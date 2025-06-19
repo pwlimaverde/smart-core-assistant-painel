@@ -39,7 +39,7 @@ class LlmParameters(ParametersReturnResult):
         context: str,
         extra_params: Optional[Dict[str, Any]] = None,
     ):
-        super().__init__(error=error)
+        self.error = error
         self.__llm_class = llm_class
         self.__model = model
         self.__extra_params = extra_params

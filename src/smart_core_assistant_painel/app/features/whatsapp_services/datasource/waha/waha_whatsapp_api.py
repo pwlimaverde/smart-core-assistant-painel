@@ -3,19 +3,14 @@ import requests
 
 from smart_core_assistant_painel.app.features.whatsapp_services.domain.interfaces.whatsapp_api import (
     WhatsappApi, )
-from smart_core_assistant_painel.utils.consts import (
-    WHATSAPP_API_BASE_URL,
-    WHATSAPP_API_SEND_TEXT_URL,
-    WHATSAPP_API_START_TYPING_URL,
-    WHATSAPP_API_STOP_TYPING_URL,
-)
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 
 class WahaWhatsAppApi(WhatsappApi):
 
     def send_message(self) -> None:
         try:
-            url = f'{WHATSAPP_API_BASE_URL}/{WHATSAPP_API_SEND_TEXT_URL}'
+            url = f'{SERVICEHUB.WHATSAPP_API_BASE_URL}/{SERVICEHUB.WHATSAPP_API_SEND_TEXT_URL}'
             headers = {
                 'Content-Type': 'application/json',
             }
@@ -35,8 +30,8 @@ class WahaWhatsAppApi(WhatsappApi):
 
     def typing(self, typing) -> None:
         try:
-            endpoint = WHATSAPP_API_START_TYPING_URL if typing else WHATSAPP_API_STOP_TYPING_URL
-            url = f'{WHATSAPP_API_BASE_URL}/{endpoint}'
+            endpoint = SERVICEHUB.WHATSAPP_API_START_TYPING_URL if typing else SERVICEHUB.WHATSAPP_API_STOP_TYPING_URL
+            url = f'{SERVICEHUB.WHATSAPP_API_BASE_URL}/{endpoint}'
             headers = {
                 'Content-Type': 'application/json',
             }

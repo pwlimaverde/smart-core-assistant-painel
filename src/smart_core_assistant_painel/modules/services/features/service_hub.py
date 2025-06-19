@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_ollama import ChatOllama
 
 
 class ServiceHub:
@@ -26,76 +27,77 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(
             __file__).parent.parent.parent / 'app/datasets'
-        self._whatsapp_api_base_url: str
-        self._whatsapp_api_send_text_url: str
-        self._whatsapp_api_start_typing_url: str
-        self._whatsapp_api_stop_typing_url: str
-        self._llm_class: Type[BaseChatModel]
-        self._model: str
-        self._temperature: int
-        self._prompt_system_analise_conteudo: str
-        self._prompt_human_analise_conteudo: str
+        
+        self._whatsapp_api_base_url: Optional[str] = None
+        self._whatsapp_api_send_text_url: Optional[str] = None
+        self._whatsapp_api_start_typing_url: Optional[str] = None
+        self._whatsapp_api_stop_typing_url: Optional[str] = None
+        self._llm_class: Optional[Type[BaseChatModel]] = None
+        self._model: Optional[str] = None
+        self._temperature: Optional[int] = None
+        self._prompt_system_analise_conteudo: Optional[str] = None
+        self._prompt_human_analise_conteudo: Optional[str] = None
 
     @property
     def PROMPT_HUMAN_ANALISE_CONTEUDO(self) -> str:
         if self._prompt_human_analise_conteudo is None:
             self._prompt_human_analise_conteudo = os.environ.get(
                 'PROMPT_HUMAN_ANALISE_CONTEUDO')
-        return self._prompt_human_analise_conteudo
+        return self._prompt_human_analise_conteudo if self._prompt_human_analise_conteudo is not None else ""
 
     @property
     def PROMPT_SYSTEM_ANALISE_CONTEUDO(self) -> str:
         if self._prompt_system_analise_conteudo is None:
             self._prompt_system_analise_conteudo = os.environ.get(
                 'PROMPT_SYSTEM_ANALISE_CONTEUDO')
-        return self._prompt_system_analise_conteudo
+        return self._prompt_system_analise_conteudo if self._prompt_system_analise_conteudo is not None else ""
 
     @property
     def TEMPERATURE(self) -> int:
         if self._temperature is None:
             self._temperature = int(os.environ.get('TEMPERATURE', '0'))
-        return self._temperature
+        return self._temperature if self._temperature is not None else 0
 
     @property
     def MODEL(self) -> str:
         if self._model is None:
             self._model = os.environ.get(
                 'MODEL')
-        return self._model
+        return self._model if self._model is not None else ""
 
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:
         if self._whatsapp_api_base_url is None:
             self._whatsapp_api_base_url = os.environ.get(
                 'WHATSAPP_API_BASE_URL')
-        return self._whatsapp_api_base_url
+        return self._whatsapp_api_base_url if self._whatsapp_api_base_url is not None else ""
 
     @property
     def WHATSAPP_API_SEND_TEXT_URL(self) -> str:
         if self._whatsapp_api_send_text_url is None:
             self._whatsapp_api_send_text_url = os.environ.get(
                 'WHATSAPP_API_SEND_TEXT_URL')
-        return self._whatsapp_api_send_text_url
+        return self._whatsapp_api_send_text_url if self._whatsapp_api_send_text_url is not None else ""
 
     @property
     def WHATSAPP_API_START_TYPING_URL(self) -> str:
         if self._whatsapp_api_start_typing_url is None:
             self._whatsapp_api_start_typing_url = os.environ.get(
                 'WHATSAPP_API_START_TYPING_URL')
-        return self._whatsapp_api_start_typing_url
+        return self._whatsapp_api_start_typing_url if self._whatsapp_api_start_typing_url is not None else ""
 
     @property
     def WHATSAPP_API_STOP_TYPING_URL(self) -> str:
         if self._whatsapp_api_stop_typing_url is None:
             self._whatsapp_api_stop_typing_url = os.environ.get(
                 'WHATSAPP_API_STOP_TYPING_URL')
-        return self._whatsapp_api_stop_typing_url
+        return self._whatsapp_api_stop_typing_url if self._whatsapp_api_stop_typing_url is not None else ""
 
     @property
     def LLM_CLASS(self) -> Type[BaseChatModel]:
         if self._llm_class is None:
             self._llm_class = self._get_llm_class()
-        return self._llm_class
+        return self._llm_class if self._llm_class is not None else ChatOllama
 
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe LLM baseada na variável de ambiente."""

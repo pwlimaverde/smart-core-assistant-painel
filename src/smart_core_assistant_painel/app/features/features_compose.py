@@ -1,4 +1,5 @@
 
+from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
@@ -39,7 +40,7 @@ class FeaturesCompose:
             raise data.result
 
     @staticmethod
-    def analise_conteudo() -> str:
+    def analise_conteudo(context: str) -> str:
 
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
@@ -48,15 +49,16 @@ class FeaturesCompose:
                 'temperature': SERVICEHUB.TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
-            context="",
+            context=context,
             error=LlmError('teste erro'))
 
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
 
         data = usecase(parameters)
+        logger.error(f"Data returned from usecase: {data}")
         if isinstance(data, SuccessReturn):
-            raise data.result
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         raise ValueError("Unexpected return type from usecase")

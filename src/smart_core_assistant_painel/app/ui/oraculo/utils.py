@@ -16,6 +16,7 @@ from langchain_community.document_loaders import (
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 
+from smart_core_assistant_painel.app.features.features_compose import FeaturesCompose
 from smart_core_assistant_painel.utils.erros import LlmError
 from smart_core_assistant_painel.utils.parameters import LlmParameters
 
@@ -131,8 +132,8 @@ class DocumentProcessor:
                 error=LlmError('teste erro'))
 
             if conteudo:
-                parameters.context = conteudo
-                pre_analise = cls._pre_analise_document(parameters)
+                # parameters.context = conteudo
+                pre_analise = FeaturesCompose.analise_conteudo(conteudo)
                 text_doc = Document(
                     page_content=pre_analise,
                 )
@@ -150,8 +151,9 @@ class DocumentProcessor:
                 documents = loader.load()
 
                 for doc in documents:
-                    parameters.context = doc.page_content
-                    pre_analise = cls._pre_analise_document(parameters)
+                    # parameters.context = doc.page_content
+                    pre_analise = FeaturesCompose.analise_conteudo(
+                        doc.page_content)
                     doc.page_content = pre_analise
 
                 todos_documentos.extend(documents)

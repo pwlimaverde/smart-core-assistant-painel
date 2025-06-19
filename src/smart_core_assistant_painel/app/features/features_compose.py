@@ -12,7 +12,7 @@ from smart_core_assistant_painel.app.features.whatsapp_services.datasource.whats
     WhatsappServicesDatasource, )
 from smart_core_assistant_painel.app.features.whatsapp_services.domain.usecase.whatsapp_services_usecase import (
     WhatsappServicesUseCase, )
-from smart_core_assistant_painel.utils.consts import LLM_CLASS
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 from smart_core_assistant_painel.utils.erros import LlmError
 from smart_core_assistant_painel.utils.parameters import (
     LlmParameters,
@@ -42,54 +42,12 @@ class FeaturesCompose:
     def analise_conteudo() -> str:
 
         parameters = LlmParameters(
-            llm_class=LLM_CLASS,
-            model='qwen/qwen3-32b',
+            llm_class=SERVICEHUB.LLM_CLASS,
+            model=SERVICEHUB.MODEL,
             extra_params={
-                'temperature': 0},
-            prompt_system="""
-                    Você é um assistente especializado em organização e análise de documentos
-                    empresariais. Sua tarefa é analisar o conteúdo completo de um documento e
-                    segmentá-lo em seções, agrupando os trechos correspondentes a cada tema identificado.
-                    É imperativo que o conteúdo original do documento seja preservado sem nenhuma
-                    alteração — nenhuma frase, palavra ou formatação interna deve ser modificada.
-
-                    Para cumprir essa tarefa, siga as instruções abaixo:
-
-                    1. **Leitura e Compreensão:** Leia atentamente o documento fornecido, identificando
-                    todos os temas ou assuntos abordados.
-
-                    2. **Identificação de Temas:** Reconheça os diferentes tópicos presentes no
-                    documento. Se o documento não apresentar títulos ou marcadores evidentes,
-                    utilize pistas contextuais para inferir os assuntos (por exemplo: Políticas da
-                    Empresa, Procedimentos Operacionais, Informações de Contato, etc.).
-
-                    3. **Segregação por Seções:** Separe o texto em seções correspondentes a cada
-                    tema identificado. Caso o documento possua trechos que não se encaixem claramente
-                    em um tema principal, agrupe-os em uma seção denominada “Outros” ou “Conteúdo
-                    Diverso”.
-
-                    4. **Preservação do Conteúdo:** Mantenha inalterado cada trecho do texto original.
-                    Sua responsabilidade é apenas organizar o conteúdo, sem realizar qualquer edição,
-                    correção ou modificação.
-
-                    5. **Formatação do Resultado:** Apresente o resultado final com um título para cada
-                    seção seguido do conteúdo original referente a esse tema. Você pode utilizar o
-                    seguinte formato:
-
-                        ----------------------------------------------------
-
-                        **[Título da Seção 1: Nome do Tema]**
-                        [Conteúdo original relacionado a esse tema]
-
-                        **[Título da Seção 2: Nome do Tema]**
-                        [Conteúdo original relacionado a esse tema]
-
-                        _(Repita para cada tema identificado)_
-
-                    Siga rigorosamente essas diretrizes para garantir que o documento seja segmentado de
-                    forma coerente e organizada, sem perder nenhum detalhe do conteúdo original.
-                """,
-            prompt_human="Analise e organize o conteudo a seguir",
+                'temperature': SERVICEHUB.TEMPERATURE},
+            prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
+            prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context="",
             error=LlmError('teste erro'))
 

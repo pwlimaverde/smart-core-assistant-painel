@@ -1,5 +1,4 @@
 import logging
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -13,7 +12,6 @@ from langchain_community.document_loaders import (
     TextLoader,
     UnstructuredExcelLoader,
 )
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 
 from smart_core_assistant_painel.app.features.features_compose import FeaturesCompose
@@ -37,34 +35,34 @@ class DocumentProcessor:
         ".csv": TextLoader,
     }
 
-    @staticmethod
-    def _pre_analise_document(parameters: LlmParameters) -> str:
+    # @staticmethod
+    # def _pre_analise_document(parameters: LlmParameters) -> str:
 
-        llm = parameters.create_llm
+    #     llm = parameters.create_llm
 
-        messages = ChatPromptTemplate.from_messages([
-            ('system', parameters.prompt_system),
-            ('human', '{prompt_human}: {context}')
-        ])
+    #     messages = ChatPromptTemplate.from_messages([
+    #         ('system', parameters.prompt_system),
+    #         ('human', '{prompt_human}: {context}')
+    #     ])
 
-        chain = messages | llm
+    #     chain = messages | llm
 
-        response = chain.invoke(
-            {'prompt_human': parameters.prompt_human, 'context': parameters.context, }).content
+    #     response = chain.invoke(
+    #         {'prompt_human': parameters.prompt_human, 'context': parameters.context, }).content
 
-        if isinstance(response, str):
-            # ✅ Filtrar tags <think> e </think>
-            cleaned_response = re.sub(
-                r'<think>.*?</think>',
-                '',
-                response,
-                flags=re.DOTALL)
+    #     if isinstance(response, str):
+    #         # ✅ Filtrar tags <think> e </think>
+    #         cleaned_response = re.sub(
+    #             r'<think>.*?</think>',
+    #             '',
+    #             response,
+    #             flags=re.DOTALL)
 
-            return cleaned_response.strip()
-        else:
-            raise TypeError(
-                f"Resposta do LLM deve ser uma string, mas recebeu: {
-                    type(response)}")
+    #         return cleaned_response.strip()
+    #     else:
+    #         raise TypeError(
+    #             f"Resposta do LLM deve ser uma string, mas recebeu: {
+    #                 type(response)}")
 
     @classmethod
     def load_document(
@@ -133,7 +131,8 @@ class DocumentProcessor:
 
             if conteudo:
                 # parameters.context = conteudo
-                pre_analise = FeaturesCompose.analise_conteudo(conteudo)
+                pre_analise = FeaturesCompose.pre_analise_ia_treinamento(
+                    conteudo)
                 text_doc = Document(
                     page_content=pre_analise,
                 )
@@ -152,7 +151,7 @@ class DocumentProcessor:
 
                 for doc in documents:
                     # parameters.context = doc.page_content
-                    pre_analise = FeaturesCompose.analise_conteudo(
+                    pre_analise = FeaturesCompose.pre_analise_ia_treinamento(
                         doc.page_content)
                     doc.page_content = pre_analise
 
@@ -228,53 +227,53 @@ def gerar_documentos(
                 str(e)}") from e
 
 
-def melhoria_texto(texto: str) -> str:
+# def melhoria_texto(texto: str) -> str:
 
-    parameters = LlmParameters(
-        llm_class=ChatGroq,
-        model='qwen/qwen3-32b',
-        extra_params={
-            'temperature': 0},
-        prompt_system="""
-            Você é um assistente especializado em reedição textual, com foco em
-            aprimorar a clareza e a compreensão dos conteúdos, sem modificar o
-            significado das informações originais. Sua tarefa é receber um documento
-            que já está organizado em seções (cada uma delimitada por um título) e,
-            para cada seção, reescrever o texto de forma a torná-lo mais claro,
-            coeso e fácil de entender, mantendo todas as informações intactas.
+#     parameters = LlmParameters(
+#         llm_class=ChatGroq,
+#         model='qwen/qwen3-32b',
+#         extra_params={
+#             'temperature': 0},
+#         prompt_system="""
+#             Você é um assistente especializado em reedição textual, com foco em
+#             aprimorar a clareza e a compreensão dos conteúdos, sem modificar o
+#             significado das informações originais. Sua tarefa é receber um documento
+#             que já está organizado em seções (cada uma delimitada por um título) e,
+#             para cada seção, reescrever o texto de forma a torná-lo mais claro,
+# coeso e fácil de entender, mantendo todas as informações intactas.
 
-            Siga estas instruções:
+#             Siga estas instruções:
 
-            1. **Análise Detalhada:** Leia atentamente cada seção do texto para
-            compreender o contexto e identificar pontos onde a clareza pode ser
-            otimizada.
+#             1. **Análise Detalhada:** Leia atentamente cada seção do texto para
+#             compreender o contexto e identificar pontos onde a clareza pode ser
+#             otimizada.
 
-            2. **Melhoria da Redação:** Para cada seção, reescreva o texto buscando:
-                - Estruturar frases de forma mais direta e organizada.
-                - Utilizar conexões lógicas que mantenham a fluidez do conteúdo.
-                - Substituir termos confusos ou redundantes por expressões mais claras.
-                - Preservar o significado e a integridade de todas as informações.
+#             2. **Melhoria da Redação:** Para cada seção, reescreva o texto buscando:
+#                 - Estruturar frases de forma mais direta e organizada.
+#                 - Utilizar conexões lógicas que mantenham a fluidez do conteúdo.
+#                 - Substituir termos confusos ou redundantes por expressões mais claras.
+#                 - Preservar o significado e a integridade de todas as informações.
 
-            3. **Conservação do Conteúdo:** Garanta que nenhum dado, fato ou detalhe
-            importante seja alterado ou omitido. Sua intervenção se dará apenas na
-            forma de apresentação.
+#             3. **Conservação do Conteúdo:** Garanta que nenhum dado, fato ou detalhe
+#             importante seja alterado ou omitido. Sua intervenção se dará apenas na
+#             forma de apresentação.
 
-            4. **Formatação do Resultado:** Apresente o documento com cada seção
-            devidamente formatada e identificada, utilizando o seguinte modelo:
+#             4. **Formatação do Resultado:** Apresente o documento com cada seção
+# devidamente formatada e identificada, utilizando o seguinte modelo:
 
-                ----------------------------------------------------
-                **[Título da Seção: Nome do Tema]**
-                [Texto aprimorado para maior clareza e compreensão]
-                ----------------------------------------------------
+#                 ----------------------------------------------------
+#                 **[Título da Seção: Nome do Tema]**
+#                 [Texto aprimorado para maior clareza e compreensão]
+#                 ----------------------------------------------------
 
-            Repita o formato para todas as seções do documento.
+#             Repita o formato para todas as seções do documento.
 
-            5. **Revisão Final:** Após a reescrita, revise cada seção para confirmar
-            que o conteúdo original foi preservado e que a nova redação realmente torna
-            o texto mais compreensível sem perder sua essência.
-        """,
-        prompt_human="Aprimore o texto a seguir",
-        context=texto,
-        error=LlmError('teste erro'))
+#             5. **Revisão Final:** Após a reescrita, revise cada seção para confirmar
+#             que o conteúdo original foi preservado e que a nova redação realmente torna
+#             o texto mais compreensível sem perder sua essência.
+#         """,
+#         prompt_human="Aprimore o texto a seguir",
+#         context=texto,
+#         error=LlmError('teste erro'))
 
-    return DocumentProcessor._pre_analise_document(parameters)
+#     return DocumentProcessor._pre_analise_document(parameters)

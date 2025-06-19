@@ -1,5 +1,4 @@
 
-from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
@@ -40,7 +39,7 @@ class FeaturesCompose:
             raise data.result
 
     @staticmethod
-    def analise_conteudo(context: str) -> str:
+    def pre_analise_ia_treinamento(context: str) -> str:
 
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
@@ -50,13 +49,37 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context=context,
-            error=LlmError('teste erro'))
+            error=LlmError('Error ao analisar o conteúdo'),)
 
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
 
         data = usecase(parameters)
-        logger.error(f"Data returned from usecase: {data}")
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def melhoria_ia_treinamento(context: str) -> str:
+
+        parameters = LlmParameters(
+            llm_class=SERVICEHUB.LLM_CLASS,
+            model=SERVICEHUB.MODEL,
+            extra_params={
+                'temperature': SERVICEHUB.TEMPERATURE},
+            prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
+            prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
+            context=context,
+            error=LlmError('Error ao gerar conteudo melhorado'),)
+
+        datasource: ACData = AnaliseConteudoLangchainDatasource()
+        usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
+
+        data = usecase(parameters)
+
         if isinstance(data, SuccessReturn):
             return data.result
         elif isinstance(data, ErrorReturn):

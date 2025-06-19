@@ -5,9 +5,9 @@ from django.shortcuts import redirect, render
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
+from smart_core_assistant_painel.app.features.features_compose import FeaturesCompose
 from smart_core_assistant_painel.app.ui.oraculo.utils import (
     gerar_documentos,
-    melhoria_texto,
 )
 
 from .models import Treinamentos
@@ -63,7 +63,8 @@ def treinar_ia(request):
 def pre_processamento(request, id):
     treinamento_id = id
     dados = Treinamentos.objects.get(id=treinamento_id)
-    texto_melhorado = melhoria_texto(dados.conteudo['page_content'])
+    texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+        dados.conteudo['page_content'])
     logger.info(f"Documento Carregado✅ {dados.conteudo}")
     logger.info(f"Texto melhorado✅ {texto_melhorado}")
     if not has_permission(request.user, 'treinar_ia'):

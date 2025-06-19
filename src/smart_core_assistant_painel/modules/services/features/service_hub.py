@@ -27,7 +27,7 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(
             __file__).parent.parent.parent / 'app/datasets'
-        
+
         self._whatsapp_api_base_url: Optional[str] = None
         self._whatsapp_api_send_text_url: Optional[str] = None
         self._whatsapp_api_start_typing_url: Optional[str] = None
@@ -37,6 +37,22 @@ class ServiceHub:
         self._temperature: Optional[int] = None
         self._prompt_system_analise_conteudo: Optional[str] = None
         self._prompt_human_analise_conteudo: Optional[str] = None
+        self._prompt_system_melhoria_conteudo: Optional[str] = None
+        self._prompt_human_melhoria_conteudo: Optional[str] = None
+
+    @property
+    def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
+        if self._prompt_human_melhoria_conteudo is None:
+            self._prompt_human_melhoria_conteudo = os.environ.get(
+                'PROMPT_HUMAN_MELHORIA_CONTEUDO')
+        return self._prompt_human_melhoria_conteudo if self._prompt_human_melhoria_conteudo is not None else ""
+
+    @property
+    def PROMPT_SYSTEM_MELHORIA_CONTEUDO(self) -> str:
+        if self._prompt_system_melhoria_conteudo is None:
+            self._prompt_system_melhoria_conteudo = os.environ.get(
+                'PROMPT_SYSTEM_MELHORIA_CONTEUDO')
+        return self._prompt_system_melhoria_conteudo if self._prompt_system_melhoria_conteudo is not None else ""
 
     @property
     def PROMPT_HUMAN_ANALISE_CONTEUDO(self) -> str:

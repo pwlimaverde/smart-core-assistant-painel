@@ -33,6 +33,7 @@ class FeaturesCompose:
             'temperature': 'TEMPERATURE',
             'prompt_system_analise_conteudo': 'PROMPT_SYSTEM_ANALISE_CONTEUDO',
             'prompt_human_analise_conteudo': 'PROMPT_HUMAN_ANALISE_CONTEUDO',
+            'prompt_system_melhoria_conteudo': 'PROMPT_SYSTEM_MELHORIA_CONTEUDO',
         }
         error: SetEnvironRemoteError = SetEnvironRemoteError(
             'Erro ao carregar variáveis de ambiente')

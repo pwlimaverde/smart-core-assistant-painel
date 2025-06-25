@@ -29,9 +29,11 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
             try:
                 value = config.get_string(remote_key)
                 os.environ[env_key] = value
-                logger.warning(f"✓ {env_key}: {value}")
             except Exception as e:
                 logger.error(f"✗ Erro ao carregar {remote_key}: {e}")
+                raise TypeError(
+                    f'Erro ao carregar variável de ambiente {remote_key}: {
+                        str(e)}')
 
     def __call__(self, parameters: SetEnvironRemoteParameters) -> bool:
         try:

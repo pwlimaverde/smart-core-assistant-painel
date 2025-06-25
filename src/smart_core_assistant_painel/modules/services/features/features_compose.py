@@ -24,6 +24,7 @@ class FeaturesCompose:
         config_mapping = {
             'secret_key_django': 'SECRET_KEY_DJANGO',
             'groq_api_key': 'GROQ_API_KEY',
+            'openai_api_key': 'OPENAI_API_KEY',
             'whatsapp_api_base_url': 'WHATSAPP_API_BASE_URL',
             'whatsapp_api_send_text_url': 'WHATSAPP_API_SEND_TEXT_URL',
             'whatsapp_api_start_typing_url': 'WHATSAPP_API_START_TYPING_URL',

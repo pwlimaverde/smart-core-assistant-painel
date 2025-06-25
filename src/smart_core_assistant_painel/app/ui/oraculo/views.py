@@ -52,7 +52,7 @@ def treinar_ia(request):
             conteudo=conteudo,
         )
 
-        treinamento.documento = conteudo_processado
+        treinamento.documentos = conteudo_processado
         treinamento.save()
         if documento_path and os.path.exists(documento_path):
             os.unlink(documento_path)
@@ -63,26 +63,58 @@ def treinar_ia(request):
 def pre_processamento(request, id):
     treinamento_id = id
     dados = Treinamentos.objects.get(id=treinamento_id)
+    logger.debug(
+        f"pre_processamento: {dados.documentos}"
+    )
+    # Usa o método do model para obter o conteúdo unificado
+    conteudo_unificado = dados.get_conteudo_unificado()
+    logger.debug(
+        f"conteudo_unificado: {conteudo_unificado}"
+    )
     texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-        dados.conteudo['page_content'])
-    logger.info(f"Documento Carregado✅ {dados.conteudo}")
-    logger.info(f"Texto melhorado✅ {texto_melhorado}")
+        conteudo_unificado)
+
     if not has_permission(request.user, 'treinar_ia'):
         raise Http404()
     if request.method == 'GET':
 
         return render(
             request, 'pre_processamento.html', {
-                'dados_organizados': dados.conteudo,
+                'dados_organizados': dados,
                 'treinamento': texto_melhorado,
             })
     elif request.method == 'POST':
         acao = request.POST.get('acao')
 
         if acao == 'aceitar':
-            documento_dict = json.loads(dados.documento)
-            documento_dict['page_content'] = texto_melhorado
-            dados.documento = json.dumps(documento_dict)
+            # Atualiza o page_content de todos os documentos com o texto
+            # melhorado
+            if isinstance(dados.documentos, str):
+                documentos_lista = json.loads(dados.documentos)
+            else:
+                documentos_lista = dados.documentos
+
+            # Atualiza o page_content de todos os documentos
+            for i, doc in enumerate(documentos_lista):
+                if isinstance(doc, str):
+                    documento_dict = json.loads(doc)
+                else:
+                    documento_dict = doc
+
+                documento_dict['page_content'] = texto_melhorado
+
+                # Converte de volta para string se necessário
+                if isinstance(documentos_lista[i], str):
+                    documentos_lista[i] = json.dumps(documento_dict)
+                else:
+                    documentos_lista[i] = documento_dict
+
+            # Salva a lista atualizada
+            if isinstance(dados.documentos, str):
+                dados.documentos = json.dumps(documentos_lista)
+            else:
+                dados.documentos = documentos_lista
+
             dados.treinamento_finalizado = True
             dados.save()
         elif acao == 'manter':

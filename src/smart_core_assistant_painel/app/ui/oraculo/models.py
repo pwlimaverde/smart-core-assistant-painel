@@ -1,5 +1,3 @@
-
-import json
 import re
 
 from django.core.exceptions import ValidationError
@@ -38,25 +36,10 @@ class Treinamentos(models.Model):
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento")
-    documento: models.JSONField = models.JSONField(
-        default=dict, blank=True, null=True)
+    documentos: models.JSONField = models.JSONField(
+        default=list, blank=True, null=True)
     treinamento_finalizado: models.BooleanField = models.BooleanField(
         default=False,)
-
-    @property
-    def conteudo(self):
-        """
-        Retorna o conteúdo do campo documento como dicionário
-        """
-        if self.documento:
-            if isinstance(self.documento, str):
-                try:
-                    return json.loads(self.documento)
-                except json.JSONDecodeError:
-                    return {}
-            elif isinstance(self.documento, dict):
-                return self.documento
-        return {}
 
     def save(self, *args, **kwargs):
         """
@@ -82,6 +65,42 @@ class Treinamentos(models.Model):
 
     def __str__(self):
         return str(self.tag) if self.tag else f"Treinamento {self.id}"
+
+    def get_conteudo_unificado(self):
+        """
+        Retorna todos os page_content da lista de documentos concatenados
+        """
+        import json
+
+        todos_page_contents = []
+
+        if self.documentos:
+            # Se documentos é uma string, faz parse primeiro
+            if isinstance(self.documentos, str):
+
+                documentos_lista = json.loads(self.documentos)
+
+            else:
+                documentos_lista = self.documentos
+
+            for i, doc in enumerate(documentos_lista):
+
+                # Se o documento é uma string JSON, faz o parse
+                if isinstance(doc, str):
+                    doc_parsed = json.loads(doc)
+                else:
+                    doc_parsed = doc
+
+                # Extrai o page_content do documento parseado
+                if isinstance(doc_parsed,
+                              dict) and 'page_content' in doc_parsed:
+                    page_content = doc_parsed['page_content']
+                    todos_page_contents.append(page_content)
+
+        # Concatena todos os conteúdos em uma única string
+        resultado = '\n\n'.join(str(content)
+                                for content in todos_page_contents if content)
+        return resultado
 
     class Meta:
         verbose_name = "Treinamento"

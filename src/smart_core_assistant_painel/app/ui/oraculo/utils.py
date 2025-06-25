@@ -1,4 +1,4 @@
-import logging
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -12,6 +12,7 @@ from langchain_community.document_loaders import (
     TextLoader,
     UnstructuredExcelLoader,
 )
+from loguru import logger
 
 from smart_core_assistant_painel.app.features.features_compose import FeaturesCompose
 
@@ -51,6 +52,14 @@ class DocumentProcessor:
                     conteudo)
                 text_doc = Document(
                     page_content=pre_analise,
+                    id=id,
+                    metadata={
+                        "id_treinamento": id,
+                        "tag": tag,
+                        "grupo": grupo,
+                        "source": "treinamento_ia",
+                        "processed_at": datetime.now().isoformat(),
+                    }
                 )
 
                 todos_documentos.append(text_doc)
@@ -62,7 +71,12 @@ class DocumentProcessor:
                     raise ValueError(f"Extensão {ext} não suportada")
 
                 loader_class = cls.SUPPORTED_EXTENSIONS[ext]
-                loader = loader_class(path)
+
+                # Configura encoding UTF-8 para arquivos de texto e CSV
+                if ext in ['.txt', '.csv']:
+                    loader = TextLoader(path, encoding="utf-8")
+                else:
+                    loader = loader_class(path)
                 documents = loader.load()
 
                 for doc in documents:
@@ -70,26 +84,22 @@ class DocumentProcessor:
                     pre_analise = FeaturesCompose.pre_analise_ia_treinamento(
                         doc.page_content)
                     doc.page_content = pre_analise
+                    doc.id = id
+                    doc.metadata.update({
+                        "id_treinamento": id,
+                        "tag": tag,
+                        "grupo": grupo,
+                        "source": "treinamento_ia",
+                        "processed_at": datetime.now().isoformat(),
+                    })
 
                 todos_documentos.extend(documents)
 
-            conteudo_completo = "\n\n".join(
-                [doc.page_content for doc in todos_documentos])
-
-            completo_doc = Document(
-                id=id,
-                page_content=conteudo_completo,
-                metadata={
-                    "id_treinamento": id,
-                    "tag": tag,
-                    "grupo": grupo,
-                    "source": "treinamento_ia",
-                    "processed_at": datetime.now().isoformat(),
-                }
+            completo_json = json.dumps([documento.model_dump_json(
+                indent=2) for documento in todos_documentos], ensure_ascii=False)
+            logger.warning(
+                f"Processando completo_json: {completo_json}"
             )
-
-            completo_json = completo_doc.model_dump_json(indent=2)
-
             return completo_json
         except Exception as e:
             raise RuntimeError(
@@ -104,22 +114,7 @@ def gerar_documentos(
     grupo: str,
     conteudo: Optional[str],
 ) -> str:
-    """
-    Gerar documentos RAG a partir de múltiplas fontes
 
-    Args:
-        id: Identificador único do documento
-        path: Caminho para arquivo (opcional)
-        tag: Tag de classificação
-        conteudo: Conteúdo direto (opcional)
-
-    Returns:
-        str: Resultado do processamento
-
-    Raises:
-        ValueError: Quando nem path nem conteudo são fornecidos
-        DocumentProcessingError: Quando há erro no processamento
-    """
     # Validação de entrada
     if not (path or conteudo):
         raise ValueError(
@@ -134,7 +129,6 @@ def gerar_documentos(
             grupo=grupo,
             conteudo=conteudo
         )
-        logging.info(f"treinamento {treinamento}")
         return treinamento
 
     except Exception as e:

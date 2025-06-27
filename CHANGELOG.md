@@ -5,3 +5,4 @@ Configuração inicial do projeto.
 
 ## 0.2.0
 1 - Services configurado
+2 - Features ai_engine implantado

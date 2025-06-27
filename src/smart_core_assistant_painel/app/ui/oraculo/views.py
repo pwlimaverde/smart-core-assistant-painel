@@ -5,10 +5,8 @@ from django.shortcuts import redirect, render
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
-from smart_core_assistant_painel.app.ui.oraculo.utils import (
-    gerar_documentos,
-    melhoria_texto,
-)
+from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+    FeaturesCompose, )
 
 from .models import Treinamentos
 
@@ -28,8 +26,9 @@ def treinar_ia(request):
             grupo=grupo,
         )
         treinamento.save()
-
+        documents_list = []  # Lista para armazenar todos os documentos
         documento_path = None
+
         if documento:
             try:
                 # Tenta obter o path temporário (para arquivos grandes)
@@ -44,15 +43,48 @@ def treinar_ia(request):
                         temp_file.write(chunk)
                     documento_path = temp_file.name
 
-        conteudo_processado = gerar_documentos(
-            id=treinamento.id,
-            path=documento_path if documento else None,
-            tag=tag,
-            grupo=grupo,
-            conteudo=conteudo,
-        )
+        if conteudo:
+            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(
+                conteudo)
+            data_conteudo = FeaturesCompose.load_document_conteudo(
+                id=treinamento.id,
+                conteudo=pre_analise_conteudo,
+                tag=tag,
+                grupo=grupo,
+            )
+            # Converte JSON string para lista e adiciona à lista principal
+            if data_conteudo:
+                conteudo_list = json.loads(data_conteudo)
+                documents_list.extend(conteudo_list)
 
-        treinamento.documento = conteudo_processado
+        if documento_path:
+            data_file = FeaturesCompose.load_document_file(
+                id=treinamento.id,
+                path=documento_path,
+                tag=tag,
+                grupo=grupo,
+            )
+
+            # Converte o JSON string em lista de documentos
+            doc_dict = json.loads(data_file)
+
+            # Itera sobre cada documento na lista
+            for documento_str in doc_dict:
+                # Converte cada string JSON em dicionário
+                documento = json.loads(documento_str)
+
+                if 'page_content' in documento:
+                    # Aplica a pré-análise no conteúdo
+                    pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
+                        documento['page_content'])
+                    # Atualiza o page_content do documento
+                    documento['page_content'] = pre_analise_content
+
+                # Adiciona o documento processado à lista principal
+                documents_list.append(documento)
+
+        # Converte a lista unificada para JSON
+        treinamento.documentos = json.dumps(documents_list)
         treinamento.save()
         if documento_path and os.path.exists(documento_path):
             os.unlink(documento_path)
@@ -63,25 +95,58 @@ def treinar_ia(request):
 def pre_processamento(request, id):
     treinamento_id = id
     dados = Treinamentos.objects.get(id=treinamento_id)
-    texto_melhorado = melhoria_texto(dados.conteudo['page_content'])
-    logger.info(f"Documento Carregado✅ {dados.conteudo}")
-    logger.info(f"Texto melhorado✅ {texto_melhorado}")
+    logger.debug(
+        f"pre_processamento: {dados.documentos}"
+    )
+    # Usa o método do model para obter o conteúdo unificado
+    conteudo_unificado = dados.get_conteudo_unificado()
+    logger.debug(
+        f"conteudo_unificado: {conteudo_unificado}"
+    )
+    texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+        conteudo_unificado)
+
     if not has_permission(request.user, 'treinar_ia'):
         raise Http404()
     if request.method == 'GET':
 
         return render(
             request, 'pre_processamento.html', {
-                'dados_organizados': dados.conteudo,
+                'dados_organizados': dados,
                 'treinamento': texto_melhorado,
             })
     elif request.method == 'POST':
         acao = request.POST.get('acao')
 
         if acao == 'aceitar':
-            documento_dict = json.loads(dados.documento)
-            documento_dict['page_content'] = texto_melhorado
-            dados.documento = json.dumps(documento_dict)
+            # Atualiza o page_content de todos os documentos com o texto
+            # melhorado
+            if isinstance(dados.documentos, str):
+                documentos_lista = json.loads(dados.documentos)
+            else:
+                documentos_lista = dados.documentos
+
+            # Atualiza o page_content de todos os documentos
+            for i, doc in enumerate(documentos_lista):
+                if isinstance(doc, str):
+                    documento_dict = json.loads(doc)
+                else:
+                    documento_dict = doc
+
+                documento_dict['page_content'] = texto_melhorado
+
+                # Converte de volta para string se necessário
+                if isinstance(documentos_lista[i], str):
+                    documentos_lista[i] = json.dumps(documento_dict)
+                else:
+                    documentos_lista[i] = documento_dict
+
+            # Salva a lista atualizada
+            if isinstance(dados.documentos, str):
+                dados.documentos = json.dumps(documentos_lista)
+            else:
+                dados.documentos = documentos_lista
+
             dados.treinamento_finalizado = True
             dados.save()
         elif acao == 'manter':

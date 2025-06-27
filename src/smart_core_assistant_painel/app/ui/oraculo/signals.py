@@ -23,7 +23,12 @@ def signals_treinamento_ia(sender, instance, created, **kwargs):
 def task_remover_treinamento_ia(sender, instance, **kwargs):
     if instance.treinamento_finalizado:
         db_path = settings.BASE_DIR.parent / 'db' / "banco_faiss"
-        if os.path.exists(db_path):
+
+        # Verifica se os arquivos necessários do FAISS existem
+        index_faiss_path = db_path / "index.faiss"
+        index_pkl_path = db_path / "index.pkl"
+
+        if os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path):
             vectordb = FAISS.load_local(
                 db_path,
                 OllamaEmbeddings(
@@ -47,15 +52,44 @@ def task_remover_treinamento_ia(sender, instance, **kwargs):
             else:
                 logger.warning("🎉 Nenhum dado encontrado para remover")
         else:
-            logger.error("🎉 Banco de dados não encontrado")
+            logger.error(
+                "🎉 Banco de dados FAISS não encontrado ou arquivos em falta")
 
 
 def task_treinar_ia(instance_id):
+    import json
+
     instance = Treinamentos.objects.get(id=instance_id)
-    documentos = [Document.model_validate_json(instance.documento)]
-    logger.success(f"🎉 Processamento concluído {documentos}")
+
+    # Processa todos os documentos da lista
+    documentos = []
+    if instance.documentos:
+        # Se documentos é uma string, faz parse primeiro
+        if isinstance(instance.documentos, str):
+            documentos_lista = json.loads(instance.documentos)
+        else:
+            documentos_lista = instance.documentos
+
+        # Converte cada documento JSON para objeto Document
+        for doc_json in documentos_lista:
+            try:
+                if isinstance(doc_json, str):
+                    # Se é string JSON, faz parse primeiro
+                    documento = Document.model_validate_json(doc_json)
+                else:
+                    # Se já é dicionário, converte para Document
+                    documento = Document(**doc_json)
+                documentos.append(documento)
+            except Exception as e:
+                logger.error(f"Erro ao processar documento: {e}")
+                continue
+
+    logger.success(
+        f"🎉 Processamento concluído - {len(documentos)} documentos carregados")
     logger.success(f"🎉 Tipo de dado  {type(documentos)}")
+
     if not documentos:
+        logger.warning("🎉 Nenhum documento válido encontrado")
         return
 
     splitter = RecursiveCharacterTextSplitter(
@@ -65,16 +99,27 @@ def task_treinar_ia(instance_id):
     embeddings = OllamaEmbeddings(model="mxbai-embed-large")
 
     db_path = settings.BASE_DIR.parent / 'db' / "banco_faiss"
-    if os.path.exists(db_path):
+
+    # Verifica se os arquivos necessários do FAISS existem
+    index_faiss_path = db_path / "index.faiss"
+    index_pkl_path = db_path / "index.pkl"
+
+    if os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path):
+        # Carrega banco existente
         vectordb = FAISS.load_local(
             db_path, embeddings, allow_dangerous_deserialization=True)
         vectordb.add_documents(chunks)
 
         teste = find_by_metadata(vectordb, "grupo", instance.grupo)
-        logger.warning(f"🎉 Dados os exists salvos {teste}")
+        logger.warning(f"🎉 Dados adicionados ao banco existente {teste}")
     else:
+        # Cria novo banco
         vectordb = FAISS.from_documents(chunks, embeddings)
-        logger.warning("🎉 Dados salvos criados")
+        logger.warning("🎉 Novo banco FAISS criado")
+
+        # Cria o diretório se não existir
+        os.makedirs(db_path, exist_ok=True)
+
     vectordb.save_local(db_path)
 
 

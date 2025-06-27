@@ -39,6 +39,28 @@ class ServiceHub:
         self._prompt_human_analise_conteudo: Optional[str] = None
         self._prompt_system_melhoria_conteudo: Optional[str] = None
         self._prompt_human_melhoria_conteudo: Optional[str] = None
+        self._chunk_overlap: Optional[int] = None
+        self._chunk_size: Optional[int] = None
+        self._faiss_model: Optional[str] = None
+
+    @property
+    def CHUNK_OVERLAP(self) -> int:
+        if self._chunk_overlap is None:
+            self._chunk_overlap = int(os.environ.get('CHUNK_OVERLAP', '200'))
+        return self._chunk_overlap if self._chunk_overlap is not None else ""
+
+    @property
+    def CHUNK_SIZE(self) -> int:
+        if self._chunk_size is None:
+            self._chunk_size = int(os.environ.get('CHUNK_SIZE', '20'))
+        return self._chunk_size if self._chunk_size is not None else ""
+
+    @property
+    def FAISS_MODEL(self) -> str:
+        if self._faiss_model is None:
+            self._faiss_model = os.environ.get(
+                'FAISS_MODEL')
+        return self._faiss_model if self._faiss_model is not None else ""
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:

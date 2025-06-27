@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 
 from django.conf import settings
@@ -10,32 +9,11 @@ from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
+from loguru import logger
+
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import Treinamentos
-
-logger = logging.getLogger(__name__)
-
-# Constantes
-FAISS_MODEL = "mxbai-embed-large"
-CHUNK_SIZE = 1000  # Aumentado de 100 para melhor contexto
-CHUNK_OVERLAP = 200  # Aumentado proporcionalmente
-
-
-def get_faiss_db_path():
-    """Retorna o caminho para o banco FAISS."""
-    return settings.BASE_DIR.parent / 'db' / "banco_faiss"
-
-
-def get_embeddings():
-    """Retorna a instância de embeddings configurada."""
-    return OllamaEmbeddings(model=FAISS_MODEL)
-
-
-def faiss_db_exists(db_path):
-    """Verifica se os arquivos necessários do FAISS existem."""
-    index_faiss_path = db_path / "index.faiss"
-    index_pkl_path = db_path / "index.pkl"
-    return os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path)
 
 
 @receiver(post_save, sender=Treinamentos)
@@ -72,6 +50,23 @@ def signal_remover_treinamento_ia(sender, instance, **kwargs):
         logger.error(
             f"Erro ao processar remoção de treinamento para instância {
                 instance.id}: {e}")
+
+
+def get_faiss_db_path():
+    """Retorna o caminho para o banco FAISS."""
+    return settings.BASE_DIR.parent / 'db' / "banco_faiss"
+
+
+def get_embeddings():
+    """Retorna a instância de embeddings configurada."""
+    return OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
+
+
+def faiss_db_exists(db_path):
+    """Verifica se os arquivos necessários do FAISS existem."""
+    index_faiss_path = db_path / "index.faiss"
+    index_pkl_path = db_path / "index.pkl"
+    return os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path)
 
 
 def task_remover_treinamento_ia(instance_id):
@@ -157,8 +152,8 @@ def task_treinar_ia(instance_id):
 
         # Divide documentos em chunks
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=CHUNK_SIZE,
-            chunk_overlap=CHUNK_OVERLAP
+            chunk_size=SERVICEHUB.CHUNK_SIZE,
+            chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
         )
         chunks = splitter.split_documents(documentos)
         logger.info(

@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Type
 from langchain_core.language_models.chat_models import BaseChatModel
 from py_return_success_or_error import ParametersReturnResult
 
-from smart_core_assistant_painel.utils.erros import LlmError, WahaApiError
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError, LlmError, WahaApiError
 
 
 @dataclass
@@ -16,7 +16,28 @@ class MessageParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         return self.__repr__()
+    
+@dataclass
+class LoadDocumentFileParameters(ParametersReturnResult):
+    id: str
+    path: str
+    tag: str
+    grupo: str
+    error: DocumentError
 
+    def __str__(self) -> str:
+        return self.__repr__()
+
+@dataclass
+class LoadDocumentConteudoParameters(ParametersReturnResult):
+    id: str
+    conteudo: str
+    tag: str
+    grupo: str
+    error: DocumentError
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 class LlmParameters(ParametersReturnResult):
     __slots__ = [

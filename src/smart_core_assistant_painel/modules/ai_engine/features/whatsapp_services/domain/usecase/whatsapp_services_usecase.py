@@ -6,11 +6,11 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.app.features.whatsapp_services.domain.interfaces.whatsapp_api import (
+from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
     WhatsappApi, )
-from smart_core_assistant_painel.utils.erros import WahaApiError
-from smart_core_assistant_painel.utils.parameters import MessageParameters
-from smart_core_assistant_painel.utils.types import WSUsecase
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import WahaApiError
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import MessageParameters
+from smart_core_assistant_painel.modules.ai_engine.utils.types import WSUsecase
 
 
 class WhatsappServicesUseCase(WSUsecase):

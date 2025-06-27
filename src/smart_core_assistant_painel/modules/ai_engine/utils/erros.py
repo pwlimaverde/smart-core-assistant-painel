@@ -23,3 +23,10 @@ class LlmError(AppError):
 
     def __str__(self) -> str:
         return f'LlmError - {self.message}'
+    
+@dataclass
+class DocumentError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f'DocumentError - {self.message}'

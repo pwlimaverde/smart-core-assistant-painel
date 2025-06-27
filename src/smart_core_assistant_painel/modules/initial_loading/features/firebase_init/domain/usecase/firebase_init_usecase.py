@@ -27,7 +27,6 @@ class FirebaseInitUseCase(FIUsecase):
                 firebase_admin.get_app()
             except ValueError:
                 firebase_admin.initialize_app()
-            print("Firebase Admin SDK inicializado com sucesso!")
 
             return SuccessReturn(EMPTY)
 

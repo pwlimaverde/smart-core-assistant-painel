@@ -29,5 +29,5 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, ErrorReturn):
             raise data.result
-        logger.info("Firebase Admin SDK inicializado com sucesso!")
+        logger.info("Firebase inicializado com sucesso!")
         

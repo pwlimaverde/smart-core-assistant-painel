@@ -27,6 +27,8 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(
             __file__).parent.parent.parent / 'app/datasets'
+        self.PASTA_FAISS_DB: Path = Path(
+            __file__).parent.parent.parent / 'app/db/banco_faiss'
 
         self._whatsapp_api_base_url: Optional[str] = None
         self._whatsapp_api_send_text_url: Optional[str] = None

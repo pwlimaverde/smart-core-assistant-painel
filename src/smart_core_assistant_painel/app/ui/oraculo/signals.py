@@ -1,7 +1,6 @@
 import json
 import os
 
-from django.conf import settings
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
@@ -52,11 +51,6 @@ def signal_remover_treinamento_ia(sender, instance, **kwargs):
                 instance.id}: {e}")
 
 
-def get_faiss_db_path():
-    """Retorna o caminho para o banco FAISS."""
-    return settings.BASE_DIR.parent / 'db' / "banco_faiss"
-
-
 def get_embeddings():
     """Retorna a instância de embeddings configurada."""
     return OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
@@ -74,7 +68,7 @@ def task_remover_treinamento_ia(instance_id):
     Task para remover um treinamento específico do banco vetorial FAISS.
     """
     try:
-        db_path = get_faiss_db_path()
+        db_path = SERVICEHUB.PASTA_FAISS_DB
 
         if not faiss_db_exists(db_path):
             logger.warning(f"Banco FAISS não encontrado em {db_path}")
@@ -142,14 +136,6 @@ def task_treinar_ia(instance_id):
                 f"Nenhum documento encontrado para o treinamento {instance_id}")
             return
 
-        # Adiciona metadados aos documentos para identificação
-        for doc in documentos:
-            if not doc.metadata:
-                doc.metadata = {}
-            doc.metadata["id_treinamento"] = instance_id
-            doc.metadata["tag"] = instance.tag
-            doc.metadata["grupo"] = instance.grupo
-
         # Divide documentos em chunks
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=SERVICEHUB.CHUNK_SIZE,
@@ -215,7 +201,7 @@ def _criar_ou_atualizar_banco_vetorial(chunks):
         chunks: Lista de chunks de documentos para adicionar
     """
     embeddings = get_embeddings()
-    db_path = get_faiss_db_path()
+    db_path = SERVICEHUB.PASTA_FAISS_DB
 
     if faiss_db_exists(db_path):
         # Carrega banco existente

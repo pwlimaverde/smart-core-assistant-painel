@@ -1,13 +1,10 @@
 import json
-import os
 
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
 from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
@@ -51,60 +48,16 @@ def signal_remover_treinamento_ia(sender, instance, **kwargs):
                 instance.id}: {e}")
 
 
-def get_embeddings():
-    """Retorna a instância de embeddings configurada."""
-    return OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
-
-
-def faiss_db_exists(db_path):
-    """Verifica se os arquivos necessários do FAISS existem."""
-    index_faiss_path = db_path / "index.faiss"
-    index_pkl_path = db_path / "index.pkl"
-    return os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path)
-
-
 def task_remover_treinamento_ia(instance_id):
     """
     Task para remover um treinamento específico do banco vetorial FAISS.
     """
     try:
-        db_path = SERVICEHUB.PASTA_FAISS_DB
-
-        if not faiss_db_exists(db_path):
-            logger.warning(f"Banco FAISS não encontrado em {db_path}")
-            return
-
-        embeddings = get_embeddings()
-        vectordb = FAISS.load_local(
-            db_path,
-            embeddings,
-            allow_dangerous_deserialization=True
-        )
-
-        # Busca documentos relacionados ao treinamento
-        ids_para_remover = find_by_metadata(
-            vectordb, "id_treinamento", instance_id)
-
-        if ids_para_remover:
-            # Valida IDs existentes
-            ids_existentes = set(vectordb.docstore._dict.keys())
-            ids_validos = [
-                str(doc_id) for doc_id in ids_para_remover
-                if str(doc_id) in ids_existentes
-            ]
-
-            if ids_validos:
-                vectordb.delete(ids_validos)
-                vectordb.save_local(db_path)
-                logger.info(
-                    f"Removidos {
-                        len(ids_validos)} documentos do treinamento {instance_id}")
-            else:
-                logger.warning(
-                    f"Nenhum documento válido encontrado para remoção do treinamento {instance_id}")
-        else:
-            logger.info(
-                f"Nenhum documento encontrado para o treinamento {instance_id}")
+        logger.info(f"Removendo treinamento {instance_id} do banco vetorial")
+        SERVICEHUB.vetor_storage.remove_by_metadata(
+            "id_treinamento", str(instance_id))
+        logger.info(
+            f"Treinamento {instance_id} removido com sucesso do banco vetorial")
 
     except Exception as e:
         logger.error(
@@ -142,12 +95,19 @@ def task_treinar_ia(instance_id):
             chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
         )
         chunks = splitter.split_documents(documentos)
+
+        # Adiciona metadados de identificação do treinamento aos chunks
+        for chunk in chunks:
+            if chunk.metadata is None:
+                chunk.metadata = {}
+            chunk.metadata["id_treinamento"] = str(instance_id)
+
         logger.info(
             f"Documentos divididos em {
                 len(chunks)} chunks para treinamento {instance_id}")
 
         # Cria ou atualiza banco vetorial
-        _criar_ou_atualizar_banco_vetorial(chunks)
+        SERVICEHUB.vetor_storage.write(chunks)
 
         logger.info(f"Treinamento {instance_id} concluído com sucesso")
 
@@ -191,77 +151,3 @@ def _processar_documentos(documentos_raw):
         logger.error(f"Erro ao processar documentos: {e}")
 
     return documentos
-
-
-def _criar_ou_atualizar_banco_vetorial(chunks):
-    """
-    Cria um novo banco vetorial ou atualiza o existente com novos chunks.
-
-    Args:
-        chunks: Lista de chunks de documentos para adicionar
-    """
-    embeddings = get_embeddings()
-    db_path = SERVICEHUB.PASTA_FAISS_DB
-
-    if faiss_db_exists(db_path):
-        # Carrega banco existente
-        logger.info("Carregando banco vetorial existente")
-        vectordb = FAISS.load_local(
-            db_path,
-            embeddings,
-            allow_dangerous_deserialization=True
-        )
-        vectordb.add_documents(chunks)
-        logger.info(f"Adicionados {len(chunks)} chunks ao banco existente")
-    else:
-        # Cria novo banco
-        logger.info("Criando novo banco vetorial")
-        vectordb = FAISS.from_documents(chunks, embeddings)
-
-        # Cria o diretório se não existir
-        os.makedirs(db_path, exist_ok=True)
-        logger.info(f"Novo banco criado com {len(chunks)} chunks")
-
-    vectordb.save_local(db_path)
-    logger.info(f"Banco vetorial salvo em {db_path}")
-
-
-def find_by_metadata(vectorstore, metadata_key, metadata_value):
-    """
-    Localiza IDs de documentos baseado em metadados específicos.
-
-    Args:
-        vectorstore: Instância do FAISS vectorstore
-        metadata_key: Chave do metadado para buscar
-        metadata_value: Valor do metadado para buscar
-
-    Returns:
-        List: Lista de IDs de documentos que correspondem aos critérios
-    """
-    matching_ids = []
-
-    try:
-        if hasattr(
-                vectorstore,
-                'docstore') and hasattr(
-                vectorstore,
-                'index_to_docstore_id'):
-            for doc_id in vectorstore.index_to_docstore_id.values():
-                try:
-                    doc = vectorstore.docstore.search(doc_id)
-                    if doc and hasattr(doc, 'metadata') and doc.metadata:
-                        if doc.metadata.get(metadata_key) == metadata_value:
-                            matching_ids.append(doc_id)
-                except Exception as e:
-                    logger.warning(f"Erro ao buscar documento {doc_id}: {e}")
-                    continue
-
-        logger.info(
-            f"Encontrados {
-                len(matching_ids)} documentos com {metadata_key}={metadata_value}")
-
-    except Exception as e:
-        logger.error(
-            f"Erro ao buscar por metadados {metadata_key}={metadata_value}: {e}")
-
-    return matching_ids

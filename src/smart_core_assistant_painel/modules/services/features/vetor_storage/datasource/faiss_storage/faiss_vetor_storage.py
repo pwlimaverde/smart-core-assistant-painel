@@ -13,15 +13,41 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.
 
 
 class FaissVetorStorage(VetorStorage):
+    """
+    Implementação singleton do VetorStorage usando FAISS.
+    Garante que todas as instâncias compartilhem o mesmo banco vetorial.
+    """
+
+    _instance = None
+    _initialized = False
+    _lock = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     def __init__(self):
         """
         Inicializa o armazenamento FAISS.
         Cria ou carrega o banco vetorial existente.
         """
-        self.__db_path = str(Path(__file__).parent / "banco_faiss")
-        self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
-        self.__vectordb = self.__inicializar_banco_vetorial()
+        if not self._initialized:
+            # Import aqui para evitar problemas de importação circular
+            import threading
+            if FaissVetorStorage._lock is None:
+                FaissVetorStorage._lock = threading.Lock()
+
+            with FaissVetorStorage._lock:
+                if not self._initialized:
+                    self.__db_path = str(Path(__file__).parent / "banco_faiss")
+                    self.__embeddings = OllamaEmbeddings(
+                        model=SERVICEHUB.FAISS_MODEL)
+                    self.__vectordb = self.__inicializar_banco_vetorial()
+                    FaissVetorStorage._initialized = True
+                    logger.info(
+                        f"FaissVetorStorage singleton inicializado (ID: {
+                            id(self)})")
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco FAISS existe no caminho especificado."""
@@ -166,6 +192,9 @@ class FaissVetorStorage(VetorStorage):
             Lista de documentos encontrados
         """
         try:
+            # Sincroniza com o disco antes de ler
+            self._sync_vectordb()
+
             if query_vector:
                 results = self.__vectordb.similarity_search_by_vector(
                     query_vector, k=k)
@@ -309,6 +338,8 @@ class FaissVetorStorage(VetorStorage):
             metadata_value: Valor do metadado para buscar
         """
         try:
+            # Sincroniza com o disco antes de remover
+            self._sync_vectordb()
 
             # Busca documentos relacionados ao treinamento
             ids_para_remover = self.__find_by_metadata(
@@ -349,6 +380,26 @@ class FaissVetorStorage(VetorStorage):
         except Exception as e:
             logger.error(
                 f"Erro ao remover {metadata_key}: {metadata_value} do banco vetorial: {e}")
+
+    def _sync_vectordb(self):
+        """
+        Sincroniza o banco vetorial recarregando do disco.
+        Usado para garantir que mudanças de outros processos sejam visíveis.
+        """
+        try:
+            if self.__faiss_db_exists(self.__db_path):
+                logger.debug("Sincronizando banco vetorial com o disco")
+                self.__vectordb = FAISS.load_local(
+                    self.__db_path,
+                    self.__embeddings,
+                    allow_dangerous_deserialization=True
+                )
+                logger.debug("Banco vetorial sincronizado com sucesso")
+            else:
+                logger.warning(
+                    "Arquivo do banco vetorial não encontrado para sincronização")
+        except Exception as e:
+            logger.error(f"Erro ao sincronizar banco vetorial: {e}")
 
     # def get_stats(self) -> Dict[str, Any]:
     #     """

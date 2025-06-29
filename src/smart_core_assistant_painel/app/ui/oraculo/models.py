@@ -77,13 +77,8 @@ class Treinamentos(models.Model):
         todos_page_contents = []
 
         if self.documentos:
-            # Se documentos é uma string, faz parse primeiro
-            if isinstance(self.documentos, str):
-
-                documentos_lista = json.loads(self.documentos)
-
-            else:
-                documentos_lista = self.documentos
+            # documentos é sempre uma lista (JSONField)
+            documentos_lista = self.documentos
 
             for i, doc in enumerate(documentos_lista):
 
@@ -117,11 +112,8 @@ class Treinamentos(models.Model):
             return documentos
 
         try:
-            # Se é uma string, faz parse primeiro
-            if isinstance(self.documentos, str):
-                documentos_lista = json.loads(self.documentos)
-            else:
-                documentos_lista = self.documentos
+            # documentos é sempre uma lista (JSONField)
+            documentos_lista = self.documentos or []
 
             # Converte cada documento para objeto Document
             for doc_json in documentos_lista:

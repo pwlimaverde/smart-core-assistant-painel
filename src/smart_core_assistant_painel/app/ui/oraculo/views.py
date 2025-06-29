@@ -156,7 +156,7 @@ def _processar_treinamento(request):
                 documents_list.extend(docs_conteudo)
 
             # Salvar documentos processados
-            treinamento.documentos = json.dumps(documents_list)
+            treinamento.documentos = documents_list
             treinamento.save()
 
             messages.success(request, 'Treinamento criado com sucesso!')
@@ -240,26 +240,49 @@ def _processar_pre_processamento(request, treinamento):
 
 
 def _aceitar_treinamento(treinamento):
-    """Aceita treinamento e atualiza conteúdo melhorado"""
-    conteudo_unificado = treinamento.get_conteudo_unificado()
-    texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-        conteudo_unificado)
+    """Aceita treinamento e atualiza conteúdo melhorado individualmente para cada documento"""
+    try:
+        # Processa documentos - agora sempre será uma lista (JSONField)
+        documentos_lista = treinamento.documentos or []
 
-    # Processa documentos
-    documentos_lista = json.loads(
-        treinamento.documentos) if isinstance(
-        treinamento.documentos,
-        str) else treinamento.documentos
+        if not documentos_lista:
+            logger.warning(
+                f"Nenhum documento encontrado para treinamento {
+                    treinamento.id}")
+            return
 
-    for i, doc in enumerate(documentos_lista):
-        documento_dict = json.loads(doc) if isinstance(doc, str) else doc
-        documento_dict['page_content'] = texto_melhorado
+        documentos_melhorados = []
 
-        documentos_lista[i] = json.dumps(documento_dict) if isinstance(
-            documentos_lista[i], str) else documento_dict
+        for doc in documentos_lista:
+            documento_dict = json.loads(doc) if isinstance(doc, str) else doc
 
-    # Salva alterações
-    treinamento.documentos = json.dumps(documentos_lista) if isinstance(
-        treinamento.documentos, str) else documentos_lista
-    treinamento.treinamento_finalizado = True
-    treinamento.save()
+            # Valida se o documento tem page_content
+            if 'page_content' not in documento_dict:
+                logger.warning(
+                    f"Documento sem page_content no treinamento {
+                        treinamento.id}")
+                documentos_melhorados.append(documento_dict)
+                continue
+
+            # Melhora o conteúdo individual de cada documento
+            conteudo_original = documento_dict['page_content']
+            if conteudo_original:
+                texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+                    conteudo_original)
+                documento_dict['page_content'] = texto_melhorado
+
+            documentos_melhorados.append(documento_dict)
+
+        # Salva alterações
+        treinamento.documentos = documentos_melhorados
+        treinamento.treinamento_finalizado = True
+        treinamento.save()
+
+        logger.info(
+            f"Treinamento {
+                treinamento.id} aceito com {
+                len(documentos_melhorados)} documentos melhorados")
+
+    except Exception as e:
+        logger.error(f"Erro ao aceitar treinamento {treinamento.id}: {e}")
+        raise

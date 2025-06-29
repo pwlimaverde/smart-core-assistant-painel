@@ -1,141 +1,113 @@
-import os
-
-from django.conf import settings
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django_q.tasks import async_task
-from langchain.docstore.document import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings
 from loguru import logger
+
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import Treinamentos
 
 
 @receiver(post_save, sender=Treinamentos)
 def signals_treinamento_ia(sender, instance, created, **kwargs):
-    if instance.treinamento_finalizado:
-        async_task(task_treinar_ia, instance.id)
+    """
+    Signal executado após salvar um treinamento.
+    Executa o treinamento da IA de forma assíncrona se o treinamento foi finalizado.
+    """
+    try:
+        if instance.treinamento_finalizado:
+            logger.info(
+                f"Iniciando treinamento assíncrono para instância {
+                    instance.id}")
+            async_task(__task_treinar_ia, instance.id)
+    except Exception as e:
+        logger.error(
+            f"Erro ao processar signal de treinamento para instância {
+                instance.id}: {e}")
 
 
-@receiver(post_delete, sender=Treinamentos)
-def task_remover_treinamento_ia(sender, instance, **kwargs):
-    if instance.treinamento_finalizado:
-        db_path = settings.BASE_DIR.parent / 'db' / "banco_faiss"
+def __task_treinar_ia(instance_id):
+    """
+    Task para treinar a IA com documentos de um treinamento específico.
 
-        # Verifica se os arquivos necessários do FAISS existem
-        index_faiss_path = db_path / "index.faiss"
-        index_pkl_path = db_path / "index.pkl"
-
-        if os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path):
-            vectordb = FAISS.load_local(
-                db_path,
-                OllamaEmbeddings(
-                    model="mxbai-embed-large"),
-                allow_dangerous_deserialization=True)
-            teste = find_by_metadata(vectordb, "id_treinamento", instance.id)
-            logger.error(f"🎉 id para apagar {instance.id}")
-            logger.error(f"🎉 id list {teste}")
-            if teste:
-                ids_existentes = set(vectordb.docstore._dict.keys())
-                logger.warning(f"🎉 ids_existentes {ids_existentes}")
-                ids_para_remover_str = [str(id) for id in teste]
-                logger.warning(
-                    f"🎉 ids_para_remover_str {ids_para_remover_str}")
-                ids_validos = [
-                    id for id in ids_para_remover_str if id in ids_existentes]
-                logger.warning(f"🎉 ids_validos {ids_validos}")
-                logger.success(f"🎉 Dados removidos com sucesso {teste}")
-                vectordb.delete(ids_validos)
-                vectordb.save_local(db_path)
-            else:
-                logger.warning("🎉 Nenhum dado encontrado para remover")
-        else:
-            logger.error(
-                "🎉 Banco de dados FAISS não encontrado ou arquivos em falta")
-
-
-def task_treinar_ia(instance_id):
-    import json
-
+    Args:
+        instance_id: ID da instância de Treinamento
+    """
     instance = Treinamentos.objects.get(id=instance_id)
 
-    # Processa todos os documentos da lista
-    documentos = []
-    if instance.documentos:
-        # Se documentos é uma string, faz parse primeiro
-        if isinstance(instance.documentos, str):
-            documentos_lista = json.loads(instance.documentos)
-        else:
-            documentos_lista = instance.documentos
+    try:
+        logger.info(
+            f"Iniciando task de treinamento para instância {instance_id}")
 
-        # Converte cada documento JSON para objeto Document
-        for doc_json in documentos_lista:
-            try:
-                if isinstance(doc_json, str):
-                    # Se é string JSON, faz parse primeiro
-                    documento = Document.model_validate_json(doc_json)
-                else:
-                    # Se já é dicionário, converte para Document
-                    documento = Document(**doc_json)
-                documentos.append(documento)
-            except Exception as e:
-                logger.error(f"Erro ao processar documento: {e}")
-                continue
+        # Remove dados antigos do treinamento antes de adicionar novos
+        logger.info(f"Removendo dados antigos do treinamento {instance_id}")
+        SERVICEHUB.vetor_storage.remove_by_metadata(
+            "id_treinamento", str(instance_id))
 
-    logger.success(
-        f"🎉 Processamento concluído - {len(documentos)} documentos carregados")
-    logger.success(f"🎉 Tipo de dado  {type(documentos)}")
+        # Processa documentos
+        documentos = instance.processar_documentos()
+        if not documentos:
+            logger.warning(
+                f"Nenhum documento encontrado para o treinamento {instance_id}")
+            return
 
-    if not documentos:
-        logger.warning("🎉 Nenhum documento válido encontrado")
-        return
+        # Cria ou atualiza banco vetorial
+        SERVICEHUB.vetor_storage.write(documentos)
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=100, chunk_overlap=20)
-    chunks = splitter.split_documents(documentos)
+        logger.info(f"Treinamento {instance_id} concluído com sucesso")
 
-    embeddings = OllamaEmbeddings(model="mxbai-embed-large")
-
-    db_path = settings.BASE_DIR.parent / 'db' / "banco_faiss"
-
-    # Verifica se os arquivos necessários do FAISS existem
-    index_faiss_path = db_path / "index.faiss"
-    index_pkl_path = db_path / "index.pkl"
-
-    if os.path.exists(index_faiss_path) and os.path.exists(index_pkl_path):
-        # Carrega banco existente
-        vectordb = FAISS.load_local(
-            db_path, embeddings, allow_dangerous_deserialization=True)
-        vectordb.add_documents(chunks)
-
-        teste = find_by_metadata(vectordb, "grupo", instance.grupo)
-        logger.warning(f"🎉 Dados adicionados ao banco existente {teste}")
-    else:
-        # Cria novo banco
-        vectordb = FAISS.from_documents(chunks, embeddings)
-        logger.warning("🎉 Novo banco FAISS criado")
-
-        # Cria o diretório se não existir
-        os.makedirs(db_path, exist_ok=True)
-
-    vectordb.save_local(db_path)
+    except Exception as e:
+        logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
+        instance.treinamento_finalizado = False
 
 
-# Exemplo de busca por metadados específicos
-def find_by_metadata(vectorstore, metadata_key, metadata_value):
+@receiver(pre_delete, sender=Treinamentos)
+def signal_remover_treinamento_ia(sender, instance, **kwargs):
     """
-    Localiza índices de documentos baseado em metadados específicos
+    Signal executado antes de deletar um treinamento.
+    Remove os dados do treinamento do banco vetorial FAISS.
+    Se houver erro na remoção, interrompe a deleção do treinamento.
     """
-    matching_indices = []
+    try:
+        if instance.treinamento_finalizado:
+            logger.info(
+                f"Removendo treinamento {
+                    instance.id} do banco vetorial antes da deleção")
+            # Executa a remoção de forma síncrona para garantir que seja concluída
+            # antes da deleção do objeto
+            __task_remover_treinamento_ia(instance.id)
+            logger.info(
+                f"Treinamento {
+                    instance.id} removido com sucesso do banco vetorial")
+    except Exception as e:
+        logger.error(
+            f"Erro ao processar remoção de treinamento para instância {
+                instance.id}: {e}")
+        # Interrompe a deleção levantando uma exceção
+        raise Exception(
+            f"Falha ao remover treinamento {
+                instance.id} do banco vetorial. Deleção interrompida: {e}")
 
-    # Se usando LangChain FAISS
-    if hasattr(vectorstore, 'docstore'):
-        for i, doc_id in enumerate(vectorstore.index_to_docstore_id.values()):
-            doc = vectorstore.docstore.search(doc_id)
-            if doc and hasattr(doc, 'metadata'):
-                if doc.metadata.get(metadata_key) == metadata_value:
-                    matching_indices.append(doc_id)
 
-    return matching_indices
+def __task_remover_treinamento_ia(instance_id):
+    """
+    Task para remover um treinamento específico do banco vetorial FAISS.
+
+    Args:
+        instance_id: ID da instância de Treinamento
+
+    Raises:
+        Exception: Se houver erro na remoção do banco vetorial
+    """
+    try:
+        logger.info(f"Removendo treinamento {instance_id} do banco vetorial")
+        SERVICEHUB.vetor_storage.remove_by_metadata(
+            "id_treinamento", str(instance_id))
+        logger.info(
+            f"Treinamento {instance_id} removido com sucesso do banco vetorial")
+
+    except Exception as e:
+        logger.error(
+            f"Erro ao remover treinamento {instance_id} do banco vetorial: {e}")
+        # Propaga a exceção para interromper o processo de deleção
+        raise

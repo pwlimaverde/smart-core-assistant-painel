@@ -21,7 +21,7 @@ class LoadDocumentConteudoDatasource(LDCData):
                 page_content=parameters.conteudo,
                 id=parameters.id,
                 metadata={
-                    "id_treinamento": parameters.id,
+                    "id_treinamento": str(parameters.id),
                     "tag": parameters.tag,
                     "grupo": parameters.grupo,
                     "source": "treinamento_ia",

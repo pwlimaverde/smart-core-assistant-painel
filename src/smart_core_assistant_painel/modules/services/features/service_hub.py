@@ -4,6 +4,10 @@ from typing import Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama
+from loguru import logger
+
+from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
+    VetorStorage, )
 
 
 class ServiceHub:
@@ -27,6 +31,8 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(
             __file__).parent.parent.parent / 'app/datasets'
+        self._vetor_storage: Optional[VetorStorage] = None
+        self._configuring_vetor_storage: bool = False
 
         self._whatsapp_api_base_url: Optional[str] = None
         self._whatsapp_api_send_text_url: Optional[str] = None
@@ -39,6 +45,45 @@ class ServiceHub:
         self._prompt_human_analise_conteudo: Optional[str] = None
         self._prompt_system_melhoria_conteudo: Optional[str] = None
         self._prompt_human_melhoria_conteudo: Optional[str] = None
+        self._chunk_overlap: Optional[int] = None
+        self._chunk_size: Optional[int] = None
+        self._faiss_model: Optional[str] = None
+
+    def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
+        """Define a instância do VetorStorage."""
+        if not isinstance(vetor_storage, VetorStorage):
+            raise TypeError(
+                "vetor_storage deve implementar a interface VetorStorage")
+        self._vetor_storage = vetor_storage
+
+    @property
+    def vetor_storage(self) -> VetorStorage:
+        """Retorna a instância do VetorStorage."""
+        if self._vetor_storage is None:
+            raise RuntimeError(
+                "Falha ao auto-configurar VetorStorage. "
+                "Use set_vetor_storage() para definir a instância manualmente."
+            )
+        return self._vetor_storage
+
+    @property
+    def CHUNK_OVERLAP(self) -> int:
+        if self._chunk_overlap is None:
+            self._chunk_overlap = int(os.environ.get('CHUNK_OVERLAP', '200'))
+        return self._chunk_overlap if self._chunk_overlap is not None else 200
+
+    @property
+    def CHUNK_SIZE(self) -> int:
+        if self._chunk_size is None:
+            self._chunk_size = int(os.environ.get('CHUNK_SIZE', '1000'))
+        return self._chunk_size if self._chunk_size is not None else 1000
+
+    @property
+    def FAISS_MODEL(self) -> str:
+        if self._faiss_model is None:
+            self._faiss_model = os.environ.get(
+                'FAISS_MODEL')
+        return self._faiss_model if self._faiss_model is not None else ""
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
@@ -132,7 +177,6 @@ class ServiceHub:
                 f"LLM class '{llm_type}' not recognized. "
                 "Please set 'LLM_CLASS' environment variable to 'ChatGroq', 'ChatOpenAI', or 'ChatOllama'."
             )
-
 
 # Instância global da configuração
 SERVICEHUB = ServiceHub()

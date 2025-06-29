@@ -9,3 +9,4 @@ Configuração inicial do projeto.
 
 ## 0.3.0
 1 - Migração dos metodos em signals para features em ai_engine
+2 - Refatoração e melhoria dos códigos para treinamento

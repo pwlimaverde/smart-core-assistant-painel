@@ -10,3 +10,6 @@ Configuração inicial do projeto.
 ## 0.3.0
 1 - Migração dos metodos em signals para features em ai_engine
 2 - Refatoração e melhoria dos códigos para treinamento
+
+## 0.4.0
+1 - Refatoração do model treinamento para armazenar diretamente os documentos do langchain

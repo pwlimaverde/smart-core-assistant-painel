@@ -29,7 +29,9 @@ class LoadDocumentFileDatasource(LDFData):
         ".csv": TextLoader,
     }
 
-    def __call__(self, parameters: LoadDocumentFileParameters) -> list[Document]:
+    def __call__(
+            self,
+            parameters: LoadDocumentFileParameters) -> list[Document]:
 
         try:
             ext = Path(parameters.path).suffix.lower()
@@ -50,7 +52,7 @@ class LoadDocumentFileDatasource(LDFData):
                 # parameters.context = doc.page_content
                 doc.id = parameters.id
                 doc.metadata.update({
-                    "id_treinamento": parameters.id,
+                    "id_treinamento": str(parameters.id),
                     "tag": parameters.tag,
                     "grupo": parameters.grupo,
                     "source": "treinamento_ia",

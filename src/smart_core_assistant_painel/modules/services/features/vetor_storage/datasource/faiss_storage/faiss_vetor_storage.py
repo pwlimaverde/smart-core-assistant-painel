@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from loguru import logger
@@ -282,7 +283,7 @@ class FaissVetorStorage(VetorStorage):
             logger.error(f"Erro ao ler documentos: {e}")
             return []
 
-    def write(self, chunks: List[Document]) -> None:
+    def write(self, documents: List[Document]) -> None:
         """
         Adiciona uma lista de chunks de documentos ao banco vetorial.
 
@@ -296,9 +297,18 @@ class FaissVetorStorage(VetorStorage):
         # Sincroniza com o disco antes de escrever
         self.__sync_vectordb()
 
-        if not chunks:
-            logger.warning("Lista de chunks está vazia")
-            raise ValueError("Lista de chunks está vazia")
+        if not documents:
+            logger.warning("Lista de documents está vazia")
+            raise ValueError("Lista de documents está vazia")
+
+        # Divide documentos em chunks
+        splitter = RecursiveCharacterTextSplitter(
+            chunk_size=SERVICEHUB.CHUNK_SIZE,
+            chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
+        )
+        chunks = splitter.split_documents(documents)
+        logger.info(
+            f"Dividindo {len(documents)} documentos em chunks: {chunks}")
 
         # Validação dos documentos
         valid_chunks = []
@@ -328,6 +338,9 @@ class FaissVetorStorage(VetorStorage):
                 error_msg = "Vectorstore não possui método add_documents"
                 logger.error(error_msg)
                 raise AttributeError(error_msg)
+
+            logger.warning(
+                f"valid_chunks {len(valid_chunks)}: {valid_chunks}")
 
             self.__vectordb.add_documents(valid_chunks)
 

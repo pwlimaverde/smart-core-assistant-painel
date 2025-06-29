@@ -25,7 +25,7 @@ class VetorStorage(ABC):
         pass
 
     @abstractmethod
-    def write(self, chunks: list[Document]) -> None:
+    def write(self, documents: list[Document]) -> None:
         """
         Adiciona um vetor ao armazenamento.
 

@@ -1,10 +1,6 @@
-import json
-
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django_q.tasks import async_task
-from langchain.docstore.document import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
@@ -95,73 +91,23 @@ def task_treinar_ia(instance_id):
         logger.info(
             f"Iniciando task de treinamento para instância {instance_id}")
 
+        # Remove dados antigos do treinamento antes de adicionar novos
+        logger.info(f"Removendo dados antigos do treinamento {instance_id}")
+        SERVICEHUB.vetor_storage.remove_by_metadata(
+            "id_treinamento", str(instance_id))
+
         # Processa documentos
-        documentos = _processar_documentos(instance.documentos)
+        documentos = instance.processar_documentos()
         if not documentos:
             logger.warning(
                 f"Nenhum documento encontrado para o treinamento {instance_id}")
             return
 
-        # Divide documentos em chunks
-        splitter = RecursiveCharacterTextSplitter(
-            chunk_size=SERVICEHUB.CHUNK_SIZE,
-            chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
-        )
-        chunks = splitter.split_documents(documentos)
-
-        # Adiciona metadados de identificação do treinamento aos chunks
-        for chunk in chunks:
-            if chunk.metadata is None:
-                chunk.metadata = {}
-            chunk.metadata["id_treinamento"] = str(instance_id)
-
-        logger.info(
-            f"Documentos divididos em {
-                len(chunks)} chunks para treinamento {instance_id}")
-
         # Cria ou atualiza banco vetorial
-        SERVICEHUB.vetor_storage.write(chunks)
+        SERVICEHUB.vetor_storage.write(documentos)
 
         logger.info(f"Treinamento {instance_id} concluído com sucesso")
 
     except Exception as e:
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
         instance.treinamento_finalizado = False
-
-
-def _processar_documentos(documentos_raw):
-    """
-    Processa e converte documentos JSON para objetos Document.
-
-    Args:
-        documentos_raw: Lista de documentos em formato JSON ou string
-
-    Returns:
-        List[Document]: Lista de documentos processados
-    """
-    documentos = []
-
-    if not documentos_raw:
-        return documentos
-
-    try:
-        # Se é uma string, faz parse primeiro
-        if isinstance(documentos_raw, str):
-            documentos_lista = json.loads(documentos_raw)
-        else:
-            documentos_lista = documentos_raw
-
-        # Converte cada documento para objeto Document
-        for doc_json in documentos_lista:
-            if isinstance(doc_json, str):
-                # Se é string JSON, faz parse primeiro
-                documento = Document.model_validate_json(doc_json)
-            else:
-                # Se já é dicionário, converte para Document
-                documento = Document(**doc_json)
-            documentos.append(documento)
-
-    except (json.JSONDecodeError, TypeError, ValueError) as e:
-        logger.error(f"Erro ao processar documentos: {e}")
-
-    return documentos

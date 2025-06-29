@@ -175,7 +175,7 @@ setup = "uv sync && python src/smart_core_assistant_painel/APP/ui/manage.py migr
 dev-setup = "uv sync --dev && python src/smart_core_assistant_painel/APP/ui/manage.py migrate && python src/smart_core_assistant_painel/APP/ui/manage.py collectstatic --noinput"
 
 # Comandos diversos
-faiss_to_json = "cd src/smart_core_assistant_painel/APP/db/banco_faiss && python faiss_to_json.py"
+faiss_to_json = "cd src/smart_core_assistant_painel/modules/services/features/vetor_storage/datasource/faiss_storage/banco_faiss && python faiss_to_json.py"
 
 [tool.mypy]
 ignore_missing_imports = true

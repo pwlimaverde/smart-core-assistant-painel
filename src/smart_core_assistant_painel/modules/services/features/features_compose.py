@@ -2,19 +2,31 @@
 from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
+    NoParams,
+    SuccessReturn,
 )
 
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 from smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource import (
     SetEnvironRemoteFirebaseDatasource, )
 from smart_core_assistant_painel.modules.services.features.set_environ_remote.domain.usecase.set_environ_remote_usecase import (
     SetEnvironRemoteUseCase, )
+from smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_storage_datasource import (
+    FaissStorageDatasource, )
+from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.usecase.vetor_storage_usecase import (
+    VetorStorageUseCase, )
 from smart_core_assistant_painel.modules.services.utils.erros import (
     SetEnvironRemoteError,
 )
 from smart_core_assistant_painel.modules.services.utils.parameters import (
     SetEnvironRemoteParameters,
 )
-from smart_core_assistant_painel.modules.services.utils.types import SERData, SERUsecase
+from smart_core_assistant_painel.modules.services.utils.types import (
+    SERData,
+    SERUsecase,
+    VSData,
+    VSUsecase,
+)
 
 
 class FeaturesCompose:
@@ -50,3 +62,17 @@ class FeaturesCompose:
         if isinstance(data, ErrorReturn):
             raise data.result
         logger.info("Fariáveis de ambientes carregadas com sucesso!")
+
+    @staticmethod
+    def vetor_storage() -> None:
+
+        parameters: NoParams = NoParams()
+        datasource: VSData = FaissStorageDatasource()
+        usecase: VSUsecase = VetorStorageUseCase(datasource=datasource)
+
+        data = usecase(parameters)
+        if isinstance(data, SuccessReturn):
+            SERVICEHUB.set_vetor_storage(data.result)
+        if isinstance(data, ErrorReturn):
+            raise data.result
+        logger.info("VetorStorage configurado com sucesso!")

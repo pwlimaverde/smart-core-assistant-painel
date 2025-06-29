@@ -5,6 +5,9 @@ from typing import Optional, Type
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama
 
+from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
+    VetorStorage, )
+
 
 class ServiceHub:
     """Classe singleton para gerenciar configurações do ambiente."""
@@ -27,8 +30,7 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(
             __file__).parent.parent.parent / 'app/datasets'
-        self.PASTA_FAISS_DB: Path = Path(
-            __file__).parent.parent.parent / 'app/db/banco_faiss'
+        self._vetorstorage: Optional[VetorStorage] = None
 
         self._whatsapp_api_base_url: Optional[str] = None
         self._whatsapp_api_send_text_url: Optional[str] = None
@@ -45,17 +47,34 @@ class ServiceHub:
         self._chunk_size: Optional[int] = None
         self._faiss_model: Optional[str] = None
 
+    def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
+        """Define a instância do VetorStorage."""
+        if not isinstance(vetor_storage, VetorStorage):
+            raise TypeError(
+                "vetor_storage deve implementar a interface VetorStorage")
+        self._vetorstorage = vetor_storage
+
+    @property
+    def vetor_storage(self) -> VetorStorage:
+        """Retorna a instância do VetorStorage."""
+        if self._vetorstorage is None:
+            raise RuntimeError(
+                "VetorStorage não foi configurado. "
+                "Use set_vetor_storage() para definir a instância."
+            )
+        return self._vetorstorage
+
     @property
     def CHUNK_OVERLAP(self) -> int:
         if self._chunk_overlap is None:
             self._chunk_overlap = int(os.environ.get('CHUNK_OVERLAP', '200'))
-        return self._chunk_overlap if self._chunk_overlap is not None else ""
+        return self._chunk_overlap if self._chunk_overlap is not None else 200
 
     @property
     def CHUNK_SIZE(self) -> int:
         if self._chunk_size is None:
-            self._chunk_size = int(os.environ.get('CHUNK_SIZE', '20'))
-        return self._chunk_size if self._chunk_size is not None else ""
+            self._chunk_size = int(os.environ.get('CHUNK_SIZE', '1000'))
+        return self._chunk_size if self._chunk_size is not None else 1000
 
     @property
     def FAISS_MODEL(self) -> str:

@@ -60,10 +60,6 @@ class ServiceHub:
     def vetor_storage(self) -> VetorStorage:
         """Retorna a instância do VetorStorage."""
         if self._vetor_storage is None:
-            # Auto-configurar VetorStorage se não estiver configurado
-            self._auto_configure_vetor_storage()
-
-        if self._vetor_storage is None:
             raise RuntimeError(
                 "Falha ao auto-configurar VetorStorage. "
                 "Use set_vetor_storage() para definir a instância manualmente."
@@ -181,48 +177,6 @@ class ServiceHub:
                 f"LLM class '{llm_type}' not recognized. "
                 "Please set 'LLM_CLASS' environment variable to 'ChatGroq', 'ChatOpenAI', or 'ChatOllama'."
             )
-
-    def _auto_configure_vetor_storage(self) -> None:
-        """
-        Auto-configura o VetorStorage se não estiver configurado.
-        Usado principalmente para processos workers do Django-Q.
-        Garante que apenas uma instância seja criada por processo.
-        """
-        try:
-            # Verifica se já está sendo configurado para evitar race conditions
-            if self._configuring_vetor_storage:
-                import time
-                # Aguarda até que a configuração termine
-                timeout = 10  # 10 segundos de timeout
-                start_time = time.time()
-                while (self._configuring_vetor_storage and
-                       (time.time() - start_time) < timeout):
-                    time.sleep(0.1)
-                return
-
-            # Marca que está configurando
-            self._configuring_vetor_storage = True
-
-            # Verifica novamente se não foi configurado enquanto aguardava
-            if self._vetor_storage is not None:
-                return
-
-            from smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage import (
-                FaissVetorStorage, )
-
-            logger.info("Auto-configurando VetorStorage...")
-            self._vetor_storage = FaissVetorStorage()
-            logger.info("VetorStorage auto-configurado com sucesso!")
-
-        except Exception as e:
-            logger.error(f"Erro ao auto-configurar VetorStorage: {e}")
-            raise RuntimeError(
-                f"Falha ao auto-configurar VetorStorage: {e}"
-            )
-        finally:
-            # Remove a marca de configuração
-            self._configuring_vetor_storage = False
-
 
 # Instância global da configuração
 SERVICEHUB = ServiceHub()

@@ -1,6 +1,6 @@
 import json
 
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django_q.tasks import async_task
 from langchain.docstore.document import Document
@@ -30,27 +30,43 @@ def signals_treinamento_ia(sender, instance, created, **kwargs):
                 instance.id}: {e}")
 
 
-@receiver(post_delete, sender=Treinamentos)
+@receiver(pre_delete, sender=Treinamentos)
 def signal_remover_treinamento_ia(sender, instance, **kwargs):
     """
-    Signal executado após deletar um treinamento.
+    Signal executado antes de deletar um treinamento.
     Remove os dados do treinamento do banco vetorial FAISS.
+    Se houver erro na remoção, interrompe a deleção do treinamento.
     """
     try:
         if instance.treinamento_finalizado:
             logger.info(
                 f"Removendo treinamento {
-                    instance.id} do banco vetorial")
-            async_task(task_remover_treinamento_ia, instance.id)
+                    instance.id} do banco vetorial antes da deleção")
+            # Executa a remoção de forma síncrona para garantir que seja concluída
+            # antes da deleção do objeto
+            task_remover_treinamento_ia(instance.id)
+            logger.info(
+                f"Treinamento {
+                    instance.id} removido com sucesso do banco vetorial")
     except Exception as e:
         logger.error(
             f"Erro ao processar remoção de treinamento para instância {
                 instance.id}: {e}")
+        # Interrompe a deleção levantando uma exceção
+        raise Exception(
+            f"Falha ao remover treinamento {
+                instance.id} do banco vetorial. Deleção interrompida: {e}")
 
 
 def task_remover_treinamento_ia(instance_id):
     """
     Task para remover um treinamento específico do banco vetorial FAISS.
+
+    Args:
+        instance_id: ID da instância de Treinamento
+
+    Raises:
+        Exception: Se houver erro na remoção do banco vetorial
     """
     try:
         logger.info(f"Removendo treinamento {instance_id} do banco vetorial")
@@ -62,6 +78,8 @@ def task_remover_treinamento_ia(instance_id):
     except Exception as e:
         logger.error(
             f"Erro ao remover treinamento {instance_id} do banco vetorial: {e}")
+        # Propaga a exceção para interromper o processo de deleção
+        raise
 
 
 def task_treinar_ia(instance_id):
@@ -71,16 +89,11 @@ def task_treinar_ia(instance_id):
     Args:
         instance_id: ID da instância de Treinamento
     """
+    instance = Treinamentos.objects.get(id=instance_id)
+
     try:
         logger.info(
             f"Iniciando task de treinamento para instância {instance_id}")
-
-        # Busca a instância do treinamento
-        try:
-            instance = Treinamentos.objects.get(id=instance_id)
-        except Treinamentos.DoesNotExist:
-            logger.error(f"Treinamento com ID {instance_id} não encontrado")
-            return
 
         # Processa documentos
         documentos = _processar_documentos(instance.documentos)
@@ -113,6 +126,7 @@ def task_treinar_ia(instance_id):
 
     except Exception as e:
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
+        instance.treinamento_finalizado = False
 
 
 def _processar_documentos(documentos_raw):

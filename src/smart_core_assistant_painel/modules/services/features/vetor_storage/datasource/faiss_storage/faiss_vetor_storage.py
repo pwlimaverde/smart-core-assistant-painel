@@ -108,6 +108,26 @@ class FaissVetorStorage(VetorStorage):
             logger.error(f"Erro ao criar banco FAISS vazio: {e}")
             raise
 
+    def __sync_vectordb(self):
+        """
+        Sincroniza o banco vetorial recarregando do disco.
+        Usado para garantir que mudanças de outros processos sejam visíveis.
+        """
+        try:
+            if self.__faiss_db_exists(self.__db_path):
+                logger.debug("Sincronizando banco vetorial com o disco")
+                self.__vectordb = FAISS.load_local(
+                    self.__db_path,
+                    self.__embeddings,
+                    allow_dangerous_deserialization=True
+                )
+                logger.debug("Banco vetorial sincronizado com sucesso")
+            else:
+                logger.warning(
+                    "Arquivo do banco vetorial não encontrado para sincronização")
+        except Exception as e:
+            logger.error(f"Erro ao sincronizar banco vetorial: {e}")
+
     def __find_by_metadata(
             self,
             metadata_key: str,
@@ -193,7 +213,7 @@ class FaissVetorStorage(VetorStorage):
         """
         try:
             # Sincroniza com o disco antes de ler
-            self._sync_vectordb()
+            self.__sync_vectordb()
 
             if query_vector:
                 results = self.__vectordb.similarity_search_by_vector(
@@ -273,9 +293,12 @@ class FaissVetorStorage(VetorStorage):
             ValueError: Se nenhum chunk válido for encontrado
             Exception: Erro ao adicionar documentos ao banco
         """
+        # Sincroniza com o disco antes de escrever
+        self.__sync_vectordb()
+
         if not chunks:
             logger.warning("Lista de chunks está vazia")
-            return
+            raise ValueError("Lista de chunks está vazia")
 
         # Validação dos documentos
         valid_chunks = []
@@ -323,7 +346,8 @@ class FaissVetorStorage(VetorStorage):
 
         except Exception as e:
             logger.error(f"Erro ao adicionar documentos: {e}")
-            raise
+            raise ValueError(
+                f"Erro ao adicionar documentos ao banco FAISS: {e}") from e
 
     def remove_by_metadata(
         self,
@@ -339,7 +363,7 @@ class FaissVetorStorage(VetorStorage):
         """
         try:
             # Sincroniza com o disco antes de remover
-            self._sync_vectordb()
+            self.__sync_vectordb()
 
             # Busca documentos relacionados ao treinamento
             ids_para_remover = self.__find_by_metadata(
@@ -380,26 +404,6 @@ class FaissVetorStorage(VetorStorage):
         except Exception as e:
             logger.error(
                 f"Erro ao remover {metadata_key}: {metadata_value} do banco vetorial: {e}")
-
-    def _sync_vectordb(self):
-        """
-        Sincroniza o banco vetorial recarregando do disco.
-        Usado para garantir que mudanças de outros processos sejam visíveis.
-        """
-        try:
-            if self.__faiss_db_exists(self.__db_path):
-                logger.debug("Sincronizando banco vetorial com o disco")
-                self.__vectordb = FAISS.load_local(
-                    self.__db_path,
-                    self.__embeddings,
-                    allow_dangerous_deserialization=True
-                )
-                logger.debug("Banco vetorial sincronizado com sucesso")
-            else:
-                logger.warning(
-                    "Arquivo do banco vetorial não encontrado para sincronização")
-        except Exception as e:
-            logger.error(f"Erro ao sincronizar banco vetorial: {e}")
 
     # def get_stats(self) -> Dict[str, Any]:
     #     """

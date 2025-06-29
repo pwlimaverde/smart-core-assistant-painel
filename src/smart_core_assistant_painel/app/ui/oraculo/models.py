@@ -1,7 +1,11 @@
+import json
 import re
+from typing import List
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from langchain.docstore.document import Document
+from loguru import logger
 
 
 def validate_tag(value):
@@ -70,18 +74,11 @@ class Treinamentos(models.Model):
         """
         Retorna todos os page_content da lista de documentos concatenados
         """
-        import json
-
         todos_page_contents = []
 
         if self.documentos:
-            # Se documentos é uma string, faz parse primeiro
-            if isinstance(self.documentos, str):
-
-                documentos_lista = json.loads(self.documentos)
-
-            else:
-                documentos_lista = self.documentos
+            # documentos é sempre uma lista (JSONField)
+            documentos_lista = self.documentos
 
             for i, doc in enumerate(documentos_lista):
 
@@ -101,6 +98,39 @@ class Treinamentos(models.Model):
         resultado = '\n\n'.join(str(content)
                                 for content in todos_page_contents if content)
         return resultado
+
+    def processar_documentos(self) -> List[Document]:
+        """
+        Processa e converte documentos JSON para objetos Document.
+
+        Returns:
+            List[Document]: Lista de documentos processados
+        """
+        documentos: list[Document] = []
+
+        if not self.documentos:
+            return documentos
+
+        try:
+            # documentos é sempre uma lista (JSONField)
+            documentos_lista = self.documentos or []
+
+            # Converte cada documento para objeto Document
+            for doc_json in documentos_lista:
+                if isinstance(doc_json, str):
+                    # Se é string JSON, faz parse primeiro
+                    documento = Document.model_validate_json(doc_json)
+                else:
+                    # Se já é dicionário, converte para Document
+                    documento = Document(**doc_json)
+                documentos.append(documento)
+
+        except (json.JSONDecodeError, TypeError, ValueError) as e:
+            logger.error(
+                f"Erro ao processar documentos do treinamento {
+                    self.pk or 'novo'}: {e}")
+
+        return documentos
 
     class Meta:
         verbose_name = "Treinamento"

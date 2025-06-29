@@ -30,7 +30,7 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(
             __file__).parent.parent.parent / 'app/datasets'
-        self._vetorstorage: Optional[VetorStorage] = None
+        self._vetor_storage: Optional[VetorStorage] = None
 
         self._whatsapp_api_base_url: Optional[str] = None
         self._whatsapp_api_send_text_url: Optional[str] = None
@@ -52,17 +52,17 @@ class ServiceHub:
         if not isinstance(vetor_storage, VetorStorage):
             raise TypeError(
                 "vetor_storage deve implementar a interface VetorStorage")
-        self._vetorstorage = vetor_storage
+        self._vetor_storage = vetor_storage
 
     @property
     def vetor_storage(self) -> VetorStorage:
         """Retorna a instância do VetorStorage."""
-        if self._vetorstorage is None:
+        if self._vetor_storage is None:
             raise RuntimeError(
                 "VetorStorage não foi configurado. "
                 "Use set_vetor_storage() para definir a instância."
             )
-        return self._vetorstorage
+        return self._vetor_storage
 
     @property
     def CHUNK_OVERLAP(self) -> int:

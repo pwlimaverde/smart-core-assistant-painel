@@ -1,7 +1,12 @@
 from typing import TypeAlias
 
 from langchain.docstore.document import Document
-from py_return_success_or_error import Datasource, Empty, UsecaseBaseCallData
+from py_return_success_or_error import (
+    Datasource,
+    Empty,
+    UsecaseBase,
+    UsecaseBaseCallData,
+)
 
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
     WhatsappApi, )
@@ -27,15 +32,13 @@ ACUsecase: TypeAlias = UsecaseBaseCallData[
 ACData: TypeAlias = Datasource[str, LlmParameters]
 
 LDFUsecase: TypeAlias = UsecaseBaseCallData[
-    str,
+    list[Document],
     list[Document],
     LoadDocumentFileParameters,
 ]
 LDFData: TypeAlias = Datasource[list[Document], LoadDocumentFileParameters]
 
-LDCUsecase: TypeAlias = UsecaseBaseCallData[
-    str,
+LDCUsecase: TypeAlias = UsecaseBase[
     list[Document],
     LoadDocumentConteudoParameters,
 ]
-LDCData: TypeAlias = Datasource[list[Document], LoadDocumentConteudoParameters]

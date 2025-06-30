@@ -12,4 +12,4 @@ Configuração inicial do projeto.
 2 - Refatoração e melhoria dos códigos para treinamento
 
 ## 0.4.0
-1 - Refatoração do model treinamento para armazenar diretamente os documentos do langchain
+1 - Refatoração do model treinamento para setar e carregar os documentos do langchain

@@ -1,4 +1,3 @@
-import json
 import os
 import tempfile
 
@@ -6,6 +5,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect, render
+from langchain.docstore.document import Document
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
@@ -36,10 +36,14 @@ class TreinamentoService:
                 return temp_file.name
 
     @staticmethod
-    def processar_conteudo_texto(treinamento_id, conteudo, tag, grupo):
+    def processar_conteudo_texto(
+            treinamento_id,
+            conteudo,
+            tag,
+            grupo) -> list[Document]:
         """Processa conteúdo de texto para treinamento"""
         if not conteudo:
-            return []
+            raise ValueError("Conteúdo não pode ser vazio")
 
         try:
             pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(
@@ -50,17 +54,17 @@ class TreinamentoService:
                 tag=tag,
                 grupo=grupo,
             )
-            return json.loads(data_conteudo) if data_conteudo else []
+            return data_conteudo
         except Exception as e:
             logger.error(f"Erro ao processar conteúdo texto: {e}")
-            return []
+            raise e
 
     @staticmethod
     def processar_arquivo_documento(
-            treinamento_id, documento_path, tag, grupo):
+            treinamento_id, documento_path, tag, grupo) -> list[Document]:
         """Processa arquivo de documento para treinamento"""
         if not documento_path:
-            return []
+            raise ValueError("Caminho do documento não pode ser vazio")
 
         try:
             data_file = FeaturesCompose.load_document_file(
@@ -70,23 +74,19 @@ class TreinamentoService:
                 grupo=grupo,
             )
 
-            doc_dict = json.loads(data_file)
-            documents_list = []
+            for documento in data_file:
+                # Apenas modificar o page_content do documento existente
+                pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
+                    documento.page_content)
 
-            for documento_str in doc_dict:
-                documento = json.loads(documento_str)
+                # Modificar diretamente o page_content
+                documento.page_content = pre_analise_content
 
-                if 'page_content' in documento:
-                    pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
-                        documento['page_content'])
-                    documento['page_content'] = pre_analise_content
+            return data_file
 
-                documents_list.append(documento)
-
-            return documents_list
         except Exception as e:
             logger.error(f"Erro ao processar arquivo documento: {e}")
-            return []
+            raise e
 
     @staticmethod
     def limpar_arquivo_temporario(arquivo_path):
@@ -156,7 +156,7 @@ def _processar_treinamento(request):
                 documents_list.extend(docs_conteudo)
 
             # Salvar documentos processados
-            treinamento.documentos = documents_list
+            treinamento.set_documentos(documents_list)
             treinamento.save()
 
             messages.success(request, 'Treinamento criado com sucesso!')
@@ -177,22 +177,17 @@ def pre_processamento(request, id):
     if not has_permission(request.user, 'treinar_ia'):
         raise Http404()
 
-    try:
-        treinamento = Treinamentos.objects.get(id=id)
-    except Treinamentos.DoesNotExist:
-        messages.error(request, 'Treinamento não encontrado.')
-        return redirect('treinar_ia')
-
     if request.method == 'GET':
-        return _exibir_pre_processamento(request, treinamento)
+        return _exibir_pre_processamento(request, id)
 
     if request.method == 'POST':
-        return _processar_pre_processamento(request, treinamento)
+        return _processar_pre_processamento(request, id)
 
 
-def _exibir_pre_processamento(request, treinamento):
+def _exibir_pre_processamento(request, id):
     """Exibe página de pré-processamento"""
     try:
+        treinamento = Treinamentos.objects.get(id=id)
         conteudo_unificado = treinamento.get_conteudo_unificado()
         texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
             conteudo_unificado)
@@ -207,8 +202,9 @@ def _exibir_pre_processamento(request, treinamento):
         return redirect('treinar_ia')
 
 
-def _processar_pre_processamento(request, treinamento):
+def _processar_pre_processamento(request, id):
     """Processa ação do pré-processamento"""
+    treinamento = Treinamentos.objects.get(id=id)
     acao = request.POST.get('acao')
 
     if not acao:
@@ -218,7 +214,7 @@ def _processar_pre_processamento(request, treinamento):
     try:
         with transaction.atomic():
             if acao == 'aceitar':
-                _aceitar_treinamento(treinamento)
+                _aceitar_treinamento(id)
                 messages.success(request, 'Treinamento aceito e finalizado!')
             elif acao == 'manter':
                 treinamento.treinamento_finalizado = True
@@ -239,11 +235,12 @@ def _processar_pre_processamento(request, treinamento):
     return redirect('treinar_ia')
 
 
-def _aceitar_treinamento(treinamento):
+def _aceitar_treinamento(id):
     """Aceita treinamento e atualiza conteúdo melhorado individualmente para cada documento"""
     try:
         # Processa documentos - agora sempre será uma lista (JSONField)
-        documentos_lista = treinamento.documentos or []
+        treinamento = Treinamentos.objects.get(id=id)
+        documentos_lista = treinamento.get_documentos()
 
         if not documentos_lista:
             logger.warning(
@@ -253,28 +250,18 @@ def _aceitar_treinamento(treinamento):
 
         documentos_melhorados = []
 
-        for doc in documentos_lista:
-            documento_dict = json.loads(doc) if isinstance(doc, str) else doc
+        for documento in documentos_lista:
+            # Apenas modificar o page_content do documento existente
+            pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
+                documento.page_content)
 
-            # Valida se o documento tem page_content
-            if 'page_content' not in documento_dict:
-                logger.warning(
-                    f"Documento sem page_content no treinamento {
-                        treinamento.id}")
-                documentos_melhorados.append(documento_dict)
-                continue
+            # Modificar diretamente o page_content
+            documento.page_content = pre_analise_content
 
-            # Melhora o conteúdo individual de cada documento
-            conteudo_original = documento_dict['page_content']
-            if conteudo_original:
-                texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-                    conteudo_original)
-                documento_dict['page_content'] = texto_melhorado
-
-            documentos_melhorados.append(documento_dict)
+            documentos_melhorados.append(documento)
 
         # Salva alterações
-        treinamento.documentos = documentos_melhorados
+        treinamento.set_documentos(documentos_melhorados)
         treinamento.treinamento_finalizado = True
         treinamento.save()
 

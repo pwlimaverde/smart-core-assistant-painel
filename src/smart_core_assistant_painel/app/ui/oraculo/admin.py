@@ -25,24 +25,24 @@ class TreinamentosAdmin(admin.ModelAdmin):
     # Organização dos campos no formulário
     fieldsets = (
         ('Informações do Treinamento', {
-            'fields': ('tag', 'grupo', 'treinamento_finalizado', 'documentos'),
+            'fields': ('tag', 'grupo', 'treinamento_finalizado', '_documentos'),
             'classes': ('wide',)
         }),
     )
 
     # Função para exibir preview do documentos JSON
-    @admin.display(description="Preview do Documento", ordering='documentos')
+    @admin.display(description="Preview do Documento", ordering='_documentos')
     def get_documentos_preview(self, obj):
         """Retorna uma prévia do documentos JSON limitada a 100 caracteres"""
-        if obj and obj.documentos:
+        if obj and obj._documentos:
             try:
                 # Se for um dict, converte para string
-                if isinstance(obj.documentos, dict):
-                    preview = str(obj.documentos)[:1000]
+                if isinstance(obj._documentos, dict):
+                    preview = str(obj._documentos)[:1000]
                 else:
-                    preview = str(obj.documentos)[:1000]
+                    preview = str(obj._documentos)[:1000]
                 return preview + \
-                    "..." if len(str(obj.documentos)) > 1000 else preview
+                    "..." if len(str(obj._documentos)) > 1000 else preview
             except Exception:
                 return "Erro ao exibir documentos"
         return "Documento vazio"

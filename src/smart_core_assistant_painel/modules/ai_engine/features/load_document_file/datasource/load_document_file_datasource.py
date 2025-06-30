@@ -48,17 +48,6 @@ class LoadDocumentFileDatasource(LDFData):
                 loader = loader_class(parameters.path)
             documents = loader.load()
 
-            for doc in documents:
-                # parameters.context = doc.page_content
-                doc.id = parameters.id
-                doc.metadata.update({
-                    "id_treinamento": str(parameters.id),
-                    "tag": parameters.tag,
-                    "grupo": parameters.grupo,
-                    "source": "treinamento_ia",
-                    "processed_at": datetime.now().isoformat(),
-                })
-
             return documents
         except Exception as e:
             raise RuntimeError(

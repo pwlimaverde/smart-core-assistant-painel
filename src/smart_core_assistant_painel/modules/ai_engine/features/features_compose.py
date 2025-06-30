@@ -1,4 +1,5 @@
 
+from langchain.docstore.document import Document
 from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
@@ -8,8 +9,6 @@ from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.dat
     AnaliseConteudoLangchainDatasource, )
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.domain.usecase.analise_conteudo_usecase import (
     AnaliseConteudoUseCase, )
-from smart_core_assistant_painel.modules.ai_engine.features.load_document_conteudo.datasource.load_document_conteudo_datasource import (
-    LoadDocumentConteudoDatasource, )
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
     LoadDocumentConteudoUseCase, )
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
@@ -28,7 +27,6 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
 from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     ACData,
     ACUsecase,
-    LDCData,
     LDCUsecase,
     LDFData,
     LDFUsecase,
@@ -44,7 +42,7 @@ class FeaturesCompose:
         conteudo: str,
         tag: str,
         grupo: str,
-    ) -> str:
+    ) -> list[Document]:
 
         error = DocumentError('Error ao processar os dados do arquivo!')
         parameters = LoadDocumentConteudoParameters(
@@ -55,8 +53,7 @@ class FeaturesCompose:
             error=error,
         )
 
-        datasource: LDCData = LoadDocumentConteudoDatasource()
-        usecase: LDCUsecase = LoadDocumentConteudoUseCase(datasource)
+        usecase: LDCUsecase = LoadDocumentConteudoUseCase()
 
         data = usecase(parameters)
 
@@ -68,7 +65,12 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def load_document_file(id: str, path: str, tag: str, grupo: str,) -> str:
+    def load_document_file(
+        id: str,
+        path: str,
+        tag: str,
+        grupo: str,
+    ) -> list[Document]:
 
         error = DocumentError('Error ao processar os dados do arquivo!')
         parameters = LoadDocumentFileParameters(

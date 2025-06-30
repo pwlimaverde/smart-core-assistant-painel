@@ -45,7 +45,7 @@ def __task_treinar_ia(instance_id):
             "id_treinamento", str(instance_id))
 
         # Processa documentos
-        documentos = instance.processar_documentos()
+        documentos = instance.get_documentos()
         if not documentos:
             logger.warning(
                 f"Nenhum documento encontrado para o treinamento {instance_id}")

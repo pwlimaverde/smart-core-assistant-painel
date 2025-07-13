@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from langchain.docstore.document import Document
 
@@ -12,9 +12,7 @@ class VetorStorage(ABC):
 
     @abstractmethod
     def read(self,
-             query_vector: Optional[List[float]] = None,
-             metadata: Optional[Dict[str,
-                                     Any]] = None,
+             query_vector: str,
              k: int = 5) -> List[Document]:
         """
         Ler um vetor do armazenamento.

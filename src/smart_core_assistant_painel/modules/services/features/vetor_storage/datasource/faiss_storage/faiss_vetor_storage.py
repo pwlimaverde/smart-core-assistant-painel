@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -198,15 +198,13 @@ class FaissVetorStorage(VetorStorage):
         return matching_ids
 
     def read(self,
-             query_vector: Optional[List[float]] = None,
-             metadata: Optional[Dict[str, Any]] = None,
+             query_vector: str,
              k: int = 5) -> List[Document]:
         """
         Busca documentos similares no armazenamento FAISS.
 
         Args:
-            query_vector: Vetor de consulta (opcional)
-            metadata: Metadados para filtrar a busca (opcional)
+            query_vector: Vetor de consulta
             k: Número de documentos mais similares a retornar
 
         Returns:
@@ -216,68 +214,12 @@ class FaissVetorStorage(VetorStorage):
             # Sincroniza com o disco antes de ler
             self.__sync_vectordb()
 
-            if query_vector:
-                results = self.__vectordb.similarity_search_by_vector(
-                    query_vector, k=k)
-                logger.info(
-                    f"Encontrados {
-                        len(results)} documentos por similaridade vetorial")
-                return results
-
-            elif metadata:
-                # Implementação corrigida: busca por TODOS os metadados (AND
-                # logic)
-                if not metadata:
-                    logger.warning("Dicionário de metadados está vazio")
-                    return []
-
-                matching_docs = []
-
-                # Se temos apenas uma chave de metadado, busca simples
-                if len(metadata) == 1:
-                    key, value = next(iter(metadata.items()))
-                    doc_ids = self.__find_by_metadata(key, str(value))
-
-                    for doc_id in doc_ids[:k]:  # Limitar desde o início
-                        try:
-                            doc = self.__vectordb.docstore.search(doc_id)
-                            if doc:
-                                matching_docs.append(doc)
-                        except Exception as e:
-                            logger.warning(
-                                f"Erro ao recuperar documento {doc_id}: {e}")
-
-                else:
-                    # Para múltiplos metadados, fazer intersecção
-                    sets_of_ids = []
-                    for key, value in metadata.items():
-                        doc_ids = self.__find_by_metadata(key, str(value))
-                        sets_of_ids.append(set(doc_ids))
-
-                    # Intersecção de todos os conjuntos
-                    if sets_of_ids:
-                        common_ids = sets_of_ids[0]
-                        for id_set in sets_of_ids[1:]:
-                            common_ids = common_ids.intersection(id_set)
-
-                        # Recuperar documentos da intersecção
-                        for doc_id in list(common_ids)[:k]:
-                            try:
-                                doc = self.__vectordb.docstore.search(doc_id)
-                                if doc:
-                                    matching_docs.append(doc)
-                            except Exception as e:
-                                logger.warning(
-                                    f"Erro ao recuperar documento {doc_id}: {e}")
-
-                logger.info(
-                    f"Encontrados {
-                        len(matching_docs)} documentos por metadados")
-                return matching_docs
-
-            else:
-                logger.warning("Nenhum critério de busca fornecido")
-                return []
+            results = self.__vectordb.similarity_search(
+                query_vector, k=k)
+            logger.info(
+                f"Encontrados {
+                    len(results)} documentos por similaridade vetorial")
+            return results
 
         except Exception as e:
             logger.error(f"Erro ao ler documentos: {e}")

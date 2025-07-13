@@ -1,0 +1,68 @@
+erDiagram
+    TREINAMENTOS {
+        Integer id PK
+        String tag
+        String grupo
+        Boolean treinamento_finalizado
+    }
+
+    DOCUMENTOS_JSON {
+        JSON documentos "Lista JSON de documentos LangChain serializados"
+    }
+
+    TREINAMENTOS ||--|| DOCUMENTOS_JSON : armazena
+
+    CLIENTE ||--o{ ATENDIMENTO : possui
+    ATENDIMENTO ||--o{ MENSAGEM : contém
+
+    CLIENTE {
+        Integer id PK
+        String telefone "CharField, único, +55XXXXXXXXXXX"
+        String nome "CharField, opcional"
+        DateTime data_cadastro "auto_now_add"
+        DateTime ultima_interacao "auto_now"
+        Boolean ativo
+        JSON metadados
+    }
+
+    ATENDIMENTO {
+        Integer id PK
+        Integer cliente_id FK
+        String status "TextChoices StatusAtendimento"
+        DateTime data_inicio "auto_now_add"
+        DateTime data_fim
+        String assunto
+        String prioridade "baixa|normal|alta|urgente"
+        String atendente_humano
+        JSON contexto_conversa
+        JSON historico_status
+        JSON tags
+        Integer avaliacao "1–5"
+        Text feedback
+    }
+
+    MENSAGEM {
+        Integer id PK
+        Integer atendimento_id FK
+        String tipo "TextChoices TipoMensagem"
+        Text conteudo
+        Boolean is_from_client
+        DateTime timestamp "auto_now_add"
+        String message_id_whatsapp
+        JSON metadados
+        Boolean respondida
+        Text resposta_bot
+        String intent_detectado
+        JSON entidades_extraidas
+    }
+
+    FLUXO_CONVERSA {
+        Integer id PK
+        String nome "único"
+        Text descricao
+        JSON condicoes_entrada
+        JSON estados
+        Boolean ativo
+        DateTime data_criacao "auto_now_add"
+        DateTime data_modificacao "auto_now"
+    }

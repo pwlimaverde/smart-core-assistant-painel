@@ -19,6 +19,36 @@ class TreinamentoService:
     """Serviço para gerenciar operações de treinamento"""
 
     @staticmethod
+    def aplicar_pre_analise_documentos(
+            documentos: list[Document]) -> list[Document]:
+        """Aplica pré-análise de IA ao page_content de uma lista de documentos
+
+        Args:
+            documentos: Lista de documentos para processar
+
+        Returns:
+            Lista de documentos com page_content atualizado
+        """
+        documentos_processados = []
+
+        for documento in documentos:
+            try:
+                # Aplicar pré-análise
+                pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
+                    documento.page_content)
+                documento.page_content = pre_analise_content
+                documentos_processados.append(documento)
+
+            except Exception as e:
+                logger.error(f"Erro ao aplicar pré-análise no documento: {e}")
+                # Mantém documento original em caso de erro
+                documentos_processados.append(documento)
+
+        logger.debug(
+            f"Pré-análise aplicada em {len(documentos_processados)} documentos")
+        return documentos_processados
+
+    @staticmethod
     def processar_arquivo_upload(arquivo):
         """Processa arquivo uploadado e retorna caminho temporário"""
         if not arquivo:
@@ -74,15 +104,7 @@ class TreinamentoService:
                 grupo=grupo,
             )
 
-            for documento in data_file:
-                # Apenas modificar o page_content do documento existente
-                pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
-                    documento.page_content)
-
-                # Modificar diretamente o page_content
-                documento.page_content = pre_analise_content
-
-            return data_file
+            return TreinamentoService.aplicar_pre_analise_documentos(data_file)
 
         except Exception as e:
             logger.error(f"Erro ao processar arquivo documento: {e}")
@@ -241,25 +263,20 @@ def _aceitar_treinamento(id):
         # Processa documentos - agora sempre será uma lista (JSONField)
         treinamento = Treinamentos.objects.get(id=id)
         documentos_lista = treinamento.get_documentos()
-
+        logger.debug(
+            f"Processando documentos_lista {
+                len(documentos_lista)} documentos {documentos_lista}")
         if not documentos_lista:
             logger.warning(
                 f"Nenhum documento encontrado para treinamento {
                     treinamento.id}")
             return
 
-        documentos_melhorados = []
-
-        for documento in documentos_lista:
-            # Apenas modificar o page_content do documento existente
-            pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
-                documento.page_content)
-
-            # Modificar diretamente o page_content
-            documento.page_content = pre_analise_content
-
-            documentos_melhorados.append(documento)
-
+        documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
+            documentos_lista)
+        logger.debug(
+            f"Processando documentos_melhorados {
+                len(documentos_melhorados)} documentos {documentos_melhorados}")
         # Salva alterações
         treinamento.set_documentos(documentos_melhorados)
         treinamento.treinamento_finalizado = True

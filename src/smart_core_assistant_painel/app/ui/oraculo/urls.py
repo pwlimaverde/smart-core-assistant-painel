@@ -8,7 +8,4 @@ urlpatterns = [
         'pre-processamento/<int:id>/',
         views.pre_processamento,
         name="pre_processamento"),
-    # path('chat', views.chat, name="chat"),
-    # path('stream_response', views.stream_response, name="stream_response"),
-    # path('ver_fontes/<int:id>', views.ver_fontes, name='ver_fontes'),
 ]

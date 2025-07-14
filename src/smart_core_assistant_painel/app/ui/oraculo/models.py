@@ -54,6 +54,7 @@ class Treinamentos(models.Model):
         grupo: Grupo ao qual o treinamento pertence
         _documentos: Lista de documentos LangChain serializados
         treinamento_finalizado: Status de finalização do treinamento
+        data_criacao: Data de criação automática do treinamento
     """
     tag: models.CharField = models.CharField(
         max_length=40,
@@ -76,6 +77,10 @@ class Treinamentos(models.Model):
     )
     treinamento_finalizado: models.BooleanField = models.BooleanField(
         default=False,)
+    data_criacao: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Data de criação do treinamento"
+    )
 
     def save(self, *args, **kwargs):
         """
@@ -301,28 +306,26 @@ class AtendenteHumano(models.Model):
     incluindo dados de contato, credenciais e metadados profissionais.
 
     Attributes:
-        whatsapp: Número de WhatsApp único do atendente (usado como sessão)
+        telefone: Número de telefone único do atendente (usado como sessão)
         nome: Nome completo do atendente
         cargo: Cargo/função do atendente
         departamento: Departamento ao qual pertence
         email: E-mail corporativo do atendente
-        telefone_corporativo: Telefone corporativo (opcional)
         usuario_sistema: Usuário do sistema (se aplicável)
         ativo: Status de atividade do atendente
         disponivel: Disponibilidade atual para atendimento
         max_atendimentos_simultaneos: Máximo de atendimentos simultâneos
         especialidades: Lista de especialidades/áreas de conhecimento
         horario_trabalho: Horário de trabalho em formato JSON
-        data_admissao: Data de admissão do atendente
         data_cadastro: Data de cadastro no sistema
         ultima_atividade: Data da última atividade no sistema
         metadados: Informações adicionais do atendente
     """
-    whatsapp: models.CharField = models.CharField(
+    telefone: models.CharField = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone],
-        help_text="Número de WhatsApp do atendente (usado como sessão única)"
+        help_text="Número de telefone do atendente (usado como sessão única)"
     )
     nome: models.CharField = models.CharField(
         max_length=100,
@@ -342,13 +345,6 @@ class AtendenteHumano(models.Model):
         blank=True,
         null=True,
         help_text="E-mail corporativo do atendente"
-    )
-    telefone_corporativo: models.CharField = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        validators=[validate_telefone],
-        help_text="Telefone corporativo (opcional)"
     )
     usuario_sistema: models.CharField = models.CharField(
         max_length=50,
@@ -375,11 +371,6 @@ class AtendenteHumano(models.Model):
         default=dict,
         blank=True,
         help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})"
-    )
-    data_admissao: models.DateField = models.DateField(
-        blank=True,
-        null=True,
-        help_text="Data de admissão do atendente na empresa"
     )
     data_cadastro: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
@@ -411,30 +402,23 @@ class AtendenteHumano(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Salva o atendente normalizando o número de WhatsApp.
+        Salva o atendente normalizando o número de telefone.
 
-        Normaliza o WhatsApp para formato internacional (+55...) antes
+        Normaliza o telefone para formato internacional (+55...) antes
         de salvar no banco de dados.
 
         Args:
             *args: Argumentos posicionais do método save
             **kwargs: Argumentos nomeados do método save
         """
-        # Normaliza o número de WhatsApp
-        if self.whatsapp:
+        # Normaliza o número de telefone
+        if self.telefone:
             # Remove caracteres não numéricos
-            whatsapp_limpo = re.sub(r'\D', '', self.whatsapp)
+            telefone_limpo = re.sub(r'\D', '', self.telefone)
             # Adiciona código do país se não tiver
-            if not whatsapp_limpo.startswith('55'):
-                whatsapp_limpo = '55' + whatsapp_limpo
-            self.whatsapp = '+' + whatsapp_limpo
-
-        # Normaliza telefone corporativo se fornecido
-        if self.telefone_corporativo:
-            telefone_limpo = re.sub(r'\D', '', self.telefone_corporativo)
             if not telefone_limpo.startswith('55'):
                 telefone_limpo = '55' + telefone_limpo
-            self.telefone_corporativo = '+' + telefone_limpo
+            self.telefone = '+' + telefone_limpo
 
         super().save(*args, **kwargs)
 
@@ -442,20 +426,12 @@ class AtendenteHumano(models.Model):
         """
         Validação personalizada do modelo.
 
-        Valida que o WhatsApp seja diferente do telefone corporativo
-        e executa outras validações customizadas.
+        Executa validações customizadas do modelo.
 
         Raises:
             ValidationError: Se houver violação das regras de validação
         """
         super().clean()
-
-        # Validação: WhatsApp não pode ser igual ao telefone corporativo
-        if (self.whatsapp and self.telefone_corporativo and
-                self.whatsapp == self.telefone_corporativo):
-            raise ValidationError({
-                'telefone_corporativo': 'O telefone corporativo não pode ser igual ao WhatsApp.'
-            })
 
     def get_atendimentos_ativos(self):
         """
@@ -623,6 +599,18 @@ class TipoMensagem(models.TextChoices):
     LOCALIZACAO = 'localizacao', 'Localização'
     CONTATO = 'contato', 'Contato'
     SISTEMA = 'sistema', 'Mensagem do Sistema'
+
+
+class TipoRemetente(models.TextChoices):
+    """
+    Enum para definir os tipos de remetente das mensagens.
+
+    Define quem enviou a mensagem para controle do fluxo de interação
+    entre cliente, bot e atendente humano.
+    """
+    CLIENTE = 'cliente', 'Cliente'
+    BOT = 'bot', 'Bot/Sistema'
+    ATENDENTE_HUMANO = 'atendente_humano', 'Atendente Humano'
 
 
 class Atendimento(models.Model):
@@ -847,7 +835,7 @@ class Mensagem(models.Model):
         atendimento: Atendimento ao qual a mensagem pertence
         tipo: Tipo da mensagem (texto, imagem, áudio, etc.)
         conteudo: Conteúdo textual da mensagem
-        is_from_client: Indica se a mensagem é do cliente ou do sistema
+        remetente: Tipo do remetente (cliente, bot, atendente_humano)
         timestamp: Data e hora da mensagem
         message_id_whatsapp: ID da mensagem no WhatsApp (se aplicável)
         metadados: Metadados adicionais da mensagem
@@ -855,6 +843,7 @@ class Mensagem(models.Model):
         resposta_bot: Resposta gerada pelo bot
         intent_detectado: Intent detectado pelo processamento de NLP
         entidades_extraidas: Entidades extraídas da mensagem
+        confianca_resposta: Nível de confiança da resposta do bot
     """
     atendimento: models.ForeignKey = models.ForeignKey(
         Atendimento,
@@ -871,9 +860,12 @@ class Mensagem(models.Model):
     conteudo: models.TextField = models.TextField(
         help_text="Conteúdo da mensagem"
     )
-    is_from_client: models.BooleanField = models.BooleanField(
-        default=True,
-        help_text="True se a mensagem é do cliente, False se é do bot/atendente")
+    remetente: models.CharField = models.CharField(
+        max_length=20,
+        choices=TipoRemetente.choices,
+        default=TipoRemetente.CLIENTE,
+        help_text="Tipo do remetente da mensagem"
+    )
     timestamp: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
         help_text="Timestamp da mensagem"
@@ -909,6 +901,11 @@ class Mensagem(models.Model):
         blank=True,
         help_text="Entidades extraídas da mensagem"
     )
+    confianca_resposta: models.FloatField = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Nível de confiança da resposta do bot (0-1)"
+    )
 
     class Meta:
         verbose_name = "Mensagem"
@@ -920,12 +917,12 @@ class Mensagem(models.Model):
         Retorna representação string da mensagem.
 
         Returns:
-            str: Origem da mensagem (Cliente/Bot) e preview do conteúdo
+            str: Remetente e preview do conteúdo
         """
-        origem = "Cliente" if self.is_from_client else "Bot/Atendente"
+        remetente_display = self.get_remetente_display()
         conteudo_preview = self.conteudo[:50] + \
             "..." if len(self.conteudo) > 50 else self.conteudo
-        return f"{origem}: {conteudo_preview}"
+        return f"{remetente_display}: {conteudo_preview}"
 
     def marcar_como_respondida(self, resposta, confianca=None):
         """
@@ -940,6 +937,53 @@ class Mensagem(models.Model):
         if confianca is not None:
             self.confianca_resposta = confianca
         self.save()
+
+    @property
+    def is_from_client(self):
+        """
+        Propriedade para compatibilidade com código existente.
+
+        Returns:
+            bool: True se a mensagem é do cliente
+        """
+        return self.remetente == TipoRemetente.CLIENTE
+
+    @property
+    def is_from_bot(self):
+        """
+        Verifica se a mensagem é do bot.
+
+        Returns:
+            bool: True se a mensagem é do bot
+        """
+        return self.remetente == TipoRemetente.BOT
+
+    @property
+    def is_from_atendente_humano(self):
+        """
+        Verifica se a mensagem é de um atendente humano.
+
+        Returns:
+            bool: True se a mensagem é de um atendente humano
+        """
+        return self.remetente == TipoRemetente.ATENDENTE_HUMANO
+
+    def pode_bot_responder(self):
+        """
+        Verifica se o bot pode responder considerando o histórico de mensagens.
+
+        O bot não deve responder se há mensagens de atendente humano no atendimento.
+
+        Returns:
+            bool: True se o bot pode responder
+        """
+        # Verifica se existe alguma mensagem de atendente humano neste
+        # atendimento
+        mensagens_atendente = self.atendimento.mensagens.filter(
+            remetente=TipoRemetente.ATENDENTE_HUMANO
+        ).exists()
+
+        return not mensagens_atendente
 
 
 class FluxoConversa(models.Model):
@@ -1083,7 +1127,7 @@ def inicializar_atendimento_whatsapp(numero_telefone,
                 atendimento=atendimento,
                 tipo=TipoMensagem.TEXTO,
                 conteudo=primeira_mensagem,
-                is_from_client=True,
+                remetente=TipoRemetente.CLIENTE,
                 metadados={
                     'canal': 'whatsapp',
                     'primeira_mensagem': cliente_criado
@@ -1155,7 +1199,8 @@ def processar_mensagem_whatsapp(
         conteudo,
         tipo_mensagem=TipoMensagem.TEXTO,
         message_id=None,
-        metadados=None):
+        metadados=None,
+        remetente=TipoRemetente.CLIENTE):
     """
     Processa uma mensagem recebida do WhatsApp.
 
@@ -1165,6 +1210,7 @@ def processar_mensagem_whatsapp(
         tipo_mensagem (TipoMensagem): Tipo da mensagem (texto, imagem, etc.)
         message_id (str, optional): ID da mensagem no WhatsApp
         metadados (dict, optional): Metadados adicionais da mensagem
+        remetente (TipoRemetente): Tipo do remetente da mensagem
 
     Returns:
         Mensagem: Objeto mensagem criado
@@ -1188,17 +1234,18 @@ def processar_mensagem_whatsapp(
             atendimento=atendimento,
             tipo=tipo_mensagem,
             conteudo=conteudo,
-            is_from_client=True,
+            remetente=remetente,
             message_id_whatsapp=message_id,
             metadados=metadados or {}
         )
 
         # Atualiza timestamp da última interação do cliente
-        atendimento.cliente.ultima_interacao = timezone.now()
-        atendimento.cliente.save()
+        if remetente == TipoRemetente.CLIENTE:
+            atendimento.cliente.ultima_interacao = timezone.now()
+            atendimento.cliente.save()
 
         logger.info(
-            f"Mensagem processada para {numero_telefone}: {conteudo[:50]}...")
+            f"Mensagem processada para {numero_telefone} de {remetente}: {conteudo[:50]}...")
 
         return mensagem
 
@@ -1324,7 +1371,7 @@ def listar_atendentes_por_disponibilidade():
                 'nome': atendente.nome,
                 'cargo': atendente.cargo,
                 'departamento': atendente.departamento,
-                'whatsapp': atendente.whatsapp,
+                'telefone': atendente.telefone,
                 'atendimentos_ativos': atendente.get_atendimentos_ativos(),
                 'max_atendimentos': atendente.max_atendimentos_simultaneos,
                 'especialidades': atendente.especialidades
@@ -1342,3 +1389,84 @@ def listar_atendentes_por_disponibilidade():
     except Exception as e:
         logger.error(f"Erro ao listar atendentes por disponibilidade: {e}")
         return {'disponiveis': [], 'ocupados': [], 'indisponiveis': []}
+
+
+def pode_bot_responder_atendimento(atendimento):
+    """
+    Verifica se o bot pode responder em um atendimento específico.
+
+    O bot não deve responder se há mensagens de atendente humano no atendimento.
+
+    Args:
+        atendimento (Atendimento): Atendimento a ser verificado
+
+    Returns:
+        bool: True se o bot pode responder
+    """
+    try:
+        # Verifica se existe alguma mensagem de atendente humano neste
+        # atendimento
+        mensagens_atendente = atendimento.mensagens.filter(
+            remetente=TipoRemetente.ATENDENTE_HUMANO
+        ).exists()
+
+        return not mensagens_atendente
+    except Exception as e:
+        logger.error(f"Erro ao verificar se bot pode responder: {e}")
+        return False
+
+
+def enviar_mensagem_atendente(
+        atendimento,
+        atendente_humano,
+        conteudo,
+        tipo_mensagem=TipoMensagem.TEXTO,
+        metadados=None):
+    """
+    Envia uma mensagem de um atendente humano para um atendimento.
+
+    Args:
+        atendimento (Atendimento): Atendimento onde a mensagem será enviada
+        atendente_humano (AtendenteHumano): Atendente que está enviando a mensagem
+        conteudo (str): Conteúdo da mensagem
+        tipo_mensagem (TipoMensagem): Tipo da mensagem (padrão: TEXTO)
+        metadados (dict, optional): Metadados adicionais da mensagem
+
+    Returns:
+        Mensagem: Objeto mensagem criado
+
+    Raises:
+        ValidationError: Se o atendente não estiver associado ao atendimento
+    """
+    try:
+        # Verifica se o atendente está associado ao atendimento
+        if atendimento.atendente_humano != atendente_humano:
+            raise ValidationError(
+                f"O atendente {
+                    atendente_humano.nome} não está associado a este atendimento.")
+
+        # Cria a mensagem
+        mensagem = Mensagem.objects.create(
+            atendimento=atendimento,
+            tipo=tipo_mensagem,
+            conteudo=conteudo,
+            remetente=TipoRemetente.ATENDENTE_HUMANO,
+            metadados=metadados or {
+                'atendente_id': atendente_humano.id,
+                'atendente_nome': atendente_humano.nome
+            }
+        )
+
+        # Atualiza a última atividade do atendente
+        atendente_humano.ultima_atividade = timezone.now()
+        atendente_humano.save()
+
+        logger.info(
+            f"Mensagem enviada pelo atendente {atendente_humano.nome} no atendimento {atendimento.id}: {conteudo[:50]}..."
+        )
+
+        return mensagem
+
+    except Exception as e:
+        logger.error(f"Erro ao enviar mensagem do atendente: {e}")
+        raise

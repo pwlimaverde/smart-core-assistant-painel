@@ -67,7 +67,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):
         'nome',
         'cargo',
         'departamento',
-        'whatsapp',
+        'telefone',
         'ativo',
         'disponivel',
         'get_atendimentos_ativos',
@@ -80,7 +80,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):
         'nome',
         'cargo',
         'departamento',
-        'whatsapp',
+        'telefone',
         'email',
     ]
 
@@ -110,7 +110,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):
             'classes': ('wide',)
         }),
         ('Contatos', {
-            'fields': ('whatsapp', 'telefone_corporativo', 'email'),
+            'fields': ('telefone', 'email'),
             'classes': ('wide',)
         }),
         ('Sistema', {
@@ -120,7 +120,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):
             'fields': ('max_atendimentos_simultaneos', 'especialidades'),
         }),
         ('Horários', {
-            'fields': ('horario_trabalho', 'data_admissao'),
+            'fields': ('horario_trabalho',),
             'classes': ('collapse',)
         }),
         ('Metadados', {
@@ -275,16 +275,16 @@ class MensagemAdmin(admin.ModelAdmin):
         'cliente_telefone',
         'tipo',
         'conteudo_preview',
-        'is_from_client',
+        'remetente',
         'respondida',
         'timestamp']
-    list_filter = ['tipo', 'is_from_client', 'respondida', 'timestamp']
+    list_filter = ['tipo', 'remetente', 'respondida', 'timestamp']
     search_fields = ['conteudo', 'atendimento__cliente__telefone']
     readonly_fields = ['timestamp', 'message_id_whatsapp']
 
     fieldsets = (
         ('Informações da Mensagem', {
-            'fields': ('atendimento', 'tipo', 'conteudo', 'is_from_client', 'respondida')
+            'fields': ('atendimento', 'tipo', 'conteudo', 'remetente', 'respondida')
         }),
         ('Resposta do Bot', {
             'fields': ('resposta_bot', 'confianca_resposta', 'intent_detectado')

@@ -1,0 +1,140 @@
+erDiagram
+    %% ==============================
+    %% DOMÍNIO DE TREINAMENTO DE IA
+    %% ==============================
+    TREINAMENTOS {
+        string tag PK "Identificador único do treinamento"
+        string grupo "Grupo organizacional do treinamento"
+        json documentos "Documentos LangChain serializados"
+        boolean treinamento_finalizado "Status de finalização"
+        datetime data_criacao "Data de criação"
+    }
+
+    %% ==============================
+    %% DOMÍNIO DE PARTICIPANTES
+    %% ==============================
+    CLIENTE {
+        string telefone PK "Número de telefone único (+5511999999999)"
+        string nome "Nome do cliente"
+        datetime data_cadastro "Data de registro automático"
+        datetime ultima_interacao "Última atividade"
+        json metadados "Dados adicionais do cliente"
+    }
+
+    ATENDENTE_HUMANO {
+        int id PK "Identificador único"
+        string telefone UK "Telefone único do atendente"
+        string nome "Nome completo"
+        string cargo "Função/cargo"
+        string departamento "Departamento"
+        string email "E-mail corporativo"
+        string usuario_sistema "Login do sistema"
+        boolean ativo "Status ativo/inativo"
+        boolean disponivel "Disponível para novos atendimentos"
+        int max_atendimentos_simultaneos "Limite de atendimentos"
+        json especialidades "Lista de especialidades"
+        json horario_trabalho "Horários de trabalho"
+        datetime data_cadastro "Data de cadastro"
+        datetime ultima_atividade "Última atividade"
+        json metadados "Configurações e preferências"
+    }
+
+    %% ==============================
+    %% DOMÍNIO DE ATENDIMENTO
+    %% ==============================
+    ATENDIMENTO {
+        int id PK "Identificador único"
+        string cliente_telefone FK "Referência ao cliente"
+        string status "Status atual do atendimento"
+        datetime data_inicio "Início automático"
+        datetime data_fim "Finalização (quando aplicável)"
+        string assunto "Resumo/assunto"
+        string prioridade "baixa|normal|alta|urgente"
+        int atendente_humano_id FK "Atendente responsável (se transferido)"
+        json contexto_conversa "Estado da conversa e variáveis"
+        json historico_status "Log de mudanças de status"
+        json tags "Tags de categorização"
+        int avaliacao "Avaliação 1-5"
+        text feedback "Feedback do cliente"
+    }
+
+    MENSAGEM {
+        int id PK "Identificador único"
+        int atendimento_id FK "Atendimento relacionado"
+        string tipo "Tipo de conteúdo da mensagem"
+        text conteudo "Conteúdo principal da mensagem"
+        string remetente "Quem enviou a mensagem"
+        datetime timestamp "Data/hora da mensagem"
+        string message_id_whatsapp "ID único do WhatsApp"
+        json metadados "Metadados de mídia, localização, etc."
+        boolean respondida "Indica se foi respondida"
+        text resposta_bot "Resposta gerada pelo bot"
+        string intent_detectado "Intent identificado pelo NLP"
+        json entidades_extraidas "Entidades extraídas pelo NLP"
+        float confianca_resposta "Nível de confiança 0-1"
+    }
+
+    %% ==============================
+    %% DOMÍNIO DE AUTOMAÇÃO
+    %% ==============================
+    FLUXO_CONVERSA {
+        int id PK "Identificador único"
+        string nome UK "Nome único do fluxo"
+        text descricao "Descrição detalhada"
+        json condicoes_entrada "Condições para ativação"
+        json estados "Estados e transições"
+        boolean ativo "Fluxo ativo/inativo"
+        datetime data_criacao "Data de criação"
+        datetime data_modificacao "Última modificação"
+    }
+
+    %% ==============================
+    %% ENUMS E TIPOS
+    %% ==============================
+    STATUS_ATENDIMENTO {
+        string aguardando_inicial "Aguardando primeira interação"
+        string em_andamento "Atendimento ativo"
+        string aguardando_cliente "Esperando resposta do cliente"
+        string aguardando_atendente "Esperando ação do atendente"
+        string resolvido "Atendimento finalizado com sucesso"
+        string cancelado "Atendimento cancelado"
+        string transferido "Transferido para atendente humano"
+    }
+
+    TIPO_MENSAGEM {
+        string texto "Mensagem de texto simples"
+        string imagem "Arquivo de imagem"
+        string audio "Arquivo de áudio/voz"
+        string video "Arquivo de vídeo"
+        string documento "Documento/arquivo"
+        string localizacao "Coordenadas geográficas"
+        string contato "Informações de contato"
+        string sistema "Mensagem automática do sistema"
+    }
+
+    TIPO_REMETENTE {
+        string cliente "Mensagem enviada pelo cliente"
+        string bot "Mensagem gerada pelo bot/IA"
+        string atendente_humano "Mensagem do atendente humano"
+    }
+
+    %% ==============================
+    %% RELACIONAMENTOS PRINCIPAIS
+    %% ==============================
+    
+    %% Relacionamentos de Cliente
+    CLIENTE ||--o{ ATENDIMENTO : "1 cliente pode ter N atendimentos"
+    
+    %% Relacionamentos de Atendente
+    ATENDENTE_HUMANO ||--o{ ATENDIMENTO : "1 atendente pode ter N atendimentos"
+    
+    %% Relacionamentos de Atendimento
+    ATENDIMENTO ||--o{ MENSAGEM : "1 atendimento contém N mensagens"
+    
+    %% Relacionamentos com Enums
+    ATENDIMENTO }o--|| STATUS_ATENDIMENTO : "usa status"
+    MENSAGEM }o--|| TIPO_MENSAGEM : "categorizada por tipo"
+    MENSAGEM }o--|| TIPO_REMETENTE : "identifica remetente"
+    
+    %% Relacionamentos de Fluxo (opcional/futuro)
+    FLUXO_CONVERSA }o--o{ ATENDIMENTO : "pode ser aplicado a atendimentos"

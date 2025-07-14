@@ -13,6 +13,10 @@ Funcionalidades implementadas:
 - Busca por especialidades e departamentos
 """
 
+import os
+import sys
+
+import django
 from oraculo.models import (
     AtendenteHumano,
     Atendimento,
@@ -22,9 +26,6 @@ from oraculo.models import (
     listar_atendentes_por_disponibilidade,
     transferir_atendimento_automatico,
 )
-import django
-import os
-import sys
 
 # Adiciona o path do Django
 sys.path.insert(
@@ -50,13 +51,12 @@ def criar_atendentes_exemplo():
 
     # Atendente 1 - Suporte Técnico
     atendente1, created = AtendenteHumano.objects.get_or_create(
-        whatsapp="+5511999999001",
+        telefone="+5511999999001",
         defaults={
             'nome': 'João Silva',
             'cargo': 'Analista de Suporte',
             'departamento': 'Suporte Técnico',
             'email': 'joao.silva@empresa.com',
-            'telefone_corporativo': '+5511888888001',
             'especialidades': ['suporte_tecnico', 'troubleshooting', 'hardware'],
             'max_atendimentos_simultaneos': 3,
             'horario_trabalho': {
@@ -71,7 +71,7 @@ def criar_atendentes_exemplo():
 
     # Atendente 2 - Vendas
     atendente2, created = AtendenteHumano.objects.get_or_create(
-        whatsapp="+5511999999002",
+        telefone="+5511999999002",
         defaults={
             'nome': 'Maria Santos',
             'cargo': 'Consultora de Vendas',
@@ -91,7 +91,7 @@ def criar_atendentes_exemplo():
 
     # Atendente 3 - Financeiro
     atendente3, created = AtendenteHumano.objects.get_or_create(
-        whatsapp="+5511999999003",
+        telefone="+5511999999003",
         defaults={
             'nome': 'Carlos Oliveira',
             'cargo': 'Analista Financeiro',

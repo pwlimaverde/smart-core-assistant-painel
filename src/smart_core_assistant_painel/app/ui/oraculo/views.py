@@ -1,14 +1,18 @@
+import json
 import os
 import tempfile
 
 from django.contrib import messages
 from django.db import transaction
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, render
 from langchain.docstore.document import Document
 from loguru import logger
 from rolepermissions.checkers import has_permission
+from django.views.decorators.csrf import csrf_exempt
+from django.core.cache import cache
 
+from smart_core_assistant_painel.app.ui.oraculo.utils import sched_message_response
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose, )
 
@@ -290,3 +294,18 @@ def _aceitar_treinamento(id):
     except Exception as e:
         logger.error(f"Erro ao aceitar treinamento {treinamento.id}: {e}")
         raise
+    
+@csrf_exempt
+def webhook_whatsapp(request):
+    # Validar API KEY e event
+    data = json.loads(request.body)
+    phone = data.get('data').get('key').get('remoteJid').split('@')[0]
+    message = data.get('data').get('message').get('extendedTextMessage').get('text')
+
+    buffer = cache.get(f"wa_buffer_{phone}", [])
+    buffer.append(message)
+
+    cache.set(f"wa_buffer_{phone}", buffer, timeout=120)
+
+    sched_message_response(phone)
+    return HttpResponse()

@@ -8,4 +8,5 @@ urlpatterns = [
         'pre-processamento/<int:id>/',
         views.pre_processamento,
         name="pre_processamento"),
+    path('webhook_whatsapp/', views.webhook_whatsapp, name='webhook_whatsapp')
 ]

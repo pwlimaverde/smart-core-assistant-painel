@@ -79,6 +79,8 @@ class Treinamentos(models.Model):
         default=False,)
     data_criacao: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
+        null=True,
+        blank=True,
         help_text="Data de criação do treinamento"
     )
 
@@ -325,6 +327,8 @@ class AtendenteHumano(models.Model):
         max_length=20,
         unique=True,
         validators=[validate_telefone],
+        null=True,
+        blank=True,
         help_text="Número de telefone do atendente (usado como sessão única)"
     )
     nome: models.CharField = models.CharField(

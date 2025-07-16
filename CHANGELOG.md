@@ -13,3 +13,6 @@ Configuração inicial do projeto.
 
 ## 0.4.0
 1 - Refatoração do model treinamento para setar e carregar os documentos do langchain
+2 - Criação de modelos para controle de atendimento em Oraculo
+3 - Criação de diagrama de relacionamento Oraculo
+4 - Criação de diagrama de fluxo de atendimento Oraculo

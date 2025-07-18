@@ -46,94 +46,75 @@ graph TD
     
     %% 1. INICIO DO FLUXO
     Start[🚀 1. INICIO DO FLUXO<br/>Nova Mensagem Recebida]:::startEnd
-    ReceiveMsg[📱 1.1 Receber Mensagem WhatsApp<br/>Numero do Cliente<br/>Conteudo<br/>Tipo de Mensagem<br/>Message ID]:::process
-    CallInitializer[⚙️ 1.2 processar_mensagem_whatsapp<br/>Normalizar telefone para +55<br/>Buscar ou criar cliente<br/>Validar dados]:::systemFlow
+    ReceiveMsg[📱 1.1 webhook_whatsapp<br/>Receber Payload JSON<br/>Validar API KEY e evento<br/>Chamar nova_mensagem]:::process
+    ExtractMessageData[🔍 1.2 nova_mensagem<br/>Extrair número do cliente<br/>Identificar tipo da mensagem<br/>Processar conteúdo por tipo<br/>Extrair metadados relevantes]:::systemFlow
+    CallMessageProcessor[⚙️ 1.3 processar_mensagem_whatsapp<br/>Determinar tipo de remetente<br/>Buscar/Criar atendimento<br/>Criar objeto Mensagem<br/>Atualizar timestamp cliente]:::systemFlow
+    RecoverMessage[💾 1.4 Recuperar Objeto Mensagem<br/>Mensagem.objects.get<br/>Obter atributos completos<br/>Acessar mensagem.atendimento]:::database
     
-    %% 1.3 TRATAMENTO DO TIPO DE MENSAGEM
-    CheckMessageType{❓ 1.3 Tipo da mensagem<br/>e TEXTO?}:::decision
-    ProcessNonTextMessage[🤖 1.4 Processar Conteudo Nao-Texto<br/>Transcrever AUDIO para Texto<br/>Analisar IMAGEM para Descricao<br/>Extrair DOCUMENTO para Conteudo<br/>Converter VIDEO para Transcricao]:::botFlow
-    ConvertToText[📝 1.5 Converter para Texto<br/>IA Agent de Interpretacao<br/>Retornar conteudo em texto<br/>Manter referencia original]:::botFlow
+    %% 2. DECISAO ATENDENTE RESPONSAVEL
+    CheckResponsibleAgent{� 2.1 Atendimento tem<br/>atendente responsavel?<br/>Verificar atendimento.atendente_humano}:::decision
+    DirectToResponsibleAgent[🎯 2.2 Direcionar para Atendente Responsavel<br/>Mensagem vai diretamente<br/>para atendente definido<br/>Ignorar triagem geral]:::humanFlow
     
-    %% 2. VERIFICACAO DE ATENDIMENTO ATIVO
-    SearchActiveTicket[🔍 2. VERIFICACAO DE ATENDIMENTO ATIVO<br/>Iniciar verificacao de atendimento]:::systemFlow
-    BuscarAtendimentoAtivo[🔍 2.1 buscar_atendimento_ativo<br/>Localizar conversas em andamento<br/>Status: AGUARDANDO_INICIAL, EM_ANDAMENTO<br/>AGUARDANDO_CLIENTE, AGUARDANDO_ATENDENTE<br/>Um cliente = um atendimento ativo]:::systemFlow
-    ActiveTicketExists{📋 2.2 Existe atendimento<br/>ativo?<br/>Status nao finalizado}:::decision
-    CheckResponsibleAgent{👤 2.3 Atendimento tem<br/>atendente responsavel?<br/>Verificar atendente_humano}:::decision
-    %% 2.5 NOVO: FLUXO DIRETO PARA ATENDENTE RESPONSAVEL
-    SaveDirectMessage[💾 2.5 CREATE Mensagem Direta<br/>Conteudo da mensagem<br/>Remetente: CLIENTE<br/>timestamp automatico<br/>Vincular ao atendimento com responsavel]:::database
-    UpdateDirectInteraction[💾 2.6 UPDATE Cliente Interacao Direta<br/>ultima_interacao = now<br/>Rastreamento atividade responsavel<br/>Analytics direcionamento]:::database
-    
-    DirectToResponsibleAgent[🎯 2.4 Direcionar para Atendente Responsavel<br/>Mensagem vai diretamente<br/>para atendente definido<br/>Ignorar triagem geral]:::humanFlow
-    
-    %% 3. CRIAR NOVO ATENDIMENTO
-    CreateNewTicketFlow[🆕 3. CRIAR NOVO ATENDIMENTO<br/>Inicializar novo atendimento]:::systemFlow
-    CreateClientDB[💾 3.1 GET_OR_CREATE Cliente<br/>Telefone normalizado +55<br/>Nome se fornecido<br/>Metadados iniciais<br/>data_cadastro automatico]:::database
-    CreateTicketDB[💾 3.2 CREATE Atendimento<br/>Status: AGUARDANDO_INICIAL<br/>data_inicio automatico<br/>Contexto inicial WhatsApp<br/>Historico de status]:::database
-    SaveFirstMessage[💾 3.3 CREATE Mensagem Primeira<br/>Conteudo da primeira mensagem<br/>Remetente: CLIENTE<br/>Tipo: TEXTO/IMAGEM/AUDIO/etc<br/>message_id_whatsapp<br/>timestamp automatico]:::database
-    UpdateToInProgress[💾 3.4 UPDATE Atendimento Status EM_ANDAMENTO<br/>Transicao: AGUARDANDO_INICIAL para EM_ANDAMENTO<br/>Historico: Primeira mensagem<br/>Trigger: Ativa controle central do bot]:::database
-    
-    %% 4. CONTINUAR ATENDIMENTO EXISTENTE (SEM RESPONSAVEL)
-    ContinueTicketFlow[🔄 4. CONTINUAR ATENDIMENTO EXISTENTE<br/>Sem atendente responsavel<br/>Manutencao de contexto]:::process
-    SaveMessageDB[💾 4.1 CREATE Mensagem Continuacao<br/>Conteudo da mensagem<br/>Remetente: CLIENTE<br/>timestamp automatico<br/>Vincular ao atendimento ativo]:::database
-    UpdateClientInteraction[💾 4.2 UPDATE Cliente Ultima Interacao<br/>ultima_interacao = now<br/>Rastreamento de atividade<br/>Analytics e metricas]:::database
-    
-    %% 5. CONTROLE CENTRAL DO BOT
-    BotControlLogic[🔧 5. CONTROLE CENTRAL DO BOT<br/>Bot assume controle do atendimento<br/>Nao ha atendente humano responsavel<br/>Processar automaticamente]:::systemFlow
+    %% 3. CONTROLE CENTRAL DO BOT
+    BotControlLogic[🔧 3. CONTROLE CENTRAL DO BOT<br/>Bot assume controle do atendimento<br/>Verificar condições de resposta automática]:::systemFlow
+    CheckBotCanRespond{❓ 3.1 _pode_bot_responder_atendimento<br/>Verificar ausência de mensagens<br/>de atendente humano<br/>Determinar se bot pode responder}:::decision
+    CheckMessageNeedsProcessing{❓ 3.2 Mensagem precisa<br/>processamento especial?<br/>Verificar tipo != TEXTO}:::decision
+    ProcessSpecialContent[🤖 3.3 Processar Conteúdo Especial<br/>Extrair informações contextuais<br/>Metadados específicos por tipo<br/>Preparar para análise de intent]:::botFlow
 
-    %% 6. FLUXO DE RESPOSTA DO BOT
-    AnalyzeMessage[🤖 6. FLUXO DE RESPOSTA BOT<br/>Analisar Mensagem<br/>Extrair intent e entidades<br/>Consultar base de conhecimento<br/>Processar contexto]:::botFlow
-    ClassifyIntent{❓ 6.1 Classificar Intent<br/>PERGUNTA, AGRADECIMENTO<br/>SATISFACAO ou TRANSFERENCIA?}:::decision
-    DetectTransferIntent[🔄 6.1.1 Detectar Intent Transferencia<br/>Cliente solicita mudanca setor<br/>Exemplo: quero falar financeiro<br/>Identificar setor destino]:::transferFlow
-    GenerateResponse[💭 6.2 Gerar Resposta<br/>Processar com IA<br/>Calcular confianca_resposta 0-1<br/>Preparar resposta]:::botFlow
-    DetectSatisfaction[✅ 6.3 Detectar Satisfacao<br/>Cliente demonstra satisfacao<br/>Agradecimento ou resolucao<br/>Preparar encerramento]:::botFlow
-    CheckConfidence{❓ 6.4 Confianca >= 0.5?}:::decision
-    TransferToHuman[👤 6.5 transferir_atendimento_automatico<br/>Baixa confianca - Transferir]:::humanFlow
-    CheckHighConfidence{❓ 6.6 Confianca >= 0.8?}:::decision
-    SendAutomaticResponse[📤 6.7 Resposta Automatica<br/>Salvar mensagem BOT<br/>Enviar para cliente<br/>Alta confianca]:::botFlow
-    RequireReview[⚠️ 6.8 Resposta Requer Revisao<br/>Salvar com baixa confianca<br/>Logica customizavel<br/>Confianca media]:::systemFlow
+    %% 4. FLUXO DE RESPOSTA DO BOT
+    AnalyzeMessage[🤖 4. FLUXO DE RESPOSTA BOT<br/>Analisar Mensagem<br/>Extrair intent e entidades<br/>Consultar base de conhecimento<br/>Processar contexto]:::botFlow
+    ClassifyIntent{❓ 4.1 Classificar Intent<br/>PERGUNTA, AGRADECIMENTO<br/>SATISFACAO ou TRANSFERENCIA?}:::decision
+    DetectTransferIntent[🔄 4.1.1 Detectar Intent Transferencia<br/>Cliente solicita mudanca setor<br/>Exemplo: quero falar financeiro<br/>Identificar setor destino]:::transferFlow
+    GenerateResponse[💭 4.2 Gerar Resposta<br/>Processar com IA<br/>Calcular confianca_resposta 0-1<br/>Preparar resposta]:::botFlow
+    DetectSatisfaction[✅ 4.3 Detectar Satisfacao<br/>Cliente demonstra satisfacao<br/>Agradecimento ou resolucao<br/>Preparar encerramento]:::botFlow
+    CheckConfidence{❓ 4.4 Confianca >= 0.5?}:::decision
+    TransferToHuman[👤 4.5 transferir_atendimento_automatico<br/>Baixa confianca - Transferir]:::humanFlow
+    CheckHighConfidence{❓ 4.6 Confianca >= 0.8?}:::decision
+    SendAutomaticResponse[📤 4.7 Resposta Automatica<br/>Salvar mensagem BOT<br/>Enviar para cliente<br/>Alta confianca]:::botFlow
+    RequireReview[⚠️ 4.8 Resposta Requer Revisao<br/>Salvar com baixa confianca<br/>Logica customizavel<br/>Confianca media]:::systemFlow
     
-    %% 7. TRANSFERENCIA PARA ATENDENTE
-    FindAgent[👥 7. TRANSFERENCIA PARA ATENDENTE<br/>buscar_atendente_disponivel<br/>Filtrar ativo=True, disponivel=True<br/>Verificar max_atendimentos_simultaneos<br/>Balanceamento de carga]:::humanFlow
-    BuscarAtendenteDisponivel[🔍 7.1 buscar_atendente_disponivel<br/>Localizacao de atendente apropriado<br/>Filtros: ativo=True, disponivel=True<br/>max_atendimentos_simultaneos<br/>Balanceamento de carga]:::systemFlow
-    CheckSpecificSector{🏢 7.1.1 Transfer solicitada<br/>para setor especifico?<br/>Verificar setor destino}:::decision
-    BuscarPorSetor[🏢 7.1.2 buscar_atendente_por_setor<br/>Filtrar por setor especifico<br/>Priorizar especialistas<br/>Verificar disponibilidade]:::sectorFlow
-    AgentAvailable{❓ 7.2 Atendente Disponivel?}:::decision
-    NoAgentFlow[⚠️ 7.3 Nenhum Atendente Disponivel<br/>Notificar administradores<br/>Aguardar intervalo<br/>Preparar nova busca]:::systemFlow
-    WaitAndRetry[⏳ 7.4 Aguardar e Tentar Novamente<br/>Intervalo de espera configuravel<br/>Log de tentativa<br/>Incrementar contador]:::systemFlow
-    AssignAgent[👤 7.5 transferir_para_humano<br/>atendimento.atendente_humano = atendente<br/>Status: TRANSFERIDO<br/>Historico: transferencia automatica]:::humanFlow
-    NotifyAgent[📬 7.6 Notificar Atendente<br/>Atualizar ultima_atividade<br/>Enviar notificacao<br/>Preparar interface]:::humanFlow
-    HumanTakeover[👤 7.7 Atendente Assume Controle<br/>Bot para de responder automaticamente]:::humanFlow
+    %% 5. TRANSFERENCIA PARA ATENDENTE
+    FindAgent[👥 5. TRANSFERENCIA PARA ATENDENTE<br/>buscar_atendente_disponivel<br/>Filtrar ativo=True, disponivel=True<br/>Verificar max_atendimentos_simultaneos<br/>Balanceamento de carga]:::humanFlow
+    BuscarAtendenteDisponivel[🔍 5.1 buscar_atendente_disponivel<br/>Localizacao de atendente apropriado<br/>Filtros: ativo=True, disponivel=True<br/>max_atendimentos_simultaneos<br/>Balanceamento de carga]:::systemFlow
+    CheckSpecificSector{🏢 5.1.1 Transfer solicitada<br/>para setor especifico?<br/>Verificar setor destino}:::decision
+    BuscarPorSetor[🏢 5.1.2 buscar_atendente_por_setor<br/>Filtrar por setor especifico<br/>Priorizar especialistas<br/>Verificar disponibilidade]:::sectorFlow
+    AgentAvailable{❓ 5.2 Atendente Disponivel?}:::decision
+    NoAgentFlow[⚠️ 5.3 Nenhum Atendente Disponivel<br/>Notificar administradores<br/>Aguardar intervalo<br/>Preparar nova busca]:::systemFlow
+    WaitAndRetry[⏳ 5.4 Aguardar e Tentar Novamente<br/>Intervalo de espera configuravel<br/>Log de tentativa<br/>Incrementar contador]:::systemFlow
+    AssignAgent[👤 5.5 transferir_para_humano<br/>atendimento.atendente_humano = atendente<br/>Status: TRANSFERIDO<br/>Historico: transferencia automatica]:::humanFlow
+    NotifyAgent[📬 5.6 Notificar Atendente<br/>Atualizar ultima_atividade<br/>Enviar notificacao<br/>Preparar interface]:::humanFlow
+    HumanTakeover[👤 5.7 Atendente Assume Controle<br/>Bot para de responder automaticamente]:::humanFlow
     
-    %% 8. ATENDIMENTO HUMANO ATIVO
-    WaitHumanAction[👤 8. ATENDIMENTO HUMANO ATIVO<br/>Aguardar Acao do Atendente<br/>Status: AGUARDANDO_ATENDENTE]:::humanFlow
-    HumanResponse{❓ 8.1 Atendente enviou<br/>resposta?}:::decision
-    WaitHumanTimeout[⏰ 8.1.1 Aguardar Timeout Atendente<br/>Periodo especifico configuravel<br/>Monitorar tempo limite<br/>Preparar notificacao]:::systemFlow
-    NotifyAgentAgain[📢 8.1.2 Notificar Atendente Novamente<br/>Alerta de timeout<br/>Lembrete de resposta pendente<br/>Incrementar contador notificacoes]:::humanFlow
-    SaveHumanMessage[💾 8.2 enviar_mensagem_atendente<br/>Remetente: ATENDENTE_HUMANO<br/>Atualizar ultima_atividade<br/>Metadados do atendente]:::humanFlow
+    %% 6. ATENDIMENTO HUMANO ATIVO
+    WaitHumanAction[👤 6. ATENDIMENTO HUMANO ATIVO<br/>Aguardar Acao do Atendente<br/>Status: AGUARDANDO_ATENDENTE]:::humanFlow
+    HumanResponse{❓ 6.1 Atendente enviou<br/>resposta?}:::decision
+    WaitHumanTimeout[⏰ 6.1.1 Aguardar Timeout Atendente<br/>Periodo especifico configuravel<br/>Monitorar tempo limite<br/>Preparar notificacao]:::systemFlow
+    NotifyAgentAgain[📢 6.1.2 Notificar Atendente Novamente<br/>Alerta de timeout<br/>Lembrete de resposta pendente<br/>Incrementar contador notificacoes]:::humanFlow
+    SaveHumanMessage[💾 6.2 enviar_mensagem_atendente<br/>Remetente: ATENDENTE_HUMANO<br/>Atualizar ultima_atividade<br/>Metadados do atendente]:::humanFlow
     
-    %% 8.5 NOVO: TRANSFERENCIA ENTRE ATENDENTES/SETORES
-    CheckTransferCommand{🔄 8.3 Atendente solicitou<br/>transferencia?<br/>Comando: /transfer}:::decision
-    ProcessTransferCommand[🔄 8.4 processar_comando_transferencia<br/>Extrair setor/atendente destino<br/>Validar permissoes<br/>Preparar historico]:::transferFlow
-    SelectTransferTarget{🎯 8.5 Tipo de Transferencia?<br/>SETOR ou ATENDENTE?}:::decision
+    %% 6.5 NOVO: TRANSFERENCIA ENTRE ATENDENTES/SETORES
+    CheckTransferCommand{🔄 6.3 Atendente solicitou<br/>transferencia?<br/>Comando: /transfer}:::decision
+    ProcessTransferCommand[🔄 6.4 processar_comando_transferencia<br/>Extrair setor/atendente destino<br/>Validar permissoes<br/>Preparar historico]:::transferFlow
+    SelectTransferTarget{🎯 6.5 Tipo de Transferencia?<br/>SETOR ou ATENDENTE?}:::decision
     
-    %% 8.5.1 TRANSFERENCIA POR SETOR
-    TransferToSector[🏢 8.5.1 transferir_para_setor<br/>Buscar atendentes do setor<br/>Aplicar criterios disponibilidade<br/>Balanceamento de carga setor]:::sectorFlow
+    %% 6.5.1 TRANSFERENCIA POR SETOR
+    TransferToSector[🏢 6.5.1 transferir_para_setor<br/>Buscar atendentes do setor<br/>Aplicar criterios disponibilidade<br/>Balanceamento de carga setor]:::sectorFlow
     
-    %% 8.5.2 TRANSFERENCIA PARA ATENDENTE ESPECIFICO
-    TransferToSpecificAgent[👤 8.5.2 transferir_para_atendente_especifico<br/>Validar atendente existe<br/>Verificar disponibilidade<br/>Forcar transferencia se necessario]:::transferFlow
+    %% 6.5.2 TRANSFERENCIA PARA ATENDENTE ESPECIFICO
+    TransferToSpecificAgent[👤 6.5.2 transferir_para_atendente_especifico<br/>Validar atendente existe<br/>Verificar disponibilidade<br/>Forcar transferencia se necessario]:::transferFlow
     
-    %% 8.6 FINALIZACAO DE TRANSFERENCIA
-    UpdateTransferHistory[📝 8.6 atualizar_historico_transferencia<br/>Registrar atendente origem<br/>Registrar destino<br/>Motivo da transferencia<br/>timestamp]:::database
-    NotifyNewAgent[📬 8.7 notificar_novo_atendente<br/>Enviar contexto completo<br/>Historico da conversa<br/>Detalhes da transferencia]:::humanFlow
-    NotifyOldAgent[📤 8.8 notificar_atendente_origem<br/>Confirmar transferencia<br/>Liberar da conversa<br/>Atualizar contadores]:::humanFlow
+    %% 6.6 FINALIZACAO DE TRANSFERENCIA
+    UpdateTransferHistory[📝 6.6 atualizar_historico_transferencia<br/>Registrar atendente origem<br/>Registrar destino<br/>Motivo da transferencia<br/>timestamp]:::database
+    NotifyNewAgent[📬 6.7 notificar_novo_atendente<br/>Enviar contexto completo<br/>Historico da conversa<br/>Detalhes da transferencia]:::humanFlow
+    NotifyOldAgent[📤 6.8 notificar_atendente_origem<br/>Confirmar transferencia<br/>Liberar da conversa<br/>Atualizar contadores]:::humanFlow
 
-  	%% 9. ENCERRAR ATENDIMENTO
-    CloseTicketFlow[🏁 9. ENCERRAR ATENDIMENTO<br/>finalizar_atendimento<br/>Metodo do modelo Atendimento]:::systemFlow
-    GenerateClosingMsg[💬 9.1 Gerar Mensagem Final<br/>Resumo da conversa<br/>Solicitacao de avaliacao<br/>Mensagem de despedida]:::botFlow
-    UpdateTicketDB[💾 9.2 UPDATE Atendimento<br/>Status: RESOLVIDO<br/>data_fim = now<br/>Historico: Atendimento finalizado]:::database
-    SaveClosingMsgDB[💾 9.3 CREATE Mensagem<br/>Conteudo de encerramento<br/>Remetente: BOT<br/>timestamp automatico]:::database
-    SendClosingMessage[📤 9.4 Enviar Mensagem Final<br/>Solicitar avaliacao opcional<br/>Finalizar conversa]:::botFlow
-    EndFlow[🏁 9.5 Fim do Fluxo<br/>Atendimento Encerrado]:::startEnd
+  	%% 7. ENCERRAR ATENDIMENTO
+    CloseTicketFlow[🏁 7. ENCERRAR ATENDIMENTO<br/>finalizar_atendimento<br/>Metodo do modelo Atendimento]:::systemFlow
+    GenerateClosingMsg[💬 7.1 Gerar Mensagem Final<br/>Resumo da conversa<br/>Solicitacao de avaliacao<br/>Mensagem de despedida]:::botFlow
+    UpdateTicketDB[💾 7.2 UPDATE Atendimento<br/>Status: RESOLVIDO<br/>data_fim = now<br/>Historico: Atendimento finalizado]:::database
+    SaveClosingMsgDB[💾 7.3 CREATE Mensagem<br/>Conteudo de encerramento<br/>Remetente: BOT<br/>timestamp automatico]:::database
+    SendClosingMessage[📤 7.4 Enviar Mensagem Final<br/>Solicitar avaliacao opcional<br/>Finalizar conversa]:::botFlow
+    EndFlow[🏁 7.5 Fim do Fluxo<br/>Atendimento Encerrado]:::startEnd
      
 
 
@@ -143,45 +124,31 @@ graph TD
     
     %% Fluxo sequencial principal
     Start --> ReceiveMsg
-    ReceiveMsg --> CallInitializer
-    CallInitializer --> CheckMessageType
+    ReceiveMsg --> ExtractMessageData
+    ExtractMessageData --> CallMessageProcessor
+    CallMessageProcessor --> RecoverMessage
+    RecoverMessage --> CheckResponsibleAgent
+    
+    %% Decisao atendente responsavel (JA FEITA NO PROCESSAMENTO)
+    CheckResponsibleAgent -->|✅ Sim| DirectToResponsibleAgent
+    CheckResponsibleAgent -->|❌ Nao| BotControlLogic
+    
+    %% Fluxo direto para atendente responsavel
+    DirectToResponsibleAgent --> WaitHumanAction
+    
+    %% Bot assume controle (sem verificacoes redundantes)
+    BotControlLogic --> CheckBotCanRespond
+    
+    %% Verificação se o bot pode responder - UNICA VERIFICACAO NO FLUXO
+    CheckBotCanRespond -->|✅ Sim| CheckMessageNeedsProcessing
+    CheckBotCanRespond -->|❌ Não| WaitHumanAction
     
     %% Bifurcacao para tratamento de tipo de mensagem
-    CheckMessageType -->|✅ TEXTO| SearchActiveTicket
-    CheckMessageType -->|❌ NAO-TEXTO| ProcessNonTextMessage
-    ProcessNonTextMessage --> ConvertToText
-    ConvertToText --> SearchActiveTicket
+    CheckMessageNeedsProcessing -->|✅ Precisa| ProcessSpecialContent
+    CheckMessageNeedsProcessing -->|❌ Não precisa| AnalyzeMessage
     
-    SearchActiveTicket --> BuscarAtendimentoAtivo
-    BuscarAtendimentoAtivo --> ActiveTicketExists
+    ProcessSpecialContent --> AnalyzeMessage
     
-    %% Decisao de criar novo ou continuar
-    ActiveTicketExists -->|❌ Nao| CreateNewTicketFlow
-    ActiveTicketExists -->|✅ Sim| CheckResponsibleAgent
-    
-    %% Nova verificacao de atendente responsavel
-    CheckResponsibleAgent -->|✅ Sim| DirectToResponsibleAgent
-    CheckResponsibleAgent -->|❌ Nao| ContinueTicketFlow
-    
-    %% Fluxo organizado para atendente responsavel
-    DirectToResponsibleAgent --> SaveDirectMessage
-    SaveDirectMessage --> UpdateDirectInteraction
-    UpdateDirectInteraction --> WaitHumanAction
-    
-    CreateNewTicketFlow --> CreateClientDB
-    CreateClientDB --> CreateTicketDB
-    CreateTicketDB --> SaveFirstMessage
-    SaveFirstMessage --> UpdateToInProgress
-    
-    ContinueTicketFlow --> SaveMessageDB
-    SaveMessageDB --> UpdateClientInteraction
-    
-    %% Convergencia para controle do bot (APENAS para fluxos sem atendente responsavel)
-    UpdateToInProgress --> BotControlLogic
-    UpdateClientInteraction --> BotControlLogic
-    
-    %% Bot assume controle direto (sem verificacoes redundantes)
-    BotControlLogic --> AnalyzeMessage
     AnalyzeMessage --> ClassifyIntent
     
     %% Bifurcacao por tipo de intent
@@ -206,13 +173,13 @@ graph TD
     %% Fluxo especifico do BOT apos resposta
     SendAutomaticResponse --> BotWaitClientResponse
     RequireReview --> BotWaitClientResponse
-    BotWaitClientResponse[⏳ 6.9 Bot Aguarda Resposta Cliente<br/>Status: AGUARDANDO_CLIENTE<br/>Timeout configuravel<br/>Loop ate satisfacao ou timeout]:::botFlow
+    BotWaitClientResponse[⏳ 4.9 Bot Aguarda Resposta Cliente<br/>Status: AGUARDANDO_CLIENTE<br/>Timeout configuravel<br/>Loop ate satisfacao ou timeout]:::botFlow
     
     %% Fluxo especifico do HUMANO apos resposta
     SaveHumanMessage --> HumanDecision
-    HumanDecision{❓ 8.9 Atendente escolhe<br/>proximo passo?}:::decision
-    HumanWaitClient[⏳ 8.10 Humano Aguarda Cliente<br/>Status: AGUARDANDO_CLIENTE_HUMANO<br/>Sem timeout automatico<br/>Controle total do atendente]:::humanFlow
-    HumanFinalizeNow[🏁 8.11 Atendente Finaliza Agora<br/>Decisao direta do atendente<br/>Problema resolvido<br/>Encerramento imediato]:::humanFlow
+    HumanDecision{❓ 6.9 Atendente escolhe<br/>proximo passo?}:::decision
+    HumanWaitClient[⏳ 6.10 Humano Aguarda Cliente<br/>Status: AGUARDANDO_CLIENTE_HUMANO<br/>Sem timeout automatico<br/>Controle total do atendente]:::humanFlow
+    HumanFinalizeNow[🏁 6.11 Atendente Finaliza Agora<br/>Decisao direta do atendente<br/>Problema resolvido<br/>Encerramento imediato]:::humanFlow
     
     %% Fluxo de Transferencia
     TransferToHuman --> FindAgent
@@ -230,7 +197,7 @@ graph TD
     
     %% Loop de busca de atendente
     NoAgentFlow --> WaitAndRetry
-    WaitAndRetry -.->|🔄 7.4.1 Nova Busca Loop<br/>Tentar buscar atendente novamente<br/>Loop continuo ate encontrar| CheckSpecificSector
+    WaitAndRetry -.->|🔄 5.4.1 Nova Busca Loop<br/>Tentar buscar atendente novamente<br/>Loop continuo ate encontrar| CheckSpecificSector
     
     AssignAgent --> NotifyAgent
     NotifyAgent --> HumanTakeover
@@ -238,7 +205,7 @@ graph TD
     HumanTakeover --> WaitHumanAction
     
     %% Fluxo do Bot - Caminhos especificos
-    BotWaitClientResponse -.->|🔄 6.9.1 Nova Mensagem Cliente<br/>Retorna para inicio do fluxo<br/>Passa novamente por intent 6.1| ReceiveMsg
+    BotWaitClientResponse -.->|🔄 4.9.1 Nova Mensagem Cliente<br/>Retorna para inicio do fluxo<br/>Passa novamente por intent 4.1| ReceiveMsg
     BotWaitClientResponse -->|⏰ Timeout Cliente| CloseTicketFlow
     
     %% Fluxo Humano - Caminhos especificos  
@@ -262,7 +229,7 @@ graph TD
     HumanDecision -->|⏳ Aguardar Cliente| HumanWaitClient
     
     HumanFinalizeNow --> CloseTicketFlow
-    HumanWaitClient -.->|🔄 8.10.1 Nova Mensagem Cliente Loop<br/>Cliente responde para atendente<br/>Reiniciar fluxo mantendo controle humano| ReceiveMsg
+    HumanWaitClient -.->|🔄 6.10.1 Nova Mensagem Cliente Loop<br/>Cliente responde para atendente<br/>Reiniciar fluxo mantendo controle humano| ReceiveMsg
     
     %% Fluxo Humano antigo - ajustar para nova estrutura
     HumanFlow --> WaitHumanAction
@@ -272,7 +239,7 @@ graph TD
     
     %% Loop de timeout e notificacao do atendente
     WaitHumanTimeout --> NotifyAgentAgain
-    NotifyAgentAgain -.->|🔄 8.1.3 Loop Notificacao Atendente<br/>Aguardar periodo e notificar novamente<br/>Loop continuo ate resposta ou fechamento| HumanResponse
+    NotifyAgentAgain -.->|🔄 6.1.3 Loop Notificacao Atendente<br/>Aguardar periodo e notificar novamente<br/>Loop continuo ate resposta ou fechamento| HumanResponse
     
     %% Fluxo de Encerramento
     CloseTicketFlow --> GenerateClosingMsg
@@ -282,20 +249,23 @@ graph TD
     SendClosingMessage --> EndFlow
     
     %% Loops de Retorno - Estrutura hierarquica atualizada
-    WaitHumanAction -.->|🔄 8.1.4 Nova Mensagem Atendente Loop<br/>Cliente responde durante espera atendente<br/>Retornar ao inicio| ReceiveMsg
+    WaitHumanAction -.->|🔄 6.1.4 Nova Mensagem Atendente Loop<br/>Cliente responde durante espera atendente<br/>Retornar ao inicio| ReceiveMsg
     
     %% Aplicar estilos aos subgrafos da legenda
     class LegendaRow1,LegendaRow2,LegendaRow3,LegendaRow4 legendaInvisible
     
-    %% Nota: Inclui tratamento de midia via IA 1.3-1.4-1.5 para conversao de conteudo nao-texto
-    %% Nota: Item 7.3-7.4-7.4.1 implementa loop continuo de busca por atendente disponivel com notificacoes administrativas
-    %% Nota: Classificacao de Intent 6.1 determina fluxo: PERGUNTA -> resposta IA vs SATISFACAO -> encerramento direto vs TRANSFERENCIA -> mudanca setor
-    %% Nota: Bot aguarda resposta 6.9 e retorna para inicio 6.9.1 passando novamente por classificacao intent 6.1
-    %% Nota: Fluxos finais distintos - Bot 6.9 simplificado vs Humano 8.x controle manual com caminhos especificos
-    %% Nota: Loops hierarquicos: 6.9.1 retorno bot, 7.4.1 busca atendente, 8.1.1-8.10.1 timeout e controle humano com opcao fechamento
-    %% Nota: NOVO 2.3-2.4: Direcionamento direto para atendente responsavel quando atendimento ja tem atendente definido - BYPASSA CONTROLE DO BOT
-    %% Nota: SIMPLIFICADO 5.0: Bot assume controle direto quando nao ha atendente responsavel - verificacao ja feita em 2.3
-    %% Nota: NOVO 6.1.1: Intent de transferencia detectada pelo bot direciona para mudanca de setor automaticamente
-    %% Nota: NOVO 7.1.1-7.1.2: Busca de atendente pode ser filtrada por setor especifico ou geral
-    %% Nota: NOVO 8.3-8.8: Atendentes podem transferir entre si usando comandos, com historico completo e notificacoes
+    %% Nota: SIMPLIFICADO v5.0: Eliminadas verificações redundantes - busca de atendimento já feita em 1.3
+    %% Nota: CONTROLE DIRETO 2.1: Verificação de atendente responsável feita logo após recuperar mensagem
+    %% Nota: BOT ASSUME CONTROLE 3.0: Verificação bot response centralizada em um ponto único
+    %% Nota: Inclui tratamento de midia via IA 3.3 para conversao de conteudo nao-texto
+    %% Nota: UNICA VERIFICACAO 3.1: "_pode_bot_responder_atendimento" realizada apenas uma vez
+    %% Nota: Item 5.3-5.4-5.4.1 implementa loop continuo de busca por atendente disponivel
+    %% Nota: Classificacao de Intent 4.1 determina fluxo: PERGUNTA -> resposta IA vs SATISFACAO -> encerramento vs TRANSFERENCIA
+    %% Nota: Bot aguarda resposta 4.9 e retorna para inicio 4.9.1 passando novamente por classificacao intent 4.1
+    %% Nota: Fluxos finais distintos - Bot 4.x simplificado vs Humano 6.x controle manual
+    %% Nota: Loops hierarquicos: 4.9.1 retorno bot, 5.4.1 busca atendente, 6.1.x timeout e controle humano
+    %% Nota: DIRECIONAMENTO DIRETO 2.1-2.2: Atendente responsável definido bypassa controle do bot
+    %% Nota: NOVO 4.1.1: Intent de transferencia detectada pelo bot direciona para mudanca de setor automaticamente
+    %% Nota: NOVO 5.1.1-5.1.2: Busca de atendente pode ser filtrada por setor especifico ou geral
+    %% Nota: NOVO 6.3-6.8: Atendentes podem transferir entre si usando comandos, com historico completo
     %% Nota: Sistema suporta transferencia por SETOR (automatica) e por ATENDENTE ESPECIFICO (manual)

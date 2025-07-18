@@ -76,7 +76,7 @@ def exemplo_conversa_continuada():
         # Registra resposta do bot
         mensagem_bot = Mensagem.objects.create(
             atendimento=atendimento,
-            tipo=TipoMensagem.TEXTO,
+            tipo=TipoMensagem.TEXTO_FORMATADO,
             conteudo=resposta_bot,
             is_from_client=False,
             metadados={'gerada_por': 'chatbot_ia'}

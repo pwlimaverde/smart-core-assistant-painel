@@ -1,8 +1,8 @@
 # 📋 Notas Explicativas - Fluxo de Recebimento de Mensagem WhatsApp
 
 ## 🎯 Visão Geral do Sistema
-**Versão**: 4.0 - Alinhamento Completo com Diagrama Atualizado
-**Data**: 15 de julho de 2025
+**Versão**: 4.3 - Otimização da Verificação Bot Response
+**Data**: 18 de julho de 2025
 
 Este fluxo representa o processo completo de **recebimento, processamento e resposta** de mensagens WhatsApp no sistema de atendimento inteligente. O sistema combina **automação via IA** com **atendimento humano** para oferecer suporte eficiente.
 
@@ -24,40 +24,124 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 
 **Vantagem**: A numeração hierárquica torna claro que os loops são **extensões** dos processos principais, com **classificação de intent** determinando fluxos específicos (pergunta vs satisfação).
 
+### 🔄 **Atualizações na Versão 4.3**
+1. **Otimização da Verificação Bot**: A função `_pode_bot_responder_atendimento` agora é chamada apenas uma vez no ponto 5.1
+2. **Eliminação de Redundâncias**: Removida verificação duplicada no início do fluxo (antiga seção 1.5)
+3. **Reorganização Estrutural**: Verificação de atendente responsável (5.2) agora ocorre após verificação bot (5.1)
+4. **Fluxo Mais Limpo**: Centralizada a decisão de direcionamento bot vs humano em um único ponto
+5. **Melhor Performance**: Evita múltiplas consultas desnecessárias ao banco de dados
+6. **Clareza no Código**: Um único ponto de controle facilita manutenção e entendimento
+7. **Lógica Otimizada**: Verifica primeiro se bot pode responder, depois contexto de responsabilidade
+
 ---
 
 ## 🚀 1. INÍCIO DO FLUXO - Nova Mensagem Recebida
 
-### 📱 1.1 **Receber Mensagem WhatsApp**
-**Processo**: Captura inicial da mensagem do cliente
-- **Dados Coletados**:
-  - `numero_cliente`: Telefone do remetente (formato internacional)
-  - `conteudo`: Texto, áudio, imagem ou documento
-  - `tipo_mensagem`: TEXTO, IMAGEM, AUDIO, VIDEO, DOCUMENTO
-  - `message_id`: ID único da mensagem no WhatsApp
+### 📱 1.1 **Função: webhook_whatsapp (View Django)**
+**Processo**: Ponto de entrada para o webhook do WhatsApp
+- **Responsabilidades**:
+  - Receber payload JSON do webhook
+  - Validar API KEY e evento
+  - Chamar `nova_mensagem()` para processamento
+  - Obter o objeto Mensagem completo usando o ID retornado
+  - Registrar logs de processamento
+  - Retornar resposta HTTP adequada
+- **Tratamento de Erros**:
+  - Captura exceções durante todo o processamento
+  - Registra erros detalhados via logger
+  - Retorna resposta HTTP 500 em caso de falha
+- **Estrutura**:
+  ```python
+  @csrf_exempt
+  def webhook_whatsapp(request):
+      from .models import nova_mensagem, Mensagem
 
-**Importância**: Este é o ponto de entrada único para todas as interações. A qualidade dos dados coletados aqui impacta todo o processamento posterior.
+      try:
+          # Processar dados
+          data = json.loads(request.body)
+          mensagem_id = nova_mensagem(data)
+          mensagem = Mensagem.objects.get(id=mensagem_id)
+          
+          # Log de sucesso
+          logger.info(f"Mensagem processada com sucesso. ID: {mensagem_id}")
+          
+          # Responder ao webhook
+          return JsonResponse({"status": "success", "mensagem_id": mensagem_id}, status=200)
+      except Exception as e:
+          logger.error(f"Erro no webhook WhatsApp: {e}")
+          return JsonResponse({"error": str(e)}, status=500)
+  ```
 
-### ⚙️ 1.2 **Função: processar_mensagem_whatsapp**
-**Processo**: Normalização e validação inicial dos dados
-- **Normalização do Telefone**:
-  - Adiciona código do país (+55 para Brasil)
-  - Remove caracteres especiais e espaços
-  - Formato final: `+5511999999999`
-- **Buscar ou Criar Cliente**:
-  - Verifica se o número já existe no banco
-  - Cria novo registro se necessário
-  - Atualiza metadados de contato
+**Nota**: A verificação `_pode_bot_responder_atendimento` foi movida para o ponto 5.1 para otimizar o fluxo.
+
+### 🔍 1.2 **Função: nova_mensagem**
+**Processo**: Extração e processamento dos dados do webhook
+- **Extrações**:
+  - `phone`: Número do telefone do cliente (extraído de `data.key.remoteJid`)
+  - `message_id`: ID único da mensagem no WhatsApp (extraído de `data.key.id`)
+  - `tipo_chave`: Tipo da mensagem (textMessage, imageMessage, etc.)
+  - `conteudo`: Conteúdo específico com base no tipo
+  - `metadados`: Dados adicionais por tipo de mensagem (URL, mimetype, etc.)
+- **Tipos Suportados**:
+  - TEXTO_FORMATADO: Mensagens de texto simples
+  - IMAGEM: Fotos com ou sem legenda
+  - VIDEO: Vídeos com ou sem legenda
+  - AUDIO: Mensagens de voz ou áudio
+  - DOCUMENTO: Arquivos PDF, DOC, etc.
+  - STICKER, LOCALIZACAO, CONTATO, LISTA, BOTOES, ENQUETE, REACAO
+- **Retorno**: ID da mensagem criada (valor inteiro)
+
+### ⚙️ 1.3 **Função: processar_mensagem_whatsapp**
+**Processo**: Processamento completo da mensagem
+- **Determinação do Remetente**:
+  - Verifica se o número pertence a um atendente humano
+  - Define como CLIENTE ou ATENDENTE_HUMANO
+- **Fluxo Principal**:
+  - Busca atendimento ativo com `buscar_atendimento_ativo()`
+  - Se não existir, inicializa novo com `inicializar_atendimento_whatsapp()`
+  - Cria objeto `Mensagem` no banco de dados com os dados do webhook
+  - Atualiza timestamp da última interação do cliente
+- **Retorno**: ID da mensagem criada
+
+### 💾 1.4 **Recuperar Objeto Mensagem**
+**Processo**: Recupera o objeto Mensagem completo a partir do ID
+- **Função**: `Mensagem.objects.get(id=mensagem_id)`
+- **Objetivo**: Obter todos os atributos da mensagem, incluindo o relacionamento com o atendimento
+- **Importância**: Permite acessar `mensagem.atendimento` para verificações subsequentes
+
+### ❓ 1.5 **Função: _pode_bot_responder_atendimento**
+**Processo**: Verifica se o bot pode responder ao atendimento
+- **Implementação**: 
+  ```python
+  def _pode_bot_responder_atendimento(atendimento):
+      mensagens_atendente = atendimento.mensagens.filter(
+          remetente=TipoRemetente.ATENDENTE_HUMANO
+      ).exists()
+      
+      return not mensagens_atendente
+  ```
+- **Lógica**: O bot não deve responder se houver mensagens de atendente humano no atendimento
+- **Resultado**: 
+  - `True`: Bot pode responder (fluxo automatizado)
+  - `False`: Bot não pode responder (fluxo humano)
 
 **Técnica**: Utiliza Django ORM com `get_or_create()` para evitar duplicatas.
 
-### ❓ 1.3 **Decisão: Tipo da mensagem é TEXTO?**
+### 🔍 1.4 **Recuperar Objeto Mensagem**
+**Processo**: Recupera o objeto Mensagem completo a partir do ID
+- **Função**: `Mensagem.objects.get(id=mensagem_id)`
+- **Objetivo**: Obter todos os atributos da mensagem, incluindo o relacionamento com o atendimento
+- **Importância**: Permite acessar `mensagem.atendimento` para verificações subsequentes no fluxo
+
+---
+
+## 🔍 2. VERIFICAÇÃO DE ATENDIMENTO ATIVO - buscar_atendimento_ativo
 **Processo**: Verificação do tipo de conteúdo recebido
 - **TEXTO**: Prossegue diretamente para verificação de atendimento ativo
 - **NÃO-TEXTO**: Direciona para processamento de conversão via IA
 - **Tipos Suportados**: AUDIO, IMAGEM, VIDEO, DOCUMENTO, STICKER
 
-### 🤖 1.4 **Processar Conteúdo Não-Texto**
+### 🤖 1.6 **Processar Conteúdo Não-Texto**
 **Processo**: Identificação e preparação para conversão
 - **AUDIO**: Preparar para transcrição de voz para texto
 - **IMAGEM**: Preparar para análise de conteúdo visual
@@ -65,7 +149,7 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 - **VIDEO**: Preparar para transcrição de áudio do vídeo
 - **Validação**: Verificar formato e tamanho do arquivo
 
-### 📝 1.5 **Converter para Texto via IA Agent**
+### 📝 1.7 **Converter para Texto via IA Agent**
 **Processo**: Conversão inteligente de conteúdo multimídia
 - **Transcrição de Áudio**: 
   - Utiliza modelos de Speech-to-Text
@@ -92,6 +176,31 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 
 ### 🔍 2.1 **Função: buscar_atendimento_ativo**
 **Processo**: Localiza conversas em andamento
+- **Implementação**:
+  ```python
+  def buscar_atendimento_ativo(numero_telefone):
+      # Normaliza o número de telefone
+      telefone_limpo = re.sub(r'\D', '', numero_telefone)
+      if not telefone_limpo.startswith('55'):
+          telefone_limpo = '55' + telefone_limpo
+      telefone_formatado = '+' + telefone_limpo
+
+      cliente = Cliente.objects.filter(telefone=telefone_formatado).first()
+      if not cliente:
+          return None
+
+      atendimento = Atendimento.objects.filter(
+          cliente=cliente,
+          status__in=[
+              StatusAtendimento.AGUARDANDO_INICIAL,
+              StatusAtendimento.EM_ANDAMENTO,
+              StatusAtendimento.AGUARDANDO_CLIENTE,
+              StatusAtendimento.AGUARDANDO_ATENDENTE
+          ]
+      ).first()
+
+      return atendimento
+  ```
 - **Status Verificados**:
   - `AGUARDANDO_INICIAL`: Novo atendimento criado
   - `EM_ANDAMENTO`: Conversa ativa com bot ou humano
@@ -103,10 +212,11 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 ### 📋 2.2 **Decisão: Existe atendimento ativo?**
 **Critério**: Busca por atendimento com status não finalizado
 - **SIM**: Verifica se tem atendente responsável (2.3)
-- **NÃO**: Inicia novo atendimento (nova jornada)
+- **NÃO**: Inicia novo atendimento (3.1)
 
 ### 👤 2.3 **Decisão: Atendimento tem atendente responsável?**
 **Processo**: Verificação de responsabilidade definida
+- **Verificação**: `atendimento.atendente_humano is not None`
 - **SIM**: Direciona para atendente responsável (2.4)
 - **NÃO**: Continua fluxo normal sem responsável (4.1)
 
@@ -115,6 +225,7 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 - **Prioridade**: Mensagem vai diretamente para atendente definido
 - **Contexto**: Ignora triagem geral do sistema
 - **Eficiência**: Conexão direta com responsável
+- **Importância**: Mantém continuidade do atendimento humano
 
 ### 💾 2.5 **CREATE Mensagem Direta**
 **Processo**: Salvamento para atendente responsável
@@ -127,43 +238,96 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 **Processo**: Atualização para fluxo direto
 - **Campo**: `ultima_interacao = now`
 - **Contexto**: Rastreamento de atividade com responsável
-- **Analytics**: Métricas de direcionamento direto
+- **Analytics**: Dados para métricas de atendimento e direcionamento direto
 
 ---
 
 ## 🆕 3. CRIAR NOVO ATENDIMENTO - inicializar_atendimento_whatsapp
 
-### 💾 3.1 **GET_OR_CREATE Cliente**
-- **Campos Principais**:
-  - `telefone`: Normalizado para +55XXXXXXXXXX
-  - `nome`: Extraído da mensagem se fornecido
-  - `data_cadastro`: Timestamp automático
-  - `canal_origem`: 'WHATSAPP'
-- **Metadados Iniciais**:
-  - IP de origem (se disponível)
-  - User Agent do WhatsApp
-  - Localização aproximada
+### 🆕 3.1 **Função: inicializar_atendimento_whatsapp**
+**Processo**: Criação de novo atendimento
+- **Implementação**:
+  ```python
+  def inicializar_atendimento_whatsapp(numero_telefone, mensagem_texto=None, tipo_mensagem=None):
+      # Normaliza o número de telefone
+      telefone_limpo = re.sub(r'\D', '', numero_telefone)
+      if not telefone_limpo.startswith('55'):
+          telefone_limpo = '55' + telefone_limpo
+      telefone_formatado = '+' + telefone_limpo
 
-### 💾 3.2 **CREATE Atendimento**
+      # Busca ou cria cliente
+      cliente, cliente_criado = Cliente.objects.get_or_create(
+          telefone=telefone_formatado,
+          defaults={
+              'nome': f'Cliente {telefone_formatado[-4:]}',
+              'ultima_interacao': timezone.now()
+          }
+      )
+
+      # Verifica se já existe atendimento ativo
+      atendimento_ativo = buscar_atendimento_ativo(numero_telefone)
+      if atendimento_ativo:
+          return atendimento_ativo
+
+      # Cria novo atendimento
+      atendimento = Atendimento.objects.create(
+          cliente=cliente,
+          status=StatusAtendimento.AGUARDANDO_INICIAL,
+          canal=CanalAtendimento.WHATSAPP,
+          origem=OrigemAtendimento.CLIENTE
+      )
+
+      # Registra primeira mensagem se fornecida
+      if mensagem_texto:
+          Mensagem.objects.create(
+              atendimento=atendimento,
+              remetente=RemetenteMensagem.CLIENTE,
+              tipo=tipo_mensagem or TipoMensagem.TEXTO,
+              conteudo=mensagem_texto
+          )
+
+          # Atualiza status para EM_ANDAMENTO após primeira mensagem
+          atendimento.status = StatusAtendimento.EM_ANDAMENTO
+          atendimento.save(update_fields=['status'])
+
+          # Registra mudança de status no histórico
+          HistoricoStatusAtendimento.objects.create(
+              atendimento=atendimento,
+              status_anterior=StatusAtendimento.AGUARDANDO_INICIAL,
+              status_novo=StatusAtendimento.EM_ANDAMENTO,
+              motivo="Primeira mensagem do cliente"
+          )
+
+      return atendimento
+  ```
+- **Verificação**: Confirma ausência de atendimento ativo
+- **Criação**: Novo registro de atendimento
 - **Status Inicial**: `AGUARDANDO_INICIAL`
-- **Contexto**: Informações do canal WhatsApp
-- **Histórico**: Log inicial de criação
-- **Campos Automáticos**:
-  - `data_inicio`: Timestamp de criação
-  - `canal`: 'WHATSAPP'
-  - `status`: Enum com controle de estado
+- **Vinculação**: Associa ao cliente (existente ou novo)
 
-### 💾 3.3 **CREATE Mensagem (Primeira)**
+### 💾 3.2 **CREATE Mensagem (Primeira)**
 - **Conteúdo**: Texto completo da mensagem original
 - **Remetente**: `CLIENTE` (enum)
 - **Tipo**: Detectado automaticamente (TEXTO/IMAGEM/etc)
 - **Rastreamento**: `message_id_whatsapp` para evitar duplicatas
 - **Timestamp**: Automático via `auto_now_add=True`
+- **Condição**: Executado apenas se `mensagem_texto` for fornecido
 
-### 💾 3.4 **UPDATE Atendimento - Status: EM_ANDAMENTO**
+### 💾 3.3 **UPDATE Atendimento - Status: EM_ANDAMENTO**
 - **Transição**: `AGUARDANDO_INICIAL` → `EM_ANDAMENTO`
 - **Histórico**: "Primeira mensagem recebida e processada"
 - **Trigger**: Ativa o controle central do bot
+- **Condição**: Executado apenas se `mensagem_texto` for fornecido
+
+### 📝 3.4 **CREATE Histórico Status**
+**Processo**: Registro de mudança de estado
+- **Campos**:
+  - `atendimento`: Referência ao atendimento
+  - `status_anterior`: `AGUARDANDO_INICIAL`
+  - `status_novo`: `EM_ANDAMENTO`
+  - `data_hora`: Automático
+  - `motivo`: "Primeira mensagem do cliente"
+- **Condição**: Executado apenas se `mensagem_texto` for fornecido
 
 ---
 
@@ -181,16 +345,46 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 
 ---
 
-## 🔧 5. CONTROLE CENTRAL DO BOT - Assumir Controle Direto
+## 🔧 5. CONTROLE CENTRAL DO BOT - Bot assume controle do atendimento
 
-### � 5. **Controle Central do Bot**
-**Processo**: Bot assume controle do atendimento
-- **Condição**: Não há atendente humano responsável
-- **Verificação**: Já realizada na seção 2.3
-- **Ação**: Processar automaticamente via IA
-- **Simplificação**: Controle direto sem verificações redundantes
+### ❓ 5.1 **_pode_bot_responder_atendimento - ÚNICA VERIFICAÇÃO**
+**Processo**: Verificação centralizada se o bot deve responder ao atendimento
+- **Localização**: Única verificação realizada antes do fluxo de resposta
+- **Condição Principal**: Não há mensagens de atendente humano no atendimento
+- **Implementação**: 
+  ```python
+  def _pode_bot_responder_atendimento(atendimento):
+      from .models import TipoRemetente
+      
+      mensagens_atendente = atendimento.mensagens.filter(
+          remetente=TipoRemetente.ATENDENTE_HUMANO
+      ).exists()
+      
+      return not mensagens_atendente
+  ```
+- **Resultado**: 
+  - `True`: Bot pode responder - fluxo continua para 5.2
+  - `False`: Bot não pode responder - direciona para 8.0 (Atendimento Humano)
 
----
+### 👤 5.2 **Atendimento tem atendente responsável?**
+**Processo**: Verificação de responsabilidade definida para contexto
+- **Verificação**: `atendimento.atendente_humano is not None`
+- **SIM**: Continua para verificação de tipo de mensagem (5.3)
+- **NÃO**: Continua para verificação de tipo de mensagem (5.3)
+- **Nota importante**: Esta verificação não bloqueia o fluxo, apenas registra o contexto para decisões futuras
+
+### ❓ 5.3 **Mensagem precisa processamento especial?**
+**Processo**: Verificação do tipo de conteúdo para processamento especial
+- **Condição**: Tipo de mensagem não é TEXTO
+- **SIM**: Direcionar para processamento especial (5.4)
+- **NÃO**: Seguir para análise direta da mensagem (6.0)
+
+### 🤖 5.4 **Processar Conteúdo Especial**
+**Processo**: Tratamento específico para conteúdo não textual
+- **Extração**: Informações contextuais do conteúdo
+- **Metadados**: Específicos por tipo (imagem, áudio, documento, etc.)
+- **Preparação**: Formatação para análise de intent
+- **Resultado**: Conteúdo enriquecido para processamento pelo bot
 
 ## 🤖 6. FLUXO DE RESPOSTA DO BOT - Analisar e Classificar Intent
 
@@ -262,10 +456,6 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 - **Lógica**: Customizável conforme regras de negócio
 - **Confiança**: Média (0.5-0.8)
 
----
-
-## ⏳ 6.9 **FLUXO ESPECÍFICO DO BOT - Aguardar e Loop Inteligente**
-
 ### ⏳ 6.9 **Bot Aguarda Resposta Cliente**
 **Processo**: Monitoramento automatizado com loop inteligente
 - **Status**: `AGUARDANDO_CLIENTE`
@@ -273,18 +463,12 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 - **Loop**: Sistema mantém conversa até satisfação ou timeout
 - **Inteligência**: Retorna para classificação de intent (6.1) automaticamente
 
-### 🔄 6.9.1 **Nova Mensagem Cliente**
+#### 🔄 6.9.1 **Nova Mensagem Cliente Loop**
 **Processo**: Retorno inteligente para início do fluxo
 - **Ação**: Quando cliente responde, retorna para item **1.1** (Receber Mensagem)
 - **Classificação**: Nova mensagem passa novamente por **6.1** (Classificar Intent)
 - **Eficiência**: Satisfação é detectada automaticamente no intent
 - **Loop**: Processo continua até cliente demonstrar satisfação ou timeout
-
-### ⏰ **Timeout Cliente**
-**Processo**: Encerramento por inatividade
-- **Trigger**: Cliente não responde no prazo estabelecido
-- **Ação**: Direciona para **9. ENCERRAR ATENDIMENTO**
-- **Automatização**: Sistema finaliza conversa automaticamente
 
 ---
 
@@ -357,21 +541,16 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 
 ## 👤 8. ATENDIMENTO HUMANO ATIVO - Aguardar Ação do Atendente
 
-### ⏳ 8.1 **Aguardar Ação do Atendente**
-**Estado**: `AGUARDANDO_ATENDENTE`
-- **Interface**: Dashboard em tempo real
-- **Alertas**: Notificações de novas mensagens
-- **Ferramentas**: Acesso a histórico e recursos
-
 ### ❓ 8.1 **Decisão: Atendente Enviou Resposta?**
 **Processo**: Verificação de ação do atendente com timeout inteligente
+- **SIM**: Processa mensagem do atendente (8.2)
+- **NÃO**: Inicia monitoramento de timeout (8.1.1)
 
 #### ⏰ 8.1.1 **Aguardar Timeout Atendente**
 **Processo**: Monitoramento de tempo limite com notificação proativa
 - **Período**: Configurável (ex: 5-10 minutos)
 - **Monitoramento**: Sistema rastreia tempo de inatividade
 - **Trigger**: Acionado quando atendente não responde no prazo
-- **Log**: Registra tentativas de notificação
 
 #### 📢 8.1.2 **Notificar Atendente Novamente**
 **Processo**: Sistema de lembrete proativo
@@ -380,15 +559,13 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 - **Escalação**: Incrementa contador de notificações
 - **Persistência**: Mantém alertas até resposta ou finalização
 
-#### 🔄 8.1.3 **Loop Notificação Atendente (Loop Hierárquico)**
+#### 🔄 8.1.3 **Loop Notificação Atendente**
 **Processo**: Ciclo contínuo de notificação até resposta ou fechamento
 - **Hierarquia**: Sub-nível do item 8.1 (Aguardar Ação do Atendente)
 - **Retorno**: Volta para decisão 8.1 (Atendente enviou resposta?)
-- **Opções de Saída**: Atendente responder OU decidir fechar atendimento
-- **Persistência**: Continua até uma das duas ações acima
-- **Configurável**: Intervalo entre notificações ajustável
+- **Persistência**: Continua até atendente responder
 
-#### 🔄 8.1.4 **Nova Mensagem Cliente Loop (Loop Hierárquico)**
+#### 🔄 8.1.4 **Nova Mensagem Cliente Loop**
 **Processo**: Reativação por nova mensagem do cliente
 - **Hierarquia**: Sub-nível do item 8.1 (Aguardar Ação do Atendente)
 - **Prioridade**: Nova mensagem interrompe ciclo de notificação
@@ -469,12 +646,12 @@ Este fluxo representa o processo completo de **recebimento, processamento e resp
 - **Controle**: Atendente mantém responsabilidade total
 - **Flexibilidade**: Pode aguardar indefinidamente se necessário
 
-### 🔄 8.10.1 **Nova Mensagem Cliente Loop (Loop Hierárquico)**
-**Processo**: Reativação por nova mensagem do cliente
-- **Hierarquia**: Sub-nível do item 8.10 (Humano Aguarda Cliente)
-- **Prioridade**: Cliente responde mantendo controle humano
-- **Continuidade**: Fluxo retorna ao início (item 1.1) preservando contexto humano
-- **Notificação**: Atendente é imediatamente alertado sobre nova mensagem
+#### 🔄 8.10.1 **Nova Mensagem Cliente Loop**
+**Processo**: Recebimento de resposta durante espera
+- **Reinício**: Fluxo retorna ao início (1.1)
+- **Contexto**: Mantém atendente humano como responsável
+- **Continuidade**: Preserva histórico completo da conversa
+- **Prioridade**: Direcionamento direto para mesmo atendente
 
 ### 🏁 8.11 **Atendente Finaliza Agora**
 **Processo**: Encerramento direto pelo atendente

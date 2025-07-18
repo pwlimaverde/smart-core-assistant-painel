@@ -184,7 +184,7 @@ class MensagemTest(TestCase):
 
         self.assertEqual(mensagem.atendimento, self.atendimento)
         self.assertEqual(mensagem.conteudo, "Olá! Preciso de ajuda.")
-        self.assertEqual(mensagem.tipo, TipoMensagem.TEXTO)
+        self.assertEqual(mensagem.tipo, TipoMensagem.TEXTO_FORMATADO)
         self.assertTrue(mensagem.is_from_client)
         self.assertFalse(mensagem.respondida)
 
@@ -305,7 +305,7 @@ class FuncoesUtilitariasTest(TestCase):
         # Verifica mensagem
         self.assertEqual(mensagem.conteudo, conteudo)
         self.assertTrue(mensagem.is_from_client)
-        self.assertEqual(mensagem.tipo, TipoMensagem.TEXTO)
+        self.assertEqual(mensagem.tipo, TipoMensagem.TEXTO_FORMATADO)
 
         # Verifica cliente e atendimento
         cliente = mensagem.atendimento.cliente

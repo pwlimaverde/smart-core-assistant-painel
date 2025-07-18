@@ -201,7 +201,7 @@ class MensagemInline(admin.TabularInline):
     model = Mensagem
     extra = 0
     readonly_fields = ['timestamp', 'message_id_whatsapp']
-    fields = ['tipo', 'conteudo', 'is_from_client', 'respondida', 'timestamp']
+    fields = ['tipo', 'conteudo', 'remetente', 'respondida', 'timestamp']
 
     def get_queryset(self, request):
         return super().get_queryset(request).order_by('timestamp')

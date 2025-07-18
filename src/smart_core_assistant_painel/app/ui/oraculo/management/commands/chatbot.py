@@ -232,7 +232,7 @@ class Command(BaseCommand):
             for resposta in respostas:
                 Mensagem.objects.create(
                     atendimento=atendimento,
-                    tipo=TipoMensagem.TEXTO,
+                    tipo=TipoMensagem.TEXTO_FORMATADO,
                     conteudo=resposta,
                     is_from_client=False,
                     metadados={'gerada_por': 'demo'}

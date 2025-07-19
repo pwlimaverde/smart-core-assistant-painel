@@ -599,10 +599,10 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         FeaturesCompose, )
 
     try:
+        features = FeaturesCompose()
         mensagem = Mensagem.objects.get(id=mensagem_id)
         # Carrega historico para futuro uso na análise de IA
-        cast(Atendimento, mensagem.atendimento).carregar_historico_mensagens()
-        features = FeaturesCompose()
+        historico_atendimento = cast(Atendimento, mensagem.atendimento).carregar_historico_mensagens()
         # Análise de intenção e extração de entidades
         features.analise_previa_mensagem()
         logger.info(

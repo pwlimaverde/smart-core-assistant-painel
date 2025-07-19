@@ -1,6 +1,8 @@
 
+from typing import Any
+
 from langchain.docstore.document import Document
-from py_return_success_or_error import (
+from py_return_success_or_error.core.return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
 )
@@ -58,7 +60,8 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            result: list[Document] = data.result
+            return result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -87,7 +90,8 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            result: list[Document] = data.result
+            return result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -112,7 +116,8 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            result: str = data.result
+            return result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -137,14 +142,16 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            result: str = data.result
+            return result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
-        
+
     @staticmethod
-    def analise_previa_mensagem() -> None:
+    def analise_previa_mensagem(
+            historico_atendimento: dict[str, Any], conteudo: str) -> None:
         """
         Método para análise prévia de uma mensagem, incluindo detecção de intenção e extração de entidades.
         """

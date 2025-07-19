@@ -1,6 +1,6 @@
 import json
 import re
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -634,15 +634,15 @@ class TipoMensagem(models.TextChoices):
     REACAO = 'reactMessage', 'Reação (emoji) a uma mensagem existente'
 
     @classmethod
-    def obter_por_chave_json(cls, chave_json: str | None):
+    def obter_por_chave_json(cls, chave_json: Optional[str]):
         """
         Retorna o tipo de mensagem baseado na chave JSON recebida.
 
         Args:
-            chave_json (str | None): Chave JSON do tipo de mensagem (ex: 'extendedTextMessage') ou None
+            chave_json (Optional[str]): Chave JSON do tipo de mensagem (ex: 'extendedTextMessage') ou None
 
         Returns:
-            TipoMensagem | None: Tipo de mensagem correspondente ou None se não encontrado ou se chave_json for None
+            Optional[TipoMensagem]: Tipo de mensagem correspondente ou None se não encontrado ou se chave_json for None
 
         Examples:
             >>> TipoMensagem.obter_por_chave_json('extendedTextMessage')
@@ -931,9 +931,14 @@ class Atendimento(models.Model):
             )
             self.save()
 
-    def carregar_historico_mensagens(self) -> dict[str, Any]:
+    def carregar_historico_mensagens(
+            self, excluir_mensagem_id: Optional[int] = None) -> dict[str, Any]:
         """
         Carrega o histórico completo de todas as mensagens do atendimento.
+
+        Args:
+            excluir_mensagem_id (Optional[int]): ID da mensagem a ser excluída do histórico
+                (útil para excluir a mensagem atual ao analisar contexto)
 
         Returns:
             dict: Dicionário contendo:
@@ -942,7 +947,11 @@ class Atendimento(models.Model):
                 - 'entidades_extraidas': Set com todas as entidades únicas extraídas
 
         Example:
+            >>> # Para carregar histórico completo
             >>> historico = atendimento.carregar_historico_mensagens()
+            >>>
+            >>> # Para carregar histórico excluindo mensagem atual
+            >>> historico = atendimento.carregar_historico_mensagens(excluir_mensagem_id=123)
             >>> print(f"Total de mensagens: {len(historico['conteudo_mensagens'])}")
             >>> print(f"Intents únicos: {historico['intents_detectados']}")
             >>> print(f"Entidades únicas: {historico['entidades_extraidas']}")
@@ -950,7 +959,14 @@ class Atendimento(models.Model):
         try:
             # Busca todas as mensagens do atendimento ordenadas por timestamp
             # (mais antigas primeiro)
-            mensagens = self.mensagens.all().order_by('timestamp')
+            mensagens_query = self.mensagens.all().order_by('timestamp')
+
+            # Exclui mensagem específica se solicitado
+            if excluir_mensagem_id:
+                mensagens_query = mensagens_query.exclude(
+                    id=excluir_mensagem_id)
+
+            mensagens = mensagens_query
 
             # Inicializa as estruturas de dados
             conteudo_mensagens = []
@@ -1003,6 +1019,7 @@ class Atendimento(models.Model):
                 f"{len(conteudo_mensagens)} mensagens, "
                 f"{len(intents_detectados)} intents únicos, "
                 f"{len(entidades_extraidas)} entidades únicas"
+                f"{f' (excluindo mensagem {excluir_mensagem_id})' if excluir_mensagem_id else ''}"
             )
 
             return resultado
@@ -1126,7 +1143,7 @@ class Mensagem(models.Model):
     def marcar_como_respondida(
             self,
             resposta: str,
-            confianca: float | None = None) -> None:
+            confianca: Optional[float] = None) -> None:
         """
         Marca a mensagem como respondida com a resposta fornecida.
 
@@ -1238,10 +1255,9 @@ class FluxoConversa(models.Model):
 # Função utilitária para inicializar cliente e atendimento
 def inicializar_atendimento_whatsapp(numero_telefone: str,
                                      primeira_mensagem: str = "",
-                                     metadata_cliente: dict[str,
-                                                            Any] | None = None,
-                                     nome_cliente: str | None = None) -> tuple['Cliente',
-                                                                               'Atendimento']:
+                                     metadata_cliente: Optional[dict[str, Any]] = None,
+                                     nome_cliente: Optional[str] = None) -> tuple['Cliente',
+                                                                                  'Atendimento']:
     """
     Inicializa ou recupera um cliente e cria um novo atendimento baseado no número do WhatsApp.
 
@@ -1313,27 +1329,8 @@ def inicializar_atendimento_whatsapp(numero_telefone: str,
         else:
             atendimento = atendimento_ativo
 
-        # Registra a primeira mensagem se fornecida
-        if primeira_mensagem:
-            Mensagem.objects.create(
-                atendimento=atendimento,
-                tipo=TipoMensagem.TEXTO_FORMATADO,
-                conteudo=primeira_mensagem,
-                remetente=TipoRemetente.CLIENTE,
-                metadados={
-                    'canal': 'whatsapp',
-                    'primeira_mensagem': cliente_criado
-                }
-            )
-
-            # Atualiza status para em andamento
-            if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:
-                atendimento.status = StatusAtendimento.EM_ANDAMENTO
-                atendimento.adicionar_historico_status(
-                    StatusAtendimento.EM_ANDAMENTO,
-                    "Primeira mensagem recebida"
-                )
-                atendimento.save()
+        # REMOVIDO: Não cria mensagem aqui para evitar duplicação
+        # A mensagem será criada na função processar_mensagem_whatsapp
 
         logger.info(
             f"{'Novo' if cliente_criado else 'Existente'} cliente inicializado: {cliente.telefone}")
@@ -1345,7 +1342,7 @@ def inicializar_atendimento_whatsapp(numero_telefone: str,
         raise
 
 
-def buscar_atendimento_ativo(numero_telefone: str) -> 'Atendimento' | None:
+def buscar_atendimento_ativo(numero_telefone: str) -> Optional['Atendimento']:
     """
     Busca um atendimento ativo para o número de telefone fornecido.
 
@@ -1538,9 +1535,9 @@ def processar_mensagem_whatsapp(
         numero_telefone: str,
         conteudo: str,
         tipo_mensagem: 'TipoMensagem' = TipoMensagem.TEXTO_FORMATADO,
-        message_id: str | None = None,
-        metadados: dict[str, Any] | None = None,
-        remetente: 'TipoRemetente' | None = None) -> int:
+        message_id: Optional[str] = None,
+        metadados: Optional[dict[str, Any]] = None,
+        remetente: Optional['TipoRemetente'] = None) -> int:
     """
     Processa uma mensagem recebida do WhatsApp.
 
@@ -1587,6 +1584,20 @@ def processar_mensagem_whatsapp(
                 conteudo
             )
 
+        # Verifica se a mensagem já foi processada (evita duplicação)
+        if message_id:
+            mensagem_existente = Mensagem.objects.filter(
+                message_id_whatsapp=message_id,
+                atendimento=atendimento
+            ).first()
+
+            if mensagem_existente:
+                logger.warning(
+                    f"Mensagem duplicada detectada - ID: {message_id}, "
+                    f"Telefone: {numero_telefone}. Retornando mensagem existente."
+                )
+                return mensagem_existente.id
+
         # Cria a mensagem
         mensagem = Mensagem.objects.create(
             atendimento=atendimento,
@@ -1602,6 +1613,15 @@ def processar_mensagem_whatsapp(
             atendimento.cliente.ultima_interacao = timezone.now()
             atendimento.cliente.save()
 
+            # Atualiza status do atendimento se for a primeira mensagem
+            if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:
+                atendimento.status = StatusAtendimento.EM_ANDAMENTO
+                atendimento.adicionar_historico_status(
+                    StatusAtendimento.EM_ANDAMENTO,
+                    "Primeira mensagem recebida"
+                )
+                atendimento.save()
+
         logger.info(
             f"Mensagem processada para {numero_telefone} de {remetente}: {conteudo[:50]}...")
 
@@ -1613,8 +1633,8 @@ def processar_mensagem_whatsapp(
 
 
 def buscar_atendente_disponivel(
-        especialidades: list[str] | None = None,
-        departamento: str | None = None) -> 'AtendenteHumano' | None:
+        especialidades: Optional[list[str]] = None,
+        departamento: Optional[str] = None) -> Optional['AtendenteHumano']:
     """
     Busca um atendente humano disponível para receber um novo atendimento.
 
@@ -1663,8 +1683,8 @@ def buscar_atendente_disponivel(
 
 def transferir_atendimento_automatico(
         atendimento: 'Atendimento',
-        especialidades: list[str] | None = None,
-        departamento: str | None = None) -> 'AtendenteHumano' | None:
+        especialidades: Optional[list[str]] = None,
+        departamento: Optional[str] = None) -> Optional['AtendenteHumano']:
     """
     Transfere automaticamente um atendimento para um atendente humano disponível.
 
@@ -1757,7 +1777,7 @@ def enviar_mensagem_atendente(
         atendente_humano: 'AtendenteHumano',
         conteudo: str,
         tipo_mensagem: 'TipoMensagem' = TipoMensagem.TEXTO_FORMATADO,
-        metadados: dict[str, Any] | None = None) -> 'Mensagem':
+        metadados: Optional[dict[str, Any]] = None) -> 'Mensagem':
     """
     Envia uma mensagem de um atendente humano para um atendimento.
 

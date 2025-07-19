@@ -601,12 +601,19 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
     try:
         features = FeaturesCompose()
         mensagem = Mensagem.objects.get(id=mensagem_id)
-        # Carrega historico para futuro uso na análise de IA
-        historico_atendimento = cast(Atendimento, mensagem.atendimento).carregar_historico_mensagens()
+        # Carrega historico EXCLUINDO a mensagem atual para análise de contexto
+        historico_atendimento = cast(
+            Atendimento, mensagem.atendimento).carregar_historico_mensagens(
+                excluir_mensagem_id=mensagem_id
+        )
         # Análise de intenção e extração de entidades
-        features.analise_previa_mensagem()
+        features.analise_previa_mensagem(
+            historico_atendimento=historico_atendimento,
+            conteudo=mensagem.conteudo)
         logger.info(
-            f"Conteúdo da mensagem {mensagem_id} analisado com sucesso")
+            f"Conteúdo da mensagem: {mensagem.conteudo}")
+        logger.info(
+            f"Historico da mensagem (sem atual): {historico_atendimento}")
     except Exception as e:
         logger.error(
             f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")

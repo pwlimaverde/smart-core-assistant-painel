@@ -54,6 +54,7 @@ dependencies = [
     "markdown>=3.8",
     "marshmallow==3.26.1",
     "multidict==6.4.4",
+    "mypy>=1.17.0",
     "mypy-extensions==1.1.0",
     "networkx>=3.5",
     "numpy==2.2.6",

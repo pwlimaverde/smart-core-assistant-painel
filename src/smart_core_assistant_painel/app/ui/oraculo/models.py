@@ -1,12 +1,18 @@
 import json
 import re
-from typing import List
+from typing import TYPE_CHECKING, Any, List
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from langchain.docstore.document import Document
 from loguru import logger
+
+# Para resolving Django related managers com MyPy
+# mypy: disable-error-code="attr-defined"
+
+if TYPE_CHECKING:
+    pass
 
 
 def validate_tag(value: str) -> None:
@@ -50,12 +56,17 @@ class Treinamentos(models.Model):
     permitindo armazenar e recuperar documentos LangChain serializados.
 
     Attributes:
+        id: Chave primária do registro
         tag: Identificador único do treinamento
         grupo: Grupo ao qual o treinamento pertence
         _documentos: Lista de documentos LangChain serializados
         treinamento_finalizado: Status de finalização do treinamento
         data_criacao: Data de criação automática do treinamento
     """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
     tag: models.CharField = models.CharField(
         max_length=40,
         validators=[validate_tag],
@@ -308,6 +319,7 @@ class AtendenteHumano(models.Model):
     incluindo dados de contato, credenciais e metadados profissionais.
 
     Attributes:
+        id: Chave primária do registro
         telefone: Número de telefone único do atendente (usado como sessão)
         nome: Nome completo do atendente
         cargo: Cargo/função do atendente
@@ -323,6 +335,10 @@ class AtendenteHumano(models.Model):
         ultima_atividade: Data da última atividade no sistema
         metadados: Informações adicionais do atendente
     """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
     telefone: models.CharField = models.CharField(
         max_length=20,
         unique=True,
@@ -426,7 +442,7 @@ class AtendenteHumano(models.Model):
 
         super().save(*args, **kwargs)
 
-    def clean(self):
+    def clean(self) -> None:
         """
         Validação personalizada do modelo.
 
@@ -437,7 +453,7 @@ class AtendenteHumano(models.Model):
         """
         super().clean()
 
-    def get_atendimentos_ativos(self):
+    def get_atendimentos_ativos(self) -> int:
         """
         Retorna a quantidade de atendimentos ativos do atendente.
 
@@ -452,7 +468,7 @@ class AtendenteHumano(models.Model):
             ]
         ).count()
 
-    def pode_receber_atendimento(self):
+    def pode_receber_atendimento(self) -> bool:
         """
         Verifica se o atendente pode receber um novo atendimento.
 
@@ -468,7 +484,7 @@ class AtendenteHumano(models.Model):
         atendimentos_ativos = self.get_atendimentos_ativos()
         return atendimentos_ativos < self.max_atendimentos_simultaneos
 
-    def adicionar_especialidade(self, especialidade):
+    def adicionar_especialidade(self, especialidade: str) -> None:
         """
         Adiciona uma especialidade à lista de especialidades do atendente.
 
@@ -482,7 +498,7 @@ class AtendenteHumano(models.Model):
             self.especialidades.append(especialidade)
             self.save()
 
-    def remover_especialidade(self, especialidade):
+    def remover_especialidade(self, especialidade: str) -> None:
         """
         Remove uma especialidade da lista de especialidades do atendente.
 
@@ -502,6 +518,7 @@ class Cliente(models.Model):
     telefone, nome e metadados. O telefone é usado como identificador único.
 
     Attributes:
+        id: Chave primária do registro
         telefone: Número de telefone único do cliente (formato internacional)
         nome: Nome do cliente (opcional)
         data_cadastro: Data de cadastro automática
@@ -509,6 +526,10 @@ class Cliente(models.Model):
         ativo: Status de atividade do cliente
         metadados: Informações adicionais em formato JSON
     """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
     telefone: models.CharField = models.CharField(
         max_length=20,
         unique=True,
@@ -613,22 +634,28 @@ class TipoMensagem(models.TextChoices):
     REACAO = 'reactMessage', 'Reação (emoji) a uma mensagem existente'
 
     @classmethod
-    def obter_por_chave_json(cls, chave_json: str):
+    def obter_por_chave_json(cls, chave_json: str | None):
         """
         Retorna o tipo de mensagem baseado na chave JSON recebida.
 
         Args:
-            chave_json (str): Chave JSON do tipo de mensagem (ex: 'extendedTextMessage')
+            chave_json (str | None): Chave JSON do tipo de mensagem (ex: 'extendedTextMessage') ou None
 
         Returns:
-            TipoMensagem: Tipo de mensagem correspondente ou None se não encontrado
+            TipoMensagem | None: Tipo de mensagem correspondente ou None se não encontrado ou se chave_json for None
 
         Examples:
             >>> TipoMensagem.obter_por_chave_json('extendedTextMessage')
             TipoMensagem.TEXTO_FORMATADO
             >>> TipoMensagem.obter_por_chave_json('imageMessage')
             TipoMensagem.IMAGEM
+            >>> TipoMensagem.obter_por_chave_json(None)
+            None
         """
+        # Verifica se chave_json é None
+        if chave_json is None:
+            return None
+
         # Mapeamento direto das chaves JSON para os tipos
         mapeamento = {
             'extendedTextMessage': cls.TEXTO_FORMATADO,
@@ -690,6 +717,7 @@ class Atendimento(models.Model):
     contexto da conversa e metadados associados.
 
     Attributes:
+        id: Chave primária do registro
         cliente: Cliente vinculado ao atendimento
         status: Status atual do atendimento
         data_inicio: Data de início do atendimento
@@ -703,6 +731,10 @@ class Atendimento(models.Model):
         avaliacao: Avaliação do atendimento (1-5)
         feedback: Feedback do cliente
     """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
     cliente: models.ForeignKey = models.ForeignKey(
         Cliente,
         on_delete=models.CASCADE,
@@ -792,7 +824,9 @@ class Atendimento(models.Model):
             self.cliente.telefone} ({
             self.get_status_display()})"
 
-    def finalizar_atendimento(self, novo_status=StatusAtendimento.RESOLVIDO):
+    def finalizar_atendimento(
+            self,
+            novo_status: str = StatusAtendimento.RESOLVIDO) -> None:
         """
         Finaliza o atendimento alterando o status e registrando a data de fim.
 
@@ -804,7 +838,10 @@ class Atendimento(models.Model):
         self.adicionar_historico_status(novo_status, "Atendimento finalizado")
         self.save()
 
-    def adicionar_historico_status(self, novo_status, observacao=""):
+    def adicionar_historico_status(
+            self,
+            novo_status: str,
+            observacao: str = "") -> None:
         """
         Adiciona entrada no histórico de status.
 
@@ -821,7 +858,7 @@ class Atendimento(models.Model):
             'observacao': observacao
         })
 
-    def atualizar_contexto(self, chave, valor):
+    def atualizar_contexto(self, chave: str, valor: Any) -> None:
         """
         Atualiza uma chave no contexto da conversa.
 
@@ -835,7 +872,7 @@ class Atendimento(models.Model):
         self.contexto_conversa[chave] = valor
         self.save()
 
-    def get_contexto(self, chave, padrao=None):
+    def get_contexto(self, chave: str, padrao: Any = None) -> Any:
         """
         Recupera um valor do contexto da conversa.
 
@@ -851,7 +888,9 @@ class Atendimento(models.Model):
 
         return self.contexto_conversa.get(chave, padrao)
 
-    def transferir_para_humano(self, atendente_humano, observacao=""):
+    def transferir_para_humano(self,
+                               atendente_humano: 'AtendenteHumano',
+                               observacao: str = "") -> None:
         """
         Transfere o atendimento para um atendente humano específico.
 
@@ -876,7 +915,7 @@ class Atendimento(models.Model):
         )
         self.save()
 
-    def liberar_atendente_humano(self, observacao=""):
+    def liberar_atendente_humano(self, observacao: str = "") -> None:
         """
         Remove a atribuição do atendente humano do atendimento.
 
@@ -892,6 +931,92 @@ class Atendimento(models.Model):
             )
             self.save()
 
+    def carregar_historico_mensagens(self) -> dict[str, Any]:
+        """
+        Carrega o histórico completo de todas as mensagens do atendimento.
+
+        Returns:
+            dict: Dicionário contendo:
+                - 'conteudo_mensagens': Lista de strings com o conteúdo das mensagens
+                - 'intents_detectados': Set com todos os intents únicos detectados
+                - 'entidades_extraidas': Set com todas as entidades únicas extraídas
+
+        Example:
+            >>> historico = atendimento.carregar_historico_mensagens()
+            >>> print(f"Total de mensagens: {len(historico['conteudo_mensagens'])}")
+            >>> print(f"Intents únicos: {historico['intents_detectados']}")
+            >>> print(f"Entidades únicas: {historico['entidades_extraidas']}")
+        """
+        try:
+            # Busca todas as mensagens do atendimento ordenadas por timestamp
+            # (mais antigas primeiro)
+            mensagens = self.mensagens.all().order_by('timestamp')
+
+            # Inicializa as estruturas de dados
+            conteudo_mensagens = []
+            intents_detectados = set()
+            entidades_extraidas = set()
+
+            # Processa cada mensagem
+            for mensagem in mensagens:
+                # Adiciona conteúdo da mensagem
+                if mensagem.conteudo:
+                    conteudo_mensagens.append(mensagem.conteudo)
+
+                # Adiciona intent se existir
+                if mensagem.intent_detectado:
+                    intents_detectados.add(mensagem.intent_detectado)
+
+                # Processa entidades extraídas
+                if mensagem.entidades_extraidas:
+                    # Espera sempre uma lista de dicionários no formato
+                    # {"tipo": "valor"}
+                    if isinstance(mensagem.entidades_extraidas, list):
+                        for entidade_dict in mensagem.entidades_extraidas:
+                            if isinstance(entidade_dict, dict):
+                                # Formato padrão: {"pessoa": "João Silva"} -
+                                # pega todos os valores
+                                for chave, valor in entidade_dict.items():
+                                    if valor and str(valor).strip():
+                                        entidades_extraidas.add(str(valor))
+                    else:
+                        # Se não é uma lista, loga um aviso
+                        logger.warning(
+                            f"Entidades extraídas da mensagem {
+                                mensagem.id} não está no formato esperado (lista de dicionários): {
+                                type(
+                                    mensagem.entidades_extraidas)}")
+
+            # Remove strings vazias das entidades
+            entidades_extraidas.discard('')
+            entidades_extraidas.discard('None')
+            entidades_extraidas.discard('null')
+
+            resultado = {
+                'conteudo_mensagens': conteudo_mensagens,
+                'intents_detectados': intents_detectados,
+                'entidades_extraidas': entidades_extraidas
+            }
+
+            logger.info(
+                f"Histórico carregado para atendimento {self.id}: "
+                f"{len(conteudo_mensagens)} mensagens, "
+                f"{len(intents_detectados)} intents únicos, "
+                f"{len(entidades_extraidas)} entidades únicas"
+            )
+
+            return resultado
+
+        except Exception as e:
+            logger.error(
+                f"Erro ao carregar histórico de mensagens do atendimento {
+                    self.id}: {e}")
+            return {
+                'conteudo_mensagens': [],
+                'intents_detectados': set(),
+                'entidades_extraidas': set()
+            }
+
 
 class Mensagem(models.Model):
     """
@@ -901,6 +1026,7 @@ class Mensagem(models.Model):
     metadados, tipo de conteúdo e informações de processamento.
 
     Attributes:
+        id: Chave primária do registro
         atendimento: Atendimento ao qual a mensagem pertence
         tipo: Tipo da mensagem (texto, imagem, áudio, etc.)
         conteudo: Conteúdo textual da mensagem
@@ -914,6 +1040,10 @@ class Mensagem(models.Model):
         entidades_extraidas: Entidades extraídas da mensagem
         confianca_resposta: Nível de confiança da resposta do bot
     """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
     atendimento: models.ForeignKey = models.ForeignKey(
         Atendimento,
         on_delete=models.CASCADE,
@@ -966,9 +1096,9 @@ class Mensagem(models.Model):
         help_text="Intent detectado pelo processamento de NLP"
     )
     entidades_extraidas = models.JSONField(
-        default=dict,
+        default=list,
         blank=True,
-        help_text="Entidades extraídas da mensagem"
+        help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})"
     )
     confianca_resposta: models.FloatField = models.FloatField(
         blank=True,
@@ -993,7 +1123,10 @@ class Mensagem(models.Model):
             "..." if len(self.conteudo) > 50 else self.conteudo
         return f"{remetente_display}: {conteudo_preview}"
 
-    def marcar_como_respondida(self, resposta, confianca=None):
+    def marcar_como_respondida(
+            self,
+            resposta: str,
+            confianca: float | None = None) -> None:
         """
         Marca a mensagem como respondida com a resposta fornecida.
 
@@ -1008,7 +1141,7 @@ class Mensagem(models.Model):
         self.save()
 
     @property
-    def is_from_client(self):
+    def is_from_client(self) -> bool:
         """
         Propriedade para compatibilidade com código existente.
 
@@ -1018,7 +1151,7 @@ class Mensagem(models.Model):
         return self.remetente == TipoRemetente.CLIENTE
 
     @property
-    def is_from_bot(self):
+    def is_from_bot(self) -> bool:
         """
         Verifica se a mensagem é do bot.
 
@@ -1028,7 +1161,7 @@ class Mensagem(models.Model):
         return self.remetente == TipoRemetente.BOT
 
     @property
-    def is_from_atendente_humano(self):
+    def is_from_atendente_humano(self) -> bool:
         """
         Verifica se a mensagem é de um atendente humano.
 
@@ -1036,23 +1169,6 @@ class Mensagem(models.Model):
             bool: True se a mensagem é de um atendente humano
         """
         return self.remetente == TipoRemetente.ATENDENTE_HUMANO
-
-    def pode_bot_responder(self):
-        """
-        Verifica se o bot pode responder considerando o histórico de mensagens.
-
-        O bot não deve responder se há mensagens de atendente humano no atendimento.
-
-        Returns:
-            bool: True se o bot pode responder
-        """
-        # Verifica se existe alguma mensagem de atendente humano neste
-        # atendimento
-        mensagens_atendente = self.atendimento.mensagens.filter(
-            remetente=TipoRemetente.ATENDENTE_HUMANO
-        ).exists()
-
-        return not mensagens_atendente
 
 
 class FluxoConversa(models.Model):
@@ -1063,6 +1179,7 @@ class FluxoConversa(models.Model):
     incluindo condições de entrada, estados e transições.
 
     Attributes:
+        id: Chave primária do registro
         nome: Nome único do fluxo de conversa
         descricao: Descrição detalhada do fluxo
         condicoes_entrada: Condições JSON para ativação do fluxo
@@ -1071,6 +1188,10 @@ class FluxoConversa(models.Model):
         data_criacao: Data de criação automática
         data_modificacao: Data de última modificação automática
     """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
     nome: models.CharField = models.CharField(
         max_length=100,
         unique=True,
@@ -1115,10 +1236,12 @@ class FluxoConversa(models.Model):
 
 
 # Função utilitária para inicializar cliente e atendimento
-def inicializar_atendimento_whatsapp(numero_telefone,
-                                     primeira_mensagem="",
-                                     metadata_cliente=None,
-                                     nome_cliente=None):
+def inicializar_atendimento_whatsapp(numero_telefone: str,
+                                     primeira_mensagem: str = "",
+                                     metadata_cliente: dict[str,
+                                                            Any] | None = None,
+                                     nome_cliente: str | None = None) -> tuple['Cliente',
+                                                                               'Atendimento']:
     """
     Inicializa ou recupera um cliente e cria um novo atendimento baseado no número do WhatsApp.
 
@@ -1222,7 +1345,7 @@ def inicializar_atendimento_whatsapp(numero_telefone,
         raise
 
 
-def buscar_atendimento_ativo(numero_telefone):
+def buscar_atendimento_ativo(numero_telefone: str) -> 'Atendimento' | None:
     """
     Busca um atendimento ativo para o número de telefone fornecido.
 
@@ -1263,26 +1386,49 @@ def buscar_atendimento_ativo(numero_telefone):
         return None
 
 
-def nova_mensagem(data):
+def nova_mensagem(data: dict[str, Any]) -> int:
     """
     Processa os dados brutos recebidos do webhook do WhatsApp e cria uma nova mensagem.
 
     Args:
-        data (dict): Dados brutos do webhook do WhatsApp
+        data (dict): Dados brutos do webhook do WhatsApp contendo:
+            - data.key.remoteJid: Identificador do remetente
+            - data.key.id: ID da mensagem
+            - data.message: Objeto da mensagem com tipo específico
 
     Returns:
         int: ID da mensagem criada
 
     Raises:
+        ValueError: Se campos obrigatórios estiverem ausentes
         Exception: Se houver erro durante o processamento
     """
     try:
-        # Extrair informações básicas
-        phone = data.get('data').get('key').get('remoteJid').split('@')[0]
-        message_id = data.get('data').get('key').get('id')
+        # Extrair informações básicas com verificações de segurança
+        data_section = data.get('data')
+        if not data_section:
+            raise ValueError(
+                "Campo 'data' não encontrado no payload do webhook")
+
+        key_section = data_section.get('key')
+        if not key_section:
+            raise ValueError("Campo 'key' não encontrado nos dados do webhook")
+
+        remote_jid = key_section.get('remoteJid')
+        if not remote_jid:
+            raise ValueError(
+                "Campo 'remoteJid' não encontrado na chave do webhook")
+
+        phone = remote_jid.split('@')[0]
+        message_id = key_section.get('id')
 
         # Obter a primeira chave do message (tipo de mensagem)
-        message_keys = data.get('data').get('message').keys()
+        message_section = data_section.get('message')
+        if not message_section:
+            raise ValueError(
+                "Campo 'message' não encontrado nos dados do webhook")
+
+        message_keys = message_section.keys()
         tipo_chave = list(message_keys)[0] if message_keys else None
 
         # Converter chave JSON para tipo de mensagem interno
@@ -1293,7 +1439,7 @@ def nova_mensagem(data):
         metadados = {}
 
         if tipo_chave:
-            message_data = data.get('data').get('message').get(tipo_chave, {})
+            message_data = message_section.get(tipo_chave, {})
 
             if tipo_mensagem == TipoMensagem.TEXTO_FORMATADO:
                 conteudo = message_data.get('text', '')
@@ -1389,12 +1535,12 @@ def nova_mensagem(data):
 
 
 def processar_mensagem_whatsapp(
-        numero_telefone,
-        conteudo,
-        tipo_mensagem=TipoMensagem.TEXTO_FORMATADO,
-        message_id=None,
-        metadados=None,
-        remetente=None):
+        numero_telefone: str,
+        conteudo: str,
+        tipo_mensagem: 'TipoMensagem' = TipoMensagem.TEXTO_FORMATADO,
+        message_id: str | None = None,
+        metadados: dict[str, Any] | None = None,
+        remetente: 'TipoRemetente' | None = None) -> int:
     """
     Processa uma mensagem recebida do WhatsApp.
 
@@ -1466,7 +1612,9 @@ def processar_mensagem_whatsapp(
         raise
 
 
-def buscar_atendente_disponivel(especialidades=None, departamento=None):
+def buscar_atendente_disponivel(
+        especialidades: list[str] | None = None,
+        departamento: str | None = None) -> 'AtendenteHumano' | None:
     """
     Busca um atendente humano disponível para receber um novo atendimento.
 
@@ -1514,9 +1662,9 @@ def buscar_atendente_disponivel(especialidades=None, departamento=None):
 
 
 def transferir_atendimento_automatico(
-        atendimento,
-        especialidades=None,
-        departamento=None):
+        atendimento: 'Atendimento',
+        especialidades: list[str] | None = None,
+        departamento: str | None = None) -> 'AtendenteHumano' | None:
     """
     Transfere automaticamente um atendimento para um atendente humano disponível.
 
@@ -1561,7 +1709,8 @@ def transferir_atendimento_automatico(
         raise
 
 
-def listar_atendentes_por_disponibilidade():
+def listar_atendentes_por_disponibilidade(
+) -> dict[str, list['AtendenteHumano']]:
     """
     Lista todos os atendentes agrupados por disponibilidade.
 
@@ -1571,7 +1720,7 @@ def listar_atendentes_por_disponibilidade():
     try:
         atendentes = AtendenteHumano.objects.filter(ativo=True)
 
-        resultado = {
+        resultado: dict[str, list[dict[str, Any]]] = {
             'disponiveis': [],
             'ocupados': [],
             'indisponiveis': []
@@ -1604,11 +1753,11 @@ def listar_atendentes_por_disponibilidade():
 
 
 def enviar_mensagem_atendente(
-        atendimento,
-        atendente_humano,
-        conteudo,
-        tipo_mensagem=TipoMensagem.TEXTO_FORMATADO,
-        metadados=None):
+        atendimento: 'Atendimento',
+        atendente_humano: 'AtendenteHumano',
+        conteudo: str,
+        tipo_mensagem: 'TipoMensagem' = TipoMensagem.TEXTO_FORMATADO,
+        metadados: dict[str, Any] | None = None) -> 'Mensagem':
     """
     Envia uma mensagem de um atendente humano para um atendimento.
 

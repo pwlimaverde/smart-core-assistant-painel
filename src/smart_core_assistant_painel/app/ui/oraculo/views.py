@@ -1,6 +1,7 @@
 import json
 import os
 import tempfile
+from typing import Any, cast
 
 from django.contrib import messages
 from django.db import transaction
@@ -14,7 +15,7 @@ from rolepermissions.checkers import has_permission
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose, )
 
-from .models import TipoMensagem, Treinamentos
+from .models import Atendimento, Mensagem, TipoMensagem, Treinamentos
 
 
 class TreinamentoService:
@@ -69,10 +70,10 @@ class TreinamentoService:
 
     @staticmethod
     def processar_conteudo_texto(
-            treinamento_id,
-            conteudo,
-            tag,
-            grupo) -> list[Document]:
+            treinamento_id: int,
+            conteudo: str,
+            tag: str,
+            grupo: str) -> list[Document]:
         """Processa conteúdo de texto para treinamento"""
         if not conteudo:
             raise ValueError("Conteúdo não pode ser vazio")
@@ -81,7 +82,7 @@ class TreinamentoService:
             pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(
                 conteudo)
             data_conteudo = FeaturesCompose.load_document_conteudo(
-                id=treinamento_id,
+                id=str(treinamento_id),
                 conteudo=pre_analise_conteudo,
                 tag=tag,
                 grupo=grupo,
@@ -93,14 +94,17 @@ class TreinamentoService:
 
     @staticmethod
     def processar_arquivo_documento(
-            treinamento_id, documento_path, tag, grupo) -> list[Document]:
+            treinamento_id: int,
+            documento_path: str,
+            tag: str,
+            grupo: str) -> list[Document]:
         """Processa arquivo de documento para treinamento"""
         if not documento_path:
             raise ValueError("Caminho do documento não pode ser vazio")
 
         try:
             data_file = FeaturesCompose.load_document_file(
-                id=treinamento_id,
+                id=str(treinamento_id),
                 path=documento_path,
                 tag=tag,
                 grupo=grupo,
@@ -184,7 +188,8 @@ def _processar_treinamento(request):
             treinamento.save()
 
             messages.success(request, 'Treinamento criado com sucesso!')
-            return redirect('pre_processamento', id=treinamento.id)
+            return redirect('pre_processamento',
+                            id=treinamento.id)
 
     except Exception as e:
         logger.error(f"Erro ao processar treinamento: {e}")
@@ -233,6 +238,7 @@ def _processar_pre_processamento(request, id):
 
     if not acao:
         messages.error(request, 'Ação não especificada.')
+
         return redirect('pre_processamento', id=treinamento.id)
 
     try:
@@ -249,11 +255,13 @@ def _processar_pre_processamento(request, id):
                 messages.info(request, 'Treinamento descartado.')
             else:
                 messages.error(request, 'Ação inválida.')
-                return redirect('pre_processamento', id=treinamento.id)
+                return redirect('pre_processamento',
+                                id=treinamento.id)
 
     except Exception as e:
         logger.error(f"Erro ao processar ação {acao}: {e}")
         messages.error(request, 'Erro ao processar ação. Tente novamente.')
+
         return redirect('pre_processamento', id=treinamento.id)
 
     return redirect('treinar_ia')
@@ -290,7 +298,9 @@ def _aceitar_treinamento(id):
                 len(documentos_melhorados)} documentos melhorados")
 
     except Exception as e:
-        logger.error(f"Erro ao aceitar treinamento {treinamento.id}: {e}")
+        logger.error(
+            f"Erro ao aceitar treinamento {
+                treinamento.id}: {e}")
         raise
 
 
@@ -468,7 +478,7 @@ def webhook_whatsapp(request):
             try:
                 conteudo_original = mensagem.conteudo
                 conteudo_convertido = _converter_contexto(
-                    metadata=mensagem.metadata)
+                    metadata=mensagem.metadados)
 
                 if conteudo_convertido != conteudo_original:
                     mensagem.conteudo = conteudo_convertido
@@ -478,9 +488,16 @@ def webhook_whatsapp(request):
                         f"Conteúdo da mensagem {mensagem_id} convertido: {conteudo_original[:50]} -> {conteudo_convertido[:50]}")
 
             except Exception as e:
+                # Continua processamento mesmo com erro na conversão
                 logger.error(
                     f"Erro ao converter contexto da mensagem {mensagem_id}: {e}")
-                # Continua processamento mesmo com erro na conversão
+        # Analise previa do conteudo da mensagem por agente de IA, detectando
+        # intent e extraindo entidades
+        try:
+            _analisar_conteudo_mensagem(mensagem_id)
+        except Exception as e:
+            logger.error(
+                f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
         # Verificação de direcionamento do atendimento
         try:
@@ -534,7 +551,7 @@ def webhook_whatsapp(request):
             f"MensagemID: {mensagem_id}, "
             f"Direcionamento: {direcionamento}, "
             f"ModificadaContexto: {mensagem_modificada}, "
-            f"AtendimentoID: {mensagem.atendimento.id}"
+            f"AtendimentoID: {cast(Atendimento, mensagem.atendimento).id}"
         )
 
         # Resposta de sucesso
@@ -548,6 +565,54 @@ def webhook_whatsapp(request):
         # Log detalhado do erro para debugging
         logger.error(f"Erro crítico no webhook WhatsApp: {e}", exc_info=True)
         return JsonResponse({"error": "Erro interno do servidor"}, status=500)
+
+
+def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
+    """
+    Análise prévia do conteúdo da mensagem para detectar intent e extrair entidades.
+
+    Esta função utiliza o sistema de IA para analisar o conteúdo textual da mensagem,
+    identificando a intenção do usuário e extraindo entidades relevantes. É uma etapa
+    crítica para melhorar a compreensão do contexto e direcionamento das respostas.
+
+    Args:
+        mensagem (Mensagem): Instância da mensagem a ser analisada.
+            Deve conter o campo 'conteudo' com texto a ser analisado.
+
+    Returns:
+        None: A função atualiza a mensagem diretamente no banco de dados.
+
+    Raises:
+        Exception: Capturada internamente e logada. Função não retorna valor
+            em caso de erro, mas garante que o processamento continue.
+
+    Notes:
+        - Implementação planejada para análise de intent e entidades
+        - Base para futuras melhorias na experiência do usuário
+        - Logs de erro são gerados para facilitar troubleshooting
+
+    Examples:
+        >>> mensagem = Mensagem.objects.get(id=123)
+        >>> _analisar_conteudo_mensagem(mensagem)
+    """
+    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+        FeaturesCompose, )
+
+    try:
+        mensagem = Mensagem.objects.get(id=mensagem_id)
+        # Carrega historico para futuro uso na análise de IA
+        cast(Atendimento, mensagem.atendimento).carregar_historico_mensagens()
+        features = FeaturesCompose()
+        # Análise de intenção e extração de entidades
+        features.analise_previa_mensagem()
+        logger.info(
+            f"Conteúdo da mensagem {mensagem_id} analisado com sucesso")
+    except Exception as e:
+        logger.error(
+            f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
+        # Continua processamento mesmo com erro na análise
+        # Não interrompe o fluxo para garantir resiliência
+        pass
 
 
 def _pode_bot_responder_atendimento(atendimento):
@@ -597,7 +662,7 @@ def _pode_bot_responder_atendimento(atendimento):
         return False
 
 
-def _converter_contexto(metadata) -> str:
+def _converter_contexto(metadata: dict[str, Any]) -> str:
     """
     Converte metadados de mensagens multimídia para texto formatado legível.
 

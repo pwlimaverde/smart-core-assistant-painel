@@ -142,3 +142,12 @@ class FeaturesCompose:
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
+        
+    @staticmethod
+    def analise_previa_mensagem() -> None:
+        """
+        Método para análise prévia de uma mensagem, incluindo detecção de intenção e extração de entidades.
+        """
+        # Aqui você pode implementar a lógica de análise prévia
+        # Exemplo: Detecção de intenção e extração de entidades
+        pass

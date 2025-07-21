@@ -20,6 +20,9 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             parameters: AnalisePreviaMensagemParameters) -> AnalisePreviaMensagemLangchain:
 
         try:
+            # Extrair tipos de intents e entities dos parâmetros
+            entity_types = parameters.valid_entity_types
+            intent_types = parameters.valid_intent_types
             # Processar histórico do atendimento
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento

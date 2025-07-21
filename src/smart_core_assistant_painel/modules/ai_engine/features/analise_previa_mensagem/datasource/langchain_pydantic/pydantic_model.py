@@ -311,7 +311,3 @@ class PydanticModel(BaseModel):
 
     def get_entities_by_type(self, tipo: EntityType) -> List[str]:
         return [item.value for item in self.entities if item.type == tipo]
-
-
-# Alias para compatibilidade com o código existente
-AnalisePreviaMensagemLangchain = PydanticModel

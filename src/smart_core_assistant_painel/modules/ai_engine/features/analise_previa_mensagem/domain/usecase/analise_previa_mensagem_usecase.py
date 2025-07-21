@@ -30,9 +30,13 @@ class AnalisePreviaMensagemUsecase(APMUsecase):
                 # Verificar se o resultado tem os atributos necessários
                 result = data.result
 
-                # Converter objetos Pydantic para dicionários
-                intent_dicts = [item.model_dump() for item in result.intent]
-                entity_dicts = [item.model_dump() for item in result.entities]
+                # Converter objetos Pydantic para dicionários com formato personalizado
+                # De: {'type': 'cotacao', 'value': 'texto'}
+                # Para: {'cotacao': 'texto'}
+                intent_dicts = [{item.type: item.value}
+                                for item in result.intent]
+                entity_dicts = [{item.type: item.value}
+                                for item in result.entities]
 
                 tuple_result = APMTuple(
                     intent_types=intent_dicts,

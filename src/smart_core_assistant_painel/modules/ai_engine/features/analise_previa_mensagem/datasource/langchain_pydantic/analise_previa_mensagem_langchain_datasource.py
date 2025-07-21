@@ -5,8 +5,8 @@ from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
     AnalisePreviaMensagemLangchain, )
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model import (
-    PydanticModel, )
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
+    create_dynamic_pydantic_model, )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
@@ -20,9 +20,12 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             parameters: AnalisePreviaMensagemParameters) -> AnalisePreviaMensagemLangchain:
 
         try:
-            # Extrair tipos de intents e entities dos parâmetros
-            entity_types = parameters.valid_entity_types
-            intent_types = parameters.valid_intent_types
+            # Criar modelo PydanticModel dinâmico baseado nos parâmetros
+            PydanticModel = create_dynamic_pydantic_model(
+                intent_types_json=parameters.valid_intent_types,
+                entity_types_json=parameters.valid_entity_types
+            )
+
             # Processar histórico do atendimento
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
@@ -56,7 +59,8 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
 
             response = chain.invoke(invoke_data)
 
-            if isinstance(response, PydanticModel):
+            # Verificar se a resposta é uma instância do modelo dinâmico
+            if hasattr(response, 'intent') and hasattr(response, 'entities'):
                 # Converter PydanticModel para AnalisePreviaMensagem
                 # Extrair intent como lista de dicionários {tipo: valor}
                 intent_dicts = [{str(item.type): item.value}
@@ -76,7 +80,7 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             else:
                 raise ValueError(
                     f"Resposta inesperada: {
-                        type(response)}. Esperado: PydanticModel")
+                        type(response)}. Esperado: PydanticModel dinâmico")
 
         except Exception as e:
             logger.error(f"Erro ao processar análise prévia: {e}")

@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, List, Type, Union
+from typing import List, Type
 
 from pydantic import BaseModel, Field
 
@@ -11,24 +11,20 @@ class PydanticModelFactory:
     """
 
     @staticmethod
-    def _extract_types_from_json(
-            types_json: Union[str, Dict[str, Any]]) -> List[str]:
+    def _extract_types_from_json(types_json: str) -> List[str]:
         """
         Extrai os tipos individuais de um JSON de configuração.
 
         Args:
-            types_json: JSON string ou dict com a estrutura de tipos
+            types_json: JSON string com a estrutura de tipos
 
         Returns:
             Lista com todos os tipos disponíveis
         """
-        if isinstance(types_json, str):
-            try:
-                data = json.loads(types_json)
-            except json.JSONDecodeError:
-                return []
-        else:
-            data = types_json
+        try:
+            data = json.loads(types_json)
+        except json.JSONDecodeError:
+            return []
 
         types_list: List[str] = []
 
@@ -46,24 +42,21 @@ class PydanticModelFactory:
 
     @staticmethod
     def _generate_documentation_section(
-            types_json: Union[str, Dict[str, Any]], section_title: str) -> str:
+            types_json: str, section_title: str) -> str:
         """
         Gera uma seção da documentação baseada no JSON de configuração.
 
         Args:
-            types_json: JSON string ou dict com a estrutura de tipos
+            types_json: JSON string com a estrutura de tipos
             section_title: Título da seção (ex: "INTENTS", "ENTITIES")
 
         Returns:
             String formatada com a documentação da seção
         """
-        if isinstance(types_json, str):
-            try:
-                data = json.loads(types_json)
-            except json.JSONDecodeError:
-                return f"       {section_title}: Erro ao processar configuração\n"
-        else:
-            data = types_json
+        try:
+            data = json.loads(types_json)
+        except json.JSONDecodeError:
+            return f"       {section_title}: Erro ao processar configuração\n"
 
         documentation = f"    {section_title}:\n"
 
@@ -87,8 +80,8 @@ class PydanticModelFactory:
         return documentation
 
     @staticmethod
-    def _generate_examples_section(intent_types_json: Union[str, Dict[str, Any]],
-                                   entity_types_json: Union[str, Dict[str, Any]]) -> str:
+    def _generate_examples_section(intent_types_json: str,
+                                   entity_types_json: str) -> str:
         """
         Gera a seção de exemplos da documentação.
 
@@ -138,18 +131,14 @@ class PydanticModelFactory:
 
     @classmethod
     def create_pydantic_model(cls,
-                              intent_types_json: Union[str,
-                                                       Dict[str,
-                                                            Any]],
-                              entity_types_json: Union[str,
-                                                       Dict[str,
-                                                            Any]]) -> Type[BaseModel]:
+                              intent_types_json: str,
+                              entity_types_json: str) -> Type[BaseModel]:
         """
         Cria dinamicamente uma classe PydanticModel baseada nas configurações JSON.
 
         Args:
-            intent_types_json: JSON ou dict com os tipos de intent
-            entity_types_json: JSON ou dict com os tipos de entity
+            intent_types_json: JSON com os tipos de intent
+            entity_types_json: JSON com os tipos de entity
 
         Returns:
             Classe PydanticModel gerada dinamicamente
@@ -211,21 +200,21 @@ class PydanticModelFactory:
         return PydanticModel
 
 
-def create_dynamic_pydantic_model(intent_types_json: Union[str, Dict[str, Any]],
-                                  entity_types_json: Union[str, Dict[str, Any]]) -> Type[BaseModel]:
+def create_dynamic_pydantic_model(intent_types_json: str,
+                                  entity_types_json: str) -> Type[BaseModel]:
     """
     Função utilitária para criar uma PydanticModel dinâmica.
 
     Args:
-        intent_types_json: JSON ou dict com os tipos de intent
-        entity_types_json: JSON ou dict com os tipos de entity
+        intent_types_json: JSON com os tipos de intent
+        entity_types_json: JSON com os tipos de entity
 
     Returns:
         Classe PydanticModel gerada dinamicamente
 
     Example:
-        >>> intent_json = {"comunicacao_basica": {"saudacao": "cumprimentos"}}
-        >>> entity_json = {"identificacao_pessoal": {"cliente": "nome do cliente"}}
+        >>> intent_json = '{"comunicacao_basica": {"saudacao": "cumprimentos"}}'
+        >>> entity_json = '{"identificacao_pessoal": {"cliente": "nome do cliente"}}'
         >>> Model = create_dynamic_pydantic_model(intent_json, entity_json)
         >>> instance = Model(intent=[{"type": "saudacao", "value": "Olá"}], entities=[])
     """

@@ -1,7 +1,8 @@
 from abc import ABC
+from dataclasses import dataclass
 from typing import Any
 
-
+@dataclass
 class AnalisePreviaMensagem(ABC):
     """Interface para análise prévia de mensagens.
 

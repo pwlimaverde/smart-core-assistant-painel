@@ -5,6 +5,8 @@ from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
     AnalisePreviaMensagemLangchain, )
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model import (
+    PydanticModel, )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
@@ -37,7 +39,7 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
 
             # Aplicar structured output diretamente no LLM
             structured_llm = llm.with_structured_output(
-                AnalisePreviaMensagemLangchain, method="function_calling")
+                PydanticModel, method="function_calling")
 
             # Chain com LLM estruturado
             chain = messages | structured_llm
@@ -49,38 +51,29 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
                 'historico_context': historico_formatado,
             }
 
-            # Debug: Log dos dados de entrada
-            logger.debug(f"Prompt System: {prompt_system_escaped}")
-            logger.debug(
-                f"Prompt Human: {
-                    parameters.llm_parameters.prompt_human}")
-            logger.debug(f"Context: {parameters.llm_parameters.context}")
-            logger.debug(f"Histórico formatado: {historico_formatado}")
-            logger.debug(f"Invoke data: {invoke_data}")
-
             response = chain.invoke(invoke_data)
 
-            logger.debug(
-                f"Resposta da chain: {response} tipo: {
-                    type(response)}")
+            if isinstance(response, PydanticModel):
+                # Converter PydanticModel para AnalisePreviaMensagem
+                # Extrair intent como lista de dicionários {tipo: valor}
+                intent_dicts = [{str(item.type): item.value}
+                                for item in response.intent]
 
-            # Debug adicional: verificar conteúdo das listas
-            if hasattr(response, 'intent'):
-                logger.debug(
-                    f"Intent encontrados: {len(response.intent)} itens: {response.intent}")
-            if hasattr(response, 'entities'):
-                logger.debug(
-                    f"Entities encontradas: {len(response.entities)} itens: {response.entities}")
+                # Extrair entities como lista de dicionários {tipo: valor}
+                entity_dicts = [{str(item.type): item.value}
+                                for item in response.entities]
 
-            if isinstance(response, AnalisePreviaMensagemLangchain):
-                return response
+                # Criar instância de AnalisePreviaMensagem
+                resultado = AnalisePreviaMensagemLangchain(
+                    intent=intent_dicts,
+                    entities=entity_dicts
+                )
+
+                return resultado
             else:
-                logger.warning(
-                    f"Resposta não é AnalisePreviaMensagemLangchain: {
-                        type(response)}")
                 raise ValueError(
                     f"Resposta inesperada: {
-                        type(response)}. Esperado: AnalisePreviaMensagemLangchain")
+                        type(response)}. Esperado: PydanticModel")
 
         except Exception as e:
             logger.error(f"Erro ao processar análise prévia: {e}")

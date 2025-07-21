@@ -47,8 +47,6 @@ class TreinamentoService:
                 # Mantém documento original em caso de erro
                 documentos_processados.append(documento)
 
-        logger.debug(
-            f"Pré-análise aplicada em {len(documentos_processados)} documentos")
         return documentos_processados
 
     @staticmethod
@@ -273,29 +271,15 @@ def _aceitar_treinamento(id):
         # Processa documentos - agora sempre será uma lista (JSONField)
         treinamento = Treinamentos.objects.get(id=id)
         documentos_lista = treinamento.get_documentos()
-        logger.debug(
-            f"Processando documentos_lista {
-                len(documentos_lista)} documentos {documentos_lista}")
         if not documentos_lista:
-            logger.warning(
-                f"Nenhum documento encontrado para treinamento {
-                    treinamento.id}")
             return
 
         documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
             documentos_lista)
-        logger.debug(
-            f"Processando documentos_melhorados {
-                len(documentos_melhorados)} documentos {documentos_melhorados}")
         # Salva alterações
         treinamento.set_documentos(documentos_melhorados)
         treinamento.treinamento_finalizado = True
         treinamento.save()
-
-        logger.info(
-            f"Treinamento {
-                treinamento.id} aceito com {
-                len(documentos_melhorados)} documentos melhorados")
 
     except Exception as e:
         logger.error(
@@ -413,20 +397,12 @@ def webhook_whatsapp(request):
     """
     from .models import Mensagem, nova_mensagem
 
-    # Logging de entrada para auditoria
-    logger.info(
-        f"Webhook WhatsApp recebido - Method: {request.method}, Content-Type: {request.content_type}")
-
     try:
         # Validação básica da requisição
         if request.method != 'POST':
-            logger.warning(
-                f"Método HTTP inválido para webhook: {
-                    request.method}")
             return JsonResponse({"error": "Método não permitido"}, status=405)
 
         if not request.body:
-            logger.warning("Corpo da requisição vazio")
             return JsonResponse(
                 {"error": "Corpo da requisição vazio"}, status=400)
 
@@ -439,7 +415,6 @@ def webhook_whatsapp(request):
 
         # Validação dos campos obrigatórios
         if not isinstance(data, dict):
-            logger.error("Dados do webhook não são um dicionário válido")
             return JsonResponse(
                 {"error": "Formato de dados inválido"}, status=400)
 
@@ -448,16 +423,9 @@ def webhook_whatsapp(request):
         # if not _validar_api_key(api_key):
         #     return JsonResponse({"error": "API key inválida"}, status=401)
 
-        # Logging dos dados recebidos (sem dados sensíveis)
-        event_type = data.get('event', 'N/A')
-        instance = data.get('instance', 'N/A')
-        logger.info(
-            f"Processando webhook - Event: {event_type}, Instance: {instance}")
-
         # Processar mensagem usando função nova_mensagem
         try:
             mensagem_id = nova_mensagem(data)
-            logger.info(f"Mensagem criada com sucesso. ID: {mensagem_id}")
         except Exception as e:
             logger.error(f"Erro ao processar nova mensagem: {e}")
             return JsonResponse(
@@ -473,7 +441,6 @@ def webhook_whatsapp(request):
                 {"error": "Mensagem não encontrada"}, status=500)
 
         # Processamento especial para mensagens não textuais
-        mensagem_modificada = False
         if mensagem.tipo != TipoMensagem.TEXTO_FORMATADO:
             try:
                 conteudo_original = mensagem.conteudo
@@ -483,9 +450,6 @@ def webhook_whatsapp(request):
                 if conteudo_convertido != conteudo_original:
                     mensagem.conteudo = conteudo_convertido
                     mensagem.save(update_fields=['conteudo'])
-                    mensagem_modificada = True
-                    logger.info(
-                        f"Conteúdo da mensagem {mensagem_id} convertido: {conteudo_original[:50]} -> {conteudo_convertido[:50]}")
 
             except Exception as e:
                 # Continua processamento mesmo com erro na conversão
@@ -505,9 +469,6 @@ def webhook_whatsapp(request):
                 mensagem.atendimento)
             direcionamento = "BOT" if is_bot_responder else "HUMANO"
 
-            logger.info(
-                f"Direcionamento definido para mensagem {mensagem_id}: {direcionamento}")
-
             if is_bot_responder:
                 # TODO: Implementar geração de resposta automática do bot
                 # Esta é uma funcionalidade crítica que deve ser implementada
@@ -523,19 +484,10 @@ def webhook_whatsapp(request):
                 # except Exception as e:
                 #     logger.error(f"Erro ao gerar resposta automática: {e}")
 
-                logger.info(
-                    f"Bot pode responder automaticamente para mensagem ID: {mensagem_id}")
+                pass
             else:
                 # Mensagem direcionada para atendente humano
-                atendente_responsavel = getattr(
-                    mensagem.atendimento, 'atendente_humano', None)
-                if atendente_responsavel:
-                    logger.info(
-                        f"Mensagem {mensagem_id} direcionada para atendente: {
-                            atendente_responsavel.nome}")
-                else:
-                    logger.info(
-                        f"Mensagem {mensagem_id} direcionada para triagem de atendente humano")
+                pass
 
         except Exception as e:
             logger.error(
@@ -544,15 +496,6 @@ def webhook_whatsapp(request):
             # segurança
             is_bot_responder = False
             direcionamento = "HUMANO (por erro)"
-
-        # Log de sucesso completo
-        logger.info(
-            f"Webhook processado com sucesso - "
-            f"MensagemID: {mensagem_id}, "
-            f"Direcionamento: {direcionamento}, "
-            f"ModificadaContexto: {mensagem_modificada}, "
-            f"AtendimentoID: {cast(Atendimento, mensagem.atendimento).id}"
-        )
 
         # Resposta de sucesso
         return JsonResponse({
@@ -606,45 +549,26 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
             Atendimento, mensagem.atendimento).carregar_historico_mensagens(
                 excluir_mensagem_id=mensagem_id
         )
-        logger.info(f"Iniciando análise prévia para mensagem {mensagem_id}")
 
         # Análise de intenção e extração de entidades
         resultado_analise = features.analise_previa_mensagem(
             historico_atendimento=historico_atendimento,
             context=mensagem.conteudo)
 
-        logger.info(f"Resultado análise tipo: {type(resultado_analise)}")
-        logger.info(
-            f"Resultado análise hasattr intent_types: {
-                hasattr(
-                    resultado_analise,
-                    'intent_types')}")
-        logger.info(
-            f"Resultado análise hasattr entity_types: {
-                hasattr(
-                    resultado_analise,
-                    'entity_types')}")
-
         # Extrair dados do APMTuple corretamente
         try:
-            intent_types = resultado_analise.intent_types
-            logger.info(f"Intent types extraído com sucesso: {intent_types}")
+            resultado_analise.intent_types
+            logger.info(
+                f"Intent types detectados: {resultado_analise.intent_types}")
         except Exception as e:
             logger.error(f"Erro ao acessar intent_types: {e}")
-            intent_types = []
 
         try:
-            entity_types = resultado_analise.entity_types
-            logger.info(f"Entity types extraído com sucesso: {entity_types}")
+            resultado_analise.entity_types
+            logger.info(
+                f"Entity types detectados: {resultado_analise.entity_types}")
         except Exception as e:
             logger.error(f"Erro ao acessar entity_types: {e}")
-            entity_types = []
-
-        logger.info(f"Conteúdo da mensagem: {mensagem.conteudo}")
-        logger.info(
-            f"Historico da mensagem (sem atual): {historico_atendimento}")
-        logger.info(f"Tipos de entidades detectados: {entity_types}")
-        logger.info(f"Tipos de intenções detectados: {intent_types}")
 
     except Exception as e:
         logger.error(
@@ -895,10 +819,8 @@ def _validar_api_key(api_key: str) -> bool:
     # )
 
     if not api_key:
-        logger.warning("Tentativa de acesso com API key vazia")
         return False
 
     # Implementação temporária para desenvolvimento
     # Em produção, substituir por validação real
-    logger.debug(f"API key recebida: {api_key[:8]}... (validação temporária)")
     return True

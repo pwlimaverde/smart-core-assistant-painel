@@ -8,7 +8,6 @@ from py_return_success_or_error import (
     UsecaseBaseCallData,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem, )
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
@@ -49,10 +48,10 @@ class APMTuple(NamedTuple):
 
 APMUsecase: TypeAlias = UsecaseBaseCallData[
     APMTuple,
-    AnalisePreviaMensagemLangchain,
+    AnalisePreviaMensagem,
     AnalisePreviaMensagemParameters,
 ]
-APMData: TypeAlias = Datasource[AnalisePreviaMensagemLangchain,
+APMData: TypeAlias = Datasource[AnalisePreviaMensagem,
                                 AnalisePreviaMensagemParameters]
 
 LDFUsecase: TypeAlias = UsecaseBaseCallData[

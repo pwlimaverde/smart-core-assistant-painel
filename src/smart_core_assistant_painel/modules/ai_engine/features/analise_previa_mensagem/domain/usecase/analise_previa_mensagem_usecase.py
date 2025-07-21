@@ -27,30 +27,21 @@ class AnalisePreviaMensagemUsecase(APMUsecase):
             )
 
             if isinstance(data, SuccessReturn):
-                # Verificar se o resultado tem os atributos necessários
+                # Verificar se o resultado é uma instância de
+                # AnalisePreviaMensagem
                 result = data.result
 
-                # Converter objetos Pydantic para dicionários com formato personalizado
-                # De: {'type': 'cotacao', 'value': 'texto'}
-                # Para: {'cotacao': 'texto'}
-                intent_dicts = [{item.type: item.value}
-                                for item in result.intent]
-                entity_dicts = [{item.type: item.value}
-                                for item in result.entities]
-
+                # Converter AnalisePreviaMensagem para APMTuple
+                # Os dados já estão no formato correto: lista de dicionários
+                # {tipo: valor}
                 tuple_result = APMTuple(
-                    intent_types=intent_dicts,
-                    entity_types=entity_dicts
+                    intent_types=result.intent,
+                    entity_types=result.entities
                 )
-
                 return SuccessReturn(success=tuple_result)
             elif isinstance(data, ErrorReturn):
-                logger.error(
-                    f'🚨 USECASE: ErrorReturn: {
-                        data.result}')
                 return ErrorReturn(data.result)
             else:
-                logger.error(f'🚨 USECASE: Tipo inesperado: {type(data)}')
                 return ErrorReturn(parameters.error)
         except Exception as e:
             error = parameters.error

@@ -119,13 +119,26 @@ class PydanticModelFactory:
         {"type": "status_pedido", "value": "atrasado"}
       ]
 
-    REGRA IMPORTANTE:
-    - SEMPRE extraia nomes próprios como entidade "cliente", mesmo quando a pessoa se apresenta
+    EXEMPLO 3: "Isso mesmo" (sem contexto histórico suficiente)
+    - intent: []
+    - entities: []
+
+    EXEMPLO 4: "Perfeito!" (com histórico sobre agendamento para "amanhã às 14h")
+    - intent: [
+        {"type": "confirmacao", "value": "Perfeito!"}
+      ]
+    - entities: [
+        {"type": "data", "value": "amanhã"},
+        {"type": "horario", "value": "14h"}
+      ]
+
+    REGRAS IMPORTANTES:
+    - Extraia nomes próprios como entidade "cliente" quando mencionados
     - A intenção "apresentacao" captura o ATO de se apresentar
     - A entidade "cliente" captura o NOME mencionado
-    - Ambos podem coexistir na mesma mensagem
-
-    IMPORTANTE: NUNCA retorne listas vazias. Sempre identifique pelo menos uma intenção.
+    - Use o histórico para resolver referências implícitas quando o contexto for claro
+    - É PERFEITAMENTE NORMAL retornar listas vazias quando não há identificações claras
+    - Seja conservador: prefira precisão a recall
         '''
         return examples
 
@@ -146,7 +159,7 @@ class PydanticModelFactory:
         # Gerar documentação dinamicamente
         intent_docs = cls._generate_documentation_section(
             intent_types_json,
-            "1. INTENTS (intenções do usuário) - SEMPRE identifique pelo menos uma")
+            "1. INTENTS (intenções do usuário) - identifique quando presentes")
         entity_docs = cls._generate_documentation_section(
             entity_types_json,
             "2. ENTITIES (informações específicas) - extraia quando presentes")
@@ -155,7 +168,10 @@ class PydanticModelFactory:
 
         # Documentação completa
         full_documentation = f'''
-    Analise a mensagem do cliente e extraia intents e entities relevantes.
+    Analise a mensagem do cliente considerando o histórico fornecido e extraia intents e entities relevantes.
+
+    PRINCÍPIO FUNDAMENTAL: Seja conservador e preciso. É perfeitamente normal retornar listas vazias
+    quando não há identificações claras. Prefira precisão a recall.
 
     INSTRUÇÕES PARA ANÁLISE:
 {intent_docs}
@@ -178,11 +194,10 @@ class PydanticModelFactory:
 
             intent: List[IntentItem] = Field(
                 default_factory=list,
-                description="Lista de intenções extraídas da mensagem - NUNCA vazia")
+                description="Lista de intenções extraídas da mensagem - pode ser vazia quando não identificadas claramente")
             entities: List[EntityItem] = Field(
                 default_factory=list,
-                description="Lista de entidades extraídas da mensagem"
-            )
+                description="Lista de entidades extraídas da mensagem - pode ser vazia quando não identificadas")
 
             def add_intent(self, tipo: str, conteudo: str) -> None:
                 self.intent.append(IntentItem(type=tipo, value=conteudo))

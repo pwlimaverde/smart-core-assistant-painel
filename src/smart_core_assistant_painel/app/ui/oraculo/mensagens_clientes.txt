@@ -1,0 +1,74 @@
+Olá, tudo bem? meu nome é Paulo, gostaria de uma cotação de uma embalagem, vocês produzem cones para crepe?
+intent:
+# Tipos válidos de intents com suas descrições
+    VALID_INTENT_TYPES = {
+        # Comunicação básica
+        "saudacao": "cumprimentos e apresentações",
+        "despedida": "finalizações de conversa",
+        "agradecimento": "expressões de gratidão",
+
+        # Busca de informação
+        "pergunta": "solicitações de informação",
+        "esclarecimento": "pedidos de clarificação",
+        "consulta": "verificações de status ou disponibilidade",
+
+        # Ações comerciais
+        "solicitacao_servico": "pedidos de serviços ou produtos",
+        "cotacao": "solicitações de orçamento ou preço",
+        "pedido": "ordens de compra ou contratação",
+        "cancelamento": "solicitações de cancelamento",
+
+        # Feedback e suporte
+        "reclamacao": "queixas ou problemas",
+        "elogio": "comentários positivos ou satisfação",
+        "sugestao": "propostas de melhoria",
+        "relato_problema": "descrição de dificuldades técnicas",
+
+        # Confirmações e validações
+        "confirmacao": "confirmações de ações ou informações",
+        "negacao": "recusas ou negativas",
+        "aceitacao": "concordâncias ou aprovações",
+
+        # Informações fornecidas
+        "apresentacao": "identificação pessoal ou empresarial",
+        "informacao": "dados ou detalhes fornecidos",
+        "instrucao": "orientações ou direcionamentos",
+
+        # Urgência e priorização
+        "urgente": "solicitações com alta prioridade",
+        "agendamento": "marcação de compromissos ou reuniões",
+        "acompanhamento": "verificação de andamento de processos"
+    }
+entities:
+# Tipos válidos de entities com suas descrições
+    VALID_ENTITY_TYPES = {
+        # Identificação pessoal
+        "cliente": "nome ou identificação do cliente",
+        "contato": "informações de contato geral",
+        "email": "endereço de email",
+        "telefone": "número de telefone",
+
+        # Produtos e serviços
+        "tipo_produto": "categoria ou tipo de produto",
+        "produto": "nome específico do produto",
+        "servico": "tipo de serviço solicitado",
+        "marca": "marca ou fabricante",
+
+        # Quantidades e medidas
+        "quantidade": "número ou volume de itens",
+        "preco": "valor monetário ou orçamento",
+        "desconto": "percentual ou valor de desconto",
+
+        # Tempo e localização
+        "prazo": "período ou data limite",
+        "data": "data específica",
+        "horario": "horário específico",
+        "local": "endereço ou localização",
+        "cidade": "nome da cidade",
+
+        # Características técnicas
+        "cor": "cor do produto",
+        "tamanho": "dimensões ou tamanho",
+        "material": "tipo de material",
+        "modelo": "modelo específico"
+    }

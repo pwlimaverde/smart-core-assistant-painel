@@ -606,14 +606,46 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
             Atendimento, mensagem.atendimento).carregar_historico_mensagens(
                 excluir_mensagem_id=mensagem_id
         )
+        logger.info(f"Iniciando análise prévia para mensagem {mensagem_id}")
+
         # Análise de intenção e extração de entidades
-        features.analise_previa_mensagem(
+        resultado_analise = features.analise_previa_mensagem(
             historico_atendimento=historico_atendimento,
-            conteudo=mensagem.conteudo)
+            context=mensagem.conteudo)
+
+        logger.info(f"Resultado análise tipo: {type(resultado_analise)}")
         logger.info(
-            f"Conteúdo da mensagem: {mensagem.conteudo}")
+            f"Resultado análise hasattr intent_types: {
+                hasattr(
+                    resultado_analise,
+                    'intent_types')}")
+        logger.info(
+            f"Resultado análise hasattr entity_types: {
+                hasattr(
+                    resultado_analise,
+                    'entity_types')}")
+
+        # Extrair dados do APMTuple corretamente
+        try:
+            intent_types = resultado_analise.intent_types
+            logger.info(f"Intent types extraído com sucesso: {intent_types}")
+        except Exception as e:
+            logger.error(f"Erro ao acessar intent_types: {e}")
+            intent_types = []
+
+        try:
+            entity_types = resultado_analise.entity_types
+            logger.info(f"Entity types extraído com sucesso: {entity_types}")
+        except Exception as e:
+            logger.error(f"Erro ao acessar entity_types: {e}")
+            entity_types = []
+
+        logger.info(f"Conteúdo da mensagem: {mensagem.conteudo}")
         logger.info(
             f"Historico da mensagem (sem atual): {historico_atendimento}")
+        logger.info(f"Tipos de entidades detectados: {entity_types}")
+        logger.info(f"Tipos de intenções detectados: {intent_types}")
+
     except Exception as e:
         logger.error(
             f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")

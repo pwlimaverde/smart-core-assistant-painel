@@ -64,7 +64,7 @@ dependencies = [
     "packaging==24.2",
     "pandas>=2.3.0",
     "propcache==0.3.1",
-    "py-return-success-or-error>=0.5.2",
+    "py-return-success-or-error==0.5.3",
     "pydantic==2.11.5",
     "pydantic-core==2.33.2",
     "pydantic-settings==2.9.1",

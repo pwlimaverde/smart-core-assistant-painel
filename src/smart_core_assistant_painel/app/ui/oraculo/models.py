@@ -979,9 +979,27 @@ class Atendimento(models.Model):
                 if mensagem.conteudo:
                     conteudo_mensagens.append(mensagem.conteudo)
 
-                # Adiciona intent se existir
+                # Processa intents detectados
                 if mensagem.intent_detectado:
-                    intents_detectados.add(mensagem.intent_detectado)
+                    # Espera uma lista de dicionários no formato
+                    # {"saudacao": "Olá", "pergunta": "tudo bem?"}
+                    if isinstance(mensagem.intent_detectado, list):
+                        for intent_dict in mensagem.intent_detectado:
+                            if isinstance(intent_dict, dict):
+                                # Formato padrão: {"saudacao": "Olá"} -
+                                # pega todos os valores dos intents
+                                for tipo_intent, valor_intent in intent_dict.items():
+                                    if valor_intent and str(
+                                            valor_intent).strip():
+                                        intents_detectados.add(
+                                            f"{tipo_intent}: {valor_intent}")
+                    else:
+                        # Se não é uma lista, loga um aviso
+                        logger.warning(
+                            f"Intent detectado da mensagem {
+                                mensagem.id} não está no formato esperado (lista de dicionários): {
+                                type(
+                                    mensagem.intent_detectado)}")
 
                 # Processa entidades extraídas
                 if mensagem.entidades_extraidas:
@@ -1106,11 +1124,10 @@ class Mensagem(models.Model):
         null=True,
         help_text="Resposta gerada pelo bot"
     )
-    intent_detectado: models.CharField = models.CharField(
-        max_length=100,
+    intent_detectado = models.JSONField(
+        default=list,
         blank=True,
-        null=True,
-        help_text="Intent detectado pelo processamento de NLP"
+        help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})"
     )
     entidades_extraidas = models.JSONField(
         default=list,
@@ -1176,6 +1193,72 @@ class Mensagem(models.Model):
             bool: True se a mensagem é do bot
         """
         return self.remetente == TipoRemetente.BOT
+
+    def adicionar_intent(self, tipo_intent: str, valor_intent: str) -> None:
+        """
+        Adiciona um intent à lista de intents detectados.
+
+        Args:
+            tipo_intent (str): Tipo do intent (ex: 'saudacao', 'pergunta', 'solicitacao')
+            valor_intent (str): Valor/conteúdo do intent
+
+        Example:
+            >>> mensagem.adicionar_intent('saudacao', 'Olá')
+            >>> mensagem.adicionar_intent('pergunta', 'tudo bem?')
+        """
+        if not self.intent_detectado:
+            self.intent_detectado = []
+
+        # Adiciona o intent como dicionário
+        intent_dict = {tipo_intent: valor_intent}
+        self.intent_detectado.append(intent_dict)
+
+    def get_intents_por_tipo(self, tipo_intent: str) -> list[str]:
+        """
+        Retorna todos os valores de um tipo específico de intent.
+
+        Args:
+            tipo_intent (str): Tipo do intent a buscar
+
+        Returns:
+            list[str]: Lista com todos os valores encontrados para o tipo
+
+        Example:
+            >>> mensagem.get_intents_por_tipo('pergunta')
+            ['tudo bem?', 'vocês produzem cones para crepe?']
+        """
+        valores = []
+        if self.intent_detectado:
+            for intent_dict in self.intent_detectado:
+                if isinstance(intent_dict,
+                              dict) and tipo_intent in intent_dict:
+                    valores.append(intent_dict[tipo_intent])
+        return valores
+
+    def get_todos_intents(self) -> dict[str, list[str]]:
+        """
+        Retorna todos os intents organizados por tipo.
+
+        Returns:
+            dict: Dicionário com tipos como chaves e listas de valores
+
+        Example:
+            >>> mensagem.get_todos_intents()
+            {
+                'saudacao': ['Olá'],
+                'pergunta': ['tudo bem?', 'vocês produzem cones para crepe?'],
+                'solicitacao': ['gostaria de uma cotação de uma embalagem']
+            }
+        """
+        intents_organizados = {}
+        if self.intent_detectado:
+            for intent_dict in self.intent_detectado:
+                if isinstance(intent_dict, dict):
+                    for tipo, valor in intent_dict.items():
+                        if tipo not in intents_organizados:
+                            intents_organizados[tipo] = []
+                        intents_organizados[tipo].append(valor)
+        return intents_organizados
 
     @property
     def is_from_atendente_humano(self) -> bool:

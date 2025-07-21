@@ -2,7 +2,8 @@
 from typing import Any
 
 from langchain.docstore.document import Document
-from py_return_success_or_error.core.return_success_or_error import (
+from loguru import logger
+from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
 )
@@ -11,6 +12,10 @@ from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.dat
     AnaliseConteudoLangchainDatasource, )
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.domain.usecase.analise_conteudo_usecase import (
     AnaliseConteudoUseCase, )
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
+    AnalisePreviaMensagemLangchainDatasource, )
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
+    AnalisePreviaMensagemUsecase, )
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
     LoadDocumentConteudoUseCase, )
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
@@ -22,6 +27,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     LlmError,
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    AnalisePreviaMensagemParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -29,6 +35,9 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
 from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     ACData,
     ACUsecase,
+    APMData,
+    APMTuple,
+    APMUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
@@ -151,10 +160,38 @@ class FeaturesCompose:
 
     @staticmethod
     def analise_previa_mensagem(
-            historico_atendimento: dict[str, Any], conteudo: str) -> None:
+            historico_atendimento: dict[str, Any], context: str) -> APMTuple:
         """
         Método para análise prévia de uma mensagem, incluindo detecção de intenção e extração de entidades.
         """
         # Aqui você pode implementar a lógica de análise prévia
         # Exemplo: Detecção de intenção e extração de entidades
-        pass
+        llm_parameters = LlmParameters(
+            llm_class=SERVICEHUB.LLM_CLASS,
+            model=SERVICEHUB.MODEL,
+            extra_params={
+                'temperature': SERVICEHUB.TEMPERATURE},
+            prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
+            prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
+            context=context,
+            error=LlmError('Erro ao processar llm'),)
+        parameters = AnalisePreviaMensagemParameters(
+            historico_atendimento=historico_atendimento,
+            valid_intent_types=SERVICEHUB.VALID_INTENT_TYPES,
+            valid_entity_types=SERVICEHUB.VALID_ENTITY_TYPES,
+            llm_parameters=llm_parameters,
+            error=LlmError('Erro ao processar mensagem'),)
+        datasource: APMData = AnalisePreviaMensagemLangchainDatasource()
+        usecase: APMUsecase = AnalisePreviaMensagemUsecase(datasource)
+
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            result: APMTuple = data.result
+            return result
+        elif isinstance(data, ErrorReturn):
+            logger.error(f'Erro ao analisar prévia da mensagem: {data.result}')
+            raise data.result
+        else:
+            logger.error("Tipo de retorno inesperado da usecase")
+            raise ValueError("Unexpected return type from usecase")

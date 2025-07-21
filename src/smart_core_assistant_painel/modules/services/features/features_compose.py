@@ -50,6 +50,11 @@ class FeaturesCompose:
             'chunk_overlap': 'CHUNK_OVERLAP',
             'chunk_size': 'CHUNK_SIZE',
             'faiss_model': 'FAISS_MODEL',
+            'prompt_human_analise_previa_mensagem': 'PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM',
+            'prompt_system_analise_previa_mensagem': 'PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM',
+            'valid_entity_types': 'VALID_ENTITY_TYPES',
+            'valid_intent_types': 'VALID_INTENT_TYPES',
+
         }
         error: SetEnvironRemoteError = SetEnvironRemoteError(
             'Erro ao carregar variáveis de ambiente')

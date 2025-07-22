@@ -1,7 +1,7 @@
 import json
 import os
 import tempfile
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from django.contrib import messages
 from django.db import transaction
@@ -14,8 +14,19 @@ from rolepermissions.checkers import has_permission
 
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose, )
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
-from .models import Atendimento, Mensagem, TipoMensagem, Treinamentos
+from .models import (
+    Atendimento,
+    Cliente,
+    Mensagem,
+    TipoMensagem,
+    TipoRemetente,
+    Treinamentos,
+)
+
+if TYPE_CHECKING:
+    pass
 
 
 class TreinamentoService:
@@ -463,6 +474,13 @@ def webhook_whatsapp(request):
             logger.error(
                 f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
+        if mensagem.remetente == TipoRemetente.CLIENTE:
+            atendimento = cast(Atendimento, mensagem.atendimento)
+            cliente = cast(Cliente, atendimento.cliente)
+            if not cliente.nome:
+                features = FeaturesCompose()
+                features.solicitacao_info_cliene()
+
         # Verificação de direcionamento do atendimento
         try:
             is_bot_responder = _pode_bot_responder_atendimento(
@@ -510,6 +528,163 @@ def webhook_whatsapp(request):
         return JsonResponse({"error": "Erro interno do servidor"}, status=500)
 
 
+def _obter_entidades_metadados_validas() -> set[str]:
+    """
+    Obtém as entidades válidas para metadados do cliente a partir do SERVICEHUB.
+
+    Esta função extrai dinamicamente as entidades que devem ser armazenadas
+    nos metadados do cliente, baseando-se na configuração centralizada do sistema.
+    Remove entidades que já são cadastradas automaticamente (contato, telefone).
+
+    Returns:
+        set[str]: Conjunto de entidades válidas para metadados
+
+    Examples:
+        >>> entidades = _obter_entidades_metadados_validas()
+        >>> 'email' in entidades
+        True
+        >>> 'cliente' in entidades  # Cliente vai para o campo nome, não metadados
+        False
+    """
+    try:
+        # Obtém configuração de entidades válidas do SERVICEHUB
+        valid_entity_types = SERVICEHUB.VALID_ENTITY_TYPES
+
+        if not valid_entity_types:
+            logger.warning("SERVICEHUB.VALID_ENTITY_TYPES não configurado")
+            return set()
+
+        # Parse do JSON das entidades válidas
+        import json
+        entidades_validas: set[str] = set()
+
+        entidades_config = json.loads(valid_entity_types)
+
+        # Extrai todas as entidades de todas as categorias
+        if isinstance(
+                entidades_config,
+                dict) and 'entity_types' in entidades_config:
+            for categoria, entidades in entidades_config['entity_types'].items(
+            ):
+                if isinstance(entidades, dict):
+                    entidades_validas.update(entidades.keys())
+
+        # Remove entidades que não devem ir para metadados
+        entidades_validas.discard('cliente')   # Vai para campo nome
+        # Já cadastrado no recebimento da mensagem
+        entidades_validas.discard('contato')
+        # Já cadastrado no recebimento da mensagem
+        entidades_validas.discard('telefone')
+
+        logger.info(
+            f"Entidades válidas para metadados obtidas: {
+                len(entidades_validas)} entidades")
+        return entidades_validas
+
+    except Exception as e:
+        logger.error(f"Erro ao obter entidades válidas do SERVICEHUB: {e}")
+        return set()
+
+
+def _processar_entidades_cliente(
+        mensagem: 'Mensagem', entity_types: list[dict[str, Any]]) -> None:
+    """
+    Processa entidades extraídas para atualizar dados do cliente.
+
+    Esta função analisa as entidades extraídas da mensagem e atualiza
+    automaticamente os dados do cliente conforme encontra informações relevantes.
+
+    Comportamento:
+    - Se encontra entidade "cliente", atualiza o campo nome do cliente (caso esteja vazio)
+    - Para outras entidades com dados do cliente (contato, email, cpf, etc.),
+      salva nos metadados do cliente
+    - Se o nome do cliente ainda não está salvo, pode ser solicitado via nova mensagem
+
+    Args:
+        mensagem (Mensagem): Instância da mensagem analisada
+        entity_types (list[dict[str, Any]]): Lista de entidades extraídas
+            Formato esperado: [{"tipo_entidade": "valor_extraido"}, ...]
+
+    Returns:
+        None: A função atualiza diretamente o cliente no banco de dados
+
+    Examples:
+        >>> entity_types = [
+        ...     {"cliente": "João Silva"},
+        ...     {"email": "joao@email.com"},
+        ...     {"telefone": "(11) 99999-9999"}
+        ... ]
+        >>> _processar_entidades_cliente(mensagem, entity_types)
+        # Cliente terá nome="João Silva" e metadados com email e telefone
+    """
+    try:
+        atendimento = cast(Atendimento, mensagem.atendimento)
+        cliente = cast(Cliente, atendimento.cliente)
+        cliente_atualizado = False
+        metadados_atualizados = False
+
+        # Obter entidades válidas para metadados dinamicamente
+        entidades_metadados = _obter_entidades_metadados_validas()
+
+        for entidade_dict in entity_types:
+            for tipo_entidade, valor in entidade_dict.items():
+                # Processar entidade "cliente" para atualizar nome
+                if tipo_entidade.lower() == 'cliente' and valor:
+                    # Só atualiza nome se estiver vazio ou se novo nome for
+                    # mais completo
+                    if not cliente.nome or len(
+                            valor.strip()) > len(
+                            cliente.nome or ''):
+                        nome_limpo = valor.strip()
+                        if nome_limpo and len(
+                                nome_limpo) >= 2:  # Validação básica
+                            cliente.nome = nome_limpo
+                            cliente_atualizado = True
+                            logger.info(
+                                f"Nome do cliente atualizado para: {nome_limpo}")
+
+                # Processar outras entidades para metadados
+                elif tipo_entidade.lower() in entidades_metadados and valor:
+                    valor_limpo = valor.strip() if isinstance(valor, str) else valor
+                    if valor_limpo:
+                        # Atualizar metadados do cliente
+                        if not cliente.metadados:
+                            cliente.metadados = {}
+
+                        # Evitar duplicatas - só atualiza se não existe ou
+                        # valor é diferente
+                        if (tipo_entidade.lower() not in cliente.metadados or
+                                cliente.metadados[tipo_entidade.lower()] != valor_limpo):
+                            cliente.metadados[tipo_entidade.lower()
+                                              ] = valor_limpo
+                            metadados_atualizados = True
+                            logger.info(
+                                f"Metadado {
+                                    tipo_entidade.lower()} atualizado para cliente: {valor_limpo}")
+
+        # Salvar cliente se houve alterações
+        if cliente_atualizado or metadados_atualizados:
+            update_fields = []
+            if cliente_atualizado:
+                update_fields.append('nome')
+            if metadados_atualizados:
+                update_fields.append('metadados')
+
+            cliente.save(update_fields=update_fields)
+            logger.info(f"Cliente {cliente.telefone} atualizado com sucesso")
+
+            # Se ainda não há nome do cliente, considerar solicitar dados
+            if not cliente.nome:
+                logger.info(
+                    f"Cliente {
+                        cliente.telefone} ainda sem nome - considerar solicitar dados")
+
+    except Exception as e:
+        logger.error(f"Erro ao processar entidades do cliente: {e}")
+        # Não interrompe o fluxo em caso de erro
+        pass
+
+
 def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
     """
     Análise prévia do conteúdo da mensagem para detectar intent e extrair entidades.
@@ -538,37 +713,34 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         >>> mensagem = Mensagem.objects.get(id=123)
         >>> _analisar_conteudo_mensagem(mensagem)
     """
-    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
-        FeaturesCompose, )
 
     try:
         features = FeaturesCompose()
-        mensagem = Mensagem.objects.get(id=mensagem_id)
+        mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
         # Carrega historico EXCLUINDO a mensagem atual para análise de contexto
         historico_atendimento = cast(
             Atendimento, mensagem.atendimento).carregar_historico_mensagens(
                 excluir_mensagem_id=mensagem_id
         )
 
+        # Se não há mensagens anteriores no histórico, chama apresentação
+        if not historico_atendimento.get('conteudo_mensagens'):
+            features.mensagem_apresentacao()
+
         # Análise de intenção e extração de entidades
         resultado_analise = features.analise_previa_mensagem(
             historico_atendimento=historico_atendimento,
             context=mensagem.conteudo)
+        mensagem.intent_detectado = resultado_analise.intent_types
+        mensagem.entidades_extraidas = resultado_analise.entity_types
 
-        # Extrair dados do APMTuple corretamente
-        try:
-            resultado_analise.intent_types
-            logger.info(
-                f"Intent types detectados: {resultado_analise.intent_types}")
-        except Exception as e:
-            logger.error(f"Erro ao acessar intent_types: {e}")
+        mensagem.save(
+            update_fields=[
+                'intent_detectado',
+                'entidades_extraidas'])
 
-        try:
-            resultado_analise.entity_types
-            logger.info(
-                f"Entity types detectados: {resultado_analise.entity_types}")
-        except Exception as e:
-            logger.error(f"Erro ao acessar entity_types: {e}")
+        # Processar entidades para atualizar dados do cliente
+        _processar_entidades_cliente(mensagem, resultado_analise.entity_types)
 
     except Exception as e:
         logger.error(

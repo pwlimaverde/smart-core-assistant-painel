@@ -195,3 +195,13 @@ class FeaturesCompose:
         else:
             logger.error("Tipo de retorno inesperado da usecase")
             raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def mensagem_apresentacao() -> None:
+        logger.warning("Enviando mensagem de apresentação da empresa")
+        # mensagem de apresentação da empresa
+
+    @staticmethod
+    def solicitacao_info_cliene() -> None:
+        logger.warning("Enviando solicitação de informações do cliente")
+        # mensagem para coleta de informações do cliente

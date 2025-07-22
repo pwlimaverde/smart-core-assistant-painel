@@ -10,7 +10,8 @@ if TYPE_CHECKING:
 from .models import (
     AtendenteHumano,
     Atendimento,
-    Cliente,
+    Contato,
+    Empresa,
     FluxoConversa,
     Mensagem,
     Treinamentos,
@@ -180,21 +181,23 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):  # type: ignore
 # =====================================================================
 
 
-@admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):  # type: ignore
+@admin.register(Contato)
+class ContatoAdmin(admin.ModelAdmin):  # type: ignore
     list_display = [
         'telefone',
-        'nome',
+        'nome_contato',
+        'nome_perfil_whatsapp',
         'ultima_interacao',
         'data_cadastro',
-        'total_atendimentos']
-    list_filter = ['data_cadastro', 'ultima_interacao']
-    search_fields = ['telefone', 'nome']
+        'total_atendimentos',
+        'total_empresas']
+    list_filter = ['data_cadastro', 'ultima_interacao', 'ativo']
+    search_fields = ['telefone', 'nome_contato', 'nome_perfil_whatsapp']
     readonly_fields = ['data_cadastro', 'ultima_interacao']
 
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('telefone', 'nome')
+            'fields': ('telefone', 'nome_contato', 'nome_perfil_whatsapp', 'ativo')
         }),
         ('Datas', {
             'fields': ('data_cadastro', 'ultima_interacao')
@@ -206,8 +209,182 @@ class ClienteAdmin(admin.ModelAdmin):  # type: ignore
     )
 
     @admin.display(description='Total de Atendimentos')
-    def total_atendimentos(self, obj: Cliente) -> "Any":
+    def total_atendimentos(self, obj: Contato) -> "Any":
         return getattr(obj, 'atendimentos').count()
+
+    @admin.display(description='Total de Empresas')
+    def total_empresas(self, obj: Contato) -> "Any":
+        """Retorna o número total de empresas vinculadas ao contato"""
+        if hasattr(obj, 'empresas'):
+            return getattr(obj, 'empresas').count()
+        return 0
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Contato]:
+        """Otimiza consultas carregando empresas relacionadas"""
+        return super().get_queryset(request).prefetch_related('empresas')
+
+
+@admin.register(Empresa)
+class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
+    list_display = [
+        'nome_fantasia',
+        'razao_social',
+        'cnpj',
+        'cidade',
+        'uf',
+        'ramo_atividade',
+        'total_contatos',
+        'ativo',
+        'data_cadastro']
+    list_filter = [
+        'ativo',
+        'uf',
+        'cidade',
+        'ramo_atividade',
+        'data_cadastro',
+        'ultima_atualizacao']
+    search_fields = [
+        'nome_fantasia',
+        'razao_social',
+        'cnpj',
+        'telefone',
+        'cidade',
+        'ramo_atividade']
+    readonly_fields = [
+        'data_cadastro',
+        'ultima_atualizacao',
+        'get_endereco_completo_display',
+        'total_contatos']
+    filter_horizontal = ['contatos']  # Interface melhorada para ManyToMany
+
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('nome_fantasia', 'razao_social', 'cnpj', 'ativo')
+        }),
+        ('Contatos', {
+            'fields': ('telefone', 'site', 'ramo_atividade')
+        }),
+        ('Endereço', {
+            'fields': (
+                ('cep', 'uf'),
+                'logradouro',
+                ('numero', 'complemento'),
+                'bairro',
+                ('cidade', 'pais')
+            ),
+            'classes': ('wide',)
+        }),
+        ('Relacionamentos', {
+            'fields': ('contatos',)
+        }),
+        ('Observações', {
+            'fields': ('observacoes',),
+            'classes': ('collapse',)
+        }),
+        ('Metadados', {
+            'fields': ('metadados',),
+            'classes': ('collapse',)
+        }),
+        ('Informações do Sistema', {
+            'fields': ('data_cadastro', 'ultima_atualizacao', 'get_endereco_completo_display'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    @admin.display(description='Total de Contatos')
+    def total_contatos(self, obj: Empresa) -> "Any":
+        """Retorna o número total de contatos vinculados à empresa"""
+        return obj.contatos.count()
+
+    @admin.display(description='Endereço Completo')
+    def get_endereco_completo_display(self, obj: Empresa) -> str:
+        """Exibe o endereço completo formatado no admin"""
+        return obj.get_endereco_completo() or "-"
+
+    # Configurações adicionais
+    list_per_page = 25
+    save_on_top = True
+
+    # Actions customizadas
+    actions = ['marcar_como_ativa', 'marcar_como_inativa', 'exportar_dados']
+
+    @admin.action(description='Marcar empresas selecionadas como ativas')
+    def marcar_como_ativa(
+            self,
+            request: HttpRequest,
+            queryset: QuerySet[Empresa]) -> None:
+        queryset.update(ativo=True)
+        self.message_user(
+            request, f'{queryset.count()} empresas marcadas como ativas.')
+
+    @admin.action(description='Marcar empresas selecionadas como inativas')
+    def marcar_como_inativa(
+            self,
+            request: HttpRequest,
+            queryset: QuerySet[Empresa]) -> None:
+        queryset.update(ativo=False)
+        self.message_user(
+            request, f'{queryset.count()} empresas marcadas como inativas.')
+
+    @admin.action(description='Exportar dados das empresas selecionadas (CSV)')
+    def exportar_dados(
+            self,
+            request: HttpRequest,
+            queryset: QuerySet[Empresa]) -> "Any":
+        """
+        Exporta dados das empresas selecionadas em formato CSV.
+        """
+        import csv
+
+        from django.http import HttpResponse
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="empresas.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow([
+            'Nome Fantasia',
+            'Razão Social',
+            'CNPJ',
+            'Telefone',
+            'Site',
+            'Ramo de Atividade',
+            'CEP',
+            'Endereço Completo',
+            'Cidade',
+            'UF',
+            'País',
+            'Total de Contatos',
+            'Ativo',
+            'Data de Cadastro'
+        ])
+
+        for empresa in queryset.select_related().prefetch_related('contatos'):
+            writer.writerow([
+                empresa.nome_fantasia,
+                empresa.razao_social or '',
+                empresa.cnpj or '',
+                empresa.telefone or '',
+                empresa.site or '',
+                empresa.ramo_atividade or '',
+                empresa.cep or '',
+                empresa.get_endereco_completo(),
+                empresa.cidade or '',
+                empresa.uf or '',
+                empresa.pais or '',
+                empresa.contatos.count(),
+                'Sim' if empresa.ativo else 'Não',
+                empresa.data_cadastro.strftime('%d/%m/%Y %H:%M') if empresa.data_cadastro else ''
+            ])
+
+        self.message_user(
+            request, f'Dados de {
+                queryset.count()} empresas exportados com sucesso.')
+        return response
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Empresa]:
+        """Otimiza consultas carregando contatos relacionados"""
+        return super().get_queryset(request).prefetch_related('contatos')
 
 
 class MensagemInline(admin.TabularInline):  # type: ignore
@@ -251,7 +428,7 @@ class MensagemInline(admin.TabularInline):  # type: ignore
 class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
     list_display = [
         'id',
-        'cliente_telefone',
+        'contato_telefone',
         'status',
         'atendente_humano_nome',
         'data_inicio',
@@ -265,8 +442,8 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
         'avaliacao',
         'atendente_humano']
     search_fields = [
-        'cliente__telefone',
-        'cliente__nome',
+        'contato__telefone',
+        'contato__nome_contato',
         'assunto',
         'atendente_humano__nome']
     readonly_fields = ['data_inicio', 'data_fim']
@@ -274,7 +451,7 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
 
     fieldsets = (
         ('Informações do Atendimento', {
-            'fields': ('cliente', 'status', 'assunto', 'prioridade')
+            'fields': ('contato', 'status', 'assunto', 'prioridade')
         }),
         ('Datas', {
             'fields': ('data_inicio', 'data_fim')
@@ -291,10 +468,10 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
         }),
     )
 
-    @admin.display(description='Telefone', ordering='cliente__telefone')
-    def cliente_telefone(self, obj: Atendimento) -> "Any":
+    @admin.display(description='Telefone', ordering='contato__telefone')
+    def contato_telefone(self, obj: Atendimento) -> "Any":
         try:
-            return obj.cliente.telefone  # type: ignore
+            return obj.contato.telefone  # type: ignore
         except AttributeError:
             return '-'
 
@@ -310,7 +487,7 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
         return getattr(obj, 'mensagens').count()
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Atendimento]:
-        return super().get_queryset(request).select_related('cliente', 'atendente_humano')
+        return super().get_queryset(request).select_related('contato', 'atendente_humano')
 
 
 @admin.register(Mensagem)
@@ -318,7 +495,7 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
     list_display = [
         'id',
         'atendimento_id',
-        'cliente_telefone',
+        'contato_telefone',
         'tipo',
         'conteudo_preview',
         'remetente',
@@ -328,7 +505,7 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
     list_filter = ['tipo', 'remetente', 'respondida', 'timestamp']
     search_fields = [
         'conteudo',
-        'atendimento__cliente__telefone',
+        'atendimento__contato__telefone',
         'entidades_extraidas']
     readonly_fields = ['timestamp', 'message_id_whatsapp']
 
@@ -340,7 +517,7 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
             'fields': ('resposta_bot', 'confianca_resposta', 'intent_detectado', 'entidades_extraidas')
         }),
         ('Metadados', {
-            'fields': ('message_id_whatsapp', 'metadados' ),
+            'fields': ('message_id_whatsapp', 'metadados'),
             'classes': ('collapse',)
         }),
         ('Timestamps', {
@@ -349,10 +526,10 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
     )
 
     @admin.display(description='Telefone',
-                   ordering='atendimento__cliente__telefone')
-    def cliente_telefone(self: "MensagemAdmin", obj: Mensagem) -> "Any":
+                   ordering='atendimento__contato__telefone')
+    def contato_telefone(self: "MensagemAdmin", obj: Mensagem) -> "Any":
         try:
-            return obj.atendimento.cliente.telefone  # type: ignore
+            return obj.atendimento.contato.telefone  # type: ignore
         except AttributeError:
             return '-'
 
@@ -381,7 +558,7 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
         return "-"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
-        return super().get_queryset(request).select_related('atendimento__cliente')
+        return super().get_queryset(request).select_related('atendimento__contato')
 
 
 @admin.register(FluxoConversa)

@@ -6,7 +6,7 @@ class OraculoConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'oraculo'
 
-    def ready(self):
+    def ready(self) -> None:
         # Importa signals para registrar os handlers
         from . import signals  # noqa: F401
 
@@ -19,8 +19,8 @@ class OraculoConfig(AppConfig):
             from smart_core_assistant_painel.modules.services.start_services import (
                 start_services, )
             logger.info("Inicializando serviços para Django-Q workers...")
-            start_initial_loading()
-            start_services()
+            # start_initial_loading()
+            # start_services()
             logger.info(
                 "Serviços inicializados com sucesso para Django-Q workers!")
         except Exception as e:

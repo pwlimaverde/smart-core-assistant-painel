@@ -42,33 +42,76 @@ intent:
 entities:
 # Tipos válidos de entities com suas descrições
     VALID_ENTITY_TYPES = {
-        # Identificação pessoal
-        "cliente": "nome ou identificação do cliente",
-        "contato": "informações de contato geral",
-        "email": "endereço de email",
-        "telefone": "número de telefone",
-
-        # Produtos e serviços
-        "tipo_produto": "categoria ou tipo de produto",
-        "produto": "nome específico do produto",
-        "servico": "tipo de serviço solicitado",
-        "marca": "marca ou fabricante",
-
-        # Quantidades e medidas
-        "quantidade": "número ou volume de itens",
-        "preco": "valor monetário ou orçamento",
-        "desconto": "percentual ou valor de desconto",
-
-        # Tempo e localização
-        "prazo": "período ou data limite",
-        "data": "data específica",
-        "horario": "horário específico",
-        "local": "endereço ou localização",
-        "cidade": "nome da cidade",
-
-        # Características técnicas
-        "cor": "cor do produto",
-        "tamanho": "dimensões ou tamanho",
-        "material": "tipo de material",
-        "modelo": "modelo específico"
+  "entity_types": {
+    "identificacao_pessoal": {
+      "cliente": "nome ou identificação do cliente",
+      "contato": "informações de contato geral",
+      "email": "endereço de email",
+      "telefone": "número de telefone"
+    },
+    "produtos_servicos": {
+      "tipo_produto": "categoria ou tipo de produto",
+      "produto": "nome específico do produto",
+      "servico": "tipo de serviço solicitado",
+      "marca": "marca ou fabricante"
+    },
+    "quantidades_medidas": {
+      "quantidade": "número ou volume de itens",
+      "preco": "valor monetário ou orçamento",
+      "desconto": "percentual ou valor de desconto"
+    },
+    "tempo_localizacao": {
+      "prazo": "período ou data limite",
+      "data": "data específica",
+      "horario": "horário específico",
+      "local": "endereço ou localização",
+      "cidade": "nome da cidade"
+    },
+    "caracteristicas_tecnicas": {
+      "cor": "cor do produto",
+      "tamanho": "dimensões ou tamanho",
+      "material": "tipo de material",
+      "modelo": "modelo específico"
+    },
+    "identificadores_sistema": {
+      "numero_protocolo": "número de protocolo de atendimento",
+      "id_pedido": "identificador do pedido",
+      "codigo_cliente": "código de identificação do cliente",
+      "numero_ticket": "número do ticket de suporte",
+      "codigo_produto": "código do produto"
+    },
+    "documentos_identificacao": {
+      "cpf": "CPF do cliente",
+      "cnpj": "CNPJ da empresa",
+      "rg": "RG do cliente",
+      "numero_conta": "número da conta",
+      "codigo_transacao": "código da transação"
+    },
+    "dados_financeiros": {
+      "forma_pagamento": "meio de pagamento",
+      "numero_parcelas": "quantidade de parcelas",
+      "vencimento": "data de vencimento",
+      "valor_total": "valor total da transação",
+      "juros": "taxa de juros"
+    },
+    "status_estados": {
+      "status_pedido": "situação atual do pedido",
+      "situacao_cliente": "status do cliente",
+      "nivel_prioridade": "nível de prioridade do atendimento",
+      "tipo_cliente": "categoria do cliente",
+      "canal_origem": "canal de origem do contato"
+    },
+    "entrega_logistica": {
+      "cep": "código postal",
+      "endereco": "endereço completo",
+      "transportadora": "empresa de transporte",
+      "codigo_rastreamento": "código de rastreamento"
+    },
+    "suporte_tecnico": {
+      "versao_sistema": "versão do sistema",
+      "codigo_erro": "código de erro",
+      "categoria_problema": "categoria do problema",
+      "departamento": "departamento responsável"
     }
+  }
+}

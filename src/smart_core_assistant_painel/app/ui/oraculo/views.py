@@ -7,6 +7,7 @@ from django.contrib import messages
 from django.db import transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
 from loguru import logger
@@ -18,7 +19,7 @@ from smart_core_assistant_painel.modules.services.features.service_hub import SE
 
 from .models import (
     Atendimento,
-    Cliente,
+    Contato,
     Mensagem,
     TipoMensagem,
     TipoRemetente,
@@ -474,10 +475,10 @@ def webhook_whatsapp(request):
             logger.error(
                 f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
-        if mensagem.remetente == TipoRemetente.CLIENTE:
+        if mensagem.remetente == TipoRemetente.CONTATO:
             atendimento = cast(Atendimento, mensagem.atendimento)
-            cliente = cast(Cliente, atendimento.cliente)
-            if not cliente.nome:
+            contato = cast(Contato, atendimento.contato)
+            if not contato.nome_contato:
                 features = FeaturesCompose()
                 features.solicitacao_info_cliene()
 
@@ -530,10 +531,10 @@ def webhook_whatsapp(request):
 
 def _obter_entidades_metadados_validas() -> set[str]:
     """
-    Obtém as entidades válidas para metadados do cliente a partir do SERVICEHUB.
+    Obtém as entidades válidas para metadados do contato a partir do SERVICEHUB.
 
     Esta função extrai dinamicamente as entidades que devem ser armazenadas
-    nos metadados do cliente, baseando-se na configuração centralizada do sistema.
+    nos metadados do contato, baseando-se na configuração centralizada do sistema.
     Remove entidades que já são cadastradas automaticamente (contato, telefone).
 
     Returns:
@@ -543,7 +544,7 @@ def _obter_entidades_metadados_validas() -> set[str]:
         >>> entidades = _obter_entidades_metadados_validas()
         >>> 'email' in entidades
         True
-        >>> 'cliente' in entidades  # Cliente vai para o campo nome, não metadados
+        >>> 'contato' in entidades  # Contato vai para o campo nome, não metadados
         False
     """
     try:
@@ -570,7 +571,7 @@ def _obter_entidades_metadados_validas() -> set[str]:
                     entidades_validas.update(entidades.keys())
 
         # Remove entidades que não devem ir para metadados
-        entidades_validas.discard('cliente')   # Vai para campo nome
+        entidades_validas.discard('contato')   # Vai para campo nome
         # Já cadastrado no recebimento da mensagem
         entidades_validas.discard('contato')
         # Já cadastrado no recebimento da mensagem
@@ -586,19 +587,19 @@ def _obter_entidades_metadados_validas() -> set[str]:
         return set()
 
 
-def _processar_entidades_cliente(
+def _processar_entidades_contato(
         mensagem: 'Mensagem', entity_types: list[dict[str, Any]]) -> None:
     """
-    Processa entidades extraídas para atualizar dados do cliente.
+    Processa entidades extraídas para atualizar dados do contato.
 
     Esta função analisa as entidades extraídas da mensagem e atualiza
-    automaticamente os dados do cliente conforme encontra informações relevantes.
+    automaticamente os dados do contato conforme encontra informações relevantes.
 
     Comportamento:
-    - Se encontra entidade "cliente", atualiza o campo nome do cliente (caso esteja vazio)
-    - Para outras entidades com dados do cliente (contato, email, cpf, etc.),
-      salva nos metadados do cliente
-    - Se o nome do cliente ainda não está salvo, pode ser solicitado via nova mensagem
+    - Se encontra entidade "contato", atualiza o campo nome do contato (caso esteja vazio)
+    - Para outras entidades com dados do contato (contato, email, cpf, etc.),
+      salva nos metadados do contato
+    - Se o nome do contato ainda não está salvo, pode ser solicitado via nova mensagem
 
     Args:
         mensagem (Mensagem): Instância da mensagem analisada
@@ -606,21 +607,21 @@ def _processar_entidades_cliente(
             Formato esperado: [{"tipo_entidade": "valor_extraido"}, ...]
 
     Returns:
-        None: A função atualiza diretamente o cliente no banco de dados
+        None: A função atualiza diretamente o contato no banco de dados
 
     Examples:
         >>> entity_types = [
-        ...     {"cliente": "João Silva"},
+        ...     {"contato": "João Silva"},
         ...     {"email": "joao@email.com"},
         ...     {"telefone": "(11) 99999-9999"}
         ... ]
-        >>> _processar_entidades_cliente(mensagem, entity_types)
-        # Cliente terá nome="João Silva" e metadados com email e telefone
+        >>> _processar_entidades_contato(mensagem, entity_types)
+        # Contato terá nome="João Silva" e metadados com email e telefone
     """
     try:
         atendimento = cast(Atendimento, mensagem.atendimento)
-        cliente = cast(Cliente, atendimento.cliente)
-        cliente_atualizado = False
+        contato = cast(Contato, atendimento.contato)
+        contato_atualizado = False
         metadados_atualizados = False
 
         # Obter entidades válidas para metadados dinamicamente
@@ -628,59 +629,66 @@ def _processar_entidades_cliente(
 
         for entidade_dict in entity_types:
             for tipo_entidade, valor in entidade_dict.items():
-                # Processar entidade "cliente" para atualizar nome
-                if tipo_entidade.lower() == 'cliente' and valor:
+                # Processar entidade "contato" para atualizar nome
+                if tipo_entidade.lower() == 'nome_contato' and valor:
                     # Só atualiza nome se estiver vazio ou se novo nome for
                     # mais completo
-                    if not cliente.nome or len(
+                    if not contato.nome_contato or len(
                             valor.strip()) > len(
-                            cliente.nome or ''):
+                            contato.nome_contato or ''):
                         nome_limpo = valor.strip()
                         if nome_limpo and len(
                                 nome_limpo) >= 2:  # Validação básica
-                            cliente.nome = nome_limpo
-                            cliente_atualizado = True
+                            contato.nome_contato = nome_limpo
+                            contato_atualizado = True
                             logger.info(
-                                f"Nome do cliente atualizado para: {nome_limpo}")
+                                f"Nome do contato atualizado para: {nome_limpo}")
 
                 # Processar outras entidades para metadados
                 elif tipo_entidade.lower() in entidades_metadados and valor:
                     valor_limpo = valor.strip() if isinstance(valor, str) else valor
                     if valor_limpo:
-                        # Atualizar metadados do cliente
-                        if not cliente.metadados:
-                            cliente.metadados = {}
+                        # Atualizar metadados do contato
+                        if not contato.metadados:
+                            contato.metadados = {}
 
                         # Evitar duplicatas - só atualiza se não existe ou
                         # valor é diferente
-                        if (tipo_entidade.lower() not in cliente.metadados or
-                                cliente.metadados[tipo_entidade.lower()] != valor_limpo):
-                            cliente.metadados[tipo_entidade.lower()
+                        if (tipo_entidade.lower() not in contato.metadados or
+                                contato.metadados[tipo_entidade.lower()] != valor_limpo):
+                            contato.metadados[tipo_entidade.lower()
                                               ] = valor_limpo
                             metadados_atualizados = True
                             logger.info(
                                 f"Metadado {
-                                    tipo_entidade.lower()} atualizado para cliente: {valor_limpo}")
+                                    tipo_entidade.lower()} atualizado para contato: {valor_limpo}")
 
-        # Salvar cliente se houve alterações
-        if cliente_atualizado or metadados_atualizados:
+        # Salvar contato se houve alterações
+        if contato_atualizado or metadados_atualizados:
             update_fields = []
-            if cliente_atualizado:
-                update_fields.append('nome')
+            if contato_atualizado:
+                update_fields.append('nome_contato')
             if metadados_atualizados:
                 update_fields.append('metadados')
 
-            cliente.save(update_fields=update_fields)
-            logger.info(f"Cliente {cliente.telefone} atualizado com sucesso")
+            # Atualizar timestamp da última interação quando dados são
+            # atualizados
+            contato.ultima_interacao = timezone.now()
+            update_fields.append('ultima_interacao')
 
-            # Se ainda não há nome do cliente, considerar solicitar dados
-            if not cliente.nome:
+            contato.save(update_fields=update_fields)
+            logger.info(
+                f"Contato {
+                    contato.telefone} atualizado com sucesso - última interação atualizada")
+
+            # Se ainda não há nome do contato, considerar solicitar dados
+            if not contato.nome_contato:
                 logger.info(
-                    f"Cliente {
-                        cliente.telefone} ainda sem nome - considerar solicitar dados")
+                    f"Contato {
+                        contato.telefone} ainda sem nome - considerar solicitar dados")
 
     except Exception as e:
-        logger.error(f"Erro ao processar entidades do cliente: {e}")
+        logger.error(f"Erro ao processar entidades do contato: {e}")
         # Não interrompe o fluxo em caso de erro
         pass
 
@@ -739,8 +747,8 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
                 'intent_detectado',
                 'entidades_extraidas'])
 
-        # Processar entidades para atualizar dados do cliente
-        _processar_entidades_cliente(mensagem, resultado_analise.entity_types)
+        # Processar entidades para atualizar dados do contato
+        _processar_entidades_contato(mensagem, resultado_analise.entity_types)
 
     except Exception as e:
         logger.error(

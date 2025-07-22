@@ -311,6 +311,76 @@ def validate_telefone(value: str) -> None:
         raise ValidationError('Número de telefone deve conter apenas números.')
 
 
+def validate_cnpj(value: str) -> None:
+    """
+    Valida se o CNPJ está no formato correto.
+
+    Verifica se o CNPJ tem 14 dígitos e se o formato está válido.
+    Aceita tanto formato com máscara (XX.XXX.XXX/XXXX-XX) quanto sem.
+
+    Args:
+        value (str): CNPJ a ser validado
+
+    Raises:
+        ValidationError: Se o CNPJ não atender aos critérios de validação
+
+    Examples:
+        >>> validate_cnpj("12.345.678/0001-99")  # válido - com máscara
+        >>> validate_cnpj("12345678000199")       # válido - sem máscara
+        >>> validate_cnpj("123")                  # inválido - muito curto
+    """
+    if not value:
+        return
+
+    # Remove caracteres não numéricos
+    cnpj_limpo = re.sub(r'\D', '', value)
+
+    # Verifica se tem exatamente 14 dígitos
+    if len(cnpj_limpo) != 14:
+        raise ValidationError('CNPJ deve ter exatamente 14 dígitos.')
+
+    # Verifica se contém apenas números
+    if not cnpj_limpo.isdigit():
+        raise ValidationError('CNPJ deve conter apenas números.')
+
+    # Validação básica para CNPJs conhecidos como inválidos
+    if cnpj_limpo == '00000000000000':
+        raise ValidationError('CNPJ inválido.')
+
+
+def validate_cep(value: str) -> None:
+    """
+    Valida se o CEP está no formato correto.
+
+    Verifica se o CEP tem 8 dígitos e se o formato está válido.
+    Aceita tanto formato com hífen (XXXXX-XXX) quanto sem.
+
+    Args:
+        value (str): CEP a ser validado
+
+    Raises:
+        ValidationError: Se o CEP não atender aos critérios de validação
+
+    Examples:
+        >>> validate_cep("01234-567")  # válido - com hífen
+        >>> validate_cep("01234567")   # válido - sem hífen
+        >>> validate_cep("123")        # inválido - muito curto
+    """
+    if not value:
+        return
+
+    # Remove caracteres não numéricos
+    cep_limpo = re.sub(r'\D', '', value)
+
+    # Verifica se tem exatamente 8 dígitos
+    if len(cep_limpo) != 8:
+        raise ValidationError('CEP deve ter exatamente 8 dígitos.')
+
+    # Verifica se contém apenas números
+    if not cep_limpo.isdigit():
+        raise ValidationError('CEP deve conter apenas números.')
+
+
 class AtendenteHumano(models.Model):
     """
     Modelo para armazenar informações dos atendentes humanos.
@@ -463,7 +533,7 @@ class AtendenteHumano(models.Model):
         return self.atendimentos.filter(
             status__in=[
                 StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CLIENTE,
+                StatusAtendimento.AGUARDANDO_CONTATO,
                 StatusAtendimento.AGUARDANDO_ATENDENTE
             ]
         ).count()
@@ -510,20 +580,20 @@ class AtendenteHumano(models.Model):
             self.save()
 
 
-class Cliente(models.Model):
+class Contato(models.Model):
     """
-    Modelo para armazenar informações dos clientes.
+    Modelo para armazenar informações dos contatos.
 
-    Representa um cliente do sistema com informações básicas como
+    Representa um contato do sistema com informações básicas como
     telefone, nome e metadados. O telefone é usado como identificador único.
 
     Attributes:
         id: Chave primária do registro
-        telefone: Número de telefone único do cliente (formato internacional)
-        nome: Nome do cliente (opcional)
+        telefone: Número de telefone único do contato (formato internacional)
+        nome_contato: Nome do contato (opcional)
         data_cadastro: Data de cadastro automática
         ultima_interacao: Data da última interação (atualizada automaticamente)
-        ativo: Status de atividade do cliente
+        ativo: Status de atividade do contato
         metadados: Informações adicionais em formato JSON
     """
     id: models.AutoField = models.AutoField(
@@ -534,17 +604,23 @@ class Cliente(models.Model):
         max_length=20,
         unique=True,
         validators=[validate_telefone],
-        help_text="Número de telefone do cliente (formato: +5511999999999)"
+        help_text="Número de telefone do contato (formato: +5511999999999)"
     )
-    nome: models.CharField = models.CharField(
+    nome_contato: models.CharField = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        help_text="Nome do cliente"
+        help_text="Nome do contato"
+    )
+    nome_perfil_whatsapp: models.CharField = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Nome do perfil cadastrado no WhatsApp do contato"
     )
     data_cadastro: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
-        help_text="Data de cadastro do cliente"
+        help_text="Data de cadastro do contato"
     )
     ultima_interacao: models.DateTimeField = models.DateTimeField(
         auto_now=True,
@@ -552,31 +628,31 @@ class Cliente(models.Model):
     )
     ativo: models.BooleanField = models.BooleanField(
         default=True,
-        help_text="Status de atividade do cliente"
+        help_text="Status de atividade do contato"
     )
     metadados = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Informações adicionais do cliente"
+        help_text="Informações adicionais do contato"
     )
 
     class Meta:
-        verbose_name = "Cliente"
-        verbose_name_plural = "Clientes"
+        verbose_name = "Contato"
+        verbose_name_plural = "Contatos"
         ordering = ['-ultima_interacao']
 
     def __str__(self):
         """
-        Retorna representação string do cliente.
+        Retorna representação string do contato.
 
         Returns:
-            str: Nome do cliente (ou 'Cliente') seguido do telefone
+            str: Nome do contato (ou 'Contato') seguido do telefone
         """
-        return f"{self.nome or 'Cliente'} ({self.telefone})"
+        return f"{self.nome_contato or 'Contato'} ({self.telefone})"
 
     def save(self, *args, **kwargs):
         """
-        Salva o cliente normalizando o número de telefone.
+        Salva o contato normalizando o número de telefone.
 
         Normaliza o telefone para formato internacional (+55...) antes
         de salvar no banco de dados.
@@ -597,6 +673,325 @@ class Cliente(models.Model):
         super().save(*args, **kwargs)
 
 
+class Empresa(models.Model):
+    """
+    Modelo para armazenar informações das empresas.
+
+    Representa uma empresa do sistema com informações completas incluindo
+    dados cadastrais, endereço e relacionamento many-to-many com contatos.
+
+    Attributes:
+        id: Chave primária do registro
+        nome_fantasia: Nome comum da empresa (obrigatório)
+        razao_social: Nome legal/oficial da empresa
+        cnpj: CNPJ da empresa
+        telefone: Telefone fixo ou corporativo
+        site: URL/website da empresa
+        ramo_atividade: Área de atuação da empresa
+        observacoes: Informações adicionais
+        cep: Código postal do endereço
+        logradouro: Rua ou avenida
+        numero: Número do endereço
+        complemento: Complemento do endereço
+        bairro: Bairro da empresa
+        cidade: Cidade da empresa
+        uf: Estado da empresa
+        pais: País da empresa
+        contatos: Relacionamento many-to-many com contatos
+        data_cadastro: Data de cadastro automática
+        ultima_atualizacao: Data da última atualização
+        ativo: Status de atividade da empresa
+        metadados: Informações adicionais em formato JSON
+    """
+    id: models.AutoField = models.AutoField(
+        primary_key=True,
+        help_text="Chave primária do registro"
+    )
+
+    # Dados básicos da empresa
+    nome_fantasia: models.CharField = models.CharField(
+        max_length=200,
+        blank=False,
+        null=False,
+        help_text="Nome comum da empresa (obrigatório)"
+    )
+    razao_social: models.CharField = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Nome legal/oficial da empresa"
+    )
+    cnpj: models.CharField = models.CharField(
+        max_length=18,  # formato XX.XXX.XXX/XXXX-XX
+        blank=True,
+        null=True,
+        validators=[validate_cnpj],
+        help_text="CNPJ da empresa (formato: 12.345.678/0001-99)"
+    )
+    telefone: models.CharField = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        validators=[validate_telefone],
+        help_text="Telefone fixo ou corporativo da empresa"
+    )
+    site: models.URLField = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Website da empresa"
+    )
+    ramo_atividade: models.CharField = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Área de atuação da empresa"
+    )
+    observacoes: models.TextField = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Informações adicionais sobre a empresa"
+    )
+
+    # Dados de endereço
+    cep: models.CharField = models.CharField(
+        max_length=10,  # formato XXXXX-XXX
+        blank=True,
+        null=True,
+        validators=[validate_cep],
+        help_text="CEP do endereço (formato: 12345-678)"
+    )
+    logradouro: models.CharField = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Rua, avenida ou logradouro"
+    )
+    numero: models.CharField = models.CharField(
+        max_length=10,
+        blank=True,
+        null=True,
+        help_text="Número do endereço"
+    )
+    complemento: models.CharField = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Complemento do endereço (sala, andar, etc.)"
+    )
+    bairro: models.CharField = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Bairro da empresa"
+    )
+    cidade: models.CharField = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Cidade da empresa"
+    )
+    uf: models.CharField = models.CharField(
+        max_length=2,
+        blank=True,
+        null=True,
+        help_text="Estado (UF) da empresa"
+    )
+    pais: models.CharField = models.CharField(
+        max_length=50,
+        blank=True,
+        null=True,
+        default="Brasil",
+        help_text="País da empresa"
+    )
+
+    # Relacionamentos
+    contatos: models.ManyToManyField = models.ManyToManyField(
+        Contato,
+        blank=True,
+        related_name='empresas',
+        help_text="Contatos vinculados à empresa"
+    )
+
+    # Campos de controle
+    data_cadastro: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Data de cadastro da empresa"
+    )
+    ultima_atualizacao: models.DateTimeField = models.DateTimeField(
+        auto_now=True,
+        help_text="Data da última atualização"
+    )
+    ativo: models.BooleanField = models.BooleanField(
+        default=True,
+        help_text="Status de atividade da empresa"
+    )
+    metadados: models.JSONField = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Informações adicionais da empresa"
+    )
+
+    class Meta:
+        verbose_name = "Empresa"
+        verbose_name_plural = "Empresas"
+        ordering = ['nome_fantasia']
+
+    def __str__(self):
+        """
+        Retorna representação string da empresa.
+
+        Returns:
+            str: Nome fantasia da empresa
+        """
+        return self.nome_fantasia
+
+    def save(self, *args, **kwargs):
+        """
+        Salva a empresa normalizando dados antes do salvamento.
+
+        Normaliza CNPJ, CEP e telefone para formatos padronizados.
+
+        Args:
+            *args: Argumentos posicionais do método save
+            **kwargs: Argumentos nomeados do método save
+        """
+        # Normaliza o CNPJ
+        if self.cnpj:
+            cnpj_limpo = re.sub(r'\D', '', self.cnpj)
+            if len(cnpj_limpo) == 14:
+                # Formata CNPJ: XX.XXX.XXX/XXXX-XX
+                self.cnpj = f"{cnpj_limpo[:2]}.{cnpj_limpo[2:5]}.{cnpj_limpo[5:8]}/{cnpj_limpo[8:12]}-{cnpj_limpo[12:14]}"
+
+        # Normaliza o CEP
+        if self.cep:
+            cep_limpo = re.sub(r'\D', '', self.cep)
+            if len(cep_limpo) == 8:
+                # Formata CEP: XXXXX-XXX
+                self.cep = f"{cep_limpo[:5]}-{cep_limpo[5:]}"
+
+        # Normaliza o telefone (se fornecido)
+        if self.telefone:
+            telefone_limpo = re.sub(r'\D', '', self.telefone)
+            if len(telefone_limpo) >= 10:
+                # Para telefone fixo, não adiciona +55 automaticamente
+                # Mantém formato original se já estiver no padrão internacional
+                if not self.telefone.startswith('+'):
+                    self.telefone = f"({telefone_limpo[:2]}) {telefone_limpo[2:6]}-{telefone_limpo[6:]}"
+
+        # Normaliza UF para maiúscula
+        if self.uf:
+            self.uf = self.uf.upper()
+
+        super().save(*args, **kwargs)
+
+    def clean(self) -> None:
+        """
+        Validação personalizada do modelo.
+
+        Executa validações customizadas do modelo.
+
+        Raises:
+            ValidationError: Se houver violação das regras de validação
+        """
+        super().clean()
+
+        # Valida se o nome fantasia não está vazio
+        if not self.nome_fantasia or not self.nome_fantasia.strip():
+            raise ValidationError({
+                'nome_fantasia': 'Nome fantasia é obrigatório.'
+            })
+
+    def get_endereco_completo(self) -> str:
+        """
+        Retorna o endereço completo formatado.
+
+        Returns:
+            str: Endereço completo da empresa
+        """
+        partes_endereco = []
+
+        if self.logradouro:
+            endereco_linha = self.logradouro
+            if self.numero:
+                endereco_linha += f", {self.numero}"
+            if self.complemento:
+                endereco_linha += f", {self.complemento}"
+            partes_endereco.append(endereco_linha)
+
+        if self.bairro:
+            partes_endereco.append(self.bairro)
+
+        if self.cidade and self.uf:
+            partes_endereco.append(f"{self.cidade} - {self.uf}")
+        elif self.cidade:
+            partes_endereco.append(self.cidade)
+
+        if self.cep:
+            partes_endereco.append(f"CEP: {self.cep}")
+
+        if self.pais and self.pais != "Brasil":
+            partes_endereco.append(self.pais)
+
+        return ", ".join(partes_endereco) if partes_endereco else ""
+
+    def adicionar_contato(self, contato: 'Contato') -> None:
+        """
+        Adiciona um contato à empresa.
+
+        Args:
+            contato (Contato): Contato a ser vinculado à empresa
+        """
+        self.contatos.add(contato)
+
+    def remover_contato(self, contato: 'Contato') -> None:
+        """
+        Remove um contato da empresa.
+
+        Args:
+            contato (Contato): Contato a ser removido da empresa
+        """
+        self.contatos.remove(contato)
+
+    def get_contatos_ativos(self):
+        """
+        Retorna todos os contatos ativos vinculados à empresa.
+
+        Returns:
+            QuerySet: Contatos ativos da empresa
+        """
+        return self.contatos.filter(ativo=True)
+
+    def atualizar_metadados(self, chave: str, valor: Any) -> None:
+        """
+        Atualiza uma chave nos metadados da empresa.
+
+        Args:
+            chave (str): Chave a ser atualizada nos metadados
+            valor: Valor a ser armazenado
+        """
+        if not self.metadados:
+            self.metadados = {}
+
+        self.metadados[chave] = valor
+        self.save()
+
+    def get_metadados(self, chave: str, padrao: Any = None) -> Any:
+        """
+        Recupera um valor dos metadados da empresa.
+
+        Args:
+            chave (str): Chave a ser recuperada dos metadados
+            padrao: Valor padrão se a chave não existir
+
+        Returns:
+            Valor armazenado na chave ou valor padrão
+        """
+        if not self.metadados:
+            return padrao
+
+        return self.metadados.get(chave, padrao)
+
+
 class StatusAtendimento(models.TextChoices):
     """
     Enum para definir os estados possíveis do atendimento.
@@ -606,7 +1001,7 @@ class StatusAtendimento(models.TextChoices):
     """
     AGUARDANDO_INICIAL = 'aguardando_inicial', 'Aguardando Interação Inicial'
     EM_ANDAMENTO = 'em_andamento', 'Em Andamento'
-    AGUARDANDO_CLIENTE = 'aguardando_cliente', 'Aguardando Cliente'
+    AGUARDANDO_CONTATO = 'aguardando_contato', 'Aguardando Contato'
     AGUARDANDO_ATENDENTE = 'aguardando_atendente', 'Aguardando Atendente'
     RESOLVIDO = 'resolvido', 'Resolvido'
     CANCELADO = 'cancelado', 'Cancelado'
@@ -658,6 +1053,7 @@ class TipoMensagem(models.TextChoices):
 
         # Mapeamento direto das chaves JSON para os tipos
         mapeamento = {
+            'conversation': cls.TEXTO_FORMATADO,  # Mensagem de texto simples
             'extendedTextMessage': cls.TEXTO_FORMATADO,
             'imageMessage': cls.IMAGEM,
             'videoMessage': cls.VIDEO,
@@ -702,9 +1098,9 @@ class TipoRemetente(models.TextChoices):
     Enum para definir os tipos de remetente das mensagens.
 
     Define quem enviou a mensagem para controle do fluxo de interação
-    entre cliente, bot e atendente humano.
+    entre contato, bot e atendente humano.
     """
-    CLIENTE = 'cliente', 'Cliente'
+    CONTATO = 'contato', 'Contato'
     BOT = 'bot', 'Bot/Sistema'
     ATENDENTE_HUMANO = 'atendente_humano', 'Atendente Humano'
 
@@ -718,7 +1114,7 @@ class Atendimento(models.Model):
 
     Attributes:
         id: Chave primária do registro
-        cliente: Cliente vinculado ao atendimento
+        contato: Contato vinculado ao atendimento
         status: Status atual do atendimento
         data_inicio: Data de início do atendimento
         data_fim: Data de finalização do atendimento
@@ -729,17 +1125,17 @@ class Atendimento(models.Model):
         historico_status: Histórico de mudanças de status
         tags: Tags para categorização do atendimento
         avaliacao: Avaliação do atendimento (1-5)
-        feedback: Feedback do cliente
+        feedback: Feedback do contato
     """
     id: models.AutoField = models.AutoField(
         primary_key=True,
         help_text="Chave primária do registro"
     )
-    cliente: models.ForeignKey = models.ForeignKey(
-        Cliente,
+    contato: models.ForeignKey = models.ForeignKey(
+        Contato,
         on_delete=models.CASCADE,
         related_name='atendimentos',
-        help_text="Cliente vinculado ao atendimento"
+        help_text="Contato vinculado ao atendimento"
     )
     status: models.CharField = models.CharField(
         max_length=20,
@@ -804,7 +1200,7 @@ class Atendimento(models.Model):
     feedback: models.TextField = models.TextField(
         blank=True,
         null=True,
-        help_text="Feedback do cliente"
+        help_text="Feedback do contato"
     )
 
     class Meta:
@@ -817,11 +1213,11 @@ class Atendimento(models.Model):
         Retorna representação string do atendimento.
 
         Returns:
-            str: ID do atendimento, telefone do cliente e status atual
+            str: ID do atendimento, telefone do contato e status atual
         """
         return f"Atendimento {
             self.id} - {
-            self.cliente.telefone} ({
+            self.contato.telefone} ({
             self.get_status_display()})"
 
     def finalizar_atendimento(
@@ -1065,7 +1461,7 @@ class Mensagem(models.Model):
         atendimento: Atendimento ao qual a mensagem pertence
         tipo: Tipo da mensagem (texto, imagem, áudio, etc.)
         conteudo: Conteúdo textual da mensagem
-        remetente: Tipo do remetente (cliente, bot, atendente_humano)
+        remetente: Tipo do remetente (contato, bot, atendente_humano)
         timestamp: Data e hora da mensagem
         message_id_whatsapp: ID da mensagem no WhatsApp (se aplicável)
         metadados: Metadados adicionais da mensagem
@@ -1097,7 +1493,7 @@ class Mensagem(models.Model):
     remetente: models.CharField = models.CharField(
         max_length=20,
         choices=TipoRemetente.choices,
-        default=TipoRemetente.CLIENTE,
+        default=TipoRemetente.CONTATO,
         help_text="Tipo do remetente da mensagem"
     )
     timestamp: models.DateTimeField = models.DateTimeField(
@@ -1180,9 +1576,9 @@ class Mensagem(models.Model):
         Propriedade para compatibilidade com código existente.
 
         Returns:
-            bool: True se a mensagem é do cliente
+            bool: True se a mensagem é do contato
         """
-        return self.remetente == TipoRemetente.CLIENTE
+        return self.remetente == TipoRemetente.CONTATO
 
     @property
     def is_from_bot(self) -> bool:
@@ -1335,23 +1731,25 @@ class FluxoConversa(models.Model):
         return self.nome
 
 
-# Função utilitária para inicializar cliente e atendimento
+# Função utilitária para inicializar contato e atendimento
 def inicializar_atendimento_whatsapp(numero_telefone: str,
                                      primeira_mensagem: str = "",
-                                     metadata_cliente: Optional[dict[str, Any]] = None,
-                                     nome_cliente: Optional[str] = None) -> tuple['Cliente',
-                                                                                  'Atendimento']:
+                                     metadata_contato: Optional[dict[str, Any]] = None,
+                                     nome_contato: Optional[str] = None,
+                                     nome_perfil_whatsapp: Optional[str] = None) -> tuple['Contato',
+                                                                                          'Atendimento']:
     """
-    Inicializa ou recupera um cliente e cria um novo atendimento baseado no número do WhatsApp.
+    Inicializa ou recupera um contato e cria um novo atendimento baseado no número do WhatsApp.
 
     Args:
-        numero_telefone (str): Número de telefone do cliente
-        primeira_mensagem (str, optional): Primeira mensagem recebida do cliente
-        metadata_cliente (dict, optional): Metadados adicionais do cliente
-        nome_cliente (str, optional): Nome do cliente (se conhecido)
+        numero_telefone (str): Número de telefone do contato
+        primeira_mensagem (str, optional): Primeira mensagem recebida do contato
+        metadata_contato (dict, optional): Metadados adicionais do contato
+        nome_contato (str, optional): Nome do contato (se conhecido)
+        nome_perfil_whatsapp (str, optional): Nome do perfil do WhatsApp (pushName)
 
     Returns:
-        tuple: Tupla com (cliente, atendimento) criados/recuperados
+        tuple: Tupla com (contato, atendimento) criados/recuperados
 
     Raises:
         Exception: Se houver erro durante a inicialização
@@ -1363,31 +1761,43 @@ def inicializar_atendimento_whatsapp(numero_telefone: str,
             telefone_limpo = '55' + telefone_limpo
         telefone_formatado = '+' + telefone_limpo
 
-        # Busca ou cria o cliente
-        cliente, cliente_criado = Cliente.objects.get_or_create(
+        # Busca ou cria o contato
+        contato, contato_criado = Contato.objects.get_or_create(
             telefone=telefone_formatado,
             defaults={
-                'nome': nome_cliente,
-                'metadados': metadata_cliente or {},
+                'nome_contato': nome_contato,
+                'nome_perfil_whatsapp': nome_perfil_whatsapp,
+                'metadados': metadata_contato or {},
                 'ativo': True
             }
         )
 
-        # Se o cliente já existe, atualiza informações se fornecidas
-        if not cliente_criado:
-            if nome_cliente and not cliente.nome:
-                cliente.nome = nome_cliente
-            if metadata_cliente:
-                cliente.metadados.update(metadata_cliente)
-            cliente.save()
+        # Se o contato já existe, atualiza informações se fornecidas
+        if not contato_criado:
+            atualizado = False
+
+            if nome_contato and not contato.nome_contato:
+                contato.nome_contato = nome_contato
+                atualizado = True
+
+            if nome_perfil_whatsapp and nome_perfil_whatsapp != contato.nome_perfil_whatsapp:
+                contato.nome_perfil_whatsapp = nome_perfil_whatsapp
+                atualizado = True
+
+            if metadata_contato:
+                contato.metadados.update(metadata_contato)
+                atualizado = True
+
+            if atualizado:
+                contato.save()
 
         # Verifica se existe atendimento em andamento
         atendimento_ativo = Atendimento.objects.filter(
-            cliente=cliente,
+            contato=contato,
             status__in=[
                 StatusAtendimento.AGUARDANDO_INICIAL,
                 StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CLIENTE,
+                StatusAtendimento.AGUARDANDO_CONTATO,
                 StatusAtendimento.AGUARDANDO_ATENDENTE
             ]
         ).first()
@@ -1395,7 +1805,7 @@ def inicializar_atendimento_whatsapp(numero_telefone: str,
         # Se não existe atendimento ativo, cria um novo
         if not atendimento_ativo:
             atendimento = Atendimento.objects.create(
-                cliente=cliente,
+                contato=contato,
                 status=StatusAtendimento.AGUARDANDO_INICIAL,
                 contexto_conversa={
                     'canal': 'whatsapp',
@@ -1416,9 +1826,9 @@ def inicializar_atendimento_whatsapp(numero_telefone: str,
         # A mensagem será criada na função processar_mensagem_whatsapp
 
         logger.info(
-            f"{'Novo' if cliente_criado else 'Existente'} cliente inicializado: {cliente.telefone}")
+            f"{'Novo' if contato_criado else 'Existente'} contato inicializado: {contato.telefone}")
 
-        return cliente, atendimento
+        return contato, atendimento
 
     except Exception as e:
         logger.error(f"Erro ao inicializar atendimento WhatsApp: {e}")
@@ -1430,7 +1840,7 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional['Atendimento']:
     Busca um atendimento ativo para o número de telefone fornecido.
 
     Args:
-        numero_telefone (str): Número de telefone do cliente
+        numero_telefone (str): Número de telefone do contato
 
     Returns:
         Atendimento: Atendimento ativo ou None se não encontrado
@@ -1445,16 +1855,16 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional['Atendimento']:
             telefone_limpo = '55' + telefone_limpo
         telefone_formatado = '+' + telefone_limpo
 
-        cliente = Cliente.objects.filter(telefone=telefone_formatado).first()
-        if not cliente:
+        contato = Contato.objects.filter(telefone=telefone_formatado).first()
+        if not contato:
             return None
 
         atendimento = Atendimento.objects.filter(
-            cliente=cliente,
+            contato=contato,
             status__in=[
                 StatusAtendimento.AGUARDANDO_INICIAL,
                 StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CLIENTE,
+                StatusAtendimento.AGUARDANDO_CONTATO,
                 StatusAtendimento.AGUARDANDO_ATENDENTE
             ]
         ).first()
@@ -1472,9 +1882,13 @@ def nova_mensagem(data: dict[str, Any]) -> int:
 
     Args:
         data (dict): Dados brutos do webhook do WhatsApp contendo:
+            - event: Tipo do evento (ex: "messages.upsert")
             - data.key.remoteJid: Identificador do remetente
             - data.key.id: ID da mensagem
+            - data.pushName: Nome do perfil do WhatsApp do remetente
             - data.message: Objeto da mensagem com tipo específico
+            - data.messageType: Tipo da mensagem
+            - data.messageTimestamp: Timestamp da mensagem
 
     Returns:
         int: ID da mensagem criada
@@ -1499,30 +1913,64 @@ def nova_mensagem(data: dict[str, Any]) -> int:
             raise ValueError(
                 "Campo 'remoteJid' não encontrado na chave do webhook")
 
+        # Extrair telefone do remoteJid
         phone = remote_jid.split('@')[0]
         message_id = key_section.get('id')
 
-        # Obter a primeira chave do message (tipo de mensagem)
+        # Extrair pushName (nome do perfil do WhatsApp)
+        push_name = data_section.get('pushName', '')
+
+        # Obter tipo da mensagem da estrutura real da mensagem
+        # Priorizar a primeira chave do message sobre messageType
         message_section = data_section.get('message')
         if not message_section:
             raise ValueError(
                 "Campo 'message' não encontrado nos dados do webhook")
 
+        # Usar primeira chave do message como tipo real da mensagem
         message_keys = message_section.keys()
         tipo_chave = list(message_keys)[0] if message_keys else None
 
+        # Se não conseguiu detectar da estrutura, usar messageType como
+        # fallback
+        if not tipo_chave:
+            tipo_chave = data_section.get('messageType')
+
         # Converter chave JSON para tipo de mensagem interno
         tipo_mensagem = TipoMensagem.obter_por_chave_json(tipo_chave)
+
+        # Garantir que sempre tenhamos um tipo válido (fallback para texto)
+        if tipo_mensagem is None:
+            logger.warning(
+                f"Tipo de mensagem desconhecido '{tipo_chave}' - usando TEXTO_FORMATADO como fallback")
+            tipo_mensagem = TipoMensagem.TEXTO_FORMATADO
 
         # Extrair conteúdo da mensagem com base no tipo
         conteudo = ""
         metadados = {}
 
+        # Adicionar timestamp da mensagem nos metadados se disponível
+        if 'messageTimestamp' in data_section:
+            metadados['messageTimestamp'] = data_section['messageTimestamp']
+
         if tipo_chave:
             message_data = message_section.get(tipo_chave, {})
 
             if tipo_mensagem == TipoMensagem.TEXTO_FORMATADO:
-                conteudo = message_data.get('text', '')
+                # Para mensagens de texto, extrair conteúdo baseado no tipo
+                if tipo_chave == 'conversation':
+                    # Para tipo "conversation", o texto está diretamente no
+                    # campo
+                    conteudo = message_data if isinstance(
+                        message_data, str) else str(message_data)
+                elif tipo_chave == 'extendedTextMessage':
+                    # Para "extendedTextMessage", o texto está em 'text'
+                    conteudo = message_data.get('text', '')
+                else:
+                    # Para outros tipos de texto, tentar 'text' primeiro, senão
+                    # o valor direto
+                    conteudo = message_data.get(
+                        'text', str(message_data) if message_data else '')
             elif tipo_mensagem == TipoMensagem.IMAGEM:
                 # Para imagens, podemos extrair a caption e URL/dados da imagem
                 conteudo = message_data.get('caption', 'Imagem recebida')
@@ -1595,7 +2043,9 @@ def nova_mensagem(data: dict[str, Any]) -> int:
                 conteudo = f"Mensagem do tipo {tipo_chave} recebida"
 
         logger.info(
-            f"Processando mensagem - Telefone: {phone}, Tipo: {tipo_chave}, Conteúdo: {conteudo[:50]}...")
+            f"Processamento de mensagem - Telefone: {phone}, Tipo detectado: {tipo_chave}, "
+            f"Tipo mapeado: {tipo_mensagem}, PushName: '{push_name}', "
+            f"Conteúdo: {conteudo[:50]}...")
 
         # Processar a mensagem usando a função existente
         mensagem = processar_mensagem_whatsapp(
@@ -1604,7 +2054,8 @@ def nova_mensagem(data: dict[str, Any]) -> int:
             tipo_mensagem=tipo_mensagem,
             message_id=message_id,
             metadados=metadados,
-            remetente=TipoRemetente.CLIENTE
+            nome_perfil_whatsapp=push_name,
+            remetente=TipoRemetente.CONTATO
         )
 
         return mensagem
@@ -1620,6 +2071,7 @@ def processar_mensagem_whatsapp(
         tipo_mensagem: 'TipoMensagem' = TipoMensagem.TEXTO_FORMATADO,
         message_id: Optional[str] = None,
         metadados: Optional[dict[str, Any]] = None,
+        nome_perfil_whatsapp: Optional[str] = None,
         remetente: Optional['TipoRemetente'] = None) -> int:
     """
     Processa uma mensagem recebida do WhatsApp.
@@ -1630,6 +2082,7 @@ def processar_mensagem_whatsapp(
         tipo_mensagem (TipoMensagem): Tipo da mensagem (texto, imagem, etc.)
         message_id (str, optional): ID da mensagem no WhatsApp
         metadados (dict, optional): Metadados adicionais da mensagem
+        nome_perfil_whatsapp (str, optional): Nome do perfil do WhatsApp (pushName)
         remetente (TipoRemetente, optional): Tipo do remetente da mensagem (se já determinado)
 
     Returns:
@@ -1651,20 +2104,22 @@ def processar_mensagem_whatsapp(
                         f"Número {numero_telefone} identificado como atendente: {
                             atendente.nome}")
                 else:
-                    remetente = TipoRemetente.CLIENTE
+                    remetente = TipoRemetente.CONTATO
             except Exception as e:
                 logger.warning(
-                    f"Erro ao verificar se número é de atendente: {e}. Assumindo CLIENTE.")
-                remetente = TipoRemetente.CLIENTE
+                    f"Erro ao verificar se número é de atendente: {e}. Assumindo CONTATO.")
+                remetente = TipoRemetente.CONTATO
 
         # Busca atendimento ativo ou inicializa novo
         atendimento = buscar_atendimento_ativo(numero_telefone)
 
         if not atendimento:
             # Se não existe atendimento ativo, inicializa um novo
-            cliente, atendimento = inicializar_atendimento_whatsapp(
+            contato, atendimento = inicializar_atendimento_whatsapp(
                 numero_telefone,
-                conteudo
+                conteudo,
+                metadata_contato=metadados,
+                nome_perfil_whatsapp=nome_perfil_whatsapp
             )
 
         # Verifica se a mensagem já foi processada (evita duplicação)
@@ -1691,10 +2146,10 @@ def processar_mensagem_whatsapp(
             metadados=metadados or {}
         )
 
-        # Atualiza timestamp da última interação do cliente
-        if remetente == TipoRemetente.CLIENTE:
-            atendimento.cliente.ultima_interacao = timezone.now()
-            atendimento.cliente.save()
+        # Atualiza timestamp da última interação do contato
+        if remetente == TipoRemetente.CONTATO:
+            atendimento.contato.ultima_interacao = timezone.now()
+            atendimento.contato.save()
 
             # Atualiza status do atendimento se for a primeira mensagem
             if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:

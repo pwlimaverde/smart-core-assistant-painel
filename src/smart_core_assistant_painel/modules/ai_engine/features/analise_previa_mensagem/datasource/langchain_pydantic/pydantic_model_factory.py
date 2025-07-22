@@ -99,7 +99,7 @@ class PydanticModelFactory:
         {"type": "apresentacao", "value": "meu nome é Paulo"}
       ]
     - entities: [
-        {"type": "cliente", "value": "Paulo"}
+        {"type": "contato", "value": "Paulo"}
       ]
 
     EXEMPLO 2: "Oi! Meu CPF é 123.456.789-00. Preciso urgentemente falar com supervisor sobre o pedido #PED123 que está atrasado. Paguei R$ 1.500 no cartão em 3x mas não recebi ainda"
@@ -133,9 +133,9 @@ class PydanticModelFactory:
       ]
 
     REGRAS IMPORTANTES:
-    - Extraia nomes próprios como entidade "cliente" quando mencionados
+    - Extraia nomes próprios como entidade "contato" quando mencionados
     - A intenção "apresentacao" captura o ATO de se apresentar
-    - A entidade "cliente" captura o NOME mencionado
+    - A entidade "contato" captura o NOME mencionado
     - Use o histórico para resolver referências implícitas quando o contexto for claro
     - É PERFEITAMENTE NORMAL retornar listas vazias quando não há identificações claras
     - Seja conservador: prefira precisão a recall
@@ -168,7 +168,7 @@ class PydanticModelFactory:
 
         # Documentação completa
         full_documentation = f'''
-    Analise a mensagem do cliente considerando o histórico fornecido e extraia intents e entities relevantes.
+    Analise a mensagem do contato considerando o histórico fornecido e extraia intents e entities relevantes.
 
     PRINCÍPIO FUNDAMENTAL: Seja conservador e preciso. É perfeitamente normal retornar listas vazias
     quando não há identificações claras. Prefira precisão a recall.
@@ -229,7 +229,7 @@ def create_dynamic_pydantic_model(intent_types_json: str,
 
     Example:
         >>> intent_json = '{"comunicacao_basica": {"saudacao": "cumprimentos"}}'
-        >>> entity_json = '{"identificacao_pessoal": {"cliente": "nome do cliente"}}'
+        >>> entity_json = '{"identificacao_pessoal": {"contato": "nome do contato"}}'
         >>> Model = create_dynamic_pydantic_model(intent_json, entity_json)
         >>> instance = Model(intent=[{"type": "saudacao", "value": "Olá"}], entities=[])
     """

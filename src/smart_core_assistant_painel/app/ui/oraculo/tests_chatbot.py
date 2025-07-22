@@ -6,7 +6,7 @@ from django.test import TestCase
 
 from .models import (
     Atendimento,
-    Cliente,
+    Contato,
     FluxoConversa,
     Mensagem,
     StatusAtendimento,
@@ -21,98 +21,96 @@ from .models import (
 class ValidateTelefoneTest(TestCase):
     """Testes para validação de telefone"""
 
-    def test_telefone_valido(self):
+    def test_telefone_valido(self) -> None:
         """Teste com telefone válido"""
         # Não deve gerar exceção
         validate_telefone("11999999999")
         validate_telefone("5511999999999")
 
-    def test_telefone_muito_curto(self):
+    def test_telefone_muito_curto(self) -> None:
         """Teste com telefone muito curto"""
         with self.assertRaises(ValidationError):
             validate_telefone("123456789")
 
-    def test_telefone_muito_longo(self):
+    def test_telefone_muito_longo(self) -> None:
         """Teste com telefone muito longo"""
         with self.assertRaises(ValidationError):
             validate_telefone("1234567890123456")
 
-    def test_telefone_com_caracteres_especiais(self):
+    def test_telefone_com_caracteres_especiais(self) -> None:
         """Teste com telefone contendo caracteres especiais"""
         with self.assertRaises(ValidationError):
             validate_telefone("11999999999abc")
 
 
-class ClienteTest(TestCase):
-    """Testes para o modelo Cliente"""
+class ContatoTest(TestCase):
+    """Testes para o modelo Contato"""
 
-    def test_criar_cliente(self):
-        """Teste de criação de cliente"""
-        cliente = Cliente.objects.create(
+    def test_criar_contato(self) -> None:
+        """Teste de criação de contato"""
+        contato = Contato.objects.create(
             telefone="11999999999",
-            nome="João Silva",
-            email="joao@email.com"
+            nome_contato="João Silva"
         )
 
-        self.assertEqual(cliente.telefone, "+5511999999999")
-        self.assertEqual(cliente.nome, "João Silva")
-        self.assertEqual(cliente.email, "joao@email.com")
-        self.assertTrue(cliente.ativo)
+        self.assertEqual(contato.telefone, "+5511999999999")
+        self.assertEqual(contato.nome_contato, "João Silva")
+        self.assertTrue(contato.ativo)
 
-    def test_normalizacao_telefone(self):
+    def test_normalizacao_telefone(self) -> None:
         """Teste de normalização automática do telefone"""
         # Telefone sem código do país
-        cliente1 = Cliente.objects.create(telefone="11999999999")
-        self.assertEqual(cliente1.telefone, "+5511999999999")
+        contato1 = Contato.objects.create(telefone="11999999999")
+        self.assertEqual(contato1.telefone, "+5511999999999")
 
         # Telefone com código do país
-        cliente2 = Cliente.objects.create(telefone="5511888888888")
-        self.assertEqual(cliente2.telefone, "+5511888888888")
+        contato2 = Contato.objects.create(telefone="5511888888888")
+        self.assertEqual(contato2.telefone, "+5511888888888")
 
         # Telefone com formatação
-        cliente3 = Cliente.objects.create(telefone="(11) 99999-9999")
-        self.assertEqual(cliente3.telefone, "+5511999999999")
+        contato3 = Contato.objects.create(telefone="(11) 99999-9999")
+        self.assertEqual(contato3.telefone, "+5511999999999")
 
-    def test_str_cliente(self):
-        """Teste da representação string do cliente"""
-        cliente = Cliente.objects.create(
+    def test_str_cliente(self) -> None:
+        """Teste da representação string do contato"""
+        contato = Contato.objects.create(
             telefone="11999999999",
-            nome="João Silva"
+            nome_contato="João Silva"
         )
-        self.assertEqual(str(cliente), "João Silva (+5511999999999)")
+        self.assertEqual(str(contato), "João Silva (+5511999999999)")
 
-        # Cliente sem nome
-        cliente_sem_nome = Cliente.objects.create(telefone="11888888888")
-        self.assertEqual(str(cliente_sem_nome), "Cliente (+5511888888888)")
+        # Contato sem nome
+        contato_sem_nome = Contato.objects.create(telefone="11888888888")
+        self.assertEqual(str(contato_sem_nome), "Contato (+5511888888888)")
 
 
 class AtendimentoTest(TestCase):
     """Testes para o modelo Atendimento"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Configuração inicial para os testes"""
-        self.cliente = Cliente.objects.create(
+        self.contato = Contato.objects.create(
             telefone="11999999999",
             nome="João Silva"
         )
 
-    def test_criar_atendimento(self):
+    def test_criar_atendimento(self) -> None:
         """Teste de criação de atendimento"""
         atendimento = Atendimento.objects.create(
-            cliente=self.cliente,
+            contato=self.contato,
             assunto="Dúvida sobre pedido"
         )
 
-        self.assertEqual(atendimento.cliente, self.cliente)
+        self.assertEqual(atendimento.contato, self.contato)
         self.assertEqual(
             atendimento.status,
             StatusAtendimento.AGUARDANDO_INICIAL)
         self.assertEqual(atendimento.prioridade, 'normal')
         self.assertIsNone(atendimento.data_fim)
 
-    def test_finalizar_atendimento(self):
+    def test_finalizar_atendimento(self) -> None:
         """Teste de finalização de atendimento"""
-        atendimento = Atendimento.objects.create(cliente=self.cliente)
+        atendimento = Atendimento.objects.create(contato=self.contato)
 
         # Verifica estado inicial
         self.assertIsNone(atendimento.data_fim)
@@ -128,9 +126,9 @@ class AtendimentoTest(TestCase):
         self.assertEqual(atendimento.status, StatusAtendimento.RESOLVIDO)
         self.assertTrue(len(atendimento.historico_status) > 0)
 
-    def test_atualizar_contexto(self):
+    def test_atualizar_contexto(self) -> None:
         """Teste de atualização de contexto"""
-        atendimento = Atendimento.objects.create(cliente=self.cliente)
+        atendimento = Atendimento.objects.create(contato=self.contato)
 
         # Atualiza contexto
         atendimento.atualizar_contexto('numero_pedido', '12345')
@@ -141,9 +139,9 @@ class AtendimentoTest(TestCase):
         self.assertEqual(atendimento.get_contexto('produto'), 'Smartphone')
         self.assertIsNone(atendimento.get_contexto('inexistente'))
 
-    def test_adicionar_historico_status(self):
+    def test_adicionar_historico_status(self) -> None:
         """Teste de adição ao histórico de status"""
-        atendimento = Atendimento.objects.create(cliente=self.cliente)
+        atendimento = Atendimento.objects.create(contato=self.contato)
 
         # Adiciona entrada no histórico
         atendimento.adicionar_historico_status(
@@ -166,15 +164,15 @@ class AtendimentoTest(TestCase):
 class MensagemTest(TestCase):
     """Testes para o modelo Mensagem"""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Configuração inicial para os testes"""
-        self.cliente = Cliente.objects.create(
+        self.contato = Contato.objects.create(
             telefone="11999999999",
             nome="João Silva"
         )
-        self.atendimento = Atendimento.objects.create(cliente=self.cliente)
+        self.atendimento = Atendimento.objects.create(contato=self.contato)
 
-    def test_criar_mensagem(self):
+    def test_criar_mensagem(self) -> None:
         """Teste de criação de mensagem"""
         mensagem = Mensagem.objects.create(
             atendimento=self.atendimento,
@@ -188,7 +186,7 @@ class MensagemTest(TestCase):
         self.assertTrue(mensagem.is_from_client)
         self.assertFalse(mensagem.respondida)
 
-    def test_marcar_como_respondida(self):
+    def test_marcar_como_respondida(self) -> None:
         """Teste de marcação como respondida"""
         mensagem = Mensagem.objects.create(
             atendimento=self.atendimento,
@@ -205,7 +203,7 @@ class MensagemTest(TestCase):
         self.assertEqual(mensagem.resposta_bot, resposta)
         self.assertEqual(mensagem.confianca_resposta, 0.95)
 
-    def test_str_mensagem(self):
+    def test_str_mensagem(self) -> None:
         """Teste da representação string da mensagem"""
         mensagem = Mensagem.objects.create(
             atendimento=self.atendimento,
@@ -220,7 +218,7 @@ class MensagemTest(TestCase):
 class FluxoConversaTest(TestCase):
     """Testes para o modelo FluxoConversa"""
 
-    def test_criar_fluxo(self):
+    def test_criar_fluxo(self) -> None:
         """Teste de criação de fluxo de conversa"""
         fluxo = FluxoConversa.objects.create(
             nome="Atendimento Básico",
@@ -239,7 +237,7 @@ class FluxoConversaTest(TestCase):
 class FuncoesUtilitariasTest(TestCase):
     """Testes para as funções utilitárias"""
 
-    def test_inicializar_atendimento_whatsapp(self):
+    def test_inicializar_atendimento_whatsapp(self) -> None:
         """Teste de inicialização via WhatsApp"""
         telefone = "+5511999999999"
         primeira_mensagem = "Olá! Preciso de ajuda."
@@ -249,23 +247,23 @@ class FuncoesUtilitariasTest(TestCase):
         cliente, atendimento = inicializar_atendimento_whatsapp(
             numero_telefone=telefone,
             primeira_mensagem=primeira_mensagem,
-            nome_cliente=nome
+            nome_contato=nome
         )
 
         # Verifica cliente
         self.assertEqual(cliente.telefone, telefone)
-        self.assertEqual(cliente.nome, nome)
+        self.assertEqual(cliente.nome_contato, nome)
 
         # Verifica atendimento
-        self.assertEqual(atendimento.cliente, cliente)
+        self.assertEqual(atendimento.contato, cliente)
         self.assertEqual(atendimento.status, StatusAtendimento.EM_ANDAMENTO)
 
         # Verifica mensagem
-        mensagens = atendimento.mensagens.all()
+        mensagens = atendimento.mensagens.all()  # type: ignore
         self.assertEqual(mensagens.count(), 1)
         self.assertEqual(mensagens.first().conteudo, primeira_mensagem)
 
-    def test_buscar_atendimento_ativo(self):
+    def test_buscar_atendimento_ativo(self) -> None:
         """Teste de busca de atendimento ativo"""
         telefone = "+5511999999999"
 
@@ -273,10 +271,10 @@ class FuncoesUtilitariasTest(TestCase):
         atendimento = buscar_atendimento_ativo(telefone)
         self.assertIsNone(atendimento)
 
-        # Cria cliente e atendimento
-        cliente = Cliente.objects.create(telefone=telefone)
+        # Cria contato e atendimento
+        contato = Contato.objects.create(telefone=telefone)
         atendimento_ativo = Atendimento.objects.create(
-            cliente=cliente,
+            contato=contato,
             status=StatusAtendimento.EM_ANDAMENTO
         )
 
@@ -291,31 +289,33 @@ class FuncoesUtilitariasTest(TestCase):
         resultado = buscar_atendimento_ativo(telefone)
         self.assertIsNone(resultado)
 
-    def test_processar_mensagem_whatsapp(self):
+    def test_processar_mensagem_whatsapp(self) -> None:
         """Teste de processamento de mensagem do WhatsApp"""
         telefone = "+5511999999999"
         conteudo = "Preciso de ajuda com meu pedido"
 
         # Processa mensagem (cria novo atendimento)
-        mensagem = processar_mensagem_whatsapp(
+        mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=telefone,
             conteudo=conteudo
         )
+        mensagem = Mensagem.objects.get(id=mensagem_id)
 
         # Verifica mensagem
         self.assertEqual(mensagem.conteudo, conteudo)
         self.assertTrue(mensagem.is_from_client)
         self.assertEqual(mensagem.tipo, TipoMensagem.TEXTO_FORMATADO)
 
-        # Verifica cliente e atendimento
-        cliente = mensagem.atendimento.cliente
-        self.assertEqual(cliente.telefone, telefone)
+        # Verifica contato e atendimento
+        contato = mensagem.atendimento.contato  # type: ignore
+        self.assertEqual(contato.telefone, telefone)
 
         # Processa segunda mensagem (usa atendimento existente)
-        segunda_mensagem = processar_mensagem_whatsapp(
+        segunda_mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=telefone,
             conteudo="Meu pedido é #12345"
         )
+        segunda_mensagem = Mensagem.objects.get(id=segunda_mensagem_id)
 
         # Verifica que usa o mesmo atendimento
         self.assertEqual(
@@ -323,33 +323,33 @@ class FuncoesUtilitariasTest(TestCase):
             mensagem.atendimento
         )
 
-    def test_cliente_ja_existente(self):
-        """Teste com cliente já existente"""
+    def test_cliente_ja_existente(self) -> None:
+        """Teste com contato já existente"""
         telefone = "+5511999999999"
 
-        # Cria cliente existente
-        cliente_existente = Cliente.objects.create(
+        # Cria contato existente
+        contato_existente = Contato.objects.create(
             telefone=telefone,
             nome="João Existente"
         )
 
         # Inicializa atendimento
-        cliente, atendimento = inicializar_atendimento_whatsapp(
+        contato, atendimento = inicializar_atendimento_whatsapp(
             numero_telefone=telefone,
             primeira_mensagem="Nova mensagem",
-            nome_cliente="João Novo"
+            nome_contato="João Novo"
         )
 
-        # Verifica que usa o cliente existente
-        self.assertEqual(cliente, cliente_existente)
+        # Verifica que usa o contato existente
+        self.assertEqual(contato, contato_existente)
         # Não sobrescreve nome existente
-        self.assertEqual(cliente.nome, "João Existente")
+        self.assertEqual(contato.nome_contato, "João Existente")
 
 
 class IntegracaoTest(TestCase):
     """Testes de integração entre componentes"""
 
-    def test_fluxo_completo_atendimento(self):
+    def test_fluxo_completo_atendimento(self) -> None:
         """Teste de fluxo completo de atendimento"""
         telefone = "+5511999999999"
 
@@ -357,14 +357,15 @@ class IntegracaoTest(TestCase):
         cliente, atendimento = inicializar_atendimento_whatsapp(
             numero_telefone=telefone,
             primeira_mensagem="Olá! Preciso de ajuda com meu pedido.",
-            nome_cliente="João Silva"
+            nome_contato="João Silva"
         )
 
         # 2. Mensagem subsequente
-        mensagem2 = processar_mensagem_whatsapp(
+        mensagem2_id = processar_mensagem_whatsapp(
             numero_telefone=telefone,
             conteudo="Meu pedido é #12345"
         )
+        mensagem2 = Mensagem.objects.get(id=mensagem2_id)
 
         # 3. Atualiza contexto
         atendimento.atualizar_contexto('numero_pedido', '12345')
@@ -393,11 +394,11 @@ class IntegracaoTest(TestCase):
         self.assertEqual(atendimento.status, StatusAtendimento.RESOLVIDO)
         self.assertIsNotNone(atendimento.data_fim)
         self.assertEqual(atendimento.avaliacao, 5)
-        self.assertEqual(atendimento.mensagens.count(), 2)
+        self.assertEqual(atendimento.mensagens.count(), 2)  # type: ignore
         self.assertEqual(atendimento.get_contexto('numero_pedido'), '12345')
         self.assertTrue(len(atendimento.historico_status) >= 2)
 
-    def test_multiplos_atendimentos_mesmo_cliente(self):
+    def test_multiplos_atendimentos_mesmo_cliente(self) -> None:
         """Teste de múltiplos atendimentos para o mesmo cliente"""
         telefone = "+5511999999999"
 
@@ -405,7 +406,7 @@ class IntegracaoTest(TestCase):
         cliente1, atendimento1 = inicializar_atendimento_whatsapp(
             numero_telefone=telefone,
             primeira_mensagem="Primeira dúvida",
-            nome_cliente="João Silva"
+            nome_contato="João Silva"
         )
 
         # Finaliza primeiro atendimento

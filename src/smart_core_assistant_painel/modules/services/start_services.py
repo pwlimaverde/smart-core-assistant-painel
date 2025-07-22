@@ -4,7 +4,7 @@ from smart_core_assistant_painel.modules.services.features.features_compose impo
     FeaturesCompose, )
 
 
-def start_services():
+def start_services() -> None:
     """
     Inicia todos os serviços necessários da aplicação.
     Garante que o VetorStorage seja configurado desde o início.

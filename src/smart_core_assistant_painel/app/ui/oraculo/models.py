@@ -348,6 +348,43 @@ def validate_cnpj(value: str) -> None:
         raise ValidationError('CNPJ inválido.')
 
 
+def validate_cpf(value: str) -> None:
+    """
+    Valida se o CPF está no formato correto.
+
+    Verifica se o CPF tem 11 dígitos e se o formato está válido.
+    Aceita tanto formato com máscara (XXX.XXX.XXX-XX) quanto sem.
+
+    Args:
+        value (str): CPF a ser validado
+
+    Raises:
+        ValidationError: Se o CPF não atender aos critérios de validação
+
+    Examples:
+        >>> validate_cpf("123.456.789-00")  # válido - com máscara
+        >>> validate_cpf("12345678900")      # válido - sem máscara
+        >>> validate_cpf("123")              # inválido - muito curto
+    """
+    if not value:
+        return
+
+    # Remove caracteres não numéricos
+    cpf_limpo = re.sub(r'\D', '', value)
+
+    # Verifica se tem exatamente 11 dígitos
+    if len(cpf_limpo) != 11:
+        raise ValidationError('CPF deve ter exatamente 11 dígitos.')
+
+    # Verifica se contém apenas números
+    if not cpf_limpo.isdigit():
+        raise ValidationError('CPF deve conter apenas números.')
+
+    # Validação básica para CPFs conhecidos como inválidos
+    if cpf_limpo == '00000000000':
+        raise ValidationError('CPF inválido.')
+
+
 def validate_cep(value: str) -> None:
     """
     Valida se o CEP está no formato correto.
@@ -673,34 +710,36 @@ class Contato(models.Model):
         super().save(*args, **kwargs)
 
 
-class Empresa(models.Model):
+class Cliente(models.Model):
     """
-    Modelo para armazenar informações das empresas.
+    Modelo para armazenar informações dos clientes.
 
-    Representa uma empresa do sistema com informações completas incluindo
+    Representa um cliente do sistema com informações completas incluindo
     dados cadastrais, endereço e relacionamento many-to-many com contatos.
 
     Attributes:
         id: Chave primária do registro
-        nome_fantasia: Nome comum da empresa (obrigatório)
-        razao_social: Nome legal/oficial da empresa
-        cnpj: CNPJ da empresa
+        nome_fantasia: Nome comum do cliente (obrigatório)
+        razao_social: Nome legal/oficial do cliente
+        tipo: Tipo de pessoa (física ou jurídica)
+        cnpj: CNPJ do cliente (para pessoa jurídica)
+        cpf: CPF do cliente (para pessoa física)
         telefone: Telefone fixo ou corporativo
-        site: URL/website da empresa
-        ramo_atividade: Área de atuação da empresa
+        site: URL/website do cliente
+        ramo_atividade: Área de atuação do cliente
         observacoes: Informações adicionais
         cep: Código postal do endereço
         logradouro: Rua ou avenida
         numero: Número do endereço
         complemento: Complemento do endereço
-        bairro: Bairro da empresa
-        cidade: Cidade da empresa
-        uf: Estado da empresa
-        pais: País da empresa
+        bairro: Bairro do cliente
+        cidade: Cidade do cliente
+        uf: Estado do cliente
+        pais: País do cliente
         contatos: Relacionamento many-to-many com contatos
         data_cadastro: Data de cadastro automática
         ultima_atualizacao: Data da última atualização
-        ativo: Status de atividade da empresa
+        ativo: Status de atividade do cliente
         metadados: Informações adicionais em formato JSON
     """
     id: models.AutoField = models.AutoField(
@@ -708,48 +747,65 @@ class Empresa(models.Model):
         help_text="Chave primária do registro"
     )
 
-    # Dados básicos da empresa
+    # Dados básicos do cliente
     nome_fantasia: models.CharField = models.CharField(
         max_length=200,
         blank=False,
         null=False,
-        help_text="Nome comum da empresa (obrigatório)"
+        help_text="Nome comum do cliente (obrigatório)"
     )
     razao_social: models.CharField = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        help_text="Nome legal/oficial da empresa"
+        help_text="Nome legal/oficial do cliente"
+    )
+    tipo: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ('fisica', 'Pessoa Física'),
+            ('juridica', 'Pessoa Jurídica')
+        ],
+        blank=True,
+        null=True,
+        help_text="Tipo de pessoa (física ou jurídica)"
     )
     cnpj: models.CharField = models.CharField(
         max_length=18,  # formato XX.XXX.XXX/XXXX-XX
         blank=True,
         null=True,
         validators=[validate_cnpj],
-        help_text="CNPJ da empresa (formato: 12.345.678/0001-99)"
+        help_text="CNPJ do cliente (formato: 12.345.678/0001-99)"
+    )
+    cpf: models.CharField = models.CharField(
+        max_length=14,  # formato XXX.XXX.XXX-XX
+        blank=True,
+        null=True,
+        validators=[validate_cpf],
+        help_text="CPF do cliente informado durante a conversa (formato: 123.456.789-00)"
     )
     telefone: models.CharField = models.CharField(
         max_length=20,
         blank=True,
         null=True,
         validators=[validate_telefone],
-        help_text="Telefone fixo ou corporativo da empresa"
+        help_text="Telefone fixo ou corporativo do cliente"
     )
     site: models.URLField = models.URLField(
         blank=True,
         null=True,
-        help_text="Website da empresa"
+        help_text="Website do cliente"
     )
     ramo_atividade: models.CharField = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        help_text="Área de atuação da empresa"
+        help_text="Área de atuação do cliente"
     )
     observacoes: models.TextField = models.TextField(
         blank=True,
         null=True,
-        help_text="Informações adicionais sobre a empresa"
+        help_text="Informações adicionais sobre o cliente"
     )
 
     # Dados de endereço
@@ -782,40 +838,40 @@ class Empresa(models.Model):
         max_length=100,
         blank=True,
         null=True,
-        help_text="Bairro da empresa"
+        help_text="Bairro do cliente"
     )
     cidade: models.CharField = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        help_text="Cidade da empresa"
+        help_text="Cidade do cliente"
     )
     uf: models.CharField = models.CharField(
         max_length=2,
         blank=True,
         null=True,
-        help_text="Estado (UF) da empresa"
+        help_text="Estado (UF) do cliente"
     )
     pais: models.CharField = models.CharField(
         max_length=50,
         blank=True,
         null=True,
         default="Brasil",
-        help_text="País da empresa"
+        help_text="País do cliente"
     )
 
     # Relacionamentos
     contatos: models.ManyToManyField = models.ManyToManyField(
         Contato,
         blank=True,
-        related_name='empresas',
-        help_text="Contatos vinculados à empresa"
+        related_name='clientes',
+        help_text="Contatos vinculados ao cliente"
     )
 
     # Campos de controle
     data_cadastro: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
-        help_text="Data de cadastro da empresa"
+        help_text="Data de cadastro do cliente"
     )
     ultima_atualizacao: models.DateTimeField = models.DateTimeField(
         auto_now=True,
@@ -823,33 +879,33 @@ class Empresa(models.Model):
     )
     ativo: models.BooleanField = models.BooleanField(
         default=True,
-        help_text="Status de atividade da empresa"
+        help_text="Status de atividade do cliente"
     )
     metadados: models.JSONField = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Informações adicionais da empresa"
+        help_text="Informações adicionais do cliente"
     )
 
     class Meta:
-        verbose_name = "Empresa"
-        verbose_name_plural = "Empresas"
+        verbose_name = "Cliente"
+        verbose_name_plural = "Clientes"
         ordering = ['nome_fantasia']
 
     def __str__(self):
         """
-        Retorna representação string da empresa.
+        Retorna representação string do cliente.
 
         Returns:
-            str: Nome fantasia da empresa
+            str: Nome fantasia do cliente
         """
         return self.nome_fantasia
 
     def save(self, *args, **kwargs):
         """
-        Salva a empresa normalizando dados antes do salvamento.
+        Salva o cliente normalizando dados antes do salvamento.
 
-        Normaliza CNPJ, CEP e telefone para formatos padronizados.
+        Normaliza CNPJ, CPF, CEP e telefone para formatos padronizados.
 
         Args:
             *args: Argumentos posicionais do método save
@@ -861,6 +917,13 @@ class Empresa(models.Model):
             if len(cnpj_limpo) == 14:
                 # Formata CNPJ: XX.XXX.XXX/XXXX-XX
                 self.cnpj = f"{cnpj_limpo[:2]}.{cnpj_limpo[2:5]}.{cnpj_limpo[5:8]}/{cnpj_limpo[8:12]}-{cnpj_limpo[12:14]}"
+
+        # Normaliza o CPF
+        if self.cpf:
+            cpf_limpo = re.sub(r'\D', '', self.cpf)
+            if len(cpf_limpo) == 11:
+                # Formata CPF: XXX.XXX.XXX-XX
+                self.cpf = f"{cpf_limpo[:3]}.{cpf_limpo[3:6]}.{cpf_limpo[6:9]}-{cpf_limpo[9:11]}"
 
         # Normaliza o CEP
         if self.cep:
@@ -906,7 +969,7 @@ class Empresa(models.Model):
         Retorna o endereço completo formatado.
 
         Returns:
-            str: Endereço completo da empresa
+            str: Endereço completo do cliente
         """
         partes_endereco = []
 
@@ -936,34 +999,34 @@ class Empresa(models.Model):
 
     def adicionar_contato(self, contato: 'Contato') -> None:
         """
-        Adiciona um contato à empresa.
+        Adiciona um contato ao cliente.
 
         Args:
-            contato (Contato): Contato a ser vinculado à empresa
+            contato (Contato): Contato a ser vinculado ao cliente
         """
         self.contatos.add(contato)
 
     def remover_contato(self, contato: 'Contato') -> None:
         """
-        Remove um contato da empresa.
+        Remove um contato do cliente.
 
         Args:
-            contato (Contato): Contato a ser removido da empresa
+            contato (Contato): Contato a ser removido do cliente
         """
         self.contatos.remove(contato)
 
     def get_contatos_ativos(self):
         """
-        Retorna todos os contatos ativos vinculados à empresa.
+        Retorna todos os contatos ativos vinculados ao cliente.
 
         Returns:
-            QuerySet: Contatos ativos da empresa
+            QuerySet: Contatos ativos do cliente
         """
         return self.contatos.filter(ativo=True)
 
     def atualizar_metadados(self, chave: str, valor: Any) -> None:
         """
-        Atualiza uma chave nos metadados da empresa.
+        Atualiza uma chave nos metadados do cliente.
 
         Args:
             chave (str): Chave a ser atualizada nos metadados
@@ -977,7 +1040,7 @@ class Empresa(models.Model):
 
     def get_metadados(self, chave: str, padrao: Any = None) -> Any:
         """
-        Recupera um valor dos metadados da empresa.
+        Recupera um valor dos metadados do cliente.
 
         Args:
             chave (str): Chave a ser recuperada dos metadados

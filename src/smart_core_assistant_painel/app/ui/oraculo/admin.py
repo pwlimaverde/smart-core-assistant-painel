@@ -10,8 +10,8 @@ if TYPE_CHECKING:
 from .models import (
     AtendenteHumano,
     Atendimento,
+    Cliente,
     Contato,
-    Empresa,
     FluxoConversa,
     Mensagem,
     Treinamentos,
@@ -190,7 +190,7 @@ class ContatoAdmin(admin.ModelAdmin):  # type: ignore
         'ultima_interacao',
         'data_cadastro',
         'total_atendimentos',
-        'total_empresas']
+        'total_clientes']
     list_filter = ['data_cadastro', 'ultima_interacao', 'ativo']
     search_fields = ['telefone', 'nome_contato', 'nome_perfil_whatsapp']
     readonly_fields = ['data_cadastro', 'ultima_interacao']
@@ -212,24 +212,26 @@ class ContatoAdmin(admin.ModelAdmin):  # type: ignore
     def total_atendimentos(self, obj: Contato) -> "Any":
         return getattr(obj, 'atendimentos').count()
 
-    @admin.display(description='Total de Empresas')
-    def total_empresas(self, obj: Contato) -> "Any":
-        """Retorna o número total de empresas vinculadas ao contato"""
-        if hasattr(obj, 'empresas'):
-            return getattr(obj, 'empresas').count()
+    @admin.display(description='Total de Clientes')
+    def total_clientes(self, obj: Contato) -> "Any":
+        """Retorna o número total de clientes vinculados ao contato"""
+        if hasattr(obj, 'clientes'):
+            return getattr(obj, 'clientes').count()
         return 0
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Contato]:
-        """Otimiza consultas carregando empresas relacionadas"""
-        return super().get_queryset(request).prefetch_related('empresas')
+        """Otimiza consultas carregando clientes relacionados"""
+        return super().get_queryset(request).prefetch_related('clientes')
 
 
-@admin.register(Empresa)
-class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
+@admin.register(Cliente)
+class ClienteAdmin(admin.ModelAdmin):  # type: ignore
     list_display = [
         'nome_fantasia',
         'razao_social',
+        'tipo',
         'cnpj',
+        'cpf',
         'cidade',
         'uf',
         'ramo_atividade',
@@ -238,6 +240,7 @@ class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
         'data_cadastro']
     list_filter = [
         'ativo',
+        'tipo',
         'uf',
         'cidade',
         'ramo_atividade',
@@ -247,6 +250,7 @@ class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
         'nome_fantasia',
         'razao_social',
         'cnpj',
+        'cpf',
         'telefone',
         'cidade',
         'ramo_atividade']
@@ -259,7 +263,10 @@ class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
 
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('nome_fantasia', 'razao_social', 'cnpj', 'ativo')
+            'fields': ('nome_fantasia', 'razao_social', 'tipo', 'ativo')
+        }),
+        ('Documentos', {
+            'fields': ('cnpj', 'cpf')
         }),
         ('Contatos', {
             'fields': ('telefone', 'site', 'ramo_atividade')
@@ -292,12 +299,12 @@ class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
     )
 
     @admin.display(description='Total de Contatos')
-    def total_contatos(self, obj: Empresa) -> "Any":
-        """Retorna o número total de contatos vinculados à empresa"""
+    def total_contatos(self, obj: Cliente) -> "Any":
+        """Retorna o número total de contatos vinculados ao cliente"""
         return obj.contatos.count()
 
     @admin.display(description='Endereço Completo')
-    def get_endereco_completo_display(self, obj: Empresa) -> str:
+    def get_endereco_completo_display(self, obj: Cliente) -> str:
         """Exibe o endereço completo formatado no admin"""
         return obj.get_endereco_completo() or "-"
 
@@ -308,44 +315,46 @@ class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
     # Actions customizadas
     actions = ['marcar_como_ativa', 'marcar_como_inativa', 'exportar_dados']
 
-    @admin.action(description='Marcar empresas selecionadas como ativas')
+    @admin.action(description='Marcar clientes selecionados como ativos')
     def marcar_como_ativa(
             self,
             request: HttpRequest,
-            queryset: QuerySet[Empresa]) -> None:
+            queryset: QuerySet[Cliente]) -> None:
         queryset.update(ativo=True)
         self.message_user(
-            request, f'{queryset.count()} empresas marcadas como ativas.')
+            request, f'{queryset.count()} clientes marcados como ativos.')
 
-    @admin.action(description='Marcar empresas selecionadas como inativas')
+    @admin.action(description='Marcar clientes selecionados como inativos')
     def marcar_como_inativa(
             self,
             request: HttpRequest,
-            queryset: QuerySet[Empresa]) -> None:
+            queryset: QuerySet[Cliente]) -> None:
         queryset.update(ativo=False)
         self.message_user(
-            request, f'{queryset.count()} empresas marcadas como inativas.')
+            request, f'{queryset.count()} clientes marcados como inativos.')
 
-    @admin.action(description='Exportar dados das empresas selecionadas (CSV)')
+    @admin.action(description='Exportar dados dos clientes selecionados (CSV)')
     def exportar_dados(
             self,
             request: HttpRequest,
-            queryset: QuerySet[Empresa]) -> "Any":
+            queryset: QuerySet[Cliente]) -> "Any":
         """
-        Exporta dados das empresas selecionadas em formato CSV.
+        Exporta dados dos clientes selecionados em formato CSV.
         """
         import csv
 
         from django.http import HttpResponse
 
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="empresas.csv"'
+        response['Content-Disposition'] = 'attachment; filename="clientes.csv"'
 
         writer = csv.writer(response)
         writer.writerow([
             'Nome Fantasia',
             'Razão Social',
+            'Tipo',
             'CNPJ',
+            'CPF',
             'Telefone',
             'Site',
             'Ramo de Atividade',
@@ -359,30 +368,40 @@ class EmpresaAdmin(admin.ModelAdmin):  # type: ignore
             'Data de Cadastro'
         ])
 
-        for empresa in queryset.select_related().prefetch_related('contatos'):
+        for cliente in queryset.select_related().prefetch_related('contatos'):
+            # Mapeia o valor do tipo para o display
+            tipo_choices = {
+                'fisica': 'Pessoa Física',
+                'juridica': 'Pessoa Jurídica'
+            }
+            tipo_display = tipo_choices.get(
+                cliente.tipo, '') if cliente.tipo else ''
+
             writer.writerow([
-                empresa.nome_fantasia,
-                empresa.razao_social or '',
-                empresa.cnpj or '',
-                empresa.telefone or '',
-                empresa.site or '',
-                empresa.ramo_atividade or '',
-                empresa.cep or '',
-                empresa.get_endereco_completo(),
-                empresa.cidade or '',
-                empresa.uf or '',
-                empresa.pais or '',
-                empresa.contatos.count(),
-                'Sim' if empresa.ativo else 'Não',
-                empresa.data_cadastro.strftime('%d/%m/%Y %H:%M') if empresa.data_cadastro else ''
+                cliente.nome_fantasia,
+                cliente.razao_social or '',
+                tipo_display,
+                cliente.cnpj or '',
+                cliente.cpf or '',
+                cliente.telefone or '',
+                cliente.site or '',
+                cliente.ramo_atividade or '',
+                cliente.cep or '',
+                cliente.get_endereco_completo(),
+                cliente.cidade or '',
+                cliente.uf or '',
+                cliente.pais or '',
+                cliente.contatos.count(),
+                'Sim' if cliente.ativo else 'Não',
+                cliente.data_cadastro.strftime('%d/%m/%Y %H:%M') if cliente.data_cadastro else ''
             ])
 
         self.message_user(
             request, f'Dados de {
-                queryset.count()} empresas exportados com sucesso.')
+                queryset.count()} clientes exportados com sucesso.')
         return response
 
-    def get_queryset(self, request: HttpRequest) -> QuerySet[Empresa]:
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Cliente]:
         """Otimiza consultas carregando contatos relacionados"""
         return super().get_queryset(request).prefetch_related('contatos')
 

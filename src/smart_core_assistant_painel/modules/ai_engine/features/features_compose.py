@@ -205,3 +205,8 @@ class FeaturesCompose:
     def solicitacao_info_cliene() -> None:
         logger.warning("Enviando solicitação de informações do cliente")
         # mensagem para coleta de informações do cliente
+
+    @staticmethod
+    def resumo_atendimento() -> None:
+        logger.warning("Enviando assunto principal e resumo do atendimento")
+        # mensagem para resumo do atendimento

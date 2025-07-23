@@ -19,8 +19,8 @@ class OraculoConfig(AppConfig):
             from smart_core_assistant_painel.modules.services.start_services import (
                 start_services, )
             logger.info("Inicializando serviços para Django-Q workers...")
-            # start_initial_loading()
-            # start_services()
+            start_initial_loading()
+            start_services()
             logger.info(
                 "Serviços inicializados com sucesso para Django-Q workers!")
         except Exception as e:

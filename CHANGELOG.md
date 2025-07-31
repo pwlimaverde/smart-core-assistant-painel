@@ -16,3 +16,4 @@ Configuração inicial do projeto.
 2 - Criação de modelos para controle de atendimento em Oraculo
 3 - Criação de diagrama de relacionamento Oraculo
 4 - Criação de diagrama de fluxo de atendimento Oraculo
+5 - Feature analise_previa_mensagem para extração dos intents e entity das mensagens 

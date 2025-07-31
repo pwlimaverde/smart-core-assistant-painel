@@ -1,0 +1,252 @@
+"""
+Comando Django para gerenciar operações do chatbot
+"""
+from django.core.management.base import BaseCommand
+
+from smart_core_assistant_painel.app.ui.oraculo.models import (
+    Atendimento,
+    Cliente,
+    FluxoConversa,
+    Mensagem,
+    StatusAtendimento,
+    TipoMensagem,
+    inicializar_atendimento_whatsapp,
+    processar_mensagem_whatsapp,
+)
+
+
+class Command(BaseCommand):
+    help = 'Gerencia operações do chatbot de atendimento'
+
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--acao',
+            type=str,
+            help='Ação a ser executada: inicializar, processar, estatisticas, limpar',
+            required=True)
+        parser.add_argument(
+            '--telefone',
+            type=str,
+            help='Número de telefone do cliente'
+        )
+        parser.add_argument(
+            '--mensagem',
+            type=str,
+            help='Mensagem a ser processada'
+        )
+        parser.add_argument(
+            '--nome',
+            type=str,
+            help='Nome do cliente'
+        )
+
+    def handle(self, *args, **options):
+        acao = options['acao']
+
+        if acao == 'inicializar':
+            self.inicializar_cliente(options)
+        elif acao == 'processar':
+            self.processar_mensagem(options)
+        elif acao == 'estatisticas':
+            self.mostrar_estatisticas()
+        elif acao == 'limpar':
+            self.limpar_dados()
+        elif acao == 'demo':
+            self.executar_demo()
+        else:
+            self.stdout.write(
+                self.style.ERROR(f'Ação "{acao}" não reconhecida')
+            )
+
+    def inicializar_cliente(self, options):
+        """Inicializa um novo cliente e atendimento"""
+        telefone = options.get('telefone')
+        nome = options.get('nome')
+        mensagem = options.get('mensagem', 'Olá!')
+
+        if not telefone:
+            self.stdout.write(
+                self.style.ERROR('Número de telefone é obrigatório')
+            )
+            return
+
+        try:
+            cliente, atendimento = inicializar_atendimento_whatsapp(
+                numero_telefone=telefone,
+                primeira_mensagem=mensagem,
+                nome_cliente=nome
+            )
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'Cliente inicializado: {cliente.telefone} - {cliente.nome or "Sem nome"}'
+                )
+            )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'Atendimento criado: #{atendimento.id} - Status: {atendimento.get_status_display()}'
+                )
+            )
+
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Erro ao inicializar cliente: {e}')
+            )
+
+    def processar_mensagem(self, options):
+        """Processa uma mensagem de cliente"""
+        telefone = options.get('telefone')
+        mensagem = options.get('mensagem')
+
+        if not telefone or not mensagem:
+            self.stdout.write(
+                self.style.ERROR('Telefone e mensagem são obrigatórios')
+            )
+            return
+
+        try:
+            mensagem_obj = processar_mensagem_whatsapp(
+                numero_telefone=telefone,
+                conteudo=mensagem
+            )
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'Mensagem processada: {mensagem_obj.conteudo[:50]}...'
+                )
+            )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'Atendimento: #{mensagem_obj.atendimento.id}'
+                )
+            )
+
+        except Exception as e:
+            self.stdout.write(
+                self.style.ERROR(f'Erro ao processar mensagem: {e}')
+            )
+
+    def mostrar_estatisticas(self):
+        """Mostra estatísticas do sistema"""
+        self.stdout.write(
+            self.style.SUCCESS('\n=== ESTATÍSTICAS DO CHATBOT ===')
+        )
+
+        # Contadores básicos
+        total_clientes = Cliente.objects.count()
+        total_atendimentos = Atendimento.objects.count()
+        total_mensagens = Mensagem.objects.count()
+
+        self.stdout.write(f'Total de clientes: {total_clientes}')
+        self.stdout.write(f'Total de atendimentos: {total_atendimentos}')
+        self.stdout.write(f'Total de mensagens: {total_mensagens}')
+
+        # Atendimentos por status
+        self.stdout.write('\n--- Atendimentos por Status ---')
+        for status in StatusAtendimento:
+            count = Atendimento.objects.filter(status=status).count()
+            self.stdout.write(f'{status.label}: {count}')
+
+        # Mensagens por tipo
+        self.stdout.write('\n--- Mensagens por Tipo ---')
+        for tipo in TipoMensagem:
+            count = Mensagem.objects.filter(tipo=tipo).count()
+            self.stdout.write(f'{tipo.label}: {count}')
+
+        # Avaliações
+        from django.db.models import Avg
+        avaliacao_media = Atendimento.objects.filter(
+            avaliacao__isnull=False
+        ).aggregate(Avg('avaliacao'))['avaliacao__avg']
+
+        if avaliacao_media:
+            self.stdout.write(f'\nAvaliação média: {avaliacao_media:.2f}')
+
+        # Clientes mais ativos
+        self.stdout.write('\n--- Top 5 Clientes Mais Ativos ---')
+        from django.db.models import Count
+        top_clientes = Cliente.objects.annotate(
+            total_atendimentos=Count('atendimentos')
+        ).order_by('-total_atendimentos')[:5]
+
+        for cliente in top_clientes:
+            self.stdout.write(
+                f'{
+                    cliente.telefone} ({
+                    cliente.nome or "Sem nome"}): {
+                    cliente.total_atendimentos} atendimentos')
+
+    def limpar_dados(self):
+        """Limpa dados de teste (cuidado!)"""
+        resposta = input(
+            'Tem certeza que deseja limpar TODOS os dados? (digite "confirmar"): ')
+
+        if resposta.lower() == 'confirmar':
+            Mensagem.objects.all().delete()
+            Atendimento.objects.all().delete()
+            Cliente.objects.all().delete()
+            FluxoConversa.objects.all().delete()
+
+            self.stdout.write(
+                self.style.SUCCESS('Todos os dados foram removidos!')
+            )
+        else:
+            self.stdout.write(
+                self.style.WARNING('Operação cancelada')
+            )
+
+    def executar_demo(self):
+        """Executa uma demonstração do sistema"""
+        self.stdout.write(
+            self.style.SUCCESS('\n=== DEMONSTRAÇÃO DO CHATBOT ===')
+        )
+
+        # Simula conversas
+        telefones = ['+5511999999999', '+5511888888888', '+5511777777777']
+        mensagens = [
+            'Olá! Preciso de ajuda com meu pedido.',
+            'Qual é o status do meu pedido #12345?',
+            'Quero cancelar minha compra.'
+        ]
+
+        for i, telefone in enumerate(telefones):
+            self.stdout.write(f'\n--- Simulando conversa {i + 1} ---')
+
+            # Inicializa cliente
+            cliente, atendimento = inicializar_atendimento_whatsapp(
+                numero_telefone=telefone,
+                primeira_mensagem=mensagens[i],
+                nome_cliente=f'Cliente {i + 1}'
+            )
+
+            self.stdout.write(f'Cliente: {cliente.telefone}')
+            self.stdout.write(f'Primeira mensagem: {mensagens[i]}')
+
+            # Adiciona algumas mensagens de exemplo
+            respostas = [
+                'Vou verificar isso para você.',
+                'Encontrei suas informações.',
+                'Problema resolvido!'
+            ]
+
+            for resposta in respostas:
+                Mensagem.objects.create(
+                    atendimento=atendimento,
+                    tipo=TipoMensagem.TEXTO_FORMATADO,
+                    conteudo=resposta,
+                    is_from_client=False,
+                    metadados={'gerada_por': 'demo'}
+                )
+
+            # Finaliza atendimento
+            atendimento.avaliacao = 5
+            atendimento.finalizar_atendimento()
+
+            self.stdout.write(
+                self.style.SUCCESS('Atendimento finalizado com sucesso!')
+            )
+
+        self.stdout.write(
+            self.style.SUCCESS('\n=== DEMONSTRAÇÃO CONCLUÍDA ===')
+        )
+        self.stdout.write('Use --acao estatisticas para ver os resultados')

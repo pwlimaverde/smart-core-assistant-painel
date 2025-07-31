@@ -4,7 +4,11 @@ from typing import Any, Dict, Optional, Type
 from langchain_core.language_models.chat_models import BaseChatModel
 from py_return_success_or_error import ParametersReturnResult
 
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError, LlmError, WahaApiError
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    DocumentError,
+    LlmError,
+    WahaApiError,
+)
 
 
 @dataclass
@@ -16,7 +20,8 @@ class MessageParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         return self.__repr__()
-    
+
+
 @dataclass
 class LoadDocumentFileParameters(ParametersReturnResult):
     id: str
@@ -28,6 +33,7 @@ class LoadDocumentFileParameters(ParametersReturnResult):
     def __str__(self) -> str:
         return self.__repr__()
 
+
 @dataclass
 class LoadDocumentConteudoParameters(ParametersReturnResult):
     id: str
@@ -38,6 +44,7 @@ class LoadDocumentConteudoParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         return self.__repr__()
+
 
 class LlmParameters(ParametersReturnResult):
     __slots__ = [
@@ -82,6 +89,17 @@ class LlmParameters(ParametersReturnResult):
             params.update(self.__extra_params)
 
         return params
+
+    def __str__(self) -> str:
+        return self.__repr__()
+    
+@dataclass
+class AnalisePreviaMensagemParameters(ParametersReturnResult):
+    historico_atendimento: dict[str, Any]
+    valid_intent_types: str
+    valid_entity_types: str
+    llm_parameters: LlmParameters
+    error: LlmError
 
     def __str__(self) -> str:
         return self.__repr__()

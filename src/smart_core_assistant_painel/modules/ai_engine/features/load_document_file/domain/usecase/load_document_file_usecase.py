@@ -1,6 +1,7 @@
 
-import json
+from datetime import datetime
 
+from langchain.docstore.document import Document
 from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
@@ -19,19 +20,27 @@ class LoadDocumentFileUseCase(LDFUsecase):
 
     def __call__(
             self,
-            parameters: LoadDocumentFileParameters) -> ReturnSuccessOrError[str]:
+            parameters: LoadDocumentFileParameters) -> ReturnSuccessOrError[list[Document]]:
 
-        documentos = self._resultDatasource(
+        data = self._resultDatasource(
             parameters=parameters, datasource=self._datasource
         )
 
-        if isinstance(documentos, SuccessReturn):
-            completo_json = json.dumps([documento.model_dump_json(
-                indent=2) for documento in documentos.result], ensure_ascii=False)
-            logger.warning(
-                f"Processando completo_json: {completo_json}"
-            )
-            return SuccessReturn(completo_json)
+        if isinstance(data, SuccessReturn):
+            documentos = data.result
+            for doc in documentos:
+                # parameters.context = doc.page_content
+                doc.id = parameters.id
+                doc.metadata.update({
+                    "id_treinamento": str(parameters.id),
+                    "tag": parameters.tag,
+                    "grupo": parameters.grupo,
+                    "source": "treinamento_ia",
+                    "processed_at": datetime.now().isoformat(),
+                })
+            logger.debug(
+                f"Documentos carregados com sucesso: {len(documentos)} documentos: {documentos}")
+            return SuccessReturn(documentos)
         else:
             return ErrorReturn(
                 DocumentError('Erro ao obter dados do datasource.'))

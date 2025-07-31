@@ -6,7 +6,7 @@ class OraculoConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'oraculo'
 
-    def ready(self):
+    def ready(self) -> None:
         # Importa signals para registrar os handlers
         from . import signals  # noqa: F401
 

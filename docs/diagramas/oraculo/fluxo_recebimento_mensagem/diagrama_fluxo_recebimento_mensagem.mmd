@@ -1,0 +1,176 @@
+graph TD
+
+    %% ==============================
+    %% DEFINICAO DE CORES E ESTILOS
+    %% ==============================
+    classDef startEnd fill:#ff6b6b,stroke:#d63031,stroke-width:3px,color:white
+    classDef process fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:white
+    classDef decision fill:#fdcb6e,stroke:#e17055,stroke-width:2px,color:black
+    classDef database fill:#55a3ff,stroke:#2d3436,stroke-width:2px,color:white
+    classDef botFlow fill:#00b894,stroke:#00a085,stroke-width:2px,color:white
+    classDef humanFlow fill:#e17055,stroke:#d63031,stroke-width:2px,color:white
+    classDef systemFlow fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px,color:white
+    classDef transferFlow fill:#fd79a8,stroke:#e84393,stroke-width:2px,color:white
+    classDef sectorFlow fill:#00cec9,stroke:#00b894,stroke-width:2px,color:white
+    classDef todoFlow fill:#ddd,stroke:#999,stroke-width:2px,color:black
+    
+    %% Estilo para subgrafos da legenda (invisiveis)
+    classDef legendaInvisible fill:transparent,stroke:transparent
+
+    %% ==============================
+    %% LEGENDA MELHORADA COM MAIS ESPACO
+    %% ==============================
+    subgraph Legenda ["📋 Legenda de Cores e Simbolos do Fluxo"]
+        direction TB
+        subgraph LegendaRow1 [" "]
+            L1[🚀 Inicio/Fim]:::startEnd
+            L2[⚙️ Processo]:::process
+            L3[❓ Decisao]:::decision
+        end
+        subgraph LegendaRow2 [" "]
+            L4[💾 Banco de Dados]:::database
+            L5[🤖 Fluxo do Bot]:::botFlow
+        end
+        subgraph LegendaRow3 [" "]
+            L6[👤 Fluxo Humano]:::humanFlow
+            L7[🔧 Sistema/Controle]:::systemFlow
+        end
+        subgraph LegendaRow4 [" "]
+            L8[🔄 Transferencia]:::transferFlow
+            L9[⚠️ TODO - Não Implementado]:::todoFlow
+        end
+    end
+
+    %% ==============================
+    %% FLUXO PRINCIPAL - IMPLEMENTACAO REAL
+    %% ==============================
+    
+    %% 1. INICIO DO FLUXO - WEBHOOK RECEBIMENTO
+    Start[🚀 1. INICIO DO FLUXO<br/>Nova Mensagem Recebida]:::startEnd
+    
+    %% 1.1 WEBHOOK WHATSAPP - VALIDACAO INICIAL
+    ReceiveMsg[📱 1.1 webhook_whatsapp<br/>Validar requisição POST<br/>Parse JSON do payload<br/>Validar estrutura dados<br/>Log auditoria entrada]:::process
+    
+    %% 1.2 NOVA MENSAGEM - EXTRACAO DE DADOS
+    ExtractMessageData[🔍 1.2 nova_mensagem<br/>Extrair telefone de remoteJid<br/>Identificar tipo mensagem por chave<br/>Processar conteúdo específico<br/>Extrair metadados por tipo]:::systemFlow
+    
+    %% 1.3 PROCESSAR MENSAGEM WHATSAPP
+    CallMessageProcessor[⚙️ 1.3 processar_mensagem_whatsapp<br/>Determinar remetente CLIENTE/ATENDENTE<br/>Buscar atendimento ativo<br/>Criar objeto Mensagem no BD<br/>Atualizar timestamp cliente]:::systemFlow
+    
+    %% 1.4 RECUPERAR OBJETO MENSAGEM
+    RecoverMessage[💾 1.4 Recuperar Objeto Mensagem<br/>Mensagem.objects.get por ID<br/>Acessar mensagem.atendimento<br/>Preparar para processamento]:::database
+    
+    %% 2. CONVERSAO DE CONTEXTO MULTIMIDIA
+    CheckNonTextMessage{❓ 2.1 Mensagem não é texto?<br/>Verificar tipo != TEXTO_FORMATADO}:::decision
+    ConvertContext[🤖 2.2 _converter_contexto<br/>Converter metadados para texto<br/>Implementação atual: placeholder<br/>Retorna 'contexto']:::botFlow
+    UpdateMessageContent[💾 2.3 Atualizar Conteúdo Mensagem<br/>Substituir conteúdo original<br/>Salvar com update_fields<br/>Log conversão realizada]:::database
+    
+    %% 3. VERIFICACAO DE DIRECIONAMENTO
+    CheckBotCanRespond[🔧 3.1 _pode_bot_responder_atendimento<br/>Verificar ausência mensagens atendente<br/>Verificar atendimento.atendente_humano<br/>Retorna True se bot pode responder]:::systemFlow
+    
+    %% 4. DECISAO DE DIRECIONAMENTO
+    BotCanRespond{❓ 4.1 Bot pode responder?<br/>Resultado da verificação anterior}:::decision
+    
+    %% 5. FLUXO BOT - PLACEHOLDER ATUAL
+    BotResponseTODO[⚠️ 5.1 RESPOSTA AUTOMATICA BOT<br/>TODO: Não implementado<br/>Comentado no código<br/>Preparado para implementação]:::todoFlow
+    
+    %% 6. FLUXO HUMANO - ATUAL
+    HumanFlow[👤 6.1 DIRECIONAMENTO HUMANO<br/>Mensagem direcionada para humano<br/>Verificar se tem atendente responsável<br/>Log direcionamento]:::humanFlow
+    
+    CheckResponsibleAgent{❓ 6.2 Tem atendente<br/>responsável?<br/>atendimento.atendente_humano}:::decision
+    
+    DirectToResponsible[🎯 6.3 Direcionar para Responsável<br/>Mensagem vai para atendente definido<br/>Log: direcionado para Nome<br/>Manter contexto conversa]:::humanFlow
+    
+    DirectToTriage[📋 6.4 Direcionar para Triagem<br/>Mensagem aguarda triagem<br/>Log: direcionado para triagem<br/>Buscar atendente disponível]:::humanFlow
+    
+    %% 7. RESPOSTA FINAL WEBHOOK
+    ReturnSuccess[✅ 7. RESPOSTA WEBHOOK<br/>Status: success<br/>mensagem_id: ID<br/>direcionamento: bot/humano]:::process
+    ReturnError[❌ 7.1 RESPOSTA ERRO<br/>Status HTTP apropriado<br/>Mensagem de erro<br/>Log detalhado]:::process
+    
+    %% 8. FIM DO FLUXO
+    End[🏁 FIM<br/>Webhook Processado]:::startEnd
+    
+    %% ==============================
+    %% CONEXOES DO FLUXO PRINCIPAL
+    %% ==============================
+    
+    Start --> ReceiveMsg
+    ReceiveMsg --> ExtractMessageData
+    ExtractMessageData --> CallMessageProcessor
+    CallMessageProcessor --> RecoverMessage
+    
+    RecoverMessage --> CheckNonTextMessage
+    CheckNonTextMessage -->|Sim| ConvertContext
+    CheckNonTextMessage -->|Não| CheckBotCanRespond
+    ConvertContext --> UpdateMessageContent
+    UpdateMessageContent --> CheckBotCanRespond
+    
+    CheckBotCanRespond --> BotCanRespond
+    BotCanRespond -->|True| BotResponseTODO
+    BotCanRespond -->|False| HumanFlow
+    
+    BotResponseTODO --> ReturnSuccess
+    
+    HumanFlow --> CheckResponsibleAgent
+    CheckResponsibleAgent -->|Sim| DirectToResponsible
+    CheckResponsibleAgent -->|Não| DirectToTriage
+    
+    DirectToResponsible --> ReturnSuccess
+    DirectToTriage --> ReturnSuccess
+    
+    ReturnSuccess --> End
+    ReturnError --> End
+    
+    %% ==============================
+    %% TRATAMENTO DE ERROS (simplificado)
+    %% ==============================
+    ReceiveMsg -.->|Erro| ReturnError
+    ExtractMessageData -.->|Erro| ReturnError
+    CallMessageProcessor -.->|Erro| ReturnError
+    RecoverMessage -.->|Erro| ReturnError
+    ConvertContext -.->|Erro| ReturnError
+    CheckBotCanRespond -.->|Erro| HumanFlow
+    
+    %% ==============================
+    %% DETALHAMENTO PROCESSOS INTERNOS
+    %% ==============================
+    
+    subgraph DetalheBuscarAtendimento ["🔍 Detalhamento: buscar_atendimento_ativo"]
+        direction TB
+        BA1[📞 Normalizar telefone<br/>Adicionar +55 se necessário<br/>Limpar caracteres especiais]:::systemFlow
+        BA2[👤 Buscar Cliente<br/>Cliente.objects.filter<br/>Por telefone formatado]:::database
+        BA3[📋 Buscar Atendimento Ativo<br/>Status: AGUARDANDO_INICIAL<br/>EM_ANDAMENTO, AGUARDANDO_*]:::database
+        BA1 --> BA2 --> BA3
+    end
+    
+    subgraph DetalheInicializarAtendimento ["🆕 Detalhamento: inicializar_atendimento_whatsapp"]
+        direction TB
+        IA1[👤 get_or_create Cliente<br/>Telefone formatado<br/>Metadados opcionais]:::database
+        IA2[📋 Verificar Atendimento Ativo<br/>Evitar duplicação<br/>Reutilizar se existir]:::database
+        IA3[🆕 Criar Novo Atendimento<br/>Status: AGUARDANDO_INICIAL<br/>Contexto WhatsApp]:::database
+        IA4[📝 Histórico Status<br/>Registrar criação<br/>Motivo: WhatsApp]:::database
+        IA1 --> IA2 --> IA3 --> IA4
+    end
+    
+    subgraph DetalheTiposMensagem ["📱 Detalhamento: Tipos de Mensagem Suportados"]
+        direction TB
+        TM1[📝 TEXTO_FORMATADO<br/>Extrai: text<br/>Conteúdo direto]:::process
+        TM2[🖼️ IMAGEM<br/>Extrai: caption, mimetype, url<br/>fileLength para metadados]:::process
+        TM3[🎥 VIDEO<br/>Extrai: caption, mimetype, url<br/>seconds, fileLength]:::process
+        TM4[🎵 AUDIO<br/>Extrai: mimetype, url, seconds<br/>ptt para voz]:::process
+        TM5[📄 DOCUMENTO<br/>Extrai: fileName, mimetype<br/>url, fileLength]:::process
+        TM6[🎭 OUTROS<br/>STICKER, LOCALIZACAO<br/>CONTATO, LISTA, etc.]:::process
+    end
+    
+    %% ==============================
+    %% FUNCOES NAO IMPLEMENTADAS (TODO)
+    %% ==============================
+    
+    subgraph TODOImplementacoes ["⚠️ Funcionalidades Planejadas (TODO)"]
+        direction TB
+        TODO1[🤖 Resposta Automática Bot<br/>Gerar resposta com IA<br/>Calcular confiança<br/>Enviar automaticamente]:::todoFlow
+        TODO2[🔍 Classificação Intent<br/>PERGUNTA, SATISFACAO<br/>TRANSFERENCIA, etc.]:::todoFlow
+        TODO3[🔄 Transferência Automática<br/>Por especialidade<br/>Por departamento]:::todoFlow
+        TODO4[🔐 Validação API Key<br/>Segurança webhook<br/>HMAC ou banco dados]:::todoFlow
+        TODO5[🎯 Análise Conteúdo Mídia<br/>OCR para imagens<br/>Transcrição áudio]:::todoFlow
+    end

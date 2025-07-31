@@ -4,7 +4,6 @@ from typing import Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama
-from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage, )
@@ -48,6 +47,10 @@ class ServiceHub:
         self._chunk_overlap: Optional[int] = None
         self._chunk_size: Optional[int] = None
         self._faiss_model: Optional[str] = None
+        self._prompt_system_analise_previa_mensagem: Optional[str] = None
+        self._prompt_human_analise_previa_mensagem: Optional[str] = None
+        self._valid_entity_types: Optional[str] = None
+        self._valid_intent_types: Optional[str] = None
 
     def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
         """Define a instância do VetorStorage."""
@@ -160,6 +163,34 @@ class ServiceHub:
             self._llm_class = self._get_llm_class()
         return self._llm_class if self._llm_class is not None else ChatOllama
 
+    @property
+    def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
+        if self._prompt_system_analise_previa_mensagem is None:
+            self._prompt_system_analise_previa_mensagem = os.environ.get(
+                'PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM')
+        return self._prompt_system_analise_previa_mensagem if self._prompt_system_analise_previa_mensagem is not None else ""
+
+    @property
+    def PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM(self) -> str:
+        if self._prompt_human_analise_previa_mensagem is None:
+            self._prompt_human_analise_previa_mensagem = os.environ.get(
+                'PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM')
+        return self._prompt_human_analise_previa_mensagem if self._prompt_human_analise_previa_mensagem is not None else ""
+
+    @property
+    def VALID_ENTITY_TYPES(self) -> str:
+        if self._valid_entity_types is None:
+            self._valid_entity_types = os.environ.get(
+                'VALID_ENTITY_TYPES')
+        return self._valid_entity_types if self._valid_entity_types is not None else ""
+
+    @property
+    def VALID_INTENT_TYPES(self) -> str:
+        if self._valid_intent_types is None:
+            self._valid_intent_types = os.environ.get(
+                'VALID_INTENT_TYPES')
+        return self._valid_intent_types if self._valid_intent_types is not None else ""
+
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe LLM baseada na variável de ambiente."""
         llm_type = os.environ.get('LLM_CLASS', 'ChatOllama')
@@ -177,6 +208,7 @@ class ServiceHub:
                 f"LLM class '{llm_type}' not recognized. "
                 "Please set 'LLM_CLASS' environment variable to 'ChatGroq', 'ChatOpenAI', or 'ChatOllama'."
             )
+
 
 # Instância global da configuração
 SERVICEHUB = ServiceHub()

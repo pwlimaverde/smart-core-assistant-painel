@@ -1,14 +1,14 @@
 
-import json
 
-from loguru import logger
+from datetime import datetime
+
+from langchain.docstore.document import Document
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentConteudoParameters,
 )
@@ -19,19 +19,21 @@ class LoadDocumentConteudoUseCase(LDCUsecase):
 
     def __call__(
             self,
-            parameters: LoadDocumentConteudoParameters) -> ReturnSuccessOrError[str]:
-
-        documentos = self._resultDatasource(
-            parameters=parameters, datasource=self._datasource
-        )
-
-        if isinstance(documentos, SuccessReturn):
-            completo_json = json.dumps([documento.model_dump_json(
-                indent=2) for documento in documentos.result], ensure_ascii=False)
-            logger.warning(
-                f"Processando completo_json: {completo_json}"
-            )
-            return SuccessReturn(completo_json)
-        else:
-            return ErrorReturn(
-                DocumentError('Erro ao obter dados do datasource.'))
+            parameters: LoadDocumentConteudoParameters) -> ReturnSuccessOrError[list[Document]]:
+        try:
+            text_doc = [Document(
+                page_content=parameters.conteudo,
+                id=parameters.id,
+                metadata={
+                        "id_treinamento": str(parameters.id),
+                        "tag": parameters.tag,
+                        "grupo": parameters.grupo,
+                        "source": "treinamento_ia",
+                        "processed_at": datetime.now().isoformat(),
+                        }
+            )]
+            return SuccessReturn(text_doc)
+        except Exception as e:
+            error = parameters.error
+            error.message = f'{error.message} - Exception: {str(e)}'
+            return ErrorReturn(error)

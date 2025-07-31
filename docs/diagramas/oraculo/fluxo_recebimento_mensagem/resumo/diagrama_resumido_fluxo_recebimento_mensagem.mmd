@@ -1,0 +1,124 @@
+graph TD
+    %% ==============================
+    %% DEFINICAO DE CORES E ESTILOS
+    %% ==============================
+    classDef startEnd fill:#ff6b6b,stroke:#d63031,stroke-width:3px,color:white
+    classDef process fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:white
+    classDef decision fill:#fdcb6e,stroke:#e17055,stroke-width:2px,color:black
+    classDef botFlow fill:#00b894,stroke:#00a085,stroke-width:2px,color:white
+    classDef humanFlow fill:#e17055,stroke:#d63031,stroke-width:2px,color:white
+    classDef systemFlow fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px,color:white
+
+    %% ==============================
+    %% LEGENDA SIMPLIFICADA
+    %% ==============================
+    subgraph Legenda ["📋 Legenda"]
+        L1[🚀 Inicio/Fim]:::startEnd
+        L2[⚙️ Processo]:::process
+        L3[❓ Decisao]:::decision
+        L4[🤖 Bot]:::botFlow
+        L5[👤 Humano]:::humanFlow
+        L6[🔧 Sistema]:::systemFlow
+    end
+
+    %% ==============================
+    %% FLUXO PRINCIPAL RESUMIDO
+    %% ==============================
+    
+    %% 1. INICIO
+    Start[🚀 Nova Mensagem<br/>WhatsApp Recebida]:::startEnd
+    ProcessMessage[⚙️ Processar Mensagem<br/>• Normalizar telefone<br/>• Converter mídia para texto<br/>• Buscar/criar cliente]:::process
+    
+    %% 2. VERIFICAR ATENDIMENTO
+    CheckActiveTicket{❓ Existe atendimento<br/>ativo para cliente?}:::decision
+    
+    %% 3. CRIAR OU CONTINUAR
+    CreateTicket[📋 Criar Novo<br/>Atendimento<br/>Status: EM_ANDAMENTO]:::systemFlow
+    ContinueTicket[📋 Continuar<br/>Atendimento Existente<br/>Salvar nova mensagem]:::systemFlow
+    
+    %% 4. CONTROLE DE RESPOSTA
+    CheckBotControl{❓ Bot pode responder?<br/>Sem controle humano?}:::decision
+    
+    %% 5. FLUXO HUMANO
+    TransferToHuman[👤 Transferir para<br/>Atendente Humano<br/>• Buscar disponível<br/>• Notificar atendente]:::humanFlow
+    HumanResponse[👤 Atendente Responde<br/>• Controle total humano<br/>• Bot inativo]:::humanFlow
+    
+    %% 6. FLUXO BOT
+    AnalyzeIntent{❓ Classificar Intent<br/>PERGUNTA ou SATISFACAO?}:::decision
+    GenerateResponse[🤖 Gerar Resposta IA<br/>Calcular confiança 0-1]:::botFlow
+    CheckConfidence{❓ Confiança ≥ 0.5?}:::decision
+    
+    %% 7. RESPOSTA BOT
+    AutoResponse[🤖 Resposta Automática<br/>Confiança ≥ 0.8]:::botFlow
+    ReviewResponse[⚠️ Resposta p/ Revisão<br/>Confiança 0.5-0.8]:::botFlow
+    
+    %% 8. SATISFACAO E ENCERRAMENTO
+    DetectSatisfaction[✅ Cliente Satisfeito<br/>Expressa gratidão<br/>ou resolução]:::botFlow
+    CloseTicket[🏁 Encerrar Atendimento<br/>• Mensagem final<br/>• Status: RESOLVIDO<br/>• Solicitar avaliação]:::systemFlow
+    
+    %% 9. AGUARDAR RESPOSTA
+    WaitResponse[⏳ Aguardar Resposta<br/>Cliente/Atendente<br/>Com timeout]:::systemFlow
+    
+    %% 10. FIM
+    End[🏁 Atendimento<br/>Finalizado]:::startEnd
+
+    %% ==============================
+    %% CONEXOES DO FLUXO
+    %% ==============================
+    
+    %% Fluxo principal
+    Start --> ProcessMessage
+    ProcessMessage --> CheckActiveTicket
+    
+    %% Decisão de atendimento
+    CheckActiveTicket -->|❌ Não| CreateTicket
+    CheckActiveTicket -->|✅ Sim| ContinueTicket
+    
+    %% Convergência para controle
+    CreateTicket --> CheckBotControl
+    ContinueTicket --> CheckBotControl
+    
+    %% Decisão de controle
+    CheckBotControl -->|❌ Não - Humano ativo| TransferToHuman
+    CheckBotControl -->|✅ Sim - Bot livre| AnalyzeIntent
+    
+    %% Fluxo humano
+    TransferToHuman --> HumanResponse
+    HumanResponse --> WaitResponse
+    
+    %% Fluxo bot - classificação
+    AnalyzeIntent -->|❓ PERGUNTA| GenerateResponse
+    AnalyzeIntent -->|✅ SATISFACAO| DetectSatisfaction
+    
+    %% Fluxo bot - confiança
+    GenerateResponse --> CheckConfidence
+    CheckConfidence -->|❌ < 0.5| TransferToHuman
+    CheckConfidence -->|✅ ≥ 0.5| CheckHighConfidence{❓ Confiança ≥ 0.8?}:::decision
+    
+    %% Resposta bot
+    CheckHighConfidence -->|✅ Alta| AutoResponse
+    CheckHighConfidence -->|❌ Média| ReviewResponse
+    
+    %% Convergência para espera
+    AutoResponse --> WaitResponse
+    ReviewResponse --> WaitResponse
+    
+    %% Satisfação direta
+    DetectSatisfaction --> CloseTicket
+    
+    %% Loops de retorno
+    WaitResponse -.->|🔄 Nova mensagem| ProcessMessage
+    WaitResponse -->|⏰ Timeout/Finalizar| CloseTicket
+    
+    %% Encerramento
+    CloseTicket --> End
+
+    %% ==============================
+    %% NOTAS IMPORTANTES
+    %% ==============================
+    %% Nota 1: Mídia (áudio, imagem, vídeo) é convertida para texto via IA
+    %% Nota 2: Um cliente só pode ter um atendimento ativo por vez
+    %% Nota 3: Bot fica inativo quando atendente humano participa
+    %% Nota 4: Classificação de intent determina fluxo: pergunta vs satisfação
+    %% Nota 5: Sistema de confiança evita respostas inadequadas
+    %% Nota 6: Loops permitem conversas contínuas até resolução

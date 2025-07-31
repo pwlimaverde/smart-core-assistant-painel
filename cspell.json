@@ -1,0 +1,90 @@
+{
+    "version": "0.2",
+    "language": "en,pt,pt_BR",
+    "dictionaries": [
+        "portuguese",
+        "portuguese-brazilian",
+        "python",
+        "django",
+        "technical-terms",
+        "brazil-portuguese",
+        "brazil-names",
+        "brazil-cities",
+        "brazil-states"
+    ],
+    "dictionaryDefinitions": [
+        {
+            "name": "technical-terms",
+            "path": "C:\\PROJETOS\\UTILITARIOS\\Brazil-Dictionary-master\\technical-terms.txt",
+            "addWords": true
+        },
+        {
+            "name": "brazil-portuguese",
+            "path": "C:\\PROJETOS\\UTILITARIOS\\Brazil-Dictionary-master\\pt_BR.dic",
+            "addWords": false
+        },
+        {
+            "name": "brazil-names",
+            "path": "C:\\PROJETOS\\UTILITARIOS\\Brazil-Dictionary-master\\nomes.txt",
+            "addWords": false
+        },
+        {
+            "name": "brazil-cities",
+            "path": "C:\\PROJETOS\\UTILITARIOS\\Brazil-Dictionary-master\\cidades.txt",
+            "addWords": false
+        },
+        {
+            "name": "brazil-states",
+            "path": "C:\\PROJETOS\\UTILITARIOS\\Brazil-Dictionary-master\\estados.txt",
+            "addWords": false
+        }
+    ],
+    "words": [
+        "Analise",
+        "Previa",
+        "Mensagem",
+        "Parametros",
+        "Langchain",
+        "Pydantic",
+        "Datasource",
+        "Atendimento",
+        "Historico",
+        "Processamento",
+        "Configuracao",
+        "Implementacao",
+        "Funcionalidade",
+        "Validacao",
+        "Autenticacao",
+        "Autorizacao",
+        "Requisicao",
+        "Resposta",
+        "Endpoint",
+        "Middleware",
+        "Backend",
+        "Frontend",
+        "Database",
+        "Migracao",
+        "Serializer",
+        "Viewset",
+        "Queryset"
+    ],
+    "ignorePaths": [
+        "node_modules/**",
+        ".git/**",
+        "dist/**",
+        "build/**",
+        "**/*.pyc",
+        "**/__pycache__/**",
+        ".mypy_cache/**",
+        ".pytest_cache/**",
+        "venv/**",
+        ".venv/**"
+    ],
+    "enableFiletypes": [
+        "python",
+        "markdown",
+        "json",
+        "yaml",
+        "toml"
+    ]
+}

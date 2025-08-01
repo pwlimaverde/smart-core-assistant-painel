@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from langchain.docstore.document import Document
@@ -17,11 +16,9 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import LDFUsecase
 
 
 class LoadDocumentFileUseCase(LDFUsecase):
-
     def __call__(
-            self,
-            parameters: LoadDocumentFileParameters) -> ReturnSuccessOrError[list[Document]]:
-
+        self, parameters: LoadDocumentFileParameters
+    ) -> ReturnSuccessOrError[list[Document]]:
         data = self._resultDatasource(
             parameters=parameters, datasource=self._datasource
         )
@@ -31,16 +28,18 @@ class LoadDocumentFileUseCase(LDFUsecase):
             for doc in documentos:
                 # parameters.context = doc.page_content
                 doc.id = parameters.id
-                doc.metadata.update({
-                    "id_treinamento": str(parameters.id),
-                    "tag": parameters.tag,
-                    "grupo": parameters.grupo,
-                    "source": "treinamento_ia",
-                    "processed_at": datetime.now().isoformat(),
-                })
+                doc.metadata.update(
+                    {
+                        "id_treinamento": str(parameters.id),
+                        "tag": parameters.tag,
+                        "grupo": parameters.grupo,
+                        "source": "treinamento_ia",
+                        "processed_at": datetime.now().isoformat(),
+                    }
+                )
             logger.debug(
-                f"Documentos carregados com sucesso: {len(documentos)} documentos: {documentos}")
+                f"Documentos carregados com sucesso: {len(documentos)} documentos: {documentos}"
+            )
             return SuccessReturn(documentos)
         else:
-            return ErrorReturn(
-                DocumentError('Erro ao obter dados do datasource.'))
+            return ErrorReturn(DocumentError("Erro ao obter dados do datasource."))

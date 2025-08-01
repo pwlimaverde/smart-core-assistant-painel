@@ -9,4 +9,4 @@ register = template.Library()
 def markdown_format(value):
     if value:
         return mark_safe(markdown.markdown(value))
-    return ''
+    return ""

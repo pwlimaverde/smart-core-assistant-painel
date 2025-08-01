@@ -48,13 +48,13 @@ class LoadDocumentConteudoParameters(ParametersReturnResult):
 
 class LlmParameters(ParametersReturnResult):
     __slots__ = [
-        '__llm_class',
-        '__model',
-        '__extra_params',
-        'prompt_system',
-        'prompt_human',
-        'context',
-        'error'
+        "__llm_class",
+        "__model",
+        "__extra_params",
+        "prompt_system",
+        "prompt_human",
+        "context",
+        "error",
     ]
 
     def __init__(
@@ -92,7 +92,8 @@ class LlmParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         return self.__repr__()
-    
+
+
 @dataclass
 class AnalisePreviaMensagemParameters(ParametersReturnResult):
     historico_atendimento: dict[str, Any]

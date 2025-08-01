@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import MessageParameters
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    MessageParameters,
+)
 
 
 class WhatsappApi(ABC):

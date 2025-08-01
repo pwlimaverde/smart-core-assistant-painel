@@ -14,7 +14,8 @@ from loguru import logger
 from rolepermissions.checkers import has_permission
 
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
-    FeaturesCompose, )
+    FeaturesCompose,
+)
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import (
@@ -34,8 +35,7 @@ class TreinamentoService:
     """Serviço para gerenciar operações de treinamento"""
 
     @staticmethod
-    def aplicar_pre_analise_documentos(
-            documentos: list[Document]) -> list[Document]:
+    def aplicar_pre_analise_documentos(documentos: list[Document]) -> list[Document]:
         """Aplica pré-análise de IA ao page_content de uma lista de documentos
 
         Args:
@@ -50,7 +50,8 @@ class TreinamentoService:
             try:
                 # Aplicar pré-análise
                 pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
-                    documento.page_content)
+                    documento.page_content
+                )
                 documento.page_content = pre_analise_content
                 documentos_processados.append(documento)
 
@@ -71,8 +72,7 @@ class TreinamentoService:
             return arquivo.temporary_file_path()
         except AttributeError:
             with tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix=os.path.splitext(arquivo.name)[1]
+                delete=False, suffix=os.path.splitext(arquivo.name)[1]
             ) as temp_file:
                 for chunk in arquivo.chunks():
                     temp_file.write(chunk)
@@ -80,17 +80,14 @@ class TreinamentoService:
 
     @staticmethod
     def processar_conteudo_texto(
-            treinamento_id: int,
-            conteudo: str,
-            tag: str,
-            grupo: str) -> list[Document]:
+        treinamento_id: int, conteudo: str, tag: str, grupo: str
+    ) -> list[Document]:
         """Processa conteúdo de texto para treinamento"""
         if not conteudo:
             raise ValueError("Conteúdo não pode ser vazio")
 
         try:
-            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(
-                conteudo)
+            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(conteudo)
             data_conteudo = FeaturesCompose.load_document_conteudo(
                 id=str(treinamento_id),
                 conteudo=pre_analise_conteudo,
@@ -104,10 +101,8 @@ class TreinamentoService:
 
     @staticmethod
     def processar_arquivo_documento(
-            treinamento_id: int,
-            documento_path: str,
-            tag: str,
-            grupo: str) -> list[Document]:
+        treinamento_id: int, documento_path: str, tag: str, grupo: str
+    ) -> list[Document]:
         """Processa arquivo de documento para treinamento"""
         if not documento_path:
             raise ValueError("Caminho do documento não pode ser vazio")
@@ -134,36 +129,37 @@ class TreinamentoService:
                 os.unlink(arquivo_path)
             except OSError as e:
                 logger.warning(
-                    f"Erro ao remover arquivo temporário {arquivo_path}: {e}")
+                    f"Erro ao remover arquivo temporário {arquivo_path}: {e}"
+                )
 
 
 def treinar_ia(request):
     """View para treinamento de IA"""
-    if not has_permission(request.user, 'treinar_ia'):
+    if not has_permission(request.user, "treinar_ia"):
         raise Http404()
 
-    if request.method == 'GET':
-        return render(request, 'treinar_ia.html')
+    if request.method == "GET":
+        return render(request, "treinar_ia.html")
 
-    if request.method == 'POST':
+    if request.method == "POST":
         return _processar_treinamento(request)
 
 
 def _processar_treinamento(request):
     """Processa dados de treinamento enviados via POST"""
-    tag = request.POST.get('tag')
-    grupo = request.POST.get('grupo')
-    conteudo = request.POST.get('conteudo')
-    documento = request.FILES.get('documento')
+    tag = request.POST.get("tag")
+    grupo = request.POST.get("grupo")
+    conteudo = request.POST.get("conteudo")
+    documento = request.FILES.get("documento")
 
     # Validações básicas
     if not tag or not grupo:
-        messages.error(request, 'Tag e Grupo são obrigatórios.')
-        return render(request, 'treinar_ia.html')
+        messages.error(request, "Tag e Grupo são obrigatórios.")
+        return render(request, "treinar_ia.html")
 
     if not conteudo and not documento:
-        messages.error(request, 'É necessário fornecer conteúdo ou documento.')
-        return render(request, 'treinar_ia.html')
+        messages.error(request, "É necessário fornecer conteúdo ou documento.")
+        return render(request, "treinar_ia.html")
 
     documento_path = None
 
@@ -179,11 +175,11 @@ def _processar_treinamento(request):
 
             # Processar arquivo se fornecido
             if documento:
-                documento_path = TreinamentoService.processar_arquivo_upload(
-                    documento)
+                documento_path = TreinamentoService.processar_arquivo_upload(documento)
                 if documento_path:
                     docs_arquivo = TreinamentoService.processar_arquivo_documento(
-                        treinamento.id, documento_path, tag, grupo)
+                        treinamento.id, documento_path, tag, grupo
+                    )
                     documents_list.extend(docs_arquivo)
 
             # Processar conteúdo de texto se fornecido
@@ -197,14 +193,13 @@ def _processar_treinamento(request):
             treinamento.set_documentos(documents_list)
             treinamento.save()
 
-            messages.success(request, 'Treinamento criado com sucesso!')
-            return redirect('pre_processamento',
-                            id=treinamento.id)
+            messages.success(request, "Treinamento criado com sucesso!")
+            return redirect("pre_processamento", id=treinamento.id)
 
     except Exception as e:
         logger.error(f"Erro ao processar treinamento: {e}")
-        messages.error(request, 'Erro interno do servidor. Tente novamente.')
-        return render(request, 'treinar_ia.html')
+        messages.error(request, "Erro interno do servidor. Tente novamente.")
+        return render(request, "treinar_ia.html")
 
     finally:
         # Limpar arquivo temporário
@@ -213,13 +208,13 @@ def _processar_treinamento(request):
 
 def pre_processamento(request, id):
     """View para pré-processamento de treinamento"""
-    if not has_permission(request.user, 'treinar_ia'):
+    if not has_permission(request.user, "treinar_ia"):
         raise Http404()
 
-    if request.method == 'GET':
+    if request.method == "GET":
         return _exibir_pre_processamento(request, id)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         return _processar_pre_processamento(request, id)
 
 
@@ -228,53 +223,55 @@ def _exibir_pre_processamento(request, id):
     try:
         treinamento = Treinamentos.objects.get(id=id)
         conteudo_unificado = treinamento.get_conteudo_unificado()
-        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-            conteudo_unificado)
+        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
 
-        return render(request, 'pre_processamento.html', {
-            'dados_organizados': treinamento,
-            'treinamento': texto_melhorado,
-        })
+        return render(
+            request,
+            "pre_processamento.html",
+            {
+                "dados_organizados": treinamento,
+                "treinamento": texto_melhorado,
+            },
+        )
     except Exception as e:
         logger.error(f"Erro ao gerar pré-processamento: {e}")
-        messages.error(request, 'Erro ao processar dados de treinamento.')
-        return redirect('treinar_ia')
+        messages.error(request, "Erro ao processar dados de treinamento.")
+        return redirect("treinar_ia")
 
 
 def _processar_pre_processamento(request, id):
     """Processa ação do pré-processamento"""
     treinamento = Treinamentos.objects.get(id=id)
-    acao = request.POST.get('acao')
+    acao = request.POST.get("acao")
 
     if not acao:
-        messages.error(request, 'Ação não especificada.')
+        messages.error(request, "Ação não especificada.")
 
-        return redirect('pre_processamento', id=treinamento.id)
+        return redirect("pre_processamento", id=treinamento.id)
 
     try:
         with transaction.atomic():
-            if acao == 'aceitar':
+            if acao == "aceitar":
                 _aceitar_treinamento(id)
-                messages.success(request, 'Treinamento aceito e finalizado!')
-            elif acao == 'manter':
+                messages.success(request, "Treinamento aceito e finalizado!")
+            elif acao == "manter":
                 treinamento.treinamento_finalizado = True
                 treinamento.save()
-                messages.success(request, 'Treinamento mantido e finalizado!')
-            elif acao == 'descartar':
+                messages.success(request, "Treinamento mantido e finalizado!")
+            elif acao == "descartar":
                 treinamento.delete()
-                messages.info(request, 'Treinamento descartado.')
+                messages.info(request, "Treinamento descartado.")
             else:
-                messages.error(request, 'Ação inválida.')
-                return redirect('pre_processamento',
-                                id=treinamento.id)
+                messages.error(request, "Ação inválida.")
+                return redirect("pre_processamento", id=treinamento.id)
 
     except Exception as e:
         logger.error(f"Erro ao processar ação {acao}: {e}")
-        messages.error(request, 'Erro ao processar ação. Tente novamente.')
+        messages.error(request, "Erro ao processar ação. Tente novamente.")
 
-        return redirect('pre_processamento', id=treinamento.id)
+        return redirect("pre_processamento", id=treinamento.id)
 
-    return redirect('treinar_ia')
+    return redirect("treinar_ia")
 
 
 def _aceitar_treinamento(id):
@@ -287,16 +284,15 @@ def _aceitar_treinamento(id):
             return
 
         documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
-            documentos_lista)
+            documentos_lista
+        )
         # Salva alterações
         treinamento.set_documentos(documentos_melhorados)
         treinamento.treinamento_finalizado = True
         treinamento.save()
 
     except Exception as e:
-        logger.error(
-            f"Erro ao aceitar treinamento {
-                treinamento.id}: {e}")
+        logger.error(f"Erro ao aceitar treinamento {treinamento.id}: {e}")
         raise
 
 
@@ -411,12 +407,11 @@ def webhook_whatsapp(request):
 
     try:
         # Validação básica da requisição
-        if request.method != 'POST':
+        if request.method != "POST":
             return JsonResponse({"error": "Método não permitido"}, status=405)
 
         if not request.body:
-            return JsonResponse(
-                {"error": "Corpo da requisição vazio"}, status=400)
+            return JsonResponse({"error": "Corpo da requisição vazio"}, status=400)
 
         # Parse do JSON com tratamento específico
         try:
@@ -427,8 +422,7 @@ def webhook_whatsapp(request):
 
         # Validação dos campos obrigatórios
         if not isinstance(data, dict):
-            return JsonResponse(
-                {"error": "Formato de dados inválido"}, status=400)
+            return JsonResponse({"error": "Formato de dados inválido"}, status=400)
 
         # TODO: Implementar validação de API key se necessário
         # api_key = data.get('apikey')
@@ -440,40 +434,36 @@ def webhook_whatsapp(request):
             mensagem_id = nova_mensagem(data)
         except Exception as e:
             logger.error(f"Erro ao processar nova mensagem: {e}")
-            return JsonResponse(
-                {"error": "Erro ao processar mensagem"}, status=500)
+            return JsonResponse({"error": "Erro ao processar mensagem"}, status=500)
 
         # Validar se a mensagem foi realmente criada
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
         except Mensagem.DoesNotExist:
-            logger.error(
-                f"Mensagem criada (ID: {mensagem_id}) não encontrada no banco")
-            return JsonResponse(
-                {"error": "Mensagem não encontrada"}, status=500)
+            logger.error(f"Mensagem criada (ID: {mensagem_id}) não encontrada no banco")
+            return JsonResponse({"error": "Mensagem não encontrada"}, status=500)
 
         # Processamento especial para mensagens não textuais
         if mensagem.tipo != TipoMensagem.TEXTO_FORMATADO:
             try:
                 conteudo_original = mensagem.conteudo
-                conteudo_convertido = _converter_contexto(
-                    metadata=mensagem.metadados)
+                conteudo_convertido = _converter_contexto(metadata=mensagem.metadados)
 
                 if conteudo_convertido != conteudo_original:
                     mensagem.conteudo = conteudo_convertido
-                    mensagem.save(update_fields=['conteudo'])
+                    mensagem.save(update_fields=["conteudo"])
 
             except Exception as e:
                 # Continua processamento mesmo com erro na conversão
                 logger.error(
-                    f"Erro ao converter contexto da mensagem {mensagem_id}: {e}")
+                    f"Erro ao converter contexto da mensagem {mensagem_id}: {e}"
+                )
         # Analise previa do conteudo da mensagem por agente de IA, detectando
         # intent e extraindo entidades
         try:
             _analisar_conteudo_mensagem(mensagem_id)
         except Exception as e:
-            logger.error(
-                f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
+            logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
         if mensagem.remetente == TipoRemetente.CONTATO:
             atendimento = cast(Atendimento, mensagem.atendimento)
@@ -484,8 +474,7 @@ def webhook_whatsapp(request):
 
         # Verificação de direcionamento do atendimento
         try:
-            is_bot_responder = _pode_bot_responder_atendimento(
-                mensagem.atendimento)
+            is_bot_responder = _pode_bot_responder_atendimento(mensagem.atendimento)
             direcionamento = "BOT" if is_bot_responder else "HUMANO"
 
             if is_bot_responder:
@@ -510,18 +499,22 @@ def webhook_whatsapp(request):
 
         except Exception as e:
             logger.error(
-                f"Erro ao verificar direcionamento da mensagem {mensagem_id}: {e}")
+                f"Erro ao verificar direcionamento da mensagem {mensagem_id}: {e}"
+            )
             # Continua processamento assumindo direcionamento humano por
             # segurança
             is_bot_responder = False
             direcionamento = "HUMANO (por erro)"
 
         # Resposta de sucesso
-        return JsonResponse({
-            "status": "success",
-            "mensagem_id": mensagem_id,
-            "direcionamento": direcionamento.lower()
-        }, status=200)
+        return JsonResponse(
+            {
+                "status": "success",
+                "mensagem_id": mensagem_id,
+                "direcionamento": direcionamento.lower(),
+            },
+            status=200,
+        )
 
     except Exception as e:
         # Log detalhado do erro para debugging
@@ -557,29 +550,29 @@ def _obter_entidades_metadados_validas() -> set[str]:
 
         # Parse do JSON das entidades válidas
         import json
+
         entidades_validas: set[str] = set()
 
         entidades_config = json.loads(valid_entity_types)
 
         # Extrai todas as entidades de todas as categorias
-        if isinstance(
-                entidades_config,
-                dict) and 'entity_types' in entidades_config:
-            for categoria, entidades in entidades_config['entity_types'].items(
-            ):
+        if isinstance(entidades_config, dict) and "entity_types" in entidades_config:
+            for categoria, entidades in entidades_config["entity_types"].items():
                 if isinstance(entidades, dict):
                     entidades_validas.update(entidades.keys())
 
         # Remove entidades que não devem ir para metadados
-        entidades_validas.discard('contato')   # Vai para campo nome
+        entidades_validas.discard("contato")  # Vai para campo nome
         # Já cadastrado no recebimento da mensagem
-        entidades_validas.discard('contato')
+        entidades_validas.discard("contato")
         # Já cadastrado no recebimento da mensagem
-        entidades_validas.discard('telefone')
+        entidades_validas.discard("telefone")
 
         logger.info(
             f"Entidades válidas para metadados obtidas: {
-                len(entidades_validas)} entidades")
+                len(entidades_validas)
+            } entidades"
+        )
         return entidades_validas
 
     except Exception as e:
@@ -588,7 +581,8 @@ def _obter_entidades_metadados_validas() -> set[str]:
 
 
 def _processar_entidades_contato(
-        mensagem: 'Mensagem', entity_types: list[dict[str, Any]]) -> None:
+    mensagem: "Mensagem", entity_types: list[dict[str, Any]]
+) -> None:
     """
     Processa entidades extraídas para atualizar dados do contato.
 
@@ -630,19 +624,19 @@ def _processar_entidades_contato(
         for entidade_dict in entity_types:
             for tipo_entidade, valor in entidade_dict.items():
                 # Processar entidade "contato" para atualizar nome
-                if tipo_entidade.lower() == 'nome_contato' and valor:
+                if tipo_entidade.lower() == "nome_contato" and valor:
                     # Só atualiza nome se estiver vazio ou se novo nome for
                     # mais completo
-                    if not contato.nome_contato or len(
-                            valor.strip()) > len(
-                            contato.nome_contato or ''):
+                    if not contato.nome_contato or len(valor.strip()) > len(
+                        contato.nome_contato or ""
+                    ):
                         nome_limpo = valor.strip()
-                        if nome_limpo and len(
-                                nome_limpo) >= 2:  # Validação básica
+                        if nome_limpo and len(nome_limpo) >= 2:  # Validação básica
                             contato.nome_contato = nome_limpo
                             contato_atualizado = True
                             logger.info(
-                                f"Nome do contato atualizado para: {nome_limpo}")
+                                f"Nome do contato atualizado para: {nome_limpo}"
+                            )
 
                 # Processar outras entidades para metadados
                 elif tipo_entidade.lower() in entidades_metadados and valor:
@@ -654,38 +648,45 @@ def _processar_entidades_contato(
 
                         # Evitar duplicatas - só atualiza se não existe ou
                         # valor é diferente
-                        if (tipo_entidade.lower() not in contato.metadados or
-                                contato.metadados[tipo_entidade.lower()] != valor_limpo):
-                            contato.metadados[tipo_entidade.lower()
-                                              ] = valor_limpo
+                        if (
+                            tipo_entidade.lower() not in contato.metadados
+                            or contato.metadados[tipo_entidade.lower()] != valor_limpo
+                        ):
+                            contato.metadados[tipo_entidade.lower()] = valor_limpo
                             metadados_atualizados = True
                             logger.info(
                                 f"Metadado {
-                                    tipo_entidade.lower()} atualizado para contato: {valor_limpo}")
+                                    tipo_entidade.lower()
+                                } atualizado para contato: {valor_limpo}"
+                            )
 
         # Salvar contato se houve alterações
         if contato_atualizado or metadados_atualizados:
             update_fields = []
             if contato_atualizado:
-                update_fields.append('nome_contato')
+                update_fields.append("nome_contato")
             if metadados_atualizados:
-                update_fields.append('metadados')
+                update_fields.append("metadados")
 
             # Atualizar timestamp da última interação quando dados são
             # atualizados
             contato.ultima_interacao = timezone.now()
-            update_fields.append('ultima_interacao')
+            update_fields.append("ultima_interacao")
 
             contato.save(update_fields=update_fields)
             logger.info(
                 f"Contato {
-                    contato.telefone} atualizado com sucesso - última interação atualizada")
+                    contato.telefone
+                } atualizado com sucesso - última interação atualizada"
+            )
 
             # Se ainda não há nome do contato, considerar solicitar dados
             if not contato.nome_contato:
                 logger.info(
                     f"Contato {
-                        contato.telefone} ainda sem nome - considerar solicitar dados")
+                        contato.telefone
+                    } ainda sem nome - considerar solicitar dados"
+                )
 
     except Exception as e:
         logger.error(f"Erro ao processar entidades do contato: {e}")
@@ -727,33 +728,28 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
         # Carrega historico EXCLUINDO a mensagem atual para análise de contexto
         historico_atendimento = cast(
-            Atendimento, mensagem.atendimento).carregar_historico_mensagens(
-                excluir_mensagem_id=mensagem_id
-        )
+            Atendimento, mensagem.atendimento
+        ).carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
 
         # Se não há mensagens anteriores no histórico, chama apresentação
-        if not historico_atendimento.get('conteudo_mensagens'):
-            #todo: verificar se tem historido de atendimento anteriores
+        if not historico_atendimento.get("conteudo_mensagens"):
+            # todo: verificar se tem historido de atendimento anteriores
             features.mensagem_apresentacao()
 
         # Análise de intenção e extração de entidades
         resultado_analise = features.analise_previa_mensagem(
-            historico_atendimento=historico_atendimento,
-            context=mensagem.conteudo)
+            historico_atendimento=historico_atendimento, context=mensagem.conteudo
+        )
         mensagem.intent_detectado = resultado_analise.intent_types
         mensagem.entidades_extraidas = resultado_analise.entity_types
 
-        mensagem.save(
-            update_fields=[
-                'intent_detectado',
-                'entidades_extraidas'])
+        mensagem.save(update_fields=["intent_detectado", "entidades_extraidas"])
 
         # Processar entidades para atualizar dados do contato
         _processar_entidades_contato(mensagem, resultado_analise.entity_types)
 
     except Exception as e:
-        logger.error(
-            f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
+        logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
         # Continua processamento mesmo com erro na análise
         # Não interrompe o fluxo para garantir resiliência
         pass
@@ -796,9 +792,12 @@ def _pode_bot_responder_atendimento(atendimento):
     try:
         # Verifica se existe alguma mensagem de atendente humano neste
         # atendimento ou se o atendimento tem um atendente humano associado
-        mensagens_atendente = atendimento.mensagens.filter(
-            remetente=TipoRemetente.ATENDENTE_HUMANO
-        ).exists() or atendimento.atendente_humano is not None
+        mensagens_atendente = (
+            atendimento.mensagens.filter(
+                remetente=TipoRemetente.ATENDENTE_HUMANO
+            ).exists()
+            or atendimento.atendente_humano is not None
+        )
 
         return not mensagens_atendente
     except Exception as e:
@@ -909,7 +908,7 @@ def _converter_contexto(metadata: dict[str, Any]) -> str:
         #     return f"Conteúdo do tipo {media_type}"
 
         # Implementação atual: placeholder
-        return 'contexto'
+        return "contexto"
 
     except Exception as e:
         logger.error(f"Erro ao converter contexto: {e}")

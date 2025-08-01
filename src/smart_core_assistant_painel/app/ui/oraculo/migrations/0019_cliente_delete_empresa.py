@@ -5,46 +5,220 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0018_rename_nome_contato_nome_contato'),
+        ("oraculo", "0018_rename_nome_contato_nome_contato"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Cliente',
+            name="Cliente",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('nome_fantasia', models.CharField(help_text='Nome comum do cliente (obrigatório)', max_length=200)),
-                ('razao_social', models.CharField(blank=True, help_text='Nome legal/oficial do cliente', max_length=200, null=True)),
-                ('tipo', models.CharField(blank=True, choices=[('fisica', 'Pessoa Física'), ('juridica', 'Pessoa Jurídica')], help_text='Tipo de pessoa (física ou jurídica)', max_length=20, null=True)),
-                ('cnpj', models.CharField(blank=True, help_text='CNPJ do cliente (formato: 12.345.678/0001-99)', max_length=18, null=True, validators=[oraculo.models.validate_cnpj])),
-                ('cpf', models.CharField(blank=True, help_text='CPF do cliente informado durante a conversa (formato: 123.456.789-00)', max_length=14, null=True, validators=[oraculo.models.validate_cpf])),
-                ('telefone', models.CharField(blank=True, help_text='Telefone fixo ou corporativo do cliente', max_length=20, null=True, validators=[oraculo.models.validate_telefone])),
-                ('site', models.URLField(blank=True, help_text='Website do cliente', null=True)),
-                ('ramo_atividade', models.CharField(blank=True, help_text='Área de atuação do cliente', max_length=200, null=True)),
-                ('observacoes', models.TextField(blank=True, help_text='Informações adicionais sobre o cliente', null=True)),
-                ('cep', models.CharField(blank=True, help_text='CEP do endereço (formato: 12345-678)', max_length=10, null=True, validators=[oraculo.models.validate_cep])),
-                ('logradouro', models.CharField(blank=True, help_text='Rua, avenida ou logradouro', max_length=200, null=True)),
-                ('numero', models.CharField(blank=True, help_text='Número do endereço', max_length=10, null=True)),
-                ('complemento', models.CharField(blank=True, help_text='Complemento do endereço (sala, andar, etc.)', max_length=100, null=True)),
-                ('bairro', models.CharField(blank=True, help_text='Bairro do cliente', max_length=100, null=True)),
-                ('cidade', models.CharField(blank=True, help_text='Cidade do cliente', max_length=100, null=True)),
-                ('uf', models.CharField(blank=True, help_text='Estado (UF) do cliente', max_length=2, null=True)),
-                ('pais', models.CharField(blank=True, default='Brasil', help_text='País do cliente', max_length=50, null=True)),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro do cliente')),
-                ('ultima_atualizacao', models.DateTimeField(auto_now=True, help_text='Data da última atualização')),
-                ('ativo', models.BooleanField(default=True, help_text='Status de atividade do cliente')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais do cliente')),
-                ('contatos', models.ManyToManyField(blank=True, help_text='Contatos vinculados ao cliente', related_name='clientes', to='oraculo.contato')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "nome_fantasia",
+                    models.CharField(
+                        help_text="Nome comum do cliente (obrigatório)", max_length=200
+                    ),
+                ),
+                (
+                    "razao_social",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome legal/oficial do cliente",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("fisica", "Pessoa Física"),
+                            ("juridica", "Pessoa Jurídica"),
+                        ],
+                        help_text="Tipo de pessoa (física ou jurídica)",
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cnpj",
+                    models.CharField(
+                        blank=True,
+                        help_text="CNPJ do cliente (formato: 12.345.678/0001-99)",
+                        max_length=18,
+                        null=True,
+                        validators=[oraculo.models.validate_cnpj],
+                    ),
+                ),
+                (
+                    "cpf",
+                    models.CharField(
+                        blank=True,
+                        help_text="CPF do cliente informado durante a conversa (formato: 123.456.789-00)",
+                        max_length=14,
+                        null=True,
+                        validators=[oraculo.models.validate_cpf],
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Telefone fixo ou corporativo do cliente",
+                        max_length=20,
+                        null=True,
+                        validators=[oraculo.models.validate_telefone],
+                    ),
+                ),
+                (
+                    "site",
+                    models.URLField(
+                        blank=True, help_text="Website do cliente", null=True
+                    ),
+                ),
+                (
+                    "ramo_atividade",
+                    models.CharField(
+                        blank=True,
+                        help_text="Área de atuação do cliente",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "observacoes",
+                    models.TextField(
+                        blank=True,
+                        help_text="Informações adicionais sobre o cliente",
+                        null=True,
+                    ),
+                ),
+                (
+                    "cep",
+                    models.CharField(
+                        blank=True,
+                        help_text="CEP do endereço (formato: 12345-678)",
+                        max_length=10,
+                        null=True,
+                        validators=[oraculo.models.validate_cep],
+                    ),
+                ),
+                (
+                    "logradouro",
+                    models.CharField(
+                        blank=True,
+                        help_text="Rua, avenida ou logradouro",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "numero",
+                    models.CharField(
+                        blank=True,
+                        help_text="Número do endereço",
+                        max_length=10,
+                        null=True,
+                    ),
+                ),
+                (
+                    "complemento",
+                    models.CharField(
+                        blank=True,
+                        help_text="Complemento do endereço (sala, andar, etc.)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "bairro",
+                    models.CharField(
+                        blank=True,
+                        help_text="Bairro do cliente",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cidade",
+                    models.CharField(
+                        blank=True,
+                        help_text="Cidade do cliente",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "uf",
+                    models.CharField(
+                        blank=True,
+                        help_text="Estado (UF) do cliente",
+                        max_length=2,
+                        null=True,
+                    ),
+                ),
+                (
+                    "pais",
+                    models.CharField(
+                        blank=True,
+                        default="Brasil",
+                        help_text="País do cliente",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Data de cadastro do cliente"
+                    ),
+                ),
+                (
+                    "ultima_atualizacao",
+                    models.DateTimeField(
+                        auto_now=True, help_text="Data da última atualização"
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True, help_text="Status de atividade do cliente"
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais do cliente",
+                    ),
+                ),
+                (
+                    "contatos",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Contatos vinculados ao cliente",
+                        related_name="clientes",
+                        to="oraculo.contato",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Cliente',
-                'verbose_name_plural': 'Clientes',
-                'ordering': ['nome_fantasia'],
+                "verbose_name": "Cliente",
+                "verbose_name_plural": "Clientes",
+                "ordering": ["nome_fantasia"],
             },
         ),
         migrations.DeleteModel(
-            name='Empresa',
+            name="Empresa",
         ),
     ]

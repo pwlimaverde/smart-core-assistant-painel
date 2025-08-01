@@ -1,4 +1,3 @@
-
 from typing import Any
 
 from langchain.docstore.document import Document
@@ -9,19 +8,26 @@ from py_return_success_or_error import (
 )
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
-    AnaliseConteudoLangchainDatasource, )
+    AnaliseConteudoLangchainDatasource,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.domain.usecase.analise_conteudo_usecase import (
-    AnaliseConteudoUseCase, )
+    AnaliseConteudoUseCase,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
-    AnalisePreviaMensagemLangchainDatasource, )
+    AnalisePreviaMensagemLangchainDatasource,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
-    AnalisePreviaMensagemUsecase, )
+    AnalisePreviaMensagemUsecase,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
-    LoadDocumentConteudoUseCase, )
+    LoadDocumentConteudoUseCase,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
-    LoadDocumentFileDatasource, )
+    LoadDocumentFileDatasource,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.domain.usecase.load_document_file_usecase import (
-    LoadDocumentFileUseCase, )
+    LoadDocumentFileUseCase,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DocumentError,
     LlmError,
@@ -46,7 +52,6 @@ from smart_core_assistant_painel.modules.services.features.service_hub import SE
 
 
 class FeaturesCompose:
-
     @staticmethod
     def load_document_conteudo(
         id: str,
@@ -54,8 +59,7 @@ class FeaturesCompose:
         tag: str,
         grupo: str,
     ) -> list[Document]:
-
-        error = DocumentError('Error ao processar os dados do arquivo!')
+        error = DocumentError("Error ao processar os dados do arquivo!")
         parameters = LoadDocumentConteudoParameters(
             id=id,
             conteudo=conteudo,
@@ -83,8 +87,7 @@ class FeaturesCompose:
         tag: str,
         grupo: str,
     ) -> list[Document]:
-
-        error = DocumentError('Error ao processar os dados do arquivo!')
+        error = DocumentError("Error ao processar os dados do arquivo!")
         parameters = LoadDocumentFileParameters(
             id=id,
             path=path,
@@ -108,16 +111,15 @@ class FeaturesCompose:
 
     @staticmethod
     def pre_analise_ia_treinamento(context: str) -> str:
-
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={
-                'temperature': SERVICEHUB.TEMPERATURE},
+            extra_params={"temperature": SERVICEHUB.TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context=context,
-            error=LlmError('Error ao analisar o conteúdo'),)
+            error=LlmError("Error ao analisar o conteúdo"),
+        )
 
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
@@ -134,16 +136,15 @@ class FeaturesCompose:
 
     @staticmethod
     def melhoria_ia_treinamento(context: str) -> str:
-
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={
-                'temperature': SERVICEHUB.TEMPERATURE},
+            extra_params={"temperature": SERVICEHUB.TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
             context=context,
-            error=LlmError('Error ao gerar conteudo melhorado'),)
+            error=LlmError("Error ao gerar conteudo melhorado"),
+        )
 
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
@@ -160,7 +161,8 @@ class FeaturesCompose:
 
     @staticmethod
     def analise_previa_mensagem(
-            historico_atendimento: dict[str, Any], context: str) -> APMTuple:
+        historico_atendimento: dict[str, Any], context: str
+    ) -> APMTuple:
         """
         Método para análise prévia de uma mensagem, incluindo detecção de intenção e extração de entidades.
         """
@@ -169,18 +171,19 @@ class FeaturesCompose:
         llm_parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={
-                'temperature': SERVICEHUB.TEMPERATURE},
+            extra_params={"temperature": SERVICEHUB.TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
             context=context,
-            error=LlmError('Erro ao processar llm'),)
+            error=LlmError("Erro ao processar llm"),
+        )
         parameters = AnalisePreviaMensagemParameters(
             historico_atendimento=historico_atendimento,
             valid_intent_types=SERVICEHUB.VALID_INTENT_TYPES,
             valid_entity_types=SERVICEHUB.VALID_ENTITY_TYPES,
             llm_parameters=llm_parameters,
-            error=LlmError('Erro ao processar mensagem'),)
+            error=LlmError("Erro ao processar mensagem"),
+        )
         datasource: APMData = AnalisePreviaMensagemLangchainDatasource()
         usecase: APMUsecase = AnalisePreviaMensagemUsecase(datasource)
 
@@ -190,7 +193,7 @@ class FeaturesCompose:
             result: APMTuple = data.result
             return result
         elif isinstance(data, ErrorReturn):
-            logger.error(f'Erro ao analisar prévia da mensagem: {data.result}')
+            logger.error(f"Erro ao analisar prévia da mensagem: {data.result}")
             raise data.result
         else:
             logger.error("Tipo de retorno inesperado da usecase")

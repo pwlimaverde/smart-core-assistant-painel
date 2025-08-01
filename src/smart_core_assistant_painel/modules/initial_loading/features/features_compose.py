@@ -1,28 +1,24 @@
-
 from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
 )
 
 from smart_core_assistant_painel.modules.initial_loading.features.firebase_init.domain.usecase.firebase_init_usecase import (
-    FirebaseInitUseCase, )
+    FirebaseInitUseCase,
+)
 from smart_core_assistant_painel.modules.initial_loading.utils.erros import (
     FirebaseInitError,
 )
 from smart_core_assistant_painel.modules.initial_loading.utils.parameters import (
-    FirebaseInitParameters, )
+    FirebaseInitParameters,
+)
 from smart_core_assistant_painel.modules.initial_loading.utils.types import FIUsecase
 
 
-
-
-
 class FeaturesCompose:
-
     @staticmethod
     def init_firebase() -> None:
-
-        error = FirebaseInitError('Erro ao inicializar o Firebase')
+        error = FirebaseInitError("Erro ao inicializar o Firebase")
         parameters = FirebaseInitParameters(error=error)
         usecase: FIUsecase = FirebaseInitUseCase()
 
@@ -30,4 +26,3 @@ class FeaturesCompose:
         if isinstance(data, ErrorReturn):
             raise data.result
         logger.info("Firebase inicializado com sucesso!")
-        

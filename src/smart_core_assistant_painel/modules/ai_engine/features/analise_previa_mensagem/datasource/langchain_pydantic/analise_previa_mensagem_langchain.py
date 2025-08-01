@@ -1,7 +1,8 @@
 from typing import Any, Optional
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
-    AnalisePreviaMensagem, )
+    AnalisePreviaMensagem,
+)
 
 
 class AnalisePreviaMensagemLangchain(AnalisePreviaMensagem):
@@ -12,8 +13,11 @@ class AnalisePreviaMensagemLangchain(AnalisePreviaMensagem):
     a análise prévia de mensagens utilizando tecnologia LangChain.
     """
 
-    def __init__(self, intent: Optional[list[dict[str, Any]]]
-                 = None, entities: Optional[list[dict[str, Any]]] = None):
+    def __init__(
+        self,
+        intent: Optional[list[dict[str, Any]]] = None,
+        entities: Optional[list[dict[str, Any]]] = None,
+    ):
         """
         Inicializa a análise prévia da mensagem.
 
@@ -21,7 +25,4 @@ class AnalisePreviaMensagemLangchain(AnalisePreviaMensagem):
             intent: Lista de dicionários com intenções detectadas
             entities: Lista de dicionários com entidades extraídas
         """
-        super().__init__(
-            intent=intent or [],
-            entities=entities or []
-        )
+        super().__init__(intent=intent or [], entities=entities or [])

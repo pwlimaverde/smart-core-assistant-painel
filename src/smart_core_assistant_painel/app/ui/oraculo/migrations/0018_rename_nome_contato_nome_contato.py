@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0017_rename_cliente_to_contato'),
+        ("oraculo", "0017_rename_cliente_to_contato"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='contato',
-            old_name='nome',
-            new_name='nome_contato',
+            model_name="contato",
+            old_name="nome",
+            new_name="nome_contato",
         ),
     ]

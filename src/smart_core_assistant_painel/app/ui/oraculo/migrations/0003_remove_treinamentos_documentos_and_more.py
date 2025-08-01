@@ -5,29 +5,42 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0002_alter_treinamentos_documentos'),
+        ("oraculo", "0002_alter_treinamentos_documentos"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='treinamentos',
-            name='documentos',
+            model_name="treinamentos",
+            name="documentos",
         ),
         migrations.AddField(
-            model_name='treinamentos',
-            name='_documentos',
-            field=models.JSONField(blank=True, db_column='documentos', default=list, help_text='Lista de documentos LangChain serializados (campo privado)', null=True),
+            model_name="treinamentos",
+            name="_documentos",
+            field=models.JSONField(
+                blank=True,
+                db_column="documentos",
+                default=list,
+                help_text="Lista de documentos LangChain serializados (campo privado)",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='treinamentos',
-            name='grupo',
-            field=models.CharField(help_text='Campo obrigatório para identificar o grupo do treinamento', max_length=40, validators=[oraculo.models.validate_tag]),
+            model_name="treinamentos",
+            name="grupo",
+            field=models.CharField(
+                help_text="Campo obrigatório para identificar o grupo do treinamento",
+                max_length=40,
+                validators=[oraculo.models.validate_tag],
+            ),
         ),
         migrations.AlterField(
-            model_name='treinamentos',
-            name='tag',
-            field=models.CharField(help_text='Campo obrigatório para identificar o treinamento', max_length=40, validators=[oraculo.models.validate_tag]),
+            model_name="treinamentos",
+            name="tag",
+            field=models.CharField(
+                help_text="Campo obrigatório para identificar o treinamento",
+                max_length=40,
+                validators=[oraculo.models.validate_tag],
+            ),
         ),
     ]

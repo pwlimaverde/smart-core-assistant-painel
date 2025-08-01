@@ -17,13 +17,13 @@ def signals_treinamento_ia(sender, instance, created, **kwargs):
     try:
         if instance.treinamento_finalizado:
             logger.info(
-                f"Iniciando treinamento assíncrono para instância {
-                    instance.id}")
+                f"Iniciando treinamento assíncrono para instância {instance.id}"
+            )
             async_task(__task_treinar_ia, instance.id)
     except Exception as e:
         logger.error(
-            f"Erro ao processar signal de treinamento para instância {
-                instance.id}: {e}")
+            f"Erro ao processar signal de treinamento para instância {instance.id}: {e}"
+        )
 
 
 def __task_treinar_ia(instance_id):
@@ -36,19 +36,18 @@ def __task_treinar_ia(instance_id):
     instance = Treinamentos.objects.get(id=instance_id)
 
     try:
-        logger.info(
-            f"Iniciando task de treinamento para instância {instance_id}")
+        logger.info(f"Iniciando task de treinamento para instância {instance_id}")
 
         # Remove dados antigos do treinamento antes de adicionar novos
         logger.info(f"Removendo dados antigos do treinamento {instance_id}")
-        SERVICEHUB.vetor_storage.remove_by_metadata(
-            "id_treinamento", str(instance_id))
+        SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
 
         # Processa documentos
         documentos = instance.get_documentos()
         if not documentos:
             logger.warning(
-                f"Nenhum documento encontrado para o treinamento {instance_id}")
+                f"Nenhum documento encontrado para o treinamento {instance_id}"
+            )
             return
 
         # Cria ou atualiza banco vetorial
@@ -72,21 +71,27 @@ def signal_remover_treinamento_ia(sender, instance, **kwargs):
         if instance.treinamento_finalizado:
             logger.info(
                 f"Removendo treinamento {
-                    instance.id} do banco vetorial antes da deleção")
+                    instance.id
+                } do banco vetorial antes da deleção"
+            )
             # Executa a remoção de forma síncrona para garantir que seja concluída
             # antes da deleção do objeto
             __task_remover_treinamento_ia(instance.id)
             logger.info(
-                f"Treinamento {
-                    instance.id} removido com sucesso do banco vetorial")
+                f"Treinamento {instance.id} removido com sucesso do banco vetorial"
+            )
     except Exception as e:
         logger.error(
-            f"Erro ao processar remoção de treinamento para instância {
-                instance.id}: {e}")
+            f"Erro ao processar remoção de treinamento para instância {instance.id}: {
+                e
+            }"
+        )
         # Interrompe a deleção levantando uma exceção
         raise Exception(
             f"Falha ao remover treinamento {
-                instance.id} do banco vetorial. Deleção interrompida: {e}")
+                instance.id
+            } do banco vetorial. Deleção interrompida: {e}"
+        )
 
 
 def __task_remover_treinamento_ia(instance_id):
@@ -101,13 +106,12 @@ def __task_remover_treinamento_ia(instance_id):
     """
     try:
         logger.info(f"Removendo treinamento {instance_id} do banco vetorial")
-        SERVICEHUB.vetor_storage.remove_by_metadata(
-            "id_treinamento", str(instance_id))
-        logger.info(
-            f"Treinamento {instance_id} removido com sucesso do banco vetorial")
+        SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
+        logger.info(f"Treinamento {instance_id} removido com sucesso do banco vetorial")
 
     except Exception as e:
         logger.error(
-            f"Erro ao remover treinamento {instance_id} do banco vetorial: {e}")
+            f"Erro ao remover treinamento {instance_id} do banco vetorial: {e}"
+        )
         # Propaga a exceção para interromper o processo de deleção
         raise

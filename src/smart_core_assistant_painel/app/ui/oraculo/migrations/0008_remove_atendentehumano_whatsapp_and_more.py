@@ -5,38 +5,59 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0007_remove_atendentehumano_data_admissao_and_more'),
+        ("oraculo", "0007_remove_atendentehumano_data_admissao_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='atendentehumano',
-            name='whatsapp',
+            model_name="atendentehumano",
+            name="whatsapp",
         ),
         migrations.RemoveField(
-            model_name='mensagem',
-            name='is_from_client',
+            model_name="mensagem",
+            name="is_from_client",
         ),
         migrations.AddField(
-            model_name='atendentehumano',
-            name='telefone',
-            field=models.CharField(blank=True, help_text='Número de telefone do atendente (usado como sessão única)', max_length=20, null=True, unique=True, validators=[oraculo.models.validate_telefone]),
+            model_name="atendentehumano",
+            name="telefone",
+            field=models.CharField(
+                blank=True,
+                help_text="Número de telefone do atendente (usado como sessão única)",
+                max_length=20,
+                null=True,
+                unique=True,
+                validators=[oraculo.models.validate_telefone],
+            ),
         ),
         migrations.AddField(
-            model_name='mensagem',
-            name='confianca_resposta',
-            field=models.FloatField(blank=True, help_text='Nível de confiança da resposta do bot (0-1)', null=True),
+            model_name="mensagem",
+            name="confianca_resposta",
+            field=models.FloatField(
+                blank=True,
+                help_text="Nível de confiança da resposta do bot (0-1)",
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='mensagem',
-            name='remetente',
-            field=models.CharField(choices=[('cliente', 'Cliente'), ('bot', 'Bot/Sistema'), ('atendente_humano', 'Atendente Humano')], default='cliente', help_text='Tipo do remetente da mensagem', max_length=20),
+            model_name="mensagem",
+            name="remetente",
+            field=models.CharField(
+                choices=[
+                    ("cliente", "Cliente"),
+                    ("bot", "Bot/Sistema"),
+                    ("atendente_humano", "Atendente Humano"),
+                ],
+                default="cliente",
+                help_text="Tipo do remetente da mensagem",
+                max_length=20,
+            ),
         ),
         migrations.AddField(
-            model_name='treinamentos',
-            name='data_criacao',
-            field=models.DateTimeField(auto_now_add=True, help_text='Data de criação do treinamento', null=True),
+            model_name="treinamentos",
+            name="data_criacao",
+            field=models.DateTimeField(
+                auto_now_add=True, help_text="Data de criação do treinamento", null=True
+            ),
         ),
     ]

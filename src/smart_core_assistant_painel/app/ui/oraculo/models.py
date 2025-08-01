@@ -222,11 +222,6 @@ class Treinamentos(models.Model):
                     raise ValueError(error_msg) from e
 
             self._documentos = serialized_docs
-            logger.info(
-                f"Documentos serializados com sucesso: {
-                    len(serialized_docs)
-                } documentos"
-            )
 
         except (TypeError, ValueError):
             # Re-raise erros já tratados
@@ -1821,10 +1816,6 @@ def inicializar_atendimento_whatsapp(
         # REMOVIDO: Não cria mensagem aqui para evitar duplicação
         # A mensagem será criada na função processar_mensagem_whatsapp
 
-        logger.info(
-            f"{'Novo' if contato_criado else 'Existente'} contato inicializado: {contato.telefone}"
-        )
-
         return contato, atendimento
 
     except Exception as e:
@@ -1935,9 +1926,6 @@ def nova_mensagem(data: dict[str, Any]) -> int:
 
         # Garantir que sempre tenhamos um tipo válido (fallback para texto)
         if tipo_mensagem is None:
-            logger.warning(
-                f"Tipo de mensagem desconhecido '{tipo_chave}' - usando TEXTO_FORMATADO como fallback"
-            )
             tipo_mensagem = TipoMensagem.TEXTO_FORMATADO
 
         # Extrair conteúdo da mensagem com base no tipo

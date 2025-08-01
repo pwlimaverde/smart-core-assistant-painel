@@ -17,3 +17,10 @@ Configuração inicial do projeto.
 3 - Criação de diagrama de relacionamento Oraculo
 4 - Criação de diagrama de fluxo de atendimento Oraculo
 5 - Feature analise_previa_mensagem para extração dos intents e entity das mensagens 
+
+## 0.5.0
+1 - Correções gerais no dicionario
+2 - Simplificação da feature analise_previa_mensagem para rodar em llms menores
+
+## 0.6.0
+1 - 

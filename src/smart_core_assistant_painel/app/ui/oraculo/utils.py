@@ -3,7 +3,6 @@ import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.cache import cache
 from langchain_openai import ChatOpenAI
-from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
@@ -32,9 +31,7 @@ def send_message_response(phone):
             temperature=0,
         )
 
-        response = llm.invoke(messages).content
-
-        logger.info(f"Resposta gerada: {response}")
+        llm.invoke(messages).content
 
     cache.delete(f"wa_buffer_{phone}")
     cache.delete(f"wa_timer_{phone}")

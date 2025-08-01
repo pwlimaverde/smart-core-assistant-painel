@@ -201,15 +201,15 @@ class FeaturesCompose:
 
     @staticmethod
     def mensagem_apresentacao() -> None:
-        logger.warning("Enviando mensagem de apresentação da empresa")
         # mensagem de apresentação da empresa
+        pass
 
     @staticmethod
     def solicitacao_info_cliene() -> None:
-        logger.warning("Enviando solicitação de informações do cliente")
         # mensagem para coleta de informações do cliente
+        pass
 
     @staticmethod
     def resumo_atendimento() -> None:
-        logger.warning("Enviando assunto principal e resumo do atendimento")
         # mensagem para resumo do atendimento
+        pass

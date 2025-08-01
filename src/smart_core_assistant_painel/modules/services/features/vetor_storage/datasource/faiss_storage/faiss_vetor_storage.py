@@ -47,9 +47,6 @@ class FaissVetorStorage(VetorStorage):
                     self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
                     self.__vectordb = self.__inicializar_banco_vetorial()
                     FaissVetorStorage._initialized = True
-                    logger.info(
-                        f"FaissVetorStorage singleton inicializado (ID: {id(self)})"
-                    )
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco FAISS existe no caminho especificado."""
@@ -280,8 +277,6 @@ class FaissVetorStorage(VetorStorage):
                 error_msg = "Vectorstore não possui método add_documents"
                 logger.error(error_msg)
                 raise AttributeError(error_msg)
-
-            logger.warning(f"valid_chunks {len(valid_chunks)}: {valid_chunks}")
 
             self.__vectordb.add_documents(valid_chunks)
 

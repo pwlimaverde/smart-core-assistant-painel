@@ -21,10 +21,8 @@ class OraculoConfig(AppConfig):
                 start_services,
             )
 
-            logger.info("Inicializando serviços para Django-Q workers...")
             start_initial_loading()
             start_services()
-            logger.info("Serviços inicializados com sucesso para Django-Q workers!")
         except Exception as e:
             logger.error(f"Erro ao inicializar serviços para Django-Q: {e}")
             # Não falha a aplicação, apenas loga o erro

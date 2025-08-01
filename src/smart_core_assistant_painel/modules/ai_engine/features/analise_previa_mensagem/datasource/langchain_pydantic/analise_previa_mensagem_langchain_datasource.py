@@ -60,7 +60,7 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             }
 
             # Invocar a chain
-            response: Any = chain.invoke(invoke_data)
+            response = chain.invoke(invoke_data)
 
             # Converter PydanticModel para AnalisePreviaMensagem
             # Extrair intent como lista de dicionários {tipo: valor}

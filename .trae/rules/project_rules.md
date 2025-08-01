@@ -28,6 +28,16 @@
 - A minimum coverage of 80% is mandatory. Anything below must be justified and reviewed.
 - Avoid lines longer than 79 characters to facilitate reading and code review.
 - Use type hints consistently throughout the codebase for better code documentation and IDE support.
+- ALL functions and methods MUST have complete type annotations including parameters and return types.
+- Use `from typing import Any` when dealing with Django signals or dynamic types.
+- For Django signal handlers, use these standard type annotations:
+  - `sender: Any` for the sender parameter
+  - `instance: ModelClass` for the specific model instance
+  - `created: bool` for post_save signals with created parameter
+  - `**kwargs: Any` for additional keyword arguments
+  - `-> None` for return type when function doesn't return a value
+- Private functions (starting with underscore) must also have complete type annotations.
+- When working with Django models, import the model class and use it as the type annotation.
 
 ## Commands and tasks via `taskipy`
 - Use the scripts mapped in pyproject.toml for:

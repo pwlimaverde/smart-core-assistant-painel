@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django_q.tasks import async_task
@@ -9,7 +11,9 @@ from .models import Treinamentos
 
 
 @receiver(post_save, sender=Treinamentos)
-def signals_treinamento_ia(sender, instance, created, **kwargs):
+def signals_treinamento_ia(
+    sender: Any, instance: Treinamentos, created: bool, **kwargs: Any
+) -> None:
     """
     Signal executado após salvar um treinamento.
     Executa o treinamento da IA de forma assíncrona se o treinamento foi finalizado.
@@ -26,7 +30,7 @@ def signals_treinamento_ia(sender, instance, created, **kwargs):
         )
 
 
-def __task_treinar_ia(instance_id):
+def __task_treinar_ia(instance_id: int) -> None:
     """
     Task para treinar a IA com documentos de um treinamento específico.
 
@@ -36,10 +40,7 @@ def __task_treinar_ia(instance_id):
     instance = Treinamentos.objects.get(id=instance_id)
 
     try:
-        logger.info(f"Iniciando task de treinamento para instância {instance_id}")
-
         # Remove dados antigos do treinamento antes de adicionar novos
-        logger.info(f"Removendo dados antigos do treinamento {instance_id}")
         SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
 
         # Processa documentos
@@ -53,15 +54,15 @@ def __task_treinar_ia(instance_id):
         # Cria ou atualiza banco vetorial
         SERVICEHUB.vetor_storage.write(documentos)
 
-        logger.info(f"Treinamento {instance_id} concluído com sucesso")
-
     except Exception as e:
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
         instance.treinamento_finalizado = False
 
 
 @receiver(pre_delete, sender=Treinamentos)
-def signal_remover_treinamento_ia(sender, instance, **kwargs):
+def signal_remover_treinamento_ia(
+    sender: Any, instance: Treinamentos, **kwargs: Any
+) -> None:
     """
     Signal executado antes de deletar um treinamento.
     Remove os dados do treinamento do banco vetorial FAISS.
@@ -69,17 +70,10 @@ def signal_remover_treinamento_ia(sender, instance, **kwargs):
     """
     try:
         if instance.treinamento_finalizado:
-            logger.info(
-                f"Removendo treinamento {
-                    instance.id
-                } do banco vetorial antes da deleção"
-            )
             # Executa a remoção de forma síncrona para garantir que seja concluída
             # antes da deleção do objeto
             __task_remover_treinamento_ia(instance.id)
-            logger.info(
-                f"Treinamento {instance.id} removido com sucesso do banco vetorial"
-            )
+
     except Exception as e:
         logger.error(
             f"Erro ao processar remoção de treinamento para instância {instance.id}: {
@@ -94,7 +88,7 @@ def signal_remover_treinamento_ia(sender, instance, **kwargs):
         )
 
 
-def __task_remover_treinamento_ia(instance_id):
+def __task_remover_treinamento_ia(instance_id: int) -> None:
     """
     Task para remover um treinamento específico do banco vetorial FAISS.
 
@@ -105,9 +99,7 @@ def __task_remover_treinamento_ia(instance_id):
         Exception: Se houver erro na remoção do banco vetorial
     """
     try:
-        logger.info(f"Removendo treinamento {instance_id} do banco vetorial")
         SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
-        logger.info(f"Treinamento {instance_id} removido com sucesso do banco vetorial")
 
     except Exception as e:
         logger.error(

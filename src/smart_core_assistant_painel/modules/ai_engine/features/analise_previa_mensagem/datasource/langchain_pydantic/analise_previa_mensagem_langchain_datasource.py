@@ -63,11 +63,41 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             response = chain.invoke(invoke_data)
 
             # Converter PydanticModel para AnalisePreviaMensagem
-            # Extrair intent como lista de dicionários {tipo: valor}
-            intent_dicts = [{str(item.type): item.value} for item in response.intent]
+            # Verificar se response é dict ou BaseModel e extrair dados adequadamente
+            if isinstance(response, dict):
+                # Se for dict, acessar como chaves
+                intent_list = response.get("intent", [])
+                entities_list = response.get("entities", [])
+                # Converter para formato esperado se necessário
+                intent_dicts = [
+                    {str(item.get("type", "")): item.get("value", "")}
+                    for item in intent_list
+                    if isinstance(item, dict)
+                ]
+                entity_dicts = [
+                    {str(item.get("type", "")): item.get("value", "")}
+                    for item in entities_list
+                    if isinstance(item, dict)
+                ]
+            else:
+                # Se for BaseModel, verificar se tem os atributos necessários
+                if hasattr(response, "intent") and hasattr(response, "entities"):
+                    # Extrair intent como lista de dicionários {tipo: valor}
+                    intent_dicts = [
+                        {str(item.type): item.value} for item in response.intent
+                    ]
 
-            # Extrair entities como lista de dicionários {tipo: valor}
-            entity_dicts = [{str(item.type): item.value} for item in response.entities]
+                    # Extrair entities como lista de dicionários {tipo: valor}
+                    entity_dicts = [
+                        {str(item.type): item.value} for item in response.entities
+                    ]
+                else:
+                    # Fallback para caso o BaseModel não tenha os atributos esperados
+                    logger.warning(
+                        f"BaseModel response não possui atributos 'intent' ou 'entities': {type(response)}"
+                    )
+                    intent_dicts = []
+                    entity_dicts = []
 
             # Criar instância de AnalisePreviaMensagem
             resultado = AnalisePreviaMensagemLangchain(

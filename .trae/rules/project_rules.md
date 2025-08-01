@@ -38,6 +38,18 @@
   - `-> None` for return type when function doesn't return a value
 - Private functions (starting with underscore) must also have complete type annotations.
 - When working with Django models, import the model class and use it as the type annotation.
+- **UNION TYPES AND TYPE CHECKING**: Always verify object types before accessing attributes when dealing with union types (e.g., `dict | BaseModel`):
+  - Use `isinstance(obj, dict)` to check if object is a dictionary before accessing with `obj["key"]`
+  - Use `isinstance(obj, BaseModel)` to check if object is a Pydantic model before accessing with `obj.attribute`
+  - Never assume the type of objects returned from external libraries or APIs
+  - Always handle both possible types in union scenarios to prevent `union-attr` MyPy errors
+  - Example pattern:
+    ```python
+    if isinstance(response, dict):
+        value = response.get("key", default)
+    else:
+        value = response.attribute
+    ```
 
 ## Commands and tasks via `taskipy`
 - Use the scripts mapped in pyproject.toml for:

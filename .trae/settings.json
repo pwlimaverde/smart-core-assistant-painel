@@ -1,0 +1,31 @@
+{
+    "python.analysis.indexing": true,
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.stubPath": "src",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.useLibraryCodeForTypes": true,
+    "python.analysis.completeFunctionParens": true,
+    "python.analysis.includeFileSpecs": [
+        "src/**/*.py"
+    ],
+    "python.analysis.extraPaths": [
+        "src",
+        "src/smart_core_assistant_painel",
+        "src/smart_core_assistant_painel/app",
+        "src/smart_core_assistant_painel/modules"
+    ],
+    "python.analysis.packageIndexDepths": {
+        "django": 3,
+        "smart_core_assistant_painel": 5,
+        "langchain": 2,
+        "py_return_success_or_error": 2
+    },
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.logLevel": "Information",
+    "python.analysis.importFormat": "absolute",
+    "python.analysis.fixAll": [
+        "source.unusedImports",
+        "source.convertImportFormat"
+    ]
+}

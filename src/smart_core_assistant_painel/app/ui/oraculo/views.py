@@ -733,6 +733,7 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
 
         # Se não há mensagens anteriores no histórico, chama apresentação
         if not historico_atendimento.get('conteudo_mensagens'):
+            #todo: verificar se tem historido de atendimento anteriores
             features.mensagem_apresentacao()
 
         # Análise de intenção e extração de entidades

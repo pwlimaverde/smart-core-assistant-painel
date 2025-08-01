@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0015_rename_nome_perfil_contato_nome_perfil_whatsapp'),
+        ("oraculo", "0015_rename_nome_perfil_contato_nome_perfil_whatsapp"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='contato',
-            name='nome_perfil_whatsapp',
-            field=models.CharField(blank=True, help_text='Nome do perfil cadastrado no WhatsApp do contato', max_length=100, null=True),
+            model_name="contato",
+            name="nome_perfil_whatsapp",
+            field=models.CharField(
+                blank=True,
+                help_text="Nome do perfil cadastrado no WhatsApp do contato",
+                max_length=100,
+                null=True,
+            ),
         ),
     ]

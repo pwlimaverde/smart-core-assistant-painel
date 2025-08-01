@@ -4,15 +4,19 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0001_initial'),
+        ("oraculo", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='treinamentos',
-            name='documentos',
-            field=models.JSONField(blank=True, default=list, help_text='Lista de documentos LangChain serializados', null=True),
+            model_name="treinamentos",
+            name="documentos",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Lista de documentos LangChain serializados",
+                null=True,
+            ),
         ),
     ]

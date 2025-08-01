@@ -13,13 +13,10 @@ from smart_core_assistant_painel.modules.services.utils.types import SERUsecase
 
 
 class SetEnvironRemoteUseCase(SERUsecase):
-
     def __call__(
-            self,
-            parameters: SetEnvironRemoteParameters) -> ReturnSuccessOrError[Empty]:
-
+        self, parameters: SetEnvironRemoteParameters
+    ) -> ReturnSuccessOrError[Empty]:
         try:
-
             result_data = self._resultDatasource(
                 parameters=parameters, datasource=self._datasource
             )
@@ -31,5 +28,5 @@ class SetEnvironRemoteUseCase(SERUsecase):
                 return ErrorReturn(parameters.error)
         except Exception as e:
             error = parameters.error
-            error.message = f'{error.message} - Exception: {str(e)}'
+            error.message = f"{error.message} - Exception: {str(e)}"
             return ErrorReturn(error)

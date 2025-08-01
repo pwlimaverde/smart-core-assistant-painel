@@ -1,38 +1,28 @@
 from urllib.parse import urlencode, urljoin
 import requests
 
+
 class BaseEvolutionAPI:
-
     def __init__(self):
-        self._BASE_URL = ''
-        self._API_KEY = {
-            'arcane': ''
-        }
+        self._BASE_URL = ""
+        self._API_KEY = {"arcane": ""}
 
-    def _send_request(
-        self,
-        path,
-        method='GET',
-        body=None,
-        headers={},
-        params_url={}
-    ):
-        
+    def _send_request(self, path, method="GET", body=None, headers={}, params_url={}):
         method.upper()
         url = self._mount_url(path, params_url)
 
         if not isinstance(headers, dict):
             headers = {}
 
-        headers.setdefault('Content-Type', 'application/json')
+        headers.setdefault("Content-Type", "application/json")
 
         instance = self._get_instance(path)
-        headers['apikey'] = self._API_KEY.get(instance)
+        headers["apikey"] = self._API_KEY.get(instance)
         request = {
-            'GET': requests.get,
-            'POST': requests.post,
-            'PUT': requests.put,
-            'DELETE': requests.delete
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
         }.get(method)
 
         return request(url, headers=headers, json=body)
@@ -43,16 +33,15 @@ class BaseEvolutionAPI:
 
         url = urljoin(self._BASE_URL, path)
         if parameters:
-            url = url + '?' + parameters
+            url = url + "?" + parameters
 
         return url
-    
+
     def _get_instance(self, path):
-        return path.strip('/').split('/')[-1]
-    
+        return path.strip("/").split("/")[-1]
+
 
 class SendMessage(BaseEvolutionAPI):
-
     def send_message(self, instance, body):
-        path = f'/message/sendText/{instance}/'
-        return self._send_request(path, method='POST', body=body)
+        path = f"/message/sendText/{instance}/"
+        return self._send_request(path, method="POST", body=body)

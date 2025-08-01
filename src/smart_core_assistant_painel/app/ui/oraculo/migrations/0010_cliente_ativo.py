@@ -4,15 +4,16 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0009_alter_mensagem_tipo'),
+        ("oraculo", "0009_alter_mensagem_tipo"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cliente',
-            name='ativo',
-            field=models.BooleanField(default=True, help_text='Status de atividade do cliente'),
+            model_name="cliente",
+            name="ativo",
+            field=models.BooleanField(
+                default=True, help_text="Status de atividade do cliente"
+            ),
         ),
     ]

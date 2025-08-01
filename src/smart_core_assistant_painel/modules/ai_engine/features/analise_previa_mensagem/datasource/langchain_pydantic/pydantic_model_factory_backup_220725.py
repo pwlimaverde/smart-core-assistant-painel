@@ -41,8 +41,7 @@ class PydanticModelFactory:
         return types_list
 
     @staticmethod
-    def _generate_documentation_section(
-            types_json: str, section_title: str) -> str:
+    def _generate_documentation_section(types_json: str, section_title: str) -> str:
         """
         Gera uma seção da documentação baseada no JSON de configuração.
 
@@ -69,7 +68,7 @@ class PydanticModelFactory:
         for category_key, category_dict in data.items():
             if isinstance(category_dict, dict):
                 # Converter category_key para formato de título
-                category_title = category_key.replace('_', ' ').upper()
+                category_title = category_key.replace("_", " ").upper()
                 documentation += f"       {category_title}:\n"
 
                 for type_key, description in category_dict.items():
@@ -80,8 +79,9 @@ class PydanticModelFactory:
         return documentation
 
     @staticmethod
-    def _generate_examples_section(intent_types_json: str,
-                                   entity_types_json: str) -> str:
+    def _generate_examples_section(
+        intent_types_json: str, entity_types_json: str
+    ) -> str:
         """
         Gera a seção de exemplos da documentação.
 
@@ -92,7 +92,7 @@ class PydanticModelFactory:
         Returns:
             String formatada com exemplos
         """
-        examples = '''
+        examples = """
     EXEMPLO 1: "Olá, tudo bem? meu nome é Paulo"
     - intent: [
         {"type": "saudacao", "value": "Olá, tudo bem?"},
@@ -139,13 +139,13 @@ class PydanticModelFactory:
     - Use o histórico para resolver referências implícitas quando o contexto for claro
     - É PERFEITAMENTE NORMAL retornar listas vazias quando não há identificações claras
     - Seja conservador: prefira precisão a recall
-        '''
+        """
         return examples
 
     @classmethod
-    def create_pydantic_model(cls,
-                              intent_types_json: str,
-                              entity_types_json: str) -> Type[BaseModel]:
+    def create_pydantic_model(
+        cls, intent_types_json: str, entity_types_json: str
+    ) -> Type[BaseModel]:
         """
         Cria dinamicamente uma classe PydanticModel baseada nas configurações JSON.
 
@@ -159,15 +159,18 @@ class PydanticModelFactory:
         # Gerar documentação dinamicamente
         intent_docs = cls._generate_documentation_section(
             intent_types_json,
-            "1. INTENTS (intenções do usuário) - identifique quando presentes")
+            "1. INTENTS (intenções do usuário) - identifique quando presentes",
+        )
         entity_docs = cls._generate_documentation_section(
             entity_types_json,
-            "2. ENTITIES (informações específicas) - extraia quando presentes")
+            "2. ENTITIES (informações específicas) - extraia quando presentes",
+        )
         examples_docs = cls._generate_examples_section(
-            intent_types_json, entity_types_json)
+            intent_types_json, entity_types_json
+        )
 
         # Documentação completa
-        full_documentation = f'''
+        full_documentation = f"""
     Analise a mensagem do contato considerando o histórico fornecido e extraia intents e entities relevantes.
 
     PRINCÍPIO FUNDAMENTAL: Seja conservador e preciso. É perfeitamente normal retornar listas vazias
@@ -177,7 +180,7 @@ class PydanticModelFactory:
 {intent_docs}
 {entity_docs}
 {examples_docs}
-        '''
+        """
 
         # Criar classes Item
         class IntentItem(BaseModel):
@@ -194,10 +197,12 @@ class PydanticModelFactory:
 
             intent: List[IntentItem] = Field(
                 default_factory=list,
-                description="Lista de intenções extraídas da mensagem - pode ser vazia quando não identificadas claramente")
+                description="Lista de intenções extraídas da mensagem - pode ser vazia quando não identificadas claramente",
+            )
             entities: List[EntityItem] = Field(
                 default_factory=list,
-                description="Lista de entidades extraídas da mensagem - pode ser vazia quando não identificadas")
+                description="Lista de entidades extraídas da mensagem - pode ser vazia quando não identificadas",
+            )
 
             def add_intent(self, tipo: str, conteudo: str) -> None:
                 self.intent.append(IntentItem(type=tipo, value=conteudo))
@@ -209,14 +214,14 @@ class PydanticModelFactory:
                 return [item.value for item in self.intent if item.type == tipo]
 
             def get_entities_by_type(self, tipo: str) -> List[str]:
-                return [
-                    item.value for item in self.entities if item.type == tipo]
+                return [item.value for item in self.entities if item.type == tipo]
 
         return PydanticModel
 
 
-def create_dynamic_pydantic_model(intent_types_json: str,
-                                  entity_types_json: str) -> Type[BaseModel]:
+def create_dynamic_pydantic_model(
+    intent_types_json: str, entity_types_json: str
+) -> Type[BaseModel]:
     """
     Função utilitária para criar uma PydanticModel dinâmica.
 
@@ -234,4 +239,5 @@ def create_dynamic_pydantic_model(intent_types_json: str,
         >>> instance = Model(intent=[{"type": "saudacao", "value": "Olá"}], entities=[])
     """
     return PydanticModelFactory.create_pydantic_model(
-        intent_types_json, entity_types_json)
+        intent_types_json, entity_types_json
+    )

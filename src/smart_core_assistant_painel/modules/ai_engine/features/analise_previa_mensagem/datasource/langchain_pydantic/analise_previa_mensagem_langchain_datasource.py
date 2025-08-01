@@ -4,9 +4,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
-    AnalisePreviaMensagemLangchain, )
+    AnalisePreviaMensagemLangchain,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
-    create_dynamic_pydantic_model, )
+    create_dynamic_pydantic_model,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
@@ -14,16 +16,14 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import APMData
 
 
 class AnalisePreviaMensagemLangchainDatasource(APMData):
-
     def __call__(
-            self,
-            parameters: AnalisePreviaMensagemParameters) -> AnalisePreviaMensagemLangchain:
-
+        self, parameters: AnalisePreviaMensagemParameters
+    ) -> AnalisePreviaMensagemLangchain:
         try:
             # Criar modelo PydanticModel dinâmico baseado nos parâmetros
             PydanticModel = create_dynamic_pydantic_model(
                 intent_types_json=parameters.valid_intent_types,
-                entity_types_json=parameters.valid_entity_types
+                entity_types_json=parameters.valid_entity_types,
             )
 
             # Processar histórico do atendimento
@@ -34,60 +34,53 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             # Escapar chaves JSON no prompt system para evitar conflito com
             # variáveis do template
             prompt_system_escaped = parameters.llm_parameters.prompt_system.replace(
-                '{', '{{').replace('}', '}}')
+                "{", "{{"
+            ).replace("}", "}}")
 
-            messages = ChatPromptTemplate.from_messages([
-                ('system', prompt_system_escaped),
-                ('user', '{historico_context}\n\n{prompt_human}: {context}')
-            ])
+            messages = ChatPromptTemplate.from_messages(
+                [
+                    ("system", prompt_system_escaped),
+                    ("user", "{historico_context}\n\n{prompt_human}: {context}"),
+                ]
+            )
 
             llm = parameters.llm_parameters.create_llm
 
-            # Aplicar structured output diretamente no LLM
-            structured_llm = llm.with_structured_output(
-                PydanticModel, method="function_calling")
+            # Aplicar structured output
+            structured_llm = llm.with_structured_output(PydanticModel)
 
             # Chain com LLM estruturado
             chain = messages | structured_llm
 
             # Preparar dados para invocação com validação
             invoke_data = {
-                'prompt_human': parameters.llm_parameters.prompt_human,
-                'context': parameters.llm_parameters.context,
-                'historico_context': historico_formatado,
+                "prompt_human": parameters.llm_parameters.prompt_human,
+                "context": parameters.llm_parameters.context,
+                "historico_context": historico_formatado,
             }
 
-            response = chain.invoke(invoke_data)
+            # Invocar a chain
+            response: Any = chain.invoke(invoke_data)
 
-            # Verificar se a resposta é uma instância do modelo dinâmico
-            if hasattr(response, 'intent') and hasattr(response, 'entities'):
-                # Converter PydanticModel para AnalisePreviaMensagem
-                # Extrair intent como lista de dicionários {tipo: valor}
-                intent_dicts = [{str(item.type): item.value}
-                                for item in response.intent]
+            # Converter PydanticModel para AnalisePreviaMensagem
+            # Extrair intent como lista de dicionários {tipo: valor}
+            intent_dicts = [{str(item.type): item.value} for item in response.intent]
 
-                # Extrair entities como lista de dicionários {tipo: valor}
-                entity_dicts = [{str(item.type): item.value}
-                                for item in response.entities]
+            # Extrair entities como lista de dicionários {tipo: valor}
+            entity_dicts = [{str(item.type): item.value} for item in response.entities]
 
-                # Criar instância de AnalisePreviaMensagem
-                resultado = AnalisePreviaMensagemLangchain(
-                    intent=intent_dicts,
-                    entities=entity_dicts
-                )
+            # Criar instância de AnalisePreviaMensagem
+            resultado = AnalisePreviaMensagemLangchain(
+                intent=intent_dicts, entities=entity_dicts
+            )
 
-                return resultado
-            else:
-                raise ValueError(
-                    f"Resposta inesperada: {
-                        type(response)}. Esperado: PydanticModel dinâmico")
+            return resultado
 
         except Exception as e:
             logger.error(f"Erro ao processar análise prévia: {e}")
             raise
 
-    def _formatar_historico_atendimento(
-            self, historico_atendimento: Any) -> str:
+    def _formatar_historico_atendimento(self, historico_atendimento: Any) -> str:
         """
         Formata o histórico do atendimento para contexto do prompt.
 
@@ -103,22 +96,25 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
                 return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
 
             # Se for uma lista vazia
-            if isinstance(historico_atendimento, list) and len(
-                    historico_atendimento) == 0:
+            if (
+                isinstance(historico_atendimento, list)
+                and len(historico_atendimento) == 0
+            ):
                 return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
 
             # Se for uma lista com mensagens
             if isinstance(historico_atendimento, list):
                 historico_texto = "HISTÓRICO DO ATENDIMENTO:\n"
                 for i, mensagem in enumerate(
-                        historico_atendimento[-10:], 1):  # Últimas 10 mensagens
+                    historico_atendimento[-10:], 1
+                ):  # Últimas 10 mensagens
                     if isinstance(mensagem, str):
                         historico_texto += f"{i}. {mensagem}\n"
                     elif isinstance(mensagem, dict):
                         conteudo = mensagem.get(
-                            'conteudo', mensagem.get(
-                                'texto', str(mensagem)))
-                        remetente = mensagem.get('remetente', 'Usuario')
+                            "conteudo", mensagem.get("texto", str(mensagem))
+                        )
+                        remetente = mensagem.get("remetente", "Usuario")
                         historico_texto += f"{i}. [{remetente}]: {conteudo}\n"
                     else:
                         historico_texto += f"{i}. {str(mensagem)}\n"
@@ -126,14 +122,16 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
 
             # Se for um dicionário com estrutura específica
             if isinstance(historico_atendimento, dict):
-                mensagens = historico_atendimento.get('mensagens', [])
+                mensagens = historico_atendimento.get("mensagens", [])
                 if mensagens:
                     return self._formatar_historico_atendimento(mensagens)
                 else:
                     # Tentar outras chaves possíveis
-                    conteudo = (historico_atendimento.get('conteudo_mensagens') or
-                                historico_atendimento.get('historico') or
-                                historico_atendimento.get('mensagens_anteriores', []))
+                    conteudo = (
+                        historico_atendimento.get("conteudo_mensagens")
+                        or historico_atendimento.get("historico")
+                        or historico_atendimento.get("mensagens_anteriores", [])
+                    )
                     if conteudo:
                         return self._formatar_historico_atendimento(conteudo)
 
@@ -150,15 +148,20 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             # Fallback: tentar converter para string
             try:
                 historico_str = str(historico_atendimento)
-                if historico_str and historico_str not in ['[]', '{}', 'None']:
+                if historico_str and historico_str not in ["[]", "{}", "None"]:
                     return f"HISTÓRICO DO ATENDIMENTO:\n{historico_str}"
             except Exception:
                 pass
 
             # Último recurso
-            return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+            return (
+                "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+            )
 
         except Exception as format_error:
             logger.warning(
-                f'Erro ao formatar histórico, usando fallback: {format_error}')
-            return "HISTÓRICO DO ATENDIMENTO:\nErro ao processar histórico de mensagens."
+                f"Erro ao formatar histórico, usando fallback: {format_error}"
+            )
+            return (
+                "HISTÓRICO DO ATENDIMENTO:\nErro ao processar histórico de mensagens."
+            )

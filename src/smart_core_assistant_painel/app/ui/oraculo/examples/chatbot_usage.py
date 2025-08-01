@@ -1,6 +1,7 @@
 """
 Exemplo de uso dos modelos de chatbot para atendimento ao cliente
 """
+
 from smart_core_assistant_painel.app.ui.oraculo.models import (
     Atendimento,
     Cliente,
@@ -28,7 +29,7 @@ def exemplo_primeiro_contato():
     cliente, atendimento = inicializar_atendimento_whatsapp(
         numero_telefone=numero_telefone,
         primeira_mensagem=primeira_mensagem,
-        nome_cliente="João Silva"  # Opcional, se conhecido
+        nome_cliente="João Silva",  # Opcional, se conhecido
     )
 
     print(f"Cliente: {cliente}")
@@ -60,15 +61,14 @@ def exemplo_conversa_continuada():
         nova_mensagem = processar_mensagem_whatsapp(
             numero_telefone=numero_telefone,
             conteudo="Meu pedido é o número 12345",
-            tipo_mensagem=TipoMensagem.TEXTO
+            tipo_mensagem=TipoMensagem.TEXTO,
         )
 
         print(f"Nova mensagem: {nova_mensagem}")
 
         # Atualiza contexto da conversa
-        atendimento.atualizar_contexto('numero_pedido', '12345')
-        atendimento.atualizar_contexto(
-            'etapa_conversa', 'identificacao_pedido')
+        atendimento.atualizar_contexto("numero_pedido", "12345")
+        atendimento.atualizar_contexto("etapa_conversa", "identificacao_pedido")
 
         # Simula resposta do bot
         resposta_bot = "Encontrei seu pedido #12345. Como posso ajudá-lo?"
@@ -79,7 +79,7 @@ def exemplo_conversa_continuada():
             tipo=TipoMensagem.TEXTO_FORMATADO,
             conteudo=resposta_bot,
             is_from_client=False,
-            metadados={'gerada_por': 'chatbot_ia'}
+            metadados={"gerada_por": "chatbot_ia"},
         )
 
         print(f"Resposta do bot: {mensagem_bot}")
@@ -104,7 +104,7 @@ def exemplo_transferencia_humano():
         processar_mensagem_whatsapp(
             numero_telefone=numero_telefone,
             conteudo="Quero falar com um atendente humano",
-            tipo_mensagem=TipoMensagem.TEXTO
+            tipo_mensagem=TipoMensagem.TEXTO,
         )
 
         # Atualiza status para transferido
@@ -112,7 +112,7 @@ def exemplo_transferencia_humano():
         atendimento.atendente_humano = "Maria Santos"
         atendimento.adicionar_historico_status(
             StatusAtendimento.TRANSFERIDO,
-            "Transferido para atendente humano a pedido do cliente"
+            "Transferido para atendente humano a pedido do cliente",
         )
         atendimento.save()
 
@@ -124,8 +124,8 @@ def exemplo_transferencia_humano():
             tipo=TipoMensagem.SISTEMA,
             conteudo="Você foi transferido para um atendente humano. Aguarde um momento.",
             is_from_client=False,
-            metadados={
-                'tipo_sistema': 'transferencia'})
+            metadados={"tipo_sistema": "transferencia"},
+        )
 
         print(f"Mensagem do sistema: {mensagem_sistema}")
 
@@ -144,7 +144,7 @@ def exemplo_finalizacao_atendimento():
         processar_mensagem_whatsapp(
             numero_telefone=numero_telefone,
             conteudo="Obrigado! Problema resolvido.",
-            tipo_mensagem=TipoMensagem.TEXTO
+            tipo_mensagem=TipoMensagem.TEXTO,
         )
 
         # Solicita avaliação
@@ -153,14 +153,14 @@ def exemplo_finalizacao_atendimento():
             tipo=TipoMensagem.SISTEMA,
             conteudo="Que bom que conseguimos resolver! Por favor, avalie nosso atendimento de 1 a 5.",
             is_from_client=False,
-            metadados={
-                'tipo_sistema': 'solicitacao_avaliacao'})
+            metadados={"tipo_sistema": "solicitacao_avaliacao"},
+        )
 
         # Simula avaliação do cliente
         processar_mensagem_whatsapp(
             numero_telefone=numero_telefone,
             conteudo="5",
-            tipo_mensagem=TipoMensagem.TEXTO
+            tipo_mensagem=TipoMensagem.TEXTO,
         )
 
         # Registra avaliação e finaliza
@@ -191,22 +191,26 @@ def exemplo_estatisticas():
 
     # Avaliações médias
     from django.db.models import Avg
-    avaliacao_media = Atendimento.objects.filter(
-        avaliacao__isnull=False
-    ).aggregate(Avg('avaliacao'))['avaliacao__avg']
+
+    avaliacao_media = Atendimento.objects.filter(avaliacao__isnull=False).aggregate(
+        Avg("avaliacao")
+    )["avaliacao__avg"]
 
     if avaliacao_media:
         print(f"Avaliação média: {avaliacao_media:.2f}")
 
     # Atendimentos por status
     from django.db.models import Count
-    status_counts = Atendimento.objects.values('status').annotate(
-        count=Count('id')
-    ).order_by('-count')
+
+    status_counts = (
+        Atendimento.objects.values("status")
+        .annotate(count=Count("id"))
+        .order_by("-count")
+    )
 
     print("\nAtendimentos por status:")
     for item in status_counts:
-        status_display = StatusAtendimento(item['status']).label
+        status_display = StatusAtendimento(item["status"]).label
         print(f"  {status_display}: {item['count']}")
 
 
@@ -222,28 +226,28 @@ def exemplo_fluxo_conversa():
         descricao="Fluxo para resolver dúvidas sobre pedidos de clientes",
         condicoes_entrada={
             "palavras_chave": ["pedido", "compra", "ordem", "status"],
-            "intent": "consulta_pedido"
+            "intent": "consulta_pedido",
         },
         estados={
             "inicio": {
                 "mensagem": "Vou te ajudar com seu pedido! Qual é o número do seu pedido?",
-                "proximo_estado": "coletando_numero_pedido"
+                "proximo_estado": "coletando_numero_pedido",
             },
             "coletando_numero_pedido": {
                 "validacao": "numero_pedido",
                 "mensagem_erro": "Por favor, informe um número de pedido válido.",
-                "proximo_estado": "consultando_pedido"
+                "proximo_estado": "consultando_pedido",
             },
             "consultando_pedido": {
                 "acao": "consultar_sistema_pedidos",
-                "proximo_estado": "informando_status"
+                "proximo_estado": "informando_status",
             },
             "informando_status": {
                 "mensagem": "Encontrei seu pedido! Status: {status_pedido}",
                 "opcoes": ["Mais informações", "Alterar pedido", "Cancelar pedido"],
-                "proximo_estado": "aguardando_escolha"
-            }
-        }
+                "proximo_estado": "aguardando_escolha",
+            },
+        },
     )
 
     print(f"Fluxo criado: {fluxo_pedidos}")
@@ -252,12 +256,12 @@ def exemplo_fluxo_conversa():
     numero_telefone = "+5511888888888"
     cliente, atendimento = inicializar_atendimento_whatsapp(
         numero_telefone=numero_telefone,
-        primeira_mensagem="Preciso saber o status do meu pedido"
+        primeira_mensagem="Preciso saber o status do meu pedido",
     )
 
     # Atualiza contexto com o fluxo atual
-    atendimento.atualizar_contexto('fluxo_atual', 'Dúvidas sobre Pedidos')
-    atendimento.atualizar_contexto('estado_atual', 'inicio')
+    atendimento.atualizar_contexto("fluxo_atual", "Dúvidas sobre Pedidos")
+    atendimento.atualizar_contexto("estado_atual", "inicio")
 
     print(f"Cliente {cliente.telefone} entrou no fluxo: {fluxo_pedidos.nome}")
 

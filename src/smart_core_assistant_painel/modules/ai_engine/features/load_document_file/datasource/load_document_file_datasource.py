@@ -1,6 +1,3 @@
-
-
-from datetime import datetime
 from pathlib import Path
 
 from langchain.docstore.document import Document
@@ -18,7 +15,6 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import LDFData
 
 
 class LoadDocumentFileDatasource(LDFData):
-
     SUPPORTED_EXTENSIONS = {
         ".pdf": PyPDFLoader,
         ".doc": Docx2txtLoader,
@@ -29,10 +25,7 @@ class LoadDocumentFileDatasource(LDFData):
         ".csv": TextLoader,
     }
 
-    def __call__(
-            self,
-            parameters: LoadDocumentFileParameters) -> list[Document]:
-
+    def __call__(self, parameters: LoadDocumentFileParameters) -> list[Document]:
         try:
             ext = Path(parameters.path).suffix.lower()
 
@@ -42,7 +35,7 @@ class LoadDocumentFileDatasource(LDFData):
             loader_class = self.SUPPORTED_EXTENSIONS[ext]
 
             # Configura encoding UTF-8 para arquivos de texto e CSV
-            if ext in ['.txt', '.csv']:
+            if ext in [".txt", ".csv"]:
                 loader = TextLoader(parameters.path, encoding="utf-8")
             else:
                 loader = loader_class(parameters.path)
@@ -51,5 +44,5 @@ class LoadDocumentFileDatasource(LDFData):
             return documents
         except Exception as e:
             raise RuntimeError(
-                f"Falha carregar o documento '{parameters.id}': {
-                    str(e)}") from e
+                f"Falha carregar o documento '{parameters.id}': {str(e)}"
+            ) from e

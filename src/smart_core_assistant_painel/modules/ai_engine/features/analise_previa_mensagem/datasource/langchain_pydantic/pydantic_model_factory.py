@@ -42,8 +42,7 @@ class PydanticModelFactory:
         return types_list
 
     @staticmethod
-    def _generate_documentation_section(
-            types_json: str, section_title: str) -> str:
+    def _generate_documentation_section(types_json: str, section_title: str) -> str:
         """
         Gera uma seção da documentação baseada no JSON de configuração.
 
@@ -70,7 +69,7 @@ class PydanticModelFactory:
         for category_key, category_dict in data.items():
             if isinstance(category_dict, dict):
                 # Converter category_key para formato de título
-                category_title = category_key.replace('_', ' ').upper()
+                category_title = category_key.replace("_", " ").upper()
                 documentation += f"       {category_title}:\n"
 
                 for type_key, description in category_dict.items():
@@ -88,7 +87,7 @@ class PydanticModelFactory:
         Returns:
             String formatada com entidades fixas
         """
-        fixed_entities = '''
+        fixed_entities = """
     3. ENTIDADES FIXAS (dados para cadastro no banco) - extraia quando identificadas claramente:
        CONTATO:
        - nome_contato: Nome completo da pessoa que participou da conversa e deve ser cadastrado como contato no sistema, exemplo: Ana Souza
@@ -122,12 +121,13 @@ class PydanticModelFactory:
        - avaliacao_atendimento: Avaliação numérica do atendimento, variando de 1 (pior) até 5 (melhor), conforme opinião do contato, exemplo: 4
        - feedback_atendimento: Comentário qualitativo ou crítica fornecida pelo contato sobre o atendimento recebido, exemplo: Atendimento muito bom e rápido
 
-        '''
+        """
         return fixed_entities
 
     @staticmethod
-    def _generate_examples_section(intent_types_json: str,
-                                   entity_types_json: str) -> str:
+    def _generate_examples_section(
+        intent_types_json: str, entity_types_json: str
+    ) -> str:
         """
         Gera a seção de exemplos da documentação.
 
@@ -138,7 +138,7 @@ class PydanticModelFactory:
         Returns:
             String formatada com exemplos
         """
-        examples = '''
+        examples = """
     EXEMPLOS DE ANÁLISE:
 
     EXEMPLO 1: "Olá, tudo bem? meu nome é Paulo Silva, trabalho na Microsoft como Gerente de TI"
@@ -211,13 +211,13 @@ class PydanticModelFactory:
     - Seja conservador: prefira precisão a recall
     - Para dados de cadastro, seja mais liberal na extração desde que haja evidências claras
     - Distinga entre pessoa física e jurídica pelo contexto (CPF vs CNPJ, nome vs razão social)
-        '''
+        """
         return examples
 
     @classmethod
-    def create_pydantic_model(cls,
-                              intent_types_json: str,
-                              entity_types_json: str) -> Type[BaseModel]:
+    def create_pydantic_model(
+        cls, intent_types_json: str, entity_types_json: str
+    ) -> Type[BaseModel]:
         """
         Cria dinamicamente uma classe PydanticModel baseada nas configurações JSON.
 
@@ -231,16 +231,19 @@ class PydanticModelFactory:
         # Gerar documentação dinamicamente
         intent_docs = cls._generate_documentation_section(
             intent_types_json,
-            "1. INTENTS (intenções do usuário) - identifique quando presentes")
+            "1. INTENTS (intenções do usuário) - identifique quando presentes",
+        )
         entity_docs = cls._generate_documentation_section(
             entity_types_json,
-            "2. ENTITIES DINÂMICAS (informações específicas da conversa) - extraia quando presentes")
+            "2. ENTITIES DINÂMICAS (informações específicas da conversa) - extraia quando presentes",
+        )
         fixed_entities_docs = cls._generate_fixed_entities_section()
         examples_docs = cls._generate_examples_section(
-            intent_types_json, entity_types_json)
+            intent_types_json, entity_types_json
+        )
 
         # Documentação completa
-        full_documentation = f'''
+        full_documentation = f"""
     Analise a mensagem do contato considerando o histórico fornecido e extraia intents e entities relevantes.
 
     PRINCÍPIO FUNDAMENTAL: Seja conservador e preciso para entidades dinâmicas, mas mais liberal para dados de
@@ -252,7 +255,7 @@ class PydanticModelFactory:
 {entity_docs}
 {fixed_entities_docs}
 {examples_docs}
-        '''
+        """
 
         # Log da documentação completa gerada
         logger.info("=== DOCUMENTAÇÃO PYDANTIC MODEL FACTORY ===")
@@ -275,10 +278,12 @@ class PydanticModelFactory:
 
             intent: List[IntentItem] = Field(
                 default_factory=list,
-                description="Lista de intenções extraídas da mensagem - pode ser vazia quando não identificadas claramente")
+                description="Lista de intenções extraídas da mensagem - pode ser vazia quando não identificadas claramente",
+            )
             entities: List[EntityItem] = Field(
                 default_factory=list,
-                description="Lista de entidades extraídas da mensagem - pode ser vazia quando não identificadas")
+                description="Lista de entidades extraídas da mensagem - pode ser vazia quando não identificadas",
+            )
 
             def add_intent(self, tipo: str, conteudo: str) -> None:
                 self.intent.append(IntentItem(type=tipo, value=conteudo))
@@ -290,14 +295,14 @@ class PydanticModelFactory:
                 return [item.value for item in self.intent if item.type == tipo]
 
             def get_entities_by_type(self, tipo: str) -> List[str]:
-                return [
-                    item.value for item in self.entities if item.type == tipo]
+                return [item.value for item in self.entities if item.type == tipo]
 
         return PydanticModel
 
 
-def create_dynamic_pydantic_model(intent_types_json: str,
-                                  entity_types_json: str) -> Type[BaseModel]:
+def create_dynamic_pydantic_model(
+    intent_types_json: str, entity_types_json: str
+) -> Type[BaseModel]:
     """
     Função utilitária para criar uma PydanticModel dinâmica.
 
@@ -319,7 +324,8 @@ def create_dynamic_pydantic_model(intent_types_json: str,
     logger.debug(f"Entity Types JSON recebido: {entity_types_json}")
 
     model = PydanticModelFactory.create_pydantic_model(
-        intent_types_json, entity_types_json)
+        intent_types_json, entity_types_json
+    )
 
     logger.success("✅ Pydantic Model dinâmico criado com sucesso!")
     return model

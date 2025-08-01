@@ -11,9 +11,7 @@ class VetorStorage(ABC):
     """
 
     @abstractmethod
-    def read(self,
-             query_vector: str,
-             k: int = 5) -> List[Document]:
+    def read(self, query_vector: str, k: int = 5) -> List[Document]:
         """
         Ler um vetor do armazenamento.
 

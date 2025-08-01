@@ -4,18 +4,17 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0006_atendentehumano_cliente_fluxoconversa_and_more'),
+        ("oraculo", "0006_atendentehumano_cliente_fluxoconversa_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='atendentehumano',
-            name='data_admissao',
+            model_name="atendentehumano",
+            name="data_admissao",
         ),
         migrations.RemoveField(
-            model_name='atendentehumano',
-            name='telefone_corporativo',
+            model_name="atendentehumano",
+            name="telefone_corporativo",
         ),
     ]

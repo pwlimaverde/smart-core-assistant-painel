@@ -5,25 +5,45 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Treinamentos',
+            name="Treinamentos",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('tag', models.TextField(help_text='Campo obrigatório para identificar o treinamento', max_length=40, validators=[oraculo.models.validate_tag])),
-                ('grupo', models.TextField(help_text='Campo obrigatório para identificar o grupo do treinamento', max_length=40, validators=[oraculo.models.validate_tag])),
-                ('documentos', models.JSONField(blank=True, default=list, null=True)),
-                ('treinamento_finalizado', models.BooleanField(default=False)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "tag",
+                    models.TextField(
+                        help_text="Campo obrigatório para identificar o treinamento",
+                        max_length=40,
+                        validators=[oraculo.models.validate_tag],
+                    ),
+                ),
+                (
+                    "grupo",
+                    models.TextField(
+                        help_text="Campo obrigatório para identificar o grupo do treinamento",
+                        max_length=40,
+                        validators=[oraculo.models.validate_tag],
+                    ),
+                ),
+                ("documentos", models.JSONField(blank=True, default=list, null=True)),
+                ("treinamento_finalizado", models.BooleanField(default=False)),
             ],
             options={
-                'verbose_name': 'Treinamento',
-                'verbose_name_plural': 'Treinamentos',
+                "verbose_name": "Treinamento",
+                "verbose_name_plural": "Treinamentos",
             },
         ),
     ]

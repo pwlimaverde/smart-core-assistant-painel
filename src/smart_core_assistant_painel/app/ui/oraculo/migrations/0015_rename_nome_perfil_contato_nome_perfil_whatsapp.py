@@ -4,15 +4,14 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0014_contato_nome_perfil'),
+        ("oraculo", "0014_contato_nome_perfil"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='contato',
-            old_name='nome_perfil',
-            new_name='nome_perfil_whatsapp',
+            model_name="contato",
+            old_name="nome_perfil",
+            new_name="nome_perfil_whatsapp",
         ),
     ]

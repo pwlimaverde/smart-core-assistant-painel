@@ -6,75 +6,154 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0011_rename_cliente_table_to_contato'),
+        ("oraculo", "0011_rename_cliente_table_to_contato"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Contato',
+            name="Contato",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('telefone', models.CharField(help_text='Número de telefone do contato (formato: +5511999999999)', max_length=20, unique=True, validators=[oraculo.models.validate_telefone])),
-                ('nome', models.CharField(blank=True, help_text='Nome do contato', max_length=100, null=True)),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro do contato')),
-                ('ultima_interacao', models.DateTimeField(auto_now=True, help_text='Data da última interação')),
-                ('ativo', models.BooleanField(default=True, help_text='Status de atividade do contato')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais do contato')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        help_text="Número de telefone do contato (formato: +5511999999999)",
+                        max_length=20,
+                        unique=True,
+                        validators=[oraculo.models.validate_telefone],
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome do contato",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Data de cadastro do contato"
+                    ),
+                ),
+                (
+                    "ultima_interacao",
+                    models.DateTimeField(
+                        auto_now=True, help_text="Data da última interação"
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True, help_text="Status de atividade do contato"
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais do contato",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Contato',
-                'verbose_name_plural': 'Contatos',
-                'ordering': ['-ultima_interacao'],
+                "verbose_name": "Contato",
+                "verbose_name_plural": "Contatos",
+                "ordering": ["-ultima_interacao"],
             },
         ),
         migrations.AlterField(
-            model_name='atendentehumano',
-            name='id',
-            field=models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False),
+            model_name="atendentehumano",
+            name="id",
+            field=models.AutoField(
+                help_text="Chave primária do registro",
+                primary_key=True,
+                serialize=False,
+            ),
         ),
         migrations.AlterField(
-            model_name='atendimento',
-            name='feedback',
-            field=models.TextField(blank=True, help_text='Feedback do contato', null=True),
+            model_name="atendimento",
+            name="feedback",
+            field=models.TextField(
+                blank=True, help_text="Feedback do contato", null=True
+            ),
         ),
         migrations.AlterField(
-            model_name='atendimento',
-            name='id',
-            field=models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False),
+            model_name="atendimento",
+            name="id",
+            field=models.AutoField(
+                help_text="Chave primária do registro",
+                primary_key=True,
+                serialize=False,
+            ),
         ),
         migrations.AlterField(
-            model_name='fluxoconversa',
-            name='id',
-            field=models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False),
+            model_name="fluxoconversa",
+            name="id",
+            field=models.AutoField(
+                help_text="Chave primária do registro",
+                primary_key=True,
+                serialize=False,
+            ),
         ),
         migrations.AlterField(
-            model_name='mensagem',
-            name='entidades_extraidas',
-            field=models.JSONField(blank=True, default=list, help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})"),
+            model_name="mensagem",
+            name="entidades_extraidas",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
+            ),
         ),
         migrations.AlterField(
-            model_name='mensagem',
-            name='id',
-            field=models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False),
+            model_name="mensagem",
+            name="id",
+            field=models.AutoField(
+                help_text="Chave primária do registro",
+                primary_key=True,
+                serialize=False,
+            ),
         ),
         migrations.AlterField(
-            model_name='mensagem',
-            name='intent_detectado',
-            field=models.JSONField(blank=True, default=list, help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})"),
+            model_name="mensagem",
+            name="intent_detectado",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
+            ),
         ),
         migrations.AlterField(
-            model_name='treinamentos',
-            name='id',
-            field=models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False),
+            model_name="treinamentos",
+            name="id",
+            field=models.AutoField(
+                help_text="Chave primária do registro",
+                primary_key=True,
+                serialize=False,
+            ),
         ),
         migrations.AlterField(
-            model_name='atendimento',
-            name='cliente',
-            field=models.ForeignKey(help_text='Contato vinculado ao atendimento', on_delete=django.db.models.deletion.CASCADE, related_name='atendimentos', to='oraculo.contato'),
+            model_name="atendimento",
+            name="cliente",
+            field=models.ForeignKey(
+                help_text="Contato vinculado ao atendimento",
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="atendimentos",
+                to="oraculo.contato",
+            ),
         ),
         migrations.DeleteModel(
-            name='Cliente',
+            name="Cliente",
         ),
     ]

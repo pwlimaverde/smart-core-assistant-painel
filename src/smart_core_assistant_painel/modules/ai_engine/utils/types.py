@@ -9,9 +9,11 @@ from py_return_success_or_error import (
 )
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
-    AnalisePreviaMensagem, )
+    AnalisePreviaMensagem,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
-    WhatsappApi, )
+    WhatsappApi,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
     LlmParameters,
@@ -20,11 +22,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     MessageParameters,
 )
 
-WSUsecase: TypeAlias = UsecaseBaseCallData[
-    Empty,
-    WhatsappApi,
-    MessageParameters
-]
+WSUsecase: TypeAlias = UsecaseBaseCallData[Empty, WhatsappApi, MessageParameters]
 WSData: TypeAlias = Datasource[WhatsappApi, MessageParameters]
 
 ACUsecase: TypeAlias = UsecaseBaseCallData[
@@ -42,6 +40,7 @@ class APMTuple(NamedTuple):
         intent_types: Lista de tipos de intent válidos com suas configurações
         entity_types: Lista de tipos de entidade válidos com suas configurações
     """
+
     intent_types: list[dict[str, Any]]
     entity_types: list[dict[str, Any]]
 
@@ -51,8 +50,7 @@ APMUsecase: TypeAlias = UsecaseBaseCallData[
     AnalisePreviaMensagem,
     AnalisePreviaMensagemParameters,
 ]
-APMData: TypeAlias = Datasource[AnalisePreviaMensagem,
-                                AnalisePreviaMensagemParameters]
+APMData: TypeAlias = Datasource[AnalisePreviaMensagem, AnalisePreviaMensagemParameters]
 
 LDFUsecase: TypeAlias = UsecaseBaseCallData[
     list[Document],

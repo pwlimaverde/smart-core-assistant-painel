@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0004_datatreinamento_pergunta'),
+        ("oraculo", "0004_datatreinamento_pergunta"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='pergunta',
-            name='data_treinamento',
-            field=models.ManyToManyField(blank=True, to='oraculo.datatreinamento'),
+            model_name="pergunta",
+            name="data_treinamento",
+            field=models.ManyToManyField(blank=True, to="oraculo.datatreinamento"),
         ),
     ]

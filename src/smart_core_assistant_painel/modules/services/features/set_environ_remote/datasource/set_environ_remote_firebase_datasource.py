@@ -1,5 +1,3 @@
-
-
 import asyncio
 import os
 
@@ -13,7 +11,6 @@ from smart_core_assistant_painel.modules.services.utils.types import SERData
 
 
 class SetEnvironRemoteFirebaseDatasource(SERData):
-
     @staticmethod
     async def _load_remote_config_values(config_mapping: dict[str, str]):
         # Inicialize o template do Remote Config
@@ -32,16 +29,12 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
             except Exception as e:
                 logger.error(f"✗ Erro ao carregar {remote_key}: {e}")
                 raise TypeError(
-                    f'Erro ao carregar variável de ambiente {remote_key}: {
-                        str(e)}')
+                    f"Erro ao carregar variável de ambiente {remote_key}: {str(e)}"
+                )
 
     def __call__(self, parameters: SetEnvironRemoteParameters) -> bool:
         try:
-            asyncio.run(
-                self._load_remote_config_values(
-                    parameters.config_mapping))
+            asyncio.run(self._load_remote_config_values(parameters.config_mapping))
             return True
         except Exception as e:
-            raise TypeError(
-                f'Erro ao carregar variáveis de ambiente: {
-                    str(e)}')
+            raise TypeError(f"Erro ao carregar variáveis de ambiente: {str(e)}")

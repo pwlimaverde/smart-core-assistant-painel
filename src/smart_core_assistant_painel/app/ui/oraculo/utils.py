@@ -19,8 +19,11 @@ def send_message_response(phone):
         context = "\n\n".join([doc.page_content for doc in data])
 
         messages = [
-            {"role": "system", "content": f"Você é um assistente virtual e deve responder com precissão as perguntas sobre uma empresa.\n\n{context}"},
-            {"role": "user", "content": question}
+            {
+                "role": "system",
+                "content": f"Você é um assistente virtual e deve responder com precissão as perguntas sobre uma empresa.\n\n{context}",
+            },
+            {"role": "user", "content": question},
         ]
 
         llm = ChatOpenAI(
@@ -42,9 +45,9 @@ def sched_message_response(phone):
         print(1)
         scheduler.add_job(
             send_message_response,
-            'date',
+            "date",
             run_date=datetime.datetime.now() + datetime.timedelta(seconds=15),
             kwargs={"phone": phone},
-            misfire_grace_time=60
+            misfire_grace_time=60,
         )
         cache.set(f"wa_timer_{phone}", True, timeout=60)

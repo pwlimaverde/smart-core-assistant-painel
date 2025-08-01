@@ -5,41 +5,194 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('oraculo', '0012_contato_alter_atendentehumano_id_and_more'),
+        ("oraculo", "0012_contato_alter_atendentehumano_id_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Empresa',
+            name="Empresa",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('nome_fantasia', models.CharField(help_text='Nome comum da empresa (obrigatório)', max_length=200)),
-                ('razao_social', models.CharField(blank=True, help_text='Nome legal/oficial da empresa', max_length=200, null=True)),
-                ('cnpj', models.CharField(blank=True, help_text='CNPJ da empresa (formato: 12.345.678/0001-99)', max_length=18, null=True, validators=[oraculo.models.validate_cnpj])),
-                ('telefone', models.CharField(blank=True, help_text='Telefone fixo ou corporativo da empresa', max_length=20, null=True, validators=[oraculo.models.validate_telefone])),
-                ('site', models.URLField(blank=True, help_text='Website da empresa', null=True)),
-                ('ramo_atividade', models.CharField(blank=True, help_text='Área de atuação da empresa', max_length=200, null=True)),
-                ('observacoes', models.TextField(blank=True, help_text='Informações adicionais sobre a empresa', null=True)),
-                ('cep', models.CharField(blank=True, help_text='CEP do endereço (formato: 12345-678)', max_length=10, null=True, validators=[oraculo.models.validate_cep])),
-                ('logradouro', models.CharField(blank=True, help_text='Rua, avenida ou logradouro', max_length=200, null=True)),
-                ('numero', models.CharField(blank=True, help_text='Número do endereço', max_length=10, null=True)),
-                ('complemento', models.CharField(blank=True, help_text='Complemento do endereço (sala, andar, etc.)', max_length=100, null=True)),
-                ('bairro', models.CharField(blank=True, help_text='Bairro da empresa', max_length=100, null=True)),
-                ('cidade', models.CharField(blank=True, help_text='Cidade da empresa', max_length=100, null=True)),
-                ('uf', models.CharField(blank=True, help_text='Estado (UF) da empresa', max_length=2, null=True)),
-                ('pais', models.CharField(blank=True, default='Brasil', help_text='País da empresa', max_length=50, null=True)),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro da empresa')),
-                ('ultima_atualizacao', models.DateTimeField(auto_now=True, help_text='Data da última atualização')),
-                ('ativo', models.BooleanField(default=True, help_text='Status de atividade da empresa')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais da empresa')),
-                ('contatos', models.ManyToManyField(blank=True, help_text='Contatos vinculados à empresa', related_name='empresas', to='oraculo.contato')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "nome_fantasia",
+                    models.CharField(
+                        help_text="Nome comum da empresa (obrigatório)", max_length=200
+                    ),
+                ),
+                (
+                    "razao_social",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome legal/oficial da empresa",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cnpj",
+                    models.CharField(
+                        blank=True,
+                        help_text="CNPJ da empresa (formato: 12.345.678/0001-99)",
+                        max_length=18,
+                        null=True,
+                        validators=[oraculo.models.validate_cnpj],
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Telefone fixo ou corporativo da empresa",
+                        max_length=20,
+                        null=True,
+                        validators=[oraculo.models.validate_telefone],
+                    ),
+                ),
+                (
+                    "site",
+                    models.URLField(
+                        blank=True, help_text="Website da empresa", null=True
+                    ),
+                ),
+                (
+                    "ramo_atividade",
+                    models.CharField(
+                        blank=True,
+                        help_text="Área de atuação da empresa",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "observacoes",
+                    models.TextField(
+                        blank=True,
+                        help_text="Informações adicionais sobre a empresa",
+                        null=True,
+                    ),
+                ),
+                (
+                    "cep",
+                    models.CharField(
+                        blank=True,
+                        help_text="CEP do endereço (formato: 12345-678)",
+                        max_length=10,
+                        null=True,
+                        validators=[oraculo.models.validate_cep],
+                    ),
+                ),
+                (
+                    "logradouro",
+                    models.CharField(
+                        blank=True,
+                        help_text="Rua, avenida ou logradouro",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "numero",
+                    models.CharField(
+                        blank=True,
+                        help_text="Número do endereço",
+                        max_length=10,
+                        null=True,
+                    ),
+                ),
+                (
+                    "complemento",
+                    models.CharField(
+                        blank=True,
+                        help_text="Complemento do endereço (sala, andar, etc.)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "bairro",
+                    models.CharField(
+                        blank=True,
+                        help_text="Bairro da empresa",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cidade",
+                    models.CharField(
+                        blank=True,
+                        help_text="Cidade da empresa",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "uf",
+                    models.CharField(
+                        blank=True,
+                        help_text="Estado (UF) da empresa",
+                        max_length=2,
+                        null=True,
+                    ),
+                ),
+                (
+                    "pais",
+                    models.CharField(
+                        blank=True,
+                        default="Brasil",
+                        help_text="País da empresa",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Data de cadastro da empresa"
+                    ),
+                ),
+                (
+                    "ultima_atualizacao",
+                    models.DateTimeField(
+                        auto_now=True, help_text="Data da última atualização"
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True, help_text="Status de atividade da empresa"
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais da empresa",
+                    ),
+                ),
+                (
+                    "contatos",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Contatos vinculados à empresa",
+                        related_name="empresas",
+                        to="oraculo.contato",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Empresa',
-                'verbose_name_plural': 'Empresas',
-                'ordering': ['nome_fantasia'],
+                "verbose_name": "Empresa",
+                "verbose_name_plural": "Empresas",
+                "ordering": ["nome_fantasia"],
             },
         ),
     ]

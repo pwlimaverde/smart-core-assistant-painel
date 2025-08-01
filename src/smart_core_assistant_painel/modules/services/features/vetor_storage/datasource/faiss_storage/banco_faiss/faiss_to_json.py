@@ -22,11 +22,7 @@ def faiss_para_json():
     index = faiss.read_index(caminho_indice)
 
     # Criar estrutura básica
-    dados = {
-        "total_vetores": index.ntotal,
-        "dimensao": index.d,
-        "vetores": []
-    }
+    dados = {"total_vetores": index.ntotal, "dimensao": index.d, "vetores": []}
 
     # Extrair vetores (limitando a 100 para não ficar muito pesado)
     limite = min(100, index.ntotal)
@@ -36,15 +32,12 @@ def faiss_para_json():
     for i in range(limite):
         try:
             vetor = index.reconstruct(i)
-            dados["vetores"].append({
-                "id": i,
-                "dados": vetor[:10].tolist()
-            })
+            dados["vetores"].append({"id": i, "dados": vetor[:10].tolist()})
         except BaseException:
             continue
 
     # Salvar JSON no mesmo diretório
-    with open(arquivo_saida, 'w') as arquivo:
+    with open(arquivo_saida, "w") as arquivo:
         json.dump(dados, arquivo, indent=2)
 
     print(f"✅ Arquivo salvo: {arquivo_saida}")

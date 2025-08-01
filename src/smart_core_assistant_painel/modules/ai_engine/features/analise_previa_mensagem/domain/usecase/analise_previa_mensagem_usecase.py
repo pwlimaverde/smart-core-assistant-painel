@@ -1,6 +1,3 @@
-
-
-from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,
@@ -17,10 +14,9 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
 
 
 class AnalisePreviaMensagemUsecase(APMUsecase):
-
     def __call__(
-            self,
-            parameters: AnalisePreviaMensagemParameters) -> ReturnSuccessOrError[APMTuple]:
+        self, parameters: AnalisePreviaMensagemParameters
+    ) -> ReturnSuccessOrError[APMTuple]:
         try:
             data = self._resultDatasource(
                 parameters=parameters, datasource=self._datasource
@@ -35,8 +31,7 @@ class AnalisePreviaMensagemUsecase(APMUsecase):
                 # Os dados já estão no formato correto: lista de dicionários
                 # {tipo: valor}
                 tuple_result = APMTuple(
-                    intent_types=result.intent,
-                    entity_types=result.entities
+                    intent_types=result.intent, entity_types=result.entities
                 )
                 return SuccessReturn(success=tuple_result)
             elif isinstance(data, ErrorReturn):
@@ -45,5 +40,5 @@ class AnalisePreviaMensagemUsecase(APMUsecase):
                 return ErrorReturn(parameters.error)
         except Exception as e:
             error = parameters.error
-            error.message = f'{error.message} - Exception: {str(e)}'
+            error.message = f"{error.message} - Exception: {str(e)}"
             return ErrorReturn(error)

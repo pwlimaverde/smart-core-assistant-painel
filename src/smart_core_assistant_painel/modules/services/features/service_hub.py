@@ -6,16 +6,17 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
-    VetorStorage, )
+    VetorStorage,
+)
 
 
 class ServiceHub:
     """Classe singleton para gerenciar configurações do ambiente."""
 
-    _instance: Optional['ServiceHub'] = None
+    _instance: Optional["ServiceHub"] = None
     _initialized: bool = False
 
-    def __new__(cls) -> 'ServiceHub':
+    def __new__(cls) -> "ServiceHub":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -28,8 +29,7 @@ class ServiceHub:
     def _load_config(self) -> None:
         """Carrega as configurações das variáveis de ambiente."""
         # Constante para o caminho do arquivo de dados
-        self.PASTA_DATASETS: Path = Path(
-            __file__).parent.parent.parent / 'app/datasets'
+        self.PASTA_DATASETS: Path = Path(__file__).parent.parent.parent / "app/datasets"
         self._vetor_storage: Optional[VetorStorage] = None
         self._configuring_vetor_storage: bool = False
 
@@ -55,8 +55,7 @@ class ServiceHub:
     def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
         """Define a instância do VetorStorage."""
         if not isinstance(vetor_storage, VetorStorage):
-            raise TypeError(
-                "vetor_storage deve implementar a interface VetorStorage")
+            raise TypeError("vetor_storage deve implementar a interface VetorStorage")
         self._vetor_storage = vetor_storage
 
     @property
@@ -72,90 +71,126 @@ class ServiceHub:
     @property
     def CHUNK_OVERLAP(self) -> int:
         if self._chunk_overlap is None:
-            self._chunk_overlap = int(os.environ.get('CHUNK_OVERLAP', '200'))
+            self._chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", "200"))
         return self._chunk_overlap if self._chunk_overlap is not None else 200
 
     @property
     def CHUNK_SIZE(self) -> int:
         if self._chunk_size is None:
-            self._chunk_size = int(os.environ.get('CHUNK_SIZE', '1000'))
+            self._chunk_size = int(os.environ.get("CHUNK_SIZE", "1000"))
         return self._chunk_size if self._chunk_size is not None else 1000
 
     @property
     def FAISS_MODEL(self) -> str:
         if self._faiss_model is None:
-            self._faiss_model = os.environ.get(
-                'FAISS_MODEL')
+            self._faiss_model = os.environ.get("FAISS_MODEL")
         return self._faiss_model if self._faiss_model is not None else ""
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
         if self._prompt_human_melhoria_conteudo is None:
             self._prompt_human_melhoria_conteudo = os.environ.get(
-                'PROMPT_HUMAN_MELHORIA_CONTEUDO')
-        return self._prompt_human_melhoria_conteudo if self._prompt_human_melhoria_conteudo is not None else ""
+                "PROMPT_HUMAN_MELHORIA_CONTEUDO"
+            )
+        return (
+            self._prompt_human_melhoria_conteudo
+            if self._prompt_human_melhoria_conteudo is not None
+            else ""
+        )
 
     @property
     def PROMPT_SYSTEM_MELHORIA_CONTEUDO(self) -> str:
         if self._prompt_system_melhoria_conteudo is None:
             self._prompt_system_melhoria_conteudo = os.environ.get(
-                'PROMPT_SYSTEM_MELHORIA_CONTEUDO')
-        return self._prompt_system_melhoria_conteudo if self._prompt_system_melhoria_conteudo is not None else ""
+                "PROMPT_SYSTEM_MELHORIA_CONTEUDO"
+            )
+        return (
+            self._prompt_system_melhoria_conteudo
+            if self._prompt_system_melhoria_conteudo is not None
+            else ""
+        )
 
     @property
     def PROMPT_HUMAN_ANALISE_CONTEUDO(self) -> str:
         if self._prompt_human_analise_conteudo is None:
             self._prompt_human_analise_conteudo = os.environ.get(
-                'PROMPT_HUMAN_ANALISE_CONTEUDO')
-        return self._prompt_human_analise_conteudo if self._prompt_human_analise_conteudo is not None else ""
+                "PROMPT_HUMAN_ANALISE_CONTEUDO"
+            )
+        return (
+            self._prompt_human_analise_conteudo
+            if self._prompt_human_analise_conteudo is not None
+            else ""
+        )
 
     @property
     def PROMPT_SYSTEM_ANALISE_CONTEUDO(self) -> str:
         if self._prompt_system_analise_conteudo is None:
             self._prompt_system_analise_conteudo = os.environ.get(
-                'PROMPT_SYSTEM_ANALISE_CONTEUDO')
-        return self._prompt_system_analise_conteudo if self._prompt_system_analise_conteudo is not None else ""
+                "PROMPT_SYSTEM_ANALISE_CONTEUDO"
+            )
+        return (
+            self._prompt_system_analise_conteudo
+            if self._prompt_system_analise_conteudo is not None
+            else ""
+        )
 
     @property
     def TEMPERATURE(self) -> int:
         if self._temperature is None:
-            self._temperature = int(os.environ.get('TEMPERATURE', '0'))
+            self._temperature = int(os.environ.get("TEMPERATURE", "0"))
         return self._temperature if self._temperature is not None else 0
 
     @property
     def MODEL(self) -> str:
         if self._model is None:
-            self._model = os.environ.get(
-                'MODEL')
+            self._model = os.environ.get("MODEL")
         return self._model if self._model is not None else ""
 
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:
         if self._whatsapp_api_base_url is None:
-            self._whatsapp_api_base_url = os.environ.get(
-                'WHATSAPP_API_BASE_URL')
-        return self._whatsapp_api_base_url if self._whatsapp_api_base_url is not None else ""
+            self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
+        return (
+            self._whatsapp_api_base_url
+            if self._whatsapp_api_base_url is not None
+            else ""
+        )
 
     @property
     def WHATSAPP_API_SEND_TEXT_URL(self) -> str:
         if self._whatsapp_api_send_text_url is None:
             self._whatsapp_api_send_text_url = os.environ.get(
-                'WHATSAPP_API_SEND_TEXT_URL')
-        return self._whatsapp_api_send_text_url if self._whatsapp_api_send_text_url is not None else ""
+                "WHATSAPP_API_SEND_TEXT_URL"
+            )
+        return (
+            self._whatsapp_api_send_text_url
+            if self._whatsapp_api_send_text_url is not None
+            else ""
+        )
 
     @property
     def WHATSAPP_API_START_TYPING_URL(self) -> str:
         if self._whatsapp_api_start_typing_url is None:
             self._whatsapp_api_start_typing_url = os.environ.get(
-                'WHATSAPP_API_START_TYPING_URL')
-        return self._whatsapp_api_start_typing_url if self._whatsapp_api_start_typing_url is not None else ""
+                "WHATSAPP_API_START_TYPING_URL"
+            )
+        return (
+            self._whatsapp_api_start_typing_url
+            if self._whatsapp_api_start_typing_url is not None
+            else ""
+        )
 
     @property
     def WHATSAPP_API_STOP_TYPING_URL(self) -> str:
         if self._whatsapp_api_stop_typing_url is None:
             self._whatsapp_api_stop_typing_url = os.environ.get(
-                'WHATSAPP_API_STOP_TYPING_URL')
-        return self._whatsapp_api_stop_typing_url if self._whatsapp_api_stop_typing_url is not None else ""
+                "WHATSAPP_API_STOP_TYPING_URL"
+            )
+        return (
+            self._whatsapp_api_stop_typing_url
+            if self._whatsapp_api_stop_typing_url is not None
+            else ""
+        )
 
     @property
     def LLM_CLASS(self) -> Type[BaseChatModel]:
@@ -167,41 +202,52 @@ class ServiceHub:
     def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
         if self._prompt_system_analise_previa_mensagem is None:
             self._prompt_system_analise_previa_mensagem = os.environ.get(
-                'PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM')
-        return self._prompt_system_analise_previa_mensagem if self._prompt_system_analise_previa_mensagem is not None else ""
+                "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM"
+            )
+        return (
+            self._prompt_system_analise_previa_mensagem
+            if self._prompt_system_analise_previa_mensagem is not None
+            else ""
+        )
 
     @property
     def PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM(self) -> str:
         if self._prompt_human_analise_previa_mensagem is None:
             self._prompt_human_analise_previa_mensagem = os.environ.get(
-                'PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM')
-        return self._prompt_human_analise_previa_mensagem if self._prompt_human_analise_previa_mensagem is not None else ""
+                "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM"
+            )
+        return (
+            self._prompt_human_analise_previa_mensagem
+            if self._prompt_human_analise_previa_mensagem is not None
+            else ""
+        )
 
     @property
     def VALID_ENTITY_TYPES(self) -> str:
         if self._valid_entity_types is None:
-            self._valid_entity_types = os.environ.get(
-                'VALID_ENTITY_TYPES')
+            self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
         return self._valid_entity_types if self._valid_entity_types is not None else ""
 
     @property
     def VALID_INTENT_TYPES(self) -> str:
         if self._valid_intent_types is None:
-            self._valid_intent_types = os.environ.get(
-                'VALID_INTENT_TYPES')
+            self._valid_intent_types = os.environ.get("VALID_INTENT_TYPES")
         return self._valid_intent_types if self._valid_intent_types is not None else ""
 
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe LLM baseada na variável de ambiente."""
-        llm_type = os.environ.get('LLM_CLASS', 'ChatOllama')
-        if llm_type == 'ChatGroq':
+        llm_type = os.environ.get("LLM_CLASS", "ChatOllama")
+        if llm_type == "ChatGroq":
             from langchain_groq import ChatGroq
+
             return ChatGroq
-        elif llm_type == 'ChatOpenAI':
+        elif llm_type == "ChatOpenAI":
             from langchain_openai import ChatOpenAI
+
             return ChatOpenAI
-        elif llm_type == 'ChatOllama':
+        elif llm_type == "ChatOllama":
             from langchain_ollama import ChatOllama
+
             return ChatOllama
         else:
             raise ValueError(

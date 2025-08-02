@@ -5,11 +5,9 @@ from loguru import logger
 from pydantic import BaseModel
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
-    AnalisePreviaMensagemLangchain,
-)
+    AnalisePreviaMensagemLangchain, )
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
-    create_dynamic_pydantic_model,
-)
+    create_dynamic_pydantic_model, )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
@@ -31,12 +29,11 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
             )
-            
+
             # Escapar chaves JSON no prompt system para evitar conflito com
             # variáveis do template
             prompt_system_escaped = parameters.llm_parameters.prompt_system.replace(
-                "{", "{{"
-            ).replace("}", "}}")
+                "{", "{{").replace("}", "}}")
 
             messages = ChatPromptTemplate.from_messages(
                 [
@@ -64,14 +61,17 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             response = chain.invoke(invoke_data)
 
             # Converter PydanticModel para AnalisePreviaMensagem
-            # O with_structured_output sempre retorna uma instância da classe BaseModel
+            # O with_structured_output sempre retorna uma instância da classe
+            # BaseModel
             pydantic_response = cast(BaseModel, response)
             intent_dicts = [
-                {str(item.type): item.value} for item in pydantic_response.intent  # type: ignore[attr-defined]
+                # type: ignore[attr-defined]
+                {str(item.type): item.value} for item in pydantic_response.intent
             ]
 
             entity_dicts = [
-                {str(item.type): item.value} for item in pydantic_response.entities  # type: ignore[attr-defined]
+                # type: ignore[attr-defined]
+                {str(item.type): item.value} for item in pydantic_response.entities
             ]
 
             # Criar instância de AnalisePreviaMensagem
@@ -85,44 +85,47 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             logger.error(f"Erro ao processar análise prévia: {e}")
             raise
 
-    def _formatar_historico_atendimento(self, historico_atendimento: dict[str, Any]) -> str:
+    def _formatar_historico_atendimento(
+            self, historico_atendimento: dict[str, Any]) -> str:
         """Formata o histórico de atendimento para ser usado no prompt da LLM.
-        
+
         Args:
             historico_atendimento: Histórico de atendimento a ser formatado (dict[str, Any])
-            
+
         Returns:
             str: Histórico formatado para o prompt
         """
         mensagens = historico_atendimento.get("conteudo_mensagens", [])
         intents = historico_atendimento.get("intents_detectados", [])
         entidades = historico_atendimento.get("entidades_extraidas", [])
-        atendimentos_anteriores = historico_atendimento.get("historico_atendimentos", [])
-        
-        historico_parts = ["REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
-        
+        atendimentos_anteriores = historico_atendimento.get(
+            "historico_atendimentos", [])
+
+        historico_parts = [
+            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
+
         # Atendimentos anteriores - para contexto histórico
         if atendimentos_anteriores:
             historico_parts.append("")
-            historico_parts.append("HISTOTICO DE ATENDIMENTOS ANTERIORES:")
+            historico_parts.append("HISTÓRICO DE ATENDIMENTOS ANTERIORES:")
             for i, atendimento in enumerate(atendimentos_anteriores, 1):
                 historico_parts.append(f"{i}. {atendimento}")
-        
-        historico_parts.append("\n\nHISTOTICO DO ATENDIMENTO ATUAL:")
+
+        historico_parts.append("\n\nHISTÓRICO DO ATENDIMENTO ATUAL:")
         # Entidades extraídas - para entender elementos-chave
         if entidades:
             historico_parts.append("")
             historico_parts.append("ENTIDADES IDENTIFICADAS:")
             for entidade in entidades:
                 historico_parts.append(f"- {entidade}")
-        
+
         # Intents detectados - para entender intenções passadas
         if intents:
             historico_parts.append("")
             historico_parts.append("INTENÇÕES PREVIAMENTE DETECTADAS:")
             for intent in intents:
                 historico_parts.append(f"- {intent}")
-        
+
         # Conteúdo das mensagens - para entendimento da conversa
         if mensagens:
             historico_parts.append("")
@@ -133,5 +136,5 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             historico_parts.append("")
             historico_parts.append("HISTÓRICO DA CONVERSA:")
             historico_parts.append("Nenhuma mensagem anterior disponível.")
-        
+
         return "\n".join(historico_parts)

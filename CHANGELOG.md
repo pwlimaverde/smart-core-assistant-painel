@@ -23,4 +23,9 @@ Configuração inicial do projeto.
 2 - Simplificação da feature analise_previa_mensagem para rodar em llms menores
 
 ## 0.6.0
-1 - 
+- **feat**: Adicionada a chave "historico_atendimentos" na função `carregar_historico_mensagens` em `src/smart_core_assistant_painel/app/models.py`.
+- **fix**: Removido o campo `Data fim` da lista `readonly_fields` da classe `AtendimentoAdmin` para permitir edição.
+- **fix**: Resolvidas falhas nos testes, incluindo a atualização do teste `test_call_non_str`.
+- **refactor**: Ajustes gerais de tipo e formatação de código.
+- **test**: Ajustados testes para refletir o novo formato de histórico de atendimento.
+- **test**: Adicionados testes para cobertura das linhas 138 e 150 do método `_formatar_historico_atendimento`.

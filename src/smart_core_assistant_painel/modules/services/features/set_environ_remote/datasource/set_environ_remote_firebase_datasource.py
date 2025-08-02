@@ -12,7 +12,7 @@ from smart_core_assistant_painel.modules.services.utils.types import SERData
 
 class SetEnvironRemoteFirebaseDatasource(SERData):
     @staticmethod
-    async def _load_remote_config_values(config_mapping: dict[str, str]):
+    async def _load_remote_config_values(config_mapping: dict[str, str]) -> None:
         # Inicialize o template do Remote Config
         template = remote_config.init_server_template()
 

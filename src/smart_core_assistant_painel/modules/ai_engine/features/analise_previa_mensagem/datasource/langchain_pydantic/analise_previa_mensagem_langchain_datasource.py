@@ -1,7 +1,8 @@
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
+from pydantic import BaseModel
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
     AnalisePreviaMensagemLangchain,
@@ -63,41 +64,15 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             response = chain.invoke(invoke_data)
 
             # Converter PydanticModel para AnalisePreviaMensagem
-            # Verificar se response é dict ou BaseModel e extrair dados adequadamente
-            if isinstance(response, dict):
-                # Se for dict, acessar como chaves
-                intent_list = response.get("intent", [])
-                entities_list = response.get("entities", [])
-                # Converter para formato esperado se necessário
-                intent_dicts = [
-                    {str(item.get("type", "")): item.get("value", "")}
-                    for item in intent_list
-                    if isinstance(item, dict)
-                ]
-                entity_dicts = [
-                    {str(item.get("type", "")): item.get("value", "")}
-                    for item in entities_list
-                    if isinstance(item, dict)
-                ]
-            else:
-                # Se for BaseModel, verificar se tem os atributos necessários
-                if hasattr(response, "intent") and hasattr(response, "entities"):
-                    # Extrair intent como lista de dicionários {tipo: valor}
-                    intent_dicts = [
-                        {str(item.type): item.value} for item in response.intent
-                    ]
+            # O with_structured_output sempre retorna uma instância da classe BaseModel
+            pydantic_response = cast(BaseModel, response)
+            intent_dicts = [
+                {str(item.type): item.value} for item in pydantic_response.intent  # type: ignore[attr-defined]
+            ]
 
-                    # Extrair entities como lista de dicionários {tipo: valor}
-                    entity_dicts = [
-                        {str(item.type): item.value} for item in response.entities
-                    ]
-                else:
-                    # Fallback para caso o BaseModel não tenha os atributos esperados
-                    logger.warning(
-                        f"BaseModel response não possui atributos 'intent' ou 'entities': {type(response)}"
-                    )
-                    intent_dicts = []
-                    entity_dicts = []
+            entity_dicts = [
+                {str(item.type): item.value} for item in pydantic_response.entities  # type: ignore[attr-defined]
+            ]
 
             # Criar instância de AnalisePreviaMensagem
             resultado = AnalisePreviaMensagemLangchain(
@@ -110,88 +85,76 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             logger.error(f"Erro ao processar análise prévia: {e}")
             raise
 
-    def _formatar_historico_atendimento(self, historico_atendimento: Any) -> str:
+    def _formatar_historico_atendimento(self, historico_atendimento: dict[str, Any]) -> str:
         """
         Formata o histórico do atendimento para contexto do prompt.
+        
+        Processa todas as mensagens do histórico (não apenas as últimas 10) e inclui
+        intents detectados e entidades extraídas quando disponíveis.
 
         Args:
-            historico_atendimento: Lista de mensagens ou dados do histórico
+            historico_atendimento: Dicionário com dados do histórico do atendimento
+                Esperado: {
+                    "conteudo_mensagens": ["mensagem1", "mensagem2", ...],
+                    "intents_detectados": [
+                        {"tipo": "saudacao", "confianca": 0.95}, ...
+                    ],
+                    "entidades_extraidas": [
+                        {"entidade": "nome", "valor": "João", "posicao": [0, 4]}, ...
+                    ]
+                }
 
         Returns:
-            String formatada para o contexto ou mensagem indicando ausência
+            String formatada para o contexto contendo:
+            - HISTÓRICO DO ATENDIMENTO: Lista numerada de todas as mensagens
+            - INTENTS DETECTADOS: Lista de intents com confiança (se disponível)
+            - ENTIDADES EXTRAÍDAS: Lista de entidades com valores e posições (se disponível)
+            Ou mensagem indicando ausência de histórico
         """
         try:
-            # Se for None, lista vazia ou falsy
-            if not historico_atendimento:
+            # Busca por conteúdo de mensagens na estrutura do dicionário
+            conteudo_mensagens = historico_atendimento.get("conteudo_mensagens", [])
+            intents_detectados = historico_atendimento.get("intents_detectados", [])
+            entidades_extraidas = historico_atendimento.get("entidades_extraidas", [])
+            
+            # Se não há mensagens, retorna mensagem padrão
+            if not conteudo_mensagens:
                 return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
-
-            # Se for uma lista vazia
-            if (
-                isinstance(historico_atendimento, list)
-                and len(historico_atendimento) == 0
-            ):
-                return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
-
-            # Se for uma lista com mensagens
-            if isinstance(historico_atendimento, list):
-                historico_texto = "HISTÓRICO DO ATENDIMENTO:\n"
-                for i, mensagem in enumerate(
-                    historico_atendimento[-10:], 1
-                ):  # Últimas 10 mensagens
-                    if isinstance(mensagem, str):
-                        historico_texto += f"{i}. {mensagem}\n"
-                    elif isinstance(mensagem, dict):
-                        conteudo = mensagem.get(
-                            "conteudo", mensagem.get("texto", str(mensagem))
-                        )
-                        remetente = mensagem.get("remetente", "Usuario")
-                        historico_texto += f"{i}. [{remetente}]: {conteudo}\n"
+            
+            # Formata todas as mensagens (não apenas as últimas 10)
+            historico_texto = "HISTÓRICO DO ATENDIMENTO:\n"
+            for i, mensagem in enumerate(conteudo_mensagens, 1):
+                historico_texto += f"{i}. {mensagem}\n"
+            
+            # Adiciona intents detectados se disponíveis
+            if intents_detectados:
+                historico_texto += "\nINTENTS DETECTADOS:\n"
+                for intent in intents_detectados:
+                    if isinstance(intent, dict):
+                        tipo = intent.get("tipo", "")
+                        confianca = intent.get("confianca", "")
+                        historico_texto += f"- {tipo} (confiança: {confianca})\n"
                     else:
-                        historico_texto += f"{i}. {str(mensagem)}\n"
-                return historico_texto.strip()
-
-            # Se for um dicionário com estrutura específica
-            if isinstance(historico_atendimento, dict):
-                mensagens = historico_atendimento.get("mensagens", [])
-                if mensagens:
-                    return self._formatar_historico_atendimento(mensagens)
-                else:
-                    # Tentar outras chaves possíveis
-                    conteudo = (
-                        historico_atendimento.get("conteudo_mensagens")
-                        or historico_atendimento.get("historico")
-                        or historico_atendimento.get("mensagens_anteriores", [])
-                    )
-                    if conteudo:
-                        return self._formatar_historico_atendimento(conteudo)
-
-                # Se chegou aqui, é um dicionário sem mensagens válidas
-                return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
-
-            # Se for uma string (histórico já formatado)
-            if isinstance(historico_atendimento, str):
-                if historico_atendimento.strip():
-                    return f"HISTÓRICO DO ATENDIMENTO:\n{historico_atendimento}"
-                else:
-                    return "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
-
-            # Fallback: tentar converter para string
-            try:
-                historico_str = str(historico_atendimento)
-                if historico_str and historico_str not in ["[]", "{}", "None"]:
-                    return f"HISTÓRICO DO ATENDIMENTO:\n{historico_str}"
-            except Exception:
-                pass
-
-            # Último recurso
-            return (
-                "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
-            )
+                        historico_texto += f"- {intent}\n"
+            
+            # Adiciona entidades extraídas se disponíveis
+            if entidades_extraidas:
+                historico_texto += "\nENTIDADES EXTRAÍDAS:\n"
+                for entidade in entidades_extraidas:
+                    if isinstance(entidade, dict):
+                        nome = entidade.get("entidade", "")
+                        valor = entidade.get("valor", "")
+                        posicao = entidade.get("posicao", "")
+                        historico_texto += f"- {nome}: {valor} (posição: {posicao})\n"
+                    else:
+                        historico_texto += f"- {entidade}\n"
+            
+            return historico_texto.strip()
 
         except Exception as format_error:
             logger.warning(
                 f"Erro ao formatar histórico, usando fallback: {format_error}"
             )
             return (
-                "HISTÓRICO DO ATENDIMENTO:\nErro ao processar histórico de mensagens."
+                "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
             )

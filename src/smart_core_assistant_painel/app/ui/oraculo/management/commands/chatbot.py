@@ -2,6 +2,7 @@
 Comando Django para gerenciar operações do chatbot
 """
 
+from typing import Any
 from django.core.management.base import BaseCommand
 
 from smart_core_assistant_painel.app.ui.oraculo.models import (
@@ -19,7 +20,7 @@ from smart_core_assistant_painel.app.ui.oraculo.models import (
 class Command(BaseCommand):
     help = "Gerencia operações do chatbot de atendimento"
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser: Any) -> None:
         parser.add_argument(
             "--acao",
             type=str,
@@ -32,8 +33,8 @@ class Command(BaseCommand):
         parser.add_argument("--mensagem", type=str, help="Mensagem a ser processada")
         parser.add_argument("--nome", type=str, help="Nome do cliente")
 
-    def handle(self, *args, **options):
-        acao = options["acao"]
+    def handle(self, *args: str, **options: dict[str, Any]) -> None:
+        acao = str(options["acao"])
 
         if acao == "inicializar":
             self.inicializar_cliente(options)
@@ -48,7 +49,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.ERROR(f'Ação "{acao}" não reconhecida'))
 
-    def inicializar_cliente(self, options):
+    def inicializar_cliente(self, options: dict[str, Any]) -> None:
         """Inicializa um novo cliente e atendimento"""
         telefone = options.get("telefone")
         nome = options.get("nome")
@@ -60,24 +61,24 @@ class Command(BaseCommand):
 
         try:
             cliente, atendimento = inicializar_atendimento_whatsapp(
-                numero_telefone=telefone, primeira_mensagem=mensagem, nome_cliente=nome
+                numero_telefone=telefone, primeira_mensagem=mensagem, nome_contato=nome
             )
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Cliente inicializado: {cliente.telefone} - {cliente.nome or 'Sem nome'}"
+                    f"Cliente inicializado: {cliente.telefone} - {cliente.nome_contato or 'Sem nome'}"
                 )
             )
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Atendimento criado: #{atendimento.id} - Status: {atendimento.get_status_display()}"
+                    f"Atendimento criado: #{atendimento.id} - Status: {atendimento.get_status_display()}"  # type: ignore[attr-defined]
                 )
             )
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Erro ao inicializar cliente: {e}"))
 
-    def processar_mensagem(self, options):
+    def processar_mensagem(self, options: dict[str, Any]) -> None:
         """Processa uma mensagem de cliente"""
         telefone = options.get("telefone")
         mensagem = options.get("mensagem")
@@ -87,9 +88,13 @@ class Command(BaseCommand):
             return
 
         try:
-            mensagem_obj = processar_mensagem_whatsapp(
+            mensagem_id = processar_mensagem_whatsapp(
                 numero_telefone=telefone, conteudo=mensagem
             )
+            
+            # Buscar o objeto mensagem pelo ID retornado
+            from smart_core_assistant_painel.app.ui.oraculo.models import Mensagem
+            mensagem_obj: Mensagem = Mensagem.objects.get(id=mensagem_id)
 
             self.stdout.write(
                 self.style.SUCCESS(
@@ -97,13 +102,13 @@ class Command(BaseCommand):
                 )
             )
             self.stdout.write(
-                self.style.SUCCESS(f"Atendimento: #{mensagem_obj.atendimento.id}")
+                self.style.SUCCESS(f"Atendimento: #{mensagem_obj.atendimento.id}")  # type: ignore[attr-defined]
             )
 
         except Exception as e:
             self.stdout.write(self.style.ERROR(f"Erro ao processar mensagem: {e}"))
 
-    def mostrar_estatisticas(self):
+    def mostrar_estatisticas(self) -> None:
         """Mostra estatísticas do sistema"""
         self.stdout.write(self.style.SUCCESS("\n=== ESTATÍSTICAS DO CHATBOT ==="))
 
@@ -148,12 +153,12 @@ class Command(BaseCommand):
 
         for cliente in top_clientes:
             self.stdout.write(
-                f"{cliente.telefone} ({cliente.nome or 'Sem nome'}): {
-                    cliente.total_atendimentos
+                f"{cliente.telefone} ({cliente.nome_fantasia or 'Sem nome'}): {
+                    cliente.total_atendimentos  # type: ignore[attr-defined]
                 } atendimentos"
             )
 
-    def limpar_dados(self):
+    def limpar_dados(self) -> None:
         """Limpa dados de teste (cuidado!)"""
         resposta = input(
             'Tem certeza que deseja limpar TODOS os dados? (digite "confirmar"): '
@@ -169,7 +174,7 @@ class Command(BaseCommand):
         else:
             self.stdout.write(self.style.WARNING("Operação cancelada"))
 
-    def executar_demo(self):
+    def executar_demo(self) -> None:
         """Executa uma demonstração do sistema"""
         self.stdout.write(self.style.SUCCESS("\n=== DEMONSTRAÇÃO DO CHATBOT ==="))
 
@@ -188,7 +193,7 @@ class Command(BaseCommand):
             cliente, atendimento = inicializar_atendimento_whatsapp(
                 numero_telefone=telefone,
                 primeira_mensagem=mensagens[i],
-                nome_cliente=f"Cliente {i + 1}",
+                nome_contato=f"Cliente {i + 1}",
             )
 
             self.stdout.write(f"Cliente: {cliente.telefone}")

@@ -24,12 +24,12 @@ class FaissVetorStorage(VetorStorage):
     _initialized = False
     _lock = None
 
-    def __new__(cls):
+    def __new__(cls) -> "FaissVetorStorage":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Inicializa o armazenamento FAISS.
         Cria ou carrega o banco vetorial existente.
@@ -105,7 +105,7 @@ class FaissVetorStorage(VetorStorage):
             logger.error(f"Erro ao criar banco FAISS vazio: {e}")
             raise
 
-    def __sync_vectordb(self):
+    def __sync_vectordb(self) -> None:
         """
         Sincroniza o banco vetorial recarregando do disco.
         Usado para garantir que mudanças de outros processos sejam visíveis.

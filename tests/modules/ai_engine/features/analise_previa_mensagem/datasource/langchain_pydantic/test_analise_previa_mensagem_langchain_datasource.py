@@ -243,7 +243,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
              mock_chain.invoke.assert_called_once_with({
                  "prompt_human": sample_parameters.llm_parameters.prompt_human,
                  "context": sample_parameters.llm_parameters.context,
-                 "historico_context": "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível.",
+                 "historico_context": "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível.",
              })
 
     def test_prompt_system_escaping(self, datasource: AnalisePreviaMensagemLangchainDatasource, sample_parameters: AnalisePreviaMensagemParameters) -> None:
@@ -287,7 +287,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             "conteudo_mensagens": ["Primeira mensagem", "Segunda mensagem"]
         }
         result = datasource._formatar_historico_atendimento(historico)
-        expected = "HISTÓRICO DO ATENDIMENTO:\n1. Primeira mensagem\n2. Segunda mensagem"
+        expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\n1. Primeira mensagem\n2. Segunda mensagem"
         assert result == expected
 
     def test_formatar_historico_atendimento_with_intents_as_strings(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
@@ -300,12 +300,13 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         result = datasource._formatar_historico_atendimento(historico)
         
         expected = (
-            "HISTÓRICO DO ATENDIMENTO:\n"
-            "1. Olá\n"
-            "2. Como posso ajudar?\n\n"
-            "INTENTS DETECTADOS:\n"
+            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n"
+            "INTENÇÕES PREVIAMENTE DETECTADAS:\n"
             "- saudacao\n"
-            "- oferecimento_ajuda"
+            "- oferecimento_ajuda\n\n"
+            "HISTÓRICO DA CONVERSA:\n"
+            "1. Olá\n"
+            "2. Como posso ajudar?"
         )
         
         assert result == expected
@@ -320,12 +321,13 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         result = datasource._formatar_historico_atendimento(historico)
         
         expected = (
-            "HISTÓRICO DO ATENDIMENTO:\n"
-            "1. Meu nome é João\n"
-            "2. Moro em São Paulo\n\n"
-            "ENTIDADES EXTRAÍDAS:\n"
+            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n"
+            "ELEMENTOS IDENTIFICADOS:\n"
             "- nome_pessoa\n"
-            "- cidade"
+            "- cidade\n\n"
+            "HISTÓRICO DA CONVERSA:\n"
+            "1. Meu nome é João\n"
+            "2. Moro em São Paulo"
         )
         
         assert result == expected
@@ -370,7 +372,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             expected_invoke_data = {
                 "prompt_human": "Prompt humano específico",
                 "context": "Contexto específico",
-                "historico_context": "HISTÓRICO DO ATENDIMENTO:\n1. Histórico específico",
+                "historico_context": "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\n1. Histórico específico",
             }
             mock_chain.invoke.assert_called_once_with(expected_invoke_data)
 
@@ -378,7 +380,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         """Testa formatação de histórico com dicionário contendo lista de mensagens vazia."""
         historico: dict[str, list[str]] = {"mensagens": []}
         result = datasource._formatar_historico_atendimento(historico)
-        assert result == "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+        assert result == "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível."
 
     # Testes removidos: test_formatar_historico_empty_list_direct,
     # test_formatar_historico_empty_list_len_zero, test_formatar_historico_list_with_single_item,
@@ -388,28 +390,35 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         """Testa formatação de histórico com dicionário sem chaves válidas mas com conteúdo."""
         historico = {"dados": "algum conteúdo", "info": "mais dados"}
         result = datasource._formatar_historico_atendimento(historico)
-        assert result == "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+        assert result == "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível."
 
-    def test_formatar_historico_string_with_only_whitespace(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação de histórico com string contendo apenas espaços."""
-        historico = "   \n\t   "
+    def test_formatar_historico_dict_empty_with_whitespace_values(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
+        """Testa formatação de histórico com dict contendo valores com espaços."""
+        historico = {
+            "conteudo_mensagens": ["   \n\t   "]
+        }
         result = datasource._formatar_historico_atendimento(historico)
-        assert result == "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+        expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\n1.    \n\t   "
+        assert result == expected
 
-    def test_formatar_historico_exception_in_str_conversion(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa tratamento de exceção durante conversão para string."""
-        class ProblematicStr:
-            def __str__(self) -> str:
-                raise RuntimeError("Erro na conversão")
+    def test_formatar_historico_with_intents_and_entities(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
+        """Testa formatação de histórico com intents e entities como strings."""
+        historico = {
+            "conteudo_mensagens": ["Mensagem de teste"],
+            "intents_detectados": {"solicitacao_ajuda", "consulta_info"},
+            "entidades_extraidas": {"produto", "valor"}
+        }
+        result = datasource._formatar_historico_atendimento(historico)
         
-        historico = ProblematicStr()
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.logger') as mock_logger:
-            result = datasource._formatar_historico_atendimento(historico)
-            assert result == "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
-            mock_logger.warning.assert_called_once()
-            # Verificar se a mensagem de warning contém informação sobre o erro
-            warning_call = mock_logger.warning.call_args[0][0]
-            assert "Erro ao formatar histórico" in warning_call
+        # Verificar que todas as partes esperadas estão presentes
+        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
+        assert "1. Mensagem de teste" in result
+        assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in result
+        assert "- solicitacao_ajuda" in result
+        assert "- consulta_info" in result
+        assert "ELEMENTOS IDENTIFICADOS:" in result
+        assert "- produto" in result
+        assert "- valor" in result
 
     def test_call_with_llm_structured_output_exception(self, datasource: AnalisePreviaMensagemLangchainDatasource, sample_parameters: AnalisePreviaMensagemParameters) -> None:
         """Testa tratamento de exceção durante with_structured_output."""
@@ -471,7 +480,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             "conteudo_mensagens": ["Primeira mensagem", "Segunda mensagem", "Terceira mensagem"]
         }
         result = datasource._formatar_historico_atendimento(historico)
-        expected = "HISTÓRICO DO ATENDIMENTO:\n1. Primeira mensagem\n2. Segunda mensagem\n3. Terceira mensagem"
+        expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\n1. Primeira mensagem\n2. Segunda mensagem\n3. Terceira mensagem"
         assert result == expected
 
     def test_formatar_historico_atendimento_dict_with_conteudo_mensagens_more_than_10(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
@@ -481,7 +490,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         }
         result = datasource._formatar_historico_atendimento(historico)
         # Deve pegar todas as mensagens (1-15)
-        expected_lines = ["HISTÓRICO DO ATENDIMENTO:"] + [f"{i}. Mensagem {i}" for i in range(1, 16)]
+        expected_lines = ["REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:", "", "HISTÓRICO DA CONVERSA:"] + [f"{i}. Mensagem {i}" for i in range(1, 16)]
         expected = "\n".join(expected_lines)
         assert result == expected
 
@@ -491,20 +500,20 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             "conteudo_mensagens": []
         }
         result = datasource._formatar_historico_atendimento(historico)
-        expected = "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+        expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível."
         assert result == expected
 
     def test_formatar_historico_atendimento_dict_empty(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico quando é dict vazio."""
         historico: dict[str, str] = {}
         result = datasource._formatar_historico_atendimento(historico)
-        assert result == "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+        assert result == "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível."
 
     def test_formatar_historico_atendimento_dict_no_conteudo_mensagens(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico quando é dict sem chave 'conteudo_mensagens'."""
         historico = {"campo_invalido": "valor"}
         result = datasource._formatar_historico_atendimento(historico)
-        assert result == "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível."
+        assert result == "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível."
 
     def test_formatar_historico_atendimento_dict_with_conteudo_mensagens_mixed_types(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico com 'conteudo_mensagens' contendo tipos mistos."""
@@ -517,7 +526,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             ]
         }
         result = datasource._formatar_historico_atendimento(historico)
-        expected = "HISTÓRICO DO ATENDIMENTO:\n1. Mensagem string\n2. 123\n3. {'key': 'value'}\n4. None"
+        expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\n1. Mensagem string\n2. 123\n3. {'key': 'value'}\n4. None"
         assert result == expected
 
     def test_call_exception_handling(self, datasource: AnalisePreviaMensagemLangchainDatasource, sample_parameters: AnalisePreviaMensagemParameters) -> None:
@@ -638,7 +647,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             
             # Verificar se o histórico foi formatado corretamente na invocação
-            expected_historico = "HISTÓRICO DO ATENDIMENTO:\n1. Olá, preciso de ajuda\n2. Como posso ajudá-lo?\n3. Quero cancelar meu pedido"
+            expected_historico = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\n1. Olá, preciso de ajuda\n2. Como posso ajudá-lo?\n3. Quero cancelar meu pedido"
             mock_chain.invoke.assert_called_once_with({
                 "prompt_human": sample_parameters.llm_parameters.prompt_human,
                 "context": sample_parameters.llm_parameters.context,
@@ -747,68 +756,56 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             mock_chain.invoke.assert_called_once_with({
                 "prompt_human": sample_parameters.llm_parameters.prompt_human,
                 "context": sample_parameters.llm_parameters.context,
-                "historico_context": "HISTÓRICO DO ATENDIMENTO:\nNenhum histórico de mensagens disponível.",
+                "historico_context": "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível.",
             })
 
     def test_formatar_historico_atendimento_with_intents_and_entities(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico com intents detectados e entidades extraídas."""
         historico = {
             "conteudo_mensagens": ["Mensagem 1", "Mensagem 2"],
-            "intents_detectados": [
-                {"tipo": "saudacao", "confianca": 0.95},
-                {"tipo": "pergunta", "confianca": 0.87}
-            ],
-            "entidades_extraidas": [
-                {"entidade": "nome", "valor": "João", "posicao": [0, 4]},
-                {"entidade": "cidade", "valor": "São Paulo", "posicao": [10, 19]}
-            ]
+            "intents_detectados": {"saudacao", "pergunta"},
+            "entidades_extraidas": {"nome", "cidade"},
+            "atendimentos_anteriores": ["Atendimento #001 - Troca de produto"]
         }
         result = datasource._formatar_historico_atendimento(historico)
         
-        expected = (
-            "HISTÓRICO DO ATENDIMENTO:\n"
-            "1. Mensagem 1\n"
-            "2. Mensagem 2\n\n"
-            "INTENTS DETECTADOS:\n"
-            "- saudacao (confiança: 0.95)\n"
-            "- pergunta (confiança: 0.87)\n\n"
-            "ENTIDADES EXTRAÍDAS:\n"
-            "- nome: João (posição: [0, 4])\n"
-            "- cidade: São Paulo (posição: [10, 19])"
-        )
-        
-        assert result == expected
+        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
+        assert "ATENDIMENTOS ANTERIORES:" in result
+        assert "Atendimento #001 - Troca de produto" in result
+        assert "ELEMENTOS IDENTIFICADOS:" in result
+        assert "- nome" in result
+        assert "- cidade" in result
+        assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in result
+        assert "- saudacao" in result
+        assert "- pergunta" in result
+        assert "HISTÓRICO DA CONVERSA:" in result
+        assert "1. Mensagem 1" in result
+        assert "2. Mensagem 2" in result
 
     def test_formatar_historico_atendimento_with_only_intents(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico apenas com intents detectados."""
         historico = {
             "conteudo_mensagens": ["Mensagem teste"],
-            "intents_detectados": [{"tipo": "despedida", "confianca": 0.92}]
+            "intents_detectados": {"despedida"}
         }
         result = datasource._formatar_historico_atendimento(historico)
         
-        expected = (
-            "HISTÓRICO DO ATENDIMENTO:\n"
-            "1. Mensagem teste\n\n"
-            "INTENTS DETECTADOS:\n"
-            "- despedida (confiança: 0.92)"
-        )
-        
-        assert result == expected
+        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
+        assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in result
+        assert "- despedida" in result
+        assert "HISTÓRICO DA CONVERSA:" in result
+        assert "1. Mensagem teste" in result
 
     def test_formatar_historico_atendimento_with_only_entities(self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico apenas com entidades extraídas."""
         historico = {
             "conteudo_mensagens": ["Mensagem teste"],
-            "entidades_extraidas": [{"entidade": "email", "valor": "test@example.com", "posicao": [5, 20]}]
+            "entidades_extraidas": {"email"}
         }
         result = datasource._formatar_historico_atendimento(historico)
         
-        expected = (
-            "HISTÓRICO DO ATENDIMENTO:\n"
-            "1. Mensagem teste\n\n"
-            "ENTIDADES EXTRAÍDAS:\n"
-            "- email: test@example.com (posição: [5, 20])"
-        )
-        
-        assert result == expected
+        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
+        assert "ELEMENTOS IDENTIFICADOS:" in result
+        assert "- email" in result
+        assert "HISTÓRICO DA CONVERSA:" in result
+        assert "1. Mensagem teste" in result

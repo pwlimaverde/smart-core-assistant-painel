@@ -222,11 +222,6 @@ class Treinamentos(models.Model):
                     raise ValueError(error_msg) from e
 
             self._documentos = serialized_docs
-            logger.info(
-                f"Documentos serializados com sucesso: {
-                    len(serialized_docs)
-                } documentos"
-            )
 
         except (TypeError, ValueError):
             # Re-raise erros já tratados
@@ -1353,6 +1348,7 @@ class Atendimento(models.Model):
                 - 'conteudo_mensagens': Lista de strings com o conteúdo das mensagens
                 - 'intents_detectados': Set com todos os intents únicos detectados
                 - 'entidades_extraidas': Set com todas as entidades únicas extraídas
+                - 'historico_atendimentos': Lista de strings com histórico de atendimentos anteriores no formato "DD/MM/YYYY - assunto tratado: {assunto}"
 
         Example:
             >>> # Para carregar histórico completo
@@ -1437,10 +1433,28 @@ class Atendimento(models.Model):
             entidades_extraidas.discard("None")
             entidades_extraidas.discard("null")
 
+            # Busca histórico de atendimentos anteriores do contato
+            historico_atendimentos = []
+            atendimentos_anteriores = Atendimento.objects.filter(
+                contato=self.contato
+            ).exclude(
+                id=self.id
+            ).filter(
+                data_fim__isnull=False
+            ).order_by('-data_fim')
+            
+            for atendimento_anterior in atendimentos_anteriores:
+                if atendimento_anterior.assunto:
+                    data_formatada = atendimento_anterior.data_fim.strftime('%d/%m/%Y')
+                    historico_atendimentos.append(
+                        f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
+                    )
+
             resultado = {
                 "conteudo_mensagens": conteudo_mensagens,
                 "intents_detectados": intents_detectados,
                 "entidades_extraidas": entidades_extraidas,
+                "historico_atendimentos": historico_atendimentos,
             }
 
             logger.info(
@@ -1821,10 +1835,6 @@ def inicializar_atendimento_whatsapp(
         # REMOVIDO: Não cria mensagem aqui para evitar duplicação
         # A mensagem será criada na função processar_mensagem_whatsapp
 
-        logger.info(
-            f"{'Novo' if contato_criado else 'Existente'} contato inicializado: {contato.telefone}"
-        )
-
         return contato, atendimento
 
     except Exception as e:
@@ -1935,9 +1945,6 @@ def nova_mensagem(data: dict[str, Any]) -> int:
 
         # Garantir que sempre tenhamos um tipo válido (fallback para texto)
         if tipo_mensagem is None:
-            logger.warning(
-                f"Tipo de mensagem desconhecido '{tipo_chave}' - usando TEXTO_FORMATADO como fallback"
-            )
             tipo_mensagem = TipoMensagem.TEXTO_FORMATADO
 
         # Extrair conteúdo da mensagem com base no tipo

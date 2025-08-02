@@ -27,7 +27,7 @@ class WahaWhatsAppApi(WhatsappApi):
             print(f"Error sending message: {str(e)}")
             raise e
 
-    def typing(self, typing) -> None:
+    def typing(self, typing: bool) -> None:
         try:
             endpoint = (
                 SERVICEHUB.WHATSAPP_API_START_TYPING_URL

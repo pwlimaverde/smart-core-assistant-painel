@@ -1,7 +1,6 @@
 import json
 from typing import List, Type
 
-from loguru import logger
 from pydantic import BaseModel, Field
 
 
@@ -257,12 +256,6 @@ class PydanticModelFactory:
 {examples_docs}
         """
 
-        # Log da documentação completa gerada
-        logger.info("=== DOCUMENTAÇÃO PYDANTIC MODEL FACTORY ===")
-        logger.info("Documentação completa gerada para análise de mensagens:")
-        logger.info(f"\n{full_documentation.strip()}")
-        logger.info("=" * 50)
-
         # Criar classes Item
         class IntentItem(BaseModel):
             type: str
@@ -319,13 +312,9 @@ def create_dynamic_pydantic_model(
         >>> Model = create_dynamic_pydantic_model(intent_json, entity_json)
         >>> instance = Model(intent=[{"type": "saudacao", "value": "Olá"}], entities=[])
     """
-    logger.info("🏭 CRIANDO PYDANTIC MODEL DINÂMICO...")
-    logger.debug(f"Intent Types JSON recebido: {intent_types_json}")
-    logger.debug(f"Entity Types JSON recebido: {entity_types_json}")
 
     model = PydanticModelFactory.create_pydantic_model(
         intent_types_json, entity_types_json
     )
 
-    logger.success("✅ Pydantic Model dinâmico criado com sucesso!")
     return model

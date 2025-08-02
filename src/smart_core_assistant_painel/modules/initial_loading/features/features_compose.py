@@ -1,4 +1,3 @@
-from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
 )
@@ -25,4 +24,3 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, ErrorReturn):
             raise data.result
-        logger.info("Firebase inicializado com sucesso!")

@@ -24,12 +24,12 @@ class FaissVetorStorage(VetorStorage):
     _initialized = False
     _lock = None
 
-    def __new__(cls):
+    def __new__(cls) -> "FaissVetorStorage":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Inicializa o armazenamento FAISS.
         Cria ou carrega o banco vetorial existente.
@@ -47,9 +47,6 @@ class FaissVetorStorage(VetorStorage):
                     self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
                     self.__vectordb = self.__inicializar_banco_vetorial()
                     FaissVetorStorage._initialized = True
-                    logger.info(
-                        f"FaissVetorStorage singleton inicializado (ID: {id(self)})"
-                    )
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco FAISS existe no caminho especificado."""
@@ -108,7 +105,7 @@ class FaissVetorStorage(VetorStorage):
             logger.error(f"Erro ao criar banco FAISS vazio: {e}")
             raise
 
-    def __sync_vectordb(self):
+    def __sync_vectordb(self) -> None:
         """
         Sincroniza o banco vetorial recarregando do disco.
         Usado para garantir que mudanças de outros processos sejam visíveis.
@@ -280,8 +277,6 @@ class FaissVetorStorage(VetorStorage):
                 error_msg = "Vectorstore não possui método add_documents"
                 logger.error(error_msg)
                 raise AttributeError(error_msg)
-
-            logger.warning(f"valid_chunks {len(valid_chunks)}: {valid_chunks}")
 
             self.__vectordb.add_documents(valid_chunks)
 

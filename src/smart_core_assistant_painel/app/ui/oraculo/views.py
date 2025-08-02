@@ -702,15 +702,14 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
     try:
         features = FeaturesCompose()
         mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
+        atendimento: Atendimento = cast(Atendimento, mensagem.atendimento)
+        exists_atendimento_anterior = Atendimento.objects.filter(contato=atendimento.contato).exclude(id=atendimento.id).exists()
         # Carrega historico EXCLUINDO a mensagem atual para análise de contexto
-        historico_atendimento = cast(
-            Atendimento, mensagem.atendimento
-        ).carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
-
-        # Se não há mensagens anteriores no histórico, chama apresentação
-        if not historico_atendimento.get("conteudo_mensagens"):
-            # todo: verificar se tem historido de atendimento anteriores
-            features.mensagem_apresentacao()
+        historico_atendimento = atendimento.carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
+        # Se não há atendimentos anteriores, nem mensagens anteriores no histórico do atendimento atual, chama apresentação
+        if not exists_atendimento_anterior:
+            if not historico_atendimento.get("conteudo_mensagens"):
+                features.mensagem_apresentacao()
 
         # Análise de intenção e extração de entidades
         resultado_analise = features.analise_previa_mensagem(

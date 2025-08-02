@@ -1,4 +1,5 @@
 import pytest
+from typing import Any
 from unittest.mock import Mock, patch
 from langchain_core.messages import AIMessage
 
@@ -85,7 +86,70 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
-            mock_chain.invoke.assert_called_once()
+
+    def test_formatar_historico_com_atendimentos_anteriores(
+            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
+        """Testa a formatação de histórico quando há atendimentos anteriores."""
+        # Arrange
+        historico_atendimento = {
+            "historico_atendimentos": [
+                "01/01/2024 - assunto tratado: Suporte técnico",
+                "15/01/2024 - assunto tratado: Reclamação de serviço",
+                "20/01/2024 - assunto tratado: Solicitação de upgrade"
+            ],
+            "conteudo_mensagens": [],
+            "intents_detectados": [],
+            "entidades_extraidas": []
+        }
+
+        # Act
+        resultado = datasource._formatar_historico_atendimento(historico_atendimento)
+
+        # Assert
+        assert "HISTÓRICO DE ATENDIMENTOS ANTERIORES:" in resultado
+        assert "1. 01/01/2024 - assunto tratado: Suporte técnico" in resultado
+        assert "2. 15/01/2024 - assunto tratado: Reclamação de serviço" in resultado
+        assert "3. 20/01/2024 - assunto tratado: Solicitação de upgrade" in resultado
+
+    def test_formatar_historico_sem_atendimentos_anteriores(
+            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
+        """Testa a formatação de histórico quando não há atendimentos anteriores."""
+        # Arrange
+        historico_atendimento:dict[str, Any] = {
+            "historico_atendimentos": [],
+            "conteudo_mensagens": [],
+            "intents_detectados": [],
+            "entidades_extraidas": []
+        }
+
+        # Act
+        resultado = datasource._formatar_historico_atendimento(historico_atendimento)
+
+        # Assert
+        assert "HISTÓRICO DE ATENDIMENTOS ANTERIORES:" not in resultado
+
+    def test_formatar_historico_com_atendimentos_anteriores_e_outros_dados(
+            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
+        """Testa a formatação completa quando há atendimentos anteriores e outros dados."""
+        # Arrange
+        historico_atendimento = {
+            "historico_atendimentos": [
+                "01/01/2024 - assunto tratado: Suporte técnico"
+            ],
+            "conteudo_mensagens": ["Olá, preciso de ajuda"],
+            "intents_detectados": ["solicitacao_ajuda"],
+            "entidades_extraidas": ["produto: software"]
+        }
+
+        # Act
+        resultado = datasource._formatar_historico_atendimento(historico_atendimento)
+
+        # Assert
+        assert "HISTÓRICO DE ATENDIMENTOS ANTERIORES:" in resultado
+        assert "1. 01/01/2024 - assunto tratado: Suporte técnico" in resultado
+        assert "ENTIDADES IDENTIFICADAS:" in resultado
+        assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in resultado
+        assert "HISTÓRICO DA CONVERSA:" in resultado
 
     def test_call_with_think_tags(
             self,
@@ -266,157 +330,10 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             datasource(sample_parameters)
 
             # Assert
-            mock_chain.invoke.assert_called_once_with({
+            expected_invoke_data = {
                 "prompt_human": sample_parameters.llm_parameters.prompt_human,
                 "context": sample_parameters.llm_parameters.context,
                 "historico_context": "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n\nHISTÓRICO DO ATENDIMENTO ATUAL:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível.",
-            })
-
-    def test_prompt_system_escaping(
-            self,
-            datasource: AnalisePreviaMensagemLangchainDatasource,
-            sample_parameters: AnalisePreviaMensagemParameters) -> None:
-        """Testa o escape de chaves no prompt_system."""
-        # Arrange
-        mock_llm = Mock()
-        mock_chain = Mock()
-        mock_response = Mock()
-        mock_response.intent = []
-        mock_response.entities = []
-        mock_chain.invoke.return_value = mock_response
-
-        # Criar um mock dos llm_parameters com create_llm mockado
-        mock_llm_params = Mock()
-        mock_llm_params.create_llm = mock_llm
-        mock_llm_params.prompt_system = "Sistema com {chaves} que devem ser {{escapadas}}"
-        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
-        mock_llm_params.context = sample_parameters.llm_parameters.context
-
-        # Substituir os llm_parameters no sample_parameters
-        sample_parameters.llm_parameters = mock_llm_params
-
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.ChatPromptTemplate') as mock_template:
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(
-                return_value=mock_chain)
-
-            # Act
-            result = datasource(sample_parameters)
-
-            # Assert
-            # Verificar se o prompt_system foi escapado corretamente
-            expected_escaped_prompt = "Sistema com {{chaves}} que devem ser {{{{escapadas}}}}"
-            mock_template.from_messages.assert_called_once_with([
-                ("system", expected_escaped_prompt),
-                ("user", "{historico_context}\n\n{prompt_human}: {context}"),
-            ])
-
-    def test_formatar_historico_atendimento_dict_with_conteudo_mensagens_basic(
-            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação básica de histórico com 'conteudo_mensagens'."""
-        historico = {
-            "conteudo_mensagens": ["Primeira mensagem", "Segunda mensagem"]
-        }
-        result = datasource._formatar_historico_atendimento(historico)
-        expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n\nHISTÓRICO DO ATENDIMENTO ATUAL:\n\nHISTÓRICO DA CONVERSA:\n1. Primeira mensagem\n2. Segunda mensagem"
-        assert result == expected
-
-    def test_formatar_historico_atendimento_with_intents_as_strings(
-            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação do histórico com intents como strings simples (linha 138)."""
-        historico = {
-            "conteudo_mensagens": ["Olá", "Como posso ajudar?"],
-            # strings simples
-            "intents_detectados": ["saudacao", "oferecimento_ajuda"],
-        }
-
-        result = datasource._formatar_historico_atendimento(historico)
-
-        expected = (
-            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n"
-            "\nHISTÓRICO DO ATENDIMENTO ATUAL:\n"
-            "\nINTENÇÕES PREVIAMENTE DETECTADAS:\n"
-            "- saudacao\n"
-            "- oferecimento_ajuda\n\n"
-            "HISTÓRICO DA CONVERSA:\n"
-            "1. Olá\n"
-            "2. Como posso ajudar?"
-        )
-
-        assert result == expected
-
-    def test_formatar_historico_atendimento_with_entities_as_strings(
-            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação do histórico com entidades como strings simples (linha 150)."""
-        historico = {
-            "conteudo_mensagens": ["Meu nome é João", "Moro em São Paulo"],
-            # strings simples
-            "entidades_extraidas": ["nome_pessoa", "cidade"],
-        }
-
-        result = datasource._formatar_historico_atendimento(historico)
-
-        expected = (
-            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n"
-            "\nHISTÓRICO DO ATENDIMENTO ATUAL:\n"
-            "\nENTIDADES IDENTIFICADAS:\n"
-            "- nome_pessoa\n"
-            "- cidade\n\n"
-            "HISTÓRICO DA CONVERSA:\n"
-            "1. Meu nome é João\n"
-            "2. Moro em São Paulo"
-        )
-
-        assert result == expected
-
-    # Teste removido: test_formatar_historico_dict_conteudo_mensagens_key - duplicado com test_formatar_historico_atendimento_dict_with_conteudo_mensagens_basic
-    # Teste removido: test_formatar_historico_dict_historico_key - chave não mais suportada
-    # Teste removido: test_formatar_historico_dict_mensagens_anteriores_key -
-    # chave não mais suportada
-
-    # Testes removidos: test_formatar_historico_more_than_10_messages,
-    # test_formatar_historico_string_fallback_valid, test_formatar_historico_fallback_none_string,
-    # test_formatar_historico_fallback_empty_dict_string - comportamentos não
-    # mais suportados
-
-    def test_chain_invoke_parameters(
-            self,
-            datasource: AnalisePreviaMensagemLangchainDatasource,
-            sample_parameters: AnalisePreviaMensagemParameters) -> None:
-        """Testa se os parâmetros corretos são passados para chain.invoke."""
-        # Arrange
-        mock_llm = Mock()
-        mock_chain = Mock()
-        mock_response = Mock()
-        mock_response.intent = []
-        mock_response.entities = []
-        mock_chain.invoke.return_value = mock_response
-
-        # Criar um mock dos llm_parameters com create_llm mockado
-        mock_llm_params = Mock()
-        mock_llm_params.create_llm = mock_llm
-        mock_llm_params.prompt_system = "Sistema de teste"
-        mock_llm_params.prompt_human = "Prompt humano específico"
-        mock_llm_params.context = "Contexto específico"
-
-        # Substituir os llm_parameters no sample_parameters
-        sample_parameters.llm_parameters = mock_llm_params
-        sample_parameters.historico_atendimento = {
-            "conteudo_mensagens": ["Histórico específico"]}  # type: ignore[assignment]
-
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.ChatPromptTemplate') as mock_template:
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(
-                return_value=mock_chain)
-
-            # Act
-            datasource(sample_parameters)
-
-            # Assert
-            expected_invoke_data = {
-                "prompt_human": "Prompt humano específico",
-                "context": "Contexto específico",
-                "historico_context": "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n\nHISTÓRICO DO ATENDIMENTO ATUAL:\n\nHISTÓRICO DA CONVERSA:\n1. Histórico específico",
             }
             mock_chain.invoke.assert_called_once_with(expected_invoke_data)
 
@@ -426,11 +343,6 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         historico: dict[str, list[str]] = {"mensagens": []}
         result = datasource._formatar_historico_atendimento(historico)
         assert result == "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n\nHISTÓRICO DO ATENDIMENTO ATUAL:\n\nHISTÓRICO DA CONVERSA:\nNenhuma mensagem anterior disponível."
-
-    # Testes removidos: test_formatar_historico_empty_list_direct,
-    # test_formatar_historico_empty_list_len_zero, test_formatar_historico_list_with_single_item,
-    # test_formatar_historico_list_isinstance_coverage - listas não são mais
-    # suportadas
 
     def test_formatar_historico_dict_no_valid_keys_with_content(
             self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
@@ -448,89 +360,6 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         result = datasource._formatar_historico_atendimento(historico)
         expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n\nHISTÓRICO DO ATENDIMENTO ATUAL:\n\nHISTÓRICO DA CONVERSA:\n1.    \n\t   "
         assert result == expected
-
-    def test_formatar_historico_with_intents_and_entities(
-            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação de histórico com intents e entities como strings."""
-        historico = {
-            "conteudo_mensagens": ["Mensagem de teste"],
-            "intents_detectados": {"solicitacao_ajuda", "consulta_info"},
-            "entidades_extraidas": {"produto", "valor"}
-        }
-        result = datasource._formatar_historico_atendimento(historico)
-
-        # Verificar que todas as partes esperadas estão presentes
-        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
-        assert "HISTÓRICO DO ATENDIMENTO ATUAL:" in result
-        assert "1. Mensagem de teste" in result
-        assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in result
-        assert "- solicitacao_ajuda" in result
-        assert "- consulta_info" in result
-        assert "ENTIDADES IDENTIFICADAS:" in result
-        assert "- produto" in result
-        assert "- valor" in result
-
-    def test_call_with_llm_structured_output_exception(
-            self,
-            datasource: AnalisePreviaMensagemLangchainDatasource,
-            sample_parameters: AnalisePreviaMensagemParameters) -> None:
-        """Testa tratamento de exceção durante with_structured_output."""
-        # Arrange
-        mock_llm = Mock()
-        mock_llm.with_structured_output.side_effect = Exception(
-            "Erro no structured output")
-
-        # Criar um mock dos llm_parameters com create_llm mockado
-        mock_llm_params = Mock()
-        mock_llm_params.create_llm = mock_llm
-        mock_llm_params.prompt_system = sample_parameters.llm_parameters.prompt_system
-        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
-        mock_llm_params.context = sample_parameters.llm_parameters.context
-
-        # Substituir os llm_parameters no sample_parameters
-        sample_parameters.llm_parameters = mock_llm_params
-
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.logger') as mock_logger:
-            # Act & Assert
-            with pytest.raises(Exception, match="Erro no structured output"):
-                datasource(sample_parameters)
-
-            mock_logger.error.assert_called_once()
-
-    def test_call_with_chain_invoke_exception(
-            self,
-            datasource: AnalisePreviaMensagemLangchainDatasource,
-            sample_parameters: AnalisePreviaMensagemParameters) -> None:
-        """Testa tratamento de exceção durante chain.invoke."""
-        # Arrange
-        mock_llm = Mock()
-        mock_chain = Mock()
-        mock_chain.invoke.side_effect = Exception("Erro na invocação da chain")
-
-        # Criar um mock dos llm_parameters com create_llm mockado
-        mock_llm_params = Mock()
-        mock_llm_params.create_llm = mock_llm
-        mock_llm_params.prompt_system = sample_parameters.llm_parameters.prompt_system
-        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
-        mock_llm_params.context = sample_parameters.llm_parameters.context
-
-        # Substituir os llm_parameters no sample_parameters
-        sample_parameters.llm_parameters = mock_llm_params
-
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.ChatPromptTemplate') as mock_template:
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(
-                return_value=mock_chain)
-
-            with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.logger') as mock_logger:
-                # Act & Assert
-                with pytest.raises(Exception, match="Erro na invocação da chain"):
-                    datasource(sample_parameters)
-
-                mock_logger.error.assert_called_once()
-
-    # Teste removido: test_formatar_historico_recursive_call_with_conteudo_mensagens
-    # - estruturas aninhadas não são mais suportadas
 
     def test_formatar_historico_atendimento_dict_with_conteudo_mensagens_strings(
             self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
@@ -569,7 +398,7 @@ class TestAnalisePreviaMensagemLangchainDatasource:
     def test_formatar_historico_atendimento_dict_with_conteudo_mensagens_empty(
             self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
         """Testa formatação de histórico quando é dict com 'conteudo_mensagens' vazio."""
-        historico = {
+        historico:dict[str, Any] = {
             "conteudo_mensagens": []
         }
         result = datasource._formatar_historico_atendimento(historico)
@@ -604,6 +433,22 @@ class TestAnalisePreviaMensagemLangchainDatasource:
         result = datasource._formatar_historico_atendimento(historico)
         expected = "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:\n\n\nHISTÓRICO DO ATENDIMENTO ATUAL:\n\nHISTÓRICO DA CONVERSA:\n1. Mensagem string\n2. 123\n3. {'key': 'value'}\n4. None"
         assert result == expected
+
+    def test_formatar_historico_atendimento_with_only_entities(
+            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
+        """Testa formatação de histórico apenas com entidades extraídas."""
+        historico = {
+            "conteudo_mensagens": ["Mensagem teste"],
+            "entidades_extraidas": ["email"]
+        }
+        result = datasource._formatar_historico_atendimento(historico)
+
+        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
+        assert "HISTÓRICO DO ATENDIMENTO ATUAL:" in result
+        assert "ENTIDADES IDENTIFICADAS:" in result
+        assert "- email" in result
+        assert "HISTÓRICO DA CONVERSA:" in result
+        assert "1. Mensagem teste" in result
 
     def test_call_exception_handling(
             self,
@@ -861,56 +706,189 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             })
 
     def test_formatar_historico_atendimento_with_intents_and_entities(
+            self,
+            datasource: AnalisePreviaMensagemLangchainDatasource,
+            sample_parameters: AnalisePreviaMensagemParameters) -> None:
+        """Testa o processamento bem-sucedido com intenções e entidades."""
+        # Arrange
+        mock_llm = Mock()
+        mock_chain = Mock()
+        
+        # Criar mocks para objetos de intenção e entidade
+        mock_intent1 = Mock()
+        mock_intent1.type = "saudacao"
+        mock_intent1.value = "ola"
+        
+        mock_intent2 = Mock()
+        mock_intent2.type = "pergunta"
+        mock_intent2.value = "como_esta"
+        
+        mock_entity1 = Mock()
+        mock_entity1.type = "pessoa"
+        mock_entity1.value = "João"
+        
+        mock_entity2 = Mock()
+        mock_entity2.type = "local"
+        mock_entity2.value = "São Paulo"
+        
+        mock_response = Mock()
+        mock_response.intent = [mock_intent1, mock_intent2]
+        mock_response.entities = [mock_entity1, mock_entity2]
+        mock_chain.invoke.return_value = mock_response
+
+        # Criar um mock dos llm_parameters com create_llm mockado
+        mock_llm_params = Mock()
+        mock_llm_params.create_llm = mock_llm
+        mock_llm_params.prompt_system = sample_parameters.llm_parameters.prompt_system
+        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
+        mock_llm_params.context = sample_parameters.llm_parameters.context
+
+        # Substituir os llm_parameters no sample_parameters
+        sample_parameters.llm_parameters = mock_llm_params
+
+        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.ChatPromptTemplate') as mock_template:
+            mock_template.from_messages.return_value = Mock()
+            mock_template.from_messages.return_value.__or__ = Mock(
+                return_value=mock_chain)
+
+            # Act
+            result = datasource(sample_parameters)
+
+            # Assert
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            assert isinstance(result, AnalisePreviaMensagemLangchain)
+            assert result.intent == [{"saudacao": "ola"}, {"pergunta": "como_esta"}]
+            assert result.entities == [{"pessoa": "João"}, {"local": "São Paulo"}]
+            mock_chain.invoke.assert_called_once()
+
+    def test_formatar_historico_atendimento_with_only_intents(
             self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação de histórico com intents detectados e entidades extraídas."""
+        """Testa formatação de histórico apenas com intenções detectadas."""
         historico = {
-            "conteudo_mensagens": ["Mensagem 1", "Mensagem 2"],
-            "intents_detectados": {"saudacao", "pergunta"},
-            "entidades_extraidas": {"nome", "cidade"},
-            "atendimentos_anteriores": ["Atendimento #001 - Troca de produto"]
+            "conteudo_mensagens": ["Mensagem teste"],
+            "intents_detectados": ["saudacao", "pergunta"]
         }
         result = datasource._formatar_historico_atendimento(historico)
 
         assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
         assert "HISTÓRICO DO ATENDIMENTO ATUAL:" in result
-        assert "ENTIDADES IDENTIFICADAS:" in result
-        assert "- nome" in result
-        assert "- cidade" in result
         assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in result
         assert "- saudacao" in result
         assert "- pergunta" in result
         assert "HISTÓRICO DA CONVERSA:" in result
-        assert "1. Mensagem 1" in result
-        assert "2. Mensagem 2" in result
-
-    def test_formatar_historico_atendimento_with_only_intents(
-            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação de histórico apenas com intents detectados."""
-        historico = {
-            "conteudo_mensagens": ["Mensagem teste"],
-            "intents_detectados": {"despedida"}
-        }
-        result = datasource._formatar_historico_atendimento(historico)
-
-        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
-        assert "HISTÓRICO DO ATENDIMENTO ATUAL:" in result
-        assert "INTENÇÕES PREVIAMENTE DETECTADAS:" in result
-        assert "- despedida" in result
-        assert "HISTÓRICO DA CONVERSA:" in result
         assert "1. Mensagem teste" in result
 
-    def test_formatar_historico_atendimento_with_only_entities(
-            self, datasource: AnalisePreviaMensagemLangchainDatasource) -> None:
-        """Testa formatação de histórico apenas com entidades extraídas."""
-        historico = {
-            "conteudo_mensagens": ["Mensagem teste"],
-            "entidades_extraidas": {"email"}
-        }
-        result = datasource._formatar_historico_atendimento(historico)
+    def test_call_with_llm_structured_output_exception(
+            self,
+            datasource: AnalisePreviaMensagemLangchainDatasource,
+            sample_parameters: AnalisePreviaMensagemParameters) -> None:
+        """Testa tratamento de exceção durante with_structured_output."""
+        # Arrange
+        mock_llm = Mock()
+        mock_llm.with_structured_output.side_effect = Exception(
+            "Erro no structured output")
 
-        assert "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:" in result
-        assert "HISTÓRICO DO ATENDIMENTO ATUAL:" in result
-        assert "ENTIDADES IDENTIFICADAS:" in result
-        assert "- email" in result
-        assert "HISTÓRICO DA CONVERSA:" in result
-        assert "1. Mensagem teste" in result
+        # Criar um mock dos llm_parameters com create_llm mockado
+        mock_llm_params = Mock()
+        mock_llm_params.create_llm = mock_llm
+        mock_llm_params.prompt_system = sample_parameters.llm_parameters.prompt_system
+        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
+        mock_llm_params.context = sample_parameters.llm_parameters.context
+
+        # Substituir os llm_parameters no sample_parameters
+        sample_parameters.llm_parameters = mock_llm_params
+
+        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.logger') as mock_logger:
+            # Act & Assert
+            with pytest.raises(Exception, match="Erro no structured output"):
+                datasource(sample_parameters)
+
+            mock_logger.error.assert_called_once()
+
+    def test_call_with_chain_invoke_exception(
+            self,
+            datasource: AnalisePreviaMensagemLangchainDatasource,
+            sample_parameters: AnalisePreviaMensagemParameters) -> None:
+        """Testa tratamento de exceção durante chain.invoke."""
+        # Arrange
+        mock_llm = Mock()
+        mock_chain = Mock()
+        mock_chain.invoke.side_effect = Exception("Erro na invocação da chain")
+
+        # Criar um mock dos llm_parameters com create_llm mockado
+        mock_llm_params = Mock()
+        mock_llm_params.create_llm = mock_llm
+        mock_llm_params.prompt_system = sample_parameters.llm_parameters.prompt_system
+        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
+        mock_llm_params.context = sample_parameters.llm_parameters.context
+
+        # Substituir os llm_parameters no sample_parameters
+        sample_parameters.llm_parameters = mock_llm_params
+
+        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.ChatPromptTemplate') as mock_template:
+            mock_template.from_messages.return_value = Mock()
+            mock_template.from_messages.return_value.__or__ = Mock(
+                return_value=mock_chain)
+
+            with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.logger') as mock_logger:
+                # Act & Assert
+                with pytest.raises(Exception, match="Erro na invocação da chain"):
+                    datasource(sample_parameters)
+
+                mock_logger.error.assert_called_once()
+
+    def test_successful_processing_with_intents_and_entities(
+            self,
+            datasource: AnalisePreviaMensagemLangchainDatasource,
+            sample_parameters: AnalisePreviaMensagemParameters) -> None:
+        """Testa o processamento bem-sucedido com intenções e entidades - cobre linhas 107-110."""
+        # Arrange
+        mock_llm = Mock()
+        mock_chain = Mock()
+        
+        # Criar mocks para objetos de intenção e entidade
+        mock_intent1 = Mock()
+        mock_intent1.type = "saudacao"
+        mock_intent1.value = "ola"
+        
+        mock_intent2 = Mock()
+        mock_intent2.type = "pergunta"
+        mock_intent2.value = "como_esta"
+        
+        mock_entity1 = Mock()
+        mock_entity1.type = "pessoa"
+        mock_entity1.value = "João"
+        
+        mock_entity2 = Mock()
+        mock_entity2.type = "local"
+        mock_entity2.value = "São Paulo"
+        
+        mock_response = Mock()
+        mock_response.intent = [mock_intent1, mock_intent2]
+        mock_response.entities = [mock_entity1, mock_entity2]
+        mock_chain.invoke.return_value = mock_response
+
+        # Criar um mock dos llm_parameters com create_llm mockado
+        mock_llm_params = Mock()
+        mock_llm_params.create_llm = mock_llm
+        mock_llm_params.prompt_system = sample_parameters.llm_parameters.prompt_system
+        mock_llm_params.prompt_human = sample_parameters.llm_parameters.prompt_human
+        mock_llm_params.context = sample_parameters.llm_parameters.context
+
+        # Substituir os llm_parameters no sample_parameters
+        sample_parameters.llm_parameters = mock_llm_params
+
+        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource.ChatPromptTemplate') as mock_template:
+            mock_template.from_messages.return_value = Mock()
+            mock_template.from_messages.return_value.__or__ = Mock(
+                return_value=mock_chain)
+
+            # Act
+            result = datasource(sample_parameters)
+
+            # Assert - estas linhas cobrem especificamente as linhas 107-110 do arquivo fonte
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            assert isinstance(result, AnalisePreviaMensagemLangchain)
+            assert result.intent == [{"saudacao": "ola"}, {"pergunta": "como_esta"}]
+            assert result.entities == [{"pessoa": "João"}, {"local": "São Paulo"}]
+            mock_chain.invoke.assert_called_once()

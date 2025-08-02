@@ -1,13 +1,14 @@
-from typing import Any, cast
+from typing import Any
 
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
-from pydantic import BaseModel
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
-    AnalisePreviaMensagemLangchain, )
+    AnalisePreviaMensagemLangchain,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
-    create_dynamic_pydantic_model, )
+    create_dynamic_pydantic_model,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
@@ -33,7 +34,8 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             # Escapar chaves JSON no prompt system para evitar conflito com
             # variáveis do template
             prompt_system_escaped = parameters.llm_parameters.prompt_system.replace(
-                "{", "{{").replace("}", "}}")
+                "{", "{{"
+            ).replace("}", "}}")
 
             messages = ChatPromptTemplate.from_messages(
                 [
@@ -61,18 +63,13 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             response = chain.invoke(invoke_data)
 
             # Converter PydanticModel para AnalisePreviaMensagem
-            # O with_structured_output sempre retorna uma instância da classe
-            # BaseModel
-            pydantic_response = cast(BaseModel, response)
-            intent_dicts = [
-                # type: ignore[attr-defined]
-                {str(item.type): item.value} for item in pydantic_response.intent
-            ]
+            # Extrair dados de intent e entities do response
+            intent_data = getattr(response, "intent", [])
+            entities_data = getattr(response, "entities", [])
 
-            entity_dicts = [
-                # type: ignore[attr-defined]
-                {str(item.type): item.value} for item in pydantic_response.entities
-            ]
+            intent_dicts = [{str(item.type): item.value} for item in intent_data]
+
+            entity_dicts = [{str(item.type): item.value} for item in entities_data]
 
             # Criar instância de AnalisePreviaMensagem
             resultado = AnalisePreviaMensagemLangchain(
@@ -86,7 +83,8 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             raise
 
     def _formatar_historico_atendimento(
-            self, historico_atendimento: dict[str, Any]) -> str:
+        self, historico_atendimento: dict[str, Any]
+    ) -> str:
         """Formata o histórico de atendimento para ser usado no prompt da LLM.
 
         Args:
@@ -99,10 +97,10 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
         intents = historico_atendimento.get("intents_detectados", [])
         entidades = historico_atendimento.get("entidades_extraidas", [])
         atendimentos_anteriores = historico_atendimento.get(
-            "historico_atendimentos", [])
+            "historico_atendimentos", []
+        )
 
-        historico_parts = [
-            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
+        historico_parts = ["REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
 
         # Atendimentos anteriores - para contexto histórico
         if atendimentos_anteriores:

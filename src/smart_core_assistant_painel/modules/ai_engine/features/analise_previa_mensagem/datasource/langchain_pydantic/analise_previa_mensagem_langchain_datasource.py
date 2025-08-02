@@ -31,7 +31,7 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
             )
-            logger.info(f"Histórico formatado ############:\n {historico_formatado}\n\n{parameters.llm_parameters.prompt_human}: {parameters.llm_parameters.context}")
+            
             # Escapar chaves JSON no prompt system para evitar conflito com
             # variáveis do template
             prompt_system_escaped = parameters.llm_parameters.prompt_system.replace(
@@ -104,10 +104,11 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
         # Atendimentos anteriores - para contexto histórico
         if atendimentos_anteriores:
             historico_parts.append("")
-            historico_parts.append("ATENDIMENTOS ANTERIORES:")
+            historico_parts.append("HISTOTICO DE ATENDIMENTOS ANTERIORES:")
             for i, atendimento in enumerate(atendimentos_anteriores, 1):
                 historico_parts.append(f"{i}. {atendimento}")
         
+        historico_parts.append("\n\nHISTOTICO DO ATENDIMENTO ATUAL:")
         # Entidades extraídas - para entender elementos-chave
         if entidades:
             historico_parts.append("")

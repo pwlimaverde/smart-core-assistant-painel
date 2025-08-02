@@ -1,15 +1,16 @@
 import json
 import os
+from typing import Any, Dict, List
 
 import faiss
 
 
-def faiss_para_json():
+def faiss_para_json() -> None:
     """Converte dados FAISS para JSON - busca index.faiss no diretório atual"""
 
     # Buscar index.faiss no diretório atual
-    caminho_indice = "index.faiss"
-    arquivo_saida = "dados_faiss.json"
+    caminho_indice: str = "index.faiss"
+    arquivo_saida: str = "dados_faiss.json"
 
     # Verificar se o arquivo existe
     if not os.path.exists(caminho_indice):
@@ -19,20 +20,27 @@ def faiss_para_json():
     print(f"📂 Carregando: {caminho_indice}")
 
     # Carregar o índice
-    index = faiss.read_index(caminho_indice)
+    index: Any = faiss.read_index(caminho_indice)
 
     # Criar estrutura básica
-    dados = {"total_vetores": index.ntotal, "dimensao": index.d, "vetores": []}
+    dados: Dict[str, Any] = {
+        "total_vetores": index.ntotal, 
+        "dimensao": index.d, 
+        "vetores": []
+    }
 
     # Extrair vetores (limitando a 100 para não ficar muito pesado)
-    limite = min(100, index.ntotal)
+    limite: int = min(100, index.ntotal)
 
     print(f"📊 Exportando {limite} vetores de {index.ntotal} disponíveis...")
 
     for i in range(limite):
         try:
-            vetor = index.reconstruct(i)
-            dados["vetores"].append({"id": i, "dados": vetor[:10].tolist()})
+            vetor: Any = index.reconstruct(i)
+            dados["vetores"].append({
+                "id": i, 
+                "dados": vetor[:10].tolist()
+            })
         except BaseException:
             continue
 

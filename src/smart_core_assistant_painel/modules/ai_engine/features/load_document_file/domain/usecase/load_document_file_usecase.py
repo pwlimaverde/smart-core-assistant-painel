@@ -1,7 +1,6 @@
 from datetime import datetime
 
 from langchain.docstore.document import Document
-from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,
@@ -37,9 +36,6 @@ class LoadDocumentFileUseCase(LDFUsecase):
                         "processed_at": datetime.now().isoformat(),
                     }
                 )
-            logger.debug(
-                f"Documentos carregados com sucesso: {len(documentos)} documentos: {documentos}"
-            )
             return SuccessReturn(documentos)
         else:
             return ErrorReturn(DocumentError("Erro ao obter dados do datasource."))

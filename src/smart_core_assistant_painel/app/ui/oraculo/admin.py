@@ -479,7 +479,7 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
         "assunto",
         "atendente_humano__nome",
     ]
-    readonly_fields = ["data_inicio", "data_fim"]
+    readonly_fields = ["data_inicio"]
     inlines = [MensagemInline]
 
     fieldsets = (

@@ -28,6 +28,28 @@
 - A minimum coverage of 80% is mandatory. Anything below must be justified and reviewed.
 - Avoid lines longer than 79 characters to facilitate reading and code review.
 - Use type hints consistently throughout the codebase for better code documentation and IDE support.
+- ALL functions and methods MUST have complete type annotations including parameters and return types.
+- Use `from typing import Any` when dealing with Django signals or dynamic types.
+- For Django signal handlers, use these standard type annotations:
+  - `sender: Any` for the sender parameter
+  - `instance: ModelClass` for the specific model instance
+  - `created: bool` for post_save signals with created parameter
+  - `**kwargs: Any` for additional keyword arguments
+  - `-> None` for return type when function doesn't return a value
+- Private functions (starting with underscore) must also have complete type annotations.
+- When working with Django models, import the model class and use it as the type annotation.
+- **UNION TYPES AND TYPE CHECKING**: Always verify object types before accessing attributes when dealing with union types (e.g., `dict | BaseModel`):
+  - Use `isinstance(obj, dict)` to check if object is a dictionary before accessing with `obj["key"]`
+  - Use `isinstance(obj, BaseModel)` to check if object is a Pydantic model before accessing with `obj.attribute`
+  - Never assume the type of objects returned from external libraries or APIs
+  - Always handle both possible types in union scenarios to prevent `union-attr` MyPy errors
+  - Example pattern:
+    ```python
+    if isinstance(response, dict):
+        value = response.get("key", default)
+    else:
+        value = response.attribute
+    ```
 
 ## Commands and tasks via `taskipy`
 - Use the scripts mapped in pyproject.toml for:
@@ -92,3 +114,4 @@
 - Prioritize solutions that work with the existing toolchain (uv, taskipy, ruff, etc.).
 - Use `loguru` for structured logging when applicable.
 - Consider using `blue` formatter as an alternative to ruff format when needed.
+- **Sempre incluir sugestão de commit**: Em cada resumo de conclusão de tarefa, deve conter um campo "sugestão de commit" com uma mensagem de commit clara e descritiva seguindo o padrão conventional commits (feat:, fix:, test:, docs:, refactor:, etc.).

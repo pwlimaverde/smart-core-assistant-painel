@@ -1,4 +1,3 @@
-from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
     NoParams,
@@ -70,7 +69,6 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, ErrorReturn):
             raise data.result
-        logger.info("Fariáveis de ambientes carregadas com sucesso!")
 
     @staticmethod
     def vetor_storage() -> None:
@@ -83,4 +81,3 @@ class FeaturesCompose:
             SERVICEHUB.set_vetor_storage(data.result)
         if isinstance(data, ErrorReturn):
             raise data.result
-        logger.info("VetorStorage configurado com sucesso!")

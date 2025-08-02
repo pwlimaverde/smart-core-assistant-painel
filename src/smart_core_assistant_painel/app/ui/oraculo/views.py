@@ -127,10 +127,8 @@ class TreinamentoService:
         if arquivo_path and os.path.exists(arquivo_path):
             try:
                 os.unlink(arquivo_path)
-            except OSError as e:
-                logger.warning(
-                    f"Erro ao remover arquivo temporário {arquivo_path}: {e}"
-                )
+            except OSError:
+                pass
 
 
 def treinar_ia(request):
@@ -568,11 +566,6 @@ def _obter_entidades_metadados_validas() -> set[str]:
         # Já cadastrado no recebimento da mensagem
         entidades_validas.discard("telefone")
 
-        logger.info(
-            f"Entidades válidas para metadados obtidas: {
-                len(entidades_validas)
-            } entidades"
-        )
         return entidades_validas
 
     except Exception as e:
@@ -634,9 +627,6 @@ def _processar_entidades_contato(
                         if nome_limpo and len(nome_limpo) >= 2:  # Validação básica
                             contato.nome_contato = nome_limpo
                             contato_atualizado = True
-                            logger.info(
-                                f"Nome do contato atualizado para: {nome_limpo}"
-                            )
 
                 # Processar outras entidades para metadados
                 elif tipo_entidade.lower() in entidades_metadados and valor:
@@ -654,11 +644,6 @@ def _processar_entidades_contato(
                         ):
                             contato.metadados[tipo_entidade.lower()] = valor_limpo
                             metadados_atualizados = True
-                            logger.info(
-                                f"Metadado {
-                                    tipo_entidade.lower()
-                                } atualizado para contato: {valor_limpo}"
-                            )
 
         # Salvar contato se houve alterações
         if contato_atualizado or metadados_atualizados:
@@ -674,19 +659,10 @@ def _processar_entidades_contato(
             update_fields.append("ultima_interacao")
 
             contato.save(update_fields=update_fields)
-            logger.info(
-                f"Contato {
-                    contato.telefone
-                } atualizado com sucesso - última interação atualizada"
-            )
 
             # Se ainda não há nome do contato, considerar solicitar dados
             if not contato.nome_contato:
-                logger.info(
-                    f"Contato {
-                        contato.telefone
-                    } ainda sem nome - considerar solicitar dados"
-                )
+                pass
 
     except Exception as e:
         logger.error(f"Erro ao processar entidades do contato: {e}")
@@ -726,15 +702,14 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
     try:
         features = FeaturesCompose()
         mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
+        atendimento: Atendimento = cast(Atendimento, mensagem.atendimento)
+        exists_atendimento_anterior = Atendimento.objects.filter(contato=atendimento.contato).exclude(id=atendimento.id).exists()
         # Carrega historico EXCLUINDO a mensagem atual para análise de contexto
-        historico_atendimento = cast(
-            Atendimento, mensagem.atendimento
-        ).carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
-
-        # Se não há mensagens anteriores no histórico, chama apresentação
-        if not historico_atendimento.get("conteudo_mensagens"):
-            # todo: verificar se tem historido de atendimento anteriores
-            features.mensagem_apresentacao()
+        historico_atendimento = atendimento.carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
+        # Se não há atendimentos anteriores, nem mensagens anteriores no histórico do atendimento atual, chama apresentação
+        if not exists_atendimento_anterior:
+            if not historico_atendimento.get("conteudo_mensagens"):
+                features.mensagem_apresentacao()
 
         # Análise de intenção e extração de entidades
         resultado_analise = features.analise_previa_mensagem(

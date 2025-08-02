@@ -5,7 +5,7 @@ import os
 import sys
 
 
-def start_app():
+def start_app() -> None:
     project_dir = os.path.dirname(os.path.abspath(__file__))
     sys.path.insert(0, project_dir)
     """Run administrative tasks."""

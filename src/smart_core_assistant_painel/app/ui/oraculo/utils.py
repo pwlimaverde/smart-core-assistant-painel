@@ -3,7 +3,6 @@ import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.cache import cache
 from langchain_openai import ChatOpenAI
-from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
@@ -11,7 +10,7 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 
-def send_message_response(phone):
+def send_message_response(phone: str) -> None:
     messages = cache.get(f"wa_buffer_{phone}", [])
     if messages:
         question = "\n".join(messages)
@@ -27,20 +26,18 @@ def send_message_response(phone):
         ]
 
         llm = ChatOpenAI(
-            model_name="gpt-3.5-turbo",
+            model="gpt-3.5-turbo",
             streaming=True,
             temperature=0,
         )
 
-        response = llm.invoke(messages).content
-
-        logger.info(f"Resposta gerada: {response}")
+        llm.invoke(messages).content
 
     cache.delete(f"wa_buffer_{phone}")
     cache.delete(f"wa_timer_{phone}")
 
 
-def sched_message_response(phone):
+def sched_message_response(phone: str) -> None:
     if not cache.get(f"wa_timer_{phone}"):
         print(1)
         scheduler.add_job(

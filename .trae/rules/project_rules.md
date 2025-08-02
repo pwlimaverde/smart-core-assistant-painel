@@ -114,3 +114,4 @@
 - Prioritize solutions that work with the existing toolchain (uv, taskipy, ruff, etc.).
 - Use `loguru` for structured logging when applicable.
 - Consider using `blue` formatter as an alternative to ruff format when needed.
+- **Sempre incluir sugestão de commit**: Em cada resumo de conclusão de tarefa, deve conter um campo "sugestão de commit" com uma mensagem de commit clara e descritiva seguindo o padrão conventional commits (feat:, fix:, test:, docs:, refactor:, etc.).

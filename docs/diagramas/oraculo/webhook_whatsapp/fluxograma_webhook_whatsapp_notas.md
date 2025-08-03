@@ -20,6 +20,12 @@ Este documento complementa o diagrama `fluxograma_webhook_whatsapp.mmd` com expl
 - **2.1 Chamar nova_mensagem**: Invocação da função principal de processamento
 - **2.2 Extrair Dados da Mensagem**: Extração de metadados (ID, remetente, timestamp)
 - **2.3 Tipo de Mensagem?**: Classificação baseada no tipo de conteúdo recebido
+- **2.4 Inicializar Atendimento WhatsApp**: Preparação do contexto de atendimento
+- **2.5 Normalizar Telefone**: Formatação do número de telefone
+- **2.6 Buscar/Criar Contato**: Gestão de dados do contato
+- **2.7 Atendimento Ativo?**: Verificação de atendimento existente
+- **2.8 Usar Atendimento Existente**: Reutilização de contexto
+- **2.9 Criar Novo Atendimento**: Criação de novo atendimento
 
 ### 3. Camada de Processamento (3.x)
 **Responsabilidade**: Processamento específico por tipo e persistência
@@ -35,8 +41,8 @@ Este documento complementa o diagrama `fluxograma_webhook_whatsapp.mmd` com expl
 #### Persistência e Relacionamentos:
 - **3.7 Chamar processar_mensagem_whatsapp**: Função de persistência principal
 - **3.8 Tipo de Remetente?**: Classificação (contato, bot, agente humano)
-- **3.9 Criar/Atualizar Contato**: Gestão de dados do contato
-- **3.10 Criar Mensagem**: Persistência da mensagem no banco
+- **3.9 Criar Mensagem**: Persistência da mensagem no banco
+- **3.10 Mensagem Duplicada?**: Verificação de duplicação
 - **3.11 Atualizar Última Interação**: Timestamp da última atividade
 - **3.12 Primeira Mensagem?**: Verificação para inicialização de atendimento
 - **3.13 Atualizar Status Atendimento**: Mudança de status quando necessário
@@ -49,34 +55,98 @@ Este documento complementa o diagrama `fluxograma_webhook_whatsapp.mmd` com expl
 - **4.2 Carregar Histórico**: Recuperação do contexto conversacional
 - **4.3 Conteúdo Não-Textual?**: Verificação de necessidade de conversão
 - **4.4 Converter Contexto**: Função `_converter_contexto()` para mídia
+- **4.5 Primeira Interação?**: Verificação se é o primeiro contato
+- **4.6 Mensagem Apresentação**: Envio de mensagem de boas-vindas
 
 #### Processamento IA:
-- **4.5 Chamar FeaturesCompose**: Orquestrador de funcionalidades IA
-- **4.6 Configurar LLM**: Configuração de parâmetros do modelo
-- **4.7 Chamar AnalisePreviaMensagem**: Análise principal via LLM
-- **4.8 Formatar Histórico para LLM**: Preparação do contexto
-- **4.9 Processar Resposta LLM**: Interpretação da resposta do modelo
-- **4.10 Extrair Intent e Entidades**: Parsing de intenções e entidades
+- **4.7 Chamar FeaturesCompose**: Orquestrador de funcionalidades IA
+- **4.8 Configurar LLM**: Configuração de parâmetros do modelo
+- **4.9 Chamar AnalisePreviaMensagem**: Análise principal via LLM
+- **4.10 Formatar Histórico para LLM**: Preparação do contexto
+- **4.11 Processar Resposta LLM**: Interpretação da resposta do modelo
+- **4.12 Extrair Intent e Entidades**: Parsing de intenções e entidades
 
 #### Persistência de Análise:
-- **4.11 Atualizar Mensagem com Análise**: Salvamento dos insights
-- **4.12 Obter Entidades Válidas**: Função `_obter_entidades_metadados_validas()`
-- **4.13 Processar Entidades do Contato**: Função `_processar_entidades_contato()`
-- **4.14 Atualizar Metadados do Contato**: Enriquecimento do perfil
+- **4.13 Atualizar Mensagem com Análise**: Salvamento dos insights
+- **4.14 Obter Entidades Válidas**: Função `_obter_entidades_metadados_validas()`
+- **4.15 Processar Entidades do Contato**: Função `_processar_entidades_contato()`
+- **4.16 Atualizar Metadados do Contato**: Enriquecimento do perfil
+- **4.17 Nome Contato Vazio?**: Verificação da completude dos dados
+- **4.18 Solicitar Informações**: Envio de solicitação de dados
+
+---
+
+## 🏗️ Detalhamento: inicializar_atendimento_whatsapp
+
+### Função Principal
+```python
+inicializar_atendimento_whatsapp(
+    numero_telefone: str,
+    primeira_mensagem: str = "",
+    metadata_contato: Optional[dict[str, Any]] = None,
+    nome_contato: Optional[str] = None,
+    nome_perfil_whatsapp: Optional[str] = None,
+) -> tuple["Contato", "Atendimento"]
+```
+
+### Fluxo Detalhado
+
+#### 1. Normalização do Telefone
+- **Regex**: `re.sub(r"\D", "", numero_telefone)` - Remove caracteres não numéricos
+- **Validação**: Adiciona prefixo "55" se não presente
+- **Formatação**: Adiciona "+" no início
+- **Resultado**: `+55XXXXXXXXXXX`
+
+#### 2. Gestão do Contato
+- **Busca**: `Contato.objects.get_or_create(telefone=telefone_formatado)`
+- **Defaults**: 
+  - `nome_contato`: Nome fornecido ou None
+  - `nome_perfil_whatsapp`: pushName do WhatsApp
+  - `metadata_contato`: Dados adicionais
+- **Atualização**: Se contato existe, atualiza campos se necessário
+
+#### 3. Verificação de Atendimento Ativo
+- **Query**: Busca atendimentos com status válidos:
+  - `AGUARDANDO_INICIAL`
+  - `EM_ANDAMENTO`
+  - `AGUARDANDO_CLIENTE`
+  - `AGUARDANDO_ATENDENTE`
+- **Filtro**: `contato=contato, status__in=status_validos`
+
+#### 4. Criação de Novo Atendimento (se necessário)
+- **Status Inicial**: `StatusAtendimento.AGUARDANDO_INICIAL`
+- **Contexto**: Metadados específicos do WhatsApp
+- **Histórico**: Entrada automática "Atendimento iniciado via WhatsApp"
+- **Timestamp**: `data_inicio` automático
+
+#### 5. Tratamento de Erros
+- **Exception Handling**: Try/catch para toda a operação
+- **Logging**: Registro de erros com contexto
+- **Rollback**: Transações seguras para consistência
+
+### Integrações
+
+#### Com nova_mensagem
+- **Chamada**: Após extração dos dados do webhook
+- **Parâmetros**: Telefone, pushName, primeira mensagem
+- **Retorno**: Tupla (contato, atendimento) para uso posterior
+
+#### Com processar_mensagem_whatsapp
+- **Dependência**: Requer contato e atendimento inicializados
+- **Contexto**: Usa objetos retornados para criar mensagem
+- **Status**: Pode alterar status do atendimento se primeira mensagem
 
 ### 5. Camada de Decisão (5.x)
 **Responsabilidade**: Determinação do fluxo de resposta
 
 - **5.1 Bot Pode Responder?**: Função `_pode_bot_responder_atendimento()`
-- **5.2 Verificar Mensagens de Agente**: Busca por intervenções humanas
-- **5.3 Verificar Agente Associado**: Verificação de atendimento humano ativo
+- **5.2 Direcionar para Bot**: Fluxo automatizado de resposta
+- **5.3 Direcionar para Humano**: Transferência para atendimento manual
 
 ### 6. Camada de Saída (6.x)
 **Responsabilidade**: Direcionamento final e resposta
 
-- **6.1 Direcionar para Bot**: Fluxo automatizado de resposta
-- **6.2 Direcionar para Humano**: Transferência para atendimento manual
-- **6.3 Retornar Sucesso**: Resposta HTTP 200 com confirmação
+- **6.1 Retornar Sucesso**: Resposta HTTP 200 com confirmação
 
 ## Tratamento de Erros
 
@@ -117,15 +187,21 @@ Este documento complementa o diagrama `fluxograma_webhook_whatsapp.mmd` com expl
 - **Mensagem**: Histórico conversacional
 - **Atendimento**: Estados de atendimento
 - **Metadados**: Informações enriquecidas
+- **Índices**: Otimizações para telefone, message_id_whatsapp, status
 
 ### Serviços IA:
 - **LLM (Large Language Model)**: Análise de conteúdo
 - **Extração de Entidades**: Identificação de dados estruturados
 - **Detecção de Intenção**: Classificação de propósito
+- **Entidades**: Extração automática de dados do cliente
+- **Intents**: Detecção de intenções da conversa
 
 ### APIs WhatsApp:
 - **Webhook**: Recebimento de mensagens
 - **Metadados de Mídia**: Informações de arquivos
+- **Send API**: Envio de respostas (futuro)
+- **Media API**: Download de arquivos (futuro)
+- **Tipos Suportados**: Texto, imagem, áudio, vídeo, documento, localização, contato, interativos
 
 ## Performance e Escalabilidade
 

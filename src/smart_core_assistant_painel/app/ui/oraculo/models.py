@@ -2047,13 +2047,7 @@ def nova_mensagem(data: dict[str, Any]) -> int:
             else:
                 # Para outros tipos não tratados especificamente
                 conteudo = f"Mensagem do tipo {tipo_chave} recebida"
-
-        logger.info(
-            f"Processamento de mensagem - Telefone: {phone}, Tipo detectado: {tipo_chave}, "
-            f"Tipo mapeado: {tipo_mensagem}, PushName: '{push_name}', "
-            f"Conteúdo: {conteudo[:50]}..."
-        )
-
+                
         # Processar a mensagem usando a função existente
         mensagem = processar_mensagem_whatsapp(
             numero_telefone=phone,
@@ -2141,10 +2135,6 @@ def processar_mensagem_whatsapp(
             ).first()
 
             if mensagem_existente:
-                logger.warning(
-                    f"Mensagem duplicada detectada - ID: {message_id}, "
-                    f"Telefone: {numero_telefone}. Retornando mensagem existente."
-                )
                 return mensagem_existente.id
 
         # Cria a mensagem
@@ -2169,10 +2159,6 @@ def processar_mensagem_whatsapp(
                     StatusAtendimento.EM_ANDAMENTO, "Primeira mensagem recebida"
                 )
                 atendimento.save()
-
-        logger.info(
-            f"Mensagem processada para {numero_telefone} de {remetente}: {conteudo[:50]}..."
-        )
 
         return mensagem.id
 

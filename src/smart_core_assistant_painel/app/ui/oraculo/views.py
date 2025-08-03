@@ -404,6 +404,11 @@ def webhook_whatsapp(request):
     from .models import Mensagem, nova_mensagem
 
     try:
+        # TODO: Implementar validação de API key se necessário
+        # api_key = data.get('apikey')
+        # if not _validar_api_key(api_key):
+        #     return JsonResponse({"error": "API key inválida"}, status=401)
+        
         # Validação básica da requisição
         if request.method != "POST":
             return JsonResponse({"error": "Método não permitido"}, status=405)
@@ -422,10 +427,7 @@ def webhook_whatsapp(request):
         if not isinstance(data, dict):
             return JsonResponse({"error": "Formato de dados inválido"}, status=400)
 
-        # TODO: Implementar validação de API key se necessário
-        # api_key = data.get('apikey')
-        # if not _validar_api_key(api_key):
-        #     return JsonResponse({"error": "API key inválida"}, status=401)
+
 
         # Processar mensagem usando função nova_mensagem
         try:

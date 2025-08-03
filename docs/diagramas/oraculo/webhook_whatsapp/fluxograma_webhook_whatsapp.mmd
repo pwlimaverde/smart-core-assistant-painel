@@ -44,6 +44,12 @@ flowchart TD
     CallNovaMensagem[⚙️ 2.1 Chamar nova_mensagem]:::process
     ExtractMessageData[⚙️ 2.2 Extrair Dados da Mensagem]:::process
     DetermineMessageType{❓ 2.3 Tipo de Mensagem?}:::decision
+    InitializeAtendimento[⚙️ 2.4 Inicializar Atendimento WhatsApp]:::process
+    NormalizePhone[⚙️ 2.5 Normalizar Telefone]:::process
+    GetOrCreateContact[💾 2.6 Buscar/Criar Contato]:::database
+    CheckActiveAtendimento{❓ 2.7 Atendimento Ativo?}:::decision
+    UseExistingAtendimento[⚙️ 2.8 Usar Atendimento Existente]:::process
+    CreateNewAtendimento[💾 2.9 Criar Novo Atendimento]:::database
     
     %% ==============================
     %% 3. CAMADA DE PROCESSAMENTO
@@ -60,11 +66,12 @@ flowchart TD
     
     CallProcessarMensagemWhatsapp[⚙️ 3.7 Chamar processar_mensagem_whatsapp]:::process
     DetermineSenderType{❓ 3.8 Tipo de Remetente?}:::decision
-    CreateContact[💾 3.9 Criar/Atualizar Contato]:::database
-    CreateMessage[💾 3.10 Criar Mensagem]:::database
-    UpdateLastInteraction[💾 3.11 Atualizar Ultima Interacao]:::database
-    CheckFirstMessage{❓ 3.12 Primeira Mensagem?}:::decision
-    UpdateAtendimentoStatus[💾 3.13 Atualizar Status Atendimento]:::database
+    CreateMessage[💾 3.9 Criar Mensagem]:::database
+    CheckDuplicateMessage{❓ 3.10 Mensagem Duplicada?}:::decision
+    ReturnExistingId[⚙️ 3.11 Retornar ID Existente]:::process
+    UpdateLastInteraction[💾 3.12 Atualizar Ultima Interacao]:::database
+    CheckFirstMessage{❓ 3.13 Primeira Mensagem?}:::decision
+    UpdateAtendimentoStatus[💾 3.14 Atualizar Status Atendimento]:::database
     
     %% ==============================
     %% 4. CAMADA DE ANALISE IA
@@ -134,20 +141,29 @@ flowchart TD
     DetermineMessageType -->|"🔘 Interativo"| ProcessInteractiveMessage
     DetermineMessageType -->|"😊 Reacao"| ProcessReactionMessage
     
-    ProcessTextMessage --> CallProcessarMensagemWhatsapp
-    ProcessMediaMessage --> CallProcessarMensagemWhatsapp
-    ProcessLocationMessage --> CallProcessarMensagemWhatsapp
-    ProcessContactMessage --> CallProcessarMensagemWhatsapp
-    ProcessInteractiveMessage --> CallProcessarMensagemWhatsapp
-    ProcessReactionMessage --> CallProcessarMensagemWhatsapp
+    ProcessTextMessage --> InitializeAtendimento
+    ProcessMediaMessage --> InitializeAtendimento
+    ProcessLocationMessage --> InitializeAtendimento
+    ProcessContactMessage --> InitializeAtendimento
+    ProcessInteractiveMessage --> InitializeAtendimento
+    ProcessReactionMessage --> InitializeAtendimento
+    
+    InitializeAtendimento --> NormalizePhone
+    NormalizePhone --> GetOrCreateContact
+    GetOrCreateContact --> CheckActiveAtendimento
+    CheckActiveAtendimento -->|"✅ Ativo"| UseExistingAtendimento
+    CheckActiveAtendimento -->|"❌ Inativo"| CreateNewAtendimento
+    UseExistingAtendimento --> CallProcessarMensagemWhatsapp
+    CreateNewAtendimento --> CallProcessarMensagemWhatsapp
     
     CallProcessarMensagemWhatsapp --> DetermineSenderType
-    DetermineSenderType -->|"👤 Contato"| CreateContact
+    DetermineSenderType -->|"👤 Contato"| CreateMessage
     DetermineSenderType -->|"🤖 Bot"| CreateMessage
     DetermineSenderType -->|"👨‍💼 Agente"| CreateMessage
     
-    CreateContact --> CreateMessage
-    CreateMessage --> UpdateLastInteraction
+    CreateMessage --> CheckDuplicateMessage
+    CheckDuplicateMessage -->|"✅ Duplicada"| ReturnExistingId
+    CheckDuplicateMessage -->|"❌ Nova"| UpdateLastInteraction
     UpdateLastInteraction --> CheckFirstMessage
     CheckFirstMessage -->|"✅ Primeira"| UpdateAtendimentoStatus
     CheckFirstMessage -->|"❌ Nao Primeira"| CallAnalisarConteudo
@@ -177,6 +193,7 @@ flowchart TD
     
     RouteToBotFlow --> ReturnSuccess
     RouteToHumanFlow --> ReturnSuccess
+    ReturnExistingId --> ReturnSuccess
     
     %% ==============================
     %% CONEXOES DE ERRO

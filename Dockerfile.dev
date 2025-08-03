@@ -1,0 +1,57 @@
+# Use Python 3.13 slim image for development
+FROM python:3.13-slim
+
+# Set environment variables for development
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app/src
+
+# Set work directory
+WORKDIR /app
+
+# Install system dependencies including development tools
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    vim \
+    htop \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv for faster dependency management
+RUN pip install uv
+
+# Copy dependency files and README (required by pyproject.toml)
+COPY pyproject.toml uv.lock README.md ./
+
+# Install dependencies using uv (including dev dependencies)
+RUN uv sync --dev --frozen
+
+# Copy project files
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \
+    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/media \
+    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/staticfiles
+
+# Create non-root user for security (but with more permissions for dev)
+RUN adduser --disabled-password --gecos '' --uid 1000 appuser && \
+    chown -R appuser:appuser /app && \
+    chmod -R 755 /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/admin/ || exit 1
+
+# Default command for development (with auto-reload)
+CMD ["python", "src/smart_core_assistant_painel/main.py", "runserver", "0.0.0.0:8000"]

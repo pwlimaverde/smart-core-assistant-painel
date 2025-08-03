@@ -1,0 +1,104 @@
+services:
+  # Aplicação Django para desenvolvimento
+  django-app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: smart-core-assistant-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings
+      - SECRET_KEY_DJANGO=${SECRET_KEY_DJANGO}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EVOLUTION_API_URL=http://evolution-api:8080
+      - DJANGO_DEBUG=True
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./uv.lock:/app/uv.lock
+      # Persistent data
+      - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
+      - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
+    depends_on:
+      - evolution-api
+    networks:
+      - smart-core-network
+    command: >
+      sh -c "uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate &&
+             uv run python src/smart_core_assistant_painel/main.py runserver 0.0.0.0:8000"
+
+  # Django Q Cluster para desenvolvimento
+  django-qcluster:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: smart-core-qcluster-dev
+    restart: unless-stopped
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings
+      - SECRET_KEY_DJANGO=${SECRET_KEY_DJANGO}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DJANGO_DEBUG=True
+    volumes:
+      - ./src:/app/src
+      - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
+      - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
+    depends_on:
+      - django-app
+    networks:
+      - smart-core-network
+    command: ["uv", "run", "python", "src/smart_core_assistant_painel/main.py", "qcluster"]
+
+  # PostgreSQL para Evolution API
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=evolution
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolution123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - smart-core-network
+
+  # Evolution API para desenvolvimento
+  evolution-api:
+    image: atendai/evolution-api:v2.1.1
+    container_name: evolution-api-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Configuração conforme documentação oficial v2
+      - AUTHENTICATION_API_KEY=evolution-api-key-dev
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution123@postgres:5432/evolution?schema=public
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_exchange
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - postgres
+    networks:
+      - smart-core-network
+
+
+
+volumes:
+  evolution_instances:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  smart-core-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

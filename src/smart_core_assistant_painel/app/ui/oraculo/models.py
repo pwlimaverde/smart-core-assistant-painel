@@ -2049,6 +2049,7 @@ def nova_mensagem(data: dict[str, Any]) -> int:
                 conteudo = f"Mensagem do tipo {tipo_chave} recebida"
                 
         # Processar a mensagem usando a função existente
+        #TODO - Verificar o remetende da mensagem
         mensagem = processar_mensagem_whatsapp(
             numero_telefone=phone,
             conteudo=conteudo,

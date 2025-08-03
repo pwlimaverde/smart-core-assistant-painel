@@ -463,12 +463,6 @@ def webhook_whatsapp(request):
         except Exception as e:
             logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
-        if mensagem.remetente == TipoRemetente.CONTATO:
-            atendimento = cast(Atendimento, mensagem.atendimento)
-            contato = cast(Contato, atendimento.contato)
-            if not contato.nome_contato:
-                features = FeaturesCompose()
-                features.solicitacao_info_cliene()
 
         # Verificação de direcionamento do atendimento
         try:
@@ -560,12 +554,10 @@ def _obter_entidades_metadados_validas() -> set[str]:
                     entidades_validas.update(entidades.keys())
 
         # Remove entidades que não devem ir para metadados
-        entidades_validas.discard("contato")  # Vai para campo nome
         # Já cadastrado no recebimento da mensagem
         entidades_validas.discard("contato")
-        # Já cadastrado no recebimento da mensagem
         entidades_validas.discard("telefone")
-
+        logger.info(f"Entidades válidas para metadados: {entidades_validas}")
         return entidades_validas
 
     except Exception as e:
@@ -660,9 +652,10 @@ def _processar_entidades_contato(
 
             contato.save(update_fields=update_fields)
 
-            # Se ainda não há nome do contato, considerar solicitar dados
+            # Se ainda não há nome do contato, solicitar dados
             if not contato.nome_contato:
-                pass
+                features = FeaturesCompose()
+                features.solicitacao_info_cliene()
 
     except Exception as e:
         logger.error(f"Erro ao processar entidades do contato: {e}")

@@ -29,3 +29,6 @@ Configuração inicial do projeto.
 - **refactor**: Ajustes gerais de tipo e formatação de código.
 - **test**: Ajustados testes para refletir o novo formato de histórico de atendimento.
 - **test**: Adicionados testes para cobertura das linhas 138 e 150 do método `_formatar_historico_atendimento`.
+
+## 0.7.0
+- configuração do ambinte de desenvolvimento para docker, com postgres e evolution api

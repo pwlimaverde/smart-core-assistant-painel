@@ -44,8 +44,8 @@ RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/
 COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
 
 # Copy and make entrypoint scripts executable
-COPY scripts/docker-entrypoint.sh /usr/local/bin/
-COPY scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
+COPY ambiente_docker/scripts/docker-entrypoint.sh /usr/local/bin/
+COPY ambiente_docker/scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint-qcluster.sh
 

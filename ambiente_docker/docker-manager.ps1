@@ -91,9 +91,10 @@ function Test-Prerequisites {
 
 # Função para configurar arquivo .env
 function Set-EnvironmentFile {
-    # Verificar se arquivo .env já existe
+    # Verificar se arquivo .env já existe na raiz do projeto
     $envExists = $false
-    if (Test-Path ".env") {
+    $envPath = "../.env"
+    if (Test-Path $envPath) {
         if (-not $Force) {
             Write-ColorMessage "`n[AVISO] Arquivo .env ja existe." "Yellow"
             $response = Read-Host "Deseja sobrescrever? (y/N)"
@@ -181,7 +182,7 @@ OLLAMA_PORT=11434
 # - VALID_INTENT_TYPES
 "@
 
-    $envContent | Out-File -FilePath ".env" -Encoding UTF8
+    $envContent | Out-File -FilePath $envPath -Encoding UTF8
     
     Write-ColorMessage "[OK] Arquivo .env criado com sucesso!" "Green"
     Write-ColorMessage "[INFO] Credenciais geradas:" "Blue"

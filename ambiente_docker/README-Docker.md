@@ -47,7 +47,7 @@ Use o script `docker-manager.ps1` para configuração automática:
 # Navegar para o diretório do projeto
 cd c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker
 
-# Executar configuração inicial completa
+# Executar configuração inicial completa (criará .env na raiz do projeto)
 .\docker-manager.ps1 setup
 
 # Para desenvolvimento com ferramentas extras
@@ -58,12 +58,12 @@ cd c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker
 
 #### 2.1. Configurar Variáveis de Ambiente
 
-Copie o arquivo de exemplo:
+Copie o arquivo de exemplo na raiz do projeto:
 ```bash
-cp ../.env.example ../.env
+cp .env.example .env
 ```
 
-Edite o arquivo `.env` com suas configurações:
+Edite o arquivo `.env` na raiz do projeto com suas configurações:
 
 ```env
 # Firebase Configuration
@@ -589,7 +589,7 @@ docker volume prune
 
 #### Desenvolvimento
 1. **Nunca commite** credenciais no código
-2. **Use .env.local** para configurações pessoais
+2. **Use .env.local na raiz do projeto** para configurações pessoais
 3. **Mantenha Firebase keys** fora do repositório
 4. **Use HTTPS** mesmo em desenvolvimento
 5. **Monitore dependências** com vulnerabilidades

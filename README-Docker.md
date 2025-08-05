@@ -70,10 +70,10 @@ Para desenvolvimento com hot reload e ferramentas de debug:
 
 ```bash
 # Usar configuração de desenvolvimento
-docker-compose -f docker-compose.dev.yml up -d
+docker-compose up -d
 
 # Com ferramentas de visualização (MongoDB Express e Redis Commander)
-docker-compose -f docker-compose.dev.yml --profile tools up -d
+docker-compose --profile tools up -d
 ```
 
 ### Apenas Produção com Nginx

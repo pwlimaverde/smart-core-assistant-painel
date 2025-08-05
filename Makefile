@@ -3,7 +3,7 @@
 
 # Variáveis
 DOCKER_COMPOSE_PROD = docker-compose.yml
-DOCKER_COMPOSE_DEV = docker-compose.dev.yml
+DOCKER_COMPOSE_DEV = docker-compose.yml
 DJANGO_SERVICE = django-app
 PROJECT_NAME = smart-core-assistant-painel
 DOCKER_COMPOSE_CMD = docker compose

@@ -1,62 +1,71 @@
-# Dockerfile para produção
+# Use Python 3.13 slim image for development
 FROM python:3.13-slim
 
-# Definir variáveis de ambiente
-ENV PYTHONPATH=/app/src
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=core.settings
+# Set environment variables for development
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app/src
 
-# Instalar dependências do sistema
-RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    postgresql-client \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Instalar uv para gerenciamento de dependências
-RUN pip install uv
-
-# Definir diretório de trabalho
+# Set work directory
 WORKDIR /app
 
-# Copiar arquivos de configuração de dependências
-COPY pyproject.toml uv.lock ./
+# Install system dependencies including development tools and PostgreSQL client
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    vim \
+    nano \
+    htop \
+    procps \
+    libpq-dev \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Instalar dependências (apenas produção)
-RUN uv sync --frozen
+# Install uv for faster dependency management
+RUN pip install uv
 
-# Instalar psycopg[binary] separadamente
-RUN uv add psycopg[binary]
+# Copy dependency files and README (required by pyproject.toml)
+COPY pyproject.toml uv.lock README.md ./
 
-# Copiar código fonte
-COPY src/ ./src/
+# Install dependencies using uv (including dev dependencies)
+RUN uv sync --frozen --dev
 
-# Copiar chave do Firebase se existir (condicional)
-COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json 2>/dev/null || echo "Firebase key not found, skipping..."
+# Install psycopg manually as a workaround
+RUN uv pip install psycopg[binary]==3.2.3
 
-# Copiar e tornar scripts executáveis
+# Copy project files
+COPY . .
+
+# Create Firebase config directory and copy credentials
+RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
+COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
+
+# Copy and make entrypoint scripts executable
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
 COPY scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint-qcluster.sh
 
-# Criar diretórios necessários
-RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db
-RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/media
+# Create necessary directories
+RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \
+    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/media \
+    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/staticfiles
 
-# Criar usuário não-root para segurança
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-RUN chown -R appuser:appuser /app
-USER appuser
+# For development, we'll run as root for simplicity
+# In production, consider using a non-root user
 
-# Expor porta
+# Expose port
 EXPOSE 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/admin/ || exit 1
 
-# Entrypoint e comando padrão
+# Set entrypoint
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Default command - agora usa manage.py diretamente após inicialização
 CMD ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "runserver", "0.0.0.0:8000"]

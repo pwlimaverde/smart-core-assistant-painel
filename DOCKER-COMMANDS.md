@@ -84,20 +84,20 @@ make type-check
 
 ```bash
 # Iniciar desenvolvimento
-docker-compose -f docker-compose.dev.yml up -d
+docker-compose up -d
 
 # Iniciar com rebuild
-docker-compose -f docker-compose.dev.yml up -d --build
+docker-compose up -d --build
 
 # Iniciar com ferramentas (MongoDB Express, Redis Commander)
-docker-compose -f docker-compose.dev.yml --profile tools up -d
+docker-compose --profile tools up -d
 
 # Ver logs específicos
-docker-compose -f docker-compose.dev.yml logs -f django-app
-docker-compose -f docker-compose.dev.yml logs -f evolution-api
+docker-compose logs -f django-app
+docker-compose logs -f evolution-api
 
 # Parar desenvolvimento
-docker-compose -f docker-compose.dev.yml down
+docker-compose down
 ```
 
 ### Ambiente de Produção

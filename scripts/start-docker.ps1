@@ -123,11 +123,11 @@ $profileArgs = @()
 
 switch ($choice) {
     "1" {
-        $composeFile = "docker-compose.dev.yml"
+        $composeFile = "docker-compose.yml"
         Write-Message "Iniciando ambiente de desenvolvimento..." "Cyan"
     }
     "2" {
-        $composeFile = "docker-compose.dev.yml"
+        $composeFile = "docker-compose.yml"
         $profileArgs = @("--profile", "tools")
         Write-Message "Iniciando ambiente de desenvolvimento com ferramentas..." "Cyan"
     }
@@ -137,7 +137,7 @@ switch ($choice) {
     }
     default {
         Write-Message "Opcao invalida. Usando desenvolvimento por padrao." "Yellow"
-        $composeFile = "docker-compose.dev.yml"
+        $composeFile = "docker-compose.yml"
     }
 }
 

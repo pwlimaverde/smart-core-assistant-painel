@@ -169,11 +169,11 @@ switch ($Environment.ToLower()) {
         $envName = "Produção"
     }
     "dev" {
-        $composeFile = "docker-compose.dev.yml"
+        $composeFile = "docker-compose.yml"
         $envName = "Desenvolvimento"
     }
     "dev-tools" {
-        $composeFile = "docker-compose.dev.yml"
+        $composeFile = "docker-compose.yml"
         $composeProfiles = "--profile tools"
         $envName = "Desenvolvimento + Ferramentas"
     }

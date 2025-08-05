@@ -135,11 +135,11 @@ case $ENV_CHOICE in
         ENV_NAME="Produção"
         ;;
     2)
-        COMPOSE_FILE="docker-compose.dev.yml"
+        COMPOSE_FILE="docker-compose.yml"
         ENV_NAME="Desenvolvimento"
         ;;
     3)
-        COMPOSE_FILE="docker-compose.dev.yml"
+        COMPOSE_FILE="docker-compose.yml"
         COMPOSE_PROFILES="--profile tools"
         ENV_NAME="Desenvolvimento + Ferramentas"
         ;;

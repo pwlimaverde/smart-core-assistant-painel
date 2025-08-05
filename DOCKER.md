@@ -13,8 +13,8 @@ O sistema foi configurado para garantir que o Django só inicie após a conclus�
 ## 📁 Arquivos Docker
 
 ### Desenvolvimento
-- `Dockerfile.dev`: Imagem otimizada para desenvolvimento
-- `docker-compose.dev.yml`: Orquestração para ambiente de desenvolvimento
+- `Dockerfile`: Imagem única para desenvolvimento e produção
+- `docker-compose.yml`: Orquestração única para desenvolvimento e produção
 - `scripts/docker-entrypoint.sh`: Script de inicialização para Django
 - `scripts/docker-entrypoint-qcluster.sh`: Script de inicialização para QCluster
 
@@ -53,13 +53,13 @@ chmod +x scripts/start-docker-dev.sh
 #### Manual
 ```bash
 # Construir e iniciar
-docker-compose -f docker-compose.dev.yml up --build -d
+docker-compose up --build -d
 
 # Ver logs
-docker-compose -f docker-compose.dev.yml logs -f
+docker-compose logs -f
 
 # Parar
-docker-compose -f docker-compose.dev.yml down
+docker-compose down
 ```
 
 ### Produção
@@ -126,19 +126,19 @@ Estas variáveis são carregadas automaticamente pelo `start_services`:
 ### Desenvolvimento
 ```bash
 # Ver logs em tempo real
-docker-compose -f docker-compose.dev.yml logs -f django-app
+docker-compose logs -f django-app
 
 # Acessar shell do Django
-docker-compose -f docker-compose.dev.yml exec django-app bash
+docker-compose exec django-app bash
 
 # Executar comandos Django
-docker-compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
+docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
 
 # Reiniciar apenas o Django
-docker-compose -f docker-compose.dev.yml restart django-app
+docker-compose restart django-app
 
 # Ver status dos containers
-docker-compose -f docker-compose.dev.yml ps
+docker-compose ps
 ```
 
 ### Produção

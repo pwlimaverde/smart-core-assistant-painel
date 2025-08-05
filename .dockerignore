@@ -41,8 +41,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# UV lock file (generated in container)
-uv.lock
+# UV lock file (needed for frozen installs)
+# uv.lock
 
 # IDE
 .vscode/

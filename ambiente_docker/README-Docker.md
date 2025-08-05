@@ -79,6 +79,13 @@ EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
 EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
+# Redis Configuration (para Evolution API Cache)
+CACHE_REDIS_ENABLED=true
+CACHE_REDIS_URI=redis://redis:6379/6
+CACHE_REDIS_TTL=604800
+CACHE_REDIS_PREFIX_KEY=evolution
+CACHE_REDIS_SAVE_INSTANCES=false
+
 # PostgreSQL Configuration
 POSTGRES_DB=smart_core_db
 POSTGRES_USER=postgres
@@ -231,26 +238,24 @@ O `docker-manager.ps1` é um script único que consolida todas as operações Do
 
 O sistema foi projetado com uma sequência específica de inicialização:
 
-1. **PostgreSQL** - Banco de dados principal
-2. **Redis** - Cache e filas
-3. **MongoDB** - Banco para Evolution API
-4. **start_initial_loading** - Inicializa Firebase Remote Config
-5. **start_services** - Carrega configurações dinâmicas
-6. **Django App** - Aplicação principal
-7. **Django QCluster** - Processamento assíncrono
-8. **Evolution API** - API WhatsApp
-9. **Nginx** (opcional) - Proxy reverso
+1. **PostgreSQL (Django)** - Banco de dados principal do Django
+2. **PostgreSQL (Evolution)** - Banco de dados da Evolution API
+3. **Redis** - Cache para Evolution API e filas Django Q
+4. **Django App** - Aplicação principal
+5. **Django QCluster** - Processamento assíncrono
+6. **Evolution API** - API WhatsApp com Redis cache
+7. **Nginx** (opcional) - Proxy reverso
 
 ### Dependências entre Serviços
 
 ```mermaid
 graph TD
-    A[PostgreSQL] --> D[Django App]
+    A[PostgreSQL Django] --> D[Django App]
     B[Redis] --> D
     B --> E[Django QCluster]
-    C[MongoDB] --> F[Evolution API]
+    B --> F[Evolution API]
+    C[PostgreSQL Evolution] --> F
     D --> E
-    D --> F
     G[Firebase] --> D
 ```
 
@@ -274,32 +279,31 @@ graph TD
 - **Descrição**: API para integração WhatsApp
 - **Versão**: v2.1.1
 - **Webhook**: Configurado para Django app
+- **Banco de dados**: PostgreSQL dedicado
+- **Cache**: Redis configurado
+- **Autenticação**: Via AUTHENTICATION_API_KEY
 
-### PostgreSQL (postgres-django)
-- **Porta**: 5432
+### PostgreSQL Django (postgres-django)
+- **Porta**: 5432 (interno)
 - **Descrição**: Banco de dados principal do Django
 - **Database**: `smart_core_db`
 - **Usuário**: postgres
 
-### MongoDB (mongodb)
-- **Porta**: 27017
-- **Descrição**: Banco de dados para Evolution API
-- **Usuário**: admin (configurável)
-- **Persistência**: Volume nomeado
+### PostgreSQL Evolution (postgres)
+- **Porta**: 5432 (interno)
+- **Descrição**: Banco de dados dedicado para Evolution API
+- **Database**: `evolution`
+- **Usuário**: evolution
+- **Schema**: public
 
 ### Redis (redis)
 - **Porta**: 6379
-- **Descrição**: Cache e filas para Django Q
-- **Persistência**: Habilitada
-- **Configuração**: Otimizada para Django Q
+- **Descrição**: Cache para Evolution API e filas Django Q
+- **Persistência**: Habilitada com AOF
+- **Health Check**: Configurado
+- **Configuração**: Otimizada para cache e performance
 
 ### Ferramentas de Desenvolvimento (Opcionais)
-
-#### MongoDB Express
-- **Porta**: 8081
-- **URL**: http://localhost:8081
-- **Descrição**: Interface web para MongoDB
-- **Ativação**: Use a flag `-Tools`
 
 #### Redis Commander
 - **Porta**: 8082
@@ -359,17 +363,23 @@ docker-compose exec django-app bash
 ### Backup e Restore
 
 ```bash
-# Backup PostgreSQL
+# Backup PostgreSQL Django
 docker-compose exec postgres-django pg_dump -U postgres smart_core_db > backup_django.sql
 
-# Restore PostgreSQL
+# Backup PostgreSQL Evolution
+docker-compose exec postgres pg_dump -U evolution evolution > backup_evolution.sql
+
+# Restore PostgreSQL Django
 docker-compose exec -T postgres-django psql -U postgres smart_core_db < backup_django.sql
 
-# Backup MongoDB
-docker-compose exec mongodb mongodump --out /data/backup
+# Restore PostgreSQL Evolution
+docker-compose exec -T postgres psql -U evolution evolution < backup_evolution.sql
 
-# Backup Redis
+# Backup Redis (dados de cache)
 docker-compose exec redis redis-cli --rdb /data/backup.rdb
+
+# Backup Redis (via save)
+docker-compose exec redis redis-cli BGSAVE
 ```
 
 ## 🔍 Monitoramento e Debug
@@ -377,10 +387,9 @@ docker-compose exec redis redis-cli --rdb /data/backup.rdb
 ### URLs de Acesso
 
 - **Django Admin**: http://localhost:8000/admin/
-- **Django App**: http://localhost:8000
-- **Evolution API**: http://localhost:8080
-- **MongoDB Express** (dev): http://localhost:8081
-- **Redis Commander** (dev): http://localhost:8082
+- **Django App**: http://localhost:8000/
+- **Evolution API**: http://localhost:8080/ (requer apikey no header)
+- **Redis Commander**: http://localhost:8082/ (interface web para Redis)
 
 ### Health Checks
 
@@ -481,21 +490,30 @@ docker-compose exec django-app uv run python src/smart_core_assistant_painel/app
 
 #### 4. Evolution API não conecta
 
-**Sintomas**: Webhook não funciona ou API não responde
+**Sintomas**: Webhook não funciona, API não responde, ou erro "redis disconnected"
 
 **Soluções**:
 ```bash
 # Verificar logs da Evolution API
 docker-compose logs evolution-api
 
-# Verificar se MongoDB está rodando
-docker-compose ps mongodb
+# Verificar se PostgreSQL Evolution está rodando
+docker-compose ps postgres
+
+# Verificar se Redis está rodando
+docker-compose ps redis
+
+# Testar conexão Redis
+docker-compose exec redis redis-cli ping
 
 # Testar webhook
 curl -X POST http://localhost:8000/oraculo/webhook_whatsapp/
 
 # Verificar configuração da Evolution API
-curl http://localhost:8080/manager/status
+curl -H "apikey: sua-chave-aqui" http://localhost:8080
+
+# Verificar variáveis de ambiente
+docker-compose exec evolution-api env | grep -E "CACHE_REDIS|AUTHENTICATION_API_KEY|DATABASE"
 ```
 
 #### 4. Firebase não inicializa
@@ -728,7 +746,7 @@ docker system df
 # Verificar conectividade
 docker-compose exec django-app ping postgres-django
 docker-compose exec django-app ping redis
-docker-compose exec django-app ping mongodb
+docker-compose exec django-app ping postgres
 ```
 
 ---

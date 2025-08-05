@@ -108,6 +108,24 @@ services:
     networks:
       - smart-core-network
 
+  # Redis para Evolution API
+  redis:
+    image: redis:7-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - smart-core-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Evolution API para desenvolvimento
   evolution-api:
     image: atendai/evolution-api:v2.1.1
@@ -116,18 +134,48 @@ services:
     ports:
       - "8080:8080"
     environment:
-      # Configuração conforme documentação oficial v2
-      - AUTHENTICATION_API_KEY=evolution-api-key-dev
+      # Configuração de autenticação
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      
+      # Configuração do banco de dados PostgreSQL
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://evolution:evolution123@postgres:5432/evolution?schema=public
       - DATABASE_CONNECTION_CLIENT_NAME=evolution_exchange
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - DATABASE_SAVE_DATA_LABELS=true
+      - DATABASE_SAVE_DATA_HISTORIC=true
+      
+      # Configuração do Redis Cache
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      - CACHE_REDIS_TTL=604800
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - CACHE_LOCAL_ENABLED=false
+      
+      # Configurações de servidor
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
+      
+      # Configurações de log
+      - LOG_LEVEL=ERROR
+      - LOG_COLOR=true
+      - LOG_BAILEYS=error
     volumes:
       - evolution_instances:/evolution/instances
     depends_on:
       - postgres
+      - redis
     networks:
       - smart-core-network
+    env_file:
+      - .env
 
 
 
@@ -137,6 +185,8 @@ volumes:
   postgres_data:
     driver: local
   postgres_django_data:
+    driver: local
+  redis_data:
     driver: local
 
 networks:

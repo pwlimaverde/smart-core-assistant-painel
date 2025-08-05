@@ -354,10 +354,9 @@ function Show-FinalInfo {
     Write-ColorMessage "`n[OK] Configuracao concluida com sucesso!" "Green"
     Write-ColorMessage "`n[INFO] URLs de acesso:" "Blue"
     Write-ColorMessage "   - Django Admin: http://localhost:8000/admin/" "Blue"
-    Write-ColorMessage "   - Evolution API: http://localhost:8080" "Blue"
+    Write-ColorMessage "   - Evolution API: http://localhost:8080 (requer apikey)" "Blue"
     
     if ($WithTools) {
-        Write-ColorMessage "   - MongoDB Express: http://localhost:8081" "Blue"
         Write-ColorMessage "   - Redis Commander: http://localhost:8082" "Blue"
     }
     
@@ -399,7 +398,7 @@ function Show-Help {
     Write-ColorMessage "" 
     Write-ColorMessage "OPÇÕES:" "Yellow"
     Write-ColorMessage "  -Environment [env]  - Ambiente: prod, dev (padrao: prod)" "White"
-    Write-ColorMessage "  -Tools              - Incluir ferramentas (MongoDB Express, Redis Commander)" "White"
+    Write-ColorMessage "  -Tools              - Incluir ferramentas (Redis Commander)" "White"
     Write-ColorMessage "  -Force              - Forçar sobrescrita de arquivos" "White"
     Write-ColorMessage "  -Help               - Mostrar esta ajuda" "White"
     Write-ColorMessage "" 

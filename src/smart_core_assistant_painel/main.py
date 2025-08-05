@@ -5,7 +5,6 @@ from smart_core_assistant_painel.modules.initial_loading.start_initial_loading i
 from smart_core_assistant_painel.modules.services.start_services import start_services
 
 if __name__ == "__main__":
-    # if os.environ.get('RUN_MAIN') == 'true':
     start_initial_loading()
     start_services()
     start_app()

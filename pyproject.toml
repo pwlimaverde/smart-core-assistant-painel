@@ -64,6 +64,7 @@ dependencies = [
     "packaging==24.2",
     "pandas>=2.3.0",
     "propcache==0.3.1",
+    "psycopg[binary]==3.2.3",
     "py-return-success-or-error==0.5.3",
     "pydantic==2.11.5",
     "pydantic-core==2.33.2",
@@ -151,32 +152,64 @@ start-server = "smart_core_assistant_painel.main:main"
 
 
 [tool.taskipy.tasks]
-# Servidor Django
+# Servidor Django - Local
 dev = "python src/smart_core_assistant_painel/main.py runserver"
 start = "python src/smart_core_assistant_painel/main.py runserver"
 server = "python src/smart_core_assistant_painel/main.py runserver 0.0.0.0:8000"
 cluster = "python src/smart_core_assistant_painel/main.py qcluster"
 
-# Comandos Django úteis
-migrate = "cd src/smart_core_assistant_painel/APP/ui && python manage.py migrate"
-makemigrations = "cd src/smart_core_assistant_painel/APP/ui && python manage.py makemigrations"
-createsuperuser = "cd src/smart_core_assistant_painel/APP/ui && python manage.py createsuperuser"
-collectstatic = "cd src/smart_core_assistant_painel/APP/ui && python manage.py collectstatic --noinput"
-shell = "cd src/smart_core_assistant_painel/APP/ui && python manage.py shell"
-startapp = "cd src/smart_core_assistant_painel/APP/ui && python manage.py startapp"
+# Servidor Django - Docker
+dev-docker = "docker compose -f docker-compose.dev.yml up -d"
+start-docker = "docker compose -f docker-compose.dev.yml up -d"
+server-docker = "docker compose -f docker-compose.dev.yml up -d"
+cluster-docker = "docker compose -f docker-compose.dev.yml up -d"
+stop-docker = "docker compose -f docker-compose.dev.yml down"
+restart-docker = "docker compose -f docker-compose.dev.yml down && docker compose -f docker-compose.dev.yml up -d --build"
+logs-docker = "docker compose -f docker-compose.dev.yml logs -f django-app"
+logs-cluster-docker = "docker compose -f docker-compose.dev.yml logs -f django-qcluster"
 
-# Desenvolvimento e testes
-test = "pytest"
+# Comandos Django úteis - Local
+migrate = "cd src/smart_core_assistant_painel/app/ui && python manage.py migrate"
+makemigrations = "cd src/smart_core_assistant_painel/app/ui && python manage.py makemigrations"
+createsuperuser = "cd src/smart_core_assistant_painel/app/ui && python manage.py createsuperuser"
+collectstatic = "cd src/smart_core_assistant_painel/app/ui && python manage.py collectstatic --noinput"
+shell = "cd src/smart_core_assistant_painel/app/ui && python manage.py shell"
+startapp = "cd src/smart_core_assistant_painel/app/ui && python manage.py startapp"
+
+# Comandos Django úteis - Docker
+migrate-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"
+makemigrations-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
+createsuperuser-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
+collectstatic-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput"
+shell-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell"
+startapp-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py startapp"
+reset-db-docker = "docker compose -f docker-compose.dev.yml down && docker volume rm smart-core-assistant-painel_postgres-data-django || true && docker compose -f docker-compose.dev.yml up -d --build"
+
+# Desenvolvimento e testes - Local
+test = "pytest tests/ -v --cov=src --cov-report=term-missing"
 lint = "ruff check src/"
 format = "ruff format src/"
 type-check = "mypy src/"
 
-# Comandos combinados
-setup = "uv sync && python src/smart_core_assistant_painel/APP/ui/manage.py migrate"
-dev-setup = "uv sync --dev && python src/smart_core_assistant_painel/APP/ui/manage.py migrate && python src/smart_core_assistant_painel/APP/ui/manage.py collectstatic --noinput"
+# Desenvolvimento e testes - Docker
+test-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run pytest tests/ -v --cov=src --cov-report=term-missing"
+lint-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run ruff check src/"
+format-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run ruff format src/"
+type-check-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run mypy src/"
 
-# Comandos diversos
-faiss_to_json = "cd src/smart_core_assistant_painel/modules/services/features/vetor_storage/datasource/faiss_storage/banco_faiss && python faiss_to_json.py"
+# Comandos combinados - Local
+setup = "uv sync --dev && uv run task migrate && uv run task createsuperuser"
+dev-setup = "uv sync --dev && uv run task migrate"
+
+# Comandos combinados - Docker
+setup-docker = "docker compose -f docker-compose.dev.yml up -d --build && docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate && docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
+dev-setup-docker = "docker compose -f docker-compose.dev.yml up -d --build"
+
+# Comandos diversos - Local
+faiss_to_json = "python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
+
+# Comandos diversos - Docker
+faiss_to_json-docker = "docker compose -f docker-compose.dev.yml exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
 
 [tool.mypy]
 ignore_missing_imports = true

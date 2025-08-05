@@ -10,26 +10,31 @@ services:
       - "8000:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=core.settings
-      - SECRET_KEY_DJANGO=${SECRET_KEY_DJANGO}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - EVOLUTION_API_URL=http://evolution-api:8080
       - DJANGO_DEBUG=True
+      - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
+      - POSTGRES_DB=smart_core_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_HOST=postgres-django
+      - POSTGRES_PORT=5432
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+      # Variáveis dinâmicas serão configuradas pelo start_services
+      # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
     volumes:
       # Mount source code for hot reload
       - ./src:/app/src
       - ./tests:/app/tests
       - ./pyproject.toml:/app/pyproject.toml
-      - ./uv.lock:/app/uv.lock
       # Persistent data
       - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
       - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
     depends_on:
+      - postgres-django
       - evolution-api
     networks:
       - smart-core-network
-    command: >
-      sh -c "uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate &&
-             uv run python src/smart_core_assistant_painel/main.py runserver 0.0.0.0:8000"
+    # O comando será executado pelo entrypoint script
+    # command: ["uv", "run", "python", "src/smart_core_assistant_painel/main.py", "runserver", "0.0.0.0:8000"]
 
   # Django Q Cluster para desenvolvimento
   django-qcluster:
@@ -40,9 +45,16 @@ services:
     restart: unless-stopped
     environment:
       - DJANGO_SETTINGS_MODULE=core.settings
-      - SECRET_KEY_DJANGO=${SECRET_KEY_DJANGO}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DJANGO_DEBUG=True
+      - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
+      - POSTGRES_DB=smart_core_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_HOST=postgres-django
+      - POSTGRES_PORT=5432
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+      # Variáveis dinâmicas serão configuradas pelo start_services
+      # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
     volumes:
       - ./src:/app/src
       - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
@@ -51,7 +63,22 @@ services:
       - django-app
     networks:
       - smart-core-network
-    command: ["uv", "run", "python", "src/smart_core_assistant_painel/main.py", "qcluster"]
+    entrypoint: ["/usr/local/bin/docker-entrypoint-qcluster.sh"]
+    command: ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "qcluster"]
+
+  # PostgreSQL para Django
+  postgres-django:
+    image: postgres:15-alpine
+    container_name: postgres-django-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=smart_core_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    volumes:
+      - postgres_django_data:/var/lib/postgresql/data
+    networks:
+      - smart-core-network
 
   # PostgreSQL para Evolution API
   postgres:
@@ -94,6 +121,8 @@ volumes:
   evolution_instances:
     driver: local
   postgres_data:
+    driver: local
+  postgres_django_data:
     driver: local
 
 networks:

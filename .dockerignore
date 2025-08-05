@@ -41,6 +41,9 @@ ENV/
 env.bak/
 venv.bak/
 
+# UV lock file (generated in container)
+uv.lock
+
 # IDE
 .vscode/
 .idea/

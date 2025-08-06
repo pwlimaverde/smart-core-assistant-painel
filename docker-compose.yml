@@ -167,6 +167,7 @@ services:
       - LOG_LEVEL=ERROR
       - LOG_COLOR=true
       - LOG_BAILEYS=error
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
     volumes:
       - evolution_instances:/evolution/instances
     depends_on:

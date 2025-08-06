@@ -1,3 +1,4 @@
+import os
 from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.features_compose import (
@@ -11,10 +12,7 @@ def start_services() -> None:
     Garante que o VetorStorage seja configurado desde o início.
     """
     try:
-        # Carrega variáveis de ambiente remotas
         FeaturesCompose.set_environ_remote()
-
-        # Configura VetorStorage usando o método do FeaturesCompose
         FeaturesCompose.vetor_storage()
 
     except Exception as e:

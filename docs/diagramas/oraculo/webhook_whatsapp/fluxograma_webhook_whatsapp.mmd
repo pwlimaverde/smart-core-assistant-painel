@@ -1,0 +1,218 @@
+flowchart TD
+
+    %% ==============================
+    %% DEFINICAO DE CORES E ESTILOS
+    %% ==============================
+    classDef startEnd fill:#ff6b6b,stroke:#d63031,stroke-width:3px,color:white
+    classDef process fill:#74b9ff,stroke:#0984e3,stroke-width:2px,color:white
+    classDef decision fill:#fdcb6e,stroke:#e17055,stroke-width:2px,color:black
+    classDef database fill:#55a3ff,stroke:#2d3436,stroke-width:2px,color:white
+    classDef botFlow fill:#00b894,stroke:#00a085,stroke-width:2px,color:white
+    classDef humanFlow fill:#e17055,stroke:#d63031,stroke-width:2px,color:white
+    classDef systemFlow fill:#a29bfe,stroke:#6c5ce7,stroke-width:2px,color:white
+    classDef errorFlow fill:#fd79a8,stroke:#e84393,stroke-width:2px,color:white
+    classDef aiFlow fill:#00cec9,stroke:#00b894,stroke-width:2px,color:white
+    
+    %% ==============================
+    %% LEGENDA DE CORES
+    %% ==============================
+    subgraph Legenda ["📋 Legenda de Cores"]
+        direction TB
+        L1[🚀 Inicio/Fim]:::startEnd
+        L2[⚙️ Processo]:::process
+        L3[❓ Decisao]:::decision
+        L4[💾 Banco de Dados]:::database
+        L5[🤖 Fluxo do Bot]:::botFlow
+        L6[👤 Fluxo Humano]:::humanFlow
+        L7[🔧 Sistema/Controle]:::systemFlow
+        L8[🧠 IA/Analise]:::aiFlow
+        L9[⚠️ Erro/Excecao]:::errorFlow
+    end
+
+    %% ==============================
+    %% 1. CAMADA DE ENTRADA
+    %% ==============================
+    Start[🚀 1. INICIO - Webhook WhatsApp]:::startEnd
+    ValidateApiKey[🔧 1.1 Validar API Key]:::systemFlow
+    CheckApiKeyValid{❓ 1.2 API Key Valida?}:::decision
+    ParseJson[⚙️ 1.3 Parse JSON Request]:::process
+    CheckJsonValid{❓ 1.4 JSON Valido?}:::decision
+    
+    %% ==============================
+    %% 2. CAMADA DE ORQUESTRACAO
+    %% ==============================
+    CallNovaMensagem[⚙️ 2.1 Chamar nova_mensagem]:::process
+    ExtractMessageData[⚙️ 2.2 Extrair Dados da Mensagem]:::process
+    DetermineMessageType{❓ 2.3 Tipo de Mensagem?}:::decision
+    InitializeAtendimento[⚙️ 2.4 Inicializar Atendimento WhatsApp]:::process
+    NormalizePhone[⚙️ 2.5 Normalizar Telefone]:::process
+    GetOrCreateContact[💾 2.6 Buscar/Criar Contato]:::database
+    CheckActiveAtendimento{❓ 2.7 Atendimento Ativo?}:::decision
+    UseExistingAtendimento[⚙️ 2.8 Usar Atendimento Existente]:::process
+    CreateNewAtendimento[💾 2.9 Criar Novo Atendimento]:::database
+    
+    %% ==============================
+    %% 3. CAMADA DE PROCESSAMENTO
+    %% ==============================
+    subgraph ProcessamentoMensagem ["📨 3. PROCESSAMENTO DE MENSAGEM"]
+        direction TB
+        ProcessTextMessage[⚙️ 3.1 Processar Texto]:::process
+        ProcessMediaMessage[⚙️ 3.2 Processar Midia]:::process
+        ProcessLocationMessage[⚙️ 3.3 Processar Localizacao]:::process
+        ProcessContactMessage[⚙️ 3.4 Processar Contato]:::process
+        ProcessInteractiveMessage[⚙️ 3.5 Processar Interativo]:::process
+        ProcessReactionMessage[⚙️ 3.6 Processar Reacao]:::process
+    end
+    
+    CallProcessarMensagemWhatsapp[⚙️ 3.7 Chamar processar_mensagem_whatsapp]:::process
+    DetermineSenderType{❓ 3.8 Tipo de Remetente?}:::decision
+    CreateMessage[💾 3.9 Criar Mensagem]:::database
+    CheckDuplicateMessage{❓ 3.10 Mensagem Duplicada?}:::decision
+    ReturnExistingId[⚙️ 3.11 Retornar ID Existente]:::process
+    UpdateLastInteraction[💾 3.12 Atualizar Ultima Interacao]:::database
+    CheckFirstMessage{❓ 3.13 Primeira Mensagem?}:::decision
+    UpdateAtendimentoStatus[💾 3.14 Atualizar Status Atendimento]:::database
+    
+    %% ==============================
+    %% 4. CAMADA DE ANALISE IA
+    %% ==============================
+    subgraph AnaliseIA ["🧠 4. ANALISE DE IA"]
+        direction TB
+        CallAnalisarConteudo[🧠 4.1 Chamar _analisar_conteudo_mensagem]:::aiFlow
+        LoadMessageHistory[💾 4.2 Carregar Historico]:::database
+        CheckNonTextualContent{❓ 4.3 Conteudo Nao-Textual?}:::decision
+        ConvertContext[🧠 4.4 Converter Contexto]:::aiFlow
+        CallFeaturesCompose[🧠 4.5 Chamar FeaturesCompose]:::aiFlow
+        ConfigureLlmParameters[🧠 4.6 Configurar LLM]:::aiFlow
+        CallAnalisePrevia[🧠 4.7 Chamar AnalisePreviaMensagem]:::aiFlow
+        FormatHistoryForLlm[🧠 4.8 Formatar Historico para LLM]:::aiFlow
+        ProcessLlmResponse[🧠 4.9 Processar Resposta LLM]:::aiFlow
+        ExtractIntentAndEntities[🧠 4.10 Extrair Intent e Entidades]:::aiFlow
+        UpdateMessageWithAnalysis[💾 4.11 Atualizar Mensagem com Analise]:::database
+        GetValidMetadataEntities[💾 4.12 Obter Entidades Validas]:::database
+        ProcessContactEntities[💾 4.13 Processar Entidades do Contato]:::database
+        UpdateContactMetadata[💾 4.14 Atualizar Metadados do Contato]:::database
+    end
+    
+    %% ==============================
+    %% 5. CAMADA DE DECISAO
+    %% ==============================
+    CheckBotCanRespond{❓ 5.1 Bot Pode Responder?}:::decision
+    CheckHumanAgentMessages[🔧 5.2 Verificar Mensagens de Agente]:::systemFlow
+    CheckAssociatedHumanAgent[🔧 5.3 Verificar Agente Associado]:::systemFlow
+    
+    %% ==============================
+    %% 6. CAMADA DE SAIDA
+    %% ==============================
+    RouteToBotFlow[🤖 6.1 Direcionar para Bot]:::botFlow
+    RouteToHumanFlow[👤 6.2 Direcionar para Humano]:::humanFlow
+    ReturnSuccess[🚀 6.3 Retornar Sucesso]:::startEnd
+    
+    %% ==============================
+    %% TRATAMENTO DE ERROS
+    %% ==============================
+    ErrorApiKey[⚠️ E1 Erro API Key Invalida]:::errorFlow
+    ErrorJsonParsing[⚠️ E2 Erro Parse JSON]:::errorFlow
+    ErrorProcessing[⚠️ E3 Erro Processamento]:::errorFlow
+    ErrorDatabase[⚠️ E4 Erro Banco de Dados]:::errorFlow
+    ErrorAiAnalysis[⚠️ E5 Erro Analise IA]:::errorFlow
+    LogError[⚙️ E6 Log do Erro]:::process
+    ReturnError[🚀 E7 Retornar Erro]:::startEnd
+    
+    %% ==============================
+    %% CONEXOES PRINCIPAIS
+    %% ==============================
+    Start --> ValidateApiKey
+    ValidateApiKey --> CheckApiKeyValid
+    CheckApiKeyValid -->|"✅ Valida"| ParseJson
+    CheckApiKeyValid -->|"❌ Invalida"| ErrorApiKey
+    
+    ParseJson --> CheckJsonValid
+    CheckJsonValid -->|"✅ Valido"| CallNovaMensagem
+    CheckJsonValid -->|"❌ Invalido"| ErrorJsonParsing
+    
+    CallNovaMensagem --> ExtractMessageData
+    ExtractMessageData --> DetermineMessageType
+    
+    DetermineMessageType -->|"📝 Texto"| ProcessTextMessage
+    DetermineMessageType -->|"📷 Midia"| ProcessMediaMessage
+    DetermineMessageType -->|"📍 Localizacao"| ProcessLocationMessage
+    DetermineMessageType -->|"👤 Contato"| ProcessContactMessage
+    DetermineMessageType -->|"🔘 Interativo"| ProcessInteractiveMessage
+    DetermineMessageType -->|"😊 Reacao"| ProcessReactionMessage
+    
+    ProcessTextMessage --> InitializeAtendimento
+    ProcessMediaMessage --> InitializeAtendimento
+    ProcessLocationMessage --> InitializeAtendimento
+    ProcessContactMessage --> InitializeAtendimento
+    ProcessInteractiveMessage --> InitializeAtendimento
+    ProcessReactionMessage --> InitializeAtendimento
+    
+    InitializeAtendimento --> NormalizePhone
+    NormalizePhone --> GetOrCreateContact
+    GetOrCreateContact --> CheckActiveAtendimento
+    CheckActiveAtendimento -->|"✅ Ativo"| UseExistingAtendimento
+    CheckActiveAtendimento -->|"❌ Inativo"| CreateNewAtendimento
+    UseExistingAtendimento --> CallProcessarMensagemWhatsapp
+    CreateNewAtendimento --> CallProcessarMensagemWhatsapp
+    
+    CallProcessarMensagemWhatsapp --> DetermineSenderType
+    DetermineSenderType -->|"👤 Contato"| CreateMessage
+    DetermineSenderType -->|"🤖 Bot"| CreateMessage
+    DetermineSenderType -->|"👨‍💼 Agente"| CreateMessage
+    
+    CreateMessage --> CheckDuplicateMessage
+    CheckDuplicateMessage -->|"✅ Duplicada"| ReturnExistingId
+    CheckDuplicateMessage -->|"❌ Nova"| UpdateLastInteraction
+    UpdateLastInteraction --> CheckFirstMessage
+    CheckFirstMessage -->|"✅ Primeira"| UpdateAtendimentoStatus
+    CheckFirstMessage -->|"❌ Nao Primeira"| CallAnalisarConteudo
+    UpdateAtendimentoStatus --> CallAnalisarConteudo
+    
+    CallAnalisarConteudo --> LoadMessageHistory
+    LoadMessageHistory --> CheckNonTextualContent
+    CheckNonTextualContent -->|"✅ Nao-Textual"| ConvertContext
+    CheckNonTextualContent -->|"❌ Textual"| CallFeaturesCompose
+    ConvertContext --> CallFeaturesCompose
+    
+    CallFeaturesCompose --> ConfigureLlmParameters
+    ConfigureLlmParameters --> CallAnalisePrevia
+    CallAnalisePrevia --> FormatHistoryForLlm
+    FormatHistoryForLlm --> ProcessLlmResponse
+    ProcessLlmResponse --> ExtractIntentAndEntities
+    ExtractIntentAndEntities --> UpdateMessageWithAnalysis
+    UpdateMessageWithAnalysis --> GetValidMetadataEntities
+    GetValidMetadataEntities --> ProcessContactEntities
+    ProcessContactEntities --> UpdateContactMetadata
+    
+    UpdateContactMetadata --> CheckBotCanRespond
+    CheckBotCanRespond --> CheckHumanAgentMessages
+    CheckHumanAgentMessages --> CheckAssociatedHumanAgent
+    CheckAssociatedHumanAgent -->|"🤖 Bot Pode"| RouteToBotFlow
+    CheckAssociatedHumanAgent -->|"👤 Humano Deve"| RouteToHumanFlow
+    
+    RouteToBotFlow --> ReturnSuccess
+    RouteToHumanFlow --> ReturnSuccess
+    ReturnExistingId --> ReturnSuccess
+    
+    %% ==============================
+    %% CONEXOES DE ERRO
+    %% ==============================
+    ErrorApiKey -.-> LogError
+    ErrorJsonParsing -.-> LogError
+    ErrorProcessing -.-> LogError
+    ErrorDatabase -.-> LogError
+    ErrorAiAnalysis -.-> LogError
+    LogError -.-> ReturnError
+    
+    %% Erros durante processamento
+    CallNovaMensagem -.->|"⚠️ Erro"| ErrorProcessing
+    CallProcessarMensagemWhatsapp -.->|"⚠️ Erro"| ErrorProcessing
+    CreateContact -.->|"⚠️ Erro"| ErrorDatabase
+    CreateMessage -.->|"⚠️ Erro"| ErrorDatabase
+    UpdateLastInteraction -.->|"⚠️ Erro"| ErrorDatabase
+    UpdateAtendimentoStatus -.->|"⚠️ Erro"| ErrorDatabase
+    LoadMessageHistory -.->|"⚠️ Erro"| ErrorDatabase
+    CallFeaturesCompose -.->|"⚠️ Erro"| ErrorAiAnalysis
+    UpdateMessageWithAnalysis -.->|"⚠️ Erro"| ErrorDatabase
+    UpdateContactMetadata -.->|"⚠️ Erro"| ErrorDatabase

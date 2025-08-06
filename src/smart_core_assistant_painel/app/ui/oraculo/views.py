@@ -25,6 +25,7 @@ from .models import (
     TipoMensagem,
     TipoRemetente,
     Treinamentos,
+    nova_mensagem,
 )
 
 if TYPE_CHECKING:
@@ -401,9 +402,12 @@ def webhook_whatsapp(request):
         - Preparado para futuras implementações de resposta automática
         - Tratamento robusto de erros com logs detalhados
     """
-    from .models import Mensagem, nova_mensagem
-
     try:
+        # TODO: Implementar validação de API key se necessário
+        # api_key = data.get('apikey')
+        # if not _validar_api_key(api_key):
+        #     return JsonResponse({"error": "API key inválida"}, status=401)
+        
         # Validação básica da requisição
         if request.method != "POST":
             return JsonResponse({"error": "Método não permitido"}, status=405)
@@ -411,9 +415,22 @@ def webhook_whatsapp(request):
         if not request.body:
             return JsonResponse({"error": "Corpo da requisição vazio"}, status=400)
 
-        # Parse do JSON com tratamento específico
+        # Parse do JSON com tratamento robusto de encoding
         try:
-            data = json.loads(request.body)
+            # Tentar diferentes encodings para decodificar o corpo da requisição
+            body_str = None
+            for encoding in ['utf-8', 'latin-1', 'cp1252']:
+                try:
+                    body_str = request.body.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if body_str is None:
+                logger.error("Não foi possível decodificar o corpo da requisição com nenhum encoding")
+                return JsonResponse({"error": "Erro de codificação de caracteres"}, status=400)
+            
+            data = json.loads(body_str)
         except json.JSONDecodeError as e:
             logger.error(f"JSON inválido recebido no webhook: {e}")
             return JsonResponse({"error": "JSON inválido"}, status=400)
@@ -422,10 +439,7 @@ def webhook_whatsapp(request):
         if not isinstance(data, dict):
             return JsonResponse({"error": "Formato de dados inválido"}, status=400)
 
-        # TODO: Implementar validação de API key se necessário
-        # api_key = data.get('apikey')
-        # if not _validar_api_key(api_key):
-        #     return JsonResponse({"error": "API key inválida"}, status=401)
+
 
         # Processar mensagem usando função nova_mensagem
         try:
@@ -463,12 +477,6 @@ def webhook_whatsapp(request):
         except Exception as e:
             logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
-        if mensagem.remetente == TipoRemetente.CONTATO:
-            atendimento = cast(Atendimento, mensagem.atendimento)
-            contato = cast(Contato, atendimento.contato)
-            if not contato.nome_contato:
-                features = FeaturesCompose()
-                features.solicitacao_info_cliene()
 
         # Verificação de direcionamento do atendimento
         try:
@@ -560,12 +568,10 @@ def _obter_entidades_metadados_validas() -> set[str]:
                     entidades_validas.update(entidades.keys())
 
         # Remove entidades que não devem ir para metadados
-        entidades_validas.discard("contato")  # Vai para campo nome
         # Já cadastrado no recebimento da mensagem
         entidades_validas.discard("contato")
-        # Já cadastrado no recebimento da mensagem
         entidades_validas.discard("telefone")
-
+        logger.info(f"Entidades válidas para metadados: {entidades_validas}")
         return entidades_validas
 
     except Exception as e:
@@ -660,9 +666,10 @@ def _processar_entidades_contato(
 
             contato.save(update_fields=update_fields)
 
-            # Se ainda não há nome do contato, considerar solicitar dados
+            # Se ainda não há nome do contato, solicitar dados
             if not contato.nome_contato:
-                pass
+                features = FeaturesCompose()
+                features.solicitacao_info_cliene()
 
     except Exception as e:
         logger.error(f"Erro ao processar entidades do contato: {e}")

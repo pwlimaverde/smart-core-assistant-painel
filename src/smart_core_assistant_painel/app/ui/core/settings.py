@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = []
+ALLOWED_HOSTS: list[str] = ["django-app", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -86,8 +86,12 @@ WSGI_APPLICATION = "core.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR.parent / "db" / "sqlite" / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("POSTGRES_DB", "smart_core_db"),
+        "USER": os.getenv("POSTGRES_USER", "postgres"),
+        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres123"),
+        "HOST": os.getenv("POSTGRES_HOST", "postgres"),
+        "PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 }
 
@@ -155,4 +159,5 @@ Q_CLUSTER = {
     "retry": 300,
     "queue_limit": 200,
     "orm": "default",
+    "secret_key": SECRET_KEY,  # Garante que Q Cluster use a mesma SECRET_KEY
 }

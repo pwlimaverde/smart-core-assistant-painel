@@ -1,0 +1,207 @@
+services:
+  # Aplicação Django para desenvolvimento
+  django-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-core-assistant-dev
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_DEBUG=True
+      - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
+      - POSTGRES_DB=smart_core_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_HOST=postgres-django
+      - POSTGRES_PORT=5432
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+      # Configuração para acesso ao Ollama local
+      - OLLAMA_HOST=host.docker.internal
+      - OLLAMA_PORT=11434
+      # Variáveis dinâmicas serão configuradas pelo start_services
+      # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
+    volumes:
+      # Mount source code for hot reload
+      - ./src:/app/src
+      - ./tests:/app/tests
+      - ./pyproject.toml:/app/pyproject.toml
+      # Persistent data
+      - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
+      - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
+      # Mount Firebase credentials
+      - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
+    depends_on:
+      - postgres-django
+      - evolution-api
+    networks:
+      - smart-core-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
+    command: ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "runserver", "0.0.0.0:8000"]
+
+  # Django Q Cluster para desenvolvimento
+  django-qcluster:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smart-core-qcluster-dev
+    restart: unless-stopped
+    environment:
+      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_DEBUG=True
+      - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
+      - POSTGRES_DB=smart_core_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_HOST=postgres-django
+      - POSTGRES_PORT=5432
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+      # Configuração para acesso ao Ollama local
+      - OLLAMA_HOST=host.docker.internal
+      - OLLAMA_PORT=11434
+      # Variáveis dinâmicas serão configuradas pelo start_services
+      # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
+    volumes:
+      - ./src:/app/src
+      - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
+      - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
+      # Mount Firebase credentials
+      - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
+    depends_on:
+      - django-app
+    networks:
+      - smart-core-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    entrypoint: ["/usr/local/bin/docker-entrypoint-qcluster.sh"]
+    command: ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "qcluster"]
+
+  # PostgreSQL para Django
+  postgres-django:
+    image: postgres:15-alpine
+    container_name: postgres-django-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=smart_core_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+    volumes:
+      - postgres_django_data:/var/lib/postgresql/data
+    networks:
+      - smart-core-network
+
+  # PostgreSQL para Evolution API
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=evolution
+      - POSTGRES_USER=evolution
+      - POSTGRES_PASSWORD=evolution123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - smart-core-network
+
+  # Redis para Evolution API
+  redis:
+    image: redis:7-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - smart-core-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Evolution API para desenvolvimento
+  evolution-api:
+    image: atendai/evolution-api:v2.1.1
+    container_name: evolution-api-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Configuração de autenticação
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      
+      # Configuração do webhook global (com tratamento UTF-8 robusto)
+      - WEBHOOK_GLOBAL_URL=http://django-app:8000/oraculo/webhook_whatsapp/
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
+      
+      # Configuração do banco de dados PostgreSQL
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution:evolution123@postgres:5432/evolution?schema=public
+      - DATABASE_CONNECTION_CLIENT_NAME=evolution_exchange
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_UPDATE=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+      - DATABASE_SAVE_DATA_LABELS=true
+      - DATABASE_SAVE_DATA_HISTORIC=true
+      
+      # Configuração do Redis Cache
+      - CACHE_REDIS_ENABLED=true
+      - CACHE_REDIS_URI=redis://redis:6379/6
+      - CACHE_REDIS_TTL=604800
+      - CACHE_REDIS_PREFIX_KEY=evolution
+      - CACHE_REDIS_SAVE_INSTANCES=false
+      - CACHE_LOCAL_ENABLED=false
+      
+      # Configuração do QR Code (Correções Implementadas)
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#198754
+      
+      # Configurações de servidor
+      - SERVER_TYPE=http
+      - SERVER_PORT=8080
+      - SERVER_URL=http://localhost:8080
+      
+      # Configurações de log
+      - LOG_LEVEL=ERROR
+      - LOG_COLOR=true
+      - LOG_BAILEYS=error
+      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
+    volumes:
+      - evolution_instances:/evolution/instances
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - smart-core-network
+    env_file:
+      - .env
+
+
+
+volumes:
+  evolution_instances:
+    driver: local
+  postgres_data:
+    driver: local
+  postgres_django_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  smart-core-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

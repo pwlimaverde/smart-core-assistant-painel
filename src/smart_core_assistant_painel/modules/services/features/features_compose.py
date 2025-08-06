@@ -35,7 +35,6 @@ class FeaturesCompose:
     @staticmethod
     def set_environ_remote() -> None:
         config_mapping = {
-            "secret_key_django": "SECRET_KEY_DJANGO",
             "groq_api_key": "GROQ_API_KEY",
             "openai_api_key": "OPENAI_API_KEY",
             "whatsapp_api_base_url": "WHATSAPP_API_BASE_URL",

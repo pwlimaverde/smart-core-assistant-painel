@@ -31,4 +31,16 @@ Configuração inicial do projeto.
 - **test**: Adicionados testes para cobertura das linhas 138 e 150 do método `_formatar_historico_atendimento`.
 
 ## 0.7.0
-- configuração do ambinte de desenvolvimento para docker, com postgres e evolution api
+- **feat**: Configuração completa do ambiente Docker com PostgreSQL e Redis
+- **fix**: Correção do problema de geração de QR code na Evolution API
+- **fix**: Implementação de tratamento robusto de encoding UTF-8 no webhook WhatsApp
+- **fix**: Correção de caminhos Docker e configuração do ambiente de desenvolvimento
+- **docs**: Atualização completa da documentação Docker (README-Docker.md)
+- **docs**: Documentação para arquitetura PostgreSQL+Redis
+- **feat**: Configuração otimizada do QR Code da Evolution API (30s limite, cor personalizada)
+- **feat**: Implementação de cache Redis para Evolution API
+- **feat**: Configuração de webhook global para Evolution API
+- **feat**: Bypass do Firebase Remote Config em modo DEBUG
+- **refactor**: Ajustes nas variáveis de ambiente e finalização da configuração Docker
+- **refactor**: Revisão do fluxo de recebimento de mensagens
+- **refactor**: Atualização do diagrama webhook_whatsapp

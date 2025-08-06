@@ -137,6 +137,11 @@ services:
       # Configuração de autenticação
       - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
       
+      # Configuração do webhook global (com tratamento UTF-8 robusto)
+      - WEBHOOK_GLOBAL_URL=http://django-app:8000/oraculo/webhook_whatsapp/
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
+      
       # Configuração do banco de dados PostgreSQL
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
@@ -157,6 +162,10 @@ services:
       - CACHE_REDIS_PREFIX_KEY=evolution
       - CACHE_REDIS_SAVE_INSTANCES=false
       - CACHE_LOCAL_ENABLED=false
+      
+      # Configuração do QR Code (Correções Implementadas)
+      - QRCODE_LIMIT=30
+      - QRCODE_COLOR=#198754
       
       # Configurações de servidor
       - SERVER_TYPE=http

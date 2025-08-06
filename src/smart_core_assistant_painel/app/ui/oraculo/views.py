@@ -25,6 +25,7 @@ from .models import (
     TipoMensagem,
     TipoRemetente,
     Treinamentos,
+    nova_mensagem,
 )
 
 if TYPE_CHECKING:
@@ -401,8 +402,6 @@ def webhook_whatsapp(request):
         - Preparado para futuras implementações de resposta automática
         - Tratamento robusto de erros com logs detalhados
     """
-    from .models import Mensagem, nova_mensagem
-
     try:
         # TODO: Implementar validação de API key se necessário
         # api_key = data.get('apikey')
@@ -416,9 +415,22 @@ def webhook_whatsapp(request):
         if not request.body:
             return JsonResponse({"error": "Corpo da requisição vazio"}, status=400)
 
-        # Parse do JSON com tratamento específico
+        # Parse do JSON com tratamento robusto de encoding
         try:
-            data = json.loads(request.body)
+            # Tentar diferentes encodings para decodificar o corpo da requisição
+            body_str = None
+            for encoding in ['utf-8', 'latin-1', 'cp1252']:
+                try:
+                    body_str = request.body.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+            
+            if body_str is None:
+                logger.error("Não foi possível decodificar o corpo da requisição com nenhum encoding")
+                return JsonResponse({"error": "Erro de codificação de caracteres"}, status=400)
+            
+            data = json.loads(body_str)
         except json.JSONDecodeError as e:
             logger.error(f"JSON inválido recebido no webhook: {e}")
             return JsonResponse({"error": "JSON inválido"}, status=400)

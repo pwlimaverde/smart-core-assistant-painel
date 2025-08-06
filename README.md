@@ -5,10 +5,12 @@ Um painel inteligente para assistente virtual com integração WhatsApp.
 ## Características
 
 - Interface Django moderna
-- Integração com Evolution API
+- Integração com Evolution API com tratamento UTF-8 robusto
 - Suporte a MongoDB e Redis
 - Processamento de linguagem natural
 - Ambiente Docker completo
+- Webhook WhatsApp com fallback de encoding automático
+- QR Code Evolution API otimizado
 
 ## Instalação
 
@@ -44,7 +46,16 @@ uv run dev
 
 ## Documentação
 
-Veja [README-Docker.md](README-Docker.md) para instruções detalhadas do Docker.
+Veja [ambiente_docker/README-Docker.md](ambiente_docker/README-Docker.md) para instruções detalhadas do Docker.
+
+### Correções Recentes
+
+- ✅ **Webhook WhatsApp**: Implementado tratamento robusto de encoding UTF-8 com fallback automático
+- ✅ **Evolution API**: Configuração otimizada para geração de QR Code
+- ✅ **Validação JSON**: Prevenção de erros de atributo em objetos string
+- ✅ **Logging**: Sistema de logs detalhado para debugging
+
+Para detalhes completos das correções, consulte a seção [Correções Implementadas](ambiente_docker/README-Docker.md#-correções-implementadas) na documentação Docker.
 
 ## Licença
 

@@ -1,26 +1,11 @@
-# Guia Completo Docker - Smart Core Assistant Painel
+# Guia de Configuração Docker - Smart Core Assistant Painel
 
-Este documento fornece um guia completo para configurar, executar e gerenciar o Smart Core Assistant Painel usando Docker.
-
-## 📋 Índice
-
-1. [Pré-requisitos](#-pré-requisitos)
-2. [Configuração Inicial](#-configuração-inicial)
-3. [Uso do Docker Manager](#-uso-do-docker-manager)
-4. [Arquitetura do Sistema](#-arquitetura-do-sistema)
-5. [Serviços Incluídos](#-serviços-incluídos)
-6. [Comandos Úteis](#-comandos-úteis)
-7. [Monitoramento e Debug](#-monitoramento-e-debug)
-8. [Troubleshooting](#-troubleshooting)
-9. [Segurança](#-segurança)
-10. [Performance](#-performance)
+Este documento fornece instruções para configurar e executar o Smart Core Assistant Painel usando Docker.
 
 ## 📋 Pré-requisitos
 
-### Software Necessário
 - **Docker Engine 20.10+**
 - **Docker Compose 2.0+**
-- **Python 3.11+**
 - **PowerShell 5.0+** (Windows)
 - **Git**
 
@@ -30,14 +15,11 @@ Este documento fornece um guia completo para configurar, executar e gerenciar o 
 docker --version
 docker-compose --version
 
-# Verificar Python
-python --version
-
 # Verificar se Docker está rodando
 docker info
 ```
 
-## 🚀 Configuração Inicial
+## 🚀 Configuração e Execução
 
 ### 1. Configuração Rápida (Recomendado)
 
@@ -47,11 +29,11 @@ Use o script `docker-manager.ps1` para configuração automática:
 # Navegar para o diretório do projeto
 cd c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker
 
-# Executar configuração inicial completa (criará .env na raiz do projeto)
+# Executar configuração inicial completa
 .\docker-manager.ps1 setup
 
-# Para desenvolvimento com ferramentas extras
-.\docker-manager.ps1 setup -Environment dev -Tools
+# Iniciar serviços
+.\docker-manager.ps1 start
 ```
 
 ### 2. Configuração Manual
@@ -66,7 +48,7 @@ cp .env.example .env
 Edite o arquivo `.env` na raiz do projeto com suas configurações:
 
 ```env
-# Firebase Configuration
+# Firebase Configuration (OBRIGATÓRIO)
 GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
 # Django Configuration (OBRIGATÓRIO)
@@ -79,13 +61,6 @@ EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
 EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
-# Redis Configuration (para Evolution API Cache)
-CACHE_REDIS_ENABLED=true
-CACHE_REDIS_URI=redis://redis:6379/6
-CACHE_REDIS_TTL=604800
-CACHE_REDIS_PREFIX_KEY=evolution
-CACHE_REDIS_SAVE_INSTANCES=false
-
 # PostgreSQL Configuration
 POSTGRES_DB=smart_core_db
 POSTGRES_USER=postgres
@@ -93,7 +68,7 @@ POSTGRES_PASSWORD=postgres123
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 
-# Webhook Configuration (OBRIGATÓRIO)
+# Webhook Configuration
 WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 WEBHOOK_SECRET=seu-webhook-secret
 
@@ -163,9 +138,6 @@ docker-compose up -d
 Após iniciar os serviços, é necessário criar e aplicar as migrações do Django:
 
 ```powershell
-# Criar migrações para os apps (se necessário)
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations
-
 # Aplicar migrações
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
 
@@ -173,13 +145,9 @@ docker-compose exec django-app uv run python src/smart_core_assistant_painel/app
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
 ```
 
-**Nota Importante**: O passo de migrações é essencial para criar as tabelas do banco de dados. Sem ele, você pode encontrar erros como `ProgrammingError: relation "oraculo_treinamentos" does not exist` ao acessar o Django Admin.
+**Nota Importante**: O passo de migrações é essencial para criar as tabelas do banco de dados.
 
-## 🛠️ Uso do Docker Manager
-
-O `docker-manager.ps1` é um script único que consolida todas as operações Docker:
-
-### Comandos Principais
+## 🛠️ Comandos do Docker Manager
 
 ```powershell
 # Configuração inicial completa
@@ -219,97 +187,45 @@ O `docker-manager.ps1` é um script único que consolida todas as operações Do
 .\docker-manager.ps1 help
 ```
 
-### Opções Avançadas
+## 🏗️ Arquitetura dos Serviços
 
-```powershell
-# Desenvolvimento com ferramentas extras
-.\docker-manager.ps1 setup -Environment dev -Tools
+### Serviços Incluídos
 
-# Forçar reconstrução
-.\docker-manager.ps1 build -Force
+1. **Django Application** (porta 8000)
+   - Aplicação principal Django
+   - URL: http://localhost:8000
+   - Health Check: `/admin/`
 
-# Limpeza forçada sem confirmação
-.\docker-manager.ps1 clean -Force
-```
+2. **Django Q Cluster**
+   - Processamento assíncrono de tarefas
+   - Dependente do Redis
 
-## 🏗️ Arquitetura do Sistema
+3. **Evolution API** (porta 8080)
+   - API para integração WhatsApp
+   - URL: http://localhost:8080
+   - Versão: v2.1.1
+   - Webhook configurado para Django app
 
-### Sequência de Inicialização
+4. **PostgreSQL Django** (interno)
+   - Banco de dados principal do Django
+   - Database: `smart_core_db`
 
-O sistema foi projetado com uma sequência específica de inicialização:
+5. **PostgreSQL Evolution** (interno)
+   - Banco de dados dedicado para Evolution API
+   - Database: `evolution`
 
-1. **PostgreSQL (Django)** - Banco de dados principal do Django
-2. **PostgreSQL (Evolution)** - Banco de dados da Evolution API
-3. **Redis** - Cache para Evolution API e filas Django Q
-4. **Django App** - Aplicação principal
-5. **Django QCluster** - Processamento assíncrono
-6. **Evolution API** - API WhatsApp com Redis cache
-7. **Nginx** (opcional) - Proxy reverso
+6. **Redis** (porta 6379)
+   - Cache para Evolution API e filas Django Q
+   - Persistência habilitada
 
 ### Dependências entre Serviços
 
-```mermaid
-graph TD
-    A[PostgreSQL Django] --> D[Django App]
-    B[Redis] --> D
-    B --> E[Django QCluster]
-    B --> F[Evolution API]
-    C[PostgreSQL Evolution] --> F
-    D --> E
-    G[Firebase] --> D
 ```
-
-## 🔧 Serviços Incluídos
-
-### Django Application (smart-core-assistant)
-- **Porta**: 8000
-- **URL**: http://localhost:8000
-- **Descrição**: Aplicação principal Django
-- **Health Check**: `/admin/`
-- **Volumes**: Banco SQLite, media files, static files
-
-### Django Q Cluster (smart-core-qcluster)
-- **Descrição**: Processamento assíncrono de tarefas
-- **Dependências**: Redis, Django App
-- **Função**: Executa tarefas em background
-
-### Evolution API (evolution-api)
-- **Porta**: 8080
-- **URL**: http://localhost:8080
-- **Descrição**: API para integração WhatsApp
-- **Versão**: v2.1.1
-- **Webhook**: Configurado para Django app
-- **Banco de dados**: PostgreSQL dedicado
-- **Cache**: Redis configurado
-- **Autenticação**: Via AUTHENTICATION_API_KEY
-
-### PostgreSQL Django (postgres-django)
-- **Porta**: 5432 (interno)
-- **Descrição**: Banco de dados principal do Django
-- **Database**: `smart_core_db`
-- **Usuário**: postgres
-
-### PostgreSQL Evolution (postgres)
-- **Porta**: 5432 (interno)
-- **Descrição**: Banco de dados dedicado para Evolution API
-- **Database**: `evolution`
-- **Usuário**: evolution
-- **Schema**: public
-
-### Redis (redis)
-- **Porta**: 6379
-- **Descrição**: Cache para Evolution API e filas Django Q
-- **Persistência**: Habilitada com AOF
-- **Health Check**: Configurado
-- **Configuração**: Otimizada para cache e performance
-
-### Ferramentas de Desenvolvimento (Opcionais)
-
-#### Redis Commander
-- **Porta**: 8082
-- **URL**: http://localhost:8082
-- **Descrição**: Interface web para Redis
-- **Ativação**: Use a flag `-Tools`
+PostgreSQL Django → Django App → Django QCluster
+Redis → Django App, Django QCluster, Evolution API
+PostgreSQL Evolution → Evolution API
+Firebase → Django App
+```
 
 ## 📚 Comandos Úteis
 
@@ -331,9 +247,6 @@ docker-compose restart django-app
 # Parar todos os serviços
 docker-compose down
 
-# Parar e remover volumes
-docker-compose down -v
-
 # Reconstruir imagens
 docker-compose build --no-cache
 ```
@@ -341,17 +254,11 @@ docker-compose build --no-cache
 ### Django Management
 
 ```bash
-# Criar migrações (quando necessário)
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations
-
 # Executar migrações
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
 
 # Criar superusuário
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
-
-# Coletar arquivos estáticos
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput
 
 # Acessar shell Django
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
@@ -360,205 +267,73 @@ docker-compose exec django-app uv run python src/smart_core_assistant_painel/app
 docker-compose exec django-app bash
 ```
 
-### Backup e Restore
-
-```bash
-# Backup PostgreSQL Django
-docker-compose exec postgres-django pg_dump -U postgres smart_core_db > backup_django.sql
-
-# Backup PostgreSQL Evolution
-docker-compose exec postgres pg_dump -U evolution evolution > backup_evolution.sql
-
-# Restore PostgreSQL Django
-docker-compose exec -T postgres-django psql -U postgres smart_core_db < backup_django.sql
-
-# Restore PostgreSQL Evolution
-docker-compose exec -T postgres psql -U evolution evolution < backup_evolution.sql
-
-# Backup Redis (dados de cache)
-docker-compose exec redis redis-cli --rdb /data/backup.rdb
-
-# Backup Redis (via save)
-docker-compose exec redis redis-cli BGSAVE
-```
-
-## 🔍 Monitoramento e Debug
-
-### URLs de Acesso
-
-- **Django Admin**: http://localhost:8000/admin/
-- **Django App**: http://localhost:8000/
-- **Evolution API**: http://localhost:8080/ (requer apikey no header)
-- **Redis Commander**: http://localhost:8082/ (interface web para Redis)
-
-### Health Checks
-
-Todos os serviços possuem health checks configurados:
-
-```bash
-# Verificar status de saúde
-docker-compose ps
-
-# Detalhes do health check
-docker inspect smart-core-assistant | grep -A 10 Health
-```
-
-### Logs Estruturados
-
-```bash
-# Logs de todos os serviços
-docker-compose logs -f
-
-# Logs com timestamp
-docker-compose logs -f -t django-app
-
-# Últimas N linhas
-docker-compose logs --tail=50 django-app
-
-# Logs de múltiplos serviços
-docker-compose logs -f django-app evolution-api
-```
-
-### Monitoramento de Recursos
-
-```bash
-# Uso de recursos por container
-docker stats
-
-# Informações detalhadas
-docker-compose top
-
-# Espaço em disco usado
-docker system df
-```
-
 ## 🚨 Troubleshooting
 
 ### Problemas Comuns
 
 #### 1. Container não inicia
-
-**Sintomas**: Container fica em estado "Exited" ou "Restarting"
-
-**Soluções**:
 ```bash
 # Verificar logs
 docker-compose logs django-app
 
 # Verificar configuração
 docker-compose config
-
-# Verificar recursos disponíveis
-docker system df
-docker stats
 ```
 
 #### 2. Erro de conexão com banco
-
-**Sintomas**: Erro "connection refused" ou "database does not exist"
-
-**Soluções**:
 ```bash
 # Verificar se PostgreSQL está rodando
 docker-compose ps postgres-django
 
 # Verificar logs do PostgreSQL
 docker-compose logs postgres-django
-
-# Testar conexão
-docker-compose exec django-app python -c "import psycopg2; print('OK')"
-
-# Recriar banco se necessário
-docker-compose exec postgres-django createdb -U postgres smart_core_db
 ```
 
 #### 3. Erro de tabela não encontrada (Django)
-
-**Sintomas**: Erro `ProgrammingError: relation "oraculo_treinamentos" does not exist` ou similar
-
-**Soluções**:
 ```bash
 # Verificar migrações pendentes
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py showmigrations
-
-# Criar migrações se necessário
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations
 
 # Aplicar migrações
 docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
 ```
 
 #### 4. Evolution API não conecta
-
-**Sintomas**: Webhook não funciona, API não responde, ou erro "redis disconnected"
-
-**Soluções**:
 ```bash
 # Verificar logs da Evolution API
 docker-compose logs evolution-api
-
-# Verificar se PostgreSQL Evolution está rodando
-docker-compose ps postgres
 
 # Verificar se Redis está rodando
 docker-compose ps redis
 
 # Testar conexão Redis
 docker-compose exec redis redis-cli ping
-
-# Testar webhook
-curl -X POST http://localhost:8000/oraculo/webhook_whatsapp/
-
-# Verificar configuração da Evolution API
-curl -H "apikey: sua-chave-aqui" http://localhost:8080
-
-# Verificar variáveis de ambiente
-docker-compose exec evolution-api env | grep -E "CACHE_REDIS|AUTHENTICATION_API_KEY|DATABASE"
 ```
 
-#### 4. Firebase não inicializa
-
-**Sintomas**: Erro "firebase_key.json not found" ou "Firebase initialization failed"
-
-**Soluções**:
+#### 5. Firebase não inicializa
 ```bash
 # Verificar se arquivo existe
 ls -la src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
-
-# Verificar permissões
-chmod 644 src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
 # Verificar conteúdo do arquivo
 cat src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json | jq .
 ```
 
-#### 5. Problemas de permissão
+#### 6. Erro de decodificação UTF-8 no Webhook WhatsApp
 
-**Sintomas**: Erro "Permission denied" ao acessar arquivos
+**Sintomas**: Erro `UnicodeDecodeError: 'utf-8' codec can't decode byte` nos logs do Django
 
-**Soluções**:
+**Solução**: O sistema possui tratamento automático para múltiplos encodings:
+- UTF-8 (padrão)
+- Latin-1 (fallback)
+- CP1252 (fallback final)
+
 ```bash
-# Corrigir permissões (Linux/Mac)
-sudo chown -R $USER:$USER ./src/smart_core_assistant_painel/app/ui/db
-sudo chown -R $USER:$USER ./src/smart_core_assistant_painel/app/ui/media
+# Verificar se a correção está aplicada
+docker-compose exec django-app grep -n "latin-1\|cp1252" src/smart_core_assistant_painel/app/ui/oraculo/views.py
 
-# Windows - executar PowerShell como administrador
-takeown /f .\src\smart_core_assistant_painel\app\ui\db /r
-```
-
-#### 6. Porta já em uso
-
-**Sintomas**: Erro "port already in use" ou "address already in use"
-
-**Soluções**:
-```bash
-# Verificar processos usando a porta
-netstat -tulpn | grep :8000
-
-# Parar processo específico
-kill -9 <PID>
-
-# Usar portas diferentes no docker-compose.yml
+# Verificar logs do webhook
+docker-compose logs -f django-app | grep webhook
 ```
 
 ### Limpeza Completa
@@ -569,160 +344,18 @@ Para resolver problemas persistentes:
 # Parar e remover tudo
 docker-compose down -v --remove-orphans
 
-# Remover imagens
-docker-compose down --rmi all
-
 # Limpeza geral do Docker
 docker system prune -a
-
-# Remover volumes órfãos
-docker volume prune
 
 # Recriar do zero
 .\docker-manager.ps1 setup -Force
 ```
 
-## 🔒 Segurança
+## 🔒 URLs de Acesso
 
-### Configurações de Segurança Implementadas
-
-1. **Usuário não-root** nos containers
-2. **Health checks** para todos os serviços
-3. **Senhas configuráveis** para todos os serviços
-4. **Rede isolada** para comunicação entre containers
-5. **Volumes com permissões restritas**
-6. **Secrets management** via variáveis de ambiente
-
-### Recomendações de Segurança
-
-#### Produção
-1. **Altere todas as senhas padrão**
-2. **Use HTTPS** com certificados válidos
-3. **Configure firewall** adequadamente
-4. **Monitore logs** regularmente
-5. **Mantenha imagens atualizadas**
-6. **Use secrets** do Docker Swarm ou Kubernetes
-7. **Implemente rate limiting**
-8. **Configure backup automático**
-
-#### Desenvolvimento
-1. **Nunca commite** credenciais no código
-2. **Use .env.local na raiz do projeto** para configurações pessoais
-3. **Mantenha Firebase keys** fora do repositório
-4. **Use HTTPS** mesmo em desenvolvimento
-5. **Monitore dependências** com vulnerabilidades
-
-### Checklist de Segurança
-
-- [ ] Senhas fortes configuradas
-- [ ] Firebase keys protegidas
-- [ ] HTTPS configurado
-- [ ] Firewall configurado
-- [ ] Logs monitorados
-- [ ] Backups automáticos
-- [ ] Dependências atualizadas
-- [ ] Secrets não commitados
-
-## 📊 Performance
-
-### Otimizações Implementadas
-
-1. **Multi-stage builds** para imagens menores
-2. **Cache de dependências** com uv
-3. **Volumes nomeados** para persistência
-4. **Health checks** otimizados
-5. **Resource limits** configuráveis
-6. **Connection pooling** para bancos de dados
-
-### Configurações de Performance
-
-#### PostgreSQL
-```sql
--- Configurações otimizadas no postgresql.conf
-shared_buffers = 256MB
-effective_cache_size = 1GB
-work_mem = 4MB
-maintenance_work_mem = 64MB
-```
-
-#### Redis
-```conf
-# Configurações otimizadas no redis.conf
-maxmemory 512mb
-maxmemory-policy allkeys-lru
-save 900 1
-save 300 10
-save 60 10000
-```
-
-#### Django
-```python
-# Configurações de cache
-CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': 'redis://redis:6379/1',
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'CONNECTION_POOL_KWARGS': {
-                'max_connections': 50,
-                'retry_on_timeout': True,
-            }
-        }
-    }
-}
-```
-
-### Monitoramento de Performance
-
-```bash
-# Uso de recursos
-docker stats --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
-
-# Logs de performance
-docker-compose logs django-app | grep -i "slow\|timeout\|error"
-
-# Análise de queries lentas (PostgreSQL)
-docker-compose exec postgres-django psql -U postgres -d smart_core_db -c "SELECT query, mean_time, calls FROM pg_stat_statements ORDER BY mean_time DESC LIMIT 10;"
-```
-
-## 🔄 Atualizações
-
-### Atualizar Evolution API
-
-```bash
-# Parar serviço
-docker-compose stop evolution-api
-
-# Atualizar imagem
-docker-compose pull evolution-api
-
-# Reiniciar
-docker-compose up -d evolution-api
-```
-
-### Atualizar Aplicação Django
-
-```bash
-# Reconstruir imagem
-docker-compose build django-app
-
-# Reiniciar com nova imagem
-docker-compose up -d django-app
-
-# Executar migrações se necessário
-.\docker-manager.ps1 migrate
-```
-
-### Atualizar Dependências
-
-```bash
-# Atualizar requirements.txt
-uv pip compile requirements.in --output-file requirements.txt
-
-# Reconstruir imagens
-.\docker-manager.ps1 build -Force
-```
+- **Django Admin**: http://localhost:8000/admin/
+- **Django App**: http://localhost:8000/
+- **Evolution API**: http://localhost:8080/ (requer apikey no header)
 
 ## 📞 Suporte
 
@@ -730,9 +363,7 @@ Para problemas ou dúvidas:
 
 1. **Verifique os logs** dos containers
 2. **Consulte este README** para soluções comuns
-3. **Verifique a documentação** da Evolution API
-4. **Teste as conexões** entre serviços
-5. **Use o comando** `docker-manager.ps1 help`
+3. **Use o comando** `docker-manager.ps1 help`
 
 ### Comandos de Diagnóstico
 
@@ -741,14 +372,12 @@ Para problemas ou dúvidas:
 .\docker-manager.ps1 status
 docker-compose config
 docker system info
-docker system df
 
 # Verificar conectividade
 docker-compose exec django-app ping postgres-django
 docker-compose exec django-app ping redis
-docker-compose exec django-app ping postgres
 ```
 
 ---
 
-**Nota**: Esta configuração segue as melhores práticas de Docker e está otimizada para produção e desenvolvimento. O script `docker-manager.ps1` automatiza a maioria das operações e deve ser usado como ponto de entrada principal.
+**Nota**: Esta configuração está otimizada para desenvolvimento e produção. O script `docker-manager.ps1` automatiza a maioria das operações e deve ser usado como ponto de entrada principal.

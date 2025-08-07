@@ -1892,6 +1892,7 @@ def nova_mensagem(data: dict[str, Any]) -> int:
             - event: Tipo do evento (ex: "messages.upsert")
             - data.key.remoteJid: Identificador do remetente
             - data.key.id: ID da mensagem
+            - data.key.fromMe: Indica se a mensagem foi enviada pelo bot (true) ou pelo contato (false)
             - data.pushName: Nome do perfil do WhatsApp do remetente
             - data.message: Objeto da mensagem com tipo específico
             - data.messageType: Tipo da mensagem
@@ -1924,6 +1925,15 @@ def nova_mensagem(data: dict[str, Any]) -> int:
 
         # Extrair pushName (nome do perfil do WhatsApp)
         push_name = data_section.get("pushName", "")
+
+        # Extrair fromMe para determinar o tipo de remetente
+        from_me = key_section.get("fromMe", False)
+        
+        # Determinar o tipo de remetente baseado no campo fromMe
+        if from_me:
+            tipo_remetente = TipoRemetente.BOT
+        else:
+            tipo_remetente = TipoRemetente.CONTATO
 
         # Obter tipo da mensagem da estrutura real da mensagem
         # Priorizar a primeira chave do message sobre messageType
@@ -2049,7 +2059,6 @@ def nova_mensagem(data: dict[str, Any]) -> int:
                 conteudo = f"Mensagem do tipo {tipo_chave} recebida"
                 
         # Processar a mensagem usando a função existente
-        #TODO - Verificar o remetende da mensagem
         mensagem = processar_mensagem_whatsapp(
             numero_telefone=phone,
             conteudo=conteudo,
@@ -2057,7 +2066,7 @@ def nova_mensagem(data: dict[str, Any]) -> int:
             message_id=message_id,
             metadados=metadados,
             nome_perfil_whatsapp=push_name,
-            remetente=TipoRemetente.CONTATO,
+            remetente=tipo_remetente,
         )
 
         return mensagem

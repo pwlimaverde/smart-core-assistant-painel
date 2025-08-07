@@ -21,10 +21,23 @@
 - Comments are mandatory in Portuguese to explain complex logic, important flows, and critical parts.
 - Variable and function names must be in English following snake_case convention for better readability.
 - Class names should follow PascalCase convention.
-- Test files must be placed inside the root `tests/` directory (not inside `src/`).
-- Inside `tests/`, maintain a folder structure that mirrors the source apps and modules.
+## Test Organization and Structure
+
+### Django App Tests
+- Django app-specific tests (models, views, forms, admin, etc.) should be placed inside each app's directory in a `tests/` subdirectory or `tests.py` file.
+- These tests are directly related to Django functionality and should stay close to the app code.
+- Example: `src/smart_core_assistant_painel/app/user_management/tests/test_models.py`
+
+### Module and Business Logic Tests
+- Tests for business logic, services, use cases, and domain modules must be placed in the root `tests/` directory (not inside `src/`).
+- Inside the root `tests/`, maintain a folder structure that exactly mirrors the source modules structure.
 - Test files should follow the pattern `test_*.py` or `*_test.py`.
-- Never place tests directly inside source code directories to ensure clear separation between code and tests.
+- Example: `tests/modules/ai_engine/features/whatsapp_services/test_usecase.py` mirrors `src/smart_core_assistant_painel/modules/ai_engine/features/whatsapp_services/usecase.py`
+
+### General Test Rules
+- Never place business logic tests directly inside source code directories to ensure clear separation.
+- Both Django app tests and module tests must maintain the same hierarchical folder structure as their corresponding source code.
+- All test directories must include `__init__.py` files to ensure proper Python package structure.
 - A minimum coverage of 80% is mandatory. Anything below must be justified and reviewed.
 - Avoid lines longer than 79 characters to facilitate reading and code review.
 - Use type hints consistently throughout the codebase for better code documentation and IDE support.
@@ -55,7 +68,11 @@
 - Use the scripts mapped in pyproject.toml for:
   - Running the server: `dev`, `start`, `server`, `cluster`.
   - Django commands: `migrate`, `makemigrations`, `createsuperuser`, `collectstatic`, `shell`, `startapp`.
-  - Development and test routines: `test` (runs pytest on the tests folder), `lint` (ruff check on src), `format` (ruff format on src), `type-check` (mypy on src).
+  - Development and test routines: 
+    - `test` (runs pytest on the root tests/ folder for module/business logic tests)
+    - `test-apps` (runs pytest on Django app tests within src/)
+    - `test-all` (runs both module tests and Django app tests)
+    - `lint` (ruff check on src), `format` (ruff format on src), `type-check` (mypy on src).
   - Combined routines: `setup`, `dev-setup`.
   - Specific tasks such as `faiss_to_json`.
 - Ensure all commands run as indicated without errors before any merge.
@@ -76,12 +93,15 @@
 ## Quality and review process
 - Every Pull Request must contain formatted code and be free of lint errors.
 - Automated tests should cover new features and bug fixes with minimum 80% coverage.
+- Django app tests must cover models, views, forms, and admin functionality.
+- Module/business logic tests must cover use cases, services, and domain logic.
+- Both test suites (Django apps and modules) should be executed before any commit.
 - Significant changes need updated documentation.
 - Reviewers must verify compliance with these rules before merging.
 - Encourage regular execution of linting and automated formatting to keep consistent quality.
 - Advise constant static code analysis using `ruff`.
 - Be direct, technical, but maintain cordiality and clarity in all interactions.
-- Run the full test suite before any commit to ensure no regressions.
+- Run the full test suite (`test-all`) before any commit to ensure no regressions.
 - Use pre-commit hooks to enforce code quality standards automatically.
 
 ## Security and best practices
@@ -106,7 +126,9 @@
 - Present routines and commands objectively, contextualizing with the scripts configured in `taskipy`.
 - Structure responses in clear sections and use lists and code blocks for better comprehension.
 - Be direct, technical, but maintain cordiality and clarity.
-- Recommend minimum test coverage of 80% with pytest and pytest-cov.
+- Recommend minimum test coverage of 80% with pytest and pytest-cov for both Django app tests and module tests.
+- Guide developers to place Django-specific tests within app directories and business logic tests in the root tests/ folder.
+- Ensure test structure mirrors the source code hierarchy for easy navigation and maintenance.
 - Suggest using mypy for static type analysis, taking into account the ignore_missing_imports configuration.
 - Advise constant static code analysis using `ruff`.
 - Encourage regular execution of linting and automated formatting to keep consistent quality.

@@ -274,6 +274,7 @@ class Treinamentos(models.Model):
         return documentos
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Treinamento"
         verbose_name_plural = "Treinamentos"
 
@@ -506,6 +507,7 @@ class AtendenteHumano(models.Model):
     )
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Atendente Humano"
         verbose_name_plural = "Atendentes Humanos"
         ordering = ["nome"]
@@ -658,6 +660,7 @@ class Contato(models.Model):
     )
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Contato"
         verbose_name_plural = "Contatos"
         ordering = ["-ultima_interacao"]
@@ -839,6 +842,7 @@ class Cliente(models.Model):
     )
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
         ordering = ["nome_fantasia"]
@@ -1211,6 +1215,7 @@ class Atendimento(models.Model):
     )
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Atendimento"
         verbose_name_plural = "Atendimentos"
         ordering = ["-data_inicio"]
@@ -1555,6 +1560,7 @@ class Mensagem(models.Model):
     )
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Mensagem"
         verbose_name_plural = "Mensagens"
         ordering = ["timestamp"]
@@ -1724,6 +1730,7 @@ class FluxoConversa(models.Model):
     data_modificacao: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
+        app_label = "oraculo"
         verbose_name = "Fluxo de Conversa"
         verbose_name_plural = "Fluxos de Conversa"
 

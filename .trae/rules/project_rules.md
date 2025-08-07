@@ -2,7 +2,9 @@
 
 ## Main framework and tools
 - The project is developed in Python using Django.
+- **Development and testing environment is Docker-based.**
 - The server and scripts are executed via commands defined in pyproject.toml (`dev`, `start`, `server`, `cluster`).
+- **For testing, always use `test-docker` command which runs tests in the Docker environment.**
 - Use `ruff format` for automatic code formatting, with autopep8 available as fallback with aggressiveness 3 and a 79-character line limit.
 - Sort imports with `isort` using the "black" profile, maintaining trailing commas and parentheses.
 - Perform linting with `ruff` and automatic formatting via ruff as well.
@@ -63,12 +65,27 @@
     else:
         value = response.attribute
     ```
+- **TYPE ANNOTATIONS IN TESTS**: All test functions and methods MUST have complete type annotations:
+  - Test methods should have `-> None` return type annotation
+  - Helper functions in tests must have parameter and return type annotations
+  - Mock objects and fixtures should be properly typed
+  - Signal handlers in tests must follow the same typing rules as production code
+  - Example:
+    ```python
+    def test_example_function(self) -> None:
+        """Test example with proper typing."""
+        
+    def helper_function(param: str) -> bool:
+        """Helper function with proper typing."""
+        return True
+    ```
 
 ## Commands and tasks via `taskipy`
 - Use the scripts mapped in pyproject.toml for:
   - Running the server: `dev`, `start`, `server`, `cluster`.
   - Django commands: `migrate`, `makemigrations`, `createsuperuser`, `collectstatic`, `shell`, `startapp`.
   - Development and test routines: 
+    - **`test-docker`** (PREFERRED: runs pytest in Docker environment with coverage)
     - `test` (runs pytest on the root tests/ folder for module/business logic tests)
     - `test-apps` (runs pytest on Django app tests within src/)
     - `test-all` (runs both module tests and Django app tests)
@@ -96,12 +113,13 @@
 - Django app tests must cover models, views, forms, and admin functionality.
 - Module/business logic tests must cover use cases, services, and domain logic.
 - Both test suites (Django apps and modules) should be executed before any commit.
+- **Always use `test-docker` for running tests as the project runs in Docker environment.**
 - Significant changes need updated documentation.
 - Reviewers must verify compliance with these rules before merging.
 - Encourage regular execution of linting and automated formatting to keep consistent quality.
 - Advise constant static code analysis using `ruff`.
 - Be direct, technical, but maintain cordiality and clarity in all interactions.
-- Run the full test suite (`test-all`) before any commit to ensure no regressions.
+- Run the full test suite (`test-docker`) before any commit to ensure no regressions.
 - Use pre-commit hooks to enforce code quality standards automatically.
 
 ## Security and best practices
@@ -127,6 +145,7 @@
 - Structure responses in clear sections and use lists and code blocks for better comprehension.
 - Be direct, technical, but maintain cordiality and clarity.
 - Recommend minimum test coverage of 80% with pytest and pytest-cov for both Django app tests and module tests.
+- **Always recommend using `test-docker` command for running tests in the proper Docker environment.**
 - Guide developers to place Django-specific tests within app directories and business logic tests in the root tests/ folder.
 - Ensure test structure mirrors the source code hierarchy for easy navigation and maintenance.
 - Suggest using mypy for static type analysis, taking into account the ignore_missing_imports configuration.

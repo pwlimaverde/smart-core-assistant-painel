@@ -5,6 +5,7 @@ from loguru import logger
 class OraculoConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "oraculo"
+    label = "oraculo"
 
     def ready(self) -> None:
         # Importa signals para registrar os handlers

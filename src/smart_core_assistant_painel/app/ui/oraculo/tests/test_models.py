@@ -6,9 +6,7 @@ from django.utils import timezone
 from ..models import (
     AtendenteHumano,
     Atendimento,
-    Cliente,
     Contato,
-    FluxoConversa,
     Mensagem,
     StatusAtendimento,
     TipoMensagem,
@@ -25,9 +23,7 @@ class TestContato(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999",
-            nome="Cliente Teste",
-            email="cliente@teste.com"
+            telefone="5511999999999", nome="Cliente Teste", email="cliente@teste.com"
         )
 
     def test_contato_creation(self) -> None:
@@ -40,10 +36,7 @@ class TestContato(TestCase):
     def test_contato_telefone_unique(self) -> None:
         """Testa se o telefone é único."""
         with self.assertRaises(Exception):
-            Contato.objects.create(
-                telefone="5511999999999",
-                nome="Outro Cliente"
-            )
+            Contato.objects.create(telefone="5511999999999", nome="Outro Cliente")
 
 
 class TestAtendenteHumano(TestCase):
@@ -55,7 +48,7 @@ class TestAtendenteHumano(TestCase):
             telefone="5511888888888",
             nome="Atendente Teste",
             cargo="Analista",
-            email="atendente@teste.com"
+            email="atendente@teste.com",
         )
 
     def test_atendente_humano_creation(self) -> None:
@@ -78,13 +71,11 @@ class TestAtendimento(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999",
-            nome="Cliente Teste"
+            telefone="5511999999999", nome="Cliente Teste"
         )
-        
+
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato,
-            status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.ATIVO
         )
 
     def test_atendimento_creation(self) -> None:
@@ -99,7 +90,7 @@ class TestAtendimento(TestCase):
         self.atendimento.status = StatusAtendimento.FINALIZADO
         self.atendimento.data_fim = timezone.now()
         self.atendimento.save()
-        
+
         self.assertEqual(self.atendimento.status, StatusAtendimento.FINALIZADO)
         self.assertIsNotNone(self.atendimento.data_fim)
 
@@ -110,13 +101,11 @@ class TestMensagem(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999",
-            nome="Cliente Teste"
+            telefone="5511999999999", nome="Cliente Teste"
         )
-        
+
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato,
-            status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.ATIVO
         )
 
     def test_mensagem_creation(self) -> None:
@@ -126,9 +115,9 @@ class TestMensagem(TestCase):
             tipo=TipoMensagem.TEXTO_FORMATADO,
             remetente=TipoRemetente.CONTATO,
             conteudo="Mensagem de teste",
-            message_id_whatsapp="TEST123"
+            message_id_whatsapp="TEST123",
         )
-        
+
         self.assertEqual(mensagem.atendimento, self.atendimento)
         self.assertEqual(mensagem.tipo, TipoMensagem.TEXTO_FORMATADO)
         self.assertEqual(mensagem.remetente, TipoRemetente.CONTATO)
@@ -142,9 +131,9 @@ class TestMensagem(TestCase):
             atendimento=self.atendimento,
             tipo=TipoMensagem.TEXTO_FORMATADO,
             remetente=TipoRemetente.BOT,
-            conteudo="Resposta do bot"
+            conteudo="Resposta do bot",
         )
-        
+
         self.assertEqual(mensagem.remetente, TipoRemetente.BOT)
         self.assertEqual(mensagem.conteudo, "Resposta do bot")
 
@@ -157,9 +146,9 @@ class TestTreinamentos(TestCase):
         treinamento = Treinamentos.objects.create(
             tag="teste",
             grupo="grupo_teste",
-            _documentos=[{"content": "Documento de teste"}]
+            _documentos=[{"content": "Documento de teste"}],
         )
-        
+
         self.assertEqual(treinamento.tag, "teste")
         self.assertEqual(treinamento.grupo, "grupo_teste")
         self.assertFalse(treinamento.treinamento_finalizado)
@@ -172,9 +161,9 @@ class TestTreinamentos(TestCase):
             tag="teste_finalizado",
             grupo="grupo_teste",
             _documentos=[{"content": "Documento finalizado"}],
-            treinamento_finalizado=True
+            treinamento_finalizado=True,
         )
-        
+
         self.assertTrue(treinamento.treinamento_finalizado)
 
 
@@ -184,20 +173,18 @@ class TestUtilityFunctions(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999",
-            nome="Cliente Teste"
+            telefone="5511999999999", nome="Cliente Teste"
         )
-        
+
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato,
-            status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.ATIVO
         )
 
     def test_buscar_atendimento_ativo(self) -> None:
         """Testa a busca por atendimento ativo."""
         atendimento_encontrado = buscar_atendimento_ativo("5511999999999")
         self.assertEqual(atendimento_encontrado, self.atendimento)
-        
+
         # Testa busca com telefone inexistente
         atendimento_inexistente = buscar_atendimento_ativo("5511000000000")
         self.assertIsNone(atendimento_inexistente)
@@ -206,7 +193,7 @@ class TestUtilityFunctions(TestCase):
         """Testa que atendimentos finalizados não são retornados."""
         self.atendimento.status = StatusAtendimento.FINALIZADO
         self.atendimento.save()
-        
+
         atendimento_encontrado = buscar_atendimento_ativo("5511999999999")
         self.assertIsNone(atendimento_encontrado)
 
@@ -215,11 +202,11 @@ class TestUtilityFunctions(TestCase):
         telefone = "5511777777777"
         conteudo = "Olá, preciso de ajuda"
         nome_perfil = "Novo Cliente"
-        
+
         contato, atendimento = inicializar_atendimento_whatsapp(
             telefone, conteudo, nome_perfil_whatsapp=nome_perfil
         )
-        
+
         self.assertEqual(contato.telefone, telefone)
         self.assertEqual(contato.nome, nome_perfil)
         self.assertEqual(atendimento.contato, contato)
@@ -229,11 +216,9 @@ class TestUtilityFunctions(TestCase):
         """Testa inicialização com contato já existente."""
         telefone = "5511999999999"  # Contato já existe no setUp
         conteudo = "Nova mensagem"
-        
-        contato, atendimento = inicializar_atendimento_whatsapp(
-            telefone, conteudo
-        )
-        
+
+        contato, atendimento = inicializar_atendimento_whatsapp(telefone, conteudo)
+
         # Deve retornar o contato existente
         self.assertEqual(contato, self.contato)
         # Deve criar um novo atendimento
@@ -250,41 +235,39 @@ class TestModelPerformance(TestCase):
         contatos = []
         for i in range(100):
             contato = Contato.objects.create(
-                telefone=f"551199999{i:04d}",
-                nome=f"Cliente {i}"
+                telefone=f"551199999{i:04d}", nome=f"Cliente {i}"
             )
             contatos.append(contato)
-            
+
             Atendimento.objects.create(
                 contato=contato,
-                status=StatusAtendimento.ATIVO if i % 2 == 0 else StatusAtendimento.FINALIZADO
+                status=StatusAtendimento.ATIVO
+                if i % 2 == 0
+                else StatusAtendimento.FINALIZADO,
             )
-        
+
         # Testa a busca
         import time
+
         start_time = time.time()
-        
+
         atendimento = buscar_atendimento_ativo("5511999990000")
-        
+
         end_time = time.time()
         execution_time = end_time - start_time
-        
+
         # Verifica se a busca foi rápida (menos de 1 segundo)
         self.assertLess(execution_time, 1.0)
         self.assertIsNotNone(atendimento)
 
     def test_criacao_mensagens_bulk(self) -> None:
         """Testa a criação em lote de mensagens."""
-        contato = Contato.objects.create(
-            telefone="5511888888888",
-            nome="Cliente Bulk"
-        )
-        
+        contato = Contato.objects.create(telefone="5511888888888", nome="Cliente Bulk")
+
         atendimento = Atendimento.objects.create(
-            contato=contato,
-            status=StatusAtendimento.ATIVO
+            contato=contato, status=StatusAtendimento.ATIVO
         )
-        
+
         # Cria múltiplas mensagens
         mensagens = []
         for i in range(50):
@@ -293,22 +276,23 @@ class TestModelPerformance(TestCase):
                 tipo=TipoMensagem.TEXTO_FORMATADO,
                 remetente=TipoRemetente.CONTATO if i % 2 == 0 else TipoRemetente.BOT,
                 conteudo=f"Mensagem {i}",
-                message_id_whatsapp=f"BULK_{i}"
+                message_id_whatsapp=f"BULK_{i}",
             )
             mensagens.append(mensagem)
-        
+
         # Testa criação em lote
         import time
+
         start_time = time.time()
-        
+
         Mensagem.objects.bulk_create(mensagens)
-        
+
         end_time = time.time()
         execution_time = end_time - start_time
-        
+
         # Verifica se a criação foi rápida
         self.assertLess(execution_time, 2.0)
-        
+
         # Verifica se todas as mensagens foram criadas
         total_mensagens = Mensagem.objects.filter(atendimento=atendimento).count()
         self.assertEqual(total_mensagens, 50)

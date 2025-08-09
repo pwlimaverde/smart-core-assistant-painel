@@ -1,11 +1,12 @@
 from urllib.parse import urlencode, urljoin
+
 import requests
 
 
 class BaseEvolutionAPI:
     def __init__(self):
-        self._BASE_URL = ""
-        self._API_KEY = {"arcane": ""}
+        self._BASE_URL = "http://evolution-api:8080"
+        self._API_KEY = {"5588921729550": "B6D711FCDE4D4FD5936544120E713976"}
 
     def _send_request(self, path, method="GET", body=None, headers={}, params_url={}):
         method.upper()
@@ -28,6 +29,7 @@ class BaseEvolutionAPI:
         return request(url, headers=headers, json=body)
 
     def _mount_url(self, path, params_url):
+        parameters = ""
         if isinstance(params_url, dict):
             parameters = urlencode(params_url)
 

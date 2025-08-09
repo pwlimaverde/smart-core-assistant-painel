@@ -13,7 +13,6 @@ from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
 from rolepermissions.checkers import has_permission
 
-from smart_core_assistant_painel.app.ui.oraculo.wrapper_evolutionapi import SendMessage
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
@@ -449,13 +448,13 @@ def webhook_whatsapp(request):
         try:
             logger.info(f"Recebido webhook para processar: {data}")
             mensagem_id = nova_mensagem(data)
-            SendMessage().send_message(
-                instance=data["instance"],
-                body={
-                    "number": "",
-                    "text": "Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
-                },
-            )
+            # SendMessage().send_message(
+            #     instance=data["instance"],
+            #     body={
+            #         "number": "",
+            #         "text": "Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
+            #     },
+            # )
 
         except Exception as e:
             logger.error(f"Erro ao processar nova mensagem: {e}")

@@ -1440,17 +1440,16 @@ class Atendimento(models.Model):
 
             # Busca histórico de atendimentos anteriores do contato
             historico_atendimentos = []
-            atendimentos_anteriores = Atendimento.objects.filter(
-                contato=self.contato
-            ).exclude(
-                id=self.id
-            ).filter(
-                data_fim__isnull=False
-            ).order_by('-data_fim')
-            
+            atendimentos_anteriores = (
+                Atendimento.objects.filter(contato=self.contato)
+                .exclude(id=self.id)
+                .filter(data_fim__isnull=False)
+                .order_by("-data_fim")
+            )
+
             for atendimento_anterior in atendimentos_anteriores:
                 if atendimento_anterior.assunto:
-                    data_formatada = atendimento_anterior.data_fim.strftime('%d/%m/%Y')
+                    data_formatada = atendimento_anterior.data_fim.strftime("%d/%m/%Y")
                     historico_atendimentos.append(
                         f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
                     )
@@ -1935,10 +1934,10 @@ def nova_mensagem(data: dict[str, Any]) -> int:
 
         # Extrair fromMe para determinar o tipo de remetente
         from_me = key_section.get("fromMe", False)
-        
+
         # Determinar o tipo de remetente baseado no campo fromMe
         if from_me:
-            tipo_remetente = TipoRemetente.BOT
+            tipo_remetente = TipoRemetente.ATENDENTE_HUMANO
         else:
             tipo_remetente = TipoRemetente.CONTATO
 
@@ -2064,7 +2063,7 @@ def nova_mensagem(data: dict[str, Any]) -> int:
             else:
                 # Para outros tipos não tratados especificamente
                 conteudo = f"Mensagem do tipo {tipo_chave} recebida"
-                
+
         # Processar a mensagem usando a função existente
         mensagem = processar_mensagem_whatsapp(
             numero_telefone=phone,

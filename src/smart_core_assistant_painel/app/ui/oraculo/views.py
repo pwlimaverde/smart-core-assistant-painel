@@ -449,13 +449,6 @@ def webhook_whatsapp(request):
         try:
             logger.info(f"Recebido webhook para processar: {data}")
             mensagem_id = nova_mensagem(data)
-            SendMessage().send_message(
-                instance=data["instance"],
-                body={
-                    "number": "558897141275",
-                    "text": "Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
-                },
-            )
 
         except Exception as e:
             logger.error(f"Erro ao processar nova mensagem: {e}")
@@ -496,24 +489,17 @@ def webhook_whatsapp(request):
             direcionamento = "BOT" if is_bot_responder else "HUMANO"
 
             if is_bot_responder:
-                # TODO: Implementar geração de resposta automática do bot
-                # Esta é uma funcionalidade crítica que deve ser implementada
-                # Exemplo de implementação:
-                # try:
-                #     from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
-                #     resposta = FeaturesCompose.gerar_resposta_automatica(mensagem)
-                #     if resposta:
-                #         mensagem.resposta_bot = resposta
-                #         mensagem.respondida = True
-                #         mensagem.save(update_fields=['resposta_bot', 'respondida'])
-                #         logger.info(f"Resposta automática gerada para mensagem {mensagem_id}")
-                # except Exception as e:
-                #     logger.error(f"Erro ao gerar resposta automática: {e}")
-
-                pass
+                SendMessage().send_message(
+                    instance=data["instance"],
+                    body={
+                        "number": "558897141275",
+                        "text": "Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
+                    },
+                )
             else:
-                # Mensagem direcionada para atendente humano
-                pass
+                logger.info(
+                    f"Mensagem direcionada para atendente humano: {mensagem_id}"
+                )
 
         except Exception as e:
             logger.error(

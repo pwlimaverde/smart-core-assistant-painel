@@ -40,7 +40,7 @@ services:
       - smart-core-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]
+    # entrypoint: ["/usr/local/bin/docker-entrypoint.sh"]  # Temporariamente desabilitado
     command: ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "runserver", "0.0.0.0:8000"]
 
   # Django Q Cluster para desenvolvimento
@@ -77,7 +77,7 @@ services:
       - smart-core-network
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    entrypoint: ["/usr/local/bin/docker-entrypoint-qcluster.sh"]
+    # entrypoint: ["/usr/local/bin/docker-entrypoint-qcluster.sh"]  # Temporariamente desabilitado
     command: ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "qcluster"]
 
   # PostgreSQL para Django

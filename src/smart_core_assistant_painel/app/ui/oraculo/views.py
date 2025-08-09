@@ -2,6 +2,7 @@ import json
 import os
 import tempfile
 from typing import TYPE_CHECKING, Any, cast
+from venv import logger
 
 from django.contrib import messages
 from django.db import transaction
@@ -10,11 +11,12 @@ from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
-from loguru import logger
 from rolepermissions.checkers import has_permission
 
+from smart_core_assistant_painel.app.ui.oraculo.wrapper_evolutionapi import SendMessage
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
-    FeaturesCompose, )
+    FeaturesCompose,
+)
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import (
@@ -35,8 +37,7 @@ class TreinamentoService:
     """Serviço para gerenciar operações de treinamento"""
 
     @staticmethod
-    def aplicar_pre_analise_documentos(
-            documentos: list[Document]) -> list[Document]:
+    def aplicar_pre_analise_documentos(documentos: list[Document]) -> list[Document]:
         """Aplica pré-análise de IA ao page_content de uma lista de documentos
 
         Args:
@@ -51,7 +52,8 @@ class TreinamentoService:
             try:
                 # Aplicar pré-análise
                 pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
-                    documento.page_content)
+                    documento.page_content
+                )
                 documento.page_content = pre_analise_content
                 documentos_processados.append(documento)
 
@@ -87,8 +89,7 @@ class TreinamentoService:
             raise ValueError("Conteúdo não pode ser vazio")
 
         try:
-            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(
-                conteudo)
+            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(conteudo)
             data_conteudo = FeaturesCompose.load_document_conteudo(
                 id=str(treinamento_id),
                 conteudo=pre_analise_conteudo,
@@ -174,11 +175,11 @@ def _processar_treinamento(request):
 
             # Processar arquivo se fornecido
             if documento:
-                documento_path = TreinamentoService.processar_arquivo_upload(
-                    documento)
+                documento_path = TreinamentoService.processar_arquivo_upload(documento)
                 if documento_path:
                     docs_arquivo = TreinamentoService.processar_arquivo_documento(
-                        treinamento.id, documento_path, tag, grupo)
+                        treinamento.id, documento_path, tag, grupo
+                    )
                     documents_list.extend(docs_arquivo)
 
             # Processar conteúdo de texto se fornecido
@@ -222,8 +223,7 @@ def _exibir_pre_processamento(request, id):
     try:
         treinamento = Treinamentos.objects.get(id=id)
         conteudo_unificado = treinamento.get_conteudo_unificado()
-        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-            conteudo_unificado)
+        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
 
         return render(
             request,
@@ -284,7 +284,8 @@ def _aceitar_treinamento(id):
             return
 
         documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
-            documentos_lista)
+            documentos_lista
+        )
         # Salva alterações
         treinamento.set_documentos(documentos_melhorados)
         treinamento.treinamento_finalizado = True
@@ -413,15 +414,14 @@ def webhook_whatsapp(request):
             return JsonResponse({"error": "Método não permitido"}, status=405)
 
         if not request.body:
-            return JsonResponse(
-                {"error": "Corpo da requisição vazio"}, status=400)
+            return JsonResponse({"error": "Corpo da requisição vazio"}, status=400)
 
         # Parse do JSON com tratamento robusto de encoding
         try:
             # Tentar diferentes encodings para decodificar o corpo da
             # requisição
             body_str = None
-            for encoding in ['utf-8', 'latin-1', 'cp1252']:
+            for encoding in ["utf-8", "latin-1", "cp1252"]:
                 try:
                     body_str = request.body.decode(encoding)
                     break
@@ -430,9 +430,11 @@ def webhook_whatsapp(request):
 
             if body_str is None:
                 logger.error(
-                    "Não foi possível decodificar o corpo da requisição com nenhum encoding")
+                    "Não foi possível decodificar o corpo da requisição com nenhum encoding"
+                )
                 return JsonResponse(
-                    {"error": "Erro de codificação de caracteres"}, status=400)
+                    {"error": "Erro de codificação de caracteres"}, status=400
+                )
 
             data = json.loads(body_str)
         except json.JSONDecodeError as e:
@@ -441,33 +443,36 @@ def webhook_whatsapp(request):
 
         # Validação dos campos obrigatórios
         if not isinstance(data, dict):
-            return JsonResponse(
-                {"error": "Formato de dados inválido"}, status=400)
+            return JsonResponse({"error": "Formato de dados inválido"}, status=400)
 
         # Processar mensagem usando função nova_mensagem
         try:
             logger.info(f"Recebido webhook para processar: {data}")
             mensagem_id = nova_mensagem(data)
+            SendMessage().send_message(
+                instance=data["instance"],
+                body={
+                    "number": "",
+                    "text": "Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
+                },
+            )
+
         except Exception as e:
             logger.error(f"Erro ao processar nova mensagem: {e}")
-            return JsonResponse(
-                {"error": "Erro ao processar mensagem"}, status=500)
+            return JsonResponse({"error": "Erro ao processar mensagem"}, status=500)
 
         # Validar se a mensagem foi realmente criada
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
         except Mensagem.DoesNotExist:
-            logger.error(
-                f"Mensagem criada (ID: {mensagem_id}) não encontrada no banco")
-            return JsonResponse(
-                {"error": "Mensagem não encontrada"}, status=500)
+            logger.error(f"Mensagem criada (ID: {mensagem_id}) não encontrada no banco")
+            return JsonResponse({"error": "Mensagem não encontrada"}, status=500)
 
         # Processamento especial para mensagens não textuais
         if mensagem.tipo != TipoMensagem.TEXTO_FORMATADO:
             try:
                 conteudo_original = mensagem.conteudo
-                conteudo_convertido = _converter_contexto(
-                    metadata=mensagem.metadados)
+                conteudo_convertido = _converter_contexto(metadata=mensagem.metadados)
 
                 if conteudo_convertido != conteudo_original:
                     mensagem.conteudo = conteudo_convertido
@@ -476,19 +481,18 @@ def webhook_whatsapp(request):
             except Exception as e:
                 # Continua processamento mesmo com erro na conversão
                 logger.error(
-                    f"Erro ao converter contexto da mensagem {mensagem_id}: {e}")
+                    f"Erro ao converter contexto da mensagem {mensagem_id}: {e}"
+                )
         # Analise previa do conteudo da mensagem por agente de IA, detectando
         # intent e extraindo entidades
         try:
             _analisar_conteudo_mensagem(mensagem_id)
         except Exception as e:
-            logger.error(
-                f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
+            logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 
         # Verificação de direcionamento do atendimento
         try:
-            is_bot_responder = _pode_bot_responder_atendimento(
-                mensagem.atendimento)
+            is_bot_responder = _pode_bot_responder_atendimento(mensagem.atendimento)
             direcionamento = "BOT" if is_bot_responder else "HUMANO"
 
             if is_bot_responder:
@@ -513,7 +517,8 @@ def webhook_whatsapp(request):
 
         except Exception as e:
             logger.error(
-                f"Erro ao verificar direcionamento da mensagem {mensagem_id}: {e}")
+                f"Erro ao verificar direcionamento da mensagem {mensagem_id}: {e}"
+            )
             # Continua processamento assumindo direcionamento humano por
             # segurança
             is_bot_responder = False
@@ -569,11 +574,8 @@ def _obter_entidades_metadados_validas() -> set[str]:
         entidades_config = json.loads(valid_entity_types)
 
         # Extrai todas as entidades de todas as categorias
-        if isinstance(
-                entidades_config,
-                dict) and "entity_types" in entidades_config:
-            for categoria, entidades in entidades_config["entity_types"].items(
-            ):
+        if isinstance(entidades_config, dict) and "entity_types" in entidades_config:
+            for _, entidades in entidades_config["entity_types"].items():
                 if isinstance(entidades, dict):
                     entidades_validas.update(entidades.keys())
 
@@ -640,8 +642,7 @@ def _processar_entidades_contato(
                         contato.nome_contato or ""
                     ):
                         nome_limpo = valor.strip()
-                        if nome_limpo and len(
-                                nome_limpo) >= 2:  # Validação básica
+                        if nome_limpo and len(nome_limpo) >= 2:  # Validação básica
                             contato.nome_contato = nome_limpo
                             contato_atualizado = True
 
@@ -659,8 +660,7 @@ def _processar_entidades_contato(
                             tipo_entidade.lower() not in contato.metadados
                             or contato.metadados[tipo_entidade.lower()] != valor_limpo
                         ):
-                            contato.metadados[tipo_entidade.lower()
-                                              ] = valor_limpo
+                            contato.metadados[tipo_entidade.lower()] = valor_limpo
                             metadados_atualizados = True
 
         # Salvar contato se houve alterações
@@ -722,12 +722,15 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         features = FeaturesCompose()
         mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
         atendimento: Atendimento = cast(Atendimento, mensagem.atendimento)
-        exists_atendimento_anterior = Atendimento.objects.filter(
-            contato=atendimento.contato).exclude(
-            id=atendimento.id).exists()
+        exists_atendimento_anterior = (
+            Atendimento.objects.filter(contato=atendimento.contato)
+            .exclude(id=atendimento.id)
+            .exists()
+        )
         # Carrega historico EXCLUINDO a mensagem atual para análise de contexto
         historico_atendimento = atendimento.carregar_historico_mensagens(
-            excluir_mensagem_id=mensagem_id)
+            excluir_mensagem_id=mensagem_id
+        )
         # Se não há atendimentos anteriores, nem mensagens anteriores no
         # histórico do atendimento atual, chama apresentação
         if not exists_atendimento_anterior:
@@ -736,21 +739,18 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
 
         # Análise de intenção e extração de entidades
         resultado_analise = features.analise_previa_mensagem(
-            historico_atendimento=historico_atendimento, context=mensagem.conteudo)
+            historico_atendimento=historico_atendimento, context=mensagem.conteudo
+        )
         mensagem.intent_detectado = resultado_analise.intent_types
         mensagem.entidades_extraidas = resultado_analise.entity_types
 
-        mensagem.save(
-            update_fields=[
-                "intent_detectado",
-                "entidades_extraidas"])
+        mensagem.save(update_fields=["intent_detectado", "entidades_extraidas"])
 
         # Processar entidades para atualizar dados do contato
         _processar_entidades_contato(mensagem, resultado_analise.entity_types)
 
     except Exception as e:
-        logger.error(
-            f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
+        logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
         # Continua processamento mesmo com erro na análise
         # Não interrompe o fluxo para garantir resiliência
         pass
@@ -788,7 +788,6 @@ def _pode_bot_responder_atendimento(atendimento):
         ...     # Bot pode responder automaticamente
         ...     pass
     """
-    from .models import TipoRemetente
 
     try:
         # Verifica se existe alguma mensagem de atendente humano neste

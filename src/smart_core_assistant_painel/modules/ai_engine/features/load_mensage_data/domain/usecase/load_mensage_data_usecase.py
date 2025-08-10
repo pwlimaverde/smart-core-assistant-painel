@@ -10,6 +10,8 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     DataMensageParameters,
 )
+from typing import Any
+
 from smart_core_assistant_painel.modules.ai_engine.utils.types import LMDUsecase
 
 
@@ -65,7 +67,7 @@ class LoadMensageDataUseCase(LMDUsecase):
 
             # Extrair conteúdo da mensagem com base no tipo
             conteudo = ""
-            metadados = {}
+            metadados: dict[str, Any] = {}
 
             # Adicionar timestamp da mensagem nos metadados se disponível
             if "messageTimestamp" in data_section:

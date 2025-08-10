@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 @dataclass
 class MessageData:
@@ -8,5 +8,5 @@ class MessageData:
     conteudo: str
     message_type: str
     message_id: str
-    metadados: Optional[dict]
+    metadados: Optional[dict[str, Any]]
     nome_perfil_whatsapp: Optional[str]

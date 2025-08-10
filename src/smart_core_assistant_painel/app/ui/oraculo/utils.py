@@ -6,8 +6,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from django.contrib import messages
 from django.core.cache import cache
 from django.utils import timezone
-
 from oraculo.wrapper_evolutionapi import SendMessage
+
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
@@ -95,21 +95,21 @@ def send_message_response(phone: str) -> None:
                 f"Erro ao verificar direcionamento da mensagem {mensagem_id}: {e}"
             )
 
-    cache.delete(f"wa_buffer_{phone}")
-    cache.delete(f"wa_timer_{phone}")
+        cache.delete(f"wa_buffer_{phone}")
+        cache.delete(f"wa_timer_{phone}")
 
 
 def sched_message_response(phone: str) -> None:
     if not cache.get(f"wa_timer_{phone}"):
-        print(1)
         scheduler.add_job(
             send_message_response,
             "date",
-            run_date=datetime.datetime.now() + datetime.timedelta(seconds=15),
+            run_date=datetime.datetime.now()
+            + datetime.timedelta(seconds=SERVICEHUB.TIME_CACHE),
             kwargs={"phone": phone},
-            misfire_grace_time=60,
+            misfire_grace_time=SERVICEHUB.TIME_CACHE,
         )
-        cache.set(f"wa_timer_{phone}", True, timeout=60)
+        cache.set(f"wa_timer_{phone}", True, timeout=(SERVICEHUB.TIME_CACHE * 2))
 
 
 def _obter_entidades_metadados_validas() -> set[str]:
@@ -252,8 +252,7 @@ def _processar_entidades_contato(
 
             # Se ainda não há nome do contato, solicitar dados
             if not contato.nome_contato:
-                features = FeaturesCompose()
-                features.solicitacao_info_cliene()
+                FeaturesCompose.solicitacao_info_cliene()
 
     except Exception as e:
         logger.error(f"Erro ao processar entidades do contato: {e}")
@@ -291,7 +290,6 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
     """
 
     try:
-        features = FeaturesCompose()
         mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
         atendimento: Atendimento = cast(Atendimento, mensagem.atendimento)
         exists_atendimento_anterior = (
@@ -307,10 +305,10 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         # histórico do atendimento atual, chama apresentação
         if not exists_atendimento_anterior:
             if not historico_atendimento.get("conteudo_mensagens"):
-                features.mensagem_apresentacao()
+                FeaturesCompose.mensagem_apresentacao()
 
         # Análise de intenção e extração de entidades
-        resultado_analise = features.analise_previa_mensagem(
+        resultado_analise = FeaturesCompose.analise_previa_mensagem(
             historico_atendimento=historico_atendimento, context=mensagem.conteudo
         )
         mensagem.intent_detectado = resultado_analise.intent_types
@@ -511,7 +509,7 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
     ultima_mensagem = messages[-1]
 
     # Concatenar todos os conteúdos das mensagens
-    conteudo_compilado = " ".join(msg.conteudo for msg in messages if msg.conteudo)
+    conteudo_compilado = "\n".join(msg.conteudo for msg in messages if msg.conteudo)
 
     # Combinar todos os metadados (quando chaves repetirem, o último prevalece)
     metadados_compilados: dict[str, Any] = {}

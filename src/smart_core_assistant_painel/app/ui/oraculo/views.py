@@ -16,6 +16,7 @@ from oraculo.utils import sched_message_response
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
+from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import (
     Treinamentos,
@@ -407,16 +408,8 @@ def webhook_whatsapp(request):
 
         # Parse do JSON com tratamento robusto de encoding
         try:
-            # Tentar diferentes encodings para decodificar o corpo da
-            # requisição
-            body_str = None
-            for encoding in ["utf-8", "latin-1", "cp1252"]:
-                try:
-                    body_str = request.body.decode(encoding)
-                    break
-                except UnicodeDecodeError:
-                    continue
-
+            body_str = request.body.decode("utf-8")
+            
             if body_str is None:
                 logger.error(
                     "Não foi possível decodificar o corpo da requisição com nenhum encoding"
@@ -437,11 +430,11 @@ def webhook_whatsapp(request):
         # Processar mensagem usando função nova_mensagem
         try:
             logger.info(f"Recebido webhook para processar: {data}")
-            features = FeaturesCompose()
-            message = features.load_message_data(data)
+            message = FeaturesCompose.load_message_data(data)
             buffer = cache.get(f"wa_buffer_{message.numero_telefone}", [])
             buffer.append(message)
-            cache.set(f"wa_buffer_{message.numero_telefone}", buffer, timeout=120)
+            cache.set(f"wa_buffer_{message.numero_telefone}", buffer, timeout=(SERVICEHUB.TIME_CACHE*2))
+
 
             sched_message_response(message.numero_telefone)
 

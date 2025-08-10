@@ -28,8 +28,12 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.d
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.domain.usecase.load_document_file_usecase import (
     LoadDocumentFileUseCase,
 )
-from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import MessageData
-from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import LoadMensageDataUseCase
+from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
+    MessageData,
+)
+from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import (
+    LoadMensageDataUseCase,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DataMessageError,
     DocumentError,
@@ -205,6 +209,11 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
+    def _converter_contexto(metadados: dict[str, Any]) -> str:
+        # mensagem para resumo do atendimento
+        return ''
+
+    @staticmethod
     def load_message_data(
         data: dict[str, Any],
     ) -> MessageData:
@@ -221,12 +230,15 @@ class FeaturesCompose:
 
         if isinstance(message_data, SuccessReturn):
             result: MessageData = message_data.result
+            # TODO: Tratar dos dados da mensagem caso ela seja de midia, transcrevendo os audio, video, etc. em imagem
+            if result.metadados:
+                conteudo_media: str = FeaturesCompose._converter_contexto(result.metadados)
+                result.conteudo = f"{result.conteudo}\n{conteudo_media}"
             return result
         elif isinstance(message_data, ErrorReturn):
             raise message_data.result
         else:
             raise ValueError("Unexpected return type from usecase")
-
 
     @staticmethod
     def mensagem_apresentacao() -> None:
@@ -242,3 +254,6 @@ class FeaturesCompose:
     def resumo_atendimento() -> None:
         # mensagem para resumo do atendimento
         pass
+
+# Removido singleton global não necessário; use chamadas estáticas diretamente.
+# FEATURE_COMPOSE = FeaturesCompose()

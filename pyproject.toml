@@ -159,11 +159,11 @@ server = "python src/smart_core_assistant_painel/main.py runserver 0.0.0.0:8000"
 cluster = "python src/smart_core_assistant_painel/main.py qcluster"
 
 # Docker commands
-dev-docker = "docker compose up -d"
+
 start-docker = "docker compose up -d"
-server-docker = "docker compose up -d"
-cluster-docker = "docker compose up -d"
-stop-docker = "docker compose down"
+down-docker = "docker compose down"
+pause-docker = "docker compose pause"
+unpause-docker = "docker compose unpause"
 restart-docker = "docker compose down && docker compose up -d --build"
 logs-docker = "docker compose logs -f django-app"
 logs-cluster-docker = "docker compose logs -f django-qcluster"

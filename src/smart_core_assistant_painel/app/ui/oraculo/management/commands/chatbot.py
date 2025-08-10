@@ -5,7 +5,7 @@ Comando Django para gerenciar operações do chatbot
 from typing import Any
 from django.core.management.base import BaseCommand
 
-from smart_core_assistant_painel.app.ui.oraculo.models import (
+from oraculo.models import (
     Atendimento,
     Cliente,
     FluxoConversa,
@@ -93,7 +93,7 @@ class Command(BaseCommand):
             )
             
             # Buscar o objeto mensagem pelo ID retornado
-            from smart_core_assistant_painel.app.ui.oraculo.models import Mensagem
+            from oraculo.models import Mensagem
             mensagem_obj: Mensagem = Mensagem.objects.get(id=mensagem_id)
 
             self.stdout.write(

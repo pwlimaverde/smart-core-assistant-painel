@@ -33,6 +33,7 @@ if os.environ.get('DISABLE_MIGRATIONS', 'False').lower() == 'true':
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'TIMEOUT': 120,
     }
 }
 

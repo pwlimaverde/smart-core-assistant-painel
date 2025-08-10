@@ -28,12 +28,16 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.d
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.domain.usecase.load_document_file_usecase import (
     LoadDocumentFileUseCase,
 )
+from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import MessageData
+from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import LoadMensageDataUseCase
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    DataMessageError,
     DocumentError,
     LlmError,
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
+    DataMensageParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -47,6 +51,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     LDCUsecase,
     LDFData,
     LDFUsecase,
+    LMDUsecase,
 )
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
@@ -198,6 +203,30 @@ class FeaturesCompose:
         else:
             logger.error("Tipo de retorno inesperado da usecase")
             raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def load_message_data(
+        data: dict[str, Any],
+    ) -> MessageData:
+        error = DataMessageError("Error ao processar os dados da mensagem!")
+
+        parameters = DataMensageParameters(
+            data=data,
+            error=error,
+        )
+
+        usecase: LMDUsecase = LoadMensageDataUseCase()
+
+        message_data = usecase(parameters)
+
+        if isinstance(message_data, SuccessReturn):
+            result: MessageData = message_data.result
+            return result
+        elif isinstance(message_data, ErrorReturn):
+            raise message_data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
 
     @staticmethod
     def mensagem_apresentacao() -> None:

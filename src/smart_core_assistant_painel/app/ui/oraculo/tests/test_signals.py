@@ -131,7 +131,7 @@ class TestCustomSignals(TestCase):
         """Configuração inicial."""
         self.mock_handler = Mock()
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.signals.atendimento_iniciado")
+    @patch("oraculo.signals.atendimento_iniciado")
     def test_atendimento_iniciado_signal(self, mock_signal) -> None:
         """Testa sinal customizado de atendimento iniciado."""
         contato = Contato.objects.create(telefone="5511555555555", nome="Cliente Sinal")
@@ -144,7 +144,7 @@ class TestCustomSignals(TestCase):
         # Este teste verifica se a estrutura está preparada para sinais customizados
         self.assertIsNotNone(atendimento)
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.signals.mensagem_recebida")
+    @patch("oraculo.signals.mensagem_recebida")
     def test_mensagem_recebida_signal(self, mock_signal) -> None:
         """Testa sinal customizado de mensagem recebida."""
         contato = Contato.objects.create(
@@ -165,7 +165,7 @@ class TestCustomSignals(TestCase):
         # Verifica se a estrutura está preparada
         self.assertIsNotNone(mensagem)
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.signals.atendimento_finalizado")
+    @patch("oraculo.signals.atendimento_finalizado")
     def test_atendimento_finalizado_signal(self, mock_signal) -> None:
         """Testa sinal customizado de atendimento finalizado."""
         contato = Contato.objects.create(

@@ -426,7 +426,7 @@ class TestUtilsErrorHandling(TestCase):
     def test_buscar_atendimento_com_erro_db(self) -> None:
         """Testa busca de atendimento com erro de banco de dados."""
         with patch(
-            "smart_core_assistant_painel.app.ui.oraculo.models.Atendimento.objects.filter"
+            "oraculo.models.Atendimento.objects.filter"
         ) as mock_filter:
             mock_filter.side_effect = Exception("Erro de banco")
 
@@ -442,7 +442,7 @@ class TestUtilsErrorHandling(TestCase):
     def test_inicializar_atendimento_com_erro(self) -> None:
         """Testa inicialização de atendimento com erro."""
         with patch(
-            "smart_core_assistant_painel.app.ui.oraculo.models.Contato.objects.get_or_create"
+            "oraculo.models.Contato.objects.get_or_create"
         ) as mock_get_or_create:
             mock_get_or_create.side_effect = Exception("Erro ao criar contato")
 

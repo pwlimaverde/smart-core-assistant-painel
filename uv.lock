@@ -1911,11 +1911,11 @@ wheels = [
 
 [[package]]
 name = "py-return-success-or-error"
-version = "0.5.3"
+version = "0.6.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4c/e6/3001c72cd0cc7e8fe5940b6d8e09dfd007a7d2792bd4a7107d2c86c3eb2a/py_return_success_or_error-0.5.3.tar.gz", hash = "sha256:99ae7ae338f07f01d461bacab3acef0d2ee71fe975da5ba9b93f74926c83537f", size = 319028 }
+sdist = { url = "https://files.pythonhosted.org/packages/c6/5e/22697786224c1fe2bb535eed84a5841fdf1c36aa3967454a59d8b208159c/py_return_success_or_error-0.6.1.tar.gz", hash = "sha256:2fb7864222098cbbce9aeb1b0b716a3f683ef018474611560cec09e6b303eac0", size = 319346 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/fd/e3/93dd6cb478d760894f7626342de58786199de27f34870aef980deb9b25fb/py_return_success_or_error-0.5.3-py3-none-any.whl", hash = "sha256:3be8b71619e7c5bb05f6a8dd1a50deb5e3e38551e3a734906535a23b0c3112fb", size = 12739 },
+    { url = "https://files.pythonhosted.org/packages/e7/ae/0d46f0f448d18916696187c4b249434fbe5b58dcebf54e701606dac3a003/py_return_success_or_error-0.6.1-py3-none-any.whl", hash = "sha256:ee8eac9638430ae015ef40bb878146b2e422e4717371393c9964ee9164fcf638", size = 12773 },
 ]
 
 [[package]]
@@ -2350,7 +2350,7 @@ wheels = [
 
 [[package]]
 name = "smart-core-assistant-painel"
-version = "0.7.0"
+version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohappyeyeballs" },
@@ -2526,7 +2526,7 @@ requires-dist = [
     { name = "pandas", specifier = ">=2.3.0" },
     { name = "propcache", specifier = "==0.3.1" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.2.3" },
-    { name = "py-return-success-or-error", specifier = "==0.5.3" },
+    { name = "py-return-success-or-error", specifier = "==0.6.1" },
     { name = "pydantic", specifier = "==2.11.5" },
     { name = "pydantic-core", specifier = "==2.33.2" },
     { name = "pydantic-settings", specifier = "==2.9.1" },

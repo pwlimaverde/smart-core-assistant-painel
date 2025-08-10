@@ -1050,7 +1050,7 @@ class TipoMensagem(models.TextChoices):
     REACAO = "reactMessage", "Reação (emoji) a uma mensagem existente"
 
     @classmethod
-    def obter_por_chave_json(cls, chave_json: Optional[str]):
+    def obter_por_chave_json(cls, chave_json: str):
         """
         Retorna o tipo de mensagem baseado na chave JSON recebida.
 
@@ -1068,9 +1068,6 @@ class TipoMensagem(models.TextChoices):
             >>> TipoMensagem.obter_por_chave_json(None)
             None
         """
-        # Verifica se chave_json é None
-        if chave_json is None:
-            return None
 
         # Mapeamento direto das chaves JSON para os tipos
         mapeamento = {
@@ -1088,7 +1085,8 @@ class TipoMensagem(models.TextChoices):
             "pollMessage": cls.ENQUETE,
             "reactMessage": cls.REACAO,
         }
-        return mapeamento.get(chave_json)
+        return mapeamento.get(chave_json, cls.TEXTO_FORMATADO)
+
 
     @classmethod
     def obter_chave_json(cls, tipo_mensagem):
@@ -1889,207 +1887,14 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional["Atendimento"]:
         return None
 
 
-def nova_mensagem(data: dict[str, Any]) -> int:
-    """
-    Processa os dados brutos recebidos do webhook do WhatsApp e cria uma nova mensagem.
-
-    Args:
-        data (dict): Dados brutos do webhook do WhatsApp contendo:
-            - event: Tipo do evento (ex: "messages.upsert")
-            - data.key.remoteJid: Identificador do remetente
-            - data.key.id: ID da mensagem
-            - data.key.fromMe: Indica se a mensagem foi enviada pelo bot (true) ou pelo contato (false)
-            - data.pushName: Nome do perfil do WhatsApp do remetente
-            - data.message: Objeto da mensagem com tipo específico
-            - data.messageType: Tipo da mensagem
-            - data.messageTimestamp: Timestamp da mensagem
-
-    Returns:
-        int: ID da mensagem criada
-
-    Raises:
-        ValueError: Se campos obrigatórios estiverem ausentes
-        Exception: Se houver erro durante o processamento
-    """
-    try:
-        # Extrair informações básicas com verificações de segurança
-        data_section = data.get("data")
-        if not data_section:
-            raise ValueError("Campo 'data' não encontrado no payload do webhook")
-
-        key_section = data_section.get("key")
-        if not key_section:
-            raise ValueError("Campo 'key' não encontrado nos dados do webhook")
-
-        remote_jid = key_section.get("remoteJid")
-        if not remote_jid:
-            raise ValueError("Campo 'remoteJid' não encontrado na chave do webhook")
-
-        # Extrair telefone do remoteJid
-        phone = remote_jid.split("@")[0]
-        message_id = key_section.get("id")
-
-        # Extrair pushName (nome do perfil do WhatsApp)
-        push_name = data_section.get("pushName", "")
-
-        # Extrair fromMe para determinar o tipo de remetente
-        from_me = key_section.get("fromMe", False)
-
-        # Determinar o tipo de remetente baseado no campo fromMe
-        if from_me:
-            tipo_remetente = TipoRemetente.ATENDENTE_HUMANO
-        else:
-            tipo_remetente = TipoRemetente.CONTATO
-
-        # Obter tipo da mensagem da estrutura real da mensagem
-        # Priorizar a primeira chave do message sobre messageType
-        message_section = data_section.get("message")
-        if not message_section:
-            raise ValueError("Campo 'message' não encontrado nos dados do webhook")
-
-        # Usar primeira chave do message como tipo real da mensagem
-        message_keys = message_section.keys()
-        tipo_chave = list(message_keys)[0] if message_keys else None
-
-        # Se não conseguiu detectar da estrutura, usar messageType como
-        # fallback
-        if not tipo_chave:
-            tipo_chave = data_section.get("messageType")
-
-        # Converter chave JSON para tipo de mensagem interno
-        tipo_mensagem = TipoMensagem.obter_por_chave_json(tipo_chave)
-
-        # Garantir que sempre tenhamos um tipo válido (fallback para texto)
-        if tipo_mensagem is None:
-            tipo_mensagem = TipoMensagem.TEXTO_FORMATADO
-
-        # Extrair conteúdo da mensagem com base no tipo
-        conteudo = ""
-        metadados = {}
-
-        # Adicionar timestamp da mensagem nos metadados se disponível
-        if "messageTimestamp" in data_section:
-            metadados["messageTimestamp"] = data_section["messageTimestamp"]
-
-        if tipo_chave:
-            message_data = message_section.get(tipo_chave, {})
-
-            if tipo_mensagem == TipoMensagem.TEXTO_FORMATADO:
-                # Para mensagens de texto, extrair conteúdo baseado no tipo
-                if tipo_chave == "conversation":
-                    # Para tipo "conversation", o texto está diretamente no
-                    # campo
-                    conteudo = (
-                        message_data
-                        if isinstance(message_data, str)
-                        else str(message_data)
-                    )
-                elif tipo_chave == "extendedTextMessage":
-                    # Para "extendedTextMessage", o texto está em 'text'
-                    conteudo = message_data.get("text", "")
-                else:
-                    # Para outros tipos de texto, tentar 'text' primeiro, senão
-                    # o valor direto
-                    conteudo = message_data.get(
-                        "text", str(message_data) if message_data else ""
-                    )
-            elif tipo_mensagem == TipoMensagem.IMAGEM:
-                # Para imagens, podemos extrair a caption e URL/dados da imagem
-                conteudo = message_data.get("caption", "Imagem recebida")
-                metadados["mimetype"] = message_data.get("mimetype")
-                metadados["url"] = message_data.get("url")
-                # Outros metadados relevantes para processamento posterior
-                metadados["fileLength"] = message_data.get("fileLength")
-            elif tipo_mensagem == TipoMensagem.VIDEO:
-                # Para vídeos, similar às imagens
-                conteudo = message_data.get("caption", "Vídeo recebido")
-                metadados["mimetype"] = message_data.get("mimetype")
-                metadados["url"] = message_data.get("url")
-                metadados["seconds"] = message_data.get("seconds")
-                metadados["fileLength"] = message_data.get("fileLength")
-            elif tipo_mensagem == TipoMensagem.AUDIO:
-                # Para áudios
-                conteudo = "Áudio recebido"
-                metadados["mimetype"] = message_data.get("mimetype")
-                metadados["url"] = message_data.get("url")
-                metadados["seconds"] = message_data.get("seconds")
-                metadados["ptt"] = message_data.get(
-                    "ptt", False
-                )  # Se é mensagem de voz
-            elif tipo_mensagem == TipoMensagem.DOCUMENTO:
-                # Para documentos
-                conteudo = message_data.get("fileName", "Documento recebido")
-                metadados["mimetype"] = message_data.get("mimetype")
-                metadados["url"] = message_data.get("url")
-                metadados["fileLength"] = message_data.get("fileLength")
-            elif tipo_mensagem == TipoMensagem.STICKER:
-                # Para stickers
-                conteudo = "Sticker recebido"
-                metadados["mimetype"] = message_data.get("mimetype")
-                metadados["url"] = message_data.get("url")
-            elif tipo_mensagem == TipoMensagem.LOCALIZACAO:
-                # Para localização
-                conteudo = "Localização recebida"
-                metadados["latitude"] = message_data.get("degreesLatitude")
-                metadados["longitude"] = message_data.get("degreesLongitude")
-                metadados["name"] = message_data.get("name")
-                metadados["address"] = message_data.get("address")
-            elif tipo_mensagem == TipoMensagem.CONTATO:
-                # Para contatos
-                conteudo = "Contato recebido"
-                metadados["displayName"] = message_data.get("displayName")
-                metadados["vcard"] = message_data.get("vcard")
-            elif tipo_mensagem == TipoMensagem.LISTA:
-                # Para mensagens de lista
-                conteudo = message_data.get("title", "Lista recebida")
-                metadados["buttonText"] = message_data.get("buttonText")
-                metadados["description"] = message_data.get("description")
-                metadados["listType"] = message_data.get("listType")
-            elif tipo_mensagem == TipoMensagem.BOTOES:
-                # Para mensagens com botões
-                conteudo = message_data.get("contentText", "Botões recebidos")
-                metadados["headerType"] = message_data.get("headerType")
-                metadados["footerText"] = message_data.get("footerText")
-            elif tipo_mensagem == TipoMensagem.ENQUETE:
-                # Para enquetes
-                conteudo = message_data.get("name", "Enquete recebida")
-                metadados["options"] = message_data.get("options")
-                metadados["selectableCount"] = message_data.get("selectableCount")
-            elif tipo_mensagem == TipoMensagem.REACAO:
-                # Para reações
-                conteudo = "Reação recebida"
-                metadados["emoji"] = message_data.get("text")
-                metadados["key"] = message_data.get("key")
-            else:
-                # Para outros tipos não tratados especificamente
-                conteudo = f"Mensagem do tipo {tipo_chave} recebida"
-
-        # Processar a mensagem usando a função existente
-        mensagem = processar_mensagem_whatsapp(
-            numero_telefone=phone,
-            conteudo=conteudo,
-            tipo_mensagem=tipo_mensagem,
-            message_id=message_id,
-            metadados=metadados,
-            nome_perfil_whatsapp=push_name,
-            remetente=tipo_remetente,
-        )
-
-        return mensagem
-
-    except Exception as e:
-        logger.error(f"Erro ao processar nova mensagem WhatsApp: {e}")
-        raise
-
-
 def processar_mensagem_whatsapp(
     numero_telefone: str,
     conteudo: str,
-    tipo_mensagem: "TipoMensagem" = TipoMensagem.TEXTO_FORMATADO,
-    message_id: Optional[str] = None,
+    message_type: str,
+    message_id: str,
     metadados: Optional[dict[str, Any]] = None,
     nome_perfil_whatsapp: Optional[str] = None,
-    remetente: Optional["TipoRemetente"] = None,
+    from_me: bool = False,
 ) -> int:
     """
     Processa uma mensagem recebida do WhatsApp.
@@ -2110,34 +1915,17 @@ def processar_mensagem_whatsapp(
         Exception: Se houver erro durante o processamento
     """
     try:
-        # Determinar o tipo de remetente se não foi especificado
-        if remetente is None:
-            # Verificar se o número pertence a um atendente humano
-            try:
-                atendente = AtendenteHumano.objects.filter(
-                    telefone=numero_telefone
-                ).first()
-                if atendente:
-                    remetente = TipoRemetente.ATENDENTE_HUMANO
-                    logger.info(
-                        f"Número {numero_telefone} identificado como atendente: {
-                            atendente.nome
-                        }"
-                    )
-                else:
-                    remetente = TipoRemetente.CONTATO
-            except Exception as e:
-                logger.warning(
-                    f"Erro ao verificar se número é de atendente: {e}. Assumindo CONTATO."
-                )
-                remetente = TipoRemetente.CONTATO
+        if from_me:
+            remetente = TipoRemetente.ATENDENTE_HUMANO
+        else:
+            remetente = TipoRemetente.CONTATO
 
         # Busca atendimento ativo ou inicializa novo
         atendimento = buscar_atendimento_ativo(numero_telefone)
 
         if not atendimento:
             # Se não existe atendimento ativo, inicializa um novo
-            contato, atendimento = inicializar_atendimento_whatsapp(
+            _, atendimento = inicializar_atendimento_whatsapp(
                 numero_telefone,
                 conteudo,
                 metadata_contato=metadados,
@@ -2152,7 +1940,7 @@ def processar_mensagem_whatsapp(
 
             if mensagem_existente:
                 return mensagem_existente.id
-
+        tipo_mensagem = TipoMensagem.obter_por_chave_json(message_type)
         # Cria a mensagem
         mensagem = Mensagem.objects.create(
             atendimento=atendimento,

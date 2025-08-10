@@ -8,12 +8,17 @@ from pathlib import Path
 
 def pytest_configure() -> None:
     """Configura o Django para os testes."""
-    # Adiciona o diretório da aplicação Django ao PYTHONPATH
-    project_root = Path(__file__).parent.parent
-    django_app_path = project_root / "src" / "smart_core_assistant_painel" / "app" / "ui"
-    
-    if str(django_app_path) not in sys.path:
-        sys.path.insert(0, str(django_app_path))
-    
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+    # Garante que a raiz do projeto e o diretório src estejam no sys.path
+    repo_root = Path(__file__).resolve().parents[1]
+    src_dir = repo_root / "src"
+    ui_dir = src_dir / "smart_core_assistant_painel" / "app" / "ui"
+    for p in (str(repo_root), str(src_dir), str(ui_dir)):
+        if p not in sys.path:
+            sys.path.insert(0, p)
+
+    # Força o DJANGO_SETTINGS_MODULE para o caminho absoluto do settings
+    os.environ["DJANGO_SETTINGS_MODULE"] = (
+        "smart_core_assistant_painel.app.ui.core.settings"
+    )
+
     django.setup()

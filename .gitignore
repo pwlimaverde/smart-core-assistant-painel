@@ -30,6 +30,8 @@ share/python-wheels/
 *.egg
 MANIFEST
 .vscode
+.trae
+.mypy_cache_temp
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

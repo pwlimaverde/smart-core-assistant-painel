@@ -1,7 +1,7 @@
 from rolepermissions.roles import AbstractUserRole
 
 
-class Gerente(AbstractUserRole):  # type: ignore[misc]
+class Gerente(AbstractUserRole):  # [misc]
     available_permissions = {
         "treinar_ia": True,
     }

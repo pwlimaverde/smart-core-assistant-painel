@@ -1,12 +1,9 @@
-from typing import Any, List, cast, Optional
-from loguru import logger
+from typing import Any, List, Optional, cast
 
-from django.contrib import messages
 from django.core.cache import cache
 from django.utils import timezone
+from loguru import logger
 
-
-from .wrapper_evolutionapi import SendMessage
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
@@ -23,7 +20,7 @@ from .models import (
     processar_mensagem_whatsapp,
 )
 from .signals import mensagem_bufferizada
-
+from .wrapper_evolutionapi import SendMessage
 
 # -------------------------------------------------------------
 # Funções utilitárias de processamento de mensagens (WhatsApp)
@@ -32,25 +29,33 @@ from .signals import mensagem_bufferizada
 
 def send_message_response(phone: str) -> None:
     cache_key = f"wa_buffer_{phone}"
-    
-    logger.debug(f"[CACHE DEBUG] Iniciando processamento para {phone}: chave={cache_key}")
-    logger.debug(f"[CACHE DEBUG] Verificando se chave existe no cache...")
-    
+
+    logger.debug(
+        f"[CACHE DEBUG] Iniciando processamento para {phone}: chave={cache_key}"
+    )
+    logger.debug("[CACHE DEBUG] Verificando se chave existe no cache...")
+
     # Verificar se a chave existe no cache
     cache_exists = cache.has_key(cache_key)
     logger.debug(f"[CACHE DEBUG] Chave {cache_key} existe no cache: {cache_exists}")
-    
+
     message_data_list: List[MessageData] = cache.get(cache_key, [])
-    logger.debug(f"[CACHE DEBUG] Conteúdo recuperado do cache: {len(message_data_list) if message_data_list else 0} mensagens")
+    logger.debug(
+        f"[CACHE DEBUG] Conteúdo recuperado do cache: {len(message_data_list) if message_data_list else 0} mensagens"
+    )
     logger.debug(f"[CACHE DEBUG] Tipo do conteúdo: {type(message_data_list)}")
-    
+
     if not message_data_list:
-        logger.error(f"[CACHE ERROR] Buffer vazio para {phone} - chave_existe={cache_exists}, conteudo={message_data_list}")
-        logger.error(f"[CACHE ERROR] Possível problema: cache expirou ou foi limpo prematuramente")
+        logger.error(
+            f"[CACHE ERROR] Buffer vazio para {phone} - chave_existe={cache_exists}, conteudo={message_data_list}"
+        )
+        logger.error(
+            "[CACHE ERROR] Possível problema: cache expirou ou foi limpo prematuramente"
+        )
         return
 
     logger.info(f"Processando {len(message_data_list)} mensagem(ns) para {phone}")
-    
+
     try:
         message_data = _compile_message_data_list(message_data_list)
         logger.debug(f"[DEBUG] Dados compilados: {message_data}")
@@ -103,7 +108,7 @@ def send_message_response(phone: str) -> None:
 
         cache.delete(f"wa_buffer_{phone}")
         cache.delete(f"wa_timer_{phone}")
-        
+
     except Exception as e:
         logger.error(f"Erro geral ao processar mensagens para {phone}: {e}")
         # Limpar cache mesmo em caso de erro para evitar reprocessamento
@@ -123,20 +128,26 @@ def sched_message_response(phone: str) -> None:
     """
     timer_key = f"wa_timer_{phone}"
     buffer_key = f"wa_buffer_{phone}"
-    
+
     # Verificar estado atual do cache
     current_buffer = cache.get(buffer_key, [])
     timer_exists = cache.get(timer_key)
-    
-    logger.debug(f"[SCHED DEBUG] Agendando para {phone}: buffer={len(current_buffer) if current_buffer else 0} msgs, timer_exists={bool(timer_exists)}")
-    logger.debug(f"[SCHED DEBUG] TIME_CACHE configurado: {SERVICEHUB.TIME_CACHE} segundos")
-    
+
+    logger.debug(
+        f"[SCHED DEBUG] Agendando para {phone}: buffer={len(current_buffer) if current_buffer else 0} msgs, timer_exists={bool(timer_exists)}"
+    )
+    logger.debug(
+        f"[SCHED DEBUG] TIME_CACHE configurado: {SERVICEHUB.TIME_CACHE} segundos"
+    )
+
     # Evita múltiplos agendamentos em janelas curtas usando um flag no cache
     if not timer_exists:
         # Define janela de proteção um pouco maior que o tempo de cache
         timeout_value = SERVICEHUB.TIME_CACHE * 2
         cache.set(timer_key, True, timeout=timeout_value)
-        logger.info(f"[SCHED] Agendando processamento para {phone} em {SERVICEHUB.TIME_CACHE}s (timer por {timeout_value}s)")
+        logger.info(
+            f"[SCHED] Agendando processamento para {phone} em {SERVICEHUB.TIME_CACHE}s (timer por {timeout_value}s)"
+        )
         # Emite signal para que o handler crie a Schedule no cluster
         mensagem_bufferizada.send(sender="oraculo", phone=phone)
     else:
@@ -279,7 +290,7 @@ def _processar_entidades_contato(
             contato.ultima_interacao = timezone.now()
             update_fields.append("ultima_interacao")
 
-            contato.save(update_fields=update_fields)  # type: ignore[no-untyped-call]
+            contato.save(update_fields=update_fields)  # [no-untyped-call]
 
             # Se ainda não há nome do contato, solicitar dados
             if not contato.nome_contato:
@@ -416,26 +427,30 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
     """
     if not messages:
         raise ValueError("Lista de mensagens não pode estar vazia")
-    
+
     if not isinstance(messages, list):
         raise ValueError("Parâmetro 'messages' deve ser uma lista")
-    
+
     # Validar se todas as mensagens são válidas
     for i, msg in enumerate(messages):
         if not isinstance(msg, MessageData):
             raise ValueError(f"Item {i} não é uma instância válida de MessageData")
-        if not hasattr(msg, 'numero_telefone') or not msg.numero_telefone:
+        if not hasattr(msg, "numero_telefone") or not msg.numero_telefone:
             raise ValueError(f"Mensagem {i} não possui número de telefone válido")
-    
+
     logger.debug(f"Compilando {len(messages)} mensagens em uma única MessageData")
 
     # Usar última mensagem como base
     ultima_mensagem = messages[-1]
 
     # Concatenar todos os conteúdos das mensagens (filtrar conteúdos vazios)
-    conteudos_validos = [msg.conteudo.strip() for msg in messages if msg.conteudo and msg.conteudo.strip()]
+    conteudos_validos = [
+        msg.conteudo.strip()
+        for msg in messages
+        if msg.conteudo and msg.conteudo.strip()
+    ]
     conteudo_compilado = "\n".join(conteudos_validos)
-    
+
     if not conteudo_compilado:
         logger.warning("Nenhum conteúdo válido encontrado nas mensagens")
 

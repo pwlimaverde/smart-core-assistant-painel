@@ -37,7 +37,7 @@ class BaseEvolutionAPI:
             "DELETE": requests.delete,
         }.get(method)
 
-        return request(url, headers=headers, json=body)  # type: ignore
+        return request(url, headers=headers, json=body)  #
 
     def _mount_url(self, path: str, params_url: Dict[str, Any]) -> str:
         parameters = ""

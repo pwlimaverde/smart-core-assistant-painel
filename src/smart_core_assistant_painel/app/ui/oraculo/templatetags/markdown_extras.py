@@ -1,5 +1,6 @@
-import markdown  # type: ignore[import-untyped]
 from typing import Any
+
+import markdown  # [import-untyped]
 from django import template
 from django.utils.safestring import SafeString, mark_safe
 

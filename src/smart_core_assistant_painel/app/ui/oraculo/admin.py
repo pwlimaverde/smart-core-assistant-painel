@@ -19,7 +19,7 @@ from .models import (
 
 
 @admin.register(Treinamentos)
-class TreinamentosAdmin(admin.ModelAdmin):  # type: ignore
+class TreinamentosAdmin(admin.ModelAdmin):  #
     # Campos a serem exibidos na lista
     list_display = [
         "id",
@@ -70,7 +70,7 @@ class TreinamentosAdmin(admin.ModelAdmin):  # type: ignore
 
 
 @admin.register(AtendenteHumano)
-class AtendenteHumanoAdmin(admin.ModelAdmin):  # type: ignore
+class AtendenteHumanoAdmin(admin.ModelAdmin):  #
     # Campos a serem exibidos na lista
     list_display = [
         "id",
@@ -187,7 +187,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):  # type: ignore
 
 
 @admin.register(Contato)
-class ContatoAdmin(admin.ModelAdmin):  # type: ignore
+class ContatoAdmin(admin.ModelAdmin):  #
     list_display = [
         "telefone",
         "nome_contato",
@@ -227,7 +227,7 @@ class ContatoAdmin(admin.ModelAdmin):  # type: ignore
 
 
 @admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):  # type: ignore
+class ClienteAdmin(admin.ModelAdmin):  #
     list_display = [
         "nome_fantasia",
         "razao_social",
@@ -410,7 +410,7 @@ class ClienteAdmin(admin.ModelAdmin):  # type: ignore
         return super().get_queryset(request).prefetch_related("contatos")
 
 
-class MensagemInline(admin.TabularInline):  # type: ignore
+class MensagemInline(admin.TabularInline):  #
     model = Mensagem
     extra = 0
     readonly_fields = [
@@ -455,7 +455,7 @@ class MensagemInline(admin.TabularInline):  # type: ignore
 
 
 @admin.register(Atendimento)
-class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
+class AtendimentoAdmin(admin.ModelAdmin):  #
     list_display = [
         "id",
         "contato_telefone",
@@ -502,14 +502,14 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
     @admin.display(description="Telefone", ordering="contato__telefone")
     def contato_telefone(self, obj: Atendimento) -> "Any":
         try:
-            return obj.contato.telefone  # type: ignore
+            return obj.contato.telefone  #
         except AttributeError:
             return "-"
 
     @admin.display(description="Atendente", ordering="atendente_humano__nome")
     def atendente_humano_nome(self, obj: Atendimento) -> "Any":
         try:
-            return obj.atendente_humano.nome if obj.atendente_humano else "-"  # type: ignore
+            return obj.atendente_humano.nome if obj.atendente_humano else "-"  #
         except AttributeError:
             return "-"
 
@@ -524,7 +524,7 @@ class AtendimentoAdmin(admin.ModelAdmin):  # type: ignore
 
 
 @admin.register(Mensagem)
-class MensagemAdmin(admin.ModelAdmin):  # type: ignore
+class MensagemAdmin(admin.ModelAdmin):  #
     list_display = [
         "id",
         "atendimento_id",
@@ -570,7 +570,7 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
     @admin.display(description="Telefone", ordering="atendimento__contato__telefone")
     def contato_telefone(self: "MensagemAdmin", obj: Mensagem) -> "Any":
         try:
-            return obj.atendimento.contato.telefone  # type: ignore
+            return obj.atendimento.contato.telefone  #
         except AttributeError:
             return "-"
 
@@ -605,7 +605,7 @@ class MensagemAdmin(admin.ModelAdmin):  # type: ignore
 
 
 @admin.register(FluxoConversa)
-class FluxoConversaAdmin(admin.ModelAdmin):  # type: ignore
+class FluxoConversaAdmin(admin.ModelAdmin):  #
     list_display = ["nome", "ativo", "data_criacao", "data_modificacao"]
     list_filter = ["ativo", "data_criacao"]
     search_fields = ["nome", "descricao"]

@@ -1,13 +1,12 @@
-import datetime
-from typing import Any, List, cast
-from venv import logger
+from typing import Any, List, cast, Optional
+from loguru import logger
 
-from apscheduler.schedulers.background import BackgroundScheduler
 from django.contrib import messages
 from django.core.cache import cache
 from django.utils import timezone
-from oraculo.wrapper_evolutionapi import SendMessage
 
+
+from .wrapper_evolutionapi import SendMessage
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
@@ -20,20 +19,41 @@ from .models import (
     Atendimento,
     Contato,
     Mensagem,
-    TipoMensagem,
     TipoRemetente,
     processar_mensagem_whatsapp,
 )
+from .signals import mensagem_bufferizada
 
-scheduler = BackgroundScheduler()
-scheduler.start()
+
+# -------------------------------------------------------------
+# Funções utilitárias de processamento de mensagens (WhatsApp)
+# -------------------------------------------------------------
 
 
 def send_message_response(phone: str) -> None:
-    message_data_list: List[MessageData] = cache.get(f"wa_buffer_{phone}", [])
+    cache_key = f"wa_buffer_{phone}"
+    
+    logger.debug(f"[CACHE DEBUG] Iniciando processamento para {phone}: chave={cache_key}")
+    logger.debug(f"[CACHE DEBUG] Verificando se chave existe no cache...")
+    
+    # Verificar se a chave existe no cache
+    cache_exists = cache.has_key(cache_key)
+    logger.debug(f"[CACHE DEBUG] Chave {cache_key} existe no cache: {cache_exists}")
+    
+    message_data_list: List[MessageData] = cache.get(cache_key, [])
+    logger.debug(f"[CACHE DEBUG] Conteúdo recuperado do cache: {len(message_data_list) if message_data_list else 0} mensagens")
+    logger.debug(f"[CACHE DEBUG] Tipo do conteúdo: {type(message_data_list)}")
+    
+    if not message_data_list:
+        logger.error(f"[CACHE ERROR] Buffer vazio para {phone} - chave_existe={cache_exists}, conteudo={message_data_list}")
+        logger.error(f"[CACHE ERROR] Possível problema: cache expirou ou foi limpo prematuramente")
+        return
 
-    if messages:
+    logger.info(f"Processando {len(message_data_list)} mensagem(ns) para {phone}")
+    
+    try:
         message_data = _compile_message_data_list(message_data_list)
+        logger.debug(f"[DEBUG] Dados compilados: {message_data}")
 
         mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=message_data.numero_telefone,
@@ -50,6 +70,7 @@ def send_message_response(phone: str) -> None:
             mensagem = Mensagem.objects.get(id=mensagem_id)
         except Mensagem.DoesNotExist:
             logger.error(f"Mensagem criada (ID: {mensagem_id}) não encontrada no banco")
+            return
 
         # Analise previa do conteudo da mensagem por agente de IA, detectando
         # intent e extraindo entidades
@@ -60,7 +81,8 @@ def send_message_response(phone: str) -> None:
 
         # Verificação de direcionamento do atendimento
         try:
-            is_bot_responder = _pode_bot_responder_atendimento(mensagem.atendimento)
+            atendimento_obj: Atendimento = cast(Atendimento, mensagem.atendimento)
+            is_bot_responder = _pode_bot_responder_atendimento(atendimento_obj)
             if is_bot_responder:
                 SendMessage().send_message(
                     instance="5588921729550",
@@ -81,19 +103,44 @@ def send_message_response(phone: str) -> None:
 
         cache.delete(f"wa_buffer_{phone}")
         cache.delete(f"wa_timer_{phone}")
+        
+    except Exception as e:
+        logger.error(f"Erro geral ao processar mensagens para {phone}: {e}")
+        # Limpar cache mesmo em caso de erro para evitar reprocessamento
+        cache.delete(f"wa_buffer_{phone}")
+        cache.delete(f"wa_timer_{phone}")
 
 
 def sched_message_response(phone: str) -> None:
-    if not cache.get(f"wa_timer_{phone}"):
-        scheduler.add_job(
-            send_message_response,
-            "date",
-            run_date=datetime.datetime.now()
-            + datetime.timedelta(seconds=SERVICEHUB.TIME_CACHE),
-            kwargs={"phone": phone},
-            misfire_grace_time=SERVICEHUB.TIME_CACHE,
-        )
-        cache.set(f"wa_timer_{phone}", True, timeout=(SERVICEHUB.TIME_CACHE * 2))
+    """
+    Agenda o processamento da resposta via signal para execução no cluster.
+
+    Esta função apenas emite um signal indicando que há mensagens
+    bufferizadas para um determinado telefone. O agendamento real ocorre
+    no receiver do signal, que cria uma Schedule (Django Q) do tipo ONCE
+    para execução futura no cluster, respeitando um tempo de debounce
+    configurado por SERVICEHUB.TIME_CACHE.
+    """
+    timer_key = f"wa_timer_{phone}"
+    buffer_key = f"wa_buffer_{phone}"
+    
+    # Verificar estado atual do cache
+    current_buffer = cache.get(buffer_key, [])
+    timer_exists = cache.get(timer_key)
+    
+    logger.debug(f"[SCHED DEBUG] Agendando para {phone}: buffer={len(current_buffer) if current_buffer else 0} msgs, timer_exists={bool(timer_exists)}")
+    logger.debug(f"[SCHED DEBUG] TIME_CACHE configurado: {SERVICEHUB.TIME_CACHE} segundos")
+    
+    # Evita múltiplos agendamentos em janelas curtas usando um flag no cache
+    if not timer_exists:
+        # Define janela de proteção um pouco maior que o tempo de cache
+        timeout_value = SERVICEHUB.TIME_CACHE * 2
+        cache.set(timer_key, True, timeout=timeout_value)
+        logger.info(f"[SCHED] Agendando processamento para {phone} em {SERVICEHUB.TIME_CACHE}s (timer por {timeout_value}s)")
+        # Emite signal para que o handler crie a Schedule no cluster
+        mensagem_bufferizada.send(sender="oraculo", phone=phone)
+    else:
+        logger.debug(f"[SCHED] Agendamento já existe para {phone}, ignorando")
 
 
 def _obter_entidades_metadados_validas() -> set[str]:
@@ -232,7 +279,7 @@ def _processar_entidades_contato(
             contato.ultima_interacao = timezone.now()
             update_fields.append("ultima_interacao")
 
-            contato.save(update_fields=update_fields)
+            contato.save(update_fields=update_fields)  # type: ignore[no-untyped-call]
 
             # Se ainda não há nome do contato, solicitar dados
             if not contato.nome_contato:
@@ -310,7 +357,7 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         pass
 
 
-def _pode_bot_responder_atendimento(atendimento):
+def _pode_bot_responder_atendimento(atendimento: Optional["Atendimento"]) -> bool:
     """
     Verifica se o bot pode responder automaticamente em um atendimento específico.
 
@@ -319,46 +366,35 @@ def _pode_bot_responder_atendimento(atendimento):
     a experiência do usuário não seja comprometida por respostas conflitantes.
 
     Args:
-        atendimento (Atendimento): Instância do atendimento a ser verificado.
-            Deve conter as relações 'mensagens' e 'atendente_humano'.
+        atendimento (Atendimento | None): Instância do atendimento a ser
+            verificado. Deve conter as relações 'mensagens' e
+            'atendente_humano'.
 
     Returns:
         bool: True se o bot pode responder automaticamente, False caso contrário.
             Retorna False também em caso de erro durante a verificação.
-
-    Raises:
-        Exception: Capturada internamente e logada. Função retorna False
-            em caso de erro para garantir segurança operacional.
-
-    Notes:
-        - A verificação inclui tanto mensagens quanto associação direta de atendente
-        - Em caso de erro, assume-se comportamento conservador (False)
-        - Logs de erro são gerados para facilitar troubleshooting
-
-    Examples:
-        >>> atendimento = Atendimento.objects.get(id=123)
-        >>> pode_responder = _pode_bot_responder_atendimento(atendimento)
-        >>> if pode_responder:
-        ...     # Bot pode responder automaticamente
-        ...     pass
     """
+
+    if atendimento is None:
+        return False
 
     try:
         # Verifica se existe alguma mensagem de atendente humano neste
         # atendimento ou se o atendimento tem um atendente humano associado
-        mensagens_atendente = (
-            atendimento.mensagens.filter(
+        mensagens_manager = getattr(atendimento, "mensagens", None)
+        has_human_messages = False
+        if mensagens_manager is not None:
+            mm_any = cast(Any, mensagens_manager)
+            has_human_messages = mm_any.filter(
                 remetente=TipoRemetente.ATENDENTE_HUMANO
             ).exists()
-            or atendimento.atendente_humano is not None
-        )
 
-        return not mensagens_atendente
+        has_human_attendant = getattr(atendimento, "atendente_humano", None) is not None
+
+        return not (has_human_messages or has_human_attendant)
     except Exception as e:
         logger.error(f"Erro ao verificar se bot pode responder: {e}")
         return False
-
-
 
 
 def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
@@ -376,21 +412,37 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
         MessageData: Objeto MessageData compilado
 
     Raises:
-        ValueError: Se a lista estiver vazia
+        ValueError: Se a lista estiver vazia ou contiver dados inválidos
     """
     if not messages:
         raise ValueError("Lista de mensagens não pode estar vazia")
+    
+    if not isinstance(messages, list):
+        raise ValueError("Parâmetro 'messages' deve ser uma lista")
+    
+    # Validar se todas as mensagens são válidas
+    for i, msg in enumerate(messages):
+        if not isinstance(msg, MessageData):
+            raise ValueError(f"Item {i} não é uma instância válida de MessageData")
+        if not hasattr(msg, 'numero_telefone') or not msg.numero_telefone:
+            raise ValueError(f"Mensagem {i} não possui número de telefone válido")
+    
+    logger.debug(f"Compilando {len(messages)} mensagens em uma única MessageData")
 
     # Usar última mensagem como base
     ultima_mensagem = messages[-1]
 
-    # Concatenar todos os conteúdos das mensagens
-    conteudo_compilado = "\n".join(msg.conteudo for msg in messages if msg.conteudo)
+    # Concatenar todos os conteúdos das mensagens (filtrar conteúdos vazios)
+    conteudos_validos = [msg.conteudo.strip() for msg in messages if msg.conteudo and msg.conteudo.strip()]
+    conteudo_compilado = "\n".join(conteudos_validos)
+    
+    if not conteudo_compilado:
+        logger.warning("Nenhum conteúdo válido encontrado nas mensagens")
 
     # Combinar todos os metadados (quando chaves repetirem, o último prevalece)
     metadados_compilados: dict[str, Any] = {}
     for msg in messages:
-        if msg.metadados:
+        if msg.metadados and isinstance(msg.metadados, dict):
             metadados_compilados.update(msg.metadados)
 
     # Criar nova MessageData com conteúdo e metadados compilados

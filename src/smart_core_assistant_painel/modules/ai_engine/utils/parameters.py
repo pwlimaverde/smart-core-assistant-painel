@@ -20,6 +20,7 @@ class DataMensageParameters(ParametersReturnResult):
     def __str__(self) -> str:
         return self.__repr__()
 
+
 @dataclass
 class MessageParameters(ParametersReturnResult):
     session: str

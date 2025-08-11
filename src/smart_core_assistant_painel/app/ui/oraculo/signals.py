@@ -1,13 +1,22 @@
 from typing import Any
+from datetime import timedelta
 
 from django.db.models.signals import post_save, pre_delete
-from django.dispatch import receiver
+from django.dispatch import receiver, Signal
+from django.utils import timezone
 from django_q.tasks import async_task
+from django_q.models import Schedule
 from loguru import logger
 
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
+from smart_core_assistant_painel.modules.services.features.service_hub import (
+    SERVICEHUB,
+)
 
 from .models import Treinamentos
+
+
+# Signal customizado para notificar sobre mensagens bufferizadas
+mensagem_bufferizada = Signal()
 
 
 @receiver(post_save, sender=Treinamentos)
@@ -16,7 +25,8 @@ def signals_treinamento_ia(
 ) -> None:
     """
     Signal executado após salvar um treinamento.
-    Executa o treinamento da IA de forma assíncrona se o treinamento foi finalizado.
+    Executa o treinamento da IA de forma assíncrona se o treinamento foi
+    finalizado.
     """
     try:
         if instance.treinamento_finalizado:
@@ -28,6 +38,94 @@ def signals_treinamento_ia(
         logger.error(
             f"Erro ao processar signal de treinamento para instância {instance.id}: {e}"
         )
+
+
+@receiver(mensagem_bufferizada)
+def signal_agendar_processamento_mensagens(
+    sender: Any, phone: str, **kwargs: Any
+) -> None:
+    """
+    Signal receiver para agendar processamento de mensagens no cluster.
+
+    Cria uma Schedule do Django Q do tipo ONCE para execução futura da função
+    send_message_response, respeitando o tempo de debounce configurado.
+
+    Args:
+        sender: Remetente do signal (padrão "oraculo")
+        phone: Número do telefone para processamento
+        **kwargs: Argumentos adicionais do signal
+    """
+    try:
+        schedule_name = f"process_msg_{phone}"
+        current_time = timezone.now()
+        delay_seconds = SERVICEHUB.TIME_CACHE
+        next_run = current_time + timedelta(seconds=delay_seconds)
+        
+        logger.debug(f"[SIGNAL] Recebido signal para {phone} de {sender}")
+        logger.debug(f"[SIGNAL] Tempo atual: {current_time}, delay: {delay_seconds}s, execução: {next_run}")
+
+        # Remove agendamentos pendentes para o mesmo telefone
+        # para evitar duplicação
+        removed_count = __limpar_schedules_telefone(phone)
+        if removed_count > 0:
+            logger.debug(f"[SIGNAL] Removidos {removed_count} agendamentos anteriores para {phone}")
+
+        # Cria nova Schedule para execução futura
+        schedule = Schedule.objects.create(
+            name=schedule_name,
+            func="oraculo.utils.send_message_response",
+            args=phone,  # Passa diretamente o telefone como string
+            schedule_type=Schedule.ONCE,
+            next_run=next_run,
+            cluster=None,  # Permite execução em qualquer cluster
+        )
+
+        logger.info(
+            f"[SIGNAL] ✅ Agendado processamento para {phone} às {next_run} "
+            f"(Schedule ID: {schedule.id}, delay: {delay_seconds}s)"
+        )
+        
+        # Verificar se a Schedule foi criada corretamente
+        try:
+            created_schedule = Schedule.objects.get(id=schedule.id)
+            logger.debug(f"[SIGNAL] Verificação: Schedule {created_schedule.id} criada com sucesso")
+        except Schedule.DoesNotExist:
+            logger.error(f"[SIGNAL] ❌ Schedule {schedule.id} não encontrada após criação!")
+
+    except Exception as e:
+        logger.error(f"[SIGNAL] ❌ Erro ao agendar processamento para {phone}: {e}", exc_info=True)
+
+
+def __limpar_schedules_telefone(phone: str) -> int:
+    """
+    Remove schedules pendentes para um telefone específico.
+
+    Args:
+        phone: Número do telefone
+        
+    Returns:
+        int: Número de schedules removidos
+    """
+    try:
+        schedule_name = f"process_msg_{phone}"
+
+        # Remove schedules pendentes (ainda não executadas)
+        schedules_removidos = Schedule.objects.filter(
+            name=schedule_name, next_run__gt=timezone.now()
+        ).delete()
+        
+        removed_count = schedules_removidos[0] if schedules_removidos else 0
+        
+        if removed_count > 0:
+            logger.debug(
+                f"[SIGNAL] Removidos {removed_count} schedules pendentes para {phone}"
+            )
+            
+        return removed_count
+
+    except Exception as e:
+        logger.warning(f"[SIGNAL] Erro ao limpar schedules para {phone}: {e}")
+        return 0
 
 
 def __task_treinar_ia(instance_id: int) -> None:
@@ -70,21 +168,19 @@ def signal_remover_treinamento_ia(
     """
     try:
         if instance.treinamento_finalizado:
-            # Executa a remoção de forma síncrona para garantir que seja concluída
-            # antes da deleção do objeto
+            # Executa a remoção de forma síncrona para garantir que seja
+            # concluída antes da deleção do objeto
             __task_remover_treinamento_ia(instance.id)
 
     except Exception as e:
         logger.error(
-            f"Erro ao processar remoção de treinamento para instância {instance.id}: {
-                e
-            }"
+            "Erro ao processar remoção de treinamento para instância "
+            f"{instance.id}: {e}"
         )
         # Interrompe a deleção levantando uma exceção
         raise Exception(
-            f"Falha ao remover treinamento {
-                instance.id
-            } do banco vetorial. Deleção interrompida: {e}"
+            "Falha ao remover treinamento {id} do banco vetorial. "
+            "Deleção interrompida: {err}".format(id=instance.id, err=e)
         )
 
 

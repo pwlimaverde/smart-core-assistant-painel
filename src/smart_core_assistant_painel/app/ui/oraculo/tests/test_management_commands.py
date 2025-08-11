@@ -224,7 +224,9 @@ class TestManagementCommandsIntegration(TestCase):
         """Testa o tratamento de erros do comando."""
         # Testa com argumentos inválidos
         try:
-            call_command("chatbot", "--invalid-option", stdout=self.out, stderr=self.err)
+            call_command(
+                "chatbot", "--invalid-option", stdout=self.out, stderr=self.err
+            )
         except Exception:
             # Qualquer exceção é aceitável neste contexto
             pass

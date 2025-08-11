@@ -211,86 +211,86 @@ class FeaturesCompose:
     @staticmethod
     def _converter_contexto(metadados: dict[str, Any]) -> str:
         """
-    Converte metadados de mensagens multimídia para texto formatado legível.
+        Converte metadados de mensagens multimídia para texto formatado legível.
 
-    Esta função processa os metadados de mensagens não textuais (imagens,
-    áudios, documentos, vídeos, stickers, etc.) e os converte em uma
-    representação textual que pode ser compreendida e processada pelo
-    sistema de IA para geração de respostas contextuais apropriadas.
+        Esta função processa os metadados de mensagens não textuais (imagens,
+        áudios, documentos, vídeos, stickers, etc.) e os converte em uma
+        representação textual que pode ser compreendida e processada pelo
+        sistema de IA para geração de respostas contextuais apropriadas.
 
-    Args:
-        metadata (dict): Dicionário contendo os metadados da mensagem.
-            Estrutura típica inclui:
-            - 'type': Tipo da mídia (image, audio, document, etc.)
-            - 'mime_type'/'mimetype': Tipo MIME do arquivo
-            - 'size'/'fileLength': Tamanho do arquivo em bytes
-            - 'url': URL para download do arquivo
-            - 'fileName': Nome original do arquivo
-            - Campos específicos por tipo (duration, dimensions, etc.)
+        Args:
+            metadata (dict): Dicionário contendo os metadados da mensagem.
+                Estrutura típica inclui:
+                - 'type': Tipo da mídia (image, audio, document, etc.)
+                - 'mime_type'/'mimetype': Tipo MIME do arquivo
+                - 'size'/'fileLength': Tamanho do arquivo em bytes
+                - 'url': URL para download do arquivo
+                - 'fileName': Nome original do arquivo
+                - Campos específicos por tipo (duration, dimensions, etc.)
 
-    Returns:
-        str: Texto formatado representando o contexto da mensagem.
-            Exemplos de retorno futuro:
-            - "Imagem JPEG de 2.1MB (1920x1080)"
-            - "Áudio MP3 de 45 segundos"
-            - "Documento PDF: 'Relatório_Mensal.pdf' (856KB)"
-            - "Vídeo MP4 de 2min30s (1280x720)"
+        Returns:
+            str: Texto formatado representando o contexto da mensagem.
+                Exemplos de retorno futuro:
+                - "Imagem JPEG de 2.1MB (1920x1080)"
+                - "Áudio MP3 de 45 segundos"
+                - "Documento PDF: 'Relatório_Mensal.pdf' (856KB)"
+                - "Vídeo MP4 de 2min30s (1280x720)"
 
-    Raises:
-        Exception: Repassada para o chamador em caso de erro na conversão.
-            Logs de erro são gerados automaticamente para debugging.
+        Raises:
+            Exception: Repassada para o chamador em caso de erro na conversão.
+                Logs de erro são gerados automaticamente para debugging.
 
-    Implementation Status:
-        - ATUAL: Retorna placeholder 'contexto' para todos os tipos
-        - PLANEJADO: Conversão específica por tipo de mídia
-        - FUTURO: Integração com análise de conteúdo por IA
+        Implementation Status:
+            - ATUAL: Retorna placeholder 'contexto' para todos os tipos
+            - PLANEJADO: Conversão específica por tipo de mídia
+            - FUTURO: Integração com análise de conteúdo por IA
 
-    Processing Logic (Futuro):
-        1. Identificar tipo de mídia pelos metadados
-        2. Extrair informações relevantes (tamanho, formato, duração)
-        3. Formatar texto descritivo apropriado
-        4. Adicionar contexto específico quando possível
+        Processing Logic (Futuro):
+            1. Identificar tipo de mídia pelos metadados
+            2. Extrair informações relevantes (tamanho, formato, duração)
+            3. Formatar texto descritivo apropriado
+            4. Adicionar contexto específico quando possível
 
-    Notes:
-        - Função crítica para suporte completo a mensagens multimídia
-        - Permite que o bot compreenda e responda a qualquer tipo de mensagem
-        - Essencial para experiência de usuário completa no WhatsApp
-        - Base para futuras funcionalidades de análise de conteúdo
+        Notes:
+            - Função crítica para suporte completo a mensagens multimídia
+            - Permite que o bot compreenda e responda a qualquer tipo de mensagem
+            - Essencial para experiência de usuário completa no WhatsApp
+            - Base para futuras funcionalidades de análise de conteúdo
 
-    Examples:
-        >>> # Imagem
-        >>> metadata = {
-        ...     "type": "image",
-        ...     "mimetype": "image/jpeg",
-        ...     "fileLength": 2048000,
-        ...     "url": "https://example.com/image.jpg"
-        ... }
-        >>> _converter_contexto(metadata)
-        'contexto'  # Atual
-        # 'Imagem JPEG de 2MB'  # Implementação futura
+        Examples:
+            >>> # Imagem
+            >>> metadata = {
+            ...     "type": "image",
+            ...     "mimetype": "image/jpeg",
+            ...     "fileLength": 2048000,
+            ...     "url": "https://example.com/image.jpg"
+            ... }
+            >>> _converter_contexto(metadata)
+            'contexto'  # Atual
+            # 'Imagem JPEG de 2MB'  # Implementação futura
 
-        >>> # Áudio
-        >>> metadata = {
-        ...     "type": "audio",
-        ...     "mimetype": "audio/ogg",
-        ...     "seconds": 45,
-        ...     "ptt": True
-        ... }
-        >>> _converter_contexto(metadata)
-        'contexto'  # Atual
-        # 'Mensagem de voz de 45 segundos'  # Implementação futura
+            >>> # Áudio
+            >>> metadata = {
+            ...     "type": "audio",
+            ...     "mimetype": "audio/ogg",
+            ...     "seconds": 45,
+            ...     "ptt": True
+            ... }
+            >>> _converter_contexto(metadata)
+            'contexto'  # Atual
+            # 'Mensagem de voz de 45 segundos'  # Implementação futura
 
-        >>> # Documento
-        >>> metadata = {
-        ...     "type": "document",
-        ...     "fileName": "Contrato_2025.pdf",
-        ...     "mimetype": "application/pdf",
-        ...     "fileLength": 856000
-        ... }
-        >>> _converter_contexto(metadata)
-        'contexto'  # Atual
-        # 'Documento PDF: Contrato_2025.pdf (856KB)'  # Implementação futura
-    """
+            >>> # Documento
+            >>> metadata = {
+            ...     "type": "document",
+            ...     "fileName": "Contrato_2025.pdf",
+            ...     "mimetype": "application/pdf",
+            ...     "fileLength": 856000
+            ... }
+            >>> _converter_contexto(metadata)
+            'contexto'  # Atual
+            # 'Documento PDF: Contrato_2025.pdf (856KB)'  # Implementação futura
+        """
         try:
             # TODO: Implementar lógica específica de conversão por tipo de mídia
             #
@@ -337,8 +337,12 @@ class FeaturesCompose:
             result: MessageData = message_data.result
             # TODO: Tratar dos dados da mensagem caso ela seja de midia, transcrevendo os audio, video, etc. em imagem
             if result.metadados:
-                conteudo_media: str = FeaturesCompose._converter_contexto(result.metadados)
-                result.conteudo = f"{result.conteudo}\n{conteudo_media}"
+                conteudo_media: str = FeaturesCompose._converter_contexto(
+                    result.metadados
+                )
+                # Só adiciona o contexto se não for o placeholder padrão
+                if conteudo_media and conteudo_media != "contexto":
+                    result.conteudo = f"{result.conteudo}\n{conteudo_media}"
             return result
         elif isinstance(message_data, ErrorReturn):
             raise message_data.result

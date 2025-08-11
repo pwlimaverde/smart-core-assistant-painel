@@ -74,7 +74,9 @@ class AtendimentoForm(ModelForm):
 
         # Se status é TRANSFERIDO, deve ter atendente humano
         if status == StatusAtendimento.TRANSFERIDO and not atendente_humano:
-            raise ValidationError("Atendimento transferido requer um atendente designado.")
+            raise ValidationError(
+                "Atendimento transferido requer um atendente designado."
+            )
 
         # Se tem atendente humano, deve estar ativo
         if atendente_humano and not atendente_humano.ativo:
@@ -186,7 +188,10 @@ class TestAtendenteHumanoForm(TestCase):
     def setUp(self) -> None:
         """Configuração inicial."""
         self.atendente_existente = AtendenteHumano.objects.create(
-            nome="Atendente Existente", cargo="Analista", email="existente@teste.com", ativo=True
+            nome="Atendente Existente",
+            cargo="Analista",
+            email="existente@teste.com",
+            ativo=True,
         )
 
     def test_form_valido(self) -> None:
@@ -318,7 +323,9 @@ class TestMensagemForm(TestCase):
 
     def setUp(self) -> None:
         """Configuração inicial."""
-        contato = Contato.objects.create(telefone="11999999999", nome_contato="Cliente Teste")
+        contato = Contato.objects.create(
+            telefone="11999999999", nome_contato="Cliente Teste"
+        )
 
         self.atendimento = Atendimento.objects.create(
             contato=contato, status=StatusAtendimento.EM_ANDAMENTO

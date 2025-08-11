@@ -1087,7 +1087,6 @@ class TipoMensagem(models.TextChoices):
         }
         return mapeamento.get(chave_json, cls.TEXTO_FORMATADO)
 
-
     @classmethod
     def obter_chave_json(cls, tipo_mensagem):
         """

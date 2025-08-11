@@ -425,9 +425,7 @@ class TestUtilsErrorHandling(TestCase):
 
     def test_buscar_atendimento_com_erro_db(self) -> None:
         """Testa busca de atendimento com erro de banco de dados."""
-        with patch(
-            "oraculo.models.Atendimento.objects.filter"
-        ) as mock_filter:
+        with patch("oraculo.models.Atendimento.objects.filter") as mock_filter:
             mock_filter.side_effect = Exception("Erro de banco")
 
             # A função deve tratar o erro graciosamente

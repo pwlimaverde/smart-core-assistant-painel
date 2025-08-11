@@ -1,7 +1,8 @@
 import json
 import os
 import tempfile
-from venv import logger
+from typing import Any
+from loguru import logger
 
 from django.contrib import messages
 from django.core.cache import cache
@@ -12,7 +13,8 @@ from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
 from rolepermissions.checkers import has_permission
 
-from oraculo.utils import sched_message_response
+
+from .utils import sched_message_response
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
@@ -287,7 +289,7 @@ def _aceitar_treinamento(id):
 
 
 @csrf_exempt
-def webhook_whatsapp(request):
+def webhook_whatsapp(request: Any) -> JsonResponse:
     """
     Webhook robusto para recebimento e processamento de mensagens do WhatsApp.
 
@@ -408,8 +410,17 @@ def webhook_whatsapp(request):
 
         # Parse do JSON com tratamento robusto de encoding
         try:
-            body_str = request.body.decode("utf-8")
-            
+            # Tenta decodificar com UTF-8 primeiro, depois com outros encodings
+            try:
+                body_str = request.body.decode("utf-8")
+            except UnicodeDecodeError:
+                try:
+                    body_str = request.body.decode("latin-1")
+                    logger.warning("Decodificação UTF-8 falhou, usando latin-1")
+                except UnicodeDecodeError:
+                    body_str = request.body.decode("utf-8", errors="ignore")
+                    logger.warning("Decodificação com errors='ignore' aplicada")
+
             if body_str is None:
                 logger.error(
                     "Não foi possível decodificar o corpo da requisição com nenhum encoding"
@@ -431,10 +442,25 @@ def webhook_whatsapp(request):
         try:
             logger.info(f"Recebido webhook para processar: {data}")
             message = FeaturesCompose.load_message_data(data)
-            buffer = cache.get(f"wa_buffer_{message.numero_telefone}", [])
+            
+            buffer_key = f"wa_buffer_{message.numero_telefone}"
+            buffer = cache.get(buffer_key, [])
+            buffer_size_before = len(buffer)
+            
             buffer.append(message)
-            cache.set(f"wa_buffer_{message.numero_telefone}", buffer, timeout=(SERVICEHUB.TIME_CACHE*2))
-
+            # Timeout deve ser maior que o delay do agendamento para garantir
+            # que as mensagens estejam disponíveis quando a tarefa executar
+            timeout_value = SERVICEHUB.TIME_CACHE * 3
+            
+            logger.info(f"[WEBHOOK] Adicionando mensagem ao buffer para {message.numero_telefone}")
+            logger.debug(f"[WEBHOOK] Buffer antes: {buffer_size_before} msgs, depois: {len(buffer)} msgs")
+            logger.debug(f"[WEBHOOK] Timeout do cache: {timeout_value}s")
+            
+            cache.set(buffer_key, buffer, timeout=timeout_value)
+            
+            # Verificar se foi salvo corretamente
+            verification_buffer = cache.get(buffer_key, [])
+            logger.debug(f"[WEBHOOK] Verificação pós-cache: {len(verification_buffer)} msgs no buffer")
 
             sched_message_response(message.numero_telefone)
 

@@ -11,7 +11,6 @@ from ..models import (
     Contato,
     Mensagem,
     StatusAtendimento,
-    TipoMensagem,
     TipoRemetente,
 )
 from ..views import nova_mensagem
@@ -292,7 +291,8 @@ class TestNovaMensagem(TestCase):
         mensagem = Mensagem.objects.filter(message_id_whatsapp="wamid.aud123").first()
 
         self.assertIsNotNone(mensagem)
-        self.assertEqual(mensagem.conteudo, "[Áudio recebido]")
+        if mensagem is not None:
+            self.assertEqual(mensagem.conteudo, "[Áudio recebido]")
 
     @patch("smart_core_assistant_painel.modules.whatsapp.enviar_mensagem_whatsapp")
     def test_nova_mensagem_tipo_documento(self, mock_whatsapp: Mock) -> None:
@@ -310,7 +310,8 @@ class TestNovaMensagem(TestCase):
         mensagem = Mensagem.objects.filter(message_id_whatsapp="wamid.doc123").first()
 
         self.assertIsNotNone(mensagem)
-        self.assertEqual(mensagem.conteudo, "Documento: arquivo.pdf")
+        if mensagem is not None:
+            self.assertEqual(mensagem.conteudo, "Documento: arquivo.pdf")
 
     def test_nova_mensagem_duplicada(self) -> None:
         """Testa o tratamento de mensagem duplicada."""

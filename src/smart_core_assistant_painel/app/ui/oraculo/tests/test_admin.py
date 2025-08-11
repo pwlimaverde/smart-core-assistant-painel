@@ -48,7 +48,12 @@ class TestContatoAdmin(TestCase):
 
     def test_list_display(self) -> None:
         """Testa os campos exibidos na lista."""
-        expected_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp", "data_cadastro"]
+        expected_fields = [
+            "telefone",
+            "nome_contato",
+            "nome_perfil_whatsapp",
+            "data_cadastro",
+        ]
 
         for field in expected_fields:
             self.assertIn(field, self.admin.list_display)
@@ -300,8 +305,8 @@ class TestTreinamentosAdmin(TestCase):
     def test_get_documentos_preview_method(self) -> None:
         """Testa se o método get_documentos_preview está funcionando corretamente."""
         # Verifica se o método existe
-        self.assertTrue(hasattr(self.admin, 'get_documentos_preview'))
-        
+        self.assertTrue(hasattr(self.admin, "get_documentos_preview"))
+
         preview = self.admin.get_documentos_preview(self.treinamento)
         self.assertIsInstance(preview, str)
         # O método retorna o conteúdo real dos documentos
@@ -322,12 +327,10 @@ class TestTreinamentosAdmin(TestCase):
         preview_multiplo = self.admin.get_documentos_preview(treinamento_multiplo)
         self.assertIn("Doc 1", preview_multiplo)
         self.assertIn("content", preview_multiplo)
-        
+
         # Testa com objeto vazio
         treinamento_vazio = Treinamentos.objects.create(
-            tag="teste_vazio",
-            grupo="grupo_teste",
-            _documentos=None
+            tag="teste_vazio", grupo="grupo_teste", _documentos=None
         )
         result_vazio = self.admin.get_documentos_preview(treinamento_vazio)
         self.assertEqual(result_vazio, "Documento vazio")

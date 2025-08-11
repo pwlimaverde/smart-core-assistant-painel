@@ -5,7 +5,7 @@ Comando Django para gerenciar operações do chatbot
 from typing import Any
 from django.core.management.base import BaseCommand
 
-from oraculo.models import (
+from ...models import (
     Atendimento,
     Cliente,
     FluxoConversa,
@@ -69,9 +69,10 @@ class Command(BaseCommand):
                     f"Cliente inicializado: {cliente.telefone} - {cliente.nome_contato or 'Sem nome'}"
                 )
             )
+            status_display = getattr(atendimento, "get_status_display", lambda: atendimento.status)()
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Atendimento criado: #{atendimento.id} - Status: {atendimento.get_status_display()}"  # type: ignore[attr-defined]
+                    f"Atendimento criado: #{atendimento.id} - Status: {status_display}"
                 )
             )
 
@@ -88,12 +89,17 @@ class Command(BaseCommand):
             return
 
         try:
+            # Usar argumentos obrigatórios com valores padrão
             mensagem_id = processar_mensagem_whatsapp(
-                numero_telefone=telefone, conteudo=mensagem
+                numero_telefone=telefone,
+                conteudo=mensagem,
+                message_type="text",  # Tipo padrão para texto
+                message_id=f"chatbot_cmd_{telefone}_{mensagem[:10]}"  # ID único
             )
-            
+
             # Buscar o objeto mensagem pelo ID retornado
-            from oraculo.models import Mensagem
+            from ...models import Mensagem
+
             mensagem_obj: Mensagem = Mensagem.objects.get(id=mensagem_id)
 
             self.stdout.write(
@@ -101,8 +107,10 @@ class Command(BaseCommand):
                     f"Mensagem processada: {mensagem_obj.conteudo[:50]}..."
                 )
             )
+            att = getattr(mensagem_obj, "atendimento", None)
+            att_id = getattr(att, "id", None)
             self.stdout.write(
-                self.style.SUCCESS(f"Atendimento: #{mensagem_obj.atendimento.id}")  # type: ignore[attr-defined]
+                self.style.SUCCESS(f"Atendimento: #{att_id}")
             )
 
         except Exception as e:
@@ -152,10 +160,9 @@ class Command(BaseCommand):
         ).order_by("-total_atendimentos")[:5]
 
         for cliente in top_clientes:
+            total = getattr(cliente, "total_atendimentos", None)
             self.stdout.write(
-                f"{cliente.telefone} ({cliente.nome_fantasia or 'Sem nome'}): {
-                    cliente.total_atendimentos  # type: ignore[attr-defined]
-                } atendimentos"
+                f"{cliente.telefone} ({cliente.nome_fantasia or 'Sem nome'}): {total} atendimentos"
             )
 
     def limpar_dados(self) -> None:

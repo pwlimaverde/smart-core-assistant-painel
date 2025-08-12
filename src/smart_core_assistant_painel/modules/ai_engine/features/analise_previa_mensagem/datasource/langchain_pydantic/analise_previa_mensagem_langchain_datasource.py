@@ -4,9 +4,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
-    AnalisePreviaMensagemLangchain, )
+    AnalisePreviaMensagemLangchain,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
-    create_dynamic_pydantic_model, )
+    create_dynamic_pydantic_model,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
@@ -31,7 +33,8 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             # Escapar chaves JSON no prompt system para evitar conflito com
             # variáveis do template
             prompt_system_escaped = parameters.llm_parameters.prompt_system.replace(
-                "{", "{{").replace("}", "}}")
+                "{", "{{"
+            ).replace("}", "}}")
 
             messages = ChatPromptTemplate.from_messages(
                 [
@@ -63,11 +66,9 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             intent_data = getattr(response, "intent", [])
             entities_data = getattr(response, "entities", [])
 
-            intent_dicts = [{str(item.type): item.value}
-                            for item in intent_data]
+            intent_dicts = [{str(item.type): item.value} for item in intent_data]
 
-            entity_dicts = [{str(item.type): item.value}
-                            for item in entities_data]
+            entity_dicts = [{str(item.type): item.value} for item in entities_data]
 
             # Criar instância de AnalisePreviaMensagem
             resultado = AnalisePreviaMensagemLangchain(
@@ -98,8 +99,7 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             "historico_atendimentos", []
         )
 
-        historico_parts = [
-            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
+        historico_parts = ["REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
 
         # Atendimentos anteriores - para contexto histórico
         if atendimentos_anteriores:

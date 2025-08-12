@@ -58,20 +58,20 @@ class FaissVetorStorage(VetorStorage):
         Carrega o banco existente ou cria um novo se não existir.
         """
         if self.__faiss_db_exists(self.__db_path):
-            logger.info("Carregando banco vetorial FAISS existente")
+            
             try:
                 vectordb = FAISS.load_local(
                     self.__db_path,
                     self.__embeddings,
                     allow_dangerous_deserialization=True,
                 )
-                logger.info("Banco vetorial FAISS carregado com sucesso")
+
                 return vectordb
             except Exception as e:
                 logger.error(f"Erro ao carregar banco FAISS existente: {e}")
                 return self.__criar_banco_vazio()
         else:
-            logger.info("Criando novo banco vetorial FAISS vazio")
+
             return self.__criar_banco_vazio()
 
     def __criar_banco_vazio(self) -> FAISS:
@@ -98,7 +98,7 @@ class FaissVetorStorage(VetorStorage):
             self.remove_by_metadata("temp_id", "dummy_init")
 
             # Retorna o banco limpo
-            logger.info(f"Banco vetorial FAISS vazio criado em {self.__db_path}")
+
             return self.__vectordb
 
         except Exception as e:
@@ -112,17 +112,15 @@ class FaissVetorStorage(VetorStorage):
         """
         try:
             if self.__faiss_db_exists(self.__db_path):
-                logger.debug("Sincronizando banco vetorial com o disco")
+
                 self.__vectordb = FAISS.load_local(
                     self.__db_path,
                     self.__embeddings,
                     allow_dangerous_deserialization=True,
                 )
-                logger.debug("Banco vetorial sincronizado com sucesso")
-            else:
-                logger.warning(
-                    "Arquivo do banco vetorial não encontrado para sincronização"
-                )
+
+            
+                
         except Exception as e:
             logger.error(f"Erro ao sincronizar banco vetorial: {e}")
 
@@ -139,7 +137,6 @@ class FaissVetorStorage(VetorStorage):
         """
         # Validação de entrada
         if not metadata_key or not metadata_value:
-            logger.warning("Chave ou valor de metadado não podem estar vazios")
             return []
 
         matching_ids: List[str] = []
@@ -149,20 +146,15 @@ class FaissVetorStorage(VetorStorage):
                 hasattr(self.__vectordb, "docstore")
                 and hasattr(self.__vectordb, "index_to_docstore_id")
             ):
-                logger.warning(
-                    "Vectorstore não possui estrutura necessária para busca por metadados"
-                )
+                
                 return matching_ids
 
             # Verificar se o vectordb não está vazio
             if not self.__vectordb.index_to_docstore_id:
-                logger.info("Banco vetorial está vazio")
                 return matching_ids
 
             total_docs = len(self.__vectordb.index_to_docstore_id)
-            logger.debug(
-                f"Buscando em {total_docs} documentos por {metadata_key}={metadata_value}"
-            )
+
 
             # Usar método mais robusto para busca
             processed_count = 0
@@ -178,21 +170,13 @@ class FaissVetorStorage(VetorStorage):
                         matching_ids.append(doc_id)
 
                     processed_count += 1
-                    # Log de progresso para bancos grandes
-                    if processed_count % 1000 == 0:
-                        logger.debug(
-                            f"Processados {processed_count}/{total_docs} documentos"
-                        )
+
 
                 except Exception as e:
                     logger.warning(f"Erro ao buscar documento {doc_id}: {e}")
                     continue
 
-            logger.info(
-                f"Encontrados {len(matching_ids)} documentos com {metadata_key}={
-                    metadata_value
-                }"
-            )
+
 
         except Exception as e:
             logger.error(
@@ -217,9 +201,7 @@ class FaissVetorStorage(VetorStorage):
             self.__sync_vectordb()
 
             results = self.__vectordb.similarity_search(query_vector, k=k)
-            logger.info(
-                f"Encontrados {len(results)} documentos por similaridade vetorial"
-            )
+
             return results
 
         except Exception as e:
@@ -241,7 +223,6 @@ class FaissVetorStorage(VetorStorage):
         self.__sync_vectordb()
 
         if not documents:
-            logger.warning("Lista de documents está vazia")
             raise ValueError("Lista de documents está vazia")
 
         # Divide documentos em chunks
@@ -249,20 +230,17 @@ class FaissVetorStorage(VetorStorage):
             chunk_size=SERVICEHUB.CHUNK_SIZE, chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
         )
         chunks = splitter.split_documents(documents)
-        logger.info(f"Dividindo {len(documents)} documentos em chunks: {chunks}")
+
 
         # Validação dos documentos
         valid_chunks = []
-        for i, chunk in enumerate(chunks):
+        for chunk in chunks:
             if not isinstance(chunk, Document):
-                logger.warning(f"Chunk {i} não é uma instância válida de Document")
                 continue
             if not chunk.page_content or not chunk.page_content.strip():
-                logger.warning(f"Chunk {i} possui conteúdo vazio ou nulo")
                 continue
             # Validar metadados se existirem
             if chunk.metadata is not None and not isinstance(chunk.metadata, dict):
-                logger.warning(f"Chunk {i} possui metadados inválidos")
                 continue
             valid_chunks.append(chunk)
 
@@ -289,9 +267,7 @@ class FaissVetorStorage(VetorStorage):
                 logger.error(error_msg)
                 raise RuntimeError(error_msg)
 
-            logger.info(
-                f"Adicionados {len(valid_chunks)} chunks válidos ao banco FAISS"
-            )
+
 
         except Exception as e:
             logger.error(f"Erro ao adicionar documentos: {e}")
@@ -343,19 +319,12 @@ class FaissVetorStorage(VetorStorage):
                 if ids_validos:
                     self.__vectordb.delete(ids_validos)
                     self.__vectordb.save_local(self.__db_path)
-                    logger.info(
-                        f"Removidos {len(ids_validos)} documentos do {metadata_key}: {
-                            metadata_value
-                        }"
-                    )
-                else:
-                    logger.warning(
-                        f"Nenhum documento válido encontrado para remoção do {metadata_key}: {metadata_value}"
-                    )
-            else:
-                logger.info(
-                    f"Nenhum documento encontrado para o {metadata_key}: {metadata_value}"
-                )
+
+                
+                    
+            
+                
+
 
         except Exception as e:
             logger.error(

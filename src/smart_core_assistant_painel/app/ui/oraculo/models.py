@@ -1,18 +1,12 @@
 import json
 import re
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import Any, List, Optional
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from langchain.docstore.document import Document
 from loguru import logger
-
-# Para resolving Django related managers com MyPy
-# mypy: disable-error-code="attr-defined"
-
-if TYPE_CHECKING:
-    pass
 
 
 def validate_tag(value: str) -> None:
@@ -274,7 +268,6 @@ class Treinamentos(models.Model):
         return documentos
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Treinamento"
         verbose_name_plural = "Treinamentos"
 
@@ -507,7 +500,6 @@ class AtendenteHumano(models.Model):
     )
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Atendente Humano"
         verbose_name_plural = "Atendentes Humanos"
         ordering = ["nome"]
@@ -660,7 +652,6 @@ class Contato(models.Model):
     )
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Contato"
         verbose_name_plural = "Contatos"
         ordering = ["-ultima_interacao"]
@@ -842,7 +833,6 @@ class Cliente(models.Model):
     )
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Cliente"
         verbose_name_plural = "Clientes"
         ordering = ["nome_fantasia"]
@@ -1212,7 +1202,6 @@ class Atendimento(models.Model):
     )
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Atendimento"
         verbose_name_plural = "Atendimentos"
         ordering = ["-data_inicio"]
@@ -1398,15 +1387,9 @@ class Atendimento(models.Model):
                                         intents_detectados.add(
                                             f"{tipo_intent}: {valor_intent}"
                                         )
-                    else:
-                        # Se não é uma lista, loga um aviso
-                        logger.warning(
-                            f"Intent detectado da mensagem {
-                                mensagem.id
-                            } não está no formato esperado (lista de dicionários): {
-                                type(mensagem.intent_detectado)
-                            }"
-                        )
+                    
+                        # Se não é uma lista, continua sem processar
+                        
 
                 # Processa entidades extraídas
                 if mensagem.entidades_extraidas:
@@ -1422,13 +1405,8 @@ class Atendimento(models.Model):
                                         entidades_extraidas.add(str(valor))
                     else:
                         # Se não é uma lista, loga um aviso
-                        logger.warning(
-                            f"Entidades extraídas da mensagem {
-                                mensagem.id
-                            } não está no formato esperado (lista de dicionários): {
-                                type(mensagem.entidades_extraidas)
-                            }"
-                        )
+                        pass
+
 
             # Remove strings vazias das entidades
             entidades_extraidas.discard("")
@@ -1458,13 +1436,7 @@ class Atendimento(models.Model):
                 "historico_atendimentos": historico_atendimentos,
             }
 
-            logger.info(
-                f"Histórico carregado para atendimento {self.id}: "
-                f"{len(conteudo_mensagens)} mensagens, "
-                f"{len(intents_detectados)} intents únicos, "
-                f"{len(entidades_extraidas)} entidades únicas"
-                f"{f' (excluindo mensagem {excluir_mensagem_id})' if excluir_mensagem_id else ''}"
-            )
+
 
             return resultado
 
@@ -1556,7 +1528,6 @@ class Mensagem(models.Model):
     )
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Mensagem"
         verbose_name_plural = "Mensagens"
         ordering = ["timestamp"]
@@ -1726,7 +1697,6 @@ class FluxoConversa(models.Model):
     data_modificacao: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
-        app_label = "oraculo"
         verbose_name = "Fluxo de Conversa"
         verbose_name_plural = "Fluxos de Conversa"
 
@@ -2036,9 +2006,6 @@ def transferir_atendimento_automatico(
         atendente = buscar_atendente_disponivel(especialidades, departamento)
 
         if not atendente:
-            logger.warning(
-                f"Nenhum atendente disponível para o atendimento {atendimento.id}"
-            )
             return None
 
         # Realiza a transferência
@@ -2049,12 +2016,6 @@ def transferir_atendimento_automatico(
             observacao += f" - Departamento: {departamento}"
 
         atendimento.transferir_para_humano(atendente, observacao)
-
-        logger.info(
-            f"Atendimento {atendimento.id} transferido automaticamente para {
-                atendente.nome
-            }"
-        )
 
         return atendente
 
@@ -2153,10 +2114,6 @@ def enviar_mensagem_atendente(
         # Atualiza a última atividade do atendente
         atendente_humano.ultima_atividade = timezone.now()
         atendente_humano.save()
-
-        logger.info(
-            f"Mensagem enviada pelo atendente {atendente_humano.nome} no atendimento {atendimento.id}: {conteudo[:50]}..."
-        )
 
         return mensagem
 

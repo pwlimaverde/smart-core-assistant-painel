@@ -45,11 +45,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rolepermissions",
     "django_q",
-    "usuarios",
-    "oraculo",
+    "smart_core_assistant_painel.app.ui.usuarios",
+    "smart_core_assistant_painel.app.ui.oraculo",
 ]
 
-ROLEPERMISSIONS_MODULE = "core.roles"
+ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -61,7 +61,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "core.urls"
+ROOT_URLCONF = "smart_core_assistant_painel.app.ui.core.urls"
 
 TEMPLATES = [
     {
@@ -78,7 +78,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "core.wsgi.application"
+WSGI_APPLICATION = "smart_core_assistant_painel.app.ui.core.wsgi.application"
 
 
 # Database

@@ -1,11 +1,11 @@
-from typing import Any
 from datetime import timedelta
+from typing import Any
 
 from django.db.models.signals import post_save, pre_delete
-from django.dispatch import receiver, Signal
+from django.dispatch import Signal, receiver
 from django.utils import timezone
-from django_q.tasks import async_task
 from django_q.models import Schedule
+from django_q.tasks import async_task
 from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.service_hub import (
@@ -13,7 +13,6 @@ from smart_core_assistant_painel.modules.services.features.service_hub import (
 )
 
 from .models import Treinamentos
-
 
 # Signal customizado para notificar sobre mensagens bufferizadas
 mensagem_bufferizada = Signal()
@@ -30,9 +29,6 @@ def signals_treinamento_ia(
     """
     try:
         if instance.treinamento_finalizado:
-            logger.info(
-                f"Iniciando treinamento assíncrono para instância {instance.id}"
-            )
             async_task(__task_treinar_ia, instance.id)
     except Exception as e:
         logger.error(
@@ -60,40 +56,35 @@ def signal_agendar_processamento_mensagens(
         current_time = timezone.now()
         delay_seconds = SERVICEHUB.TIME_CACHE
         next_run = current_time + timedelta(seconds=delay_seconds)
-        
-        logger.debug(f"[SIGNAL] Recebido signal para {phone} de {sender}")
-        logger.debug(f"[SIGNAL] Tempo atual: {current_time}, delay: {delay_seconds}s, execução: {next_run}")
 
         # Remove agendamentos pendentes para o mesmo telefone
         # para evitar duplicação
-        removed_count = __limpar_schedules_telefone(phone)
-        if removed_count > 0:
-            logger.debug(f"[SIGNAL] Removidos {removed_count} agendamentos anteriores para {phone}")
+        __limpar_schedules_telefone(phone)
 
         # Cria nova Schedule para execução futura
         schedule = Schedule.objects.create(
             name=schedule_name,
-            func="oraculo.utils.send_message_response",
+            func="smart_core_assistant_painel.app.ui.oraculo.utils.send_message_response",
             args=phone,  # Passa diretamente o telefone como string
             schedule_type=Schedule.ONCE,
             next_run=next_run,
             cluster=None,  # Permite execução em qualquer cluster
         )
 
-        logger.info(
-            f"[SIGNAL] ✅ Agendado processamento para {phone} às {next_run} "
-            f"(Schedule ID: {schedule.id}, delay: {delay_seconds}s)"
-        )
-        
         # Verificar se a Schedule foi criada corretamente
         try:
             created_schedule = Schedule.objects.get(id=schedule.id)
-            logger.debug(f"[SIGNAL] Verificação: Schedule {created_schedule.id} criada com sucesso")
+
         except Schedule.DoesNotExist:
-            logger.error(f"[SIGNAL] ❌ Schedule {schedule.id} não encontrada após criação!")
+            logger.error(
+                f"[SIGNAL] ❌ Schedule {schedule.id} não encontrada após criação!"
+            )
 
     except Exception as e:
-        logger.error(f"[SIGNAL] ❌ Erro ao agendar processamento para {phone}: {e}", exc_info=True)
+        logger.error(
+            f"[SIGNAL] ❌ Erro ao agendar processamento para {phone}: {e}",
+            exc_info=True,
+        )
 
 
 def __limpar_schedules_telefone(phone: str) -> int:
@@ -102,7 +93,7 @@ def __limpar_schedules_telefone(phone: str) -> int:
 
     Args:
         phone: Número do telefone
-        
+
     Returns:
         int: Número de schedules removidos
     """
@@ -113,14 +104,9 @@ def __limpar_schedules_telefone(phone: str) -> int:
         schedules_removidos = Schedule.objects.filter(
             name=schedule_name, next_run__gt=timezone.now()
         ).delete()
-        
+
         removed_count = schedules_removidos[0] if schedules_removidos else 0
-        
-        if removed_count > 0:
-            logger.debug(
-                f"[SIGNAL] Removidos {removed_count} schedules pendentes para {phone}"
-            )
-            
+
         return removed_count
 
     except Exception as e:

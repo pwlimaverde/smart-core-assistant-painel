@@ -30,20 +30,10 @@ from .wrapper_evolutionapi import SendMessage
 def send_message_response(phone: str) -> None:
     cache_key = f"wa_buffer_{phone}"
 
-    logger.debug(
-        f"[CACHE DEBUG] Iniciando processamento para {phone}: chave={cache_key}"
-    )
-    logger.debug("[CACHE DEBUG] Verificando se chave existe no cache...")
-
     # Verificar se a chave existe no cache
     cache_exists = cache.has_key(cache_key)
-    logger.debug(f"[CACHE DEBUG] Chave {cache_key} existe no cache: {cache_exists}")
 
     message_data_list: List[MessageData] = cache.get(cache_key, [])
-    logger.debug(
-        f"[CACHE DEBUG] Conteúdo recuperado do cache: {len(message_data_list) if message_data_list else 0} mensagens"
-    )
-    logger.debug(f"[CACHE DEBUG] Tipo do conteúdo: {type(message_data_list)}")
 
     if not message_data_list:
         logger.error(
@@ -54,11 +44,8 @@ def send_message_response(phone: str) -> None:
         )
         return
 
-    logger.info(f"Processando {len(message_data_list)} mensagem(ns) para {phone}")
-
     try:
         message_data = _compile_message_data_list(message_data_list)
-        logger.debug(f"[DEBUG] Dados compilados: {message_data}")
 
         mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=message_data.numero_telefone,
@@ -133,13 +120,6 @@ def sched_message_response(phone: str) -> None:
     current_buffer = cache.get(buffer_key, [])
     timer_exists = cache.get(timer_key)
 
-    logger.debug(
-        f"[SCHED DEBUG] Agendando para {phone}: buffer={len(current_buffer) if current_buffer else 0} msgs, timer_exists={bool(timer_exists)}"
-    )
-    logger.debug(
-        f"[SCHED DEBUG] TIME_CACHE configurado: {SERVICEHUB.TIME_CACHE} segundos"
-    )
-
     # Evita múltiplos agendamentos em janelas curtas usando um flag no cache
     if not timer_exists:
         # Define janela de proteção um pouco maior que o tempo de cache
@@ -150,8 +130,6 @@ def sched_message_response(phone: str) -> None:
         )
         # Emite signal para que o handler crie a Schedule no cluster
         mensagem_bufferizada.send(sender="oraculo", phone=phone)
-    else:
-        logger.debug(f"[SCHED] Agendamento já existe para {phone}, ignorando")
 
 
 def _obter_entidades_metadados_validas() -> set[str]:
@@ -177,7 +155,6 @@ def _obter_entidades_metadados_validas() -> set[str]:
         valid_entity_types = SERVICEHUB.VALID_ENTITY_TYPES
 
         if not valid_entity_types:
-            logger.warning("SERVICEHUB.VALID_ENTITY_TYPES não configurado")
             return set()
 
         # Parse do JSON das entidades válidas
@@ -197,7 +174,7 @@ def _obter_entidades_metadados_validas() -> set[str]:
         # Já cadastrado no recebimento da mensagem
         entidades_validas.discard("contato")
         entidades_validas.discard("telefone")
-        logger.info(f"Entidades válidas para metadados: {entidades_validas}")
+
         return entidades_validas
 
     except Exception as e:
@@ -438,8 +415,6 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
         if not hasattr(msg, "numero_telefone") or not msg.numero_telefone:
             raise ValueError(f"Mensagem {i} não possui número de telefone válido")
 
-    logger.debug(f"Compilando {len(messages)} mensagens em uma única MessageData")
-
     # Usar última mensagem como base
     ultima_mensagem = messages[-1]
 
@@ -450,9 +425,6 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
         if msg.conteudo and msg.conteudo.strip()
     ]
     conteudo_compilado = "\n".join(conteudos_validos)
-
-    if not conteudo_compilado:
-        logger.warning("Nenhum conteúdo válido encontrado nas mensagens")
 
     # Combinar todos os metadados (quando chaves repetirem, o último prevalece)
     metadados_compilados: dict[str, Any] = {}

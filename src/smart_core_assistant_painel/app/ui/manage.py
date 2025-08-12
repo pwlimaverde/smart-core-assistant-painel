@@ -7,7 +7,7 @@ import sys
 
 def start_app() -> None:
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "core.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.ui.core.settings")
 
     try:
         from django.core.management import execute_from_command_line

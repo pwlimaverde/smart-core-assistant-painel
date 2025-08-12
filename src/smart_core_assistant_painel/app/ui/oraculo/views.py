@@ -2,7 +2,6 @@ import json
 import os
 import tempfile
 from typing import Any
-from loguru import logger
 
 from django.contrib import messages
 from django.core.cache import cache
@@ -11,10 +10,9 @@ from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
+from loguru import logger
 from rolepermissions.checkers import has_permission
 
-
-from .utils import sched_message_response
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
@@ -23,6 +21,7 @@ from smart_core_assistant_painel.modules.services.features.service_hub import SE
 from .models import (
     Treinamentos,
 )
+from .utils import sched_message_response
 
 
 class TreinamentoService:
@@ -440,27 +439,18 @@ def webhook_whatsapp(request: Any) -> JsonResponse:
 
         # Processar mensagem usando função nova_mensagem
         try:
-            logger.info(f"Recebido webhook para processar: {data}")
             message = FeaturesCompose.load_message_data(data)
-            
+
             buffer_key = f"wa_buffer_{message.numero_telefone}"
             buffer = cache.get(buffer_key, [])
             buffer_size_before = len(buffer)
-            
+
             buffer.append(message)
             # Timeout deve ser maior que o delay do agendamento para garantir
             # que as mensagens estejam disponíveis quando a tarefa executar
             timeout_value = SERVICEHUB.TIME_CACHE * 3
-            
-            logger.info(f"[WEBHOOK] Adicionando mensagem ao buffer para {message.numero_telefone}")
-            logger.debug(f"[WEBHOOK] Buffer antes: {buffer_size_before} msgs, depois: {len(buffer)} msgs")
-            logger.debug(f"[WEBHOOK] Timeout do cache: {timeout_value}s")
-            
+
             cache.set(buffer_key, buffer, timeout=timeout_value)
-            
-            # Verificar se foi salvo corretamente
-            verification_buffer = cache.get(buffer_key, [])
-            logger.debug(f"[WEBHOOK] Verificação pós-cache: {len(verification_buffer)} msgs no buffer")
 
             sched_message_response(message.numero_telefone)
 

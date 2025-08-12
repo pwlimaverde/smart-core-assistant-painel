@@ -35,8 +35,7 @@ class PydanticModelFactory:
             data = data["entity_types"]
 
         for category_dict in data.values():
-            if isinstance(category_dict, dict):
-                types_list.extend(category_dict.keys())
+            types_list.extend(category_dict.keys())
 
         return types_list
 
@@ -66,15 +65,14 @@ class PydanticModelFactory:
             data = data["entity_types"]
 
         for category_key, category_dict in data.items():
-            if isinstance(category_dict, dict):
-                # Converter category_key para formato de título
-                category_title = category_key.replace("_", " ").upper()
-                documentation += f"       {category_title}:\n"
+            # Converter category_key para formato de título
+            category_title = category_key.replace("_", " ").upper()
+            documentation += f"       {category_title}:\n"
 
-                for type_key, description in category_dict.items():
-                    documentation += f"       - {type_key}: {description}\n"
+            for type_key, description in category_dict.items():
+                documentation += f"       - {type_key}: {description}\n"
 
-                documentation += "\n"
+            documentation += "\n"
 
         return documentation
 

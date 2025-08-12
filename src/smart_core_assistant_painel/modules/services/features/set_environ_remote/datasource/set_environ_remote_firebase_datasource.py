@@ -16,7 +16,7 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
     async def _load_remote_config_values(config_mapping: dict[str, str]) -> None:
         try:
             logger.info("🔧 Iniciando carregamento do Firebase Remote Config...")
-            
+
             # Verifica se o Firebase está inicializado, se não, inicializa
             try:
                 firebase_admin.get_app()
@@ -25,7 +25,7 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
                 logger.info("🔥 Inicializando Firebase...")
                 firebase_admin.initialize_app()
                 logger.info("✅ Firebase inicializado com sucesso")
-            
+
             # Inicialize o template do Remote Config
             logger.info("📋 Criando template do Remote Config...")
             template = remote_config.init_server_template()
@@ -43,7 +43,7 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
 
             logger.info(f"🔑 Carregando {len(config_mapping)} variáveis de ambiente...")
             loaded_count = 0
-            
+
             for remote_key, env_key in config_mapping.items():
                 try:
                     logger.debug(f"📝 Carregando {remote_key} -> {env_key}")
@@ -59,12 +59,15 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
                     raise TypeError(
                         f"Erro ao carregar variável de ambiente {remote_key}: {str(e)}"
                     )
-            
-            logger.info(f"🎉 {loaded_count}/{len(config_mapping)} variáveis carregadas com sucesso!")
-            
+
+            logger.info(
+                f"🎉 {loaded_count}/{len(config_mapping)} variáveis carregadas com sucesso!"
+            )
+
         except Exception as e:
             logger.error(f"💥 Erro fatal no carregamento do Remote Config: {e}")
             import traceback
+
             logger.error(f"📋 Traceback: {traceback.format_exc()}")
             raise
 

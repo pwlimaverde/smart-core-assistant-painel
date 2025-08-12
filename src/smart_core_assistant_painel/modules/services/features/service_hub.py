@@ -51,12 +51,19 @@ class ServiceHub:
         self._prompt_human_analise_previa_mensagem: Optional[str] = None
         self._valid_entity_types: Optional[str] = None
         self._valid_intent_types: Optional[str] = None
+        self._time_cache: Optional[int] = None
 
     def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
         """Define a instância do VetorStorage."""
         if not isinstance(vetor_storage, VetorStorage):
             raise TypeError("vetor_storage deve implementar a interface VetorStorage")
         self._vetor_storage = vetor_storage
+
+    @property
+    def TIME_CACHE(self) -> int:
+        if self._time_cache is None:
+            self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
+        return self._time_cache if self._time_cache is not None else 20
 
     @property
     def vetor_storage(self) -> VetorStorage:

@@ -2,13 +2,14 @@ from django.contrib import auth, messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.contrib.messages import constants
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from rolepermissions.roles import assign_role
 
 # Create your views here.
 
 
-def cadastro(request):
+def cadastro(request: HttpRequest) -> HttpResponse:
     if request.method == "GET":
         return render(request, "cadastro.html")
     elif request.method == "POST":
@@ -22,7 +23,7 @@ def cadastro(request):
             )
             return redirect("/usuarios/cadastro/")
 
-        if len(senha) < 6:
+        if len(senha or "") < 6:
             messages.add_message(
                 request, constants.ERROR, "A senha deve ter 6 ou mais caracteres."
             )
@@ -35,19 +36,27 @@ def cadastro(request):
             )
             return redirect("/usuarios/cadastro/")
 
+        if username is None or senha is None:
+            messages.add_message(
+                request, constants.ERROR, "Username e senha são obrigatórios."
+            )
+            return redirect("/usuarios/cadastro/")
+
         User.objects.create_user(username=username, password=senha)
 
         return redirect("/usuarios/login")
 
+    return redirect("/usuarios/cadastro/")
 
-def login(request):
+
+def login(request: HttpRequest) -> HttpResponse:
     if request.method == "GET":
         return render(request, "login.html")
     elif request.method == "POST":
         username = request.POST.get("username")
         senha = request.POST.get("senha")
 
-        user = authenticate(request, username=username, password=senha)
+        user = authenticate(request, username=username or "", password=senha or "")
 
         if user:
             auth.login(request, user)
@@ -56,14 +65,16 @@ def login(request):
         messages.add_message(request, constants.ERROR, "Username ou senha inválidos.")
         return redirect("login")
 
+    return redirect("login")
+
 
 # @user_passes_test(lambda u: u.is_superuser)
-def permissoes(request):
+def permissoes(request: HttpRequest) -> HttpResponse:
     users = User.objects.filter(is_superuser=False)
     return render(request, "permissoes.html", {"users": users})
 
 
-def tornar_gerente(request, id):
+def tornar_gerente(request: HttpRequest, id: int) -> HttpResponseRedirect:
     # if not request.user.is_superuser:
     #    raise Http404()
     user = User.objects.get(id=id)

@@ -5,10 +5,20 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from py_return_success_or_error import ParametersReturnResult
 
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    DataMessageError,
     DocumentError,
     LlmError,
     WahaApiError,
 )
+
+
+@dataclass
+class DataMensageParameters(ParametersReturnResult):
+    data: dict[str, Any]
+    error: DataMessageError
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 @dataclass

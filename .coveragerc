@@ -1,0 +1,23 @@
+[run]
+branch = True
+# Fonte principal do código a ser medido
+source =
+    src/smart_core_assistant_painel
+# Omitir pastas de testes dentro dos apps Django (que ficam em src)
+omit =
+    src/smart_core_assistant_painel/**/tests/*
+    src/smart_core_assistant_painel/**/tests.py
+    src/smart_core_assistant_painel/**/migrations/*
+    */__init__.py
+
+[report]
+# Linhas a serem excluídas do relatório de cobertura
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    if __name__ == "__main__":
+# Garantir que os testes dentro de apps também sejam omitidos no report
+omit =
+    src/smart_core_assistant_painel/**/tests/*
+    src/smart_core_assistant_painel/**/tests.py
+    src/smart_core_assistant_painel/**/migrations/*

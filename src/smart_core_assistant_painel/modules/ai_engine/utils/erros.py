@@ -33,3 +33,11 @@ class DocumentError(AppError):
 
     def __str__(self) -> str:
         return f"DocumentError - {self.message}"
+
+
+@dataclass
+class DataMessageError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f"DataMessageError - {self.message}"

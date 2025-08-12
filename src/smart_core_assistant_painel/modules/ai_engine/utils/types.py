@@ -11,11 +11,15 @@ from py_return_success_or_error import (
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem,
 )
+from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
+    MessageData,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
     WhatsappApi,
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
+    DataMensageParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -62,4 +66,9 @@ LDFData: TypeAlias = Datasource[list[Document], LoadDocumentFileParameters]
 LDCUsecase: TypeAlias = UsecaseBase[
     list[Document],
     LoadDocumentConteudoParameters,
+]
+
+LMDUsecase: TypeAlias = UsecaseBase[
+    MessageData,
+    DataMensageParameters,
 ]

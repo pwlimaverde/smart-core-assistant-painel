@@ -62,7 +62,7 @@ def signal_agendar_processamento_mensagens(
         __limpar_schedules_telefone(phone)
 
         # Cria nova Schedule para execução futura
-        schedule = Schedule.objects.create(
+        Schedule.objects.create(
             name=schedule_name,
             func="smart_core_assistant_painel.app.ui.oraculo.utils.send_message_response",
             args=phone,  # Passa diretamente o telefone como string
@@ -71,15 +71,6 @@ def signal_agendar_processamento_mensagens(
             cluster=None,  # Permite execução em qualquer cluster
         )
 
-        # Verificar se a Schedule foi criada corretamente
-        try:
-            created_schedule = Schedule.objects.get(id=schedule.id)
-
-        except Schedule.DoesNotExist:
-            logger.error(
-                f"[SIGNAL] ❌ Schedule {schedule.id} não encontrada após criação!"
-            )
-
     except Exception as e:
         logger.error(
             f"[SIGNAL] ❌ Erro ao agendar processamento para {phone}: {e}",
@@ -87,7 +78,7 @@ def signal_agendar_processamento_mensagens(
         )
 
 
-def __limpar_schedules_telefone(phone: str) -> int:
+def __limpar_schedules_telefone(phone: str) -> None:
     """
     Remove schedules pendentes para um telefone específico.
 
@@ -101,17 +92,13 @@ def __limpar_schedules_telefone(phone: str) -> int:
         schedule_name = f"process_msg_{phone}"
 
         # Remove schedules pendentes (ainda não executadas)
-        schedules_removidos = Schedule.objects.filter(
+        Schedule.objects.filter(
             name=schedule_name, next_run__gt=timezone.now()
         ).delete()
 
-        removed_count = schedules_removidos[0] if schedules_removidos else 0
-
-        return removed_count
-
+        
     except Exception as e:
         logger.warning(f"[SIGNAL] Erro ao limpar schedules para {phone}: {e}")
-        return 0
 
 
 def __task_treinar_ia(instance_id: int) -> None:

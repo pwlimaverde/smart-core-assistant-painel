@@ -1,10 +1,10 @@
 import json
 import os
 import tempfile
-from typing import Any
 
 from django.contrib import messages
-from django.core.cache import cache
+
+# from django.core.cache import cache
 from django.db import transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
@@ -16,12 +16,11 @@ from rolepermissions.checkers import has_permission
 from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
     FeaturesCompose,
 )
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import (
     Treinamentos,
 )
-from .utils import sched_message_response
+from .utils import sched_message_response, set_wa_buffer
 
 
 class TreinamentoService:
@@ -209,27 +208,6 @@ def pre_processamento(request, id):
         return _processar_pre_processamento(request, id)
 
 
-def _exibir_pre_processamento(request, id):
-    """Exibe página de pré-processamento"""
-    try:
-        treinamento = Treinamentos.objects.get(id=id)
-        conteudo_unificado = treinamento.get_conteudo_unificado()
-        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
-
-        return render(
-            request,
-            "pre_processamento.html",
-            {
-                "dados_organizados": treinamento,
-                "treinamento": texto_melhorado,
-            },
-        )
-    except Exception as e:
-        logger.error(f"Erro ao gerar pré-processamento: {e}")
-        messages.error(request, "Erro ao processar dados de treinamento.")
-        return redirect("treinar_ia")
-
-
 def _processar_pre_processamento(request, id):
     """Processa ação do pré-processamento"""
     treinamento = Treinamentos.objects.get(id=id)
@@ -237,7 +215,6 @@ def _processar_pre_processamento(request, id):
 
     if not acao:
         messages.error(request, "Ação não especificada.")
-
         return redirect("pre_processamento", id=treinamento.id)
 
     try:
@@ -259,7 +236,6 @@ def _processar_pre_processamento(request, id):
     except Exception as e:
         logger.error(f"Erro ao processar ação {acao}: {e}")
         messages.error(request, "Erro ao processar ação. Tente novamente.")
-
         return redirect("pre_processamento", id=treinamento.id)
 
     return redirect("treinar_ia")
@@ -283,100 +259,69 @@ def _aceitar_treinamento(id):
         treinamento.save()
 
     except Exception as e:
-        logger.error(f"Erro ao aceitar treinamento {treinamento.id}: {e}")
+        logger.error(f"Erro ao aceitar treinamento {id}: {e}")
         raise
 
 
+def _exibir_pre_processamento(request, id):
+    """Exibe página de pré-processamento"""
+    try:
+        treinamento = Treinamentos.objects.get(id=id)
+        conteudo_unificado = treinamento.get_conteudo_unificado()
+        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
+
+        return render(
+            request,
+            "pre_processamento.html",
+            {
+                "treinamento": treinamento,
+                "conteudo_unificado": conteudo_unificado,
+                "texto_melhorado": texto_melhorado,
+            },
+        )
+
+    except Treinamentos.DoesNotExist:
+        messages.error(request, "Treinamento não encontrado.")
+        return redirect("treinar_ia")
+
+    except Exception as e:
+        logger.error(f"Erro ao exibir pré-processamento: {e}")
+        messages.error(request, "Erro interno do servidor. Tente novamente.")
+        return redirect("treinar_ia")
+
+
 @csrf_exempt
-def webhook_whatsapp(request: Any) -> JsonResponse:
+def webhook_whatsapp(request):
     """
-    Webhook robusto para recebimento e processamento de mensagens do WhatsApp.
+    Endpoint para receber notificações de mensagens do WhatsApp via Evolution API.
 
-    Esta função é o ponto de entrada principal para mensagens do WhatsApp via webhook.
-    Realiza validações completas, processa mensagens usando a função nova_mensagem(),
-    determina o direcionamento apropriado (bot ou atendente humano), converte contexto
-    de mensagens não textuais e prepara a mensagem para processamento posterior.
+    Este endpoint recebe mensagens enviados pelo Evolution API e processa
+    de forma robusta com suporte a diferentes tipos de mensagem, tratamento
+    de erros e integração com o sistema de análise semântica e atendimento.
 
-    Args:
-        request (HttpRequest): Requisição HTTP contendo os dados do webhook
-            do WhatsApp em formato JSON no body da requisição. Deve ser POST
-            com Content-Type application/json.
-
-    Returns:
-        JsonResponse: Resposta JSON com status da operação:
-            - Em caso de sucesso: {
-                "status": "success",
-                "mensagem_id": int,
-                "direcionamento": str  # "bot" ou "humano"
-              }
-            - Em caso de erro: {"error": str} com códigos:
-                * 400: Requisição inválida (JSON malformado, corpo vazio)
-                * 401: API key inválida (quando implementada)
-                * 405: Método HTTP não permitido (apenas POST aceito)
-                * 500: Erro interno do servidor
-
-    Raises:
-        json.JSONDecodeError: Se o body da requisição não contém JSON válido
-        Mensagem.DoesNotExist: Se a mensagem criada não for encontrada no banco
-        ValidationError: Se dados do webhook são inválidos
-        Exception: Para outros erros durante o processamento
-
-    Validations:
-        - Método HTTP deve ser POST
-        - Body da requisição não pode estar vazio
-        - JSON deve ser válido e estruturado como dicionário
-        - Mensagem deve ser criada com sucesso no banco de dados
-        - TODO: Validação de API key para segurança
-
-    Processing Flow:
-        1. Validação da requisição HTTP
-        2. Parse e validação do JSON
-        3. Logging de auditoria de entrada
-        4. Processamento via nova_mensagem()
-        5. Conversão de contexto para mensagens não textuais
-        6. Determinação de direcionamento (bot vs humano)
-        7. Logging completo de sucesso
-        8. Resposta estruturada com metadados
-
-    Security:
-        - Função marcada com @csrf_exempt para chamadas externas
-        - Logs não expõem dados sensíveis
-        - Comportamento conservador em caso de erro (assume humano)
-        - Preparada para validação de API key
-
-    Performance:
-        - Usa update_fields para economia em alterações de mensagem
-        - Logs estruturados para facilitar monitoramento
-        - Graceful degradation em falhas não críticas
-
-    Examples:
-        Payload típico do webhook:
+    Request sample (parcial):
         {
-          "event": "messages.upsert",
-          "instance": "arcane",
+          "apikey": "YOUR_API_KEY",
+          "instance": "instance_01",
           "data": {
-            "key": {
-              "remoteJid": "5516992805442@s.whatsapp.net",
-              "fromMe": false,
-              "id": "5F2AAA4BD98BB388BBCD6FCB9B4ED660"
-            },
-            "pushName": "Cliente Exemplo",
-            "message": {
-              "extendedTextMessage": {
-                "text": "Olá, preciso de ajuda com meu pedido"
-              }
-            },
-            "messageType": "conversation",
-            "messageTimestamp": 1748739583
-          },
-          "owner": "arcane",
-          "source": "android",
-          "destination": "localhost",
-          "date_time": "2025-07-18T14:30:00.000Z",
-          "sender": "5516999999999@s.whatsapp.net",
-          "server_url": "http://localhost:8080",
-          "apikey": "sua_api_key_aqui",
-          "webhookUrl": "https://seu-dominio.com/webhook",
+             "key": {
+                 "remoteJid": "553199999999@s.whatsapp.net",
+                 "fromMe": false,
+                 "id": "ABCD1234"
+             },
+             "message": {
+                 "conversation": "Olá, tudo bem?"
+             },
+             "messageType": "conversation",
+             "pushName": "João Silva",
+             "broadcast": false,
+             "messageTimestamp": 1700000123
+          }
+        }
+
+    Response sample:
+        {
+          "status": "success",
           "executionMode": "production"
         }
 
@@ -441,17 +386,10 @@ def webhook_whatsapp(request: Any) -> JsonResponse:
         try:
             message = FeaturesCompose.load_message_data(data)
 
-            buffer_key = f"wa_buffer_{message.numero_telefone}"
-            buffer = cache.get(buffer_key, [])
-            buffer_size_before = len(buffer)
+            # Adiciona a mensagem ao buffer
+            set_wa_buffer(message)
 
-            buffer.append(message)
-            # Timeout deve ser maior que o delay do agendamento para garantir
-            # que as mensagens estejam disponíveis quando a tarefa executar
-            timeout_value = SERVICEHUB.TIME_CACHE * 3
-
-            cache.set(buffer_key, buffer, timeout=timeout_value)
-
+            # Agenda o processamento consolidado (usa normalização internamente)
             sched_message_response(message.numero_telefone)
 
         except Exception as e:

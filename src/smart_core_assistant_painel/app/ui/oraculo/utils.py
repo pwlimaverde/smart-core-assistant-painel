@@ -10,6 +10,9 @@ from smart_core_assistant_painel.modules.ai_engine.features.features_compose imp
 from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
     MessageData,
 )
+from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import (
+    LoadMensageDataUseCase,
+)
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import (
@@ -22,25 +25,57 @@ from .models import (
 from .signals import mensagem_bufferizada
 from .wrapper_evolutionapi import SendMessage
 
-# -------------------------------------------------------------
-# Funções utilitárias de processamento de mensagens (WhatsApp)
-# -------------------------------------------------------------
+
+def set_wa_buffer(message: MessageData) -> None:
+    """
+    Adiciona uma mensagem ao buffer existente de WhatsApp.
+
+    Realiza validação de tipo e persiste SEMPRE a lista completa de
+    mensagens no cache, evitando regressões de tipo.
+
+    Args:
+        message (MessageData): Mensagem para adicionar ao buffer
+
+    Examples:
+        >>> set_wa_buffer(new_message)
+    """
+
+    # Obtém buffer atual (lista) e acrescenta a nova mensagem
+    cache_key = f"wa_buffer_{message.numero_telefone}"
+    buffer = cache.get(cache_key, [])
+    buffer.append(message)
+
+    # Salva o buffer ATUALIZADO (lista) no cache
+    timeout = SERVICEHUB.TIME_CACHE * 3
+    cache.set(cache_key, buffer, timeout=timeout)
+
+
+def clear_wa_buffer(phone: str) -> None:
+    """
+    Remove completamente o buffer de mensagens WhatsApp para um telefone.
+
+    Args:
+        phone (str): Número de telefone normalizado
+
+    Examples:
+        >>> clear_wa_buffer("5511999999999")
+    """
+    cache_key = f"wa_buffer_{phone}"
+    timer_key = f"wa_timer_{phone}"
+
+    # Remover tanto o buffer quanto o timer
+    cache.delete(cache_key)
+    cache.delete(timer_key)
 
 
 def send_message_response(phone: str) -> None:
+    # Obter buffer usando função robusta
     cache_key = f"wa_buffer_{phone}"
-
-    # Verificar se a chave existe no cache
-    cache_exists = cache.has_key(cache_key)
-
     message_data_list: List[MessageData] = cache.get(cache_key, [])
 
     if not message_data_list:
-        logger.error(
-            f"[CACHE ERROR] Buffer vazio para {phone} - chave_existe={cache_exists}, conteudo={message_data_list}"
-        )
-        logger.error(
-            "[CACHE ERROR] Possível problema: cache expirou ou foi limpo prematuramente"
+        logger.warning(
+            f"[CACHE] Buffer vazio para {phone} - nenhuma mensagem para processar"
         )
         return
 
@@ -93,14 +128,13 @@ def send_message_response(phone: str) -> None:
                 f"Erro ao verificar direcionamento da mensagem {mensagem_id}: {e}"
             )
 
-        cache.delete(f"wa_buffer_{phone}")
-        cache.delete(f"wa_timer_{phone}")
+        # Limpar cache usando função robusta
+        clear_wa_buffer(phone)
 
     except Exception as e:
         logger.error(f"Erro geral ao processar mensagens para {phone}: {e}")
         # Limpar cache mesmo em caso de erro para evitar reprocessamento
-        cache.delete(f"wa_buffer_{phone}")
-        cache.delete(f"wa_timer_{phone}")
+        clear_wa_buffer(phone)
 
 
 def sched_message_response(phone: str) -> None:
@@ -113,11 +147,10 @@ def sched_message_response(phone: str) -> None:
     para execução futura no cluster, respeitando um tempo de debounce
     configurado por SERVICEHUB.TIME_CACHE.
     """
-    timer_key = f"wa_timer_{phone}"
-    buffer_key = f"wa_buffer_{phone}"
+    # Normalizar telefone usando a função do use case
+    normalized_phone = LoadMensageDataUseCase.normalize_phone(phone)
+    timer_key = f"wa_timer_{normalized_phone}"
 
-    # Verificar estado atual do cache
-    current_buffer = cache.get(buffer_key, [])
     timer_exists = cache.get(timer_key)
 
     # Evita múltiplos agendamentos em janelas curtas usando um flag no cache
@@ -125,11 +158,8 @@ def sched_message_response(phone: str) -> None:
         # Define janela de proteção um pouco maior que o tempo de cache
         timeout_value = SERVICEHUB.TIME_CACHE * 2
         cache.set(timer_key, True, timeout=timeout_value)
-        logger.info(
-            f"[SCHED] Agendando processamento para {phone} em {SERVICEHUB.TIME_CACHE}s (timer por {timeout_value}s)"
-        )
         # Emite signal para que o handler crie a Schedule no cluster
-        mensagem_bufferizada.send(sender="oraculo", phone=phone)
+        mensagem_bufferizada.send(sender="oraculo", phone=normalized_phone)
 
 
 def _obter_entidades_metadados_validas() -> set[str]:

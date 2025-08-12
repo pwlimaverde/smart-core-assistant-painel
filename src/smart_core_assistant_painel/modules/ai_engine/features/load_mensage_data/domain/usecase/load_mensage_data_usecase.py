@@ -11,11 +11,41 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     DataMensageParameters,
 )
 from typing import Any
+import re
 
 from smart_core_assistant_painel.modules.ai_engine.utils.types import LMDUsecase
 
 
 class LoadMensageDataUseCase(LMDUsecase):
+    @staticmethod
+    def normalize_phone(phone: str) -> str:
+        """
+        Normaliza um número de telefone removendo caracteres especiais e padronizando formato.
+        
+        Args:
+            phone (str): Número de telefone bruto extraído do remoteJid
+            
+        Returns:
+            str: Número de telefone normalizado (apenas dígitos)
+            
+        Examples:
+            >>> LoadMensageDataUseCase.normalize_phone("55 11 99999-9999")
+            "5511999999999"
+            >>> LoadMensageDataUseCase.normalize_phone("+55(11)99999-9999")
+            "5511999999999"
+        """
+        if not phone:
+            return ""
+        
+        # Remove todos os caracteres não numéricos
+        normalized = re.sub(r'[^\d]', '', str(phone))
+        
+        # Remove códigos de país duplicados (ex: 5555119999999 -> 5511999999999)
+        if normalized.startswith('5555') and len(normalized) >= 13:
+            normalized = normalized[2:]
+        
+        return normalized
+
     def __call__(
         self, parameters: DataMensageParameters
     ) -> ReturnSuccessOrError[MessageData]:
@@ -40,8 +70,9 @@ class LoadMensageDataUseCase(LMDUsecase):
                 error.message = f"{error.message} - Exception: Campo remoteJid não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
-            # Extrair telefone do remoteJid
-            phone = remote_jid.split("@")[0]
+            # Extrair e normalizar telefone do remoteJid
+            phone_raw = remote_jid.split("@")[0]
+            phone = self.normalize_phone(phone_raw)
             message_id = key_section.get("id")
 
             # Extrair pushName (nome do perfil do WhatsApp)

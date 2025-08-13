@@ -10,9 +10,6 @@ from smart_core_assistant_painel.modules.ai_engine.features.features_compose imp
 from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
     MessageData,
 )
-from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import (
-    LoadMensageDataUseCase,
-)
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 
 from .models import (
@@ -112,10 +109,13 @@ def send_message_response(phone: str) -> None:
             is_bot_responder = _pode_bot_responder_atendimento(atendimento_obj)
             if is_bot_responder:
                 SendMessage().send_message(
-                    instance="5588921729550",
+                    instance=message_data.instance,
                     body={
-                        "number": "558897141275",
-                        "text": "Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
+                        "number": message_data.numero_telefone,
+                        "text": (
+                            "Obrigado pela sua mensagem, em breve um atendente "
+                            "entrará em contato."
+                        ),
                     },
                 )
             else:
@@ -147,9 +147,8 @@ def sched_message_response(phone: str) -> None:
     para execução futura no cluster, respeitando um tempo de debounce
     configurado por SERVICEHUB.TIME_CACHE.
     """
-    # Normalizar telefone usando a função do use case
-    normalized_phone = LoadMensageDataUseCase.normalize_phone(phone)
-    timer_key = f"wa_timer_{normalized_phone}"
+
+    timer_key = f"wa_timer_{phone}"
 
     timer_exists = cache.get(timer_key)
 
@@ -159,7 +158,7 @@ def sched_message_response(phone: str) -> None:
         timeout_value = SERVICEHUB.TIME_CACHE * 2
         cache.set(timer_key, True, timeout=timeout_value)
         # Emite signal para que o handler crie a Schedule no cluster
-        mensagem_bufferizada.send(sender="oraculo", phone=normalized_phone)
+        mensagem_bufferizada.send(sender="oraculo", phone=phone)
 
 
 def _obter_entidades_metadados_validas() -> set[str]:
@@ -464,6 +463,7 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
 
     # Criar nova MessageData com conteúdo e metadados compilados
     return MessageData(
+        instance=ultima_mensagem.instance,
         numero_telefone=ultima_mensagem.numero_telefone,
         from_me=ultima_mensagem.from_me,
         conteudo=conteudo_compilado,

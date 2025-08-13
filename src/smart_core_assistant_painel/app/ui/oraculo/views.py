@@ -20,6 +20,7 @@ from smart_core_assistant_painel.modules.ai_engine.features.features_compose imp
 from .models import (
     Treinamentos,
 )
+from .models_departamento import Departamento
 from .utils import sched_message_response, set_wa_buffer
 
 
@@ -340,11 +341,6 @@ def webhook_whatsapp(request):
         - Tratamento robusto de erros com logs detalhados
     """
     try:
-        # TODO: Implementar validação de API key se necessário
-        # api_key = data.get('apikey')
-        # if not _validar_api_key(api_key):
-        #     return JsonResponse({"error": "API key inválida"}, status=401)
-
         # Validação básica da requisição
         if request.method != "POST":
             return JsonResponse({"error": "Método não permitido"}, status=405)
@@ -354,29 +350,29 @@ def webhook_whatsapp(request):
 
         # Parse do JSON com tratamento robusto de encoding
         try:
-            # Tenta decodificar com UTF-8 primeiro, depois com outros encodings
+            body_str = request.body.decode("utf-8")
+        except UnicodeDecodeError:
             try:
-                body_str = request.body.decode("utf-8")
+                body_str = request.body.decode("latin-1")
+                logger.warning("Decodificação UTF-8 falhou, usando latin-1")
             except UnicodeDecodeError:
-                try:
-                    body_str = request.body.decode("latin-1")
-                    logger.warning("Decodificação UTF-8 falhou, usando latin-1")
-                except UnicodeDecodeError:
-                    body_str = request.body.decode("utf-8", errors="ignore")
-                    logger.warning("Decodificação com errors='ignore' aplicada")
+                body_str = request.body.decode("utf-8", errors="ignore")
+                logger.warning("Decodificação com errors='ignore' aplicada")
 
-            if body_str is None:
-                logger.error(
-                    "Não foi possível decodificar o corpo da requisição com nenhum encoding"
-                )
-                return JsonResponse(
-                    {"error": "Erro de codificação de caracteres"}, status=400
-                )
+        if body_str is None:
+            logger.error(
+                "Não foi possível decodificar o corpo da requisição com nenhum encoding"
+            )
+            return JsonResponse(
+                {"error": "Erro de codificação de caracteres"}, status=400
+            )
 
-            data = json.loads(body_str)
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON inválido recebido no webhook: {e}")
-            return JsonResponse({"error": "JSON inválido"}, status=400)
+        data = json.loads(body_str)
+
+        # Validação da API Key
+        departamento = Departamento.validar_api_key(data)
+        if not departamento:
+            return JsonResponse({"error": "API key inválida ou inativa"}, status=401)
 
         # Validação dos campos obrigatórios
         if not isinstance(data, dict):
@@ -384,6 +380,7 @@ def webhook_whatsapp(request):
 
         # Processar mensagem usando função nova_mensagem
         try:
+            logger.info(f"Recebido webhook: {data}")
             message = FeaturesCompose.load_message_data(data)
 
             # Adiciona a mensagem ao buffer
@@ -408,94 +405,3 @@ def webhook_whatsapp(request):
         # Log detalhado do erro para debugging
         logger.error(f"Erro crítico no webhook WhatsApp: {e}", exc_info=True)
         return JsonResponse({"error": "Erro interno do servidor"}, status=500)
-
-
-def _validar_api_key(api_key: str) -> bool:
-    """
-    Valida se a API key fornecida é válida para autenticação do webhook.
-
-    Esta função verifica se a API key enviada no payload do webhook é válida
-    e tem permissão para enviar mensagens para o sistema. Implementa uma
-    camada de segurança essencial para evitar chamadas não autorizadas.
-
-    Args:
-        api_key (str): Chave de API a ser validada. Pode vir do campo
-            'apikey' no payload do webhook ou de headers HTTP.
-
-    Returns:
-        bool: True se a API key é válida e autorizada, False caso contrário.
-            Comportamento atual: aceita qualquer key não vazia (desenvolvimento).
-
-    Security Considerations:
-        - API keys devem ser únicas por instância/cliente
-        - Recomenda-se uso de hashing ou assinatura digital
-        - Implementar rate limiting por API key
-        - Logs de tentativas de acesso inválidas
-        - Rotação periódica de chaves em produção
-
-    Implementation Roadmap:
-        - ATUAL: Validação básica (não vazia)
-        - FASE 1: Validação contra banco de dados
-        - FASE 2: Assinatura digital HMAC-SHA256
-        - FASE 3: Rate limiting e blacklist
-        - FASE 4: Rotação automática de chaves
-
-    Notes:
-        - TODO: Implementar validação real de API key
-        - Considerar implementar verificação em banco de dados ou cache
-        - Importante para segurança em ambiente de produção
-        - Deve integrar com sistema de monitoramento de segurança
-
-    Examples:
-        >>> # Validação básica atual
-        >>> api_key = "abc123def456"
-        >>> if _validar_api_key(api_key):
-        ...     # Processar webhook
-        ...     pass
-
-        >>> # API key vazia (rejeitada)
-        >>> _validar_api_key("")
-        False
-
-        >>> # Implementação futura com HMAC
-        >>> # import hmac, hashlib
-        >>> # def _validar_api_key_hmac(api_key, payload, secret):
-        >>> #     expected = hmac.new(
-        >>> #         secret.encode(),
-        >>> #         payload.encode(),
-        >>> #         hashlib.sha256
-        >>> #     ).hexdigest()
-        >>> #     return hmac.compare_digest(expected, api_key)
-    """
-    # TODO: Implementar validação real de API key
-    #
-    # Exemplo de implementação robusta:
-    #
-    # 1. Validação em banco de dados:
-    # try:
-    #     api_config = APIKey.objects.get(
-    #         key=api_key,
-    #         ativo=True,
-    #         expires_at__gt=timezone.now()
-    #     )
-    #     # Atualizar último uso
-    #     api_config.ultimo_uso = timezone.now()
-    #     api_config.save(update_fields=['ultimo_uso'])
-    #     return True
-    # except APIKey.DoesNotExist:
-    #     logger.warning(f"API key inválida tentou acesso: {api_key[:8]}...")
-    #     return False
-    #
-    # 2. Validação com assinatura HMAC:
-    # secret = settings.WEBHOOK_SECRET
-    # return hmac.compare_digest(
-    #     expected_signature,
-    #     hmac.new(secret.encode(), payload, hashlib.sha256).hexdigest()
-    # )
-
-    if not api_key:
-        return False
-
-    # Implementação temporária para desenvolvimento
-    # Em produção, substituir por validação real
-    return True

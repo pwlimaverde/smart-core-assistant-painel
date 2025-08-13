@@ -21,13 +21,13 @@ class LoadMensageDataUseCase(LMDUsecase):
     def normalize_phone(phone: str) -> str:
         """
         Normaliza um número de telefone removendo caracteres especiais e padronizando formato.
-        
+
         Args:
             phone (str): Número de telefone bruto extraído do remoteJid
-            
+
         Returns:
             str: Número de telefone normalizado (apenas dígitos)
-            
+
         Examples:
             >>> LoadMensageDataUseCase.normalize_phone("55 11 99999-9999")
             "5511999999999"
@@ -36,14 +36,14 @@ class LoadMensageDataUseCase(LMDUsecase):
         """
         if not phone:
             return ""
-        
+
         # Remove todos os caracteres não numéricos
-        normalized = re.sub(r'[^\d]', '', str(phone))
-        
+        normalized = re.sub(r"[^\d]", "", str(phone))
+
         # Remove códigos de país duplicados (ex: 5555119999999 -> 5511999999999)
-        if normalized.startswith('5555') and len(normalized) >= 13:
+        if normalized.startswith("5555") and len(normalized) >= 13:
             normalized = normalized[2:]
-        
+
         return normalized
 
     def __call__(
@@ -51,6 +51,13 @@ class LoadMensageDataUseCase(LMDUsecase):
     ) -> ReturnSuccessOrError[MessageData]:
         try:
             # Extrair informações básicas com verificações de segurança
+            instance = parameters.data.get("instance")
+            if not instance:
+                error = parameters.error
+                error.message = f"{error.message} - Exception: Campo instance não encontrado no payload do webhook"
+                return ErrorReturn(error)
+
+
             data_section = parameters.data.get("data")
 
             if not data_section:
@@ -190,6 +197,7 @@ class LoadMensageDataUseCase(LMDUsecase):
 
             return SuccessReturn(
                 MessageData(
+                    instance=instance,
                     numero_telefone=phone,
                     from_me=from_me,
                     conteudo=conteudo,

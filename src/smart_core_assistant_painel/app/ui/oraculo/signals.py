@@ -96,7 +96,6 @@ def __limpar_schedules_telefone(phone: str) -> None:
             name=schedule_name, next_run__gt=timezone.now()
         ).delete()
 
-        
     except Exception as e:
         logger.warning(f"[SIGNAL] Erro ao limpar schedules para {phone}: {e}")
 

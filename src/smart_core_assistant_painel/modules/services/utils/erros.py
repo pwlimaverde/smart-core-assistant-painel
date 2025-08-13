@@ -9,3 +9,11 @@ class SetEnvironRemoteError(AppError):
 
     def __str__(self) -> str:
         return f"LlmError - {self.message}"
+
+
+@dataclass
+class WhatsAppServiceError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f"WhatsAppServiceError - {self.message}"

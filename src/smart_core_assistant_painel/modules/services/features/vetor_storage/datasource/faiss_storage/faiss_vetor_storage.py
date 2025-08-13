@@ -58,7 +58,6 @@ class FaissVetorStorage(VetorStorage):
         Carrega o banco existente ou cria um novo se não existir.
         """
         if self.__faiss_db_exists(self.__db_path):
-            
             try:
                 vectordb = FAISS.load_local(
                     self.__db_path,
@@ -71,7 +70,6 @@ class FaissVetorStorage(VetorStorage):
                 logger.error(f"Erro ao carregar banco FAISS existente: {e}")
                 return self.__criar_banco_vazio()
         else:
-
             return self.__criar_banco_vazio()
 
     def __criar_banco_vazio(self) -> FAISS:
@@ -112,15 +110,12 @@ class FaissVetorStorage(VetorStorage):
         """
         try:
             if self.__faiss_db_exists(self.__db_path):
-
                 self.__vectordb = FAISS.load_local(
                     self.__db_path,
                     self.__embeddings,
                     allow_dangerous_deserialization=True,
                 )
 
-            
-                
         except Exception as e:
             logger.error(f"Erro ao sincronizar banco vetorial: {e}")
 
@@ -146,15 +141,11 @@ class FaissVetorStorage(VetorStorage):
                 hasattr(self.__vectordb, "docstore")
                 and hasattr(self.__vectordb, "index_to_docstore_id")
             ):
-                
                 return matching_ids
 
             # Verificar se o vectordb não está vazio
             if not self.__vectordb.index_to_docstore_id:
                 return matching_ids
-
-            total_docs = len(self.__vectordb.index_to_docstore_id)
-
 
             # Usar método mais robusto para busca
             processed_count = 0
@@ -171,12 +162,9 @@ class FaissVetorStorage(VetorStorage):
 
                     processed_count += 1
 
-
                 except Exception as e:
                     logger.warning(f"Erro ao buscar documento {doc_id}: {e}")
                     continue
-
-
 
         except Exception as e:
             logger.error(
@@ -231,7 +219,6 @@ class FaissVetorStorage(VetorStorage):
         )
         chunks = splitter.split_documents(documents)
 
-
         # Validação dos documentos
         valid_chunks = []
         for chunk in chunks:
@@ -266,8 +253,6 @@ class FaissVetorStorage(VetorStorage):
                 error_msg = "Falha ao salvar banco FAISS no disco"
                 logger.error(error_msg)
                 raise RuntimeError(error_msg)
-
-
 
         except Exception as e:
             logger.error(f"Erro ao adicionar documentos: {e}")
@@ -319,12 +304,6 @@ class FaissVetorStorage(VetorStorage):
                 if ids_validos:
                     self.__vectordb.delete(ids_validos)
                     self.__vectordb.save_local(self.__db_path)
-
-                
-                    
-            
-                
-
 
         except Exception as e:
             logger.error(

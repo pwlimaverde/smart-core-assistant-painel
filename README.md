@@ -11,6 +11,7 @@ Um painel inteligente para assistente virtual com integração WhatsApp.
 - Ambiente Docker completo
 - Webhook WhatsApp com fallback de encoding automático
 - QR Code Evolution API otimizado
+- Serviço de envio de mensagens WhatsApp com arquitetura modular
 
 ## Instalação
 
@@ -56,6 +57,35 @@ Veja [ambiente_docker/README-Docker.md](ambiente_docker/README-Docker.md) para i
 - ✅ **Logging**: Sistema de logs detalhado para debugging
 
 Para detalhes completos das correções, consulte a seção [Correções Implementadas](ambiente_docker/README-Docker.md#-correções-implementadas) na documentação Docker.
+
+## Serviços
+
+O projeto utiliza uma arquitetura modular baseada no padrão `py-return-success-or-error` para implementar funcionalidades. Recursos recentes incluem:
+
+### Serviço de Envio de Mensagens WhatsApp
+
+Implementamos um serviço modular para envio de mensagens via WhatsApp utilizando a Evolution API:
+
+- **DataSource**: `WhatsAppAPIDataSource` - Responsável por interagir diretamente com a API
+- **UseCase**: `WhatsAppSendMessageUseCase` - Implementa a lógica de negócio para envio de mensagens
+- **Interface**: `WhatsAppServiceInterface` - Define o contrato para o serviço
+- **Serviço de Alto Nível**: `send_whatsapp_message` - Função simplificada para envio de mensagens
+
+Exemplo de uso:
+```python
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.send_message_service import send_whatsapp_message
+
+result = send_whatsapp_message(
+    instance="5588921729550",
+    api_key="sua_chave_api",
+    message_data={
+        "number": "5511999999999",
+        "textMessage": {
+            "text": "Olá! Esta é uma mensagem de teste."
+        }
+    }
+)
+```
 
 ## Licença
 

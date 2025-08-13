@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 @dataclass
 class MessageData:
+    instance: str
     numero_telefone: str
     from_me: bool
     conteudo: str

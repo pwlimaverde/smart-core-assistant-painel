@@ -1,64 +1,97 @@
-# Guia de Configuração Docker - Smart Core Assistant Painel
+# 🐳 Docker Environment - Smart Core Assistant Painel
 
-Este documento fornece instruções para configurar e executar o Smart Core Assistant Painel usando Docker.
+Este documento fornece instruções **COMPLETAS e ATUALIZADAS** para configurar e executar o Smart Core Assistant Painel usando Docker. Siga este guia para garantir uma configuração sem erros.
 
 ## 📋 Pré-requisitos
 
-- **Docker Engine 20.10+**
-- **Docker Compose 2.0+**
+### Software Obrigatório
+- **Docker Engine 20.10+** (ou Docker Desktop para Windows)
+- **Docker Compose 2.0+** (incluído no Docker Desktop)
 - **PowerShell 5.0+** (Windows)
-- **Git**
+- **Git** (para clonar o repositório)
 
-### Verificação dos Pré-requisitos
+### Software Opcional
+- **Python 3.13+** (apenas se quiser desenvolvimento local sem Docker)
+- **Ollama** (para funcionalidades de IA local - opcional)
+
+### Hardware Recomendado
+- **RAM**: Mínimo 8GB (recomendado 16GB)
+- **Espaço em Disco**: Mínimo 15GB livres
+- **CPU**: 4 cores ou mais (recomendado 8 cores)
+
+### Verificação Automática dos Pré-requisitos
+O script `docker-manager.ps1` verifica automaticamente todos os pré-requisitos:
+
+```powershell
+# O script verifica automaticamente:
+# ✅ Docker instalado
+# ✅ Docker Compose disponível
+# ✅ Docker rodando
+# ✅ Python instalado
+.\docker-manager.ps1 setup
+```
+
+### Verificação Manual (Opcional)
 ```powershell
 # Verificar Docker
 docker --version
-docker-compose --version
+docker compose --version
 
 # Verificar se Docker está rodando
 docker info
+
+# Verificar PowerShell
+$PSVersionTable.PSVersion
 ```
 
 ## 🚀 Configuração e Execução
 
-### 1. Configuração Rápida (Recomendado)
+### 1. Configuração Rápida (RECOMENDADO)
 
-Use o script `docker-manager.ps1` para configuração automática:
+Use o script `docker-manager.ps1` para configuração automática completa:
 
 ```powershell
-# Navegar para o diretório do projeto
+# 1) Navegar para o diretório do ambiente Docker
 cd c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker
 
-# Executar configuração inicial completa
+# 2) Executar configuração inicial completa (ambiente padrão: prod)
 .\docker-manager.ps1 setup
 
-# Iniciar serviços
-.\docker-manager.ps1 start
+# 3) (Opcional) Ativar ferramentas de desenvolvimento (ex.: Redis Commander)
+.\docker-manager.ps1 setup -Tools
+
+# 4) (Opcional) Escolher ambiente explicitamente
+.\docker-manager.ps1 setup -Environment dev
 ```
 
-### 2. Configuração Manual
+O comando `setup` executa automaticamente:
+- ✅ Verificação de pré-requisitos
+- ✅ Criação/atualização do arquivo `.env` com chaves e senhas geradas
+- ✅ Verificação das credenciais do Firebase (exige o arquivo firebase_key.json no caminho correto)
+- ✅ Verificação da conectividade com Ollama (opcional)
+- ✅ Construção das imagens Docker
+- ✅ Inicialização de todos os serviços
+- ✅ Execução das migrações do banco e collectstatic
+- ✅ Exibição das informações finais e URLs de acesso
+
+### 2. Configuração Manual (Para Casos Especiais)
 
 #### 2.1. Configurar Variáveis de Ambiente
 
-Copie o arquivo de exemplo na raiz do projeto:
-```bash
-cp .env.example .env
-```
-
-Edite o arquivo `.env` na raiz do projeto com suas configurações:
+O arquivo `.env` será gerado automaticamente pelo script na raiz do projeto com o seguinte conteúdo:
 
 ```env
 # Firebase Configuration (OBRIGATÓRIO)
 GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
-# Django Configuration (OBRIGATÓRIO)
-SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
+# Django Configuration (Gerado automaticamente pelo script)
+SECRET_KEY_DJANGO=chave-secreta-django-gerada-automaticamente-50-caracteres
 DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
 
-# Evolution API Configuration (OBRIGATÓRIO)
+# Evolution API Configuration (Gerado automaticamente pelo script)
 EVOLUTION_API_URL=http://localhost:8080
-EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
+EVOLUTION_API_KEY=chave-evolution-api-gerada-automaticamente-25-caracteres
 EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
 # PostgreSQL Configuration
@@ -70,7 +103,7 @@ POSTGRES_PORT=5432
 
 # Webhook Configuration
 WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
-WEBHOOK_SECRET=seu-webhook-secret
+WEBHOOK_SECRET=webhook-secret-gerado-automaticamente-25-caracteres
 
 # Server Configuration
 SERVER_HOST=0.0.0.0
@@ -85,12 +118,35 @@ CSRF_COOKIE_SECURE=False
 # Logging
 LOG_LEVEL=INFO
 
-# Ollama Configuration (opcional)
+# Ollama Configuration (para desenvolvimento local)
 OLLAMA_HOST=localhost
 OLLAMA_PORT=11434
+
+# As seguintes variáveis são carregadas dinamicamente do Firebase Remote Config:
+# - OPENAI_API_KEY
+# - GROQ_API_KEY
+# - WHATSAPP_API_BASE_URL
+# - WHATSAPP_API_SEND_TEXT_URL
+# - WHATSAPP_API_START_TYPING_URL
+# - WHATSAPP_API_STOP_TYPING_URL
+# - LLM_CLASS
+# - MODEL
+# - TEMPERATURE
+# - PROMPT_SYSTEM_ANALISE_CONTEUDO
+# - PROMPT_HUMAN_ANALISE_CONTEUDO
+# - PROMPT_SYSTEM_MELHORIA_CONTEUDO
+# - CHUNK_OVERLAP
+# - CHUNK_SIZE
+# - FAISS_MODEL
+# - PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM
+# - PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM
+# - VALID_ENTITY_TYPES
+# - VALID_INTENT_TYPES
 ```
 
-#### 2.2. Configurar Firebase
+⚠️ **IMPORTANTE**: O script `docker-manager.ps1` gera automaticamente as chaves necessárias. Você **NÃO** precisa criar este arquivo manualmente.
+
+#### 2.2. Configurar Firebase (OBRIGATÓRIO)
 
 1. **Obter credenciais do Firebase:**
    - Acesse o [Console do Firebase](https://console.firebase.google.com/)
@@ -103,281 +159,401 @@ OLLAMA_PORT=11434
    src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
    ```
 
-3. **Configurar Remote Config:**
+3. **Configurar Remote Config no Firebase:**
    Configure as seguintes variáveis no Firebase Remote Config:
+   
+   **APIs e Chaves:**
    - `OPENAI_API_KEY`
    - `GROQ_API_KEY`
+   
+   **WhatsApp API:**
    - `WHATSAPP_API_BASE_URL`
    - `WHATSAPP_API_SEND_TEXT_URL`
    - `WHATSAPP_API_START_TYPING_URL`
    - `WHATSAPP_API_STOP_TYPING_URL`
+   
+   **LLM Configuration:**
    - `LLM_CLASS`
    - `MODEL`
    - `TEMPERATURE`
-   - Prompts do sistema
-   - Configurações do FAISS
+   
+   **Prompts do Sistema:**
+   - `PROMPT_SYSTEM_ANALISE_CONTEUDO`
+   - `PROMPT_HUMAN_ANALISE_CONTEUDO`
+   - `PROMPT_SYSTEM_MELHORIA_CONTEUDO`
+   - `PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM`
+   - `PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM`
+   
+   **FAISS Configuration:**
+   - `CHUNK_OVERLAP`
+   - `CHUNK_SIZE`
+   - `FAISS_MODEL`
+   
+   **Validação:**
+   - `VALID_ENTITY_TYPES`
+   - `VALID_INTENT_TYPES`
 
-#### 2.3. Gerar Chave Secreta Django
+#### 2.3. Configurar Ollama (OPCIONAL)
 
-```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
-```
+O sistema funciona sem Ollama, mas para funcionalidades de embeddings locais:
 
-#### 2.4. Construir e Iniciar Serviços
+1. **Instalar Ollama:**
+   - Download: https://ollama.ai/
+   - Instalar e executar localmente
+
+2. **Verificar se está rodando:**
+   ```bash
+   curl http://localhost:11434/api/tags
+   ```
+
+#### 2.4. Construir e Iniciar Serviços (Manual)
 
 ```powershell
-# Construir as imagens Docker
-docker-compose build
+# 1. Construir as imagens Docker
+docker compose build
 
-# Iniciar os serviços
-docker-compose up -d
+# 2. Iniciar os serviços
+docker compose up -d
+
+# 3. Executar migrações
+docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
+
+# 4. Criar superusuário (opcional)
+docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
 ```
-
-#### 2.5. Configurar Banco de Dados
-
-Após iniciar os serviços, é necessário criar e aplicar as migrações do Django:
-
-```powershell
-# Aplicar migrações
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
-
-# Criar superusuário (opcional)
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
-```
-
-**Nota Importante**: O passo de migrações é essencial para criar as tabelas do banco de dados.
 
 ## 🛠️ Comandos do Docker Manager
 
+O `docker-manager.ps1` é o script principal para gerenciar o ambiente:
+
+### Comandos Principais
+
 ```powershell
-# Configuração inicial completa
+# ⚡ Configuração inicial completa (RECOMENDADO)
 .\docker-manager.ps1 setup
 
-# Iniciar serviços
+# 🚀 Iniciar serviços
 .\docker-manager.ps1 start
 
-# Parar serviços
+# ⏹️ Parar serviços
 .\docker-manager.ps1 stop
 
-# Reiniciar serviços
+# 🔄 Reiniciar serviços
 .\docker-manager.ps1 restart
 
-# Ver status dos serviços
+# 📊 Ver status dos serviços
 .\docker-manager.ps1 status
 
-# Ver logs em tempo real
+# 📋 Ver logs em tempo real
 .\docker-manager.ps1 logs
+```
 
-# Construir imagens
+### Comandos de Manutenção
+
+```powershell
+# 🔨 Construir imagens
 .\docker-manager.ps1 build
 
-# Limpeza completa
+# 🧹 Limpeza completa (cuidado!)
 .\docker-manager.ps1 clean
 
-# Acessar shell do Django
+# 💻 Acessar shell do Django
 .\docker-manager.ps1 shell
 
-# Executar migrações
+# 📊 Executar migrações
 .\docker-manager.ps1 migrate
 
-# Criar superusuário
+# 👤 Criar superusuário
 .\docker-manager.ps1 createsuperuser
+```
 
-# Mostrar ajuda
+### Comandos com Opções
+
+```powershell
+# 🛠️ Configuração com ferramentas de desenvolvimento
+.\docker-manager.ps1 setup -Tools
+
+# 🚀 Iniciar com ferramentas (Redis Commander)
+.\docker-manager.ps1 start -Tools
+
+# 🔨 Construir sem cache
+.\docker-manager.ps1 build -Force
+
+# ❓ Mostrar ajuda
 .\docker-manager.ps1 help
 ```
 
 ## 🏗️ Arquitetura dos Serviços
 
-### Serviços Incluídos
+### Serviços Principais
 
-1. **Django Application** (porta 8000)
-   - Aplicação principal Django
-   - URL: http://localhost:8000
-   - Health Check: `/admin/`
+| Serviço | Porta | Função | Status |
+|---------|-------|--------|--------|
+| **django-app** | 8000 | Aplicação principal Django | ✅ Essencial |
+| **django-qcluster** | - | Processamento assíncrono | ✅ Essencial |
+| **postgres-django** | - | Banco de dados Django | ✅ Essencial |
+| **evolution-api** | 8080 | API WhatsApp | ✅ Essencial |
+| **postgres** | - | Banco Evolution API | ✅ Essencial |
+| **redis** | 6379 | Cache e filas | ✅ Essencial |
 
-2. **Django Q Cluster**
-   - Processamento assíncrono de tarefas
-   - Dependente do Redis
+### Ferramentas de Desenvolvimento (Opcional)
 
-3. **Evolution API** (porta 8080)
-   - API para integração WhatsApp
-   - URL: http://localhost:8080
-   - Versão: v2.1.1
-   - Webhook configurado para Django app
+| Ferramenta | Porta | Função | Ativação |
+|------------|-------|--------|----------|
+| **redis-commander** | 8082 | Interface Redis | `-Tools` |
 
-4. **PostgreSQL Django** (interno)
-   - Banco de dados principal do Django
-   - Database: `smart_core_db`
+### URLs de Acesso
 
-5. **PostgreSQL Evolution** (interno)
-   - Banco de dados dedicado para Evolution API
-   - Database: `evolution`
-
-6. **Redis** (porta 6379)
-   - Cache para Evolution API e filas Django Q
-   - Persistência habilitada
+```
+📱 Django Admin:     http://localhost:8000/admin/
+🤖 Evolution API:    http://localhost:8080/
+🔧 Redis Commander:  http://localhost:8082/ (apenas com -Tools)
+🎯 Webhook:          http://localhost:8000/oraculo/webhook_whatsapp/
+```
 
 ### Dependências entre Serviços
 
-```
-PostgreSQL Django → Django App → Django QCluster
-Redis → Django App, Django QCluster, Evolution API
-PostgreSQL Evolution → Evolution API
-Firebase → Django App
+```mermaid
+graph TD
+    A[PostgreSQL Django] --> B[Django App]
+    B --> C[Django QCluster]
+    D[Redis] --> B
+    D --> C
+    D --> F[Evolution API]
+    E[PostgreSQL Evolution] --> F
+    G[Firebase] --> B
+    H[Ollama] -.-> B
 ```
 
-## 📚 Comandos Úteis
+### Inicialização Automática
+
+Atualmente, o `docker-compose.yml` está configurado para iniciar os serviços Django diretamente via `manage.py` (os entrypoints de inicialização completa estão temporariamente desabilitados por comentários no compose). Portanto, o fluxo atual é:
+
+1. **django-app**:
+   - ✅ Inicia o servidor com `uv run python manage.py runserver 0.0.0.0:8000`
+   - ✅ As variáveis dinâmicas são carregadas em runtime pelo módulo `start_services()` do próprio app quando necessário
+   - ⚠️ Migrações e criação de superusuário não são automáticas neste modo; utilize `docker-manager.ps1 migrate` e `docker-manager.ps1 createsuperuser` quando precisar
+
+2. **django-qcluster**:
+   - ✅ Inicia o QCluster com `uv run python manage.py qcluster`
+   - ⚠️ Aguarda implicitamente a disponibilidade do app principal pelo serviço do banco e configurações 
+
+Nota: Os scripts de entrypoint (<mcfile name="docker-entrypoint.sh" path="c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker\scripts\docker-entrypoint.sh"></mcfile> e <mcfile name="docker-entrypoint-qcluster.sh" path="c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker\scripts\docker-entrypoint-qcluster.sh"></mcfile>) já implementam:
+- Verificação do PostgreSQL e credenciais do Firebase
+- Execução de `start_initial_loading()` e `start_services()`
+- Verificação de conectividade com Ollama
+- Migrações e criação de superusuário padrão (admin/123456)
+
+Para reativar esse fluxo automaticamente, basta descomentar as linhas `entrypoint` correspondentes no `docker-compose.yml` e remover/ajustar os comandos `command` atuais.
+
+## 📚 Comandos Úteis do Docker
 
 ### Gerenciamento de Containers
 
 ```bash
 # Ver todos os containers
-docker-compose ps
+docker compose ps
 
 # Ver logs de todos os serviços
-docker-compose logs -f
+docker compose logs -f
 
 # Ver logs de um serviço específico
-docker-compose logs -f django-app
+docker compose logs -f django-app
 
 # Reiniciar um serviço específico
-docker-compose restart django-app
+docker compose restart django-app
 
-# Parar todos os serviços
-docker-compose down
-
-# Reconstruir imagens
-docker-compose build --no-cache
+# Executar comando em container
+docker compose exec django-app bash
 ```
 
-### Django Management
+### Monitoramento
 
 ```bash
-# Executar migrações
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
+# Ver uso de recursos
+docker stats
 
-# Criar superusuário
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
+# Ver redes Docker
+docker network ls
 
-# Acessar shell Django
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
+# Ver volumes Docker
+docker volume ls
 
-# Acessar bash do container
-docker-compose exec django-app bash
+# Inspecionar container
+docker compose exec django-app env
 ```
 
-## 🚨 Troubleshooting
+### Limpeza e Manutenção
+
+```bash
+# Remover containers parados
+docker container prune
+
+# Remover imagens não utilizadas
+docker image prune
+
+# Remover volumes não utilizados
+docker volume prune
+
+# Limpeza completa do sistema
+docker system prune -a
+```
+
+## 🧪 Testes no Ambiente Docker
+
+Para executar testes no ambiente Docker, consulte <mcfile name="README-Tests-Docker.md" path="c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker\README-Tests-Docker.md"></mcfile>.
+
+Comandos rápidos:
+```bash
+# Executar todos os testes
+uv run task test-docker
+
+# Executar testes específicos
+uv run task test-docker-specific tests/modules/oraculo/
+
+# Executar com cobertura
+uv run task test-docker-coverage
+```
+
+## 🔧 Solução de Problemas
 
 ### Problemas Comuns
 
-#### 1. Container não inicia
+#### 1. Docker não está rodando
 ```bash
-# Verificar logs
-docker-compose logs django-app
+# Verificar se Docker está ativo
+docker info
 
-# Verificar configuração
-docker-compose config
+# No Windows, iniciar Docker Desktop
 ```
 
-#### 2. Erro de conexão com banco
+#### 2. Porta já está em uso
 ```bash
-# Verificar se PostgreSQL está rodando
-docker-compose ps postgres-django
+# Verificar processos usando a porta
+netstat -ano | findstr :8000
 
-# Verificar logs do PostgreSQL
-docker-compose logs postgres-django
+# Parar serviços Docker
+.\docker-manager.ps1 stop
 ```
 
-#### 3. Erro de tabela não encontrada (Django)
-```bash
-# Verificar migrações pendentes
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py showmigrations
-
-# Aplicar migrações
-docker-compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
-```
-
-#### 4. Evolution API não conecta
-```bash
-# Verificar logs da Evolution API
-docker-compose logs evolution-api
-
-# Verificar se Redis está rodando
-docker-compose ps redis
-
-# Testar conexão Redis
-docker-compose exec redis redis-cli ping
-```
-
-#### 5. Firebase não inicializa
+#### 3. Erro de credenciais Firebase
 ```bash
 # Verificar se arquivo existe
-ls -la src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
+ls src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
-# Verificar conteúdo do arquivo
-cat src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json | jq .
+# Recolocar arquivo no local correto
 ```
 
-#### 6. Erro de decodificação UTF-8 no Webhook WhatsApp
+#### 4. Problema de conectividade com Ollama
+```bash
+# Verificar se Ollama está rodando
+curl http://localhost:11434/api/tags
 
-**Sintomas**: Erro `UnicodeDecodeError: 'utf-8' codec can't decode byte` nos logs do Django
+# Instalar Ollama se necessário
+# Download: https://ollama.ai/
+```
 
-**Solução**: O sistema possui tratamento automático para múltiplos encodings:
-- UTF-8 (padrão)
-- Latin-1 (fallback)
-- CP1252 (fallback final)
+#### 5. Erro de migrações
+```bash
+# Executar migrações manualmente
+.\docker-manager.ps1 migrate
+
+# Ou via Docker direto
+docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
+```
+
+#### 6. Problema com volumes/dados
+```bash
+# Limpeza completa (CUIDADO: apaga dados)
+.\docker-manager.ps1 clean -Force
+
+# Reconstruir do zero
+.\docker-manager.ps1 setup
+```
+
+### Logs e Debugging
 
 ```bash
-# Verificar se a correção está aplicada
-docker-compose exec django-app grep -n "latin-1\|cp1252" src/smart_core_assistant_painel/app/ui/oraculo/views.py
+# Ver logs detalhados
+.\docker-manager.ps1 logs
 
-# Verificar logs do webhook
-docker-compose logs -f django-app | grep webhook
+# Ver logs de serviço específico
+docker compose logs -f django-app
+
+# Ver logs de inicialização
+docker compose logs django-app | grep "Iniciando"
+
+# Acessar shell para debug
+.\docker-manager.ps1 shell
 ```
 
-### Limpeza Completa
-
-Para resolver problemas persistentes:
+### Performance
 
 ```bash
-# Parar e remover tudo
-docker-compose down -v --remove-orphans
+# Monitorar recursos
+docker stats
 
-# Limpeza geral do Docker
-docker system prune -a
+# Verificar saúde dos containers
+docker compose ps
 
-# Recriar do zero
-.\docker-manager.ps1 setup -Force
+# Reiniciar serviços com problemas
+docker compose restart django-app
 ```
 
-## 🔒 URLs de Acesso
+## 📝 Variáveis de Ambiente Importantes
 
-- **Django Admin**: http://localhost:8000/admin/
-- **Django App**: http://localhost:8000/
-- **Evolution API**: http://localhost:8080/ (requer apikey no header)
+### Arquivo .env (Gerado Automaticamente)
+- `SECRET_KEY_DJANGO`: Chave secreta Django (gerada automaticamente)
+- `EVOLUTION_API_KEY`: Chave da Evolution API (gerada automaticamente)
+- `WEBHOOK_SECRET`: Segredo do webhook (gerado automaticamente)
 
-## 📞 Suporte
+### Firebase Remote Config (Manual)
+- `OPENAI_API_KEY`: Chave da API OpenAI
+- `GROQ_API_KEY`: Chave da API Groq
+- `LLM_CLASS`: Classe do modelo LLM
+- `MODEL`: Nome do modelo
+- `FAISS_MODEL`: Modelo para embeddings FAISS
 
-Para problemas ou dúvidas:
+### Configuração Docker
+- `OLLAMA_HOST`: Host do Ollama (padrão: host.docker.internal)
+- `OLLAMA_PORT`: Porta do Ollama (padrão: 11434)
+- `POSTGRES_HOST`: Host do PostgreSQL (padrão: postgres-django)
+- `POSTGRES_PORT`: Porta do PostgreSQL (padrão: 5432)
 
-1. **Verifique os logs** dos containers
-2. **Consulte este README** para soluções comuns
-3. **Use o comando** `docker-manager.ps1 help`
+## 🎯 Próximos Passos Após Setup
 
-### Comandos de Diagnóstico
+1. **Acesse o Django Admin**: http://localhost:8000/admin/
+   - Usuário: `admin`
+   - Senha: `123456`
 
-```bash
-# Diagnóstico completo
-.\docker-manager.ps1 status
-docker-compose config
-docker system info
+2. **Configure sua instância WhatsApp na Evolution API**: http://localhost:8080/
 
-# Verificar conectividade
-docker-compose exec django-app ping postgres-django
-docker-compose exec django-app ping redis
-```
+3. **Teste o webhook**: http://localhost:8000/oraculo/webhook_whatsapp/
+
+4. **Configure o Firebase Remote Config** com suas chaves de API
+
+5. **Inicie o desenvolvimento** com hot reload ativo
+
+## ✨ Recursos Avançados
+
+### Hot Reload
+- ✅ Código Python: Recarregamento automático
+- ✅ Templates Django: Recarregamento automático
+- ✅ Arquivos estáticos: Coletados automaticamente
+
+### Persistência de Dados
+- ✅ Banco PostgreSQL: Dados persistem entre reinicializações
+- ✅ Redis: Dados de cache persistem
+- ✅ Uploads de mídia: Arquivos persistem
+- ✅ Logs de aplicação: Mantidos em volumes
+
+### Monitoramento
+- ✅ Health checks automáticos
+- ✅ Logs estruturados
+- ✅ Status de serviços em tempo real
 
 ---
 
-**Nota**: Esta configuração está otimizada para desenvolvimento e produção. O script `docker-manager.ps1` automatiza a maioria das operações e deve ser usado como ponto de entrada principal.
+**💡 Dica**: Use sempre `.\docker-manager.ps1 setup` para uma experiência completa e sem erros!
+
+Para dúvidas ou problemas, consulte os logs com `.\docker-manager.ps1 logs` ou acesse o shell com `.\docker-manager.ps1 shell`.

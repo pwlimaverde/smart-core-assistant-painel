@@ -57,7 +57,6 @@ class LoadMensageDataUseCase(LMDUsecase):
                 error.message = f"{error.message} - Exception: Campo instance não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
-
             data_section = parameters.data.get("data")
 
             if not data_section:

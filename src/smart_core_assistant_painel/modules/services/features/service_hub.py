@@ -8,6 +8,7 @@ from langchain_ollama import ChatOllama
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
 )
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import WhatsAppService
 
 
 class ServiceHub:
@@ -31,6 +32,7 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(__file__).parent.parent.parent / "app/datasets"
         self._vetor_storage: Optional[VetorStorage] = None
+        self._whatsapp_service: Optional[WhatsAppService] = None
         self._configuring_vetor_storage: bool = False
 
         self._whatsapp_api_base_url: Optional[str] = None
@@ -55,9 +57,12 @@ class ServiceHub:
 
     def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
         """Define a instância do VetorStorage."""
-        if not isinstance(vetor_storage, VetorStorage):
-            raise TypeError("vetor_storage deve implementar a interface VetorStorage")
         self._vetor_storage = vetor_storage
+
+    def set_whatsapp_service(self, whatsapp_service: WhatsAppService) -> None:
+        """Define a instância do WhatsAppService."""
+        self._whatsapp_service = whatsapp_service
+
 
     @property
     def TIME_CACHE(self) -> int:

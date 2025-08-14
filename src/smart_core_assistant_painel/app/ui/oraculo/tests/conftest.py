@@ -1,8 +1,5 @@
 """Configuração para testes do app Oraculo."""
 
-import os
-import django
-
 
 # def pytest_configure() -> None:
 #     """Configura o Django para os testes do app Oraculo."""

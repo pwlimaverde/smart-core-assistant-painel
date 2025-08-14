@@ -17,6 +17,12 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.datasou
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.usecase.vetor_storage_usecase import (
     VetorStorageUseCase,
 )
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_api_datasource import (
+    EvolutionAPIDatasource,
+)
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.usecase.whatsapp_service_usecase import (
+    WhatsAppServiceUsecase,
+)
 from smart_core_assistant_painel.modules.services.utils.erros import (
     SetEnvironRemoteError,
 )
@@ -28,6 +34,7 @@ from smart_core_assistant_painel.modules.services.utils.types import (
     SERUsecase,
     VSData,
     VSUsecase,
+    WSData,
 )
 
 
@@ -79,5 +86,29 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, SuccessReturn):
             SERVICEHUB.set_vetor_storage(data.result)
+        if isinstance(data, ErrorReturn):
+            raise data.result
+
+    @staticmethod
+    def whatsapp_service() -> None:
+        """
+        Função de alto nível para enviar mensagem via WhatsApp.
+
+        Args:
+            instance: Nome da instância do WhatsApp
+            api_key: Chave de API para autenticação
+            message_data: Dados da mensagem a ser enviada
+
+        Returns:
+            Resultado do envio da mensagem
+        """
+        # Cria os parâmetros
+        parameters: NoParams = NoParams()
+        datasource: WSData = EvolutionAPIDatasource()
+        usecase = WhatsAppServiceUsecase(datasource=datasource)
+
+        data = usecase(parameters)
+        if isinstance(data, SuccessReturn):
+            SERVICEHUB.set_whatsapp_service(data.result)
         if isinstance(data, ErrorReturn):
             raise data.result

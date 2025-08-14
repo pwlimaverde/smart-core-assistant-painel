@@ -43,9 +43,8 @@ class TestFaissVetorStorage(unittest.TestCase):
         self.mock_faiss.load_local.return_value = self.mock_vectordb
 
         # Reset the singleton instance before each test
-        FaissVetorStorage._instance = None
-        FaissVetorStorage._initialized = False
-        FaissVetorStorage._lock = None
+        from smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage import _FaissVetorStorageMeta
+        _FaissVetorStorageMeta._instances.clear()
 
         # Patch Path to control where the db is created
         self.path_patcher = patch(

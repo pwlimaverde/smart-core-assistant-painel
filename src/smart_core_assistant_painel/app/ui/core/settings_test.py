@@ -1,6 +1,5 @@
 """Configurações Django específicas para testes."""
 
-import os
 from typing import Any, Dict
 
 # Configurações específicas para testes

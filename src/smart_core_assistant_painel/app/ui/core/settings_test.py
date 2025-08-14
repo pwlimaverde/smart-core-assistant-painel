@@ -38,17 +38,17 @@ Q_CLUSTER: Dict[str, Any] = {
 from .settings import *  # noqa: F403, F401, E402
 
 
-# Desabilita migrações para testes mais rápidos
-class DisableMigrations:
-    def __contains__(self, item: str) -> bool:
-        return True
+# # Desabilita migrações para testes mais rápidos
+# class DisableMigrations:
+#     def __contains__(self, item: str) -> bool:
+#         return True
 
-    def __getitem__(self, item: str) -> None:
-        return None
+#     def __getitem__(self, item: str) -> None:
+#         return None
 
 
-if os.environ.get("DISABLE_MIGRATIONS", "False").lower() == "true":
-    MIGRATION_MODULES = DisableMigrations()
+# if os.environ.get("DISABLE_MIGRATIONS", "False").lower() == "true":
+#     MIGRATION_MODULES = DisableMigrations()
 
 # Configurações de cache para testes
 CACHES: Dict[str, Dict[str, Any]] = {

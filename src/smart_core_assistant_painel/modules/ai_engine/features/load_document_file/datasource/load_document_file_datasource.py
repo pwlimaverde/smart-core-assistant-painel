@@ -15,6 +15,12 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import LDFData
 
 
 class LoadDocumentFileDatasource(LDFData):
+    """Datasource para carregar documentos de diferentes formatos de arquivo.
+
+    Utiliza a biblioteca Langchain para carregar arquivos .pdf, .docx, .txt,
+    .xlsx, .xls e .csv, convertendo-os em uma lista de objetos Document.
+    """
+
     SUPPORTED_EXTENSIONS = {
         ".pdf": PyPDFLoader,
         ".doc": Docx2txtLoader,
@@ -26,6 +32,21 @@ class LoadDocumentFileDatasource(LDFData):
     }
 
     def __call__(self, parameters: LoadDocumentFileParameters) -> list[Document]:
+        """Carrega um arquivo do caminho especificado nos parâmetros.
+
+        Args:
+            parameters (LoadDocumentFileParameters): Os parâmetros contendo
+                o caminho do arquivo (`path`) e seu id.
+
+        Returns:
+            list[Document]: Uma lista de objetos `Document` contendo o
+                conteúdo do arquivo.
+
+        Raises:
+            ValueError: Se a extensão do arquivo não for suportada.
+            RuntimeError: Se ocorrer qualquer outro erro durante o
+                carregamento do arquivo.
+        """
         try:
             ext = Path(parameters.path).suffix.lower()
 

@@ -15,9 +15,26 @@ from smart_core_assistant_painel.modules.initial_loading.utils.types import FIUs
 
 
 class FirebaseInitUseCase(FIUsecase):
+    """Use case para inicializar o SDK do Firebase Admin.
+
+    Esta classe garante que o Firebase seja inicializado corretamente no início
+    da aplicação, carregando as credenciais a partir das variáveis de ambiente.
+    """
+
     def __call__(
         self, parameters: FirebaseInitParameters
     ) -> ReturnSuccessOrError[Empty]:
+        """Executa o caso de uso de inicialização do Firebase.
+
+        Args:
+            parameters (FirebaseInitParameters): Parâmetros que contêm o
+                objeto de erro a ser usado em caso de falha.
+
+        Returns:
+            ReturnSuccessOrError[Empty]: Retorna um `SuccessReturn` com um
+                objeto `EMPTY` em caso de sucesso, ou um `ErrorReturn`
+                contendo um `FirebaseInitError` em caso de falha.
+        """
         try:
             load_dotenv(find_dotenv())
             try:

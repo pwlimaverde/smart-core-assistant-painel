@@ -39,8 +39,22 @@ from smart_core_assistant_painel.modules.services.utils.types import (
 
 
 class FeaturesCompose:
+    """Facade para os casos de uso do módulo de Serviços.
+
+    Esta classe inicializa e configura os principais serviços da aplicação,
+    como variáveis de ambiente, o banco de dados vetorial (vector storage)
+    e o serviço de mensagens do WhatsApp.
+    """
+
     @staticmethod
     def set_environ_remote() -> None:
+        """Busca as variáveis de ambiente de um datasource remoto (Firebase)
+        e as injeta no `SERVICEHUB` para uso global na aplicação.
+
+        Raises:
+            SetEnvironRemoteError: Se ocorrer um erro ao buscar ou definir
+                                   as variáveis de ambiente.
+        """
         config_mapping = {
             "groq_api_key": "GROQ_API_KEY",
             "openai_api_key": "OPENAI_API_KEY",
@@ -79,6 +93,13 @@ class FeaturesCompose:
 
     @staticmethod
     def vetor_storage() -> None:
+        """Inicializa o datasource de armazenamento vetorial (Faiss) e o
+        disponibiliza no `SERVICEHUB`.
+
+        Raises:
+            VetorStorageError: Se ocorrer um erro ao inicializar ou carregar
+                               o banco de dados vetorial.
+        """
         parameters: NoParams = NoParams()
         datasource: VSData = FaissStorageDatasource()
         usecase: VSUsecase = VetorStorageUseCase(datasource=datasource)
@@ -91,16 +112,11 @@ class FeaturesCompose:
 
     @staticmethod
     def whatsapp_service() -> None:
-        """
-        Função de alto nível para enviar mensagem via WhatsApp.
+        """Inicializa o serviço de cliente de API do WhatsApp (Evolution API)
+        e o disponibiliza no `SERVICEHUB`.
 
-        Args:
-            instance: Nome da instância do WhatsApp
-            api_key: Chave de API para autenticação
-            message_data: Dados da mensagem a ser enviada
-
-        Returns:
-            Resultado do envio da mensagem
+        Raises:
+            WhatsappServiceError: Se ocorrer um erro ao inicializar o serviço.
         """
         # Cria os parâmetros
         parameters: NoParams = NoParams()

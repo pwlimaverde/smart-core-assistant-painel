@@ -16,9 +16,36 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import APMData
 
 
 class AnalisePreviaMensagemLangchainDatasource(APMData):
+    """Datasource para extrair intenções e entidades usando LLM com Langchain.
+
+    Esta classe utiliza a funcionalidade de 'structured output' da Langchain
+    para forçar o LLM a retornar uma resposta em um formato Pydantic
+    específico, garantindo a extração confiável de dados.
+    """
+
     def __call__(
         self, parameters: AnalisePreviaMensagemParameters
     ) -> AnalisePreviaMensagemLangchain:
+        """Executa a extração de intenções e entidades.
+
+        O método cria dinamicamente um modelo Pydantic a partir das intenções
+        e entidades válidas, formata um prompt com o histórico da conversa e
+        o texto atual, e invoca um LLM com 'structured output' para obter
+        os dados estruturados.
+
+        Args:
+            parameters (AnalisePreviaMensagemParameters): Os parâmetros
+                necessários, incluindo o histórico, texto, e configurações
+                do LLM.
+
+        Returns:
+            AnalisePreviaMensagemLangchain: Um objeto contendo as listas de
+                intenções e entidades extraídas.
+
+        Raises:
+            Exception: Propaga exceções que podem ocorrer durante a
+                interação com o LLM ou na criação do modelo dinâmico.
+        """
         try:
             # Criar modelo PydanticModel dinâmico baseado nos parâmetros
             PydanticModel = create_dynamic_pydantic_model(

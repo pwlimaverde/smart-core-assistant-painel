@@ -12,7 +12,25 @@ from smart_core_assistant_painel.modules.services.utils.types import VSData
 
 
 class FaissStorageDatasource(VSData):
+    """Datasource para instanciar o serviço de armazenamento vetorial Faiss.
+
+    Esta classe é responsável por criar e retornar uma instância concreta
+    do `FaissVetorStorage`.
+    """
+
     def __call__(self, parameters: NoParams) -> VetorStorage:
+        """Cria e retorna a instância do FaissVetorStorage.
+
+        Args:
+            parameters (NoParams): Nenhum parâmetro é esperado.
+
+        Returns:
+            VetorStorage: Uma instância do serviço de armazenamento vetorial.
+
+        Raises:
+            TypeError: Se ocorrer um erro durante a instanciação do
+                       `FaissVetorStorage`.
+        """
         try:
             return FaissVetorStorage()
         except Exception as e:

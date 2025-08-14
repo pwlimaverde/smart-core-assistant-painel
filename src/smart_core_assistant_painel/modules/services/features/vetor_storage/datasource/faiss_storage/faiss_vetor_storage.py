@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
+from abc import ABCMeta
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,39 +15,36 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.
 )
 
 
-class FaissVetorStorage(VetorStorage):
+class _FaissVetorStorageMeta(ABCMeta):
+    """Metaclasse para implementar o padrão Singleton com suporte a ABC."""
+
+    _instances: Dict[type, Any] = {}
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
     """
     Implementação singleton do VetorStorage usando FAISS.
     Garante que todas as instâncias compartilhem o mesmo banco vetorial.
     """
-
-    _instance = None
-    _initialized = False
-    _lock = None
-
-    def __new__(cls) -> "FaissVetorStorage":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self) -> None:
         """
         Inicializa o armazenamento FAISS.
         Cria ou carrega o banco vetorial existente.
         """
-        if not self._initialized:
-            # Import aqui para evitar problemas de importação circular
-            import threading
+        # Evita reinicialização em instâncias subsequentes do Singleton
+        if hasattr(self, "_initialized"):
+            return
 
-            if FaissVetorStorage._lock is None:
-                FaissVetorStorage._lock = threading.Lock()
-
-            with FaissVetorStorage._lock:
-                if not self._initialized:
-                    self.__db_path = str(Path(__file__).parent / "banco_faiss")
-                    self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
-                    self.__vectordb = self.__inicializar_banco_vetorial()
-                    FaissVetorStorage._initialized = True
+        self.__db_path = str(Path(__file__).parent / "banco_faiss")
+        self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
+        self.__vectordb = self.__inicializar_banco_vetorial()
+        self._initialized = True
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco FAISS existe no caminho especificado."""

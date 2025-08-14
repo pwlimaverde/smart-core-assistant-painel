@@ -11,7 +11,7 @@ from smart_core_assistant_painel.modules.services.utils.erros import (
     WhatsAppServiceError,
 )
 from smart_core_assistant_painel.modules.services.utils.parameters import (
-    WhatsAppServiceParameters,
+    WhatsAppMensagemParameters,
 )
 
 
@@ -21,14 +21,14 @@ class TestEvolutionWhatsAppService:
     def test_singleton_pattern(self) -> None:
         """Testa se o padrão Singleton está funcionando corretamente."""
         # Cria parâmetros de teste
-        parameters1 = WhatsAppServiceParameters(
+        parameters1 = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"number": "5511999999999", "text": "Teste"},
             error=WhatsAppServiceError(message="Erro de teste"),
         )
 
-        parameters2 = WhatsAppServiceParameters(
+        parameters2 = WhatsAppMensagemParameters(
             instance="another_instance",
             api_key="another_api_key",
             message_data={"number": "5511888888888", "text": "Outro teste"},
@@ -55,7 +55,7 @@ class TestEvolutionWhatsAppService:
         mock_post.return_value = mock_response
 
         # Cria parâmetros de teste
-        parameters = WhatsAppServiceParameters(
+        parameters = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"number": "5511999999999", "text": "Teste"},
@@ -86,7 +86,7 @@ class TestEvolutionWhatsAppService:
         mock_post.return_value = mock_response
 
         # Cria parâmetros de teste
-        parameters = WhatsAppServiceParameters(
+        parameters = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"number": "5511999999999", "text": "Teste"},
@@ -111,7 +111,7 @@ class TestEvolutionWhatsAppService:
         mock_post.return_value = mock_response
 
         # Cria parâmetros de teste
-        parameters = WhatsAppServiceParameters(
+        parameters = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"number": "5511999999999", "text": "Teste"},
@@ -140,7 +140,7 @@ class TestEvolutionWhatsAppService:
         mock_post.return_value = mock_response
 
         # Cria parâmetros de teste
-        parameters = WhatsAppServiceParameters(
+        parameters = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"number": "5511999999999", "text": "Teste"},
@@ -161,7 +161,7 @@ class TestEvolutionWhatsAppService:
     def test_typing_without_number(self) -> None:
         """Testa o erro quando não há número nos dados da mensagem."""
         # Cria parâmetros sem número
-        parameters = WhatsAppServiceParameters(
+        parameters = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"text": "Teste"},  # Sem número

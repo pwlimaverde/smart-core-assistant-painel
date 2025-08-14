@@ -20,7 +20,6 @@ from .models import (
     processar_mensagem_whatsapp,
 )
 from .signals import mensagem_bufferizada
-from .wrapper_evolutionapi import SendMessage
 
 
 def set_wa_buffer(message: MessageData) -> None:
@@ -108,16 +107,28 @@ def send_message_response(phone: str) -> None:
             atendimento_obj: Atendimento = cast(Atendimento, mensagem.atendimento)
             is_bot_responder = _pode_bot_responder_atendimento(atendimento_obj)
             if is_bot_responder:
-                SendMessage().send_message(
+                SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
-                    body={
-                        "number": message_data.numero_telefone,
-                        "text": (
-                            "Obrigado pela sua mensagem, em breve um atendente "
-                            "entrará em contato."
-                        ),
-                    },
+                    api_key=message_data.api_key,
+                    number=message_data.numero_telefone,
+                    text=(
+                        "Obrigado pela sua mensagem, em breve um atendente "
+                        "entrará em contato."
+                    ),
                 )
+                logger.info(
+                    f"Mensagem enviada pelo whatsapp_service para {message_data.numero_telefone}: {message_data.conteudo}"
+                )
+                # SendMessage().send_message(
+                #     instance=message_data.instance,
+                #     body={
+                #         "number": message_data.numero_telefone,
+                #         "text": (
+                #             "Obrigado pela sua mensagem, em breve um atendente "
+                #             "entrará em contato."
+                #         ),
+                #     },
+                # )
             else:
                 logger.info(
                     f"Mensagem direcionada para atendente humano: {mensagem_id}"
@@ -464,6 +475,7 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
     # Criar nova MessageData com conteúdo e metadados compilados
     return MessageData(
         instance=ultima_mensagem.instance,
+        api_key=ultima_mensagem.api_key,
         numero_telefone=ultima_mensagem.numero_telefone,
         from_me=ultima_mensagem.from_me,
         conteudo=conteudo_compilado,

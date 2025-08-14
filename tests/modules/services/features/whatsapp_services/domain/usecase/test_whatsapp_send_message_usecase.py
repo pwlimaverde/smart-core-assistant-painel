@@ -4,27 +4,27 @@ import requests
 
 from py_return_success_or_error import SuccessReturn, ErrorReturn
 
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.usecase.whatsapp_send_message_usecase import (
-    WhatsAppSendMessageUseCase,
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.usecase.whatsapp_service_usecase import (
+    WhatsAppServiceUsecase,
 )
 from smart_core_assistant_painel.modules.services.utils.erros import WhatsAppServiceError
-from smart_core_assistant_painel.modules.services.utils.parameters import WSParameters
+from smart_core_assistant_painel.modules.services.utils.parameters import WhatsAppMensagemParameters
 
 
-class TestWhatsAppSendMessageUseCase:
-    """Testes para o WhatsAppSendMessageUseCase."""
+class TestWhatsAppServiceUsecase:
+    """Testes para o WhatsAppServiceUsecase."""
 
     @pytest.fixture
-    def usecase(self) -> WhatsAppSendMessageUseCase:
-        """Fixture que retorna uma instância do WhatsAppSendMessageUseCase."""
+    def usecase(self) -> WhatsAppServiceUsecase:
+        """Fixture que retorna uma instância do WhatsAppServiceUsecase."""
         # Mock do datasource
         mock_datasource = MagicMock()
-        return WhatsAppSendMessageUseCase(datasource=mock_datasource)
+        return WhatsAppServiceUsecase(mock_datasource)
 
     @pytest.fixture
-    def valid_parameters(self) -> WSParameters:
+    def valid_parameters(self) -> WhatsAppMensagemParameters:
         """Fixture que retorna parâmetros válidos para os testes."""
-        return WSParameters(
+        return WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
             message_data={"number": "123456789", "textMessage": {"text": "Hello"}},
@@ -32,7 +32,7 @@ class TestWhatsAppSendMessageUseCase:
         )
 
     def test_call_success_case(
-        self, usecase: WhatsAppSendMessageUseCase, valid_parameters: WSParameters
+        self, usecase: WhatsAppServiceUsecase, valid_parameters: WhatsAppMensagemParameters
     ) -> None:
         """Testa o caso de sucesso do método __call__."""
         # Mock do resultado do datasource
@@ -47,7 +47,7 @@ class TestWhatsAppSendMessageUseCase:
         assert result.result == mock_response
 
     def test_call_error_from_datasource(
-        self, usecase: WhatsAppSendMessageUseCase, valid_parameters: WSParameters
+        self, usecase: WhatsAppServiceUsecase, valid_parameters: WhatsAppMensagemParameters
     ) -> None:
         """Testa o caso de erro vindo do datasource."""
         # Configura o datasource para lançar uma exceção
@@ -60,7 +60,7 @@ class TestWhatsAppSendMessageUseCase:
         assert isinstance(result.result, WhatsAppServiceError)
 
     def test_call_exception_handling(
-        self, usecase: WhatsAppSendMessageUseCase, valid_parameters: WSParameters
+        self, usecase: WhatsAppServiceUsecase, valid_parameters: WhatsAppMensagemParameters
     ) -> None:
         """Testa o tratamento de exceções."""
         # Configura o _resultDatasource para lançar uma exceção genérica

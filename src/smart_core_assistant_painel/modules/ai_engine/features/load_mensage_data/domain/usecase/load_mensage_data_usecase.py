@@ -1,3 +1,6 @@
+import re
+from typing import Any
+
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,
@@ -10,9 +13,6 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     DataMensageParameters,
 )
-from typing import Any
-import re
-
 from smart_core_assistant_painel.modules.ai_engine.utils.types import LMDUsecase
 
 
@@ -58,6 +58,11 @@ class LoadMensageDataUseCase(LMDUsecase):
                 return ErrorReturn(error)
 
             data_section = parameters.data.get("data")
+            api_key = parameters.data.get("apikey")
+            if not api_key:
+                error = parameters.error
+                error.message = f"{error.message} - Exception: Campo api_key não encontrado no payload do webhook"
+                return ErrorReturn(error)
 
             if not data_section:
                 error = parameters.error
@@ -197,6 +202,7 @@ class LoadMensageDataUseCase(LMDUsecase):
             return SuccessReturn(
                 MessageData(
                     instance=instance,
+                    api_key=api_key,
                     numero_telefone=phone,
                     from_me=from_me,
                     conteudo=conteudo,

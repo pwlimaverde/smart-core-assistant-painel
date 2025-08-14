@@ -11,7 +11,7 @@ from smart_core_assistant_painel.modules.services.features.whatsapp_services.dom
 )
 from smart_core_assistant_painel.modules.services.utils.parameters import (
     SetEnvironRemoteParameters,
-    WhatsAppServiceParameters,
+    WhatsAppMensagemParameters,
 )
 
 SERUsecase: TypeAlias = UsecaseBaseCallData[

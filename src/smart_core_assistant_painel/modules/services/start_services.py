@@ -13,6 +13,7 @@ def start_services() -> None:
     try:
         FeaturesCompose.set_environ_remote()
         FeaturesCompose.vetor_storage()
+        FeaturesCompose.whatsapp_service()
 
     except Exception as e:
         logger.error(f"Erro ao inicializar serviços: {e}")

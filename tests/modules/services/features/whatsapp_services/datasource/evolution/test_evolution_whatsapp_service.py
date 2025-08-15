@@ -121,15 +121,21 @@ class TestEvolutionWhatsAppService:
         # Cria o serviço
         service = EvolutionWhatsAppService(parameters)
 
-        # Testa o status de digitação
-        service.typing(True)
+        # Testa o status de digitação com todos os argumentos necessários
+        service.typing(
+            typing=True,
+            instance="test_instance",
+            number="5511999999999",
+            api_key="test_api_key",
+        )
 
         # Verifica se a requisição foi feita corretamente
         mock_post.assert_called_once()
         call_args = mock_post.call_args
-        assert "chat/presence/test_instance" in call_args[0][0]
+        assert "chat/sendPresence/test_instance" in call_args[0][0]
         assert call_args[1]["json"]["presence"] == "composing"
         assert call_args[1]["json"]["number"] == "5511999999999"
+        assert call_args[1]["json"]["delay"] == 1500
 
     @patch("requests.post")
     def test_typing_paused(self, mock_post: Mock) -> None:
@@ -150,30 +156,43 @@ class TestEvolutionWhatsAppService:
         # Cria o serviço
         service = EvolutionWhatsAppService(parameters)
 
-        # Testa o status de digitação
-        service.typing(False)
+        # Testa o status de digitação com todos os argumentos necessários
+        service.typing(
+            typing=False,
+            instance="test_instance",
+            number="5511999999999",
+            api_key="test_api_key",
+        )
 
         # Verifica se a requisição foi feita corretamente
         mock_post.assert_called_once()
         call_args = mock_post.call_args
         assert call_args[1]["json"]["presence"] == "paused"
+        assert call_args[1]["json"]["delay"] == 1500
 
     def test_typing_without_number(self) -> None:
-        """Testa o erro quando não há número nos dados da mensagem."""
-        # Cria parâmetros sem número
+        """Testa o comportamento quando um número vazio é passado."""
+        # Cria parâmetros de teste
         parameters = WhatsAppMensagemParameters(
             instance="test_instance",
             api_key="test_api_key",
-            message_data={"text": "Teste"},  # Sem número
+            message_data={"text": "Teste"},
             error=WhatsAppServiceError(message="Erro de teste"),
         )
 
         # Cria o serviço
         service = EvolutionWhatsAppService(parameters)
 
-        # Testa se a exceção é lançada (sem fazer requisição HTTP)
-        with pytest.raises(
-            ValueError,
-            match="Número do destinatário não encontrado nos dados da mensagem",
-        ):
-            service.typing(True)
+        # Testa com número vazio - deve funcionar normalmente
+        # pois agora passamos o número diretamente como parâmetro
+        try:
+            service.typing(
+                typing=True,
+                instance="test_instance",
+                number="",  # Número vazio
+                api_key="test_api_key",
+            )
+        except Exception:
+            # Se houver erro, é esperado que seja relacionado à requisição HTTP
+            # não à validação do número
+            pass

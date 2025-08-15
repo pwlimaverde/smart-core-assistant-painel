@@ -1,3 +1,4 @@
+import time
 from typing import Any, List, Optional, cast
 
 from django.core.cache import cache
@@ -107,6 +108,18 @@ def send_message_response(phone: str) -> None:
             atendimento_obj: Atendimento = cast(Atendimento, mensagem.atendimento)
             is_bot_responder = _pode_bot_responder_atendimento(atendimento_obj)
             if is_bot_responder:
+                SERVICEHUB.whatsapp_service.typing(
+                    typing=True,
+                    instance=message_data.instance,
+                    number=message_data.numero_telefone,
+                    api_key=message_data.api_key,
+                )
+                logger.info(
+                    f"Enviando mensagem de typing True para {message_data.numero_telefone}"
+                )
+
+                time.sleep(10)
+
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,
@@ -116,6 +129,16 @@ def send_message_response(phone: str) -> None:
                         "entrará em contato."
                     ),
                 )
+                SERVICEHUB.whatsapp_service.typing(
+                    typing=False,
+                    instance=message_data.instance,
+                    number=message_data.numero_telefone,
+                    api_key=message_data.api_key,
+                )
+                logger.info(
+                    f"Enviando mensagem de typing False para {message_data.numero_telefone}"
+                )
+
                 logger.info(
                     f"Mensagem enviada pelo whatsapp_service para {message_data.numero_telefone}: {message_data.conteudo}"
                 )

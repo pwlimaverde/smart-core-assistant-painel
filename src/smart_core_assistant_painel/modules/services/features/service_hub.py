@@ -8,6 +8,9 @@ from langchain_ollama import ChatOllama
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
 )
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
+    WhatsAppService,
+)
 
 
 class ServiceHub:
@@ -31,6 +34,7 @@ class ServiceHub:
         # Constante para o caminho do arquivo de dados
         self.PASTA_DATASETS: Path = Path(__file__).parent.parent.parent / "app/datasets"
         self._vetor_storage: Optional[VetorStorage] = None
+        self._whatsapp_service: Optional[WhatsAppService] = None
         self._configuring_vetor_storage: bool = False
 
         self._whatsapp_api_base_url: Optional[str] = None
@@ -55,9 +59,11 @@ class ServiceHub:
 
     def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
         """Define a instância do VetorStorage."""
-        if not isinstance(vetor_storage, VetorStorage):
-            raise TypeError("vetor_storage deve implementar a interface VetorStorage")
         self._vetor_storage = vetor_storage
+
+    def set_whatsapp_service(self, whatsapp_service: WhatsAppService) -> None:
+        """Define a instância do WhatsAppService."""
+        self._whatsapp_service = whatsapp_service
 
     @property
     def TIME_CACHE(self) -> int:
@@ -74,6 +80,16 @@ class ServiceHub:
                 "Use set_vetor_storage() para definir a instância manualmente."
             )
         return self._vetor_storage
+
+    @property
+    def whatsapp_service(self) -> WhatsAppService:
+        """Retorna a instância do WhatsAppService."""
+        if self._whatsapp_service is None:
+            raise RuntimeError(
+                "Falha ao auto-configurar WhatsAppService. "
+                "Use set_whatsapp_service() para definir a instância manualmente."
+            )
+        return self._whatsapp_service
 
     @property
     def CHUNK_OVERLAP(self) -> int:
@@ -151,7 +167,12 @@ class ServiceHub:
     def MODEL(self) -> str:
         if self._model is None:
             self._model = os.environ.get("MODEL")
-        return self._model if self._model is not None else ""
+        if not self._model:
+            raise ValueError(
+                "Variável de ambiente MODEL não está configurada. "
+                "Configure a variável MODEL com o nome do modelo da LLM."
+            )
+        return self._model
 
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:

@@ -1,4 +1,3 @@
-import time
 from typing import Any, List, Optional, cast
 
 from django.core.cache import cache
@@ -43,7 +42,7 @@ def set_wa_buffer(message: MessageData) -> None:
     buffer.append(message)
 
     # Salva o buffer ATUALIZADO (lista) no cache
-    timeout = SERVICEHUB.TIME_CACHE * 3
+    timeout = (SERVICEHUB.TIME_CACHE + 120)
     cache.set(cache_key, buffer, timeout=timeout)
 
 
@@ -108,18 +107,6 @@ def send_message_response(phone: str) -> None:
             atendimento_obj: Atendimento = cast(Atendimento, mensagem.atendimento)
             is_bot_responder = _pode_bot_responder_atendimento(atendimento_obj)
             if is_bot_responder:
-                SERVICEHUB.whatsapp_service.typing(
-                    typing=True,
-                    instance=message_data.instance,
-                    number=message_data.numero_telefone,
-                    api_key=message_data.api_key,
-                )
-                logger.info(
-                    f"Enviando mensagem de typing True para {message_data.numero_telefone}"
-                )
-
-                time.sleep(10)
-
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,
@@ -128,15 +115,6 @@ def send_message_response(phone: str) -> None:
                         "Obrigado pela sua mensagem, em breve um atendente "
                         "entrará em contato."
                     ),
-                )
-                SERVICEHUB.whatsapp_service.typing(
-                    typing=False,
-                    instance=message_data.instance,
-                    number=message_data.numero_telefone,
-                    api_key=message_data.api_key,
-                )
-                logger.info(
-                    f"Enviando mensagem de typing False para {message_data.numero_telefone}"
                 )
 
                 logger.info(
@@ -189,7 +167,7 @@ def sched_message_response(phone: str) -> None:
     # Evita múltiplos agendamentos em janelas curtas usando um flag no cache
     if not timer_exists:
         # Define janela de proteção um pouco maior que o tempo de cache
-        timeout_value = SERVICEHUB.TIME_CACHE * 2
+        timeout_value = (SERVICEHUB.TIME_CACHE + 120)
         cache.set(timer_key, True, timeout=timeout_value)
         # Emite signal para que o handler crie a Schedule no cluster
         mensagem_bufferizada.send(sender="oraculo", phone=phone)

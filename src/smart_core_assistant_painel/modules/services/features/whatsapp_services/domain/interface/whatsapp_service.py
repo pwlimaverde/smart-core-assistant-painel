@@ -15,7 +15,7 @@ class WhatsAppService(ABC):
         pass
 
     @abstractmethod
-    def typing(
+    def _typing(
         self,
         typing: bool,
         instance: str,

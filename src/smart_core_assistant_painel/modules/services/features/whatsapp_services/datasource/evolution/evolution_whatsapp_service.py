@@ -3,7 +3,6 @@ from typing import Any, Dict, Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
-from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
@@ -77,7 +76,6 @@ class EvolutionWhatsAppService(
 
         if request_method is None:
             raise ValueError(f"Método HTTP não suportado: {method}")
-        logger.error(f"Requisição: {method} - {url} - {headers} - {body}")
         return request_method(url, headers=headers, json=body)
 
     def _mount_url(self, path: str, params_url: Dict[str, Any]) -> str:
@@ -108,19 +106,22 @@ class EvolutionWhatsAppService(
         text: str,
     ) -> None:
         """Envia uma mensagem via WhatsApp através da Evolution API."""
+
+        self._typing(typing=True, instance=instance, number=number, api_key=api_key)
         path = f"/{SERVICEHUB.WHATSAPP_API_SEND_TEXT_URL}/{instance}/"
         body = {
             "number": number,
             "text": text,
         }
         response = self._send_request(path, method="POST", body=body, api_key=api_key)
+        self._typing(typing=False, instance=instance, number=number, api_key=api_key)
 
         if not response.ok:
             raise Exception(
                 f"Erro ao enviar mensagem: {response.status_code} - {response.text}"
             )
 
-    def typing(
+    def _typing(
         self,
         typing: bool,
         instance: str,
@@ -138,13 +139,10 @@ class EvolutionWhatsAppService(
         body = {
             "number": number,
             "presence": "composing" if typing else "paused",
-            "delay": 30000,
+            "delay": 1200,
         }
 
         response = self._send_request(path, method="POST", body=body, api_key=api_key)
-        logger.error(
-            f"Resposta da requisição: {response.status_code} - {response.text}"
-        )
 
         if not response.ok:
             raise Exception(

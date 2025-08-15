@@ -1,3 +1,13 @@
+"""Módulo para integração com a API de WhatsApp Evolution.
+
+Este módulo fornece uma implementação do serviço de WhatsApp (`WhatsAppService`)
+utilizando a Evolution API como backend. Ele encapsula a comunicação HTTP,
+o envio de mensagens e o controle de status (como "digitando").
+
+Classes:
+    _EvolutionWhatsAppServiceMeta: Metaclasse para garantir o padrão Singleton.
+    EvolutionWhatsAppService: Serviço principal para interação com a Evolution API.
+"""
 from abc import ABCMeta
 from typing import Any, Dict, Optional, Callable
 from urllib.parse import urlencode, urljoin
@@ -24,12 +34,25 @@ class _EvolutionWhatsAppServiceMeta(ABCMeta):
 class EvolutionWhatsAppService(
     WhatsAppService, metaclass=_EvolutionWhatsAppServiceMeta
 ):
-    """Serviço para interagir com a API do WhatsApp através do EvolutionAPI.
+    """Serviço para interagir com a API do WhatsApp através da Evolution API.
 
-    Implementa o padrão Singleton para garantir uma única instância.
+    Esta classe implementa a interface `WhatsAppService` e gerencia a
+    comunicação com a API Evolution para enviar mensagens e realizar outras
+    ações no WhatsApp. Utiliza o padrão Singleton para garantir uma única
+    instância.
+
+    Attributes:
+        _base_url (str): A URL base da API Evolution.
+        _initialized (bool): Flag para garantir que a inicialização ocorra
+                             apenas uma vez.
     """
 
     def __init__(self) -> None:
+        """Inicializa o serviço da Evolution API.
+
+        A inicialização real ocorre apenas na primeira vez que a classe é
+        instanciada, devido ao padrão Singleton.
+        """
         # Evita reinicialização em instâncias subsequentes do Singleton
         if hasattr(self, "_initialized"):
             return
@@ -49,14 +72,20 @@ class EvolutionWhatsAppService(
         """Envia uma requisição HTTP para a API do Evolution.
 
         Args:
-            path: Caminho da API
-            method: Método HTTP (GET, POST, PUT, DELETE)
-            body: Corpo da requisição
-            headers: Cabeçalhos da requisição
-            params_url: Parâmetros da URL
+            path (str): O caminho do endpoint da API (ex: '/messages/send').
+            api_key (str): A chave de API para autenticação.
+            method (str): O método HTTP a ser utilizado (GET, POST, etc.).
+            body (Optional[Dict[str, Any]]): O corpo da requisição para
+                                             métodos como POST.
+            headers (Optional[Dict[str, str]]): Cabeçalhos HTTP adicionais.
+            params_url (Optional[Dict[str, Any]]): Parâmetros para serem
+                                                   adicionados à URL.
 
         Returns:
-            Resposta da requisição HTTP
+            requests.Response: O objeto de resposta da requisição HTTP.
+
+        Raises:
+            ValueError: Se um método HTTP não suportado for fornecido.
         """
         method = method.upper()
         url = self._mount_url(path, params_url or {})
@@ -81,14 +110,15 @@ class EvolutionWhatsAppService(
         return request_method(url, headers=headers, json=body)
 
     def _mount_url(self, path: str, params_url: Dict[str, Any]) -> str:
-        """Monta a URL completa com parâmetros.
+        """Monta a URL completa com base, caminho e parâmetros.
 
         Args:
-            path: Caminho da API
-            params_url: Parâmetros da URL
+            path (str): O caminho do endpoint da API.
+            params_url (Dict[str, Any]): Um dicionário de parâmetros a serem
+                                         codificados na URL.
 
         Returns:
-            URL completa montada
+            str: A URL final, pronta para a requisição.
         """
         parameters = ""
         if isinstance(params_url, dict):
@@ -107,8 +137,22 @@ class EvolutionWhatsAppService(
         number: str,
         text: str,
     ) -> None:
-        """Envia uma mensagem via WhatsApp através da Evolution API."""
+        """Envia uma mensagem de texto via WhatsApp.
 
+        Simula o status 'digitando' antes de enviar a mensagem para uma
+        experiência de usuário mais natural.
+
+        Args:
+            instance (str): O nome da instância na API Evolution.
+            api_key (str): A chave de API para autenticação.
+            number (str): O número de telefone do destinatário.
+            text (str): O conteúdo da mensagem de texto.
+
+        Raises:
+            Exception: Se ocorrer um erro durante o envio da mensagem,
+                       seja ao definir o status 'digitando' ou ao enviar
+                       a mensagem em si.
+        """
         self._typing(typing=True, instance=instance, number=number, api_key=api_key)
         path = f"/{SERVICEHUB.WHATSAPP_API_SEND_TEXT_URL}/{instance}/"
         body = {
@@ -130,10 +174,17 @@ class EvolutionWhatsAppService(
         number: str,
         api_key: str,
     ) -> None:
-        """Define o status de digitação no WhatsApp.
+        """Define o status 'digitando' no WhatsApp.
 
         Args:
-            typing: True para mostrar que está digitando, False para parar
+            typing (bool): Se True, define o status como 'digitando'.
+                           Se False, define como 'pausado'.
+            instance (str): O nome da instância na API Evolution.
+            number (str): O número de telefone do chat.
+            api_key (str): A chave de API para autenticação.
+
+        Raises:
+            Exception: Se a API retornar um erro ao tentar definir o status.
         """
         path = f"/{SERVICEHUB.WHATSAPP_API_START_TYPING_URL}/{instance}/"
 

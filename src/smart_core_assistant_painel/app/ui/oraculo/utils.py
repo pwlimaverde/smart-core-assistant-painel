@@ -42,7 +42,7 @@ def set_wa_buffer(message: MessageData) -> None:
     buffer.append(message)
 
     # Salva o buffer ATUALIZADO (lista) no cache
-    timeout = (SERVICEHUB.TIME_CACHE + 120)
+    timeout = SERVICEHUB.TIME_CACHE + 120
     cache.set(cache_key, buffer, timeout=timeout)
 
 
@@ -167,7 +167,7 @@ def sched_message_response(phone: str) -> None:
     # Evita múltiplos agendamentos em janelas curtas usando um flag no cache
     if not timer_exists:
         # Define janela de proteção um pouco maior que o tempo de cache
-        timeout_value = (SERVICEHUB.TIME_CACHE + 120)
+        timeout_value = SERVICEHUB.TIME_CACHE + 120
         cache.set(timer_key, True, timeout=timeout_value)
         # Emite signal para que o handler crie a Schedule no cluster
         mensagem_bufferizada.send(sender="oraculo", phone=phone)
@@ -308,7 +308,7 @@ def _processar_entidades_contato(
             contato.ultima_interacao = timezone.now()
             update_fields.append("ultima_interacao")
 
-            contato.save(update_fields=update_fields)  # [no-untyped-call]
+            contato.save(update_fields=update_fields)
 
             # Se ainda não há nome do contato, solicitar dados
             if not contato.nome_contato:

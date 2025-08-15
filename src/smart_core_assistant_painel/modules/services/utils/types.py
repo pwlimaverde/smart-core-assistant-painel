@@ -1,6 +1,5 @@
 from typing import TypeAlias
 
-import requests
 from py_return_success_or_error import Datasource, Empty, NoParams, UsecaseBaseCallData
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
@@ -11,7 +10,6 @@ from smart_core_assistant_painel.modules.services.features.whatsapp_services.dom
 )
 from smart_core_assistant_painel.modules.services.utils.parameters import (
     SetEnvironRemoteParameters,
-    WhatsAppMensagemParameters,
 )
 
 SERUsecase: TypeAlias = UsecaseBaseCallData[

@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -67,12 +67,14 @@ class EvolutionWhatsAppService(
         headers.setdefault("Content-Type", "application/json")
         headers["apikey"] = api_key
 
-        request_method = {
+        # Tipar explicitamente os métodos para evitar Any
+        request_methods: dict[str, Callable[..., requests.Response]] = {
             "GET": requests.get,
             "POST": requests.post,
             "PUT": requests.put,
             "DELETE": requests.delete,
-        }.get(method)
+        }
+        request_method = request_methods.get(method)
 
         if request_method is None:
             raise ValueError(f"Método HTTP não suportado: {method}")

@@ -7,7 +7,6 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentFileParameters,
 )

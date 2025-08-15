@@ -17,16 +17,28 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import LMDUsecase
 
 
 class LoadMensageDataUseCase(LMDUsecase):
+    """Use case para processar e normalizar dados de webhook de mensagens.
+
+    Esta classe é responsável por receber o payload bruto de um webhook
+    (geralmente de uma API de WhatsApp), validar sua estrutura, extrair
+    as informações essenciais e normalizá-las em um objeto `MessageData`
+    limpo e consistente. Ele lida com diversos tipos de mensagens
+    (texto, imagem, vídeo, etc.), extraindo o conteúdo e metadados
+    relevantes de cada uma.
+    """
+
     @staticmethod
     def normalize_phone(phone: str) -> str:
-        """
-        Normaliza um número de telefone removendo caracteres especiais e padronizando formato.
+        """Normaliza um número de telefone para um formato padrão.
+
+        Remove caracteres não numéricos e corrige prefixos comuns para
+        garantir um formato de telefone consistente.
 
         Args:
-            phone (str): Número de telefone bruto extraído do remoteJid
+            phone: O número de telefone bruto, geralmente do `remoteJid`.
 
         Returns:
-            str: Número de telefone normalizado (apenas dígitos)
+            O número de telefone contendo apenas dígitos.
 
         Examples:
             >>> LoadMensageDataUseCase.normalize_phone("55 11 99999-9999")
@@ -49,36 +61,46 @@ class LoadMensageDataUseCase(LMDUsecase):
     def __call__(
         self, parameters: DataMensageParameters
     ) -> ReturnSuccessOrError[MessageData]:
+        """Executa o processo de parsing e normalização do webhook.
+
+        Args:
+            parameters: Contém o dicionário `data` do webhook.
+
+        Returns:
+            Um `SuccessReturn` com o objeto `MessageData` populado em caso
+            de sucesso, ou um `ErrorReturn` com um `DataMessageError` se
+            campos essenciais estiverem faltando ou ocorrer um erro.
+        """
         try:
             # Extrair informações básicas com verificações de segurança
             instance = parameters.data.get("instance")
             if not instance:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo instance não encontrado no payload do webhook"
+                error.message = "Campo 'instance' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             data_section = parameters.data.get("data")
             api_key = parameters.data.get("apikey")
             if not api_key:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo api_key não encontrado no payload do webhook"
+                error.message = "Campo 'api_key' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             if not data_section:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo data não encontrado no payload do webhook"
+                error.message = "Campo 'data' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             key_section = data_section.get("key")
             if not key_section:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo key não encontrado no payload do webhook"
+                error.message = "Campo 'key' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             remote_jid = key_section.get("remoteJid")
             if not remote_jid:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo remoteJid não encontrado no payload do webhook"
+                error.message = "Campo 'remoteJid' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             # Extrair e normalizar telefone do remoteJid

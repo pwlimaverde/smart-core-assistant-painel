@@ -14,9 +14,29 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import LDCUsecase
 
 
 class LoadDocumentConteudoUseCase(LDCUsecase):
+    """Use case para carregar um conteúdo de texto em um objeto Document.
+
+    Este caso de uso não possui um datasource, pois opera diretamente em
+    memória. Ele recebe uma string de conteúdo e a transforma em um
+    objeto `langchain.docstore.document.Document`, enriquecendo-o com
+    metadados.
+    """
+
     def __call__(
         self, parameters: LoadDocumentConteudoParameters
     ) -> ReturnSuccessOrError[list[Document]]:
+        """Executa o caso de uso de carregamento de conteúdo.
+
+        Args:
+            parameters (LoadDocumentConteudoParameters): Parâmetros contendo o
+                ID, conteúdo, tag e grupo para criar o documento.
+
+        Returns:
+            ReturnSuccessOrError[list[Document]]: Um objeto de retorno
+                contendo uma lista com o documento criado em caso de sucesso
+                (SuccessReturn), ou um AppError em caso de falha
+                (ErrorReturn).
+        """
         try:
             text_doc = [
                 Document(

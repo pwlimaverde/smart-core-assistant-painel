@@ -7,7 +7,25 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import ACData
 
 
 class AnaliseConteudoLangchainDatasource(ACData):
+    """Datasource para interagir com um LLM usando a biblioteca Langchain.
+
+    Esta classe constrói um prompt a partir dos parâmetros, envia para o LLM
+    configurado e processa a resposta, removendo tags de pensamento.
+    """
+
     def __call__(self, parameters: LlmParameters) -> str:
+        """Executa a chamada para o LLM.
+
+        Args:
+            parameters (LlmParameters): Parâmetros contendo o modelo, prompts
+                e contexto para a chamada.
+
+        Returns:
+            str: A resposta do LLM como uma string limpa.
+
+        Raises:
+            TypeError: Se a resposta do LLM não for uma string.
+        """
         llm = parameters.create_llm
 
         messages = ChatPromptTemplate.from_messages(

@@ -15,8 +15,24 @@ from smart_core_assistant_painel.modules.initial_loading.utils.types import FIUs
 
 
 class FeaturesCompose:
+    """Facade para os casos de uso do módulo de Carregamento Inicial.
+
+    Esta classe fornece uma interface para executar as tarefas de inicialização
+    necessárias quando a aplicação começa, como a inicialização do Firebase.
+    """
+
     @staticmethod
     def init_firebase() -> None:
+        """Inicializa o serviço do Firebase.
+
+        Este método executa o caso de uso para inicializar o cliente do
+        Firebase, que é essencial para outras funcionalidades que dependem
+        de serviços do Google.
+
+        Raises:
+            FirebaseInitError: Se ocorrer um erro durante a inicialização
+                               do Firebase.
+        """
         error = FirebaseInitError("Erro ao inicializar o Firebase")
         parameters = FirebaseInitParameters(error=error)
         usecase: FIUsecase = FirebaseInitUseCase()

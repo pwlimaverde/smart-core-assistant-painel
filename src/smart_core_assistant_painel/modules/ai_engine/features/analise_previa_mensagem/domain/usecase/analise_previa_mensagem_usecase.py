@@ -14,22 +14,38 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
 
 
 class AnalisePreviaMensagemUsecase(APMUsecase):
+    """Use case para realizar a análise prévia de uma mensagem.
+
+    Este caso de uso orquestra a extração de intenções e entidades de um
+    texto de entrada, utilizando um datasource que interage com um LLM.
+    """
+
     def __call__(
         self, parameters: AnalisePreviaMensagemParameters
     ) -> ReturnSuccessOrError[APMTuple]:
+        """Executa o caso de uso de análise prévia de mensagem.
+
+        Args:
+            parameters (AnalisePreviaMensagemParameters): Parâmetros que
+                incluem o texto a ser analisado, histórico e configurações
+                do LLM.
+
+        Returns:
+            ReturnSuccessOrError[APMTuple]: Um objeto de retorno contendo uma
+                tupla nomeada com as intenções e entidades extraídas em caso
+                de sucesso (SuccessReturn), ou um AppError em caso de falha
+                (ErrorReturn).
+        """
         try:
             data = self._resultDatasource(
                 parameters=parameters, datasource=self._datasource
             )
 
             if isinstance(data, SuccessReturn):
-                # Verificar se o resultado é uma instância de
-                # AnalisePreviaMensagem
+                # O resultado do datasource é um objeto AnalisePreviaMensagem
                 result = data.result
 
-                # Converter AnalisePreviaMensagem para APMTuple
-                # Os dados já estão no formato correto: lista de dicionários
-                # {tipo: valor}
+                # Converte o resultado para a tupla APMTuple definida no contrato
                 tuple_result = APMTuple(
                     intent_types=result.intent, entity_types=result.entities
                 )

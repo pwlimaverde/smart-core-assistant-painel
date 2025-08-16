@@ -4,14 +4,11 @@ Este guia descreve como configurar e executar o ambiente de desenvolvimento "mis
 
 ## Estrutura
 
-- `run.bat`/`run.sh`: Scripts para iniciar o ambiente.
-- `stop.bat`/`stop.sh`: Scripts para parar os containers Docker.
-- `prepare_env.py`: Verifica se os arquivos de configuracao necessarios existem e os move para os locais corretos.
-- `update_git_exclude.py`: Configura o Git para ignorar alteracoes locais em arquivos de configuracao especificos do ambiente.
-- `update_settings.py`: Altera o `settings.py` do Django para se conectar aos bancos de dados no Docker.
-- `update_docker_compose.py`: Altera o `docker-compose.yml` na raiz do projeto para subir apenas os servicos `postgres` e `redis`.
-- `update_dockerfile.py`: Limpa o `Dockerfile` na raiz do projeto, pois a aplicacao nao sera executada em um container.
+- `setup.sh`/`setup.bat`: Script unificado para configurar e iniciar todo o ambiente.
+- `stop.sh`/`stop.bat`: Scripts para parar os containers Docker (mantidos para compatibilidade).
 - `README.md`: Este arquivo.
+
+**Nota:** Os scripts individuais foram substituídos por um único script unificado que realiza todas as operações necessárias.
 
 ## Pre-requisitos
 
@@ -68,18 +65,18 @@ POSTGRES_HOST=localhost
 
 - No Windows, execute a partir da **raiz do projeto**:
   ```bash
-  ambiente_misto\run.bat
+  setup.bat
   ```
 - No Linux ou macOS, execute a partir da **raiz do projeto**:
   ```bash
-  chmod +x ambiente_misto/run.sh
-  ./ambiente_misto/run.sh
+  chmod +x setup.sh
+  ./setup.sh
   ```
 
-O script realizara as seguintes acoes:
+O script realizara todas as seguintes acoes em sequencia:
 
-1.  **Verificará e Moverá Configurações**: O script `prepare_env.py` garantirá que `.env` e `firebase_key.json` existem e moverá a chave do Firebase para o diretório correto.
-2.  **Configurará o Git**: O script `update_git_exclude.py` será executado para marcar arquivos de configuração (`Dockerfile`, `docker-compose.yml`, etc.) como "inalterados" para o Git.
+1.  **Verificará e Moverá Configurações**: Garantirá que `.env` e `firebase_key.json` existem e moverá a chave do Firebase para o diretório correto.
+2.  **Configurará o Git**: Configurará o Git para ignorar alterações locais em arquivos de configuração específicos do ambiente.
 3.  **Ajustará o `settings.py`**: O arquivo de configuracao do Django sera modificado para apontar para o PostgreSQL e Redis rodando no Docker.
 4.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados.
 5.  **Limpara o `Dockerfile`**: O Dockerfile principal sera esvaziado.
@@ -87,7 +84,7 @@ O script realizara as seguintes acoes:
 
 ### 3. Inicie a Aplicacao Django
 
-- Apos a finalizacao do script `run`, abra um **novo terminal**.
+- Apos a finalizacao do script `setup`, abra um **novo terminal**.
 - Navegue ate a raiz do projeto.
 - Execute o servidor de desenvolvimento do Django:
 
@@ -99,13 +96,13 @@ O script realizara as seguintes acoes:
 
 ## Gerenciamento de Configurações Locais
 
-O ambiente misto modifica arquivos que são rastreados pelo Git (como `docker-compose.yml` e `settings.py`). Para evitar que essas modificações locais sejam acidentalmente commitadas, o script `update_git_exclude.py` utiliza o seguinte comando do Git:
+O ambiente misto modifica arquivos que são rastreados pelo Git (como `docker-compose.yml` e `settings.py`). Para evitar que essas modificações locais sejam acidentalmente commitadas, o script configura o Git para "ignorar" essas alterações locais usando o seguinte comando:
 
 ```bash
 git update-index --assume-unchanged <arquivo>
 ```
 
-Isso informa ao Git para "ignorar" as alterações locais no arquivo. Elas não aparecerão no `git status` e não serão incluídas em commits.
+Isso informa ao Git para ignorar as alterações locais no arquivo. Elas não aparecerão no `git status` e não serão incluídas em commits.
 
 ### Revertendo a Configuração
 
@@ -115,7 +112,7 @@ Se você precisar **deliberadamente** commitar uma alteração em um desses arqu
 git update-index --no-assume-unchanged <caminho/para/o/arquivo>
 ```
 
-Após commitar suas alterações, recomenda-se executar o script `ambiente_misto/run.bat` ou `run.sh` novamente para reaplicar a configuração e garantir que futuras modificações locais sejam ignoradas.
+Após commitar suas alterações, recomenda-se executar o script `setup.bat` ou `setup.sh` novamente para reaplicar a configuração e garantir que futuras modificações locais sejam ignoradas.
 
 ## Parando o Ambiente
 

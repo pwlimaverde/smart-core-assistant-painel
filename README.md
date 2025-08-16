@@ -6,7 +6,7 @@ Um painel inteligente para assistente virtual com integração WhatsApp.
 
 - Interface Django moderna
 - Integração com Evolution API com tratamento UTF-8 robusto
-- Suporte a MongoDB e Redis
+- Suporte a PostgreSQL e Redis
 - Processamento de linguagem natural
 - Ambiente Docker completo
 - Webhook WhatsApp com fallback de encoding automático
@@ -25,7 +25,31 @@ powershell -ExecutionPolicy Bypass -File scripts/start-docker.ps1
 ./scripts/setup-docker.sh
 ```
 
-### Desenvolvimento Local
+### Desenvolvimento Local (Ambiente Misto)
+
+Para desenvolvimento local com bancos de dados no Docker e aplicação local:
+
+1. Crie o arquivo `.env` na raiz do projeto (veja [ambiente_misto/README.md](ambiente_misto/README.md) para instruções detalhadas)
+2. Execute o script de setup unificado:
+
+```bash
+# Windows
+ambiente_misto\setup.bat
+
+# Linux/Mac
+chmod +x ambiente_misto/setup.sh
+./ambiente_misto/setup.sh
+```
+
+3. Em um novo terminal, inicie a aplicação Django:
+
+```bash
+python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
+```
+
+Veja [ambiente_misto/README.md](ambiente_misto/README.md) para detalhes completos.
+
+### Desenvolvimento Local (Tradicional)
 
 ```bash
 # Instalar dependências
@@ -40,7 +64,7 @@ uv run dev
 
 ## Configuração
 
-1. Copie `.env.example` para `.env`
+1. Copie `.env.example` para `.env` (se existir)
 2. Configure suas variáveis de ambiente
 3. Execute as migrações do Django
 4. Inicie os serviços

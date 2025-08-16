@@ -34,11 +34,11 @@ Para desenvolvimento local com bancos de dados no Docker e aplicação local:
 
 ```bash
 # Windows
-setup.bat
+ambiente_misto\setup.bat
 
 # Linux/Mac
-chmod +x setup.sh
-./setup.sh
+chmod +x ambiente_misto/setup.sh
+./ambiente_misto/setup.sh
 ```
 
 3. Em um novo terminal, inicie a aplicação Django:

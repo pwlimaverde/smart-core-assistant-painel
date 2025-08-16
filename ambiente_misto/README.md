@@ -5,7 +5,6 @@ Este guia descreve como configurar e executar o ambiente de desenvolvimento "mis
 ## Estrutura
 
 - `setup.sh`/`setup.bat`: Script unificado para configurar e iniciar todo o ambiente.
-- `stop.sh`/`stop.bat`: Scripts para parar os containers Docker (mantidos para compatibilidade).
 - `README.md`: Este arquivo.
 
 **Nota:** Os scripts individuais foram substituídos por um único script unificado que realiza todas as operações necessárias.
@@ -63,14 +62,16 @@ POSTGRES_HOST=localhost
 
 ### 2. Execute o Script de Inicio
 
-- No Windows, execute a partir da **raiz do projeto**:
+A partir da **raiz do projeto**, execute:
+
+- No Windows:
   ```bash
-  setup.bat
+  ambiente_misto\setup.bat
   ```
-- No Linux ou macOS, execute a partir da **raiz do projeto**:
+- No Linux ou macOS:
   ```bash
-  chmod +x setup.sh
-  ./setup.sh
+  chmod +x ambiente_misto/setup.sh
+  ./ambiente_misto/setup.sh
   ```
 
 O script realizara todas as seguintes acoes em sequencia:
@@ -112,13 +113,14 @@ Se você precisar **deliberadamente** commitar uma alteração em um desses arqu
 git update-index --no-assume-unchanged <caminho/para/o/arquivo>
 ```
 
-Após commitar suas alterações, recomenda-se executar o script `setup.bat` ou `setup.sh` novamente para reaplicar a configuração e garantir que futuras modificações locais sejam ignoradas.
+Após commitar suas alterações, recomenda-se executar o script `ambiente_misto/setup.bat` ou `setup.sh` novamente para reaplicar a configuração e garantir que futuras modificações locais sejam ignoradas.
 
 ## Parando o Ambiente
 
-Para parar os containers do PostgreSQL e Redis, utilize os scripts a partir da **raiz do projeto**:
+Para parar os containers do PostgreSQL e Redis, utilize docker-compose a partir da **raiz do projeto**:
 
-- No Windows: `ambiente_misto\stop.bat`
-- No Linux/macOS: `./ambiente_misto/stop.sh`
+```bash
+docker-compose --env-file ./.env down
+```
 
 Isso **nao** apaga os dados do banco de dados, que sao persistidos em um volume Docker.

@@ -8,7 +8,9 @@ class SetEnvironRemoteError(AppError):
     message: str
 
     def __str__(self) -> str:
-        return f"LlmError - {self.message}"
+        # Ajuste do prefixo para refletir corretamente a origem do erro
+        # evitando confusão com erros de LLM.
+        return f"SetEnvironRemoteError - {self.message}"
 
 
 @dataclass

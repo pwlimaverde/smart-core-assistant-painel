@@ -10,6 +10,10 @@ param(
     [switch]$Help
 )
 
+# Garantir execução a partir do diretório do script (evita problemas de caminhos relativos)
+$ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Set-Location $ScriptDir
+
 # Função para imprimir mensagens coloridas
 function Write-ColorMessage {
     param(
@@ -91,9 +95,9 @@ function Test-Prerequisites {
 
 # Função para configurar arquivo .env
 function Set-EnvironmentFile {
-    # Verificar se arquivo .env já existe na raiz do projeto
+    # Verificar se arquivo .env já existe local
     $envExists = $false
-    $envPath = "../.env"
+    $envPath = ".\.env"  # arquivo .env local no ambiente_docker
     if (Test-Path $envPath) {
         if (-not $Force) {
             Write-ColorMessage "`n[AVISO] Arquivo .env ja existe." "Yellow"
@@ -119,34 +123,69 @@ function Set-EnvironmentFile {
     
     # Criar arquivo .env
     $envContent = @"
-# Firebase Configuration
+# Firebase Configuration (OBRIGATÓRIO)
 GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
-# Django Configuration
+# Django Configuration (OBRIGATÓRIO)
 SECRET_KEY_DJANGO=$djangoSecret
 DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+DJANGO_SETTINGS_MODULE=core.settings
 
-# Evolution API Configuration
+# Evolution API Configuration (OBRIGATÓRIO)
 EVOLUTION_API_URL=http://localhost:8080
 EVOLUTION_API_KEY=$evolutionApiKey
 EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
-# PostgreSQL Configuration
+# Evolution API QR Code Configuration (Correções Implementadas)
+EVOLUTION_API_QRCODE_LIMIT=30
+EVOLUTION_API_QRCODE_COLOR=#198754
+
+# Redis Configuration para Evolution API Cache (Correções Implementadas)
+CACHE_REDIS_ENABLED=true
+CACHE_REDIS_URI=redis://redis:6379/6
+CACHE_REDIS_TTL=604800
+CACHE_REDIS_PREFIX_KEY=evolution
+CACHE_REDIS_SAVE_INSTANCES=false
+
+# PostgreSQL Configuration - Django
 POSTGRES_DB=smart_core_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres123
-POSTGRES_HOST=localhost
+POSTGRES_HOST=postgres-django
 POSTGRES_PORT=5432
 
-# Webhook Configuration
+# PostgreSQL Configuration - Evolution API
+EVOLUTION_POSTGRES_DB=evolution
+EVOLUTION_POSTGRES_USER=evolution
+EVOLUTION_POSTGRES_PASSWORD=evolution123
+
+# Webhook Configuration (com tratamento UTF-8 robusto)
 WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 WEBHOOK_SECRET=$webhookSecret
+WEBHOOK_GLOBAL_URL=http://django-app:8000/oraculo/webhook_whatsapp/
+WEBHOOK_GLOBAL_ENABLED=true
+WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false
+
+# Database Configuration para Evolution API
+DATABASE_ENABLED=true
+DATABASE_PROVIDER=postgresql
+DATABASE_CONNECTION_URI=postgresql://evolution:evolution123@postgres:5432/evolution?schema=public
+DATABASE_CONNECTION_CLIENT_NAME=evolution_exchange
+DATABASE_SAVE_DATA_INSTANCE=true
+DATABASE_SAVE_DATA_NEW_MESSAGE=true
+DATABASE_SAVE_MESSAGE_UPDATE=true
+DATABASE_SAVE_DATA_CONTACTS=true
+DATABASE_SAVE_DATA_CHATS=true
+DATABASE_SAVE_DATA_LABELS=true
+DATABASE_SAVE_DATA_HISTORIC=true
 
 # Server Configuration
 SERVER_HOST=0.0.0.0
 SERVER_PORT=8000
 WORKERS=4
+SERVER_TYPE=http
+SERVER_URL=http://localhost:8080
 
 # Security
 SECURE_SSL_REDIRECT=False
@@ -155,21 +194,26 @@ CSRF_COOKIE_SECURE=False
 
 # Logging
 LOG_LEVEL=INFO
+LOG_COLOR=true
+LOG_BAILEYS=error
 
 # Ollama Configuration (for local development)
-OLLAMA_HOST=localhost
+OLLAMA_HOST=host.docker.internal
 OLLAMA_PORT=11434
 
-# As seguintes variáveis são carregadas dinamicamente do Firebase Remote Config:
-# - OPENAI_API_KEY
-# - GROQ_API_KEY
-# - WHATSAPP_API_BASE_URL
-# - WHATSAPP_API_SEND_TEXT_URL
-# - WHATSAPP_API_START_TYPING_URL
-# - WHATSAPP_API_STOP_TYPING_URL
-# - LLM_CLASS
-# - MODEL
-# - TEMPERATURE
+# Evolution API Session Configuration
+CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
+
+# Variáveis carregadas dinamicamente do Firebase Remote Config:
+# - OPENAI_API_KEY: Chave da API OpenAI
+# - GROQ_API_KEY: Chave da API Groq
+# - WHATSAPP_API_BASE_URL: URL base da API WhatsApp
+# - WHATSAPP_API_SEND_TEXT_URL: URL para envio de texto
+# - WHATSAPP_API_START_TYPING_URL: URL para iniciar digitação
+# - WHATSAPP_API_STOP_TYPING_URL: URL para parar digitação
+# - LLM_CLASS: Classe do modelo de linguagem
+# - MODEL: Modelo específico a ser usado
+# - TEMPERATURE: Temperatura para geração de texto
 # - PROMPT_SYSTEM_ANALISE_CONTEUDO
 # - PROMPT_HUMAN_ANALISE_CONTEUDO
 # - PROMPT_SYSTEM_MELHORIA_CONTEUDO
@@ -180,6 +224,15 @@ OLLAMA_PORT=11434
 # - PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM
 # - VALID_ENTITY_TYPES
 # - VALID_INTENT_TYPES
+
+# CORREÇÕES IMPLEMENTADAS:
+# 1. Webhook WhatsApp com tratamento robusto de encoding (UTF-8, Latin-1, CP1252)
+# 2. Validação de dados JSON para prevenir erro 'str' object has no attribute 'get'
+# 3. QR Code da Evolution API otimizado (30s limite, cor personalizada)
+# 4. Cache Redis configurado para melhor performance
+# 5. Logging detalhado para troubleshooting
+# 6. Configurações alinhadas com docker-compose.yml
+# 7. Variáveis de ambiente organizadas por categoria
 "@
 
     $envContent | Out-File -FilePath $envPath -Encoding UTF8
@@ -261,7 +314,7 @@ function Start-Services {
     param([string]$Env, [bool]$WithTools = $false)
     
     # Determinar configurações
-    $composeFile = "..\docker-compose.yml"
+    $composeFile = ".\docker-compose.yml"
     $composeProfiles = ""
     $envName = ""
     
@@ -353,17 +406,17 @@ function Show-FinalInfo {
     
     Write-ColorMessage "`n[OK] Configuracao concluida com sucesso!" "Green"
     Write-ColorMessage "`n[INFO] URLs de acesso:" "Blue"
-    Write-ColorMessage "   - Django Admin: http://localhost:8000/admin/" "Blue"
-    Write-ColorMessage "   - Evolution API: http://localhost:8080 (requer apikey)" "Blue"
+    Write-ColorMessage "   - Django Admin: http://localhost:8001/admin/" "Blue"
+    Write-ColorMessage "   - Evolution API: http://localhost:8081 (requer apikey)" "Blue"
     
     if ($WithTools) {
         Write-ColorMessage "   - Redis Commander: http://localhost:8082" "Blue"
     }
     
     Write-ColorMessage "`n[INFO] Proximos passos:" "Yellow"
-    Write-ColorMessage "   1. Acesse http://localhost:8000/admin/ para criar um superusuário" "Yellow"
+    Write-ColorMessage "   1. Acesse http://localhost:8001/admin/ (login padrão: admin / 123456) e altere a senha após o primeiro acesso" "Yellow"
     Write-ColorMessage "   2. Configure sua instância do WhatsApp na Evolution API" "Yellow"
-    Write-ColorMessage "   3. Teste o webhook em http://localhost:8000/oraculo/webhook_whatsapp/" "Yellow"
+    Write-ColorMessage "   3. Teste o webhook em http://localhost:8001/oraculo/webhook_whatsapp/" "Yellow"
     
     Write-ColorMessage "`n[INFO] Comandos uteis:" "Blue"
     Write-ColorMessage "   - Ver logs: .\docker-manager.ps1 logs" "Blue"

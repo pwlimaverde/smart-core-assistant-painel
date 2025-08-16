@@ -7,7 +7,6 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentFileParameters,
 )
@@ -58,5 +57,5 @@ class LoadDocumentFileUseCase(LDFUsecase):
             return SuccessReturn(documentos)
         else:
             return ErrorReturn(
-                parameters.error(message="Erro ao obter dados do datasource.")
+                parameters.error
             )

@@ -86,7 +86,8 @@ class TestLoadDocumentFileUseCase:
         error_message = "Erro ao carregar documento"
         
         with patch.object(
-            usecase, '_resultDatasource', return_value=ErrorReturn(error_message)
+            usecase, '_resultDatasource', return_value=ErrorReturn(DocumentError(error_message))
+
         ):
             # Act
             result = usecase(sample_parameters)
@@ -94,7 +95,7 @@ class TestLoadDocumentFileUseCase:
             # Assert
             assert isinstance(result, ErrorReturn)
             assert isinstance(result.result, DocumentError)
-            assert result.result.message == "Erro ao obter dados do datasource."
+            assert result.result.message == "Erro de teste de documento"
 
     def test_parameters_validation(self, mock_datasource):
         """Testa a validação dos parâmetros de entrada."""

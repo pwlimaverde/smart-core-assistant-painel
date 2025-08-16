@@ -7,8 +7,8 @@ DEBUG = False
 TESTING = True
 
 # Limpar configurações importadas antes de redefinir para evitar no-redef
-del globals()["DATABASES"]
-del globals()["Q_CLUSTER"]
+# del globals()["DATABASES"] # Comentado para evitar KeyError
+# del globals()["Q_CLUSTER"] # Comentado para evitar KeyError
 
 # Usa SQLite em memória para testes mais rápidos
 DATABASES: Dict[str, Dict[str, Any]] = {

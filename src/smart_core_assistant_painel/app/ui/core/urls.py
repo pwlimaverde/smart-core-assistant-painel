@@ -21,5 +21,5 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("usuarios/", include("smart_core_assistant_painel.app.ui.usuarios.urls")),
-    path("oraculo/", include("smart_core_assistant_painel.app.ui.oraculo.urls")),
+    path("oraculo/", include("smart_core_assistant_painel.app.ui.oraculo.urls", namespace="oraculo")),
 ]

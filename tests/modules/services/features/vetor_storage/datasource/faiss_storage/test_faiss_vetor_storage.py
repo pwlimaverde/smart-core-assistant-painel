@@ -1,9 +1,35 @@
 import os
 import shutil
+import sys
 import tempfile
+import types
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
+from typing import Any
+
+# Mock do FAISS antes de qualquer importação para evitar DeprecationWarning
+if 'faiss' not in sys.modules:
+    mock_faiss = types.ModuleType('faiss')
+    
+    class MockFaissIndex:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            self.d = 384
+            self.ntotal = 0
+            
+        def add(self, vectors: Any) -> None:
+            pass
+            
+        def search(self, query: Any, k: int) -> tuple[Any, Any]:
+            import numpy as np
+            return np.array([[0.1]]), np.array([[0]])
+    
+    mock_faiss.IndexFlatL2 = MockFaissIndex
+    mock_faiss.IndexFlatIP = MockFaissIndex
+    mock_faiss.read_index = lambda path: MockFaissIndex()
+    mock_faiss.write_index = lambda index, path: None
+    
+    sys.modules['faiss'] = mock_faiss
 
 from langchain.docstore.document import Document
 

@@ -7,7 +7,6 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentFileParameters,
 )
@@ -15,9 +14,28 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import LDFUsecase
 
 
 class LoadDocumentFileUseCase(LDFUsecase):
+    """Use case para carregar um arquivo e prepará-lo para treinamento.
+
+    Esta classe orquestra o processo de carregar um arquivo de um caminho,
+    processar seu conteúdo e enriquecer seus metadados para uso futuro em
+    treinamentos de IA.
+    """
+
     def __call__(
         self, parameters: LoadDocumentFileParameters
     ) -> ReturnSuccessOrError[list[Document]]:
+        """Executa o caso de uso.
+
+        Args:
+            parameters (LoadDocumentFileParameters): Os parâmetros necessários
+                para carregar o arquivo, incluindo id, caminho, tags e grupo.
+
+        Returns:
+            ReturnSuccessOrError[list[Document]]: Um objeto de retorno que
+                contém uma lista de `Document` em caso de sucesso
+                (SuccessReturn) ou um `AppError` em caso de falha
+                (ErrorReturn).
+        """
         data = self._resultDatasource(
             parameters=parameters, datasource=self._datasource
         )
@@ -38,4 +56,6 @@ class LoadDocumentFileUseCase(LDFUsecase):
                 )
             return SuccessReturn(documentos)
         else:
-            return ErrorReturn(DocumentError("Erro ao obter dados do datasource."))
+            return ErrorReturn(
+                parameters.error
+            )

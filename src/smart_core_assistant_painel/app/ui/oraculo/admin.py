@@ -17,6 +17,8 @@ from .models import (
     Treinamentos,
 )
 
+from .models_departamento import Departamento
+
 
 @admin.register(Treinamentos)
 class TreinamentosAdmin(admin.ModelAdmin):  #
@@ -71,13 +73,13 @@ class TreinamentosAdmin(admin.ModelAdmin):  #
 
 @admin.register(AtendenteHumano)
 class AtendenteHumanoAdmin(admin.ModelAdmin):  #
-    # Campos a serem exibidos na lista
+    # Campos a serem exibidos na lista - alinhado com os testes
     list_display = [
         "id",
         "nome",
         "cargo",
-        "departamento",
         "telefone",
+        "email",
         "ativo",
         "disponivel",
         "get_atendimentos_ativos",
@@ -85,20 +87,20 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):  #
         "ultima_atividade",
     ]
 
-    # Campos que podem ser pesquisados
+    # Campos que podem ser pesquisados - alinhado com os testes
     search_fields = [
         "nome",
         "cargo",
-        "departamento",
         "telefone",
         "email",
+        # Permite busca pelo nome do departamento via FK
+        "departamento__nome",
     ]
 
-    # Filtros laterais
+    # Filtros laterais - alinhado com os testes
     list_filter = [
         "ativo",
         "disponivel",
-        "departamento",
         "cargo",
         "data_cadastro",
     ]
@@ -117,7 +119,10 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):  #
     fieldsets = (
         (
             "Informações Pessoais",
-            {"fields": ("nome", "cargo", "departamento"), "classes": ("wide",)},
+            {
+                "fields": ("nome", "cargo", "departamento"),
+                "classes": ("wide",),
+            },  # FK para Departamento
         ),
         ("Contatos", {"fields": ("telefone", "email"), "classes": ("wide",)}),
         (
@@ -192,14 +197,18 @@ class ContatoAdmin(admin.ModelAdmin):  #
         "telefone",
         "nome_contato",
         "nome_perfil_whatsapp",
-        "ultima_interacao",
         "data_cadastro",
+        "ultima_interacao",
         "total_atendimentos",
         "total_clientes",
     ]
     list_filter = ["data_cadastro", "ultima_interacao", "ativo"]
     search_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp"]
     readonly_fields = ["data_cadastro", "ultima_interacao"]
+    # Ordenação padrão no admin para evitar TypeError e garantir consistência
+    ordering = ["-ultima_interacao"]
+    # Paginação padrão para melhor usabilidade
+    list_per_page = 25
 
     fieldsets = (
         (
@@ -460,11 +469,12 @@ class AtendimentoAdmin(admin.ModelAdmin):  #
         "id",
         "contato_telefone",
         "status",
-        "atendente_humano_nome",
         "data_inicio",
         "data_fim",
+        "atendente_humano_nome",
         "avaliacao",
         "total_mensagens",
+        "duracao_formatada",
     ]
     list_filter = [
         "status",
@@ -481,6 +491,12 @@ class AtendimentoAdmin(admin.ModelAdmin):  #
     ]
     readonly_fields = ["data_inicio"]
     inlines = [MensagemInline]
+    # Hierarquia por data para facilitar navegação por períodos
+    date_hierarchy = "data_inicio"
+    # Ordenação padrão por data de início (mais recentes primeiro)
+    ordering = ["-data_inicio"]
+    # Paginação padrão
+    list_per_page = 25
 
     fieldsets = (
         (
@@ -517,6 +533,17 @@ class AtendimentoAdmin(admin.ModelAdmin):  #
     def total_mensagens(self, obj: Atendimento) -> "Any":
         return getattr(obj, "mensagens").count()
 
+    @admin.display(description="Duração")
+    def duracao_formatada(self, obj: Atendimento) -> str:
+        """Retorna a duração formatada do atendimento"""
+        if obj.data_fim and obj.data_inicio:
+            duracao = obj.data_fim - obj.data_inicio
+            total_seconds = int(duracao.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            return f"{hours}:{minutes:02d}:00"
+        return "Em andamento"
+
     def get_queryset(self, request: HttpRequest) -> QuerySet[Atendimento]:
         return (
             super().get_queryset(request).select_related("contato", "atendente_humano")
@@ -528,21 +555,28 @@ class MensagemAdmin(admin.ModelAdmin):  #
     list_display = [
         "id",
         "atendimento_id",
-        "contato_telefone",
-        "tipo",
-        "conteudo_preview",
+        "atendimento",
         "remetente",
+        "tipo",
+        "conteudo_truncado",
+        "contato_telefone",
         "respondida",
         "entidades_extraidas_preview",
         "timestamp",
+        "message_id_whatsapp",
     ]
-    list_filter = ["tipo", "remetente", "respondida", "timestamp"]
+    list_filter = ["remetente", "tipo", "timestamp"]
     search_fields = [
         "conteudo",
+        "message_id_whatsapp",
+        "atendimento__contato__nome_contato",
         "atendimento__contato__telefone",
-        "entidades_extraidas",
     ]
     readonly_fields = ["timestamp", "message_id_whatsapp"]
+    # Hierarquia por data para facilitar navegação
+    date_hierarchy = "timestamp"
+    # Paginação padrão
+    list_per_page = 25
 
     fieldsets = (
         (
@@ -557,7 +591,8 @@ class MensagemAdmin(admin.ModelAdmin):  #
                     "confianca_resposta",
                     "intent_detectado",
                     "entidades_extraidas",
-                )
+                ),
+                "classes": ("collapse",),
             },
         ),
         (
@@ -575,8 +610,9 @@ class MensagemAdmin(admin.ModelAdmin):  #
             return "-"
 
     @admin.display(description="Conteúdo")
-    def conteudo_preview(self: "MensagemAdmin", obj: Mensagem) -> "Any":
-        return obj.conteudo[:50] + "..." if len(obj.conteudo) > 50 else obj.conteudo
+    def conteudo_truncado(self: "MensagemAdmin", obj: Mensagem) -> "Any":
+        # Garante no máximo 50 caracteres no total, incluindo as reticências
+        return obj.conteudo[:47] + "..." if len(obj.conteudo) > 50 else obj.conteudo
 
     @admin.display(description="Entidades Extraídas")
     def entidades_extraidas_preview(self: "MensagemAdmin", obj: Mensagem) -> "Any":
@@ -601,7 +637,7 @@ class MensagemAdmin(admin.ModelAdmin):  #
         return "-"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
-        return super().get_queryset(request).select_related("atendimento__contato")
+        return super().get_queryset(request).select_related("atendimento", "atendimento__contato")
 
 
 @admin.register(FluxoConversa)
@@ -611,14 +647,82 @@ class FluxoConversaAdmin(admin.ModelAdmin):  #
     search_fields = ["nome", "descricao"]
     readonly_fields = ["data_criacao", "data_modificacao"]
 
+
+@admin.register(Departamento)
+class DepartamentoAdmin(admin.ModelAdmin):
+    # Campos a serem exibidos na lista
+    list_display = [
+        "id",
+        "nome",
+        "telefone_instancia",
+        "api_key",
+        "instance_id",
+        "ativo",
+        "data_criacao",
+    ]
+
+    # Campos que podem ser pesquisados
+    search_fields = [
+        "nome",
+        "telefone_instancia",
+        "api_key",
+        "instance_id",
+    ]
+
+    # Filtros laterais
+    list_filter = [
+        "ativo",
+        "data_criacao",
+        "ultima_validacao",
+    ]
+
+    # Ordenação padrão
+    ordering = ["nome"]
+
+    # Todos os campos editáveis (nenhum readonly)
+    # Organização dos campos no formulário
     fieldsets = (
-        ("Informações do Fluxo", {"fields": ("nome", "descricao", "ativo")}),
         (
-            "Configuração",
-            {"fields": ("condicoes_entrada", "estados"), "classes": ("collapse",)},
+            "Informações Básicas",
+            {
+                "fields": ("nome", "descricao", "ativo"),
+                "classes": ("wide",),
+            },
         ),
-        ("Datas", {"fields": ("data_criacao", "data_modificacao")}),
+        (
+            "Configurações da Evolution API",
+            {
+                "fields": (
+                    "telefone_instancia",
+                    "api_key",
+                    "instance_id",
+                    "url_evolution_api",
+                ),
+                "classes": ("wide",),
+            },
+        ),
+        (
+            "Configurações Avançadas",
+            {
+                "fields": ("configuracoes", "metadados", "ultima_validacao"),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Informações do Sistema",
+            {
+                "fields": ("data_criacao",),
+                "classes": ("collapse",),
+            },
+        ),
     )
+
+    # Configurações adicionais
+    list_per_page = 25
+    save_on_top = True
+
+    # Campos somente leitura
+    readonly_fields = ["data_criacao"]
 
 
 # Customizações adicionais do admin

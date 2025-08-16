@@ -67,15 +67,16 @@ class TestContatoAdmin(TestCase):
 
     def test_list_filter(self) -> None:
         """Testa os filtros da lista."""
-        expected_filters = ["data_criacao"]
+        expected_filters = ["data_cadastro", "ultima_interacao", "ativo"]
 
         for filter_field in expected_filters:
             self.assertIn(filter_field, self.admin.list_filter)
 
     def test_readonly_fields(self) -> None:
         """Testa os campos somente leitura."""
-        # O admin atual não tem readonly_fields definido
-        self.assertEqual(self.admin.readonly_fields, ())
+        expected_readonly = ["data_cadastro", "ultima_interacao"]
+        for field in expected_readonly:
+            self.assertIn(field, self.admin.readonly_fields)
 
 
 class TestAtendenteHumanoAdmin(TestCase):
@@ -132,21 +133,24 @@ class TestAtendimentoAdmin(TestCase):
         self.admin = AtendimentoAdmin(Atendimento, self.site)
 
         self.contato = Contato.objects.create(
-            telefone="5511999999999", nome="Cliente Teste"
+            telefone="5511999999999", nome_contato="Cliente Teste"
         )
 
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato, status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.EM_ANDAMENTO
         )
 
     def test_list_display(self) -> None:
         """Testa os campos exibidos na lista."""
         expected_fields = [
-            "contato",
-            "status",
+            "id",
+            "contato_telefone",
+            "status", 
             "data_inicio",
             "data_fim",
-            "atendente_humano",
+            "atendente_humano_nome",
+            "avaliacao",
+            "total_mensagens",
             "duracao_formatada",
         ]
 
@@ -155,14 +159,25 @@ class TestAtendimentoAdmin(TestCase):
 
     def test_list_filter(self) -> None:
         """Testa os filtros da lista."""
-        expected_filters = ["status", "data_inicio", "atendente_humano"]
+        expected_filters = [
+            "status",
+            "prioridade", 
+            "data_inicio",
+            "avaliacao",
+            "atendente_humano",
+        ]
 
         for filter_field in expected_filters:
             self.assertIn(filter_field, self.admin.list_filter)
 
     def test_search_fields(self) -> None:
         """Testa os campos de busca."""
-        expected_fields = ["contato__nome", "contato__telefone"]
+        expected_fields = [
+            "contato__telefone", 
+            "contato__nome_contato",
+            "assunto",
+            "atendente_humano__nome",
+        ]
 
         for field in expected_fields:
             self.assertIn(field, self.admin.search_fields)
@@ -194,11 +209,11 @@ class TestMensagemAdmin(TestCase):
         self.admin = MensagemAdmin(Mensagem, self.site)
 
         self.contato = Contato.objects.create(
-            telefone="5511999999999", nome="Cliente Teste"
+            telefone="5511999999999", nome_contato="Cliente Teste"
         )
 
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato, status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.EM_ANDAMENTO
         )
 
         self.mensagem = Mensagem.objects.create(
@@ -235,7 +250,7 @@ class TestMensagemAdmin(TestCase):
         expected_fields = [
             "conteudo",
             "message_id_whatsapp",
-            "atendimento__contato__nome",
+            "atendimento__contato__nome_contato",
             "atendimento__contato__telefone",
         ]
 
@@ -351,11 +366,11 @@ class TestAdminIntegration(TestCase):
         )
 
         self.contato = Contato.objects.create(
-            telefone="5511999999999", nome="Cliente Admin Test"
+            telefone="5511999999999", nome_contato="Cliente Admin Test"
         )
 
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato, status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.EM_ANDAMENTO
         )
 
     def test_admin_urls_accessible(self) -> None:
@@ -392,7 +407,7 @@ class TestAdminIntegration(TestCase):
             # Testa POST para criar contato
             data = {
                 "telefone": "5511777777777",
-                "nome": "Novo Cliente Admin",
+                "nome_contato": "Novo Cliente Admin",
                 "email": "novo@admin.com",
             }
 
@@ -402,7 +417,7 @@ class TestAdminIntegration(TestCase):
             novo_contato = Contato.objects.filter(telefone="5511777777777").first()
 
             self.assertIsNotNone(novo_contato)
-            self.assertEqual(novo_contato.nome, "Novo Cliente Admin")
+            self.assertEqual(novo_contato.nome_contato, "Novo Cliente Admin")
 
         except Exception:
             # Se a URL não existir, pula o teste
@@ -422,7 +437,7 @@ class TestAdminIntegration(TestCase):
             # Testa alteração do status
             data = {
                 "contato": self.contato.pk,
-                "status": StatusAtendimento.FINALIZADO,
+                "status": StatusAtendimento.RESOLVIDO,
                 "data_inicio_0": self.atendimento.data_inicio.date(),
                 "data_inicio_1": self.atendimento.data_inicio.time(),
             }
@@ -431,7 +446,7 @@ class TestAdminIntegration(TestCase):
 
             # Verifica se o atendimento foi atualizado
             self.atendimento.refresh_from_db()
-            self.assertEqual(self.atendimento.status, StatusAtendimento.FINALIZADO)
+            self.assertEqual(self.atendimento.status, StatusAtendimento.RESOLVIDO)
 
         except Exception:
             # Se a URL não existir, pula o teste
@@ -470,11 +485,11 @@ class TestAdminCustomMethods(TestCase):
         self.site = AdminSite()
 
         self.contato = Contato.objects.create(
-            telefone="5511999999999", nome="Cliente Teste"
+            telefone="5511999999999", nome_contato="Cliente Teste"
         )
 
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato, status=StatusAtendimento.ATIVO
+            contato=self.contato, status=StatusAtendimento.EM_ANDAMENTO
         )
 
     def test_admin_ordering(self) -> None:

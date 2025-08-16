@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from typing import List
+from typing import Any, Dict, List
+from abc import ABCMeta
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -14,39 +15,36 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.
 )
 
 
-class FaissVetorStorage(VetorStorage):
+class _FaissVetorStorageMeta(ABCMeta):
+    """Metaclasse para implementar o padrão Singleton com suporte a ABC."""
+
+    _instances: Dict[type, Any] = {}
+
+    def __call__(cls, *args: Any, **kwargs: Any) -> Any:
+        if cls not in cls._instances:
+            cls._instances[cls] = super().__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
     """
     Implementação singleton do VetorStorage usando FAISS.
     Garante que todas as instâncias compartilhem o mesmo banco vetorial.
     """
-
-    _instance = None
-    _initialized = False
-    _lock = None
-
-    def __new__(cls) -> "FaissVetorStorage":
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
     def __init__(self) -> None:
         """
         Inicializa o armazenamento FAISS.
         Cria ou carrega o banco vetorial existente.
         """
-        if not self._initialized:
-            # Import aqui para evitar problemas de importação circular
-            import threading
+        # Evita reinicialização em instâncias subsequentes do Singleton
+        if hasattr(self, "_initialized"):
+            return
 
-            if FaissVetorStorage._lock is None:
-                FaissVetorStorage._lock = threading.Lock()
-
-            with FaissVetorStorage._lock:
-                if not self._initialized:
-                    self.__db_path = str(Path(__file__).parent / "banco_faiss")
-                    self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
-                    self.__vectordb = self.__inicializar_banco_vetorial()
-                    FaissVetorStorage._initialized = True
+        self.__db_path = str(Path(__file__).parent / "banco_faiss")
+        self.__embeddings = OllamaEmbeddings(model=SERVICEHUB.FAISS_MODEL)
+        self.__vectordb = self.__inicializar_banco_vetorial()
+        self._initialized = True
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco FAISS existe no caminho especificado."""
@@ -58,7 +56,6 @@ class FaissVetorStorage(VetorStorage):
         Carrega o banco existente ou cria um novo se não existir.
         """
         if self.__faiss_db_exists(self.__db_path):
-            
             try:
                 vectordb = FAISS.load_local(
                     self.__db_path,
@@ -71,7 +68,6 @@ class FaissVetorStorage(VetorStorage):
                 logger.error(f"Erro ao carregar banco FAISS existente: {e}")
                 return self.__criar_banco_vazio()
         else:
-
             return self.__criar_banco_vazio()
 
     def __criar_banco_vazio(self) -> FAISS:
@@ -112,15 +108,12 @@ class FaissVetorStorage(VetorStorage):
         """
         try:
             if self.__faiss_db_exists(self.__db_path):
-
                 self.__vectordb = FAISS.load_local(
                     self.__db_path,
                     self.__embeddings,
                     allow_dangerous_deserialization=True,
                 )
 
-            
-                
         except Exception as e:
             logger.error(f"Erro ao sincronizar banco vetorial: {e}")
 
@@ -146,15 +139,11 @@ class FaissVetorStorage(VetorStorage):
                 hasattr(self.__vectordb, "docstore")
                 and hasattr(self.__vectordb, "index_to_docstore_id")
             ):
-                
                 return matching_ids
 
             # Verificar se o vectordb não está vazio
             if not self.__vectordb.index_to_docstore_id:
                 return matching_ids
-
-            total_docs = len(self.__vectordb.index_to_docstore_id)
-
 
             # Usar método mais robusto para busca
             processed_count = 0
@@ -171,12 +160,9 @@ class FaissVetorStorage(VetorStorage):
 
                     processed_count += 1
 
-
                 except Exception as e:
                     logger.warning(f"Erro ao buscar documento {doc_id}: {e}")
                     continue
-
-
 
         except Exception as e:
             logger.error(
@@ -231,7 +217,6 @@ class FaissVetorStorage(VetorStorage):
         )
         chunks = splitter.split_documents(documents)
 
-
         # Validação dos documentos
         valid_chunks = []
         for chunk in chunks:
@@ -266,8 +251,6 @@ class FaissVetorStorage(VetorStorage):
                 error_msg = "Falha ao salvar banco FAISS no disco"
                 logger.error(error_msg)
                 raise RuntimeError(error_msg)
-
-
 
         except Exception as e:
             logger.error(f"Erro ao adicionar documentos: {e}")
@@ -319,12 +302,6 @@ class FaissVetorStorage(VetorStorage):
                 if ids_validos:
                     self.__vectordb.delete(ids_validos)
                     self.__vectordb.save_local(self.__db_path)
-
-                
-                    
-            
-                
-
 
         except Exception as e:
             logger.error(

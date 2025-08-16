@@ -16,7 +16,9 @@ Django==5.2.1
 django-picklefield==3.3
 django-q2==1.8.0
 django-role-permissions==3.2.0
+django-redis==6.0.0
 faiss-cpu==1.11.0
+firebase-admin==7.1.0
 frozenlist==1.6.0
 greenlet==3.2.2
 h11==0.16.0
@@ -30,10 +32,12 @@ jsonpointer==3.0.0
 langchain==0.3.25
 langchain-community==0.3.24
 langchain-core==0.3.62
+langchain-ollama==0.3.6
 langchain-openai==0.3.18
 langchain-text-splitters==0.3.8
 langchain-xai==0.2.4
 langsmith==0.3.42
+markdown==3.8.2
 marshmallow==3.26.1
 multidict==6.4.4
 mypy_extensions==1.1.0
@@ -42,11 +46,11 @@ openai==1.82.0
 orjson==3.10.18
 packaging==24.2
 propcache==0.3.1
+psycopg2-binary==2.9.9
 pydantic==2.11.5
 pydantic-settings==2.9.1
 pydantic_core==2.33.2
 pypdf==5.5.0
-psycopg2-binary==2.9.9
 python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.1.0

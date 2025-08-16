@@ -71,7 +71,7 @@ class LlmParameters(ParametersReturnResult):
         self,
         llm_class: Type[BaseChatModel],
         model: str,
-        error: LlmError,
+        error: Type[LlmError],
         prompt_system: str,
         prompt_human: str,
         context: str,

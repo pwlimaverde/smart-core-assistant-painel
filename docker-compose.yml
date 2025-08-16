@@ -35,7 +35,6 @@ services:
       - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
     depends_on:
       - postgres-django
-      - evolution-api
     networks:
       - smart-core-network
     extra_hosts:
@@ -89,6 +88,8 @@ services:
       - POSTGRES_DB=smart_core_db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres123
+    ports:
+      - "5433:5432"
     volumes:
       - postgres_django_data:/var/lib/postgresql/data
     networks:

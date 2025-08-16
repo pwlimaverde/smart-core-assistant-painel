@@ -1,6 +1,5 @@
 """Configurações Django específicas para testes."""
 
-import os
 from typing import Any, Dict
 
 # Configurações específicas para testes
@@ -8,8 +7,8 @@ DEBUG = False
 TESTING = True
 
 # Limpar configurações importadas antes de redefinir para evitar no-redef
-del globals()["DATABASES"]
-del globals()["Q_CLUSTER"]
+# del globals()["DATABASES"] # Comentado para evitar KeyError
+# del globals()["Q_CLUSTER"] # Comentado para evitar KeyError
 
 # Usa SQLite em memória para testes mais rápidos
 DATABASES: Dict[str, Dict[str, Any]] = {
@@ -35,19 +34,20 @@ Q_CLUSTER: Dict[str, Any] = {
 }
 
 # Importar configurações básicas APÓS definir os necessários
-from .settings import *  # noqa: F403, F401
-
-# Desabilita migrações para testes mais rápidos
-class DisableMigrations:
-    def __contains__(self, item: str) -> bool:
-        return True
-
-    def __getitem__(self, item: str) -> None:
-        return None
+from .settings import *  # noqa: F403, F401, E402
 
 
-if os.environ.get("DISABLE_MIGRATIONS", "False").lower() == "true":
-    MIGRATION_MODULES = DisableMigrations()
+# # Desabilita migrações para testes mais rápidos
+# class DisableMigrations:
+#     def __contains__(self, item: str) -> bool:
+#         return True
+
+#     def __getitem__(self, item: str) -> None:
+#         return None
+
+
+# if os.environ.get("DISABLE_MIGRATIONS", "False").lower() == "true":
+#     MIGRATION_MODULES = DisableMigrations()
 
 # Configurações de cache para testes
 CACHES: Dict[str, Dict[str, Any]] = {

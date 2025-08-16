@@ -17,6 +17,12 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.datasou
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.usecase.vetor_storage_usecase import (
     VetorStorageUseCase,
 )
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_api_datasource import (
+    EvolutionAPIDatasource,
+)
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.usecase.whatsapp_service_usecase import (
+    WhatsAppServiceUsecase,
+)
 from smart_core_assistant_painel.modules.services.utils.erros import (
     SetEnvironRemoteError,
 )
@@ -28,12 +34,27 @@ from smart_core_assistant_painel.modules.services.utils.types import (
     SERUsecase,
     VSData,
     VSUsecase,
+    WSData,
 )
 
 
 class FeaturesCompose:
+    """Facade para os casos de uso do módulo de Serviços.
+
+    Esta classe inicializa e configura os principais serviços da aplicação,
+    como variáveis de ambiente, o banco de dados vetorial (vector storage)
+    e o serviço de mensagens do WhatsApp.
+    """
+
     @staticmethod
     def set_environ_remote() -> None:
+        """Busca as variáveis de ambiente de um datasource remoto (Firebase)
+        e as injeta no `SERVICEHUB` para uso global na aplicação.
+
+        Raises:
+            SetEnvironRemoteError: Se ocorrer um erro ao buscar ou definir
+                                   as variáveis de ambiente.
+        """
         config_mapping = {
             "groq_api_key": "GROQ_API_KEY",
             "openai_api_key": "OPENAI_API_KEY",
@@ -72,6 +93,13 @@ class FeaturesCompose:
 
     @staticmethod
     def vetor_storage() -> None:
+        """Inicializa o datasource de armazenamento vetorial (Faiss) e o
+        disponibiliza no `SERVICEHUB`.
+
+        Raises:
+            VetorStorageError: Se ocorrer um erro ao inicializar ou carregar
+                               o banco de dados vetorial.
+        """
         parameters: NoParams = NoParams()
         datasource: VSData = FaissStorageDatasource()
         usecase: VSUsecase = VetorStorageUseCase(datasource=datasource)
@@ -79,5 +107,24 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, SuccessReturn):
             SERVICEHUB.set_vetor_storage(data.result)
+        if isinstance(data, ErrorReturn):
+            raise data.result
+
+    @staticmethod
+    def whatsapp_service() -> None:
+        """Inicializa o serviço de cliente de API do WhatsApp (Evolution API)
+        e o disponibiliza no `SERVICEHUB`.
+
+        Raises:
+            WhatsappServiceError: Se ocorrer um erro ao inicializar o serviço.
+        """
+        # Cria os parâmetros
+        parameters: NoParams = NoParams()
+        datasource: WSData = EvolutionAPIDatasource()
+        usecase = WhatsAppServiceUsecase(datasource=datasource)
+
+        data = usecase(parameters)
+        if isinstance(data, SuccessReturn):
+            SERVICEHUB.set_whatsapp_service(data.result)
         if isinstance(data, ErrorReturn):
             raise data.result

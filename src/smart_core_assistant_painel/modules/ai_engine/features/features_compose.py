@@ -61,6 +61,13 @@ from smart_core_assistant_painel.modules.services.features.service_hub import SE
 
 
 class FeaturesCompose:
+    """Facade para os casos de uso do módulo AI Engine.
+
+    Esta classe fornece uma interface simplificada para acessar as funcionalidades
+    de IA do sistema, como processamento de documentos, análise de mensagens e
+    interação com modelos de linguagem.
+    """
+
     @staticmethod
     def load_document_conteudo(
         id: str,
@@ -68,6 +75,22 @@ class FeaturesCompose:
         tag: str,
         grupo: str,
     ) -> list[Document]:
+        """Carrega e processa o conteúdo de um texto para treinamento.
+
+        Args:
+            id (str): Identificador único para o conteúdo.
+            conteudo (str): O texto a ser processado.
+            tag (str): Tag para categorização do conteúdo.
+            grupo (str): Grupo ao qual o conteúdo pertence.
+
+        Returns:
+            list[Document]: Uma lista de objetos Document do Langchain,
+                            prontos para serem vetorizados.
+
+        Raises:
+            DocumentError: Se ocorrer um erro durante o processamento do conteúdo.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
         error = DocumentError("Error ao processar os dados do arquivo!")
         parameters = LoadDocumentConteudoParameters(
             id=id,
@@ -96,6 +119,23 @@ class FeaturesCompose:
         tag: str,
         grupo: str,
     ) -> list[Document]:
+        """Carrega e processa um arquivo de documento para treinamento.
+
+        Args:
+            id (str): Identificador único para o documento.
+            path (str): O caminho do arquivo a ser carregado.
+            tag (str): Tag para categorização do documento.
+            grupo (str): Grupo ao qual o documento pertence.
+
+        Returns:
+            list[Document]: Uma lista de objetos Document do Langchain,
+                            prontos para serem vetorizados.
+
+        Raises:
+            DocumentError: Se ocorrer um erro durante o carregamento ou
+                           processamento do arquivo.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
         error = DocumentError("Error ao processar os dados do arquivo!")
         parameters = LoadDocumentFileParameters(
             id=id,
@@ -120,6 +160,18 @@ class FeaturesCompose:
 
     @staticmethod
     def pre_analise_ia_treinamento(context: str) -> str:
+        """Executa uma pré-análise em um conteúdo para treinamento de IA.
+
+        Args:
+            context (str): O conteúdo a ser analisado.
+
+        Returns:
+            str: O resultado da análise.
+
+        Raises:
+            LlmError: Se ocorrer um erro durante a comunicação com o LLM.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
@@ -145,6 +197,18 @@ class FeaturesCompose:
 
     @staticmethod
     def melhoria_ia_treinamento(context: str) -> str:
+        """Solicita ao LLM uma versão melhorada de um conteúdo para treinamento.
+
+        Args:
+            context (str): O conteúdo a ser melhorado.
+
+        Returns:
+            str: A versão melhorada do conteúdo.
+
+        Raises:
+            LlmError: Se ocorrer um erro durante a comunicação com o LLM.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
@@ -172,8 +236,18 @@ class FeaturesCompose:
     def analise_previa_mensagem(
         historico_atendimento: dict[str, Any], context: str
     ) -> APMTuple:
-        """
-        Método para análise prévia de uma mensagem, incluindo detecção de intenção e extração de entidades.
+        """Realiza análise prévia de mensagem para extrair intenção e entidades.
+
+        Args:
+            historico_atendimento (dict[str, Any]): Histórico da conversa.
+            context (str): O texto da mensagem a ser analisada.
+
+        Returns:
+            APMTuple: Uma tupla contendo as intenções e entidades detectadas.
+
+        Raises:
+            LlmError: Se ocorrer um erro durante a comunicação com o LLM.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
         """
         # Aqui você pode implementar a lógica de análise prévia
         # Exemplo: Detecção de intenção e extração de entidades

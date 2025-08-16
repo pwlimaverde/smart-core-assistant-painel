@@ -1,3 +1,6 @@
+import re
+from typing import Any
+
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,
@@ -10,38 +13,99 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     DataMensageParameters,
 )
-from typing import Any
-
 from smart_core_assistant_painel.modules.ai_engine.utils.types import LMDUsecase
 
 
 class LoadMensageDataUseCase(LMDUsecase):
+    """Use case para processar e normalizar dados de webhook de mensagens.
+
+    Esta classe é responsável por receber o payload bruto de um webhook
+    (geralmente de uma API de WhatsApp), validar sua estrutura, extrair
+    as informações essenciais e normalizá-las em um objeto `MessageData`
+    limpo e consistente. Ele lida com diversos tipos de mensagens
+    (texto, imagem, vídeo, etc.), extraindo o conteúdo e metadados
+    relevantes de cada uma.
+    """
+
+    @staticmethod
+    def normalize_phone(phone: str) -> str:
+        """Normaliza um número de telefone para um formato padrão.
+
+        Remove caracteres não numéricos e corrige prefixos comuns para
+        garantir um formato de telefone consistente.
+
+        Args:
+            phone: O número de telefone bruto, geralmente do `remoteJid`.
+
+        Returns:
+            O número de telefone contendo apenas dígitos.
+
+        Examples:
+            >>> LoadMensageDataUseCase.normalize_phone("55 11 99999-9999")
+            "5511999999999"
+            >>> LoadMensageDataUseCase.normalize_phone("+55(11)99999-9999")
+            "5511999999999"
+        """
+        if not phone:
+            return ""
+
+        # Remove todos os caracteres não numéricos
+        normalized = re.sub(r"[^\d]", "", str(phone))
+
+        # Remove códigos de país duplicados (ex: 5555119999999 -> 5511999999999)
+        if normalized.startswith("5555") and len(normalized) >= 13:
+            normalized = normalized[2:]
+
+        return normalized
+
     def __call__(
         self, parameters: DataMensageParameters
     ) -> ReturnSuccessOrError[MessageData]:
+        """Executa o processo de parsing e normalização do webhook.
+
+        Args:
+            parameters: Contém o dicionário `data` do webhook.
+
+        Returns:
+            Um `SuccessReturn` com o objeto `MessageData` populado em caso
+            de sucesso, ou um `ErrorReturn` com um `DataMessageError` se
+            campos essenciais estiverem faltando ou ocorrer um erro.
+        """
         try:
             # Extrair informações básicas com verificações de segurança
+            instance = parameters.data.get("instance")
+            if not instance:
+                error = parameters.error
+                error.message = "Campo 'instance' não encontrado no payload do webhook"
+                return ErrorReturn(error)
+
             data_section = parameters.data.get("data")
+            api_key = parameters.data.get("apikey")
+            if not api_key:
+                error = parameters.error
+                error.message = "Campo 'api_key' não encontrado no payload do webhook"
+                return ErrorReturn(error)
 
             if not data_section:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo data não encontrado no payload do webhook"
+                error.message = "Campo 'data' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             key_section = data_section.get("key")
             if not key_section:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo key não encontrado no payload do webhook"
+                error.message = "Campo 'key' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
             remote_jid = key_section.get("remoteJid")
             if not remote_jid:
                 error = parameters.error
-                error.message = f"{error.message} - Exception: Campo remoteJid não encontrado no payload do webhook"
+                error.message = "Campo 'remoteJid' não encontrado no payload do webhook"
                 return ErrorReturn(error)
 
-            # Extrair telefone do remoteJid
-            phone = remote_jid.split("@")[0]
+            # Extrair e normalizar telefone do remoteJid
+            phone_raw = remote_jid.split("@")[0]
+            phone = self.normalize_phone(phone_raw)
             message_id = key_section.get("id")
 
             # Extrair pushName (nome do perfil do WhatsApp)
@@ -159,6 +223,8 @@ class LoadMensageDataUseCase(LMDUsecase):
 
             return SuccessReturn(
                 MessageData(
+                    instance=instance,
+                    api_key=api_key,
                     numero_telefone=phone,
                     from_me=from_me,
                     conteudo=conteudo,

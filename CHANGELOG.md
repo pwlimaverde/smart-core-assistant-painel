@@ -1,3 +1,9 @@
+## 0.8.1
+- **fix**: Adição do campo email ao modelo Contato (migração 0003_add_email_to_contato)
+- **fix**: Correção dos testes que utilizavam o campo email no modelo Contato
+- **docs**: Atualização do README-Docker.md com instruções sobre migrações
+- **test**: Execução bem-sucedida da suíte de testes no Docker (305 testes passados)
+
 ## 0.8.0
 - **fix**: Correção do problema "Nenhum chunk válido encontrado" no Ollama, incluindo:
   - Bug no loop de iteração em `faiss_vetor_storage.py`.

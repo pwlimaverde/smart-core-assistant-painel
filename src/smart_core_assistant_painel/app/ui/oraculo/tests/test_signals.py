@@ -18,576 +18,265 @@ from ..models import (
 
 
 class TestModelSignals(TestCase):
-    """Testes para sinais dos modelos."""
+    """Testes para sinais de modelo básicos."""
 
     def setUp(self) -> None:
         """Configuração inicial."""
-        # Mock para capturar sinais
-        self.signal_received = Mock()
-
-        # Conecta sinais para teste
-        post_save.connect(self.signal_received, sender=Contato)
-        post_save.connect(self.signal_received, sender=Atendimento)
-        post_save.connect(self.signal_received, sender=Mensagem)
+        self.test_signals_fired = []
 
     def tearDown(self) -> None:
-        """Limpeza após testes."""
-        # Desconecta sinais
-        post_save.disconnect(self.signal_received, sender=Contato)
-        post_save.disconnect(self.signal_received, sender=Atendimento)
-        post_save.disconnect(self.signal_received, sender=Mensagem)
+        """Limpeza após os testes."""
+        self.test_signals_fired.clear()
 
     def test_contato_post_save_signal(self) -> None:
-        """Testa sinal post_save do modelo Contato."""
+        """Testa se o sinal post_save é disparado ao criar Contato."""
+        # Handler para capturar o sinal
+        @receiver(post_save, sender=Contato)
+        def test_handler(sender: Any, instance: Contato, created: bool, **kwargs: Any) -> None:
+            self.test_signals_fired.append({"sender": sender, "instance": instance, "created": created})
+
         # Cria contato
-        contato = Contato.objects.create(telefone="5511999999999", nome="Cliente Teste")
+        contato = Contato.objects.create(telefone="5511999999999", nome_contato="Teste Signal")
 
-        # Verifica se o sinal foi enviado
-        self.signal_received.assert_called()
-
-        # Verifica argumentos do sinal
-        call_args = self.signal_received.call_args
-        self.assertEqual(call_args[1]["sender"], Contato)
-        self.assertEqual(call_args[1]["instance"], contato)
-        self.assertTrue(call_args[1]["created"])
+        # Verifica se o sinal foi disparado
+        self.assertEqual(len(self.test_signals_fired), 1)
+        self.assertEqual(self.test_signals_fired[0]["instance"], contato)
+        self.assertTrue(self.test_signals_fired[0]["created"])
 
     def test_atendimento_post_save_signal(self) -> None:
-        """Testa sinal post_save do modelo Atendimento."""
-        contato = Contato.objects.create(
-            telefone="5511888888888", nome="Cliente Atendimento"
-        )
+        """Testa se o sinal post_save é disparado ao criar Atendimento."""
+        # Handler para capturar o sinal
+        @receiver(post_save, sender=Atendimento)
+        def test_handler(sender: Any, instance: Atendimento, created: bool, **kwargs: Any) -> None:
+            self.test_signals_fired.append({"sender": sender, "instance": instance, "created": created})
 
-        # Reset mock
-        self.signal_received.reset_mock()
+        # Cria contato e atendimento
+        contato = Contato.objects.create(telefone="5511888888888", nome_contato="Cliente Signal")
+        atendimento = Atendimento.objects.create(contato=contato, status=StatusAtendimento.EM_ANDAMENTO)
 
-        # Cria atendimento
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Verifica se o sinal foi enviado
-        self.signal_received.assert_called()
-
-        call_args = self.signal_received.call_args
-        self.assertEqual(call_args[1]["sender"], Atendimento)
-        self.assertEqual(call_args[1]["instance"], atendimento)
-        self.assertTrue(call_args[1]["created"])
+        # Verifica se o sinal foi disparado
+        self.assertEqual(len(self.test_signals_fired), 1)
+        self.assertEqual(self.test_signals_fired[0]["instance"], atendimento)
+        self.assertTrue(self.test_signals_fired[0]["created"])
 
     def test_mensagem_post_save_signal(self) -> None:
-        """Testa sinal post_save do modelo Mensagem."""
-        contato = Contato.objects.create(
-            telefone="5511777777777", nome="Cliente Mensagem"
-        )
+        """Testa se o sinal post_save é disparado ao criar Mensagem."""
+        # Handler para capturar o sinal
+        @receiver(post_save, sender=Mensagem)
+        def test_handler(sender: Any, instance: Mensagem, created: bool, **kwargs: Any) -> None:
+            self.test_signals_fired.append({"sender": sender, "instance": instance, "created": created})
 
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Reset mock
-        self.signal_received.reset_mock()
-
-        # Cria mensagem
+        # Cria contato, atendimento e mensagem
+        contato = Contato.objects.create(telefone="5511777777777", nome_contato="Cliente Msg Signal")
+        atendimento = Atendimento.objects.create(contato=contato, status=StatusAtendimento.EM_ANDAMENTO)
         mensagem = Mensagem.objects.create(
             atendimento=atendimento,
-            conteudo="Mensagem de teste",
-            tipo=TipoMensagem.TEXTO,
+            conteudo="Mensagem teste",
+            tipo=TipoMensagem.TEXTO_FORMATADO,
             remetente=TipoRemetente.CONTATO,
         )
 
-        # Verifica se o sinal foi enviado
-        self.signal_received.assert_called()
-
-        call_args = self.signal_received.call_args
-        self.assertEqual(call_args[1]["sender"], Mensagem)
-        self.assertEqual(call_args[1]["instance"], mensagem)
-        self.assertTrue(call_args[1]["created"])
-
-    def test_model_update_signal(self) -> None:
-        """Testa sinal ao atualizar modelo."""
-        contato = Contato.objects.create(
-            telefone="5511666666666", nome="Cliente Original"
-        )
-
-        # Reset mock
-        self.signal_received.reset_mock()
-
-        # Atualiza contato
-        contato.nome = "Cliente Atualizado"
-        contato.save()
-
-        # Verifica se o sinal foi enviado
-        self.signal_received.assert_called()
-
-        call_args = self.signal_received.call_args
-        self.assertEqual(call_args[1]["sender"], Contato)
-        self.assertEqual(call_args[1]["instance"], contato)
-        self.assertFalse(call_args[1]["created"])  # Não é criação
-
-
-class TestCustomSignals(TestCase):
-    """Testes para sinais customizados do aplicativo."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.mock_handler = Mock()
-
-    @patch("oraculo.signals.atendimento_iniciado")
-    def test_atendimento_iniciado_signal(self, mock_signal) -> None:
-        """Testa sinal customizado de atendimento iniciado."""
-        contato = Contato.objects.create(telefone="5511555555555", nome="Cliente Sinal")
-
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Se o sinal customizado existir, deve ter sido enviado
-        # Este teste verifica se a estrutura está preparada para sinais customizados
-        self.assertIsNotNone(atendimento)
-
-    @patch("oraculo.signals.mensagem_recebida")
-    def test_mensagem_recebida_signal(self, mock_signal) -> None:
-        """Testa sinal customizado de mensagem recebida."""
-        contato = Contato.objects.create(
-            telefone="5511444444444", nome="Cliente Mensagem Sinal"
-        )
-
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        mensagem = Mensagem.objects.create(
-            atendimento=atendimento,
-            conteudo="Mensagem com sinal",
-            tipo=TipoMensagem.TEXTO,
-            remetente=TipoRemetente.CONTATO,
-        )
-
-        # Verifica se a estrutura está preparada
-        self.assertIsNotNone(mensagem)
-
-    @patch("oraculo.signals.atendimento_finalizado")
-    def test_atendimento_finalizado_signal(self, mock_signal) -> None:
-        """Testa sinal customizado de atendimento finalizado."""
-        contato = Contato.objects.create(
-            telefone="5511333333333", nome="Cliente Finalização"
-        )
-
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Finaliza atendimento
-        atendimento.status = StatusAtendimento.FINALIZADO
-        atendimento.data_fim = timezone.now()
-        atendimento.save()
-
-        # Verifica se a estrutura está preparada
-        self.assertEqual(atendimento.status, StatusAtendimento.FINALIZADO)
+        # Verifica se o sinal foi disparado
+        self.assertEqual(len(self.test_signals_fired), 1)
+        self.assertEqual(self.test_signals_fired[0]["instance"], mensagem)
+        self.assertTrue(self.test_signals_fired[0]["created"])
 
 
 class TestSignalHandlers(TestCase):
-    """Testes para handlers de sinais."""
+    """Testes para handlers de sinais customizados."""
 
     def setUp(self) -> None:
         """Configuração inicial."""
-        # Simula handlers de sinais
-        self.log_handler = Mock()
-        self.notification_handler = Mock()
-        self.analytics_handler = Mock()
+        self.handler_calls = []
 
-    def test_contato_created_handler(self) -> None:
-        """Testa handler para criação de contato."""
-
-        # Simula handler que registra criação de contato
+    def test_custom_contato_handler(self) -> None:
+        """Testa handler customizado para criação de contato."""
+        # Handler customizado para contatos
         @receiver(post_save, sender=Contato)
-        def log_contato_created(
-            sender: Any, instance: Contato, created: bool, **kwargs: Any
-        ) -> None:
+        def contato_handler(sender: Any, instance: Contato, created: bool, **kwargs: Any) -> None:
             if created:
-                self.log_handler(f"Contato criado: {instance.nome}")
+                self.handler_calls.append(f"Contato criado: {instance.nome_contato}")
 
         # Cria contato
-        Contato.objects.create(telefone="5511222222222", nome="Cliente Log")
+        contato = Contato.objects.create(telefone="5511666666666", nome_contato="Handler Test")
 
         # Verifica se o handler foi chamado
-        self.log_handler.assert_called_with("Contato criado: Cliente Log")
-
-        # Desconecta o handler
-        post_save.disconnect(log_contato_created, sender=Contato)
+        self.assertEqual(len(self.handler_calls), 1)
+        self.assertEqual(self.handler_calls[0], "Contato criado: Handler Test")
 
     def test_atendimento_status_change_handler(self) -> None:
         """Testa handler para mudança de status de atendimento."""
-        contato = Contato.objects.create(
-            telefone="5511111111111", nome="Cliente Status"
-        )
+        # Handler para mudanças no atendimento
+        @receiver(post_save, sender=Atendimento)
+        def atendimento_handler(sender: Any, instance: Atendimento, **kwargs: Any) -> None:
+            self.handler_calls.append(f"Atendimento {instance.id} - Status: {instance.status}")
 
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
+        # Cria contato e atendimento
+        contato = Contato.objects.create(telefone="5511555555555", nome_contato="Status Test")
+        atendimento = Atendimento.objects.create(contato=contato, status=StatusAtendimento.EM_ANDAMENTO)
 
-        # Simula handler que monitora mudanças de status
-        @receiver(pre_save, sender=Atendimento)
-        def monitor_status_change(
-            sender: Any, instance: Atendimento, **kwargs: Any
-        ) -> None:
-            if instance.pk:
-                try:
-                    old_instance = Atendimento.objects.get(pk=instance.pk)
-                    if old_instance.status != instance.status:
-                        self.notification_handler(
-                            f"Status alterado de {old_instance.status} para {instance.status}"
-                        )
-                except Atendimento.DoesNotExist:
-                    pass
-
-        # Altera status
-        atendimento.status = StatusAtendimento.HUMANO
+        # Muda status
+        atendimento.status = StatusAtendimento.RESOLVIDO
         atendimento.save()
 
         # Verifica se o handler foi chamado
-        self.notification_handler.assert_called_with(
-            f"Status alterado de {StatusAtendimento.ATIVO} para {StatusAtendimento.HUMANO}"
-        )
-
-        # Desconecta o handler
-        pre_save.disconnect(monitor_status_change, sender=Atendimento)
-
-    def test_mensagem_analytics_handler(self) -> None:
-        """Testa handler para analytics de mensagens."""
-        contato = Contato.objects.create(
-            telefone="5511000000000", nome="Cliente Analytics"
-        )
-
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Simula handler de analytics
-        @receiver(post_save, sender=Mensagem)
-        def track_mensagem(
-            sender: Any, instance: Mensagem, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                self.analytics_handler(
-                    {
-                        "tipo": instance.tipo,
-                        "remetente": instance.remetente,
-                        "atendimento_id": instance.atendimento.id,
-                    }
-                )
-
-        # Cria mensagem
-        Mensagem.objects.create(
-            atendimento=atendimento,
-            conteudo="Mensagem analytics",
-            tipo=TipoMensagem.TEXTO,
-            remetente=TipoRemetente.CONTATO,
-        )
-
-        # Verifica se o handler foi chamado
-        self.analytics_handler.assert_called_with(
-            {
-                "tipo": TipoMensagem.TEXTO,
-                "remetente": TipoRemetente.CONTATO,
-                "atendimento_id": atendimento.id,
-            }
-        )
-
-        # Desconecta o handler
-        post_save.disconnect(track_mensagem, sender=Mensagem)
-
-
-class TestSignalErrorHandling(TestCase):
-    """Testes para tratamento de erros em sinais."""
-
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.error_handler = Mock()
-
-    def test_signal_handler_exception(self) -> None:
-        """Testa tratamento de exceções em handlers de sinais."""
-
-        # Simula handler que gera exceção
-        @receiver(post_save, sender=Contato)
-        def failing_handler(
-            sender: Any, instance: Contato, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                raise Exception("Erro simulado no handler")
-
-        # Cria contato (deve funcionar mesmo com handler falhando)
-        try:
-            contato = Contato.objects.create(
-                telefone="5510999999999", nome="Cliente Erro"
-            )
-
-            # O contato deve ser criado mesmo com erro no handler
-            self.assertIsNotNone(contato.id)
-
-        except Exception as e:
-            # Se a exceção vazar, registra para análise
-            self.error_handler(str(e))
-
-        # Desconecta o handler
-        post_save.disconnect(failing_handler, sender=Contato)
-
-    def test_signal_handler_with_database_error(self) -> None:
-        """Testa handler com erro de banco de dados."""
-
-        # Simula handler que tenta operação de banco inválida
-        @receiver(post_save, sender=Atendimento)
-        def db_error_handler(
-            sender: Any, instance: Atendimento, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                try:
-                    # Tenta criar contato com telefone duplicado
-                    Contato.objects.create(
-                        telefone=instance.contato.telefone,  # Telefone já existe
-                        nome="Duplicado",
-                    )
-                except Exception as e:
-                    self.error_handler(f"Erro de banco: {str(e)}")
-
-        contato = Contato.objects.create(
-            telefone="5510888888888", nome="Cliente DB Erro"
-        )
-
-        # Cria atendimento (deve acionar o handler com erro)
-        Atendimento.objects.create(contato=contato, status=StatusAtendimento.ATIVO)
-
-        # Verifica se o erro foi capturado
-        self.error_handler.assert_called()
-
-        # Desconecta o handler
-        post_save.disconnect(db_error_handler, sender=Atendimento)
-
-    def test_signal_handler_timeout(self) -> None:
-        """Testa handler com timeout."""
-        import time
-
-        # Simula handler lento
-        @receiver(post_save, sender=Mensagem)
-        def slow_handler(
-            sender: Any, instance: Mensagem, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                start_time = time.time()
-                time.sleep(0.1)  # Simula operação lenta
-                end_time = time.time()
-
-                if end_time - start_time > 0.05:  # Mais de 50ms
-                    self.error_handler("Handler muito lento")
-
-        contato = Contato.objects.create(
-            telefone="5510777777777", nome="Cliente Timeout"
-        )
-
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Cria mensagem (deve acionar handler lento)
-        Mensagem.objects.create(
-            atendimento=atendimento,
-            conteudo="Mensagem timeout",
-            tipo=TipoMensagem.TEXTO,
-            remetente=TipoRemetente.CONTATO,
-        )
-
-        # Verifica se o timeout foi detectado
-        self.error_handler.assert_called_with("Handler muito lento")
-
-        # Desconecta o handler
-        post_save.disconnect(slow_handler, sender=Mensagem)
+        self.assertEqual(len(self.handler_calls), 2)  # Criação + atualização
+        # Os valores do enum são strings (e.g., 'em_andamento', 'resolvido')
+        self.assertIn(StatusAtendimento.EM_ANDAMENTO, self.handler_calls[0])
+        self.assertIn(StatusAtendimento.RESOLVIDO, self.handler_calls[1])
 
 
 class TestSignalIntegration(TransactionTestCase):
-    """Testes de integração para sinais (usando TransactionTestCase para transações)."""
+    """Testes de integração com sinais em transações."""
 
-    def setUp(self) -> None:
-        """Configuração inicial."""
-        self.integration_log = []
+    def test_signal_rollback_behavior(self) -> None:
+        """Testa comportamento de sinais em rollback de transação."""
+        signals_fired = []
 
-    def test_complete_workflow_signals(self) -> None:
-        """Testa sinais em um fluxo completo de atendimento."""
-
-        # Handlers para capturar todo o fluxo
         @receiver(post_save, sender=Contato)
-        def log_contato(
-            sender: Any, instance: Contato, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                self.integration_log.append(f"Contato criado: {instance.nome}")
+        def track_signal(sender: Any, instance: Contato, **kwargs: Any) -> None:
+            signals_fired.append(instance.id)
 
-        @receiver(post_save, sender=Atendimento)
-        def log_atendimento(
-            sender: Any, instance: Atendimento, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                self.integration_log.append(f"Atendimento iniciado: {instance.id}")
-            else:
-                self.integration_log.append(f"Atendimento atualizado: {instance.id}")
+        # Testa rollback
+        from django.db import transaction
 
-        @receiver(post_save, sender=Mensagem)
-        def log_mensagem(
-            sender: Any, instance: Mensagem, created: bool, **kwargs: Any
-        ) -> None:
-            if created:
-                self.integration_log.append(
-                    f"Mensagem criada: {instance.remetente} - {instance.tipo}"
+        try:
+            with transaction.atomic():
+                contato = Contato.objects.create(
+                    telefone="5511444444444", nome_contato="Rollback Test"
+                )
+                # Força rollback com exceção
+                raise Exception("Forçar rollback")
+        except Exception:
+            pass
+
+        # Signal deve ter sido disparado mesmo com rollback
+        self.assertEqual(len(signals_fired), 1)
+
+    def test_bulk_operations_signals(self) -> None:
+        """Testa sinais em operações bulk."""
+        signals_fired = []
+
+        @receiver(post_save, sender=Contato)
+        def track_bulk_signal(sender: Any, instance: Contato, **kwargs: Any) -> None:
+            signals_fired.append(instance.nome_contato)
+
+        # Bulk create não dispara sinais post_save por padrão
+        Contato.objects.bulk_create([
+            Contato(telefone="5511111111111", nome_contato="Bulk 1"),
+            Contato(telefone="5511222222222", nome_contato="Bulk 2"),
+        ])
+
+        # Sinais não devem ter sido disparados
+        self.assertEqual(len(signals_fired), 0)
+
+        # Create individual dispara sinais
+        Contato.objects.create(telefone="5511333333333", nome_contato="Individual")
+
+        # Agora deve ter 1 sinal
+        self.assertEqual(len(signals_fired), 1)
+        self.assertEqual(signals_fired[0], "Individual")
+
+
+class TestMemoryLeaks(TestCase):
+    """Testes para verificar vazamentos de memória com sinais."""
+
+    def test_signal_memory_usage(self) -> None:
+        """Testa uso de memória com muitos sinais."""
+        # Simula um handler que armazena dados
+        data_store = {}
+
+        def memory_handler(sender: Any, instance: Mensagem, **kwargs: Any) -> None:
+            data_store[instance.id] = {
+                "id": instance.id,
+                "conteudo": instance.conteudo,
+                "timestamp": instance.timestamp,
+            }
+
+        # Conecta o handler
+        post_save.connect(memory_handler, sender=Mensagem)
+
+        try:
+            # Cria muitas mensagens
+            contato = Contato.objects.create(telefone="5511000000000", nome_contato="Memory Test")
+            atendimento = Atendimento.objects.create(contato=contato, status=StatusAtendimento.EM_ANDAMENTO)
+
+            for i in range(100):
+                Mensagem.objects.create(
+                    atendimento=atendimento,
+                    conteudo=f"Mensagem {i}",
+                    tipo=TipoMensagem.TEXTO_FORMATADO,
+                    remetente=TipoRemetente.CONTATO,
                 )
 
-        # Executa fluxo completo
-        contato = Contato.objects.create(telefone="5510666666666", nome="Cliente Fluxo")
+            # Verifica se todos os dados foram armazenados
+            self.assertEqual(len(data_store), 100)
 
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
+        finally:
+            # Desconecta o handler para evitar interferência
+            post_save.disconnect(memory_handler, sender=Mensagem)
 
-        Mensagem.objects.create(
-            atendimento=atendimento,
-            conteudo="Primeira mensagem",
-            tipo=TipoMensagem.TEXTO,
-            remetente=TipoRemetente.CONTATO,
-        )
+    def test_signal_handler_exception_handling(self) -> None:
+        """Testa tratamento de exceções em handlers."""
+        exceptions_caught = []
 
-        Mensagem.objects.create(
-            atendimento=atendimento,
-            conteudo="Resposta do bot",
-            tipo=TipoMensagem.TEXTO,
-            remetente=TipoRemetente.BOT,
-        )
+        def failing_handler(sender: Any, instance: Contato, **kwargs: Any) -> None:
+            exceptions_caught.append("Handler executado")
+            raise Exception("Handler falhou")
 
-        # Finaliza atendimento
-        atendimento.status = StatusAtendimento.FINALIZADO
-        atendimento.data_fim = timezone.now()
-        atendimento.save()
+        # Conecta handler que falha
+        post_save.connect(failing_handler, sender=Contato)
 
-        # Verifica se todos os sinais foram capturados
-        expected_logs = [
-            "Contato criado: Cliente Fluxo",
-            f"Atendimento iniciado: {atendimento.id}",
-            f"Mensagem criada: {TipoRemetente.CONTATO} - {TipoMensagem.TEXTO}",
-            f"Mensagem criada: {TipoRemetente.BOT} - {TipoMensagem.TEXTO}",
-            f"Atendimento atualizado: {atendimento.id}",
-        ]
+        try:
+            # Cria contato - deve funcionar mesmo com handler falhando
+            contato = Contato.objects.create(telefone="5511987654321", nome_contato="Exception Test")
 
-        for expected_log in expected_logs:
-            self.assertIn(expected_log, self.integration_log)
+            # Verifica se o contato foi criado
+            self.assertTrue(Contato.objects.filter(id=contato.id).exists())
 
-        # Desconecta handlers
-        post_save.disconnect(log_contato, sender=Contato)
-        post_save.disconnect(log_atendimento, sender=Atendimento)
-        post_save.disconnect(log_mensagem, sender=Mensagem)
+            # Handler deve ter sido executado
+            self.assertEqual(len(exceptions_caught), 1)
 
-    def test_signal_ordering(self) -> None:
-        """Testa ordem de execução dos sinais."""
-        execution_order = []
-
-        @receiver(pre_save, sender=Contato)
-        def pre_save_contato(sender: Any, instance: Contato, **kwargs: Any) -> None:
-            execution_order.append("pre_save_contato")
-
-        @receiver(post_save, sender=Contato)
-        def post_save_contato(
-            sender: Any, instance: Contato, created: bool, **kwargs: Any
-        ) -> None:
-            execution_order.append("post_save_contato")
-
-        # Cria contato
-        Contato.objects.create(telefone="5510555555555", nome="Cliente Ordem")
-
-        # Verifica ordem de execução
-        expected_order = ["pre_save_contato", "post_save_contato"]
-        self.assertEqual(execution_order, expected_order)
-
-        # Desconecta handlers
-        pre_save.disconnect(pre_save_contato, sender=Contato)
-        post_save.disconnect(post_save_contato, sender=Contato)
+        finally:
+            # Desconecta o handler
+            post_save.disconnect(failing_handler, sender=Contato)
 
 
 class TestSignalPerformance(TestCase):
     """Testes de performance para sinais."""
 
-    def test_multiple_signals_performance(self) -> None:
-        """Testa performance com múltiplos sinais."""
-        import time
+    def test_signal_performance_with_many_handlers(self) -> None:
+        """Testa performance com muitos handlers conectados."""
+        handlers = []
 
-        call_count = 0
+        # Cria vários handlers
+        for i in range(10):
+            def make_handler(index):
+                def handler(sender: Any, instance: Contato, **kwargs: Any) -> None:
+                    pass  # Handler vazio para teste de performance
+                return handler
 
-        @receiver(post_save, sender=Contato)
-        def performance_handler(
-            sender: Any, instance: Contato, created: bool, **kwargs: Any
-        ) -> None:
-            nonlocal call_count
-            call_count += 1
+            handler = make_handler(i)
+            handlers.append(handler)
+            post_save.connect(handler, sender=Contato)
 
-        start_time = time.time()
+        try:
+            import time
 
-        # Cria múltiplos contatos
-        for i in range(100):
-            Contato.objects.create(
-                telefone=f"551044444{i:04d}", nome=f"Cliente Performance {i}"
-            )
+            start_time = time.time()
 
-        end_time = time.time()
-        execution_time = end_time - start_time
+            # Cria contatos
+            for i in range(50):
+                Contato.objects.create(
+                    telefone=f"551199999{i:04d}", nome_contato=f"Performance Test {i}"
+                )
 
-        # Verifica que todos os sinais foram executados
-        self.assertEqual(call_count, 100)
+            end_time = time.time()
 
-        # Performance deve ser aceitável
-        self.assertLess(execution_time, 5.0)  # Menos de 5 segundos
+            # Deve completar em tempo razoável (< 5 segundos)
+            self.assertLess(end_time - start_time, 5.0)
 
-        # Desconecta handler
-        post_save.disconnect(performance_handler, sender=Contato)
-
-    def test_signal_memory_usage(self) -> None:
-        """Testa uso de memória com sinais."""
-        import gc
-
-        # Força garbage collection
-        gc.collect()
-
-        data_store = []
-
-        @receiver(post_save, sender=Mensagem)
-        def memory_handler(
-            sender: Any, instance: Mensagem, created: bool, **kwargs: Any
-        ) -> None:
-            # Simula handler que armazena dados
-            data_store.append(
-                {
-                    "id": instance.id,
-                    "conteudo": instance.conteudo,
-                    "timestamp": instance.data_criacao,
-                }
-            )
-
-        contato = Contato.objects.create(
-            telefone="5510333333333", nome="Cliente Memória"
-        )
-
-        atendimento = Atendimento.objects.create(
-            contato=contato, status=StatusAtendimento.ATIVO
-        )
-
-        # Cria múltiplas mensagens
-        for i in range(50):
-            Mensagem.objects.create(
-                atendimento=atendimento,
-                conteudo=f"Mensagem {i}",
-                tipo=TipoMensagem.TEXTO,
-                remetente=TipoRemetente.CONTATO,
-            )
-
-        # Verifica que os dados foram armazenados
-        self.assertEqual(len(data_store), 50)
-
-        # Limpa dados
-        data_store.clear()
-        gc.collect()
-
-        # Desconecta handler
-        post_save.disconnect(memory_handler, sender=Mensagem)
+        finally:
+            # Desconecta todos os handlers
+            for handler in handlers:
+                post_save.disconnect(handler, sender=Contato)

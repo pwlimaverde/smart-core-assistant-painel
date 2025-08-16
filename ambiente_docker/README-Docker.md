@@ -52,7 +52,7 @@ Use o script `docker-manager.ps1` para configuração automática completa:
 
 ```powershell
 # 1) Navegar para o diretório do ambiente Docker
-cd c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker
+cd ambiente_docker
 
 # 2) Executar configuração inicial completa (ambiente padrão: prod)
 .\docker-manager.ps1 setup
@@ -327,16 +327,23 @@ graph TD
 
 ### Inicialização Automática
 
-Atualmente, o `docker-compose.yml` está configurado para iniciar os serviços Django diretamente via `manage.py` (os entrypoints de inicialização completa estão temporariamente desabilitados por comentários no compose). Portanto, o fluxo atual é:
+O `docker-compose.yml` está configurado para utilizar os scripts de entrypoint para inicialização completa dos serviços Django. Isso garante que dependências e serviços sejam verificados e inicializados corretamente antes de iniciar o servidor.
+
+Fluxo atual:
 
 1. **django-app**:
+   - ✅ Executa `/usr/local/bin/docker-entrypoint.sh`
+   - ✅ Verifica PostgreSQL e credenciais Firebase
+   - ✅ Executa `start_initial_loading()` e `start_services()`
+   - ✅ Verifica conectividade com Ollama
+   - ✅ Executa migrações e cria superusuário padrão (admin/123456) caso não exista
    - ✅ Inicia o servidor com `uv run python manage.py runserver 0.0.0.0:8000`
-   - ✅ As variáveis dinâmicas são carregadas em runtime pelo módulo `start_services()` do próprio app quando necessário
-   - ⚠️ Migrações e criação de superusuário não são automáticas neste modo; utilize `docker-manager.ps1 migrate` e `docker-manager.ps1 createsuperuser` quando precisar
 
 2. **django-qcluster**:
+   - ✅ Executa `/usr/local/bin/docker-entrypoint-qcluster.sh`
+   - ✅ Aguarda o app principal estar disponível
+   - ✅ Verifica PostgreSQL, Firebase e Ollama
    - ✅ Inicia o QCluster com `uv run python manage.py qcluster`
-   - ⚠️ Aguarda implicitamente a disponibilidade do app principal pelo serviço do banco e configurações 
 
 Nota: Os scripts de entrypoint (<mcfile name="docker-entrypoint.sh" path="c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker\scripts\docker-entrypoint.sh"></mcfile> e <mcfile name="docker-entrypoint-qcluster.sh" path="c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\ambiente_docker\scripts\docker-entrypoint-qcluster.sh"></mcfile>) já implementam:
 - Verificação do PostgreSQL e credenciais do Firebase

@@ -653,6 +653,13 @@ class Contato(models.Model):
     nome_contato: models.CharField = models.CharField(
         max_length=100, blank=True, null=True, help_text="Nome do contato"
     )
+    # Campo de e-mail do contato (opcional), usado para comunicações por e-mail
+    email: models.EmailField = models.EmailField(
+        max_length=254,
+        blank=True,
+        null=True,
+        help_text="E-mail do contato",
+    )
     nome_perfil_whatsapp: models.CharField = models.CharField(
         max_length=100,
         blank=True,

@@ -13,6 +13,7 @@ Este guia descreve como configurar e executar o ambiente de desenvolvimento "mis
 
 1.  **Docker e Docker Compose**: [Instale o Docker Desktop](https://www.docker.com/products/docker-desktop).
 2.  **Python**: Versao 3.8 ou superior.
+3.  **Credenciais do Firebase**: Obtenha o arquivo `firebase_key.json` com as credenciais do Firebase (service account key).
 
 ## Configuracao e Execucao
 
@@ -20,15 +21,18 @@ Siga os passos abaixo para subir o ambiente:
 
 ### 1. Crie o Arquivo de Configuração
 
-Antes de iniciar o ambiente, voce precisa criar o arquivo `.env` na **raiz do projeto**:
+Antes de iniciar o ambiente, você precisa:
+
+1. Criar o arquivo `.env` na **raiz do projeto**
+2. Obter o arquivo `firebase_key.json` com as credenciais do Firebase
+
+**Passo 1: Criando o arquivo .env**
 
 - Crie um arquivo chamado `.env` na raiz do projeto. Voce pode usar o template abaixo como base. **Certifique-se de preencher os valores das chaves secretas.**
 
 ```env
-# Firebase Configuration (usando JSON direto no .env)
-# Substitua o conteúdo abaixo pelo JSON completo das suas credenciais de service account do Firebase
-# Nota: O JSON deve estar em uma única linha com \n para quebras de linha
-FIREBASE_CREDENTIALS_JSON={"type": "service_account","project_id": "seu-project-id","private_key_id": "sua-private-key-id","private_key": "-----BEGIN PRIVATE KEY-----\nSUA_CHAVE_PRIVADA_AQUI\n-----END PRIVATE KEY-----\n","client_email": "seu-client-email@seu-project-id.iam.gserviceaccount.com","client_id": "seu-client-id","auth_uri": "https://accounts.google.com/o/oauth2/auth","token_uri": "https://oauth2.googleapis.com/token","auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/seu-client-email%40seu-project-id.iam.gserviceaccount.com"}
+# Firebase Configuration (caminho para o arquivo de credenciais)
+GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
 # Django Configuration (OBRIGATÓRIO)
 SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
@@ -54,6 +58,11 @@ POSTGRES_HOST=localhost
 # ... adicione outras variáveis de ambiente conforme necessário ...
 ```
 
+**Passo 2: Obtendo o arquivo firebase_key.json**
+
+- Obtenha o arquivo de credenciais do Firebase (service account key) e salve-o como `firebase_key.json` na raiz do projeto.
+- O script de setup moverá automaticamente este arquivo para o diretório correto: `src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/`
+
 ### 2. Execute o Script de Inicio
 
 A partir da **raiz do projeto**, execute:
@@ -70,16 +79,17 @@ A partir da **raiz do projeto**, execute:
 
 O script realizara todas as seguintes acoes em sequencia:
 
-1.  **Verificará o Arquivo de Configuração**: Garantirá que `.env` existe.
-2.  **Configurará o Git**: Configurará o Git para ignorar alterações locais em arquivos de configuração específicos do ambiente.
-3.  **Ajustará o `settings.py`**: O arquivo de configuracao do Django sera modificado para apontar para o PostgreSQL rodando no Docker e usar cache em memória.
-4.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados, usando PostgreSQL versão 14.
-5.  **Limpara o `Dockerfile`**: O Dockerfile principal sera esvaziado.
-6.  **Subira os Containers**: Os containers do `postgres` e `redis` serao iniciados em background.
-7.  **Instalará as dependências Python necessárias**.
-8.  **Apagará as migrações do Django**.
-9.  **Aplicará as migrações do Django**.
-10. **Criará um superusuário com nome `admin` e senha `123456`**.
+1.  **Verificará os Arquivos de Configuração**: Garantirá que `.env` e `firebase_key.json` existem na raiz do projeto.
+2.  **Moverá o Arquivo de Credenciais**: Moverá `firebase_key.json` para o diretório especificado na variável `GOOGLE_APPLICATION_CREDENTIALS` do `.env`.
+3.  **Configurará o Git**: Configurará o Git para ignorar alterações locais em arquivos de configuração específicos do ambiente.
+4.  **Ajustará o `settings.py`**: O arquivo de configuracao do Django sera modificado para apontar para o PostgreSQL rodando no Docker e usar cache em memória.
+5.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados, usando PostgreSQL versão 14.
+6.  **Limpara o `Dockerfile`**: O Dockerfile principal sera esvaziado.
+7.  **Subira os Containers**: Os containers do `postgres` e `redis` serao iniciados em background.
+8.  **Instalará as dependências Python necessárias**.
+9.  **Apagará as migrações do Django**.
+10. **Aplicará as migrações do Django**.
+11. **Criará um superusuário com nome `admin` e senha `123456`**.
 
 ### 3. Inicie a Aplicacao Django
 

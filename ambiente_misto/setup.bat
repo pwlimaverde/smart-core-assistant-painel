@@ -19,7 +19,7 @@ if not exist ".env" (
     echo Crie um arquivo .env com o seguinte conteúdo mínimo:
     echo.
     echo # Firebase Configuration ^(OBRIGATÓRIO^)
-    echo FIREBASE_CREDENTIALS_JSON={chave JSON completa aqui}
+    echo GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
     echo.
     echo # Django Configuration ^(OBRIGATÓRIO^)
     echo SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
@@ -46,6 +46,26 @@ if not exist ".env" (
 
 echo Arquivo .env encontrado.
 
+if not exist "firebase_key.json" (
+    echo ERRO: Antes de executar a criação do ambiente local, salve o arquivo firebase_key.json na raiz do projeto.
+    echo.
+    echo Obtenha o arquivo de credenciais do Firebase ^(service account key^) e salve-o como firebase_key.json na raiz do projeto.
+    echo O script moverá automaticamente este arquivo para o diretório correto.
+    echo.
+    exit /b 1
+)
+
+echo Arquivo firebase_key.json encontrado.
+
+REM Criar diretório para o arquivo firebase_key.json se não existir
+set FIREBASE_KEY_DIR=src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config
+if not exist "%FIREBASE_KEY_DIR%" mkdir "%FIREBASE_KEY_DIR%"
+
+REM Mover firebase_key.json para o diretório correto
+move "firebase_key.json" "%FIREBASE_KEY_DIR%\firebase_key.json" >nul
+
+echo Arquivo firebase_key.json movido para %FIREBASE_KEY_DIR%\firebase_key.json
+
 REM 2. Configurar Git para ignorar alterações locais
 echo 2. Configurando Git para ignorar alterações locais...
 
@@ -59,6 +79,7 @@ echo /docker-compose.yml >> .git\info\exclude
 echo /Dockerfile >> .git\info\exclude
 echo /.gitignore >> .git\info\exclude
 echo /.env >> .git\info\exclude
+echo /firebase_key.json >> .git\info\exclude
 echo /src/smart_core_assistant_painel/app/ui/core/settings.py >> .git\info\exclude
 
 REM Arquivos para marcar com assume-unchanged

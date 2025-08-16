@@ -182,3 +182,6 @@ pyrightconfig.json
 
 src/smart_core_assistant_painel/modules/initial_loading/utils/keys/
 
+# Firebase credentials file
+firebase_key.json
+

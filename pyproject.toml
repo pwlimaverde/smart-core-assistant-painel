@@ -112,6 +112,7 @@ dev = [
     "loguru>=0.7.3",
     "pytest>=8.4.0",
     "pytest-cov>=6.1.1",
+    "pytest-django>=4.9.0",
     "rich>=14.0.0",
     "ruff>=0.11.13",
     "taskipy>=1.14.1",
@@ -186,6 +187,11 @@ reset-db-docker = "docker compose down && docker volume rm smart-core-assistant-
 
 # Desenvolvimento e testes
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"
+# Executa apenas os testes de apps Django dentro de src/
+test-apps = "pytest src/smart_core_assistant_painel/app/ui -v --cov=src --cov-report=term-missing"
+# Executa todos os testes (raiz + apps), equivalente ao Docker (sem container)
+test-all = "pytest -v --cov=src --cov-report=term-missing"
+
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"
 lint = "ruff check src/"
 format = "ruff format src/"
@@ -204,6 +210,16 @@ faiss_to_json = "python src/smart_core_assistant_painel/app/ui/manage.py faiss_t
 
 # Specific tasks (Docker)
 faiss_to_json-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
+
+# Testes (Docker)
+# Executa toda a suíte de testes no container com cobertura em src e relatório no terminal
+test-docker = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v --cov=src --cov-report=term-missing"
+# Executa testes com relatório de cobertura em HTML (artefato gerado dentro do container)
+test-docker-coverage = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v --cov=src --cov-report=html"
+# Executa testes específicos dentro do container; passe o caminho/expressão após `uv run task test-docker-specific`
+# Ex.: uv run task test-docker-specific -- src/smart_core_assistant_painel/app/ui/oraculo/tests/
+# Removido $TASK_ARGS; Taskipy anexará os argumentos passados após o comando abaixo.
+test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v"
 
 [tool.mypy]
 ignore_missing_imports = true

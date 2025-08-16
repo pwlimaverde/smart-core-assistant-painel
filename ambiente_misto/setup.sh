@@ -16,13 +16,13 @@ fi
 # 1. Verificar arquivos de configuração necessários
 echo "1. Verificando arquivos de configuração..."
 
-if [ ! -f ".env" ] || [ ! -f "firebase_key.json" ]; then
-    echo "ERRO: Antes de executar a criação do ambiente local, salve os arquivos .env e firebase_key.json na raiz do projeto."
+if [ ! -f ".env" ]; then
+    echo "ERRO: Antes de executar a criação do ambiente local, salve o arquivo .env na raiz do projeto."
     echo ""
     echo "Crie um arquivo .env com o seguinte conteúdo mínimo:"
     echo "
 # Firebase Configuration (OBRIGATÓRIO)
-GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+FIREBASE_CREDENTIALS_JSON={chave JSON completa aqui}
 
 # Django Configuration (OBRIGATÓRIO)
 SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
@@ -36,7 +36,7 @@ EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
 # Redis e PostgreSQL - Altere as portas se as padrões estiverem em uso
 REDIS_PORT=6381
-POSTGRES_PORT=5434
+POSTGRES_PORT=5435
 
 # PostgreSQL Configuration
 POSTGRES_DB=smart_core_db
@@ -47,37 +47,10 @@ POSTGRES_HOST=localhost
     exit 1
 fi
 
-echo "Arquivos .env e firebase_key.json encontrados."
+echo "Arquivo .env encontrado."
 
-# 2. Mover firebase_key.json para o local correto
-echo "2. Movendo firebase_key.json para o local correto..."
-
-# Ler variável GOOGLE_APPLICATION_CREDENTIALS do .env
-GAC_PATH=$(grep "^GOOGLE_APPLICATION_CREDENTIALS=" .env | cut -d'=' -f2 | tr -d ' ')
-
-if [ -z "$GAC_PATH" ]; then
-    echo "ERRO: A variável GOOGLE_APPLICATION_CREDENTIALS não está definida no arquivo .env."
-    exit 1
-fi
-
-# Criar diretório se não existir
-GAC_DIR=$(dirname "$GAC_PATH")
-mkdir -p "$GAC_DIR"
-
-# Mover arquivo se necessário
-if [ "$(realpath firebase_key.json)" != "$(realpath "$GAC_PATH")" ]; then
-    if [ -f "$GAC_PATH" ]; then
-        echo "Aviso: O arquivo de destino '$GAC_PATH' já existe. Ele não será sobrescrito."
-    else
-        mv firebase_key.json "$GAC_PATH"
-        echo "Arquivo 'firebase_key.json' movido para '$GAC_PATH'"
-    fi
-else
-    echo "Arquivo 'firebase_key.json' já está no local correto."
-fi
-
-# 3. Configurar Git para ignorar alterações locais
-echo "3. Configurando Git para ignorar alterações locais..."
+# 2. Configurar Git para ignorar alterações locais
+echo "2. Configurando Git para ignorar alterações locais..."
 
 # Garantir que o diretório .git/info exista
 mkdir -p .git/info
@@ -92,7 +65,6 @@ EXCLUDE_FILE=".git/info/exclude"
     echo "/.gitignore"
     echo "/.env"
     echo "/src/smart_core_assistant_painel/app/ui/core/settings.py"
-    echo "/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json"
 } >> "$EXCLUDE_FILE"
 
 # Arquivos para marcar com assume-unchanged
@@ -112,43 +84,30 @@ git update-index --assume-unchanged "${FILES_TO_ASSUME[@]}" 2>/dev/null || true
 
 echo "Configuração do Git concluída com sucesso."
 
-# 4. Atualizar settings.py para usar PostgreSQL e Redis do Docker
-echo "4. Atualizando settings.py..."
+# 3. Atualizar settings.py para usar PostgreSQL e Redis do Docker
+echo "3. Atualizando settings.py..."
 
 SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
 
 # Backup do arquivo original
 cp "$SETTINGS_PATH" "${SETTINGS_PATH}.backup"
 
-# Substituir configuração do banco de dados
-sed -i '/^DATABASES = {/,/^}/c\
-DATABASES = {\
-    "default": {\
-        "ENGINE": "django.db.backends.postgresql",\
-        "NAME": os.getenv("POSTGRES_DB", "smart_core_db"),\
-        "USER": os.getenv("POSTGRES_USER", "postgres"),\
-        "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres123"),\
-        "HOST": os.getenv("POSTGRES_HOST", "localhost"),\
-        "PORT": os.getenv("POSTGRES_PORT", "5434"),\
-    }\
-}' "$SETTINGS_PATH"
+# Substituir configuração do banco de dados e cache
+SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
 
-# Substituir configuração do cache
-sed -i '/^CACHES = {/,/^}/c\
-CACHES = {\
-    "default": {\
-        "BACKEND": "django_redis.cache.RedisCache",\
-        "LOCATION": f"redis://127.0.0.1:{os.getenv("REDIS_PORT", "6381")}/1",\
-        "OPTIONS": {\
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",\
-        }\
-    }\
-}' "$SETTINGS_PATH"
+# Substituir HOST do PostgreSQL
+sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres")/"HOST": os.getenv("POSTGRES_HOST", "localhost")/g' "$SETTINGS_PATH"
+
+# Substituir PORT do PostgreSQL
+sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5435")/g' "$SETTINGS_PATH"
+
+# Substituir configuração do cache Redis
+sed -i 's|redis://redis:6379|redis://127.0.0.1:6381|g' "$SETTINGS_PATH"
 
 echo "Arquivo settings.py atualizado com sucesso."
 
-# 5. Atualizar docker-compose.yml para conter apenas os serviços de banco de dados
-echo "5. Atualizando docker-compose.yml..."
+# 4. Atualizar docker-compose.yml para conter apenas os serviços de banco de dados
+echo "4. Atualizando docker-compose.yml..."
 
 PROJECT_NAME=$(basename "$(pwd)")
 
@@ -165,7 +124,7 @@ services:
       POSTGRES_USER: \${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - "\${POSTGRES_PORT:-5434}:5432"
+      - "\${POSTGRES_PORT:-5435}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -189,8 +148,8 @@ EOF
 
 echo "Arquivo docker-compose.yml atualizado com sucesso."
 
-# 6. Limpar Dockerfile
-echo "6. Limpando Dockerfile..."
+# 5. Limpar Dockerfile
+echo "5. Limpando Dockerfile..."
 
 # Comentar linhas ENTRYPOINT e CMD
 sed -i '/^\s*ENTRYPOINT\|^\s*CMD/s/^/# /' Dockerfile
@@ -199,10 +158,49 @@ echo "# As linhas ENTRYPOINT e CMD foram comentadas pelo ambiente_misto." >> Doc
 
 echo "Arquivo Dockerfile atualizado com sucesso."
 
-# 7. Iniciar containers
-echo "7. Iniciando os containers (Postgres e Redis)..."
+# 6. Iniciar containers
+echo "6. Iniciando os containers (Postgres e Redis)..."
 
-docker-compose --env-file ./.env up -d
+docker-compose up -d
+
+# 7. Instalar o Ollama e baixar o modelo
+echo "7. Instalando o Ollama e baixando o modelo mxbai-embed-large..."
+
+# Verificar se o Ollama ja esta instalado
+if ! command -v ollama &> /dev/null
+then
+    echo "Ollama nao encontrado. Baixando e instalando..."
+    # Baixar e executar o script de instalacao
+    curl -fsSL https://ollama.com/install.sh | sh
+else
+    echo "Ollama ja esta instalado."
+fi
+
+# Verificar novamente se o Ollama esta disponivel
+if command -v ollama &> /dev/null
+then
+    echo "Baixando o modelo mxbai-embed-large..."
+    ollama pull mxbai-embed-large:latest
+else
+    echo "Nao foi possivel instalar ou encontrar o Ollama. Pulando o download do modelo."
+fi
+
+# 8. Apagar migrações do Django
+echo "8. Apagando migrações do Django..."
+
+# Navegar para o diretório da aplicação
+cd src/smart_core_assistant_painel/app/ui
+
+# Apagar arquivos de migração (exceto __init__.py)
+find ../../../modules -name 'migrations' -type d -exec sh -c 'cd "{}" && ls *.py 2>/dev/null | grep -v __init__.py | xargs -r rm && echo > __init__.py' \;
+
+# Voltar ao diretório raiz
+cd ../../../../..
+
+# 9. Criar superusuário
+echo "9. Criando superusuário admin..."
+
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456')" | python src/smart_core_assistant_painel/app/ui/manage.py shell
 
 echo ""
 echo "=== Ambiente misto pronto! ==="

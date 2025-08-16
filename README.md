@@ -29,7 +29,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start-docker.ps1
 
 Para desenvolvimento local com bancos de dados no Docker e aplicação local:
 
-1. Crie os arquivos `.env` e `firebase_key.json` na raiz do projeto
+1. Crie o arquivo `.env` na raiz do projeto (veja [ambiente_misto/README.md](ambiente_misto/README.md) para instruções detalhadas)
 2. Execute o script de setup unificado:
 
 ```bash

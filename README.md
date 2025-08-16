@@ -49,6 +49,52 @@ python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
 
 Veja [ambiente_misto/README.md](ambiente_misto/README.md) para detalhes completos.
 
+### Configuração do Ambiente de Desenvolvimento Misto
+
+O ambiente de desenvolvimento misto permite executar os bancos de dados (PostgreSQL e Redis) em containers Docker enquanto a aplicação Django roda localmente na sua máquina. Isso facilita o desenvolvimento e a depuração.
+
+#### Estrutura
+
+- `ambiente_misto/setup.sh`/`ambiente_misto/setup.bat`: Scripts unificados para configurar e iniciar todo o ambiente.
+- `ambiente_misto/README.md`: Documentação detalhada do ambiente de desenvolvimento misto.
+
+#### Funcionalidades do Script de Setup
+
+O script realiza todas as seguintes ações em sequência:
+
+1.  **Verifica o Arquivo de Configuração**: Garante que `.env` existe.
+2.  **Configura o Git**: Configura o Git para ignorar alterações locais em arquivos de configuração específicos do ambiente.
+3.  **Ajusta o `settings.py`**: O arquivo de configuração do Django é modificado para apontar para o PostgreSQL rodando no Docker e usar cache em memória.
+4.  **Ajusta o `docker-compose.yml`**: O arquivo do Docker Compose é reescrito para conter apenas os serviços de banco de dados, usando PostgreSQL versão 14.
+5.  **Limpa o `Dockerfile`**: O Dockerfile principal é esvaziado.
+6.  **Inicia os Containers**: Os containers do `postgres` e `redis` são iniciados em background.
+7.  **Instala as dependências Python necessárias**.
+8.  **Apaga as migrações do Django**.
+9.  **Aplica as migrações do Django**.
+10. **Cria um superusuário com nome `admin` e senha `123456`**.
+
+#### Acesso ao Painel de Administração
+
+Após executar o script de setup e iniciar a aplicação Django, você pode acessar o painel de administração em:
+
+- **URL**: [http://localhost:8000/admin/](http://localhost:8000/admin/)
+- **Usuário**: `admin`
+- **Senha**: `123456`
+
+#### Parando o Ambiente
+
+Para parar os containers do PostgreSQL e Redis, utilize docker-compose a partir da **raiz do projeto**:
+
+```bash
+docker-compose down -v
+```
+
+Isso irá parar e remover os containers, além de apagar os volumes de dados. Para manter os dados, use:
+
+```bash
+docker-compose down
+```
+
 ### Desenvolvimento Local (Tradicional)
 
 ```bash

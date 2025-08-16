@@ -101,8 +101,13 @@ sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres")/"HOST": os.getenv("POST
 # Substituir PORT do PostgreSQL
 sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5435")/g' "$SETTINGS_PATH"
 
-# Substituir configuração do cache Redis
-sed -i 's|redis://redis:6379|redis://127.0.0.1:6381|g' "$SETTINGS_PATH"
+# Substituir configuração do cache Redis para usar cache em memória
+sed -i 's/CACHES = {[^}]*}/CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}/g' "$SETTINGS_PATH"
 
 echo "Arquivo settings.py atualizado com sucesso."
 
@@ -117,7 +122,7 @@ name: $PROJECT_NAME
 
 services:
   postgres:
-    image: postgres:13
+    image: postgres:14
     container_name: postgres_db
     environment:
       POSTGRES_DB: \${POSTGRES_DB:-smart_core_db}
@@ -161,29 +166,18 @@ echo "Arquivo Dockerfile atualizado com sucesso."
 # 6. Iniciar containers
 echo "6. Iniciando os containers (Postgres e Redis)..."
 
+docker-compose down -v
 docker-compose up -d
 
-# 7. Instalar o Ollama e baixar o modelo
-echo "7. Instalando o Ollama e baixando o modelo mxbai-embed-large..."
+# 7. Instalar dependências Python necessárias
+echo "7. Instalando dependências Python necessárias..."
 
-# Verificar se o Ollama ja esta instalado
-if ! command -v ollama &> /dev/null
-then
-    echo "Ollama nao encontrado. Baixando e instalando..."
-    # Baixar e executar o script de instalacao
-    curl -fsSL https://ollama.com/install.sh | sh
-else
-    echo "Ollama ja esta instalado."
-fi
-
-# Verificar novamente se o Ollama esta disponivel
-if command -v ollama &> /dev/null
-then
-    echo "Baixando o modelo mxbai-embed-large..."
-    ollama pull mxbai-embed-large:latest
-else
-    echo "Nao foi possivel instalar ou encontrar o Ollama. Pulando o download do modelo."
-fi
+pip install psycopg2-binary
+pip install firebase-admin
+pip install langchain-ollama
+pip install django-redis
+pip install redis==3.5.3
+pip install markdown
 
 # 8. Apagar migrações do Django
 echo "8. Apagando migrações do Django..."
@@ -197,9 +191,16 @@ find ../../../modules -name 'migrations' -type d -exec sh -c 'cd "{}" && ls *.py
 # Voltar ao diretório raiz
 cd ../../../../..
 
-# 9. Criar superusuário
-echo "9. Criando superusuário admin..."
+# 9. Aplicar migrações do Django
+echo "9. Aplicando migrações do Django..."
 
+export PYTHONPATH=$(pwd)/src
+python src/smart_core_assistant_painel/app/ui/manage.py migrate
+
+# 10. Criar superusuário
+echo "10. Criando superusuário admin..."
+
+export PYTHONPATH=$(pwd)/src
 echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456')" | python src/smart_core_assistant_painel/app/ui/manage.py shell
 
 echo ""

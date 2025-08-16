@@ -90,8 +90,13 @@ powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace '\"HOST\": os.gete
 REM Substituir PORT do PostgreSQL
 powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace '\"PORT\": os.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '\"PORT\": os.getenv(\"POSTGRES_PORT\", \"5435\")' | Out-File -Encoding UTF8 '%SETTINGS_PATH%'"
 
-REM Substituir configuração do cache Redis
-powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace 'redis://redis:6379', 'redis://127.0.0.1:6381' | Out-File -Encoding UTF8 '%SETTINGS_PATH%'"
+REM Substituir configuração do cache Redis para usar cache em memória
+powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace 'CACHES = {[^}]+}', 'CACHES = {
+    \"default\": {
+        \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
+        \"LOCATION\": \"unique-snowflake\",
+    }
+}' | Out-File -Encoding UTF8 '%SETTINGS_PATH%'"
 
 echo Arquivo settings.py atualizado com sucesso.
 
@@ -108,7 +113,7 @@ echo name: %PROJECT_NAME%
 echo.
 echo services:
 echo   postgres:
-echo     image: postgres:13
+echo     image: postgres:14
 echo     container_name: postgres_db
 echo     environment:
 echo       POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
@@ -153,37 +158,18 @@ echo Arquivo Dockerfile atualizado com sucesso.
 REM 6. Iniciar containers
 echo 6. Iniciando os containers (Postgres e Redis)...
 
+docker-compose down -v
 docker-compose up -d
 
-REM 7. Instalar o Ollama e baixar o modelo
-echo 7. Instalando o Ollama e baixando o modelo mxbai-embed-large...
+REM 7. Instalar dependências Python necessárias
+echo 7. Instalando dependências Python necessárias...
 
-REM Verificar se o Ollama ja esta instalado
-where ollama >nul 2>&1
-if %errorlevel% neq 0 (
-    echo Ollama nao encontrado. Baixando e instalando...
-    REM Baixar o instalador do Ollama
-    curl -o ollama-installer.bat https://ollama.com/download/ollama-windows-amd64.bat
-    if %errorlevel% equ 0 (
-        REM Executar o instalador
-        call ollama-installer.bat
-        REM Remover o instalador
-        del ollama-installer.bat
-    ) else (
-        echo Falha ao baixar o instalador do Ollama.
-    )
-) else (
-    echo Ollama ja esta instalado.
-)
-
-REM Verificar novamente se o Ollama esta disponivel
-where ollama >nul 2>&1
-if %errorlevel% equ 0 (
-    echo Baixando o modelo mxbai-embed-large...
-    ollama pull mxbai-embed-large:latest
-) else (
-    echo Nao foi possivel instalar ou encontrar o Ollama. Pulando o download do modelo.
-)
+pip install psycopg2-binary
+pip install firebase-admin
+pip install langchain-ollama
+pip install django-redis
+pip install redis==3.5.3
+pip install markdown
 
 REM 8. Apagar migrações do Django
 echo 8. Apagando migrações do Django...
@@ -204,9 +190,16 @@ for /d %%i in (..\..\..\modules\*) do (
 REM Voltar ao diretório raiz
 cd ..\..\..\..\..
 
-REM 9. Criar superusuário
-echo 9. Criando superusuário admin...
+REM 9. Aplicar migrações do Django
+echo 9. Aplicando migrações do Django...
 
+set PYTHONPATH=%cd%\src
+python src\smart_core_assistant_painel\app\ui\manage.py migrate
+
+REM 10. Criar superusuário
+echo 10. Criando superusuário admin...
+
+set PYTHONPATH=%cd%\src
 echo from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456') | python src\smart_core_assistant_painel\app\ui\manage.py shell
 
 echo.

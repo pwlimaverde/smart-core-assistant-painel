@@ -192,6 +192,8 @@ test-apps = "pytest src/smart_core_assistant_painel/app/ui -v --cov=src --cov-re
 # Executa todos os testes (raiz + apps), equivalente ao Docker (sem container)
 test-all = "pytest -v --cov=src --cov-report=term-missing"
 
+
+
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"
 lint = "ruff check src/"
 format = "ruff format src/"

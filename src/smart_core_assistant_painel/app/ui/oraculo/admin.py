@@ -205,6 +205,10 @@ class ContatoAdmin(admin.ModelAdmin):  #
     list_filter = ["data_cadastro", "ultima_interacao", "ativo"]
     search_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp"]
     readonly_fields = ["data_cadastro", "ultima_interacao"]
+    # Ordenação padrão no admin para evitar TypeError e garantir consistência
+    ordering = ["-ultima_interacao"]
+    # Paginação padrão para melhor usabilidade
+    list_per_page = 25
 
     fieldsets = (
         (
@@ -482,12 +486,17 @@ class AtendimentoAdmin(admin.ModelAdmin):  #
     search_fields = [
         "contato__telefone",
         "contato__nome_contato",
-        "contato__nome",  # Adiciona busca por nome
         "assunto",
         "atendente_humano__nome",
     ]
     readonly_fields = ["data_inicio"]
     inlines = [MensagemInline]
+    # Hierarquia por data para facilitar navegação por períodos
+    date_hierarchy = "data_inicio"
+    # Ordenação padrão por data de início (mais recentes primeiro)
+    ordering = ["-data_inicio"]
+    # Paginação padrão
+    list_per_page = 25
 
     fieldsets = (
         (
@@ -560,10 +569,14 @@ class MensagemAdmin(admin.ModelAdmin):  #
     search_fields = [
         "conteudo",
         "message_id_whatsapp",
-        "atendimento__contato__nome",
+        "atendimento__contato__nome_contato",
         "atendimento__contato__telefone",
     ]
     readonly_fields = ["timestamp", "message_id_whatsapp"]
+    # Hierarquia por data para facilitar navegação
+    date_hierarchy = "timestamp"
+    # Paginação padrão
+    list_per_page = 25
 
     fieldsets = (
         (
@@ -578,7 +591,8 @@ class MensagemAdmin(admin.ModelAdmin):  #
                     "confianca_resposta",
                     "intent_detectado",
                     "entidades_extraidas",
-                )
+                ),
+                "classes": ("collapse",),
             },
         ),
         (
@@ -597,7 +611,8 @@ class MensagemAdmin(admin.ModelAdmin):  #
 
     @admin.display(description="Conteúdo")
     def conteudo_truncado(self: "MensagemAdmin", obj: Mensagem) -> "Any":
-        return obj.conteudo[:50] + "..." if len(obj.conteudo) > 50 else obj.conteudo
+        # Garante no máximo 50 caracteres no total, incluindo as reticências
+        return obj.conteudo[:47] + "..." if len(obj.conteudo) > 50 else obj.conteudo
 
     @admin.display(description="Entidades Extraídas")
     def entidades_extraidas_preview(self: "MensagemAdmin", obj: Mensagem) -> "Any":
@@ -622,7 +637,7 @@ class MensagemAdmin(admin.ModelAdmin):  #
         return "-"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
-        return super().get_queryset(request).select_related("atendimento__contato")
+        return super().get_queryset(request).select_related("atendimento", "atendimento__contato")
 
 
 @admin.register(FluxoConversa)

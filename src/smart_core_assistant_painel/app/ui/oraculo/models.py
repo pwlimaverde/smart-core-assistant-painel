@@ -269,6 +269,23 @@ class Treinamentos(models.Model):
 
         return documentos
 
+    @property
+    def documentos(self) -> list:
+        """
+        Propriedade para compatibilidade com testes existentes.
+        
+        Returns:
+            list: Lista de documentos diretamente do campo _documentos
+        """
+        return self._documentos or []
+
+    def finalize(self) -> None:
+        """
+        Marca o treinamento como finalizado e persiste no banco.
+        """
+        self.treinamento_finalizado = True
+        self.save(update_fields=["treinamento_finalizado"])
+
     class Meta:
         verbose_name = "Treinamento"
         verbose_name_plural = "Treinamentos"
@@ -616,7 +633,7 @@ class Contato(models.Model):
 
     Attributes:
         id: Chave primária do registro
-        telefone: Número de telefone único do contato (formato internacional)
+        telefone: Número de telefone único do contato (formato brasileiro sem prefixo)
         nome_contato: Nome do contato (opcional)
         data_cadastro: Data de cadastro automática
         ultima_interacao: Data da última interação (atualizada automaticamente)
@@ -631,7 +648,7 @@ class Contato(models.Model):
         max_length=20,
         unique=True,
         validators=[validate_telefone],
-        help_text="Número de telefone do contato (formato: +5511999999999)",
+        help_text="Número de telefone do contato (formato: 5511999999999)",
     )
     nome_contato: models.CharField = models.CharField(
         max_length=100, blank=True, null=True, help_text="Nome do contato"
@@ -673,8 +690,8 @@ class Contato(models.Model):
         """
         Salva o contato normalizando o número de telefone.
 
-        Normaliza o telefone para formato internacional (+55...) antes
-        de salvar no banco de dados.
+        Normaliza o telefone para formato brasileiro (55...) sem prefixo
+        antes de salvar no banco de dados.
 
         Args:
             *args: Argumentos posicionais do método save
@@ -687,7 +704,7 @@ class Contato(models.Model):
             # Adiciona código do país se não tiver
             if not telefone_limpo.startswith("55"):
                 telefone_limpo = "55" + telefone_limpo
-            self.telefone = "+" + telefone_limpo
+            self.telefone = telefone_limpo
 
         super().save(*args, **kwargs)
 
@@ -1739,7 +1756,7 @@ def inicializar_atendimento_whatsapp(
         telefone_limpo = re.sub(r"\D", "", numero_telefone)
         if not telefone_limpo.startswith("55"):
             telefone_limpo = "55" + telefone_limpo
-        telefone_formatado = "+" + telefone_limpo
+        telefone_formatado = telefone_limpo
 
         # Busca ou cria o contato
         contato, contato_criado = Contato.objects.get_or_create(
@@ -1789,7 +1806,7 @@ def inicializar_atendimento_whatsapp(
         if not atendimento_ativo:
             atendimento = Atendimento.objects.create(
                 contato=contato,
-                status=StatusAtendimento.AGUARDANDO_INICIAL,
+                status=StatusAtendimento.EM_ANDAMENTO,
                 contexto_conversa={
                     "canal": "whatsapp",
                     "primeira_interacao": True,
@@ -1799,7 +1816,7 @@ def inicializar_atendimento_whatsapp(
 
             # Adiciona entrada no histórico
             atendimento.adicionar_historico_status(
-                StatusAtendimento.AGUARDANDO_INICIAL,
+                StatusAtendimento.EM_ANDAMENTO,
                 "Atendimento iniciado via WhatsApp",
             )
         else:
@@ -1833,7 +1850,7 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional["Atendimento"]:
         telefone_limpo = re.sub(r"\D", "", numero_telefone)
         if not telefone_limpo.startswith("55"):
             telefone_limpo = "55" + telefone_limpo
-        telefone_formatado = "+" + telefone_limpo
+        telefone_formatado = telefone_limpo
 
         contato = Contato.objects.filter(telefone=telefone_formatado).first()
         if not contato:

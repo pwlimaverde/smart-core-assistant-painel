@@ -13,7 +13,6 @@ Este guia descreve como configurar e executar o ambiente de desenvolvimento "mis
 
 1.  **Docker e Docker Compose**: [Instale o Docker Desktop](https://www.docker.com/products/docker-desktop).
 2.  **Python**: Versao 3.8 ou superior.
-3.  **Dependencias Python**: Instale as dependencias do projeto com `pip install -r requirements.txt`.
 
 ## Configuracao e Execucao
 
@@ -32,7 +31,6 @@ Antes de iniciar o ambiente, voce precisa criar o arquivo `.env` na **raiz do pr
 FIREBASE_CREDENTIALS_JSON={"type": "service_account","project_id": "seu-project-id","private_key_id": "sua-private-key-id","private_key": "-----BEGIN PRIVATE KEY-----\nSUA_CHAVE_PRIVADA_AQUI\n-----END PRIVATE KEY-----\n","client_email": "seu-client-email@seu-project-id.iam.gserviceaccount.com","client_id": "seu-client-id","auth_uri": "https://accounts.google.com/o/oauth2/auth","token_uri": "https://oauth2.googleapis.com/token","auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/seu-client-email%40seu-project-id.iam.gserviceaccount.com"}
 
 # Django Configuration (OBRIGATÓRIO)
-```
 SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
 DJANGO_DEBUG=True
 DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
@@ -74,13 +72,14 @@ O script realizara todas as seguintes acoes em sequencia:
 
 1.  **Verificará o Arquivo de Configuração**: Garantirá que `.env` existe.
 2.  **Configurará o Git**: Configurará o Git para ignorar alterações locais em arquivos de configuração específicos do ambiente.
-3.  **Ajustará o `settings.py`**: O arquivo de configuracao do Django sera modificado para apontar para o PostgreSQL e Redis rodando no Docker.
-4.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados.
+3.  **Ajustará o `settings.py`**: O arquivo de configuracao do Django sera modificado para apontar para o PostgreSQL rodando no Docker e usar cache em memória.
+4.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados, usando PostgreSQL versão 14.
 5.  **Limpara o `Dockerfile`**: O Dockerfile principal sera esvaziado.
 6.  **Subira os Containers**: Os containers do `postgres` e `redis` serao iniciados em background.
-7.  **Instalará o Ollama e baixará o modelo `mxbai-embed-large`**.
+7.  **Instalará as dependências Python necessárias**.
 8.  **Apagará as migrações do Django**.
-9.  **Criará um superusuário com nome `admin` e senha `123456`**.
+9.  **Aplicará as migrações do Django**.
+10. **Criará um superusuário com nome `admin` e senha `123456`**.
 
 ### 3. Inicie a Aplicacao Django
 
@@ -119,7 +118,11 @@ Após commitar suas alterações, recomenda-se executar o script `ambiente_misto
 Para parar os containers do PostgreSQL e Redis, utilize docker-compose a partir da **raiz do projeto**:
 
 ```bash
-docker-compose --env-file ./.env down
+docker-compose down -v
 ```
 
-Isso **nao** apaga os dados do banco de dados, que sao persistidos em um volume Docker.
+Isso irá parar e remover os containers, além de apagar os volumes de dados. Para manter os dados, use:
+
+```bash
+docker-compose down
+```

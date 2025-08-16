@@ -15,7 +15,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
 @dataclass
 class DataMensageParameters(ParametersReturnResult):
     data: dict[str, Any]
-    error: Type[DataMessageError]
+    error: DataMessageError
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -26,7 +26,7 @@ class MessageParameters(ParametersReturnResult):
     session: str
     chat_id: str
     message: Optional[str]
-    error: Type[WahaApiError]
+    error: WahaApiError
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -38,7 +38,7 @@ class LoadDocumentFileParameters(ParametersReturnResult):
     path: str
     tag: str
     grupo: str
-    error: Type[DocumentError]
+    error: DocumentError
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -50,7 +50,7 @@ class LoadDocumentConteudoParameters(ParametersReturnResult):
     conteudo: str
     tag: str
     grupo: str
-    error: Type[DocumentError]
+    error: DocumentError
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -110,7 +110,7 @@ class AnalisePreviaMensagemParameters(ParametersReturnResult):
     valid_intent_types: str
     valid_entity_types: str
     llm_parameters: LlmParameters
-    error: Type[LlmError]
+    error: LlmError
 
     def __str__(self) -> str:
         return self.__repr__()

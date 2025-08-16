@@ -57,5 +57,5 @@ class LoadDocumentFileUseCase(LDFUsecase):
             return SuccessReturn(documentos)
         else:
             return ErrorReturn(
-                parameters.error(message="Erro ao obter dados do datasource.")
+                parameters.error
             )

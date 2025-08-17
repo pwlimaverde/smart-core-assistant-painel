@@ -13,46 +13,10 @@ Este ambiente foi criado para resolver o problema de desenvolvimento no Windows,
 1. **Docker Desktop** instalado e em execução
 2. **Python 3.13+** 
 3. **uv** (gerenciador de dependências)
-4. **Credenciais Firebase** - arquivo `firebase_key.json`
 
 ## Configuração Inicial
 
-### 1. Criar arquivo `.env` 
-
-Crie um arquivo `.env` na raiz do projeto com:
-
-```bash
-# Configurações de banco de dados
-POSTGRES_DB=smart_core_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres123
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5436
-
-# Configuração do Redis (cache)
-REDIS_HOST=localhost 
-REDIS_PORT=6382
-
-# Outras configurações
-SECRET_KEY_DJANGO=your-secret-key-here
-OPENAI_API_KEY=your-openai-key
-
-# Caminho para credenciais Firebase (obrigatório)
-GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-
-# Opcional: Cole o JSON completo das credenciais aqui para criação dinâmica do arquivo
-# Recomendado para ambientes CI/CD (e.g., Jules)
-FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto", ...}
-```
-
-### 2. Adicionar credenciais Firebase
-
-Você tem duas opções:
-- Definir `FIREBASE_KEY_JSON_CONTENT` no `.env` com o conteúdo JSON completo. O script criará o arquivo no caminho de `GOOGLE_APPLICATION_CREDENTIALS`.
-
-Observação: a opção de colocar um arquivo `firebase_key.json` físico na raiz foi removida para padronizar a configuração. Sempre use a variável `FIREBASE_KEY_JSON_CONTENT`.
-
-### 3. Executar Setup
+### 1. Executar Setup
 
 **Windows:**
 ```bash

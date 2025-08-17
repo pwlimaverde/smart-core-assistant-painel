@@ -7,7 +7,7 @@
 ## 0.8.0
 - **fix**: Correção do problema "Nenhum chunk válido encontrado" no Ollama, incluindo:
   - Bug no loop de iteração em `faiss_vetor_storage.py`.
-  - Valor padrão para `FAISS_MODEL` em `service_hub.py`.
+  - Valor padrão para `EMBEDDINGS_MODEL` em `service_hub.py`.
   - Configuração dinâmica da URL do Ollama em `faiss_vetor_storage.py`.
   - Integração da configuração do Ollama com Firebase Remote Config em `features_compose.py`.
   - Configuração local da `OLLAMA_BASE_URL` no arquivo `.env`.

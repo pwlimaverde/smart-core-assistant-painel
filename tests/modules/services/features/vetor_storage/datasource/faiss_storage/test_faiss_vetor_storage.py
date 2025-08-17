@@ -48,7 +48,7 @@ class TestFaissVetorStorage(unittest.TestCase):
             "smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage.SERVICEHUB"
         )
         self.mock_servicehub = self.servicehub_patcher.start()
-        self.mock_servicehub.FAISS_MODEL = "all-minilm-l6-v2"
+        self.mock_servicehub.EMBEDDINGS_MODEL = "all-minilm-l6-v2"
         self.mock_servicehub.CHUNK_SIZE = 100
         self.mock_servicehub.CHUNK_OVERLAP = 10
 

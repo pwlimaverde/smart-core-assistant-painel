@@ -6,13 +6,6 @@ from unittest.mock import Mock, patch
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from ..models import (
-    Atendimento,
-    Contato,
-    Mensagem,
-    StatusAtendimento,
-    TipoRemetente,
-)
 from ..models_departamento import Departamento
 
 
@@ -32,16 +25,14 @@ class TestWebhookWhatsApp(TestCase):
                 "key": {
                     "remoteJid": "5511999999999@s.whatsapp.net",
                     "fromMe": False,
-                    "id": "ABCD1234"
+                    "id": "ABCD1234",
                 },
-                "message": {
-                    "conversation": "Olá, preciso de ajuda"
-                },
+                "message": {"conversation": "Olá, preciso de ajuda"},
                 "messageType": "conversation",
                 "pushName": "Cliente Teste",
                 "broadcast": False,
-                "messageTimestamp": 1700000123
-            }
+                "messageTimestamp": 1700000123,
+            },
         }
 
         # Mock do departamento para validação
@@ -73,30 +64,36 @@ class TestWebhookWhatsApp(TestCase):
         )
         self.assertEqual(response.status_code, 500)  # JSON parse error
 
-    @patch('smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key"
+    )
     def test_webhook_post_invalid_api_key(self, mock_validar: Mock) -> None:
         """Testa webhook com API key inválida."""
         mock_validar.return_value = None  # API key inválida
-        
+
         response = self.client.post(
             self.webhook_url,
             data=json.dumps(self.whatsapp_data),
             content_type="application/json",
         )
-        
+
         self.assertEqual(response.status_code, 401)  # Unauthorized
         mock_validar.assert_called_once_with(self.whatsapp_data)
 
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response")
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer")
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data")
-    @patch('smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key"
+    )
     def test_webhook_post_nova_mensagem(
-        self, 
-        mock_validar: Mock, 
+        self,
+        mock_validar: Mock,
         mock_load_message: Mock,
-        mock_set_buffer: Mock, 
-        mock_sched: Mock
+        mock_set_buffer: Mock,
+        mock_sched: Mock,
     ) -> None:
         """Testa o processamento de nova mensagem via POST."""
         # Setup mocks
@@ -117,12 +114,14 @@ class TestWebhookWhatsApp(TestCase):
         mock_set_buffer.assert_called_once_with(mock_message)
         mock_sched.assert_called_once_with(mock_message.numero_telefone)
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data")
-    @patch('smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key"
+    )
     def test_webhook_post_load_message_error(
-        self, 
-        mock_validar: Mock,
-        mock_load_message: Mock
+        self, mock_validar: Mock, mock_load_message: Mock
     ) -> None:
         """Testa erro no processamento de mensagem."""
         # Setup mocks
@@ -139,7 +138,9 @@ class TestWebhookWhatsApp(TestCase):
         mock_validar.assert_called_once_with(self.whatsapp_data)
         mock_load_message.assert_called_once_with(self.whatsapp_data)
 
-    @patch('smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key"
+    )
     def test_webhook_post_dados_invalidos(self, mock_validar: Mock) -> None:
         """Testa o webhook com dados inválidos."""
         mock_validar.return_value = self.mock_departamento
@@ -156,14 +157,18 @@ class TestWebhookWhatsApp(TestCase):
 
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response")
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer")
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data")
-    @patch('smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key"
+    )
     def test_webhook_post_multiplas_mensagens(
-        self, 
+        self,
         mock_validar: Mock,
         mock_load_message: Mock,
-        mock_set_buffer: Mock, 
-        mock_sched: Mock
+        mock_set_buffer: Mock,
+        mock_sched: Mock,
     ) -> None:
         """Testa o webhook com múltiplas mensagens."""
         # Setup mocks
@@ -179,16 +184,14 @@ class TestWebhookWhatsApp(TestCase):
                 "key": {
                     "remoteJid": "5511999999999@s.whatsapp.net",
                     "fromMe": False,
-                    "id": "ABCD1234"
+                    "id": "ABCD1234",
                 },
-                "message": {
-                    "conversation": "Primeira mensagem"
-                },
+                "message": {"conversation": "Primeira mensagem"},
                 "messageType": "conversation",
                 "pushName": "Cliente Teste",
                 "broadcast": False,
-                "messageTimestamp": 1700000123
-            }
+                "messageTimestamp": 1700000123,
+            },
         }
 
         response = self.client.post(
@@ -230,14 +233,18 @@ class TestViewsIntegration(TestCase):
 
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response")
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer")
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data")
-    @patch('smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key"
+    )
     def test_fluxo_completo_nova_conversa(
-        self, 
+        self,
         mock_validar: Mock,
         mock_load_message: Mock,
-        mock_set_buffer: Mock, 
-        mock_sched: Mock
+        mock_set_buffer: Mock,
+        mock_sched: Mock,
     ) -> None:
         """Testa o fluxo completo de uma nova conversa via webhook."""
         # Setup mocks
@@ -253,22 +260,18 @@ class TestViewsIntegration(TestCase):
                 "key": {
                     "remoteJid": "5511999999999@s.whatsapp.net",
                     "fromMe": False,
-                    "id": "FLUXO123"
+                    "id": "FLUXO123",
                 },
-                "message": {
-                    "conversation": "Iniciando conversa"
-                },
+                "message": {"conversation": "Iniciando conversa"},
                 "messageType": "conversation",
                 "pushName": "Cliente Fluxo",
                 "broadcast": False,
-                "messageTimestamp": 1700000123
-            }
+                "messageTimestamp": 1700000123,
+            },
         }
 
         response = self.client.post(
-            self.webhook_url, 
-            data=json.dumps(payload), 
-            content_type="application/json"
+            self.webhook_url, data=json.dumps(payload), content_type="application/json"
         )
 
         self.assertEqual(response.status_code, 200)
@@ -280,8 +283,8 @@ class TestViewsIntegration(TestCase):
     def test_webhook_csrf_exempt(self) -> None:
         """Verifica se a view do webhook está isenta de CSRF (csrf_exempt)."""
         from ..views import webhook_whatsapp
-        
+
         # Verifica se a view tem o atributo csrf_exempt
-        self.assertTrue(hasattr(webhook_whatsapp, 'csrf_exempt'))
+        self.assertTrue(hasattr(webhook_whatsapp, "csrf_exempt"))
         # ou verifica se está no decorator
-        self.assertTrue(getattr(webhook_whatsapp, 'csrf_exempt', False))
+        self.assertTrue(getattr(webhook_whatsapp, "csrf_exempt", False))

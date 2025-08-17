@@ -49,7 +49,7 @@ echo Arquivo .env encontrado.
 REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
 for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set FIREBASE_PATH=%%B
 if not defined FIREBASE_PATH (
-    echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env
+    echo ERRO: A variavel GOOGLE_APPLICATIONS_CREDENTIALS nao esta definida no arquivo .env
     echo Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
     exit /b 1
 )
@@ -115,20 +115,8 @@ python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').r
 REM Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)
 python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"PORT\": os\.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '\"PORT\": os.getenv(\"POSTGRES_PORT\", \"5436\")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
-# Substituir configuração do cache para usar Redis (ambiente misto)
-python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); cache_config = '''CACHES = {
-    \"default\": {
-        # Configuração Redis para ambiente_misto
-        # Se preferir cache em memória, altere para:
-        # \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
-        # \"LOCATION\": \"unique-snowflake\",
-        \"BACKEND\": \"django_redis.cache.RedisCache\",
-        \"LOCATION\": \"redis://\" + os.getenv(\"REDIS_HOST\", \"localhost\") + \":\" + os.getenv(\"REDIS_PORT\", \"6382\") + \"/1\",
-        \"OPTIONS\": {
-            \"CLIENT_CLASS\": \"django_redis.client.DefaultClient\",
-        }
-    }
-}'''; content = re.sub(r'CACHES\s*=\s*\{[^}]*\}', cache_config, content, flags=re.DOTALL); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+REM Substituir configuração do cache para usar Redis (ambiente misto)
+python -c "import re, os; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); cache_config = '''CACHES = {\n    \"default\": {\n        \"BACKEND\": \"django_redis.cache.RedisCache\",\n        \"LOCATION\": \"redis://\" + os.getenv(\"REDIS_HOST\", \"localhost\") + \":\" + os.getenv(\"REDIS_PORT\", \"6382\") + \"/1\",\n        \"OPTIONS\": {\n            \"CLIENT_CLASS\": \"django_redis.client.DefaultClient\",\n        },\n        \"TIMEOUT\": 300,\n    }\n}'''; content = re.sub(r'CACHES\s*=\s*\{(?:[^{}]*|{[^{}]*})*\}', cache_config, content, flags=re.DOTALL); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
 echo Arquivo settings.py atualizado com sucesso.
 
@@ -190,8 +178,8 @@ echo Arquivo Dockerfile atualizado com sucesso.
 REM 6. Iniciar containers
 echo 6. Iniciando os containers (Postgres e Redis)...
 
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 
 REM 7. Instalar dependências Python necessárias
 echo 7. Instalando dependências Python necessárias...
@@ -203,11 +191,28 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM 8. Apagar migrações do Django
-echo 8. Apagando migrações do Django...
+REM 8. Resetar migrações do Django
+echo 8. Resetando migrações do Django...
 
-REM 9. Aplicar migrações do Django
-echo 9. Aplicando migrações do Django...
+REM Apagar arquivos de migração (exceto __init__.py)
+for /d %%d in (src\smart_core_assistant_painel\app\ui\*) do (
+    if exist "%%d\migrations" (
+        for %%f in ("%%d\migrations\*") do (
+            if not "%%~nxf"=="__init__.py" (
+                del "%%f" 2>nul
+            )
+        )
+    )
+)
+
+REM 9. Criar e aplicar novas migrações
+echo 9. Criando e aplicando novas migrações do Django...
+
+uv run task makemigrations
+if %errorlevel% neq 0 (
+    echo Erro ao criar migrações do Django
+    exit /b 1
+)
 
 uv run task migrate
 if %errorlevel% neq 0 (

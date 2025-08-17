@@ -214,8 +214,8 @@ echo "Arquivo Dockerfile atualizado com sucesso."
 # 6. Iniciar containers
 echo "6. Iniciando os containers (Postgres e Redis)..."
 
-docker-compose down -v
-docker-compose up -d
+docker compose down -v
+docker compose up -d
 
 # 7. Instalar dependências Python necessárias
 echo "7. Instalando dependências Python necessárias..."
@@ -227,13 +227,17 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 8. Apagar migrações do Django
-echo "8. Apagando migrações do Django..."
+# 8. Resetar migrações do Django
+echo "8. Resetando migrações do Django..."
 
-# 9. Aplicar migrações do Django
-echo "9. Aplicando migrações do Django..."
+# Remover arquivos de migração exceto __init__.py
+find src/smart_core_assistant_painel/app/ui -type d -name migrations -prune -exec bash -c 'shopt -s nullglob; for f in "$1"/*; do [[ $(basename "$f") != "__init__.py" ]] && rm -f "$f"; done' _ {} \;
 
-uv run task migrate
+# 9. Criar e aplicar novas migrações do Django
+echo "9. Criando e aplicando novas migrações do Django..."
+
+uv run task makemigrations || { echo "Erro ao criar migrações do Django"; exit 1; }
+uv run task migrate || { echo "Erro ao aplicar migrações do Django"; exit 1; }
 if [ $? -ne 0 ]; then
     echo "Erro ao aplicar migrações do Django"
     exit 1

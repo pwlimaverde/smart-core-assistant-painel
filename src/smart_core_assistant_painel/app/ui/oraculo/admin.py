@@ -637,7 +637,11 @@ class MensagemAdmin(admin.ModelAdmin):  #
         return "-"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
-        return super().get_queryset(request).select_related("atendimento", "atendimento__contato")
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("atendimento", "atendimento__contato")
+        )
 
 
 @admin.register(FluxoConversa)

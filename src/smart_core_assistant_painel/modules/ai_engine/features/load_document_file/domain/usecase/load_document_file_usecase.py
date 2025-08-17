@@ -56,6 +56,4 @@ class LoadDocumentFileUseCase(LDFUsecase):
                 )
             return SuccessReturn(documentos)
         else:
-            return ErrorReturn(
-                parameters.error
-            )
+            return ErrorReturn(parameters.error)

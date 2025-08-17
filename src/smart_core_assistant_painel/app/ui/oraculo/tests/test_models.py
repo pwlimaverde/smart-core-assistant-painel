@@ -23,7 +23,9 @@ class TestContato(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999", nome_contato="Cliente Teste", email="cliente@teste.com"
+            telefone="5511999999999",
+            nome_contato="Cliente Teste",
+            email="cliente@teste.com",
         )
 
     def test_contato_creation(self) -> None:
@@ -36,7 +38,9 @@ class TestContato(TestCase):
     def test_contato_telefone_unique(self) -> None:
         """Testa se o telefone é único."""
         with self.assertRaises(Exception):
-            Contato.objects.create(telefone="5511999999999", nome_contato="Outro Cliente")
+            Contato.objects.create(
+                telefone="5511999999999", nome_contato="Outro Cliente"
+            )
 
 
 class TestAtendenteHumano(TestCase):
@@ -263,7 +267,9 @@ class TestModelPerformance(TestCase):
 
     def test_criacao_mensagens_bulk(self) -> None:
         """Testa a criação em lote de mensagens."""
-        contato = Contato.objects.create(telefone="5511888888888", nome_contato="Cliente Bulk")
+        contato = Contato.objects.create(
+            telefone="5511888888888", nome_contato="Cliente Bulk"
+        )
 
         atendimento = Atendimento.objects.create(
             contato=contato, status=StatusAtendimento.EM_ANDAMENTO

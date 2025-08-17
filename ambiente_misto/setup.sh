@@ -35,8 +35,8 @@ EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
 EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
 # Redis e PostgreSQL - Altere as portas se as padrões estiverem em uso
-REDIS_PORT=6381
-POSTGRES_PORT=5435
+REDIS_PORT=6382
+POSTGRES_PORT=5436
 
 # PostgreSQL Configuration
 POSTGRES_DB=smart_core_db
@@ -105,7 +105,7 @@ git update-index --assume-unchanged "${FILES_TO_ASSUME[@]}" 2>/dev/null || true
 
 echo "Configuração do Git concluída com sucesso."
 
-# 3. Atualizar settings.py para usar PostgreSQL e Redis do Docker
+# 3. Atualizar settings.py para usar PostgreSQL local e cache em memória
 echo "3. Atualizando settings.py..."
 
 SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
@@ -113,22 +113,30 @@ SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
 # Backup do arquivo original
 cp "$SETTINGS_PATH" "${SETTINGS_PATH}.backup"
 
-# Substituir configuração do banco de dados e cache
-SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
-
-# Substituir HOST do PostgreSQL
+# Substituir HOST do PostgreSQL para localhost (ambiente misto)
 sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres")/"HOST": os.getenv("POSTGRES_HOST", "localhost")/g' "$SETTINGS_PATH"
 
-# Substituir PORT do PostgreSQL
-sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5435")/g' "$SETTINGS_PATH"
+# Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)  
+sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5436")/g' "$SETTINGS_PATH"
 
-# Substituir configuração do cache Redis para usar cache em memória
-sed -i 's/CACHES = {[^}]*}/CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+# Substituir configuração do cache Redis para usar cache em memória (ambiente misto)
+python3 -c "
+import re
+with open('$SETTINGS_PATH', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+cache_config = '''CACHES = {
+    \"default\": {
+        \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
+        \"LOCATION\": \"unique-snowflake\",
     }
-}/g' "$SETTINGS_PATH"
+}'''
+
+content = re.sub(r'CACHES\s*=\s*\{[^}]*\}', cache_config, content, flags=re.DOTALL)
+
+with open('$SETTINGS_PATH', 'w', encoding='utf-8') as f:
+    f.write(content)
+"
 
 echo "Arquivo settings.py atualizado com sucesso."
 
@@ -150,7 +158,7 @@ services:
       POSTGRES_USER: \${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - "\${POSTGRES_PORT:-5435}:5432"
+      - "\${POSTGRES_PORT:-5436}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -160,7 +168,7 @@ services:
     image: redis:6.2-alpine
     container_name: redis_cache
     ports:
-      - "\${REDIS_PORT:-6381}:6379"
+      - "\${REDIS_PORT:-6382}:6379"
     networks:
       - app-network
 
@@ -224,4 +232,6 @@ fi
 echo ""
 echo "=== Ambiente misto pronto! ==="
 echo "Para iniciar a aplicação Django, execute o seguinte comando em outro terminal:"
-echo "python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000"
+echo "uv run task start"
+echo ""
+echo "A aplicação estará disponível em http://localhost:8000"

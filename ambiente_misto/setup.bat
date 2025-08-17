@@ -32,8 +32,8 @@ if not exist ".env" (
     echo EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
     echo.
     echo # Redis e PostgreSQL - Altere as portas se as padrões estiverem em uso
-    echo REDIS_PORT=6381
-    echo POSTGRES_PORT=5435
+    echo REDIS_PORT=6382
+    echo POSTGRES_PORT=5436
     echo.
     echo # PostgreSQL Configuration
     echo POSTGRES_DB=smart_core_db
@@ -94,7 +94,7 @@ git update-index --assume-unchanged %FILES_TO_ASSUME% 2>nul
 
 echo Configuração do Git concluída com sucesso.
 
-REM 3. Atualizar settings.py para usar PostgreSQL e Redis do Docker
+REM 3. Atualizar settings.py para usar PostgreSQL local e cache em memória
 echo 3. Atualizando settings.py...
 
 set SETTINGS_PATH=src\smart_core_assistant_painel\app\ui\core\settings.py
@@ -102,19 +102,19 @@ set SETTINGS_PATH=src\smart_core_assistant_painel\app\ui\core\settings.py
 REM Backup do arquivo original
 copy "%SETTINGS_PATH%" "%SETTINGS_PATH%.backup" >nul
 
-REM Substituir HOST do PostgreSQL
-%~dp0..\..\.venv\Scripts\python.exe -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"HOST\": os.getenv\(\"POSTGRES_HOST\", \"postgres\"\)', '\"HOST\": os.getenv(\"POSTGRES_HOST\", \"localhost\")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+REM Substituir HOST do PostgreSQL para localhost (ambiente misto)
+python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"HOST\": os\.getenv\(\"POSTGRES_HOST\", \"postgres\"\)', '\"HOST\": os.getenv(\"POSTGRES_HOST\", \"localhost\")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
-REM Substituir PORT do PostgreSQL
-%~dp0..\..\.venv\Scripts\python.exe -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"PORT\": os.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '\"PORT\": os.getenv(\"POSTGRES_PORT\", \"5435\")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+REM Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)
+python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"PORT\": os\.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '\"PORT\": os.getenv(\"POSTGRES_PORT\", \"5436\")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
-REM Substituir configuração do cache Redis para usar cache em memória
-%~dp0..\..\.venv\Scripts\python.exe -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'CACHES = {[^}]+}', 'CACHES = {
+REM Substituir configuração do cache Redis para usar cache em memória (ambiente misto)
+python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); cache_config = '''CACHES = {
     \"default\": {
         \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
         \"LOCATION\": \"unique-snowflake\",
     }
-}', content, flags=re.DOTALL); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+}'''; content = re.sub(r'CACHES\s*=\s*\{[^}]*\}', cache_config, content, flags=re.DOTALL); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
 echo Arquivo settings.py atualizado com sucesso.
 
@@ -138,7 +138,7 @@ echo       POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
 echo       POSTGRES_USER: ${POSTGRES_USER:-postgres}
 echo       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
 echo     ports:
-echo       - "${POSTGRES_PORT:-5435}:5432"
+echo       - "${POSTGRES_PORT:-5436}:5432"
 echo     volumes:
 echo       - postgres_data:/var/lib/postgresql/data
 echo     networks:
@@ -148,7 +148,7 @@ echo   redis:
 echo     image: redis:6.2-alpine
 echo     container_name: redis_cache
 echo     ports:
-echo       - "${REDIS_PORT:-6381}:6379"
+echo       - "${REDIS_PORT:-6382}:6379"
 echo     networks:
 echo       - app-network
 echo.
@@ -166,7 +166,7 @@ REM 5. Limpar Dockerfile
 echo 5. Limpando Dockerfile...
 
 REM Comentar linhas ENTRYPOINT e CMD usando Python
-%~dp0..\..\.venv\Scripts\python.exe -c "import re; content = open('Dockerfile', 'r', encoding='utf-8').read(); content = re.sub(r'^\s*ENTRYPOINT', '# ENTRYPOINT', content, flags=re.MULTILINE); content = re.sub(r'^\s*CMD', '# CMD', content, flags=re.MULTILINE); open('Dockerfile', 'w', encoding='utf-8').write(content)"
+python -c "import re; content = open('Dockerfile', 'r', encoding='utf-8').read(); content = re.sub(r'^\s*ENTRYPOINT', '# ENTRYPOINT', content, flags=re.MULTILINE); content = re.sub(r'^\s*CMD', '# CMD', content, flags=re.MULTILINE); open('Dockerfile', 'w', encoding='utf-8').write(content)"
 
 echo. >> Dockerfile
 echo # As linhas ENTRYPOINT e CMD foram comentadas pelo ambiente_misto. >> Dockerfile
@@ -213,6 +213,8 @@ if %errorlevel% neq 0 (
 echo.
 echo === Ambiente misto pronto! ===
 echo Para iniciar a aplicação Django, execute o seguinte comando em outro terminal:
-echo python src\smart_core_assistant_painel\app\ui\manage.py runserver 0.0.0.0:8000
+echo uv run task start
+echo.
+echo A aplicação estará disponível em http://localhost:8000
 
 pause

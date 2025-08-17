@@ -14,12 +14,9 @@ from smart_core_assistant_painel.modules.services.utils.types import WSUsecase
 
 
 class WhatsAppServiceUsecase(WSUsecase):
-
     """Caso de uso para envio de mensagens via WhatsApp."""
 
-    def __call__(
-        self, parameters: NoParams
-    ) -> ReturnSuccessOrError[WhatsAppService]:
+    def __call__(self, parameters: NoParams) -> ReturnSuccessOrError[WhatsAppService]:
         """Executa o caso de uso de envio de mensagem."""
         try:
             result = self._resultDatasource(

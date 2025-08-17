@@ -13,46 +13,10 @@ Este ambiente foi criado para resolver o problema de desenvolvimento no Windows,
 1. **Docker Desktop** instalado e em execução
 2. **Python 3.13+** 
 3. **uv** (gerenciador de dependências)
-4. **Credenciais Firebase** - arquivo `firebase_key.json`
 
 ## Configuração Inicial
 
-### 1. Criar arquivo `.env` 
-
-Crie um arquivo `.env` na raiz do projeto com:
-
-```bash
-# Configurações de banco de dados
-POSTGRES_DB=smart_core_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres123
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5436
-
-# Configuração do Redis (cache)
-REDIS_HOST=localhost 
-REDIS_PORT=6382
-
-# Outras configurações
-SECRET_KEY_DJANGO=your-secret-key-here
-OPENAI_API_KEY=your-openai-key
-
-# Caminho para credenciais Firebase (obrigatório)
-GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-
-# Opcional: Cole o JSON completo das credenciais aqui para criação dinâmica do arquivo
-# Recomendado para ambientes CI/CD (e.g., Jules)
-FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto", ...}
-```
-
-### 2. Adicionar credenciais Firebase
-
-Você tem duas opções:
-- Definir `FIREBASE_KEY_JSON_CONTENT` no `.env` com o conteúdo JSON completo. O script criará o arquivo no caminho de `GOOGLE_APPLICATION_CREDENTIALS`.
-
-Observação: a opção de colocar um arquivo `firebase_key.json` físico na raiz foi removida para padronizar a configuração. Sempre use a variável `FIREBASE_KEY_JSON_CONTENT`.
-
-### 3. Executar Setup
+### 1. Executar Setup
 
 **Windows:**
 ```bash
@@ -78,9 +42,9 @@ chmod +x setup.sh
    - Usa variáveis `REDIS_HOST` e `REDIS_PORT` para conectividade
 5. **Criação do docker-compose.yml**: Gera arquivo com PostgreSQL (5436:5432) e Redis (6382:6379)
 6. **Limpeza do Dockerfile**: Comenta `ENTRYPOINT` e `CMD` para desenvolvimento local
-7. **Subida dos containers**: Executa `docker-compose up -d`
+7. **Subida dos containers**: Executa `docker compose up -d`
 8. **Instalação de dependências**: Executa `uv sync --dev`
-9. **Aplicação de migrações**: Executa `uv run task migrate`
+9. **Criação e aplicação de migrações**: Executa `uv run task makemigrations` e `uv run task migrate` após reset seguro das pastas de migração
 10. **Criação de superusuário**: Executa `uv run task createsuperuser`
 
 ## Execução da Aplicação
@@ -135,14 +99,14 @@ CACHES = {
 docker ps
 
 # Parar containers
-docker-compose down
+docker compose down
 
 # Reiniciar containers
-docker-compose down && docker-compose up -d
+docker compose down && docker compose up -d
 
 # Ver logs 
-docker-compose logs -f postgres
-docker-compose logs -f redis
+docker compose logs -f postgres
+docker compose logs -f redis
 ```
 
 ### Comandos Django (via taskipy)
@@ -185,7 +149,7 @@ print(cache.get('test_key'))  # Deve retornar: test_value
 
 O projeto enfrentava erro `psycopg.OperationalError` devido a inconsistências nas configurações de porta do PostgreSQL:
 
-- **docker-compose.yml**: Expunha PostgreSQL na porta 5433
+- **docker compose**: Arquivo docker-compose.yml expunha PostgreSQL na porta 5433
 - **settings.py**: Usava porta 5435 como padrão 
 - **.env**: Definia POSTGRES_PORT=5436
 

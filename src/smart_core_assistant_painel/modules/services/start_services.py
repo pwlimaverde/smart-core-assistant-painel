@@ -4,6 +4,7 @@ Garante que todos os serviços, como configuração de ambiente, armazenamento
 de vetores e serviços de WhatsApp, sejam iniciados corretamente durante a
 inicialização da aplicação.
 """
+
 from loguru import logger
 
 from smart_core_assistant_painel.modules.services.features.features_compose import (

@@ -145,7 +145,7 @@ class TestAtendimentoAdmin(TestCase):
         expected_fields = [
             "id",
             "contato_telefone",
-            "status", 
+            "status",
             "data_inicio",
             "data_fim",
             "atendente_humano_nome",
@@ -161,7 +161,7 @@ class TestAtendimentoAdmin(TestCase):
         """Testa os filtros da lista."""
         expected_filters = [
             "status",
-            "prioridade", 
+            "prioridade",
             "data_inicio",
             "avaliacao",
             "atendente_humano",
@@ -173,7 +173,7 @@ class TestAtendimentoAdmin(TestCase):
     def test_search_fields(self) -> None:
         """Testa os campos de busca."""
         expected_fields = [
-            "contato__telefone", 
+            "contato__telefone",
             "contato__nome_contato",
             "assunto",
             "atendente_humano__nome",

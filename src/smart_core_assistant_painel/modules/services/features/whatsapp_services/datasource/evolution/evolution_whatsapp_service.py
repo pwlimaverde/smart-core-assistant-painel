@@ -8,6 +8,7 @@ Classes:
     _EvolutionWhatsAppServiceMeta: Metaclasse para garantir o padrão Singleton.
     EvolutionWhatsAppService: Serviço principal para interação com a Evolution API.
 """
+
 from abc import ABCMeta
 from typing import Any, Dict, Optional, Callable
 from urllib.parse import urlencode, urljoin

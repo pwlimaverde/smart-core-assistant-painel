@@ -119,16 +119,23 @@ sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres")/"HOST": os.getenv("POST
 # Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)  
 sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5436")/g' "$SETTINGS_PATH"
 
-# Substituir configuração do cache Redis para usar cache em memória (ambiente misto)
+# Substituir configuração do cache para usar Redis (ambiente misto)
 python3 -c "
-import re
+import re, os
 with open('$SETTINGS_PATH', 'r', encoding='utf-8') as f:
     content = f.read()
 
 cache_config = '''CACHES = {
     \"default\": {
-        \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
-        \"LOCATION\": \"unique-snowflake\",
+        # Configuração Redis para ambiente_misto
+        # Se preferir cache em memória, altere para:
+        # \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
+        # \"LOCATION\": \"unique-snowflake\",
+        \"BACKEND\": \"django_redis.cache.RedisCache\",
+        \"LOCATION\": \"redis://\" + os.getenv(\"REDIS_HOST\", \"localhost\") + \":\" + os.getenv(\"REDIS_PORT\", \"6382\") + \"/1\",
+        \"OPTIONS\": {
+            \"CLIENT_CLASS\": \"django_redis.client.DefaultClient\",
+        }
     }
 }'''
 
@@ -223,7 +230,8 @@ fi
 # 10. Criar superusuário
 echo "10. Criando superusuário admin..."
 
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456')" | uv run task shell
+# Comando idempotente: cria apenas se não existir
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','123456')" | uv run task shell
 if [ $? -ne 0 ]; then
     echo "Erro ao criar superusuário"
     exit 1

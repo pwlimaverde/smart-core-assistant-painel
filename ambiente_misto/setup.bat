@@ -108,11 +108,18 @@ python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').r
 REM Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)
 python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"PORT\": os\.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '\"PORT\": os.getenv(\"POSTGRES_PORT\", \"5436\")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
-REM Substituir configuração do cache Redis para usar cache em memória (ambiente misto)
+# Substituir configuração do cache para usar Redis (ambiente misto)
 python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); cache_config = '''CACHES = {
     \"default\": {
-        \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
-        \"LOCATION\": \"unique-snowflake\",
+        # Configuração Redis para ambiente_misto
+        # Se preferir cache em memória, altere para:
+        # \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
+        # \"LOCATION\": \"unique-snowflake\",
+        \"BACKEND\": \"django_redis.cache.RedisCache\",
+        \"LOCATION\": \"redis://\" + os.getenv(\"REDIS_HOST\", \"localhost\") + \":\" + os.getenv(\"REDIS_PORT\", \"6382\") + \"/1\",
+        \"OPTIONS\": {
+            \"CLIENT_CLASS\": \"django_redis.client.DefaultClient\",
+        }
     }
 }'''; content = re.sub(r'CACHES\s*=\s*\{[^}]*\}', cache_config, content, flags=re.DOTALL); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
 
@@ -204,7 +211,8 @@ if %errorlevel% neq 0 (
 REM 10. Criar superusuário
 echo 10. Criando superusuário admin...
 
-echo from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456') | uv run task shell
+REM Comando idempotente: cria apenas se não existir
+echo from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','123456') | uv run task shell
 if %errorlevel% neq 0 (
     echo Erro ao criar superusuário
     exit /b 1

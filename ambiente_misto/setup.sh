@@ -22,7 +22,7 @@ if [ ! -f ".env" ]; then
     echo "Crie um arquivo .env com o seguinte conteúdo mínimo:"
     echo "
 # Firebase Configuration (OBRIGATÓRIO)
-FIREBASE_CREDENTIALS_JSON={chave JSON completa aqui}
+GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
 # Django Configuration (OBRIGATÓRIO)
 SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
@@ -35,8 +35,8 @@ EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
 EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
 
 # Redis e PostgreSQL - Altere as portas se as padrões estiverem em uso
-REDIS_PORT=6381
-POSTGRES_PORT=5435
+REDIS_PORT=6382
+POSTGRES_PORT=5436
 
 # PostgreSQL Configuration
 POSTGRES_DB=smart_core_db
@@ -48,6 +48,26 @@ POSTGRES_HOST=localhost
 fi
 
 echo "Arquivo .env encontrado."
+
+if [ ! -f "firebase_key.json" ]; then
+    echo "ERRO: Antes de executar a criação do ambiente local, salve o arquivo firebase_key.json na raiz do projeto."
+    echo ""
+    echo "Obtenha o arquivo de credenciais do Firebase (service account key) e salve-o como firebase_key.json na raiz do projeto."
+    echo "O script moverá automaticamente este arquivo para o diretório correto."
+    echo ""
+    exit 1
+fi
+
+echo "Arquivo firebase_key.json encontrado."
+
+# Criar diretório para o arquivo firebase_key.json se não existir
+FIREBASE_KEY_DIR="src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config"
+mkdir -p "$FIREBASE_KEY_DIR"
+
+# Mover firebase_key.json para o diretório correto
+mv "firebase_key.json" "$FIREBASE_KEY_DIR/firebase_key.json"
+
+echo "Arquivo firebase_key.json movido para $FIREBASE_KEY_DIR/firebase_key.json"
 
 # 2. Configurar Git para ignorar alterações locais
 echo "2. Configurando Git para ignorar alterações locais..."
@@ -64,6 +84,7 @@ EXCLUDE_FILE=".git/info/exclude"
     echo "/Dockerfile"
     echo "/.gitignore"
     echo "/.env"
+    echo "/firebase_key.json"
     echo "/src/smart_core_assistant_painel/app/ui/core/settings.py"
 } >> "$EXCLUDE_FILE"
 
@@ -84,7 +105,7 @@ git update-index --assume-unchanged "${FILES_TO_ASSUME[@]}" 2>/dev/null || true
 
 echo "Configuração do Git concluída com sucesso."
 
-# 3. Atualizar settings.py para usar PostgreSQL e Redis do Docker
+# 3. Atualizar settings.py para usar PostgreSQL local e cache em memória
 echo "3. Atualizando settings.py..."
 
 SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
@@ -92,22 +113,37 @@ SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
 # Backup do arquivo original
 cp "$SETTINGS_PATH" "${SETTINGS_PATH}.backup"
 
-# Substituir configuração do banco de dados e cache
-SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
-
-# Substituir HOST do PostgreSQL
+# Substituir HOST do PostgreSQL para localhost (ambiente misto)
 sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres")/"HOST": os.getenv("POSTGRES_HOST", "localhost")/g' "$SETTINGS_PATH"
 
-# Substituir PORT do PostgreSQL
-sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5435")/g' "$SETTINGS_PATH"
+# Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)  
+sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5436")/g' "$SETTINGS_PATH"
 
-# Substituir configuração do cache Redis para usar cache em memória
-sed -i 's/CACHES = {[^}]*}/CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "unique-snowflake",
+# Substituir configuração do cache para usar Redis (ambiente misto)
+python3 -c "
+import re, os
+with open('$SETTINGS_PATH', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+cache_config = '''CACHES = {
+    \"default\": {
+        # Configuração Redis para ambiente_misto
+        # Se preferir cache em memória, altere para:
+        # \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
+        # \"LOCATION\": \"unique-snowflake\",
+        \"BACKEND\": \"django_redis.cache.RedisCache\",
+        \"LOCATION\": \"redis://\" + os.getenv(\"REDIS_HOST\", \"localhost\") + \":\" + os.getenv(\"REDIS_PORT\", \"6382\") + \"/1\",
+        \"OPTIONS\": {
+            \"CLIENT_CLASS\": \"django_redis.client.DefaultClient\",
+        }
     }
-}/g' "$SETTINGS_PATH"
+}'''
+
+content = re.sub(r'CACHES\s*=\s*\{[^}]*\}', cache_config, content, flags=re.DOTALL)
+
+with open('$SETTINGS_PATH', 'w', encoding='utf-8') as f:
+    f.write(content)
+"
 
 echo "Arquivo settings.py atualizado com sucesso."
 
@@ -129,7 +165,7 @@ services:
       POSTGRES_USER: \${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - "\${POSTGRES_PORT:-5435}:5432"
+      - "\${POSTGRES_PORT:-5436}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -139,7 +175,7 @@ services:
     image: redis:6.2-alpine
     container_name: redis_cache
     ports:
-      - "\${REDIS_PORT:-6381}:6379"
+      - "\${REDIS_PORT:-6382}:6379"
     networks:
       - app-network
 
@@ -172,38 +208,38 @@ docker-compose up -d
 # 7. Instalar dependências Python necessárias
 echo "7. Instalando dependências Python necessárias..."
 
-pip install psycopg2-binary
-pip install firebase-admin
-pip install langchain-ollama
-pip install django-redis
-pip install redis==3.5.3
-pip install markdown
+# Usar o uv para sincronizar as dependências
+uv sync --dev
+if [ $? -ne 0 ]; then
+    echo "Erro ao sincronizar dependências com uv"
+    exit 1
+fi
 
 # 8. Apagar migrações do Django
 echo "8. Apagando migrações do Django..."
 
-# Navegar para o diretório da aplicação
-cd src/smart_core_assistant_painel/app/ui
-
-# Apagar arquivos de migração (exceto __init__.py)
-find ../../../modules -name 'migrations' -type d -exec sh -c 'cd "{}" && ls *.py 2>/dev/null | grep -v __init__.py | xargs -r rm && echo > __init__.py' \;
-
-# Voltar ao diretório raiz
-cd ../../../../..
-
 # 9. Aplicar migrações do Django
 echo "9. Aplicando migrações do Django..."
 
-export PYTHONPATH=$(pwd)/src
-python src/smart_core_assistant_painel/app/ui/manage.py migrate
+uv run task migrate
+if [ $? -ne 0 ]; then
+    echo "Erro ao aplicar migrações do Django"
+    exit 1
+fi
 
 # 10. Criar superusuário
 echo "10. Criando superusuário admin..."
 
-export PYTHONPATH=$(pwd)/src
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456')" | python src/smart_core_assistant_painel/app/ui/manage.py shell
+# Comando idempotente: cria apenas se não existir
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','123456')" | uv run task shell
+if [ $? -ne 0 ]; then
+    echo "Erro ao criar superusuário"
+    exit 1
+fi
 
 echo ""
 echo "=== Ambiente misto pronto! ==="
 echo "Para iniciar a aplicação Django, execute o seguinte comando em outro terminal:"
-echo "python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000"
+echo "uv run task start"
+echo ""
+echo "A aplicação estará disponível em http://localhost:8000"

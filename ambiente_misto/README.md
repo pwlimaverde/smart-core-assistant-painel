@@ -1,128 +1,218 @@
-# Ambiente de Desenvolvimento Misto
+# Ambiente Misto - Smart Core Assistant Painel
 
-Este guia descreve como configurar e executar o ambiente de desenvolvimento "misto", onde os bancos de dados (PostgreSQL e Redis) rodam em containers Docker, e a aplicacao Django roda localmente na sua maquina.
+Este ambiente foi criado para resolver o problema de desenvolvimento no Windows, onde a aplicação Django executa localmente (fora de containers) e os serviços de banco de dados (PostgreSQL e Redis) executam em containers Docker.
 
-## Estrutura
+## Arquitectura
 
-- `setup.sh`/`setup.bat`: Script unificado para configurar e iniciar todo o ambiente.
-- `README.md`: Este arquivo.
+- **PostgreSQL**: Container Docker (porta 5436)
+- **Redis**: Container Docker (porta 6382) 
+- **Aplicação Django**: Execução local no Windows
 
-**Nota:** Os scripts individuais foram substituídos por um único script unificado que realiza todas as operações necessárias.
+## Pré-requisitos
 
-## Pre-requisitos
+1. **Docker Desktop** instalado e em execução
+2. **Python 3.13+** 
+3. **uv** (gerenciador de dependências)
+4. **Credenciais Firebase** - arquivo `firebase_key.json`
 
-1.  **Docker e Docker Compose**: [Instale o Docker Desktop](https://www.docker.com/products/docker-desktop).
-2.  **Python**: Versao 3.8 ou superior.
+## Configuração Inicial
 
-## Configuracao e Execucao
+### 1. Criar arquivo `.env` 
 
-Siga os passos abaixo para subir o ambiente:
+Crie um arquivo `.env` na raiz do projeto com:
 
-### 1. Crie o Arquivo de Configuração
-
-Antes de iniciar o ambiente, voce precisa criar o arquivo `.env` na **raiz do projeto**:
-
-- Crie um arquivo chamado `.env` na raiz do projeto. Voce pode usar o template abaixo como base. **Certifique-se de preencher os valores das chaves secretas.**
-
-```env
-# Firebase Configuration (usando JSON direto no .env)
-# Substitua o conteúdo abaixo pelo JSON completo das suas credenciais de service account do Firebase
-# Nota: O JSON deve estar em uma única linha com \n para quebras de linha
-FIREBASE_CREDENTIALS_JSON={"type": "service_account","project_id": "seu-project-id","private_key_id": "sua-private-key-id","private_key": "-----BEGIN PRIVATE KEY-----\nSUA_CHAVE_PRIVADA_AQUI\n-----END PRIVATE KEY-----\n","client_email": "seu-client-email@seu-project-id.iam.gserviceaccount.com","client_id": "seu-client-id","auth_uri": "https://accounts.google.com/o/oauth2/auth","token_uri": "https://oauth2.googleapis.com/token","auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/seu-client-email%40seu-project-id.iam.gserviceaccount.com"}
-
-# Django Configuration (OBRIGATÓRIO)
-SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-
-# Evolution API Configuration (OBRIGATÓRIO)
-EVOLUTION_API_URL=http://localhost:8080
-EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
-EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
-
-# Redis e PostgreSQL - Altere as portas se as padroes estiverem em uso
-REDIS_PORT=6381
-POSTGRES_PORT=5435
-
-# PostgreSQL Configuration
+```bash
+# Configurações de banco de dados
 POSTGRES_DB=smart_core_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres123
 POSTGRES_HOST=localhost
+POSTGRES_PORT=5436
 
-# Outras configurações (opcional)
-# ... adicione outras variáveis de ambiente conforme necessário ...
+# Configuração do Redis (cache)
+REDIS_HOST=localhost 
+REDIS_PORT=6382
+
+# Outras configurações
+SECRET_KEY_DJANGO=your-secret-key-here
+OPENAI_API_KEY=your-openai-key
 ```
 
-### 2. Execute o Script de Inicio
+### 2. Adicionar credenciais Firebase
 
-A partir da **raiz do projeto**, execute:
+Coloque o arquivo `firebase_key.json` na raiz do projeto.
 
-- No Windows:
-  ```bash
-  ambiente_misto\\setup.bat
-  ```
-- No Linux ou macOS:
-  ```bash
-  chmod +x ambiente_misto/setup.sh
-  ./ambiente_misto/setup.sh
-  ```
+### 3. Executar Setup
 
-O script realizara todas as seguintes acoes em sequencia:
-
-1.  **Verificará o Arquivo de Configuração**: Garantirá que `.env` existe.
-2.  **Configurará o Git**: Configurará o Git para ignorar alterações locais em arquivos de configuração específicos do ambiente.
-3.  **Ajustará o `settings.py`**: O arquivo de configuracao do Django sera modificado para apontar para o PostgreSQL rodando no Docker e usar cache em memória.
-4.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados, usando PostgreSQL versão 14.
-5.  **Limpara o `Dockerfile`**: O Dockerfile principal sera esvaziado.
-6.  **Subira os Containers**: Os containers do `postgres` e `redis` serao iniciados em background.
-7.  **Instalará as dependências Python necessárias**.
-8.  **Apagará as migrações do Django**.
-9.  **Aplicará as migrações do Django**.
-10. **Criará um superusuário com nome `admin` e senha `123456`**.
-
-### 3. Inicie a Aplicacao Django
-
-- Apos a finalizacao do script `setup`, abra um **novo terminal**.
-- Navegue ate a raiz do projeto.
-- Execute o servidor de desenvolvimento do Django:
-
-  ```bash
-  python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
-  ```
-
-- A aplicacao estara disponivel em [http://localhost:8000](http://localhost:8000).
-
-## Gerenciamento de Configurações Locais
-
-O ambiente misto modifica arquivos que são rastreados pelo Git (como `docker-compose.yml` e `settings.py`). Para evitar que essas modificações locais sejam acidentalmente commitadas, o script configura o Git para "ignorar" essas alterações locais usando o seguinte comando:
-
+**Windows:**
 ```bash
-git update-index --assume-unchanged <arquivo>
+cd ambiente_misto
+setup.bat
 ```
 
-Isso informa ao Git para ignorar as alterações locais no arquivo. Elas não aparecerão no `git status` e não serão incluídas em commits.
-
-### Revertendo a Configuração
-
-Se você precisar **deliberadamente** commitar uma alteração em um desses arquivos, você deve primeiro reverter essa configuração. Para fazer isso, execute o seguinte comando na raiz do projeto para o arquivo desejado:
-
+**Linux/macOS:**
 ```bash
-git update-index --no-assume-unchanged <caminho/para/o/arquivo>
+cd ambiente_misto
+chmod +x setup.sh
+./setup.sh
 ```
 
-Após commitar suas alterações, recomenda-se executar o script `ambiente_misto/setup.bat` ou `setup.sh` novamente para reaplicar a configuração e garantir que futuras modificações locais sejam ignoradas.
+## O que o Script de Setup Faz
 
-## Parando o Ambiente
+1. **Verificação de arquivos**: Confirma existência de `.env` e `firebase_key.json`
+2. **Movimentação de credenciais**: Move `firebase_key.json` para pasta adequada
+3. **Configuração Git**: Configura Git para ignorar mudanças locais nos arquivos de configuração
+4. **Ajuste do settings.py**:
+   - Define `POSTGRES_HOST=localhost` e `POSTGRES_PORT=5436`
+   - Configura Redis como cache padrão (`django_redis.cache.RedisCache`)
+   - Usa variáveis `REDIS_HOST` e `REDIS_PORT` para conectividade
+5. **Criação do docker-compose.yml**: Gera arquivo com PostgreSQL (5436:5432) e Redis (6382:6379)
+6. **Limpeza do Dockerfile**: Comenta `ENTRYPOINT` e `CMD` para desenvolvimento local
+7. **Subida dos containers**: Executa `docker-compose up -d`
+8. **Instalação de dependências**: Executa `uv sync --dev`
+9. **Aplicação de migrações**: Executa `uv run task migrate`
+10. **Criação de superusuário**: Executa `uv run task createsuperuser`
 
-Para parar os containers do PostgreSQL e Redis, utilize docker-compose a partir da **raiz do projeto**:
+## Execução da Aplicação
+
+Depois do setup inicial, para iniciar a aplicação:
 
 ```bash
-docker-compose down -v
+# Na raiz do projeto (não no ambiente_misto)
+uv run task start
 ```
 
-Isso irá parar e remover os containers, além de apagar os volumes de dados. Para manter os dados, use:
+O servidor estará disponível em: http://127.0.0.1:8000/
 
+## Configurações Locais do Git 
+
+O script configura o Git para ignorar mudanças locais em:
+- `docker-compose.yml` 
+- `settings.py`
+- `Dockerfile`
+
+Para desfazer (quando necessário):
 ```bash
+git update-index --no-assume-unchanged docker-compose.yml src/smart_core_assistant_painel/app/ui/core/settings.py Dockerfile
+```
+
+## Cache Redis vs Memória Local
+
+**Configuração Padrão (Redis):**
+- Usa `django_redis.cache.RedisCache`
+- Host: `REDIS_HOST` (fallback: localhost)
+- Porta: `REDIS_PORT` (fallback: 6382)
+- Melhor performance e persistência
+
+**Alternativa (Cache em Memória):**
+
+Se preferir usar cache local em vez de Redis, edite manualmente o `settings.py`:
+
+```python
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "unique-snowflake",
+    }
+}
+```
+
+## Comandos Úteis
+
+### Gerenciamento Docker
+```bash
+# Ver status dos containers
+docker ps
+
+# Parar containers
 docker-compose down
+
+# Reiniciar containers
+docker-compose down && docker-compose up -d
+
+# Ver logs 
+docker-compose logs -f postgres
+docker-compose logs -f redis
 ```
+
+### Comandos Django (via taskipy)
+```bash
+# Migrações
+uv run task migrate
+uv run task makemigrations
+
+# Criar superusuário
+uv run task createsuperuser
+
+# Shell do Django
+uv run task shell
+
+# Testes
+uv run task test
+
+# Linting e formatação
+uv run task lint
+uv run task format
+```
+
+## Validação do Cache Redis
+
+Para testar se o cache Redis está funcionando:
+
+```bash
+# Abrir shell do Django
+uv run task shell
+
+# Dentro do shell:
+from django.core.cache import cache
+cache.set('test_key', 'test_value', 60)
+print(cache.get('test_key'))  # Deve retornar: test_value
+```
+
+## Resolução do Problema de Conexão PostgreSQL
+
+### Problema Original
+
+O projeto enfrentava erro `psycopg.OperationalError` devido a inconsistências nas configurações de porta do PostgreSQL:
+
+- **docker-compose.yml**: Expunha PostgreSQL na porta 5433
+- **settings.py**: Usava porta 5435 como padrão 
+- **.env**: Definia POSTGRES_PORT=5436
+
+### Solução Implementada
+
+1. **Padronização da porta**: Todos os componentes agora usam **porta 5436**
+2. **Configuração de host**: `settings.py` usa `localhost` por padrão no ambiente misto
+3. **Cache Redis**: Migrado de `LocMemCache` para `RedisCache` com configuração via variáveis de ambiente
+4. **Containers Docker**: PostgreSQL mapeado para `5436:5432`, Redis para `6382:6379`
+5. **Recriação de containers**: Garantiu limpeza completa do ambiente
+
+### Para Usuários Windows
+
+1. **Verificar .env**: Confirme que `POSTGRES_PORT=5436` e `REDIS_PORT=6382`
+2. **Subir serviços**: Execute o script `ambiente_misto/setup.bat`
+3. **Aplicar migrações**: Automaticamente feito pelo script
+4. **Iniciar servidor**: `uv run task start`
+
+### Checklist de Verificação Rápida
+
+- [ ] Docker Desktop está rodando
+- [ ] Arquivo `.env` configurado corretamente
+- [ ] Credenciais `firebase_key.json` no lugar certo
+- [ ] Containers PostgreSQL e Redis estão ativos (`docker ps`)
+- [ ] Porta 5436 está livre para PostgreSQL
+- [ ] Porta 6382 está livre para Redis
+- [ ] Migrações aplicadas sem erro
+- [ ] Cache Redis funcionando
+
+### Próximos Passos Recomendados
+
+1. **Executar testes**: `uv run task test`
+2. **Verificar linting**: `uv run task lint`
+3. **Checar tipagem**: `uv run task type-check`
+
+### Observações Importantes
+
+- Os arquivos `settings.py`, `docker-compose.yml` e `Dockerfile` ficam ignorados pelo Git após o setup
+- Para reverter configurações, use os comandos Git mencionados na seção "Configurações Locais do Git"
+- O ambiente é específico para desenvolvimento - não use em produção

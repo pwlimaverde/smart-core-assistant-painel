@@ -88,6 +88,9 @@ echo /.gitignore >> .git\info\exclude
 echo /.env >> .git\info\exclude
 echo /firebase_key.json >> .git\info\exclude
 echo /src/smart_core_assistant_painel/app/ui/core/settings.py >> .git\info\exclude
+REM Ignorar novas migrações locais (não rastrear futuras criações)
+echo /src/smart_core_assistant_painel/app/ui/*/migrations/ >> .git\info\exclude
+echo /src/smart_core_assistant_painel/app/ui/*/migrations/*.py >> .git\info\exclude
 
 REM Arquivos para marcar com assume-unchanged
 set FILES_TO_ASSUME=Dockerfile docker-compose.yml .gitignore src/smart_core_assistant_painel/app/ui/core/settings.py
@@ -98,6 +101,13 @@ git update-index --no-assume-unchanged %FILES_TO_ASSUME% 2>nul
 
 echo Marcando arquivos de configuração para serem ignorados localmente...
 git update-index --assume-unchanged %FILES_TO_ASSUME% 2>nul
+
+REM Marcar arquivos de migração rastreados como assume-unchanged (local)
+echo Marcando arquivos de migracoes (rastreados) como assume-unchanged...
+for /f "usebackq delims=" %%F in (`git ls-files src/smart_core_assistant_painel/app/ui/*/migrations/* 2^>nul`) do (
+    git update-index --no-assume-unchanged "%%F" 2>nul
+    git update-index --assume-unchanged "%%F" 2>nul
+)
 
 echo Configuração do Git concluída com sucesso.
 

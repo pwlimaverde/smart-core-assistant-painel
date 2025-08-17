@@ -17,33 +17,8 @@ fi
 echo "1. Verificando arquivos de configuração..."
 
 if [ ! -f ".env" ]; then
-    echo "ERRO: Antes de executar a criação do ambiente local, salve o arquivo .env na raiz do projeto."
-    echo ""
-    echo "Crie um arquivo .env com o seguinte conteúdo mínimo:"
-    echo "
-# Firebase Configuration (OBRIGATÓRIO)
-GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-
-# Django Configuration (OBRIGATÓRIO)
-SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
-
-# Evolution API Configuration (OBRIGATÓRIO)
-EVOLUTION_API_URL=http://localhost:8080
-EVOLUTION_API_KEY=sua-chave-evolution-api-aqui
-EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
-
-# Redis e PostgreSQL - Altere as portas se as padrões estiverem em uso
-REDIS_PORT=6382
-POSTGRES_PORT=5436
-
-# PostgreSQL Configuration
-POSTGRES_DB=smart_core_db
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres123
-POSTGRES_HOST=localhost
-"
+    echo "ERRO: Arquivo .env não encontrado na raiz do projeto."
+    echo "Coloque o arquivo .env manualmente antes de executar este setup."
     exit 1
 fi
 
@@ -53,7 +28,14 @@ echo "Arquivo .env encontrado."
 FIREBASE_PATH=$(grep "^GOOGLE_APPLICATION_CREDENTIALS=" .env | cut -d'=' -f2)
 if [ -z "$FIREBASE_PATH" ]; then
     echo "ERRO: A variável GOOGLE_APPLICATION_CREDENTIALS não está definida no arquivo .env"
-    echo "Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json"
+    echo "Defina GOOGLE_APPLICATION_CREDENTIALS apontando para o caminho do firebase_key.json"
+    exit 1
+fi
+
+# Verificar existência do arquivo de credenciais do Firebase (deve ser colocado manualmente)
+if [ ! -f "$FIREBASE_PATH" ]; then
+    echo "ERRO: Arquivo de credenciais do Firebase não encontrado em: $FIREBASE_PATH"
+    echo "Coloque o arquivo firebase_key.json manualmente no caminho configurado em GOOGLE_APPLICATION_CREDENTIALS no .env"
     exit 1
 fi
 
@@ -61,25 +43,6 @@ fi
 FIREBASE_KEY_DIR=$(dirname "$FIREBASE_PATH")
 mkdir -p "$FIREBASE_KEY_DIR"
 
-# Verificar se existe FIREBASE_KEY_JSON_CONTENT no .env
-if ! grep -q "^FIREBASE_KEY_JSON_CONTENT=" .env; then
-    echo "ERRO: Variável FIREBASE_KEY_JSON_CONTENT não encontrada no arquivo .env"
-    echo "Por favor, adicione a variável FIREBASE_KEY_JSON_CONTENT no .env com o conteúdo JSON do Firebase"
-    exit 1
-fi
-
-# Criar o arquivo firebase_key.json a partir da variável FIREBASE_KEY_JSON_CONTENT
-echo "Criando firebase_key.json a partir da variável FIREBASE_KEY_JSON_CONTENT..."
-FIREBASE_CONTENT=$(grep "^FIREBASE_KEY_JSON_CONTENT=" .env | cut -d'=' -f2-)
-
-if [ -n "$FIREBASE_CONTENT" ]; then
-    echo "$FIREBASE_CONTENT" > "$FIREBASE_PATH"
-    echo "Arquivo firebase_key.json criado com sucesso em $FIREBASE_PATH"
-else
-    echo "ERRO: Variável FIREBASE_KEY_JSON_CONTENT está vazia no arquivo .env"
-    echo "Por favor, adicione o conteúdo JSON do Firebase na variável FIREBASE_KEY_JSON_CONTENT"
-    exit 1
-fi
 
 # 2. Configurar Git para ignorar alterações locais
 echo "2. Configurando Git para ignorar alterações locais..."
@@ -98,6 +61,9 @@ EXCLUDE_FILE=".git/info/exclude"
     echo "/.env"
     echo "/firebase_key.json"
     echo "/src/smart_core_assistant_painel/app/ui/core/settings.py"
+    # Ignorar novas migrações locais (não rastrear futuras criações)
+    echo "/src/smart_core_assistant_painel/app/ui/*/migrations/"
+    echo "/src/smart_core_assistant_painel/app/ui/*/migrations/*.py"
 } >> "$EXCLUDE_FILE"
 
 # Arquivos para marcar com assume-unchanged
@@ -112,8 +78,19 @@ FILES_TO_ASSUME=(
 echo "Limpando flags 'assume-unchanged' existentes..."
 git update-index --no-assume-unchanged "${FILES_TO_ASSUME[@]}" 2>/dev/null || true
 
+# Marcar arquivos rastreados de migrations como assume-unchanged (local)
+echo "Marcando arquivos de migrações (rastreados) como assume-unchanged..."
+while IFS= read -r f; do
+  git update-index --no-assume-unchanged "$f" 2>/dev/null || true
+  git update-index --assume-unchanged "$f" 2>/dev/null || true
+done < <(git ls-files 'src/smart_core_assistant_painel/app/ui/*/migrations/*' 2>/dev/null)
+
+# Marcar arquivos de configuração para serem ignorados localmente
 echo "Marcando arquivos de configuração para serem ignorados localmente..."
 git update-index --assume-unchanged "${FILES_TO_ASSUME[@]}" 2>/dev/null || true
+
+# Opcional: aconselhar o uso de update-index caso novas migrações sejam criadas e rastreadas
+# git update-index --assume-unchanged caminho/do/arquivo.py
 
 echo "Configuração do Git concluída com sucesso."
 

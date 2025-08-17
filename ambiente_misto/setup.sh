@@ -49,25 +49,37 @@ fi
 
 echo "Arquivo .env encontrado."
 
-if [ ! -f "firebase_key.json" ]; then
-    echo "ERRO: Antes de executar a criação do ambiente local, salve o arquivo firebase_key.json na raiz do projeto."
-    echo ""
-    echo "Obtenha o arquivo de credenciais do Firebase (service account key) e salve-o como firebase_key.json na raiz do projeto."
-    echo "O script moverá automaticamente este arquivo para o diretório correto."
-    echo ""
+# Verificar se GOOGLE_APPLICATION_CREDENTIALS está definido no .env
+FIREBASE_PATH=$(grep "^GOOGLE_APPLICATION_CREDENTIALS=" .env | cut -d'=' -f2)
+if [ -z "$FIREBASE_PATH" ]; then
+    echo "ERRO: A variável GOOGLE_APPLICATION_CREDENTIALS não está definida no arquivo .env"
+    echo "Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json"
     exit 1
 fi
 
-echo "Arquivo firebase_key.json encontrado."
-
-# Criar diretório para o arquivo firebase_key.json se não existir
-FIREBASE_KEY_DIR="src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config"
+# Extrair diretório do caminho do firebase_key.json
+FIREBASE_KEY_DIR=$(dirname "$FIREBASE_PATH")
 mkdir -p "$FIREBASE_KEY_DIR"
 
-# Mover firebase_key.json para o diretório correto
-mv "firebase_key.json" "$FIREBASE_KEY_DIR/firebase_key.json"
+# Verificar se existe FIREBASE_KEY_JSON_CONTENT no .env
+if ! grep -q "^FIREBASE_KEY_JSON_CONTENT=" .env; then
+    echo "ERRO: Variável FIREBASE_KEY_JSON_CONTENT não encontrada no arquivo .env"
+    echo "Por favor, adicione a variável FIREBASE_KEY_JSON_CONTENT no .env com o conteúdo JSON do Firebase"
+    exit 1
+fi
 
-echo "Arquivo firebase_key.json movido para $FIREBASE_KEY_DIR/firebase_key.json"
+# Criar o arquivo firebase_key.json a partir da variável FIREBASE_KEY_JSON_CONTENT
+echo "Criando firebase_key.json a partir da variável FIREBASE_KEY_JSON_CONTENT..."
+FIREBASE_CONTENT=$(grep "^FIREBASE_KEY_JSON_CONTENT=" .env | cut -d'=' -f2-)
+
+if [ -n "$FIREBASE_CONTENT" ]; then
+    echo "$FIREBASE_CONTENT" > "$FIREBASE_PATH"
+    echo "Arquivo firebase_key.json criado com sucesso em $FIREBASE_PATH"
+else
+    echo "ERRO: Variável FIREBASE_KEY_JSON_CONTENT está vazia no arquivo .env"
+    echo "Por favor, adicione o conteúdo JSON do Firebase na variável FIREBASE_KEY_JSON_CONTENT"
+    exit 1
+fi
 
 # 2. Configurar Git para ignorar alterações locais
 echo "2. Configurando Git para ignorar alterações locais..."

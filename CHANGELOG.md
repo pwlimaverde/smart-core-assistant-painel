@@ -3,6 +3,10 @@
 - **fix**: Correção dos testes que utilizavam o campo email no modelo Contato
 - **docs**: Atualização do README-Docker.md com instruções sobre migrações
 - **test**: Execução bem-sucedida da suíte de testes no Docker (305 testes passados)
+- **fix**: Resolução do problema de contêineres Docker reiniciando, incluindo:
+  - Correção do erro `uv: 1: [/usr/local/bin/docker-entrypoint.sh]: not found` no `smart-core-qcluster-dev`.
+  - Resolução da incompatibilidade de versão do PostgreSQL (`database files are incompatible with server`) no `postgres-dev` e `evolution-api-dev` através da remoção dos volumes de dados e reinicialização dos contêineres.
+- **test**: Verificação de que todos os contêineres Docker (`smart-core-qcluster-dev`, `evolution-api-dev`, `smart-core-assistant-dev`, `postgres-dev`, `redis-dev`, `postgres-django-dev`) estão em estado `running`.
 
 ## 0.8.0
 - **fix**: Correção do problema "Nenhum chunk válido encontrado" no Ollama, incluindo:

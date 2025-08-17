@@ -24,8 +24,6 @@ RUN apt-get update && apt-get install -y \
     procps \
     libpq-dev \
     postgresql-client \
-    bash \
-    dos2unix \
     && rm -rf /var/lib/apt/lists/*
 
 # Install uv for faster dependency management
@@ -50,8 +48,8 @@ COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase
 # Copy and make entrypoint scripts executable
 COPY ambiente_docker/scripts/docker-entrypoint.sh /usr/local/bin/
 COPY ambiente_docker/scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
-RUN dos2unix /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh \
-    && chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-qcluster.sh
 
 # Create necessary directories
 RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \

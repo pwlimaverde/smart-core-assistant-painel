@@ -40,70 +40,6 @@ docker-compose --version
 # Verificar se Docker está rodando
 docker info
 ```
-
-## ⚙️ Configuração Inicial
-
-### 1. Arquivo .env
-Na raiz do projeto, crie o arquivo `.env` baseado no `.env.example`:
-
-```bash
-# Copiar arquivo de exemplo
-cp ambiente_docker/.env.example .env
-```
-
-Configure as seguintes variáveis **obrigatórias**:
-
-```env
-# Django
-SECRET_KEY_DJANGO=sua_chave_secreta_django_aqui
-DEBUG=True
-
-# Evolution API
-EVOLUTION_API_KEY=sua_chave_evolution_api
-
-# Firebase
-GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-
-# Opção 1: Salvar firebase_key.json na raiz do projeto
-# OU
-# Opção 2: Adicionar conteúdo JSON diretamente no .env
-FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto-id"...}
-
-# Redis
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_DB=0
-
-# PostgreSQL Django
-POSTGRES_DJANGO_HOST=postgres-django
-POSTGRES_DJANGO_PORT=5432
-POSTGRES_DJANGO_DB=smart_core_assistant
-POSTGRES_DJANGO_USER=django_user
-POSTGRES_DJANGO_PASSWORD=django_password
-
-# PostgreSQL Evolution
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DB=evolution
-POSTGRES_USER=evolution
-POSTGRES_PASSWORD=evolution_password
-```
-
-### 2. Credenciais Firebase
-
-**Você tem duas opções para fornecer as credenciais do Firebase:**
-
-#### Opção 1: Arquivo físico (Recomendado para desenvolvimento local)
-1. Salve o arquivo `firebase_key.json` na raiz do projeto
-2. O script automaticamente moverá para o local correto
-
-#### Opção 2: Variável de ambiente (Recomendado para CI/CD e produção)
-1. Copie todo o conteúdo JSON do seu arquivo Firebase
-2. Adicione no arquivo `.env`:
-```env
-FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto","private_key_id":"...","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"...","client_id":"...","auth_uri":"...","token_uri":"...","auth_provider_x509_cert_url":"...","client_x509_cert_url":"..."}
-```
-
 ## 🚀 Executar o Ambiente
 
 ### Script de Setup Automático
@@ -144,6 +80,177 @@ Após a execução bem-sucedida do script:
 - **Django App**: http://localhost:8001
 - **Evolution API**: http://localhost:8081
 - **Admin Django**: http://localhost:8001/admin (admin/123456)
+
+### Credenciais Padrão
+- **Username**: admin
+- **Password**: 123456
+- **Email**: admin@example.com
+
+## 🔧 Comandos Úteis
+
+### Docker Compose
+
+```bash
+# Visualizar status dos containers
+docker-compose ps
+
+# Monitorar logs em tempo real
+docker-compose logs -f
+
+# Logs de um serviço específico
+docker-compose logs -f django-app
+
+# Parar todos os serviços
+docker-compose down
+
+# Parar e remover volumes (CUIDADO: apaga dados)
+docker-compose down -v
+
+# Reiniciar um serviço específico
+docker-compose restart django-app
+
+# Executar comando dentro do container
+docker-compose exec django-app bash
+```
+
+### Django
+
+```bash
+# Executar comandos Django
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py <comando>
+
+# Exemplos:
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic
+```
+
+### Banco de Dados
+
+```bash
+# Conectar ao PostgreSQL Django
+docker-compose exec postgres-django psql -U django_user -d smart_core_assistant
+
+# Conectar ao PostgreSQL Evolution
+docker-compose exec postgres psql -U evolution -d evolution
+
+# Conectar ao Redis
+docker-compose exec redis redis-cli
+```
+
+## 🐛 Resolução de Problemas
+
+### Docker não está rodando
+```
+ERRO: Docker não está rodando. Inicie o Docker Desktop e tente novamente.
+```
+**Solução**: Inicie o Docker Desktop e aguarde ele ficar completamente carregado.
+
+### Falha na construção das imagens
+```
+ERRO: Falha ao construir as imagens Docker.
+```
+**Soluções**:
+1. Verificar se o arquivo `.env` está configurado corretamente
+2. Executar `docker system prune -a` para limpar cache
+3. Reiniciar o Docker Desktop
+
+### Container sai imediatamente
+```bash
+# Verificar logs para identificar o erro
+docker-compose logs django-app
+```
+
+**Possíveis causas**:
+- Credenciais Firebase inválidas
+- Variáveis de ambiente mal configuradas
+- Problemas de conexão com banco de dados
+
+### Problemas de conexão PostgreSQL
+```bash
+# Verificar se o PostgreSQL está rodando
+docker-compose ps postgres-django
+
+# Verificar logs do PostgreSQL
+docker-compose logs postgres-django
+
+# Testar conexão manualmente
+docker-compose exec postgres-django pg_isready -U postgres
+```
+
+### Redis não conecta
+```bash
+# Verificar se Redis está rodando
+docker-compose ps redis
+
+# Testar conexão
+docker-compose exec redis redis-cli ping
+```
+
+### Problemas de permissão (Linux/macOS)
+```bash
+# Dar permissão aos scripts
+chmod +x ambiente_docker/setup.sh
+```
+
+## 🧹 Reset Completo de Banco e Migrações
+
+Em casos de inconsistências de schema, erros de migrações quebradas ou para garantir um estado limpo de desenvolvimento, você pode realizar um reset completo do banco e das migrações.
+
+ATENÇÃO: Este procedimento remove dados e recria migrações. Utilize apenas em desenvolvimento.
+
+### Passo a passo (Windows/Linux/macOS)
+
+1) Parar serviços e remover volumes/imagens
+```bash
+docker-compose down -v --rmi all
+```
+
+2) Opcional: Limpar cache do Docker (cuidado!)
+```bash
+docker system prune -a
+```
+
+3) Resetar migrações nas apps Django (mantendo __init__.py)
+- O script de setup do ambiente Docker agora executa automaticamente um reset seguro das migrações, removendo arquivos dentro de cada pasta `migrations/` e preservando o `__init__.py`.
+- Em seguida, ele executa `makemigrations` e `migrate` para recriar o schema do zero.
+
+4) Recriar ambiente completo
+```bash
+# Windows
+ambiente_docker\setup.bat
+
+# Linux/macOS
+chmod +x ambiente_docker/setup.sh
+ambiente_docker/setup.sh
+```
+
+### Comandos equivalentes manuais
+Caso prefira executar manualmente:
+```bash
+# Remover arquivos de migração (preservando __init__.py)
+# Exemplo Linux/macOS
+find src/smart_core_assistant_painel/app/ui -type d -name migrations -prune -exec bash -c 'shopt -s nullglob; for f in "$1"/*; do [[ $(basename "$f") != "__init__.py" ]] && rm -f "$f"; done' _ {} \;
+
+# Recriar migrações e aplicar
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
+```
+
+### Observações
+- O reset é semelhante ao realizado no ambiente_misto, garantindo consistência entre ambientes.
+- Sempre execute testes após o reset para garantir integridade.
+
+### Após o reset
+- Rode coleta de estáticos (já automatizado no setup):
+```bash
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput
+```
+- Acesse o admin com o usuário padrão criado:
+```
+admin / 123456
+```
 
 ### Credenciais Padrão
 - **Username**: admin

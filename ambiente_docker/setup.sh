@@ -97,7 +97,7 @@ services:
     ports:
       - "8001:8000"
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - DJANGO_DEBUG=True
       - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
       - POSTGRES_DB=smart_core_db
@@ -137,7 +137,7 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - DJANGO_DEBUG=True
       - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
       - POSTGRES_DB=smart_core_db
@@ -564,6 +564,17 @@ done
 
 # 10. Executar migrações do Django
 echo "9. Executando migrações do Django..."
+
+# Resetar migrações: remover todos os arquivos (exceto __init__.py)
+echo "Limpando arquivos de migrações existentes..."
+find src/smart_core_assistant_painel/app/ui -type d -name migrations -prune -exec bash -c 'shopt -s nullglob; for f in "$1"/*; do [[ $(basename "$f") != "__init__.py" ]] && rm -f "$f"; done' _ {} \;
+
+# Criar novas migrações antes de aplicar
+docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations
+if [ $? -ne 0 ]; then
+    echo "ERRO: Falha ao criar migrações do Django."
+    exit 1
+fi
 
 docker-compose run --rm django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
 

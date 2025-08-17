@@ -193,36 +193,33 @@ docker-compose up -d
 # 7. Instalar dependências Python necessárias
 echo "7. Instalando dependências Python necessárias..."
 
-pip install psycopg2-binary
-pip install firebase-admin
-pip install langchain-ollama
-pip install django-redis
-pip install redis==3.5.3
-pip install markdown
+# Usar o uv para sincronizar as dependências
+uv sync --dev
+if [ $? -ne 0 ]; then
+    echo "Erro ao sincronizar dependências com uv"
+    exit 1
+fi
 
 # 8. Apagar migrações do Django
 echo "8. Apagando migrações do Django..."
 
-# Navegar para o diretório da aplicação
-cd src/smart_core_assistant_painel/app/ui
-
-# Apagar arquivos de migração (exceto __init__.py)
-find ../../../modules -name 'migrations' -type d -exec sh -c 'cd "{}" && ls *.py 2>/dev/null | grep -v __init__.py | xargs -r rm && echo > __init__.py' \;
-
-# Voltar ao diretório raiz
-cd ../../../../..
-
 # 9. Aplicar migrações do Django
 echo "9. Aplicando migrações do Django..."
 
-export PYTHONPATH=$(pwd)/src
-python src/smart_core_assistant_painel/app/ui/manage.py migrate
+uv run task migrate
+if [ $? -ne 0 ]; then
+    echo "Erro ao aplicar migrações do Django"
+    exit 1
+fi
 
 # 10. Criar superusuário
 echo "10. Criando superusuário admin..."
 
-export PYTHONPATH=$(pwd)/src
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456')" | python src/smart_core_assistant_painel/app/ui/manage.py shell
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456')" | uv run task shell
+if [ $? -ne 0 ]; then
+    echo "Erro ao criar superusuário"
+    exit 1
+fi
 
 echo ""
 echo "=== Ambiente misto pronto! ==="

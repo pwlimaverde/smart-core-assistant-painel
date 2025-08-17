@@ -12,8 +12,9 @@ Este guia descreve como configurar e executar o ambiente de desenvolvimento "mis
 ## Pre-requisitos
 
 1.  **Docker e Docker Compose**: [Instale o Docker Desktop](https://www.docker.com/products/docker-desktop).
-2.  **Python**: Versao 3.8 ou superior.
-3.  **Credenciais do Firebase**: Obtenha o arquivo `firebase_key.json` com as credenciais do Firebase (service account key).
+2.  **Python**: Versao 3.13 ou superior.
+3.  **uv**: [Instale o uv](https://docs.astral.sh/uv/getting-started/installation/) para gerenciamento de dependências.
+4.  **Credenciais do Firebase**: Obtenha o arquivo `firebase_key.json` com as credenciais do Firebase (service account key).
 
 ## Configuracao e Execucao
 
@@ -32,7 +33,7 @@ Antes de iniciar o ambiente, você precisa:
 
 ```env
 # Firebase Configuration (caminho para o arquivo de credenciais)
-GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+GOOGLE_APPLICATION_CREDENTIALS=../../../smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
 # Django Configuration (OBRIGATÓRIO)
 SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
@@ -86,10 +87,10 @@ O script realizara todas as seguintes acoes em sequencia:
 5.  **Ajustará o `docker-compose.yml`**: O arquivo do Docker Compose sera reescrito para conter apenas os servicos de banco de dados, usando PostgreSQL versão 14.
 6.  **Limpara o `Dockerfile`**: O Dockerfile principal sera esvaziado.
 7.  **Subira os Containers**: Os containers do `postgres` e `redis` serao iniciados em background.
-8.  **Instalará as dependências Python necessárias**.
+8.  **Instalará as dependências Python necessárias**: Usará o `uv` para sincronizar as dependências.
 9.  **Apagará as migrações do Django**.
-10. **Aplicará as migrações do Django**.
-11. **Criará um superusuário com nome `admin` e senha `123456`**.
+10. **Aplicará as migrações do Django**: Usará o `uv run task migrate`.
+11. **Criará um superusuário com nome `admin` e senha `123456`**: Usará o `uv run task createsuperuser`.
 
 ### 3. Inicie a Aplicacao Django
 
@@ -98,7 +99,11 @@ O script realizara todas as seguintes acoes em sequencia:
 - Execute o servidor de desenvolvimento do Django:
 
   ```bash
-  python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
+  # No Windows
+  .venv\Scripts\python.exe src\smart_core_assistant_painel\app\ui\manage.py runserver 0.0.0.0:8000
+  
+  # No Linux ou macOS
+  .venv/bin/python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
   ```
 
 - A aplicacao estara disponivel em [http://localhost:8000](http://localhost:8000).

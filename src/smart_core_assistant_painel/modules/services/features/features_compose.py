@@ -58,6 +58,7 @@ class FeaturesCompose:
         config_mapping = {
             "groq_api_key": "GROQ_API_KEY",
             "openai_api_key": "OPENAI_API_KEY",
+            "huggingface_api_key": "HUGGINGFACE_API_KEY",
             "whatsapp_api_base_url": "WHATSAPP_API_BASE_URL",
             "whatsapp_api_send_text_url": "WHATSAPP_API_SEND_TEXT_URL",
             "whatsapp_api_start_typing_url": "WHATSAPP_API_START_TYPING_URL",
@@ -70,7 +71,8 @@ class FeaturesCompose:
             "prompt_system_melhoria_conteudo": "PROMPT_SYSTEM_MELHORIA_CONTEUDO",
             "chunk_overlap": "CHUNK_OVERLAP",
             "chunk_size": "CHUNK_SIZE",
-            "faiss_model": "FAISS_MODEL",
+            "embeddings_model": "EMBEDDINGS_MODEL",
+            "embeddings_class": "EMBEDDINGS_CLASS",
             "prompt_human_analise_previa_mensagem": "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM",
             "prompt_system_analise_previa_mensagem": "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM",
             "valid_entity_types": "VALID_ENTITY_TYPES",

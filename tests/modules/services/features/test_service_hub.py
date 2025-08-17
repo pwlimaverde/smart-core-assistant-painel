@@ -62,16 +62,16 @@ class TestServiceHub(unittest.TestCase):
         hub = ServiceHub()
         self.assertEqual(hub.CHUNK_SIZE, 1000)
 
-    @patch.dict(os.environ, {"FAISS_MODEL": "test_model"})
-    def test_faiss_model_property_with_env_var(self):
+    @patch.dict(os.environ, {"EMBEDDINGS_MODEL": "test_model"})
+    def test_embeddings_model_property_with_env_var(self):
         hub = ServiceHub()
-        self.assertEqual(hub.FAISS_MODEL, "test_model")
+        self.assertEqual(hub.EMBEDDINGS_MODEL, "test_model")
 
-    def test_faiss_model_property_without_env_var(self):
-        if "FAISS_MODEL" in os.environ:
-            del os.environ["FAISS_MODEL"]
+    def test_embeddings_model_property_without_env_var(self):
+        if "EMBEDDINGS_MODEL" in os.environ:
+            del os.environ["EMBEDDINGS_MODEL"]
         hub = ServiceHub()
-        self.assertEqual(hub.FAISS_MODEL, "")
+        self.assertEqual(hub.EMBEDDINGS_MODEL, "")
 
     def test_singleton_pattern(self):
         hub1 = ServiceHub()

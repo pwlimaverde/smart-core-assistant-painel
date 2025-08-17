@@ -1,9 +1,10 @@
 import os
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional, Type, Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_ollama import ChatOllama
+from langchain.embeddings import HuggingFaceInferenceEmbeddings
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
@@ -50,7 +51,8 @@ class ServiceHub:
         self._prompt_human_melhoria_conteudo: Optional[str] = None
         self._chunk_overlap: Optional[int] = None
         self._chunk_size: Optional[int] = None
-        self._faiss_model: Optional[str] = None
+        self._embeddings_model: Optional[str] = None
+        self._embeddings_class: Optional[Any] = None
         self._prompt_system_analise_previa_mensagem: Optional[str] = None
         self._prompt_human_analise_previa_mensagem: Optional[str] = None
         self._valid_entity_types: Optional[str] = None
@@ -104,10 +106,16 @@ class ServiceHub:
         return self._chunk_size if self._chunk_size is not None else 1000
 
     @property
-    def FAISS_MODEL(self) -> str:
-        if self._faiss_model is None:
-            self._faiss_model = os.environ.get("FAISS_MODEL")
-        return self._faiss_model if self._faiss_model is not None else ""
+    def EMBEDDINGS_MODEL(self) -> str:
+        if self._embeddings_model is None:
+            self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
+        return self._embeddings_model if self._embeddings_model is not None else ""
+
+    @property
+    def EMBEDDINGS_CLASS(self) -> Any:
+        if self._embeddings_class is None:
+            self._embeddings_class = self._get_embeddings_class()
+        return self._embeddings_class if self._embeddings_class is not None else HuggingFaceInferenceEmbeddings
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
@@ -281,6 +289,21 @@ class ServiceHub:
             raise ValueError(
                 f"LLM class '{llm_type}' not recognized. "
                 "Please set 'LLM_CLASS' environment variable to 'ChatGroq', 'ChatOpenAI', or 'ChatOllama'."
+            )
+
+    def _get_embeddings_class(self) -> Any:
+        """Retorna a classe de embeddings baseada na variável de ambiente."""
+        embeddings_class = os.environ.get("EMBEDDINGS_CLASS", "HuggingFaceInferenceEmbeddings")
+        if embeddings_class == "HuggingFaceInferenceEmbeddings":
+            from langchain.embeddings import HuggingFaceInferenceEmbeddings
+            return HuggingFaceInferenceEmbeddings
+        elif embeddings_class == "OllamaEmbeddings":
+            from langchain_ollama import OllamaEmbeddings
+            return OllamaEmbeddings 
+        else:
+            raise ValueError(
+                f"Embeddings class '{embeddings_class}' not recognized. "
+                "Please set 'EMBEDDINGS_CLASS' environment variable to 'HuggingFaceInferenceEmbeddings' or 'OllamaEmbeddings'."
             )
 
 

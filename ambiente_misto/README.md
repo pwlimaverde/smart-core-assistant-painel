@@ -36,11 +36,21 @@ REDIS_PORT=6382
 # Outras configurações
 SECRET_KEY_DJANGO=your-secret-key-here
 OPENAI_API_KEY=your-openai-key
+
+# Caminho para credenciais Firebase (obrigatório)
+GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+
+# Opcional: Cole o JSON completo das credenciais aqui para criação dinâmica do arquivo
+# Recomendado para ambientes CI/CD (e.g., Jules)
+FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto", ...}
 ```
 
 ### 2. Adicionar credenciais Firebase
 
-Coloque o arquivo `firebase_key.json` na raiz do projeto.
+Você tem duas opções:
+- Definir `FIREBASE_KEY_JSON_CONTENT` no `.env` com o conteúdo JSON completo. O script criará o arquivo no caminho de `GOOGLE_APPLICATION_CREDENTIALS`.
+
+Observação: a opção de colocar um arquivo `firebase_key.json` físico na raiz foi removida para padronizar a configuração. Sempre use a variável `FIREBASE_KEY_JSON_CONTENT`.
 
 ### 3. Executar Setup
 

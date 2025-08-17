@@ -46,25 +46,32 @@ if not exist ".env" (
 
 echo Arquivo .env encontrado.
 
-if not exist "firebase_key.json" (
-    echo ERRO: Antes de executar a criação do ambiente local, salve o arquivo firebase_key.json na raiz do projeto.
-    echo.
-    echo Obtenha o arquivo de credenciais do Firebase ^(service account key^) e salve-o como firebase_key.json na raiz do projeto.
-    echo O script moverá automaticamente este arquivo para o diretório correto.
-    echo.
+REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set FIREBASE_PATH=%%B
+if not defined FIREBASE_PATH (
+    echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env
+    echo Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
     exit /b 1
 )
 
-echo Arquivo firebase_key.json encontrado.
-
-REM Criar diretório para o arquivo firebase_key.json se não existir
-set FIREBASE_KEY_DIR=src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config
+REM Extrair diretorio do caminho informado
+for %%I in ("%FIREBASE_PATH%") do set FIREBASE_KEY_DIR=%%~dpI
 if not exist "%FIREBASE_KEY_DIR%" mkdir "%FIREBASE_KEY_DIR%"
 
-REM Mover firebase_key.json para o diretório correto
-move "firebase_key.json" "%FIREBASE_KEY_DIR%\firebase_key.json" >nul
+REM 2. Criar credenciais Firebase usando FIREBASE_KEY_JSON_CONTENT
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"FIREBASE_KEY_JSON_CONTENT=" .env`) do set FIREBASE_CONTENT=%%B
 
-echo Arquivo firebase_key.json movido para %FIREBASE_KEY_DIR%\firebase_key.json
+if not defined FIREBASE_CONTENT (
+    echo ERRO: Variavel FIREBASE_KEY_JSON_CONTENT nao encontrada ou vazia no arquivo .env
+    echo Por favor, adicione a variavel FIREBASE_KEY_JSON_CONTENT no .env com o conteudo JSON do Firebase
+    echo Exemplo: FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto",...}
+    exit /b 1
+)
+
+echo Criando firebase_key.json a partir da variavel FIREBASE_KEY_JSON_CONTENT...
+mkdir "%FIREBASE_KEY_DIR%" 2>nul
+echo %FIREBASE_CONTENT% > "%FIREBASE_PATH%"
+echo Arquivo firebase_key.json criado com sucesso em %FIREBASE_PATH%
 
 REM 2. Configurar Git para ignorar alterações locais
 echo 2. Configurando Git para ignorar alterações locais...

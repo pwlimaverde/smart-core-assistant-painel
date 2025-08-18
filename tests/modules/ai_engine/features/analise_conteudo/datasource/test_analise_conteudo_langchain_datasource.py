@@ -2,13 +2,13 @@ import pytest
 from unittest.mock import Mock, patch
 from langchain_core.messages import AIMessage
 
+from smart_core_assistant_painel.modules.ai_engine import (
+    LlmError,
+    LlmParameters,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
-    LlmParameters,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 
 
 class TestAnaliseConteudoLangchainDatasource:

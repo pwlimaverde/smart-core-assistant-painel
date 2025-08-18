@@ -4,11 +4,13 @@ import requests
 
 from py_return_success_or_error import SuccessReturn, ErrorReturn
 
+from smart_core_assistant_painel.modules.services import (
+    WhatsAppMensagemParameters,
+    WhatsAppServiceError,
+)
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.usecase.whatsapp_service_usecase import (
     WhatsAppServiceUsecase,
 )
-from smart_core_assistant_painel.modules.services.utils.erros import WhatsAppServiceError
-from smart_core_assistant_painel.modules.services.utils.parameters import WhatsAppMensagemParameters
 
 
 class TestWhatsAppServiceUsecase:

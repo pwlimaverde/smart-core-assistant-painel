@@ -14,10 +14,8 @@ from typing import Optional, Type
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
-    VetorStorage,
-)
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
+from .vetor_storage.domain.interface.vetor_storage import VetorStorage
+from .whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
 

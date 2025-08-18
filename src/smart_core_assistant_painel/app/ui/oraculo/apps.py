@@ -3,9 +3,15 @@
 Este módulo define a configuração do aplicativo Django para o Oráculo,
 incluindo a inicialização de serviços e o registro de signals.
 """
+
 from django.apps import AppConfig
+from django.db.models.signals import (
+    post_delete,
+    post_save,
+    pre_delete,
+    pre_save,
+)
 from loguru import logger
-from django.db.models.signals import post_save, pre_save, post_delete, pre_delete
 
 
 class OraculoConfig(AppConfig):
@@ -19,10 +25,10 @@ class OraculoConfig(AppConfig):
         from . import signals  # noqa: F401
 
         try:
-            from smart_core_assistant_painel.modules.initial_loading.start_initial_loading import (
+            from smart_core_assistant_painel.modules.initial_loading import (
                 start_initial_loading,
             )
-            from smart_core_assistant_painel.modules.services.start_services import (
+            from smart_core_assistant_painel.modules.services import (
                 start_services,
             )
 
@@ -41,7 +47,9 @@ class OraculoConfig(AppConfig):
             self._set_send_to_robust(post_delete, "post_delete")
             self._set_send_to_robust(pre_delete, "pre_delete")
         except Exception as e:
-            logger.error(f"Falha ao configurar signals como robustos: {e}", exc_info=True)
+            logger.error(
+                f"Falha ao configurar signals como robustos: {e}", exc_info=True
+            )
 
     @staticmethod
     def _set_send_to_robust(signal_obj, label: str) -> None:
@@ -57,4 +65,7 @@ class OraculoConfig(AppConfig):
             signal_obj.send = signal_obj.send_robust  # type: ignore[assignment]
             logger.debug(f"Signal '{label}' configurado para envio robusto.")
         except Exception as e:
-            logger.warning(f"Não foi possível configurar '{label}' como robusto: {e}", exc_info=True)
+            logger.warning(
+                f"Não foi possível configurar '{label}' como robusto: {e}",
+                exc_info=True,
+            )

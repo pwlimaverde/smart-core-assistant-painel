@@ -14,9 +14,7 @@ from django_q.models import Schedule
 from django_q.tasks import async_task
 from loguru import logger
 
-from smart_core_assistant_painel.modules.services.features.service_hub import (
-    SERVICEHUB,
-)
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models import Treinamentos
 

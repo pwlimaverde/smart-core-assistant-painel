@@ -5,13 +5,13 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
+from smart_core_assistant_painel.modules.ai_engine import (
+    LlmError,
+    LlmParameters,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.domain.usecase.analise_conteudo_usecase import (
     AnaliseConteudoUseCase,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
-    LlmParameters,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 
 
 class TestAnaliseConteudoUseCase:

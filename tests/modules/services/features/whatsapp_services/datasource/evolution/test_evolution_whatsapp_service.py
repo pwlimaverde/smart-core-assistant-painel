@@ -4,14 +4,12 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_whatsapp_service import (
-    EvolutionWhatsAppService,
-)
-from smart_core_assistant_painel.modules.services.utils.erros import (
+from smart_core_assistant_painel.modules.services import (
+    WhatsAppMensagemParameters,
     WhatsAppServiceError,
 )
-from smart_core_assistant_painel.modules.services.utils.parameters import (
-    WhatsAppMensagemParameters,
+from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_whatsapp_service import (
+    EvolutionWhatsAppService,
 )
 
 

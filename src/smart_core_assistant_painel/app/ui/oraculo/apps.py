@@ -1,28 +1,25 @@
+"""Configuração do aplicativo Oráculo.
+
+Este módulo define a configuração do aplicativo Django para o Oráculo,
+incluindo a inicialização de serviços e o registro de signals.
+"""
 from django.apps import AppConfig
 from loguru import logger
-
-# Importações necessárias para configurar sinais como robustos
-from django.db.models.signals import (
-    post_delete,
-    post_save,
-    pre_delete,
-    pre_save,
-)
+from django.db.models.signals import post_save, pre_save, post_delete, pre_delete
 
 
 class OraculoConfig(AppConfig):
+    """Configuração para o aplicativo Oraculo."""
+
     default_auto_field = "django.db.models.BigAutoField"
     name = "smart_core_assistant_painel.app.ui.oraculo"
 
     def ready(self) -> None:
-        # Importa signals para registrar os handlers
+        """Executa quando o aplicativo está pronto."""
         from . import signals  # noqa: F401
 
-        # Inicializa serviços quando a aplicação estiver pronta
-        # Isso garante que o VetorStorage esteja configurado para Django-Q
-        # workers
         try:
-            from smart_core_assistant_painel.modules.initial_loading.start_initial_loading import (  # noqa: E501
+            from smart_core_assistant_painel.modules.initial_loading.start_initial_loading import (
                 start_initial_loading,
             )
             from smart_core_assistant_painel.modules.services.start_services import (
@@ -33,43 +30,31 @@ class OraculoConfig(AppConfig):
             start_services()
         except Exception as e:
             logger.error(f"Erro ao inicializar serviços para Django-Q: {e}")
-            # Não falha a aplicação, apenas loga o erro
 
-        # Configura sinais padrão do Django para envio robusto (send_robust)
-        # Isto impede que exceções em handlers quebrem o fluxo principal,
-        # atendendo aos requisitos dos testes de signals.
         self._configure_signals_as_robust()
 
     def _configure_signals_as_robust(self) -> None:
-        """Configura sinais de modelo para usar send_robust.
-
-        Evita que exceções em handlers propaguem para a origem do evento.
-        """
+        """Configura os signals do modelo para usar send_robust."""
         try:
             self._set_send_to_robust(post_save, "post_save")
             self._set_send_to_robust(pre_save, "pre_save")
             self._set_send_to_robust(post_delete, "post_delete")
             self._set_send_to_robust(pre_delete, "pre_delete")
         except Exception as e:
-            # Qualquer falha aqui não deve interromper a app.
-            logger.error(
-                f"Falha ao configurar sinais como robustos: {e}", exc_info=True
-            )
+            logger.error(f"Falha ao configurar signals como robustos: {e}", exc_info=True)
 
     @staticmethod
     def _set_send_to_robust(signal_obj, label: str) -> None:
-        """Substitui o método send pelo send_robust de forma idempotente."""
+        """Substitui o método send por send_robust de forma idempotente.
+
+        Args:
+            signal_obj: O objeto de signal a ser modificado.
+            label (str): Um rótulo para fins de logging.
+        """
         try:
-            # Se já estiver configurado, não faz nada.
             if getattr(signal_obj.send, "__name__", "") == "send_robust":
                 return
-            # Substitui o método de envio para capturar exceções dos handlers.
             signal_obj.send = signal_obj.send_robust  # type: ignore[assignment]
-            logger.debug(
-                f"Sinal '{label}' configurado para envio robusto (send_robust)."
-            )
+            logger.debug(f"Signal '{label}' configurado para envio robusto.")
         except Exception as e:
-            logger.warning(
-                f"Não foi possível configurar '{label}' como robusto: {e}",
-                exc_info=True,
-            )
+            logger.warning(f"Não foi possível configurar '{label}' como robusto: {e}", exc_info=True)

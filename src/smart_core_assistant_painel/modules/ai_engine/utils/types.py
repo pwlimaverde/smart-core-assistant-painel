@@ -1,3 +1,10 @@
+"""Define apelidos de tipo e estruturas de dados para o módulo de IA.
+
+Este módulo centraliza as definições de tipo usadas nas funcionalidades do motor
+de IA, melhorando a legibilidade e a manutenção do código. Inclui apelidos
+para casos de uso e fontes de dados, bem como tuplas nomeadas para estruturas
+de dados específicas.
+"""
 from typing import Any, NamedTuple, TypeAlias
 
 from langchain.docstore.document import Document
@@ -41,8 +48,10 @@ class APMTuple(NamedTuple):
     """Tupla nomeada para dados de Análise Prévia de Mensagem.
 
     Attributes:
-        intent_types: Lista de tipos de intent válidos com suas configurações
-        entity_types: Lista de tipos de entidade válidos com suas configurações
+        intent_types (list[dict[str, Any]]): Lista de tipos de intenção válidos
+            com suas configurações.
+        entity_types (list[dict[str, Any]]): Lista de tipos de entidade válidos
+            com suas configurações.
     """
 
     intent_types: list[dict[str, Any]]

@@ -70,7 +70,7 @@ dependencies = [
     "pypdf==5.5.0",
     "python-dateutil==2.9.0.post0",
     "python-decouple==3.8",
-    "python-dotenv==1.1.0",
+    "python-dotenv[cli]==1.1.0",
     "pyyaml==6.0.2",
     "redis==3.5.3",
     "django-redis==5.4.0",
@@ -170,12 +170,12 @@ logs-docker = "docker compose logs -f django-app"
 logs-cluster-docker = "docker compose logs -f django-qcluster"
 
 # Comandos Django úteis - Local
-migrate = "cd src/smart_core_assistant_painel/app/ui && python manage.py migrate"
-makemigrations = "cd src/smart_core_assistant_painel/app/ui && python manage.py makemigrations"
-createsuperuser = "cd src/smart_core_assistant_painel/app/ui && python manage.py createsuperuser"
+migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
+makemigrations = "python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
+createsuperuser = "python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 collectstatic = "cd src/smart_core_assistant_painel/app/ui && python manage.py collectstatic --noinput"
 shell = "cd src/smart_core_assistant_painel/app/ui && python manage.py shell"
-startapp = "cd src/smart_core_assistant_painel/app/ui && python manage.py startapp"
+startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
 
 # Django management commands (Docker)
 migrate-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"

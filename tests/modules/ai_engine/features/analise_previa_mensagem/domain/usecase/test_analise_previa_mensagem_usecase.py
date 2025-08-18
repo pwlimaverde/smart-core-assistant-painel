@@ -5,18 +5,18 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
-    AnalisePreviaMensagemUsecase,
+from smart_core_assistant_painel.modules.ai_engine import (
+    APMTuple,
+    AnalisePreviaMensagemParameters,
+    LlmError,
+    LlmParameters,
 )
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
-    AnalisePreviaMensagemParameters,
-    LlmParameters,
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
+    AnalisePreviaMensagemUsecase,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import APMTuple
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 
 
 class TestAnalisePreviaMensagemUsecase:

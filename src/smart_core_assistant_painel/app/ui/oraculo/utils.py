@@ -4,13 +4,11 @@ from django.core.cache import cache
 from django.utils import timezone
 from loguru import logger
 
-from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
     MessageData,
 )
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models import (
     Atendimento,

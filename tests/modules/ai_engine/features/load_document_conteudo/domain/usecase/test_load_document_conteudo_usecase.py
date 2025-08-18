@@ -7,13 +7,13 @@ from py_return_success_or_error import (
 )
 from langchain_core.documents import Document
 
+from smart_core_assistant_painel.modules.ai_engine import (
+    DocumentError,
+    LoadDocumentConteudoParameters,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
     LoadDocumentConteudoUseCase,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
-    LoadDocumentConteudoParameters,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError
 
 
 class TestLoadDocumentConteudoUseCase:

@@ -22,10 +22,10 @@ class OraculoConfig(AppConfig):
         # Isso garante que o VetorStorage esteja configurado para Django-Q
         # workers
         try:
-            from smart_core_assistant_painel.modules.initial_loading.start_initial_loading import (  # noqa: E501
+            from smart_core_assistant_painel.modules.initial_loading import (
                 start_initial_loading,
             )
-            from smart_core_assistant_painel.modules.services.start_services import (
+            from smart_core_assistant_painel.modules.services import (
                 start_services,
             )
 

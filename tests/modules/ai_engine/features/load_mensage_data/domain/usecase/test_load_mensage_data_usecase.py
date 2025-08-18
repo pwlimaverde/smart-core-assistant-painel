@@ -3,13 +3,13 @@ from typing import Any
 
 from py_return_success_or_error import ErrorReturn, SuccessReturn
 
+from smart_core_assistant_painel.modules.ai_engine import (
+    DataMensageParameters,
+    DataMessageError,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
-    DataMensageParameters,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DataMessageError
 
 
 class TestLoadMensageDataUseCase(unittest.TestCase):

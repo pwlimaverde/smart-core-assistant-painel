@@ -3,7 +3,7 @@ import requests
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
     WhatsappApi,
 )
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class WahaWhatsAppApi(WhatsappApi):

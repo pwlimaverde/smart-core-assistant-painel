@@ -3,14 +3,12 @@ from unittest.mock import Mock, patch, mock_open
 from pathlib import Path
 from typing import List
 
-from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
-    LoadDocumentFileDatasource,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+from smart_core_assistant_painel.modules.ai_engine import (
+    DocumentError,
     LoadDocumentFileParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
-    DocumentError,
+from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
+    LoadDocumentFileDatasource,
 )
 from langchain_core.documents import Document
 

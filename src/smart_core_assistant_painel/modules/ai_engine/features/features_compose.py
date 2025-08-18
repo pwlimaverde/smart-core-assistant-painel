@@ -7,46 +7,19 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
-    AnaliseConteudoLangchainDatasource,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.domain.usecase.analise_conteudo_usecase import (
-    AnaliseConteudoUseCase,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
-    AnalisePreviaMensagemLangchainDatasource,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
-    AnalisePreviaMensagemUsecase,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
-    LoadDocumentConteudoUseCase,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
-    LoadDocumentFileDatasource,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.domain.usecase.load_document_file_usecase import (
-    LoadDocumentFileUseCase,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
-    MessageData,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.usecase.load_mensage_data_usecase import (
-    LoadMensageDataUseCase,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+from ..utils.erros import (
     DataMessageError,
     DocumentError,
     LlmError,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+from ..utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import (
+from ..utils.types import (
     ACData,
     ACUsecase,
     APMData,
@@ -57,7 +30,33 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     LDFUsecase,
     LMDUsecase,
 )
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
+from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
+    AnaliseConteudoLangchainDatasource,
+)
+from .analise_conteudo.domain.usecase.analise_conteudo_usecase import (
+    AnaliseConteudoUseCase,
+)
+from .analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
+    AnalisePreviaMensagemLangchainDatasource,
+)
+from .analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
+    AnalisePreviaMensagemUsecase,
+)
+from .load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
+    LoadDocumentConteudoUseCase,
+)
+from .load_document_file.datasource.load_document_file_datasource import (
+    LoadDocumentFileDatasource,
+)
+from .load_document_file.domain.usecase.load_document_file_usecase import (
+    LoadDocumentFileUseCase,
+)
+from .load_mensage_data.domain.model.message_data import MessageData
+from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
+    LoadMensageDataUseCase,
+)
+
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class FeaturesCompose:

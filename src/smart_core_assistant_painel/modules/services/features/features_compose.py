@@ -4,37 +4,33 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
-from smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource import (
-    SetEnvironRemoteFirebaseDatasource,
-)
-from smart_core_assistant_painel.modules.services.features.set_environ_remote.domain.usecase.set_environ_remote_usecase import (
-    SetEnvironRemoteUseCase,
-)
-from smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_storage_datasource import (
-    FaissStorageDatasource,
-)
-from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.usecase.vetor_storage_usecase import (
-    VetorStorageUseCase,
-)
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_api_datasource import (
-    EvolutionAPIDatasource,
-)
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.usecase.whatsapp_service_usecase import (
-    WhatsAppServiceUsecase,
-)
-from smart_core_assistant_painel.modules.services.utils.erros import (
-    SetEnvironRemoteError,
-)
-from smart_core_assistant_painel.modules.services.utils.parameters import (
-    SetEnvironRemoteParameters,
-)
-from smart_core_assistant_painel.modules.services.utils.types import (
+from ..utils.erros import SetEnvironRemoteError
+from ..utils.parameters import SetEnvironRemoteParameters
+from ..utils.types import (
     SERData,
     SERUsecase,
     VSData,
     VSUsecase,
     WSData,
+)
+from .service_hub import SERVICEHUB
+from .set_environ_remote.datasource.set_environ_remote_firebase_datasource import (
+    SetEnvironRemoteFirebaseDatasource,
+)
+from .set_environ_remote.domain.usecase.set_environ_remote_usecase import (
+    SetEnvironRemoteUseCase,
+)
+from .vetor_storage.datasource.faiss_storage.faiss_storage_datasource import (
+    FaissStorageDatasource,
+)
+from .vetor_storage.domain.usecase.vetor_storage_usecase import (
+    VetorStorageUseCase,
+)
+from .whatsapp_services.datasource.evolution.evolution_api_datasource import (
+    EvolutionAPIDatasource,
+)
+from .whatsapp_services.domain.usecase.whatsapp_service_usecase import (
+    WhatsAppServiceUsecase,
 )
 
 

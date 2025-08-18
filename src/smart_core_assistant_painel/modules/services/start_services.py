@@ -7,9 +7,7 @@ inicialização da aplicação.
 
 from loguru import logger
 
-from smart_core_assistant_painel.modules.services.features.features_compose import (
-    FeaturesCompose,
-)
+from .features.features_compose import FeaturesCompose
 
 
 def start_services() -> None:

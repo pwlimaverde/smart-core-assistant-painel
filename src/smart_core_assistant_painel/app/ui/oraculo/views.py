@@ -13,9 +13,7 @@ from langchain.docstore.document import Document
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
-from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
-    FeaturesCompose,
-)
+from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
 from .models import (
     Treinamentos,

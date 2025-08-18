@@ -4,9 +4,7 @@ from unittest.mock import patch
 
 from langchain.docstore.document import Document
 
-from smart_core_assistant_painel.modules.services.features.service_hub import (
-    ServiceHub,
-)
+from smart_core_assistant_painel.modules.services import ServiceHub
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
 )

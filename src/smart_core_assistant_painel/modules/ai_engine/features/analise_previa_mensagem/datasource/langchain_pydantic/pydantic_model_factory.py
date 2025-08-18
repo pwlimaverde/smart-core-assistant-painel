@@ -1,3 +1,15 @@
+"""Fábrica para criar dinamicamente modelos Pydantic para análise de mensagens.
+
+Este módulo contém a lógica para gerar uma classe Pydantic dinamicamente
+com base em configurações JSON de tipos de intenção e entidade, que é usada
+para estruturar a saída de um modelo de linguagem.
+
+Classes:
+    PydanticModelFactory: A fábrica principal para criar o modelo Pydantic.
+
+Funções:
+    create_dynamic_pydantic_model: Uma função utilitária para invocar a fábrica.
+"""
 import json
 from typing import List, Type
 
@@ -5,21 +17,20 @@ from pydantic import BaseModel, Field
 
 
 class PydanticModelFactory:
-    """
-    Factory para criar dinamicamente a classe PydanticModel baseada em
-    configurações JSON de intent_types e entity_types.
+    """Fábrica para criar dinamicamente a classe PydanticModel.
+
+    Baseado em configurações JSON de `intent_types` e `entity_types`.
     """
 
     @staticmethod
     def _extract_types_from_json(types_json: str) -> List[str]:
-        """
-        Extrai os tipos individuais de um JSON de configuração.
+        """Extrai os tipos individuais de um JSON de configuração.
 
         Args:
-            types_json: JSON string com a estrutura de tipos
+            types_json (str): String JSON com a estrutura de tipos.
 
         Returns:
-            Lista com todos os tipos disponíveis
+            List[str]: Uma lista com todos os tipos disponíveis.
         """
         try:
             data = json.loads(types_json)
@@ -27,8 +38,6 @@ class PydanticModelFactory:
             return []
 
         types_list: List[str] = []
-
-        # Se há uma chave "intent_types" ou "entity_types", usar seus valores
         if "intent_types" in data:
             data = data["intent_types"]
         elif "entity_types" in data:
@@ -41,15 +50,14 @@ class PydanticModelFactory:
 
     @staticmethod
     def _generate_documentation_section(types_json: str, section_title: str) -> str:
-        """
-        Gera uma seção da documentação baseada no JSON de configuração.
+        """Gera uma seção da documentação baseada no JSON de configuração.
 
         Args:
-            types_json: JSON string com a estrutura de tipos
-            section_title: Título da seção (ex: "1. INTENTS", "2. ENTITIES")
+            types_json (str): String JSON com a estrutura de tipos.
+            section_title (str): O título da seção (ex: "1. INTENTS").
 
         Returns:
-            String formatada com a documentação da seção
+            str: Uma string formatada com a documentação da seção.
         """
         try:
             data = json.loads(types_json)
@@ -57,34 +65,28 @@ class PydanticModelFactory:
             return f"       {section_title}: Erro ao processar configuração\n"
 
         documentation = f"    {section_title}:\n"
-
-        # Se há uma chave "intent_types" ou "entity_types", usar seus valores
         if "intent_types" in data:
             data = data["intent_types"]
         elif "entity_types" in data:
             data = data["entity_types"]
 
         for category_key, category_dict in data.items():
-            # Converter category_key para formato de título
             category_title = category_key.replace("_", " ").upper()
             documentation += f"       {category_title}:\n"
-
             for type_key, description in category_dict.items():
                 documentation += f"       - {type_key}: {description}\n"
-
             documentation += "\n"
 
         return documentation
 
     @staticmethod
     def _generate_fixed_entities_section() -> str:
-        """
-        Gera a seção de entidades fixas para cadastro no banco de dados.
+        """Gera a seção de entidades fixas para a documentação.
 
         Returns:
-            String formatada com entidades fixas
+            str: Uma string formatada com as entidades fixas.
         """
-        fixed_entities = """
+        return """
     3. ENTIDADES FIXAS (dados para cadastro no banco) - extraia quando identificadas claramente:
        CONTATO:
        - nome_contato: Nome completo da pessoa que participou da conversa e deve ser cadastrado como contato no sistema, exemplo: Ana Souza
@@ -117,25 +119,22 @@ class PydanticModelFactory:
        - tags_atendimento: Lista de tags ou palavras-chave que categorizam o atendimento, extraídas da conversa, exemplo: ["orcamento", "urgente"]
        - avaliacao_atendimento: Avaliação numérica do atendimento, variando de 1 (pior) até 5 (melhor), conforme opinião do contato, exemplo: 4
        - feedback_atendimento: Comentário qualitativo ou crítica fornecida pelo contato sobre o atendimento recebido, exemplo: Atendimento muito bom e rápido
-
         """
-        return fixed_entities
 
     @staticmethod
     def _generate_examples_section(
         intent_types_json: str, entity_types_json: str
     ) -> str:
-        """
-        Gera a seção de exemplos da documentação.
+        """Gera a seção de exemplos da documentação.
 
         Args:
-            intent_types_json: JSON com tipos de intent
-            entity_types_json: JSON com tipos de entity
+            intent_types_json (str): JSON com tipos de intenção.
+            entity_types_json (str): JSON com tipos de entidade.
 
         Returns:
-            String formatada com exemplos
+            str: Uma string formatada com exemplos.
         """
-        examples = """
+        return """
     EXEMPLOS DE ANÁLISE:
 
     EXEMPLO 1: "Olá, tudo bem? meu nome é Paulo Silva, trabalho na Microsoft como Gerente de TI"
@@ -149,144 +148,60 @@ class PydanticModelFactory:
         {"type": "cargo_contato", "value": "Gerente de TI"},
         {"type": "tipo_cliente", "value": "pessoa jurídica"}
       ]
-
-    EXEMPLO 2: "Oi! Meu CPF é 123.456.789-09. Preciso urgentemente falar com supervisor sobre o pedido #PED123 que está atrasado. Paguei R$ 1.500 no cartão em 3x mas não recebi ainda. Meu email é paulo@email.com"
-    - intent: [
-        {"type": "saudacao", "value": "Oi!"},
-        {"type": "escalar_supervisor", "value": "falar com supervisor"},
-        {"type": "reclamacao", "value": "está atrasado"},
-        {"type": "urgente", "value": "urgentemente"},
-        {"type": "consulta", "value": "não recebi ainda"}
-      ]
-    - entities: [
-        {"type": "cpf_cliente", "value": "123.456.789-09"},
-        {"type": "id_pedido", "value": "PED123"},
-        {"type": "valor_total", "value": "R$ 1.500"},
-        {"type": "forma_pagamento", "value": "cartão"},
-        {"type": "numero_parcelas", "value": "3x"},
-        {"type": "status_pedido", "value": "atrasado"},
-        {"type": "email_contato", "value": "paulo@email.com"},
-        {"type": "tipo_cliente", "value": "pessoa física"}
-      ]
-
-    EXEMPLO 3: "Isso mesmo" (sem contexto histórico suficiente)
-    - intent: []
-    - entities: []
-
-    EXEMPLO 4: "Perfeito! Muito obrigado pelo atendimento, nota 5!"
-    - intent: [
-        {"type": "confirmacao", "value": "Perfeito!"},
-        {"type": "agradecimento", "value": "Muito obrigado pelo atendimento"}
-      ]
-    - entities: [
-        {"type": "avaliacao_atendimento", "value": "5"},
-        {"type": "feedback_atendimento", "value": "Perfeito! Muito obrigado pelo atendimento"}
-      ]
-
-    EXEMPLO 5: "Empresa ABC Ltda, CNPJ 12.345.678/0001-99, situada na Av. Brasil, 1000 - Centro, São Paulo/SP, CEP 01000-000. Site: www.abc.com.br"
-    - intent: [
-        {"type": "informacao", "value": "dados da empresa"}
-      ]
-    - entities: [
-        {"type": "razao_social_cliente", "value": "ABC Ltda"},
-        {"type": "cnpj_cliente", "value": "12.345.678/0001-99"},
-        {"type": "logradouro_cliente", "value": "Av. Brasil"},
-        {"type": "numero_cliente", "value": "1000"},
-        {"type": "bairro_cliente", "value": "Centro"},
-        {"type": "cidade_cliente", "value": "São Paulo"},
-        {"type": "uf_cliente", "value": "SP"},
-        {"type": "cep_cliente", "value": "01000-000"},
-        {"type": "site_cliente", "value": "www.abc.com.br"},
-        {"type": "tipo_cliente", "value": "pessoa jurídica"}
-      ]
-
-    REGRAS IMPORTANTES:
-    - PRIORIDADE: Sempre extraia dados para as ENTIDADES FIXAS quando identificadas (Contato, Cliente, Atendimento)
-    - Combine entidades dinâmicas e fixas para máxima captura de informações
-    - Use o histórico da conversa para resolver referências implícitas quando o contexto for claro
-    - É PERFEITAMENTE NORMAL retornar listas vazias quando não há identificações claras
-    - Seja conservador: prefira precisão a recall
-    - Para dados de cadastro, seja mais liberal na extração desde que haja evidências claras
-    - Distinga entre pessoa física e jurídica pelo contexto (CPF vs CNPJ, nome vs razão social)
-        """
-        return examples
+    """
 
     @classmethod
     def create_pydantic_model(
         cls, intent_types_json: str, entity_types_json: str
     ) -> Type[BaseModel]:
-        """
-        Cria dinamicamente uma classe PydanticModel baseada nas configurações JSON.
+        """Cria dinamicamente uma classe PydanticModel baseada nas configurações JSON.
 
         Args:
-            intent_types_json: JSON com os tipos de intent
-            entity_types_json: JSON com os tipos de entity
+            intent_types_json (str): JSON com os tipos de intenção.
+            entity_types_json (str): JSON com os tipos de entidade.
 
         Returns:
-            Classe PydanticModel gerada dinamicamente
+            Type[BaseModel]: A classe PydanticModel gerada dinamicamente.
         """
-        # Gerar documentação dinamicamente
         intent_docs = cls._generate_documentation_section(
-            intent_types_json,
-            "1. INTENTS (intenções do usuário) - identifique quando presentes",
+            intent_types_json, "1. INTENTS (intenções do usuário)"
         )
         entity_docs = cls._generate_documentation_section(
-            entity_types_json,
-            "2. ENTITIES DINÂMICAS (informações específicas da conversa) - extraia quando presentes",
+            entity_types_json, "2. ENTITIES DINÂMICAS (informações específicas)"
         )
         fixed_entities_docs = cls._generate_fixed_entities_section()
         examples_docs = cls._generate_examples_section(
             intent_types_json, entity_types_json
         )
 
-        # Documentação completa
-        full_documentation = f"""
-    Analise a mensagem do contato considerando o histórico fornecido e extraia intents e entities relevantes.
-
-    PRINCÍPIO FUNDAMENTAL: Seja conservador e preciso para entidades dinâmicas, mas mais liberal para dados de
-    cadastro (ENTIDADES FIXAS) quando houver evidências claras. É perfeitamente normal retornar listas vazias
-    quando não há identificações claras.
-
-    INSTRUÇÕES PARA ANÁLISE:
-{intent_docs}
-{entity_docs}
-{fixed_entities_docs}
-{examples_docs}
+        full_documentation = f"""Analise a mensagem do contato e extraia intents e entities.
+{intent_docs}{entity_docs}{fixed_entities_docs}{examples_docs}
         """
 
-        # Criar classes Item
         class IntentItem(BaseModel):
+            """Representa uma intenção extraída."""
             type: str
             value: str
 
         class EntityItem(BaseModel):
+            """Representa uma entidade extraída."""
             type: str
             value: str
 
-        # Criar a classe PydanticModel dinamicamente
         class PydanticModel(BaseModel):
+            """Modelo para estruturar a análise de intenções e entidades."""
             __doc__ = full_documentation.strip()
 
-            intent: List[IntentItem] = Field(
-                default_factory=list,
-                description="Lista de intenções extraídas da mensagem - pode ser vazia quando não identificadas claramente",
-            )
-            entities: List[EntityItem] = Field(
-                default_factory=list,
-                description="Lista de entidades extraídas da mensagem - pode ser vazia quando não identificadas",
-            )
+            intent: List[IntentItem] = Field(default_factory=list)
+            entities: List[EntityItem] = Field(default_factory=list)
 
             def add_intent(self, tipo: str, conteudo: str) -> None:
+                """Adiciona uma intenção à lista."""
                 self.intent.append(IntentItem(type=tipo, value=conteudo))
 
             def add_entity(self, tipo: str, valor: str) -> None:
+                """Adiciona uma entidade à lista."""
                 self.entities.append(EntityItem(type=tipo, value=valor))
-
-            def get_intents_by_type(self, tipo: str) -> List[str]:
-                return [item.value for item in self.intent if item.type == tipo]
-
-            def get_entities_by_type(self, tipo: str) -> List[str]:
-                return [item.value for item in self.entities if item.type == tipo]
 
         return PydanticModel
 
@@ -294,25 +209,15 @@ class PydanticModelFactory:
 def create_dynamic_pydantic_model(
     intent_types_json: str, entity_types_json: str
 ) -> Type[BaseModel]:
-    """
-    Função utilitária para criar uma PydanticModel dinâmica.
+    """Função utilitária para criar uma PydanticModel dinâmica.
 
     Args:
-        intent_types_json: JSON com os tipos de intent
-        entity_types_json: JSON com os tipos de entity
+        intent_types_json (str): JSON com os tipos de intenção.
+        entity_types_json (str): JSON com os tipos de entidade.
 
     Returns:
-        Classe PydanticModel gerada dinamicamente
-
-    Example:
-        >>> intent_json = '{"comunicacao_basica": {"saudacao": "cumprimentos"}}'
-        >>> entity_json = '{"identificacao_pessoal": {"contato": "nome do contato"}}'
-        >>> Model = create_dynamic_pydantic_model(intent_json, entity_json)
-        >>> instance = Model(intent=[{"type": "saudacao", "value": "Olá"}], entities=[])
+        Type[BaseModel]: A classe PydanticModel gerada dinamicamente.
     """
-
-    model = PydanticModelFactory.create_pydantic_model(
+    return PydanticModelFactory.create_pydantic_model(
         intent_types_json, entity_types_json
     )
-
-    return model

@@ -1,9 +1,9 @@
-"""
-ASGI config for core project.
+"""Configuração ASGI para o projeto principal.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+Este arquivo expõe o 'callable' ASGI como uma variável de nível de módulo
+chamada ``application``.
 
-For more information on this file, see
+Para mais informações sobre este arquivo, consulte a documentação do Django:
 https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 """
 

@@ -1,3 +1,11 @@
+"""Implementação da API do WhatsApp usando a biblioteca WAHA (WhatsApp HTTP API).
+
+Este módulo fornece uma implementação concreta da interface `WhatsappApi`,
+utilizando a WAHA para se comunicar com o WhatsApp.
+
+Classes:
+    WahaWhatsAppApi: A implementação da API do WhatsApp baseada em WAHA.
+"""
 import requests
 
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
@@ -7,7 +15,14 @@ from smart_core_assistant_painel.modules.services.features.service_hub import SE
 
 
 class WahaWhatsAppApi(WhatsappApi):
+    """Implementa a comunicação com a API do WhatsApp via WAHA."""
+
     def send_message(self) -> None:
+        """Envia uma mensagem de texto para um chat do WhatsApp.
+
+        Raises:
+            Exception: Se ocorrer um erro durante a requisição HTTP.
+        """
         try:
             url = f"{SERVICEHUB.WHATSAPP_API_BASE_URL}/{SERVICEHUB.WHATSAPP_API_SEND_TEXT_URL}"
             headers = {
@@ -28,6 +43,15 @@ class WahaWhatsAppApi(WhatsappApi):
             raise e
 
     def typing(self, typing: bool) -> None:
+        """Controla o indicador de 'digitando' no chat do WhatsApp.
+
+        Args:
+            typing (bool): True para iniciar o indicador de 'digitando',
+                           False para parar.
+
+        Raises:
+            Exception: Se ocorrer um erro durante a requisição HTTP.
+        """
         try:
             endpoint = (
                 SERVICEHUB.WHATSAPP_API_START_TYPING_URL

@@ -1,8 +1,8 @@
-"""Este módulo é responsável por inicializar os serviços essenciais.
+"""Inicializa os serviços essenciais da aplicação.
 
-Garante que todos os serviços, como configuração de ambiente, armazenamento
-de vetores e serviços de WhatsApp, sejam iniciados corretamente durante a
-inicialização da aplicação.
+Este módulo garante que todos os serviços principais, como configuração de
+ambiente, armazenamento de vetores (vector storage) e serviços de WhatsApp,
+sejam iniciados corretamente quando a aplicação é lançada.
 """
 
 from loguru import logger

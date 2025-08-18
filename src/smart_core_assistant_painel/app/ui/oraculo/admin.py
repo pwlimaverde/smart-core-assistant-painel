@@ -1,3 +1,8 @@
+"""Configuração do painel de administração do Django para o aplicativo Oráculo.
+
+Este módulo registra os modelos do aplicativo Oráculo no painel de administração
+do Django e personaliza a forma como eles são exibidos e gerenciados.
+"""
 from typing import TYPE_CHECKING
 
 from django.contrib import admin
@@ -21,8 +26,9 @@ from .models_departamento import Departamento
 
 
 @admin.register(Treinamentos)
-class TreinamentosAdmin(admin.ModelAdmin):  #
-    # Campos a serem exibidos na lista
+class TreinamentosAdmin(admin.ModelAdmin):
+    """Admin para o modelo Treinamentos."""
+
     list_display = [
         "id",
         "tag",
@@ -30,16 +36,8 @@ class TreinamentosAdmin(admin.ModelAdmin):  #
         "treinamento_finalizado",
         "get_documentos_preview",
     ]
-
-    # Campos que podem ser pesquisados
-    search_fields = [
-        "tag",
-    ]
-
-    # Ordenação padrão
+    search_fields = ["tag"]
     ordering = ["id"]
-
-    # Organização dos campos no formulário
     fieldsets = (
         (
             "Informações do Treinamento",
@@ -49,31 +47,32 @@ class TreinamentosAdmin(admin.ModelAdmin):  #
             },
         ),
     )
+    list_per_page = 25
+    save_on_top = True
 
-    # Função para exibir preview do documentos JSON
     @admin.display(description="Preview do Documento", ordering="_documentos")
     def get_documentos_preview(self, obj: Treinamentos) -> str:
-        """Retorna uma prévia do documentos JSON limitada a 100 caracteres"""
+        """Retorna uma prévia do conteúdo JSON dos documentos.
+
+        Args:
+            obj (Treinamentos): A instância do treinamento.
+
+        Returns:
+            str: Uma prévia do conteúdo dos documentos.
+        """
         if obj and obj._documentos:
             try:
-                # Se for um dict, converte para string
-                if isinstance(obj._documentos, dict):
-                    preview = str(obj._documentos)[:1000]
-                else:
-                    preview = str(obj._documentos)[:1000]
+                preview = str(obj._documentos)[:1000]
                 return preview + "..." if len(str(obj._documentos)) > 1000 else preview
             except Exception:
                 return "Erro ao exibir documentos"
         return "Documento vazio"
 
-    # Configurações adicionais
-    list_per_page = 25
-    save_on_top = True
-
 
 @admin.register(AtendenteHumano)
-class AtendenteHumanoAdmin(admin.ModelAdmin):  #
-    # Campos a serem exibidos na lista - alinhado com os testes
+class AtendenteHumanoAdmin(admin.ModelAdmin):
+    """Admin para o modelo AtendenteHumano."""
+
     list_display = [
         "id",
         "nome",
@@ -86,57 +85,19 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):  #
         "max_atendimentos_simultaneos",
         "ultima_atividade",
     ]
-
-    # Campos que podem ser pesquisados - alinhado com os testes
-    search_fields = [
-        "nome",
-        "cargo",
-        "telefone",
-        "email",
-        # Permite busca pelo nome do departamento via FK
-        "departamento__nome",
-    ]
-
-    # Filtros laterais - alinhado com os testes
-    list_filter = [
-        "ativo",
-        "disponivel",
-        "cargo",
-        "data_cadastro",
-    ]
-
-    # Campos somente leitura
+    search_fields = ["nome", "cargo", "telefone", "email", "departamento__nome"]
+    list_filter = ["ativo", "disponivel", "cargo", "data_cadastro"]
     readonly_fields = [
         "data_cadastro",
         "ultima_atividade",
         "get_atendimentos_ativos",
     ]
-
-    # Ordenação padrão
     ordering = ["nome"]
-
-    # Organização dos campos no formulário
     fieldsets = (
-        (
-            "Informações Pessoais",
-            {
-                "fields": ("nome", "cargo", "departamento"),
-                "classes": ("wide",),
-            },  # FK para Departamento
-        ),
-        ("Contatos", {"fields": ("telefone", "email"), "classes": ("wide",)}),
-        (
-            "Sistema",
-            {
-                "fields": ("usuario_sistema", "ativo", "disponivel"),
-            },
-        ),
-        (
-            "Capacidades",
-            {
-                "fields": ("max_atendimentos_simultaneos", "especialidades"),
-            },
-        ),
+        ("Informações Pessoais", {"fields": ("nome", "cargo", "departamento")}),
+        ("Contatos", {"fields": ("telefone", "email")}),
+        ("Sistema", {"fields": ("usuario_sistema", "ativo", "disponivel")}),
+        ("Capacidades", {"fields": ("max_atendimentos_simultaneos", "especialidades")}),
         ("Horários", {"fields": ("horario_trabalho",), "classes": ("collapse",)}),
         ("Metadados", {"fields": ("metadados",), "classes": ("collapse",)}),
         (
@@ -151,48 +112,55 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):  #
             },
         ),
     )
-
-    # Função para exibir quantidade de atendimentos ativos
-    @admin.display(description="Atendimentos Ativos")
-    def get_atendimentos_ativos(self, obj: AtendenteHumano) -> int:
-        """Retorna a quantidade de atendimentos ativos do atendente"""
-        if obj:
-            return obj.get_atendimentos_ativos()
-        return 0
-
-    # Configurações adicionais
     list_per_page = 25
     save_on_top = True
-
-    # Actions customizadas
     actions = ["marcar_como_disponivel", "marcar_como_indisponivel"]
+
+    @admin.display(description="Atendimentos Ativos")
+    def get_atendimentos_ativos(self, obj: AtendenteHumano) -> int:
+        """Retorna a quantidade de atendimentos ativos do atendente.
+
+        Args:
+            obj (AtendenteHumano): A instância do atendente.
+
+        Returns:
+            int: O número de atendimentos ativos.
+        """
+        return obj.get_atendimentos_ativos() if obj else 0
 
     @admin.action(description="Marcar atendentes selecionados como disponíveis")
     def marcar_como_disponivel(
         self, request: HttpRequest, queryset: QuerySet[AtendenteHumano]
     ) -> None:
+        """Marca os atendentes selecionados como disponíveis.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[AtendenteHumano]): O queryset de atendentes.
+        """
         queryset.update(disponivel=True)
-        self.message_user(
-            request, f"{queryset.count()} atendentes marcados como disponíveis."
-        )
+        self.message_user(request, f"{queryset.count()} atendentes marcados como disponíveis.")
 
     @admin.action(description="Marcar atendentes selecionados como indisponíveis")
     def marcar_como_indisponivel(
         self, request: HttpRequest, queryset: QuerySet[AtendenteHumano]
     ) -> None:
+        """Marca os atendentes selecionados como indisponíveis.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[AtendenteHumano]): O queryset de atendentes.
+        """
         queryset.update(disponivel=False)
         self.message_user(
             request, f"{queryset.count()} atendentes marcados como indisponíveis."
         )
 
 
-# =====================================================================
-# ADMINS PARA O SISTEMA DE CHATBOT
-# =====================================================================
-
-
 @admin.register(Contato)
-class ContatoAdmin(admin.ModelAdmin):  #
+class ContatoAdmin(admin.ModelAdmin):
+    """Admin para o modelo Contato."""
+
     list_display = [
         "telefone",
         "nome_contato",
@@ -205,447 +173,333 @@ class ContatoAdmin(admin.ModelAdmin):  #
     list_filter = ["data_cadastro", "ultima_interacao", "ativo"]
     search_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp"]
     readonly_fields = ["data_cadastro", "ultima_interacao"]
-    # Ordenação padrão no admin para evitar TypeError e garantir consistência
     ordering = ["-ultima_interacao"]
-    # Paginação padrão para melhor usabilidade
     list_per_page = 25
-
     fieldsets = (
-        (
-            "Informações Básicas",
-            {"fields": ("telefone", "nome_contato", "nome_perfil_whatsapp", "ativo")},
-        ),
+        ("Informações Básicas", {"fields": ("telefone", "nome_contato", "nome_perfil_whatsapp", "ativo")}),
         ("Datas", {"fields": ("data_cadastro", "ultima_interacao")}),
         ("Metadados", {"fields": ("metadados",), "classes": ("collapse",)}),
     )
 
     @admin.display(description="Total de Atendimentos")
     def total_atendimentos(self, obj: Contato) -> "Any":
+        """Retorna o número total de atendimentos do contato.
+
+        Args:
+            obj (Contato): A instância do contato.
+
+        Returns:
+            Any: O número de atendimentos.
+        """
         return getattr(obj, "atendimentos").count()
 
     @admin.display(description="Total de Clientes")
     def total_clientes(self, obj: Contato) -> "Any":
-        """Retorna o número total de clientes vinculados ao contato"""
-        if hasattr(obj, "clientes"):
-            return getattr(obj, "clientes").count()
-        return 0
+        """Retorna o número total de clientes vinculados ao contato.
+
+        Args:
+            obj (Contato): A instância do contato.
+
+        Returns:
+            Any: O número de clientes.
+        """
+        return getattr(obj, "clientes").count() if hasattr(obj, "clientes") else 0
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Contato]:
-        """Otimiza consultas carregando clientes relacionados"""
+        """Otimiza as consultas carregando clientes relacionados.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+
+        Returns:
+            QuerySet[Contato]: O queryset otimizado.
+        """
         return super().get_queryset(request).prefetch_related("clientes")
 
 
 @admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):  #
-    list_display = [
-        "nome_fantasia",
-        "razao_social",
-        "tipo",
-        "cnpj",
-        "cpf",
-        "cidade",
-        "uf",
-        "ramo_atividade",
-        "total_contatos",
-        "ativo",
-        "data_cadastro",
-    ]
-    list_filter = [
-        "ativo",
-        "tipo",
-        "uf",
-        "cidade",
-        "ramo_atividade",
-        "data_cadastro",
-        "ultima_atualizacao",
-    ]
-    search_fields = [
-        "nome_fantasia",
-        "razao_social",
-        "cnpj",
-        "cpf",
-        "telefone",
-        "cidade",
-        "ramo_atividade",
-    ]
-    readonly_fields = [
-        "data_cadastro",
-        "ultima_atualizacao",
-        "get_endereco_completo_display",
-        "total_contatos",
-    ]
-    filter_horizontal = ["contatos"]  # Interface melhorada para ManyToMany
+class ClienteAdmin(admin.ModelAdmin):
+    """Admin para o modelo Cliente."""
 
-    fieldsets = (
-        (
-            "Informações Básicas",
-            {"fields": ("nome_fantasia", "razao_social", "tipo", "ativo")},
-        ),
-        ("Documentos", {"fields": ("cnpj", "cpf")}),
-        ("Contatos", {"fields": ("telefone", "site", "ramo_atividade")}),
-        (
-            "Endereço",
-            {
-                "fields": (
-                    ("cep", "uf"),
-                    "logradouro",
-                    ("numero", "complemento"),
-                    "bairro",
-                    ("cidade", "pais"),
-                ),
-                "classes": ("wide",),
-            },
-        ),
-        ("Relacionamentos", {"fields": ("contatos",)}),
-        ("Observações", {"fields": ("observacoes",), "classes": ("collapse",)}),
-        ("Metadados", {"fields": ("metadados",), "classes": ("collapse",)}),
-        (
-            "Informações do Sistema",
-            {
-                "fields": (
-                    "data_cadastro",
-                    "ultima_atualizacao",
-                    "get_endereco_completo_display",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-    )
+    list_display = ["nome_fantasia", "razao_social", "tipo", "cnpj", "cpf", "cidade", "uf", "ramo_atividade", "total_contatos", "ativo", "data_cadastro"]
+    list_filter = ["ativo", "tipo", "uf", "cidade", "ramo_atividade", "data_cadastro", "ultima_atualizacao"]
+    search_fields = ["nome_fantasia", "razao_social", "cnpj", "cpf", "telefone", "cidade", "ramo_atividade"]
+    readonly_fields = ["data_cadastro", "ultima_atualizacao", "get_endereco_completo_display", "total_contatos"]
+    filter_horizontal = ["contatos"]
+    list_per_page = 25
+    save_on_top = True
+    actions = ["marcar_como_ativa", "marcar_como_inativa", "exportar_dados"]
 
     @admin.display(description="Total de Contatos")
     def total_contatos(self, obj: Cliente) -> "Any":
-        """Retorna o número total de contatos vinculados ao cliente"""
+        """Retorna o número total de contatos vinculados ao cliente.
+
+        Args:
+            obj (Cliente): A instância do cliente.
+
+        Returns:
+            Any: O número de contatos.
+        """
         return obj.contatos.count()
 
     @admin.display(description="Endereço Completo")
     def get_endereco_completo_display(self, obj: Cliente) -> str:
-        """Exibe o endereço completo formatado no admin"""
+        """Exibe o endereço completo formatado no admin.
+
+        Args:
+            obj (Cliente): A instância do cliente.
+
+        Returns:
+            str: O endereço completo.
+        """
         return obj.get_endereco_completo() or "-"
 
-    # Configurações adicionais
-    list_per_page = 25
-    save_on_top = True
-
-    # Actions customizadas
-    actions = ["marcar_como_ativa", "marcar_como_inativa", "exportar_dados"]
-
     @admin.action(description="Marcar clientes selecionados como ativos")
-    def marcar_como_ativa(
-        self, request: HttpRequest, queryset: QuerySet[Cliente]
-    ) -> None:
+    def marcar_como_ativa(self, request: HttpRequest, queryset: QuerySet[Cliente]) -> None:
+        """Marca os clientes selecionados como ativos.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[Cliente]): O queryset de clientes.
+        """
         queryset.update(ativo=True)
         self.message_user(request, f"{queryset.count()} clientes marcados como ativos.")
 
     @admin.action(description="Marcar clientes selecionados como inativos")
-    def marcar_como_inativa(
-        self, request: HttpRequest, queryset: QuerySet[Cliente]
-    ) -> None:
+    def marcar_como_inativa(self, request: HttpRequest, queryset: QuerySet[Cliente]) -> None:
+        """Marca os clientes selecionados como inativos.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[Cliente]): O queryset de clientes.
+        """
         queryset.update(ativo=False)
-        self.message_user(
-            request, f"{queryset.count()} clientes marcados como inativos."
-        )
+        self.message_user(request, f"{queryset.count()} clientes marcados como inativos.")
 
     @admin.action(description="Exportar dados dos clientes selecionados (CSV)")
-    def exportar_dados(
-        self, request: HttpRequest, queryset: QuerySet[Cliente]
-    ) -> "Any":
-        """
-        Exporta dados dos clientes selecionados em formato CSV.
+    def exportar_dados(self, request: HttpRequest, queryset: QuerySet[Cliente]) -> "Any":
+        """Exporta os dados dos clientes selecionados em formato CSV.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[Cliente]): O queryset de clientes.
+
+        Returns:
+            Any: A resposta HTTP com o arquivo CSV.
         """
         import csv
-
         from django.http import HttpResponse
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="clientes.csv"'
-
         writer = csv.writer(response)
-        writer.writerow(
-            [
-                "Nome Fantasia",
-                "Razão Social",
-                "Tipo",
-                "CNPJ",
-                "CPF",
-                "Telefone",
-                "Site",
-                "Ramo de Atividade",
-                "CEP",
-                "Endereço Completo",
-                "Cidade",
-                "UF",
-                "País",
-                "Total de Contatos",
-                "Ativo",
-                "Data de Cadastro",
-            ]
-        )
+        writer.writerow(["Nome Fantasia", "Razão Social", "Tipo", "CNPJ", "CPF", "Telefone", "Site", "Ramo de Atividade", "CEP", "Endereço Completo", "Cidade", "UF", "País", "Total de Contatos", "Ativo", "Data de Cadastro"])
 
         for cliente in queryset.select_related().prefetch_related("contatos"):
-            # Mapeia o valor do tipo para o display
             tipo_choices = {"fisica": "Pessoa Física", "juridica": "Pessoa Jurídica"}
             tipo_display = tipo_choices.get(cliente.tipo, "") if cliente.tipo else ""
+            writer.writerow([cliente.nome_fantasia, cliente.razao_social or "", tipo_display, cliente.cnpj or "", cliente.cpf or "", cliente.telefone or "", cliente.site or "", cliente.ramo_atividade or "", cliente.cep or "", cliente.get_endereco_completo(), cliente.cidade or "", cliente.uf or "", cliente.pais or "", cliente.contatos.count(), "Sim" if cliente.ativo else "Não", cliente.data_cadastro.strftime("%d/%m/%Y %H:%M") if cliente.data_cadastro else ""])
 
-            writer.writerow(
-                [
-                    cliente.nome_fantasia,
-                    cliente.razao_social or "",
-                    tipo_display,
-                    cliente.cnpj or "",
-                    cliente.cpf or "",
-                    cliente.telefone or "",
-                    cliente.site or "",
-                    cliente.ramo_atividade or "",
-                    cliente.cep or "",
-                    cliente.get_endereco_completo(),
-                    cliente.cidade or "",
-                    cliente.uf or "",
-                    cliente.pais or "",
-                    cliente.contatos.count(),
-                    "Sim" if cliente.ativo else "Não",
-                    cliente.data_cadastro.strftime("%d/%m/%Y %H:%M")
-                    if cliente.data_cadastro
-                    else "",
-                ]
-            )
-
-        self.message_user(
-            request, f"Dados de {queryset.count()} clientes exportados com sucesso."
-        )
+        self.message_user(request, f"Dados de {queryset.count()} clientes exportados com sucesso.")
         return response
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Cliente]:
-        """Otimiza consultas carregando contatos relacionados"""
+        """Otimiza as consultas carregando contatos relacionados.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+
+        Returns:
+            QuerySet[Cliente]: O queryset otimizado.
+        """
         return super().get_queryset(request).prefetch_related("contatos")
 
 
-class MensagemInline(admin.TabularInline):  #
+class MensagemInline(admin.TabularInline):
+    """Inline para o modelo Mensagem."""
+
     model = Mensagem
     extra = 0
-    readonly_fields = [
-        "timestamp",
-        "message_id_whatsapp",
-        "entidades_extraidas_preview",
-    ]
-    fields = [
-        "tipo",
-        "conteudo",
-        "remetente",
-        "respondida",
-        "entidades_extraidas_preview",
-        "timestamp",
-    ]
+    readonly_fields = ["timestamp", "message_id_whatsapp", "entidades_extraidas_preview"]
+    fields = ["tipo", "conteudo", "remetente", "respondida", "entidades_extraidas_preview", "timestamp"]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
+        """Ordena as mensagens por timestamp.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+
+        Returns:
+            QuerySet[Mensagem]: O queryset ordenado.
+        """
         return super().get_queryset(request).order_by("timestamp")
 
     @admin.display(description="Entidades Extraídas")
     def entidades_extraidas_preview(self, obj: Mensagem) -> str:
-        """Retorna uma prévia das entidades extraídas da mensagem"""
+        """Retorna uma prévia das entidades extraídas da mensagem.
+
+        Args:
+            obj (Mensagem): A instância da mensagem.
+
+        Returns:
+            str: Uma prévia das entidades.
+        """
         if obj.entidades_extraidas:
             try:
-                # Converte para string se for dict/list
-                if isinstance(obj.entidades_extraidas, (dict, list)):
-                    import json
-
-                    entidades_str = json.dumps(
-                        obj.entidades_extraidas, ensure_ascii=False
-                    )
-                else:
-                    entidades_str = str(obj.entidades_extraidas)
-                return (
-                    entidades_str[:30] + "..."
-                    if len(entidades_str) > 30
-                    else entidades_str
-                )
+                entidades_str = str(obj.entidades_extraidas)
+                return (entidades_str[:30] + "...") if len(entidades_str) > 30 else entidades_str
             except Exception:
                 return "Erro ao exibir entidades"
         return "-"
 
 
 @admin.register(Atendimento)
-class AtendimentoAdmin(admin.ModelAdmin):  #
-    list_display = [
-        "id",
-        "contato_telefone",
-        "status",
-        "data_inicio",
-        "data_fim",
-        "atendente_humano_nome",
-        "avaliacao",
-        "total_mensagens",
-        "duracao_formatada",
-    ]
-    list_filter = [
-        "status",
-        "prioridade",
-        "data_inicio",
-        "avaliacao",
-        "atendente_humano",
-    ]
-    search_fields = [
-        "contato__telefone",
-        "contato__nome_contato",
-        "assunto",
-        "atendente_humano__nome",
-    ]
+class AtendimentoAdmin(admin.ModelAdmin):
+    """Admin para o modelo Atendimento."""
+
+    list_display = ["id", "contato_telefone", "status", "data_inicio", "data_fim", "atendente_humano_nome", "avaliacao", "total_mensagens", "duracao_formatada"]
+    list_filter = ["status", "prioridade", "data_inicio", "avaliacao", "atendente_humano"]
+    search_fields = ["contato__telefone", "contato__nome_contato", "assunto", "atendente_humano__nome"]
     readonly_fields = ["data_inicio"]
     inlines = [MensagemInline]
-    # Hierarquia por data para facilitar navegação por períodos
     date_hierarchy = "data_inicio"
-    # Ordenação padrão por data de início (mais recentes primeiro)
     ordering = ["-data_inicio"]
-    # Paginação padrão
     list_per_page = 25
-
-    fieldsets = (
-        (
-            "Informações do Atendimento",
-            {"fields": ("contato", "status", "assunto", "prioridade")},
-        ),
-        ("Datas", {"fields": ("data_inicio", "data_fim")}),
-        ("Atendente", {"fields": ("atendente_humano",)}),
-        ("Avaliação", {"fields": ("avaliacao", "feedback")}),
-        (
-            "Contexto e Histórico",
-            {
-                "fields": ("contexto_conversa", "historico_status", "tags"),
-                "classes": ("collapse",),
-            },
-        ),
-    )
 
     @admin.display(description="Telefone", ordering="contato__telefone")
     def contato_telefone(self, obj: Atendimento) -> "Any":
-        try:
-            return obj.contato.telefone  #
-        except AttributeError:
-            return "-"
+        """Retorna o telefone do contato.
+
+        Args:
+            obj (Atendimento): A instância do atendimento.
+
+        Returns:
+            Any: O telefone do contato.
+        """
+        return obj.contato.telefone if hasattr(obj, 'contato') else "-"
 
     @admin.display(description="Atendente", ordering="atendente_humano__nome")
     def atendente_humano_nome(self, obj: Atendimento) -> "Any":
-        try:
-            return obj.atendente_humano.nome if obj.atendente_humano else "-"  #
-        except AttributeError:
-            return "-"
+        """Retorna o nome do atendente humano.
+
+        Args:
+            obj (Atendimento): A instância do atendimento.
+
+        Returns:
+            Any: O nome do atendente.
+        """
+        return obj.atendente_humano.nome if obj.atendente_humano else "-"
 
     @admin.display(description="Mensagens")
     def total_mensagens(self, obj: Atendimento) -> "Any":
+        """Retorna o número total de mensagens no atendimento.
+
+        Args:
+            obj (Atendimento): A instância do atendimento.
+
+        Returns:
+            Any: O número de mensagens.
+        """
         return getattr(obj, "mensagens").count()
 
     @admin.display(description="Duração")
     def duracao_formatada(self, obj: Atendimento) -> str:
-        """Retorna a duração formatada do atendimento"""
+        """Retorna a duração formatada do atendimento.
+
+        Args:
+            obj (Atendimento): A instância do atendimento.
+
+        Returns:
+            str: A duração formatada.
+        """
         if obj.data_fim and obj.data_inicio:
             duracao = obj.data_fim - obj.data_inicio
             total_seconds = int(duracao.total_seconds())
-            hours = total_seconds // 3600
-            minutes = (total_seconds % 3600) // 60
-            return f"{hours}:{minutes:02d}:00"
+            hours, remainder = divmod(total_seconds, 3600)
+            minutes, _ = divmod(remainder, 60)
+            return f"{hours:02}:{minutes:02}"
         return "Em andamento"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Atendimento]:
-        return (
-            super().get_queryset(request).select_related("contato", "atendente_humano")
-        )
+        """Otimiza as consultas carregando dados relacionados.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+
+        Returns:
+            QuerySet[Atendimento]: O queryset otimizado.
+        """
+        return super().get_queryset(request).select_related("contato", "atendente_humano")
 
 
 @admin.register(Mensagem)
-class MensagemAdmin(admin.ModelAdmin):  #
-    list_display = [
-        "id",
-        "atendimento_id",
-        "atendimento",
-        "remetente",
-        "tipo",
-        "conteudo_truncado",
-        "contato_telefone",
-        "respondida",
-        "entidades_extraidas_preview",
-        "timestamp",
-        "message_id_whatsapp",
-    ]
+class MensagemAdmin(admin.ModelAdmin):
+    """Admin para o modelo Mensagem."""
+
+    list_display = ["id", "atendimento_id", "atendimento", "remetente", "tipo", "conteudo_truncado", "contato_telefone", "respondida", "entidades_extraidas_preview", "timestamp", "message_id_whatsapp"]
     list_filter = ["remetente", "tipo", "timestamp"]
-    search_fields = [
-        "conteudo",
-        "message_id_whatsapp",
-        "atendimento__contato__nome_contato",
-        "atendimento__contato__telefone",
-    ]
+    search_fields = ["conteudo", "message_id_whatsapp", "atendimento__contato__nome_contato", "atendimento__contato__telefone"]
     readonly_fields = ["timestamp", "message_id_whatsapp"]
-    # Hierarquia por data para facilitar navegação
     date_hierarchy = "timestamp"
-    # Paginação padrão
     list_per_page = 25
 
-    fieldsets = (
-        (
-            "Informações da Mensagem",
-            {"fields": ("atendimento", "tipo", "conteudo", "remetente", "respondida")},
-        ),
-        (
-            "Resposta do Bot",
-            {
-                "fields": (
-                    "resposta_bot",
-                    "confianca_resposta",
-                    "intent_detectado",
-                    "entidades_extraidas",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Metadados",
-            {"fields": ("message_id_whatsapp", "metadados"), "classes": ("collapse",)},
-        ),
-        ("Timestamps", {"fields": ("timestamp",)}),
-    )
-
     @admin.display(description="Telefone", ordering="atendimento__contato__telefone")
-    def contato_telefone(self: "MensagemAdmin", obj: Mensagem) -> "Any":
-        try:
-            return obj.atendimento.contato.telefone  #
-        except AttributeError:
-            return "-"
+    def contato_telefone(self, obj: Mensagem) -> "Any":
+        """Retorna o telefone do contato associado à mensagem.
+
+        Args:
+            obj (Mensagem): A instância da mensagem.
+
+        Returns:
+            Any: O telefone do contato.
+        """
+        return obj.atendimento.contato.telefone if hasattr(obj, 'atendimento') and hasattr(obj.atendimento, 'contato') else "-"
 
     @admin.display(description="Conteúdo")
-    def conteudo_truncado(self: "MensagemAdmin", obj: Mensagem) -> "Any":
-        # Garante no máximo 50 caracteres no total, incluindo as reticências
-        return obj.conteudo[:47] + "..." if len(obj.conteudo) > 50 else obj.conteudo
+    def conteudo_truncado(self, obj: Mensagem) -> "Any":
+        """Retorna uma versão truncada do conteúdo da mensagem.
+
+        Args:
+            obj (Mensagem): A instância da mensagem.
+
+        Returns:
+            Any: O conteúdo truncado.
+        """
+        return (obj.conteudo[:47] + "...") if len(obj.conteudo) > 50 else obj.conteudo
 
     @admin.display(description="Entidades Extraídas")
-    def entidades_extraidas_preview(self: "MensagemAdmin", obj: Mensagem) -> "Any":
+    def entidades_extraidas_preview(self, obj: Mensagem) -> "Any":
+        """Retorna uma prévia das entidades extraídas.
+
+        Args:
+            obj (Mensagem): A instância da mensagem.
+
+        Returns:
+            Any: Uma prévia das entidades.
+        """
         if obj.entidades_extraidas:
             try:
-                # Converte para string se for dict/list
-                if isinstance(obj.entidades_extraidas, (dict, list)):
-                    import json
-
-                    entidades_str = json.dumps(
-                        obj.entidades_extraidas, ensure_ascii=False
-                    )
-                else:
-                    entidades_str = str(obj.entidades_extraidas)
-                return (
-                    entidades_str[:40] + "..."
-                    if len(entidades_str) > 40
-                    else entidades_str
-                )
+                entidades_str = str(obj.entidades_extraidas)
+                return (entidades_str[:40] + "...") if len(entidades_str) > 40 else entidades_str
             except Exception:
                 return "Erro ao exibir entidades"
         return "-"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("atendimento", "atendimento__contato")
-        )
+        """Otimiza as consultas carregando dados relacionados.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+
+        Returns:
+            QuerySet[Mensagem]: O queryset otimizado.
+        """
+        return super().get_queryset(request).select_related("atendimento", "atendimento__contato")
 
 
 @admin.register(FluxoConversa)
-class FluxoConversaAdmin(admin.ModelAdmin):  #
+class FluxoConversaAdmin(admin.ModelAdmin):
+    """Admin para o modelo FluxoConversa."""
     list_display = ["nome", "ativo", "data_criacao", "data_modificacao"]
     list_filter = ["ativo", "data_criacao"]
     search_fields = ["nome", "descricao"]
@@ -654,82 +508,16 @@ class FluxoConversaAdmin(admin.ModelAdmin):  #
 
 @admin.register(Departamento)
 class DepartamentoAdmin(admin.ModelAdmin):
-    # Campos a serem exibidos na lista
-    list_display = [
-        "id",
-        "nome",
-        "telefone_instancia",
-        "api_key",
-        "instance_id",
-        "ativo",
-        "data_criacao",
-    ]
-
-    # Campos que podem ser pesquisados
-    search_fields = [
-        "nome",
-        "telefone_instancia",
-        "api_key",
-        "instance_id",
-    ]
-
-    # Filtros laterais
-    list_filter = [
-        "ativo",
-        "data_criacao",
-        "ultima_validacao",
-    ]
-
-    # Ordenação padrão
+    """Admin para o modelo Departamento."""
+    list_display = ["id", "nome", "telefone_instancia", "api_key", "instance_id", "ativo", "data_criacao"]
+    search_fields = ["nome", "telefone_instancia", "api_key", "instance_id"]
+    list_filter = ["ativo", "data_criacao", "ultima_validacao"]
     ordering = ["nome"]
-
-    # Todos os campos editáveis (nenhum readonly)
-    # Organização dos campos no formulário
-    fieldsets = (
-        (
-            "Informações Básicas",
-            {
-                "fields": ("nome", "descricao", "ativo"),
-                "classes": ("wide",),
-            },
-        ),
-        (
-            "Configurações da Evolution API",
-            {
-                "fields": (
-                    "telefone_instancia",
-                    "api_key",
-                    "instance_id",
-                    "url_evolution_api",
-                ),
-                "classes": ("wide",),
-            },
-        ),
-        (
-            "Configurações Avançadas",
-            {
-                "fields": ("configuracoes", "metadados", "ultima_validacao"),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Informações do Sistema",
-            {
-                "fields": ("data_criacao",),
-                "classes": ("collapse",),
-            },
-        ),
-    )
-
-    # Configurações adicionais
+    readonly_fields = ["data_criacao"]
     list_per_page = 25
     save_on_top = True
 
-    # Campos somente leitura
-    readonly_fields = ["data_criacao"]
 
-
-# Customizações adicionais do admin
 admin.site.site_header = "Smart Core Assistant - Painel de Administração"
 admin.site.site_title = "Smart Core Assistant"
 admin.site.index_title = "Painel de Controle do Chatbot"

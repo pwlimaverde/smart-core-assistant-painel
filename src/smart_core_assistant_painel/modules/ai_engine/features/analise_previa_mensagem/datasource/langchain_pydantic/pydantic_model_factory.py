@@ -135,6 +135,8 @@ class PydanticModelFactory:
         Returns:
             str: Uma string formatada com exemplos.
         """
+        # Nota: Mantemos palavras-chave exigidas pelos testes: "EXEMPLOS DE ANÁLISE:",
+        # "EXEMPLO 1:", "EXEMPLO 2:" e "REGRAS IMPORTANTES:".
         return """
     EXEMPLOS DE ANÁLISE:
 
@@ -149,6 +151,19 @@ class PydanticModelFactory:
         {"type": "cargo_contato", "value": "Gerente de TI"},
         {"type": "tipo_cliente", "value": "pessoa jurídica"}
       ]
+
+    EXEMPLO 2: "Preciso de um orçamento para desenvolvimento de site, meu e-mail é maria@empresa.com"
+    - intent: [
+        {"type": "informacao", "value": "Preciso de um orçamento para desenvolvimento de site"}
+      ]
+    - entities: [
+        {"type": "email", "value": "maria@empresa.com"}
+      ]
+
+    REGRAS IMPORTANTES:
+    - Extraia apenas informações explícitas no texto, sem inferências.
+    - Mantenha o texto original encontrado como value, sem reescrever.
+    - Se nada for encontrado para intent ou entities, retorne listas vazias.
     """
 
     @classmethod
@@ -206,6 +221,23 @@ class PydanticModelFactory:
             def add_entity(self, tipo: str, valor: str) -> None:
                 """Adiciona uma entidade à lista."""
                 self.entities.append(EntityItem(type=tipo, value=valor))
+
+            def get_intents_by_type(self, tipo: str) -> List[str]:
+                """Retorna valores das intents filtradas por tipo.
+
+                Esta função percorre a lista de intents e retorna somente os
+                valores (campo "value") cujo tipo (campo "type") corresponde
+                ao parâmetro informado.
+                """
+                return [item.value for item in self.intent if item.type == tipo]
+
+            def get_entities_by_type(self, tipo: str) -> List[str]:
+                """Retorna valores das entities filtradas por tipo.
+
+                Percorre a lista de entities e retorna os valores ("value")
+                cujo tipo ("type") seja igual ao parâmetro fornecido.
+                """
+                return [item.value for item in self.entities if item.type == tipo]
 
         return PydanticModel
 

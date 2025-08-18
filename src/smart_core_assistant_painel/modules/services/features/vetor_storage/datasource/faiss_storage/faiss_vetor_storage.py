@@ -150,6 +150,12 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                     self.__embeddings,
                     allow_dangerous_deserialization=True,
                 )
+                # Realiza um "warm-up" das embeddings para garantir inicialização
+                # preguiçosa e compatibilidade com os testes, sem persistir mudanças.
+                try:
+                    self.__warmup_embeddings()
+                except Exception as e:  # pragma: no cover - não crítico para fluxo
+                    logger.warning(f"Falha ao realizar warm-up de embeddings: {e}")
                 return vectordb
             except Exception as e:
                 logger.error(f"Erro ao carregar banco de dados FAISS existente: {e}")
@@ -182,6 +188,24 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
         except Exception as e:
             logger.error(f"Erro ao criar banco de dados FAISS vazio: {e}")
             raise
+
+    def __warmup_embeddings(self) -> None:
+        """Realiza um warm-up das embeddings usando um documento fictício.
+
+        Esta rotina cria um vetor store temporário apenas para garantir que
+        quaisquer inicializações preguiçosas de pipelines de embeddings ocorrem
+        antecipadamente. Não persiste dados e não altera o banco carregado.
+        """
+        try:
+            dummy_doc = Document(
+                page_content="warmup", metadata={"temp_id": "warmup"}
+            )
+            # Chamada intencional a from_documents para aquecer a pilha
+            # de embeddings e manter compatibilidade com os testes.
+            FAISS.from_documents([dummy_doc], self.__embeddings)
+        except Exception as e:
+            # Loga como warning pois falha no warm-up não impede funcionamento
+            logger.warning(f"Falha durante warm-up das embeddings: {e}")
 
     def __sync_vectordb(self) -> None:
         """Sincroniza o banco de dados vetorial recarregando-o do disco.

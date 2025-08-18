@@ -6,6 +6,7 @@ utilizando a WAHA para se comunicar com o WhatsApp.
 Classes:
     WahaWhatsAppApi: A implementação da API do WhatsApp baseada em WAHA.
 """
+
 import requests
 
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (

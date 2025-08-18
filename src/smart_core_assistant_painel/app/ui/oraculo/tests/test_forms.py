@@ -2,20 +2,20 @@
 
 import json
 
-from django.test import TestCase
+from django import forms
 from django.core.exceptions import ValidationError
 from django.forms import ModelForm
-from django import forms
+from django.test import TestCase
 
 from ..models import (
-    Contato,
     AtendenteHumano,
     Atendimento,
+    Contato,
     Mensagem,
-    Treinamentos,
     StatusAtendimento,
     TipoMensagem,
     TipoRemetente,
+    Treinamentos,
 )
 
 
@@ -78,9 +78,7 @@ class AtendenteHumanoForm(ModelForm):
             try:
                 parsed = json.loads(value)
                 if isinstance(parsed, list):
-                    return [
-                        str(v).strip() for v in parsed if isinstance(v, (str, int))
-                    ]
+                    return [str(v).strip() for v in parsed if isinstance(v, (str, int))]
             except Exception:
                 # Não é JSON, segue para CSV
                 pass
@@ -129,42 +127,6 @@ class AtendimentoForm(ModelForm):
 
         return cleaned_data
 
-
-class MensagemForm(ModelForm):
-    """Formulário para modelo Mensagem."""
-
-    class Meta:
-        model = Mensagem
-        fields = ["atendimento", "conteudo", "tipo", "remetente"]
-
-    def clean_conteudo(self) -> str:
-        """Validação customizada para conteúdo."""
-        conteudo = self.cleaned_data.get("conteudo")
-        if conteudo and len(conteudo.strip()) == 0:
-            raise ValidationError("Mensagem não pode estar vazia.")
-        return conteudo
-
-
-class TreinamentosForm(ModelForm):
-    """Formulário para modelo Treinamentos."""
-
-    class Meta:
-        model = Treinamentos
-        fields = ["tag", "grupo", "treinamento_finalizado"]
-
-    def clean_tag(self) -> str:
-        """Validação customizada para tag."""
-        tag = self.cleaned_data.get("tag")
-        if tag and len(tag.strip()) < 3:
-            raise ValidationError("Tag deve ter pelo menos 3 caracteres.")
-        return tag
-
-    def clean_grupo(self) -> str:
-        """Validação customizada para grupo."""
-        grupo = self.cleaned_data.get("grupo")
-        if grupo and len(grupo.strip()) < 3:
-            raise ValidationError("Grupo deve ter pelo menos 3 caracteres.")
-        return grupo
 
 
 class TestContatoForm(TestCase):

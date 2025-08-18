@@ -3,6 +3,7 @@
 Este módulo define o modelo Departamento, que centraliza as configurações
 de API, o relacionamento com atendentes e a validação de webhooks.
 """
+
 import re
 from typing import Optional
 
@@ -50,8 +51,12 @@ class Departamento(models.Model):
     id = models.AutoField(primary_key=True)
     nome = models.CharField(max_length=100, unique=True)
     descricao = models.TextField(blank=True, null=True)
-    telefone_instancia = models.CharField(max_length=20, unique=True, validators=[validate_telefone_instancia])
-    api_key = models.CharField(max_length=100, unique=True, validators=[validate_api_key])
+    telefone_instancia = models.CharField(
+        max_length=20, unique=True, validators=[validate_telefone_instancia]
+    )
+    api_key = models.CharField(
+        max_length=100, unique=True, validators=[validate_api_key]
+    )
     instance_id = models.CharField(max_length=100, blank=True, null=True)
     url_evolution_api = models.URLField(default="http://www.evolution-api:8080")
     ativo = models.BooleanField(default=True)
@@ -139,7 +144,7 @@ class Departamento(models.Model):
         try:
             return cls.objects.get(api_key=api_key, ativo=True)
         except cls.DoesNotExist:
-            logger.warning(f"Departamento não encontrado para a chave de API.")
+            logger.warning("Departamento não encontrado para a chave de API.")
             return None
 
     @classmethod
@@ -156,7 +161,9 @@ class Departamento(models.Model):
         try:
             return cls.objects.get(telefone_instancia=telefone_limpo, ativo=True)
         except cls.DoesNotExist:
-            logger.warning(f"Departamento não encontrado para o telefone: {telefone_limpo}")
+            logger.warning(
+                f"Departamento não encontrado para o telefone: {telefone_limpo}"
+            )
             return None
 
     @classmethod
@@ -175,7 +182,11 @@ class Departamento(models.Model):
             logger.warning("Chave de API ou instância não fornecida no webhook.")
             return None
         try:
-            return cls.objects.get(api_key=api_key, telefone_instancia=instance, ativo=True)
+            return cls.objects.get(
+                api_key=api_key, telefone_instancia=instance, ativo=True
+            )
         except cls.DoesNotExist:
-            logger.warning(f"Tentativa de acesso com chave de API inválida para a instância {instance}.")
+            logger.warning(
+                f"Tentativa de acesso com chave de API inválida para a instância {instance}."
+            )
             return None

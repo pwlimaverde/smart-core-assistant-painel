@@ -7,6 +7,7 @@ inicialização e encapsula o resultado em um objeto `ReturnSuccessOrError`.
 Classes:
     WhatsAppServiceUsecase: O caso de uso para obter uma instância do serviço de WhatsApp.
 """
+
 from py_return_success_or_error import (
     ErrorReturn,
     NoParams,

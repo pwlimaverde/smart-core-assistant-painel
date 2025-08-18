@@ -3,6 +3,8 @@
 Este módulo fornece funções para gerenciar o buffer de mensagens do WhatsApp,
 agendar respostas, processar entidades e analisar o conteúdo das mensagens.
 """
+
+import json
 from typing import Any, List, Optional, cast
 
 from django.core.cache import cache
@@ -258,7 +260,9 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
 
     ultima_mensagem = messages[-1]
     conteudos_validos = [
-        msg.conteudo.strip() for msg in messages if msg.conteudo and msg.conteudo.strip()
+        msg.conteudo.strip()
+        for msg in messages
+        if msg.conteudo and msg.conteudo.strip()
     ]
     conteudo_compilado = "\n".join(conteudos_validos)
     metadados_compilados: dict[str, Any] = {}

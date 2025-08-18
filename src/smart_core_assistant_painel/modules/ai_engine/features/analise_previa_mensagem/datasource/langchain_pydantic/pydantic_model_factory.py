@@ -10,6 +10,7 @@ Classes:
 Funções:
     create_dynamic_pydantic_model: Uma função utilitária para invocar a fábrica.
 """
+
 import json
 from typing import List, Type
 
@@ -180,16 +181,19 @@ class PydanticModelFactory:
 
         class IntentItem(BaseModel):
             """Representa uma intenção extraída."""
+
             type: str
             value: str
 
         class EntityItem(BaseModel):
             """Representa uma entidade extraída."""
+
             type: str
             value: str
 
         class PydanticModel(BaseModel):
             """Modelo para estruturar a análise de intenções e entidades."""
+
             __doc__ = full_documentation.strip()
 
             intent: List[IntentItem] = Field(default_factory=list)

@@ -6,9 +6,15 @@ para criar tipos claros e descritivos para casos de uso e fontes de dados
 relacionados à configuração de ambiente, armazenamento de vetores e serviços
 de WhatsApp.
 """
+
 from typing import TypeAlias
 
-from py_return_success_or_error import Datasource, Empty, NoParams, UsecaseBaseCallData
+from py_return_success_or_error import (
+    Datasource,
+    Empty,
+    NoParams,
+    UsecaseBaseCallData,
+)
 
 from ..features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,

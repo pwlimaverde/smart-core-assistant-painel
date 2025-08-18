@@ -14,6 +14,7 @@ Exemplos:
         1. Importe a função include(): from django.urls import include, path
         2. Adicione uma URL a urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
 from django.urls import include, path
 

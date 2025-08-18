@@ -10,7 +10,9 @@ from py_return_success_or_error import (
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentConteudoParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import LDCUsecase
+from smart_core_assistant_painel.modules.ai_engine.utils.types import (
+    LDCUsecase,
+)
 
 
 class LoadDocumentConteudoUseCase(LDCUsecase):

@@ -7,6 +7,7 @@ mensagens e controle do indicador de 'digitando'.
 Classes:
     WhatsappApi: Uma classe base abstrata para APIs de WhatsApp.
 """
+
 from abc import ABC, abstractmethod
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (

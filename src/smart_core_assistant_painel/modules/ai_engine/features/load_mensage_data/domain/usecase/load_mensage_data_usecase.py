@@ -13,7 +13,9 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     DataMensageParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import LMDUsecase
+from smart_core_assistant_painel.modules.ai_engine.utils.types import (
+    LMDUsecase,
+)
 
 
 class LoadMensageDataUseCase(LMDUsecase):

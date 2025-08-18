@@ -3,6 +3,7 @@
 Este módulo define a configuração do aplicativo Django para o gerenciamento
 de usuários.
 """
+
 from django.apps import AppConfig
 
 

@@ -3,6 +3,7 @@
 Este módulo contém dataclasses que estruturam os parâmetros necessários
 para diferentes serviços, garantindo segurança de tipo e clareza.
 """
+
 from dataclasses import dataclass
 from typing import Any, Dict
 

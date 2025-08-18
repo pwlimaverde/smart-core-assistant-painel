@@ -8,6 +8,7 @@ aplicação.
 Classes:
     WhatsAppService: Uma classe base abstrata para serviços de WhatsApp.
 """
+
 from abc import ABC, abstractmethod
 
 

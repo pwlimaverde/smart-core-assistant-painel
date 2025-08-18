@@ -3,6 +3,7 @@
 Este módulo contém as views para o gerenciamento de usuários, incluindo
 cadastro, login e atribuição de permissões.
 """
+
 from django.contrib import auth, messages
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
@@ -32,13 +33,19 @@ def cadastro(request: HttpRequest) -> HttpResponse:
             messages.add_message(request, constants.ERROR, "As senhas não coincidem.")
             return redirect("/usuarios/cadastro/")
         if len(senha or "") < 6:
-            messages.add_message(request, constants.ERROR, "A senha deve ter pelo menos 6 caracteres.")
+            messages.add_message(
+                request, constants.ERROR, "A senha deve ter pelo menos 6 caracteres."
+            )
             return redirect("/usuarios/cadastro/")
         if User.objects.filter(username=username).exists():
-            messages.add_message(request, constants.ERROR, "Este nome de usuário já existe.")
+            messages.add_message(
+                request, constants.ERROR, "Este nome de usuário já existe."
+            )
             return redirect("/usuarios/cadastro/")
         if not username or not senha:
-            messages.add_message(request, constants.ERROR, "Nome de usuário e senha são obrigatórios.")
+            messages.add_message(
+                request, constants.ERROR, "Nome de usuário e senha são obrigatórios."
+            )
             return redirect("/usuarios/cadastro/")
 
         User.objects.create_user(username=username, password=senha)
@@ -64,7 +71,9 @@ def login(request: HttpRequest) -> HttpResponse:
         if user:
             auth.login(request, user)
             return redirect("treinar_ia")
-        messages.add_message(request, constants.ERROR, "Nome de usuário ou senha inválidos.")
+        messages.add_message(
+            request, constants.ERROR, "Nome de usuário ou senha inválidos."
+        )
         return redirect("login")
     return redirect("login")
 

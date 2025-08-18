@@ -4,6 +4,7 @@ Esta classe fornece uma interface simplificada para acessar as funcionalidades
 de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
+
 from typing import Any
 
 from langchain.docstore.document import Document
@@ -12,6 +13,8 @@ from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
 )
+
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from ..utils.erros import (
     DataMessageError,
@@ -62,8 +65,6 @@ from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
 )
 
-from smart_core_assistant_painel.modules.services import SERVICEHUB
-
 
 class FeaturesCompose:
     """Facade para os casos de uso do módulo AI Engine."""
@@ -105,9 +106,7 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def load_document_file(
-        id: str, path: str, tag: str, grupo: str
-    ) -> list[Document]:
+    def load_document_file(id: str, path: str, tag: str, grupo: str) -> list[Document]:
         """Carrega e processa um arquivo de documento para treinamento.
 
         Args:

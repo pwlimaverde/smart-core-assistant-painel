@@ -1,6 +1,7 @@
 """Configuração para testes do app Oraculo."""
 
 import os
+
 import django
 
 

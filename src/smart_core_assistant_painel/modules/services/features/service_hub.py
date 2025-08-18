@@ -7,6 +7,7 @@ instâncias de serviços e integrações em toda a aplicação.
 Classes:
     ServiceHub: O singleton central para gerenciamento de serviços e configurações.
 """
+
 import os
 from pathlib import Path
 from typing import Optional, Type
@@ -181,9 +182,7 @@ class ServiceHub:
         if self._huggingface_api_key is None:
             self._huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY")
             if not self._huggingface_api_key:
-                self._huggingface_api_key = os.environ.get(
-                    "HUGGINGFACEHUB_API_KEY"
-                )
+                self._huggingface_api_key = os.environ.get("HUGGINGFACEHUB_API_KEY")
         return self._huggingface_api_key if self._huggingface_api_key else ""
 
     @property
@@ -326,22 +325,14 @@ class ServiceHub:
         """Retorna uma string JSON com intenções válidas, ou vazia se não definida."""
         if self._valid_intent_types is None:
             self._valid_intent_types = os.environ.get("VALID_INTENT_TYPES")
-        return (
-            self._valid_intent_types
-            if self._valid_intent_types is not None
-            else ""
-        )
+        return self._valid_intent_types if self._valid_intent_types is not None else ""
 
     @property
     def VALID_ENTITY_TYPES(self) -> str:
         """Retorna uma string JSON com entidades válidas, ou vazia se não definida."""
         if self._valid_entity_types is None:
             self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
-        return (
-            self._valid_entity_types
-            if self._valid_entity_types is not None
-            else ""
-        )
+        return self._valid_entity_types if self._valid_entity_types is not None else ""
 
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe do LLM com base na variável de ambiente.

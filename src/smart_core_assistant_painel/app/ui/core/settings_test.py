@@ -36,7 +36,6 @@ Q_CLUSTER: Dict[str, Any] = {
 # Importar configurações básicas APÓS definir os necessários
 from .settings import *  # noqa: F403, F401, E402
 
-
 # # Desabilita migrações para testes mais rápidos
 # class DisableMigrations:
 #     def __contains__(self, item: str) -> bool:

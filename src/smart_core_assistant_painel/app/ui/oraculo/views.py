@@ -3,13 +3,14 @@
 Este módulo contém as views para o treinamento da IA, pré-processamento de
 dados e o webhook para receber mensagens do WhatsApp.
 """
+
 import json
 import os
 import tempfile
 
 from django.contrib import messages
 from django.db import transaction
-from django.http import Http404, JsonResponse, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document

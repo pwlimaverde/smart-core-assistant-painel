@@ -7,14 +7,15 @@ a Evolution API.
 Classes:
     EvolutionAPIDatasource: A fonte de dados para o serviço Evolution API.
 """
+
 from py_return_success_or_error import NoParams
+
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_whatsapp_service import (
     EvolutionWhatsAppService,
 )
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
-
 from smart_core_assistant_painel.modules.services.utils.types import WSData
 
 

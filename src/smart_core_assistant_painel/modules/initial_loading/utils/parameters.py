@@ -6,6 +6,7 @@ funcionalidades de carregamento inicial, como a inicialização do Firebase.
 Classes:
     FirebaseInitParameters: Parâmetros para o processo de inicialização do Firebase.
 """
+
 from dataclasses import dataclass
 
 from py_return_success_or_error import ParametersReturnResult

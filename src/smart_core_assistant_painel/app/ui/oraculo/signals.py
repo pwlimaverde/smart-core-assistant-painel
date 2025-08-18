@@ -4,6 +4,7 @@ Este módulo define os signals e receivers para lidar com eventos assíncronos,
 como o treinamento da IA após salvar um treinamento e o agendamento do
 processamento de mensagens em buffer.
 """
+
 from datetime import timedelta
 from typing import Any
 
@@ -89,9 +90,7 @@ def __task_treinar_ia(instance_id: int) -> None:
     """
     try:
         instance = Treinamentos.objects.get(id=instance_id)
-        SERVICEHUB.vetor_storage.remove_by_metadata(
-            "id_treinamento", str(instance_id)
-        )
+        SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
         documentos = instance.get_documentos()
         if documentos:
             SERVICEHUB.vetor_storage.write(documentos)

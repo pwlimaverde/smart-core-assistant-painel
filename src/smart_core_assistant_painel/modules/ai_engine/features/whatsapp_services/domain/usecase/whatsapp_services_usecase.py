@@ -6,6 +6,7 @@ pelo WhatsApp, incluindo o controle do indicador de 'digitando'.
 Classes:
     WhatsappServicesUseCase: O caso de uso para enviar mensagens de WhatsApp.
 """
+
 from py_return_success_or_error import (
     EMPTY,
     Empty,
@@ -17,7 +18,9 @@ from py_return_success_or_error import (
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
     WhatsappApi,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import WahaApiError
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    WahaApiError,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     MessageParameters,
 )

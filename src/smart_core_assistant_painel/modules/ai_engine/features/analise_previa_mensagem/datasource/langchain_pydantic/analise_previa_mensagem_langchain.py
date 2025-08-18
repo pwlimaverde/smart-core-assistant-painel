@@ -6,6 +6,7 @@ utilizando a biblioteca LangChain para realizar a análise.
 Classes:
     AnalisePreviaMensagemLangchain: Implementação da análise com LangChain.
 """
+
 from typing import Any, Optional
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (

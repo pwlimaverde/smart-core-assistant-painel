@@ -4,6 +4,7 @@ Este módulo contém dataclasses para erros de aplicação específicos que pode
 ocorrer dentro dos serviços, proporcionando um tratamento de erros claro e
 consistente.
 """
+
 from dataclasses import dataclass
 
 from py_return_success_or_error import AppError

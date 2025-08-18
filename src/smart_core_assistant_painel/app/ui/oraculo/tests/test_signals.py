@@ -1,13 +1,14 @@
 """Testes para sinais (signals) do app Oraculo."""
 
 from typing import Any
-from django.test import TestCase, TransactionTestCase
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.test import TestCase, TransactionTestCase
 
 from ..models import (
-    Contato,
     Atendimento,
+    Contato,
     Mensagem,
     StatusAtendimento,
     TipoMensagem,
@@ -124,9 +125,7 @@ class TestSignalHandlers(TestCase):
                 self.handler_calls.append(f"Contato criado: {instance.nome_contato}")
 
         # Cria contato (sem atribuição, apenas para disparar o sinal)
-        Contato.objects.create(
-            telefone="5511666666666", nome_contato="Handler Test"
-        )
+        Contato.objects.create(telefone="5511666666666", nome_contato="Handler Test")
 
         # Verifica se o handler foi chamado
         self.assertEqual(len(self.handler_calls), 1)

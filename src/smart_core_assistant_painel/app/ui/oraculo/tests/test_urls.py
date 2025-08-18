@@ -1,9 +1,10 @@
 """Testes para URLs do app Oraculo."""
 
-from django.test import TestCase, Client
-from django.urls import reverse, resolve
-from django.contrib.auth.models import User
 from unittest.mock import patch
+
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
+from django.urls import resolve, reverse
 
 from ..views import webhook_whatsapp
 

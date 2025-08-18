@@ -2,7 +2,9 @@ import re
 
 from langchain_core.prompts import ChatPromptTemplate
 
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import LlmParameters
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    LlmParameters,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.types import ACData
 
 

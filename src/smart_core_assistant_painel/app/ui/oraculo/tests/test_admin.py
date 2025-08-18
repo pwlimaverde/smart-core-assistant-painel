@@ -8,15 +8,15 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from ..admin import (
-    AtendimentoAdmin,
     AtendenteHumanoAdmin,
+    AtendimentoAdmin,
     ContatoAdmin,
     MensagemAdmin,
     TreinamentosAdmin,
 )
 from ..models import (
-    Atendimento,
     AtendenteHumano,
+    Atendimento,
     Contato,
     Mensagem,
     StatusAtendimento,

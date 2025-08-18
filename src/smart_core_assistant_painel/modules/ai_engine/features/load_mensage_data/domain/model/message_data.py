@@ -6,6 +6,7 @@ processada e normalizada a partir de um payload de webhook.
 Classes:
     MessageData: A estrutura de dados para uma mensagem normalizada.
 """
+
 from dataclasses import dataclass
 from typing import Any, Optional
 

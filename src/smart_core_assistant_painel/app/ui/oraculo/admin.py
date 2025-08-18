@@ -3,6 +3,7 @@
 Este módulo registra os modelos do aplicativo Oráculo no painel de administração
 do Django e personaliza a forma como eles são exibidos e gerenciados.
 """
+
 from typing import TYPE_CHECKING
 
 from django.contrib import admin
@@ -21,7 +22,6 @@ from .models import (
     Mensagem,
     Treinamentos,
 )
-
 from .models_departamento import Departamento
 
 
@@ -139,7 +139,9 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):
             queryset (QuerySet[AtendenteHumano]): O queryset de atendentes.
         """
         queryset.update(disponivel=True)
-        self.message_user(request, f"{queryset.count()} atendentes marcados como disponíveis.")
+        self.message_user(
+            request, f"{queryset.count()} atendentes marcados como disponíveis."
+        )
 
     @admin.action(description="Marcar atendentes selecionados como indisponíveis")
     def marcar_como_indisponivel(
@@ -176,7 +178,10 @@ class ContatoAdmin(admin.ModelAdmin):
     ordering = ["-ultima_interacao"]
     list_per_page = 25
     fieldsets = (
-        ("Informações Básicas", {"fields": ("telefone", "nome_contato", "nome_perfil_whatsapp", "ativo")}),
+        (
+            "Informações Básicas",
+            {"fields": ("telefone", "nome_contato", "nome_perfil_whatsapp", "ativo")},
+        ),
         ("Datas", {"fields": ("data_cadastro", "ultima_interacao")}),
         ("Metadados", {"fields": ("metadados",), "classes": ("collapse",)}),
     )
@@ -221,10 +226,43 @@ class ContatoAdmin(admin.ModelAdmin):
 class ClienteAdmin(admin.ModelAdmin):
     """Admin para o modelo Cliente."""
 
-    list_display = ["nome_fantasia", "razao_social", "tipo", "cnpj", "cpf", "cidade", "uf", "ramo_atividade", "total_contatos", "ativo", "data_cadastro"]
-    list_filter = ["ativo", "tipo", "uf", "cidade", "ramo_atividade", "data_cadastro", "ultima_atualizacao"]
-    search_fields = ["nome_fantasia", "razao_social", "cnpj", "cpf", "telefone", "cidade", "ramo_atividade"]
-    readonly_fields = ["data_cadastro", "ultima_atualizacao", "get_endereco_completo_display", "total_contatos"]
+    list_display = [
+        "nome_fantasia",
+        "razao_social",
+        "tipo",
+        "cnpj",
+        "cpf",
+        "cidade",
+        "uf",
+        "ramo_atividade",
+        "total_contatos",
+        "ativo",
+        "data_cadastro",
+    ]
+    list_filter = [
+        "ativo",
+        "tipo",
+        "uf",
+        "cidade",
+        "ramo_atividade",
+        "data_cadastro",
+        "ultima_atualizacao",
+    ]
+    search_fields = [
+        "nome_fantasia",
+        "razao_social",
+        "cnpj",
+        "cpf",
+        "telefone",
+        "cidade",
+        "ramo_atividade",
+    ]
+    readonly_fields = [
+        "data_cadastro",
+        "ultima_atualizacao",
+        "get_endereco_completo_display",
+        "total_contatos",
+    ]
     filter_horizontal = ["contatos"]
     list_per_page = 25
     save_on_top = True
@@ -255,7 +293,9 @@ class ClienteAdmin(admin.ModelAdmin):
         return obj.get_endereco_completo() or "-"
 
     @admin.action(description="Marcar clientes selecionados como ativos")
-    def marcar_como_ativa(self, request: HttpRequest, queryset: QuerySet[Cliente]) -> None:
+    def marcar_como_ativa(
+        self, request: HttpRequest, queryset: QuerySet[Cliente]
+    ) -> None:
         """Marca os clientes selecionados como ativos.
 
         Args:
@@ -266,7 +306,9 @@ class ClienteAdmin(admin.ModelAdmin):
         self.message_user(request, f"{queryset.count()} clientes marcados como ativos.")
 
     @admin.action(description="Marcar clientes selecionados como inativos")
-    def marcar_como_inativa(self, request: HttpRequest, queryset: QuerySet[Cliente]) -> None:
+    def marcar_como_inativa(
+        self, request: HttpRequest, queryset: QuerySet[Cliente]
+    ) -> None:
         """Marca os clientes selecionados como inativos.
 
         Args:
@@ -274,10 +316,14 @@ class ClienteAdmin(admin.ModelAdmin):
             queryset (QuerySet[Cliente]): O queryset de clientes.
         """
         queryset.update(ativo=False)
-        self.message_user(request, f"{queryset.count()} clientes marcados como inativos.")
+        self.message_user(
+            request, f"{queryset.count()} clientes marcados como inativos."
+        )
 
     @admin.action(description="Exportar dados dos clientes selecionados (CSV)")
-    def exportar_dados(self, request: HttpRequest, queryset: QuerySet[Cliente]) -> "Any":
+    def exportar_dados(
+        self, request: HttpRequest, queryset: QuerySet[Cliente]
+    ) -> "Any":
         """Exporta os dados dos clientes selecionados em formato CSV.
 
         Args:
@@ -288,19 +334,62 @@ class ClienteAdmin(admin.ModelAdmin):
             Any: A resposta HTTP com o arquivo CSV.
         """
         import csv
+
         from django.http import HttpResponse
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="clientes.csv"'
         writer = csv.writer(response)
-        writer.writerow(["Nome Fantasia", "Razão Social", "Tipo", "CNPJ", "CPF", "Telefone", "Site", "Ramo de Atividade", "CEP", "Endereço Completo", "Cidade", "UF", "País", "Total de Contatos", "Ativo", "Data de Cadastro"])
+        writer.writerow(
+            [
+                "Nome Fantasia",
+                "Razão Social",
+                "Tipo",
+                "CNPJ",
+                "CPF",
+                "Telefone",
+                "Site",
+                "Ramo de Atividade",
+                "CEP",
+                "Endereço Completo",
+                "Cidade",
+                "UF",
+                "País",
+                "Total de Contatos",
+                "Ativo",
+                "Data de Cadastro",
+            ]
+        )
 
         for cliente in queryset.select_related().prefetch_related("contatos"):
             tipo_choices = {"fisica": "Pessoa Física", "juridica": "Pessoa Jurídica"}
             tipo_display = tipo_choices.get(cliente.tipo, "") if cliente.tipo else ""
-            writer.writerow([cliente.nome_fantasia, cliente.razao_social or "", tipo_display, cliente.cnpj or "", cliente.cpf or "", cliente.telefone or "", cliente.site or "", cliente.ramo_atividade or "", cliente.cep or "", cliente.get_endereco_completo(), cliente.cidade or "", cliente.uf or "", cliente.pais or "", cliente.contatos.count(), "Sim" if cliente.ativo else "Não", cliente.data_cadastro.strftime("%d/%m/%Y %H:%M") if cliente.data_cadastro else ""])
+            writer.writerow(
+                [
+                    cliente.nome_fantasia,
+                    cliente.razao_social or "",
+                    tipo_display,
+                    cliente.cnpj or "",
+                    cliente.cpf or "",
+                    cliente.telefone or "",
+                    cliente.site or "",
+                    cliente.ramo_atividade or "",
+                    cliente.cep or "",
+                    cliente.get_endereco_completo(),
+                    cliente.cidade or "",
+                    cliente.uf or "",
+                    cliente.pais or "",
+                    cliente.contatos.count(),
+                    "Sim" if cliente.ativo else "Não",
+                    cliente.data_cadastro.strftime("%d/%m/%Y %H:%M")
+                    if cliente.data_cadastro
+                    else "",
+                ]
+            )
 
-        self.message_user(request, f"Dados de {queryset.count()} clientes exportados com sucesso.")
+        self.message_user(
+            request, f"Dados de {queryset.count()} clientes exportados com sucesso."
+        )
         return response
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Cliente]:
@@ -320,8 +409,19 @@ class MensagemInline(admin.TabularInline):
 
     model = Mensagem
     extra = 0
-    readonly_fields = ["timestamp", "message_id_whatsapp", "entidades_extraidas_preview"]
-    fields = ["tipo", "conteudo", "remetente", "respondida", "entidades_extraidas_preview", "timestamp"]
+    readonly_fields = [
+        "timestamp",
+        "message_id_whatsapp",
+        "entidades_extraidas_preview",
+    ]
+    fields = [
+        "tipo",
+        "conteudo",
+        "remetente",
+        "respondida",
+        "entidades_extraidas_preview",
+        "timestamp",
+    ]
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
         """Ordena as mensagens por timestamp.
@@ -347,7 +447,11 @@ class MensagemInline(admin.TabularInline):
         if obj.entidades_extraidas:
             try:
                 entidades_str = str(obj.entidades_extraidas)
-                return (entidades_str[:30] + "...") if len(entidades_str) > 30 else entidades_str
+                return (
+                    (entidades_str[:30] + "...")
+                    if len(entidades_str) > 30
+                    else entidades_str
+                )
             except Exception:
                 return "Erro ao exibir entidades"
         return "-"
@@ -357,9 +461,30 @@ class MensagemInline(admin.TabularInline):
 class AtendimentoAdmin(admin.ModelAdmin):
     """Admin para o modelo Atendimento."""
 
-    list_display = ["id", "contato_telefone", "status", "data_inicio", "data_fim", "atendente_humano_nome", "avaliacao", "total_mensagens", "duracao_formatada"]
-    list_filter = ["status", "prioridade", "data_inicio", "avaliacao", "atendente_humano"]
-    search_fields = ["contato__telefone", "contato__nome_contato", "assunto", "atendente_humano__nome"]
+    list_display = [
+        "id",
+        "contato_telefone",
+        "status",
+        "data_inicio",
+        "data_fim",
+        "atendente_humano_nome",
+        "avaliacao",
+        "total_mensagens",
+        "duracao_formatada",
+    ]
+    list_filter = [
+        "status",
+        "prioridade",
+        "data_inicio",
+        "avaliacao",
+        "atendente_humano",
+    ]
+    search_fields = [
+        "contato__telefone",
+        "contato__nome_contato",
+        "assunto",
+        "atendente_humano__nome",
+    ]
     readonly_fields = ["data_inicio"]
     inlines = [MensagemInline]
     date_hierarchy = "data_inicio"
@@ -376,7 +501,7 @@ class AtendimentoAdmin(admin.ModelAdmin):
         Returns:
             Any: O telefone do contato.
         """
-        return obj.contato.telefone if hasattr(obj, 'contato') else "-"
+        return obj.contato.telefone if hasattr(obj, "contato") else "-"
 
     @admin.display(description="Atendente", ordering="atendente_humano__nome")
     def atendente_humano_nome(self, obj: Atendimento) -> "Any":
@@ -429,16 +554,35 @@ class AtendimentoAdmin(admin.ModelAdmin):
         Returns:
             QuerySet[Atendimento]: O queryset otimizado.
         """
-        return super().get_queryset(request).select_related("contato", "atendente_humano")
+        return (
+            super().get_queryset(request).select_related("contato", "atendente_humano")
+        )
 
 
 @admin.register(Mensagem)
 class MensagemAdmin(admin.ModelAdmin):
     """Admin para o modelo Mensagem."""
 
-    list_display = ["id", "atendimento_id", "atendimento", "remetente", "tipo", "conteudo_truncado", "contato_telefone", "respondida", "entidades_extraidas_preview", "timestamp", "message_id_whatsapp"]
+    list_display = [
+        "id",
+        "atendimento_id",
+        "atendimento",
+        "remetente",
+        "tipo",
+        "conteudo_truncado",
+        "contato_telefone",
+        "respondida",
+        "entidades_extraidas_preview",
+        "timestamp",
+        "message_id_whatsapp",
+    ]
     list_filter = ["remetente", "tipo", "timestamp"]
-    search_fields = ["conteudo", "message_id_whatsapp", "atendimento__contato__nome_contato", "atendimento__contato__telefone"]
+    search_fields = [
+        "conteudo",
+        "message_id_whatsapp",
+        "atendimento__contato__nome_contato",
+        "atendimento__contato__telefone",
+    ]
     readonly_fields = ["timestamp", "message_id_whatsapp"]
     date_hierarchy = "timestamp"
     list_per_page = 25
@@ -453,7 +597,11 @@ class MensagemAdmin(admin.ModelAdmin):
         Returns:
             Any: O telefone do contato.
         """
-        return obj.atendimento.contato.telefone if hasattr(obj, 'atendimento') and hasattr(obj.atendimento, 'contato') else "-"
+        return (
+            obj.atendimento.contato.telefone
+            if hasattr(obj, "atendimento") and hasattr(obj.atendimento, "contato")
+            else "-"
+        )
 
     @admin.display(description="Conteúdo")
     def conteudo_truncado(self, obj: Mensagem) -> "Any":
@@ -480,7 +628,11 @@ class MensagemAdmin(admin.ModelAdmin):
         if obj.entidades_extraidas:
             try:
                 entidades_str = str(obj.entidades_extraidas)
-                return (entidades_str[:40] + "...") if len(entidades_str) > 40 else entidades_str
+                return (
+                    (entidades_str[:40] + "...")
+                    if len(entidades_str) > 40
+                    else entidades_str
+                )
             except Exception:
                 return "Erro ao exibir entidades"
         return "-"
@@ -494,12 +646,17 @@ class MensagemAdmin(admin.ModelAdmin):
         Returns:
             QuerySet[Mensagem]: O queryset otimizado.
         """
-        return super().get_queryset(request).select_related("atendimento", "atendimento__contato")
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("atendimento", "atendimento__contato")
+        )
 
 
 @admin.register(FluxoConversa)
 class FluxoConversaAdmin(admin.ModelAdmin):
     """Admin para o modelo FluxoConversa."""
+
     list_display = ["nome", "ativo", "data_criacao", "data_modificacao"]
     list_filter = ["ativo", "data_criacao"]
     search_fields = ["nome", "descricao"]
@@ -509,7 +666,16 @@ class FluxoConversaAdmin(admin.ModelAdmin):
 @admin.register(Departamento)
 class DepartamentoAdmin(admin.ModelAdmin):
     """Admin para o modelo Departamento."""
-    list_display = ["id", "nome", "telefone_instancia", "api_key", "instance_id", "ativo", "data_criacao"]
+
+    list_display = [
+        "id",
+        "nome",
+        "telefone_instancia",
+        "api_key",
+        "instance_id",
+        "ativo",
+        "data_criacao",
+    ]
     search_fields = ["nome", "telefone_instancia", "api_key", "instance_id"]
     list_filter = ["ativo", "data_criacao", "ultima_validacao"]
     ordering = ["nome"]

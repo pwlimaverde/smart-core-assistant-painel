@@ -7,6 +7,7 @@ remoção de documentos sejam padronizadas.
 Classes:
     VetorStorage: Uma classe base abstrata para serviços de armazenamento de vetores.
 """
+
 from abc import ABC, abstractmethod
 from typing import List
 

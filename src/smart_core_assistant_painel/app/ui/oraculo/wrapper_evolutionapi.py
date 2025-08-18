@@ -3,6 +3,7 @@
 Este módulo fornece uma classe base e subclasses para interagir com a
 Evolution API para enviar mensagens do WhatsApp.
 """
+
 from typing import Any, Dict, Optional
 from urllib.parse import urlencode, urljoin
 

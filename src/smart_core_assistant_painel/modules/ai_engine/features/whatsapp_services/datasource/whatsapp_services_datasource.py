@@ -6,6 +6,7 @@ concreta da API do WhatsApp a ser usada pela aplicação.
 Classes:
     WhatsappServicesDatasource: A fonte de dados para o serviço de WhatsApp.
 """
+
 from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.datasource.waha.waha_whatsapp_api import (
     WahaWhatsAppApi,
 )

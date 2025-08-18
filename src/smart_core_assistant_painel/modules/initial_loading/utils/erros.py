@@ -3,6 +3,7 @@
 Este módulo contém dataclasses para erros de aplicação específicos que podem
 ocorrer durante o processo de carregamento inicial.
 """
+
 from dataclasses import dataclass
 
 from py_return_success_or_error import AppError

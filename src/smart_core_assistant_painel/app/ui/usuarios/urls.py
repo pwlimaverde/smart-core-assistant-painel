@@ -3,6 +3,7 @@
 Este arquivo define as rotas de URL para as views do aplicativo de usuários,
 mapeando cada caminho para sua respectiva função de view.
 """
+
 from django.urls import path
 
 from . import views

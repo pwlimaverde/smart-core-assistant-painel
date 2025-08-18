@@ -4,6 +4,7 @@ Este módulo contém as estruturas de dados que encapsulam os parâmetros
 necessários para as várias funcionalidades do motor de IA, como processamento
 de mensagens, carregamento de documentos e interação com modelos de linguagem.
 """
+
 from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 

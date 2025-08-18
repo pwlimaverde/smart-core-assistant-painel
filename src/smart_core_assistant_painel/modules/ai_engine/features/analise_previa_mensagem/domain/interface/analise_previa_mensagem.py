@@ -6,6 +6,7 @@ implementação de análise prévia de mensagens.
 Classes:
     AnalisePreviaMensagem: Uma classe base abstrata para os dados da análise.
 """
+
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any

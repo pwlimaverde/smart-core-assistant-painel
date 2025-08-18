@@ -10,12 +10,14 @@ Classes:
 """
 
 from abc import ABCMeta
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
 
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
+from smart_core_assistant_painel.modules.services.features.service_hub import (
+    SERVICEHUB,
+)
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )

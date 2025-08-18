@@ -5,6 +5,7 @@ de IA, melhorando a legibilidade e a manutenção do código. Inclui apelidos
 para casos de uso e fontes de dados, bem como tuplas nomeadas para estruturas
 de dados específicas.
 """
+
 from typing import Any, NamedTuple, TypeAlias
 
 from langchain.docstore.document import Document

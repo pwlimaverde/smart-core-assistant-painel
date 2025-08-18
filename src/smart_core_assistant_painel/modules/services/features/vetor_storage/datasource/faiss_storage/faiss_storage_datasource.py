@@ -8,10 +8,10 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.datasou
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
 )
-from smart_core_assistant_painel.modules.services.utils.types import VSData
 from smart_core_assistant_painel.modules.services.utils.erros import (
     VetorStorageError,
 )
+from smart_core_assistant_painel.modules.services.utils.types import VSData
 
 
 class FaissStorageDatasource(VSData):

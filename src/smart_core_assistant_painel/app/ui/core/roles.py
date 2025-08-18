@@ -6,6 +6,7 @@ as funções de usuário e suas permissões associadas.
 Classes:
     Gerente: A função de gerente com permissões específicas.
 """
+
 from rolepermissions.roles import AbstractUserRole
 
 

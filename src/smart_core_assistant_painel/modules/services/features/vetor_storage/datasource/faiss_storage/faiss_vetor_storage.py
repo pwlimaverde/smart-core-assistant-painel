@@ -9,6 +9,7 @@ Classes:
     _FaissVetorStorageMeta: Metaclasse para garantir o padrão Singleton.
     FaissVetorStorage: A classe principal para o armazenamento vetorial FAISS.
 """
+
 import os
 from abc import ABCMeta
 from pathlib import Path
@@ -197,9 +198,7 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
         except Exception as e:
             logger.error(f"Erro ao sincronizar banco de dados vetorial: {e}")
 
-    def __find_by_metadata(
-        self, metadata_key: str, metadata_value: str
-    ) -> List[str]:
+    def __find_by_metadata(self, metadata_key: str, metadata_value: str) -> List[str]:
         """Encontra IDs de documentos com base em metadados específicos.
 
         Args:
@@ -322,8 +321,12 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                 f"Erro ao adicionar documentos ao banco de dados FAISS: {e}"
             ) from e
 
-    def add_from_file(self, file_path: str, chunk_overlap: int | None = None,
-                      chunk_size: int | None = None) -> bool:
+    def add_from_file(
+        self,
+        file_path: str,
+        chunk_overlap: int | None = None,
+        chunk_size: int | None = None,
+    ) -> bool:
         """Adiciona o conteúdo de um arquivo de texto ao armazenamento FAISS.
 
         Args:
@@ -343,10 +346,14 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                 content = file.read()
 
             if not content.strip():
-                logger.warning(f"Arquivo vazio ou sem conteúdo significativo: {file_path}")
+                logger.warning(
+                    f"Arquivo vazio ou sem conteúdo significativo: {file_path}"
+                )
                 return False
 
-            overlap = chunk_overlap if chunk_overlap is not None else SERVICEHUB.CHUNK_OVERLAP
+            overlap = (
+                chunk_overlap if chunk_overlap is not None else SERVICEHUB.CHUNK_OVERLAP
+            )
             size = chunk_size if chunk_size is not None else SERVICEHUB.CHUNK_SIZE
             text_splitter = RecursiveCharacterTextSplitter(
                 chunk_size=size,
@@ -359,7 +366,10 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                 logger.warning(f"Falha ao gerar chunks para o arquivo: {file_path}")
                 return False
 
-            docs = [Document(page_content=chunk, metadata={"source": file_path}) for chunk in chunks]
+            docs = [
+                Document(page_content=chunk, metadata={"source": file_path})
+                for chunk in chunks
+            ]
             self.__vectordb.add_documents(docs)
             self.__vectordb.save_local(self.__db_path)
             return True

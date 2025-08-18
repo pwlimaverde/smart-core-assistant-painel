@@ -103,10 +103,10 @@ SETTINGS_PATH="src/smart_core_assistant_painel/app/ui/core/settings.py"
 cp "$SETTINGS_PATH" "${SETTINGS_PATH}.backup"
 
 # Substituir HOST do PostgreSQL para localhost (ambiente misto)
-sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres")/"HOST": os.getenv("POSTGRES_HOST", "localhost")/g' "$SETTINGS_PATH"
+sed -i 's/"HOST": os.getenv("POSTGRES_HOST", "postgres") /"HOST": os.getenv("POSTGRES_HOST", "localhost") /g' "$SETTINGS_PATH"
 
 # Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)  
-sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432")/"PORT": os.getenv("POSTGRES_PORT", "5436")/g' "$SETTINGS_PATH"
+sed -i 's/"PORT": os.getenv("POSTGRES_PORT", "5432") /"PORT": os.getenv("POSTGRES_PORT", "5436") /g' "$SETTINGS_PATH"
 
 # Substituir configuração do cache para usar Redis (ambiente misto)
 python3 -c "
@@ -143,18 +143,18 @@ PROJECT_NAME=$(basename "$(pwd)")
 
 cat > docker-compose.yml << EOF
 # Arquivo gerenciado pelo ambiente_misto
-name: $PROJECT_NAME
+name: ${PROJECT_NAME}-amb-misto
 
 services:
   postgres:
     image: postgres:14
     container_name: postgres_db
     environment:
-      POSTGRES_DB: \${POSTGRES_DB:-smart_core_db}
-      POSTGRES_USER: \${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: \${POSTGRES_PASSWORD:-postgres123}
+      POSTGRES_DB: ">${POSTGRES_DB:-smart_core_db}"
+      POSTGRES_USER: ">${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: ">${POSTGRES_PASSWORD:-postgres123}"
     ports:
-      - "\${POSTGRES_PORT:-5436}:5432"
+      - "">${POSTGRES_PORT:-5436}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -164,7 +164,7 @@ services:
     image: redis:6.2-alpine
     container_name: redis_cache
     ports:
-      - "\${REDIS_PORT:-6382}:6379"
+      - "">${REDIS_PORT:-6382}:6379"
     networks:
       - app-network
 
@@ -182,7 +182,7 @@ echo "Arquivo docker-compose.yml atualizado com sucesso."
 echo "5. Limpando Dockerfile..."
 
 # Comentar linhas ENTRYPOINT e CMD
-sed -i '/^\s*ENTRYPOINT\|^\s*CMD/s/^/# /' Dockerfile
+sed -i '/^\s*ENTRYPOINT|^\s*CMD/s/^/# /' Dockerfile
 echo "" >> Dockerfile
 echo "# As linhas ENTRYPOINT e CMD foram comentadas pelo ambiente_misto." >> Dockerfile
 
@@ -191,18 +191,14 @@ echo "Arquivo Dockerfile atualizado com sucesso."
 # 6. Iniciar containers
 echo "6. Iniciando os containers (Postgres e Redis)..."
 
+docker rm -f postgres_db redis_cache || true
 docker compose down -v
 docker compose up -d
 
 # 7. Instalar dependências Python necessárias
 echo "7. Instalando dependências Python necessárias..."
 
-# Usar o uv para sincronizar as dependências
-uv sync --dev
-if [ $? -ne 0 ]; then
-    echo "Erro ao sincronizar dependências com uv"
-    exit 1
-fi
+# O comando uv sync --dev foi removido para evitar o downgrade do python-dotenv
 
 # 8. Resetar migrações do Django
 echo "8. Resetando migrações do Django..."
@@ -213,18 +209,14 @@ find src/smart_core_assistant_painel/app/ui -type d -name migrations -prune -exe
 # 9. Criar e aplicar novas migrações do Django
 echo "9. Criando e aplicando novas migrações do Django..."
 
-uv run task makemigrations || { echo "Erro ao criar migrações do Django"; exit 1; }
-uv run task migrate || { echo "Erro ao aplicar migrações do Django"; exit 1; }
-if [ $? -ne 0 ]; then
-    echo "Erro ao aplicar migrações do Django"
-    exit 1
-fi
+.venv/bin/python -m dotenv.cli run uv run task makemigrations || { echo "Erro ao criar migrações do Django"; exit 1; }
+.venv/bin/python -m dotenv.cli run uv run task migrate || { echo "Erro ao aplicar migrações do Django"; exit 1; }
 
 # 10. Criar superusuário
 echo "10. Criando superusuário admin..."
 
 # Comando idempotente: cria apenas se não existir
-echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','123456')" | uv run task shell
+echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','123456')" | .venv/bin/python -m dotenv.cli run uv run task shell
 if [ $? -ne 0 ]; then
     echo "Erro ao criar superusuário"
     exit 1
@@ -234,5 +226,6 @@ echo ""
 echo "=== Ambiente misto pronto! ==="
 echo "Para iniciar a aplicação Django, execute o seguinte comando em outro terminal:"
 echo "uv run task start"
+
 echo ""
 echo "A aplicação estará disponível em http://localhost:8000"

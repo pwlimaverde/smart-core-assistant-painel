@@ -6,7 +6,7 @@ Este ambiente foi criado para resolver o problema de desenvolvimento no Windows,
 
 - **PostgreSQL**: Container Docker (porta 5436)
 - **Redis**: Container Docker (porta 6382) 
-- **Aplicação Django**: Execução local no Windows
+- **Aplicação Django**: Execução local
 
 ## Pré-requisitos
 
@@ -20,43 +20,57 @@ Este ambiente foi criado para resolver o problema de desenvolvimento no Windows,
 
 **Windows:**
 ```bash
-cd ambiente_misto
-setup.bat
+# Na raiz do projeto
+.\ambiente_misto\setup.bat
 ```
 
 **Linux/macOS:**
 ```bash
-cd ambiente_misto
-chmod +x setup.sh
-./setup.sh
+# Na raiz do projeto
+chmod +x ambiente_misto/setup.sh
+./ambiente_misto/setup.sh
 ```
 
 ## O que o Script de Setup Faz
 
-1. **Verificação de arquivos**: Confirma existência de `.env` e `firebase_key.json`
-2. **Movimentação de credenciais**: Move `firebase_key.json` para pasta adequada
-3. **Configuração Git**: Configura Git para ignorar mudanças locais nos arquivos de configuração
-4. **Ajuste do settings.py**:
+1. **Verificação de arquivos**: Confirma existência de `.env` e cria `firebase_key.json` a partir de variável de ambiente.
+2. **Configuração Git**: Configura Git para ignorar mudanças locais nos arquivos de configuração.
+3. **Ajuste do settings.py**:
    - Define `POSTGRES_HOST=localhost` e `POSTGRES_PORT=5436`
    - Configura Redis como cache padrão (`django_redis.cache.RedisCache`)
    - Usa variáveis `REDIS_HOST` e `REDIS_PORT` para conectividade
-5. **Criação do docker-compose.yml**: Gera arquivo com PostgreSQL (5436:5432) e Redis (6382:6379)
-6. **Limpeza do Dockerfile**: Comenta `ENTRYPOINT` e `CMD` para desenvolvimento local
-7. **Subida dos containers**: Executa `docker compose up -d`
-8. **Instalação de dependências**: Executa `uv sync --dev`
-9. **Criação e aplicação de migrações**: Executa `uv run task makemigrations` e `uv run task migrate` após reset seguro das pastas de migração
-10. **Criação de superusuário**: Executa `uv run task createsuperuser`
+4. **Criação do docker-compose.yml**: Gera arquivo com PostgreSQL (5436:5432) e Redis (6382:6379) e define o nome do projeto como `<nome_da_pasta_raiz>-amb-misto`.
+5. **Limpeza do Dockerfile**: Comenta `ENTRYPOINT` e `CMD` para desenvolvimento local.
+6. **Subida dos containers**: Força a remoção de containers antigos e executa `docker compose up -d`.
+7. **Criação e aplicação de migrações**: Executa `makemigrations` e `migrate` usando o python do ambiente virtual para garantir que as variáveis de ambiente sejam carregadas corretamente.
+8. **Criação de superusuário**: Executa `createsuperuser` de forma idempotente.
 
 ## Execução da Aplicação
 
 Depois do setup inicial, para iniciar a aplicação:
 
 ```bash
-# Na raiz do projeto (não no ambiente_misto)
+# Na raiz do projeto
 uv run task start
 ```
 
 O servidor estará disponível em: http://127.0.0.1:8000/
+
+## Troubleshooting
+
+### Erro `google.auth.exceptions.DefaultCredentialsError` ou `RefreshError`
+
+Este erro ocorre quando a aplicação não consegue encontrar as credenciais do Firebase. Isso pode acontecer por alguns motivos:
+
+1.  **O arquivo `.env` não está sendo carregado corretamente.** Os scripts de setup foram ajustados para forçar o carregamento do `.env` usando `python -m dotenv.cli run` antes de executar os comandos do Django.
+2.  **A dependência `python-dotenv[cli]` não está instalada.** O `pyproject.toml` foi ajustado para incluir a opção `[cli]`. Caso o erro persista, garanta que a dependência está instalada corretamente executando:
+    ```bash
+    uv pip install "python-dotenv[cli]"
+    ```
+
+### Erro de conflito de containers
+
+O script de setup agora força a remoção dos containers `postgres_db` e `redis_cache` antes de recriá-los para evitar conflitos de nome.
 
 ## Configurações Locais do Git 
 
@@ -142,51 +156,3 @@ from django.core.cache import cache
 cache.set('test_key', 'test_value', 60)
 print(cache.get('test_key'))  # Deve retornar: test_value
 ```
-
-## Resolução do Problema de Conexão PostgreSQL
-
-### Problema Original
-
-O projeto enfrentava erro `psycopg.OperationalError` devido a inconsistências nas configurações de porta do PostgreSQL:
-
-- **docker compose**: Arquivo docker-compose.yml expunha PostgreSQL na porta 5433
-- **settings.py**: Usava porta 5435 como padrão 
-- **.env**: Definia POSTGRES_PORT=5436
-
-### Solução Implementada
-
-1. **Padronização da porta**: Todos os componentes agora usam **porta 5436**
-2. **Configuração de host**: `settings.py` usa `localhost` por padrão no ambiente misto
-3. **Cache Redis**: Migrado de `LocMemCache` para `RedisCache` com configuração via variáveis de ambiente
-4. **Containers Docker**: PostgreSQL mapeado para `5436:5432`, Redis para `6382:6379`
-5. **Recriação de containers**: Garantiu limpeza completa do ambiente
-
-### Para Usuários Windows
-
-1. **Verificar .env**: Confirme que `POSTGRES_PORT=5436` e `REDIS_PORT=6382`
-2. **Subir serviços**: Execute o script `ambiente_misto/setup.bat`
-3. **Aplicar migrações**: Automaticamente feito pelo script
-4. **Iniciar servidor**: `uv run task start`
-
-### Checklist de Verificação Rápida
-
-- [ ] Docker Desktop está rodando
-- [ ] Arquivo `.env` configurado corretamente
-- [ ] Credenciais `firebase_key.json` no lugar certo
-- [ ] Containers PostgreSQL e Redis estão ativos (`docker ps`)
-- [ ] Porta 5436 está livre para PostgreSQL
-- [ ] Porta 6382 está livre para Redis
-- [ ] Migrações aplicadas sem erro
-- [ ] Cache Redis funcionando
-
-### Próximos Passos Recomendados
-
-1. **Executar testes**: `uv run task test`
-2. **Verificar linting**: `uv run task lint`
-3. **Checar tipagem**: `uv run task type-check`
-
-### Observações Importantes
-
-- Os arquivos `settings.py`, `docker-compose.yml` e `Dockerfile` ficam ignorados pelo Git após o setup
-- Para reverter configurações, use os comandos Git mencionados na seção "Configurações Locais do Git"
-- O ambiente é específico para desenvolvimento - não use em produção

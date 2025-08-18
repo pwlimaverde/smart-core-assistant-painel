@@ -41,20 +41,15 @@ RUN uv pip install psycopg[binary]==3.2.3
 # Copy project files
 COPY . .
 
-# Create Firebase config directory and copy credentials
+# Create Firebase config directory and generate credentials from environment variable
+ARG FIREBASE_KEY_JSON_CONTENT
 RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
-COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
-
-# Copy and make entrypoint scripts executable
-COPY ambiente_docker/scripts/docker-entrypoint.sh /usr/local/bin/
-COPY ambiente_docker/scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint-qcluster.sh
+RUN echo "$FIREBASE_KEY_JSON_CONTENT" > /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
 
 # Create necessary directories
-RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \
-    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/media \
-    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/staticfiles
+RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite && \
+    mkdir -p /app/src/smart_core_assistant_painel/app/ui/media && \
+    mkdir -p /app/src/smart_core_assistant_painel/app/ui/staticfiles
 
 # For development, we'll run as root for simplicity
 # In production, consider using a non-root user

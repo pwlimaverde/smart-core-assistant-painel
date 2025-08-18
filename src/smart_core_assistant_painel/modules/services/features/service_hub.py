@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from typing import Optional, Type, Any
+from typing import Optional, Type
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
@@ -34,13 +35,14 @@ class ServiceHub:
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
             self._embeddings_model: Optional[str] = None
-            self._embeddings_class: Optional[Any] = None
+            self._embeddings_class: Optional[Type[Embeddings]] = None
             self._prompt_human_melhoria_conteudo: Optional[str] = None
             self._prompt_system_melhoria_conteudo: Optional[str] = None
             self._prompt_human_analise_conteudo: Optional[str] = None
             self._prompt_system_analise_conteudo: Optional[str] = None
             self._temperature: Optional[int] = None
             self._model: Optional[str] = None
+            self._llm_class: Optional[Type[BaseChatModel]] = None
             self._whatsapp_api_base_url: Optional[str] = None
             self._vetor_storage: Optional[VetorStorage] = None
             self._whatsapp_service: Optional[WhatsAppService] = None
@@ -127,13 +129,6 @@ class ServiceHub:
         if self._embeddings_model is None:
             self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
         return self._embeddings_model if self._embeddings_model is not None else ""
-
-    @property
-    def EMBEDDINGS_CLASS(self) -> Any:
-        if self._embeddings_class is None:
-            self._embeddings_class = self._get_embeddings_class()
-        # Retorna sempre a classe resolvida; sem fallback para símbolo inexistente
-        return self._embeddings_class
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
@@ -224,7 +219,17 @@ class ServiceHub:
     def LLM_CLASS(self) -> Type[BaseChatModel]:
         if not hasattr(self, "_llm_class"):
             self._llm_class = self._get_llm_class()
-        return self._llm_class
+            return self._llm_class
+        else:
+            raise ValueError("LLM class not found.")
+
+    @property
+    def EMBEDDINGS_CLASS(self) -> Type[Embeddings]:
+        if not hasattr(self, "_embeddings_class"):
+            self._embeddings_class = self._get_embeddings_class()
+            return self._embeddings_class
+        else:
+            raise ValueError("Embeddings class not found.")
 
     @property
     def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
@@ -284,7 +289,7 @@ class ServiceHub:
                 "'ChatOpenAI', or 'ChatOllama'."
             )
 
-    def _get_embeddings_class(self) -> Any:
+    def _get_embeddings_class(self) -> Type[Embeddings]:
         """Retorna a classe de embeddings baseada na variável de ambiente.
 
         Mapeia nomes antigos para as classes atuais compatíveis com as versões

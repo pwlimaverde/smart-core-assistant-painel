@@ -3,8 +3,6 @@ from pathlib import Path
 from typing import Optional, Type, Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_ollama import ChatOllama
-from langchain.embeddings import HuggingFaceInferenceEmbeddings
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
@@ -15,67 +13,87 @@ from smart_core_assistant_painel.modules.services.features.whatsapp_services.dom
 
 
 class ServiceHub:
-    """Classe singleton para gerenciar configurações do ambiente."""
+    """Hub central de serviços e configurações da aplicação.
+
+    Responsável por carregar e prover configurações via variáveis de ambiente
+    e por disponibilizar instâncias/integrações entre serviços.
+    """
 
     _instance: Optional["ServiceHub"] = None
     _initialized: bool = False
 
     def __new__(cls) -> "ServiceHub":
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
+            cls._instance = super(ServiceHub, cls).__new__(cls)
         return cls._instance
 
     def __init__(self) -> None:
         if not self._initialized:
+            self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
+            self._time_cache: Optional[int] = None
+            self._chunk_overlap: Optional[int] = None
+            self._chunk_size: Optional[int] = None
+            self._embeddings_model: Optional[str] = None
+            self._embeddings_class: Optional[Any] = None
+            self._prompt_human_melhoria_conteudo: Optional[str] = None
+            self._prompt_system_melhoria_conteudo: Optional[str] = None
+            self._prompt_human_analise_conteudo: Optional[str] = None
+            self._prompt_system_analise_conteudo: Optional[str] = None
+            self._temperature: Optional[int] = None
+            self._model: Optional[str] = None
+            self._whatsapp_api_base_url: Optional[str] = None
+            self._vetor_storage: Optional[VetorStorage] = None
+            self._whatsapp_service: Optional[WhatsAppService] = None
+            self._prompt_system_analise_previa_mensagem: Optional[str] = None
+            self._prompt_human_analise_previa_mensagem: Optional[str] = None
+            self._valid_entity_types: Optional[str] = None
+            self._valid_intent_types: Optional[str] = None
+
             self._load_config()
-            ServiceHub._initialized = True
+            self._initialized = True
 
     def _load_config(self) -> None:
-        """Carrega as configurações das variáveis de ambiente."""
-        # Constante para o caminho do arquivo de dados
-        self.PASTA_DATASETS: Path = Path(__file__).parent.parent.parent / "app/datasets"
-        self._vetor_storage: Optional[VetorStorage] = None
-        self._whatsapp_service: Optional[WhatsAppService] = None
-        self._configuring_vetor_storage: bool = False
+        """Carrega configurações iniciais a partir de variáveis de ambiente."""
+        self._time_cache = int(os.environ.get("TIME_CACHE", "60"))
+        self._chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", "200"))
+        self._chunk_size = int(os.environ.get("CHUNK_SIZE", "1000"))
+        self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
+        self._temperature = int(os.environ.get("TEMPERATURE", "0"))
+        self._model = os.environ.get("MODEL", "llama3.1")
+        self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
 
-        self._whatsapp_api_base_url: Optional[str] = None
-        self._whatsapp_api_send_text_url: Optional[str] = None
-        self._whatsapp_api_start_typing_url: Optional[str] = None
-        self._whatsapp_api_stop_typing_url: Optional[str] = None
-        self._llm_class: Optional[Type[BaseChatModel]] = None
-        self._model: Optional[str] = None
-        self._temperature: Optional[int] = None
-        self._prompt_system_analise_conteudo: Optional[str] = None
-        self._prompt_human_analise_conteudo: Optional[str] = None
-        self._prompt_system_melhoria_conteudo: Optional[str] = None
-        self._prompt_human_melhoria_conteudo: Optional[str] = None
-        self._chunk_overlap: Optional[int] = None
-        self._chunk_size: Optional[int] = None
-        self._embeddings_model: Optional[str] = None
-        self._embeddings_class: Optional[Any] = None
-        self._prompt_system_analise_previa_mensagem: Optional[str] = None
-        self._prompt_human_analise_previa_mensagem: Optional[str] = None
-        self._valid_entity_types: Optional[str] = None
-        self._valid_intent_types: Optional[str] = None
-        self._time_cache: Optional[int] = None
+        # Tenta auto-configurar serviços se as variáveis de ambiente existirem
+        # Comentários em português para explicar a lógica crítica
+        vetor_storage_type = os.environ.get("VETOR_STORAGE_TYPE")
+        if vetor_storage_type is not None and self._vetor_storage is None:
+            raise RuntimeError(
+                "Falha ao auto-configurar VetorStorage. "
+                "Use set_vetor_storage() para definir a instância manualmente."
+            )
+
+        whatsapp_service_type = os.environ.get("WHATSAPP_SERVICE_TYPE")
+        if whatsapp_service_type is not None and self._whatsapp_service is None:
+            raise RuntimeError(
+                "Falha ao auto-configurar WhatsAppService. "
+                "Use set_whatsapp_service() para definir a instância manualmente."
+            )
 
     def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
-        """Define a instância do VetorStorage."""
+        """Define a implementação de VetorStorage a ser utilizada."""
         self._vetor_storage = vetor_storage
 
     def set_whatsapp_service(self, whatsapp_service: WhatsAppService) -> None:
-        """Define a instância do WhatsAppService."""
+        """Define a implementação de WhatsAppService a ser utilizada."""
         self._whatsapp_service = whatsapp_service
 
     @property
     def TIME_CACHE(self) -> int:
         if self._time_cache is None:
-            self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
-        return self._time_cache if self._time_cache is not None else 20
+            self._time_cache = int(os.environ.get("TIME_CACHE", "60"))
+        return self._time_cache if self._time_cache is not None else 60
 
     @property
     def vetor_storage(self) -> VetorStorage:
-        """Retorna a instância do VetorStorage."""
         if self._vetor_storage is None:
             raise RuntimeError(
                 "Falha ao auto-configurar VetorStorage. "
@@ -85,7 +103,6 @@ class ServiceHub:
 
     @property
     def whatsapp_service(self) -> WhatsAppService:
-        """Retorna a instância do WhatsAppService."""
         if self._whatsapp_service is None:
             raise RuntimeError(
                 "Falha ao auto-configurar WhatsAppService. "
@@ -115,7 +132,8 @@ class ServiceHub:
     def EMBEDDINGS_CLASS(self) -> Any:
         if self._embeddings_class is None:
             self._embeddings_class = self._get_embeddings_class()
-        return self._embeddings_class if self._embeddings_class is not None else HuggingFaceInferenceEmbeddings
+        # Retorna sempre a classe resolvida; sem fallback para símbolo inexistente
+        return self._embeddings_class
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
@@ -174,13 +192,8 @@ class ServiceHub:
     @property
     def MODEL(self) -> str:
         if self._model is None:
-            self._model = os.environ.get("MODEL")
-        if not self._model:
-            raise ValueError(
-                "Variável de ambiente MODEL não está configurada. "
-                "Configure a variável MODEL com o nome do modelo da LLM."
-            )
-        return self._model
+            self._model = os.environ.get("MODEL", "llama3.1")
+        return self._model if self._model is not None else "llama3.1"
 
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:
@@ -194,45 +207,24 @@ class ServiceHub:
 
     @property
     def WHATSAPP_API_SEND_TEXT_URL(self) -> str:
-        if self._whatsapp_api_send_text_url is None:
-            self._whatsapp_api_send_text_url = os.environ.get(
-                "WHATSAPP_API_SEND_TEXT_URL"
-            )
-        return (
-            self._whatsapp_api_send_text_url
-            if self._whatsapp_api_send_text_url is not None
-            else ""
-        )
+        base = self.WHATSAPP_API_BASE_URL
+        return f"{base}/v1/utils/send_text" if base else ""
 
     @property
     def WHATSAPP_API_START_TYPING_URL(self) -> str:
-        if self._whatsapp_api_start_typing_url is None:
-            self._whatsapp_api_start_typing_url = os.environ.get(
-                "WHATSAPP_API_START_TYPING_URL"
-            )
-        return (
-            self._whatsapp_api_start_typing_url
-            if self._whatsapp_api_start_typing_url is not None
-            else ""
-        )
+        base = self.WHATSAPP_API_BASE_URL
+        return f"{base}/v1/utils/start_typing" if base else ""
 
     @property
     def WHATSAPP_API_STOP_TYPING_URL(self) -> str:
-        if self._whatsapp_api_stop_typing_url is None:
-            self._whatsapp_api_stop_typing_url = os.environ.get(
-                "WHATSAPP_API_STOP_TYPING_URL"
-            )
-        return (
-            self._whatsapp_api_stop_typing_url
-            if self._whatsapp_api_stop_typing_url is not None
-            else ""
-        )
+        base = self.WHATSAPP_API_BASE_URL
+        return f"{base}/v1/utils/stop_typing" if base else ""
 
     @property
     def LLM_CLASS(self) -> Type[BaseChatModel]:
-        if self._llm_class is None:
+        if not hasattr(self, "_llm_class"):
             self._llm_class = self._get_llm_class()
-        return self._llm_class if self._llm_class is not None else ChatOllama
+        return self._llm_class
 
     @property
     def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
@@ -288,22 +280,58 @@ class ServiceHub:
         else:
             raise ValueError(
                 f"LLM class '{llm_type}' not recognized. "
-                "Please set 'LLM_CLASS' environment variable to 'ChatGroq', 'ChatOpenAI', or 'ChatOllama'."
+                "Please set 'LLM_CLASS' environment variable to 'ChatGroq', "
+                "'ChatOpenAI', or 'ChatOllama'."
             )
 
     def _get_embeddings_class(self) -> Any:
-        """Retorna a classe de embeddings baseada na variável de ambiente."""
-        embeddings_class = os.environ.get("EMBEDDINGS_CLASS", "HuggingFaceInferenceEmbeddings")
-        if embeddings_class == "HuggingFaceInferenceEmbeddings":
-            from langchain.embeddings import HuggingFaceInferenceEmbeddings
-            return HuggingFaceInferenceEmbeddings
+        """Retorna a classe de embeddings baseada na variável de ambiente.
+
+        Mapeia nomes antigos para as classes atuais compatíveis com as versões
+        recentes do LangChain e pacotes parceiros. A importação é local para
+        evitar erros de import no carregamento do Django quando a classe não é
+        utilizada.
+        """
+        embeddings_class = os.environ.get(
+            "EMBEDDINGS_CLASS", "HuggingFaceInferenceAPIEmbeddings"
+        )
+
+        # Normaliza possíveis aliases/históricos
+        if embeddings_class in (
+            "HuggingFaceInferenceEmbeddings",
+            "HuggingFaceInferenceAPIEmbeddings",
+        ):
+            # Usa a implementação da API de Inference da Hugging Face
+            from langchain_community.embeddings import (
+                HuggingFaceInferenceAPIEmbeddings,
+            )
+
+            return HuggingFaceInferenceAPIEmbeddings
+        elif embeddings_class == "HuggingFaceEndpointEmbeddings":
+            # Integra com Endpoints gerenciados (parceiro oficial)
+            from langchain_huggingface.embeddings import (
+                HuggingFaceEndpointEmbeddings,
+            )
+
+            return HuggingFaceEndpointEmbeddings
+        elif embeddings_class == "HuggingFaceEmbeddings":
+            # Modelos locais via transformers/accelerate
+            from langchain_huggingface import HuggingFaceEmbeddings
+
+            return HuggingFaceEmbeddings
         elif embeddings_class == "OllamaEmbeddings":
             from langchain_ollama import OllamaEmbeddings
-            return OllamaEmbeddings 
+
+            return OllamaEmbeddings
         else:
             raise ValueError(
-                f"Embeddings class '{embeddings_class}' not recognized. "
-                "Please set 'EMBEDDINGS_CLASS' environment variable to 'HuggingFaceInferenceEmbeddings' or 'OllamaEmbeddings'."
+                (
+                    f"Embeddings class '{embeddings_class}' not recognized. "
+                    "Please set 'EMBEDDINGS_CLASS' to one of: "
+                    "'HuggingFaceInferenceAPIEmbeddings', "
+                    "'HuggingFaceEndpointEmbeddings', "
+                    "'HuggingFaceEmbeddings', or 'OllamaEmbeddings'."
+                )
             )
 
 

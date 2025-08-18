@@ -1,5 +1,5 @@
 services:
-  # Aplicacao Django para desenvolvimento
+  # Aplicação Django para desenvolvimento
   django-app:
     build:
       context: .
@@ -193,3 +193,6 @@ volumes:
 networks:
   smart-core-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

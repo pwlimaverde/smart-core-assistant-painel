@@ -62,19 +62,35 @@ if not exist ".env" (
     echo - SECRET_KEY_DJANGO
     echo - EVOLUTION_API_KEY
     echo - FIREBASE_KEY_JSON_CONTENT
+    echo - GOOGLE_APPLICATION_CREDENTIALS
     echo.
     exit /b 1
 )
 
 echo Arquivo .env encontrado.
 
-REM 3. Processar credenciais Firebase
-set "FIREBASE_PATH=src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json"
+REM 3. Processar credenciais Firebase usando GOOGLE_APPLICATION_CREDENTIALS do .env
+call :section "3. Validando e criando credenciais Firebase..."
+
+REM Extrair GOOGLE_APPLICATION_CREDENTIALS do .env
+for /f "tokens=1,* delims==" %%A in ('findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env') do set "FIREBASE_PATH=%%B"
+if not defined FIREBASE_PATH (
+    echo ERRO: Variavel GOOGLE_APPLICATION_CREDENTIALS nao encontrada no arquivo .env
+    echo Por favor, adicione a variavel GOOGLE_APPLICATION_CREDENTIALS no .env
+    echo Exemplo: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+    exit /b 1
+)
+
+echo Caminho do firebase_key.json definido por GOOGLE_APPLICATION_CREDENTIALS: %FIREBASE_PATH%
+
+REM Criar diretorio se nao existir
 for %%I in ("%FIREBASE_PATH%") do set "FIREBASE_KEY_DIR=%%~dpI"
 if not exist "%FIREBASE_KEY_DIR%" (
+    echo Criando diretorio: %FIREBASE_KEY_DIR%
     mkdir "%FIREBASE_KEY_DIR%"
 )
 
+REM Verificar se FIREBASE_KEY_JSON_CONTENT existe no .env
 for /f "tokens=1,* delims==" %%A in ('findstr /b /c:"FIREBASE_KEY_JSON_CONTENT=" .env') do set "FIREBASE_CONTENT=%%B"
 if not defined FIREBASE_CONTENT (
     echo ERRO: Variavel FIREBASE_KEY_JSON_CONTENT nao encontrada no arquivo .env
@@ -90,6 +106,20 @@ echo Arquivo firebase_key.json criado com sucesso em %FIREBASE_PATH%
 
 REM 4. Criar docker-compose.yml
 call :section "3. Criando docker-compose.yml..."
+
+REM Definir caminhos do Firebase com base na variável FIREBASE_PATH
+set "CONTAINER_FIREBASE_PATH=/app/%FIREBASE_PATH%"
+
+REM Normalizar caminho da pasta do Firebase para relativo ao projeto e com separadores corretos
+set "PROJECT_ROOT=%CD%"
+for %%I in ("%FIREBASE_KEY_DIR%") do set "FIREBASE_DIR_ABS=%%~fI"
+REM Se não conseguir derivar relativo, cai para o valor original
+call set "FIREBASE_DIR_REL=%%FIREBASE_DIR_ABS:%PROJECT_ROOT%\=%%"
+if "%FIREBASE_DIR_REL%"=="%FIREBASE_DIR_ABS%" set "FIREBASE_DIR_REL=%FIREBASE_KEY_DIR%"
+if "%FIREBASE_DIR_REL:~0,1%"=="\" set "FIREBASE_DIR_REL=%FIREBASE_DIR_REL:~1%"
+set "FIREBASE_DIR_REL_FWD=%FIREBASE_DIR_REL:\=/%"
+set "FIREBASE_KEY_DIR_HOST=./%FIREBASE_DIR_REL_FWD%"
+set "FIREBASE_KEY_DIR_CONTAINER=/app/%FIREBASE_DIR_REL_FWD%"
 
 echo services:> docker-compose.yml
 echo   # Aplicacao Django para desenvolvimento>> docker-compose.yml
@@ -109,7 +139,7 @@ echo       - POSTGRES_USER=postgres>> docker-compose.yml
 echo       - POSTGRES_PASSWORD=postgres123>> docker-compose.yml
 echo       - POSTGRES_HOST=postgres-django>> docker-compose.yml
 echo       - POSTGRES_PORT=5432>> docker-compose.yml
-echo       - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json>> docker-compose.yml
+echo       - GOOGLE_APPLICATION_CREDENTIALS=%CONTAINER_FIREBASE_PATH%>> docker-compose.yml
 echo       # Configuracao para acesso ao Ollama local>> docker-compose.yml
 echo       - OLLAMA_HOST=host.docker.internal>> docker-compose.yml
 echo       - OLLAMA_PORT=11434>> docker-compose.yml
@@ -124,7 +154,7 @@ echo       # Persistent data>> docker-compose.yml
 echo       - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db>> docker-compose.yml
 echo       - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media>> docker-compose.yml
 echo       # Mount Firebase credentials>> docker-compose.yml
-echo       - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config>> docker-compose.yml
+echo       - %FIREBASE_KEY_DIR_HOST%:%FIREBASE_KEY_DIR_CONTAINER%>> docker-compose.yml
 echo     depends_on:>> docker-compose.yml
 echo       - postgres-django>> docker-compose.yml
 echo     networks:>> docker-compose.yml
@@ -149,7 +179,7 @@ echo       - POSTGRES_USER=postgres>> docker-compose.yml
 echo       - POSTGRES_PASSWORD=postgres123>> docker-compose.yml
 echo       - POSTGRES_HOST=postgres-django>> docker-compose.yml
 echo       - POSTGRES_PORT=5432>> docker-compose.yml
-echo       - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json>> docker-compose.yml
+echo       - GOOGLE_APPLICATION_CREDENTIALS=%CONTAINER_FIREBASE_PATH%>> docker-compose.yml
 echo       # Configuracao para acesso ao Ollama local>> docker-compose.yml
 echo       - OLLAMA_HOST=host.docker.internal>> docker-compose.yml
 echo       - OLLAMA_PORT=11434>> docker-compose.yml
@@ -160,7 +190,7 @@ echo       - ./src:/app/src>> docker-compose.yml
 echo       - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db>> docker-compose.yml
 echo       - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media>> docker-compose.yml
 echo       # Mount Firebase credentials>> docker-compose.yml
-echo       - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config>> docker-compose.yml
+echo       - %FIREBASE_KEY_DIR_HOST%:%FIREBASE_KEY_DIR_CONTAINER%>> docker-compose.yml
 echo     depends_on:>> docker-compose.yml
 echo       - django-app>> docker-compose.yml
 echo     networks:>> docker-compose.yml
@@ -528,9 +558,24 @@ call :section "8. Iniciando servicos de banco de dados..."
 %COMPOSE_CMD% up -d postgres-django postgres redis
 
 REM Aguardar bancos de dados ficarem prontos
-call :wait_for_service postgres-django "pg_isready -U postgres"
-call :wait_for_service postgres "pg_isready -U evolution"
-call :wait_for_service redis "redis-cli ping"
+for /l %%i in (1,1,30) do (
+    %COMPOSE_CMD% exec -T postgres-django pg_isready -U postgres -h localhost -p 5432 && goto :pg_ready
+    echo Aguardando postgres-django...
+    timeout /t 2 >nul
+)
+:pg_ready
+for /l %%i in (1,1,30) do (
+    %COMPOSE_CMD% exec -T postgres pg_isready -U evolution -h localhost -p 5432 && goto :pg2_ready
+    echo Aguardando postgres...
+    timeout /t 2 >nul
+)
+:pg2_ready
+for /l %%i in (1,1,30) do (
+    %COMPOSE_CMD% exec -T redis redis-cli ping | findstr /i "PONG" >nul && goto :redis_ready
+    echo Aguardando redis...
+    timeout /t 2 >nul
+)
+:redis_ready
 
 REM 10. Executar migracoes do Django
 call :section "9. Executando migracoes do Django..."

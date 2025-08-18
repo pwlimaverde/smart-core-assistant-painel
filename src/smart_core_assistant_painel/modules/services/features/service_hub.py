@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
-from typing import Optional, Type, Any
+from typing import Optional, Type
 
+from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
@@ -34,13 +35,14 @@ class ServiceHub:
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
             self._embeddings_model: Optional[str] = None
-            self._embeddings_class: Optional[Any] = None
+            self._embeddings_class: Optional[Type[Embeddings]] = None
             self._prompt_human_melhoria_conteudo: Optional[str] = None
             self._prompt_system_melhoria_conteudo: Optional[str] = None
             self._prompt_human_analise_conteudo: Optional[str] = None
             self._prompt_system_analise_conteudo: Optional[str] = None
             self._temperature: Optional[int] = None
             self._model: Optional[str] = None
+            self._llm_class: Optional[Type[BaseChatModel]] = None
             self._whatsapp_api_base_url: Optional[str] = None
             self._vetor_storage: Optional[VetorStorage] = None
             self._whatsapp_service: Optional[WhatsAppService] = None
@@ -48,13 +50,15 @@ class ServiceHub:
             self._prompt_human_analise_previa_mensagem: Optional[str] = None
             self._valid_entity_types: Optional[str] = None
             self._valid_intent_types: Optional[str] = None
+            # Chave de API da Hugging Face para integrações de embeddings
+            self._huggingface_api_key: Optional[str] = None
 
             self._load_config()
             self._initialized = True
 
     def _load_config(self) -> None:
         """Carrega configurações iniciais a partir de variáveis de ambiente."""
-        self._time_cache = int(os.environ.get("TIME_CACHE", "60"))
+        self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
         self._chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", "200"))
         self._chunk_size = int(os.environ.get("CHUNK_SIZE", "1000"))
         self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
@@ -89,8 +93,9 @@ class ServiceHub:
     @property
     def TIME_CACHE(self) -> int:
         if self._time_cache is None:
-            self._time_cache = int(os.environ.get("TIME_CACHE", "60"))
-        return self._time_cache if self._time_cache is not None else 60
+            self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
+        # Conforme testes, fallback esperado é 20 quando não definido
+        return self._time_cache if self._time_cache is not None else 20
 
     @property
     def vetor_storage(self) -> VetorStorage:
@@ -129,11 +134,20 @@ class ServiceHub:
         return self._embeddings_model if self._embeddings_model is not None else ""
 
     @property
-    def EMBEDDINGS_CLASS(self) -> Any:
-        if self._embeddings_class is None:
-            self._embeddings_class = self._get_embeddings_class()
-        # Retorna sempre a classe resolvida; sem fallback para símbolo inexistente
-        return self._embeddings_class
+    def HUGGINGFACE_API_KEY(self) -> str:
+        """Retorna a API key da Hugging Face para uso em embeddings.
+
+        Busca em duas variáveis por compatibilidade:
+        - HUGGINGFACE_API_KEY (preferida no projeto)
+        - HUGGINGFACEHUB_API_KEY (fallback comum em libs)
+        """
+        if self._huggingface_api_key is None:
+            self._huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY")
+            if not self._huggingface_api_key:
+                self._huggingface_api_key = os.environ.get(
+                    "HUGGINGFACEHUB_API_KEY"
+                )
+        return self._huggingface_api_key if self._huggingface_api_key else ""
 
     @property
     def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
@@ -222,9 +236,17 @@ class ServiceHub:
 
     @property
     def LLM_CLASS(self) -> Type[BaseChatModel]:
-        if not hasattr(self, "_llm_class"):
+        # Retorna a classe do LLM. Se ainda não definida, resolve e cacheia.
+        if self._llm_class is None:
             self._llm_class = self._get_llm_class()
         return self._llm_class
+
+    @property
+    def EMBEDDINGS_CLASS(self) -> Type[Embeddings]:
+        # Retorna a classe de embeddings. Se ainda não definida, resolve e cacheia.
+        if self._embeddings_class is None:
+            self._embeddings_class = self._get_embeddings_class()
+        return self._embeddings_class
 
     @property
     def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
@@ -251,16 +273,26 @@ class ServiceHub:
         )
 
     @property
-    def VALID_ENTITY_TYPES(self) -> str:
-        if self._valid_entity_types is None:
-            self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
-        return self._valid_entity_types if self._valid_entity_types is not None else ""
-
-    @property
     def VALID_INTENT_TYPES(self) -> str:
+        """Retorna JSON string com intents válidas, ou vazio se não definido."""
         if self._valid_intent_types is None:
             self._valid_intent_types = os.environ.get("VALID_INTENT_TYPES")
-        return self._valid_intent_types if self._valid_intent_types is not None else ""
+        return (
+            self._valid_intent_types
+            if self._valid_intent_types is not None
+            else ""
+        )
+
+    @property
+    def VALID_ENTITY_TYPES(self) -> str:
+        """Retorna JSON string com entidades válidas, ou vazio se não definido."""
+        if self._valid_entity_types is None:
+            self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
+        return (
+            self._valid_entity_types
+            if self._valid_entity_types is not None
+            else ""
+        )
 
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe LLM baseada na variável de ambiente."""
@@ -284,7 +316,7 @@ class ServiceHub:
                 "'ChatOpenAI', or 'ChatOllama'."
             )
 
-    def _get_embeddings_class(self) -> Any:
+    def _get_embeddings_class(self) -> Type[Embeddings]:
         """Retorna a classe de embeddings baseada na variável de ambiente.
 
         Mapeia nomes antigos para as classes atuais compatíveis com as versões

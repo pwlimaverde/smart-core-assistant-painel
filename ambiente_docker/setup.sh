@@ -50,20 +50,35 @@ if [ ! -f ".env" ]; then
     echo "- SECRET_KEY_DJANGO"
     echo "- EVOLUTION_API_KEY"
     echo "- FIREBASE_KEY_JSON_CONTENT"
+    echo "- GOOGLE_APPLICATION_CREDENTIALS"
     echo ""
     exit 1
 fi
 
 echo "Arquivo .env encontrado."
 
-# 3. Processar credenciais Firebase
-FIREBASE_PATH="src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json"
+# 3. Processar credenciais Firebase usando GOOGLE_APPLICATION_CREDENTIALS do .env
+echo "3. Validando e criando credenciais Firebase..."
 
-# Extrair diretório do caminho do firebase_key.json
+# Extrair GOOGLE_APPLICATION_CREDENTIALS do .env
+FIREBASE_PATH=$(grep "^GOOGLE_APPLICATION_CREDENTIALS=" .env | cut -d'=' -f2-)
+if [ -z "$FIREBASE_PATH" ]; then
+    echo "ERRO: Variável GOOGLE_APPLICATION_CREDENTIALS não encontrada no arquivo .env"
+    echo "Por favor, adicione a variável GOOGLE_APPLICATION_CREDENTIALS no .env"
+    echo "Exemplo: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json"
+    exit 1
+fi
+
+echo "Caminho do firebase_key.json definido por GOOGLE_APPLICATION_CREDENTIALS: $FIREBASE_PATH"
+
+# Criar diretório se não existir
 FIREBASE_KEY_DIR=$(dirname "$FIREBASE_PATH")
-mkdir -p "$FIREBASE_KEY_DIR"
+if [ ! -d "$FIREBASE_KEY_DIR" ]; then
+    echo "Criando diretório: $FIREBASE_KEY_DIR"
+    mkdir -p "$FIREBASE_KEY_DIR"
+fi
 
-# Criar firebase_key.json a partir da variável FIREBASE_KEY_JSON_CONTENT
+# Verificar se FIREBASE_KEY_JSON_CONTENT existe no .env
 if ! grep -q "^FIREBASE_KEY_JSON_CONTENT=" .env; then
     echo "ERRO: Variável FIREBASE_KEY_JSON_CONTENT não encontrada no arquivo .env"
     echo "Por favor, adicione a variável FIREBASE_KEY_JSON_CONTENT no .env com o conteúdo JSON do Firebase"
@@ -86,7 +101,12 @@ fi
 # 4. Criar docker-compose.yml
 echo "3. Criando docker-compose.yml..."
 
-cat > docker-compose.yml << 'EOF'
+# Definir caminhos do Firebase
+CONTAINER_FIREBASE_PATH="/app/$FIREBASE_PATH"
+FIREBASE_KEY_DIR_HOST=$(dirname "$FIREBASE_PATH")
+FIREBASE_KEY_DIR_CONTAINER="/app/$FIREBASE_KEY_DIR_HOST"
+
+cat > docker-compose.yml << EOF
 services:
   # Aplicação Django para desenvolvimento
   django-app:
@@ -105,7 +125,7 @@ services:
       - POSTGRES_PASSWORD=postgres123
       - POSTGRES_HOST=postgres-django
       - POSTGRES_PORT=5432
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+      - GOOGLE_APPLICATION_CREDENTIALS=$CONTAINER_FIREBASE_PATH
       # Configuração para acesso ao Ollama local
       - OLLAMA_HOST=host.docker.internal
       - OLLAMA_PORT=11434
@@ -119,8 +139,8 @@ services:
       # Persistent data
       - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
       - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
-      # Mount Firebase credentials
-      - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
+      # Mount Firebase credentials dynamically
+      - ./$FIREBASE_KEY_DIR_HOST:$FIREBASE_KEY_DIR_CONTAINER
     depends_on:
       - postgres-django
     networks:
@@ -145,7 +165,7 @@ services:
       - POSTGRES_PASSWORD=postgres123
       - POSTGRES_HOST=postgres-django
       - POSTGRES_PORT=5432
-      - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+      - GOOGLE_APPLICATION_CREDENTIALS=$CONTAINER_FIREBASE_PATH
       # Configuração para acesso ao Ollama local
       - OLLAMA_HOST=host.docker.internal
       - OLLAMA_PORT=11434
@@ -155,8 +175,8 @@ services:
       - ./src:/app/src
       - ./src/smart_core_assistant_painel/app/ui/db:/app/src/smart_core_assistant_painel/app/ui/db
       - ./src/smart_core_assistant_painel/app/ui/media:/app/src/smart_core_assistant_painel/app/ui/media
-      # Mount Firebase credentials
-      - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
+      # Mount Firebase credentials dynamically
+      - ./$FIREBASE_KEY_DIR_HOST:$FIREBASE_KEY_DIR_CONTAINER
     depends_on:
       - django-app
     networks:
@@ -499,6 +519,7 @@ if ! grep -q "docker-entrypoint" Dockerfile; then
 # Copiar scripts de entrypoint para o ambiente Docker\
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh\
 COPY docker-entrypoint-qcluster.sh /usr/local/bin/docker-entrypoint-qcluster.sh\
+RUN dos2unix /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh\
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh\
 ' Dockerfile
 fi

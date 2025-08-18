@@ -1,4 +1,5 @@
 services:
+  #
   # Aplicação Django para desenvolvimento
   django-app:
     build:

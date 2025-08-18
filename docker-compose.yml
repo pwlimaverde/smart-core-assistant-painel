@@ -11,7 +11,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - DJANGO_DEBUG=True
       - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
       - POSTGRES_DB=smart_core_db
@@ -55,7 +55,7 @@ services:
     container_name: smart-core-qcluster-dev
     restart: unless-stopped
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - DJANGO_DEBUG=True
       - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
       - POSTGRES_DB=smart_core_db

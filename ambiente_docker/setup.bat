@@ -22,31 +22,35 @@ if not exist ".env" (
     exit /b 1
 )
 
-:: Carregar variáveis do .env
-for /f "usebackq delims=" %%a in (".env") do (set "%%a")
-
-echo Arquivo .env encontrado e variaveis carregadas.
+echo Arquivo .env encontrado.
 
 :: 2. Verificar e criar o firebase_key.json
-echo 2. Verificando as credenciais do Firebase...
+echo 2. Verificando e criando as credenciais do Firebase...
 
-if not defined FIREBASE_KEY_JSON_CONTENT (
-    echo AVISO: A variavel FIREBASE_KEY_JSON_CONTENT nao esta definida no .env.
-    echo Se o seu GOOGLE_APPLICATION_CREDENTIALS aponta para um arquivo que ja existe, tudo bem.
-    if not defined GOOGLE_APPLICATION_CREDENTIALS (
-        echo ERRO: GOOGLE_APPLICATION_CREDENTIALS nao aponta para um arquivo valido e FIREBASE_KEY_JSON_CONTENT nao esta definida.
-        exit /b 1
-    )
-) else (
-    if not defined GOOGLE_APPLICATION_CREDENTIALS (
-        echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no .env.
-        exit /b 1
-    )
-    echo Criando o arquivo firebase_key.json em %GOOGLE_APPLICATION_CREDENTIALS%...
-    powershell -Command "New-Item -Path (Split-Path -Path '%GOOGLE_APPLICATION_CREDENTIALS%') -ItemType Directory -Force | Out-Null"
-    echo %FIREBASE_KEY_JSON_CONTENT% > "%GOOGLE_APPLICATION_CREDENTIALS%"
-    echo Arquivo firebase_key.json criado com sucesso.
+REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
+if not defined FIREBASE_PATH (
+    echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env
+    echo Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+    exit /b 1
 )
+
+REM Criar credenciais Firebase usando FIREBASE_KEY_JSON_CONTENT
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"FIREBASE_KEY_JSON_CONTENT=" .env`) do set "FIREBASE_CONTENT=%%B"
+
+if not defined FIREBASE_CONTENT (
+    echo ERRO: Variavel FIREBASE_KEY_JSON_CONTENT nao encontrada ou vazia no arquivo .env
+    echo Por favor, adicione a variavel FIREBASE_KEY_JSON_CONTENT no .env com o conteudo JSON do Firebase
+    exit /b 1
+)
+
+echo Criando o arquivo %FIREBASE_PATH%...
+REM Extrair diretorio do caminho informado e criar
+for %%I in ("%FIREBASE_PATH%") do set "FIREBASE_KEY_DIR=%%~dpI"
+if not exist "%FIREBASE_KEY_DIR%" mkdir "%FIREBASE_KEY_DIR%"
+
+(echo %FIREBASE_CONTENT%) > "%FIREBASE_PATH%"
+echo Arquivo firebase_key.json criado com sucesso.
 
 
 :: 3. Limpeza completa do ambiente Docker anterior
@@ -94,8 +98,7 @@ docker compose exec -T django-app uv run task migrate
 
 :: 8. Criar superusuário
 echo 8. Criando superusuario 'admin' com senha '123456'...
-set SUPERUSER_COMMAND="from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', '123456')"
-docker compose exec -T django-app uv run python -c %SUPERUSER_COMMAND%
+docker compose exec -T django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', '123456')"
 echo Superusuario criado com sucesso!
 
 echo.

@@ -65,6 +65,8 @@ echo "Migrações antigas removidas."
 echo "5. Construindo imagens Docker e iniciando os containers..."
 docker compose build
 docker compose up -d
+echo "5.1. Parando temporariamente o django-qcluster ate concluir as migracoes..."
+docker compose stop django-qcluster
 
 # 6. Aguardar o banco de dados ficar pronto
 wait_for_db() {
@@ -83,12 +85,16 @@ wait_for_db
 echo "7. Criando e aplicando novas migrações do Django..."
 docker compose exec -T django-app uv run task makemigrations
 docker compose exec -T django-app uv run task migrate
+echo "Aplicando migracoes especificas do django_q..."
+docker compose exec -T django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate django_q --noinput
 
 # 8. Criar superusuário
 echo "8. Criando superusuário 'admin' com senha '123456'..."
 SUPERUSER_COMMAND="from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', '123456')"
 docker compose exec -T django-app uv run python -c "$SUPERUSER_COMMAND"
 echo "Superusuário criado com sucesso!"
+echo "9. Iniciando o django-qcluster apos as migracoes..."
+docker compose start django-qcluster
 
 echo ""
 echo "=== Ambiente Docker pronto! ==="

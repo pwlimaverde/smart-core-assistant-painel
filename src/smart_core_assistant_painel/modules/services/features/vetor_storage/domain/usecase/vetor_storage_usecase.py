@@ -2,10 +2,14 @@ from py_return_success_or_error import (
     ErrorReturn,
     NoParams,
     ReturnSuccessOrError,
+    SuccessReturn,
 )
 
 from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
+)
+from smart_core_assistant_painel.modules.services.utils.erros import (
+    VetorStorageError,
 )
 from smart_core_assistant_painel.modules.services.utils.types import VSUsecase
 
@@ -31,11 +35,17 @@ class VetorStorageUseCase(VSUsecase):
                 (ErrorReturn).
         """
         try:
-            return self._resultDatasource(
-                parameters=parameters, datasource=self._datasource
-            )
-
-        except Exception as e:
-            error = parameters.error
-            error.message = f"{error.message} - Exception: {str(e)}"
+            # Chamamos diretamente o datasource para preservar a exceção
+            # original (evitando que bibliotecas intermediárias a convertam
+            # em um ErrorGeneric genérico, o que perde contexto importante).
+            storage: VetorStorage = self._datasource(parameters)
+            return SuccessReturn(storage)
+        except VetorStorageError as e:
+            # Exceção já específica do domínio: apenas propaga
+            return ErrorReturn(e)
+        except Exception as e:  # noqa: BLE001
+            # Constrói um erro específico com a mensagem original para
+            # manter rastreabilidade do problema na inicialização.
+            base_msg = "Erro ao inicializar VetorStorage"
+            error = VetorStorageError(message=f"{base_msg} - Exception: {e}")
             return ErrorReturn(error)

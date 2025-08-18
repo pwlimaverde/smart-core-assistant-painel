@@ -19,3 +19,14 @@ class WhatsAppServiceError(AppError):
 
     def __str__(self) -> str:
         return f"WhatsAppServiceError - {self.message}"
+
+
+@dataclass
+class VetorStorageError(AppError):
+    """Erro específico para inicialização/uso do VetorStorage."""
+
+    message: str
+
+    def __str__(self) -> str:
+        # Mantém padrão consistente de mensagem específica
+        return f"VetorStorageError - {self.message}"

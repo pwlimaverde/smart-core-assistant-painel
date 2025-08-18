@@ -22,7 +22,6 @@ RUN apt-get update && apt-get install -y \
     nano \
     htop \
     procps \
-    dos2unix \
     libpq-dev \
     postgresql-client \
     && rm -rf /var/lib/apt/lists/*
@@ -42,13 +41,15 @@ RUN uv pip install psycopg[binary]==3.2.3
 # Copy project files
 COPY . .
 
-# Firebase credentials are provided at runtime via volume mount and GOOGLE_APPLICATION_CREDENTIALS; no build-time copy
+# Create Firebase config directory and copy credentials
+RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
+COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
 
 # Copy and make entrypoint scripts executable
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-COPY docker-entrypoint-qcluster.sh /usr/local/bin/docker-entrypoint-qcluster.sh
-RUN dos2unix /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh
+COPY ambiente_docker/scripts/docker-entrypoint.sh /usr/local/bin/
+COPY ambiente_docker/scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-qcluster.sh
 
 # Create necessary directories
 RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \

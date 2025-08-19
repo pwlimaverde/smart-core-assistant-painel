@@ -202,7 +202,7 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
             treinamento.set_documentos(documents_list)
             treinamento.save()
             messages.success(request, "Treinamento criado com sucesso!")
-            return redirect("pre_processamento", id=treinamento.id)
+            return redirect("oraculo:pre_processamento", id=treinamento.id)
     except Exception as e:
         logger.error(f"Erro ao processar treinamento: {e}")
         messages.error(request, "Erro interno do servidor. Tente novamente.")
@@ -240,11 +240,16 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     Returns:
         HttpResponse: A resposta HTTP.
     """
-    treinamento = Treinamentos.objects.get(id=id)
+    try:
+        treinamento = Treinamentos.objects.get(id=id)
+    except Treinamentos.DoesNotExist:
+        messages.error(request, "Treinamento não encontrado.")
+        return redirect("oraculo:treinar_ia")
+    
     acao = request.POST.get("acao")
     if not acao:
         messages.error(request, "Ação não especificada.")
-        return redirect("pre_processamento", id=treinamento.id)
+        return redirect("oraculo:pre_processamento", id=treinamento.id)
     try:
         with transaction.atomic():
             if acao == "aceitar":
@@ -259,11 +264,11 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
                 messages.info(request, "Treinamento descartado.")
             else:
                 messages.error(request, "Ação inválida.")
-                return redirect("pre_processamento", id=treinamento.id)
+                return redirect("oraculo:pre_processamento", id=treinamento.id)
     except Exception as e:
         logger.error(f"Erro ao processar ação {acao}: {e}")
         messages.error(request, "Erro ao processar ação. Tente novamente.")
-        return redirect("pre_processamento", id=treinamento.id)
+        return redirect("oraculo:pre_processamento", id=treinamento.id)
     return redirect("oraculo:treinar_ia")
 
 

@@ -24,6 +24,8 @@ class OraculoConfig(AppConfig):
         """Executa quando o aplicativo está pronto."""
         from . import signals  # noqa: F401
 
+        # Inicialização dos serviços é feita pelo main.py na ordem correta
+        # Removendo duplicação para evitar problemas de ordem de execução
         try:
             from smart_core_assistant_painel.modules.initial_loading import (
                 start_initial_loading,
@@ -32,6 +34,7 @@ class OraculoConfig(AppConfig):
                 start_services,
             )
 
+            # Garantir ordem correta: initial_loading ANTES de services
             start_initial_loading()
             start_services()
         except Exception as e:

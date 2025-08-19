@@ -1,0 +1,170 @@
+2025-08-19 20:28:26.190 |    Building smart-core-assistant-painel @ file:///app
+2025-08-19 20:28:27.912 |       Built smart-core-assistant-painel @ file:///app
+2025-08-19 20:28:27.921 | Uninstalled 1 package in 4ms
+2025-08-19 20:28:27.924 | Installed 1 package in 2ms
+2025-08-19 20:28:32.024 | 2025-08-19 23:28:32.023 | INFO     | smart_core_assistant_painel.modules.services.start_services:start_services:98 - Iniciando serviços essenciais da aplicação...
+2025-08-19 20:28:32.024 | 2025-08-19 23:28:32.024 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:140 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-08-19 20:28:32.024 | 2025-08-19 23:28:32.024 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:53 - 🔧 Iniciando carregamento do Firebase Remote Config...
+2025-08-19 20:28:32.024 | 2025-08-19 23:28:32.024 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:58 - ✅ Firebase já inicializado
+2025-08-19 20:28:32.024 | 2025-08-19 23:28:32.024 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:65 - 📋 Criando template do Remote Config...
+2025-08-19 20:28:32.060 | 2025-08-19 23:28:32.060 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:67 - ✅ Template criado com sucesso
+2025-08-19 20:28:32.060 | 2025-08-19 23:28:32.060 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:70 - 📥 Carregando template do backend...
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:72 - ✅ Template carregado com sucesso
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:75 - 🔍 Avaliando template...
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:77 - ✅ Template avaliado com sucesso
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:80 - 📊 Estado do template: <class 'firebase_admin.remote_config.ServerConfig'>
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | WARNING  | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:87 - ⚠️ Não foi possível listar parâmetros: 'ServerConfig' object has no attribute 'get_all'
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:89 - 🔑 Carregando 23 variáveis de ambiente...
+2025-08-19 20:28:33.414 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar groq_api_key -> GROQ_API_KEY
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para groq_api_key: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ groq_api_key: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.414 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar openai_api_key -> OPENAI_API_KEY
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para openai_api_key: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ openai_api_key: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar huggingface_api_key -> HUGGINGFACE_API_KEY
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para huggingface_api_key: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ huggingface_api_key: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar llm_class -> LLM_CLASS
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para llm_class: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ llm_class: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar model -> MODEL
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para model: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ model: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar llm_temperature -> LLM_TEMPERATURE
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para llm_temperature: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ llm_temperature: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar prompt_system_analise_conteudo -> PROMPT_SYSTEM_ANALISE_CONTEUDO
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para prompt_system_analise_conteudo: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ prompt_system_analise_conteudo: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar prompt_human_analise_conteudo -> PROMPT_HUMAN_ANALISE_CONTEUDO
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para prompt_human_analise_conteudo: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ prompt_human_analise_conteudo: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar prompt_system_melhoria_conteudo -> PROMPT_SYSTEM_MELHORIA_CONTEUDO
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para prompt_system_melhoria_conteudo: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ prompt_system_melhoria_conteudo: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar prompt_human_melhoria_conteudo -> PROMPT_HUMAN_MELHORIA_CONTEUDO
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para prompt_human_melhoria_conteudo: [DEFINIDO]
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ prompt_human_melhoria_conteudo: carregado com sucesso
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar prompt_human_analise_previa_mensagem -> PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM
+2025-08-19 20:28:33.415 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para prompt_human_analise_previa_mensagem: [DEFINIDO]
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.415 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ prompt_human_analise_previa_mensagem: carregado com sucesso
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar prompt_system_analise_previa_mensagem -> PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para prompt_system_analise_previa_mensagem: [DEFINIDO]
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ prompt_system_analise_previa_mensagem: carregado com sucesso
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar chunk_overlap -> CHUNK_OVERLAP
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para chunk_overlap: [DEFINIDO]
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ chunk_overlap: carregado com sucesso
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar chunk_size -> CHUNK_SIZE
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para chunk_size: [DEFINIDO]
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ chunk_size: carregado com sucesso
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar embeddings_model -> EMBEDDINGS_MODEL
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para embeddings_model: [DEFINIDO]
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ embeddings_model: carregado com sucesso
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar embeddings_class -> EMBEDDINGS_CLASS
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para embeddings_class: [DEFINIDO]
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ embeddings_class: carregado com sucesso
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar whatsapp_api_base_url -> WHATSAPP_API_BASE_URL
+2025-08-19 20:28:33.416 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para whatsapp_api_base_url: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.416 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ whatsapp_api_base_url: carregado com sucesso
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar whatsapp_api_send_text_url -> WHATSAPP_API_SEND_TEXT_URL
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para whatsapp_api_send_text_url: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ whatsapp_api_send_text_url: carregado com sucesso
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar whatsapp_api_start_typing_url -> WHATSAPP_API_START_TYPING_URL
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para whatsapp_api_start_typing_url: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ whatsapp_api_start_typing_url: carregado com sucesso
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar whatsapp_api_stop_typing_url -> WHATSAPP_API_STOP_TYPING_URL
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para whatsapp_api_stop_typing_url: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ whatsapp_api_stop_typing_url: carregado com sucesso
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar valid_entity_types -> VALID_ENTITY_TYPES
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para valid_entity_types: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ valid_entity_types: carregado com sucesso
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar valid_intent_types -> VALID_INTENT_TYPES
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para valid_intent_types: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ valid_intent_types: carregado com sucesso
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:94 - 📝 Tentando carregar time_cache -> TIME_CACHE
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:96 - 🔍 Valor obtido para time_cache: [DEFINIDO]
+2025-08-19 20:28:33.417 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:100 - ✅ time_cache: carregado com sucesso
+2025-08-19 20:28:33.418 | 2025-08-19 23:28:33.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:_load_remote_config_values:111 - 🎉 23/23 variáveis carregadas com sucesso!
+2025-08-19 20:28:33.420 | 2025-08-19 23:28:33.419 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:142 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-08-19 20:28:33.436 | INFO:faiss.loader:Loading faiss with AVX512 support.
+2025-08-19 20:28:33.615 | INFO:faiss.loader:Successfully loaded faiss with AVX512 support.
+2025-08-19 20:28:33.683 | INFO:httpx:HTTP Request: POST http://host.docker.internal:11434/api/embed "HTTP/1.1 200 OK"
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.685 | INFO     | smart_core_assistant_painel.modules.services.start_services:start_services:104 - Serviços inicializados com sucesso
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.685 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:56 - === VARIÁVEIS DE AMBIENTE CARREGADAS ===
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.685 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:64 - GROQ_API_KEY: gsk_WGSh...gbkw
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.685 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:64 - OPENAI_API_KEY: sk-proj-...TFoA
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:64 - HUGGINGFACE_API_KEY: hf_EYzde...qOMz
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - LLM_CLASS: ChatGroq
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - MODEL: llama-3.1-8b-instant
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - LLM_TEMPERATURE: 0
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:69 - PROMPT_SYSTEM_ANALISE_CONTEUDO: Você é um assistente especializado em organização e análise de documentos 
+2025-08-19 20:28:33.686 | empresariais. Sua tare...
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - PROMPT_HUMAN_ANALISE_CONTEUDO: Analise e organize o conteudo a seguir
+2025-08-19 20:28:33.686 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:69 - PROMPT_SYSTEM_MELHORIA_CONTEUDO: Você é um assistente especializado em reedição textual, com foco em
+2025-08-19 20:28:33.686 | aprimorar a clareza e a compr...
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - PROMPT_HUMAN_MELHORIA_CONTEUDO: Analise e organize o conteudo a seguir
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.686 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM: MENSAGEM ATUAL PARA ANÁLISE
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:69 - PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM: # Prompt System Melhorado para Análise Prévia de Mensagens
+2025-08-19 20:28:33.687 | 
+2025-08-19 20:28:33.687 | ## 🎯 OBJETIVO PRINCIPAL
+2025-08-19 20:28:33.687 | Você é um esp...
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - CHUNK_OVERLAP: 200
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - CHUNK_SIZE: 1000
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - EMBEDDINGS_MODEL: mxbai-embed-large:latest
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - EMBEDDINGS_CLASS: OllamaEmbeddings
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - WHATSAPP_API_BASE_URL: http://evolution-api:8080
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - WHATSAPP_API_SEND_TEXT_URL: message/sendText
+2025-08-19 20:28:33.687 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - WHATSAPP_API_START_TYPING_URL: chat/sendPresence
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.687 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - WHATSAPP_API_STOP_TYPING_URL: chat/sendPresence
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:69 - VALID_ENTITY_TYPES: {"entity_types":{"produtos_servicos":{"tipo_produto":"Categoria do produto citada na conversa, ex...
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:69 - VALID_INTENT_TYPES: {"intent_types":{"comunicacao_basica":{"saudacao":"cumprimentos e apresentações","despedida":"fin...
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:71 - TIME_CACHE: 2
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | INFO     | smart_core_assistant_painel.modules.services.start_services:_log_environment_variables:73 - === FIM DAS VARIÁVEIS DE AMBIENTE ===
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | DEBUG    | smart_core_assistant_painel.app.ui.oraculo.apps:_set_send_to_robust:69 - Signal 'post_save' configurado para envio robusto.
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | DEBUG    | smart_core_assistant_painel.app.ui.oraculo.apps:_set_send_to_robust:69 - Signal 'pre_save' configurado para envio robusto.
+2025-08-19 20:28:33.688 | 2025-08-19 23:28:33.688 | DEBUG    | smart_core_assistant_painel.app.ui.oraculo.apps:_set_send_to_robust:69 - Signal 'post_delete' configurado para envio robusto.
+2025-08-19 20:28:33.689 | 2025-08-19 23:28:33.688 | DEBUG    | smart_core_assistant_painel.app.ui.oraculo.apps:_set_send_to_robust:69 - Signal 'pre_delete' configurado para envio robusto.
+2025-08-19 20:28:34.887 | 23:28:34 [Q] INFO Q Cluster arizona-oregon-tango-indigo starting.
+2025-08-19 20:28:34.939 | 23:28:34 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.
+2025-08-19 20:28:34.945 | 23:28:34 [Q] INFO Process-56c261d941544475a069c1ed91c70fb3 ready for work at 59
+2025-08-19 20:28:34.951 | 23:28:34 [Q] INFO Process-00a685b925c24f05b52b0baa1ca95afb ready for work at 60
+2025-08-19 20:28:34.957 | 23:28:34 [Q] INFO Process-c2a9fb34b333408e97a665e53e6aee26 monitoring at 61
+2025-08-19 20:28:34.960 | 23:28:34 [Q] INFO Process-05f71b87febf4e3f8f7e973ecbe53d7d guarding cluster arizona-oregon-tango-indigo [smart_core_cluster]
+2025-08-19 20:28:34.961 | 23:28:34 [Q] INFO Process-079281c321b84cd1848bc8dc64494670 pushing tasks at 62
+2025-08-19 20:28:34.963 | 23:28:34 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.
+2025-08-19 20:28:34.963 | 23:28:34 [Q] INFO Q Cluster arizona-oregon-tango-indigo [smart_core_cluster] running.
+2025-08-19 20:28:34.965 | 23:28:34 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.
+2025-08-19 20:28:34.988 | INFO:venv:=== VARIÁVEIS DE AMBIENTE CARREGADAS ===
+2025-08-19 20:28:34.988 | INFO:venv:GROQ_API_KEY: gsk_WGSh...gbkw
+2025-08-19 20:28:34.988 | INFO:venv:OPENAI_API_KEY: sk-proj-...TFoA
+2025-08-19 20:28:34.988 | INFO:venv:HUGGINGFACE_API_KEY: hf_EYzde...qOMz
+2025-08-19 20:28:34.988 | INFO:venv:LLM_CLASS: ChatGroq
+2025-08-19 20:28:34.988 | INFO:venv:MODEL: llama-3.1-8b-instant
+2025-08-19 20:28:34.988 | INFO:venv:LLM_TEMPERATURE: 0
+2025-08-19 20:28:34.988 | INFO:venv:PROMPT_SYSTEM_ANALISE_CONTEUDO: Você é um assistente especializado em organização e análise de documentos 
+2025-08-19 20:28:34.988 | empresariais. Sua tare...
+2025-08-19 20:28:34.988 | INFO:venv:PROMPT_HUMAN_ANALISE_CONTEUDO: Analise e organize o conteudo a seguir
+2025-08-19 20:28:34.988 | INFO:venv:PROMPT_SYSTEM_MELHORIA_CONTEUDO: Você é um assistente especializado em reedição textual, com foco em
+2025-08-19 20:28:34.988 | aprimorar a clareza e a compr...
+2025-08-19 20:28:34.988 | INFO:venv:PROMPT_HUMAN_MELHORIA_CONTEUDO: Analise e organize o conteudo a seguir
+2025-08-19 20:28:34.988 | INFO:venv:PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM: MENSAGEM ATUAL PARA ANÁLISE
+2025-08-19 20:28:34.988 | INFO:venv:PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM: # Prompt System Melhorado para Análise Prévia de Mensagens
+2025-08-19 20:28:34.988 | 
+2025-08-19 20:28:34.988 | ## 🎯 OBJETIVO PRINCIPAL
+2025-08-19 20:28:34.988 | Você é um esp...
+2025-08-19 20:28:34.988 | INFO:venv:CHUNK_OVERLAP: 200
+2025-08-19 20:28:34.988 | INFO:venv:CHUNK_SIZE: 1000
+2025-08-19 20:28:34.988 | INFO:venv:EMBEDDINGS_MODEL: mxbai-embed-large:latest
+2025-08-19 20:28:34.988 | INFO:venv:EMBEDDINGS_CLASS: OllamaEmbeddings
+2025-08-19 20:28:34.988 | INFO:venv:WHATSAPP_API_BASE_URL: http://evolution-api:8080
+2025-08-19 20:28:34.988 | INFO:venv:WHATSAPP_API_SEND_TEXT_URL: message/sendText
+2025-08-19 20:28:34.989 | INFO:venv:WHATSAPP_API_START_TYPING_URL: chat/sendPresence
+2025-08-19 20:28:34.989 | INFO:venv:WHATSAPP_API_STOP_TYPING_URL: chat/sendPresence
+2025-08-19 20:28:34.989 | INFO:venv:VALID_ENTITY_TYPES: {"entity_types":{"produtos_servicos":{"tipo_produto":"Categoria do produto citada na conversa, ex...
+2025-08-19 20:28:34.989 | INFO:venv:VALID_INTENT_TYPES: {"intent_types":{"comunicacao_basica":{"saudacao":"cumprimentos e apresentações","despedida":"fin...
+2025-08-19 20:28:34.989 | INFO:venv:TIME_CACHE: 2
+2025-08-19 20:28:34.989 | INFO:venv:=== FIM DAS VARIÁVEIS DE AMBIENTE ===
+2025-08-19 20:28:35.466 | 23:28:35 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.
+2025-08-19 20:28:35.967 | 23:28:35 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.
+2025-08-19 20:28:36.468 | 23:28:36 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.
+2025-08-19 20:28:36.969 | 23:28:36 [Q] ERROR Error 111 connecting to localhost:6379. Connection refused.

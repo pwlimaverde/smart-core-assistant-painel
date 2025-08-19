@@ -154,7 +154,7 @@ class FeaturesCompose:
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.TEMPERATURE},
+            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context=context,
@@ -188,7 +188,7 @@ class FeaturesCompose:
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.TEMPERATURE},
+            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
             context=context,
@@ -225,7 +225,7 @@ class FeaturesCompose:
         llm_parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.TEMPERATURE},
+            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
             context=context,

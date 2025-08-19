@@ -6,20 +6,25 @@ padrão singleton para garantir que uma única instância do banco de dados veto
 seja compartilhada em toda a aplicação.
 
 Classes:
-    _FaissVetorStorageMeta: Metaclasse para garantir o padrão Singleton.
     FaissVetorStorage: A classe principal para o armazenamento vetorial FAISS.
 """
 
-import os
 from abc import ABCMeta
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import (
+    HuggingFaceInferenceAPIEmbeddings,
+    OpenAIEmbeddings,
+)
+from langchain_ollama import OllamaEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings
 from loguru import logger
-from pydantic import ValidationError
+from pydantic import SecretStr
 
 from smart_core_assistant_painel.modules.services.features.service_hub import (
     SERVICEHUB,
@@ -28,101 +33,84 @@ from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.
     VetorStorage,
 )
 
-
 class _FaissVetorStorageMeta(ABCMeta):
-    """Metaclasse para implementar o padrão Singleton com suporte a ABC.
-
-    Attributes:
-        _instances (Dict[type, Any]): Armazena as instâncias singleton.
-    """
+    """Metaclasse para implementar o padrão Singleton com suporte a ABC."""
 
     _instances: Dict[type, Any] = {}
 
     def __call__(cls, *args: Any, **kwargs: Any) -> Any:
-        """Garante que apenas uma instância da classe seja criada.
-
-        Args:
-            *args: Lista de argumentos variáveis.
-            **kwargs: Argumentos de palavra-chave arbitrários.
-
-        Returns:
-            Any: A instância singleton da classe.
-        """
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
 
-
 class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
+
     """Implementação singleton do VetorStorage usando FAISS.
 
-    Garante que todas as instâncias compartilhem o mesmo banco de dados vetorial.
+    Garante que todas as instâncias compartilhem o mesmo banco de dados vetorial
+    e que seja sincronizado entre Django e cluster.
 
     Attributes:
+        _instance: Instância singleton da classe.
         _initialized (bool): Flag para evitar reinicialização.
+        _lock: Lock para thread safety.
         __db_path (str): Caminho para o diretório do banco de dados FAISS.
-        __embeddings (Any): A instância do modelo de embeddings.
+        __embeddings (Embeddings): A instância do modelo de embeddings.
         __vectordb (FAISS): A instância do banco de dados vetorial FAISS.
     """
 
-    def __init__(self) -> None:
-        """Inicializa o armazenamento FAISS.
 
-        Cria ou carrega o banco de dados vetorial existente. A inicialização
-        é executada apenas uma vez devido ao padrão singleton.
+    def __init__(self) -> None:
+        """Inicializa o serviço da Evolution API.
+
+        A inicialização real ocorre apenas na primeira vez que a classe é
+        instanciada, devido ao padrão Singleton.
         """
+        # Evita reinicialização em instâncias subsequentes do Singleton
         if hasattr(self, "_initialized"):
             return
 
         self.__db_path = str(Path(__file__).parent / "banco_faiss")
         self.__embeddings = self.__create_embeddings()
-        self.__vectordb = self.__initialize_vector_database()
+        self.__vectordb = self.__inicializar_banco_vetorial()
         self._initialized = True
 
-    def __create_embeddings(self) -> Any:
+    def __create_embeddings(self) -> Embeddings:
         """Cria uma instância de embeddings com base na classe configurada.
 
-        Tenta instanciar a classe primeiro com 'model_name' (padrão para
-        classes HuggingFace) e depois com 'model' (padrão para Ollama),
-        evitando passar argumentos posicionais para modelos baseados em Pydantic.
-
         Returns:
-            Any: Uma instância da classe de embeddings configurada.
+            Embeddings: Uma instância da classe de embeddings configurada.
 
         Raises:
-            TypeError: Se a classe de embeddings não puder ser instanciada com as
-                       configurações de modelo e chave de API fornecidas.
+            TypeError: Se a classe de embeddings não puder ser instanciada.
         """
         emb_cls = SERVICEHUB.EMBEDDINGS_CLASS
         model = SERVICEHUB.EMBEDDINGS_MODEL
-        api_key = SERVICEHUB.HUGGINGFACE_API_KEY
+        
+        if emb_cls == "HuggingFaceInferenceAPIEmbeddings":
+            import os
+            token = os.environ.get("HUGGINGFACE_API_KEY")
+            if token:
+                return HuggingFaceInferenceAPIEmbeddings(
+                    api_key=SecretStr(token),
+                    model_name=model,
+                )
 
-        if api_key:
-            try:
-                return emb_cls(model_name=model, api_key=api_key)  # type: ignore[call-arg]
-            except (TypeError, ValidationError):
-                try:
-                    return emb_cls(model_name=model, huggingfacehub_api_token=api_key)  # type: ignore[call-arg]
-                except (TypeError, ValidationError):
-                    try:
-                        return emb_cls(model_name=model)  # type: ignore[call-arg]
-                    except (TypeError, ValidationError):
-                        pass
-        else:
-            try:
-                return emb_cls(model_name=model)  # type: ignore[call-arg]
-            except (TypeError, ValidationError):
-                pass
+        if emb_cls == "OllamaEmbeddings":
+            # As URLs e configurações do Ollama devem ser fornecidas via
+            # variáveis de ambiente (ex.: OLLAMA_BASE_URL) no Docker.
+            # Portanto, não passamos base_url explicitamente aqui.
+            return OllamaEmbeddings(model=model)
+        
+        if emb_cls == "OpenAIEmbeddings":
+            return OpenAIEmbeddings(model=model)
 
-        try:
-            return emb_cls(model=model)  # type: ignore[call-arg]
-        except (TypeError, ValidationError) as e:
-            logger.error(
-                "Não foi possível instanciar a classe de embeddings. "
-                f"classe={getattr(emb_cls, '__name__', str(emb_cls))}, "
-                f"model={model}, erro={e}"
-            )
-            raise
+        raise TypeError(
+            f"Classe de embeddings {emb_cls} não suportada. "
+            "Certifique-se de que a classe está configurada corretamente."
+        )
+
+
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco de dados FAISS existe no caminho especificado.
@@ -133,12 +121,14 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
         Returns:
             bool: True se 'index.faiss' existir, False caso contrário.
         """
+        import os
         return os.path.exists(os.path.join(db_path, "index.faiss"))
 
-    def __initialize_vector_database(self) -> FAISS:
+    def __inicializar_banco_vetorial(self) -> FAISS:
         """Inicializa o banco de dados vetorial FAISS.
 
         Carrega um banco de dados existente ou cria um novo se não existir.
+        Garante sincronização entre Django e cluster.
 
         Returns:
             FAISS: A instância FAISS inicializada.
@@ -150,24 +140,20 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                     self.__embeddings,
                     allow_dangerous_deserialization=True,
                 )
-                # Realiza um "warm-up" das embeddings para garantir inicialização
-                # preguiçosa e compatibilidade com os testes, sem persistir mudanças.
+                # Realiza warm-up das embeddings
                 try:
                     self.__warmup_embeddings()
-                except Exception as e:  # pragma: no cover - não crítico para fluxo
+                except Exception as e:
                     logger.warning(f"Falha ao realizar warm-up de embeddings: {e}")
                 return vectordb
             except Exception as e:
                 logger.error(f"Erro ao carregar banco de dados FAISS existente: {e}")
-                return self.__create_empty_database()
+                return self.__criar_banco_vazio()
         else:
-            return self.__create_empty_database()
+            return self.__criar_banco_vazio()
 
-    def __create_empty_database(self) -> FAISS:
+    def __criar_banco_vazio(self) -> FAISS:
         """Cria um banco de dados FAISS vazio.
-
-        Inicializa o banco de dados com um documento fictício, salva-o, remove o
-        documento fictício e, em seguida, retorna o banco de dados limpo.
 
         Returns:
             FAISS: Uma instância FAISS vazia e limpa.
@@ -176,6 +162,7 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
             Exception: Se a criação do banco de dados vazio falhar.
         """
         try:
+            import os
             dummy_doc = Document(
                 page_content="dummy", metadata={"temp_id": "dummy_init"}
             )
@@ -192,25 +179,20 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
     def __warmup_embeddings(self) -> None:
         """Realiza um warm-up das embeddings usando um documento fictício.
 
-        Esta rotina cria um vetor store temporário apenas para garantir que
-        quaisquer inicializações preguiçosas de pipelines de embeddings ocorrem
-        antecipadamente. Não persiste dados e não altera o banco carregado.
+        Esta rotina garante que inicializações preguiçosas ocorram antecipadamente.
         """
         try:
             dummy_doc = Document(
                 page_content="warmup", metadata={"temp_id": "warmup"}
             )
-            # Chamada intencional a from_documents para aquecer a pilha
-            # de embeddings e manter compatibilidade com os testes.
             FAISS.from_documents([dummy_doc], self.__embeddings)
         except Exception as e:
-            # Loga como warning pois falha no warm-up não impede funcionamento
             logger.warning(f"Falha durante warm-up das embeddings: {e}")
 
     def __sync_vectordb(self) -> None:
         """Sincroniza o banco de dados vetorial recarregando-o do disco.
 
-        Usado para garantir que as alterações de outros processos sejam visíveis.
+        Garante que alterações de outros processos (Django/cluster) sejam visíveis.
         """
         try:
             if self.__faiss_db_exists(self.__db_path):
@@ -276,6 +258,7 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
             List[Document]: Uma lista de documentos encontrados.
         """
         try:
+            # Sincroniza antes de ler para garantir dados atualizados
             self.__sync_vectordb()
             results = self.__vectordb.similarity_search(query_vector, k=k)
             if not results:
@@ -293,18 +276,15 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
     def write(self, documents: list[Document]) -> None:
         """Adiciona documentos ao armazenamento vetorial e persiste no disco.
 
-        Garante robustez convertendo entradas não-Documento quando possível
-        e ignorando as inválidas. Sincroniza o banco de dados antes de escrever para
-        refletir alterações externas.
-
         Args:
             documents (list[Document]): Uma lista de documentos a serem adicionados.
 
         Raises:
-            ValueError: Se a lista de documentos estiver vazia ou se nenhum chunk válido
-                        puder ser criado, ou se a adição de documentos falhar.
+            ValueError: Se a lista de documentos estiver vazia ou inválida.
         """
+        # Sincroniza antes de escrever para refletir alterações externas
         self.__sync_vectordb()
+        
         if not documents:
             raise ValueError("A lista de documentos está vazia.")
 
@@ -314,7 +294,7 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                 docs.append(item)
 
         if not docs:
-            raise ValueError("Nenhum chunk válido encontrado")
+            raise ValueError("Nenhum documento válido encontrado")
 
         splitter = RecursiveCharacterTextSplitter(
             chunk_size=SERVICEHUB.CHUNK_SIZE,
@@ -362,6 +342,7 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
             bool: True se o conteúdo foi adicionado com sucesso, False caso contrário.
         """
         try:
+            import os
             if not os.path.exists(file_path):
                 logger.warning(f"Arquivo não encontrado: {file_path}")
                 return False

@@ -33,6 +33,32 @@ Este documento define as convenções, ferramentas e melhores práticas a serem 
     else: # Supondo que o outro tipo seja um objeto Pydantic/Django
         value = response.attribute
     ```
+- **Padrão de Imports em `__init__.py`**:
+  - Para facilitar o acesso a componentes de um módulo, os arquivos `__init__.py` devem ser usados como uma "fachada", centralizando e expondo a API pública do módulo.
+  - **Centralização**: Importe os objetos principais do módulo para dentro do `__init__.py`.
+  - **Exposição**: Use a variável `__all__` para definir explicitamente quais objetos são parte da API pública.
+  - **Documentação**: Inclua uma `docstring` no início do arquivo explicando o propósito do módulo.
+  - **Exemplo**:
+    ```python
+    """
+    Este módulo centraliza e expõe os principais serviços da aplicação.
+    """
+    from .features.service_hub import SERVICEHUB, ServiceHub
+    from .utils.erros import VetorStorageError, WhatsAppServiceError
+    from .utils.types import VSUsecase, WSUsecase
+
+    __all__ = [
+        # Service Hub
+        "ServiceHub",
+        "SERVICEHUB",
+        # Erros
+        "WhatsAppServiceError",
+        "VetorStorageError",
+        # Types
+        "VSUsecase",
+        "WSUsecase",
+    ]
+    ```
 
 ## 3. Ferramentas de Qualidade e Automação
 

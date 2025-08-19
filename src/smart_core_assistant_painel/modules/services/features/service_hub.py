@@ -59,8 +59,8 @@ class ServiceHub:
             self._prompt_system_melhoria_conteudo: Optional[str] = None
             self._prompt_human_analise_conteudo: Optional[str] = None
             self._prompt_system_analise_conteudo: Optional[str] = None
-            self._temperature: Optional[int] = None
-            self._model: Optional[str] = None
+            self._llm_temperature: Optional[int] = None
+            self._llm_model: Optional[str] = None
             self._llm_class: Optional[Type[BaseChatModel]] = None
             self._whatsapp_api_base_url: Optional[str] = None
             self._vetor_storage: Optional[VetorStorage] = None
@@ -79,9 +79,9 @@ class ServiceHub:
         self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
         self._chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", "200"))
         self._chunk_size = int(os.environ.get("CHUNK_SIZE", "1000"))
-        self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
-        self._temperature = int(os.environ.get("TEMPERATURE", "0"))
-        self._model = os.environ.get("MODEL", "llama3.1")
+        self._embeddings_model = os.environ.get("EMBEDDINGS_LLM_MODEL")
+        self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
+        self._llm_model = os.environ.get("LLM_MODEL", "llama3.1")
         self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
 
         vetor_storage_type = os.environ.get("VETOR_STORAGE_TYPE")
@@ -238,18 +238,18 @@ class ServiceHub:
         )
 
     @property
-    def TEMPERATURE(self) -> int:
+    def LLM_TEMPERATURE(self) -> int:
         """Retorna a temperatura para o modelo de linguagem."""
-        if self._temperature is None:
-            self._temperature = int(os.environ.get("TEMPERATURE", "0"))
-        return self._temperature if self._temperature is not None else 0
+        if self._llm_temperature is None:
+            self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
+        return self._llm_temperature if self._llm_temperature is not None else 0
 
     @property
-    def MODEL(self) -> str:
+    def LLM_MODEL(self) -> str:
         """Retorna o nome do modelo de linguagem."""
-        if self._model is None:
-            self._model = os.environ.get("MODEL", "llama3.1")
-        return self._model if self._model is not None else "llama3.1"
+        if self._llm_model is None:
+            self._llm_model = os.environ.get("LLM_MODEL", "llama3.1")
+        return self._llm_model if self._llm_model is not None else "llama3.1"
 
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:

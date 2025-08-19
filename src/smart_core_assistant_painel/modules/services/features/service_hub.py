@@ -386,32 +386,28 @@ class ServiceHub:
             ValueError: Se a classe de embeddings especificada não for reconhecida.
         """
         embeddings_class = os.environ.get(
-            "EMBEDDINGS_CLASS", "HuggingFaceInferenceAPIEmbeddings"
+            "EMBEDDINGS_CLASS", "OpenAIEmbeddings"
         )
 
-        if embeddings_class in (
-            "HuggingFaceInferenceEmbeddings",
-            "HuggingFaceInferenceAPIEmbeddings",
-        ):
+        if embeddings_class == 'HuggingFaceInferenceAPIEmbeddings':
             from langchain_community.embeddings import (
                 HuggingFaceInferenceAPIEmbeddings,
             )
-
             return HuggingFaceInferenceAPIEmbeddings
         elif embeddings_class == "HuggingFaceEndpointEmbeddings":
             from langchain_huggingface.embeddings import (
                 HuggingFaceEndpointEmbeddings,
             )
-
             return HuggingFaceEndpointEmbeddings
         elif embeddings_class == "HuggingFaceEmbeddings":
             from langchain_huggingface import HuggingFaceEmbeddings
-
             return HuggingFaceEmbeddings
         elif embeddings_class == "OllamaEmbeddings":
             from langchain_ollama import OllamaEmbeddings
-
             return OllamaEmbeddings
+        elif embeddings_class == "OpenAIEmbeddings":
+            from langchain_openai import OpenAIEmbeddings
+            return OpenAIEmbeddings
         else:
             raise ValueError(
                 (
@@ -419,7 +415,9 @@ class ServiceHub:
                     "Defina 'EMBEDDINGS_CLASS' como uma das seguintes: "
                     "'HuggingFaceInferenceAPIEmbeddings', "
                     "'HuggingFaceEndpointEmbeddings', "
-                    "'HuggingFaceEmbeddings' ou 'OllamaEmbeddings'."
+                    "'HuggingFaceEmbeddings', "
+                    "'OllamaEmbeddings' ou "
+                    "'OpenAIEmbeddings'."
                 )
             )
 

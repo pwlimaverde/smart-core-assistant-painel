@@ -49,9 +49,10 @@ class ServiceHub:
         apenas uma vez.
         """
         if not self._initialized:
+            #Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
-            # Api_Keys
-            self._huggingface_api_key: Optional[str] = None
+            self._vetor_storage: Optional[VetorStorage] = None
+            self._whatsapp_service: Optional[WhatsAppService] = None
             # LLM
             self._llm_class: Optional[Type[BaseChatModel]] = None
             self._llm_model: Optional[str] = None
@@ -69,8 +70,9 @@ class ServiceHub:
             self._embeddings_class: Optional[Type[Embeddings]] = None
             # Whatsapp
             self._whatsapp_api_base_url: Optional[str] = None
-            self._vetor_storage: Optional[VetorStorage] = None
-            self._whatsapp_service: Optional[WhatsAppService] = None
+            self._whatsapp_api_send_text_url: Optional[str] = None
+            self._whatsapp_api_start_typing_url: Optional[str] = None
+            self._whatsapp_api_stop_typing_url: Optional[str] = None
             # Utilitarios
             self._valid_entity_types: Optional[str] = None
             self._valid_intent_types: Optional[str] = None
@@ -266,21 +268,36 @@ class ServiceHub:
 
     @property
     def WHATSAPP_API_SEND_TEXT_URL(self) -> str:
-        """Retorna a URL completa para o endpoint de envio de texto."""
-        base = self.WHATSAPP_API_BASE_URL
-        return f"{base}/v1/utils/send_text" if base else ""
+        if self._whatsapp_api_send_text_url is None:
+            self._whatsapp_api_send_text_url = os.environ.get("WHATSAPP_API_SEND_TEXT_URL")
+        return (
+            self._whatsapp_api_send_text_url
+            if self._whatsapp_api_send_text_url is not None
+            else ""
+        )
+
 
     @property
     def WHATSAPP_API_START_TYPING_URL(self) -> str:
-        """Retorna a URL completa para o endpoint de iniciar digitação."""
-        base = self.WHATSAPP_API_BASE_URL
-        return f"{base}/v1/utils/start_typing" if base else ""
+        if self._whatsapp_api_start_typing_url is None:
+            self._whatsapp_api_start_typing_url = os.environ.get("WHATSAPP_API_START_TYPING_URL")
+        return (
+            self._whatsapp_api_start_typing_url
+            if self._whatsapp_api_start_typing_url is not None
+            else ""
+        )
+
 
     @property
     def WHATSAPP_API_STOP_TYPING_URL(self) -> str:
-        """Retorna a URL completa para o endpoint de parar digitação."""
-        base = self.WHATSAPP_API_BASE_URL
-        return f"{base}/v1/utils/stop_typing" if base else ""
+        if self._whatsapp_api_stop_typing_url is None:
+            self._whatsapp_api_stop_typing_url = os.environ.get("WHATSAPP_API_STOP_TYPING_URL")
+        return (
+            self._whatsapp_api_stop_typing_url
+            if self._whatsapp_api_stop_typing_url is not None
+            else ""
+        )
+
 
     @property
     def vetor_storage(self) -> VetorStorage:

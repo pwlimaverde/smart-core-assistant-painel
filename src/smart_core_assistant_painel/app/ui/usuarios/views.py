@@ -70,7 +70,7 @@ def login(request: HttpRequest) -> HttpResponse:
         user = authenticate(request, username=username or "", password=senha or "")
         if user:
             auth.login(request, user)
-            return redirect("treinar_ia")
+            return redirect("oraculo:treinar_ia")
         messages.add_message(
             request, constants.ERROR, "Nome de usuário ou senha inválidos."
         )

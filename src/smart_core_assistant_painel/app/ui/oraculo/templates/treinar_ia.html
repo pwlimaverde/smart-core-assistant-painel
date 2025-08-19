@@ -14,7 +14,7 @@
                         </h1>
                     </div>
                     <div class="flex items-center gap-x-4 sm:gap-x-6">
-                        <a href="{% url 'treinar_ia' %}"
+                        <a href="{% url 'oraculo:treinar_ia' %}"
                            type="button"
                            class="hidden text-sm/6 font-semibold text-gray-900 sm:block">Treinamento da IA</a>
                           <a href=""
@@ -30,7 +30,7 @@
                 <div class="-mx-4 px-4 py-8 shadow-xs ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 lg:col-span-2 lg:row-span-2 lg:row-end-2 ">
                     <div class="divide-y divide-gray-900/10  max-w-7xl mx-auto ">
                         <form class="sm:rounded-xl md:col-span-2"
-                              action="{% url 'treinar_ia' %}"
+                              action="{% url 'oraculo:treinar_ia' %}"
                               method="POST"
                               enctype='multipart/form-data'>
                             {% csrf_token %}

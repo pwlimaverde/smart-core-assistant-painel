@@ -227,7 +227,7 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         return _exibir_pre_processamento(request, id)
     if request.method == "POST":
         return _processar_pre_processamento(request, id)
-    return redirect("treinar_ia")
+    return redirect("oraculo:treinar_ia")
 
 
 def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
@@ -264,7 +264,7 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         logger.error(f"Erro ao processar ação {acao}: {e}")
         messages.error(request, "Erro ao processar ação. Tente novamente.")
         return redirect("pre_processamento", id=treinamento.id)
-    return redirect("treinar_ia")
+    return redirect("oraculo:treinar_ia")
 
 
 def _aceitar_treinamento(id: int):
@@ -314,11 +314,11 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         )
     except Treinamentos.DoesNotExist:
         messages.error(request, "Treinamento não encontrado.")
-        return redirect("treinar_ia")
+        return redirect("oraculo:treinar_ia")
     except Exception as e:
         logger.error(f"Erro ao exibir pré-processamento: {e}")
         messages.error(request, "Erro interno do servidor. Tente novamente.")
-        return redirect("treinar_ia")
+        return redirect("oraculo:treinar_ia")
 
 
 @csrf_exempt

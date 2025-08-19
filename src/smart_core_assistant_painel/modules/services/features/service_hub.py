@@ -50,26 +50,31 @@ class ServiceHub:
         """
         if not self._initialized:
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
-            self._time_cache: Optional[int] = None
+            # Api_Keys
+            self._huggingface_api_key: Optional[str] = None
+            # LLM
+            self._llm_class: Optional[Type[BaseChatModel]] = None
+            self._llm_model: Optional[str] = None
+            self._llm_temperature: Optional[int] = None
+            # Prompts
+            self._prompt_system_analise_conteudo: Optional[str] = None
+            self._prompt_human_analise_conteudo: Optional[str] = None
+            self._prompt_system_melhoria_conteudo: Optional[str] = None
+            self._prompt_human_analise_previa_mensagem: Optional[str] = None
+            self._prompt_system_analise_previa_mensagem: Optional[str] = None
+            # Embeddings
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
             self._embeddings_model: Optional[str] = None
             self._embeddings_class: Optional[Type[Embeddings]] = None
-            self._prompt_human_melhoria_conteudo: Optional[str] = None
-            self._prompt_system_melhoria_conteudo: Optional[str] = None
-            self._prompt_human_analise_conteudo: Optional[str] = None
-            self._prompt_system_analise_conteudo: Optional[str] = None
-            self._llm_temperature: Optional[int] = None
-            self._llm_model: Optional[str] = None
-            self._llm_class: Optional[Type[BaseChatModel]] = None
+            # Whatsapp
             self._whatsapp_api_base_url: Optional[str] = None
             self._vetor_storage: Optional[VetorStorage] = None
             self._whatsapp_service: Optional[WhatsAppService] = None
-            self._prompt_system_analise_previa_mensagem: Optional[str] = None
-            self._prompt_human_analise_previa_mensagem: Optional[str] = None
+            # Utilitarios
             self._valid_entity_types: Optional[str] = None
             self._valid_intent_types: Optional[str] = None
-            self._huggingface_api_key: Optional[str] = None
+            self._time_cache: Optional[int] = None
 
             self._load_config()
             self._initialized = True
@@ -116,41 +121,109 @@ class ServiceHub:
         """
         self._whatsapp_service = whatsapp_service
 
+    # Api_Keys
     @property
-    def TIME_CACHE(self) -> int:
-        """Retorna o tempo de cache em segundos."""
-        if self._time_cache is None:
-            self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
-        return self._time_cache if self._time_cache is not None else 20
+    def HUGGINGFACE_API_KEY(self) -> str:
+        """Retorna a chave de API da Hugging Face para embeddings.
 
-    @property
-    def vetor_storage(self) -> VetorStorage:
-        """Retorna a instância configurada do VetorStorage.
-
-        Raises:
-            RuntimeError: Se o serviço não tiver sido configurado.
+        Verifica 'HUGGINGFACE_API_KEY' primeiro, depois recorre a
+        'HUGGINGFACEHUB_API_KEY' para compatibilidade.
         """
-        if self._vetor_storage is None:
-            raise RuntimeError(
-                "VetorStorage não configurado. "
-                "Use set_vetor_storage() para definir a instância manualmente."
-            )
-        return self._vetor_storage
+        if self._huggingface_api_key is None:
+            self._huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY")
+            if not self._huggingface_api_key:
+                self._huggingface_api_key = os.environ.get("HUGGINGFACEHUB_API_KEY")
+        return self._huggingface_api_key if self._huggingface_api_key else ""
+
+    # LLM
+    @property
+    def LLM_CLASS(self) -> Type[BaseChatModel]:
+        """Retorna a classe do LLM. Resolve e armazena em cache se não estiver definida."""
+        if self._llm_class is None:
+            self._llm_class = self._get_llm_class()
+        return self._llm_class
 
     @property
-    def whatsapp_service(self) -> WhatsAppService:
-        """Retorna a instância configurada do WhatsAppService.
+    def LLM_MODEL(self) -> str:
+        """Retorna o nome do modelo de linguagem."""
+        if self._llm_model is None:
+            self._llm_model = os.environ.get("LLM_MODEL", "llama3.1")
+        return self._llm_model if self._llm_model is not None else "llama3.1"
 
-        Raises:
-            RuntimeError: Se o serviço não tiver sido configurado.
-        """
-        if self._whatsapp_service is None:
-            raise RuntimeError(
-                "WhatsAppService não configurado. "
-                "Use set_whatsapp_service() para definir a instância manualmente."
+    @property
+    def LLM_TEMPERATURE(self) -> int:
+        """Retorna a temperatura para o modelo de linguagem."""
+        if self._llm_temperature is None:
+            self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
+        return self._llm_temperature if self._llm_temperature is not None else 0
+
+    # Prompts
+    @property
+    def PROMPT_SYSTEM_ANALISE_CONTEUDO(self) -> str:
+        """Retorna o prompt de sistema para análise de conteúdo."""
+        if self._prompt_system_analise_conteudo is None:
+            self._prompt_system_analise_conteudo = os.environ.get(
+                "PROMPT_SYSTEM_ANALISE_CONTEUDO"
             )
-        return self._whatsapp_service
+        return (
+            self._prompt_system_analise_conteudo
+            if self._prompt_system_analise_conteudo is not None
+            else ""
+        )
 
+    @property
+    def PROMPT_HUMAN_ANALISE_CONTEUDO(self) -> str:
+        """Retorna o prompt humano para análise de conteúdo."""
+        if self._prompt_human_analise_conteudo is None:
+            self._prompt_human_analise_conteudo = os.environ.get(
+                "PROMPT_HUMAN_ANALISE_CONTEUDO"
+            )
+        return (
+            self._prompt_human_analise_conteudo
+            if self._prompt_human_analise_conteudo is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_SYSTEM_MELHORIA_CONTEUDO(self) -> str:
+        """Retorna o prompt de sistema para melhoria de conteúdo."""
+        if self._prompt_system_melhoria_conteudo is None:
+            self._prompt_system_melhoria_conteudo = os.environ.get(
+                "PROMPT_SYSTEM_MELHORIA_CONTEUDO"
+            )
+        return (
+            self._prompt_system_melhoria_conteudo
+            if self._prompt_system_melhoria_conteudo is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM(self) -> str:
+        """Retorna o prompt humano para análise prévia de mensagem."""
+        if self._prompt_human_analise_previa_mensagem is None:
+            self._prompt_human_analise_previa_mensagem = os.environ.get(
+                "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM"
+            )
+        return (
+            self._prompt_human_analise_previa_mensagem
+            if self._prompt_human_analise_previa_mensagem is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
+        """Retorna o prompt de sistema para análise prévia de mensagem."""
+        if self._prompt_system_analise_previa_mensagem is None:
+            self._prompt_system_analise_previa_mensagem = os.environ.get(
+                "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM"
+            )
+        return (
+            self._prompt_system_analise_previa_mensagem
+            if self._prompt_system_analise_previa_mensagem is not None
+            else ""
+        )
+
+    # Embeddings
     @property
     def CHUNK_OVERLAP(self) -> int:
         """Retorna o tamanho da sobreposição de chunks para divisão de texto."""
@@ -173,84 +246,13 @@ class ServiceHub:
         return self._embeddings_model if self._embeddings_model is not None else ""
 
     @property
-    def HUGGINGFACE_API_KEY(self) -> str:
-        """Retorna a chave de API da Hugging Face para embeddings.
+    def EMBEDDINGS_CLASS(self) -> Type[Embeddings]:
+        """Retorna a classe de embeddings. Resolve e armazena em cache se não estiver definida."""
+        if self._embeddings_class is None:
+            self._embeddings_class = self._get_embeddings_class()
+        return self._embeddings_class
 
-        Verifica 'HUGGINGFACE_API_KEY' primeiro, depois recorre a
-        'HUGGINGFACEHUB_API_KEY' para compatibilidade.
-        """
-        if self._huggingface_api_key is None:
-            self._huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY")
-            if not self._huggingface_api_key:
-                self._huggingface_api_key = os.environ.get("HUGGINGFACEHUB_API_KEY")
-        return self._huggingface_api_key if self._huggingface_api_key else ""
-
-    @property
-    def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
-        """Retorna o prompt humano para melhoria de conteúdo."""
-        if self._prompt_human_melhoria_conteudo is None:
-            self._prompt_human_melhoria_conteudo = os.environ.get(
-                "PROMPT_HUMAN_MELHORIA_CONTEUDO"
-            )
-        return (
-            self._prompt_human_melhoria_conteudo
-            if self._prompt_human_melhoria_conteudo is not None
-            else ""
-        )
-
-    @property
-    def PROMPT_SYSTEM_MELHORIA_CONTEUDO(self) -> str:
-        """Retorna o prompt de sistema para melhoria de conteúdo."""
-        if self._prompt_system_melhoria_conteudo is None:
-            self._prompt_system_melhoria_conteudo = os.environ.get(
-                "PROMPT_SYSTEM_MELHORIA_CONTEUDO"
-            )
-        return (
-            self._prompt_system_melhoria_conteudo
-            if self._prompt_system_melhoria_conteudo is not None
-            else ""
-        )
-
-    @property
-    def PROMPT_HUMAN_ANALISE_CONTEUDO(self) -> str:
-        """Retorna o prompt humano para análise de conteúdo."""
-        if self._prompt_human_analise_conteudo is None:
-            self._prompt_human_analise_conteudo = os.environ.get(
-                "PROMPT_HUMAN_ANALISE_CONTEUDO"
-            )
-        return (
-            self._prompt_human_analise_conteudo
-            if self._prompt_human_analise_conteudo is not None
-            else ""
-        )
-
-    @property
-    def PROMPT_SYSTEM_ANALISE_CONTEUDO(self) -> str:
-        """Retorna o prompt de sistema para análise de conteúdo."""
-        if self._prompt_system_analise_conteudo is None:
-            self._prompt_system_analise_conteudo = os.environ.get(
-                "PROMPT_SYSTEM_ANALISE_CONTEUDO"
-            )
-        return (
-            self._prompt_system_analise_conteudo
-            if self._prompt_system_analise_conteudo is not None
-            else ""
-        )
-
-    @property
-    def LLM_TEMPERATURE(self) -> int:
-        """Retorna a temperatura para o modelo de linguagem."""
-        if self._llm_temperature is None:
-            self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
-        return self._llm_temperature if self._llm_temperature is not None else 0
-
-    @property
-    def LLM_MODEL(self) -> str:
-        """Retorna o nome do modelo de linguagem."""
-        if self._llm_model is None:
-            self._llm_model = os.environ.get("LLM_MODEL", "llama3.1")
-        return self._llm_model if self._llm_model is not None else "llama3.1"
-
+    # Whatsapp
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:
         """Retorna a URL base para a API do WhatsApp."""
@@ -281,44 +283,40 @@ class ServiceHub:
         return f"{base}/v1/utils/stop_typing" if base else ""
 
     @property
-    def LLM_CLASS(self) -> Type[BaseChatModel]:
-        """Retorna a classe do LLM. Resolve e armazena em cache se não estiver definida."""
-        if self._llm_class is None:
-            self._llm_class = self._get_llm_class()
-        return self._llm_class
+    def vetor_storage(self) -> VetorStorage:
+        """Retorna a instância configurada do VetorStorage.
 
-    @property
-    def EMBEDDINGS_CLASS(self) -> Type[Embeddings]:
-        """Retorna a classe de embeddings. Resolve e armazena em cache se não estiver definida."""
-        if self._embeddings_class is None:
-            self._embeddings_class = self._get_embeddings_class()
-        return self._embeddings_class
-
-    @property
-    def PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM(self) -> str:
-        """Retorna o prompt de sistema para análise prévia de mensagem."""
-        if self._prompt_system_analise_previa_mensagem is None:
-            self._prompt_system_analise_previa_mensagem = os.environ.get(
-                "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM"
+        Raises:
+            RuntimeError: Se o serviço não tiver sido configurado.
+        """
+        if self._vetor_storage is None:
+            raise RuntimeError(
+                "VetorStorage não configurado. "
+                "Use set_vetor_storage() para definir a instância manualmente."
             )
-        return (
-            self._prompt_system_analise_previa_mensagem
-            if self._prompt_system_analise_previa_mensagem is not None
-            else ""
-        )
+        return self._vetor_storage
 
     @property
-    def PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM(self) -> str:
-        """Retorna o prompt humano para análise prévia de mensagem."""
-        if self._prompt_human_analise_previa_mensagem is None:
-            self._prompt_human_analise_previa_mensagem = os.environ.get(
-                "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM"
+    def whatsapp_service(self) -> WhatsAppService:
+        """Retorna a instância configurada do WhatsAppService.
+
+        Raises:
+            RuntimeError: Se o serviço não tiver sido configurado.
+        """
+        if self._whatsapp_service is None:
+            raise RuntimeError(
+                "WhatsAppService não configurado. "
+                "Use set_whatsapp_service() para definir a instância manualmente."
             )
-        return (
-            self._prompt_human_analise_previa_mensagem
-            if self._prompt_human_analise_previa_mensagem is not None
-            else ""
-        )
+        return self._whatsapp_service
+
+    # Utilitarios
+    @property
+    def VALID_ENTITY_TYPES(self) -> str:
+        """Retorna uma string JSON com entidades válidas, ou vazia se não definida."""
+        if self._valid_entity_types is None:
+            self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
+        return self._valid_entity_types if self._valid_entity_types is not None else ""
 
     @property
     def VALID_INTENT_TYPES(self) -> str:
@@ -328,11 +326,11 @@ class ServiceHub:
         return self._valid_intent_types if self._valid_intent_types is not None else ""
 
     @property
-    def VALID_ENTITY_TYPES(self) -> str:
-        """Retorna uma string JSON com entidades válidas, ou vazia se não definida."""
-        if self._valid_entity_types is None:
-            self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
-        return self._valid_entity_types if self._valid_entity_types is not None else ""
+    def TIME_CACHE(self) -> int:
+        """Retorna o tempo de cache em segundos."""
+        if self._time_cache is None:
+            self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
+        return self._time_cache if self._time_cache is not None else 20
 
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe do LLM com base na variável de ambiente.

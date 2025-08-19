@@ -32,7 +32,7 @@
                 <div class="-mx-4 px-4 py-8 shadow-xs ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 lg:col-span-2 lg:row-span-2 lg:row-end-2 ">
                     <div class="divide-y divide-gray-900/10  max-w-1xl mx-auto ">
                         <form class="sm:rounded-xl md:col-span-2"
-                              action="{% url 'pre_processamento' id=treinamento.id %}"
+                              action="{% url 'oraculo:pre_processamento' id=treinamento.id %}"
                               method="POST"
                               enctype='multipart/form-data'>
                             {% csrf_token %}

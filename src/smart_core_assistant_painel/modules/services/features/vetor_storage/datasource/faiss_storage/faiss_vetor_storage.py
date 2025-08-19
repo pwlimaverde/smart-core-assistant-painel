@@ -17,9 +17,12 @@ from typing import Any, Dict, List
 
 from langchain.docstore.document import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings, OllamaEmbeddings, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
+from langchain_core.embeddings import Embeddings
 from loguru import logger
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
+from huggingface_hub import InferenceClient
 
 from smart_core_assistant_painel.modules.services.features.service_hub import (
     SERVICEHUB,
@@ -79,7 +82,7 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
         self.__vectordb = self.__initialize_vector_database()
         self._initialized = True
 
-    def __create_embeddings(self) -> Any:
+    def __create_embeddings(self) -> Embeddings:
         """Cria uma instância de embeddings com base na classe configurada.
 
         Tenta instanciar a classe primeiro com 'model_name' (padrão para
@@ -95,34 +98,29 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
         """
         emb_cls = SERVICEHUB.EMBEDDINGS_CLASS
         model = SERVICEHUB.EMBEDDINGS_MODEL
-        api_key = SERVICEHUB.HUGGINGFACE_API_KEY
 
-        if api_key:
-            try:
-                return emb_cls(model_name=model, api_key=api_key)  # type: ignore[call-arg]
-            except (TypeError, ValidationError):
-                try:
-                    return emb_cls(model_name=model, huggingfacehub_api_token=api_key)  # type: ignore[call-arg]
-                except (TypeError, ValidationError):
-                    try:
-                        return emb_cls(model_name=model)  # type: ignore[call-arg]
-                    except (TypeError, ValidationError):
-                        pass
-        else:
-            try:
-                return emb_cls(model_name=model)  # type: ignore[call-arg]
-            except (TypeError, ValidationError):
-                pass
+        if emb_cls == "HuggingFaceInferenceAPIEmbeddings":
+            token = os.environ.get("HUGGINGFACE_API_KEY")
+            if token:
+                embeddings = HuggingFaceInferenceAPIEmbeddings(
+                    api_key=SecretStr(token),
+                    model_name=model,
+                )
+                return embeddings
 
-        try:
-            return emb_cls(model=model)  # type: ignore[call-arg]
-        except (TypeError, ValidationError) as e:
-            logger.error(
-                "Não foi possível instanciar a classe de embeddings. "
-                f"classe={getattr(emb_cls, '__name__', str(emb_cls))}, "
-                f"model={model}, erro={e}"
-            )
-            raise
+        if emb_cls == "OllamaEmbeddings":
+            embeddings = OllamaEmbeddings(model=model)
+            return embeddings
+        
+        if emb_cls == "OpenAIEmbeddings":
+            embeddings = OpenAIEmbeddings(model=model)
+            return embeddings
+
+        raise TypeError(
+            f"Classe de embeddings {emb_cls} não suportada. "
+            "Certifique-se de que a classe está configurada corretamente."
+        )
+
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco de dados FAISS existe no caminho especificado.

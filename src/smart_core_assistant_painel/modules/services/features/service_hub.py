@@ -61,13 +61,14 @@ class ServiceHub:
             self._prompt_system_analise_conteudo: Optional[str] = None
             self._prompt_human_analise_conteudo: Optional[str] = None
             self._prompt_system_melhoria_conteudo: Optional[str] = None
+            self._prompt_human_melhoria_conteudo: Optional[str] = None
             self._prompt_human_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_previa_mensagem: Optional[str] = None
             # Embeddings
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
             self._embeddings_model: Optional[str] = None
-            self._embeddings_class: Optional[Type[Embeddings]] = None
+            self._embeddings_class: Optional[str] = None
             # Whatsapp
             self._whatsapp_api_base_url: Optional[str] = None
             self._whatsapp_api_send_text_url: Optional[str] = None
@@ -200,6 +201,19 @@ class ServiceHub:
         )
 
     @property
+    def PROMPT_HUMAN_MELHORIA_CONTEUDO(self) -> str:
+        """Retorna o prompt humano para melhoria de conteúdo."""
+        if self._prompt_human_melhoria_conteudo is None:
+            self._prompt_human_melhoria_conteudo = os.environ.get(
+                "PROMPT_HUMAN_MELHORIA_CONTEUDO"
+            )
+        return (
+            self._prompt_human_melhoria_conteudo
+            if self._prompt_human_melhoria_conteudo is not None
+            else ""
+        )
+
+    @property
     def PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM(self) -> str:
         """Retorna o prompt humano para análise prévia de mensagem."""
         if self._prompt_human_analise_previa_mensagem is None:
@@ -248,11 +262,12 @@ class ServiceHub:
         return self._embeddings_model if self._embeddings_model is not None else ""
 
     @property
-    def EMBEDDINGS_CLASS(self) -> Type[Embeddings]:
-        """Retorna a classe de embeddings. Resolve e armazena em cache se não estiver definida."""
+    def EMBEDDINGS_CLASS(self) -> str:
+        """Retorna o nome da classe de embeddings."""
         if self._embeddings_class is None:
-            self._embeddings_class = self._get_embeddings_class()
-        return self._embeddings_class
+            self._embeddings_class = os.environ.get("EMBEDDINGS_CLASS")
+        return self._embeddings_class if self._embeddings_class is not None else "OpenAIEmbeddings"
+
 
     # Whatsapp
     @property
@@ -375,51 +390,51 @@ class ServiceHub:
                 "'ChatOpenAI' ou 'ChatOllama'."
             )
 
-    def _get_embeddings_class(self) -> Type[Embeddings]:
-        """Retorna a classe de embeddings com base na variável de ambiente.
+    # def _get_embeddings_class(self) -> Type[Embeddings]:
+    #     """Retorna a classe de embeddings com base na variável de ambiente.
 
-        Mapeia nomes legados para classes compatíveis atuais de versões
-        recentes do LangChain e pacotes parceiros. As importações são locais
-        para evitar erros de importação quando a classe não é utilizada.
+    #     Mapeia nomes legados para classes compatíveis atuais de versões
+    #     recentes do LangChain e pacotes parceiros. As importações são locais
+    #     para evitar erros de importação quando a classe não é utilizada.
 
-        Raises:
-            ValueError: Se a classe de embeddings especificada não for reconhecida.
-        """
-        embeddings_class = os.environ.get(
-            "EMBEDDINGS_CLASS", "OpenAIEmbeddings"
-        )
+    #     Raises:
+    #         ValueError: Se a classe de embeddings especificada não for reconhecida.
+    #     """
+    #     embeddings_class = os.environ.get(
+    #         "EMBEDDINGS_CLASS", "OpenAIEmbeddings"
+    #     )
 
-        if embeddings_class == 'HuggingFaceInferenceAPIEmbeddings':
-            from langchain_community.embeddings import (
-                HuggingFaceInferenceAPIEmbeddings,
-            )
-            return HuggingFaceInferenceAPIEmbeddings
-        elif embeddings_class == "HuggingFaceEndpointEmbeddings":
-            from langchain_huggingface.embeddings import (
-                HuggingFaceEndpointEmbeddings,
-            )
-            return HuggingFaceEndpointEmbeddings
-        elif embeddings_class == "HuggingFaceEmbeddings":
-            from langchain_huggingface import HuggingFaceEmbeddings
-            return HuggingFaceEmbeddings
-        elif embeddings_class == "OllamaEmbeddings":
-            from langchain_ollama import OllamaEmbeddings
-            return OllamaEmbeddings
-        elif embeddings_class == "OpenAIEmbeddings":
-            from langchain_openai import OpenAIEmbeddings
-            return OpenAIEmbeddings
-        else:
-            raise ValueError(
-                (
-                    f"Classe de embeddings '{embeddings_class}' não reconhecida. "
-                    "Defina 'EMBEDDINGS_CLASS' como uma das seguintes: "
-                    "'HuggingFaceInferenceAPIEmbeddings', "
-                    "'HuggingFaceEndpointEmbeddings', "
-                    "'HuggingFaceEmbeddings', "
-                    "'OllamaEmbeddings' ou "
-                    "'OpenAIEmbeddings'."
-                )
-            )
+    #     if embeddings_class == 'HuggingFaceInferenceAPIEmbeddings':
+    #         from langchain_community.embeddings import (
+    #             HuggingFaceInferenceAPIEmbeddings,
+    #         )
+    #         return HuggingFaceInferenceAPIEmbeddings
+    #     elif embeddings_class == "HuggingFaceEndpointEmbeddings":
+    #         from langchain_huggingface.embeddings import (
+    #             HuggingFaceEndpointEmbeddings,
+    #         )
+    #         return HuggingFaceEndpointEmbeddings
+    #     elif embeddings_class == "HuggingFaceEmbeddings":
+    #         from langchain_huggingface import HuggingFaceEmbeddings
+    #         return HuggingFaceEmbeddings
+    #     elif embeddings_class == "OllamaEmbeddings":
+    #         from langchain_ollama import OllamaEmbeddings
+    #         return OllamaEmbeddings
+    #     elif embeddings_class == "OpenAIEmbeddings":
+    #         from langchain_openai import OpenAIEmbeddings
+    #         return OpenAIEmbeddings
+    #     else:
+    #         raise ValueError(
+    #             (
+    #                 f"Classe de embeddings '{embeddings_class}' não reconhecida. "
+    #                 "Defina 'EMBEDDINGS_CLASS' como uma das seguintes: "
+    #                 "'HuggingFaceInferenceAPIEmbeddings', "
+    #                 "'HuggingFaceEndpointEmbeddings', "
+    #                 "'HuggingFaceEmbeddings', "
+    #                 "'OllamaEmbeddings' ou "
+    #                 "'OpenAIEmbeddings'."
+    #             )
+    #         )
 
 
 SERVICEHUB = ServiceHub()

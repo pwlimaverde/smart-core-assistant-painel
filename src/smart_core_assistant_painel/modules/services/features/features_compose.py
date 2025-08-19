@@ -64,6 +64,7 @@ class FeaturesCompose:
             "prompt_system_analise_conteudo": "PROMPT_SYSTEM_ANALISE_CONTEUDO",
             "prompt_human_analise_conteudo": "PROMPT_HUMAN_ANALISE_CONTEUDO",
             "prompt_system_melhoria_conteudo": "PROMPT_SYSTEM_MELHORIA_CONTEUDO",
+            "prompt_human_melhoria_conteudo": "PROMPT_HUMAN_MELHORIA_CONTEUDO",
             "prompt_human_analise_previa_mensagem": "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM",
             "prompt_system_analise_previa_mensagem": "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM",
             #Embeddings

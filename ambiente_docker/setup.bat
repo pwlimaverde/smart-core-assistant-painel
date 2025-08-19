@@ -25,32 +25,59 @@ if not exist ".env" (
 echo Arquivo .env encontrado.
 
 :: 2. Verificar e criar o firebase_key.json
-echo 2. Verificando e criando as credenciais do Firebase...
+echo 2. Verificando as credenciais do Firebase...
 
-REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
-for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
-if not defined FIREBASE_PATH (
-    echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env
-    echo Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-    exit /b 1
-)
-
-REM Criar credenciais Firebase usando FIREBASE_KEY_JSON_CONTENT
+REM Verificar se FIREBASE_KEY_JSON_CONTENT existe
 for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"FIREBASE_KEY_JSON_CONTENT=" .env`) do set "FIREBASE_CONTENT=%%B"
 
 if not defined FIREBASE_CONTENT (
-    echo ERRO: Variavel FIREBASE_KEY_JSON_CONTENT nao encontrada ou vazia no arquivo .env
-    echo Por favor, adicione a variavel FIREBASE_KEY_JSON_CONTENT no .env com o conteudo JSON do Firebase
-    exit /b 1
+    echo AVISO: A variavel FIREBASE_KEY_JSON_CONTENT nao esta definida no .env.
+    echo Se o seu GOOGLE_APPLICATION_CREDENTIALS aponta para um arquivo que ja existe, tudo bem.
+    
+    REM Verificar se GOOGLE_APPLICATION_CREDENTIALS aponta para arquivo valido
+    for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
+    if not defined FIREBASE_PATH (
+        echo ERRO: GOOGLE_APPLICATION_CREDENTIALS nao aponta para um arquivo valido e FIREBASE_KEY_JSON_CONTENT nao esta definida.
+        exit /b 1
+    )
+    if not exist "!FIREBASE_PATH!" (
+        echo ERRO: GOOGLE_APPLICATION_CREDENTIALS nao aponta para um arquivo valido e FIREBASE_KEY_JSON_CONTENT nao esta definida.
+        exit /b 1
+    )
+) else (
+    REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
+    for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
+    if not defined FIREBASE_PATH (
+        echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env
+        exit /b 1
+    )
+    
+    echo Criando o arquivo firebase_key.json em !FIREBASE_PATH!...
+    REM Extrair diretorio do caminho informado e criar
+    for %%I in ("!FIREBASE_PATH!") do set "FIREBASE_KEY_DIR=%%~dpI"
+    if not exist "!FIREBASE_KEY_DIR!" mkdir "!FIREBASE_KEY_DIR!"
+    
+    (echo !FIREBASE_CONTENT!) > "!FIREBASE_PATH!"
+    echo Arquivo firebase_key.json criado com sucesso.
 )
 
-echo Criando o arquivo %FIREBASE_PATH%...
-REM Extrair diretorio do caminho informado e criar
-for %%I in ("%FIREBASE_PATH%") do set "FIREBASE_KEY_DIR=%%~dpI"
-if not exist "%FIREBASE_KEY_DIR%" mkdir "%FIREBASE_KEY_DIR%"
+:: 2.1. Verificar configurações do Redis para Django Q Cluster
+echo 2.1. Verificando configuracoes do Redis para Django Q Cluster...
 
-(echo %FIREBASE_CONTENT%) > "%FIREBASE_PATH%"
-echo Arquivo firebase_key.json criado com sucesso.
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"REDIS_HOST=" .env`) do set "REDIS_HOST_VAR=%%B"
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"REDIS_PORT=" .env`) do set "REDIS_PORT_VAR=%%B"
+
+if not defined REDIS_HOST_VAR (
+    echo AVISO: Variavel REDIS_HOST nao encontrada no .env. Usando valor padrao: redis
+    echo REDIS_HOST=redis >> .env
+)
+
+if not defined REDIS_PORT_VAR (
+    echo AVISO: Variavel REDIS_PORT nao encontrada no .env. Usando valor padrao: 6379
+    echo REDIS_PORT=6379 >> .env
+)
+
+echo Configuracoes do Redis verificadas.
 
 
 :: 3. Limpeza completa do ambiente Docker anterior

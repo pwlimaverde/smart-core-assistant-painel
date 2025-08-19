@@ -50,6 +50,21 @@ else
     echo "Arquivo firebase_key.json criado com sucesso."
 fi
 
+# 2.1. Verificar configurações do Redis para Django Q Cluster
+echo "2.1. Verificando configurações do Redis para Django Q Cluster..."
+
+if ! grep -q "^REDIS_HOST=" .env; then
+    echo "AVISO: Variável REDIS_HOST não encontrada no .env. Adicionando valor padrão: redis"
+    echo "REDIS_HOST=redis" >> .env
+fi
+
+if ! grep -q "^REDIS_PORT=" .env; then
+    echo "AVISO: Variável REDIS_PORT não encontrada no .env. Adicionando valor padrão: 6379"
+    echo "REDIS_PORT=6379" >> .env
+fi
+
+echo "Configurações do Redis verificadas."
+
 
 # 3. Limpeza completa do ambiente Docker anterior
 echo "3. Limpando ambiente Docker anterior (containers, volumes e redes)..."

@@ -240,7 +240,12 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     Returns:
         HttpResponse: A resposta HTTP.
     """
-    treinamento = Treinamentos.objects.get(id=id)
+    try:
+        treinamento = Treinamentos.objects.get(id=id)
+    except Treinamentos.DoesNotExist:
+        messages.error(request, "Treinamento não encontrado.")
+        return redirect("oraculo:treinar_ia")
+    
     acao = request.POST.get("acao")
     if not acao:
         messages.error(request, "Ação não especificada.")

@@ -54,6 +54,16 @@ class _FaissVetorStorageMeta(ABCMeta):
         if cls not in cls._instances:
             cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
+    
+    def clear_instance(cls, target_class: type) -> None:
+        """Limpa a instância singleton de uma classe específica.
+        
+        Args:
+            target_class: A classe cuja instância deve ser removida do cache.
+        """
+        if target_class in cls._instances:
+            # Removendo instância singleton do cache
+            del cls._instances[target_class]
 
 
 class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
@@ -98,6 +108,8 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
         """
         emb_cls = SERVICEHUB.EMBEDDINGS_CLASS
         model = SERVICEHUB.EMBEDDINGS_MODEL
+        
+        # Criando embeddings baseado na classe configurada
 
         if emb_cls == "HuggingFaceInferenceAPIEmbeddings":
             token = os.environ.get("HUGGINGFACE_API_KEY")
@@ -109,7 +121,12 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
                 return embeddings
 
         if emb_cls == "OllamaEmbeddings":
-            embeddings = OllamaEmbeddings(model=model)
+            import os
+            ollama_base_url = os.environ.get("OLLAMA_BASE_URL")
+            embeddings = OllamaEmbeddings(
+                model=model,
+                base_url=ollama_base_url
+            )
             return embeddings
         
         if emb_cls == "OpenAIEmbeddings":
@@ -121,6 +138,15 @@ class FaissVetorStorage(VetorStorage, metaclass=_FaissVetorStorageMeta):
             "Certifique-se de que a classe está configurada corretamente."
         )
 
+    @classmethod
+    def clear_singleton_cache(cls) -> None:
+        """Limpa o cache do singleton para forçar recriação da instância.
+        
+        Útil quando as configurações de ambiente mudaram e é necessário
+        recriar a instância com as novas configurações.
+        """
+        # Limpando cache do singleton para forçar recriação
+        cls.__class__.clear_instance(cls.__class__, cls)
 
     def __faiss_db_exists(self, db_path: str) -> bool:
         """Verifica se o banco de dados FAISS existe no caminho especificado.

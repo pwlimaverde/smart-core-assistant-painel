@@ -58,7 +58,7 @@ class FeaturesCompose:
             "huggingface_api_key": "HUGGINGFACE_API_KEY",
             #LLM
             "llm_class": "LLM_CLASS",
-            "llm_model": "LLM_MODEL",
+            "model": "MODEL",
             "llm_temperature": "LLM_TEMPERATURE",
             #Prompts
             "prompt_system_analise_conteudo": "PROMPT_SYSTEM_ANALISE_CONTEUDO",
@@ -70,7 +70,7 @@ class FeaturesCompose:
             #Embeddings
             "chunk_overlap": "CHUNK_OVERLAP",
             "chunk_size": "CHUNK_SIZE",
-            "embeddings_model": "EMBEDDINGS_LLM_MODEL",
+            "embeddings_model": "EMBEDDINGS_MODEL",
             "embeddings_class": "EMBEDDINGS_CLASS",
             #Whatsapp
             "whatsapp_api_base_url": "WHATSAPP_API_BASE_URL",
@@ -95,6 +95,9 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, ErrorReturn):
             raise data.result
+        
+        # Recarrega as configurações do SERVICEHUB após carregar as variáveis do Firebase
+        SERVICEHUB.reload_config()
 
     @staticmethod
     def vetor_storage() -> None:

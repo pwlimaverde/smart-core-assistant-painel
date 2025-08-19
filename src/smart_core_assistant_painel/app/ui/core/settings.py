@@ -102,7 +102,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://redis:6379/1",
+        "LOCATION": f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -175,4 +175,11 @@ Q_CLUSTER = {
     "queue_limit": 200,
     "orm": "default",
     "secret_key": SECRET_KEY,  # Garante que Q Cluster use a mesma SECRET_KEY
+    # Configuração do Redis broker
+    "redis": {
+        "host": os.getenv("REDIS_HOST", "localhost"),
+        "port": int(os.getenv("REDIS_PORT", "6379")),
+        "db": 0,
+        "password": os.getenv("REDIS_PASSWORD", None),
+    },
 }

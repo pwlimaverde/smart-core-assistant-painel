@@ -76,21 +76,34 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
             config = template.evaluate()
             logger.info("✅ Template avaliado com sucesso")
 
+            # Log detalhado do estado do template
+            logger.info(f"📊 Estado do template: {type(config)}")
+            
+            # Tentar listar todos os parâmetros disponíveis no Remote Config
+            try:
+                all_params = config.get_all()
+                logger.info(f"📋 Parâmetros disponíveis no Remote Config: {list(all_params.keys()) if all_params else 'Nenhum'}")
+            except Exception as e:
+                logger.warning(f"⚠️ Não foi possível listar parâmetros: {e}")
+
             logger.info(f"🔑 Carregando {len(config_mapping)} variáveis de ambiente...")
             loaded_count = 0
 
             for remote_key, env_key in config_mapping.items():
                 try:
-                    logger.debug(f"📝 Carregando {remote_key} -> {env_key}")
+                    logger.info(f"📝 Tentando carregar {remote_key} -> {env_key}")
                     value = config.get_string(remote_key)
+                    logger.info(f"🔍 Valor obtido para {remote_key}: {'[DEFINIDO]' if value else '[VAZIO/NULO]'}")
                     if value:
                         os.environ[env_key] = value
                         loaded_count += 1
-                        logger.debug(f"✅ {remote_key}: carregado com sucesso")
+                        logger.info(f"✅ {remote_key}: carregado com sucesso")
                     else:
-                        logger.warning(f"⚠️  {remote_key}: valor vazio")
+                        logger.warning(f"⚠️  {remote_key}: valor vazio ou nulo")
                 except Exception as e:
                     logger.error(f"❌ Erro ao carregar {remote_key}: {e}")
+                    import traceback
+                    logger.error(f"📋 Traceback detalhado: {traceback.format_exc()}")
                     raise TypeError(
                         f"Erro ao carregar variável de ambiente {remote_key}: {str(e)}"
                     )

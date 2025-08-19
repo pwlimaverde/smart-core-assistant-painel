@@ -27,6 +27,9 @@ services:
       # Configuração de Embeddings
       - EMBEDDINGS_MODEL=mxbai-embed-large
       - EMBEDDINGS_CLASS=OllamaEmbeddings
+      # Configuração do Redis para Q Cluster
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       # Variáveis dinâmicas serão configuradas pelo start_services
       # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
     volumes:
@@ -75,6 +78,9 @@ services:
       # Configuração de Embeddings
       - EMBEDDINGS_MODEL=mxbai-embed-large
       - EMBEDDINGS_CLASS=OllamaEmbeddings
+      # Configuração do Redis para Q Cluster
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       # Variáveis dinâmicas serão configuradas pelo start_services
       # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
     volumes:

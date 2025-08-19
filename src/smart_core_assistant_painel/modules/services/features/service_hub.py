@@ -55,7 +55,7 @@ class ServiceHub:
             self._whatsapp_service: Optional[WhatsAppService] = None
             # LLM
             self._llm_class: Optional[Type[BaseChatModel]] = None
-            self._llm_model: Optional[str] = None
+            self._model: Optional[str] = None
             self._llm_temperature: Optional[int] = None
             # Prompts
             self._prompt_system_analise_conteudo: Optional[str] = None
@@ -87,10 +87,28 @@ class ServiceHub:
         self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
         self._chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", "200"))
         self._chunk_size = int(os.environ.get("CHUNK_SIZE", "1000"))
-        self._embeddings_model = os.environ.get("EMBEDDINGS_LLM_MODEL")
+        self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
         self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
-        self._llm_model = os.environ.get("LLM_MODEL", "llama3.1")
+        self._model = os.environ.get("MODEL", "llama3.1")
         self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
+
+    def reload_config(self) -> None:
+        """Recarrega as configurações a partir de variáveis de ambiente.
+        
+        Este método deve ser chamado após o carregamento das variáveis
+        do Firebase Remote Config para garantir que os valores mais
+        recentes sejam utilizados.
+        """
+        self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
+        self._chunk_overlap = int(os.environ.get("CHUNK_OVERLAP", "200"))
+        self._chunk_size = int(os.environ.get("CHUNK_SIZE", "1000"))
+        self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
+        self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
+        self._model = os.environ.get("MODEL", "llama3.1")
+        self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
+        
+        # Limpa o cache da classe LLM para forçar recarregamento
+        self._llm_class = None
 
         vetor_storage_type = os.environ.get("VETOR_STORAGE_TYPE")
         if vetor_storage_type is not None and self._vetor_storage is None:
@@ -147,11 +165,11 @@ class ServiceHub:
         return self._llm_class
 
     @property
-    def LLM_MODEL(self) -> str:
+    def MODEL(self) -> str:
         """Retorna o nome do modelo de linguagem."""
-        if self._llm_model is None:
-            self._llm_model = os.environ.get("LLM_MODEL", "llama3.1")
-        return self._llm_model if self._llm_model is not None else "llama3.1"
+        if self._model is None:
+            self._model = os.environ.get("MODEL", "llama3.1")
+        return self._model if self._model is not None else "llama3.1"
 
     @property
     def LLM_TEMPERATURE(self) -> int:

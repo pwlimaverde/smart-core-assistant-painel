@@ -1,64 +1,74 @@
-# Ambiente de Desenvolvimento Docker
+# Smart Core Assistant Painel - Ambiente Docker
 
 Este diretório contém os scripts para configurar e gerenciar o ambiente de desenvolvimento local usando Docker.
 
 ## Pré-requisitos
 
-- Docker e Docker Compose instalados.
-- Um arquivo `.env` na raiz do projeto. Um exemplo (`.env.example`) é fornecido no projeto.
+- Docker e Docker Compose instalados
+- Git instalado
+- Um arquivo `.env` na raiz do projeto (use `.env.example` como base)
 
-## Como usar
+## Setup Rápido
 
-Execute o script apropriado para o seu sistema operacional a partir da raiz do projeto:
+Execute o script apropriado para o seu sistema operacional **a partir da raiz do projeto**:
 
 ### Windows
-
-```bash
+```cmd
 .\ambiente_docker\setup.bat
 ```
 
 ### Linux / macOS
-
 ```bash
 chmod +x ./ambiente_docker/setup.sh
 ./ambiente_docker/setup.sh
 ```
 
-## O que o script faz
+## Configuração do Arquivo .env
 
-1.  **Verifica o `.env`**: Garante que o arquivo de configuração `.env` existe na raiz do projeto.
-2.  **Cria `firebase_key.json`**: Se a variável `FIREBASE_KEY_JSON_CONTENT` estiver no `.env`, o script cria o arquivo de credenciais do Firebase.
-3.  **Verifica Configurações do Redis**: Garante que as variáveis `REDIS_HOST` e `REDIS_PORT` estão configuradas no `.env` para o Django Q Cluster.
-4.  **Limpa o Ambiente Docker**: Remove containers, volumes e redes de execuções anteriores para garantir um ambiente limpo.
-5.  **Remove Migrações Antigas**: Apaga todos os arquivos de migração dos aplicativos Django.
-6.  **Constrói e Inicia os Containers**: Constrói as imagens Docker e inicia os serviços definidos no `docker-compose.yml`.
-7.  **Aplica Migrações**: Cria e aplica as novas migrações no banco de dados, incluindo as específicas do Django Q.
-8.  **Cria Superusuário**: Cria um superusuário com as credenciais `admin` e senha `123456`.
-9.  **Inicia o Django Q Cluster**: Inicia o serviço de processamento assíncrono após as migrações.
-
-## Configurações Importantes
-
-### Redis para Django Q Cluster
-
-O projeto utiliza Redis para o Django Q Cluster (processamento assíncrono). As seguintes variáveis devem estar configuradas no `.env`:
+Antes de executar o setup, configure as seguintes variáveis obrigatórias no arquivo `.env`:
 
 ```env
+# Firebase (obrigatório)
+GOOGLE_APPLICATION_CREDENTIALS=./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto",...}
+
+# Evolution API (obrigatório)
+EVOLUTION_API_BASE_URL=http://evolution-api:8080
+EVOLUTION_API_GLOBAL_API_KEY=sua_chave_evolution_api
+
+# Redis (adicionado automaticamente se não existir)
 REDIS_HOST=redis
 REDIS_PORT=6379
+
+# Outras configurações necessárias...
 ```
 
-**Nota**: Se essas variáveis não estiverem presentes no `.env`, o script as adicionará automaticamente com os valores padrão.
+**Importante**: O script verificará automaticamente se as variáveis `REDIS_HOST` e `REDIS_PORT` estão configuradas e as adicionará com valores padrão se necessário.
 
-### Firebase Configuration
+## O que o Script de Setup Faz
 
-O arquivo `firebase_key.json` é criado automaticamente a partir da variável `FIREBASE_KEY_JSON_CONTENT` no `.env`. Certifique-se de que:
+1. **Validação de Ambiente**:
+   - Verifica se está sendo executado na raiz do projeto
+   - Valida a existência do arquivo `.env`
+   - Verifica credenciais do Firebase
+   - Valida formato JSON do Firebase
 
-1. A variável `GOOGLE_APPLICATION_CREDENTIALS` aponta para o caminho correto
-2. A variável `FIREBASE_KEY_JSON_CONTENT` contém o JSON válido das credenciais do Firebase
+2. **Preparação do Ambiente**:
+   - Configura variáveis Redis automaticamente se não existirem
+   - Cria o arquivo `firebase_key.json` a partir da variável `FIREBASE_KEY_JSON_CONTENT`
+   - Limpa containers, volumes e redes de execuções anteriores
+   - Remove migrações antigas do Django
 
-### Serviços Disponíveis
+3. **Construção e Inicialização**:
+   - Constrói as imagens Docker com todas as dependências
+   - Inicia todos os serviços definidos no `docker-compose.yml`
+   - Aplica migrações no banco de dados
+   - Cria superusuário (admin/123456)
+   - Inicia o Django Q Cluster para processamento assíncrono
 
-Após a execução do script, os seguintes serviços estarão disponíveis:
+## Serviços Disponíveis
+
+Após a execução bem-sucedida do script:
 
 - **Aplicação Django**: http://localhost:8000
 - **Painel Administrativo**: http://localhost:8000/admin/ (admin/123456)
@@ -67,26 +77,102 @@ Após a execução do script, os seguintes serviços estarão disponíveis:
 - **PostgreSQL Evolution**: localhost:5433
 - **Redis**: localhost:6379
 
-## Changelog - Correções Implementadas
+## Validação do Setup
 
-### v1.1.0 - Melhorias no Ambiente Docker
+Para verificar se tudo está funcionando:
 
-#### Correções do Django Q Cluster
-- **Problema**: O serviço `django-qcluster` estava falhando ao conectar com o Redis devido à ausência das variáveis de ambiente `REDIS_HOST` e `REDIS_PORT`
-- **Solução**: Adicionadas as variáveis `REDIS_HOST=redis` e `REDIS_PORT=6379` no `docker-compose.yml` para o serviço `django-qcluster`
-- **Resultado**: Django Q Cluster agora conecta corretamente ao Redis e processa tarefas assíncronas
+1. **Acesse a aplicação**: http://localhost:8000
+2. **Verifique o admin**: http://localhost:8000/admin/ (admin/123456)
+3. **Confira os logs dos containers**:
+   ```bash
+   docker logs smart-core-assistant-dev
+   docker logs smart-core-qcluster-dev
+   docker logs evolution-api-dev
+   ```
 
-#### Melhorias nos Scripts de Setup
-- **Verificação Automática do Redis**: Os scripts `setup.bat` e `setup.sh` agora verificam automaticamente se as variáveis `REDIS_HOST` e `REDIS_PORT` estão configuradas no `.env` e as adicionam com valores padrão se necessário
-- **Lógica Aprimorada do Firebase**: Melhorada a lógica de criação do `firebase_key.json` para ser mais robusta e informativa
-- **Tratamento de Erros**: Adicionados avisos e validações mais claras para configurações ausentes
+## Problemas Comuns e Soluções
 
-#### Atualizações na Documentação
-- **Seção de Configurações Importantes**: Adicionada documentação detalhada sobre Redis, Firebase e serviços disponíveis
-- **Instruções Claras**: Melhoradas as instruções de uso e configuração do ambiente
-- **Lista de Serviços**: Documentados todos os serviços disponíveis após a execução do script
+### 1. Erro de Conexão com Redis
+**Problema**: Django Q Cluster não consegue conectar ao Redis
+**Solução**: Verifique se as variáveis `REDIS_HOST=redis` e `REDIS_PORT=6379` estão no `.env`
 
-#### Melhorias no .env.example
-- **Configurações do Redis**: Adicionadas as variáveis `REDIS_HOST` e `REDIS_PORT` com valores padrão
-- **Organização**: Melhor organização das variáveis por categoria
-- **Comentários**: Adicionados comentários explicativos sobre as correções implementadas
+### 2. Arquivo firebase_key.json não encontrado
+**Problema**: Erro ao carregar credenciais do Firebase
+**Solução**: 
+- Verifique se `FIREBASE_KEY_JSON_CONTENT` está configurado no `.env`
+- Certifique-se de que o JSON está válido (use um validador JSON)
+- Confirme que `GOOGLE_APPLICATION_CREDENTIALS` aponta para o caminho correto
+
+### 3. Containers não iniciam
+**Problema**: Falha na inicialização dos containers
+**Solução**: 
+- Execute `docker system prune -a --volumes` para limpar o ambiente
+- Verifique se o Docker tem espaço suficiente em disco
+- Execute o setup novamente
+
+### 4. Migrações falham
+**Problema**: Erro durante aplicação das migrações
+**Solução**: O script remove automaticamente migrações antigas e recria todas
+
+### 5. Logs repetitivos de HEALTHCHECK
+**Problema**: Requisições `GET /health/` a cada 30 segundos nos logs
+**Solução**: O HEALTHCHECK foi desativado no Dockerfile para ambiente de desenvolvimento. Se precisar reativar:
+```dockerfile
+# Descomente no Dockerfile:
+# HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+#   CMD curl -f http://localhost:8000/health/ || exit 1
+```
+
+## Limpeza do Ambiente
+
+Para remover completamente o ambiente Docker:
+
+```bash
+# Parar e remover containers, volumes e redes
+docker compose down --volumes --remove-orphans
+
+# Limpeza completa do sistema Docker (opcional)
+docker system prune -a --volumes
+```
+
+## Estrutura de Arquivos
+
+```
+ambiente_docker/
+├── setup.bat          # Script de setup para Windows
+├── setup.sh           # Script de setup para Linux/macOS
+├── validate_setup.bat # Script de validação para Windows
+├── validate_setup.sh  # Script de validação para Linux/macOS
+└── README.md          # Este arquivo
+```
+
+## Histórico de Correções
+
+### Principais Problemas Resolvidos:
+
+1. **Loop Infinito no Docker Entrypoint**: Desabilitado entrypoint problemático no Dockerfile
+2. **Django Q Cluster**: Configuradas variáveis de ambiente Redis necessárias
+3. **Firebase Key**: Criação automática do arquivo `firebase_key.json` a partir da variável de ambiente
+4. **Migrações**: Limpeza automática de migrações antigas antes da recriação
+5. **Dependências**: Instalação otimizada com `uv sync` e dependências específicas do PostgreSQL
+6. **Healthcheck**: Desativado para evitar logs desnecessários e requisições repetitivas em desenvolvimento
+7. **Estrutura de Diretórios**: Criação automática de diretórios necessários
+
+### Melhorias Implementadas:
+
+- Validação automática de configurações
+- Criação automática de variáveis Redis se ausentes
+- Logs mais informativos durante o setup
+- Tratamento robusto de erros
+- Documentação completa e clara
+
+## Suporte
+
+Se encontrar problemas durante o setup:
+
+1. Verifique se todos os pré-requisitos estão instalados
+2. Confirme que o arquivo `.env` está configurado corretamente
+3. Execute o script de validação correspondente ao seu sistema
+4. Consulte os logs dos containers para diagnóstico detalhado
+
+O ambiente foi testado e validado em múltiplas execuções, garantindo reprodutibilidade e confiabilidade.

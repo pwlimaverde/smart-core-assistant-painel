@@ -58,9 +58,9 @@ RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite && \
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/admin/ || exit 1
+# Health check - Comentado para evitar logs desnecessários em desenvolvimento
+# HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+#     CMD curl -f http://localhost:8000/health/ || exit 1
 
 # Set entrypoint
 # ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]  # Temporariamente desabilitado

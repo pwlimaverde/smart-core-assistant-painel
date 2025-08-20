@@ -80,11 +80,14 @@ echo "Configurações do Redis verificadas."
 echo "3. Limpando ambiente Docker anterior (containers, volumes e redes)..."
 docker compose down -v --remove-orphans
 
-# 4. Apagar migrações antigas dos apps Django
-echo "4. Apagando migrações antigas do Django..."
-find src/smart_core_assistant_painel/app/ui -path '*/migrations/*.py' -not -name '__init__.py' -delete
-find src/smart_core_assistant_painel/app/ui -path '*/migrations/*.pyc' -delete
-echo "Migrações antigas removidas."
+# 4. Remover arquivos .pyc e migrações antigas
+echo "4. Removendo arquivos .pyc e migrações antigas..."
+find src -name "*.pyc" -delete 2>/dev/null || true
+find src -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+
+# Remover migrações antigas mantendo apenas __init__.py
+find src -path "*/migrations/*.py" -not -name "__init__.py" -delete 2>/dev/null || true
+echo "Arquivos .pyc e migrações antigas removidos."
 
 # 5. Construir e iniciar os containers
 echo "5. Construindo imagens Docker e iniciando os containers..."
@@ -108,15 +111,15 @@ wait_for_db
 
 # 7. Criar e aplicar novas migrações do Django
 echo "7. Criando e aplicando novas migrações do Django..."
-docker compose exec -T django-app uv run task makemigrations
-docker compose exec -T django-app uv run task migrate
+docker compose exec -T django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations --noinput
+docker compose exec -T django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate --noinput
 echo "Aplicando migracoes especificas do django_q..."
 docker compose exec -T django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate django_q --noinput
 
 # 8. Criar superusuário
 echo "8. Criando superusuário 'admin' com senha '123456'..."
 SUPERUSER_COMMAND="from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin', 'admin@example.com', '123456')"
-docker compose exec -T django-app uv run python -c "$SUPERUSER_COMMAND"
+docker compose exec -T django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell -c "$SUPERUSER_COMMAND"
 echo "Superusuário criado com sucesso!"
 echo "9. Iniciando o django-qcluster apos as migracoes..."
 docker compose start django-qcluster

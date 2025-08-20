@@ -1,3 +1,18 @@
+## 0.8.2
+
+### Added
+- Nova documentação de setup completa e unificada no `README.md`.
+- Scripts de setup (`ambiente_docker/`) atualizados e corrigidos para uma instalação mais fluida.
+- Guia de validação para garantir que o setup funcione em um ambiente limpo do zero.
+
+### Changed
+- Refatorado e simplificado todo o processo de instalação via Docker.
+- Unificados múltiplos arquivos de documentação em um `README.md` centralizado para facilitar a consulta.
+
+### Fixed
+- Corrigidos bugs no `Dockerfile` que causavam loops e falhas durante a construção da imagem.
+- Resolvido problema na geração automática do arquivo `firebase_key.json`.
+
 ## 0.8.1
 - **fix**: Adição do campo email ao modelo Contato (migração 0003_add_email_to_contato)
 - **fix**: Correção dos testes que utilizavam o campo email no modelo Contato

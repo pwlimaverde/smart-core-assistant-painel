@@ -3,7 +3,7 @@
 :: Script unificado para configurar e iniciar o ambiente de desenvolvimento Docker
 :: Este script consolida toda a lógica de setup, garantindo um ambiente limpo e pronto para uso.
 
-setlocal
+setlocal enabledelayedexpansion
 
 echo === Configurando o ambiente de desenvolvimento Docker ===
 
@@ -27,38 +27,43 @@ echo Arquivo .env encontrado.
 :: 2. Verificar e criar o firebase_key.json
 echo 2. Verificando as credenciais do Firebase...
 
-REM Verificar se FIREBASE_KEY_JSON_CONTENT existe
+:: Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
+
+if not defined FIREBASE_PATH (
+    echo ERRO: GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env.
+    echo Por favor, defina o caminho para o arquivo firebase_key.json.
+    exit /b 1
+)
+
+:: Verificar se o arquivo Firebase existe
+if not exist "!FIREBASE_PATH!" (
+    echo ERRO: Arquivo Firebase nao encontrado em: !FIREBASE_PATH!
+    echo Por favor, coloque o arquivo firebase_key.json no caminho especificado.
+    exit /b 1
+)
+
+:: Verificar se o arquivo Firebase é um JSON válido
+echo Verificando se o arquivo Firebase é um JSON valido...
+powershell -Command "try { Get-Content '!FIREBASE_PATH!' | ConvertFrom-Json | Out-Null; Write-Host 'JSON valido' } catch { Write-Host 'ERRO: Arquivo Firebase nao e um JSON valido'; exit 1 }" || (
+    echo ERRO: O arquivo Firebase nao e um JSON valido.
+    exit /b 1
+)
+
+echo Credenciais do Firebase verificadas com sucesso.
+
+:: Verificar se FIREBASE_KEY_JSON_CONTENT existe para Docker build
 for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"FIREBASE_KEY_JSON_CONTENT=" .env`) do set "FIREBASE_CONTENT=%%B"
 
 if not defined FIREBASE_CONTENT (
-    echo AVISO: A variavel FIREBASE_KEY_JSON_CONTENT nao esta definida no .env.
-    echo Se o seu GOOGLE_APPLICATION_CREDENTIALS aponta para um arquivo que ja existe, tudo bem.
-    
-    REM Verificar se GOOGLE_APPLICATION_CREDENTIALS aponta para arquivo valido
-    for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
-    if not defined FIREBASE_PATH (
-        echo ERRO: GOOGLE_APPLICATION_CREDENTIALS nao aponta para um arquivo valido e FIREBASE_KEY_JSON_CONTENT nao esta definida.
+    echo Criando FIREBASE_KEY_JSON_CONTENT a partir do arquivo...
+    powershell -Command "$content = Get-Content '!FIREBASE_PATH!' -Raw; $env:FIREBASE_KEY_JSON_CONTENT = $content; Add-Content -Path '.env' -Value ('FIREBASE_KEY_JSON_CONTENT=' + $content)" || (
+        echo ERRO: Falha ao criar FIREBASE_KEY_JSON_CONTENT.
         exit /b 1
     )
-    if not exist "!FIREBASE_PATH!" (
-        echo ERRO: GOOGLE_APPLICATION_CREDENTIALS nao aponta para um arquivo valido e FIREBASE_KEY_JSON_CONTENT nao esta definida.
-        exit /b 1
-    )
+    echo FIREBASE_KEY_JSON_CONTENT criado com sucesso.
 ) else (
-    REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
-    for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set "FIREBASE_PATH=%%B"
-    if not defined FIREBASE_PATH (
-        echo ERRO: A variavel GOOGLE_APPLICATION_CREDENTIALS nao esta definida no arquivo .env
-        exit /b 1
-    )
-    
-    echo Criando o arquivo firebase_key.json em !FIREBASE_PATH!...
-    REM Extrair diretorio do caminho informado e criar
-    for %%I in ("!FIREBASE_PATH!") do set "FIREBASE_KEY_DIR=%%~dpI"
-    if not exist "!FIREBASE_KEY_DIR!" mkdir "!FIREBASE_KEY_DIR!"
-    
-    (echo !FIREBASE_CONTENT!) > "!FIREBASE_PATH!"
-    echo Arquivo firebase_key.json criado com sucesso.
+    echo FIREBASE_KEY_JSON_CONTENT ja existe no arquivo .env.
 )
 
 :: 2.1. Verificar configurações do Redis para Django Q Cluster

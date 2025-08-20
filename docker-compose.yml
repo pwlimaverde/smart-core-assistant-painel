@@ -6,6 +6,11 @@ services:
       dockerfile: Dockerfile
       args:
         - FIREBASE_KEY_JSON_CONTENT=${FIREBASE_KEY_JSON_CONTENT}
+      labels:
+        - "project=smart-core-assistant"
+        - "service=django-app"
+        - "version=latest"
+    image: smart-core-assistant:django-app-latest
     container_name: smart-core-assistant-dev
     restart: unless-stopped
     ports:
@@ -59,6 +64,11 @@ services:
       dockerfile: Dockerfile
       args:
         - FIREBASE_KEY_JSON_CONTENT=${FIREBASE_KEY_JSON_CONTENT}
+      labels:
+        - "project=smart-core-assistant"
+        - "service=django-qcluster"
+        - "version=latest"
+    image: smart-core-assistant:django-qcluster-latest
     container_name: smart-core-qcluster-dev
     restart: unless-stopped
     environment:

@@ -13,7 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies including development tools and PostgreSQL client
+# Install system dependencies and uv in a single layer
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -24,27 +24,28 @@ RUN apt-get update && apt-get install -y \
     procps \
     libpq-dev \
     postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for faster dependency management
-RUN pip install uv
+    jq \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install uv
 
 # Copy dependency files and README (required by pyproject.toml)
 COPY pyproject.toml uv.lock README.md ./
 
-# Install dependencies using uv (including dev dependencies)
-RUN uv sync --frozen --dev
-
-# Install psycopg manually as a workaround
-RUN uv pip install psycopg[binary]==3.2.3
+# Install dependencies using uv in a single layer
+RUN uv sync --frozen --dev && \
+    uv pip install psycopg[binary]==3.2.3
 
 # Copy project files
 COPY . .
 
 # Create Firebase config directory and generate credentials from environment variable
 ARG FIREBASE_KEY_JSON_CONTENT
-RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
-RUN echo "$FIREBASE_KEY_JSON_CONTENT" > /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/ && \
+    if [ -n "$FIREBASE_KEY_JSON_CONTENT" ]; then \
+        printf '%s\n' "$FIREBASE_KEY_JSON_CONTENT" | jq '.' > /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json; \
+    else \
+        echo "Warning: FIREBASE_KEY_JSON_CONTENT not provided. Make sure to mount the firebase_key.json file."; \
+    fi
 
 # Create necessary directories
 RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite && \

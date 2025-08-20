@@ -29,25 +29,35 @@ echo "Arquivo .env encontrado e variáveis carregadas."
 # 2. Verificar e criar o firebase_key.json
 echo "2. Verificando as credenciais do Firebase..."
 
+# Verificar se GOOGLE_APPLICATION_CREDENTIALS está definida
+if [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+    echo "ERRO: GOOGLE_APPLICATION_CREDENTIALS não está definida no arquivo .env."
+    echo "Por favor, defina o caminho para o arquivo firebase_key.json."
+    exit 1
+fi
+
+# Verificar se o arquivo Firebase existe
+if [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
+    echo "ERRO: Arquivo Firebase não encontrado em: $GOOGLE_APPLICATION_CREDENTIALS"
+    echo "Por favor, coloque o arquivo firebase_key.json no caminho especificado."
+    exit 1
+fi
+
+# Verificar se o arquivo Firebase é um JSON válido
+echo "Verificando se o arquivo Firebase é um JSON válido..."
+if ! python3 -m json.tool "$GOOGLE_APPLICATION_CREDENTIALS" > /dev/null 2>&1; then
+    echo "ERRO: O arquivo Firebase não é um JSON válido."
+    exit 1
+fi
+
+echo "Credenciais do Firebase verificadas com sucesso."
+
+# Verificar se FIREBASE_KEY_JSON_CONTENT existe para Docker build
 if [ -z "$FIREBASE_KEY_JSON_CONTENT" ]; then
-    echo "AVISO: A variável FIREBASE_KEY_JSON_CONTENT não está definida no .env."
-    echo "Se o seu GOOGLE_APPLICATION_CREDENTIALS aponta para um arquivo que já existe, tudo bem."
-    if [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ] || [ ! -f "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-        echo "ERRO: GOOGLE_APPLICATION_CREDENTIALS não aponta para um arquivo válido e FIREBASE_KEY_JSON_CONTENT não está definida."
-        exit 1
-    fi
-else
-    if [ -z "$GOOGLE_APPLICATION_CREDENTIALS" ]; then
-        echo "ERRO: A variável GOOGLE_APPLICATION_CREDENTIALS não está definida no .env."
-        exit 1
-    fi
-    FIREBASE_KEY_PATH="$GOOGLE_APPLICATION_CREDENTIALS"
-    FIREBASE_KEY_DIR=$(dirname "$FIREBASE_KEY_PATH")
-    
-    echo "Criando o arquivo firebase_key.json em $FIREBASE_KEY_PATH..."
-    mkdir -p "$FIREBASE_KEY_DIR"
-    echo "$FIREBASE_KEY_JSON_CONTENT" > "$FIREBASE_KEY_PATH"
-    echo "Arquivo firebase_key.json criado com sucesso."
+    echo "Criando FIREBASE_KEY_JSON_CONTENT a partir do arquivo..."
+    FIREBASE_CONTENT=$(cat "$GOOGLE_APPLICATION_CREDENTIALS")
+    echo "FIREBASE_KEY_JSON_CONTENT=$FIREBASE_CONTENT" >> .env
+    export FIREBASE_KEY_JSON_CONTENT="$FIREBASE_CONTENT"
 fi
 
 # 2.1. Verificar configurações do Redis para Django Q Cluster

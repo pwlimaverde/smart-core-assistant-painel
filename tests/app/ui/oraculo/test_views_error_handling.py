@@ -4,6 +4,7 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.messages import get_messages
 from django.contrib.auth.models import User
+from rolepermissions.roles import assign_role
 from smart_core_assistant_painel.app.ui.oraculo.models import Treinamentos
 
 
@@ -17,6 +18,8 @@ class TestViewsErrorHandling(TestCase):
             username='testuser',
             password='testpass123'
         )
+        # Atribui a função de Gerente para ter a permissão "treinar_ia"
+        assign_role(self.user, 'gerente')
         self.client.login(username='testuser', password='testpass123')
 
     def test_processar_pre_processamento_treinamento_inexistente(self) -> None:
@@ -27,7 +30,7 @@ class TestViewsErrorHandling(TestCase):
         # Faz uma requisição POST para o endpoint
         response = self.client.post(
             reverse('oraculo:pre_processamento', args=[inexistent_id]),
-            data={'action': 'process'}
+            data={'acao': 'process'}  # Corrigido de 'action' para 'acao'
         )
         
         # Verifica se houve redirecionamento
@@ -36,7 +39,7 @@ class TestViewsErrorHandling(TestCase):
         # Verifica se a mensagem de erro foi adicionada
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any(
-            'não foi encontrado' in str(message) 
+            'não encontrado' in str(message) 
             for message in messages
         ))
         
@@ -59,7 +62,7 @@ class TestViewsErrorHandling(TestCase):
         # Verifica se a mensagem de erro foi adicionada
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any(
-            'não foi encontrado' in str(message) 
+            'não encontrado' in str(message) 
             for message in messages
         ))
         
@@ -70,9 +73,8 @@ class TestViewsErrorHandling(TestCase):
         """Testa o comportamento normal com treinamento válido."""
         # Cria um treinamento válido
         treinamento = Treinamentos.objects.create(
-            nome='Teste',
-            descricao='Descrição de teste',
-            documentos='[]'  # Lista vazia de documentos
+            tag='teste_tag',
+            grupo='teste_grupo'
         )
         
         # Faz uma requisição GET para verificar se não há erro

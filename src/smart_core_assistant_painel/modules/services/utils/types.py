@@ -1,16 +1,28 @@
+"""Define apelidos de tipo para os casos de uso e fontes de dados de serviços.
+
+Este módulo centraliza as definições de tipo usadas em diferentes serviços,
+melhorando a legibilidade e a manutenção do código. Ele utiliza `TypeAlias`
+para criar tipos claros e descritivos para casos de uso e fontes de dados
+relacionados à configuração de ambiente, armazenamento de vetores e serviços
+de WhatsApp.
+"""
+
 from typing import TypeAlias
 
-from py_return_success_or_error import Datasource, Empty, NoParams, UsecaseBaseCallData
+from py_return_success_or_error import (
+    Datasource,
+    Empty,
+    NoParams,
+    UsecaseBaseCallData,
+)
 
-from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
+from ..features.vetor_storage.domain.interface.vetor_storage import (
     VetorStorage,
 )
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
+from ..features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
-from smart_core_assistant_painel.modules.services.utils.parameters import (
-    SetEnvironRemoteParameters,
-)
+from .parameters import SetEnvironRemoteParameters
 
 SERUsecase: TypeAlias = UsecaseBaseCallData[
     Empty,

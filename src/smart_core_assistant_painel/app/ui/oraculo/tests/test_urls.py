@@ -1,17 +1,11 @@
 """Testes para URLs do app Oraculo."""
 
-from django.test import TestCase, Client
-from django.urls import reverse, resolve
-from django.contrib.auth.models import User
 from unittest.mock import patch
 
-from ..models import (
-    Contato,
-    Atendimento,
-    StatusAtendimento,
-    TipoMensagem,
-    TipoRemetente,
-)
+from django.contrib.auth.models import User
+from django.test import Client, TestCase
+from django.urls import resolve, reverse
+
 from ..views import webhook_whatsapp
 
 
@@ -89,15 +83,18 @@ class TestWebhookWhatsAppURL(TestCase):
         }
 
         # Mock das dependências internas da view para isolar o teste de URL
-        with patch(
-            "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key",
-            return_value=object(),
-        ), patch(
-            "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
-        ) as mock_load, patch(
-            "smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer"
-        ), patch(
-            "smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response"
+        with (
+            patch(
+                "smart_core_assistant_painel.app.ui.oraculo.views.Departamento.validar_api_key",
+                return_value=object(),
+            ),
+            patch(
+                "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
+            ) as mock_load,
+            patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer"),
+            patch(
+                "smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response"
+            ),
         ):
             # Retorno simulado com atributo numero_telefone usado pela view
             class Dummy:
@@ -237,9 +234,7 @@ class TestURLsWithAuthentication(TestCase):
     def setUp(self) -> None:
         """Configuração inicial."""
         self.client = Client()
-        self.user = User.objects.create_user(
-            username="testuser", password="testpass"
-        )
+        self.user = User.objects.create_user(username="testuser", password="testpass")
 
     def test_admin_urls_require_authentication(self) -> None:
         """Testa que URLs do admin requerem autenticação."""
@@ -347,7 +342,9 @@ class TestURLsErrorHandling(TestCase):
         """Testa requisições malformadas para endpoints conhecidos."""
         # Envia payload inválido ao webhook
         response = self.client.post(
-            "/oraculo/webhook/whatsapp/", data="{invalid_json}", content_type="application/json"
+            "/oraculo/webhook/whatsapp/",
+            data="{invalid_json}",
+            content_type="application/json",
         )
         self.assertIn(response.status_code, [200, 400, 404])
 
@@ -355,7 +352,9 @@ class TestURLsErrorHandling(TestCase):
         """Testa requisições com payload muito grande."""
         large_data = "x" * 10_000  # 10KB de dados
         response = self.client.post(
-            "/oraculo/webhook/whatsapp/", data=large_data, content_type="application/json"
+            "/oraculo/webhook/whatsapp/",
+            data=large_data,
+            content_type="application/json",
         )
         self.assertIn(response.status_code, [200, 400, 404])
 

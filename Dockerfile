@@ -13,7 +13,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies including development tools and PostgreSQL client
+# Install system dependencies and uv in a single layer
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -24,39 +24,33 @@ RUN apt-get update && apt-get install -y \
     procps \
     libpq-dev \
     postgresql-client \
-    bash \
-    dos2unix \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install uv for faster dependency management
-RUN pip install uv
+    jq \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install uv
 
 # Copy dependency files and README (required by pyproject.toml)
 COPY pyproject.toml uv.lock README.md ./
 
-# Install dependencies using uv (including dev dependencies)
-RUN uv sync --frozen --dev
-
-# Install psycopg manually as a workaround
-RUN uv pip install psycopg[binary]==3.2.3
+# Install dependencies using uv in a single layer
+RUN uv sync --frozen --dev && \
+    uv pip install psycopg[binary]==3.2.3
 
 # Copy project files
 COPY . .
 
-# Create Firebase config directory and copy credentials
-RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
-COPY src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/
-
-# Copy and make entrypoint scripts executable
-COPY ambiente_docker/scripts/docker-entrypoint.sh /usr/local/bin/
-COPY ambiente_docker/scripts/docker-entrypoint-qcluster.sh /usr/local/bin/
-RUN dos2unix /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh \
-    && chmod +x /usr/local/bin/docker-entrypoint.sh /usr/local/bin/docker-entrypoint-qcluster.sh
+# Create Firebase config directory and generate credentials from environment variable
+ARG FIREBASE_KEY_JSON_CONTENT
+RUN mkdir -p /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/ && \
+    if [ -n "$FIREBASE_KEY_JSON_CONTENT" ]; then \
+        printf '%s\n' "$FIREBASE_KEY_JSON_CONTENT" | jq '.' > /app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json; \
+    else \
+        echo "Warning: FIREBASE_KEY_JSON_CONTENT not provided. Make sure to mount the firebase_key.json file."; \
+    fi
 
 # Create necessary directories
-RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \
-    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/media \
-    && mkdir -p /app/src/smart_core_assistant_painel/app/ui/staticfiles
+RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite && \
+    mkdir -p /app/src/smart_core_assistant_painel/app/ui/media && \
+    mkdir -p /app/src/smart_core_assistant_painel/app/ui/staticfiles
 
 # For development, we'll run as root for simplicity
 # In production, consider using a non-root user
@@ -64,9 +58,9 @@ RUN mkdir -p /app/src/smart_core_assistant_painel/app/ui/db/sqlite \
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/admin/ || exit 1
+# Health check - Comentado para evitar logs desnecessários em desenvolvimento
+# HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+#     CMD curl -f http://localhost:8000/health/ || exit 1
 
 # Set entrypoint
 # ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]  # Temporariamente desabilitado

@@ -273,7 +273,7 @@ class Treinamentos(models.Model):
     def documentos(self) -> list:
         """
         Propriedade para compatibilidade com testes existentes.
-        
+
         Returns:
             list: Lista de documentos diretamente do campo _documentos
         """

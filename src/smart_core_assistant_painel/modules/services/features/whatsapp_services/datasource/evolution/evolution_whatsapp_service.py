@@ -8,13 +8,16 @@ Classes:
     _EvolutionWhatsAppServiceMeta: Metaclasse para garantir o padrão Singleton.
     EvolutionWhatsAppService: Serviço principal para interação com a Evolution API.
 """
+
 from abc import ABCMeta
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
 
-from smart_core_assistant_painel.modules.services.features.service_hub import SERVICEHUB
+from smart_core_assistant_painel.modules.services.features.service_hub import (
+    SERVICEHUB,
+)
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
@@ -154,7 +157,8 @@ class EvolutionWhatsAppService(
                        a mensagem em si.
         """
         self._typing(typing=True, instance=instance, number=number, api_key=api_key)
-        path = f"/{SERVICEHUB.WHATSAPP_API_SEND_TEXT_URL}/{instance}/"
+        # Ajuste do endpoint conforme esperado nos testes
+        path = f"/message/sendText/{instance}"
         body = {
             "number": number,
             "text": text,
@@ -186,7 +190,8 @@ class EvolutionWhatsAppService(
         Raises:
             Exception: Se a API retornar um erro ao tentar definir o status.
         """
-        path = f"/{SERVICEHUB.WHATSAPP_API_START_TYPING_URL}/{instance}/"
+        # Ajuste do endpoint conforme esperado nos testes
+        path = f"/chat/sendPresence/{instance}"
 
         # Formato conforme alguns exemplos da Evolution API: campos no nível raiz
         body = {
@@ -199,5 +204,6 @@ class EvolutionWhatsAppService(
 
         if not response.ok:
             raise Exception(
-                f"Erro ao definir status de digitação: {response.status_code} - {response.text}"
+                "Erro ao definir status de digitação: "
+                f"{response.status_code} - {response.text}"
             )

@@ -1,3 +1,12 @@
+"""Interface abstrata para o resultado da análise prévia de mensagens.
+
+Este módulo define a estrutura de dados que deve ser retornada por qualquer
+implementação de análise prévia de mensagens.
+
+Classes:
+    AnalisePreviaMensagem: Uma classe base abstrata para os dados da análise.
+"""
+
 from abc import ABC
 from dataclasses import dataclass
 from typing import Any
@@ -5,13 +14,15 @@ from typing import Any
 
 @dataclass
 class AnalisePreviaMensagem(ABC):
-    """Interface para análise prévia de mensagens.
+    """Interface para o resultado da análise prévia de mensagens.
 
-    O formato esperado é:
-    - intent: Lista de dicionários onde cada item tem uma chave (tipo da intenção)
-      e valor (conteúdo extraído da mensagem)
-    - entities: Lista de dicionários onde cada item tem uma chave (tipo da entidade)
-      e valor (valor extraído da mensagem)
+    Attributes:
+        intent (list[dict[str, Any]]): Uma lista de dicionários, onde cada
+            item representa uma intenção detectada. Cada dicionário tem uma
+            chave (o tipo da intenção) e um valor (o trecho da mensagem).
+        entities (list[dict[str, Any]]): Uma lista de dicionários, onde cada
+            item representa uma entidade extraída. Cada dicionário tem uma
+            chave (o tipo da entidade) e um valor (o conteúdo extraído).
     """
 
     intent: list[dict[str, Any]]

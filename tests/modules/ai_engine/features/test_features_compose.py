@@ -4,11 +4,9 @@ from unittest.mock import MagicMock, patch
 from langchain.docstore.document import Document
 from py_return_success_or_error import ErrorReturn, SuccessReturn
 
-from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
-    FeaturesCompose,
-)
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+from smart_core_assistant_painel.modules.ai_engine import (
     DocumentError,
+    FeaturesCompose,
 )
 
 

@@ -11,7 +11,9 @@ from py_return_success_or_error import (
 from smart_core_assistant_painel.modules.initial_loading.utils.parameters import (
     FirebaseInitParameters,
 )
-from smart_core_assistant_painel.modules.initial_loading.utils.types import FIUsecase
+from smart_core_assistant_painel.modules.initial_loading.utils.types import (
+    FIUsecase,
+)
 
 
 class FirebaseInitUseCase(FIUsecase):

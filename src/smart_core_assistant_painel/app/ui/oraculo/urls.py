@@ -1,3 +1,9 @@
+"""Configuração de URLs para o aplicativo Oráculo.
+
+Este arquivo define as rotas de URL para as views do aplicativo Oráculo,
+mapeando cada caminho para sua respectiva função de view.
+"""
+
 from django.urls import path
 
 from . import views

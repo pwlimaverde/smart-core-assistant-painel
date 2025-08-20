@@ -19,7 +19,7 @@ if not exist ".env" (
     echo Crie um arquivo .env com o seguinte conteúdo mínimo:
     echo.
     echo # Firebase Configuration ^(OBRIGATÓRIO^)
-    echo FIREBASE_CREDENTIALS_JSON={chave JSON completa aqui}
+    echo GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
     echo.
     echo # Django Configuration ^(OBRIGATÓRIO^)
     echo SECRET_KEY_DJANGO=sua-chave-secreta-django-aqui
@@ -32,8 +32,8 @@ if not exist ".env" (
     echo EVOLUTION_API_GLOBAL_WEBHOOK_URL=http://localhost:8000/oraculo/webhook_whatsapp/
     echo.
     echo # Redis e PostgreSQL - Altere as portas se as padrões estiverem em uso
-    echo REDIS_PORT=6381
-    echo POSTGRES_PORT=5435
+    echo REDIS_PORT=6382
+    echo POSTGRES_PORT=5436
     echo.
     echo # PostgreSQL Configuration
     echo POSTGRES_DB=smart_core_db
@@ -45,6 +45,33 @@ if not exist ".env" (
 )
 
 echo Arquivo .env encontrado.
+
+REM Obter caminho do GOOGLE_APPLICATION_CREDENTIALS do .env
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"GOOGLE_APPLICATION_CREDENTIALS=" .env`) do set FIREBASE_PATH=%%B
+if not defined FIREBASE_PATH (
+    echo ERRO: A variavel GOOGLE_APPLICATIONS_CREDENTIALS nao esta definida no arquivo .env
+    echo Adicione a linha: GOOGLE_APPLICATION_CREDENTIALS=src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+    exit /b 1
+)
+
+REM Extrair diretorio do caminho informado
+for %%I in ("%FIREBASE_PATH%") do set FIREBASE_KEY_DIR=%%~dpI
+if not exist "%FIREBASE_KEY_DIR%" mkdir "%FIREBASE_KEY_DIR%"
+
+REM 2. Criar credenciais Firebase usando FIREBASE_KEY_JSON_CONTENT
+for /f "usebackq tokens=1,* delims==" %%A in (`findstr /b /c:"FIREBASE_KEY_JSON_CONTENT=" .env`) do set FIREBASE_CONTENT=%%B
+
+if not defined FIREBASE_CONTENT (
+    echo ERRO: Variavel FIREBASE_KEY_JSON_CONTENT nao encontrada ou vazia no arquivo .env
+    echo Por favor, adicione a variavel FIREBASE_KEY_JSON_CONTENT no .env com o conteudo JSON do Firebase
+    echo Exemplo: FIREBASE_KEY_JSON_CONTENT={"type":"service_account","project_id":"seu-projeto",...}
+    exit /b 1
+)
+
+echo Criando firebase_key.json a partir da variavel FIREBASE_KEY_JSON_CONTENT...
+mkdir "%FIREBASE_KEY_DIR%" 2>nul
+echo %FIREBASE_CONTENT% > "%FIREBASE_PATH%"
+echo Arquivo firebase_key.json criado com sucesso em %FIREBASE_PATH%
 
 REM 2. Configurar Git para ignorar alterações locais
 echo 2. Configurando Git para ignorar alterações locais...
@@ -59,7 +86,11 @@ echo /docker-compose.yml >> .git\info\exclude
 echo /Dockerfile >> .git\info\exclude
 echo /.gitignore >> .git\info\exclude
 echo /.env >> .git\info\exclude
+echo /firebase_key.json >> .git\info\exclude
 echo /src/smart_core_assistant_painel/app/ui/core/settings.py >> .git\info\exclude
+REM Ignorar novas migrações locais (não rastrear futuras criações)
+echo /src/smart_core_assistant_painel/app/ui/*/migrations/ >> .git\info\exclude
+echo /src/smart_core_assistant_painel/app/ui/*/migrations/*.py >> .git\info\exclude
 
 REM Arquivos para marcar com assume-unchanged
 set FILES_TO_ASSUME=Dockerfile docker-compose.yml .gitignore src/smart_core_assistant_painel/app/ui/core/settings.py
@@ -71,32 +102,43 @@ git update-index --no-assume-unchanged %FILES_TO_ASSUME% 2>nul
 echo Marcando arquivos de configuração para serem ignorados localmente...
 git update-index --assume-unchanged %FILES_TO_ASSUME% 2>nul
 
+REM Marcar arquivos de migração rastreados como assume-unchanged (local)
+echo Marcando arquivos de migracoes (rastreados) como assume-unchanged...
+for /f "usebackq delims=" %%F in (`git ls-files src/smart_core_assistant_painel/app/ui/*/migrations/* 2^>nul`) do (
+    git update-index --no-assume-unchanged "%%F" 2>nul
+    git update-index --assume-unchanged "%%F" 2>nul
+)
+
 echo Configuração do Git concluída com sucesso.
 
-REM 3. Atualizar settings.py para usar PostgreSQL e Redis do Docker
+REM 3. Atualizar settings.py para usar PostgreSQL local e cache em memória
 echo 3. Atualizando settings.py...
 
-set SETTINGS_PATH=src\smart_core_assistant_painel\app\ui\core\settings.py
+set SETTINGS_PATH=src/smart_core_assistant_painel/app/ui/core/settings.py
 
 REM Backup do arquivo original
-copy "%SETTINGS_PATH%" "%SETTINGS_PATH%.backup" >nul
+copy "src\smart_core_assistant_painel\app\ui\core\settings.py" "src\smart_core_assistant_painel\app\ui\core\settings.py.backup" >nul
 
-REM Substituir configuração do banco de dados e cache
-set SETTINGS_PATH=src\smart_core_assistant_painel\app\ui\core\settings.py
+REM Substituir HOST do PostgreSQL para localhost (ambiente misto)
+python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"HOST\": os\.getenv\(\"POSTGRES_HOST\", \"postgres\"\)', '"HOST": os.getenv("POSTGRES_HOST", "localhost")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+if %errorlevel% neq 0 (
+    echo Erro ao atualizar o HOST do PostgreSQL no settings.py
+    exit /b 1
+)
 
-REM Substituir HOST do PostgreSQL
-powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace '\"HOST\": os.getenv\(\"POSTGRES_HOST\", \"postgres\"\)', '\"HOST\": os.getenv(\"POSTGRES_HOST\", \"localhost\")' | Out-File -Encoding UTF8 '%SETTINGS_PATH%'"
+REM Substituir PORT do PostgreSQL para 5436 (padrão ambiente misto)
+python -c "import re; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); content = re.sub(r'\"PORT\": os\.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '"PORT": os.getenv("POSTGRES_PORT", "5436")', content); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+if %errorlevel% neq 0 (
+    echo Erro ao atualizar a PORT do PostgreSQL no settings.py
+    exit /b 1
+)
 
-REM Substituir PORT do PostgreSQL
-powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace '\"PORT\": os.getenv\(\"POSTGRES_PORT\", \"5432\"\)', '\"PORT\": os.getenv(\"POSTGRES_PORT\", \"5435\")' | Out-File -Encoding UTF8 '%SETTINGS_PATH%'"
-
-REM Substituir configuração do cache Redis para usar cache em memória
-powershell -Command "(Get-Content '%SETTINGS_PATH%') -replace 'CACHES = {[^}]+}', 'CACHES = {
-    \"default\": {
-        \"BACKEND\": \"django.core.cache.backends.locmem.LocMemCache\",
-        \"LOCATION\": \"unique-snowflake\",
-    }
-}' | Out-File -Encoding UTF8 '%SETTINGS_PATH%'"
+REM Substituir configuração do cache para usar Redis (ambiente misto)
+python -c "import re, os; content = open('%SETTINGS_PATH%', 'r', encoding='utf-8').read(); cache_config = '''CACHES = {\n    \"default\": {\n        \"BACKEND\": \"django_redis.cache.RedisCache\",\n        \"LOCATION\": \"redis://\" + os.getenv(\"REDIS_HOST\", \"localhost\") + \":\" + os.getenv(\"REDIS_PORT\", \"6382\") + \"/1\",\n        \"OPTIONS\": {\n            \"CLIENT_CLASS\": \"django_redis.client.DefaultClient\",\n        },\n        \"TIMEOUT\": 300,\n    }\n}'''; content = re.sub(r'CACHES\s*=\s*\{(?:[^\{\}]*|{[^\{\}]*})*\}', cache_config, content, flags=re.DOTALL); open('%SETTINGS_PATH%', 'w', encoding='utf-8').write(content)"
+if %errorlevel% neq 0 (
+    echo Erro ao atualizar a configuração de CACHE no settings.py
+    exit /b 1
+)
 
 echo Arquivo settings.py atualizado com sucesso.
 
@@ -108,38 +150,38 @@ for %%f in (.) do set PROJECT_NAME=%%~nxf
 
 REM Criar novo docker-compose.yml
 (
-echo # Arquivo gerenciado pelo ambiente_misto
-echo name: %PROJECT_NAME%
-echo.
-echo services:
-echo   postgres:
-echo     image: postgres:14
-echo     container_name: postgres_db
-echo     environment:
-echo       POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
-echo       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-echo       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
-echo     ports:
-echo       - "${POSTGRES_PORT:-5435}:5432"
-echo     volumes:
-echo       - postgres_data:/var/lib/postgresql/data
-echo     networks:
-echo       - app-network
-echo.
-echo   redis:
-echo     image: redis:6.2-alpine
-echo     container_name: redis_cache
-echo     ports:
-echo       - "${REDIS_PORT:-6381}:6379"
-echo     networks:
-echo       - app-network
-echo.
-echo volumes:
-echo   postgres_data:
-echo.
-echo networks:
-echo   app-network:
-echo     driver: bridge
+    echo # Arquivo gerenciado pelo ambiente_misto
+    echo name: %PROJECT_NAME%-amb-misto
+    echo.
+    echo services:
+    echo   postgres:
+    echo     image: postgres:14
+    echo     container_name: postgres_db
+    echo     environment:
+    echo       POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
+    echo       POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    echo       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    echo     ports:
+    echo       - "${POSTGRES_PORT:-5436}:5432"
+    echo     volumes:
+    echo       - postgres_data:/var/lib/postgresql/data
+    echo     networks:
+    echo       - app-network
+    echo.
+    echo   redis:
+    echo     image: redis:6.2-alpine
+    echo     container_name: redis_cache
+    echo     ports:
+    echo       - "${REDIS_PORT:-6382}:6379"
+    echo     networks:
+    echo       - app-network
+    echo.
+    echo volumes:
+    echo   postgres_data:
+    echo.
+    echo networks:
+    echo   app-network:
+    echo     driver: bridge
 ) > docker-compose.yml
 
 echo Arquivo docker-compose.yml atualizado com sucesso.
@@ -147,9 +189,9 @@ echo Arquivo docker-compose.yml atualizado com sucesso.
 REM 5. Limpar Dockerfile
 echo 5. Limpando Dockerfile...
 
-REM Comentar linhas ENTRYPOINT e CMD
-powershell -Command "(gc Dockerfile) -replace '^\s*ENTRYPOINT', '# ENTRYPOINT' | Out-File -encoding UTF8 Dockerfile"
-powershell -Command "(gc Dockerfile) -replace '^\s*CMD', '# CMD' | Out-File -encoding UTF8 Dockerfile"
+REM Comentar linhas ENTRYPOINT e CMD usando Python
+python -c "import re; content = open('Dockerfile', 'r', encoding='utf-8').read(); content = re.sub(r'^\s*ENTRYPOINT', '# ENTRYPOINT', content, flags=re.MULTILINE); content = re.sub(r'^\s*CMD', '# CMD', content, flags=re.MULTILINE); open('Dockerfile', 'w', encoding='utf-8').write(content)"
+
 echo. >> Dockerfile
 echo # As linhas ENTRYPOINT e CMD foram comentadas pelo ambiente_misto. >> Dockerfile
 
@@ -158,53 +200,63 @@ echo Arquivo Dockerfile atualizado com sucesso.
 REM 6. Iniciar containers
 echo 6. Iniciando os containers (Postgres e Redis)...
 
-docker-compose down -v
-docker-compose up -d
+docker rm -f postgres_db redis_cache || true
+docker compose down -v
+docker compose up -d
 
 REM 7. Instalar dependências Python necessárias
 echo 7. Instalando dependências Python necessárias...
 
-pip install psycopg2-binary
-pip install firebase-admin
-pip install langchain-ollama
-pip install django-redis
-pip install redis==3.5.3
-pip install markdown
+REM O comando uv sync --dev foi removido para evitar o downgrade do python-dotenv
 
-REM 8. Apagar migrações do Django
-echo 8. Apagando migrações do Django...
-
-REM Navegar para o diretório da aplicação
-cd src\smart_core_assistant_painel\app\ui
+REM 8. Resetar migrações do Django
+echo 8. Resetando migrações do Django...
 
 REM Apagar arquivos de migração (exceto __init__.py)
-for /d %%i in (..\..\..\modules\*) do (
-    if exist "%%i\migrations" (
-        echo Apagando migrações de %%i
-        del "%%i\migrations\*.py" >nul 2>&1
-        del "%%i\migrations\*.pyc" >nul 2>&1
-        echo. > "%%i\migrations\__init__.py"
+for /d %%d in (src\smart_core_assistant_painel\app\ui\*) do (
+    if exist "%%d\migrations" (
+        for %%f in ("%%d\migrations\*") do (
+            if not "%%~nxf"=="__init__.py" (
+                del "%%f" 2>nul
+            )
+        )
     )
 )
 
-REM Voltar ao diretório raiz
-cd ..\..\..\..\..
+REM 9. Criar e aplicar novas migrações
+echo 9. Criando e aplicando novas migrações do Django...
 
-REM 9. Aplicar migrações do Django
-echo 9. Aplicando migrações do Django...
+.venv\Scripts\python.exe -m dotenv.cli run uv run task makemigrations
+if %errorlevel% neq 0 (
+    echo Erro ao criar migrações do Django
+    exit /b 1
+)
 
-set PYTHONPATH=%cd%\src
-python src\smart_core_assistant_painel\app\ui\manage.py migrate
+.venv\Scripts\python.exe -m dotenv.cli run uv run task migrate
+if %errorlevel% neq 0 (
+    echo Erro ao aplicar migrações do Django
+    exit /b 1
+)
 
 REM 10. Criar superusuário
 echo 10. Criando superusuário admin...
 
-set PYTHONPATH=%cd%\src
-echo from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', '123456') | python src\smart_core_assistant_painel\app\ui\manage.py shell
+REM Comando idempotente: cria apenas se não existir
+echo from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','123456') | .venv\Scripts\python.exe -m dotenv.cli run uv run task shell
+if %errorlevel% neq 0 (
+    echo Erro ao criar superusuário
+    exit /b 1
+)
 
 echo.
+
 echo === Ambiente misto pronto! ===
 echo Para iniciar a aplicação Django, execute o seguinte comando em outro terminal:
-echo python src\smart_core_assistant_painel\app\ui\manage.py runserver 0.0.0.0:8000
+
+echo uv run task start
+
+echo.
+
+A aplicação estará disponível em http://localhost:8000
 
 pause

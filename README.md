@@ -13,9 +13,32 @@ Um painel inteligente para assistente virtual com integração WhatsApp.
 - QR Code Evolution API otimizado
 - Serviço de envio de mensagens WhatsApp com arquitetura modular
 
-## Instalação
+## 🚀 Instalação Rápida
 
-### Usando Docker (Recomendado)
+### Setup Completo do Zero (Recomendado)
+
+**Para setup completo após clonar o repositório:**
+
+📖 **[GUIA COMPLETO DE SETUP](GUIA_SETUP_COMPLETO.md)** - Processo 100% automatizado
+
+```bash
+# 1. Configure o .env (copie do .env.example)
+# 2. Execute o setup:
+
+# Windows
+.\ambiente_docker\setup.bat
+
+# Linux/macOS
+./ambiente_docker/setup.sh
+
+# 3. Valide a instalação:
+.\ambiente_docker\validate_setup.bat  # Windows
+./ambiente_docker/validate_setup.sh   # Linux/macOS
+```
+
+✅ **[CHECKLIST DE VALIDAÇÃO](CHECKLIST_SETUP.md)** - Verificação passo a passo
+
+### Setup Legado (Scripts Antigos)
 
 ```bash
 # Windows
@@ -117,7 +140,7 @@ uv run dev
 
 ## Documentação
 
-Veja [ambiente_docker/README-Docker.md](ambiente_docker/README-Docker.md) para instruções detalhadas do Docker.
+Veja [ambiente_docker/README.md](ambiente_docker/README.md) para instruções detalhadas do Docker.
 
 ### Correções Recentes
 
@@ -126,7 +149,7 @@ Veja [ambiente_docker/README-Docker.md](ambiente_docker/README-Docker.md) para i
 - ✅ **Validação JSON**: Prevenção de erros de atributo em objetos string
 - ✅ **Logging**: Sistema de logs detalhado para debugging
 
-Para detalhes completos das correções, consulte a seção [Correções Implementadas](ambiente_docker/README-Docker.md#-correções-implementadas) na documentação Docker.
+Para detalhes completos das correções, consulte a seção correspondente em [ambiente_docker/README.md](ambiente_docker/README.md).
 
 ## Serviços
 

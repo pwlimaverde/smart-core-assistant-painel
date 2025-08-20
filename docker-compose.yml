@@ -4,12 +4,19 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - FIREBASE_KEY_JSON_CONTENT=${FIREBASE_KEY_JSON_CONTENT}
+      labels:
+        - "project=smart-core-assistant"
+        - "service=django-app"
+        - "version=latest"
+    image: smart-core-assistant:django-app-latest
     container_name: smart-core-assistant-dev
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - DJANGO_DEBUG=True
       - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
       - POSTGRES_DB=smart_core_db
@@ -21,6 +28,13 @@ services:
       # Configuração para acesso ao Ollama local
       - OLLAMA_HOST=host.docker.internal
       - OLLAMA_PORT=11434
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # Configuração de Embeddings
+      - EMBEDDINGS_MODEL=mxbai-embed-large
+      - EMBEDDINGS_CLASS=OllamaEmbeddings
+      # Configuração do Redis para Q Cluster
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       # Variáveis dinâmicas serão configuradas pelo start_services
       # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
     volumes:
@@ -35,6 +49,7 @@ services:
       - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
     depends_on:
       - postgres-django
+      - evolution-api
     networks:
       - smart-core-network
     extra_hosts:
@@ -47,10 +62,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - FIREBASE_KEY_JSON_CONTENT=${FIREBASE_KEY_JSON_CONTENT}
+      labels:
+        - "project=smart-core-assistant"
+        - "service=django-qcluster"
+        - "version=latest"
+    image: smart-core-assistant:django-qcluster-latest
     container_name: smart-core-qcluster-dev
     restart: unless-stopped
     environment:
-      - DJANGO_SETTINGS_MODULE=core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - DJANGO_DEBUG=True
       - SECRET_KEY_DJANGO=temp-secret-key-for-initial-startup-will-be-replaced-by-firebase-remote-config
       - POSTGRES_DB=smart_core_db
@@ -62,6 +84,13 @@ services:
       # Configuração para acesso ao Ollama local
       - OLLAMA_HOST=host.docker.internal
       - OLLAMA_PORT=11434
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      # Configuração de Embeddings
+      - EMBEDDINGS_MODEL=mxbai-embed-large
+      - EMBEDDINGS_CLASS=OllamaEmbeddings
+      # Configuração do Redis para Q Cluster
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
       # Variáveis dinâmicas serão configuradas pelo start_services
       # SECRET_KEY_DJANGO, OPENAI_API_KEY, GROQ_API_KEY, etc. vêm do Firebase Remote Config
     volumes:
@@ -84,12 +113,12 @@ services:
     image: postgres:15-alpine
     container_name: postgres-django-dev
     restart: unless-stopped
+    ports:
+      - "5433:5432"
     environment:
       - POSTGRES_DB=smart_core_db
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres123
-    ports:
-      - "5433:5432"
     volumes:
       - postgres_django_data:/var/lib/postgresql/data
     networks:

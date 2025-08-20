@@ -1,13 +1,32 @@
+## 0.8.2
+
+### Added
+- Nova documentação de setup completa e unificada no `README.md`.
+- Scripts de setup (`ambiente_docker/`) atualizados e corrigidos para uma instalação mais fluida.
+- Guia de validação para garantir que o setup funcione em um ambiente limpo do zero.
+
+### Changed
+- Refatorado e simplificado todo o processo de instalação via Docker.
+- Unificados múltiplos arquivos de documentação em um `README.md` centralizado para facilitar a consulta.
+
+### Fixed
+- Corrigidos bugs no `Dockerfile` que causavam loops e falhas durante a construção da imagem.
+- Resolvido problema na geração automática do arquivo `firebase_key.json`.
+
 ## 0.8.1
 - **fix**: Adição do campo email ao modelo Contato (migração 0003_add_email_to_contato)
 - **fix**: Correção dos testes que utilizavam o campo email no modelo Contato
 - **docs**: Atualização do README-Docker.md com instruções sobre migrações
 - **test**: Execução bem-sucedida da suíte de testes no Docker (305 testes passados)
+- **fix**: Resolução do problema de contêineres Docker reiniciando, incluindo:
+  - Correção do erro `uv: 1: [/usr/local/bin/docker-entrypoint.sh]: not found` no `smart-core-qcluster-dev`.
+  - Resolução da incompatibilidade de versão do PostgreSQL (`database files are incompatible with server`) no `postgres-dev` e `evolution-api-dev` através da remoção dos volumes de dados e reinicialização dos contêineres.
+- **test**: Verificação de que todos os contêineres Docker (`smart-core-qcluster-dev`, `evolution-api-dev`, `smart-core-assistant-dev`, `postgres-dev`, `redis-dev`, `postgres-django-dev`) estão em estado `running`.
 
 ## 0.8.0
 - **fix**: Correção do problema "Nenhum chunk válido encontrado" no Ollama, incluindo:
   - Bug no loop de iteração em `faiss_vetor_storage.py`.
-  - Valor padrão para `FAISS_MODEL` em `service_hub.py`.
+  - Valor padrão para `EMBEDDINGS_MODEL` em `service_hub.py`.
   - Configuração dinâmica da URL do Ollama em `faiss_vetor_storage.py`.
   - Integração da configuração do Ollama com Firebase Remote Config em `features_compose.py`.
   - Configuração local da `OLLAMA_BASE_URL` no arquivo `.env`.

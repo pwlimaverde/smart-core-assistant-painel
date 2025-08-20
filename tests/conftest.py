@@ -23,7 +23,3 @@ django.setup()
 
 # Configure pytest-django
 import pytest
-
-@pytest.fixture(scope='session')
-def django_db_setup():
-    pass  # Use the settings from settings_test.py

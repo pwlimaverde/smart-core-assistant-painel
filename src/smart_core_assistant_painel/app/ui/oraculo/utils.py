@@ -126,6 +126,7 @@ def _obter_entidades_metadados_validas() -> set[str]:
                     entidades_validas.update(entidades.keys())
         entidades_validas.discard("contato")
         entidades_validas.discard("telefone")
+        entidades_validas.discard("nome_contato")
         return entidades_validas
     except Exception as e:
         logger.error(f"Erro ao obter entidades válidas: {e}")
@@ -207,10 +208,10 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         resultado_analise = FeaturesCompose.analise_previa_mensagem(
             historico_atendimento=historico_atendimento, context=mensagem.conteudo
         )
-        mensagem.intent_detectado = resultado_analise.intent_types
-        mensagem.entidades_extraidas = resultado_analise.entity_types
+        mensagem.intent_detectado = resultado_analise.intent
+        mensagem.entidades_extraidas = resultado_analise.entities
         mensagem.save(update_fields=["intent_detectado", "entidades_extraidas"])
-        _processar_entidades_contato(mensagem, resultado_analise.entity_types)
+        _processar_entidades_contato(mensagem, resultado_analise.entities)
     except Exception as e:
         logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 

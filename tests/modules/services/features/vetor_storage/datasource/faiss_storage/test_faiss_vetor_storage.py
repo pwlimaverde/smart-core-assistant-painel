@@ -7,6 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 from typing import Any
+from pydantic import SecretStr
 
 # Mock do FAISS antes de qualquer importação para evitar DeprecationWarning
 if 'faiss' not in sys.modules:
@@ -198,6 +199,51 @@ class TestFaissVetorStorage(unittest.TestCase):
         
         self.assertFalse(result)
         self.mock_vectordb.delete.assert_not_called()
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open, read_data="file content")
+    @patch("os.path.exists", return_value=True)
+    def test_add_from_file_success(self, mock_exists, mock_open):
+        """Test adding a document from a file successfully."""
+        storage = FaissVetorStorage()
+        result = storage.add_from_file("dummy/path.txt")
+        self.assertTrue(result)
+        self.mock_vectordb.add_documents.assert_called()
+        self.mock_vectordb.save_local.assert_called_with(self.db_path)
+
+    @patch("os.path.exists", return_value=False)
+    def test_add_from_file_not_found(self, mock_exists):
+        """Test that add_from_file returns False if the file does not exist."""
+        storage = FaissVetorStorage()
+        result = storage.add_from_file("nonexistent/path.txt")
+        self.assertFalse(result)
+        self.mock_vectordb.add_documents.assert_not_called()
+
+    @patch("builtins.open", new_callable=unittest.mock.mock_open, read_data="  ")
+    @patch("os.path.exists", return_value=True)
+    def test_add_from_file_empty_content(self, mock_exists, mock_open):
+        """Test that add_from_file returns False for empty or whitespace-only files."""
+        storage = FaissVetorStorage()
+        result = storage.add_from_file("empty/path.txt")
+        self.assertFalse(result)
+        self.mock_vectordb.add_documents.assert_not_called()
+
+    @patch("smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage.HuggingFaceInferenceAPIEmbeddings")
+    def test_create_embeddings_huggingface(self, mock_hf_embeddings):
+        """Test creation of HuggingFace embeddings."""
+        self.mock_servicehub.EMBEDDINGS_CLASS = "HuggingFaceInferenceAPIEmbeddings"
+        with patch.dict(os.environ, {"HUGGINGFACE_API_KEY": "test_key"}):
+            storage = FaissVetorStorage()
+            # Access internal method for testing purposes
+            embeddings = storage._FaissVetorStorage__create_embeddings()
+            mock_hf_embeddings.assert_called_with(api_key=SecretStr("test_key"), model_name="all-minilm-l6-v2")
+
+    @patch("smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage.OpenAIEmbeddings")
+    def test_create_embeddings_openai(self, mock_openai_embeddings):
+        """Test creation of OpenAI embeddings."""
+        self.mock_servicehub.EMBEDDINGS_CLASS = "OpenAIEmbeddings"
+        storage = FaissVetorStorage()
+        embeddings = storage._FaissVetorStorage__create_embeddings()
+        mock_openai_embeddings.assert_called_with(model="all-minilm-l6-v2")
 
 
 if __name__ == "__main__":

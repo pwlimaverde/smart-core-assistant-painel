@@ -41,8 +41,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# UV lock file (needed for frozen installs)
-# uv.lock
+# UV lock file (we don't use uv in the container runtime)
+uv.lock
 
 # IDE
 .vscode/
@@ -131,5 +131,6 @@ pytest.ini
 cspell.json
 
 # Test files
+# Mantemos testes fora da imagem para reduzir tamanho
 tests/
 teste_*.py

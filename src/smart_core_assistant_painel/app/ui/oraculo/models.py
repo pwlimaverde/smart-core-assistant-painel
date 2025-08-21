@@ -201,9 +201,7 @@ class Treinamentos(models.Model):
 
             for i, documento in enumerate(documentos):
                 if not isinstance(documento, Document):
-                    error_msg = f"Item na posição {i} não é um Document válido: {
-                        type(documento)
-                    }"
+                    error_msg = f"Item na posição {i} não é um Document válido: {type(documento)}"
                     logger.error(error_msg)
                     raise TypeError(error_msg)
 
@@ -1241,9 +1239,7 @@ class Atendimento(models.Model):
         Returns:
             str: ID do atendimento, telefone do contato e status atual
         """
-        return f"Atendimento {self.id} - {self.contato.telefone} ({
-            self.get_status_display()
-        })"
+        return f"Atendimento {self.id} - {self.contato.telefone} ({self.get_status_display()})"
 
     def finalizar_atendimento(
         self, novo_status: str = StatusAtendimento.RESOLVIDO
@@ -2120,9 +2116,7 @@ def enviar_mensagem_atendente(
         # Verifica se o atendente está associado ao atendimento
         if atendimento.atendente_humano != atendente_humano:
             raise ValidationError(
-                f"O atendente {
-                    atendente_humano.nome
-                } não está associado a este atendimento."
+                f"O atendente {atendente_humano.nome} não está associado a este atendimento."
             )
 
         # Cria a mensagem

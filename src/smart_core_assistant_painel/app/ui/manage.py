@@ -3,11 +3,15 @@
 
 import os
 import sys
-from venv import logger
+from loguru import logger
 
 
 def start_app() -> None:
-    """Executa tarefas administrativas."""
+    """Executa tarefas administrativas.
+    
+    Configura o DJANGO_SETTINGS_MODULE e delega para o Django. Após a
+    execução do comando, realiza um log das variáveis de ambiente mapeadas.
+    """
     os.environ.setdefault(
         "DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.ui.core.settings"
     )
@@ -19,10 +23,11 @@ def start_app() -> None:
             "instalado e disponível na sua variável de ambiente PYTHONPATH? Você "
             "esqueceu de ativar um ambiente virtual?"
         ) from exc
+
     execute_from_command_line(sys.argv)
     _log_environment_variables()
 
-@staticmethod
+
 def _log_environment_variables() -> None:
     """Loga as variáveis de ambiente configuradas no config_mapping.
     
@@ -61,12 +66,12 @@ def _log_environment_variables() -> None:
         "valid_intent_types": "VALID_INTENT_TYPES",
         "time_cache": "TIME_CACHE",
     }
-    
+
     logger.info("=== VARIÁVEIS DE AMBIENTE CARREGADAS ===")
-    
+
     for key, env_var in config_mapping.items():
         value = os.environ.get(env_var, "[NÃO DEFINIDA]")
-        
+
         # Mascarar chaves de API por segurança
         if "api_key" in key.lower() and value != "[NÃO DEFINIDA]":
             masked_value = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
@@ -78,7 +83,7 @@ def _log_environment_variables() -> None:
                 logger.info(f"{env_var}: {truncated_value}")
             else:
                 logger.info(f"{env_var}: {value}")
-    
+
     logger.info("=== FIM DAS VARIÁVEIS DE AMBIENTE ===")
 
 

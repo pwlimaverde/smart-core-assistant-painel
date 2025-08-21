@@ -31,12 +31,13 @@ jsonpatch==1.33
 jsonpointer==3.0.0
 langchain==0.3.25
 langchain-community==0.3.24
-langchain-core==0.3.62
+langchain-core==0.3.70
 langchain-ollama==0.3.6
 langchain-openai==0.3.18
 langchain-text-splitters==0.3.8
 langchain-xai==0.2.4
-langsmith==0.3.42
+langsmith==0.3.45
+loguru==0.7.2
 markdown==3.8.2
 marshmallow==3.26.1
 multidict==6.4.4
@@ -46,7 +47,7 @@ openai==1.82.0
 orjson==3.10.18
 packaging==24.2
 propcache==0.3.1
-psycopg2-binary==2.9.9
+psycopg[binary]==3.2.3
 pydantic==2.11.5
 pydantic-settings==2.9.1
 pydantic_core==2.33.2
@@ -55,7 +56,7 @@ python-dateutil==2.9.0.post0
 python-decouple==3.8
 python-dotenv==1.1.0
 PyYAML==6.0.2
-redis==3.5.3
+redis==4.5.5
 regex==2024.11.6
 requests==2.32.3
 requests-toolbelt==1.0.0
@@ -77,3 +78,4 @@ urllib3==2.4.0
 wcwidth==0.2.13
 yarl==1.20.0
 zstandard==0.23.0
+py-return-success-or-error==0.6.1

@@ -363,3 +363,61 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
     except Exception as e:
         logger.error(f"Erro crítico no webhook WhatsApp: {e}", exc_info=True)
         return JsonResponse({"error": "Erro interno do servidor"}, status=500)
+
+
+def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
+    """View para verificar treinamentos vetorizados com sucesso e com erro.
+
+    Args:
+        request (HttpRequest): O objeto de requisição.
+
+    Returns:
+        HttpResponse: A resposta HTTP.
+    """
+    if not has_permission(request.user, "treinar_ia"):
+        raise Http404()
+    
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        treinamento_id = request.POST.get("treinamento_id")
+        
+        if not acao or not treinamento_id:
+            messages.error(request, "Ação ou ID do treinamento não especificado.")
+            return redirect("oraculo:verificar_treinamentos_vetorizados")
+            
+        try:
+            treinamento = Treinamentos.objects.get(id=treinamento_id)
+            
+            if acao == "excluir":
+                treinamento.delete()
+                messages.success(request, "Treinamento excluído com sucesso!")
+            elif acao == "vetorizar":
+                # Tenta vetorizar novamente
+                from django_q.tasks import async_task
+                async_task(__task_treinar_ia, treinamento.id)
+                messages.success(request, "Processo de vetorização iniciado!")
+            else:
+                messages.error(request, "Ação inválida.")
+        except Treinamentos.DoesNotExist:
+            messages.error(request, "Treinamento não encontrado.")
+        except Exception as e:
+            logger.error(f"Erro ao processar ação {acao} no treinamento {treinamento_id}: {e}")
+            messages.error(request, "Erro ao processar ação. Tente novamente.")
+        
+        return redirect("oraculo:verificar_treinamentos_vetorizados")
+    
+    # GET request - exibir lista de treinamentos
+    treinamentos_vetorizados = Treinamentos.objects.filter(
+        treinamento_finalizado=True,
+        treinamento_vetorizado=True
+    ).order_by("-data_criacao")
+    
+    treinamentos_com_erro = Treinamentos.objects.filter(
+        treinamento_finalizado=True,
+        treinamento_vetorizado=False
+    ).order_by("-data_criacao")
+    
+    return render(request, "verificar_treinamentos.html", {
+        "treinamentos_vetorizados": treinamentos_vetorizados,
+        "treinamentos_com_erro": treinamentos_com_erro,
+    })

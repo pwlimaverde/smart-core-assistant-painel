@@ -183,3 +183,9 @@ Q_CLUSTER = {
         "password": os.getenv("REDIS_PASSWORD", None),
     },
 }
+
+# Configurações de serviços externos (ambiente_chat)
+# Estas variáveis permitem que a aplicação Django consuma Evolution API e Ollama
+# que rodam em outro ambiente Docker separado.
+EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080")
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")

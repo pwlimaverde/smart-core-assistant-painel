@@ -51,12 +51,12 @@ class TestFaissVetorStorage(unittest.TestCase):
         self.mock_servicehub.EMBEDDINGS_MODEL = "all-minilm-l6-v2"
         self.mock_servicehub.CHUNK_SIZE = 100
         self.mock_servicehub.CHUNK_OVERLAP = 10
-        self.mock_servicehub.EMBEDDINGS_CLASS = MagicMock()
+        self.mock_servicehub.EMBEDDINGS_CLASS = "OllamaEmbeddings"  # Corrigido
         self.mock_servicehub.HUGGINGFACE_API_KEY = ""
 
         # Mock OllamaEmbeddings
         self.embeddings_patcher = patch(
-            "smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage.SERVICEHUB.EMBEDDINGS_CLASS"
+            "smart_core_assistant_painel.modules.services.features.vetor_storage.datasource.faiss_storage.faiss_vetor_storage.OllamaEmbeddings"
         )
         self.mock_embeddings_class = self.embeddings_patcher.start()
         self.mock_embeddings_instance = MagicMock()

@@ -140,10 +140,31 @@ echo Superusuario criado com sucesso!
 echo 9. Iniciando o django-qcluster apos as migracoes...
 docker compose start django-qcluster
 
+echo 10. Configurando modelos do Ollama...
+echo Aguardando o Ollama ficar disponivel...
+:wait_for_ollama
+docker compose exec -T ollama curl -f http://localhost:11434/api/tags >nul 2>&1
+if %errorlevel% neq 0 (
+    echo Ollama nao esta pronto. Aguardando 5 segundos...
+    timeout /t 5 /nobreak >nul
+    goto wait_for_ollama
+)
+echo Ollama conectado com sucesso!
+
+echo Baixando modelo llama3.2 (recomendado para desenvolvimento)...
+docker compose exec -T ollama ollama pull llama3.2
+echo Baixando modelo de embeddings mxbai-embed-large...
+docker compose exec -T ollama ollama pull mxbai-embed-large
+echo Modelos do Ollama configurados com sucesso!
+
 echo.
 echo === Ambiente Docker pronto! ===
 echo A aplicacao esta disponivel em http://localhost:8000
 echo O painel administrativo esta em http://localhost:8000/admin/
+echo Ollama esta disponivel em http://localhost:11434
 echo Use 'docker compose logs -f' para ver os logs.
+echo.
+echo IMPORTANTE: Os modelos llama3.2 e mxbai-embed-large foram baixados.
+echo Para usar outros modelos, execute: docker compose exec ollama ollama pull <nome-do-modelo>
 
 endlocal

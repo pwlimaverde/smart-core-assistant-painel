@@ -25,10 +25,10 @@ services:
       - POSTGRES_HOST=postgres-django
       - POSTGRES_PORT=5432
       - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-      # Configuração para acesso ao Ollama local
-      - OLLAMA_HOST=host.docker.internal
+      # Configuração para acesso ao Ollama interno
+      - OLLAMA_HOST=ollama
       - OLLAMA_PORT=11434
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
       # Configuração de Embeddings
       - EMBEDDINGS_MODEL=mxbai-embed-large
       - EMBEDDINGS_CLASS=OllamaEmbeddings
@@ -49,7 +49,8 @@ services:
       - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
     depends_on:
       - postgres-django
-      - evolution-api
+      - redis
+      - ollama
     networks:
       - smart-core-network
     extra_hosts:
@@ -81,10 +82,10 @@ services:
       - POSTGRES_HOST=postgres-django
       - POSTGRES_PORT=5432
       - GOOGLE_APPLICATION_CREDENTIALS=/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-      # Configuração para acesso ao Ollama local
-      - OLLAMA_HOST=host.docker.internal
+      # Configuração para acesso ao Ollama interno
+      - OLLAMA_HOST=ollama
       - OLLAMA_PORT=11434
-      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_BASE_URL=http://ollama:11434
       # Configuração de Embeddings
       - EMBEDDINGS_MODEL=mxbai-embed-large
       - EMBEDDINGS_CLASS=OllamaEmbeddings
@@ -101,6 +102,7 @@ services:
       - ./src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config:/app/src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config
     depends_on:
       - django-app
+      - ollama
     networks:
       - smart-core-network
     extra_hosts:
@@ -217,7 +219,25 @@ services:
     env_file:
       - .env
 
-
+  # Serviço Ollama para LLM local
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama-dev
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    networks:
+      - smart-core-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   evolution_instances:
@@ -227,6 +247,8 @@ volumes:
   postgres_django_data:
     driver: local
   redis_data:
+    driver: local
+  ollama_data:
     driver: local
 
 networks:

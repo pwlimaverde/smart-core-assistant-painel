@@ -153,7 +153,8 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     if not has_permission(request.user, "treinar_ia"):
-        raise Http404()
+        messages.error(request, "Você não tem permissão para acessar esta página.")
+        return redirect("oraculo:treinar_ia")
     if request.method == "GET":
         return render(request, "treinar_ia.html")
     if request.method == "POST":
@@ -222,7 +223,8 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     if not has_permission(request.user, "treinar_ia"):
-        raise Http404()
+        messages.error(request, "Você não tem permissão para acessar esta página.")
+        return redirect("oraculo:treinar_ia")
     if request.method == "GET":
         return _exibir_pre_processamento(request, id)
     if request.method == "POST":
@@ -243,7 +245,7 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     try:
         treinamento = Treinamentos.objects.get(id=id)
     except Treinamentos.DoesNotExist:
-        messages.error(request, "Treinamento não encontrado.")
+        messages.error(request, "Treinamento não foi encontrado.")
         return redirect("oraculo:treinar_ia")
     
     acao = request.POST.get("acao")
@@ -318,7 +320,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             },
         )
     except Treinamentos.DoesNotExist:
-        messages.error(request, "Treinamento não encontrado.")
+        messages.error(request, "Treinamento não foi encontrado.")
         return redirect("oraculo:treinar_ia")
     except Exception as e:
         logger.error(f"Erro ao exibir pré-processamento: {e}")

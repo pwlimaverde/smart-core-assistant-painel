@@ -73,6 +73,7 @@ Após a execução bem-sucedida do script:
 - **Aplicação Django**: http://localhost:8000
 - **Painel Administrativo**: http://localhost:8000/admin/ (admin/123456)
 - **Evolution API**: http://localhost:8080
+- **Ollama (LLM)**: http://localhost:11434
 - **PostgreSQL Django**: localhost:5432
 - **PostgreSQL Evolution**: localhost:5433
 - **Redis**: localhost:6379
@@ -88,6 +89,11 @@ Para verificar se tudo está funcionando:
    docker logs smart-core-assistant-dev
    docker logs smart-core-qcluster-dev
    docker logs evolution-api-dev
+   docker logs ollama-dev
+   ```
+4. **Teste o Ollama**:
+   ```bash
+   curl http://localhost:11434/api/tags
    ```
 
 ## Problemas Comuns e Soluções
@@ -122,6 +128,14 @@ Para verificar se tudo está funcionando:
 # HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 #   CMD curl -f http://localhost:8000/health/ || exit 1
 ```
+
+### 6. Problemas com Ollama
+**Problema**: Erro de conexão com o Ollama ou modelos não encontrados
+**Solução**: 
+- Verifique se o container Ollama está rodando: `docker logs ollama-dev`
+- Teste a conectividade: `curl http://localhost:11434/api/tags`
+- Para baixar novos modelos: `docker compose exec ollama ollama pull <nome-do-modelo>`
+- Modelos padrão instalados: `llama3.2` e `mxbai-embed-large`
 
 ## Limpeza do Ambiente
 

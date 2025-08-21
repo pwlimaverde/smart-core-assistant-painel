@@ -34,15 +34,17 @@ class TreinamentosAdmin(admin.ModelAdmin):
         "tag",
         "grupo",
         "treinamento_finalizado",
+        "treinamento_vetorizado",
         "get_documentos_preview",
     ]
-    search_fields = ["tag"]
-    ordering = ["id"]
+    list_filter = ["treinamento_finalizado", "treinamento_vetorizado", "grupo"]
+    search_fields = ["tag", "grupo"]
+    ordering = ["-data_criacao"]
     fieldsets = (
         (
             "Informações do Treinamento",
             {
-                "fields": ("tag", "grupo", "treinamento_finalizado", "_documentos"),
+                "fields": ("tag", "grupo", "treinamento_finalizado", "treinamento_vetorizado", "_documentos"),
                 "classes": ("wide",),
             },
         ),

@@ -58,6 +58,7 @@ class Treinamentos(models.Model):
         grupo: Grupo ao qual o treinamento pertence
         _documentos: Lista de documentos LangChain serializados
         treinamento_finalizado: Status de finalização do treinamento
+        treinamento_vetorizado: Status de vetorização do treinamento
         data_criacao: Data de criação automática do treinamento
     """
 
@@ -87,6 +88,11 @@ class Treinamentos(models.Model):
     )
     treinamento_finalizado: models.BooleanField = models.BooleanField(
         default=False,
+        help_text="Indica se o treinamento foi finalizado",
+    )
+    treinamento_vetorizado: models.BooleanField = models.BooleanField(
+        default=False,
+        help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
     data_criacao: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,

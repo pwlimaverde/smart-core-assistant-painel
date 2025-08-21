@@ -94,10 +94,20 @@ def __task_treinar_ia(instance_id: int) -> None:
         documentos = instance.get_documentos()
         if documentos:
             SERVICEHUB.vetor_storage.write(documentos)
+            # Atualiza o campo treinamento_vetorizado para True
+            instance.treinamento_vetorizado = True
+            instance.save(update_fields=["treinamento_vetorizado"])
     except Treinamentos.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")
     except Exception as e:
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
+        # Em caso de erro, podemos atualizar o campo para False
+        try:
+            instance = Treinamentos.objects.get(id=instance_id)
+            instance.treinamento_vetorizado = False
+            instance.save(update_fields=["treinamento_vetorizado"])
+        except Exception as update_error:
+            logger.error(f"Erro ao atualizar status de vetorização do treinamento {instance_id}: {update_error}")
 
 
 @receiver(pre_delete, sender=Treinamentos)

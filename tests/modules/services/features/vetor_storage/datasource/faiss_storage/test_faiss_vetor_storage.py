@@ -51,7 +51,7 @@ class TestFaissVetorStorage(unittest.TestCase):
         self.mock_servicehub.EMBEDDINGS_MODEL = "all-minilm-l6-v2"
         self.mock_servicehub.CHUNK_SIZE = 100
         self.mock_servicehub.CHUNK_OVERLAP = 10
-        self.mock_servicehub.EMBEDDINGS_CLASS = "OllamaEmbeddings"  # Corrigido
+        self.mock_servicehub.EMBEDDINGS_CLASS = "OllamaEmbeddings"  # String válida
         self.mock_servicehub.HUGGINGFACE_API_KEY = ""
 
         # Mock OllamaEmbeddings

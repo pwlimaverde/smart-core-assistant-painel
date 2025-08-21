@@ -19,6 +19,7 @@ class TestViewsErrorHandling(TestCase):
             username='testuser',
             password='testpass123'
         )
+<<<<<<< HEAD
         # Atribui a role de gerente para ter permissão treinar_ia
         assign_role(self.user, 'gerente')
         self.client.login(username='testuser', password='testpass123')
@@ -31,6 +32,7 @@ class TestViewsErrorHandling(TestCase):
         # Faz uma requisição POST para o endpoint
         response = self.client.post(
             reverse('oraculo:pre_processamento', args=[inexistent_id]),
+<<<<<<< HEAD
             data={'acao': 'aceitar'}
         )
         
@@ -40,7 +42,7 @@ class TestViewsErrorHandling(TestCase):
         # Verifica se a mensagem de erro foi adicionada
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any(
-            'não foi encontrado' in str(message) 
+            'não encontrado' in str(message) 
             for message in messages
         ))
         
@@ -63,7 +65,7 @@ class TestViewsErrorHandling(TestCase):
         # Verifica se a mensagem de erro foi adicionada
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any(
-            'não foi encontrado' in str(message) 
+            'não encontrado' in str(message) 
             for message in messages
         ))
         

@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
+    "pgvector.django",
     "rolepermissions",
     "django_q",
     "smart_core_assistant_painel.app.ui.usuarios",

@@ -5,6 +5,7 @@ from typing import Any, List, Optional
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from pgvector.django import VectorField
 from langchain.docstore.document import Document
 from loguru import logger
 
@@ -84,6 +85,12 @@ class Treinamentos(models.Model):
         null=True,
         help_text="Lista de documentos LangChain serializados (campo privado)",
         db_column="documentos",
+    )
+    embedding: VectorField = VectorField(
+        dimensions=1024,
+        null=True,
+        blank=True,
+        help_text="Vetor de embedding (dim=1024) para busca semântica via pgvector",
     )
     treinamento_finalizado: models.BooleanField = models.BooleanField(
         default=False,

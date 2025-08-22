@@ -12,7 +12,6 @@ import os
 from pathlib import Path
 from typing import Optional, Type
 
-from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from .vetor_storage.domain.interface.vetor_storage import VetorStorage
@@ -51,7 +50,6 @@ class ServiceHub:
         if not self._initialized:
             #Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
-            self._vetor_storage: Optional[VetorStorage] = None
             self._whatsapp_service: Optional[WhatsAppService] = None
             # LLM
             self._llm_class: Optional[Type[BaseChatModel]] = None
@@ -123,15 +121,6 @@ class ServiceHub:
                 "Falha ao auto-configurar WhatsAppService. "
                 "Use set_whatsapp_service() para definir a instância manualmente."
             )
-
-    def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
-        """Define a implementação de VetorStorage a ser utilizada.
-
-        Args:
-            vetor_storage (VetorStorage): Uma instância de uma classe que
-                implementa a interface VetorStorage.
-        """
-        self._vetor_storage = vetor_storage
 
     def set_whatsapp_service(self, whatsapp_service: WhatsAppService) -> None:
         """Define a implementação de WhatsAppService a ser utilizada.

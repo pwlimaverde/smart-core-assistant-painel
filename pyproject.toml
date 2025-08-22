@@ -27,7 +27,7 @@ dependencies = [
     "django-q2==1.8.0",
     "django-role-permissions==3.2.0",
     "docx2txt>=0.9",
-    "faiss-cpu==1.12.0",
+    "pgvector>=0.3.0",
     "firebase-admin>=6.9.0",
     "frozenlist==1.6.0",
     "groq>=0.26.0",
@@ -54,12 +54,12 @@ dependencies = [
     "mypy>=1.17.0",
     "mypy-extensions==1.1.0",
     "networkx>=3.5",
-    "numpy==2.2.6",
+
     "openai==1.82.0",
     "openpyxl>=3.1.5",
     "orjson==3.10.18",
     "packaging==24.2",
-    "pandas>=2.3.0",
+
     "propcache==0.3.1",
     "psycopg[binary]==3.2.3",
     "py-return-success-or-error==0.6.1",
@@ -100,12 +100,6 @@ dependencies = [
     "huggingface-hub>=0.24.0",
 ]
 
-[project.optional-dependencies]
-ml = [
-    "torch>=2.8.0",
-    "transformers>=4.55.2",
-    "sentence-transformers>=5.1.0",
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -215,11 +209,6 @@ dev-setup = "uv sync --dev && uv run task migrate"
 setup-docker = "docker compose up -d --build && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 dev-setup-docker = "docker compose up -d --build"
 
-# Comandos diversos - Local
-faiss_to_json = "python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
-
-# Specific tasks (Docker)
-faiss_to_json-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
 
 # Testes (Docker)
 # Executa toda a suíte de testes no container com cobertura em src e relatório no terminal

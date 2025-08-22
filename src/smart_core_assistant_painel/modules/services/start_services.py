@@ -97,7 +97,6 @@ def start_services() -> None:
     try:
         logger.info("Iniciando serviços essenciais da aplicação...")
         FeaturesCompose.set_environ_remote()
-        FeaturesCompose.vetor_storage()
         FeaturesCompose.whatsapp_service()
         
         _services_initialized = True

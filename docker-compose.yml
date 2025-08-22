@@ -4,7 +4,7 @@ name: smart-core-assistant-painel-django
 services:
   # Banco de dados PostgreSQL
   postgres-django:
-    image: postgres:14
+    image: timescale/timescaledb-ha:pg16
     container_name: postgres-django
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
@@ -14,6 +14,7 @@ services:
       - "${POSTGRES_PORT:-5436}:5432"
     volumes:
       - postgres_django_data:/var/lib/postgresql/data
+      - ./docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
     networks:
       - django-network
     healthcheck:
@@ -49,6 +50,7 @@ services:
       - REDIS_HOST=redis-django
       - REDIS_PORT=6379
       - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://host.docker.internal:8080}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
 
       - PYTHONPATH=/app/src
     ports:

@@ -20,19 +20,19 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip install --upgrade pip setuptools wheel uv
 
 # Aproveitar cache: copiar apenas arquivos de dependências primeiro
-COPY pyproject.toml README.md uv.lock ./
+COPY pyproject.toml README.md ./
 
 # Instalar dependências sem copiar o código (evita invalidar cache por mudanças no código)
-# Excluir dependências ML pesadas que não são necessárias para a execução básica
-# Usar --no-deps para as bibliotecas que podem trazer dependências da NVIDIA
-RUN uv sync --frozen --no-dev
+# Não usar lock congelado para evitar instalação de dependências obsoletas/pesadas
+RUN uv sync --no-dev
 
 # Copiar o restante do código (somente após instalar deps)
 COPY . .
 
 # Criar usuário não-root para segurança
 RUN adduser --disabled-password --gecos '' app \
-    && chown -R app:app /app
+    && chown -R app:app /app \
+    && chown -R app:app /opt/venv
 USER app
 
 # Expor porta da aplicação

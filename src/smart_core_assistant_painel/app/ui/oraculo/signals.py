@@ -6,8 +6,9 @@ processamento de mensagens em buffer.
 """
 
 from datetime import timedelta
-from typing import Any
+from typing import Any, List
 
+from django.conf import settings
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import Signal, receiver
 from django.utils import timezone
@@ -64,7 +65,9 @@ def signal_agendar_processamento_mensagens(
             next_run=next_run,
         )
     except Exception as e:
-        logger.error(f"Erro ao agendar processamento para {phone}: {e}", exc_info=True)
+        logger.error(
+            f"Erro ao agendar processamento para {phone}: {e}", exc_info=True
+        )
 
 
 def __limpar_schedules_telefone(phone: str) -> None:
@@ -82,6 +85,91 @@ def __limpar_schedules_telefone(phone: str) -> None:
         logger.warning(f"Erro ao limpar schedules para {phone}: {e}")
 
 
+# -------------------------
+# Helpers de Embeddings
+# -------------------------
+
+def __get_embeddings_instance() -> Any:
+    """Constrói a instância de embeddings conforme configuração do ServiceHub.
+
+    Returns:
+        Any: Instância de embeddings compatível com LangChain.
+
+    Raises:
+        ValueError: Caso a classe configurada não seja suportada.
+    """
+    embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
+    embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
+
+    try:
+        if embeddings_class == "OllamaEmbeddings":
+            # Usa Ollama via URL configurada no settings/env
+            from langchain_ollama import OllamaEmbeddings
+
+            base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
+            kwargs: dict[str, Any] = {}
+            if embeddings_model:
+                kwargs["model"] = embeddings_model
+            if base_url:
+                kwargs["base_url"] = base_url
+            return OllamaEmbeddings(**kwargs)
+
+        if embeddings_class == "OpenAIEmbeddings":
+            from langchain_openai import OpenAIEmbeddings
+
+            if embeddings_model:
+                return OpenAIEmbeddings(model=embeddings_model)
+            return OpenAIEmbeddings()
+
+        if embeddings_class == "HuggingFaceEmbeddings":
+            from langchain_huggingface import HuggingFaceEmbeddings
+
+            if embeddings_model:
+                return HuggingFaceEmbeddings(model_name=embeddings_model)
+            return HuggingFaceEmbeddings()
+
+        raise ValueError(
+            "Classe de embeddings não suportada: " f"{embeddings_class}"
+        )
+    except Exception as exc:  # pragma: no cover - proteção adicional
+        # Loga erro e repassa para tratamento na chamada
+        logger.error(
+            "Falha ao criar instancia de embeddings: " f"{exc}",
+            exc_info=True,
+        )
+        raise
+
+
+def __embed_text(text: str) -> List[float]:
+    """Gera o vetor de embedding para um texto.
+
+    Tenta usar embed_query se disponível (preferível para uma única string),
+    caso contrário, utiliza embed_documents.
+
+    Args:
+        text (str): Texto a ser convertido em embedding.
+
+    Returns:
+        List[float]: Vetor de embedding como lista de floats.
+    """
+    embeddings = __get_embeddings_instance()
+
+    try:
+        if hasattr(embeddings, "embed_query"):
+            vec: List[float] = list(map(float, embeddings.embed_query(text)))
+        else:
+            # Fallback para APIs que suportam apenas embed_documents
+            docs_vec: List[List[float]] = embeddings.embed_documents([text])
+            vec = list(map(float, docs_vec[0]))
+        return vec
+    except Exception as exc:  # pragma: no cover - proteção adicional
+        logger.error(
+            "Erro ao gerar embedding do texto: " f"{exc}",
+            exc_info=True,
+        )
+        raise
+
+
 def __task_treinar_ia(instance_id: int) -> None:
     """Tarefa para treinar a IA com os documentos de um treinamento.
 
@@ -90,10 +178,24 @@ def __task_treinar_ia(instance_id: int) -> None:
     """
     try:
         instance = Treinamentos.objects.get(id=instance_id)
-        SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
-        documentos = instance.get_documentos()
-        if documentos:
-            SERVICEHUB.vetor_storage.write(documentos)
+
+        # 1) Limpa embedding anterior sem disparar signals
+        Treinamentos.objects.filter(id=instance_id).update(embedding=None)
+
+        # 2) Extrai conteúdo unificado e gera embedding
+        texto_unificado: str = instance.get_conteudo_unificado() or ""
+        if not texto_unificado.strip():
+            logger.warning(
+                "Treinamento %s sem conteúdo para embedding.", instance_id
+            )
+            return
+
+        vetor: List[float] = __embed_text(texto_unificado)
+
+        # 3) Persiste vetor via update() para evitar loop de signals
+        Treinamentos.objects.filter(id=instance_id).update(embedding=vetor)
+        logger.info("Embedding atualizado para treinamento %s", instance_id)
+
     except Treinamentos.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")
     except Exception as e:
@@ -132,7 +234,11 @@ def __task_remover_treinamento_ia(instance_id: int) -> None:
         Exception: Se ocorrer um erro durante a remoção.
     """
     try:
-        SERVICEHUB.vetor_storage.remove_by_metadata("id_treinamento", str(instance_id))
+        # Como os dados ficam no próprio modelo, basta limpar o vetor.
+        Treinamentos.objects.filter(id=instance_id).update(embedding=None)
+        logger.info(
+            "Embedding removido para treinamento %s (pre_delete)", instance_id
+        )
     except Exception as e:
         logger.error(f"Erro ao remover treinamento {instance_id}: {e}")
         raise

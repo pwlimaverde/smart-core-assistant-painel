@@ -20,12 +20,6 @@ from .set_environ_remote.datasource.set_environ_remote_firebase_datasource impor
 from .set_environ_remote.domain.usecase.set_environ_remote_usecase import (
     SetEnvironRemoteUseCase,
 )
-from .vetor_storage.datasource.faiss_storage.faiss_storage_datasource import (
-    FaissStorageDatasource,
-)
-from .vetor_storage.domain.usecase.vetor_storage_usecase import (
-    VetorStorageUseCase,
-)
 from .whatsapp_services.datasource.evolution.evolution_api_datasource import (
     EvolutionAPIDatasource,
 )
@@ -98,25 +92,6 @@ class FeaturesCompose:
         
         # Recarrega as configurações do SERVICEHUB após carregar as variáveis do Firebase
         SERVICEHUB.reload_config()
-
-    @staticmethod
-    def vetor_storage() -> None:
-        """Inicializa o datasource de armazenamento vetorial (Faiss) e o
-        disponibiliza no `SERVICEHUB`.
-
-        Raises:
-            VetorStorageError: Se ocorrer um erro ao inicializar ou carregar
-                               o banco de dados vetorial.
-        """
-        parameters: NoParams = NoParams()
-        datasource: VSData = FaissStorageDatasource()
-        usecase: VSUsecase = VetorStorageUseCase(datasource=datasource)
-
-        data = usecase(parameters)
-        if isinstance(data, SuccessReturn):
-            SERVICEHUB.set_vetor_storage(data.result)
-        if isinstance(data, ErrorReturn):
-            raise data.result
 
     @staticmethod
     def whatsapp_service() -> None:

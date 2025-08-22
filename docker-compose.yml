@@ -1,0 +1,100 @@
+# Arquivo gerenciado pelo ambiente_django
+name: smart-core-assistant-painel-django
+
+services:
+  # Banco de dados PostgreSQL
+  postgres-django:
+    image: postgres:14
+    container_name: postgres-django
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    ports:
+      - "${POSTGRES_PORT:-5436}:5432"
+    volumes:
+      - postgres_django_data:/var/lib/postgresql/data
+    networks:
+      - django-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-smart_core_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Cache Redis
+  redis-django:
+    image: redis:6.2-alpine
+    container_name: redis-django
+    ports:
+      - "${REDIS_PORT:-6382}:6379"
+    networks:
+      - django-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Aplicação Django principal
+  django-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django-app
+    environment:
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - POSTGRES_HOST=postgres-django
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis-django
+      - REDIS_PORT=6379
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://host.docker.internal:8080}
+
+      - PYTHONPATH=/app/src
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    networks:
+      - django-network
+    depends_on:
+      postgres-django:
+        condition: service_healthy
+      redis-django:
+        condition: service_healthy
+    command: >
+      sh -c "uv run --active task migrate && uv run --active task server"
+
+  # Django Q Cluster para tarefas assíncronas
+  django-qcluster:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: django-qcluster
+    environment:
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - POSTGRES_HOST=postgres-django
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis-django
+      - REDIS_PORT=6379
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-http://host.docker.internal:8080}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - PYTHONPATH=/app/src
+    volumes:
+      - .:/app
+    networks:
+      - django-network
+    depends_on:
+      postgres-django:
+        condition: service_healthy
+      redis-django:
+        condition: service_healthy
+    command: >
+      sh -c "uv run --active task cluster"
+
+volumes:
+  postgres_django_data:
+
+networks:
+  django-network:
+    driver: bridge

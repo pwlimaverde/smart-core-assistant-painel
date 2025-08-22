@@ -41,8 +41,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# UV lock file (we don't use uv in the container runtime)
-uv.lock
+# UV lock file (usaremos uv no runtime do container)
+# uv.lock
 
 # IDE
 .vscode/

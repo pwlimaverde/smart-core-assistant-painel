@@ -1,5 +1,6 @@
 """Configurações do Django para o projeto principal.
 
+
 Gerado por 'django-admin startproject' usando Django 5.2.1.
 
 Para mais informações sobre este arquivo, consulte:

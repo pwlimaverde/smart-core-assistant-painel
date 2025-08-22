@@ -9,7 +9,6 @@ from .features.service_hub import SERVICEHUB, ServiceHub
 from .start_services import start_services
 from .utils.erros import (
     SetEnvironRemoteError,
-    VetorStorageError,
     WhatsAppServiceError,
 )
 from .utils.parameters import (
@@ -19,8 +18,6 @@ from .utils.parameters import (
 from .utils.types import (
     SERData,
     SERUsecase,
-    VSData,
-    VSUsecase,
     WSData,
     WSUsecase,
 )
@@ -36,15 +33,12 @@ __all__ = [
     # Erros
     "SetEnvironRemoteError",
     "WhatsAppServiceError",
-    "VetorStorageError",
     # Parameters
     "SetEnvironRemoteParameters",
     "WhatsAppMensagemParameters",
     # Types
     "SERUsecase",
     "SERData",
-    "VSUsecase",
-    "VSData",
     "WSUsecase",
     "WSData",
 ]

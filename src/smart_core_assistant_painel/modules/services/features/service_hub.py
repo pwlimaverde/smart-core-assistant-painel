@@ -14,7 +14,6 @@ from typing import Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from .vetor_storage.domain.interface.vetor_storage import VetorStorage
 from .whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
@@ -107,13 +106,6 @@ class ServiceHub:
         
         # Limpa o cache da classe LLM para forçar recarregamento
         self._llm_class = None
-
-        vetor_storage_type = os.environ.get("VETOR_STORAGE_TYPE")
-        if vetor_storage_type is not None and self._vetor_storage is None:
-            raise RuntimeError(
-                "Falha ao auto-configurar VetorStorage. "
-                "Use set_vetor_storage() para definir a instância manualmente."
-            )
 
         whatsapp_service_type = os.environ.get("WHATSAPP_SERVICE_TYPE")
         if whatsapp_service_type is not None and self._whatsapp_service is None:
@@ -320,20 +312,6 @@ class ServiceHub:
             else ""
         )
 
-
-    @property
-    def vetor_storage(self) -> VetorStorage:
-        """Retorna a instância configurada do VetorStorage.
-
-        Raises:
-            RuntimeError: Se o serviço não tiver sido configurado.
-        """
-        if self._vetor_storage is None:
-            raise RuntimeError(
-                "VetorStorage não configurado. "
-                "Use set_vetor_storage() para definir a instância manualmente."
-            )
-        return self._vetor_storage
 
     @property
     def whatsapp_service(self) -> WhatsAppService:

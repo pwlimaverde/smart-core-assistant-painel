@@ -9,8 +9,6 @@ from ..utils.parameters import SetEnvironRemoteParameters
 from ..utils.types import (
     SERData,
     SERUsecase,
-    VSData,
-    VSUsecase,
     WSData,
 )
 from .service_hub import SERVICEHUB

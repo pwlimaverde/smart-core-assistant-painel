@@ -54,7 +54,7 @@ services:
 
       - PYTHONPATH=/app/src
     ports:
-      - "8000:8000"
+      - "${SERVER_PORT:-8000}:8000"
     volumes:
       - .:/app
     networks:

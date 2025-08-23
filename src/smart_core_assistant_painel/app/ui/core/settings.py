@@ -31,7 +31,22 @@ SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = ["django-app", "localhost", "127.0.0.1"]
+# Configuração de hosts permitidos com suporte a variável de ambiente
+# Permite ajustar rapidamente em diferentes ambientes (local, Docker, etc.).
+DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
+if DJANGO_ALLOWED_HOSTS:
+    ALLOWED_HOSTS: list[str] = [
+        host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",") if host.strip()
+    ]
+else:
+    # Padrão compatível com execução via Docker e acesso externo pelo host
+    ALLOWED_HOSTS: list[str] = [
+        "django-app",
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "host.docker.internal",
+    ]
 
 
 # Application definition

@@ -22,6 +22,7 @@ from .models import (
     Contato,
     Mensagem,
     TipoRemetente,
+    Treinamentos,
     processar_mensagem_whatsapp,
 )
 from .signals import mensagem_bufferizada
@@ -77,6 +78,10 @@ def send_message_response(phone: str) -> None:
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
             _analisar_conteudo_mensagem(mensagem_id)
+            teste_similaridade = Treinamentos.build_similarity_context(mensagem)
+            logger.info(f"Teste similaridade: {teste_similaridade}")
+
+
             atendimento_obj: Atendimento = cast(Atendimento, mensagem.atendimento)
             if _pode_bot_responder_atendimento(atendimento_obj):
                 SERVICEHUB.whatsapp_service.send_message(

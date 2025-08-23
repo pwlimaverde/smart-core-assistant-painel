@@ -78,7 +78,7 @@ def send_message_response(phone: str) -> None:
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
             _analisar_conteudo_mensagem(mensagem_id)
-            teste_similaridade = Treinamentos.build_similarity_context(mensagem)
+            teste_similaridade = Treinamentos.build_similarity_context(query=mensagem.conteudo)
             logger.info(f"Teste similaridade: {teste_similaridade}")
 
 

@@ -29,6 +29,8 @@ services:
     container_name: redis-django
     ports:
       - "${REDIS_PORT:-6382}:6379"
+    volumes:
+      - redis_django_data:/data  # evita criação de volume anônimo pelo VOLUME /data da imagem redis
     networks:
       - django-network
     healthcheck:
@@ -96,6 +98,9 @@ services:
 
 volumes:
   postgres_django_data:
+    name: postgres_django_data
+  redis_django_data:
+    name: redis_django_data
 
 networks:
   django-network:

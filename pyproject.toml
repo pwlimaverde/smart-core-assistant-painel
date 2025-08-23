@@ -185,7 +185,7 @@ createsuperuser-docker = "docker compose exec django-app uv run --active python 
 collectstatic-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput"
 shell-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell"
 startapp-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py startapp"
-reset-db-docker = "docker compose down && docker volume rm smart-core-assistant-painel_postgres-data-django || true && docker compose up -d --build"
+reset-db-docker = "docker compose down && docker volume rm postgres_django_data || true && docker compose up -d --build"
 
 # Desenvolvimento e testes
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"

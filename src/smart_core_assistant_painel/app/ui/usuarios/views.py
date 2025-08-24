@@ -31,26 +31,26 @@ def cadastro(request: HttpRequest) -> HttpResponse:
 
         if not senha == confirmar_senha:
             messages.add_message(request, constants.ERROR, "As senhas não coincidem.")
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
         if len(senha or "") < 6:
             messages.add_message(
                 request, constants.ERROR, "A senha deve ter pelo menos 6 caracteres."
             )
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
         if User.objects.filter(username=username).exists():
             messages.add_message(
                 request, constants.ERROR, "Este nome de usuário já existe."
             )
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
         if not username or not senha:
             messages.add_message(
                 request, constants.ERROR, "Nome de usuário e senha são obrigatórios."
             )
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
 
         User.objects.create_user(username=username, password=senha)
-        return redirect("/usuarios/login")
-    return redirect("/usuarios/cadastro/")
+        return redirect("login")
+    return redirect("cadastro")
 
 
 def login(request: HttpRequest) -> HttpResponse:

@@ -5,8 +5,11 @@ from typing import Any, List, Optional
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
+from pgvector.django import VectorField, CosineDistance
 from langchain.docstore.document import Document
 from loguru import logger
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models_departamento import Departamento
 
@@ -58,6 +61,7 @@ class Treinamentos(models.Model):
         grupo: Grupo ao qual o treinamento pertence
         _documentos: Lista de documentos LangChain serializados
         treinamento_finalizado: Status de finalização do treinamento
+        treinamento_vetorizado: Status de vetorização do treinamento
         data_criacao: Data de criação automática do treinamento
     """
 
@@ -85,8 +89,19 @@ class Treinamentos(models.Model):
         help_text="Lista de documentos LangChain serializados (campo privado)",
         db_column="documentos",
     )
+    embedding: VectorField = VectorField(
+        dimensions=1024,
+        null=True,
+        blank=True,
+        help_text="Vetor de embedding (dim=1024) para busca semântica via pgvector",
+    )
     treinamento_finalizado: models.BooleanField = models.BooleanField(
         default=False,
+        help_text="Indica se o treinamento foi finalizado",
+    )
+    treinamento_vetorizado: models.BooleanField = models.BooleanField(
+        default=False,
+        help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
     data_criacao: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
@@ -201,9 +216,7 @@ class Treinamentos(models.Model):
 
             for i, documento in enumerate(documentos):
                 if not isinstance(documento, Document):
-                    error_msg = f"Item na posição {i} não é um Document válido: {
-                        type(documento)
-                    }"
+                    error_msg = f"Item na posição {i} não é um Document válido: {type(documento)}"
                     logger.error(error_msg)
                     raise TypeError(error_msg)
 
@@ -285,6 +298,295 @@ class Treinamentos(models.Model):
         """
         self.treinamento_finalizado = True
         self.save(update_fields=["treinamento_finalizado"])
+
+    # -------------------------
+    # Busca por similaridade (pgvector)
+    # -------------------------
+
+    @staticmethod
+    def _get_embeddings_instance() -> Any:
+        """Cria a instância de embeddings conforme configuração do ServiceHub.
+
+        Returns:
+            Any: Instância compatível com LangChain.
+
+        Raises:
+            ValueError: Quando a classe configurada não é suportada.
+        """
+        embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
+        embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
+
+        try:
+            if embeddings_class == "OllamaEmbeddings":
+                # Usa Ollama via URL configurada no settings/env
+                from langchain_ollama import OllamaEmbeddings
+
+                base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
+                kwargs: dict[str, Any] = {}
+                if embeddings_model:
+                    kwargs["model"] = embeddings_model
+                if base_url:
+                    kwargs["base_url"] = base_url
+                return OllamaEmbeddings(**kwargs)
+
+            if embeddings_class == "OpenAIEmbeddings":
+                from langchain_openai import OpenAIEmbeddings
+
+                if embeddings_model:
+                    return OpenAIEmbeddings(model=embeddings_model)
+                return OpenAIEmbeddings()
+
+            if embeddings_class == "HuggingFaceEmbeddings":
+                from langchain_huggingface import HuggingFaceEmbeddings
+
+                if embeddings_model:
+                    return HuggingFaceEmbeddings(
+                        model_name=embeddings_model
+                    )
+                return HuggingFaceEmbeddings()
+
+            raise ValueError(
+                "Classe de embeddings não suportada: " f"{embeddings_class}"
+            )
+        except Exception as exc:  # pragma: no cover
+            # Loga erro e repassa para tratamento na chamada
+            logger.error(
+                "Falha ao criar instancia de embeddings: " f"{exc}",
+                exc_info=True,
+            )
+            raise
+
+    @staticmethod
+    def _embed_text(text: str) -> List[float]:
+        """Gera o vetor de embedding para um texto.
+
+        Usa embed_query (preferível para uma única string) quando disponível,
+        com fallback para embed_documents.
+
+        Args:
+            text (str): Texto de entrada.
+
+        Returns:
+            List[float]: Vetor de floats (dimensão 1024).
+        """
+        embeddings = Treinamentos._get_embeddings_instance()
+
+        try:
+            if hasattr(embeddings, "embed_query"):
+                vec: List[float] = list(
+                    map(float, embeddings.embed_query(text))
+                )
+            else:
+                docs_vec: List[List[float]] = embeddings.embed_documents([text])
+                vec = list(map(float, docs_vec[0]))
+            return vec
+        except Exception as exc:  # pragma: no cover
+            logger.error(
+                "Erro ao gerar embedding do texto: " f"{exc}",
+                exc_info=True,
+            )
+            raise
+
+    @classmethod
+    def search_by_similarity(
+        cls,
+        query: str,
+        top_k: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> List[tuple["Treinamentos", float]]:
+        """Busca treinamentos mais similares a um texto de consulta.
+
+        A distância usada é a CosineDistance (menor valor = mais similar),
+        conforme configuração do pgvector (operador <=>).
+
+        Args:
+            query (str): Texto de consulta para gerar o embedding.
+            top_k (int): Número máximo de resultados a retornar.
+            grupo (Optional[str]): Filtro opcional por grupo.
+            tag (Optional[str]): Filtro opcional por tag.
+
+        Returns:
+            List[tuple[Treinamentos, float]]: Lista de tuplas
+            (objeto, distancia), ordenada por menor distância.
+        """
+        if not query or not query.strip():
+            return []
+        # Validação defensiva de limite
+        if top_k <= 0:
+            return []
+
+        # Gera vetor do texto de consulta
+        query_vec: List[float] = cls._embed_text(query.strip())
+
+        # Base queryset: somente treinamentos finalizados com embedding
+        qs = cls.objects.filter(
+            treinamento_finalizado=True, embedding__isnull=False
+        )
+        if grupo:
+            qs = qs.filter(grupo=grupo)
+        if tag:
+            qs = qs.filter(tag=tag)
+
+        # Anota e ordena por distância cosseno (menor = mais perto)
+        qs = qs.annotate(
+            distance=CosineDistance("embedding", query_vec)
+        ).order_by("distance")[:top_k]
+
+        resultados: List[tuple["Treinamentos", float]] = []
+        for obj in qs:
+            # type: ignore[attr-defined] - campo anotado em runtime
+            distancia_val: float = float(getattr(obj, "distance", 0.0))
+            resultados.append((obj, distancia_val))
+
+        return resultados
+
+    @staticmethod
+    def _cosine_distance(vec_a: List[float], vec_b: List[float]) -> float:
+        """Calcula a distância cosseno entre dois vetores.
+
+        Retorna valor em [0, 2]; quanto menor, mais similares.
+
+        Args:
+            vec_a (List[float]): Vetor A.
+            vec_b (List[float]): Vetor B.
+
+        Returns:
+            float: Distância cosseno (1 - similaridade).
+        """
+        # Tratamento defensivo para vetores vazios
+        if not vec_a or not vec_b:
+            return 1.0
+
+        # Garante o mesmo tamanho por segurança
+        n = min(len(vec_a), len(vec_b))
+        dot = 0.0
+        norm_a = 0.0
+        norm_b = 0.0
+        for i in range(n):
+            a = float(vec_a[i])
+            b = float(vec_b[i])
+            dot += a * b
+            norm_a += a * a
+            norm_b += b * b
+
+        if norm_a == 0.0 or norm_b == 0.0:
+            return 1.0
+
+        cosine = dot / ((norm_a ** 0.5) * (norm_b ** 0.5))
+        return 1.0 - cosine
+
+    @classmethod
+    def build_similarity_context(
+        cls,
+        query: str,
+        top_k_docs: int = 5,
+        top_k_trainings: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> str:
+        """Retorna string com os N documentos mais similares como contexto.
+
+        Passos:
+        1) Busca treinamentos mais similares via pgvector;
+        2) Coleta os documentos desses treinamentos;
+        3) Gera embeddings em lote destes documentos;
+        4) Calcula distância cosseno para cada documento;
+        5) Retorna uma string estruturada com separadores.
+
+        Args:
+            query (str): Texto de consulta.
+            top_k_docs (int): Quantidade de documentos no contexto.
+            top_k_trainings (int): Quantidade de treinamentos a considerar.
+            grupo (Optional[str]): Filtro por grupo.
+            tag (Optional[str]): Filtro por tag.
+
+        Returns:
+            str: Contexto concatenado com '---' entre os chunks.
+        """
+        if not query or not query.strip():
+            return ""
+        if top_k_docs <= 0 or top_k_trainings <= 0:
+            return ""
+
+        # Embedding da consulta
+        query_vec: List[float] = cls._embed_text(query.strip())
+
+        # Seleciona treinamentos mais similares (com filtros opcionais)
+        top_trainings = cls.search_by_similarity(
+            query=query,
+            top_k=top_k_trainings,
+            grupo=grupo,
+            tag=tag,
+        )
+
+        if not top_trainings:
+            return ""
+
+        # Coleta documentos e metadados (tag/grupo) de cada treinamento
+        docs: List[Document] = []
+        doc_meta: List[tuple[str, str]] = []  # (tag, grupo)
+        for tr_obj, _dist in top_trainings:
+            for doc in tr_obj.get_documentos():
+                docs.append(doc)
+                doc_meta.append((tr_obj.tag, tr_obj.grupo))
+
+        if not docs:
+            return ""
+
+        # Gera embeddings em lote para os documentos
+        embeddings = cls._get_embeddings_instance()
+        try:
+            docs_vecs_raw = embeddings.embed_documents(
+                [d.page_content for d in docs]
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.error(
+                f"Falha ao gerar embeddings dos documentos: {exc}",
+                exc_info=True,
+            )
+            return ""
+
+        # Normaliza para List[List[float]]
+        docs_vecs: List[List[float]] = []
+        for vec in docs_vecs_raw:
+            docs_vecs.append([float(x) for x in vec])
+
+        # Calcula as distâncias cosseno
+        scored: List[tuple[float, int]] = []
+        for idx, vec in enumerate(docs_vecs):
+            dist = cls._cosine_distance(query_vec, vec)
+            scored.append((dist, idx))
+
+        # Ordena por menor distância (mais similar primeiro)
+        scored.sort(key=lambda t: t[0])
+
+        # Seleciona os top_k_docs
+        top_scored = scored[:top_k_docs]
+
+        # Monta a string de contexto
+        lines: List[str] = []
+        lines.append(
+            "Contexto de suporte (documentos mais similares):"
+        )
+        for rank, (dist, i) in enumerate(top_scored, start=1):
+            doc = docs[i]
+            tag_i, grupo_i = doc_meta[i]
+            source = "-"
+            try:
+                source = str(doc.metadata.get("source", "-"))
+            except Exception:
+                pass
+
+            header = (
+                f"[{rank}] Treinamento={tag_i} | Grupo={grupo_i} | "
+                f"Fonte={source} | Distância={dist:.4f}"
+            )
+            lines.append(header)
+            lines.append(str(doc.page_content).strip())
+            lines.append("---")
+
+        return "\n".join(lines)
 
     class Meta:
         verbose_name = "Treinamento"
@@ -1241,9 +1543,7 @@ class Atendimento(models.Model):
         Returns:
             str: ID do atendimento, telefone do contato e status atual
         """
-        return f"Atendimento {self.id} - {self.contato.telefone} ({
-            self.get_status_display()
-        })"
+        return f"Atendimento {self.id} - {self.contato.telefone} ({self.get_status_display()})"
 
     def finalizar_atendimento(
         self, novo_status: str = StatusAtendimento.RESOLVIDO
@@ -2120,9 +2420,7 @@ def enviar_mensagem_atendente(
         # Verifica se o atendente está associado ao atendimento
         if atendimento.atendente_humano != atendente_humano:
             raise ValidationError(
-                f"O atendente {
-                    atendente_humano.nome
-                } não está associado a este atendimento."
+                f"O atendente {atendente_humano.nome} não está associado a este atendimento."
             )
 
         # Cria a mensagem

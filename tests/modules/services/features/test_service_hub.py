@@ -5,20 +5,6 @@ from unittest.mock import patch
 from langchain.docstore.document import Document
 
 from smart_core_assistant_painel.modules.services import ServiceHub
-from smart_core_assistant_painel.modules.services.features.vetor_storage.domain.interface.vetor_storage import (
-    VetorStorage,
-)
-
-
-class MockVetorStorage(VetorStorage):
-    def write(self, documents: list[Document]):
-        pass
-
-    def read(self) -> list[Document]:
-        return []
-
-    def remove_by_metadata(self, metadata: dict):
-        pass
 
 
 class TestServiceHub(unittest.TestCase):
@@ -75,17 +61,6 @@ class TestServiceHub(unittest.TestCase):
         hub1 = ServiceHub()
         hub2 = ServiceHub()
         self.assertIs(hub1, hub2)
-
-    def test_vetor_storage_property(self):
-        hub = ServiceHub()
-        mock_vetor_storage = MockVetorStorage()
-        hub.set_vetor_storage(mock_vetor_storage)
-        self.assertIs(hub.vetor_storage, mock_vetor_storage)
-
-    def test_vetor_storage_not_set(self):
-        hub = ServiceHub()
-        with self.assertRaises(RuntimeError):
-            _ = hub.vetor_storage
 
     @patch.dict(os.environ, {"PROMPT_SYSTEM_ANALISE_CONTEUDO": "test_prompt"})
     def test_prompt_system_analise_conteudo_property_with_env_var(self):

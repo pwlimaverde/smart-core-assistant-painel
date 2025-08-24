@@ -1,5 +1,20 @@
-## 0.8.2
+## 0.8.3
 
+### Fixed
+- Resolvidos conflitos de merge priorizando a branch `bugfix/fix-apps-django` nos arquivos:
+  - `src/smart_core_assistant_painel/app/ui/oraculo/admin.py`
+  - `src/smart_core_assistant_painel/app/ui/oraculo/signals.py`
+
+### Tests
+- Removido o teste obsoleto `test_vetor_storage_not_set`, que referenciava a
+  propriedade descontinuada `vetor_storage`.
+- Suíte de testes executada localmente com `uv run task test-all`: 295 testes
+  aprovados; relatório de cobertura HTML gerado em `tests/htmlcov`.
+
+### Chore
+- Limpeza de referências a `vetor_storage` em testes e código legado.
+
+## 0.8.2
 ### Added
 - Nova documentação de setup completa e unificada no `README.md`.
 - Scripts de setup (`ambiente_docker/`) atualizados e corrigidos para uma instalação mais fluida.

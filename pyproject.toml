@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "0.8.2"
+version = "0.8.3"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -27,10 +27,9 @@ dependencies = [
     "django-q2==1.8.0",
     "django-role-permissions==3.2.0",
     "docx2txt>=0.9",
-    "faiss-cpu==1.12.0",
+    "pgvector>=0.3.0",
     "firebase-admin>=6.9.0",
     "frozenlist==1.6.0",
-    "greenlet==3.2.2",
     "groq>=0.26.0",
     "h11==0.16.0",
     "httpcore==1.0.9",
@@ -55,12 +54,12 @@ dependencies = [
     "mypy>=1.17.0",
     "mypy-extensions==1.1.0",
     "networkx>=3.5",
-    "numpy==2.2.6",
+
     "openai==1.82.0",
     "openpyxl>=3.1.5",
     "orjson==3.10.18",
     "packaging==24.2",
-    "pandas>=2.3.0",
+
     "propcache==0.3.1",
     "psycopg[binary]==3.2.3",
     "py-return-success-or-error==0.6.1",
@@ -97,8 +96,10 @@ dependencies = [
     "xlrd>=2.0.1",
     "yarl==1.20.0",
     "zstandard==0.23.0",
-    "langchain-huggingface>=0.2.0",
+    # Substitui langchain-huggingface por dependencia leve para API
+    "huggingface-hub>=0.24.0",
 ]
+
 
 [build-system]
 requires = ["hatchling"]
@@ -154,10 +155,10 @@ start-server = "smart_core_assistant_painel.main:main"
 
 [tool.taskipy.tasks]
 # Servidor Django - Local
-dev = "python src/smart_core_assistant_painel/main.py runserver"
-start = "python src/smart_core_assistant_painel/main.py runserver"
-server = "python src/smart_core_assistant_painel/main.py runserver 0.0.0.0:8000"
-cluster = "python src/smart_core_assistant_painel/main.py qcluster"
+dev = "python -m smart_core_assistant_painel.main runserver"
+start = "python -m smart_core_assistant_painel.main runserver"
+server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
+cluster = "python -m smart_core_assistant_painel.main qcluster"
 
 # Docker commands
 
@@ -180,11 +181,11 @@ startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
 # Django management commands (Docker)
 migrate-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"
 makemigrations-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-createsuperuser-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
+createsuperuser-docker = "docker compose exec django-app uv run --active python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 collectstatic-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput"
 shell-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell"
 startapp-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py startapp"
-reset-db-docker = "docker compose down && docker volume rm smart-core-assistant-painel_postgres-data-django || true && docker compose up -d --build"
+reset-db-docker = "docker compose down && docker volume rm postgres_django_data || true && docker compose up -d --build"
 
 # Desenvolvimento e testes
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"
@@ -208,11 +209,6 @@ dev-setup = "uv sync --dev && uv run task migrate"
 setup-docker = "docker compose up -d --build && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 dev-setup-docker = "docker compose up -d --build"
 
-# Comandos diversos - Local
-faiss_to_json = "python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
-
-# Specific tasks (Docker)
-faiss_to_json-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py faiss_to_json"
 
 # Testes (Docker)
 # Executa toda a suíte de testes no container com cobertura em src e relatório no terminal

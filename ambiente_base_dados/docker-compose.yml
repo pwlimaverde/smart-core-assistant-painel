@@ -1,0 +1,77 @@
+# Arquivo gerenciado pelo ambiente_base_dados
+# Define a configuração dos serviços de banco de dados, cache e IA.
+name: smart-core-assistant-remote-services
+
+services:
+  # --- Banco de Dados PostgreSQL ---
+  # Utiliza a imagem do TimescaleDB, que é uma extensão do PostgreSQL
+  # otimizada para séries temporais, mas funciona como um PostgreSQL padrão.
+  postgres-remote:
+    image: timescale/timescaledb-ha:pg16
+    container_name: postgres-remote
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    ports:
+      # Expõe a porta 5436 no host e a mapeia para a porta 5432 do contêiner.
+      - "${POSTGRES_PORT:-5436}:5432"
+    volumes:
+      - postgres_remote_data:/var/lib/postgresql/data
+    networks:
+      - remote-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-smart_core_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Cache em Memória Redis ---
+  # Serviço de cache para sessões, filas e dados temporários.
+  redis-remote:
+    image: redis:6.2-alpine
+    container_name: redis-remote
+    ports:
+      # Expõe a porta 6382 no host e a mapeia para a porta 6379 do contêiner.
+      - "${REDIS_PORT:-6382}:6379"
+    volumes:
+      - redis_remote_data:/data
+    networks:
+      - remote-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- Motor de IA Ollama ---
+  # Serviço para execução de modelos de linguagem localmente.
+  ollama-remote:
+    image: ollama/ollama
+    container_name: ollama-remote
+    ports:
+      # Expõe a porta 11434 no host para a API do Ollama.
+      - "11434:11434"
+    volumes:
+      - ollama_remote_data:/root/.ollama
+    networks:
+      - remote-network
+    restart: unless-stopped
+
+# --- Volumes de Dados ---
+# Garante a persistência dos dados mesmo que os contêineres sejam recriados.
+volumes:
+  postgres_remote_data:
+    name: postgres_remote_data
+  redis_remote_data:
+    name: redis_remote_data
+  ollama_remote_data:
+    name: ollama_remote_data
+
+# --- Rede ---
+# Cria uma rede dedicada para que os serviços possam se comunicar.
+networks:
+  remote-network:
+    driver: bridge

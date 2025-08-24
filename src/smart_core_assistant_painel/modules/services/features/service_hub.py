@@ -12,10 +12,8 @@ import os
 from pathlib import Path
 from typing import Optional, Type
 
-from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from .vetor_storage.domain.interface.vetor_storage import VetorStorage
 from .whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
@@ -51,7 +49,6 @@ class ServiceHub:
         if not self._initialized:
             #Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
-            self._vetor_storage: Optional[VetorStorage] = None
             self._whatsapp_service: Optional[WhatsAppService] = None
             # LLM
             self._llm_class: Optional[Type[BaseChatModel]] = None
@@ -110,28 +107,12 @@ class ServiceHub:
         # Limpa o cache da classe LLM para forçar recarregamento
         self._llm_class = None
 
-        vetor_storage_type = os.environ.get("VETOR_STORAGE_TYPE")
-        if vetor_storage_type is not None and self._vetor_storage is None:
-            raise RuntimeError(
-                "Falha ao auto-configurar VetorStorage. "
-                "Use set_vetor_storage() para definir a instância manualmente."
-            )
-
         whatsapp_service_type = os.environ.get("WHATSAPP_SERVICE_TYPE")
         if whatsapp_service_type is not None and self._whatsapp_service is None:
             raise RuntimeError(
                 "Falha ao auto-configurar WhatsAppService. "
                 "Use set_whatsapp_service() para definir a instância manualmente."
             )
-
-    def set_vetor_storage(self, vetor_storage: VetorStorage) -> None:
-        """Define a implementação de VetorStorage a ser utilizada.
-
-        Args:
-            vetor_storage (VetorStorage): Uma instância de uma classe que
-                implementa a interface VetorStorage.
-        """
-        self._vetor_storage = vetor_storage
 
     def set_whatsapp_service(self, whatsapp_service: WhatsAppService) -> None:
         """Define a implementação de WhatsAppService a ser utilizada.
@@ -331,20 +312,6 @@ class ServiceHub:
             else ""
         )
 
-
-    @property
-    def vetor_storage(self) -> VetorStorage:
-        """Retorna a instância configurada do VetorStorage.
-
-        Raises:
-            RuntimeError: Se o serviço não tiver sido configurado.
-        """
-        if self._vetor_storage is None:
-            raise RuntimeError(
-                "VetorStorage não configurado. "
-                "Use set_vetor_storage() para definir a instância manualmente."
-            )
-        return self._vetor_storage
 
     @property
     def whatsapp_service(self) -> WhatsAppService:

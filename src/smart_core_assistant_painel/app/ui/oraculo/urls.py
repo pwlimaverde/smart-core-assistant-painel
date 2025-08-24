@@ -16,4 +16,5 @@ urlpatterns = [
         "pre-processamento/<int:id>/", views.pre_processamento, name="pre_processamento"
     ),
     path("webhook_whatsapp/", views.webhook_whatsapp, name="webhook_whatsapp"),
+    path("verificar_treinamentos/", views.verificar_treinamentos_vetorizados, name="verificar_treinamentos_vetorizados"),
 ]

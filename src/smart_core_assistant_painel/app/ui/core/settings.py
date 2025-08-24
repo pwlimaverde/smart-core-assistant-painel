@@ -1,5 +1,6 @@
 """Configurações do Django para o projeto principal.
 
+
 Gerado por 'django-admin startproject' usando Django 5.2.1.
 
 Para mais informações sobre este arquivo, consulte:
@@ -30,7 +31,26 @@ SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = ["django-app", "localhost", "127.0.0.1"]
+# Configuração de hosts permitidos com suporte a variável de ambiente
+# Permite ajustar rapidamente em diferentes ambientes (local, Docker, etc.).
+DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
+if DJANGO_ALLOWED_HOSTS:
+    ALLOWED_HOSTS: list[str] = [
+        host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",") if host.strip()
+    ]
+else:
+    # Em modo DEBUG, permitir qualquer host para facilitar desenvolvimento em LAN
+    if DEBUG:
+        ALLOWED_HOSTS: list[str] = ["*"]
+    else:
+        # Padrão compatível com execução via Docker e acesso externo pelo host
+        ALLOWED_HOSTS: list[str] = [
+            "django-app",
+            "localhost",
+            "127.0.0.1",
+            "0.0.0.0",
+            "host.docker.internal",
+        ]
 
 
 # Application definition
@@ -42,6 +62,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
+    "pgvector.django",
     "rolepermissions",
     "django_q",
     "smart_core_assistant_painel.app.ui.usuarios",
@@ -92,6 +114,13 @@ DATABASES = {
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres123"),
         "HOST": os.getenv("POSTGRES_HOST", "postgres"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "OPTIONS": {
+            # Define o modo de SSL via variável de ambiente; desabilita por padrão
+            # pois a conexão direta bem-sucedida ocorreu apenas com sslmode=disable.
+            "sslmode": os.getenv("POSTGRES_SSLMODE", "disable"),
+            # Define tempo máximo de tentativa de conexão (em segundos)
+            "connect_timeout": os.getenv("POSTGRES_CONNECT_TIMEOUT", "5"),
+        },
     }
 }
 
@@ -183,3 +212,9 @@ Q_CLUSTER = {
         "password": os.getenv("REDIS_PASSWORD", None),
     },
 }
+
+# Configurações de serviços externos (ambiente_chat)
+# Estas variáveis permitem que a aplicação Django consuma Evolution API e Ollama
+# que rodam em outro ambiente Docker separado.
+EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080").strip()
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()

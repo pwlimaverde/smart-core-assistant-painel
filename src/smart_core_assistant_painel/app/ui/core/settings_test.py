@@ -2,15 +2,14 @@
 
 from typing import Any, Dict
 
-# Configurações específicas para testes
+# Importar configurações básicas PRIMEIRO
+from .settings import *  # noqa: F403, F401, E402
+
+# Configurações específicas para testes (substituem as importadas)
 DEBUG = False
 TESTING = True
 
-# Limpar configurações importadas antes de redefinir para evitar no-redef
-# del globals()["DATABASES"] # Comentado para evitar KeyError
-# del globals()["Q_CLUSTER"] # Comentado para evitar KeyError
-
-# Usa SQLite em memória para testes mais rápidos
+# Usa SQLite em memória para testes mais rápidos (substitui a configuração importada)
 DATABASES: Dict[str, Dict[str, Any]] = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -21,7 +20,7 @@ DATABASES: Dict[str, Dict[str, Any]] = {
     }
 }
 
-# Desabilita Django Q para testes
+# Desabilita Django Q para testes (substitui a configuração importada)
 Q_CLUSTER: Dict[str, Any] = {
     "name": "test_cluster",
     "workers": 1,
@@ -32,21 +31,6 @@ Q_CLUSTER: Dict[str, Any] = {
     "orm": "default",
     "sync": True,  # Executa tarefas sincronamente nos testes
 }
-
-# Importar configurações básicas APÓS definir os necessários
-from .settings import *  # noqa: F403, F401, E402
-
-# # Desabilita migrações para testes mais rápidos
-# class DisableMigrations:
-#     def __contains__(self, item: str) -> bool:
-#         return True
-
-#     def __getitem__(self, item: str) -> None:
-#         return None
-
-
-# if os.environ.get("DISABLE_MIGRATIONS", "False").lower() == "true":
-#     MIGRATION_MODULES = DisableMigrations()
 
 # Configurações de cache para testes
 CACHES: Dict[str, Dict[str, Any]] = {

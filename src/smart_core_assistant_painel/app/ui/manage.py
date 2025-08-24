@@ -3,14 +3,35 @@
 
 import os
 import sys
-from venv import logger
+from loguru import logger
 
 
 def start_app() -> None:
-    """Executa tarefas administrativas."""
+    """Executa tarefas administrativas.
+    
+    Configura o DJANGO_SETTINGS_MODULE e delega para o Django. Após a
+    execução do comando, realiza um log das variáveis de ambiente mapeadas.
+    """
     os.environ.setdefault(
         "DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.ui.core.settings"
     )
+
+    # Garantir que o servidor escute na rede local quando o comando for runserver
+    # Caso nenhum endereço/porta seja informado explicitamente, aplicamos
+    # SERVER_HOST e SERVER_PORT (padrão 0.0.0.0:8000).
+    # Isso resolve cenários em que a Evolution API (outro host) precisa acessar
+    # o webhook via LAN e o runserver estaria apenas em 127.0.0.1.
+    if any(arg == "runserver" for arg in sys.argv[1:]):
+        host = os.environ.get("SERVER_HOST", "0.0.0.0").strip() or "0.0.0.0"
+        port = os.environ.get("SERVER_PORT", "8000").strip() or "8000"
+        # Detecta se já foi especificado um endereço/porta (ex.: 127.0.0.1:8000 ou apenas 8000)
+        address_specified = any((":" in arg) or arg.isdigit() for arg in sys.argv[2:])
+        if not address_specified:
+            sys.argv.append(f"{host}:{port}")
+            logger.info(
+                f"runserver sem endereço explícito — aplicando bind em {host}:{port}"
+            )
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
@@ -19,10 +40,11 @@ def start_app() -> None:
             "instalado e disponível na sua variável de ambiente PYTHONPATH? Você "
             "esqueceu de ativar um ambiente virtual?"
         ) from exc
+
     execute_from_command_line(sys.argv)
     _log_environment_variables()
 
-@staticmethod
+
 def _log_environment_variables() -> None:
     """Loga as variáveis de ambiente configuradas no config_mapping.
     
@@ -61,12 +83,12 @@ def _log_environment_variables() -> None:
         "valid_intent_types": "VALID_INTENT_TYPES",
         "time_cache": "TIME_CACHE",
     }
-    
+
     logger.info("=== VARIÁVEIS DE AMBIENTE CARREGADAS ===")
-    
+
     for key, env_var in config_mapping.items():
         value = os.environ.get(env_var, "[NÃO DEFINIDA]")
-        
+
         # Mascarar chaves de API por segurança
         if "api_key" in key.lower() and value != "[NÃO DEFINIDA]":
             masked_value = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
@@ -78,7 +100,7 @@ def _log_environment_variables() -> None:
                 logger.info(f"{env_var}: {truncated_value}")
             else:
                 logger.info(f"{env_var}: {value}")
-    
+
     logger.info("=== FIM DAS VARIÁVEIS DE AMBIENTE ===")
 
 

@@ -4,6 +4,8 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.messages import get_messages
 from django.contrib.auth.models import User
+from rolepermissions.roles import assign_role
+from unittest.mock import patch
 from smart_core_assistant_painel.app.ui.oraculo.models import Treinamentos
 
 
@@ -14,78 +16,92 @@ class TestViewsErrorHandling(TestCase):
         """Configuração inicial dos testes."""
         self.client = Client()
         self.user = User.objects.create_user(
-            username='testuser',
-            password='testpass123'
+            username="testuser",
+            password="testpass123",
         )
-        self.client.login(username='testuser', password='testpass123')
+        # Atribui a role de gerente para ter permissão treinar_ia
+        assign_role(self.user, "gerente")
+        self.client.login(username="testuser", password="testpass123")
 
     def test_processar_pre_processamento_treinamento_inexistente(self) -> None:
-        """Testa se o erro DoesNotExist é tratado corretamente."""
+        """Testa se o erro DoesNotExist é tratado corretamente (POST)."""
         # ID que não existe no banco
         inexistent_id = 99999
-        
+
         # Faz uma requisição POST para o endpoint
         response = self.client.post(
-            reverse('oraculo:pre_processamento', args=[inexistent_id]),
-            data={'action': 'process'}
+            reverse("oraculo:pre_processamento", args=[inexistent_id]),
+            data={"acao": "aceitar"},
         )
-        
+
         # Verifica se houve redirecionamento
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifica se a mensagem de erro foi adicionada
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any(
-            'não foi encontrado' in str(message) 
-            for message in messages
-        ))
-        
+        self.assertTrue(
+            any("não encontrado" in str(message) for message in messages)
+        )
+
         # Verifica se redirecionou para a página correta
-        self.assertRedirects(response, reverse('oraculo:treinar_ia'))
+        self.assertRedirects(response, reverse("oraculo:treinar_ia"))
 
     def test_exibir_pre_processamento_treinamento_inexistente(self) -> None:
-        """Testa se o erro DoesNotExist é tratado na exibição."""
+        """Testa se o erro DoesNotExist é tratado na exibição (GET)."""
         # ID que não existe no banco
         inexistent_id = 99999
-        
+
         # Faz uma requisição GET para o endpoint
         response = self.client.get(
-            reverse('oraculo:pre_processamento', args=[inexistent_id])
+            reverse("oraculo:pre_processamento", args=[inexistent_id])
         )
-        
+
         # Verifica se houve redirecionamento
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifica se a mensagem de erro foi adicionada
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any(
-            'não foi encontrado' in str(message) 
-            for message in messages
-        ))
-        
-        # Verifica se redirecionou para a página correta
-        self.assertRedirects(response, reverse('oraculo:treinar_ia'))
+        self.assertTrue(
+            any("não encontrado" in str(message) for message in messages)
+        )
 
-    def test_processar_pre_processamento_com_treinamento_valido(self) -> None:
-        """Testa o comportamento normal com treinamento válido."""
-        # Cria um treinamento válido
+        # Verifica se redirecionou para a página correta
+        self.assertRedirects(response, reverse("oraculo:treinar_ia"))
+
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views."
+        "FeaturesCompose.melhoria_ia_treinamento"
+    )
+    def test_processar_pre_processamento_com_treinamento_valido(
+        self, mock_melhoria
+    ) -> None:
+        """Testa o processamento de pré-processamento com treinamento válido.
+
+        - Mocka o método de melhoria para controlar a saída.
+        - Cria um Treinamento válido com documentos simulados.
+        - Verifica se a view retorna 200 e contém os textos esperados.
+        """
+        # Mock do método que pode estar causando problemas
+        mock_melhoria.return_value = "Texto melhorado de teste"
+
+        # Criar um treinamento válido com documentos
         treinamento = Treinamentos.objects.create(
-            nome='Teste',
-            descricao='Descrição de teste',
-            documentos='[]'  # Lista vazia de documentos
+            tag="teste_valido",
+            grupo="grupo_valido",
+            _documentos=[
+                {"page_content": "Conteúdo de teste", "metadata": {}}
+            ],
         )
-        
-        # Faz uma requisição GET para verificar se não há erro
+
+        # Fazer uma requisição GET para a página de pré-processamento
         response = self.client.get(
-            reverse('oraculo:pre_processamento', args=[treinamento.id])
+            reverse("oraculo:pre_processamento", args=[treinamento.id])
         )
-        
-        # Verifica se a página carregou normalmente (200 ou 302 dependendo da lógica)
-        self.assertIn(response.status_code, [200, 302])
-        
-        # Se houve redirecionamento, não deve ser para a página de erro
-        if response.status_code == 302:
-            self.assertNotEqual(
-                response.url, 
-                reverse('oraculo:treinar_ia')
-            )
+
+        # Verificar se a resposta é bem-sucedida
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Sugestão de Melhoria")
+        self.assertContains(response, "Texto melhorado de teste")
+
+        # Verificar se o mock foi chamado
+        mock_melhoria.assert_called_once()

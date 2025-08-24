@@ -155,10 +155,10 @@ start-server = "smart_core_assistant_painel.main:main"
 
 [tool.taskipy.tasks]
 # Servidor Django - Local
-dev = "python src/smart_core_assistant_painel/main.py runserver"
-start = "python src/smart_core_assistant_painel/main.py runserver"
-server = "python src/smart_core_assistant_painel/main.py runserver 0.0.0.0:8000"
-cluster = "python src/smart_core_assistant_painel/main.py qcluster"
+dev = "python -m smart_core_assistant_painel.main runserver"
+start = "python -m smart_core_assistant_painel.main runserver"
+server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
+cluster = "python -m smart_core_assistant_painel.main qcluster"
 
 # Docker commands
 

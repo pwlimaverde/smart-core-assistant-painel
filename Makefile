@@ -63,11 +63,7 @@ stop: ## Para todos os serviços
 	$(DOCKER_COMPOSE) stop
 
 .PHONY: down
-down: ## Para e remove containers e redes (preserva volumes)
-	$(DOCKER_COMPOSE) down --remove-orphans
-
-.PHONY: down-v
-down-v: ## Para e remove containers e volumes (DANGEROUS)
+down: ## Para e remove containers e volumes
 	$(DOCKER_COMPOSE) down -v --remove-orphans
 
 .PHONY: restart

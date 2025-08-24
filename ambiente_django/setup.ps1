@@ -23,7 +23,7 @@ try {
 
 # 1) Derrubar containers antigos
 Write-Host 'Removendo containers anteriores...' -ForegroundColor Yellow
-try { docker compose -f $composeFile down --remove-orphans } catch { }
+try { docker compose -f $composeFile down -v --remove-orphans } catch { }
 
 # 2) Build das imagens
 Write-Host 'Construindo imagens...' -ForegroundColor Cyan

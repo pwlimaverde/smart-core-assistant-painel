@@ -15,6 +15,23 @@ def start_app() -> None:
     os.environ.setdefault(
         "DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.ui.core.settings"
     )
+
+    # Garantir que o servidor escute na rede local quando o comando for runserver
+    # Caso nenhum endereço/porta seja informado explicitamente, aplicamos
+    # SERVER_HOST e SERVER_PORT (padrão 0.0.0.0:8000).
+    # Isso resolve cenários em que a Evolution API (outro host) precisa acessar
+    # o webhook via LAN e o runserver estaria apenas em 127.0.0.1.
+    if any(arg == "runserver" for arg in sys.argv[1:]):
+        host = os.environ.get("SERVER_HOST", "0.0.0.0").strip() or "0.0.0.0"
+        port = os.environ.get("SERVER_PORT", "8000").strip() or "8000"
+        # Detecta se já foi especificado um endereço/porta (ex.: 127.0.0.1:8000 ou apenas 8000)
+        address_specified = any((":" in arg) or arg.isdigit() for arg in sys.argv[2:])
+        if not address_specified:
+            sys.argv.append(f"{host}:{port}")
+            logger.info(
+                f"runserver sem endereço explícito — aplicando bind em {host}:{port}"
+            )
+
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

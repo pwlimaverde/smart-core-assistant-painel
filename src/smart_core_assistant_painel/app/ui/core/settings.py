@@ -39,14 +39,18 @@ if DJANGO_ALLOWED_HOSTS:
         host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",") if host.strip()
     ]
 else:
-    # Padrão compatível com execução via Docker e acesso externo pelo host
-    ALLOWED_HOSTS: list[str] = [
-        "django-app",
-        "localhost",
-        "127.0.0.1",
-        "0.0.0.0",
-        "host.docker.internal",
-    ]
+    # Em modo DEBUG, permitir qualquer host para facilitar desenvolvimento em LAN
+    if DEBUG:
+        ALLOWED_HOSTS: list[str] = ["*"]
+    else:
+        # Padrão compatível com execução via Docker e acesso externo pelo host
+        ALLOWED_HOSTS: list[str] = [
+            "django-app",
+            "localhost",
+            "127.0.0.1",
+            "0.0.0.0",
+            "host.docker.internal",
+        ]
 
 
 # Application definition
@@ -110,6 +114,13 @@ DATABASES = {
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres123"),
         "HOST": os.getenv("POSTGRES_HOST", "postgres"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "OPTIONS": {
+            # Define o modo de SSL via variável de ambiente; desabilita por padrão
+            # pois a conexão direta bem-sucedida ocorreu apenas com sslmode=disable.
+            "sslmode": os.getenv("POSTGRES_SSLMODE", "disable"),
+            # Define tempo máximo de tentativa de conexão (em segundos)
+            "connect_timeout": os.getenv("POSTGRES_CONNECT_TIMEOUT", "5"),
+        },
     }
 }
 

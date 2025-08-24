@@ -34,23 +34,29 @@ class TreinamentosAdmin(admin.ModelAdmin):
         "tag",
         "grupo",
         "treinamento_finalizado",
-        "treinamento_vetorizado",
+        "embedding_preview",
         "get_documentos_preview",
     ]
-    list_filter = ["treinamento_finalizado", "treinamento_vetorizado", "grupo"]
-    search_fields = ["tag", "grupo"]
-    ordering = ["-data_criacao"]
+    search_fields = ["tag"]
+    ordering = ["id"]
     fieldsets = (
         (
             "Informações do Treinamento",
             {
-                "fields": ("tag", "grupo", "treinamento_finalizado", "treinamento_vetorizado", "_documentos"),
+                "fields": (
+                    "tag",
+                    "grupo",
+                    "treinamento_finalizado",
+                    "_documentos",
+                    "embedding_preview",
+                ),
                 "classes": ("wide",),
             },
         ),
     )
     list_per_page = 25
     save_on_top = True
+    readonly_fields = ["embedding_preview"]
 
     @admin.display(description="Preview do Documento", ordering="_documentos")
     def get_documentos_preview(self, obj: Treinamentos) -> str:
@@ -69,6 +75,62 @@ class TreinamentosAdmin(admin.ModelAdmin):
             except Exception:
                 return "Erro ao exibir documentos"
         return "Documento vazio"
+
+    @admin.display(description="Embedding (prévia)")
+    def embedding_preview(self, obj: Treinamentos) -> str:
+        """Exibe uma prévia do vetor de embedding salvo.
+
+        Mostra os primeiros valores (até 10) formatados com 4 casas decimais,
+        junto com o tamanho total do vetor, para facilitar inspeção no admin.
+        """
+        try:
+            vetor = getattr(obj, "embedding", None)
+            # Evita comparações diretas com estruturas como numpy.ndarray
+            # que podem gerar ValueError por ambiguidade de verdade.
+            if vetor is None:
+                return "-"
+
+            # Tenta obter uma sequência de valores numéricos de forma resiliente
+            try:
+                if isinstance(vetor, (list, tuple)):
+                    seq = vetor
+                else:
+                    tolist = getattr(vetor, "tolist", None)
+                    if callable(tolist):
+                        seq = tolist()
+                    else:
+                        # Converte para lista (ex.: memoryview, pgvector.Vector)
+                        seq = list(vetor)
+            except Exception:
+                return "[embedding inválido]"
+
+            # Caso a sequência esteja vazia
+            try:
+                if hasattr(seq, "__len__") and len(seq) == 0:
+                    return "[embedding vazio]"
+            except Exception:
+                # Prossegue mesmo que len(seq) falhe por algum tipo exótico
+                pass
+
+            # Normaliza os elementos para float, ignorando valores não-numéricos
+            normalizado = []
+            for x in seq:
+                try:
+                    normalizado.append(float(x))
+                except Exception:
+                    # Ignora itens não conversíveis para float
+                    continue
+
+            if not normalizado:
+                return "[embedding vazio]"
+
+            tam = len(normalizado)
+            head = normalizado[:10]
+            fmt_head = ", ".join(f"{x:.4f}" for x in head)
+            sufixo = ", ..." if tam > 10 else ""
+            return f"[{fmt_head}{sufixo}] (dim={tam})"
+        except Exception:
+            return "Erro ao exibir embedding"
 
 
 @admin.register(AtendenteHumano)

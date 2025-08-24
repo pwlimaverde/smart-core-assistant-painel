@@ -77,7 +77,7 @@ def start_services() -> None:
 
     Esta função orquestra a inicialização dos serviços necessários,
     incluindo a configuração de variáveis de ambiente remotas, a inicialização
-    do armazenamento de vetores (VetorStorage) e a configuração do serviço
+    do armazenamento de vetores e a configuração do serviço
     de WhatsApp.
 
     Implementa proteção contra inicialização dupla para evitar problemas
@@ -97,7 +97,6 @@ def start_services() -> None:
     try:
         logger.info("Iniciando serviços essenciais da aplicação...")
         FeaturesCompose.set_environ_remote()
-        FeaturesCompose.vetor_storage()
         FeaturesCompose.whatsapp_service()
         
         _services_initialized = True

@@ -245,7 +245,7 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     try:
         treinamento = Treinamentos.objects.get(id=id)
     except Treinamentos.DoesNotExist:
-        messages.error(request, "Treinamento não foi encontrado.")
+        messages.error(request, "Treinamento não encontrado.")
         return redirect("oraculo:treinar_ia")
     
     acao = request.POST.get("acao")
@@ -320,7 +320,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             },
         )
     except Treinamentos.DoesNotExist:
-        messages.error(request, "Treinamento não foi encontrado.")
+        messages.error(request, "Treinamento não encontrado.")
         return redirect("oraculo:treinar_ia")
     except Exception as e:
         logger.error(f"Erro ao exibir pré-processamento: {e}")

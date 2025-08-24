@@ -86,7 +86,7 @@ Write-Host 'Garantindo superusuario admin (senha: 123456)...' -ForegroundColor C
 # Caminho do script Python estatico
 $srcPy = Join-Path $PSScriptRoot 'create_superuser.py'
 if (-not (Test-Path $srcPy)) {
-    Write-Error "Arquivo create_superuser.py nao encontrado em $PSScriptRoot."
+    Write-Error 'Arquivo create_superuser.py nao encontrado.'
     exit 1
 }
 
@@ -96,8 +96,8 @@ if (-not $containerId) { Write-Error 'Nao foi possivel obter o ID do container d
 
 docker cp $srcPy "${containerId}:/tmp/create_su.py"
 
-# Executa o script dentro do container com o ambiente do projeto
-docker compose -f $composeFile exec -T django-app python /tmp/create_su.py
+# Executa o script dentro do container com o ambiente do projeto (via uv)
+docker compose -f $composeFile exec -T django-app uv run python /tmp/create_su.py
 if ($LASTEXITCODE -ne 0) {
     Write-Error 'Falha ao criar/atualizar o superusuario.'
     exit 1

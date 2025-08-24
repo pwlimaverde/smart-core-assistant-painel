@@ -30,14 +30,3 @@ class WhatsAppServiceError(AppError):
     def __str__(self) -> str:
         """Retorna uma mensagem de erro formatada."""
         return f"WhatsAppServiceError - {self.message}"
-
-
-@dataclass
-class VetorStorageError(AppError):
-    """Erro relacionado à inicialização ou uso do VetorStorage."""
-
-    message: str
-
-    def __str__(self) -> str:
-        """Retorna uma mensagem de erro formatada."""
-        return f"VetorStorageError - {self.message}"

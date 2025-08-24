@@ -1,0 +1,50 @@
+# Arquivo gerenciado pelo ambiente_base_dados
+name: smart-core-assistant-painel-db
+
+services:
+  # Banco de dados PostgreSQL
+  postgres-django:
+    image: timescale/timescaledb-ha:pg16
+    container_name: postgres-django
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    ports:
+      - "${POSTGRES_PORT:-5436}:5432"
+    volumes:
+      - postgres_django_data:/var/lib/postgresql/data
+      - ../docker/postgres/initdb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - django-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-smart_core_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Cache Redis
+  redis-django:
+    image: redis:6.2-alpine
+    container_name: redis-django
+    ports:
+      - "${REDIS_PORT:-6382}:6379"
+    volumes:
+      - redis_django_data:/data
+    networks:
+      - django-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_django_data:
+    name: postgres_django_data
+  redis_django_data:
+    name: redis_django_data
+
+networks:
+  django-network:
+    driver: bridge

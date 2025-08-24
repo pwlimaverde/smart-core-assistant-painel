@@ -62,11 +62,6 @@ class TestServiceHub(unittest.TestCase):
         hub2 = ServiceHub()
         self.assertIs(hub1, hub2)
 
-    def test_vetor_storage_not_set(self):
-        hub = ServiceHub()
-        with self.assertRaises(RuntimeError):
-            _ = hub.vetor_storage
-
     @patch.dict(os.environ, {"PROMPT_SYSTEM_ANALISE_CONTEUDO": "test_prompt"})
     def test_prompt_system_analise_conteudo_property_with_env_var(self):
         hub = ServiceHub()

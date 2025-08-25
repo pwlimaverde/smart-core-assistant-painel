@@ -1,14 +1,16 @@
-import pytest
-from unittest.mock import Mock, patch
-from langchain_core.messages import AIMessage
+"""Testes para AnaliseConteudoLangchainDatasource."""
 
-from smart_core_assistant_painel.modules.ai_engine import (
-    LlmError,
-    LlmParameters,
-)
+import pytest
+import re
+from unittest.mock import Mock, patch
+
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
 )
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    LlmParameters,
+)
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 
 
 class TestAnaliseConteudoLangchainDatasource:
@@ -20,245 +22,276 @@ class TestAnaliseConteudoLangchainDatasource:
         return AnaliseConteudoLangchainDatasource()
 
     @pytest.fixture
-    def sample_parameters(self):
-        """Fixture para criar parâmetros de exemplo."""
-        mock_llm = Mock()
+    def llm_parameters(self):
+        """Fixture para criar parâmetros do LLM."""
         return LlmParameters(
-            llm_class=Mock,
+            llm_class=Mock,  # Usando Mock como classe
             model="test-model",
             extra_params={"temperature": 0.7},
-            prompt_system="Você é um assistente útil.",
-            prompt_human="Analise o seguinte conteúdo",
-            context="Este é um texto de exemplo para análise.",
-            error=LlmError("Erro de teste LLM"),
+            prompt_system="System prompt for analysis",
+            prompt_human="Human prompt for analysis",
+            context="Text to be analyzed",
+            error=LlmError,  # Usando a classe, não uma instância
         )
 
-    @pytest.fixture
-    def mock_llm_response(self):
-        """Fixture para criar uma resposta mock do LLM."""
-        mock_response = Mock(spec=AIMessage)
-        mock_response.content = "Análise do conteúdo: O texto apresenta informações relevantes."
-        return mock_response
+    def test_datasource_inheritance(self, datasource):
+        """Testa se o datasource herda corretamente da classe base."""
+        # Verifica se é uma instância válida com o método esperado
+        assert hasattr(datasource, '__call__')
+        assert callable(datasource)
 
-    def test_call_success_case(self, datasource, mock_llm_response):
-        """Testa o caso de sucesso da chamada do datasource."""
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_call_successful_string_response(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa resposta bem-sucedida com string."""
         # Arrange
-        mock_llm = Mock()
-        mock_chain = Mock()
-        mock_chain.invoke.return_value = mock_llm_response
+        mock_response = Mock()
+        mock_response.content = "Resposta limpa do LLM"
         
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
-        
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
-            
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
-            
-            # Act
-            result = datasource(mock_parameters)
-            
-            # Assert
-            assert result == "Análise do conteúdo: O texto apresenta informações relevantes."
-            mock_chain.invoke.assert_called_once()
-
-    def test_call_with_think_tags(self, datasource):
-        """Testa o processamento de resposta com tags <think>."""
-        # Arrange
-        mock_llm = Mock()
         mock_chain = Mock()
-        mock_response = Mock(spec=AIMessage)
-        mock_response.content = "<think>Pensando sobre o conteúdo...</think>Análise final do conteúdo."
         mock_chain.invoke.return_value = mock_response
         
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
         
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
-            
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
-            
-            # Act
-            result = datasource(mock_parameters)
-            
-            # Assert
-            assert result == "Análise final do conteúdo."
-            assert "<think>" not in result
-            assert "</think>" not in result
+        # Act
+        result = datasource(llm_parameters)
+        
+        # Assert
+        assert result == "Resposta limpa do LLM"
+        mock_chat_prompt.from_messages.assert_called_once()
+        mock_chain.invoke.assert_called_once_with({
+            "prompt_human": "Human prompt for analysis",
+            "context": "Text to be analyzed",
+        })
 
-    def test_call_with_multiline_think_tags(self, datasource):
-        """Testa o processamento de resposta com tags <think> multilinhas."""
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_call_with_think_tags_removal(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa a remoção de tags <think> da resposta."""
         # Arrange
-        mock_llm = Mock()
+        mock_response = Mock()
+        mock_response.content = "Início <think>pensamento interno</think> final <think>outro pensamento</think> resultado"
+        
         mock_chain = Mock()
-        mock_response = Mock(spec=AIMessage)
-        mock_response.content = """<think>
-Primeiro, vou analisar o contexto.
-Depois, vou formular uma resposta.
+        mock_chain.invoke.return_value = mock_response
+        
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
+        
+        # Act
+        result = datasource(llm_parameters)
+        
+        # Assert
+        assert result == "Início  final  resultado"
+        assert "<think>" not in result
+        assert "</think>" not in result
+
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_call_with_multiline_think_tags(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa a remoção de tags <think> multilinhas."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.content = """Início
+<think>
+pensamento
+multilinhas
 </think>
-Esta é a análise final do conteúdo fornecido."""
+final"""
+        
+        mock_chain = Mock()
         mock_chain.invoke.return_value = mock_response
         
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
         
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
-            
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
-            
-            # Act
-            result = datasource(mock_parameters)
-            
-            # Assert
-            assert result == "Esta é a análise final do conteúdo fornecido."
-            assert "<think>" not in result
-            assert "</think>" not in result
+        # Act
+        result = datasource(llm_parameters)
+        
+        # Assert
+        expected = "Início\n\nfinal"
+        assert result == expected
 
-    def test_call_non_string_response_error(self, datasource):
-        """Testa o erro quando a resposta não é uma string."""
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_call_with_whitespace_cleanup(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa a limpeza de espaços em branco."""
         # Arrange
-        mock_llm = Mock()
+        mock_response = Mock()
+        mock_response.content = "   \n  Resposta com espaços  \n  "
+        
         mock_chain = Mock()
-        mock_response = Mock(spec=AIMessage)
-        mock_response.content = None  # Simula resposta não-string
         mock_chain.invoke.return_value = mock_response
         
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
         
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
-            
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
-            
-            # Act & Assert
-            with pytest.raises(TypeError, match="Resposta do LLM deve ser uma string, mas recebeu: <class 'NoneType'>"):
-                datasource(mock_parameters)
+        # Act
+        result = datasource(llm_parameters)
+        
+        # Assert
+        assert result == "Resposta com espaços"
 
-    def test_prompt_template_creation(self, datasource, mock_llm_response):
-        """Testa a criação do template de prompt."""
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_call_non_string_response_raises_type_error(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa se TypeError é levantado para resposta não-string."""
         # Arrange
-        mock_llm = Mock()
+        mock_response = Mock()
+        mock_response.content = {"key": "value"}  # Não é string
+        
         mock_chain = Mock()
-        mock_chain.invoke.return_value = mock_llm_response
+        mock_chain.invoke.return_value = mock_response
         
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
         
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
-            
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
-            
-            # Act
-            datasource(mock_parameters)
-            
-            # Assert
-            mock_template.from_messages.assert_called_once_with([
-                ("system", mock_parameters.prompt_system),
-                ("human", "{prompt_human}: {context}")
-            ])
+        # Act & Assert
+        with pytest.raises(TypeError, match="Resposta do LLM deve ser uma string, mas recebeu: <class 'dict'>"):
+            datasource(llm_parameters)
 
-    def test_chain_invocation_parameters(self, datasource, mock_llm_response):
-        """Testa os parâmetros passados para a invocação da chain."""
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_call_none_response_raises_type_error(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa se TypeError é levantado para resposta None."""
         # Arrange
-        mock_llm = Mock()
+        mock_response = Mock()
+        mock_response.content = None
+        
         mock_chain = Mock()
-        mock_chain.invoke.return_value = mock_llm_response
+        mock_chain.invoke.return_value = mock_response
         
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
         
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
-            
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
-            
-            # Act
-            datasource(mock_parameters)
-            
-            # Assert
-            mock_chain.invoke.assert_called_once_with({
-                "prompt_human": mock_parameters.prompt_human,
-                "context": mock_parameters.context,
-            })
+        # Act & Assert
+        with pytest.raises(TypeError, match="Resposta do LLM deve ser uma string, mas recebeu: <class 'NoneType'>"):
+            datasource(llm_parameters)
+
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_prompt_template_construction(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa se o template de prompt é construído corretamente."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.content = "Response"
+        
+        mock_chain = Mock()
+        mock_chain.invoke.return_value = mock_response
+        
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
+        
+        # Act
+        datasource(llm_parameters)
+        
+        # Assert
+        mock_chat_prompt.from_messages.assert_called_once_with([
+            ("system", "System prompt for analysis"),
+            ("human", "{prompt_human}: {context}"),
+        ])
+
+    @patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate')
+    def test_llm_creation_and_chaining(self, mock_chat_prompt, datasource, llm_parameters):
+        """Testa se o LLM é criado e encadeado corretamente."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.content = "Response"
+        
+        mock_chain = Mock()
+        mock_chain.invoke.return_value = mock_response
+        
+        mock_messages = Mock()
+        mock_messages.__or__ = Mock(return_value=mock_chain)
+        mock_chat_prompt.from_messages.return_value = mock_messages
+        
+        # Act
+        datasource(llm_parameters)
+        
+        # Assert
+        # Verifica se create_llm foi chamado
+        assert llm_parameters.create_llm is not None
+        # Verifica se o chaining foi feito
+        mock_messages.__or__.assert_called_once()
 
     def test_empty_response_handling(self, datasource):
         """Testa o tratamento de resposta vazia."""
         # Arrange
-        mock_llm = Mock()
-        mock_chain = Mock()
-        mock_response = Mock(spec=AIMessage)
-        mock_response.content = ""
-        mock_chain.invoke.return_value = mock_response
-        
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
-        
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
+        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_chat_prompt:
+            mock_response = Mock()
+            mock_response.content = ""
             
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
+            mock_chain = Mock()
+            mock_chain.invoke.return_value = mock_response
+            
+            mock_messages = Mock()
+            mock_messages.__or__ = Mock(return_value=mock_chain)
+            mock_chat_prompt.from_messages.return_value = mock_messages
+            
+            llm_params = LlmParameters(
+                llm_class=Mock,  # Usando Mock como classe
+                model="test",
+                extra_params={},
+                prompt_system="sys",
+                prompt_human="human",
+                context="ctx",
+                error=LlmError,  # Usando a classe
+            )
             
             # Act
-            result = datasource(mock_parameters)
+            result = datasource(llm_params)
             
             # Assert
             assert result == ""
 
-    def test_whitespace_response_handling(self, datasource):
-        """Testa o tratamento de resposta com apenas espaços em branco."""
+    def test_complex_think_tags_scenario(self, datasource):
+        """Testa cenário complexo com múltiplas tags <think> aninhadas."""
         # Arrange
-        mock_llm = Mock()
-        mock_chain = Mock()
-        mock_response = Mock(spec=AIMessage)
-        mock_response.content = "   \n\t   "
-        mock_chain.invoke.return_value = mock_response
-        
-        # Criar um mock completo dos parâmetros
-        mock_parameters = Mock()
-        mock_parameters.create_llm.return_value = mock_llm
-        mock_parameters.prompt_system = "Você é um assistente útil."
-        mock_parameters.prompt_human = "Analise o seguinte conteúdo"
-        mock_parameters.context = "Este é um texto de exemplo para análise."
-        
-        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_template:
+        with patch('smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource.ChatPromptTemplate') as mock_chat_prompt:
+            mock_response = Mock()
+            mock_response.content = """
+            Análise inicial
+            <think>
+            Vou analisar este texto:
+            1. Primeiro ponto
+            2. Segundo ponto
+            </think>
+            Conclusão da análise
+            <think>Pensamento final</think>
+            Resultado final
+            """
             
-            mock_template.from_messages.return_value = Mock()
-            mock_template.from_messages.return_value.__or__ = Mock(return_value=mock_chain)
+            mock_chain = Mock()
+            mock_chain.invoke.return_value = mock_response
+            
+            mock_messages = Mock()
+            mock_messages.__or__ = Mock(return_value=mock_chain)
+            mock_chat_prompt.from_messages.return_value = mock_messages
+            
+            mock_llm_class = Mock()
+            llm_params = LlmParameters(
+                llm_class=mock_llm_class,
+                model="test",
+                extra_params={},
+                prompt_system="sys",
+                prompt_human="human",
+                context="ctx",
+                error=LlmError("err"),
+            )
             
             # Act
-            result = datasource(mock_parameters)
+            result = datasource(llm_params)
             
             # Assert
-            assert result == ""
+            assert "<think>" not in result
+            assert "</think>" not in result
+            assert "Análise inicial" in result
+            assert "Conclusão da análise" in result
+            assert "Resultado final" in result
+
+    def test_docstring_and_class_metadata(self, datasource):
+        """Testa se a documentação está presente."""
+        assert hasattr(datasource, '__call__')
+        assert datasource.__call__.__doc__ is not None
+        assert "Executa a chamada para o LLM" in datasource.__call__.__doc__

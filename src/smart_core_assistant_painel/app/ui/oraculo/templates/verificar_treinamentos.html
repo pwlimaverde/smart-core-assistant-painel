@@ -28,11 +28,11 @@
             </div>
         </header>
         <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 items-start gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Treinamentos Vetorizados com Sucesso -->
-                <div class="-mx-4 px-4 py-8 shadow-xs ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 lg:col-span-2 lg:row-span-2 lg:row-end-2 ">
-                    <div class="divide-y divide-gray-900/10  max-w-7xl mx-auto ">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Treinamentos Vetorizados com Sucesso</h2>
+                <div class="px-4 py-8 shadow-xs ring-1 ring-gray-900/5 rounded-lg">
+                    <div class="divide-y divide-gray-900/10">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Treinamentos Vetorizados com Sucesso</h2>
                         {% if treinamentos_vetorizados %}
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-300">
@@ -57,6 +57,12 @@
                                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}
+                                                        <input type="hidden" name="acao" value="editar">
+                                                        <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
+                                                        <button type="submit" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar Treinamento</button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
+                                                        {% csrf_token %}
                                                         <input type="hidden" name="acao" value="excluir">
                                                         <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                         <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Tem certeza que deseja excluir este treinamento?')">Excluir</button>
@@ -74,9 +80,9 @@
                 </div>
                 
                 <!-- Treinamentos com Erro na Vetorização -->
-                <div class="-mx-4 px-4 py-8 shadow-xs ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 lg:col-span-2 lg:row-span-2 lg:row-end-2 ">
-                    <div class="divide-y divide-gray-900/10  max-w-7xl mx-auto ">
-                        <h2 class="text-2xl font-bold text-gray-900 mb-6">Treinamentos com Erro na Vetorização</h2>
+                <div class="px-4 py-8 shadow-xs ring-1 ring-gray-900/5 rounded-lg">
+                    <div class="divide-y divide-gray-900/10">
+                        <h2 class="text-xl font-bold text-gray-900 mb-6">Treinamentos com Erro na Vetorização</h2>
                         {% if treinamentos_com_erro %}
                             <div class="overflow-x-auto">
                                 <table class="min-w-full divide-y divide-gray-300">
@@ -101,9 +107,9 @@
                                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                                                     <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}
-                                                        <input type="hidden" name="acao" value="vetorizar">
+                                                        <input type="hidden" name="acao" value="editar">
                                                         <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
-                                                        <button type="submit" class="text-indigo-600 hover:text-indigo-900 mr-4">Tentar Novamente</button>
+                                                        <button type="submit" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar Treinamento</button>
                                                     </form>
                                                     <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}

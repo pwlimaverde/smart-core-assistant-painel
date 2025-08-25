@@ -194,6 +194,7 @@ def __task_treinar_ia(instance_id: int) -> None:
 
         # 3) Persiste vetor via update() para evitar loop de signals
         Treinamentos.objects.filter(id=instance_id).update(embedding=vetor)
+        Treinamentos.objects.filter(id=instance_id).update(treinamento_vetorizado=True)
         logger.info("Embedding atualizado para treinamento %s", instance_id)
 
     except Treinamentos.DoesNotExist:

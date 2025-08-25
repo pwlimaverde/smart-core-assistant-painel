@@ -155,10 +155,33 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
     if not has_permission(request.user, "treinar_ia"):
         messages.error(request, "Você não tem permissão para acessar esta página.")
         return redirect("oraculo:treinar_ia")
+    
     if request.method == "GET":
-        return render(request, "treinar_ia.html")
+        # Verifica se está em modo de edição (dados na sessão)
+        dados_edicao = request.session.get('treinamento_edicao')
+        
+        if dados_edicao:
+            context = {
+                'modo_edicao': True,
+                'treinamento_id': dados_edicao['id'],
+                'tag_inicial': dados_edicao['tag'],
+                'grupo_inicial': dados_edicao['grupo'],
+                'conteudo_inicial': dados_edicao['conteudo'],
+            }
+        else:
+            context = {
+                'modo_edicao': False,
+                'treinamento_id': None,
+                'tag_inicial': '',
+                'grupo_inicial': '',
+                'conteudo_inicial': '',
+            }
+        
+        return render(request, "treinar_ia.html", context)
+    
     if request.method == "POST":
         return _processar_treinamento(request)
+    
     return render(request, "treinar_ia.html")
 
 
@@ -175,6 +198,13 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     grupo = request.POST.get("grupo")
     conteudo = request.POST.get("conteudo")
     documento = request.FILES.get("documento")
+    treinamento_id = request.POST.get("treinamento_id")
+    
+    # Se não tem ID no POST, verifica se tem dados de edição na sessão
+    if not treinamento_id:
+        dados_edicao = request.session.get('treinamento_edicao')
+        if dados_edicao:
+            treinamento_id = dados_edicao['id']
 
     if not tag or not grupo:
         messages.error(request, "Tag e Grupo são obrigatórios.")
@@ -186,7 +216,25 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     documento_path = None
     try:
         with transaction.atomic():
-            treinamento = Treinamentos.objects.create(tag=tag, grupo=grupo)
+            # Verifica se está editando um treinamento existente
+            if treinamento_id:
+                try:
+                    treinamento = Treinamentos.objects.get(id=treinamento_id)
+                    # Atualiza os campos básicos
+                    treinamento.tag = tag
+                    treinamento.grupo = grupo
+                    # LIMPA COMPLETAMENTE TODOS OS DADOS EXISTENTES
+                    treinamento.clear_all_data()
+                    messages.success(request, f"Treinamento ID {treinamento_id} editado com sucesso!")
+                except Treinamentos.DoesNotExist:
+                    messages.error(request, "Treinamento não encontrado para edição.")
+                    return render(request, "treinar_ia.html")
+            else:
+                # Cria novo treinamento
+                treinamento = Treinamentos.objects.create(tag=tag, grupo=grupo)
+                messages.success(request, "Treinamento criado com sucesso!")
+            
+            # Processa documentos (tanto para criação quanto edição)
             documents_list = []
             if documento:
                 documento_path = TreinamentoService.processar_arquivo_upload(documento)
@@ -200,8 +248,16 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                     treinamento.id, conteudo, tag, grupo
                 )
                 documents_list.extend(docs_conteudo)
-            treinamento.set_documentos(documents_list)
+            # Verificação segura da lista para evitar erro de ambiguidade
+            if len(documents_list) > 0:
+                treinamento.set_documentos(documents_list)
+            
             treinamento.save()
+            
+            # Limpa dados de edição da sessão se existirem
+            if 'treinamento_edicao' in request.session:
+                del request.session['treinamento_edicao']
+            
             messages.success(request, "Treinamento criado com sucesso!")
             return redirect("oraculo:pre_processamento", id=treinamento.id)
     except Exception as e:
@@ -283,7 +339,8 @@ def _aceitar_treinamento(id: int):
     try:
         treinamento = Treinamentos.objects.get(id=id)
         documentos_lista = treinamento.get_documentos()
-        if not documentos_lista:
+        # Verificação segura da lista para evitar erro de ambiguidade
+        if len(documentos_lista) == 0:
             return
         documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
             documentos_lista
@@ -393,11 +450,20 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
             if acao == "excluir":
                 treinamento.delete()
                 messages.success(request, "Treinamento excluído com sucesso!")
-            elif acao == "vetorizar":
-                # Tenta vetorizar novamente
-                from django_q.tasks import async_task
-                async_task(__task_treinar_ia, treinamento.id)
-                messages.success(request, "Processo de vetorização iniciado!")
+            elif acao == "editar":
+                # Armazena os dados do treinamento na sessão para edição
+                conteudo_atual = treinamento.get_conteudo_unificado()
+                
+                # Armazena na sessão para evitar URLs extensas
+                request.session['treinamento_edicao'] = {
+                    'id': treinamento.id,
+                    'tag': treinamento.tag,
+                    'grupo': treinamento.grupo,
+                    'conteudo': conteudo_atual
+                }
+                
+                messages.info(request, f"Editando treinamento ID: {treinamento.id}")
+                return redirect('oraculo:treinar_ia')
             else:
                 messages.error(request, "Ação inválida.")
         except Treinamentos.DoesNotExist:

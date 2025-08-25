@@ -170,6 +170,30 @@ class TestTreinamentos(TestCase):
 
         self.assertTrue(treinamento.treinamento_finalizado)
 
+    def test_clear_all_data(self) -> None:
+        """Testa a limpeza completa dos dados de um treinamento."""
+        treinamento = Treinamentos.objects.create(
+            tag="teste_clear",
+            grupo="grupo_teste",
+            _documentos=[{"content": "Documento teste"}],
+            treinamento_finalizado=True,
+            treinamento_vetorizado=True,
+        )
+
+        # Verifica que os dados estão lá
+        self.assertEqual(len(treinamento.documentos), 1)
+        self.assertTrue(treinamento.treinamento_finalizado)
+        self.assertTrue(treinamento.treinamento_vetorizado)
+
+        # Limpa todos os dados
+        treinamento.clear_all_data()
+
+        # Verifica que tudo foi limpo
+        self.assertEqual(len(treinamento.documentos), 0)
+        self.assertFalse(treinamento.treinamento_finalizado)
+        self.assertFalse(treinamento.treinamento_vetorizado)
+        self.assertIsNone(treinamento.embedding)
+
 
 class TestUtilityFunctions(TestCase):
     """Testes para as funções utilitárias dos modelos."""

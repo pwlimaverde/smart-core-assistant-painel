@@ -34,10 +34,12 @@ class TreinamentosAdmin(admin.ModelAdmin):
         "tag",
         "grupo",
         "treinamento_finalizado",
+        "treinamento_vetorizado",
         "embedding_preview",
         "get_documentos_preview",
     ]
     search_fields = ["tag"]
+    list_filter = ["treinamento_finalizado", "treinamento_vetorizado"]
     ordering = ["id"]
     fieldsets = (
         (
@@ -47,6 +49,7 @@ class TreinamentosAdmin(admin.ModelAdmin):
                     "tag",
                     "grupo",
                     "treinamento_finalizado",
+                    "treinamento_vetorizado",
                     "_documentos",
                     "embedding_preview",
                 ),
@@ -57,6 +60,7 @@ class TreinamentosAdmin(admin.ModelAdmin):
     list_per_page = 25
     save_on_top = True
     readonly_fields = ["embedding_preview"]
+    actions = ["marcar_como_vetorizado", "marcar_como_nao_vetorizado", "reprocessar_treinamentos"]
 
     @admin.display(description="Preview do Documento", ordering="_documentos")
     def get_documentos_preview(self, obj: Treinamentos) -> str:
@@ -131,6 +135,53 @@ class TreinamentosAdmin(admin.ModelAdmin):
             return f"[{fmt_head}{sufixo}] (dim={tam})"
         except Exception:
             return "Erro ao exibir embedding"
+
+    @admin.action(description="Marcar treinamentos selecionados como vetorizados")
+    def marcar_como_vetorizado(
+        self, request: HttpRequest, queryset: QuerySet[Treinamentos]
+    ) -> None:
+        """Marca os treinamentos selecionados como vetorizados.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[Treinamentos]): O queryset de treinamentos.
+        """
+        queryset.update(treinamento_vetorizado=True)
+        self.message_user(
+            request, f"{queryset.count()} treinamentos marcados como vetorizados."
+        )
+
+    @admin.action(description="Marcar treinamentos selecionados como não vetorizados")
+    def marcar_como_nao_vetorizado(
+        self, request: HttpRequest, queryset: QuerySet[Treinamentos]
+    ) -> None:
+        """Marca os treinamentos selecionados como não vetorizados.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[Treinamentos]): O queryset de treinamentos.
+        """
+        queryset.update(treinamento_vetorizado=False)
+        self.message_user(
+            request, f"{queryset.count()} treinamentos marcados como não vetorizados."
+        )
+
+    @admin.action(description="Reprocessar treinamentos selecionados (marca como finalizado)")
+    def reprocessar_treinamentos(
+        self, request: HttpRequest, queryset: QuerySet[Treinamentos]
+    ) -> None:
+        """Reprocessa os treinamentos selecionados marcando como finalizados.
+
+        Isso irá disparar o signal que inicia o processo de vetorização.
+
+        Args:
+            request (HttpRequest): O objeto de requisição.
+            queryset (QuerySet[Treinamentos]): O queryset de treinamentos.
+        """
+        queryset.update(treinamento_finalizado=True, treinamento_vetorizado=False)
+        self.message_user(
+            request, f"{queryset.count()} treinamentos marcados para reprocessamento."
+        )
 
 
 @admin.register(AtendenteHumano)

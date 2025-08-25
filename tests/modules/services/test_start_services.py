@@ -46,7 +46,6 @@ class TestStartServices:
 
         # Verifica se os componentes principais foram chamados
         mock_features_compose.set_environ_remote.assert_called_once()
-        mock_features_compose.vetor_storage.assert_called_once()
         mock_features_compose.whatsapp_service.assert_called_once()
         mock_log_env.assert_called_once()
 

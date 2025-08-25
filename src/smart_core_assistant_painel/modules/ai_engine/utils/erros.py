@@ -11,17 +11,6 @@ from py_return_success_or_error import AppError
 
 
 @dataclass
-class WahaApiError(AppError):
-    """Erro relacionado à API WAHA (WhatsApp)."""
-
-    message: str
-
-    def __str__(self) -> str:
-        """Retorna uma mensagem de erro formatada."""
-        return f"WahaApiError - {self.message}"
-
-
-@dataclass
 class HtmlStrError(AppError):
     """Erro relacionado ao processamento de strings HTML."""
 

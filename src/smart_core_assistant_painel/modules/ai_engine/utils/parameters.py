@@ -15,7 +15,6 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DataMessageError,
     DocumentError,
     LlmError,
-    WahaApiError,
 )
 
 
@@ -30,27 +29,6 @@ class DataMensageParameters(ParametersReturnResult):
 
     data: dict[str, Any]
     error: DataMessageError
-
-    def __str__(self) -> str:
-        """Retorna uma representação em string do objeto."""
-        return self.__repr__()
-
-
-@dataclass
-class MessageParameters(ParametersReturnResult):
-    """Parâmetros para o envio de uma mensagem.
-
-    Attributes:
-        session (str): A sessão associada à mensagem.
-        chat_id (str): O ID do chat para onde a mensagem será enviada.
-        message (Optional[str]): O conteúdo da mensagem.
-        error (WahaApiError): O erro a ser levantado em caso de falha.
-    """
-
-    session: str
-    chat_id: str
-    message: Optional[str]
-    error: WahaApiError
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""

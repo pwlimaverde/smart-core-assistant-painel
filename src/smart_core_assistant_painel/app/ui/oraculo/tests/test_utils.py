@@ -111,14 +111,20 @@ class TestSendMessageResponse:
 
     @patch("smart_core_assistant_painel.app.ui.oraculo.models.Mensagem.objects.get")
     @patch("smart_core_assistant_painel.app.ui.oraculo.utils._pode_bot_responder_atendimento", return_value=True)
+    @patch("smart_core_assistant_painel.app.ui.oraculo.models.Treinamentos.build_similarity_context", return_value="")
     @patch("smart_core_assistant_painel.app.ui.oraculo.utils.SERVICEHUB")
-    def test_send_message_success(self, mock_service_hub, mock_pode_responder, mock_msg_get, mock_cache, mock_compile, mock_processar, mock_analisar, mock_clear):
+    def test_send_message_success(self, mock_service_hub, mock_similarity, mock_pode_responder, mock_msg_get, mock_cache, mock_compile, mock_processar, mock_analisar, mock_clear):
         phone = "12345"
         message_data = create_message_data(numero_telefone=phone)
         mock_cache.get.return_value = [message_data]
         mock_compile.return_value = message_data
         mock_processar.return_value = 1
-        mock_msg_get.return_value = MagicMock()
+        
+        # Configurar mock da mensagem com conteúdo real
+        mock_mensagem = MagicMock()
+        mock_mensagem.conteudo = "Olá, mundo!"
+        mock_mensagem.atendimento = MagicMock()
+        mock_msg_get.return_value = mock_mensagem
 
         utils.send_message_response(phone)
 

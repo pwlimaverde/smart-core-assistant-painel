@@ -48,6 +48,176 @@ def validate_tag(value: str) -> None:
         )
 
 
+class DocumentoVetorizado(models.Model):
+    """
+    Modelo para armazenar documentos individuais com seus embeddings.
+
+    Cada documento de um treinamento é armazenado separadamente com seu
+    próprio embedding para busca semântica mais precisa.
+
+    Attributes:
+        id: Chave primária do registro
+        treinamento: Referência ao treinamento pai
+        conteudo: Conteúdo textual do documento (page_content)
+        metadata: Metadados do documento em formato JSON
+        embedding: Vetor de embedding do documento individual
+        ordem: Ordem do documento dentro do treinamento
+        data_criacao: Data de criação automática
+    """
+
+    id: models.AutoField = models.AutoField(
+        primary_key=True, help_text="Chave primária do registro"
+    )
+    treinamento: models.ForeignKey = models.ForeignKey(
+        "Treinamentos",
+        on_delete=models.CASCADE,
+        related_name="documentos_vetorizados",
+        help_text="Treinamento ao qual este documento pertence",
+    )
+    conteudo: models.TextField = models.TextField(
+        help_text="Conteúdo textual do documento (page_content)"
+    )
+    metadata: models.JSONField = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Metadados do documento (source, chunk_id, etc.)",
+    )
+    embedding: VectorField = VectorField(
+        dimensions=1024,
+        null=True,
+        blank=True,
+        help_text="Vetor de embedding (dim=1024) do documento individual",
+    )
+    ordem: models.PositiveIntegerField = models.PositiveIntegerField(
+        help_text="Ordem do documento dentro do treinamento"
+    )
+    data_criacao: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="Data de criação do documento"
+    )
+
+    class Meta:
+        verbose_name = "Documento Vetorizado"
+        verbose_name_plural = "Documentos Vetorizados"
+        ordering = ["treinamento", "ordem"]
+        unique_together = ["treinamento", "ordem"]
+
+    def __str__(self):
+        """
+        Retorna representação string do documento.
+
+        Returns:
+            str: Preview do conteúdo do documento
+        """
+        preview = self.conteudo[:50] + "..." if len(self.conteudo) > 50 else self.conteudo
+        return f"Doc {self.ordem}: {preview}"
+
+    @classmethod
+    def search_by_similarity(
+        cls,
+        query: str,
+        top_k: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> List[tuple["DocumentoVetorizado", float]]:
+        """
+        Busca documentos mais similares a um texto de consulta.
+
+        Args:
+            query (str): Texto de consulta para gerar o embedding
+            top_k (int): Número máximo de resultados
+            grupo (Optional[str]): Filtro opcional por grupo do treinamento
+            tag (Optional[str]): Filtro opcional por tag do treinamento
+
+        Returns:
+            List[tuple[DocumentoVetorizado, float]]: Lista de tuplas (documento, distância)
+        """
+        if not query or not query.strip():
+            return []
+        if top_k <= 0:
+            return []
+
+        # Gera vetor do texto de consulta usando método estático
+        query_vec: List[float] = cls._embed_text_static(query.strip())
+
+        # Base queryset: documentos de treinamentos finalizados com embedding
+        qs = cls.objects.filter(
+            treinamento__treinamento_finalizado=True,
+            embedding__isnull=False
+        )
+
+        # Aplicar filtros opcionais
+        if grupo:
+            qs = qs.filter(treinamento__grupo=grupo)
+        if tag:
+            qs = qs.filter(treinamento__tag=tag)
+
+        # Anota e ordena por distância cosseno
+        qs = qs.annotate(
+            distance=CosineDistance("embedding", query_vec)
+        ).order_by("distance")[:top_k]
+
+        resultados: List[tuple["DocumentoVetorizado", float]] = []
+        for obj in qs:
+            distancia_val: float = float(getattr(obj, "distance", 0.0))
+            resultados.append((obj, distancia_val))
+
+        return resultados
+
+    @staticmethod
+    def _embed_text_static(text: str) -> List[float]:
+        """
+        Gera o vetor de embedding para um texto (método estático).
+
+        Args:
+            text (str): Texto de entrada.
+
+        Returns:
+            List[float]: Vetor de floats (dimensão 1024).
+        """
+        from smart_core_assistant_painel.modules.services import SERVICEHUB
+        from django.conf import settings
+        
+        embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
+        embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
+
+        try:
+            if embeddings_class == "OllamaEmbeddings":
+                from langchain_ollama import OllamaEmbeddings
+                base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
+                kwargs: dict[str, Any] = {}
+                if embeddings_model:
+                    kwargs["model"] = embeddings_model
+                if base_url:
+                    kwargs["base_url"] = base_url
+                embeddings = OllamaEmbeddings(**kwargs)
+            elif embeddings_class == "OpenAIEmbeddings":
+                from langchain_openai import OpenAIEmbeddings
+                if embeddings_model:
+                    embeddings = OpenAIEmbeddings(model=embeddings_model)
+                else:
+                    embeddings = OpenAIEmbeddings()
+            elif embeddings_class == "HuggingFaceEmbeddings":
+                from langchain_huggingface import HuggingFaceEmbeddings
+                if embeddings_model:
+                    embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
+                else:
+                    embeddings = HuggingFaceEmbeddings()
+            else:
+                raise ValueError(f"Classe de embeddings não suportada: {embeddings_class}")
+
+            # Gera embedding
+            if hasattr(embeddings, "embed_query"):
+                vec: List[float] = list(map(float, embeddings.embed_query(text)))
+            else:
+                docs_vec: List[List[float]] = embeddings.embed_documents([text])
+                vec = list(map(float, docs_vec[0]))
+            return vec
+            
+        except Exception as exc:
+            logger.error(f"Erro ao gerar embedding do texto: {exc}", exc_info=True)
+            raise
+
+
 class Treinamentos(models.Model):
     """
     Modelo para armazenar informações de treinamento de IA.
@@ -113,13 +283,31 @@ class Treinamentos(models.Model):
     def save(self, *args, **kwargs):
         """
         Salva o modelo executando validação completa antes do salvamento.
+        
+        Se é uma nova instancia e tem documentos, cria os DocumentoVetorizado
+        após o salvamento.
 
         Args:
             *args: Argumentos posicionais do método save
             **kwargs: Argumentos nomeados do método save
         """
         self.full_clean()
+        
+        # Verifica se é uma nova instância
+        is_new = self.pk is None
+        
         super().save(*args, **kwargs)
+        
+        # Se é nova instância e tem documentos, cria DocumentoVetorizado
+        if is_new and self._documentos:
+            try:
+                documentos = self.get_documentos()
+                if documentos:
+                    self._create_documentos_vetorizados(documentos)
+            except Exception as e:
+                logger.warning(
+                    f"Erro ao criar documentos vetorizados após save: {e}"
+                )
 
     def clean(self):
         """
@@ -191,6 +379,7 @@ class Treinamentos(models.Model):
 
         Este método processa uma lista de objetos Document do LangChain e os
         serializa adequadamente para armazenamento no campo JSONField do modelo.
+        Também cria registros DocumentoVetorizado para cada documento.
 
         Args:
             documentos: Lista de objetos Document do LangChain a serem armazenados
@@ -210,6 +399,9 @@ class Treinamentos(models.Model):
         # Verificação segura da lista para evitar erro de ambiguidade
         if len(documentos) == 0:
             self._documentos = []
+            # Limpa documentos vetorizados existentes
+            if self.pk:
+                self.documentos_vetorizados.all().delete()
             return
 
         try:
@@ -233,6 +425,10 @@ class Treinamentos(models.Model):
 
             self._documentos = serialized_docs
 
+            # Se o treinamento já foi salvo, criar DocumentoVetorizado
+            if self.pk:
+                self._create_documentos_vetorizados(documentos)
+
         except (TypeError, ValueError):
             # Re-raise erros já tratados
             raise
@@ -241,6 +437,73 @@ class Treinamentos(models.Model):
             logger.error(error_msg)
             self._documentos = []
             raise ValueError(error_msg) from e
+
+    def _create_documentos_vetorizados(self, documentos: List[Document]) -> None:
+        """
+        Cria registros DocumentoVetorizado para os documentos fornecidos.
+
+        Args:
+            documentos: Lista de objetos Document do LangChain
+        """
+        # Remove documentos vetorizados existentes
+        self.documentos_vetorizados.all().delete()
+
+        # Cria novos registros DocumentoVetorizado
+        documentos_vetorizados = []
+        for i, documento in enumerate(documentos):
+            doc_vetorizado = DocumentoVetorizado(
+                treinamento=self,
+                conteudo=documento.page_content,
+                metadata=documento.metadata or {},
+                ordem=i + 1,
+            )
+            documentos_vetorizados.append(doc_vetorizado)
+
+        # Bulk create para eficiência
+        DocumentoVetorizado.objects.bulk_create(documentos_vetorizados)
+
+        logger.info(
+            f"Criados {len(documentos_vetorizados)} documentos vetorizados para treinamento {self.pk}"
+        )
+
+    def vetorizar_documentos_individuais(self) -> None:
+        """
+        Gera embeddings para todos os DocumentoVetorizado deste treinamento.
+        
+        Este método deve ser chamado após a criação dos documentos vetorizados
+        para gerar os embeddings individuais de cada documento.
+        """
+        if not self.pk:
+            logger.warning("Treinamento deve ser salvo antes de vetorizar documentos")
+            return
+
+        documentos_sem_embedding = self.documentos_vetorizados.filter(
+            embedding__isnull=True
+        )
+
+        if not documentos_sem_embedding.exists():
+            logger.info(f"Todos os documentos do treinamento {self.pk} já estão vetorizados")
+            return
+
+        # Gera embeddings em lote para eficiência
+        textos = [doc.conteudo for doc in documentos_sem_embedding]
+        
+        try:
+            embeddings_instance = self._get_embeddings_instance()
+            vetores = embeddings_instance.embed_documents(textos)
+            
+            # Atualiza cada documento com seu embedding
+            for doc, vetor in zip(documentos_sem_embedding, vetores):
+                doc.embedding = [float(x) for x in vetor]
+                doc.save(update_fields=['embedding'])
+            
+            logger.info(
+                f"Vetorizados {len(documentos_sem_embedding)} documentos do treinamento {self.pk}"
+            )
+            
+        except Exception as e:
+            logger.error(f"Erro ao vetorizar documentos do treinamento {self.pk}: {e}")
+            raise
 
     def get_documentos(self) -> List[Document]:
         """
@@ -305,6 +568,11 @@ class Treinamentos(models.Model):
         self.embedding = None
         self.treinamento_finalizado = False
         self.treinamento_vetorizado = False
+        
+        # Limpa documentos vetorizados se o treinamento já foi salvo
+        if self.pk:
+            self.documentos_vetorizados.all().delete()
+            
         logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")
 
     def finalize(self) -> None:
@@ -599,6 +867,65 @@ class Treinamentos(models.Model):
             )
             lines.append(header)
             lines.append(str(doc.page_content).strip())
+            lines.append("---")
+
+        return "\n".join(lines)
+
+    @classmethod
+    def build_similarity_context_v2(
+        cls,
+        query: str,
+        top_k_docs: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> str:
+        """
+        Versão otimizada da busca semântica usando DocumentoVetorizado.
+
+        Esta versão é mais eficiente pois utiliza embeddings pré-calculados
+        armazenados na tabela DocumentoVetorizado, evitando geração em tempo real.
+
+        Args:
+            query (str): Texto de consulta
+            top_k_docs (int): Quantidade de documentos no contexto
+            grupo (Optional[str]): Filtro por grupo
+            tag (Optional[str]): Filtro por tag
+
+        Returns:
+            str: Contexto concatenado com '---' entre os chunks
+        """
+        if not query or not query.strip():
+            return ""
+        if top_k_docs <= 0:
+            return ""
+
+        # Busca documentos mais similares diretamente
+        documentos_similares = DocumentoVetorizado.search_by_similarity(
+            query=query.strip(),
+            top_k=top_k_docs,
+            grupo=grupo,
+            tag=tag,
+        )
+
+        if not documentos_similares:
+            return ""
+
+        # Monta a string de contexto
+        lines: List[str] = []
+        lines.append(
+            "Contexto de suporte (documentos mais similares - v2):"
+        )
+        
+        for rank, (doc_vetorizado, distancia) in enumerate(documentos_similares, start=1):
+            treinamento = doc_vetorizado.treinamento
+            source = doc_vetorizado.metadata.get("source", "-")
+
+            header = (
+                f"[{rank}] Treinamento={treinamento.tag} | Grupo={treinamento.grupo} | "
+                f"Fonte={source} | Distância={distancia:.4f}"
+            )
+            lines.append(header)
+            lines.append(doc_vetorizado.conteudo.strip())
             lines.append("---")
 
         return "\n".join(lines)

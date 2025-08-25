@@ -63,3 +63,14 @@ class DataMessageError(AppError):
     def __str__(self) -> str:
         """Retorna uma mensagem de erro formatada."""
         return f"DataMessageError - {self.message}"
+
+
+@dataclass
+class EmbeddingError(AppError):
+    """Erro relacionado à geração ou processamento de embeddings."""
+
+    message: str
+
+    def __str__(self) -> str:
+        """Retorna uma mensagem de erro formatada."""
+        return f"EmbeddingError - {self.message}"

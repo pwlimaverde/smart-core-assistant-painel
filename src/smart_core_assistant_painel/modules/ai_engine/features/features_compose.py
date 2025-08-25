@@ -19,14 +19,18 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 from ..utils.erros import (
     DataMessageError,
     DocumentError,
+    EmbeddingError,
     LlmError,
 )
 from ..utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
+    EmbeddingToTextParameters,
+    GenerateEmbeddingsParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
+    SearchSimilarEmbeddingsParameters,
 )
 from ..utils.types import (
     ACData,
@@ -34,10 +38,14 @@ from ..utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
+    ETTUsecase,
+    GEData,
+    GEUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
     LMDUsecase,
+    SSEUsecase,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
@@ -63,6 +71,18 @@ from .load_document_file.domain.usecase.load_document_file_usecase import (
 from .load_mensage_data.domain.model.message_data import MessageData
 from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
+)
+from .generate_embeddings.datasource.generate_embeddings_langchain_datasource import (
+    GenerateEmbeddingsLangchainDatasource,
+)
+from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
+    GenerateEmbeddingsUseCase,
+)
+from .embedding_to_text.domain.usecase.embedding_to_text_usecase import (
+    EmbeddingToTextUseCase,
+)
+from .search_similar_embeddings.domain.usecase.search_similar_embeddings_usecase import (
+    SearchSimilarEmbeddingsUseCase,
 )
 
 
@@ -158,7 +178,7 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context=context,
-            error=LlmError("Error ao analisar o conteúdo"),
+            error=LlmError,
         )
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
@@ -192,7 +212,7 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
             context=context,
-            error=LlmError("Error ao gerar conteudo melhorado"),
+            error=LlmError,
         )
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
@@ -229,7 +249,7 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
             context=context,
-            error=LlmError("Erro ao processar llm"),
+            error=LlmError,
         )
         parameters = AnalisePreviaMensagemParameters(
             historico_atendimento=historico_atendimento,
@@ -313,3 +333,95 @@ class FeaturesCompose:
     def resumo_atendimento() -> None:
         """Envia uma mensagem de resumo do atendimento."""
         pass
+
+    @staticmethod
+    def generate_embeddings(text: str) -> list[float]:
+        """Gera embeddings para um texto.
+
+        Args:
+            text (str): Texto para gerar embeddings.
+
+        Returns:
+            list[float]: Vetor de embeddings gerado.
+
+        Raises:
+            EmbeddingError: Se ocorrer um erro durante a geração.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error = EmbeddingError("Erro ao gerar embeddings!")
+        parameters = GenerateEmbeddingsParameters(text=text, error=error)
+        datasource: GEData = GenerateEmbeddingsLangchainDatasource()
+        usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def embedding_to_text(embedding_vector: list[float]) -> str:
+        """Converte um embedding em representação textual.
+
+        Args:
+            embedding_vector (list[float]): Vetor de embedding a converter.
+
+        Returns:
+            str: Representação textual do embedding.
+
+        Raises:
+            EmbeddingError: Se ocorrer um erro durante a conversão.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error = EmbeddingError("Erro ao converter embedding em texto!")
+        parameters = EmbeddingToTextParameters(
+            embedding_vector=embedding_vector, error=error
+        )
+        usecase: ETTUsecase = EmbeddingToTextUseCase()
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def search_similar_embeddings(
+        query_embedding: list[float],
+        embeddings_data: list[dict],
+        top_k: int = 5,
+    ) -> list[dict]:
+        """Busca embeddings similares ao embedding de consulta.
+
+        Args:
+            query_embedding (list[float]): Embedding da consulta.
+            embeddings_data (list[dict]): Dados com embeddings para busca.
+            top_k (int): Número de resultados a retornar.
+
+        Returns:
+            list[dict]: Lista ordenada por similaridade.
+
+        Raises:
+            EmbeddingError: Se ocorrer um erro durante a busca.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error = EmbeddingError("Erro ao buscar embeddings similares!")
+        parameters = SearchSimilarEmbeddingsParameters(
+            query_embedding=query_embedding,
+            embeddings_data=embeddings_data,
+            top_k=top_k,
+            error=error,
+        )
+        usecase: SSEUsecase = SearchSimilarEmbeddingsUseCase()
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")

@@ -352,8 +352,8 @@ class TestTreinamentosAdmin(TestCase):
 
     def test_readonly_fields(self) -> None:
         """Testa os campos somente leitura."""
-        # TreinamentosAdmin não tem campos readonly definidos
-        self.assertEqual(self.admin.readonly_fields, ())
+        # TreinamentosAdmin tem o campo embedding_preview como readonly
+        self.assertEqual(self.admin.readonly_fields, ["embedding_preview"])
 
 
 class TestAdminIntegration(TestCase):

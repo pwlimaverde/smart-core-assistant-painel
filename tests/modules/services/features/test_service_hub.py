@@ -167,6 +167,84 @@ class TestServiceHub(unittest.TestCase):
         hub = ServiceHub()
         self.assertEqual(hub.VALID_ENTITY_TYPES, "")
 
+    # Testes para propriedades LLM
+    @patch.dict(os.environ, {"MODEL": "test_model"})
+    def test_model_property_with_env_var(self):
+        hub = ServiceHub()
+        self.assertEqual(hub.MODEL, "test_model")
+
+    def test_model_property_without_env_var(self):
+        if "MODEL" in os.environ:
+            del os.environ["MODEL"]
+        hub = ServiceHub()
+        self.assertEqual(hub.MODEL, "llama3.1")
+
+    @patch.dict(os.environ, {"LLM_TEMPERATURE": "1"})
+    def test_llm_temperature_property_with_env_var(self):
+        hub = ServiceHub()
+        self.assertEqual(hub.LLM_TEMPERATURE, 1)
+
+    def test_llm_temperature_property_without_env_var(self):
+        if "LLM_TEMPERATURE" in os.environ:
+            del os.environ["LLM_TEMPERATURE"]
+        hub = ServiceHub()
+        self.assertEqual(hub.LLM_TEMPERATURE, 0)
+
+    # Testes para propriedades WhatsApp
+    @patch.dict(os.environ, {"WHATSAPP_API_BASE_URL": "http://test.com"})
+    def test_whatsapp_api_base_url_with_env_var(self):
+        hub = ServiceHub()
+        self.assertEqual(hub.WHATSAPP_API_BASE_URL, "http://test.com")
+
+    def test_whatsapp_api_base_url_without_env_var(self):
+        if "WHATSAPP_API_BASE_URL" in os.environ:
+            del os.environ["WHATSAPP_API_BASE_URL"]
+        hub = ServiceHub()
+        self.assertEqual(hub.WHATSAPP_API_BASE_URL, "")
+
+    # Testes para EMBEDDINGS_CLASS
+    @patch.dict(os.environ, {"EMBEDDINGS_CLASS": "HuggingFaceEmbeddings"})
+    def test_embeddings_class_with_env_var(self):
+        hub = ServiceHub()
+        self.assertEqual(hub.EMBEDDINGS_CLASS, "HuggingFaceEmbeddings")
+
+    def test_embeddings_class_without_env_var(self):
+        if "EMBEDDINGS_CLASS" in os.environ:
+            del os.environ["EMBEDDINGS_CLASS"]
+        hub = ServiceHub()
+        self.assertEqual(hub.EMBEDDINGS_CLASS, "OpenAIEmbeddings")
+
+
+
+    # Testes para métodos
+    def test_set_whatsapp_service(self):
+        from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import WhatsAppService
+        from unittest.mock import Mock
+        
+        mock_service = Mock(spec=WhatsAppService)
+        hub = ServiceHub()
+        hub.set_whatsapp_service(mock_service)
+        self.assertEqual(hub.whatsapp_service, mock_service)
+
+    def test_whatsapp_service_not_configured(self):
+        hub = ServiceHub()
+        with self.assertRaises(RuntimeError) as context:
+            _ = hub.whatsapp_service
+        self.assertIn("WhatsAppService não configurado", str(context.exception))
+
+    def test_reload_config_method(self):
+        hub = ServiceHub()
+        # Testa se o método reload_config não gera erro
+        hub.reload_config()
+        # Verifica se as configurações foram recarregadas
+        self.assertIsNotNone(hub.TIME_CACHE)
+
+    @patch.dict(os.environ, {"LLM_CLASS": "ChatOllama"})
+    def test_get_llm_class_chatollama_default(self):
+        hub = ServiceHub()
+        from langchain_ollama import ChatOllama
+        self.assertEqual(hub.LLM_CLASS, ChatOllama)
+
 
 if __name__ == "__main__":
     unittest.main()

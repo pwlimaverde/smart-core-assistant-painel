@@ -21,6 +21,7 @@ from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
 from .models import Treinamentos
 from .models_departamento import Departamento
+from .signals import __task_treinar_ia
 from .utils import sched_message_response, set_wa_buffer
 
 

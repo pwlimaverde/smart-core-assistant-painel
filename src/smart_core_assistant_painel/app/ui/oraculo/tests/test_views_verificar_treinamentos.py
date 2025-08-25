@@ -5,6 +5,7 @@ from unittest.mock import patch
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
 from django.urls import reverse
+from rolepermissions.roles import assign_role
 
 from ..models import Treinamentos
 
@@ -19,6 +20,7 @@ class TestVerificarTreinamentosView(TestCase):
             username='testuser', 
             password='testpass123'
         )
+        assign_role(self.user, 'gerente')  # Atribui a função de gerente
         self.client.login(username='testuser', password='testpass123')
         
         # Cria treinamentos de teste
@@ -71,17 +73,18 @@ class TestVerificarTreinamentosView(TestCase):
         """Testa a tentativa de vetorizar novamente um treinamento."""
         treinamento_id = self.treinamento_erro.id
         
-        with patch('smart_core_assistant_painel.app.ui.oraculo.views.async_task') as mock_async_task:
-            response = self.client.post(self.url, {
-                'acao': 'vetorizar',
-                'treinamento_id': treinamento_id
-            })
-            
-            # Verifica redirecionamento
-            self.assertEqual(response.status_code, 302)
-            
-            # Verifica se a task assíncrona foi chamada
-            mock_async_task.assert_called_once()
+        with patch('smart_core_assistant_painel.app.ui.oraculo.views.__task_treinar_ia') as mock_task:
+            with patch('django_q.tasks.async_task') as mock_async_task:
+                response = self.client.post(self.url, {
+                    'acao': 'vetorizar',
+                    'treinamento_id': treinamento_id
+                })
+                
+                # Verifica redirecionamento
+                self.assertEqual(response.status_code, 302)
+                
+                # Verifica se a task assíncrona foi chamada
+                mock_async_task.assert_called_once()
 
     def test_verificar_treinamentos_acao_invalida(self):
         """Testa uma ação inválida."""

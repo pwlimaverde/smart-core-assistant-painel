@@ -48,12 +48,13 @@ def validate_tag(value: str) -> None:
         )
 
 
-class DocumentoVetorizado(models.Model):
+class Documento(models.Model):
     """
-    Modelo para armazenar documentos individuais com seus embeddings.
+    Modelo para armazenar documentos individuais de treinamento com seus embeddings.
 
     Cada documento de um treinamento é armazenado separadamente com seu
-    próprio embedding para busca semântica mais precisa.
+    próprio embedding para busca semântica mais precisa. Este modelo substitui
+    a abordagem anterior de armazenar documentos como JSON no modelo Treinamentos.
 
     Attributes:
         id: Chave primária do registro
@@ -63,6 +64,7 @@ class DocumentoVetorizado(models.Model):
         embedding: Vetor de embedding do documento individual
         ordem: Ordem do documento dentro do treinamento
         data_criacao: Data de criação automática
+        data_atualizacao: Data da última atualização
     """
 
     id: models.AutoField = models.AutoField(
@@ -71,7 +73,7 @@ class DocumentoVetorizado(models.Model):
     treinamento: models.ForeignKey = models.ForeignKey(
         "Treinamentos",
         on_delete=models.CASCADE,
-        related_name="documentos_vetorizados",
+        related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
     conteudo: models.TextField = models.TextField(
@@ -96,10 +98,14 @@ class DocumentoVetorizado(models.Model):
     )
 
     class Meta:
-        verbose_name = "Documento Vetorizado"
-        verbose_name_plural = "Documentos Vetorizados"
+        verbose_name = "Documento"
+        verbose_name_plural = "Documentos"
         ordering = ["treinamento", "ordem"]
         unique_together = ["treinamento", "ordem"]
+        indexes = [
+            models.Index(fields=["treinamento", "ordem"]),
+            models.Index(fields=["data_criacao"]),
+        ]
 
     def __str__(self):
         """
@@ -111,6 +117,26 @@ class DocumentoVetorizado(models.Model):
         preview = self.conteudo[:50] + "..." if len(self.conteudo) > 50 else self.conteudo
         return f"Doc {self.ordem}: {preview}"
 
+    def gerar_embedding(self) -> None:
+        """
+        Gera e salva o embedding para este documento.
+        
+        Raises:
+            Exception: Se houver erro na geração do embedding
+        """
+        if not self.conteudo:
+            logger.warning(f"Documento {self.id} sem conteúdo para gerar embedding")
+            return
+            
+        try:
+            vetor = self._embed_text_static(self.conteudo)
+            self.embedding = vetor
+            self.save(update_fields=['embedding'])
+            logger.info(f"Embedding gerado para documento {self.id}")
+        except Exception as e:
+            logger.error(f"Erro ao gerar embedding para documento {self.id}: {e}")
+            raise
+
     @classmethod
     def search_by_similarity(
         cls,
@@ -118,7 +144,7 @@ class DocumentoVetorizado(models.Model):
         top_k: int = 5,
         grupo: Optional[str] = None,
         tag: Optional[str] = None,
-    ) -> List[tuple["DocumentoVetorizado", float]]:
+    ) -> List[tuple["Documento", float]]:
         """
         Busca documentos mais similares a um texto de consulta.
 
@@ -129,7 +155,7 @@ class DocumentoVetorizado(models.Model):
             tag (Optional[str]): Filtro opcional por tag do treinamento
 
         Returns:
-            List[tuple[DocumentoVetorizado, float]]: Lista de tuplas (documento, distância)
+            List[tuple[Documento, float]]: Lista de tuplas (documento, distância)
         """
         if not query or not query.strip():
             return []
@@ -156,7 +182,7 @@ class DocumentoVetorizado(models.Model):
             distance=CosineDistance("embedding", query_vec)
         ).order_by("distance")[:top_k]
 
-        resultados: List[tuple["DocumentoVetorizado", float]] = []
+        resultados: List[tuple["Documento", float]] = []
         for obj in qs:
             distancia_val: float = float(getattr(obj, "distance", 0.0))
             resultados.append((obj, distancia_val))
@@ -222,17 +248,19 @@ class Treinamentos(models.Model):
     """
     Modelo para armazenar informações de treinamento de IA.
 
-    Este modelo gerencia documentos de treinamento organizados por tags e grupos,
-    permitindo armazenar e recuperar documentos LangChain serializados.
+    Este modelo gerencia treinamentos organizados por tags e grupos.
+    O conteúdo completo é armazenado aqui e depois dividido em chunks
+    que são salvos como registros Documento com embeddings individuais.
 
     Attributes:
         id: Chave primária do registro
         tag: Identificador único do treinamento
         grupo: Grupo ao qual o treinamento pertence
-        _documentos: Lista de documentos LangChain serializados
+        conteudo: Conteúdo completo do treinamento (antes da divisão em chunks)
         treinamento_finalizado: Status de finalização do treinamento
         treinamento_vetorizado: Status de vetorização do treinamento
         data_criacao: Data de criação automática do treinamento
+        data_atualizacao: Data da última atualização
     """
 
     id: models.AutoField = models.AutoField(
@@ -252,18 +280,10 @@ class Treinamentos(models.Model):
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento",
     )
-    _documentos: models.JSONField = models.JSONField(
-        default=list,
+    conteudo: models.TextField = models.TextField(
         blank=True,
         null=True,
-        help_text="Lista de documentos LangChain serializados (campo privado)",
-        db_column="documentos",
-    )
-    embedding: VectorField = VectorField(
-        dimensions=1024,
-        null=True,
-        blank=True,
-        help_text="Vetor de embedding (dim=1024) para busca semântica via pgvector",
+        help_text="Conteúdo completo do treinamento (antes da divisão em chunks)",
     )
     treinamento_finalizado: models.BooleanField = models.BooleanField(
         default=False,
@@ -275,39 +295,22 @@ class Treinamentos(models.Model):
     )
     data_criacao: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
-        null=True,
-        blank=True,
         help_text="Data de criação do treinamento",
     )
+    data_atualizacao: models.DateTimeField = models.DateTimeField(
+        auto_now=True,
+        help_text="Data da última atualização do treinamento",
+    )
 
-    def save(self, *args, **kwargs):
-        """
-        Salva o modelo executando validação completa antes do salvamento.
-        
-        Se é uma nova instancia e tem documentos, cria os DocumentoVetorizado
-        após o salvamento.
-
-        Args:
-            *args: Argumentos posicionais do método save
-            **kwargs: Argumentos nomeados do método save
-        """
-        self.full_clean()
-        
-        # Verifica se é uma nova instância
-        is_new = self.pk is None
-        
-        super().save(*args, **kwargs)
-        
-        # Se é nova instância e tem documentos, cria DocumentoVetorizado
-        if is_new and self._documentos:
-            try:
-                documentos = self.get_documentos()
-                if documentos:
-                    self._create_documentos_vetorizados(documentos)
-            except Exception as e:
-                logger.warning(
-                    f"Erro ao criar documentos vetorizados após save: {e}"
-                )
+    class Meta:
+        verbose_name = "Treinamento"
+        verbose_name_plural = "Treinamentos"
+        ordering = ["-data_criacao"]
+        indexes = [
+            models.Index(fields=["tag", "grupo"]),
+            models.Index(fields=["data_criacao"]),
+            models.Index(fields=["treinamento_finalizado", "treinamento_vetorizado"]),
+        ]
 
     def clean(self):
         """
@@ -336,242 +339,239 @@ class Treinamentos(models.Model):
 
     def get_conteudo_unificado(self) -> str:
         """
-        Retorna todos os page_content da lista de documentos concatenados.
-
-        Processa a lista de documentos LangChain serializados e extrai
-        o conteúdo de texto (page_content) de cada documento, concatenando
-        tudo em uma única string.
+        Retorna o conteúdo completo do treinamento.
 
         Returns:
-            str: Conteúdo unificado de todos os documentos, separados por quebras de linha duplas
-
-        Note:
-            Se não houver documentos ou se houver erro no processamento,
-            retorna uma string vazia.
+            str: Conteúdo completo armazenado no treinamento
         """
-        todos_page_contents = []
+        return self.conteudo or ""
 
-        if self._documentos:
-            # documentos é sempre uma lista (JSONField)
-            documentos_lista = self._documentos
-
-            for i, doc in enumerate(documentos_lista):
-                # Se o documento é uma string JSON, faz o parse
-                if isinstance(doc, str):
-                    doc_parsed = json.loads(doc)
-                else:
-                    doc_parsed = doc
-
-                # Extrai o page_content do documento parseado
-                if isinstance(doc_parsed, dict) and "page_content" in doc_parsed:
-                    page_content = doc_parsed["page_content"]
-                    todos_page_contents.append(page_content)
-
-        # Concatena todos os conteúdos em uma única string
-        resultado = "\n\n".join(
-            str(content) for content in todos_page_contents if content
-        )
-        return resultado
-
-    def set_documentos(self, documentos: List[Document]) -> None:
+    def processar_conteudo_para_chunks(self, conteudo_novo: str) -> None:
         """
-        Define uma lista de documentos LangChain, serializando-os para JSON.
+        Processa o conteúdo, armazena no treinamento e cria chunks como Documento.
+        
+        Args:
+            conteudo_novo (str): Conteúdo completo a ser processado
+        """
+        # Armazena o conteúdo completo
+        self.conteudo = conteudo_novo
+        self.save(update_fields=['conteudo'])
+        
+        # Limpa documentos existentes
+        self.limpar_documentos()
+        
+        if not conteudo_novo or not conteudo_novo.strip():
+            logger.info(f"Conteúdo vazio para treinamento {self.pk}")
+            return
+            
+        # Cria chunks usando FeaturesCompose
+        try:
+            # Usa o sistema de chunking do LangChain via FeaturesCompose
+            from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
+            
+            # Cria um documento temporário para chunking
+            temp_document = Document(
+                page_content=conteudo_novo,
+                metadata={"source": "treinamento_manual", "treinamento_id": str(self.pk)}
+            )
+            
+            # Aplica o chunking usando o sistema existente
+            chunks = FeaturesCompose.load_document_conteudo(
+                id=str(self.pk),
+                conteudo=conteudo_novo,
+                tag=self.tag,
+                grupo=self.grupo
+            )
+            
+            # Cria registros Documento para cada chunk
+            self.criar_documentos(chunks)
+            
+            logger.info(f"Processados {len(chunks)} chunks para treinamento {self.pk}")
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar conteúdo em chunks: {e}")
+            raise
 
-        Este método processa uma lista de objetos Document do LangChain e os
-        serializa adequadamente para armazenamento no campo JSONField do modelo.
-        Também cria registros DocumentoVetorizado para cada documento.
+    def criar_documentos(self, documentos_langchain: List[Document]) -> None:
+        """
+        Cria registros Documento a partir de uma lista de objetos Document do LangChain.
 
         Args:
-            documentos: Lista de objetos Document do LangChain a serem armazenados
+            documentos_langchain: Lista de objetos Document do LangChain
 
         Raises:
             TypeError: Se algum item da lista não for um objeto Document válido
-            ValueError: Se houver erro na serialização dos dados
-
-        Example:
-            >>> from langchain.docstore.document import Document
-            >>> docs = [
-            ...     Document(page_content="Texto 1", metadata={"source": "doc1.txt"}),
-            ...     Document(page_content="Texto 2", metadata={"source": "doc2.txt"})
-            ... ]
-            >>> treinamento.set_documentos(docs)
+            ValueError: Se houver erro no processamento dos dados
         """
         # Verificação segura da lista para evitar erro de ambiguidade
-        if len(documentos) == 0:
-            self._documentos = []
-            # Limpa documentos vetorizados existentes
-            if self.pk:
-                self.documentos_vetorizados.all().delete()
+        if len(documentos_langchain) == 0:
+            logger.info(f"Lista de documentos vazia para treinamento {self.pk}")
             return
 
         try:
-            serialized_docs = []
+            # Limpa documentos existentes
+            self.limpar_documentos()
 
-            for i, documento in enumerate(documentos):
+            # Cria novos registros Documento
+            documentos_para_criar = []
+            for i, documento in enumerate(documentos_langchain):
                 if not isinstance(documento, Document):
                     error_msg = f"Item na posição {i} não é um Document válido: {type(documento)}"
                     logger.error(error_msg)
                     raise TypeError(error_msg)
 
-                try:
-                    # Serializa o Document para dicionário
-                    doc_dict = documento.model_dump_json(indent=2)
-                    serialized_docs.append(doc_dict)
+                doc_obj = Documento(
+                    treinamento=self,
+                    conteudo=documento.page_content or "",
+                    metadata=documento.metadata or {},
+                    ordem=i + 1,
+                )
+                documentos_para_criar.append(doc_obj)
 
-                except Exception as e:
-                    error_msg = f"Erro ao serializar documento na posição {i}: {e}"
-                    logger.error(error_msg)
-                    raise ValueError(error_msg) from e
+            # Bulk create para eficiência
+            Documento.objects.bulk_create(documentos_para_criar)
 
-            self._documentos = serialized_docs
-
-            # Se o treinamento já foi salvo, criar DocumentoVetorizado
-            if self.pk:
-                self._create_documentos_vetorizados(documentos)
+            logger.info(
+                f"Criados {len(documentos_para_criar)} documentos para treinamento {self.pk}"
+            )
 
         except (TypeError, ValueError):
             # Re-raise erros já tratados
             raise
         except Exception as e:
-            error_msg = f"Erro inesperado ao processar documentos: {e}"
+            error_msg = f"Erro inesperado ao criar documentos: {e}"
             logger.error(error_msg)
-            self._documentos = []
             raise ValueError(error_msg) from e
 
-    def _create_documentos_vetorizados(self, documentos: List[Document]) -> None:
+    def limpar_documentos(self) -> None:
         """
-        Cria registros DocumentoVetorizado para os documentos fornecidos.
-
-        Args:
-            documentos: Lista de objetos Document do LangChain
+        Remove todos os documentos relacionados a este treinamento.
         """
-        # Remove documentos vetorizados existentes
-        self.documentos_vetorizados.all().delete()
+        if self.pk:
+            count = self.documentos.count()
+            self.documentos.all().delete()
+            logger.info(f"Removidos {count} documentos do treinamento {self.pk}")
 
-        # Cria novos registros DocumentoVetorizado
-        documentos_vetorizados = []
-        for i, documento in enumerate(documentos):
-            doc_vetorizado = DocumentoVetorizado(
-                treinamento=self,
-                conteudo=documento.page_content,
-                metadata=documento.metadata or {},
-                ordem=i + 1,
-            )
-            documentos_vetorizados.append(doc_vetorizado)
-
-        # Bulk create para eficiência
-        DocumentoVetorizado.objects.bulk_create(documentos_vetorizados)
-
-        logger.info(
-            f"Criados {len(documentos_vetorizados)} documentos vetorizados para treinamento {self.pk}"
-        )
-
-    def vetorizar_documentos_individuais(self) -> None:
+    def vetorizar_documentos(self) -> None:
         """
-        Gera embeddings para todos os DocumentoVetorizado deste treinamento.
+        Gera embeddings para todos os documentos deste treinamento.
         
-        Este método deve ser chamado após a criação dos documentos vetorizados
+        Este método deve ser chamado após a criação dos documentos
         para gerar os embeddings individuais de cada documento.
         """
         if not self.pk:
             logger.warning("Treinamento deve ser salvo antes de vetorizar documentos")
             return
 
-        documentos_sem_embedding = self.documentos_vetorizados.filter(
-            embedding__isnull=True
-        )
+        documentos_sem_embedding = self.documentos.filter(embedding__isnull=True)
 
         if not documentos_sem_embedding.exists():
             logger.info(f"Todos os documentos do treinamento {self.pk} já estão vetorizados")
+            self.treinamento_vetorizado = True
+            self.save(update_fields=['treinamento_vetorizado'])
             return
 
-        # Gera embeddings em lote para eficiência
-        textos = [doc.conteudo for doc in documentos_sem_embedding]
+        # Gera embeddings individualmente para ter melhor controle
+        sucesso = 0
+        erros = 0
         
-        try:
-            embeddings_instance = self._get_embeddings_instance()
-            vetores = embeddings_instance.embed_documents(textos)
-            
-            # Atualiza cada documento com seu embedding
-            for doc, vetor in zip(documentos_sem_embedding, vetores):
-                doc.embedding = [float(x) for x in vetor]
-                doc.save(update_fields=['embedding'])
-            
-            logger.info(
-                f"Vetorizados {len(documentos_sem_embedding)} documentos do treinamento {self.pk}"
-            )
-            
-        except Exception as e:
-            logger.error(f"Erro ao vetorizar documentos do treinamento {self.pk}: {e}")
-            raise
+        for documento in documentos_sem_embedding:
+            try:
+                documento.gerar_embedding()
+                sucesso += 1
+            except Exception as e:
+                logger.error(f"Erro ao gerar embedding para documento {documento.id}: {e}")
+                erros += 1
+        
+        # Atualiza status de vetorização
+        if erros == 0:
+            self.treinamento_vetorizado = True
+            self.save(update_fields=['treinamento_vetorizado'])
+            logger.info(f"Vetorização concluída: {sucesso} documentos vetorizados")
+        else:
+            logger.warning(f"Vetorização parcial: {sucesso} sucessos, {erros} erros")
 
-    def get_documentos(self) -> List[Document]:
+    def finalizar(self) -> None:
         """
-        Processa e converte documentos JSON para objetos Document.
+        Marca o treinamento como finalizado e persiste no banco.
+        """
+        self.treinamento_finalizado = True
+        self.save(update_fields=["treinamento_finalizado"])
+        logger.info(f"Treinamento {self.pk} finalizado")
+    @classmethod
+    def search_by_similarity(
+        cls,
+        query: str,
+        top_k: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> List[tuple["Treinamentos", float]]:
+        """
+        Busca treinamentos mais similares a um texto de consulta.
 
-        Desserializa a lista de documentos armazenados no campo JSONField
-        e converte cada item para um objeto Document do LangChain.
+        Utiliza a nova arquitetura com Documento para
+        busca semântica mais precisa por documento individual.
+
+        Args:
+            query (str): Texto de consulta para gerar o embedding.
+            top_k (int): Número máximo de resultados a retornar.
+            grupo (Optional[str]): Filtro opcional por grupo.
+            tag (Optional[str]): Filtro opcional por tag.
 
         Returns:
-            List[Document]: Lista de documentos processados. Retorna lista vazia
-                          se não houver documentos ou se houver erro no processamento.
-
-        Note:
-            Em caso de erro na desserialização, o erro é logado e uma lista
-            vazia é retornada para manter a estabilidade da aplicação.
+            List[tuple[Treinamentos, float]]: Lista de tuplas
+            (objeto, distancia), ordenada por menor distância.
         """
-        documentos: list[Document] = []
+        if not query or not query.strip():
+            return []
+        if top_k <= 0:
+            return []
 
-        if not self._documentos:
-            return documentos
+        # Busca documentos similares usando Documento
+        documentos_similares = Documento.search_by_similarity(
+            query=query.strip(),
+            top_k=top_k * 3,  # Busca mais para garantir diversidade
+            grupo=grupo,
+            tag=tag,
+        )
 
-        try:
-            # documentos é sempre uma lista (JSONField)
-            documentos_lista = self._documentos or []
+        if not documentos_similares:
+            return []
 
-            # Converte cada documento para objeto Document
-            for doc_json in documentos_lista:
-                if isinstance(doc_json, str):
-                    # Se é string JSON, faz parse primeiro
-                    documento = Document.model_validate_json(doc_json)
-                else:
-                    # Se já é dicionário, converte para Document
-                    documento = Document(**doc_json)
-                documentos.append(documento)
+        # Agrupa por treinamento e pega a melhor distância
+        treinamentos_scores = {}
+        for documento, distancia in documentos_similares:
+            treinamento = documento.treinamento
+            if treinamento.id not in treinamentos_scores:
+                treinamentos_scores[treinamento.id] = (treinamento, distancia)
+            else:
+                # Mantém a menor distância (mais similar)
+                if distancia < treinamentos_scores[treinamento.id][1]:
+                    treinamentos_scores[treinamento.id] = (treinamento, distancia)
 
-        except (json.JSONDecodeError, TypeError, ValueError) as e:
-            logger.error(
-                f"Erro ao processar documentos do treinamento {self.pk or 'novo'}: {e}"
-            )
+        # Ordena por distância e retorna top_k
+        resultados = list(treinamentos_scores.values())
+        resultados.sort(key=lambda x: x[1])  # Ordena por distância
+        
+        return resultados[:top_k]
 
-        return documentos
 
-    @property
-    def documentos(self) -> list:
-        """
-        Propriedade para compatibilidade com testes existentes.
 
-        Returns:
-            list: Lista de documentos diretamente do campo _documentos
-        """
-        return self._documentos or []
+
 
     def clear_all_data(self) -> None:
         """
         Limpa completamente todos os dados do treinamento para reutilização.
         
         Este método é especialmente útil durante edição de treinamentos,
-        garantindo que não haja conflitos ou problemas de ambiguidade
-        com objetos Document do LangChain.
+        garantindo que não haja conflitos ou problemas de ambiguidade.
         """
-        self._documentos = []
-        self.embedding = None
+        self.conteudo = ""
         self.treinamento_finalizado = False
         self.treinamento_vetorizado = False
         
-        # Limpa documentos vetorizados se o treinamento já foi salvo
-        if self.pk:
-            self.documentos_vetorizados.all().delete()
+        # Limpa documentos se o treinamento já foi salvo
+        self.limpar_documentos()
             
         logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")
 
@@ -680,8 +680,8 @@ class Treinamentos(models.Model):
     ) -> List[tuple["Treinamentos", float]]:
         """Busca treinamentos mais similares a um texto de consulta.
 
-        A distância usada é a CosineDistance (menor valor = mais similar),
-        conforme configuração do pgvector (operador <=>).
+        Agora utiliza a nova arquitetura com DocumentoVetorizado para
+        busca semântica mais precisa por documento individual.
 
         Args:
             query (str): Texto de consulta para gerar o embedding.
@@ -695,34 +695,36 @@ class Treinamentos(models.Model):
         """
         if not query or not query.strip():
             return []
-        # Validação defensiva de limite
         if top_k <= 0:
             return []
 
-        # Gera vetor do texto de consulta
-        query_vec: List[float] = cls._embed_text(query.strip())
-
-        # Base queryset: somente treinamentos finalizados com embedding
-        qs = cls.objects.filter(
-            treinamento_finalizado=True, embedding__isnull=False
+        # Busca documentos similares usando Documento
+        documentos_similares = Documento.search_by_similarity(
+            query=query.strip(),
+            top_k=top_k * 3,  # Busca mais para garantir diversidade
+            grupo=grupo,
+            tag=tag,
         )
-        if grupo:
-            qs = qs.filter(grupo=grupo)
-        if tag:
-            qs = qs.filter(tag=tag)
 
-        # Anota e ordena por distância cosseno (menor = mais perto)
-        qs = qs.annotate(
-            distance=CosineDistance("embedding", query_vec)
-        ).order_by("distance")[:top_k]
+        if not documentos_similares:
+            return []
 
-        resultados: List[tuple["Treinamentos", float]] = []
-        for obj in qs:
-            # type: ignore[attr-defined] - campo anotado em runtime
-            distancia_val: float = float(getattr(obj, "distance", 0.0))
-            resultados.append((obj, distancia_val))
+        # Agrupa por treinamento e pega a melhor distância
+        treinamentos_scores = {}
+        for documento, distancia in documentos_similares:
+            treinamento = documento.treinamento
+            if treinamento.id not in treinamentos_scores:
+                treinamentos_scores[treinamento.id] = (treinamento, distancia)
+            else:
+                # Mantém a menor distância (mais similar)
+                if distancia < treinamentos_scores[treinamento.id][1]:
+                    treinamentos_scores[treinamento.id] = (treinamento, distancia)
 
-        return resultados
+        # Ordena por distância e retorna top_k
+        resultados = list(treinamentos_scores.values())
+        resultados.sort(key=lambda x: x[1])  # Ordena por distância
+        
+        return resultados[:top_k]
 
     @staticmethod
     def _cosine_distance(vec_a: List[float], vec_b: List[float]) -> float:
@@ -880,10 +882,10 @@ class Treinamentos(models.Model):
         tag: Optional[str] = None,
     ) -> str:
         """
-        Versão otimizada da busca semântica usando DocumentoVetorizado.
+        Versão otimizada da busca semântica usando Documento.
 
         Esta versão é mais eficiente pois utiliza embeddings pré-calculados
-        armazenados na tabela DocumentoVetorizado, evitando geração em tempo real.
+        armazenados na tabela Documento, evitando geração em tempo real.
 
         Args:
             query (str): Texto de consulta
@@ -900,7 +902,7 @@ class Treinamentos(models.Model):
             return ""
 
         # Busca documentos mais similares diretamente
-        documentos_similares = DocumentoVetorizado.search_by_similarity(
+        documentos_similares = Documento.search_by_similarity(
             query=query.strip(),
             top_k=top_k_docs,
             grupo=grupo,
@@ -916,16 +918,16 @@ class Treinamentos(models.Model):
             "Contexto de suporte (documentos mais similares - v2):"
         )
         
-        for rank, (doc_vetorizado, distancia) in enumerate(documentos_similares, start=1):
-            treinamento = doc_vetorizado.treinamento
-            source = doc_vetorizado.metadata.get("source", "-")
+        for rank, (documento, distancia) in enumerate(documentos_similares, start=1):
+            treinamento = documento.treinamento
+            source = documento.metadata.get("source", "-")
 
             header = (
                 f"[{rank}] Treinamento={treinamento.tag} | Grupo={treinamento.grupo} | "
                 f"Fonte={source} | Distância={distancia:.4f}"
             )
             lines.append(header)
-            lines.append(doc_vetorizado.conteudo.strip())
+            lines.append(documento.conteudo.strip())
             lines.append("---")
 
         return "\n".join(lines)

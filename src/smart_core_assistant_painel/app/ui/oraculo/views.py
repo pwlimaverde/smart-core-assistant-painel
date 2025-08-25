@@ -234,23 +234,26 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                 treinamento = Treinamentos.objects.create(tag=tag, grupo=grupo)
                 messages.success(request, "Treinamento criado com sucesso!")
             
-            # Processa documentos (tanto para criação quanto edição)
-            documents_list = []
+            # Processa conteúdo (tanto para criação quanto edição)
+            conteudo_completo = ""
+            
             if documento:
                 documento_path = TreinamentoService.processar_arquivo_upload(documento)
                 if documento_path:
                     docs_arquivo = TreinamentoService.processar_arquivo_documento(
                         treinamento.id, documento_path, tag, grupo
                     )
-                    documents_list.extend(docs_arquivo)
+                    conteudo_completo += "\n\n".join([doc.page_content for doc in docs_arquivo])
+                    
             if conteudo:
-                docs_conteudo = TreinamentoService.processar_conteudo_texto(
-                    treinamento.id, conteudo, tag, grupo
-                )
-                documents_list.extend(docs_conteudo)
-            # Verificação segura da lista para evitar erro de ambiguidade
-            if len(documents_list) > 0:
-                treinamento.set_documentos(documents_list)
+                if conteudo_completo:
+                    conteudo_completo += "\n\n" + conteudo
+                else:
+                    conteudo_completo = conteudo
+            
+            # Processa o conteúdo completo em chunks
+            if conteudo_completo.strip():
+                treinamento.processar_conteudo_para_chunks(conteudo_completo)
             
             treinamento.save()
             
@@ -331,23 +334,34 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
 
 
 def _aceitar_treinamento(id: int):
-    """Aceita o treinamento e atualiza o conteúdo de cada documento.
+    """Aceita o treinamento aplicando melhorias de IA e finalizando.
 
     Args:
         id (int): O ID do treinamento.
     """
     try:
         treinamento = Treinamentos.objects.get(id=id)
-        documentos_lista = treinamento.get_documentos()
-        # Verificação segura da lista para evitar erro de ambiguidade
-        if len(documentos_lista) == 0:
+        
+        # Obtém conteúdo unificado atual
+        conteudo_atual = treinamento.get_conteudo_unificado()
+        
+        # Verificação segura se há conteúdo
+        if not conteudo_atual.strip():
+            logger.warning(f"Treinamento {id} não possui conteúdo para processar")
             return
-        documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
-            documentos_lista
-        )
-        treinamento.set_documentos(documentos_melhorados)
+            
+        # Aplica melhoria de IA ao conteúdo unificado
+        conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_atual)
+        
+        # Processa o conteúdo melhorado em chunks
+        treinamento.processar_conteudo_para_chunks(conteudo_melhorado)
+        
+        # Finaliza o treinamento
         treinamento.treinamento_finalizado = True
         treinamento.save()
+        
+        logger.info(f"Treinamento {id} aceito e finalizado com melhorias aplicadas")
+        
     except Exception as e:
         logger.error(f"Erro ao aceitar treinamento {id}: {e}")
         raise

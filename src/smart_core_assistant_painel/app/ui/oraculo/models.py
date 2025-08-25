@@ -207,7 +207,8 @@ class Treinamentos(models.Model):
             ... ]
             >>> treinamento.set_documentos(docs)
         """
-        if not documentos:
+        # Verificação segura da lista para evitar erro de ambiguidade
+        if len(documentos) == 0:
             self._documentos = []
             return
 
@@ -291,6 +292,20 @@ class Treinamentos(models.Model):
             list: Lista de documentos diretamente do campo _documentos
         """
         return self._documentos or []
+
+    def clear_all_data(self) -> None:
+        """
+        Limpa completamente todos os dados do treinamento para reutilização.
+        
+        Este método é especialmente útil durante edição de treinamentos,
+        garantindo que não haja conflitos ou problemas de ambiguidade
+        com objetos Document do LangChain.
+        """
+        self._documentos = []
+        self.embedding = None
+        self.treinamento_finalizado = False
+        self.treinamento_vetorizado = False
+        logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")
 
     def finalize(self) -> None:
         """

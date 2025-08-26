@@ -19,7 +19,8 @@ from rolepermissions.checkers import has_permission
 
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
-from .models import Treinamentos
+# Atualizando a importação do modelo Treinamento
+from .models_treinamento import Treinamento
 from .models_departamento import Departamento
 from .utils import sched_message_response, set_wa_buffer
 
@@ -219,19 +220,19 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
             # Verifica se está editando um treinamento existente
             if treinamento_id:
                 try:
-                    treinamento = Treinamentos.objects.get(id=treinamento_id)
+                    treinamento = Treinamento.objects.get(id=treinamento_id)
                     # Atualiza os campos básicos
                     treinamento.tag = tag
                     treinamento.grupo = grupo
                     # LIMPA COMPLETAMENTE TODOS OS DADOS EXISTENTES
                     treinamento.clear_all_data()
                     messages.success(request, f"Treinamento ID {treinamento_id} editado com sucesso!")
-                except Treinamentos.DoesNotExist:
+                except Treinamento.DoesNotExist:
                     messages.error(request, "Treinamento não encontrado para edição.")
                     return render(request, "treinar_ia.html")
             else:
                 # Cria novo treinamento
-                treinamento = Treinamentos.objects.create(tag=tag, grupo=grupo)
+                treinamento = Treinamento.objects.create(tag=tag, grupo=grupo)
                 messages.success(request, "Treinamento criado com sucesso!")
             
             # Processa conteúdo (tanto para criação quanto edição)
@@ -302,8 +303,8 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     try:
-        treinamento = Treinamentos.objects.get(id=id)
-    except Treinamentos.DoesNotExist:
+        treinamento = Treinamento.objects.get(id=id)
+    except Treinamento.DoesNotExist:
         messages.error(request, "Treinamento não encontrado.")
         return redirect("oraculo:treinar_ia")
     
@@ -340,7 +341,7 @@ def _aceitar_treinamento(id: int):
         id (int): O ID do treinamento.
     """
     try:
-        treinamento = Treinamentos.objects.get(id=id)
+        treinamento = Treinamento.objects.get(id=id)
         
         # Obtém conteúdo unificado atual
         conteudo_atual = treinamento.get_conteudo_unificado()
@@ -378,7 +379,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     try:
-        treinamento = Treinamentos.objects.get(id=id)
+        treinamento = Treinamento.objects.get(id=id)
         conteudo_unificado = treinamento.get_conteudo_unificado()
         texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
         return render(
@@ -390,7 +391,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
                 "texto_melhorado": texto_melhorado,
             },
         )
-    except Treinamentos.DoesNotExist:
+    except Treinamento.DoesNotExist:
         messages.error(request, "Treinamento não encontrado.")
         return redirect("oraculo:treinar_ia")
     except Exception as e:
@@ -459,7 +460,7 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
             return redirect("oraculo:verificar_treinamentos_vetorizados")
             
         try:
-            treinamento = Treinamentos.objects.get(id=treinamento_id)
+            treinamento = Treinamento.objects.get(id=treinamento_id)
             
             if acao == "excluir":
                 treinamento.delete()
@@ -480,7 +481,7 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
                 return redirect('oraculo:treinar_ia')
             else:
                 messages.error(request, "Ação inválida.")
-        except Treinamentos.DoesNotExist:
+        except Treinamento.DoesNotExist:
             messages.error(request, "Treinamento não encontrado.")
         except Exception as e:
             logger.error(f"Erro ao processar ação {acao} no treinamento {treinamento_id}: {e}")
@@ -489,12 +490,12 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
         return redirect("oraculo:verificar_treinamentos_vetorizados")
     
     # GET request - exibir lista de treinamentos
-    treinamentos_vetorizados = Treinamentos.objects.filter(
+    treinamentos_vetorizados = Treinamento.objects.filter(
         treinamento_finalizado=True,
         treinamento_vetorizado=True
     ).order_by("-data_criacao")
     
-    treinamentos_com_erro = Treinamentos.objects.filter(
+    treinamentos_com_erro = Treinamento.objects.filter(
         treinamento_finalizado=True,
         treinamento_vetorizado=False
     ).order_by("-data_criacao")

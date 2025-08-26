@@ -2,6 +2,10 @@
 
 Este diretório contém a configuração completa do ambiente de base de dados para o projeto Smart Core Assistant.
 
+## ⚠️ Importante
+
+Este ambiente é **exclusivo** para o projeto Smart Core Assistant e **não deve interferir** com o ambiente_chat existente no servidor Docker remoto (192.168.3.127).
+
 ## 🎯 Componentes
 
 ### Serviços Docker
@@ -105,6 +109,7 @@ ambiente_base_dados/
 3. **Senha padrão**: Altere a senha em produção
 4. **Volumes persistentes**: Os dados são mantidos entre reinicializações
 5. **Limpeza completa**: Use `docker-compose down -v` apenas se quiser apagar todos os dados
+6. **Ambiente Isolado**: Este ambiente não afeta o ambiente_chat no servidor remoto
 
 ## 🔧 Customização
 

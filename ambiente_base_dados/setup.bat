@@ -1,12 +1,13 @@
 @echo off
 CLS
 ECHO ================================================
-ECHO     SMART CORE ASSISTANT - SETUP AMBIENTE
+ECHO     SMART CORE ASSISTANT - SETUP AMBIENTE BASE DE DADOS
 ECHO ================================================
 ECHO.
 
-REM Script para configurar e inicializar o ambiente completo
+REM Script para configurar e inicializar o ambiente de base de dados
 REM Inclui: banco de dados, migrações e criação de superusuário
+REM Este ambiente é independente do ambiente_chat no servidor remoto
 
 ECHO [1/5] Verificando se Docker está rodando...
 docker version >nul 2>&1
@@ -18,13 +19,13 @@ if %ERRORLEVEL% NEQ 0 (
 ECHO ✓ Docker está rodando
 ECHO.
 
-ECHO [2/5] Parando containers existentes e limpando volumes...
-docker-compose down -v
+ECHO [2/5] Parando containers existentes do ambiente_base_dados e limpando volumes...
+docker-compose -p ambiente_base_dados down -v
 ECHO ✓ Containers parados e volumes limpos
 ECHO.
 
 ECHO [3/5] Construindo e iniciando ambiente de banco de dados...
-docker-compose up --build -d
+docker-compose -p ambiente_base_dados up --build -d
 if %ERRORLEVEL% NEQ 0 (
     ECHO ERRO: Falha ao iniciar o ambiente Docker.
     PAUSE
@@ -35,7 +36,7 @@ ECHO.
 
 ECHO [4/5] Aguardando banco de dados ficar pronto...
 :wait_db
-docker-compose exec postgres-remote pg_isready -U postgres -d smart_core_db >nul 2>&1
+docker-compose -p ambiente_base_dados exec postgres-remote pg_isready -U postgres -d smart_core_db >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
     ECHO Aguardando PostgreSQL... (tentando novamente em 3 segundos)
     timeout /t 3 /nobreak >nul
@@ -82,6 +83,8 @@ ECHO Para iniciar o Django:
 ECHO   python src/smart_core_assistant_painel/app/ui/manage.py runserver
 ECHO.
 ECHO Para ver logs dos containers:
-ECHO   docker-compose -f ambiente_base_dados/docker-compose.yml logs -f
+ECHO   docker-compose -p ambiente_base_dados logs -f
+ECHO.
+ECHO ⚠️  ATENÇÃO: Este ambiente é independente do ambiente_chat no servidor remoto
 ECHO.
 PAUSE

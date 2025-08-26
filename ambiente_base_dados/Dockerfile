@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar scripts de inicialização se existirem
-COPY initdb/*.sql /docker-entrypoint-initdb.d/ 2>/dev/null || true
+COPY initdb/ /docker-entrypoint-initdb.d/
 
 # Expor porta padrão do PostgreSQL
 EXPOSE 5432

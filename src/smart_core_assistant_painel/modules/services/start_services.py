@@ -105,7 +105,6 @@ def start_services() -> None:
         # Log das variáveis de ambiente após carregamento do Firebase Remote Config
         _log_environment_variables()
 
-
     except Exception as e:
         logger.error(f"Erro ao inicializar serviços: {e}")
         raise

@@ -25,18 +25,40 @@ Um painel inteligente para assistente virtual com integração WhatsApp.
 # 1. Configure o .env (copie do .env.example)
 # 2. Execute o setup:
 
+# Navegar até o diretório do ambiente base de dados
+cd ambiente_base_dados
+
 # Windows
-.\ambiente_docker\setup.bat
+.\setup.bat
 
 # Linux/macOS
-./ambiente_docker/setup.sh
+./setup.sh
 
-# 3. Valide a instalação:
-.\ambiente_docker\validate_setup.bat  # Windows
-./ambiente_docker/validate_setup.sh   # Linux/macOS
+# 3. Valide a instalação conforme instruções no terminal
 ```
 
 ✅ **[CHECKLIST DE VALIDAÇÃO](CHECKLIST_SETUP.md)** - Verificação passo a passo
+
+### Ambiente Base de Dados (Configuração Exclusiva)
+
+Este projeto utiliza um ambiente de banco de dados dedicado que pode ser executado localmente ou em um servidor Docker remoto:
+
+📁 **[ambiente_base_dados/](ambiente_base_dados/)** - Ambiente de banco de dados e cache (PostgreSQL + Redis)
+
+Para configurar o ambiente base de dados:
+
+```bash
+# Navegar até o diretório
+cd ambiente_base_dados
+
+# Executar o setup automático
+setup.bat  # Windows
+# ou
+./setup.sh  # Linux/macOS (se existir)
+```
+
+Para ambientes remotos (como o servidor 192.168.3.127), consulte:
+📁 **[ambiente_base_dados/INSTRUCOES_REMOTO.md](ambiente_base_dados/INSTRUCOES_REMOTO.md)**
 
 ### Setup Legado (Scripts Antigos)
 
@@ -106,16 +128,17 @@ Após executar o script de setup e iniciar a aplicação Django, você pode aces
 
 #### Parando o Ambiente
 
-Para parar os containers do PostgreSQL e Redis, utilize docker-compose a partir da **raiz do projeto**:
+Para parar os containers do PostgreSQL e Redis, utilize docker-compose a partir do diretório **ambiente_base_dados**:
 
 ```bash
-docker-compose down -v
-```
+# Navegar até o diretório do ambiente base de dados
+cd ambiente_base_dados
 
-Isso irá parar e remover os containers, além de apagar os volumes de dados. Para manter os dados, use:
+# Parar e remover volumes (CUIDADO: apaga os dados)
+docker-compose -p ambiente_base_dados down -v
 
-```bash
-docker-compose down
+# Para manter os dados, use:
+docker-compose -p ambiente_base_dados down
 ```
 
 ### Desenvolvimento Local (Tradicional)
@@ -140,7 +163,7 @@ uv run dev
 
 ## Documentação
 
-Veja [ambiente_docker/README.md](ambiente_docker/README.md) para instruções detalhadas do Docker.
+Veja [ambiente_base_dados/README.md](ambiente_base_dados/README.md) para instruções detalhadas do Docker.
 
 ### Correções Recentes
 
@@ -149,7 +172,7 @@ Veja [ambiente_docker/README.md](ambiente_docker/README.md) para instruções de
 - ✅ **Validação JSON**: Prevenção de erros de atributo em objetos string
 - ✅ **Logging**: Sistema de logs detalhado para debugging
 
-Para detalhes completos das correções, consulte a seção correspondente em [ambiente_docker/README.md](ambiente_docker/README.md).
+Para detalhes completos das correções, consulte a seção correspondente em [ambiente_base_dados/README.md](ambiente_base_dados/README.md).
 
 ## Serviços
 

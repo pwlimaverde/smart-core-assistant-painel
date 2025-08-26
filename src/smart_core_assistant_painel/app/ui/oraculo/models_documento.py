@@ -222,16 +222,17 @@ class Documento(models.Model):
         if tag:
             qs = qs.filter(treinamento__tag=tag)
 
-        # Anota com a distância cosseno e ordena
+        # Anota com a distância cosseno, ordena e limita resultados
+        # Esta é a forma correta conforme documentação do pgvector
         qs = qs.annotate(
-            distance=CosineDistance("embedding", query_vec)
-        ).order_by("distance")[:top_k]
+            distance=CosineDistance('embedding', query_vec)
+        ).order_by('distance')[:top_k]
 
-        # Coleta os resultados
+        # Coleta os resultados já anotados
         resultados: List[tuple["Documento", float]] = []
         for obj in qs:
-            distancia_val = getattr(obj, "distance", 0.0)
-            resultados.append((obj, float(distancia_val)))
+            distancia = getattr(obj, 'distance', 0.0)
+            resultados.append((obj, float(distancia)))
 
         return resultados
 

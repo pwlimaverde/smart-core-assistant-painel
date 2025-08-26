@@ -1,13 +1,15 @@
-# Arquivo gerenciado pelo ambiente_base_dados
+# Arquivo gerenciado pelo smart-core-assistant-painel
 # Define a configuração dos serviços de banco de dados e cache para o Django.
-name: ambiente_base_dados
+# Este arquivo é um symlink para ambiente_base_dados/docker-compose.yml
+
+version: '3.8'
 
 services:
   # --- Banco de Dados PostgreSQL ---
   # Utiliza Dockerfile personalizado com extensões pré-configuradas
   postgres-remote:
     build:
-      context: .
+      context: ./ambiente_base_dados
       dockerfile: Dockerfile
     container_name: postgres-remote
     environment:
@@ -19,7 +21,7 @@ services:
       - "${POSTGRES_PORT:-5436}:5432"
     volumes:
       - postgres_remote_data:/var/lib/postgresql/data
-      - ./initdb:/docker-entrypoint-initdb.d:ro
+      - ./ambiente_base_dados/initdb:/docker-entrypoint-initdb.d:ro
     networks:
       - remote-network
     healthcheck:

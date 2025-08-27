@@ -22,7 +22,6 @@ from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 # Atualizando a importação do modelo Treinamento
 from .models_treinamento import Treinamento
 from .models_departamento import Departamento
-from .signals import __task_treinar_ia
 from .utils import sched_message_response, set_wa_buffer
 
 
@@ -251,12 +250,7 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                 if conteudo_completo:
                     conteudo_completo += "\n\n" + conteudo
                 else:
-                    conteudo_completo = conteudo
-            
-            # Processa o conteúdo completo em chunks
-            if conteudo_completo.strip():
-                from .models_documento import Documento
-                Documento.processar_conteudo_para_chunks(treinamento, conteudo_completo)
+                    conteudo_completo: str = conteudo
             
             treinamento.save()
             
@@ -322,9 +316,6 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             elif acao == "manter":
                 treinamento.treinamento_finalizado = True
                 treinamento.save()
-                # Gera embeddings para os documentos após finalizar o treinamento
-                from .models_documento import Documento
-                Documento.vetorizar_documentos_por_treinamento(treinamento)
                 messages.success(request, "Treinamento mantido e finalizado!")
             elif acao == "descartar":
                 treinamento.delete()
@@ -363,17 +354,9 @@ def _aceitar_treinamento(id: int):
         treinamento.conteudo = conteudo_melhorado
         treinamento.save(update_fields=['conteudo'])
         
-        # Processa o conteúdo melhorado em chunks
-        from .models_documento import Documento
-        Documento.processar_conteudo_para_chunks(treinamento, conteudo_melhorado)
-        
         # Finaliza o treinamento
         treinamento.treinamento_finalizado = True
         treinamento.save()
-        
-        # Gera embeddings para os documentos após finalizar o treinamento
-        from .models_documento import Documento
-        Documento.vetorizar_documentos_por_treinamento(treinamento)
         
         logger.info(f"Treinamento {id} aceito e finalizado com melhorias aplicadas")
         

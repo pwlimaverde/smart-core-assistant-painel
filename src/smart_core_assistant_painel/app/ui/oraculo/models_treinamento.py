@@ -306,7 +306,8 @@ class Treinamento(models.Model):
         # Atualiza status de vetorização
         if erros == 0:
             self.treinamento_vetorizado = True
-            self.finalizar()  # Finaliza automaticamente se todos os embeddings foram criados
+            # NÃO chama self.finalizar() aqui para evitar loop infinito!
+            # O treinamento já está finalizado quando chegamos neste ponto
             self.save(update_fields=['treinamento_vetorizado'])
             logger.info(f"Vetorização concluída: {sucesso} documentos vetorizados")
         else:

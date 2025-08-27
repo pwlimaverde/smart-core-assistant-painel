@@ -31,7 +31,6 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
-    MessageParameters,
     SearchSimilarEmbeddingsParameters,
 )
 

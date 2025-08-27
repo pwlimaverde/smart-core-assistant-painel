@@ -1,21 +1,9 @@
-import re
-from typing import Any, List, Optional
+from langchain_core.documents.base import Document
+from smart_core_assistant_painel.app.ui.oraculo.fields import VectorField
 
-from django.core.exceptions import ValidationError
+from typing import Any, List
 from django.db import models
-from django.utils import timezone
-from django.conf import settings
-from langchain.docstore.document import Document
 from loguru import logger
-from smart_core_assistant_painel.modules.services import SERVICEHUB
-
-from .models_departamento import Departamento
-# Importando nosso VectorField personalizado
-from .fields import VectorField
-# Removendo o import do VectorField do pgvector
-# from pgvector.django import VectorField, CosineDistance, HnswIndex
-
-# Importando CosineDistance e HnswIndex do pgvector
 from pgvector.django import CosineDistance, HnswIndex
 
 
@@ -25,31 +13,35 @@ class Documento(models.Model):
     
     Cada instância armazena um chunk de conteúdo de treinamento
     com seu respectivo embedding vetorial para busca semântica.
+    
+    Attributes:
+        treinamento: Relacionamento com o modelo Treinamento
+        conteudo: Conteúdo do chunk de treinamento
+        metadata: Metadados do documento (tag, grupo, source, etc.)
+        embedding: Vetor de embeddings do conteúdo (1024 dimensões)
+        ordem: Ordem do documento no treinamento
+        data_criacao: Timestamp de criação
     """
     
-    # Relacionamento com Treinamento (1:N) - usando string para evitar circular import
-    treinamento: models.ForeignKey = models.ForeignKey(
-        "Treinamento",  # Referência direta ao modelo Treinamento
+    treinamento = models.ForeignKey(
+        "Treinamento",
         on_delete=models.CASCADE,
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
     
-    # Conteúdo do documento (chunk)
-    conteudo: models.TextField = models.TextField(
+    conteudo = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo do chunk de treinamento",
     )
     
-    # Metadados do documento
-    metadata: models.JSONField = models.JSONField(
+    metadata = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
     )
     
-    # Embedding vetorial (1024 dimensões)
     embedding: VectorField = VectorField(
         dimensions=1024,
         null=True,
@@ -57,38 +49,23 @@ class Documento(models.Model):
         help_text="Vetor de embeddings do conteúdo do documento",
     )
     
-    def formfield(self, **kwargs):
-        """
-        Sobrescreve o método formfield para evitar que o campo embedding
-        seja exibido diretamente no formulário do admin, evitando o erro
-        "The truth value of an array with more than one element is ambiguous".
-        """
-        # Para o campo embedding, retornamos None para evitar exibição no admin
-        from django import forms
-        kwargs['widget'] = forms.HiddenInput()
-        # Retornando None para evitar a exibição do campo no formulário
-        return None
-
-    # Ordem do documento no treinamento
-    ordem: models.PositiveIntegerField = models.PositiveIntegerField(
+    ordem = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
     
-    # Timestamps
-    data_criacao: models.DateTimeField = models.DateTimeField(
+    data_criacao = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )
     
     class Meta:
-        verbose_name = "Documento"
-        verbose_name_plural = "Documentos"
-        ordering = ["treinamento", "ordem"]
-        indexes = [
+        verbose_name: str = "Documento"
+        verbose_name_plural: str = "Documentos"
+        ordering: list[str] = ["treinamento", "ordem"]
+        indexes: list[Any] = [
             models.Index(fields=["treinamento", "ordem"]),
             models.Index(fields=["data_criacao"]),
-            # Adicionando índice HNSW para buscas de similaridade com distância cosseno
             HnswIndex(
                 name='documento_embedding_hnsw_idx',
                 fields=['embedding'],
@@ -98,245 +75,89 @@ class Documento(models.Model):
             ),
         ]
 
-    def __str__(self):
-        """
-        Retorna representação string do objeto.
-
-        Returns:
-            str: Conteúdo truncado do documento
-        """
+    def __str__(self) -> str:
+        """Retorna representação string do objeto."""
         if self.conteudo:
             return f"Documento {self.pk}: {self.conteudo[:50]}..."
         return f"Documento {self.pk} (vazio)"
-
-    def save(self, *args, **kwargs):
-        """
-        Salva o documento, gerando o embedding antes se necessário.
-        """
-        # Gera embedding antes de salvar se não existir e o treinamento estiver finalizado
-        # Verificação segura para evitar erro "truth value of array is ambiguous"
-        embedding_exists = self.embedding is not None
-        if hasattr(self.embedding, '__len__'):
-            try:
-                embedding_exists = len(self.embedding) > 0
-            except Exception:
-                # Se não conseguirmos verificar o tamanho, assumimos que existe
-                embedding_exists = True
-        
-        if (not embedding_exists and self.conteudo and self.conteudo.strip() and 
-            self.treinamento and self.treinamento.treinamento_finalizado):
-            try:
-                self.gerar_embedding_sem_salvar()
-            except Exception as e:
-                logger.error(f"Erro ao gerar embedding antes de salvar documento: {e}")
-                # Continua salvando mesmo se o embedding falhar
-        
-        super().save(*args, **kwargs)
     
-    def gerar_embedding(self) -> None:
-        """
-        Gera o embedding do documento e salva no banco.
+    @classmethod
+    def buscar_documentos_similares(
+        cls,
+        query_vec: List[float],
+        top_k: int = 5,
+    ) -> str:
+        """Busca documentos relacionados à mensagem recebida pelo webhook.
         
-        Raises:
-            EmbeddingError: Se houver erro na geração do embedding
+        Args:
+            mensagem: Texto da mensagem recebida
+            top_k: Número de documentos a retornar
+            
+        Returns:
+            Contexto formatado com os documentos mais relevantes
         """
-        self.gerar_embedding_sem_salvar()
-        if self.pk:
-            self.save(update_fields=['embedding'])
-        else:
-            logger.warning("Documento ainda não foi salvo, embedding será salvo junto")
-
-    def gerar_embedding_sem_salvar(self) -> None:
-        """
-        Gera o embedding do documento sem salvar no banco.
-        
-        Raises:
-            EmbeddingError: Se houver erro na geração do embedding
-        """
-        if not self.conteudo or not self.conteudo.strip():
-            logger.warning(f"Conteúdo vazio para documento {self.pk or 'novo'}")
-            return
-
-        try:
-            # Importações e configurações
-            from smart_core_assistant_painel.modules.services import SERVICEHUB
+        try:         
+            # Busca documentos similares
+            documentos = cls.objects.filter(
+                treinamento__treinamento_finalizado=True,
+                embedding__isnull=False
+            ).annotate(
+                distance=CosineDistance('embedding', query_vec)
+            ).order_by('distance')[:top_k]
             
-            # Criar instância de embeddings usando configurações do ServiceHub
-            embeddings_class = SERVICEHUB.EMBEDDINGS_CLASS
-            embeddings_model = SERVICEHUB.EMBEDDINGS_MODEL
+            # Formata contexto
+            if not documentos:
+                return ""
+                
+            contexto_lines = ["📚 Contexto relevante:"]
+            for i, doc in enumerate(documentos, 1):
+                contexto_lines.extend([
+                    f"\n[{i}] {doc.treinamento.tag} - {doc.treinamento.grupo}",
+                    doc.conteudo.strip(),
+                    "---"
+                ])
             
-            # Criar instância de embeddings baseada na configuração do ServiceHub
-            embeddings_instance = None
-            if embeddings_class == "OpenAIEmbeddings":
-                from langchain_openai import OpenAIEmbeddings
-                embeddings_instance = OpenAIEmbeddings(model=embeddings_model)
+            return "\n".join(contexto_lines)
             
-            elif embeddings_class == "OllamaEmbeddings":
-                from langchain_ollama import OllamaEmbeddings
-                embeddings_instance = OllamaEmbeddings(model=embeddings_model)
-            
-            elif embeddings_class == "HuggingFaceEmbeddings":
-                try:
-                    # Tentar importar da versão mais recente primeiro
-                    from langchain_huggingface import HuggingFaceEmbeddings
-                    embeddings_instance = HuggingFaceEmbeddings(model_name=embeddings_model)
-                except ImportError:
-                    # Fallback para a versão community se a versão huggingface não estiver disponível
-                    from langchain_community.embeddings import HuggingFaceEmbeddings
-                    embeddings_instance = HuggingFaceEmbeddings(model_name=embeddings_model)
-            
-            elif embeddings_class == "HuggingFaceInferenceAPIEmbeddings":
-                from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
-                from pydantic import SecretStr
-                import os
-                api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
-                embeddings_instance = HuggingFaceInferenceAPIEmbeddings(
-                    api_key=SecretStr(api_key),
-                    model_name=embeddings_model
-                )
-            
-            else:
-                # Fallback para OpenAI como padrão
-                from langchain_openai import OpenAIEmbeddings
-                embeddings_instance = OpenAIEmbeddings(model=embeddings_model or "text-embedding-ada-002")
-            
-            # Verificar se embeddings_instance foi criado
-            if embeddings_instance is None:
-                raise ValueError(f"Não foi possível criar instância de embeddings para a classe: {embeddings_class}")
-            
-            # Gerar embeddings usando LangChain
-            embedding_vector = embeddings_instance.embed_query(self.conteudo)
-            
-            # Converter para lista se necessário
-            try:
-                # Tentar converter para lista diretamente
-                self.embedding = list(embedding_vector)
-            except Exception:
-                # Se falhar, atribuir diretamente
-                self.embedding = embedding_vector
-
-            logger.info(f"Embedding gerado para documento {self.pk or 'novo'}")
-
         except Exception as e:
-            error_msg = f"Erro ao gerar embedding para documento {self.pk or 'novo'}: {e}"
-            logger.error(error_msg)
-            raise
+            logger.error(f"Erro na busca semântica: {e}")
+            return ""
 
     @classmethod
-    def search_by_similarity(
+    def criar_documentos_de_chunks(
         cls,
-        query: str,
-        top_k: int = 5,
-        grupo: Optional[str] = None,
-        tag: Optional[str] = None,
-    ) -> List[tuple["Documento", float]]:
-        """
-        Busca documentos mais similares a um texto de consulta usando os métodos nativos do pgvector.
-
-        Args:
-            query (str): Texto de consulta para gerar o embedding
-            top_k (int): Número máximo de resultados
-            grupo (Optional[str]): Filtro opcional por grupo do treinamento
-            tag (Optional[str]): Filtro opcional por tag do treinamento
-
-        Returns:
-            List[tuple[Documento, float]]: Lista de tuplas (documento, distância)
-        """
-        if not query or not query.strip():
-            return []
-        if top_k <= 0:
-            return []
-
-        # Gera vetor do texto de consulta usando método estático
-        query_vec: List[float] = cls._embed_text_static(query.strip())
-
-        # Base queryset: documentos de treinamentos finalizados com embedding
-        qs = cls.objects.filter(
-            treinamento__treinamento_finalizado=True,
-            embedding__isnull=False
-        )
-
-        # Aplicar filtros opcionais
-        if grupo:
-            qs = qs.filter(treinamento__grupo=grupo)
-        if tag:
-            qs = qs.filter(treinamento__tag=tag)
-
-        # Anota com a distância cosseno, ordena e limita resultados
-        # Esta é a forma correta conforme documentação do pgvector
-        qs = qs.annotate(
-            distance=CosineDistance('embedding', query_vec)
-        ).order_by('distance')[:top_k]
-
-        # Coleta os resultados já anotados
-        resultados: List[tuple["Documento", float]] = []
-        for obj in qs:
-            distancia = getattr(obj, 'distance', 0.0)
-            resultados.append((obj, float(distancia)))
-
-        return resultados
-
-    @staticmethod
-    def _embed_text_static(text: str) -> List[float]:
-        """
-        Gera o vetor de embedding para um texto (método estático).
-
-        Args:
-            text (str): Texto de entrada.
-
-        Returns:
-            List[float]: Vetor de floats (dimensão 1024).
-        """
-        from smart_core_assistant_painel.modules.services import SERVICEHUB
-        from django.conf import settings
+        chunks: List[Document],
+        treinamento_id: int
+    ) -> List['Documento']:
+        """Cria documentos a partir de uma lista de chunks e o ID do treinamento.
         
-        embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
-        embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
-
-        try:
-            if embeddings_class == "OllamaEmbeddings":
-                from langchain_ollama import OllamaEmbeddings
-                base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
-                kwargs: dict[str, Any] = {}
-                if embeddings_model:
-                    kwargs["model"] = embeddings_model
-                if base_url:
-                    kwargs["base_url"] = base_url
-                embeddings = OllamaEmbeddings(**kwargs)
-            elif embeddings_class == "OpenAIEmbeddings":
-                from langchain_openai import OpenAIEmbeddings
-                if embeddings_model:
-                    embeddings = OpenAIEmbeddings(model=embeddings_model)
-                else:
-                    embeddings = OpenAIEmbeddings()
-            elif embeddings_class == "HuggingFaceEmbeddings":
-                try:
-                    # Tentar importar da versão mais recente primeiro
-                    from langchain_huggingface import HuggingFaceEmbeddings
-                    if embeddings_model:
-                        embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
-                    else:
-                        embeddings = HuggingFaceEmbeddings()
-                except ImportError:
-                    # Fallback para a versão community se a versão huggingface não estiver disponível
-                    from langchain_community.embeddings import HuggingFaceEmbeddings
-                    if embeddings_model:
-                        embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
-                    else:
-                        embeddings = HuggingFaceEmbeddings()
-            else:
-                raise ValueError(f"Classe de embeddings não suportada: {embeddings_class}")
-
-            # Gera embedding
-            if hasattr(embeddings, "embed_query"):
-                vec: List[float] = list(map(float, embeddings.embed_query(text)))
-            else:
-                docs_vec: List[List[float]] = embeddings.embed_documents([text])
-                vec = list(map(float, docs_vec[0]))
+        Args:
+            chunks: Lista de objetos Document (chunks) do LangChain
+            treinamento_id: ID do treinamento ao qual os documentos pertencem
             
-            # Garantir que o vetor seja uma lista de floats
-            return list(vec)
+        Returns:
+            Lista de objetos Documento criados
+        """
+        documentos_criados = []
+        
+        for ordem, chunk in enumerate(chunks, start=1):
+            documento = cls.objects.create(
+                treinamento_id=treinamento_id,
+                conteudo=chunk.page_content,
+                metadata=chunk.metadata or {},
+                ordem=ordem
+            )
+            documentos_criados.append(documento)
             
-        except Exception as exc:
-            logger.error(f"Erro ao gerar embedding do texto: {exc}", exc_info=True)
-            raise
+        logger.info(f"Criados {len(documentos_criados)} documentos para o treinamento {treinamento_id}")
+        return documentos_criados
+
+    @classmethod
+    def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
+        """Remove todos os documentos de um treinamento."""
+        count = cls.objects.filter(treinamento_id=treinamento_id).count()
+        cls.objects.filter(treinamento_id=treinamento_id).delete()
+        logger.info(f"Removidos {count} documentos do treinamento {treinamento_id}")
+
+    
+        

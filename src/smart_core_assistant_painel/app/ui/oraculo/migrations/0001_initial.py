@@ -6,6 +6,7 @@ import pgvector.django.vector
 import smart_core_assistant_painel.app.ui.oraculo.models
 import smart_core_assistant_painel.app.ui.oraculo.models_departamento
 import smart_core_assistant_painel.app.ui.oraculo.models_treinamento
+import smart_core_assistant_painel.app.ui.oraculo.fields
 from django.db import migrations, models
 from pgvector.django import VectorExtension
 
@@ -190,8 +191,8 @@ class Migration(migrations.Migration):
             name='Treinamento',
             fields=[
                 ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('tag', models.CharField(help_text='Campo obrigatório para identificar o treinamento', max_length=40, validators=[smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_tag])),
-                ('grupo', models.CharField(help_text='Campo obrigatório para identificar o grupo do treinamento', max_length=40, validators=[smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_tag])),
+                ('tag', models.CharField(help_text='Campo obrigatório para identificar o treinamento', max_length=40, validators=[smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_identificador])),
+                ('grupo', models.CharField(help_text='Campo obrigatório para identificar o grupo do treinamento', max_length=40, validators=[smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_identificador])),
                 ('conteudo', models.TextField(blank=True, help_text='Conteúdo completo do treinamento (antes da divisão em chunks)', null=True)),
                 ('treinamento_finalizado', models.BooleanField(default=False, help_text='Indica se o treinamento foi finalizado')),
                 ('treinamento_vetorizado', models.BooleanField(default=False, help_text='Indica se o treinamento foi vetorizado com sucesso')),
@@ -211,7 +212,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('conteudo', models.TextField(blank=True, help_text='Conteúdo do chunk de treinamento', null=True)),
                 ('metadata', models.JSONField(blank=True, default=dict, help_text='Metadados do documento (tag, grupo, source, etc.)')),
-                ('embedding', pgvector.django.vector.VectorField(blank=True, dimensions=1024, help_text='Vetor de embeddings do conteúdo do documento', null=True)),
+                ('embedding', smart_core_assistant_painel.app.ui.oraculo.fields.VectorField(blank=True, dimensions=1024, help_text='Vetor de embeddings do conteúdo do documento', null=True)),
                 ('ordem', models.PositiveIntegerField(default=1, help_text='Ordem do documento no treinamento')),
                 ('data_criacao', models.DateTimeField(auto_now_add=True, help_text='Data de criação do documento')),
                 ('treinamento', models.ForeignKey(help_text='Treinamento ao qual este documento pertence', on_delete=django.db.models.deletion.CASCADE, related_name='documentos', to='oraculo.treinamento')),

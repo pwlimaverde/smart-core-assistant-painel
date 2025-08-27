@@ -22,7 +22,6 @@ from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 # Atualizando a importação do modelo Treinamento
 from .models_treinamento import Treinamento
 from .models_departamento import Departamento
-from .signals import __task_treinar_ia
 from .utils import sched_message_response, set_wa_buffer
 
 
@@ -251,11 +250,11 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                 if conteudo_completo:
                     conteudo_completo += "\n\n" + conteudo
                 else:
-                    conteudo_completo = conteudo
+                    conteudo_completo: str = conteudo
             
-            # Processa o conteúdo completo em chunks
-            if conteudo_completo.strip():
-                treinamento.processar_conteudo_para_chunks(conteudo_completo)
+            # CRUCIAL: Salva o conteúdo no modelo Treinamento
+            if conteudo_completo:
+                treinamento.conteudo = conteudo_completo
             
             treinamento.save()
             
@@ -321,8 +320,6 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             elif acao == "manter":
                 treinamento.treinamento_finalizado = True
                 treinamento.save()
-                # Gera embeddings para os documentos após finalizar o treinamento
-                treinamento.vetorizar_documentos()
                 messages.success(request, "Treinamento mantido e finalizado!")
             elif acao == "descartar":
                 treinamento.delete()
@@ -361,15 +358,9 @@ def _aceitar_treinamento(id: int):
         treinamento.conteudo = conteudo_melhorado
         treinamento.save(update_fields=['conteudo'])
         
-        # Processa o conteúdo melhorado em chunks
-        treinamento.processar_conteudo_para_chunks(conteudo_melhorado)
-        
         # Finaliza o treinamento
         treinamento.treinamento_finalizado = True
         treinamento.save()
-        
-        # Gera embeddings para os documentos após finalizar o treinamento
-        treinamento.vetorizar_documentos()
         
         logger.info(f"Treinamento {id} aceito e finalizado com melhorias aplicadas")
         
@@ -391,6 +382,14 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     try:
         treinamento = Treinamento.objects.get(id=id)
         conteudo_unificado = treinamento.conteudo or ""
+        
+        # Verifica se há conteúdo para processar
+        if not conteudo_unificado.strip():
+            logger.warning(f"Treinamento {id} sem conteúdo para pré-processamento")
+            messages.warning(request, "Treinamento sem conteúdo. Verifique se o conteúdo foi salvo corretamente.")
+            # Retorna para edição
+            return redirect("oraculo:treinar_ia")
+            
         texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
         return render(
             request,

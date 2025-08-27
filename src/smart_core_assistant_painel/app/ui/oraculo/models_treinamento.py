@@ -1,12 +1,8 @@
 from django.db.models.indexes import Index
 import re
-from typing import Any, List, Optional
-
 from django.core.exceptions import ValidationError
 from django.db import models
 from loguru import logger
-
-from .models_departamento import Departamento
 
 
 def validate_identificador(value: str) -> None:

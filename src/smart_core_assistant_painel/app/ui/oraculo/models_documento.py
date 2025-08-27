@@ -1,7 +1,10 @@
+from django.db.models.query import QuerySet
+
+
 from langchain_core.documents.base import Document
 from smart_core_assistant_painel.app.ui.oraculo.fields import VectorField
 
-from typing import Any, List
+from typing import Any, List, Self
 from django.db import models
 from loguru import logger
 from pgvector.django import CosineDistance, HnswIndex
@@ -23,20 +26,20 @@ class Documento(models.Model):
         data_criacao: Timestamp de criação
     """
     
-    treinamento = models.ForeignKey(
+    treinamento: models.ForeignKey = models.ForeignKey(
         "Treinamento",
         on_delete=models.CASCADE,
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
     
-    conteudo = models.TextField(
+    conteudo: models.TextField = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo do chunk de treinamento",
     )
     
-    metadata = models.JSONField(
+    metadata: models.JSONField = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
@@ -49,12 +52,12 @@ class Documento(models.Model):
         help_text="Vetor de embeddings do conteúdo do documento",
     )
     
-    ordem = models.PositiveIntegerField(
+    ordem: models.PositiveIntegerField = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
     
-    data_criacao = models.DateTimeField(
+    data_criacao: models.DateTimeField = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )
@@ -98,7 +101,7 @@ class Documento(models.Model):
         """
         try:         
             # Busca documentos similares
-            documentos = cls.objects.filter(
+            documentos: QuerySet[Self, Self] = cls.objects.filter(
                 treinamento__treinamento_finalizado=True,
                 embedding__isnull=False
             ).annotate(
@@ -109,7 +112,7 @@ class Documento(models.Model):
             if not documentos:
                 return ""
                 
-            contexto_lines = ["📚 Contexto relevante:"]
+            contexto_lines: list[str] = ["📚 Contexto relevante:"]
             for i, doc in enumerate(documentos, 1):
                 contexto_lines.extend([
                     f"\n[{i}] {doc.treinamento.tag} - {doc.treinamento.grupo}",
@@ -138,7 +141,7 @@ class Documento(models.Model):
         Returns:
             Lista de objetos Documento criados
         """
-        documentos_criados = []
+        documentos_criados: list[Any] = []
         
         for ordem, chunk in enumerate(chunks, start=1):
             documento = cls.objects.create(
@@ -155,7 +158,7 @@ class Documento(models.Model):
     @classmethod
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
         """Remove todos os documentos de um treinamento."""
-        count = cls.objects.filter(treinamento_id=treinamento_id).count()
+        count: int = cls.objects.filter(treinamento_id=treinamento_id).count()
         cls.objects.filter(treinamento_id=treinamento_id).delete()
         logger.info(f"Removidos {count} documentos do treinamento {treinamento_id}")
 

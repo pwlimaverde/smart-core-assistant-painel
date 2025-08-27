@@ -1,16 +1,6 @@
 from langchain_core.documents.base import Document
 from smart_core_assistant_painel.app.ui.oraculo.fields import VectorField
 
-
-from django.db.models.fields.json import JSONField
-
-
-from django.db.models.fields import DateTimeField, PositiveIntegerField, TextField
-
-
-from django.db.models.fields.related import ForeignKey
-
-
 from typing import Any, List
 from django.db import models
 from loguru import logger
@@ -33,20 +23,20 @@ class Documento(models.Model):
         data_criacao: Timestamp de criação
     """
     
-    treinamento: ForeignKey[Any, Any] = models.ForeignKey(
+    treinamento = models.ForeignKey(
         "Treinamento",
         on_delete=models.CASCADE,
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
     
-    conteudo: TextField[Any, Any] = models.TextField(
+    conteudo = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo do chunk de treinamento",
     )
     
-    metadata: JSONField[Any, Any] = models.JSONField(
+    metadata = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
@@ -59,12 +49,12 @@ class Documento(models.Model):
         help_text="Vetor de embeddings do conteúdo do documento",
     )
     
-    ordem: PositiveIntegerField[Any, Any] = models.PositiveIntegerField(
+    ordem = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
     
-    data_criacao: DateTimeField[Any, Any] = models.DateTimeField(
+    data_criacao = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )

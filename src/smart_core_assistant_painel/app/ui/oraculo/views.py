@@ -252,6 +252,10 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                 else:
                     conteudo_completo: str = conteudo
             
+            # CRUCIAL: Salva o conteúdo no modelo Treinamento
+            if conteudo_completo:
+                treinamento.conteudo = conteudo_completo
+            
             treinamento.save()
             
             # Limpa dados de edição da sessão se existirem
@@ -378,6 +382,14 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     try:
         treinamento = Treinamento.objects.get(id=id)
         conteudo_unificado = treinamento.conteudo or ""
+        
+        # Verifica se há conteúdo para processar
+        if not conteudo_unificado.strip():
+            logger.warning(f"Treinamento {id} sem conteúdo para pré-processamento")
+            messages.warning(request, "Treinamento sem conteúdo. Verifique se o conteúdo foi salvo corretamente.")
+            # Retorna para edição
+            return redirect("oraculo:treinar_ia")
+            
         texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
         return render(
             request,

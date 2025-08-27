@@ -291,6 +291,7 @@ def __gerar_documentos(instance_id: int) -> None:
 
         Documento.criar_documentos_de_chunks(chunks=chunks, treinamento_id=instance_id)
         instance.treinamento_vetorizado = True
+        instance.save()
         logger.info("Documentos gerados: %s", instance_id)
 
     except Treinamento.DoesNotExist:

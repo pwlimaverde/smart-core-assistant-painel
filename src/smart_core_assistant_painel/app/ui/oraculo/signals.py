@@ -199,7 +199,8 @@ def __task_treinar_ia(instance_id: int) -> None:
             return
 
         # 4) Gera embeddings para documentos que não possuem
-        instance.vetorizar_documentos()
+        from .models_documento import Documento
+        Documento.vetorizar_documentos_por_treinamento(instance)
         logger.info("Treinamento vetorizado: %s", instance_id)
 
     except Treinamento.DoesNotExist:

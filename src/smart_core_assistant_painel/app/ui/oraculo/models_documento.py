@@ -340,3 +340,282 @@ class Documento(models.Model):
         except Exception as exc:
             logger.error(f"Erro ao gerar embedding do texto: {exc}", exc_info=True)
             raise
+
+    @classmethod
+    def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
+        """Remove todos os documentos relacionados a um treinamento específico.
+        
+        Args:
+            treinamento_id (int): ID do treinamento cujos documentos devem ser removidos
+        """
+        count = cls.objects.filter(treinamento_id=treinamento_id).count()
+        cls.objects.filter(treinamento_id=treinamento_id).delete()
+        logger.info(f"Removidos {count} documentos do treinamento {treinamento_id}")
+
+    @classmethod
+    def processar_conteudo_para_chunks(cls, treinamento, conteudo_novo: str) -> None:
+        """Processa o conteúdo e cria chunks como registros Documento.
+        
+        Args:
+            treinamento: Instância do modelo Treinamento
+            conteudo_novo (str): Conteúdo completo a ser processado em chunks
+        """
+        # Armazena o conteúdo completo no treinamento
+        treinamento.conteudo = conteudo_novo
+        treinamento.save(update_fields=['conteudo'])
+        
+        # Limpa documentos existentes
+        cls.limpar_documentos_por_treinamento(treinamento.pk)
+        
+        if not conteudo_novo or not conteudo_novo.strip():
+            logger.info(f"Conteúdo vazio para treinamento {treinamento.pk}")
+            return
+            
+        # Cria chunks usando RecursiveCharacterTextSplitter do LangChain
+        try:
+            from langchain.text_splitter import RecursiveCharacterTextSplitter
+            from smart_core_assistant_painel.modules.services import SERVICEHUB
+            
+            # Cria um documento temporário para chunking
+            temp_document = Document(
+                page_content=conteudo_novo,
+                metadata={
+                    "source": "treinamento_manual", 
+                    "treinamento_id": str(treinamento.pk),
+                    "tag": treinamento.tag,
+                    "grupo": treinamento.grupo
+                }
+            )
+            
+            # Divide documentos em chunks
+            splitter = RecursiveCharacterTextSplitter(
+                chunk_size=SERVICEHUB.CHUNK_SIZE, 
+                chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
+            )
+            chunks = splitter.split_documents([temp_document])
+            
+            # Cria registros Documento para cada chunk
+            cls.criar_documentos_from_chunks(treinamento, chunks)
+            
+            logger.info(f"Processados {len(chunks)} chunks para treinamento {treinamento.pk}")
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar conteúdo em chunks: {e}")
+            raise
+
+    @classmethod
+    def criar_documentos_from_chunks(cls, treinamento, documentos_langchain: List[Document]) -> None:
+        """Cria registros Documento a partir de uma lista de objetos Document do LangChain.
+        
+        Args:
+            treinamento: Instância do modelo Treinamento
+            documentos_langchain: Lista de objetos Document do LangChain
+        """
+        if len(documentos_langchain) == 0:
+            logger.info(f"Lista de documentos vazia para treinamento {treinamento.pk}")
+            return
+
+        try:
+            # Limpa documentos existentes
+            cls.limpar_documentos_por_treinamento(treinamento.pk)
+
+            # Cria novos registros Documento
+            documentos_criados = []
+            sucesso = 0
+            erros = 0
+            
+            for i, documento in enumerate(documentos_langchain):
+                if not isinstance(documento, Document):
+                    error_msg = f"Item na posição {i} não é um Document válido: {type(documento)}"
+                    logger.error(error_msg)
+                    erros += 1
+                    continue
+
+                try:
+                    doc_obj = cls(
+                        treinamento=treinamento,
+                        conteudo=documento.page_content or "",
+                        metadata=documento.metadata or {},
+                        ordem=i + 1,
+                    )
+                    # O embedding é gerado automaticamente no save() se o treinamento estiver finalizado
+                    doc_obj.save()
+                    documentos_criados.append(doc_obj)
+                    sucesso += 1
+                except Exception as e:
+                    logger.error(f"Erro ao criar documento {i}: {e}")
+                    erros += 1
+
+            # Atualiza status de vetorização do treinamento apenas se estiver finalizado
+            if treinamento.treinamento_finalizado:
+                if erros == 0:
+                    treinamento.treinamento_vetorizado = True
+                    treinamento.save(update_fields=['treinamento_vetorizado'])
+                    logger.info(f"Criados {len(documentos_criados)} documentos com embeddings para treinamento {treinamento.pk}")
+                else:
+                    logger.warning(f"Documentos criados: {len(documentos_criados)}, Sucessos: {sucesso}, Erros: {erros}")
+            else:
+                logger.info(f"Criados {len(documentos_criados)} documentos para treinamento {treinamento.pk} (embeddings gerados após finalização)")
+
+        except Exception as e:
+            error_msg = f"Erro inesperado ao criar documentos: {e}"
+            logger.error(error_msg)
+            raise ValueError(error_msg) from e
+
+    @classmethod
+    def vetorizar_documentos_por_treinamento(cls, treinamento) -> None:
+        """Gera embeddings para documentos que ainda não possuem embedding.
+        
+        Args:
+            treinamento: Instância do modelo Treinamento
+        """
+        if not treinamento.pk:
+            logger.warning("Treinamento deve ser salvo antes de vetorizar documentos")
+            return
+
+        documentos_sem_embedding = cls.objects.filter(
+            treinamento=treinamento, 
+            embedding__isnull=True
+        )
+
+        if not documentos_sem_embedding.exists():
+            logger.info(f"Todos os documentos do treinamento {treinamento.pk} já estão vetorizados")
+            treinamento.treinamento_vetorizado = True
+            treinamento.save(update_fields=['treinamento_vetorizado'])
+            return
+
+        # Gera embeddings individualmente para ter melhor controle
+        sucesso = 0
+        erros = 0
+        
+        for documento in documentos_sem_embedding:
+            try:
+                documento.gerar_embedding()
+                sucesso += 1
+            except Exception as e:
+                logger.error(f"Erro ao gerar embedding para documento {documento.pk}: {e}")
+                erros += 1
+        
+        # Atualiza status de vetorização
+        if erros == 0:
+            treinamento.treinamento_vetorizado = True
+            # NÃO chama treinamento.finalizar() aqui para evitar loop infinito!
+            # O treinamento já está finalizado quando chegamos neste ponto
+            treinamento.save(update_fields=['treinamento_vetorizado'])
+            logger.info(f"Vetorização concluída: {sucesso} documentos vetorizados")
+        else:
+            logger.warning(f"Vetorização parcial: {sucesso} sucessos, {erros} erros")
+
+    @classmethod
+    def build_similarity_context_v2(
+        cls,
+        query: str,
+        top_k_docs: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> str:
+        """Versão otimizada da busca semântica usando Documento.
+
+        Esta versão é mais eficiente pois utiliza embeddings pré-calculados
+        armazenados na tabela Documento, evitando geração em tempo real.
+
+        Args:
+            query (str): Texto de consulta
+            top_k_docs (int): Quantidade de documentos no contexto
+            grupo (Optional[str]): Filtro por grupo
+            tag (Optional[str]): Filtro por tag
+
+        Returns:
+            str: Contexto concatenado com '---' entre os chunks
+        """
+        if not query or not query.strip():
+            return ""
+        if top_k_docs <= 0:
+            return ""
+
+        # Busca documentos mais similares diretamente
+        documentos_similares = cls.search_by_similarity(
+            query=query.strip(),
+            top_k=top_k_docs,
+            grupo=grupo,
+            tag=tag,
+        )
+
+        if not documentos_similares:
+            return ""
+
+        # Monta a string de contexto
+        lines: List[str] = []
+        lines.append(
+            "Contexto de suporte (documentos mais similares - v2):"
+        )
+        
+        for rank, (documento, distancia) in enumerate(documentos_similares, start=1):
+            treinamento = documento.treinamento
+            source = documento.metadata.get("source", "-")
+
+            header = (
+                f"[{rank}] Treinamento={treinamento.tag} | Grupo={treinamento.grupo} | "
+                f"Fonte={source} | Distância={distancia:.4f}"
+            )
+            lines.append(header)
+            lines.append(documento.conteudo.strip())
+            lines.append("---")
+
+        return "\n".join(lines)
+
+    @classmethod
+    def search_treinamentos_by_similarity(
+        cls,
+        query: str,
+        top_k: int = 5,
+        grupo: Optional[str] = None,
+        tag: Optional[str] = None,
+    ) -> List[tuple[Any, float]]:
+        """Busca treinamentos mais similares a um texto de consulta.
+
+        Utiliza a nova arquitetura com Documento para
+        busca semântica mais precisa por documento individual.
+
+        Args:
+            query (str): Texto de consulta para gerar o embedding.
+            top_k (int): Número máximo de resultados a retornar.
+            grupo (Optional[str]): Filtro opcional por grupo.
+            tag (Optional[str]): Filtro opcional por tag.
+
+        Returns:
+            List[tuple[Treinamento, float]]: Lista de tuplas
+            (objeto, distancia), ordenada por menor distância.
+        """
+        if not query or not query.strip():
+            return []
+        if top_k <= 0:
+            return []
+
+        # Busca documentos similares
+        documentos_similares = cls.search_by_similarity(
+            query=query.strip(),
+            top_k=top_k * 3,  # Busca mais para garantir diversidade
+            grupo=grupo,
+            tag=tag,
+        )
+
+        if not documentos_similares:
+            return []
+
+        # Agrupa por treinamento e pega a melhor distância
+        treinamentos_scores = {}
+        for documento, distancia in documentos_similares:
+            treinamento = documento.treinamento
+            if treinamento.id not in treinamentos_scores:
+                treinamentos_scores[treinamento.id] = (treinamento, distancia)
+            else:
+                # Mantém a menor distância (mais similar)
+                if distancia < treinamentos_scores[treinamento.id][1]:
+                    treinamentos_scores[treinamento.id] = (treinamento, distancia)
+
+        # Ordena por distância e retorna top_k
+        resultados = list(treinamentos_scores.values())
+        resultados.sort(key=lambda x: x[1])  # Ordena por distância
+        
+        return resultados[:top_k]

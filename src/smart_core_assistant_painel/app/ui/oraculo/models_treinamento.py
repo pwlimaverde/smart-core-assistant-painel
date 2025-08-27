@@ -3,56 +3,50 @@ from typing import Any, List, Optional
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.utils import timezone
-from django.conf import settings
 from loguru import logger
-from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models_departamento import Departamento
-from langchain.docstore.document import Document
 
 
-def validate_tag(value: str) -> None:
-    """
-    Valida se a tag está em formato válido.
+def validate_identificador(value: str) -> None:
+    """Valida se o identificador está em formato válido.
 
-    A tag deve estar em minúsculo, sem espaços, com no máximo 40 caracteres
+    O identificador deve estar em minúsculo, sem espaços, com no máximo 40 caracteres
     e conter apenas letras minúsculas, números e underscore.
 
     Args:
-        value (str): Valor da tag a ser validada
+        value (str): Valor do identificador a ser validado
 
     Raises:
-        ValidationError: Se a tag não atender aos critérios de validação
+        ValidationError: Se o identificador não atender aos critérios de validação
 
     Examples:
-        >>> validate_tag("minha_tag_123")  # válida
-        >>> validate_tag("MinhaTag")       # inválida - maiúsculas
-        >>> validate_tag("minha tag")      # inválida - espaço
+        >>> validate_identificador("minha_tag_123")  # válida
+        >>> validate_identificador("MinhaTag")       # inválida - maiúsculas
+        >>> validate_identificador("minha tag")      # inválida - espaço
     """
     if len(value) > 40:
-        raise ValidationError("Tag deve ter no máximo 40 caracteres.")
+        raise ValidationError("Identificador deve ter no máximo 40 caracteres.")
 
     if " " in value:
-        raise ValidationError("Tag não deve conter espaços.")
+        raise ValidationError("Identificador não deve conter espaços.")
 
     if not value.islower():
-        raise ValidationError("Tag deve conter apenas letras minúsculas.")
+        raise ValidationError("Identificador deve conter apenas letras minúsculas.")
 
-    # Opcional: validar se contém apenas letras, números e underscore
+    # Validar se contém apenas letras, números e underscore
     if not re.match(r"^[a-z0-9_]+$", value):
         raise ValidationError(
-            "Tag deve conter apenas letras minúsculas, números e underscore."
+            "Identificador deve conter apenas letras minúsculas, números e underscore."
         )
 
 
 class Treinamento(models.Model):
-    """
-    Modelo para armazenar informações de treinamento de IA.
+    """Modelo para armazenar informações de treinamento de IA.
 
     Este modelo gerencia treinamentos organizados por tags e grupos.
-    O conteúdo completo é armazenado aqui e depois dividido em chunks
-    que são salvos como registros Documento com embeddings individuais.
+    O conteúdo completo é armazenado aqui, sendo a operações de documentos
+    delegadas ao modelo Documento através de relacionamento 1:N.
 
     Attributes:
         id: Chave primária do registro
@@ -70,14 +64,14 @@ class Treinamento(models.Model):
     )
     tag: models.CharField = models.CharField(
         max_length=40,
-        validators=[validate_tag],
+        validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o treinamento",
     )
     grupo: models.CharField = models.CharField(
         max_length=40,
-        validators=[validate_tag],
+        validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento",
@@ -115,8 +109,7 @@ class Treinamento(models.Model):
         ]
 
     def clean(self):
-        """
-        Validação personalizada do modelo.
+        """Validação personalizada do modelo.
 
         Valida que a tag não seja igual ao grupo e executa outras
         validações customizadas do modelo.
@@ -131,258 +124,25 @@ class Treinamento(models.Model):
             raise ValidationError({"grupo": "O grupo não pode ser igual à tag."})
 
     def __str__(self):
-        """
-        Retorna representação string do objeto.
+        """Retorna representação string do objeto.
 
         Returns:
             str: Tag do treinamento ou identificador padrão
         """
         return str(self.tag) if self.tag else f"Treinamento {self.id}"
 
-    def processar_conteudo_para_chunks(self, conteudo_novo: str) -> None:
-        """
-        Processa o conteúdo, armazena no treinamento e cria chunks como Documento.
-        Gera embeddings automaticamente e finaliza o treinamento.
-        
-        Args:
-            conteudo_novo (str): Conteúdo completo a ser processado
-        """
-        # Armazena o conteúdo completo
-        self.conteudo = conteudo_novo
-        self.save(update_fields=['conteudo'])
-        
-        # Limpa documentos existentes
-        self.limpar_documentos()
-        
-        if not conteudo_novo or not conteudo_novo.strip():
-            logger.info(f"Conteúdo vazio para treinamento {self.pk}")
-            return
-            
-        # Cria chunks usando RecursiveCharacterTextSplitter do LangChain
-        try:
-            from langchain.text_splitter import RecursiveCharacterTextSplitter
-            from smart_core_assistant_painel.modules.services import SERVICEHUB
-            
-            # Cria um documento temporário para chunking
-            temp_document = Document(
-                page_content=conteudo_novo,
-                metadata={
-                    "source": "treinamento_manual", 
-                    "treinamento_id": str(self.pk),
-                    "tag": self.tag,
-                    "grupo": self.grupo
-                }
-            )
-            
-            # Divide documentos em chunks
-            splitter = RecursiveCharacterTextSplitter(
-                chunk_size=SERVICEHUB.CHUNK_SIZE, 
-                chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
-            )
-            chunks = splitter.split_documents([temp_document])
-            
-            # Cria registros Documento para cada chunk (com embeddings automáticos)
-            self.criar_documentos(chunks)
-            
-            # Não finaliza automaticamente o treinamento - isso será feito pelo usuário
-            logger.info(f"Processados {len(chunks)} chunks para treinamento {self.pk}")
-            
-        except Exception as e:
-            logger.error(f"Erro ao processar conteúdo em chunks: {e}")
-            raise
-
-    def criar_documentos(self, documentos_langchain: List[Document]) -> None:
-        """
-        Cria registros Documento a partir de uma lista de objetos Document do LangChain.
-        Os embeddings são gerados automaticamente no método save() de cada documento.
-
-        Args:
-            documentos_langchain: Lista de objetos Document do LangChain
-
-        Raises:
-            TypeError: Se algum item da lista não for um objeto Document válido
-            ValueError: Se houver erro no processamento dos dados
-        """
-        # Verificação segura da lista para evitar erro de ambiguidade
-        if len(documentos_langchain) == 0:
-            logger.info(f"Lista de documentos vazia para treinamento {self.pk}")
-            return
-
-        try:
-            # Limpa documentos existentes
-            self.limpar_documentos()
-
-            # Cria novos registros Documento (embeddings gerados automaticamente no save)
-            documentos_criados = []
-            sucesso = 0
-            erros = 0
-            
-            for i, documento in enumerate(documentos_langchain):
-                if not isinstance(documento, Document):
-                    error_msg = f"Item na posição {i} não é um Document válido: {type(documento)}"
-                    logger.error(error_msg)
-                    erros += 1
-                    continue
-
-                try:
-                    # Importação local para evitar circular import
-                    from .models_documento import Documento
-                    doc_obj = Documento(
-                        treinamento=self,
-                        conteudo=documento.page_content or "",
-                        metadata=documento.metadata or {},
-                        ordem=i + 1,
-                    )
-                    # O embedding é gerado automaticamente no save() apenas se o treinamento estiver finalizado
-                    doc_obj.save()
-                    documentos_criados.append(doc_obj)
-                    sucesso += 1
-                except Exception as e:
-                    logger.error(f"Erro ao criar documento {i}: {e}")
-                    erros += 1
-
-            # Atualiza status de vetorização do treinamento apenas se estiver finalizado
-            if self.treinamento_finalizado:
-                if erros == 0:
-                    self.treinamento_vetorizado = True
-                    self.save(update_fields=['treinamento_vetorizado'])
-                    logger.info(f"Criados {len(documentos_criados)} documentos com embeddings para treinamento {self.pk}")
-                else:
-                    logger.warning(f"Documentos criados: {len(documentos_criados)}, Sucessos: {sucesso}, Erros: {erros}")
-            else:
-                logger.info(f"Criados {len(documentos_criados)} documentos para treinamento {self.pk} (embeddings gerados após finalização)")
-
-        except Exception as e:
-            error_msg = f"Erro inesperado ao criar documentos: {e}"
-            logger.error(error_msg)
-            raise ValueError(error_msg) from e
-
-    def limpar_documentos(self) -> None:
-        """
-        Remove todos os documentos relacionados a este treinamento.
-        """
-        if self.pk:
-            # Importação local para evitar circular import
-            from django.apps import apps
-            Documento = apps.get_model('oraculo', 'Documento')
-            count = self.documentos.count()
-            self.documentos.all().delete()
-            logger.info(f"Removidos {count} documentos do treinamento {self.pk}")
-
-    def vetorizar_documentos(self) -> None:
-        """
-        Gera embeddings para documentos que ainda não possuem embedding.
-        
-        Este método é usado principalmente para casos onde documentos foram criados
-        sem embeddings ou para reprocessar documentos existentes.
-        """
-        if not self.pk:
-            logger.warning("Treinamento deve ser salvo antes de vetorizar documentos")
-            return
-
-        # Importação local para evitar circular import
-        from django.apps import apps
-        Documento = apps.get_model('oraculo', 'Documento')
-        documentos_sem_embedding = self.documentos.filter(embedding__isnull=True)
-
-        if not documentos_sem_embedding.exists():
-            logger.info(f"Todos os documentos do treinamento {self.pk} já estão vetorizados")
-            self.treinamento_vetorizado = True
-            self.save(update_fields=['treinamento_vetorizado'])
-            return
-
-        # Gera embeddings individualmente para ter melhor controle
-        sucesso = 0
-        erros = 0
-        
-        for documento in documentos_sem_embedding:
-            try:
-                documento.gerar_embedding()
-                sucesso += 1
-            except Exception as e:
-                logger.error(f"Erro ao gerar embedding para documento {documento.id}: {e}")
-                erros += 1
-        
-        # Atualiza status de vetorização
-        if erros == 0:
-            self.treinamento_vetorizado = True
-            # NÃO chama self.finalizar() aqui para evitar loop infinito!
-            # O treinamento já está finalizado quando chegamos neste ponto
-            self.save(update_fields=['treinamento_vetorizado'])
-            logger.info(f"Vetorização concluída: {sucesso} documentos vetorizados")
-        else:
-            logger.warning(f"Vetorização parcial: {sucesso} sucessos, {erros} erros")
-
     def finalizar(self) -> None:
-        """
-        Marca o treinamento como finalizado e persiste no banco.
+        """Marca o treinamento como finalizado e persiste no banco.
+        
+        Este é o único método mantido no modelo Treinamento pois altera
+        diretamente o status do próprio treinamento.
         """
         self.treinamento_finalizado = True
         self.save(update_fields=["treinamento_finalizado"])
         logger.info(f"Treinamento {self.pk} finalizado")
-        
-    @classmethod
-    def search_by_similarity(
-        cls,
-        query: str,
-        top_k: int = 5,
-        grupo: Optional[str] = None,
-        tag: Optional[str] = None,
-    ) -> List[tuple["Treinamento", float]]:
-        """
-        Busca treinamentos mais similares a um texto de consulta usando os métodos nativos do pgvector.
-
-        Utiliza a nova arquitetura com Documento para
-        busca semântica mais precisa por documento individual.
-
-        Args:
-            query (str): Texto de consulta para gerar o embedding.
-            top_k (int): Número máximo de resultados a retornar.
-            grupo (Optional[str]): Filtro opcional por grupo.
-            tag (Optional[str]): Filtro opcional por tag.
-
-        Returns:
-            List[tuple[Treinamento, float]]: Lista de tuplas
-            (objeto, distancia), ordenada por menor distância.
-        """
-        if not query or not query.strip():
-            return []
-        if top_k <= 0:
-            return []
-
-        # Importação local para evitar circular import
-        from .models_documento import Documento
-        # Busca documentos similares usando Documento
-        documentos_similares = Documento.search_by_similarity(
-            query=query.strip(),
-            top_k=top_k * 3,  # Busca mais para garantir diversidade
-            grupo=grupo,
-            tag=tag,
-        )
-
-        if not documentos_similares:
-            return []
-
-        # Agrupa por treinamento e pega a melhor distância
-        treinamentos_scores = {}
-        for documento, distancia in documentos_similares:
-            treinamento = documento.treinamento
-            if treinamento.id not in treinamentos_scores:
-                treinamentos_scores[treinamento.id] = (treinamento, distancia)
-            else:
-                # Mantém a menor distância (mais similar)
-                if distancia < treinamentos_scores[treinamento.id][1]:
-                    treinamentos_scores[treinamento.id] = (treinamento, distancia)
-
-        # Ordena por distância e retorna top_k
-        resultados = list(treinamentos_scores.values())
-        resultados.sort(key=lambda x: x[1])  # Ordena por distância
-        
-        return resultados[:top_k]
 
     def clear_all_data(self) -> None:
-        """
-        Limpa completamente todos os dados do treinamento para reutilização.
+        """Limpa completamente todos os dados do treinamento para reutilização.
         
         Este método é especialmente útil durante edição de treinamentos,
         garantindo que não haja conflitos ou problemas de ambiguidade.
@@ -391,75 +151,9 @@ class Treinamento(models.Model):
         self.treinamento_finalizado = False
         self.treinamento_vetorizado = False
         
-        # Limpa documentos se o treinamento já foi salvo
-        self.limpar_documentos()
+        # Delega a limpeza de documentos para o modelo Documento
+        if self.pk:
+            from .models_documento import Documento
+            Documento.limpar_documentos_por_treinamento(self.pk)
             
         logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")
-
-    def finalize(self) -> None:
-        """
-        Marca o treinamento como finalizado e persiste no banco.
-        """
-        self.treinamento_finalizado = True
-        self.save(update_fields=["treinamento_finalizado"])
-
-    @classmethod
-    def build_similarity_context_v2(
-        cls,
-        query: str,
-        top_k_docs: int = 5,
-        grupo: Optional[str] = None,
-        tag: Optional[str] = None,
-    ) -> str:
-        """
-        Versão otimizada da busca semântica usando Documento.
-
-        Esta versão é mais eficiente pois utiliza embeddings pré-calculados
-        armazenados na tabela Documento, evitando geração em tempo real.
-
-        Args:
-            query (str): Texto de consulta
-            top_k_docs (int): Quantidade de documentos no contexto
-            grupo (Optional[str]): Filtro por grupo
-            tag (Optional[str]): Filtro por tag
-
-        Returns:
-            str: Contexto concatenado com '---' entre os chunks
-        """
-        if not query or not query.strip():
-            return ""
-        if top_k_docs <= 0:
-            return ""
-
-        # Importação local para evitar circular import
-        from .models_documento import Documento
-        # Busca documentos mais similares diretamente
-        documentos_similares = Documento.search_by_similarity(
-            query=query.strip(),
-            top_k=top_k_docs,
-            grupo=grupo,
-            tag=tag,
-        )
-
-        if not documentos_similares:
-            return ""
-
-        # Monta a string de contexto
-        lines: List[str] = []
-        lines.append(
-            "Contexto de suporte (documentos mais similares - v2):"
-        )
-        
-        for rank, (documento, distancia) in enumerate(documentos_similares, start=1):
-            treinamento = documento.treinamento
-            source = documento.metadata.get("source", "-")
-
-            header = (
-                f"[{rank}] Treinamento={treinamento.tag} | Grupo={treinamento.grupo} | "
-                f"Fonte={source} | Distância={distancia:.4f}"
-            )
-            lines.append(header)
-            lines.append(documento.conteudo.strip())
-            lines.append("---")
-
-        return "\n".join(lines)

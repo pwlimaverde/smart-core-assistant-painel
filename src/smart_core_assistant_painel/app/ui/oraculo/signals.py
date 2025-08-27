@@ -18,20 +18,20 @@ from loguru import logger
 
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
-from .models import Treinamentos
+from .models_treinamento import Treinamento
 
 mensagem_bufferizada = Signal()
 
 
-@receiver(post_save, sender=Treinamentos)
+@receiver(post_save, sender=Treinamento)
 def signals_treinamento_ia(
-    sender: Any, instance: Treinamentos, created: bool, **kwargs: Any
+    sender: Any, instance: Treinamento, created: bool, **kwargs: Any
 ) -> None:
     """Executa o treinamento da IA de forma assíncrona após salvar um treinamento.
 
     Args:
         sender (Any): O remetente do signal.
-        instance (Treinamentos): A instância do modelo de treinamento.
+        instance (Treinamento): A instância do modelo de treinamento.
         created (bool): True se um novo registro foi criado.
         **kwargs (Any): Argumentos de palavra-chave adicionais.
     """
@@ -177,13 +177,13 @@ def __task_treinar_ia(instance_id: int) -> None:
         instance_id (int): O ID da instância de Treinamento.
     """
     try:
-        instance = Treinamentos.objects.get(id=instance_id)
+        instance = Treinamento.objects.get(id=instance_id)
 
         # 1) Limpa embedding anterior sem disparar signals
-        Treinamentos.objects.filter(id=instance_id).update(embedding=None)
+        Treinamento.objects.filter(id=instance_id).update(embedding=None)
 
         # 2) Extrai conteúdo unificado e gera embedding
-        texto_unificado: str = instance.get_conteudo_unificado() or ""
+        texto_unificado: str = instance.conteudo or ""
         if not texto_unificado.strip():
             logger.warning(
                 "Treinamento %s sem conteúdo para embedding.", instance_id
@@ -193,25 +193,25 @@ def __task_treinar_ia(instance_id: int) -> None:
         vetor: List[float] = __embed_text(texto_unificado)
 
         # 3) Persiste vetor via update() para evitar loop de signals
-        Treinamentos.objects.filter(id=instance_id).update(embedding=vetor)
-        Treinamentos.objects.filter(id=instance_id).update(treinamento_vetorizado=True)
+        Treinamento.objects.filter(id=instance_id).update(embedding=vetor)
+        Treinamento.objects.filter(id=instance_id).update(treinamento_vetorizado=True)
         logger.info("Embedding atualizado para treinamento %s", instance_id)
 
-    except Treinamentos.DoesNotExist:
+    except Treinamento.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")
     except Exception as e:
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
 
 
-@receiver(pre_delete, sender=Treinamentos)
+@receiver(pre_delete, sender=Treinamento)
 def signal_remover_treinamento_ia(
-    sender: Any, instance: Treinamentos, **kwargs: Any
+    sender: Any, instance: Treinamento, **kwargs: Any
 ) -> None:
     """Remove os dados de treinamento do banco vetorial antes de deletar.
 
     Args:
         sender (Any): O remetente do signal.
-        instance (Treinamentos): A instância do modelo de treinamento.
+        instance (Treinamento): A instância do modelo de treinamento.
         **kwargs (Any): Argumentos de palavra-chave adicionais.
 
     Raises:
@@ -236,7 +236,7 @@ def __task_remover_treinamento_ia(instance_id: int) -> None:
     """
     try:
         # Como os dados ficam no próprio modelo, basta limpar o vetor.
-        Treinamentos.objects.filter(id=instance_id).update(embedding=None)
+        Treinamento.objects.filter(id=instance_id).update(embedding=None)
         logger.info(
             "Embedding removido para treinamento %s (pre_delete)", instance_id
         )

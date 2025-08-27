@@ -22,9 +22,9 @@ from .models import (
     Contato,
     Mensagem,
     TipoRemetente,
-    Treinamentos,
     processar_mensagem_whatsapp,
 )
+from .models_treinamento import Treinamento
 from .signals import mensagem_bufferizada
 
 
@@ -78,7 +78,7 @@ def send_message_response(phone: str) -> None:
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
             _analisar_conteudo_mensagem(mensagem_id)
-            teste_similaridade = Treinamentos.build_similarity_context(query=mensagem.conteudo)
+            teste_similaridade = Treinamento.build_similarity_context(query=mensagem.conteudo)
             logger.info(f"Teste similaridade: {teste_similaridade}")
 
 

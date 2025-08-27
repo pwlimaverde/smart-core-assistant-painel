@@ -1,78 +1,63 @@
-# Makefile - Ambiente Django (Smart Core Assistant Painel)
+# Makefile - Ambiente Base de Dados (Smart Core Assistant Painel)
 
 DOCKER_COMPOSE = docker compose
-DJANGO_SERVICE = django-app
-QCLUSTER_SERVICE = django-qcluster
+DOCKER_COMPOSE_PROJECT = ambiente_base_dados
+POSTGRES_SERVICE = postgres-remote
+REDIS_SERVICE = redis-remote
 
 .PHONY: help
 help: ## Mostra esta ajuda
-	@echo "Ambiente Django - Comandos" 
-	@echo "=========================="
+	@echo "Ambiente Base de Dados - Comandos" 
+	@echo "================================="
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
 
 # Desenvolvimento
 .PHONY: dev
 dev: ## Sobe o ambiente (build + up)
-	$(DOCKER_COMPOSE) up -d --build
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) up -d --build
 
 .PHONY: dev-build
 dev-build: ## Reconstrói as imagens sem cache
-	$(DOCKER_COMPOSE) build --no-cache
-	$(DOCKER_COMPOSE) up -d
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) build --no-cache
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) up -d
 
 .PHONY: dev-logs
 dev-logs: ## Mostra logs do ambiente
-	$(DOCKER_COMPOSE) logs -f
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) logs -f
 
-# Django
-.PHONY: migrate
-migrate: ## Executa migrações do Django
-	$(DOCKER_COMPOSE) exec $(DJANGO_SERVICE) uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate
+# Banco de Dados
+.PHONY: psql
+psql: ## Abre shell do PostgreSQL
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) exec $(POSTGRES_SERVICE) psql -U postgres -d smart_core_db
 
-.PHONY: makemigrations
-makemigrations: ## Cria novas migrações do Django
-	$(DOCKER_COMPOSE) exec $(DJANGO_SERVICE) uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations
-
-.PHONY: createsuperuser
-createsuperuser: ## Cria superusuário do Django
-	$(DOCKER_COMPOSE) exec $(DJANGO_SERVICE) uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser
-
-.PHONY: collectstatic
-collectstatic: ## Coleta arquivos estáticos
-	$(DOCKER_COMPOSE) exec $(DJANGO_SERVICE) uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput
-
-.PHONY: shell
-shell: ## Abre shell do Django
-	$(DOCKER_COMPOSE) exec $(DJANGO_SERVICE) uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
-
-.PHONY: dbshell
-dbshell: ## Abre shell do banco de dados
-	$(DOCKER_COMPOSE) exec $(DJANGO_SERVICE) uv run python src/smart_core_assistant_painel/app/ui/manage.py dbshell
+.PHONY: redis-cli
+redis-cli: ## Abre shell do Redis
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) exec $(REDIS_SERVICE) redis-cli
 
 # Serviços
 .PHONY: ps
 ps: ## Lista containers
-	$(DOCKER_COMPOSE) ps
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) ps
 
 .PHONY: logs
 logs: ## Mostra logs de todos os serviços
-	$(DOCKER_COMPOSE) logs -f
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) logs -f
 
 .PHONY: stop
 stop: ## Para todos os serviços
-	$(DOCKER_COMPOSE) stop
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) stop
 
 .PHONY: down
 down: ## Para e remove containers e volumes
-	$(DOCKER_COMPOSE) down -v --remove-orphans
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) down -v --remove-orphans
 
 .PHONY: restart
 restart: ## Reinicia serviços
-	$(DOCKER_COMPOSE) restart
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) restart
 
 .PHONY: clean
 clean: ## Remove containers, volumes e imagens não utilizadas
-	$(DOCKER_COMPOSE) down -v --rmi all --remove-orphans
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) down -v --rmi all --remove-orphans
 	docker system prune -f
 
 # Informações
@@ -82,7 +67,7 @@ info: ## Mostra informações do ambiente
 	@echo "\nDocker Compose Version:" && $(DOCKER_COMPOSE) --version
 	@echo "\nContainers em execução:" && docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
 
-.PHONY: urls
-urls: ## Mostra URLs disponíveis
-	@echo "Django Admin: http://localhost:8000/admin/"
-	@echo "Django App:   http://localhost:8000/"
+.PHONY: status
+status: ## Mostra status dos serviços do ambiente base de dados
+	@echo "Status dos serviços do ambiente base de dados:"
+	$(DOCKER_COMPOSE) -p $(DOCKER_COMPOSE_PROJECT) ps

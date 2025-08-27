@@ -20,14 +20,15 @@ from .models import (
     Contato,
     FluxoConversa,
     Mensagem,
-    Treinamentos,
 )
 from .models_departamento import Departamento
+from .models_treinamento import Treinamento
+from .models_documento import Documento
 
 
-@admin.register(Treinamentos)
-class TreinamentosAdmin(admin.ModelAdmin):
-    """Admin para o modelo Treinamentos."""
+@admin.register(Treinamento)
+class TreinamentoAdmin(admin.ModelAdmin):
+    """Admin para o modelo Treinamento."""
 
     list_display = [
         "id",
@@ -36,7 +37,7 @@ class TreinamentosAdmin(admin.ModelAdmin):
         "treinamento_finalizado",
         "treinamento_vetorizado",
         "embedding_preview",
-        "get_documentos_preview",
+        "get_documentos_count",
     ]
     search_fields = ["tag"]
     list_filter = ["treinamento_finalizado", "treinamento_vetorizado"]
@@ -48,9 +49,9 @@ class TreinamentosAdmin(admin.ModelAdmin):
                 "fields": (
                     "tag",
                     "grupo",
+                    "conteudo",
                     "treinamento_finalizado",
                     "treinamento_vetorizado",
-                    "_documentos",
                     "embedding_preview",
                 ),
                 "classes": ("wide",),
@@ -62,26 +63,18 @@ class TreinamentosAdmin(admin.ModelAdmin):
     readonly_fields = ["embedding_preview"]
     actions = ["marcar_como_vetorizado", "marcar_como_nao_vetorizado", "reprocessar_treinamentos"]
 
-    @admin.display(description="Preview do Documento", ordering="_documentos")
-    def get_documentos_preview(self, obj: Treinamentos) -> str:
-        """Retorna uma prévia do conteúdo JSON dos documentos.
-
-        Args:
-            obj (Treinamentos): A instância do treinamento.
-
-        Returns:
-            str: Uma prévia do conteúdo dos documentos.
-        """
-        if obj and obj._documentos:
+    @admin.display(description="Número de Documentos")
+    def get_documentos_count(self, obj: Treinamento) -> int:
+        """Retorna o número de documentos associados ao treinamento."""
+        if obj and obj.pk:
             try:
-                preview = str(obj._documentos)[:1000]
-                return preview + "..." if len(str(obj._documentos)) > 1000 else preview
+                return obj.documentos.count()
             except Exception:
-                return "Erro ao exibir documentos"
-        return "Documento vazio"
+                return 0
+        return 0
 
     @admin.display(description="Embedding (prévia)")
-    def embedding_preview(self, obj: Treinamentos) -> str:
+    def embedding_preview(self, obj: Treinamento) -> str:
         """Exibe uma prévia do vetor de embedding salvo.
 
         Mostra os primeiros valores (até 10) formatados com 4 casas decimais,
@@ -138,13 +131,13 @@ class TreinamentosAdmin(admin.ModelAdmin):
 
     @admin.action(description="Marcar treinamentos selecionados como vetorizados")
     def marcar_como_vetorizado(
-        self, request: HttpRequest, queryset: QuerySet[Treinamentos]
+        self, request: HttpRequest, queryset: QuerySet[Treinamento]
     ) -> None:
         """Marca os treinamentos selecionados como vetorizados.
 
         Args:
             request (HttpRequest): O objeto de requisição.
-            queryset (QuerySet[Treinamentos]): O queryset de treinamentos.
+            queryset (QuerySet[Treinamento]): O queryset de treinamentos.
         """
         queryset.update(treinamento_vetorizado=True)
         self.message_user(
@@ -153,13 +146,13 @@ class TreinamentosAdmin(admin.ModelAdmin):
 
     @admin.action(description="Marcar treinamentos selecionados como não vetorizados")
     def marcar_como_nao_vetorizado(
-        self, request: HttpRequest, queryset: QuerySet[Treinamentos]
+        self, request: HttpRequest, queryset: QuerySet[Treinamento]
     ) -> None:
         """Marca os treinamentos selecionados como não vetorizados.
 
         Args:
             request (HttpRequest): O objeto de requisição.
-            queryset (QuerySet[Treinamentos]): O queryset de treinamentos.
+            queryset (QuerySet[Treinamento]): O queryset de treinamentos.
         """
         queryset.update(treinamento_vetorizado=False)
         self.message_user(
@@ -168,7 +161,7 @@ class TreinamentosAdmin(admin.ModelAdmin):
 
     @admin.action(description="Reprocessar treinamentos selecionados (marca como finalizado)")
     def reprocessar_treinamentos(
-        self, request: HttpRequest, queryset: QuerySet[Treinamentos]
+        self, request: HttpRequest, queryset: QuerySet[Treinamento]
     ) -> None:
         """Reprocessa os treinamentos selecionados marcando como finalizados.
 
@@ -176,7 +169,7 @@ class TreinamentosAdmin(admin.ModelAdmin):
 
         Args:
             request (HttpRequest): O objeto de requisição.
-            queryset (QuerySet[Treinamentos]): O queryset de treinamentos.
+            queryset (QuerySet[Treinamento]): O queryset de treinamentos.
         """
         queryset.update(treinamento_finalizado=True, treinamento_vetorizado=False)
         self.message_user(
@@ -797,6 +790,111 @@ class DepartamentoAdmin(admin.ModelAdmin):
     readonly_fields = ["data_criacao"]
     list_per_page = 25
     save_on_top = True
+
+
+@admin.register(Documento)
+class DocumentoAdmin(admin.ModelAdmin):
+    """Admin para o modelo Documento."""
+    
+    list_display = [
+        "id",
+        "treinamento_tag",
+        "ordem",
+        "conteudo_preview",
+        "metadata_preview",
+        "data_criacao",
+    ]
+    search_fields = ["treinamento__tag", "conteudo"]
+    list_filter = ["treinamento__tag", "treinamento__grupo", "data_criacao"]
+    ordering = ["treinamento__tag", "ordem"]
+    readonly_fields = [
+        "treinamento", 
+        "conteudo", 
+        "metadata", 
+        "embedding_preview",
+        "ordem",
+        "data_criacao"
+    ]
+    list_per_page = 50
+    save_on_top = True
+    
+    def has_change_permission(self, request, obj=None):
+        """Impede a modificação de documentos existentes."""
+        return False
+    
+    def has_add_permission(self, request):
+        """Impede a criação manual de documentos."""
+        return False
+    
+    @admin.display(description="Tag do Treinamento", ordering="treinamento__tag")
+    def treinamento_tag(self, obj: Documento) -> str:
+        """Retorna a tag do treinamento associado."""
+        return obj.treinamento.tag if obj.treinamento and obj.treinamento.tag else "-"
+    
+    @admin.display(description="Conteúdo (prévia)")
+    def conteudo_preview(self, obj: Documento) -> str:
+        """Exibe uma prévia do conteúdo do documento."""
+        if obj and obj.conteudo:
+            preview = obj.conteudo[:200]
+            return preview + "..." if len(obj.conteudo) > 200 else preview
+        return "Conteúdo vazio"
+    
+    @admin.display(description="Metadados")
+    def metadata_preview(self, obj: Documento) -> str:
+        """Exibe uma prévia dos metadados do documento."""
+        if obj and obj.metadata:
+            try:
+                metadata_str = str(obj.metadata)
+                preview = metadata_str[:100]
+                return preview + "..." if len(metadata_str) > 100 else preview
+            except Exception:
+                return "Erro ao exibir metadados"
+        return "Sem metadados"
+    
+    @admin.display(description="Embedding (prévia)")
+    def embedding_preview(self, obj: Documento) -> str:
+        """Exibe uma prévia do vetor de embedding salvo."""
+        try:
+            vetor = getattr(obj, "embedding", None)
+            # Verificação mais segura para evitar o erro de "truth value of array"
+            if vetor is None or (hasattr(vetor, '__len__') and len(vetor) == 0):
+                return "-"
+            
+            try:
+                if isinstance(vetor, (list, tuple)):
+                    seq = vetor
+                else:
+                    tolist = getattr(vetor, "tolist", None)
+                    if callable(tolist):
+                        seq = tolist()
+                    else:
+                        seq = list(vetor)
+            except Exception:
+                return "[embedding inválido]"
+            
+            try:
+                if hasattr(seq, "__len__") and len(seq) == 0:
+                    return "[embedding vazio]"
+            except Exception:
+                pass
+            
+            normalizado = []
+            for x in seq:
+                try:
+                    normalizado.append(float(x))
+                except Exception:
+                    continue
+            
+            if not normalizado:
+                return "[embedding vazio]"
+            
+            tam = len(normalizado)
+            head = normalizado[:5]
+            fmt_head = ", ".join(f"{x:.4f}" for x in head)
+            sufixo = ", ..." if tam > 5 else ""
+            return f"[{fmt_head}{sufixo}] (dim={tam})"
+        except Exception:
+            return "Erro ao exibir embedding"
 
 
 admin.site.site_header = "Smart Core Assistant - Painel de Administração"

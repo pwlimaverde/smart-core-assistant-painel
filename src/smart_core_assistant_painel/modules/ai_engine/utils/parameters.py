@@ -14,6 +14,7 @@ from py_return_success_or_error import ParametersReturnResult
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DataMessageError,
     DocumentError,
+    EmbeddingError,
     LlmError,
 )
 
@@ -181,6 +182,61 @@ class AnalisePreviaMensagemParameters(ParametersReturnResult):
     valid_entity_types: str
     llm_parameters: LlmParameters
     error: LlmError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class GenerateEmbeddingsParameters(ParametersReturnResult):
+    """Parâmetros para geração de embeddings.
+
+    Attributes:
+        text (str): Texto para o qual gerar o embedding.
+        error (EmbeddingError): O erro a ser levantado em caso de falha.
+    """
+
+    text: str
+    error: EmbeddingError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class EmbeddingToTextParameters(ParametersReturnResult):
+    """Parâmetros para conversão de embedding em texto.
+
+    Attributes:
+        embedding_vector (list[float]): Vetor de embedding a ser convertido.
+        error (EmbeddingError): O erro a ser levantado em caso de falha.
+    """
+
+    embedding_vector: list[float]
+    error: EmbeddingError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class SearchSimilarEmbeddingsParameters(ParametersReturnResult):
+    """Parâmetros para busca por similaridade de embeddings.
+
+    Attributes:
+        query_embedding (list[float]): Vetor de embedding da consulta.
+        embeddings_data (list[dict]): Lista de dados com embeddings para busca.
+        top_k (int): Número máximo de resultados a retornar.
+        error (EmbeddingError): O erro a ser levantado em caso de falha.
+    """
+
+    query_embedding: list[float]
+    embeddings_data: list[dict]
+    top_k: int = 5
+    error: EmbeddingError
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""

@@ -36,7 +36,9 @@ def signals_treinamento_ia(
         **kwargs (Any): Argumentos de palavra-chave adicionais.
     """
     try:
-        if instance.treinamento_finalizado:
+        # Só executa se o treinamento foi finalizado E ainda não foi vetorizado
+        # Isso evita loops infinitos quando a vetorização atualiza o status
+        if instance.treinamento_finalizado and not instance.treinamento_vetorizado:
             async_task(__task_treinar_ia, instance.id)
     except Exception as e:
         logger.error(f"Erro ao processar signal de treinamento: {e}")
@@ -178,24 +180,27 @@ def __task_treinar_ia(instance_id: int) -> None:
     """
     try:
         instance = Treinamento.objects.get(id=instance_id)
+        
+        logger.info(f"Iniciando vetorização do treinamento {instance_id} - Status: finalizado={instance.treinamento_finalizado}, vetorizado={instance.treinamento_vetorizado}")
 
-        # 1) Limpa embedding anterior sem disparar signals
-        Treinamento.objects.filter(id=instance_id).update(embedding=None)
-
-        # 2) Extrai conteúdo unificado e gera embedding
-        texto_unificado: str = instance.conteudo or ""
-        if not texto_unificado.strip():
+        # 1) Como a arquitetura atual usa embeddings nos documentos, não no treinamento,
+        # vamos apenas marcar como vetorizado se todos os documentos tiverem embeddings
+        
+        # 2) Verifica se há documentos para treinar
+        if not instance.conteudo or not instance.conteudo.strip():
             logger.warning(
                 "Treinamento %s sem conteúdo para embedding.", instance_id
             )
             return
+            
+        # 3) Verifica se já está vetorizado para evitar reprocessamento
+        if instance.treinamento_vetorizado:
+            logger.info(f"Treinamento {instance_id} já está vetorizado, pulando...")
+            return
 
-        vetor: List[float] = __embed_text(texto_unificado)
-
-        # 3) Persiste vetor via update() para evitar loop de signals
-        Treinamento.objects.filter(id=instance_id).update(embedding=vetor)
-        Treinamento.objects.filter(id=instance_id).update(treinamento_vetorizado=True)
-        logger.info("Embedding atualizado para treinamento %s", instance_id)
+        # 4) Gera embeddings para documentos que não possuem
+        instance.vetorizar_documentos()
+        logger.info("Treinamento vetorizado: %s", instance_id)
 
     except Treinamento.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")
@@ -235,10 +240,13 @@ def __task_remover_treinamento_ia(instance_id: int) -> None:
         Exception: Se ocorrer um erro durante a remoção.
     """
     try:
-        # Como os dados ficam no próprio modelo, basta limpar o vetor.
-        Treinamento.objects.filter(id=instance_id).update(embedding=None)
+        # Na nova arquitetura, não há campo embedding no Treinamento.
+        # Os embeddings ficam nos documentos relacionados que são removidos
+        # automaticamente devido ao CASCADE no ForeignKey.
+        # Apenas marca como não vetorizado
+        Treinamento.objects.filter(id=instance_id).update(treinamento_vetorizado=False)
         logger.info(
-            "Embedding removido para treinamento %s (pre_delete)", instance_id
+            "Treinamento marcado como não vetorizado: %s (pre_delete)", instance_id
         )
     except Exception as e:
         logger.error(f"Erro ao remover treinamento {instance_id}: {e}")

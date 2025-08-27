@@ -73,8 +73,23 @@ def signals_gerar_documentos_treinamento(
 def signals_embeddings_documento(
     sender: Any, instance: Documento, created: bool, **kwargs: Any
 ) -> None:
-    #TODO: Gerar os embeddins no cluster após a criação do documento
-    pass
+    """Gera embedding para o documento após criação ou atualização.
+    
+    Args:
+        sender: O remetente do signal
+        instance: Instância do Documento
+        created: True se foi criado, False se foi atualizado
+        **kwargs: Argumentos adicionais
+    """
+    try:
+        # Só gera embedding se não existe ou se o conteúdo foi alterado
+        if not instance.embedding or not instance.conteudo:
+            if instance.conteudo and instance.conteudo.strip():
+                async_task(__gerar_embedding_documento, instance.pk)
+            else:
+                logger.warning(f"Documento {instance.pk} sem conteúdo para embedding")
+    except Exception as e:
+        logger.error(f"Erro no signal de embedding do documento {instance.pk}: {e}")
 
 
 @receiver(mensagem_bufferizada)
@@ -225,6 +240,37 @@ def __processar_conteudo_para_chunks(treinamento: Treinamento) -> List[Document]
     )
     chunks: List[Document] = splitter.split_documents(documents=[temp_document])
     return chunks
+
+def __gerar_embedding_documento(documento_id: int) -> None:
+    """Gera embedding para um documento específico.
+    
+    Args:
+        documento_id: ID do documento para gerar embedding
+    """
+    try:
+        from .embedding_data import EmbeddingData
+        
+        documento: Documento = Documento.objects.get(id=documento_id)
+        
+        if not documento.conteudo or not documento.conteudo.strip():
+            logger.warning(f"Documento {documento_id} sem conteúdo válido")
+            return
+            
+        # Gera embedding usando a classe especializada EmbeddingData
+        embedding_vector: List[float] = EmbeddingData.gerar_embedding_para_documento(documento.conteudo)
+        
+        if embedding_vector:
+            # Salva o embedding no documento
+            Documento.objects.filter(id=documento_id).update(embedding=embedding_vector)
+            logger.info(f"Embedding gerado e salvo para documento {documento_id}")
+        else:
+            logger.error(f"Falha ao gerar embedding para documento {documento_id}")
+            
+    except Documento.DoesNotExist:
+        logger.error(f"Documento {documento_id} não encontrado")
+    except Exception as e:
+        logger.error(f"Erro ao gerar embedding para documento {documento_id}: {e}")
+
 
 def __gerar_documentos(instance_id: int) -> None:
 

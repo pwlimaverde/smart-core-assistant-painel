@@ -1,3 +1,4 @@
+from django.db.models.indexes import Index
 import re
 from typing import Any, List, Optional
 
@@ -99,16 +100,16 @@ class Treinamento(models.Model):
     )
 
     class Meta:
-        verbose_name = "Treinamento"
-        verbose_name_plural = "Treinamentos"
-        ordering = ["-data_criacao"]
-        indexes = [
+        verbose_name: str = "Treinamento"
+        verbose_name_plural: str = "Treinamentos"
+        ordering: list[str] = ["-data_criacao"]
+        indexes: list[Index] = [
             models.Index(fields=["tag", "grupo"]),
             models.Index(fields=["data_criacao"]),
             models.Index(fields=["treinamento_finalizado", "treinamento_vetorizado"]),
         ]
 
-    def clean(self):
+    def clean(self) -> None:
         """Validação personalizada do modelo.
 
         Valida que a tag não seja igual ao grupo e executa outras
@@ -121,25 +122,15 @@ class Treinamento(models.Model):
 
         # Validação customizada: tag não pode ser igual ao grupo
         if self.tag and self.grupo and self.tag == self.grupo:
-            raise ValidationError({"grupo": "O grupo não pode ser igual à tag."})
+            raise ValidationError(message={"grupo": "O grupo não pode ser igual à tag."})
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Retorna representação string do objeto.
 
         Returns:
             str: Tag do treinamento ou identificador padrão
         """
         return str(self.tag) if self.tag else f"Treinamento {self.id}"
-
-    def finalizar(self) -> None:
-        """Marca o treinamento como finalizado e persiste no banco.
-        
-        Este é o único método mantido no modelo Treinamento pois altera
-        diretamente o status do próprio treinamento.
-        """
-        self.treinamento_finalizado = True
-        self.save(update_fields=["treinamento_finalizado"])
-        logger.info(f"Treinamento {self.pk} finalizado")
 
     def clear_all_data(self) -> None:
         """Limpa completamente todos os dados do treinamento para reutilização.
@@ -154,6 +145,6 @@ class Treinamento(models.Model):
         # Delega a limpeza de documentos para o modelo Documento
         if self.pk:
             from .models_documento import Documento
-            Documento.limpar_documentos_por_treinamento(self.pk)
+            Documento.limpar_documentos_por_treinamento(treinamento_id=self.pk)
             
         logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")

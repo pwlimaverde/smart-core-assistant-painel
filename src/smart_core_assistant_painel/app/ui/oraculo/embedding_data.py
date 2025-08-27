@@ -145,27 +145,4 @@ class EmbeddingData:
             logger.error(f"Erro ao gerar embedding para documento: {e}")
             return []
             
-    @classmethod
-    def processar_conteudo_para_chunks(cls, treinamento, conteudo_novo: str) -> List[Document]:
-        """Processa conteúdo e cria chunks."""
-        treinamento.conteudo = conteudo_novo
-        treinamento.save(update_fields=['conteudo'])
-        
-            
-        # Cria chunks
-        temp_document: Document = Document(
-            page_content=conteudo_novo,
-            metadata={
-                "source": "treinamento_manual", 
-                "treinamento_id": str(treinamento.pk),
-                "tag": treinamento.tag,
-                "grupo": treinamento.grupo
-            }
-        )
-        
-        splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-            chunk_size=SERVICEHUB.CHUNK_SIZE, 
-            chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
-        )
-        chunks: List[Document] = splitter.split_documents(documents=[temp_document])
-        return chunks
+    

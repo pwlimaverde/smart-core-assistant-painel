@@ -1,4 +1,3 @@
-from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 from langchain_core.documents.base import Document
 from smart_core_assistant_painel.app.ui.oraculo.fields import VectorField
 
@@ -12,18 +11,10 @@ from django.db.models.fields import DateTimeField, PositiveIntegerField, TextFie
 from django.db.models.fields.related import ForeignKey
 
 
-from typing import Any, List, Optional
-
-from django.conf import settings
+from typing import Any, List
 from django.db import models
-from langchain.docstore.document import Document
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from loguru import logger
 from pgvector.django import CosineDistance, HnswIndex
-from smart_core_assistant_painel.modules.services import SERVICEHUB
-
-from .fields import VectorField
-from .embedding_data import EmbeddingData
 
 
 class Documento(models.Model):
@@ -142,10 +133,35 @@ class Documento(models.Model):
             logger.error(f"Erro na busca semântica: {e}")
             return ""
 
-    # ============================
-    # MÉTODOS ESSENCIAIS DE APOIO
-    # ============================
-    
+    @classmethod
+    def criar_documentos_de_chunks(
+        cls,
+        chunks: List[Document],
+        treinamento_id: int
+    ) -> List['Documento']:
+        """Cria documentos a partir de uma lista de chunks e o ID do treinamento.
+        
+        Args:
+            chunks: Lista de objetos Document (chunks) do LangChain
+            treinamento_id: ID do treinamento ao qual os documentos pertencem
+            
+        Returns:
+            Lista de objetos Documento criados
+        """
+        documentos_criados = []
+        
+        for ordem, chunk in enumerate(chunks, start=1):
+            documento = cls.objects.create(
+                treinamento_id=treinamento_id,
+                conteudo=chunk.page_content,
+                metadata=chunk.metadata or {},
+                ordem=ordem
+            )
+            documentos_criados.append(documento)
+            
+        logger.info(f"Criados {len(documentos_criados)} documentos para o treinamento {treinamento_id}")
+        return documentos_criados
+
     @classmethod
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
         """Remove todos os documentos de um treinamento."""

@@ -6,6 +6,11 @@ processamento de mensagens em buffer.
 """
 
 from datetime import timedelta
+from langchain_core.documents.base import Document
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
+from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
 from typing import Any, List
 
 from django.conf import settings
@@ -16,6 +21,7 @@ from django_q.models import Schedule
 from django_q.tasks import async_task
 from loguru import logger
 
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models_treinamento import Treinamento
@@ -23,8 +29,28 @@ from .models_treinamento import Treinamento
 mensagem_bufferizada = Signal()
 
 
+# @receiver(post_save, sender=Treinamento)
+# def signals_treinamento_ia(
+#     sender: Any, instance: Treinamento, created: bool, **kwargs: Any
+# ) -> None:
+#     """Executa o treinamento da IA de forma assíncrona após salvar um treinamento.
+
+#     Args:
+#         sender (Any): O remetente do signal.
+#         instance (Treinamento): A instância do modelo de treinamento.
+#         created (bool): True se um novo registro foi criado.
+#         **kwargs (Any): Argumentos de palavra-chave adicionais.
+#     """
+#     try:
+#         # Só executa se o treinamento foi finalizado E ainda não foi vetorizado
+#         # Isso evita loops infinitos quando a vetorização atualiza o status
+#         if instance.treinamento_finalizado and not instance.treinamento_vetorizado:
+#             async_task(__gerar_documentos, instance.id)
+#     except Exception as e:
+#         logger.error(f"Erro ao processar signal de treinamento: {e}")
+
 @receiver(post_save, sender=Treinamento)
-def signals_treinamento_ia(
+def signals_gerar_documentos_treinamento(
     sender: Any, instance: Treinamento, created: bool, **kwargs: Any
 ) -> None:
     """Executa o treinamento da IA de forma assíncrona após salvar um treinamento.
@@ -39,9 +65,16 @@ def signals_treinamento_ia(
         # Só executa se o treinamento foi finalizado E ainda não foi vetorizado
         # Isso evita loops infinitos quando a vetorização atualiza o status
         if instance.treinamento_finalizado and not instance.treinamento_vetorizado:
-            async_task(__task_treinar_ia, instance.id)
+            async_task(__gerar_documentos, instance.id)
     except Exception as e:
         logger.error(f"Erro ao processar signal de treinamento: {e}")
+
+@receiver(post_save, sender=Documento)
+def signals_embeddings_documento(
+    sender: Any, instance: Documento, created: bool, **kwargs: Any
+) -> None:
+    #TODO: Gerar os embeddins no cluster após a criação do documento
+    pass
 
 
 @receiver(mensagem_bufferizada)
@@ -172,36 +205,46 @@ def __embed_text(text: str) -> List[float]:
         raise
 
 
-def __task_treinar_ia(instance_id: int) -> None:
-    """Tarefa para treinar a IA com os documentos de um treinamento.
+def __processar_conteudo_para_chunks(treinamento: Treinamento) -> List[Document]:
+    """Processa conteúdo e cria chunks."""
 
-    Args:
-        instance_id (int): O ID da instância de Treinamento.
-    """
+    # Cria chunks
+    temp_document: Document = Document(
+        page_content=treinamento.conteudo,
+        metadata={
+            "source": "treinamento_manual", 
+            "treinamento_id": str(treinamento.pk),
+            "tag": treinamento.tag,
+            "grupo": treinamento.grupo
+        }
+    )
+    
+    splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
+        chunk_size=SERVICEHUB.CHUNK_SIZE, 
+        chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
+    )
+    chunks: List[Document] = splitter.split_documents(documents=[temp_document])
+    return chunks
+
+def __gerar_documentos(instance_id: int) -> None:
+
     try:
-        instance = Treinamento.objects.get(id=instance_id)
-        
-        logger.info(f"Iniciando vetorização do treinamento {instance_id} - Status: finalizado={instance.treinamento_finalizado}, vetorizado={instance.treinamento_vetorizado}")
+        instance: Treinamento = Treinamento.objects.get(id=instance_id)
 
-        # 1) Como a arquitetura atual usa embeddings nos documentos, não no treinamento,
-        # vamos apenas marcar como vetorizado se todos os documentos tiverem embeddings
-        
-        # 2) Verifica se há documentos para treinar
         if not instance.conteudo or not instance.conteudo.strip():
             logger.warning(
                 "Treinamento %s sem conteúdo para embedding.", instance_id
             )
             return
             
-        # 3) Verifica se já está vetorizado para evitar reprocessamento
         if instance.treinamento_vetorizado:
             logger.info(f"Treinamento {instance_id} já está vetorizado, pulando...")
             return
-
-        # 4) Gera embeddings para documentos que não possuem
+        chunks: List[Document] = __processar_conteudo_para_chunks(treinamento=instance)
         from .models_documento import Documento
-        Documento.vetorizar_documentos_por_treinamento(instance)
-        logger.info("Treinamento vetorizado: %s", instance_id)
+
+        Documento.criar_documentos_de_chunks(chunks=chunks, treinamento_id=instance_id)
+        logger.info("Documentos gerados: %s", instance_id)
 
     except Treinamento.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")

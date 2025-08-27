@@ -5,12 +5,18 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
-from pgvector.django import VectorField, CosineDistance, HnswIndex
 from langchain.docstore.document import Document
 from loguru import logger
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models_departamento import Departamento
+# Importando nosso VectorField personalizado
+from .fields import VectorField
+# Removendo o import do VectorField do pgvector
+# from pgvector.django import VectorField, CosineDistance, HnswIndex
+
+# Importando CosineDistance e HnswIndex do pgvector
+from pgvector.django import CosineDistance, HnswIndex
 
 
 class Documento(models.Model):
@@ -51,6 +57,18 @@ class Documento(models.Model):
         help_text="Vetor de embeddings do conteúdo do documento",
     )
     
+    def formfield(self, **kwargs):
+        """
+        Sobrescreve o método formfield para evitar que o campo embedding
+        seja exibido diretamente no formulário do admin, evitando o erro
+        "The truth value of an array with more than one element is ambiguous".
+        """
+        # Para o campo embedding, retornamos None para evitar exibição no admin
+        from django import forms
+        kwargs['widget'] = forms.HiddenInput()
+        # Retornando None para evitar a exibição do campo no formulário
+        return None
+
     # Ordem do documento no treinamento
     ordem: models.PositiveIntegerField = models.PositiveIntegerField(
         default=1,
@@ -95,8 +113,18 @@ class Documento(models.Model):
         """
         Salva o documento, gerando o embedding antes se necessário.
         """
-        # Gera embedding antes de salvar se não existir
-        if not self.embedding and self.conteudo and self.conteudo.strip():
+        # Gera embedding antes de salvar se não existir e o treinamento estiver finalizado
+        # Verificação segura para evitar erro "truth value of array is ambiguous"
+        embedding_exists = self.embedding is not None
+        if hasattr(self.embedding, '__len__'):
+            try:
+                embedding_exists = len(self.embedding) > 0
+            except Exception:
+                # Se não conseguirmos verificar o tamanho, assumimos que existe
+                embedding_exists = True
+        
+        if (not embedding_exists and self.conteudo and self.conteudo.strip() and 
+            self.treinamento and self.treinamento.treinamento_finalizado):
             try:
                 self.gerar_embedding_sem_salvar()
             except Exception as e:
@@ -138,6 +166,7 @@ class Documento(models.Model):
             embeddings_model = SERVICEHUB.EMBEDDINGS_MODEL
             
             # Criar instância de embeddings baseada na configuração do ServiceHub
+            embeddings_instance = None
             if embeddings_class == "OpenAIEmbeddings":
                 from langchain_openai import OpenAIEmbeddings
                 embeddings_instance = OpenAIEmbeddings(model=embeddings_model)
@@ -147,8 +176,14 @@ class Documento(models.Model):
                 embeddings_instance = OllamaEmbeddings(model=embeddings_model)
             
             elif embeddings_class == "HuggingFaceEmbeddings":
-                from langchain_community.embeddings import HuggingFaceEmbeddings
-                embeddings_instance = HuggingFaceEmbeddings(model_name=embeddings_model)
+                try:
+                    # Tentar importar da versão mais recente primeiro
+                    from langchain_huggingface import HuggingFaceEmbeddings
+                    embeddings_instance = HuggingFaceEmbeddings(model_name=embeddings_model)
+                except ImportError:
+                    # Fallback para a versão community se a versão huggingface não estiver disponível
+                    from langchain_community.embeddings import HuggingFaceEmbeddings
+                    embeddings_instance = HuggingFaceEmbeddings(model_name=embeddings_model)
             
             elif embeddings_class == "HuggingFaceInferenceAPIEmbeddings":
                 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
@@ -165,16 +200,21 @@ class Documento(models.Model):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings_instance = OpenAIEmbeddings(model=embeddings_model or "text-embedding-ada-002")
             
+            # Verificar se embeddings_instance foi criado
+            if embeddings_instance is None:
+                raise ValueError(f"Não foi possível criar instância de embeddings para a classe: {embeddings_class}")
+            
             # Gerar embeddings usando LangChain
             embedding_vector = embeddings_instance.embed_query(self.conteudo)
             
             # Converter para lista se necessário
-            if hasattr(embedding_vector, 'tolist'):
-                embedding_vector = embedding_vector.tolist()
-            
-            # Atribuir o embedding ao campo
-            self.embedding = list(embedding_vector)
-            
+            try:
+                # Tentar converter para lista diretamente
+                self.embedding = list(embedding_vector)
+            except Exception:
+                # Se falhar, atribuir diretamente
+                self.embedding = embedding_vector
+
             logger.info(f"Embedding gerado para documento {self.pk or 'novo'}")
 
         except Exception as e:
@@ -270,11 +310,20 @@ class Documento(models.Model):
                 else:
                     embeddings = OpenAIEmbeddings()
             elif embeddings_class == "HuggingFaceEmbeddings":
-                from langchain_huggingface import HuggingFaceEmbeddings
-                if embeddings_model:
-                    embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
-                else:
-                    embeddings = HuggingFaceEmbeddings()
+                try:
+                    # Tentar importar da versão mais recente primeiro
+                    from langchain_huggingface import HuggingFaceEmbeddings
+                    if embeddings_model:
+                        embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
+                    else:
+                        embeddings = HuggingFaceEmbeddings()
+                except ImportError:
+                    # Fallback para a versão community se a versão huggingface não estiver disponível
+                    from langchain_community.embeddings import HuggingFaceEmbeddings
+                    if embeddings_model:
+                        embeddings = HuggingFaceEmbeddings(model_name=embeddings_model)
+                    else:
+                        embeddings = HuggingFaceEmbeddings()
             else:
                 raise ValueError(f"Classe de embeddings não suportada: {embeddings_class}")
 

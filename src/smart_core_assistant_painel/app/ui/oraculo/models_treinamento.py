@@ -184,10 +184,7 @@ class Treinamento(models.Model):
             # Cria registros Documento para cada chunk (com embeddings automáticos)
             self.criar_documentos(chunks)
             
-            # Finaliza o treinamento automaticamente se todos os embeddings foram criados
-            if self.treinamento_vetorizado:
-                self.finalizar()
-            
+            # Não finaliza automaticamente o treinamento - isso será feito pelo usuário
             logger.info(f"Processados {len(chunks)} chunks para treinamento {self.pk}")
             
         except Exception as e:
@@ -236,7 +233,7 @@ class Treinamento(models.Model):
                         metadata=documento.metadata or {},
                         ordem=i + 1,
                     )
-                    # O embedding é gerado automaticamente no save()
+                    # O embedding é gerado automaticamente no save() apenas se o treinamento estiver finalizado
                     doc_obj.save()
                     documentos_criados.append(doc_obj)
                     sucesso += 1
@@ -244,13 +241,16 @@ class Treinamento(models.Model):
                     logger.error(f"Erro ao criar documento {i}: {e}")
                     erros += 1
 
-            # Atualiza status de vetorização do treinamento
-            if erros == 0:
-                self.treinamento_vetorizado = True
-                self.save(update_fields=['treinamento_vetorizado'])
-                logger.info(f"Criados {len(documentos_criados)} documentos com embeddings para treinamento {self.pk}")
+            # Atualiza status de vetorização do treinamento apenas se estiver finalizado
+            if self.treinamento_finalizado:
+                if erros == 0:
+                    self.treinamento_vetorizado = True
+                    self.save(update_fields=['treinamento_vetorizado'])
+                    logger.info(f"Criados {len(documentos_criados)} documentos com embeddings para treinamento {self.pk}")
+                else:
+                    logger.warning(f"Documentos criados: {len(documentos_criados)}, Sucessos: {sucesso}, Erros: {erros}")
             else:
-                logger.warning(f"Documentos criados: {len(documentos_criados)}, Sucessos: {sucesso}, Erros: {erros}")
+                logger.info(f"Criados {len(documentos_criados)} documentos para treinamento {self.pk} (embeddings gerados após finalização)")
 
         except Exception as e:
             error_msg = f"Erro inesperado ao criar documentos: {e}"

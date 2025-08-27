@@ -183,7 +183,7 @@ def __task_treinar_ia(instance_id: int) -> None:
         Treinamento.objects.filter(id=instance_id).update(embedding=None)
 
         # 2) Extrai conteúdo unificado e gera embedding
-        texto_unificado: str = instance.get_conteudo_unificado() or ""
+        texto_unificado: str = instance.conteudo or ""
         if not texto_unificado.strip():
             logger.warning(
                 "Treinamento %s sem conteúdo para embedding.", instance_id

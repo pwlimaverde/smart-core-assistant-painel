@@ -856,7 +856,8 @@ class DocumentoAdmin(admin.ModelAdmin):
         """Exibe uma prévia do vetor de embedding salvo."""
         try:
             vetor = getattr(obj, "embedding", None)
-            if vetor is None:
+            # Verificação mais segura para evitar o erro de "truth value of array"
+            if vetor is None or (hasattr(vetor, '__len__') and len(vetor) == 0):
                 return "-"
             
             try:

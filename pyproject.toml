@@ -54,12 +54,10 @@ dependencies = [
     "mypy>=1.17.0",
     "mypy-extensions==1.1.0",
     "networkx>=3.5",
-
     "openai==1.82.0",
     "openpyxl>=3.1.5",
     "orjson==3.10.18",
     "packaging==24.2",
-
     "propcache==0.3.1",
     "psycopg[binary]==3.2.3",
     "py-return-success-or-error==0.6.1",
@@ -98,6 +96,7 @@ dependencies = [
     "zstandard==0.23.0",
     # Substitui langchain-huggingface por dependencia leve para API
     "huggingface-hub>=0.24.0",
+    "langchain-huggingface>=0.2.0",
 ]
 
 

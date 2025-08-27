@@ -320,6 +320,8 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             elif acao == "manter":
                 treinamento.treinamento_finalizado = True
                 treinamento.save()
+                # Gera embeddings para os documentos após finalizar o treinamento
+                treinamento.vetorizar_documentos()
                 messages.success(request, "Treinamento mantido e finalizado!")
             elif acao == "descartar":
                 treinamento.delete()
@@ -344,7 +346,7 @@ def _aceitar_treinamento(id: int):
         treinamento = Treinamento.objects.get(id=id)
         
         # Obtém conteúdo unificado atual
-        conteudo_atual = treinamento.get_conteudo_unificado()
+        conteudo_atual = treinamento.conteudo or ""
         
         # Verificação segura se há conteúdo
         if not conteudo_atual.strip():
@@ -354,12 +356,19 @@ def _aceitar_treinamento(id: int):
         # Aplica melhoria de IA ao conteúdo unificado
         conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_atual)
         
+        # Atualiza o conteúdo do treinamento
+        treinamento.conteudo = conteudo_melhorado
+        treinamento.save(update_fields=['conteudo'])
+        
         # Processa o conteúdo melhorado em chunks
         treinamento.processar_conteudo_para_chunks(conteudo_melhorado)
         
         # Finaliza o treinamento
         treinamento.treinamento_finalizado = True
         treinamento.save()
+        
+        # Gera embeddings para os documentos após finalizar o treinamento
+        treinamento.vetorizar_documentos()
         
         logger.info(f"Treinamento {id} aceito e finalizado com melhorias aplicadas")
         
@@ -380,7 +389,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     """
     try:
         treinamento = Treinamento.objects.get(id=id)
-        conteudo_unificado = treinamento.get_conteudo_unificado()
+        conteudo_unificado = treinamento.conteudo or ""
         texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
         return render(
             request,
@@ -467,7 +476,7 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
                 messages.success(request, "Treinamento excluído com sucesso!")
             elif acao == "editar":
                 # Armazena os dados do treinamento na sessão para edição
-                conteudo_atual = treinamento.get_conteudo_unificado()
+                conteudo_atual = treinamento.conteudo or ""
                 
                 # Armazena na sessão para evitar URLs extensas
                 request.session['treinamento_edicao'] = {

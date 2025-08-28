@@ -27,6 +27,7 @@ from ..utils.erros import (
 from ..utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
+    GenerateChunksParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -38,6 +39,7 @@ from ..utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
+    GCUsecase,
     GEData,
     GEUsecase,
     LDCUsecase,
@@ -79,6 +81,9 @@ from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
 )
 from .search_similar_embeddings.domain.usecase.search_similar_embeddings_usecase import (
     SearchSimilarEmbeddingsUseCase,
+)
+from .generate_chunks.domain.usecase.generate_chunks_usecase import (
+    GenerateChunksUseCase,
 )
 
 
@@ -385,6 +390,40 @@ class FeaturesCompose:
             error=error,
         )
         usecase: SSEUsecase = SearchSimilarEmbeddingsUseCase()
+        data = usecase(parameters)
+        
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def generate_chunks(
+        conteudo: str,
+        metadata: dict[str, Any],
+    ) -> list[Document]:
+        """Gera chunks a partir de conteúdo de texto.
+
+        Args:
+            conteudo (str): Conteúdo de texto para ser dividido em chunks.
+            metadata (dict[str, Any]): Metadados a serem associados aos chunks.
+
+        Returns:
+            list[Document]: Lista de documentos em chunks.
+
+        Raises:
+            DocumentError: Se ocorrer um erro durante a geração de chunks.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error = DocumentError("Erro ao gerar chunks do conteúdo!")
+        parameters = GenerateChunksParameters(
+            conteudo=conteudo,
+            metadata=metadata,
+            error=error,
+        )
+        usecase: GCUsecase = GenerateChunksUseCase()
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):

@@ -8,7 +8,6 @@ processamento de mensagens em buffer.
 from datetime import timedelta
 from langchain_core.documents.base import Document
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
 from typing import Any, List
 
@@ -219,23 +218,22 @@ def __embed_text(text: str) -> List[float]:
 
 def __processar_conteudo_para_chunks(treinamento: Treinamento) -> List[Document]:
     """Processa conteúdo e cria chunks."""
-
-    # Cria chunks
-    temp_document: Document = Document(
-        page_content=treinamento.conteudo,
-        metadata={
-            "source": "treinamento_manual", 
-            "treinamento_id": str(treinamento.pk),
-            "tag": treinamento.tag,
-            "grupo": treinamento.grupo
-        }
+    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
+    
+    # Prepara metadados
+    metadata = {
+        "source": "treinamento_manual", 
+        "treinamento_id": str(treinamento.pk),
+        "tag": treinamento.tag,
+        "grupo": treinamento.grupo
+    }
+    
+    # Usa a nova feature para gerar chunks
+    chunks = FeaturesCompose.generate_chunks(
+        conteudo=treinamento.conteudo,
+        metadata=metadata
     )
     
-    splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-        chunk_size=SERVICEHUB.CHUNK_SIZE, 
-        chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
-    )
-    chunks: List[Document] = splitter.split_documents(documents=[temp_document])
     return chunks
 
 def __gerar_embedding_documento(documento_id: int) -> None:

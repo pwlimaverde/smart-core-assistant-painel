@@ -2,12 +2,10 @@ from django.db.models.query import QuerySet
 
 
 from langchain_core.documents.base import Document
-from smart_core_assistant_painel.app.ui.oraculo.fields import VectorField
-
 from typing import Any, List, Self
 from django.db import models
 from loguru import logger
-from pgvector.django import CosineDistance, HnswIndex
+from pgvector.django import CosineDistance, HnswIndex, VectorField
 
 
 class Documento(models.Model):

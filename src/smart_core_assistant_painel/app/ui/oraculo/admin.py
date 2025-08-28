@@ -82,52 +82,86 @@ class TreinamentoAdmin(admin.ModelAdmin):
         """
         try:
             vetor = getattr(obj, "embedding", None)
-            # Evita comparações diretas com estruturas como numpy.ndarray
-            # que podem gerar ValueError por ambiguidade de verdade.
+            
+            # Verificação mais robusta para diferentes tipos de dados
             if vetor is None:
                 return "-"
+            
+            # Verifica se é vazio de forma segura
+            try:
+                # Para numpy arrays e arrays similares
+                if hasattr(vetor, 'size') and getattr(vetor, 'size', 0) == 0:
+                    return "[embedding vazio]"
+                # Para listas, tuplas e outros iteráveis
+                elif hasattr(vetor, '__len__'):
+                    try:
+                        if len(vetor) == 0:
+                            return "[embedding vazio]"
+                    except (ValueError, TypeError):
+                        # Se len() falhar (ex: numpy arrays multidimensionais), continua
+                        pass
+            except Exception:
+                pass
 
-            # Tenta obter uma sequência de valores numéricos de forma resiliente
+            # Converte para lista de forma segura
+            seq = []
             try:
                 if isinstance(vetor, (list, tuple)):
-                    seq = vetor
+                    seq = list(vetor)
+                elif hasattr(vetor, 'tolist') and callable(getattr(vetor, 'tolist')):
+                    seq = vetor.tolist()
                 else:
-                    tolist = getattr(vetor, "tolist", None)
-                    if callable(tolist):
-                        seq = tolist()
-                    else:
-                        # Converte para lista (ex.: memoryview, pgvector.Vector)
-                        seq = list(vetor)
+                    # Tenta converter iterando sobre o objeto
+                    try:
+                        for i, item in enumerate(vetor):
+                            if i >= 10:  # Limita para evitar processamento excessivo
+                                break
+                            seq.append(item)
+                    except (TypeError, ValueError):
+                        return "[embedding inválido]"
             except Exception:
                 return "[embedding inválido]"
 
-            # Caso a sequência esteja vazia
-            try:
-                if hasattr(seq, "__len__") and len(seq) == 0:
-                    return "[embedding vazio]"
-            except Exception:
-                # Prossegue mesmo que len(seq) falhe por algum tipo exótico
-                pass
+            # Verifica se a sequência resultante está vazia
+            if not seq:
+                return "[embedding vazio]"
 
-            # Normaliza os elementos para float, ignorando valores não-numéricos
+            # Normaliza os elementos para float
             normalizado = []
-            for x in seq:
+            for i, x in enumerate(seq):
+                if i >= 10:  # Limita a 10 elementos para preview
+                    break
                 try:
                     normalizado.append(float(x))
-                except Exception:
-                    # Ignora itens não conversíveis para float
+                except (ValueError, TypeError):
                     continue
 
             if not normalizado:
                 return "[embedding vazio]"
 
-            tam = len(normalizado)
+            # Estima o tamanho total do vetor original
+            tam_total = len(normalizado)  # fallback
+            try:
+                if hasattr(vetor, 'size'):
+                    tam_total = getattr(vetor, 'size', tam_total)
+                elif hasattr(vetor, '__len__'):
+                    try:
+                        tam_total = len(vetor)
+                    except (ValueError, TypeError):
+                        tam_total = len(seq)
+                else:
+                    tam_total = len(seq)
+            except Exception:
+                pass
+
+            # Formata a preview
             head = normalizado[:10]
             fmt_head = ", ".join(f"{x:.4f}" for x in head)
-            sufixo = ", ..." if tam > 10 else ""
-            return f"[{fmt_head}{sufixo}] (dim={tam})"
-        except Exception:
-            return "Erro ao exibir embedding"
+            sufixo = ", ..." if tam_total > 10 else ""
+            return f"[{fmt_head}{sufixo}] (dim={tam_total})"
+            
+        except Exception as e:
+            return f"Erro: {type(e).__name__}"
 
     @admin.action(description="Marcar treinamentos selecionados como vetorizados")
     def marcar_como_vetorizado(
@@ -807,6 +841,7 @@ class DocumentoAdmin(admin.ModelAdmin):
     search_fields = ["treinamento__tag", "conteudo"]
     list_filter = ["treinamento__tag", "treinamento__grupo", "data_criacao"]
     ordering = ["treinamento__tag", "ordem"]
+    exclude = ["embedding"]  # Exclui o campo embedding do formulário
     readonly_fields = [
         "treinamento", 
         "conteudo", 
@@ -856,45 +891,86 @@ class DocumentoAdmin(admin.ModelAdmin):
         """Exibe uma prévia do vetor de embedding salvo."""
         try:
             vetor = getattr(obj, "embedding", None)
-            # Verificação mais segura para evitar o erro de "truth value of array"
-            if vetor is None or (hasattr(vetor, '__len__') and len(vetor) == 0):
+            
+            # Verificação mais robusta para diferentes tipos de dados
+            if vetor is None:
                 return "-"
             
+            # Verifica se é vazio de forma segura
             try:
-                if isinstance(vetor, (list, tuple)):
-                    seq = vetor
-                else:
-                    tolist = getattr(vetor, "tolist", None)
-                    if callable(tolist):
-                        seq = tolist()
-                    else:
-                        seq = list(vetor)
-            except Exception:
-                return "[embedding inválido]"
-            
-            try:
-                if hasattr(seq, "__len__") and len(seq) == 0:
+                # Para numpy arrays e arrays similares
+                if hasattr(vetor, 'size') and getattr(vetor, 'size', 0) == 0:
                     return "[embedding vazio]"
+                # Para listas, tuplas e outros iteráveis
+                elif hasattr(vetor, '__len__'):
+                    try:
+                        if len(vetor) == 0:
+                            return "[embedding vazio]"
+                    except (ValueError, TypeError):
+                        # Se len() falhar (ex: numpy arrays multidimensionais), continua
+                        pass
             except Exception:
                 pass
             
+            # Converte para lista de forma segura
+            seq = []
+            try:
+                if isinstance(vetor, (list, tuple)):
+                    seq = list(vetor)
+                elif hasattr(vetor, 'tolist') and callable(getattr(vetor, 'tolist')):
+                    seq = vetor.tolist()
+                else:
+                    # Tenta converter iterando sobre o objeto
+                    try:
+                        for i, item in enumerate(vetor):
+                            if i >= 10:  # Limita para evitar processamento excessivo
+                                break
+                            seq.append(item)
+                    except (TypeError, ValueError):
+                        return "[embedding inválido]"
+            except Exception:
+                return "[embedding inválido]"
+            
+            # Verifica se a sequência resultante está vazia
+            if not seq:
+                return "[embedding vazio]"
+            
+            # Normaliza os elementos para float
             normalizado = []
-            for x in seq:
+            for i, x in enumerate(seq):
+                if i >= 10:  # Limita a 10 elementos para preview
+                    break
                 try:
                     normalizado.append(float(x))
-                except Exception:
+                except (ValueError, TypeError):
                     continue
             
             if not normalizado:
                 return "[embedding vazio]"
             
-            tam = len(normalizado)
+            # Estima o tamanho total do vetor original
+            tam_total = len(normalizado)  # fallback
+            try:
+                if hasattr(vetor, 'size'):
+                    tam_total = getattr(vetor, 'size', tam_total)
+                elif hasattr(vetor, '__len__'):
+                    try:
+                        tam_total = len(vetor)
+                    except (ValueError, TypeError):
+                        tam_total = len(seq)
+                else:
+                    tam_total = len(seq)
+            except Exception:
+                pass
+            
+            # Formata a preview
             head = normalizado[:5]
             fmt_head = ", ".join(f"{x:.4f}" for x in head)
-            sufixo = ", ..." if tam > 5 else ""
-            return f"[{fmt_head}{sufixo}] (dim={tam})"
-        except Exception:
-            return "Erro ao exibir embedding"
+            sufixo = ", ..." if tam_total > 5 else ""
+            return f"[{fmt_head}{sufixo}] (dim={tam_total})"
+            
+        except Exception as e:
+            return f"Erro: {type(e).__name__}"
 
 
 admin.site.site_header = "Smart Core Assistant - Painel de Administração"

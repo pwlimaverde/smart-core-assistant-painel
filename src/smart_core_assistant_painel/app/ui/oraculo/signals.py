@@ -9,7 +9,6 @@ from datetime import timedelta
 from langchain_core.documents.base import Document
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
 from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
 from typing import Any, List
 
@@ -23,8 +22,6 @@ from loguru import logger
 
 from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
 from smart_core_assistant_painel.modules.services import SERVICEHUB
-
-from .models_treinamento import Treinamento
 
 mensagem_bufferizada = Signal()
 
@@ -248,7 +245,8 @@ def __gerar_embedding_documento(documento_id: int) -> None:
         documento_id: ID do documento para gerar embedding
     """
     try:
-        from .embedding_data import EmbeddingData
+        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
+        
         
         documento: Documento = Documento.objects.get(id=documento_id)
         
@@ -256,8 +254,7 @@ def __gerar_embedding_documento(documento_id: int) -> None:
             logger.warning(f"Documento {documento_id} sem conteúdo válido")
             return
             
-        # Gera embedding usando a classe especializada EmbeddingData
-        embedding_vector: List[float] = EmbeddingData.gerar_embedding_para_documento(documento.conteudo)
+        embedding_vector: List[float] = FeaturesCompose.generate_embeddings(text=documento.conteudo)
         
         if embedding_vector:
             # Salva o embedding no documento

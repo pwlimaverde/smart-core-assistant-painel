@@ -205,22 +205,6 @@ class GenerateEmbeddingsParameters(ParametersReturnResult):
         return self.__repr__()
 
 
-@dataclass
-class EmbeddingToTextParameters(ParametersReturnResult):
-    """Parâmetros para conversão de embedding em texto.
-
-    Attributes:
-        embedding_vector (list[float]): Vetor de embedding a ser convertido.
-        error (EmbeddingError): O erro a ser levantado em caso de falha.
-    """
-
-    embedding_vector: list[float]
-    error: EmbeddingError
-
-    def __str__(self) -> str:
-        """Retorna uma representação em string do objeto."""
-        return self.__repr__()
-
 
 @dataclass
 class SearchSimilarEmbeddingsParameters(ParametersReturnResult):

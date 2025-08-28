@@ -5,6 +5,9 @@ de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
 
+from py_return_success_or_error.core.return_success_or_error import ReturnSuccessOrError
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import EmbeddingError
 from typing import Any
 
 from langchain.docstore.document import Document
@@ -19,14 +22,11 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 from ..utils.erros import (
     DataMessageError,
     DocumentError,
-    EmbeddingError,
     LlmError,
 )
 from ..utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
-    EmbeddingToTextParameters,
-    GenerateEmbeddingsParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -38,7 +38,6 @@ from ..utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
-    ETTUsecase,
     GEData,
     GEUsecase,
     LDCUsecase,
@@ -77,9 +76,6 @@ from .generate_embeddings.datasource.generate_embeddings_langchain_datasource im
 )
 from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
     GenerateEmbeddingsUseCase,
-)
-from .embedding_to_text.domain.usecase.embedding_to_text_usecase import (
-    EmbeddingToTextUseCase,
 )
 from .search_similar_embeddings.domain.usecase.search_similar_embeddings_usecase import (
     SearchSimilarEmbeddingsUseCase,
@@ -348,39 +344,11 @@ class FeaturesCompose:
             EmbeddingError: Se ocorrer um erro durante a geração.
             ValueError: Se o tipo de retorno do caso de uso for inesperado.
         """
-        error = EmbeddingError("Erro ao gerar embeddings!")
-        parameters = GenerateEmbeddingsParameters(text=text, error=error)
+        error: EmbeddingError = EmbeddingError("Erro ao gerar embeddings!")
+        parameters: GenerateEmbeddingsParameters = GenerateEmbeddingsParameters(text=text, error=error)
         datasource: GEData = GenerateEmbeddingsLangchainDatasource()
         usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
-        data = usecase(parameters)
-
-        if isinstance(data, SuccessReturn):
-            return data.result
-        elif isinstance(data, ErrorReturn):
-            raise data.result
-        else:
-            raise ValueError("Unexpected return type from usecase")
-
-    @staticmethod
-    def embedding_to_text(embedding_vector: list[float]) -> str:
-        """Converte um embedding em representação textual.
-
-        Args:
-            embedding_vector (list[float]): Vetor de embedding a converter.
-
-        Returns:
-            str: Representação textual do embedding.
-
-        Raises:
-            EmbeddingError: Se ocorrer um erro durante a conversão.
-            ValueError: Se o tipo de retorno do caso de uso for inesperado.
-        """
-        error = EmbeddingError("Erro ao converter embedding em texto!")
-        parameters = EmbeddingToTextParameters(
-            embedding_vector=embedding_vector, error=error
-        )
-        usecase: ETTUsecase = EmbeddingToTextUseCase()
-        data = usecase(parameters)
+        data: ReturnSuccessOrError[list[float]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
             return data.result

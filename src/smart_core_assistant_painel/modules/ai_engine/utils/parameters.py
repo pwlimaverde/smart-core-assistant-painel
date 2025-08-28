@@ -205,22 +205,6 @@ class GenerateEmbeddingsParameters(ParametersReturnResult):
         return self.__repr__()
 
 
-@dataclass
-class EmbeddingToTextParameters(ParametersReturnResult):
-    """Parâmetros para conversão de embedding em texto.
-
-    Attributes:
-        embedding_vector (list[float]): Vetor de embedding a ser convertido.
-        error (EmbeddingError): O erro a ser levantado em caso de falha.
-    """
-
-    embedding_vector: list[float]
-    error: EmbeddingError
-
-    def __str__(self) -> str:
-        """Retorna uma representação em string do objeto."""
-        return self.__repr__()
-
 
 @dataclass
 class SearchSimilarEmbeddingsParameters(ParametersReturnResult):
@@ -237,6 +221,25 @@ class SearchSimilarEmbeddingsParameters(ParametersReturnResult):
     embeddings_data: list[dict]
     top_k: int = 5
     error: EmbeddingError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class GenerateChunksParameters(ParametersReturnResult):
+    """Parâmetros para geração de chunks a partir de conteúdo.
+
+    Attributes:
+        conteudo (str): Conteúdo de texto para ser dividido em chunks.
+        metadata (dict[str, Any]): Metadados a serem associados aos chunks.
+        error (DocumentError): O erro a ser levantado em caso de falha.
+    """
+
+    conteudo: str
+    metadata: dict[str, Any]
+    error: DocumentError
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""

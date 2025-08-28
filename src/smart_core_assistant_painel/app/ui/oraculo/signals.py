@@ -8,8 +8,6 @@ processamento de mensagens em buffer.
 from datetime import timedelta
 from langchain_core.documents.base import Document
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.documents import Document
 from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
 from typing import Any, List
 
@@ -23,8 +21,6 @@ from loguru import logger
 
 from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
 from smart_core_assistant_painel.modules.services import SERVICEHUB
-
-from .models_treinamento import Treinamento
 
 mensagem_bufferizada = Signal()
 
@@ -222,23 +218,22 @@ def __embed_text(text: str) -> List[float]:
 
 def __processar_conteudo_para_chunks(treinamento: Treinamento) -> List[Document]:
     """Processa conteúdo e cria chunks."""
-
-    # Cria chunks
-    temp_document: Document = Document(
-        page_content=treinamento.conteudo,
-        metadata={
-            "source": "treinamento_manual", 
-            "treinamento_id": str(treinamento.pk),
-            "tag": treinamento.tag,
-            "grupo": treinamento.grupo
-        }
+    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
+    
+    # Prepara metadados
+    metadata = {
+        "source": "treinamento_manual", 
+        "treinamento_id": str(treinamento.pk),
+        "tag": treinamento.tag,
+        "grupo": treinamento.grupo
+    }
+    
+    # Usa a nova feature para gerar chunks
+    chunks = FeaturesCompose.generate_chunks(
+        conteudo=treinamento.conteudo,
+        metadata=metadata
     )
     
-    splitter: RecursiveCharacterTextSplitter = RecursiveCharacterTextSplitter(
-        chunk_size=SERVICEHUB.CHUNK_SIZE, 
-        chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
-    )
-    chunks: List[Document] = splitter.split_documents(documents=[temp_document])
     return chunks
 
 def __gerar_embedding_documento(documento_id: int) -> None:
@@ -248,7 +243,8 @@ def __gerar_embedding_documento(documento_id: int) -> None:
         documento_id: ID do documento para gerar embedding
     """
     try:
-        from .embedding_data import EmbeddingData
+        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
+        
         
         documento: Documento = Documento.objects.get(id=documento_id)
         
@@ -256,8 +252,7 @@ def __gerar_embedding_documento(documento_id: int) -> None:
             logger.warning(f"Documento {documento_id} sem conteúdo válido")
             return
             
-        # Gera embedding usando a classe especializada EmbeddingData
-        embedding_vector: List[float] = EmbeddingData.gerar_embedding_para_documento(documento.conteudo)
+        embedding_vector: List[float] = FeaturesCompose.generate_embeddings(text=documento.conteudo)
         
         if embedding_vector:
             # Salva o embedding no documento

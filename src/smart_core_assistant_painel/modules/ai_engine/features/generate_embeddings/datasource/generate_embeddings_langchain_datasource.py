@@ -6,11 +6,7 @@ como OpenAI, Ollama e HuggingFace através da biblioteca LangChain.
 As configurações vêm do ServiceHub seguindo o padrão do projeto.
 """
 
-from typing import Any, Dict, List
-
-from django.conf import settings
-from loguru import logger
-
+from langchain_core.embeddings.embeddings import Embeddings
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     GenerateEmbeddingsParameters,
 )
@@ -41,24 +37,24 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
         """
         try:
             # Criar instância de embeddings usando configurações do ServiceHub
-            embeddings_instance = self._create_embeddings_instance()
+            embeddings_instance: Embeddings = self._create_embeddings_instance()
             
             # Gerar embeddings usando LangChain
-            embedding_vector = embeddings_instance.embed_query(parameters.text)
+            embedding_vector: list[float] = embeddings_instance.embed_query(parameters.text)
             
             return embedding_vector
             
         except Exception as e:
             raise Exception(f"Erro ao gerar embeddings: {str(e)}")
     
-    def _create_embeddings_instance(self):
+    def _create_embeddings_instance(self) -> Embeddings:
         """Cria uma instância de embeddings baseada na configuração do ServiceHub.
         
         Returns:
             Instância do modelo de embeddings configurado.
         """
-        embeddings_class = SERVICEHUB.EMBEDDINGS_CLASS
-        embeddings_model = SERVICEHUB.EMBEDDINGS_MODEL
+        embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
+        embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
         
         if embeddings_class == "OpenAIEmbeddings":
             from langchain_openai import OpenAIEmbeddings
@@ -75,10 +71,8 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
         elif embeddings_class == "HuggingFaceInferenceAPIEmbeddings":
             from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
             from pydantic import SecretStr
-            import os
-            api_key = os.environ.get("HUGGINGFACE_API_KEY", "")
             return HuggingFaceInferenceAPIEmbeddings(
-                api_key=SecretStr(api_key),
+                api_key=SecretStr(secret_value=SERVICEHUB.HUGGINGFACE_API_KEY),
                 model_name=embeddings_model
             )
         

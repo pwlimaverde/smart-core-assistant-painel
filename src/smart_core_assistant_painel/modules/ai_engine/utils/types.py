@@ -26,7 +26,7 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
-    EmbeddingToTextParameters,
+    GenerateChunksParameters,
     GenerateEmbeddingsParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
@@ -88,14 +88,14 @@ GEUsecase: TypeAlias = UsecaseBaseCallData[
 ]
 GEData: TypeAlias = Datasource[list[float], GenerateEmbeddingsParameters]
 
-# Aliases para Embedding to Text
-ETTUsecase: TypeAlias = UsecaseBase[
-    str,
-    EmbeddingToTextParameters,
-]
-
 # Aliases para Search Similar Embeddings
 SSEUsecase: TypeAlias = UsecaseBase[
     list[dict],
     SearchSimilarEmbeddingsParameters,
+]
+
+# Aliases para Generate Chunks
+GCUsecase: TypeAlias = UsecaseBase[
+    list[Document],
+    GenerateChunksParameters,
 ]

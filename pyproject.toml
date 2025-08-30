@@ -150,6 +150,8 @@ packages = ["src/smart_core_assistant_painel"]
 # Servidor Django
 dev = "smart_core_assistant_painel.main:main"
 start-server = "smart_core_assistant_painel.main:main"
+base = "python scripts/new_feature_script.py --type base"
+call-data = "python scripts/new_feature_script.py --type call_data"
 
 
 [tool.taskipy.tasks]

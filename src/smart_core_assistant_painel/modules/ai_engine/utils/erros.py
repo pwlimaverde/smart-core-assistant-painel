@@ -63,3 +63,14 @@ class EmbeddingError(AppError):
     def __str__(self) -> str:
         """Retorna uma mensagem de erro formatada."""
         return f"EmbeddingError - {self.message}"
+
+
+@dataclass
+class GenerateChunksError(AppError):
+    """Erro relacionado à geração ou processamento de chunks."""
+
+    message: str
+
+    def __str__(self) -> str:
+        """Retorna uma mensagem de erro formatada."""
+        return f"GenerateChunksError - {self.message}"

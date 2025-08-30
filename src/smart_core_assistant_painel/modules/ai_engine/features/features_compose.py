@@ -400,31 +400,14 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def generate_chunks(
-        conteudo: str,
-        metadata: dict[str, Any],
-    ) -> list[Document]:
-        """Gera chunks a partir de conteúdo de texto.
-
-        Args:
-            conteudo (str): Conteúdo de texto para ser dividido em chunks.
-            metadata (dict[str, Any]): Metadados a serem associados aos chunks.
-
-        Returns:
-            list[Document]: Lista de documentos em chunks.
-
-        Raises:
-            DocumentError: Se ocorrer um erro durante a geração de chunks.
-            ValueError: Se o tipo de retorno do caso de uso for inesperado.
-        """
+    def generate_chunks() -> None:
         error = DocumentError("Erro ao gerar chunks do conteúdo!")
         parameters = GenerateChunksParameters(
-            conteudo=conteudo,
-            metadata=metadata,
             error=error,
         )
-        usecase: GCUsecase = GenerateChunksUseCase()
-        data = usecase(parameters)
+        datasource: GEData = GenerateEmbeddingsLangchainDatasource()
+        usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
+        data: ReturnSuccessOrError[list[float]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
             return data.result

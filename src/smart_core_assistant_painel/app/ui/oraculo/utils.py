@@ -11,6 +11,7 @@ from django.core.cache import cache
 from django.utils import timezone
 from loguru import logger
 
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -78,7 +79,12 @@ def send_message_response(phone: str) -> None:
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
             _analisar_conteudo_mensagem(mensagem_id)
-            teste_similaridade = Treinamento.build_similarity_context(query=mensagem.conteudo)
+            query_vec = FeaturesCompose.generate_embeddings(
+                text=mensagem.conteudo
+            )
+            teste_similaridade = Documento.buscar_documentos_similares(
+                query_vec=query_vec
+            )
             logger.info(f"Teste similaridade: {teste_similaridade}")
 
 
@@ -213,10 +219,10 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         resultado_analise = FeaturesCompose.analise_previa_mensagem(
             historico_atendimento=historico_atendimento, context=mensagem.conteudo
         )
-        mensagem.intent_detectado = resultado_analise.intent
-        mensagem.entidades_extraidas = resultado_analise.entities
+        mensagem.intent_detectado = resultado_analise.intent_types
+        mensagem.entidades_extraidas = resultado_analise.entity_types
         mensagem.save(update_fields=["intent_detectado", "entidades_extraidas"])
-        _processar_entidades_contato(mensagem, resultado_analise.entities)
+        _processar_entidades_contato(mensagem, resultado_analise.entity_types)
     except Exception as e:
         logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
 

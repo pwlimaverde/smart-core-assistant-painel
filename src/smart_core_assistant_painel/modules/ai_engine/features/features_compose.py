@@ -5,14 +5,11 @@ de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
 
-
-
 from typing import Any
 from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
 from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import GenerateChunksUseCase
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import EmbeddingError
-
 
 from langchain_core.documents.base import Document
 from loguru import logger
@@ -31,7 +28,6 @@ from ..utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
-    SearchSimilarEmbeddingsParameters,
 )
 from ..utils.types import (
     ACData,
@@ -45,7 +41,6 @@ from ..utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
-    SSEUsecase,
     GCUsecase,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
@@ -79,10 +74,6 @@ from .generate_embeddings.datasource.generate_embeddings_langchain_datasource im
 from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
     GenerateEmbeddingsUseCase,
 )
-from .search_similar_embeddings.domain.usecase.search_similar_embeddings_usecase import (
-    SearchSimilarEmbeddingsUseCase,
-)
-
 
 class FeaturesCompose:
     """Facade para os casos de uso do módulo AI Engine."""
@@ -352,43 +343,6 @@ class FeaturesCompose:
         usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
         data: ReturnSuccessOrError[list[float]] = usecase(parameters)
 
-        if isinstance(data, SuccessReturn):
-            return data.result
-        elif isinstance(data, ErrorReturn):
-            raise data.result
-        else:
-            raise ValueError("Unexpected return type from usecase")
-
-    @staticmethod
-    def search_similar_embeddings(
-        query_embedding: list[float],
-        embeddings_data: list[dict[str, Any]],
-        top_k: int = 5,
-    ) -> list[dict[str, Any]]:
-        """Busca embeddings similares ao embedding de consulta.
-
-        Args:
-            query_embedding (list[float]): Embedding da consulta.
-            embeddings_data (list[dict]): Dados com embeddings para busca.
-            top_k (int): Número de resultados a retornar.
-
-        Returns:
-            list[dict]: Lista ordenada por similaridade.
-
-        Raises:
-            EmbeddingError: Se ocorrer um erro durante a busca.
-            ValueError: Se o tipo de retorno do caso de uso for inesperado.
-        """
-        error = EmbeddingError("Erro ao buscar embeddings similares!")
-        parameters = SearchSimilarEmbeddingsParameters(
-            query_embedding=query_embedding,
-            embeddings_data=embeddings_data,
-            top_k=top_k,
-            error=error,
-        )
-        usecase: SSEUsecase = SearchSimilarEmbeddingsUseCase()
-        data = usecase(parameters)
-        
         if isinstance(data, SuccessReturn):
             return data.result
         elif isinstance(data, ErrorReturn):

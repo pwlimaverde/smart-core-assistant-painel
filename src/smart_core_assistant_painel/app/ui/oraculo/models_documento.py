@@ -1,11 +1,14 @@
+import datetime
 from django.db.models.query import QuerySet
 
-
-from langchain_core.documents.base import Document
-from typing import Any, Self
+from typing import Any, Self, TYPE_CHECKING
 from django.db import models
 from loguru import logger
 from pgvector.django import CosineDistance, HnswIndex, VectorField
+
+if TYPE_CHECKING:
+    # Importação apenas para checagem de tipos, evita dependências circulares em runtime
+    from .models_treinamento import Treinamento
 
 
 class Documento(models.Model):
@@ -24,14 +27,14 @@ class Documento(models.Model):
         data_criacao: Timestamp de criação
     """
     
-    treinamento: models.ForeignKey = models.ForeignKey(
+    treinamento: models.ForeignKey["Treinamento"] = models.ForeignKey(
         "Treinamento",
         on_delete=models.CASCADE,
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
     
-    conteudo: models.TextField = models.TextField(
+    conteudo: models.TextField[str, None] = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo do chunk de treinamento",
@@ -50,12 +53,12 @@ class Documento(models.Model):
         help_text="Vetor de embeddings do conteúdo do documento",
     )
     
-    ordem: models.PositiveIntegerField = models.PositiveIntegerField(
+    ordem: models.PositiveIntegerField[int, int] = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
     
-    data_criacao: models.DateTimeField = models.DateTimeField(
+    data_criacao: models.DateTimeField[datetime.datetime, None] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )
@@ -99,7 +102,7 @@ class Documento(models.Model):
         """
         try:         
             # Busca documentos similares
-            documentos: QuerySet[Self, Self] = cls.objects.filter(
+            documentos: QuerySet[Self] = cls.objects.filter(
                 treinamento__treinamento_finalizado=True,
                 embedding__isnull=False
             ).annotate(
@@ -123,35 +126,6 @@ class Documento(models.Model):
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
             return ""
-
-    @classmethod
-    def criar_documentos_de_chunks(
-        cls,
-        chunks: list[Document],
-        treinamento_id: int
-    ) -> list['Documento']:
-        """Cria documentos a partir de uma lista de chunks e o ID do treinamento.
-        
-        Args:
-            chunks: lista de objetos Document (chunks) do LangChain
-            treinamento_id: ID do treinamento ao qual os documentos pertencem
-            
-        Returns:
-            lista de objetos Documento criados
-        """
-        documentos_criados: list[Any] = []
-        
-        for ordem, chunk in enumerate(chunks, start=1):
-            documento = cls.objects.create(
-                treinamento_id=treinamento_id,
-                conteudo=chunk.page_content,
-                metadata=chunk.metadata or {},
-                ordem=ordem
-            )
-            documentos_criados.append(documento)
-            
-        logger.info(f"Criados {len(documentos_criados)} documentos para o treinamento {treinamento_id}")
-        return documentos_criados
 
     @classmethod
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:

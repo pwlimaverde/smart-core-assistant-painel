@@ -1,6 +1,5 @@
 import os
 import argparse
-from typing import List, Tuple
 
 from rich.console import Console
 from rich.panel import Panel
@@ -171,8 +170,8 @@ def gen_datasource_content(project: str, module: str, cc_name: str, fi: str,
 
 
 def build_facade_imports(module: str, snake: str, cc_name: str, fi: str,
-                          feature_type: str) -> List[str]:
-    lines: List[str] = []
+                          feature_type: str) -> list[str]:
+    lines: list[str] = []
     # py_return_success_or_error (garantir ReturnSuccessOrError)
     base_imp = (
         "from py_return_success_or_error import (ErrorReturn, SuccessReturn, "
@@ -203,7 +202,7 @@ def build_facade_imports(module: str, snake: str, cc_name: str, fi: str,
 def build_facade_method(snake: str, cc_name: str, fi: str,
                         feature_type: str) -> str:
     indent = " " * 4
-    m: List[str] = []
+    m: list[str] = []
     m.append(f"{indent}@staticmethod")
     m.append(f"{indent}def {snake}() -> None:")
     m.append(
@@ -240,7 +239,7 @@ def build_facade_method(snake: str, cc_name: str, fi: str,
 
 # ------------------------- Core flow ------------------------
 
-def get_user_input() -> Tuple[str, str]:
+def get_user_input() -> tuple[str, str]:
     module_name = Prompt.ask(
         "[bold cyan]Digite o nome do módulo[/bold cyan] (ex: ai_engine)"
     )
@@ -364,7 +363,7 @@ def update_features_compose(module_name: str, feature_name: str,
 
     # Inserir imports necessários
     import_lines = build_facade_imports(module_name, snake, cc, fi, feature_type)
-    to_insert: List[str] = []
+    to_insert: list[str] = []
     for line in import_lines:
         if line not in content:
             to_insert.append(line)

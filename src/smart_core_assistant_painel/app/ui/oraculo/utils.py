@@ -5,7 +5,7 @@ agendar respostas, processar entidades e analisar o conteúdo das mensagens.
 """
 
 import json
-from typing import Any, List, Optional, cast
+from typing import Any, Optional, cast
 
 from django.core.cache import cache
 from django.utils import timezone
@@ -60,7 +60,7 @@ def send_message_response(phone: str) -> None:
         phone (str): O número de telefone para o qual enviar a resposta.
     """
     cache_key = f"wa_buffer_{phone}"
-    message_data_list: List[MessageData] = cache.get(cache_key, [])
+    message_data_list: list[MessageData] = cache.get(cache_key, [])
     if not message_data_list:
         logger.warning(f"Buffer vazio para {phone}")
         return
@@ -145,7 +145,7 @@ def _processar_entidades_contato(
 
     Args:
         mensagem (Mensagem): A instância da mensagem analisada.
-        entity_types (list[dict[str, Any]]): Lista de entidades extraídas.
+        entity_types (list[dict[str, Any]]): lista de entidades extraídas.
     """
     try:
         atendimento = cast(Atendimento, mensagem.atendimento)
@@ -247,11 +247,11 @@ def _pode_bot_responder_atendimento(atendimento: Optional["Atendimento"]) -> boo
         return False
 
 
-def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
+def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
     """Compila uma lista de MessageData em um único objeto.
 
     Args:
-        messages (List[MessageData]): A lista de objetos MessageData.
+        messages (list[MessageData]): A lista de objetos MessageData.
 
     Returns:
         MessageData: O objeto MessageData compilado.
@@ -260,7 +260,7 @@ def _compile_message_data_list(messages: List[MessageData]) -> MessageData:
         ValueError: Se a lista de mensagens estiver vazia ou for inválida.
     """
     if not messages:
-        raise ValueError("Lista de mensagens não pode estar vazia")
+        raise ValueError("lista de mensagens não pode estar vazia")
     if not isinstance(messages, list):
         raise ValueError("O parâmetro 'messages' deve ser uma lista")
 

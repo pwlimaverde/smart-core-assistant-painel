@@ -40,7 +40,7 @@ class GenerateChunksUseCase(GCUsecase):
                 para gerar chunks, incluindo o conteúdo e metadados.
 
         Returns:
-            ReturnSuccessOrError[List[Document]]: Um objeto de retorno que
+            ReturnSuccessOrError[list[Document]]: Um objeto de retorno que
                 contém a lista de documentos em chunks em caso de sucesso
                 (SuccessReturn) ou um `AppError` em caso de falha
                 (ErrorReturn).

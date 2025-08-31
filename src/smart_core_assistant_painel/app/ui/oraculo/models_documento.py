@@ -2,7 +2,7 @@ from django.db.models.query import QuerySet
 
 
 from langchain_core.documents.base import Document
-from typing import Any, List, Self
+from typing import Any, Self
 from django.db import models
 from loguru import logger
 from pgvector.django import CosineDistance, HnswIndex, VectorField
@@ -85,7 +85,7 @@ class Documento(models.Model):
     @classmethod
     def buscar_documentos_similares(
         cls,
-        query_vec: List[float],
+        query_vec: list[float],
         top_k: int = 5,
     ) -> str:
         """Busca documentos relacionados à mensagem recebida pelo webhook.
@@ -127,17 +127,17 @@ class Documento(models.Model):
     @classmethod
     def criar_documentos_de_chunks(
         cls,
-        chunks: List[Document],
+        chunks: list[Document],
         treinamento_id: int
-    ) -> List['Documento']:
+    ) -> list['Documento']:
         """Cria documentos a partir de uma lista de chunks e o ID do treinamento.
         
         Args:
-            chunks: Lista de objetos Document (chunks) do LangChain
+            chunks: lista de objetos Document (chunks) do LangChain
             treinamento_id: ID do treinamento ao qual os documentos pertencem
             
         Returns:
-            Lista de objetos Documento criados
+            lista de objetos Documento criados
         """
         documentos_criados: list[Any] = []
         

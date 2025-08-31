@@ -4,6 +4,7 @@ Este módulo contém a implementação do caso de uso para divisão de texto
 em chunks utilizando o RecursiveCharacterTextSplitter do LangChain.
 """
 
+
 from typing import List
 
 from langchain_core.documents.base import Document

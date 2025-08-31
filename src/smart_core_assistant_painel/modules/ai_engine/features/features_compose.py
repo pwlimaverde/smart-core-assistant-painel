@@ -43,6 +43,7 @@ from ..utils.types import (
     LDFUsecase,
     LMDUsecase,
     SSEUsecase,
+    GCUsecase,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
@@ -393,13 +394,14 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def generate_chunks() -> None:
+    def generate_chunks(metadata: dict[str, Any], conteudo: str) -> None:
         error = DocumentError("Erro ao gerar chunks do conteúdo!")
         parameters = GenerateChunksParameters(
+            metadata=metadata,
+            conteudo=conteudo,
             error=error,
         )
-        datasource: GEData = GenerateEmbeddingsLangchainDatasource()
-        usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
+        usecase: GCUsecase = GenerateChunksUseCase()
         data: ReturnSuccessOrError[list[float]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):

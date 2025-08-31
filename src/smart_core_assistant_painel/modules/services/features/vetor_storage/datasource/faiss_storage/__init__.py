@@ -1,0 +1,1 @@
+"""Implementações usando FAISS para armazenamento vetorial."""

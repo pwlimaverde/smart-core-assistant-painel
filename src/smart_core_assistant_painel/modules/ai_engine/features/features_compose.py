@@ -6,12 +6,15 @@ interação com modelos de linguagem.
 """
 
 
+
+from typing import Any
 from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
+from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import GenerateChunksUseCase
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import EmbeddingError
-from typing import Any
 
-from langchain.docstore.document import Document
+
+from langchain_core.documents.base import Document
 from loguru import logger
 
 from smart_core_assistant_painel.modules.services import SERVICEHUB
@@ -359,9 +362,9 @@ class FeaturesCompose:
     @staticmethod
     def search_similar_embeddings(
         query_embedding: list[float],
-        embeddings_data: list[dict],
+        embeddings_data: list[dict[str, Any]],
         top_k: int = 5,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Busca embeddings similares ao embedding de consulta.
 
         Args:
@@ -394,7 +397,16 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def generate_chunks(metadata: dict[str, Any], conteudo: str) -> None:
+    def generate_chunks(conteudo: str, metadata: dict[str, Any]) -> list[Document]:
+        """Gera chunks a partir do conteúdo informado.
+
+        Args:
+            conteudo (str): Texto de entrada para gerar chunks.
+            metadata (dict[str, Any]): Metadados associados ao conteúdo.
+
+        Returns:
+            list[Document]: Lista de documentos (chunks) gerados.
+        """
         error = DocumentError("Erro ao gerar chunks do conteúdo!")
         parameters = GenerateChunksParameters(
             metadata=metadata,
@@ -402,7 +414,7 @@ class FeaturesCompose:
             error=error,
         )
         usecase: GCUsecase = GenerateChunksUseCase()
-        data: ReturnSuccessOrError[list[float]] = usecase(parameters)
+        data: ReturnSuccessOrError[list[Document]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
             return data.result

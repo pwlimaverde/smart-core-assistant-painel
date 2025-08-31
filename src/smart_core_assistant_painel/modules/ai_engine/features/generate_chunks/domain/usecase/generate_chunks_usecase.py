@@ -5,7 +5,7 @@ em chunks utilizando o RecursiveCharacterTextSplitter do LangChain.
 """
 
 
-from typing import List
+
 
 from langchain_core.documents.base import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -32,7 +32,7 @@ class GenerateChunksUseCase(GCUsecase):
 
     def __call__(
         self, parameters: GenerateChunksParameters
-    ) -> ReturnSuccessOrError[List[Document]]:
+    ) -> ReturnSuccessOrError[list[Document]]:
         """Executa o caso de uso de geração de chunks.
 
         Args:
@@ -48,11 +48,9 @@ class GenerateChunksUseCase(GCUsecase):
         try:
             # Valida se o conteúdo não está vazio
             if not parameters.conteudo or not parameters.conteudo.strip():
-                return ErrorReturn(
-                    parameters.error(
-                        message="Conteúdo não pode estar vazio para geração de chunks"
-                    )
-                )
+                error = parameters.error
+                error.message = f"{error.message} - Conteúdo não pode estar vazio para geração de chunks"
+                return ErrorReturn(error)
 
             # Cria documento temporário para chunking
             temp_document = Document(
@@ -72,8 +70,6 @@ class GenerateChunksUseCase(GCUsecase):
             return SuccessReturn(chunks)
             
         except Exception as e:
-            return ErrorReturn(
-                parameters.error(
-                    message=f"Erro ao gerar chunks: {str(e)}"
-                )
-            )
+            error = parameters.error
+            error.message = f"{error.message} - Exception: {str(e)}"
+            return ErrorReturn(error)

@@ -225,3 +225,7 @@ test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core
 
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.basedpyright]
+# Desativa o aviso para Any explícito (reportExplicitAny)
+reportExplicitAny = "none"

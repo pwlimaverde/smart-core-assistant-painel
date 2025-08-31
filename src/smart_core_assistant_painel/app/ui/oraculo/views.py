@@ -16,7 +16,9 @@ from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
 from loguru import logger
 from rolepermissions.checkers import has_permission
+from typing import cast
 
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
 # Atualizando a importação do modelo Treinamento
@@ -220,12 +222,12 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
             # Verifica se está editando um treinamento existente
             if treinamento_id:
                 try:
-                    treinamento = Treinamento.objects.get(id=treinamento_id)
+                    treinamento: Treinamento = Treinamento.objects.get(id=treinamento_id)
                     # Atualiza os campos básicos
                     treinamento.tag = tag
                     treinamento.grupo = grupo
                     # LIMPA COMPLETAMENTE TODOS OS DADOS EXISTENTES
-                    treinamento.clear_all_data()
+                    Documento.limpar_documentos_por_treinamento(treinamento.id)
                     messages.success(request, f"Treinamento ID {treinamento_id} editado com sucesso!")
                 except Treinamento.DoesNotExist:
                     messages.error(request, "Treinamento não encontrado para edição.")

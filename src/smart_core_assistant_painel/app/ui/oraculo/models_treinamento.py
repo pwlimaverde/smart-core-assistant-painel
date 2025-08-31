@@ -1,3 +1,4 @@
+import datetime
 from django.db.models.indexes import Index
 import re
 from django.core.exceptions import ValidationError
@@ -56,41 +57,41 @@ class Treinamento(models.Model):
         data_atualizacao: Data da última atualização
     """
 
-    id: models.AutoField = models.AutoField(
+    id: models.AutoField[int, int] = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    tag: models.CharField = models.CharField(
+    tag: models.CharField[str, str] = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o treinamento",
     )
-    grupo: models.CharField = models.CharField(
+    grupo: models.CharField[str, str] = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento",
     )
-    conteudo: models.TextField = models.TextField(
+    conteudo: models.TextField[str, None] = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo completo do treinamento (antes da divisão em chunks)",
     )
-    treinamento_finalizado: models.BooleanField = models.BooleanField(
+    treinamento_finalizado: models.BooleanField[bool, bool] = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi finalizado",
     )
-    treinamento_vetorizado: models.BooleanField = models.BooleanField(
+    treinamento_vetorizado: models.BooleanField[bool, bool] = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
-    data_criacao: models.DateTimeField = models.DateTimeField(
+    data_criacao: models.DateTimeField[datetime, datetime] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do treinamento",
     )
-    data_atualizacao: models.DateTimeField = models.DateTimeField(
+    data_atualizacao: models.DateTimeField[datetime, datetime] = models.DateTimeField(
         auto_now=True,
         help_text="Data da última atualização do treinamento",
     )
@@ -127,20 +128,3 @@ class Treinamento(models.Model):
             str: Tag do treinamento ou identificador padrão
         """
         return str(self.tag) if self.tag else f"Treinamento {self.id}"
-
-    def clear_all_data(self) -> None:
-        """Limpa completamente todos os dados do treinamento para reutilização.
-        
-        Este método é especialmente útil durante edição de treinamentos,
-        garantindo que não haja conflitos ou problemas de ambiguidade.
-        """
-        self.conteudo = ""
-        self.treinamento_finalizado = False
-        self.treinamento_vetorizado = False
-        
-        # Delega a limpeza de documentos para o modelo Documento
-        if self.pk:
-            from .models_documento import Documento
-            Documento.limpar_documentos_por_treinamento(treinamento_id=self.pk)
-            
-        logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")

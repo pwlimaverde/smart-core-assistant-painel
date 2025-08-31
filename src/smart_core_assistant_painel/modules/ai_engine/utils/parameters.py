@@ -244,4 +244,3 @@ class GenerateChunksParameters(ParametersReturnResult):
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""
         return self.__repr__()
-

@@ -153,6 +153,10 @@ start-server = "smart_core_assistant_painel.main:main"
 
 
 [tool.taskipy.tasks]
+# Scripts de automação
+base = "python scripts/new_feature_script.py --type base"
+call-data = "python scripts/new_feature_script.py --type call_data"
+
 # Servidor Django - Local
 dev = "python -m smart_core_assistant_painel.main runserver"
 start = "python -m smart_core_assistant_painel.main runserver"
@@ -221,3 +225,11 @@ test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core
 
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.basedpyright]
+# Desativa o aviso para Any explícito (reportExplicitAny)
+reportExplicitAny = "none"
+
+[tool.pyright]
+# Mesma configuração para o Pyright padrão
+reportExplicitAny = "none"

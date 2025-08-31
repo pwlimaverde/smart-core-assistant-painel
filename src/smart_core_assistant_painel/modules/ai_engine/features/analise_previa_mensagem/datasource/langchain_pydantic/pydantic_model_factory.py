@@ -12,7 +12,7 @@ Funções:
 """
 
 import json
-from typing import List, Type
+from typing import Type
 
 from pydantic import BaseModel, Field
 
@@ -24,21 +24,21 @@ class PydanticModelFactory:
     """
 
     @staticmethod
-    def _extract_types_from_json(types_json: str) -> List[str]:
+    def _extract_types_from_json(types_json: str) -> list[str]:
         """Extrai os tipos individuais de um JSON de configuração.
 
         Args:
             types_json (str): String JSON com a estrutura de tipos.
 
         Returns:
-            List[str]: Uma lista com todos os tipos disponíveis.
+            list[str]: Uma lista com todos os tipos disponíveis.
         """
         try:
             data = json.loads(types_json)
         except json.JSONDecodeError:
             return []
 
-        types_list: List[str] = []
+        types_list: list[str] = []
         if "intent_types" in data:
             data = data["intent_types"]
         elif "entity_types" in data:
@@ -117,7 +117,7 @@ class PydanticModelFactory:
        - pais_cliente: Nome do país onde a empresa está localizada, conforme mencionado, exemplo: Brasil
 
        ATENDIMENTO:
-       - tags_atendimento: Lista de tags ou palavras-chave que categorizam o atendimento, extraídas da conversa, exemplo: ["orcamento", "urgente"]
+       - tags_atendimento: lista de tags ou palavras-chave que categorizam o atendimento, extraídas da conversa, exemplo: ["orcamento", "urgente"]
        - avaliacao_atendimento: Avaliação numérica do atendimento, variando de 1 (pior) até 5 (melhor), conforme opinião do contato, exemplo: 4
        - feedback_atendimento: Comentário qualitativo ou crítica fornecida pelo contato sobre o atendimento recebido, exemplo: Atendimento muito bom e rápido
         """
@@ -211,8 +211,8 @@ class PydanticModelFactory:
 
             __doc__ = full_documentation.strip()
 
-            intent: List[IntentItem] = Field(default_factory=list)
-            entities: List[EntityItem] = Field(default_factory=list)
+            intent: list[IntentItem] = Field(default_factory=list)
+            entities: list[EntityItem] = Field(default_factory=list)
 
             def add_intent(self, tipo: str, conteudo: str) -> None:
                 """Adiciona uma intenção à lista."""
@@ -222,7 +222,7 @@ class PydanticModelFactory:
                 """Adiciona uma entidade à lista."""
                 self.entities.append(EntityItem(type=tipo, value=valor))
 
-            def get_intents_by_type(self, tipo: str) -> List[str]:
+            def get_intents_by_type(self, tipo: str) -> list[str]:
                 """Retorna valores das intents filtradas por tipo.
 
                 Esta função percorre a lista de intents e retorna somente os
@@ -231,7 +231,7 @@ class PydanticModelFactory:
                 """
                 return [item.value for item in self.intent if item.type == tipo]
 
-            def get_entities_by_type(self, tipo: str) -> List[str]:
+            def get_entities_by_type(self, tipo: str) -> list[str]:
                 """Retorna valores das entities filtradas por tipo.
 
                 Percorre a lista de entities e retorna os valores ("value")

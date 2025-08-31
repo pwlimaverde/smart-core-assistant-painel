@@ -1,6 +1,6 @@
 # import json
 # import re
-# from typing import Any, List, Optional
+# from typing import Any, list, Optional
 
 # from django.core.exceptions import ValidationError
 # from django.db import models
@@ -210,7 +210,7 @@
 #         top_k: int = 5,
 #         grupo: Optional[str] = None,
 #         tag: Optional[str] = None,
-#     ) -> List[tuple["Documento", float]]:
+#     ) -> list[tuple["Documento", float]]:
 #         """
 #         Busca documentos mais similares a um texto de consulta.
 
@@ -221,7 +221,7 @@
 #             tag (Optional[str]): Filtro opcional por tag do treinamento
 
 #         Returns:
-#             List[tuple[Documento, float]]: Lista de tuplas (documento, distância)
+#             list[tuple[Documento, float]]: lista de tuplas (documento, distância)
 #         """
 #         if not query or not query.strip():
 #             return []
@@ -229,7 +229,7 @@
 #             return []
 
 #         # Gera vetor do texto de consulta usando método estático
-#         query_vec: List[float] = cls._embed_text_static(query.strip())
+#         query_vec: list[float] = cls._embed_text_static(query.strip())
 
 #         # Base queryset: documentos de treinamentos finalizados com embedding
 #         qs = cls.objects.filter(
@@ -248,7 +248,7 @@
 #             distance=CosineDistance("embedding", query_vec)
 #         ).order_by("distance")[:top_k]
 
-#         resultados: List[tuple["Documento", float]] = []
+#         resultados: list[tuple["Documento", float]] = []
 #         for obj in qs:
 #             distancia_val: float = float(getattr(obj, "distance", 0.0))
 #             resultados.append((obj, distancia_val))
@@ -256,7 +256,7 @@
 #         return resultados
 
 #     @staticmethod
-#     def _embed_text_static(text: str) -> List[float]:
+#     def _embed_text_static(text: str) -> list[float]:
 #         """
 #         Gera o vetor de embedding para um texto (método estático).
 
@@ -264,7 +264,7 @@
 #             text (str): Texto de entrada.
 
 #         Returns:
-#             List[float]: Vetor de floats (dimensão 1024).
+#             list[float]: Vetor de floats (dimensão 1024).
 #         """
 #         from smart_core_assistant_painel.modules.services import SERVICEHUB
 #         from django.conf import settings
@@ -299,9 +299,9 @@
 
 #             # Gera embedding
 #             if hasattr(embeddings, "embed_query"):
-#                 vec: List[float] = list(map(float, embeddings.embed_query(text)))
+#                 vec: list[float] = list(map(float, embeddings.embed_query(text)))
 #             else:
-#                 docs_vec: List[List[float]] = embeddings.embed_documents([text])
+#                 docs_vec: list[list[float]] = embeddings.embed_documents([text])
 #                 vec = list(map(float, docs_vec[0]))
 #             return vec
             
@@ -458,13 +458,13 @@
 #             logger.error(f"Erro ao processar conteúdo em chunks: {e}")
 #             raise
 
-#     def criar_documentos(self, documentos_langchain: List[Document]) -> None:
+#     def criar_documentos(self, documentos_langchain: list[Document]) -> None:
 #         """
 #         Cria registros Documento a partir de uma lista de objetos Document do LangChain.
 #         Os embeddings são gerados automaticamente no método save() de cada documento.
 
 #         Args:
-#             documentos_langchain: Lista de objetos Document do LangChain
+#             documentos_langchain: lista de objetos Document do LangChain
 
 #         Raises:
 #             TypeError: Se algum item da lista não for um objeto Document válido
@@ -472,7 +472,7 @@
 #         """
 #         # Verificação segura da lista para evitar erro de ambiguidade
 #         if len(documentos_langchain) == 0:
-#             logger.info(f"Lista de documentos vazia para treinamento {self.pk}")
+#             logger.info(f"lista de documentos vazia para treinamento {self.pk}")
 #             return
 
 #         try:
@@ -582,7 +582,7 @@
 #         top_k: int = 5,
 #         grupo: Optional[str] = None,
 #         tag: Optional[str] = None,
-#     ) -> List[tuple["Treinamentos", float]]:
+#     ) -> list[tuple["Treinamentos", float]]:
 #         """
 #         Busca treinamentos mais similares a um texto de consulta.
 
@@ -596,7 +596,7 @@
 #             tag (Optional[str]): Filtro opcional por tag.
 
 #         Returns:
-#             List[tuple[Treinamentos, float]]: Lista de tuplas
+#             list[tuple[Treinamentos, float]]: lista de tuplas
 #             (objeto, distancia), ordenada por menor distância.
 #         """
 #         if not query or not query.strip():
@@ -717,7 +717,7 @@
 #             raise
 
 #     @staticmethod
-#     def _embed_text(text: str) -> List[float]:
+#     def _embed_text(text: str) -> list[float]:
 #         """Gera o vetor de embedding para um texto.
 
 #         Usa embed_query (preferível para uma única string) quando disponível,
@@ -727,17 +727,17 @@
 #             text (str): Texto de entrada.
 
 #         Returns:
-#             List[float]: Vetor de floats (dimensão 1024).
+#             list[float]: Vetor de floats (dimensão 1024).
 #         """
 #         embeddings = Treinamentos._get_embeddings_instance()
 
 #         try:
 #             if hasattr(embeddings, "embed_query"):
-#                 vec: List[float] = list(
+#                 vec: list[float] = list(
 #                     map(float, embeddings.embed_query(text))
 #                 )
 #             else:
-#                 docs_vec: List[List[float]] = embeddings.embed_documents([text])
+#                 docs_vec: list[list[float]] = embeddings.embed_documents([text])
 #                 vec = list(map(float, docs_vec[0]))
 #             return vec
 #         except Exception as exc:  # pragma: no cover
@@ -754,7 +754,7 @@
 #         top_k: int = 5,
 #         grupo: Optional[str] = None,
 #         tag: Optional[str] = None,
-#     ) -> List[tuple["Treinamentos", float]]:
+#     ) -> list[tuple["Treinamentos", float]]:
 #         """Busca treinamentos mais similares a um texto de consulta.
 
 #         Agora utiliza a nova arquitetura com DocumentoVetorizado para
@@ -767,7 +767,7 @@
 #             tag (Optional[str]): Filtro opcional por tag.
 
 #         Returns:
-#             List[tuple[Treinamentos, float]]: Lista de tuplas
+#             list[tuple[Treinamentos, float]]: lista de tuplas
 #             (objeto, distancia), ordenada por menor distância.
 #         """
 #         if not query or not query.strip():
@@ -804,14 +804,14 @@
 #         return resultados[:top_k]
 
 #     @staticmethod
-#     def _cosine_distance(vec_a: List[float], vec_b: List[float]) -> float:
+#     def _cosine_distance(vec_a: list[float], vec_b: list[float]) -> float:
 #         """Calcula a distância cosseno entre dois vetores.
 
 #         Retorna valor em [0, 2]; quanto menor, mais similares.
 
 #         Args:
-#             vec_a (List[float]): Vetor A.
-#             vec_b (List[float]): Vetor B.
+#             vec_a (list[float]): Vetor A.
+#             vec_b (list[float]): Vetor B.
 
 #         Returns:
 #             float: Distância cosseno (1 - similaridade).
@@ -872,7 +872,7 @@
 #             return ""
 
 #         # Embedding da consulta
-#         query_vec: List[float] = cls._embed_text(query.strip())
+#         query_vec: list[float] = cls._embed_text(query.strip())
 
 #         # Seleciona treinamentos mais similares (com filtros opcionais)
 #         top_trainings = cls.search_by_similarity(
@@ -886,8 +886,8 @@
 #             return ""
 
 #         # Coleta documentos e metadados (tag/grupo) de cada treinamento
-#         docs: List[Document] = []
-#         doc_meta: List[tuple[str, str]] = []  # (tag, grupo)
+#         docs: list[Document] = []
+#         doc_meta: list[tuple[str, str]] = []  # (tag, grupo)
 #         for tr_obj, _dist in top_trainings:
 #             for doc in tr_obj.get_documentos():
 #                 docs.append(doc)
@@ -909,13 +909,13 @@
 #             )
 #             return ""
 
-#         # Normaliza para List[List[float]]
-#         docs_vecs: List[List[float]] = []
+#         # Normaliza para list[list[float]]
+#         docs_vecs: list[list[float]] = []
 #         for vec in docs_vecs_raw:
 #             docs_vecs.append([float(x) for x in vec])
 
 #         # Calcula as distâncias cosseno
-#         scored: List[tuple[float, int]] = []
+#         scored: list[tuple[float, int]] = []
 #         for idx, vec in enumerate(docs_vecs):
 #             dist = cls._cosine_distance(query_vec, vec)
 #             scored.append((dist, idx))
@@ -927,7 +927,7 @@
 #         top_scored = scored[:top_k_docs]
 
 #         # Monta a string de contexto
-#         lines: List[str] = []
+#         lines: list[str] = []
 #         lines.append(
 #             "Contexto de suporte (documentos mais similares):"
 #         )
@@ -990,7 +990,7 @@
 #             return ""
 
 #         # Monta a string de contexto
-#         lines: List[str] = []
+#         lines: list[str] = []
 #         lines.append(
 #             "Contexto de suporte (documentos mais similares - v2):"
 #         )
@@ -1169,7 +1169,7 @@
 #         ativo: Status de atividade do atendente
 #         disponivel: Disponibilidade atual para atendimento
 #         max_atendimentos_simultaneos: Máximo de atendimentos simultâneos
-#         especialidades: Lista de especialidades/áreas de conhecimento
+#         especialidades: lista de especialidades/áreas de conhecimento
 #         horario_trabalho: Horário de trabalho em formato JSON
 #         data_cadastro: Data de cadastro no sistema
 #         ultima_atividade: Data da última atividade no sistema
@@ -1224,7 +1224,7 @@
 #     especialidades: models.JSONField = models.JSONField(
 #         default=list,
 #         blank=True,
-#         help_text="Lista de especialidades/áreas de conhecimento do atendente",
+#         help_text="lista de especialidades/áreas de conhecimento do atendente",
 #     )
 #     horario_trabalho: models.JSONField = models.JSONField(
 #         default=dict,
@@ -2085,10 +2085,10 @@
 
 #         Returns:
 #             dict: Dicionário contendo:
-#                 - 'conteudo_mensagens': Lista de strings com o conteúdo das mensagens
+#                 - 'conteudo_mensagens': lista de strings com o conteúdo das mensagens
 #                 - 'intents_detectados': Set com todos os intents únicos detectados
 #                 - 'entidades_extraidas': Set com todas as entidades únicas extraídas
-#                 - 'historico_atendimentos': Lista de strings com histórico de atendimentos anteriores no formato "DD/MM/YYYY - assunto tratado: {assunto}"
+#                 - 'historico_atendimentos': lista de strings com histórico de atendimentos anteriores no formato "DD/MM/YYYY - assunto tratado: {assunto}"
 
 #         Example:
 #             >>> # Para carregar histórico completo
@@ -2353,7 +2353,7 @@
 #             tipo_intent (str): Tipo do intent a buscar
 
 #         Returns:
-#             list[str]: Lista com todos os valores encontrados para o tipo
+#             list[str]: lista com todos os valores encontrados para o tipo
 
 #         Example:
 #             >>> mensagem.get_intents_por_tipo('pergunta')
@@ -2693,7 +2693,7 @@
 #     Busca um atendente humano disponível para receber um novo atendimento.
 
 #     Args:
-#         especialidades (list, optional): Lista de especialidades requeridas
+#         especialidades (list, optional): lista de especialidades requeridas
 #         departamento (Departamento, optional): Objeto departamento específico
 
 #     Returns:
@@ -2739,7 +2739,7 @@
 
 #     Args:
 #         atendimento (Atendimento): Atendimento a ser transferido
-#         especialidades (list, optional): Lista de especialidades requeridas
+#         especialidades (list, optional): lista de especialidades requeridas
 #         departamento (Departamento, optional): Objeto departamento específico
 
 #     Returns:
@@ -2772,7 +2772,7 @@
 
 # def listar_atendentes_por_disponibilidade() -> dict[str, list["AtendenteHumano"]]:
 #     """
-#     Lista todos os atendentes agrupados por disponibilidade.
+#     lista todos os atendentes agrupados por disponibilidade.
 
 #     Returns:
 #         dict: Dicionário com atendentes agrupados por status de disponibilidade

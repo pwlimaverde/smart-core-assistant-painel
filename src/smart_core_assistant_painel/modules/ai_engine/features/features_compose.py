@@ -5,17 +5,17 @@ de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
 
-from py_return_success_or_error.core.return_success_or_error import ReturnSuccessOrError
+
+
+from typing import Any
+from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
+from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import GenerateChunksUseCase
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import EmbeddingError
-from typing import Any
 
-from langchain.docstore.document import Document
+
+from langchain_core.documents.base import Document
 from loguru import logger
-from py_return_success_or_error import (
-    ErrorReturn,
-    SuccessReturn,
-)
 
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
@@ -39,7 +39,6 @@ from ..utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
-    GCUsecase,
     GEData,
     GEUsecase,
     LDCUsecase,
@@ -47,6 +46,7 @@ from ..utils.types import (
     LDFUsecase,
     LMDUsecase,
     SSEUsecase,
+    GCUsecase,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
@@ -81,9 +81,6 @@ from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
 )
 from .search_similar_embeddings.domain.usecase.search_similar_embeddings_usecase import (
     SearchSimilarEmbeddingsUseCase,
-)
-from .generate_chunks.domain.usecase.generate_chunks_usecase import (
-    GenerateChunksUseCase,
 )
 
 
@@ -365,9 +362,9 @@ class FeaturesCompose:
     @staticmethod
     def search_similar_embeddings(
         query_embedding: list[float],
-        embeddings_data: list[dict],
+        embeddings_data: list[dict[str, Any]],
         top_k: int = 5,
-    ) -> list[dict]:
+    ) -> list[dict[str, Any]]:
         """Busca embeddings similares ao embedding de consulta.
 
         Args:
@@ -400,31 +397,24 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def generate_chunks(
-        conteudo: str,
-        metadata: dict[str, Any],
-    ) -> list[Document]:
-        """Gera chunks a partir de conteúdo de texto.
+    def generate_chunks(conteudo: str, metadata: dict[str, Any]) -> list[Document]:
+        """Gera chunks a partir do conteúdo informado.
 
         Args:
-            conteudo (str): Conteúdo de texto para ser dividido em chunks.
-            metadata (dict[str, Any]): Metadados a serem associados aos chunks.
+            conteudo (str): Texto de entrada para gerar chunks.
+            metadata (dict[str, Any]): Metadados associados ao conteúdo.
 
         Returns:
-            list[Document]: Lista de documentos em chunks.
-
-        Raises:
-            DocumentError: Se ocorrer um erro durante a geração de chunks.
-            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+            list[Document]: Lista de documentos (chunks) gerados.
         """
         error = DocumentError("Erro ao gerar chunks do conteúdo!")
         parameters = GenerateChunksParameters(
-            conteudo=conteudo,
             metadata=metadata,
+            conteudo=conteudo,
             error=error,
         )
         usecase: GCUsecase = GenerateChunksUseCase()
-        data = usecase(parameters)
+        data: ReturnSuccessOrError[list[Document]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
             return data.result

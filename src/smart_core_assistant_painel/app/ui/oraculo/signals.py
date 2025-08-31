@@ -9,7 +9,7 @@ from datetime import timedelta
 from langchain_core.documents.base import Document
 
 from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
-from typing import Any, List
+from typing import Any
 
 from django.conf import settings
 from django.db.models.signals import post_save, pre_delete
@@ -23,27 +23,6 @@ from smart_core_assistant_painel.app.ui.oraculo.models_documento import Document
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 mensagem_bufferizada = Signal()
-
-
-# @receiver(post_save, sender=Treinamento)
-# def signals_treinamento_ia(
-#     sender: Any, instance: Treinamento, created: bool, **kwargs: Any
-# ) -> None:
-#     """Executa o treinamento da IA de forma assíncrona após salvar um treinamento.
-
-#     Args:
-#         sender (Any): O remetente do signal.
-#         instance (Treinamento): A instância do modelo de treinamento.
-#         created (bool): True se um novo registro foi criado.
-#         **kwargs (Any): Argumentos de palavra-chave adicionais.
-#     """
-#     try:
-#         # Só executa se o treinamento foi finalizado E ainda não foi vetorizado
-#         # Isso evita loops infinitos quando a vetorização atualiza o status
-#         if instance.treinamento_finalizado and not instance.treinamento_vetorizado:
-#             async_task(__gerar_documentos, instance.id)
-#     except Exception as e:
-#         logger.error(f"Erro ao processar signal de treinamento: {e}")
 
 @receiver(post_save, sender=Treinamento)
 def signals_gerar_documentos_treinamento(
@@ -131,92 +110,7 @@ def __limpar_schedules_telefone(phone: str) -> None:
         logger.warning(f"Erro ao limpar schedules para {phone}: {e}")
 
 
-# -------------------------
-# Helpers de Embeddings
-# -------------------------
-
-def __get_embeddings_instance() -> Any:
-    """Constrói a instância de embeddings conforme configuração do ServiceHub.
-
-    Returns:
-        Any: Instância de embeddings compatível com LangChain.
-
-    Raises:
-        ValueError: Caso a classe configurada não seja suportada.
-    """
-    embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
-    embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
-
-    try:
-        if embeddings_class == "OllamaEmbeddings":
-            # Usa Ollama via URL configurada no settings/env
-            from langchain_ollama import OllamaEmbeddings
-
-            base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
-            kwargs: dict[str, Any] = {}
-            if embeddings_model:
-                kwargs["model"] = embeddings_model
-            if base_url:
-                kwargs["base_url"] = base_url
-            return OllamaEmbeddings(**kwargs)
-
-        if embeddings_class == "OpenAIEmbeddings":
-            from langchain_openai import OpenAIEmbeddings
-
-            if embeddings_model:
-                return OpenAIEmbeddings(model=embeddings_model)
-            return OpenAIEmbeddings()
-
-        if embeddings_class == "HuggingFaceEmbeddings":
-            from langchain_huggingface import HuggingFaceEmbeddings
-
-            if embeddings_model:
-                return HuggingFaceEmbeddings(model_name=embeddings_model)
-            return HuggingFaceEmbeddings()
-
-        raise ValueError(
-            "Classe de embeddings não suportada: " f"{embeddings_class}"
-        )
-    except Exception as exc:  # pragma: no cover - proteção adicional
-        # Loga erro e repassa para tratamento na chamada
-        logger.error(
-            "Falha ao criar instancia de embeddings: " f"{exc}",
-            exc_info=True,
-        )
-        raise
-
-
-def __embed_text(text: str) -> List[float]:
-    """Gera o vetor de embedding para um texto.
-
-    Tenta usar embed_query se disponível (preferível para uma única string),
-    caso contrário, utiliza embed_documents.
-
-    Args:
-        text (str): Texto a ser convertido em embedding.
-
-    Returns:
-        List[float]: Vetor de embedding como lista de floats.
-    """
-    embeddings = __get_embeddings_instance()
-
-    try:
-        if hasattr(embeddings, "embed_query"):
-            vec: List[float] = list(map(float, embeddings.embed_query(text)))
-        else:
-            # Fallback para APIs que suportam apenas embed_documents
-            docs_vec: List[List[float]] = embeddings.embed_documents([text])
-            vec = list(map(float, docs_vec[0]))
-        return vec
-    except Exception as exc:  # pragma: no cover - proteção adicional
-        logger.error(
-            "Erro ao gerar embedding do texto: " f"{exc}",
-            exc_info=True,
-        )
-        raise
-
-
-def __processar_conteudo_para_chunks(treinamento: Treinamento) -> List[Document]:
+def __processar_conteudo_para_chunks(treinamento: Treinamento) -> list[Document]:
     """Processa conteúdo e cria chunks."""
     from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
     
@@ -252,7 +146,7 @@ def __gerar_embedding_documento(documento_id: int) -> None:
             logger.warning(f"Documento {documento_id} sem conteúdo válido")
             return
             
-        embedding_vector: List[float] = FeaturesCompose.generate_embeddings(text=documento.conteudo)
+        embedding_vector: list[float] = FeaturesCompose.generate_embeddings(text=documento.conteudo)
         
         if embedding_vector:
             # Salva o embedding no documento
@@ -281,7 +175,7 @@ def __gerar_documentos(instance_id: int) -> None:
         if instance.treinamento_vetorizado:
             logger.info(f"Treinamento {instance_id} já está vetorizado, pulando...")
             return
-        chunks: List[Document] = __processar_conteudo_para_chunks(treinamento=instance)
+        chunks: list[Document] = __processar_conteudo_para_chunks(treinamento=instance)
         from .models_documento import Documento
 
         Documento.criar_documentos_de_chunks(chunks=chunks, treinamento_id=instance_id)

@@ -4,6 +4,12 @@ Esta classe fornece uma interface simplificada para acessar as funcionalidades
 de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
+from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
+from ..utils.erros import NewFeatureTesteError
+from ..utils.types import NFTUsecase
+from ..utils.parameters import NewFeatureTesteParameters
+from .new_feature_teste.domain.usecase.new_feature_teste_usecase import NewFeatureTesteUseCase
+
 
 from py_return_success_or_error.core.return_success_or_error import ReturnSuccessOrError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters

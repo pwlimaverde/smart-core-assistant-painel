@@ -156,6 +156,8 @@ start-server = "smart_core_assistant_painel.main:main"
 # Scripts de automação
 base = "python scripts/new_feature_script.py --type base"
 call-data = "python scripts/new_feature_script.py --type call_data"
+feature-base = "python scripts/new_feature_script.py --type base"
+feature-call-data = "python scripts/new_feature_script.py --type call_data"
 
 # Servidor Django - Local
 dev = "python -m smart_core_assistant_painel.main runserver"

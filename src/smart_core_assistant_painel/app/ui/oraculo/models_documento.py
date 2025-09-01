@@ -4,11 +4,13 @@ from django.db.models.query import QuerySet
 from typing import Any, Self, TYPE_CHECKING
 from django.db import models
 from loguru import logger
-from pgvector.django import CosineDistance, HnswIndex, VectorField
+from pgvector.django import CosineDistance, VectorField  # pyright: ignore[reportMissingTypeStubs]
 
 if TYPE_CHECKING:
     # Importação apenas para checagem de tipos, evita dependências circulares em runtime
     from .models_treinamento import Treinamento
+
+from typing import override
 
 
 class Documento(models.Model):
@@ -26,7 +28,10 @@ class Documento(models.Model):
         ordem: Ordem do documento no treinamento
         data_criacao: Timestamp de criação
     """
-    
+    id: models.AutoField[int, int] = models.AutoField(
+        primary_key=True, help_text="Chave primária do registro"
+    )
+
     treinamento: models.ForeignKey["Treinamento"] = models.ForeignKey(
         "Treinamento",
         on_delete=models.CASCADE,
@@ -69,22 +74,13 @@ class Documento(models.Model):
         ordering: list[str] = ["treinamento", "ordem"]
         indexes: list[Any] = [
             models.Index(fields=["treinamento", "ordem"]),
-            models.Index(fields=["data_criacao"]),
-            HnswIndex(
-                name='documento_embedding_hnsw_idx',
-                fields=['embedding'],
-                m=16,
-                ef_construction=64,
-                opclasses=['vector_cosine_ops']
-            ),
+            models.Index(fields=["status", "data_criacao"]),
         ]
 
+    @override
     def __str__(self) -> str:
-        """Retorna representação string do objeto."""
-        if self.conteudo:
-            return f"Documento {self.pk}: {self.conteudo[:50]}..."
-        return f"Documento {self.pk} (vazio)"
-    
+        return f"Documento {self.id}"
+
     @classmethod
     def buscar_documentos_similares(
         cls,
@@ -115,11 +111,12 @@ class Documento(models.Model):
                 
             contexto_lines: list[str] = ["📚 Contexto relevante:"]
             for i, doc in enumerate(documentos, 1):
-                contexto_lines.extend([
-                    f"\n[{i}] {doc.treinamento.tag} - {doc.treinamento.grupo}",
-                    doc.conteudo.strip(),
+                if doc.conteudo:
+                    contexto_lines.extend([
+                        f"\n[{i}] {doc.treinamento.tag} - {doc.treinamento.grupo}",
+                        doc.conteudo.strip(),
                     "---"
-                ])
+                    ])
             
             return "\n".join(contexto_lines)
             
@@ -131,8 +128,8 @@ class Documento(models.Model):
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
         """Remove todos os documentos de um treinamento."""
         count: int = cls.objects.filter(treinamento_id=treinamento_id).count()
-        cls.objects.filter(treinamento_id=treinamento_id).delete()
-        logger.info(f"Removidos {count} documentos do treinamento {treinamento_id}")
+        docs = cls.objects.filter(treinamento_id=treinamento_id).delete()
+        logger.info(f"Removidos {count} documentos do treinamento {treinamento_id} {docs}")
 
     
         

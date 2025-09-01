@@ -73,7 +73,7 @@ class TestVerificarTreinamentosView(TestCase):
         """Testa a tentativa de vetorizar novamente um treinamento."""
         treinamento_id = self.treinamento_erro.id
         
-        with patch('smart_core_assistant_painel.app.ui.oraculo.views.__task_treinar_ia') as mock_task:
+        with patch('smart_core_assistant_painel.app.ui.oraculo.views.__task_treinar_ia'):
             with patch('django_q.tasks.async_task') as mock_async_task:
                 response = self.client.post(self.url, {
                     'acao': 'vetorizar',

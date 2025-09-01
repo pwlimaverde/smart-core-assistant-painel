@@ -3,7 +3,7 @@ from django.db.models.indexes import Index
 import re
 from django.core.exceptions import ValidationError
 from django.db import models
-from loguru import logger
+from typing import override
 
 
 def validate_identificador(value: str) -> None:
@@ -87,11 +87,11 @@ class Treinamento(models.Model):
         default=False,
         help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
-    data_criacao: models.DateTimeField[datetime, datetime] = models.DateTimeField(
+    data_criacao: models.DateTimeField[datetime.datetime, datetime.datetime] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do treinamento",
     )
-    data_atualizacao: models.DateTimeField[datetime, datetime] = models.DateTimeField(
+    data_atualizacao: models.DateTimeField[datetime.datetime, datetime.datetime] = models.DateTimeField(
         auto_now=True,
         help_text="Data da última atualização do treinamento",
     )
@@ -106,6 +106,7 @@ class Treinamento(models.Model):
             models.Index(fields=["treinamento_finalizado", "treinamento_vetorizado"]),
         ]
 
+    @override
     def clean(self) -> None:
         """Validação personalizada do modelo.
 
@@ -121,6 +122,7 @@ class Treinamento(models.Model):
         if self.tag and self.grupo and self.tag == self.grupo:
             raise ValidationError(message={"grupo": "O grupo não pode ser igual à tag."})
 
+    @override
     def __str__(self) -> str:
         """Retorna representação string do objeto.
 

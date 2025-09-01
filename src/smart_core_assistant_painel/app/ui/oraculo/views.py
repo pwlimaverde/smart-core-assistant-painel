@@ -16,7 +16,6 @@ from django.views.decorators.csrf import csrf_exempt
 from langchain.docstore.document import Document
 from loguru import logger
 from rolepermissions.checkers import has_permission
-from typing import cast
 
 from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose

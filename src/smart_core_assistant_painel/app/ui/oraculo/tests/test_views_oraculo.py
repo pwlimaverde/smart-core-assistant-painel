@@ -5,11 +5,11 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.contrib.messages import get_messages
-from unittest.mock import patch, MagicMock, mock_open, call
+from unittest.mock import patch, MagicMock
 from langchain.docstore.document import Document
 from rolepermissions.roles import assign_role
 
-from smart_core_assistant_painel.app.ui.oraculo.views import TreinamentoService, _processar_treinamento, pre_processamento
+from smart_core_assistant_painel.app.ui.oraculo.views import TreinamentoService, _processar_treinamento
 from smart_core_assistant_painel.app.ui.oraculo.models import Treinamentos
 
 

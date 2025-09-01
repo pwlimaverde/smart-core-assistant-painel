@@ -11,7 +11,6 @@ from langchain_core.documents.base import Document
 from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
 from typing import Any
 
-from django.conf import settings
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import Signal, receiver
 from django.utils import timezone

@@ -5,7 +5,7 @@ de API, o relacionamento com atendentes e a validação de webhooks.
 """
 
 import re
-from typing import Optional
+from typing import Optional, override
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -75,16 +75,19 @@ class Departamento(models.Model):
             models.Index(fields=["ativo", "nome"]),
         ]
 
+    @override
     def __str__(self) -> str:
         """Retorna a representação em string do departamento."""
         return f"{self.nome} ({self.telefone_instancia})"
 
+    @override
     def save(self, *args, **kwargs):
         """Salva o departamento, normalizando o telefone da instância."""
         if self.telefone_instancia:
             self.telefone_instancia = re.sub(r"\D", "", self.telefone_instancia)
         super().save(*args, **kwargs)
 
+    @override
     def clean(self) -> None:
         """Valida os campos antes de salvar."""
         super().clean()

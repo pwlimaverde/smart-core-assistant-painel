@@ -1,6 +1,5 @@
 """Testes para os modelos do app Oraculo."""
 
-import json
 from unittest.mock import patch, MagicMock
 
 from django.core.exceptions import ValidationError
@@ -21,12 +20,10 @@ from ..models import (
     Treinamentos,
     buscar_atendimento_ativo,
     inicializar_atendimento_whatsapp,
-    processar_mensagem_whatsapp,
     validate_tag,
     validate_telefone,
     validate_cnpj,
     validate_cpf,
-    validate_cep,
 )
 from ..models_departamento import Departamento, validate_api_key, validate_telefone_instancia
 

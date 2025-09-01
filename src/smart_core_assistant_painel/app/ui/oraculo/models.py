@@ -1,11 +1,9 @@
-import json
 import re
-from typing import Any, List, Optional
+from typing import Any, Optional, override
 
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
 from loguru import logger
 
 from .models_departamento import Departamento
@@ -244,7 +242,8 @@ class AtendenteHumano(models.Model):
         verbose_name_plural = "Atendentes Humanos"
         ordering = ["nome"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do atendente.
 
@@ -253,7 +252,8 @@ class AtendenteHumano(models.Model):
         """
         return f"{self.nome} - {self.cargo}"
 
-    def save(self, *args, **kwargs):
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Salva o atendente normalizando o número de telefone.
 
@@ -275,6 +275,7 @@ class AtendenteHumano(models.Model):
 
         super().save(*args, **kwargs)
 
+    @override
     def clean(self) -> None:
         """
         Validação personalizada do modelo.
@@ -403,7 +404,8 @@ class Contato(models.Model):
         verbose_name_plural = "Contatos"
         ordering = ["-ultima_interacao"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do contato.
 
@@ -412,7 +414,8 @@ class Contato(models.Model):
         """
         return f"{self.nome_contato or 'Contato'} ({self.telefone})"
 
-    def save(self, *args, **kwargs):
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Salva o contato normalizando o número de telefone.
 
@@ -584,7 +587,8 @@ class Cliente(models.Model):
         verbose_name_plural = "Clientes"
         ordering = ["nome_fantasia"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do cliente.
 
@@ -593,7 +597,8 @@ class Cliente(models.Model):
         """
         return self.nome_fantasia
 
-    def save(self, *args, **kwargs):
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Salva o cliente normalizando dados antes do salvamento.
 
@@ -639,6 +644,7 @@ class Cliente(models.Model):
 
         super().save(*args, **kwargs)
 
+    @override
     def clean(self) -> None:
         """
         Validação personalizada do modelo.
@@ -953,7 +959,8 @@ class Atendimento(models.Model):
         verbose_name_plural = "Atendimentos"
         ordering = ["-data_inicio"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do atendimento.
 
@@ -1273,7 +1280,8 @@ class Mensagem(models.Model):
         verbose_name_plural = "Mensagens"
         ordering = ["timestamp"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string da mensagem.
 
@@ -1441,7 +1449,7 @@ class FluxoConversa(models.Model):
         verbose_name = "Fluxo de Conversa"
         verbose_name_plural = "Fluxos de Conversa"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """
         Retorna representação string do fluxo de conversa.
 

@@ -3,11 +3,10 @@
 import pytest
 import json
 from unittest.mock import patch, MagicMock, call
-from django.utils import timezone
 from smart_core_assistant_painel.app.ui.oraculo import utils
 from smart_core_assistant_painel.modules.ai_engine import MessageData
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import AnalisePreviaMensagem
-from smart_core_assistant_painel.app.ui.oraculo.models import Atendimento, Contato, Mensagem, TipoRemetente
+from smart_core_assistant_painel.app.ui.oraculo.models import Atendimento, Contato, Mensagem
 
 
 def create_message_data(**kwargs):

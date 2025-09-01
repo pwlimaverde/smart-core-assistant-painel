@@ -233,4 +233,3 @@ reportExplicitAny = "none"
 [tool.pyright]
 # Mesma configuração para o Pyright padrão
 reportExplicitAny = "none"
-reportMissingTypeStubs = "none"

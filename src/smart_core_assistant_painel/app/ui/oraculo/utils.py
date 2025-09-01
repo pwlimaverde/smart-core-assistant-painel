@@ -25,7 +25,6 @@ from .models import (
     TipoRemetente,
     processar_mensagem_whatsapp,
 )
-from .models_treinamento import Treinamento
 from .signals import mensagem_bufferizada
 
 

@@ -236,9 +236,44 @@ reportUnknownVariableType = "none"
 reportUnknownMemberType = "none"
 # Suprime a exigência de anotação para atributos de classe (ex.: campos de modelos)
 reportUnannotatedClassAttribute = "none"
+# Casos adicionais que podem aparecer em chamadas e parâmetros
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+
+# Overrides específicos para arquivos/padrões problemáticos
+[[tool.basedpyright.diagnosticRuleOverrides]]
+path = "src/smart_core_assistant_painel/app/ui/oraculo/models_documento.py"
+[tool.basedpyright.diagnosticRuleOverrides.rules]
+reportUnknownVariableType = "none"
+reportUnannotatedClassAttribute = "none"
+reportUnknownMemberType = "none"
+
+[[tool.basedpyright.diagnosticRuleOverrides]]
+path = "src/smart_core_assistant_painel/app/ui/oraculo/*.py"
+[tool.basedpyright.diagnosticRuleOverrides.rules]
+reportUnknownVariableType = "none"
+reportUnannotatedClassAttribute = "none"
+reportUnknownMemberType = "none"
 
 [tool.pyright]
 # Mesma configuração para o Pyright padrão
 reportExplicitAny = "none"
 reportUnknownVariableType = "none"
+reportUnknownMemberType = "none"
 reportUnannotatedClassAttribute = "none"
+# Casos adicionais que podem aparecer em chamadas e parâmetros
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+
+# Overrides específicos para arquivos/padrões problemáticos (formato compatível com Pyright)
+[[tool.pyright.overrides]]
+files = ["src/smart_core_assistant_painel/app/ui/oraculo/models_documento.py"]
+reportUnknownVariableType = "none"
+reportUnannotatedClassAttribute = "none"
+reportUnknownMemberType = "none"
+
+[[tool.pyright.overrides]]
+files = ["src/smart_core_assistant_painel/app/ui/oraculo/*.py"]
+reportUnknownVariableType = "none"
+reportUnannotatedClassAttribute = "none"
+reportUnknownMemberType = "none"

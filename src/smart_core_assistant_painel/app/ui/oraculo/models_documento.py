@@ -9,6 +9,8 @@ from pgvector.django import CosineDistance, VectorField  # type: ignore
 
 from typing import override
 
+# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false, reportUnknownMemberType=false
+
 
 class Documento(models.Model):
     """

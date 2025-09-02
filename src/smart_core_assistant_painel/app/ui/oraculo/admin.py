@@ -4,11 +4,11 @@ Este módulo registra os modelos do aplicativo Oráculo no painel de administra�
 do Django e personaliza a forma como eles são exibidos e gerenciados.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.contrib import admin
 from django.db.models import QuerySet
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 
 if TYPE_CHECKING:
     from typing import Any
@@ -27,7 +27,7 @@ from .models_documento import Documento
 
 
 @admin.register(Treinamento)
-class TreinamentoAdmin(admin.ModelAdmin):
+class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
     """Admin para o modelo Treinamento."""
 
     list_display = [
@@ -212,7 +212,7 @@ class TreinamentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(AtendenteHumano)
-class AtendenteHumanoAdmin(admin.ModelAdmin):
+class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
     """Admin para o modelo AtendenteHumano."""
 
     list_display = [
@@ -302,7 +302,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Contato)
-class ContatoAdmin(admin.ModelAdmin):
+class ContatoAdmin(admin.ModelAdmin[Contato]):
     """Admin para o modelo Contato."""
 
     list_display = [
@@ -329,28 +329,28 @@ class ContatoAdmin(admin.ModelAdmin):
     )
 
     @admin.display(description="Total de Atendimentos")
-    def total_atendimentos(self, obj: Contato) -> "Any":
+    def total_atendimentos(self, obj: Contato) -> int:
         """Retorna o número total de atendimentos do contato.
 
         Args:
             obj (Contato): A instância do contato.
 
         Returns:
-            Any: O número de atendimentos.
+            int: O número de atendimentos.
         """
-        return getattr(obj, "atendimentos").count()
+        return cast(int, getattr(obj, "atendimentos").count())
 
     @admin.display(description="Total de Clientes")
-    def total_clientes(self, obj: Contato) -> "Any":
+    def total_clientes(self, obj: Contato) -> int:
         """Retorna o número total de clientes vinculados ao contato.
 
         Args:
             obj (Contato): A instância do contato.
 
         Returns:
-            Any: O número de clientes.
+            int: O número de clientes.
         """
-        return getattr(obj, "clientes").count() if hasattr(obj, "clientes") else 0
+        return cast(int, getattr(obj, "clientes").count() if hasattr(obj, "clientes") else 0)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Contato]:
         """Otimiza as consultas carregando clientes relacionados.
@@ -365,7 +365,7 @@ class ContatoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Cliente)
-class ClienteAdmin(admin.ModelAdmin):
+class ClienteAdmin(admin.ModelAdmin[Cliente]):
     """Admin para o modelo Cliente."""
 
     list_display = [
@@ -411,14 +411,14 @@ class ClienteAdmin(admin.ModelAdmin):
     actions = ["marcar_como_ativa", "marcar_como_inativa", "exportar_dados"]
 
     @admin.display(description="Total de Contatos")
-    def total_contatos(self, obj: Cliente) -> "Any":
+    def total_contatos(self, obj: Cliente) -> int:
         """Retorna o número total de contatos vinculados ao cliente.
 
         Args:
             obj (Cliente): A instância do cliente.
 
         Returns:
-            Any: O número de contatos.
+            int: O número de contatos.
         """
         return obj.contatos.count()
 
@@ -465,7 +465,7 @@ class ClienteAdmin(admin.ModelAdmin):
     @admin.action(description="Exportar dados dos clientes selecionados (CSV)")
     def exportar_dados(
         self, request: HttpRequest, queryset: QuerySet[Cliente]
-    ) -> "Any":
+    ) -> HttpResponse:
         """Exporta os dados dos clientes selecionados em formato CSV.
 
         Args:
@@ -473,11 +473,9 @@ class ClienteAdmin(admin.ModelAdmin):
             queryset (QuerySet[Cliente]): O queryset de clientes.
 
         Returns:
-            Any: A resposta HTTP com o arquivo CSV.
+            HttpResponse: A resposta HTTP com o arquivo CSV.
         """
         import csv
-
-        from django.http import HttpResponse
 
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="clientes.csv"'
@@ -546,24 +544,18 @@ class ClienteAdmin(admin.ModelAdmin):
         return super().get_queryset(request).prefetch_related("contatos")
 
 
-class MensagemInline(admin.TabularInline):
+class MensagemInline(admin.TabularInline[Mensagem, Atendimento]):
     """Inline para o modelo Mensagem."""
 
     model = Mensagem
-    extra = 0
-    readonly_fields = [
-        "timestamp",
-        "message_id_whatsapp",
-        "entidades_extraidas_preview",
-    ]
-    fields = [
+    fields = (
         "tipo",
         "conteudo",
         "remetente",
         "respondida",
         "entidades_extraidas_preview",
         "timestamp",
-    ]
+    )
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
         """Ordena as mensagens por timestamp.
@@ -600,7 +592,7 @@ class MensagemInline(admin.TabularInline):
 
 
 @admin.register(Atendimento)
-class AtendimentoAdmin(admin.ModelAdmin):
+class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
     """Admin para o modelo Atendimento."""
 
     list_display = [
@@ -633,41 +625,31 @@ class AtendimentoAdmin(admin.ModelAdmin):
     ordering = ["-data_inicio"]
     list_per_page = 25
 
-    @admin.display(description="Telefone", ordering="contato__telefone")
-    def contato_telefone(self, obj: Atendimento) -> "Any":
-        """Retorna o telefone do contato.
+    @admin.display(description="Telefone")
+    def contato_telefone(self, obj: Atendimento) -> str:
+        """Retorna o telefone do contato."""
+        if obj.contato:
+            return cast(str, obj.contato.telefone)  # type: ignore[attr-defined]
+        return "-"
 
-        Args:
-            obj (Atendimento): A instância do atendimento.
-
-        Returns:
-            Any: O telefone do contato.
-        """
-        return obj.contato.telefone if hasattr(obj, "contato") else "-"
-
-    @admin.display(description="Atendente", ordering="atendente_humano__nome")
-    def atendente_humano_nome(self, obj: Atendimento) -> "Any":
-        """Retorna o nome do atendente humano.
-
-        Args:
-            obj (Atendimento): A instância do atendimento.
-
-        Returns:
-            Any: O nome do atendente.
-        """
-        return obj.atendente_humano.nome if obj.atendente_humano else "-"
+    @admin.display(description="Atendente")
+    def atendente_humano_nome(self, obj: Atendimento) -> str:
+        """Retorna o nome do atendente humano."""
+        if obj.atendente_humano:
+            return cast(str, obj.atendente_humano.nome)  # type: ignore[attr-defined]
+        return "-"
 
     @admin.display(description="Mensagens")
-    def total_mensagens(self, obj: Atendimento) -> "Any":
+    def total_mensagens(self, obj: Atendimento) -> int:
         """Retorna o número total de mensagens no atendimento.
 
         Args:
             obj (Atendimento): A instância do atendimento.
 
         Returns:
-            Any: O número de mensagens.
+            int: O número de mensagens.
         """
-        return getattr(obj, "mensagens").count()
+        return cast(int, getattr(obj, "mensagens").count())
 
     @admin.display(description="Duração")
     def duracao_formatada(self, obj: Atendimento) -> str:
@@ -688,21 +670,17 @@ class AtendimentoAdmin(admin.ModelAdmin):
         return "Em andamento"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Atendimento]:
-        """Otimiza as consultas carregando dados relacionados.
-
-        Args:
-            request (HttpRequest): O objeto de requisição.
-
-        Returns:
-            QuerySet[Atendimento]: O queryset otimizado.
-        """
+        """Otimiza a consulta pré-carregando dados relacionados."""
         return (
-            super().get_queryset(request).select_related("contato", "atendente_humano")
+            super()
+            .get_queryset(request)
+            .select_related("contato", "atendente_humano", "departamento")
+            .prefetch_related("mensagens")
         )
 
 
 @admin.register(Mensagem)
-class MensagemAdmin(admin.ModelAdmin):
+class MensagemAdmin(admin.ModelAdmin[Mensagem]):
     """Admin para o modelo Mensagem."""
 
     list_display = [
@@ -730,14 +708,14 @@ class MensagemAdmin(admin.ModelAdmin):
     list_per_page = 25
 
     @admin.display(description="Telefone", ordering="atendimento__contato__telefone")
-    def contato_telefone(self, obj: Mensagem) -> "Any":
+    def contato_telefone(self, obj: Mensagem) -> str:
         """Retorna o telefone do contato associado à mensagem.
 
         Args:
             obj (Mensagem): A instância da mensagem.
 
         Returns:
-            Any: O telefone do contato.
+            str: O telefone do contato.
         """
         return (
             obj.atendimento.contato.telefone
@@ -746,26 +724,26 @@ class MensagemAdmin(admin.ModelAdmin):
         )
 
     @admin.display(description="Conteúdo")
-    def conteudo_truncado(self, obj: Mensagem) -> "Any":
+    def conteudo_truncado(self, obj: Mensagem) -> str:
         """Retorna uma versão truncada do conteúdo da mensagem.
 
         Args:
             obj (Mensagem): A instância da mensagem.
 
         Returns:
-            Any: O conteúdo truncado.
+            str: O conteúdo truncado.
         """
-        return (obj.conteudo[:47] + "...") if len(obj.conteudo) > 50 else obj.conteudo
+        return cast(str, (obj.conteudo[:47] + "...") if len(obj.conteudo) > 50 else obj.conteudo)
 
     @admin.display(description="Entidades Extraídas")
-    def entidades_extraidas_preview(self, obj: Mensagem) -> "Any":
+    def entidades_extraidas_preview(self, obj: Mensagem) -> str:
         """Retorna uma prévia das entidades extraídas.
 
         Args:
             obj (Mensagem): A instância da mensagem.
 
         Returns:
-            Any: Uma prévia das entidades.
+            str: Uma prévia das entidades.
         """
         if obj.entidades_extraidas:
             try:
@@ -796,7 +774,7 @@ class MensagemAdmin(admin.ModelAdmin):
 
 
 @admin.register(FluxoConversa)
-class FluxoConversaAdmin(admin.ModelAdmin):
+class FluxoConversaAdmin(admin.ModelAdmin[FluxoConversa]):
     """Admin para o modelo FluxoConversa."""
 
     list_display = ["nome", "ativo", "data_criacao", "data_modificacao"]
@@ -806,7 +784,7 @@ class FluxoConversaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Departamento)
-class DepartamentoAdmin(admin.ModelAdmin):
+class DepartamentoAdmin(admin.ModelAdmin[Departamento]):
     """Admin para o modelo Departamento."""
 
     list_display = [
@@ -827,7 +805,7 @@ class DepartamentoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Documento)
-class DocumentoAdmin(admin.ModelAdmin):
+class DocumentoAdmin(admin.ModelAdmin[Documento]):
     """Admin para o modelo Documento."""
     
     list_display = [
@@ -853,18 +831,18 @@ class DocumentoAdmin(admin.ModelAdmin):
     list_per_page = 50
     save_on_top = True
     
-    def has_change_permission(self, request, obj=None):
+    def has_change_permission(self, request: HttpRequest, obj: Documento | None = None) -> bool:
         """Impede a modificação de documentos existentes."""
         return False
     
-    def has_add_permission(self, request):
+    def has_add_permission(self, request: HttpRequest) -> bool:
         """Impede a criação manual de documentos."""
         return False
     
-    @admin.display(description="Tag do Treinamento", ordering="treinamento__tag")
+    @admin.display(description="Tag do Treinamento")
     def treinamento_tag(self, obj: Documento) -> str:
         """Retorna a tag do treinamento associado."""
-        return obj.treinamento.tag if obj.treinamento and obj.treinamento.tag else "-"
+        return obj.treinamento.tag if obj.treinamento and obj.treinamento.tag else "-"  # type: ignore[attr-defined]
     
     @admin.display(description="Conteúdo (prévia)")
     def conteudo_preview(self, obj: Documento) -> str:
@@ -964,9 +942,9 @@ class DocumentoAdmin(admin.ModelAdmin):
                 pass
             
             # Formata a preview
-            head = normalizado[:5]
+            head = normalizado[:10]
             fmt_head = ", ".join(f"{x:.4f}" for x in head)
-            sufixo = ", ..." if tam_total > 5 else ""
+            sufixo = ", ..." if tam_total > 10 else ""
             return f"[{fmt_head}{sufixo}] (dim={tam_total})"
             
         except Exception as e:

@@ -10,19 +10,19 @@ from smart_core_assistant_painel.app.ui.core.roles import Gerente
 class TestUsuariosViews(TestCase):
     """Testes para as views de usuários."""
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.client = Client()
         self.user = User.objects.create_user(username="testuser", password="testpassword")
         assign_role(self.user, "gerente")
 
-    def test_cadastro_get(self):
+    def test_cadastro_get(self) -> None:
         """Testa se a página de cadastro é renderizada corretamente via GET."""
         response = self.client.get(reverse("cadastro"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "cadastro.html")
 
-    def test_cadastro_post_success(self):
+    def test_cadastro_post_success(self) -> None:
         """Testa o cadastro de um novo usuário com sucesso."""
         response = self.client.post(
             reverse("cadastro"),
@@ -31,7 +31,7 @@ class TestUsuariosViews(TestCase):
         self.assertRedirects(response, reverse("login"))
         self.assertTrue(User.objects.filter(username="newuser").exists())
 
-    def test_cadastro_post_password_mismatch(self):
+    def test_cadastro_post_password_mismatch(self) -> None:
         """Testa o cadastro com senhas que não coincidem."""
         response = self.client.post(
             reverse("cadastro"),
@@ -40,7 +40,7 @@ class TestUsuariosViews(TestCase):
         )
         self.assertContains(response, "As senhas não coincidem.")
 
-    def test_cadastro_post_password_too_short(self):
+    def test_cadastro_post_password_too_short(self) -> None:
         """Testa o cadastro com uma senha muito curta."""
         response = self.client.post(
             reverse("cadastro"),
@@ -49,7 +49,7 @@ class TestUsuariosViews(TestCase):
         )
         self.assertContains(response, "A senha deve ter pelo menos 6 caracteres.")
 
-    def test_cadastro_post_existing_username(self):
+    def test_cadastro_post_existing_username(self) -> None:
         """Testa o cadastro com um nome de usuário que já existe."""
         response = self.client.post(
             reverse("cadastro"),
@@ -58,13 +58,13 @@ class TestUsuariosViews(TestCase):
         )
         self.assertContains(response, "Este nome de usuário já existe.")
 
-    def test_login_get(self):
+    def test_login_get(self) -> None:
         """Testa se a página de login é renderizada corretamente via GET."""
         response = self.client.get(reverse("login"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "login.html")
 
-    def test_login_post_success(self):
+    def test_login_post_success(self) -> None:
         """Testa o login de um usuário com sucesso."""
         response = self.client.post(
             reverse("login"),
@@ -72,7 +72,7 @@ class TestUsuariosViews(TestCase):
         )
         self.assertRedirects(response, reverse("oraculo:treinar_ia"))
 
-    def test_login_post_invalid_credentials(self):
+    def test_login_post_invalid_credentials(self) -> None:
         """Testa o login com credenciais inválidas."""
         response = self.client.post(
             reverse("login"),
@@ -81,7 +81,7 @@ class TestUsuariosViews(TestCase):
         )
         self.assertContains(response, "Nome de usuário ou senha inválidos.")
 
-    def test_permissoes_get(self):
+    def test_permissoes_get(self) -> None:
         """Testa se a página de permissões é renderizada com a lista de usuários."""
         self.client.login(username="testuser", password="testpassword")
         User.objects.create_user(username="user2", password="password2")
@@ -91,7 +91,7 @@ class TestUsuariosViews(TestCase):
         self.assertIn("users", response.context)
         self.assertEqual(len(response.context["users"]), 2)
 
-    def test_tornar_gerente(self):
+    def test_tornar_gerente(self) -> None:
         """Testa se a view atribui a role de 'gerente' ao usuário."""
         self.client.login(username="testuser", password="testpassword")
         user_to_promote = User.objects.create_user(username="user_to_promote", password="password")

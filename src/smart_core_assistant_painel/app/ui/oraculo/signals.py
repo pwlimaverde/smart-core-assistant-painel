@@ -9,7 +9,7 @@ from datetime import timedelta
 from langchain_core.documents.base import Document
 
 from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
-from typing import Any
+from typing import Any, cast
 
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import Signal, receiver
@@ -121,9 +121,12 @@ def __processar_conteudo_para_chunks(treinamento: Treinamento) -> list[Document]
         "grupo": treinamento.grupo
     }
     
+    # Garante que o conteúdo não é None
+    conteudo = cast(str, treinamento.conteudo)
+
     # Usa a nova feature para gerar chunks
     chunks = FeaturesCompose.generate_chunks(
-        conteudo=treinamento.conteudo,
+        conteudo=conteudo,
         metadata=metadata
     )
     

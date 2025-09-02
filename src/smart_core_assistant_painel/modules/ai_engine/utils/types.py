@@ -89,7 +89,7 @@ GEData: TypeAlias = Datasource[list[float], GenerateEmbeddingsParameters]
 
 # Aliases para Search Similar Embeddings
 SSEUsecase: TypeAlias = UsecaseBase[
-    list[dict],
+    list[dict[str, Any]],
     SearchSimilarEmbeddingsParameters,
 ]
 

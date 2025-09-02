@@ -11,6 +11,7 @@ from django.db.models.signals import (
     pre_delete,
     pre_save,
 )
+from django.dispatch import Signal
 from loguru import logger
 
 
@@ -55,13 +56,13 @@ class OraculoConfig(AppConfig):
             )
 
     @staticmethod
-    def _set_send_to_robust(signal_obj, label: str) -> None:
+    def _set_send_to_robust(signal_obj: Signal, label: str) -> None:
         """Substitui o método send por send_robust de forma idempotente.
 
         Args:
             signal_obj: O objeto de signal a ser modificado.
             label (str): Um rótulo para fins de logging.
-        """
+        """        
         try:
             if getattr(signal_obj.send, "__name__", "") == "send_robust":
                 return

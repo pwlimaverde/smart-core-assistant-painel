@@ -5,10 +5,11 @@ de API, o relacionamento com atendentes e a validação de webhooks.
 """
 
 import re
-from typing import Optional, override
+from typing import Any, Optional, override
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.query import QuerySet
 from loguru import logger
 
 
@@ -81,7 +82,7 @@ class Departamento(models.Model):
         return f"{self.nome} ({self.telefone_instancia})"
 
     @override
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """Salva o departamento, normalizando o telefone da instância."""
         if self.telefone_instancia:
             self.telefone_instancia = re.sub(r"\D", "", self.telefone_instancia)
@@ -94,7 +95,7 @@ class Departamento(models.Model):
         if self.api_key:
             validate_api_key(self.api_key)
 
-    def get_atendentes_ativos(self):
+    def get_atendentes_ativos(self) -> QuerySet[Any]:
         """Retorna os atendentes ativos deste departamento.
 
         Returns:
@@ -102,7 +103,7 @@ class Departamento(models.Model):
         """
         return self.atendentes.filter(ativo=True)
 
-    def get_atendentes_disponiveis(self):
+    def get_atendentes_disponiveis(self) -> QuerySet[Any]:
         """Retorna os atendentes disponíveis para novos atendimentos.
 
         Returns:
@@ -110,7 +111,7 @@ class Departamento(models.Model):
         """
         return self.atendentes.filter(ativo=True, disponivel=True)
 
-    def atualizar_configuracao(self, chave: str, valor) -> None:
+    def atualizar_configuracao(self, chave: str, valor: Any) -> None:
         """Atualiza uma configuração específica.
 
         Args:
@@ -122,7 +123,7 @@ class Departamento(models.Model):
         self.configuracoes[chave] = valor
         self.save(update_fields=["configuracoes"])
 
-    def get_configuracao(self, chave: str, padrao=None):
+    def get_configuracao(self, chave: str, padrao: Any = None) -> Any:
         """Obtém uma configuração específica.
 
         Args:
@@ -170,7 +171,7 @@ class Departamento(models.Model):
             return None
 
     @classmethod
-    def validar_api_key(cls, data: dict) -> Optional["Departamento"]:
+    def validar_api_key(cls, data: dict[str, Any]) -> Optional["Departamento"]:
         """Valida a chave de API e a instância a partir dos dados do webhook.
 
         Args:

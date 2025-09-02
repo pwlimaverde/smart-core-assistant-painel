@@ -212,13 +212,13 @@ class SearchSimilarEmbeddingsParameters(ParametersReturnResult):
 
     Attributes:
         query_embedding (list[float]): Vetor de embedding da consulta.
-        embeddings_data (list[dict]): Lista de dados com embeddings para busca.
+        embeddings_data (list[dict[str, Any]]): Lista de dados com embeddings para busca.
         top_k (int): Número máximo de resultados a retornar.
         error (EmbeddingError): O erro a ser levantado em caso de falha.
     """
 
     query_embedding: list[float]
-    embeddings_data: list[dict]
+    embeddings_data: list[dict[str, Any]]
     top_k: int = 5
     error: EmbeddingError
 

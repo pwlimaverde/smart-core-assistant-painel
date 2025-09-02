@@ -50,6 +50,8 @@ class ServiceHub:
             #Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
             self._whatsapp_service: Optional[WhatsAppService] = None
+            # Api_Keys
+            self._huggingface_api_key: Optional[str] = None
             # LLM
             self._llm_class: Optional[Type[BaseChatModel]] = None
             self._model: Optional[str] = None

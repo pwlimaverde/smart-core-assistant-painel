@@ -5,7 +5,7 @@ de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
 
-from typing import Any
+from typing import Any, cast
 from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
 from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import GenerateChunksUseCase
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters
@@ -108,7 +108,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(list[Document], data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -140,7 +140,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(list[Document], data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -174,7 +174,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(str, data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -208,7 +208,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(str, data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -252,9 +252,8 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(APMTuple, data.result)
         elif isinstance(data, ErrorReturn):
-            logger.error(f"Erro ao analisar prévia da mensagem: {data.result}")
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
@@ -295,7 +294,7 @@ class FeaturesCompose:
         message_data = usecase(parameters)
 
         if isinstance(message_data, SuccessReturn):
-            result: MessageData = message_data.result
+            result: MessageData = cast(MessageData, message_data.result)
             if result.metadados:
                 conteudo_media: str = FeaturesCompose._converter_contexto(
                     result.metadados
@@ -344,7 +343,7 @@ class FeaturesCompose:
         data: ReturnSuccessOrError[list[float]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(list[float], data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -371,7 +370,7 @@ class FeaturesCompose:
         data: ReturnSuccessOrError[list[Document]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(list[Document], data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:

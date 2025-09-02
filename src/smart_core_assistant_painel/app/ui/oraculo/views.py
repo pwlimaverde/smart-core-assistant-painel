@@ -7,6 +7,7 @@ dados e o webhook para receber mensagens do WhatsApp.
 import json
 import os
 import tempfile
+from typing import Any
 
 from django.contrib import messages
 from django.db import transaction
@@ -55,7 +56,7 @@ class TreinamentoService:
         return documentos_processados
 
     @staticmethod
-    def processar_arquivo_upload(arquivo):
+    def processar_arquivo_upload(arquivo: Any) -> str | None:
         """Processa um arquivo enviado e retorna seu caminho temporário.
 
         Args:
@@ -67,14 +68,14 @@ class TreinamentoService:
         if not arquivo:
             return None
         try:
-            return arquivo.temporary_file_path()
+            return str(arquivo.temporary_file_path())
         except AttributeError:
             with tempfile.NamedTemporaryFile(
                 delete=False, suffix=os.path.splitext(arquivo.name)[1]
             ) as temp_file:
                 for chunk in arquivo.chunks():
                     temp_file.write(chunk)
-                return temp_file.name
+                return str(temp_file.name)
 
     @staticmethod
     def processar_conteudo_texto(
@@ -132,7 +133,7 @@ class TreinamentoService:
             raise
 
     @staticmethod
-    def limpar_arquivo_temporario(arquivo_path):
+    def limpar_arquivo_temporario(arquivo_path: str | None) -> None:
         """Remove um arquivo temporário, se existir.
 
         Args:
@@ -251,7 +252,7 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                 if conteudo_completo:
                     conteudo_completo += "\n\n" + conteudo
                 else:
-                    conteudo_completo: str = conteudo
+                    conteudo_completo = conteudo
             
             # CRUCIAL: Salva o conteúdo no modelo Treinamento
             if conteudo_completo:
@@ -335,7 +336,7 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     return redirect("oraculo:treinar_ia")
 
 
-def _aceitar_treinamento(id: int):
+def _aceitar_treinamento(id: int) -> None:
     """Aceita o treinamento aplicando melhorias de IA e finalizando.
 
     Args:

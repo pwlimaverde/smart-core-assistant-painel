@@ -4,7 +4,7 @@ from django.db.models.query import QuerySet
 from typing import Any, Self, TYPE_CHECKING
 from django.db import models
 from loguru import logger
-from pgvector.django import CosineDistance, VectorField  # pyright: ignore[reportMissingTypeStubs]
+from pgvector.django import CosineDistance, VectorField  # type: ignore
 
 if TYPE_CHECKING:
     # Importação apenas para checagem de tipos, evita dependências circulares em runtime
@@ -28,7 +28,7 @@ class Documento(models.Model):
         ordem: Ordem do documento no treinamento
         data_criacao: Timestamp de criação
     """
-    id: models.AutoField[int, int] = models.AutoField(
+    id = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
 
@@ -74,7 +74,6 @@ class Documento(models.Model):
         ordering: list[str] = ["treinamento", "ordem"]
         indexes: list[Any] = [
             models.Index(fields=["treinamento", "ordem"]),
-            models.Index(fields=["status", "data_criacao"]),
         ]
 
     @override

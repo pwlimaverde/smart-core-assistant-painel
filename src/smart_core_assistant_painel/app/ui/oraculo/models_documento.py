@@ -28,7 +28,8 @@ class Documento(models.Model):
         ordem: Ordem do documento no treinamento
         data_criacao: Timestamp de criação
     """
-    id = models.AutoField(
+    
+    id:models.AutoField[int, int] = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
 

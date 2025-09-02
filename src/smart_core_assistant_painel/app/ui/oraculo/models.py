@@ -520,7 +520,7 @@ class Cliente(models.Model):
     ramo_atividade: models.CharField = models.CharField(
         max_length=200, blank=True, null=True, help_text="Área de atuação do cliente"
     )
-    observacoes: models.TextField = models.TextField(
+    observacoes = models.TextField(
         blank=True, null=True, help_text="Informações adicionais sobre o cliente"
     )
 

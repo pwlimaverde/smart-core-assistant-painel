@@ -240,3 +240,5 @@ reportUnannotatedClassAttribute = "none"
 [tool.pyright]
 # Mesma configuração para o Pyright padrão
 reportExplicitAny = "none"
+reportUnknownVariableType = "none"
+reportUnannotatedClassAttribute = "none"

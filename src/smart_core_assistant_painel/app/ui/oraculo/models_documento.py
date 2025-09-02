@@ -1,14 +1,11 @@
-import datetime
 from django.db.models.query import QuerySet
 
-from typing import Any, Self, TYPE_CHECKING
+from typing import Any, Self
 from django.db import models
 from loguru import logger
 from pgvector.django import CosineDistance, VectorField  # type: ignore
 
-if TYPE_CHECKING:
-    # Importação apenas para checagem de tipos, evita dependências circulares em runtime
-    from .models_treinamento import Treinamento
+
 
 from typing import override
 

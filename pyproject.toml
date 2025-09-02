@@ -231,6 +231,11 @@ ignore_missing_imports = true
 [tool.basedpyright]
 # Desativa o aviso para Any explícito (reportExplicitAny)
 reportExplicitAny = "none"
+# Suprime avisos de tipos desconhecidos em variáveis/atributos
+reportUnknownVariableType = "none"
+reportUnknownMemberType = "none"
+# Suprime a exigência de anotação para atributos de classe (ex.: campos de modelos)
+reportUnannotatedClassAttribute = "none"
 
 [tool.pyright]
 # Mesma configuração para o Pyright padrão

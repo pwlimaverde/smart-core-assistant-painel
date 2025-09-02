@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false
 """Modelo para gerenciar departamentos e configurações da Evolution API.
 
 Este módulo define o modelo Departamento, que centraliza as configurações

@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false
 import re
 from typing import Any, Optional, override
 
@@ -890,31 +891,31 @@ class Atendimento(models.Model):
         feedback: Feedback do contato
     """
 
-    id: models.AutoField = models.AutoField(
+    id = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    contato: models.ForeignKey = models.ForeignKey(
+    contato = models.ForeignKey(
         Contato,
         on_delete=models.CASCADE,
         related_name="atendimentos",
         help_text="Contato vinculado ao atendimento",
     )
-    status: models.CharField = models.CharField(
+    status = models.CharField(
         max_length=20,
         choices=StatusAtendimento.choices,
         default=StatusAtendimento.AGUARDANDO_INICIAL,
         help_text="Status atual do atendimento",
     )
-    data_inicio: models.DateTimeField = models.DateTimeField(
+    data_inicio = models.DateTimeField(
         auto_now_add=True, help_text="Data de início do atendimento"
     )
-    data_fim: models.DateTimeField = models.DateTimeField(
+    data_fim = models.DateTimeField(
         blank=True, null=True, help_text="Data de finalização do atendimento"
     )
-    assunto: models.CharField = models.CharField(
+    assunto = models.CharField(
         max_length=200, blank=True, null=True, help_text="Assunto/resumo do atendimento"
     )
-    prioridade: models.CharField = models.CharField(
+    prioridade = models.CharField(
         max_length=10,
         choices=[
             ("baixa", "Baixa"),
@@ -925,7 +926,7 @@ class Atendimento(models.Model):
         default="normal",
         help_text="Prioridade do atendimento",
     )
-    atendente_humano: models.ForeignKey = models.ForeignKey(
+    atendente_humano = models.ForeignKey(
         AtendenteHumano,
         on_delete=models.SET_NULL,
         blank=True,
@@ -933,24 +934,24 @@ class Atendimento(models.Model):
         related_name="atendimentos",
         help_text="Atendente humano responsável pelo atendimento (se transferido)",
     )
-    contexto_conversa: models.JSONField = models.JSONField(
+    contexto_conversa = models.JSONField(
         default=dict,
         blank=True,
         help_text="Contexto atual da conversa (variáveis, estado, etc.)",
     )
-    historico_status: models.JSONField = models.JSONField(
+    historico_status = models.JSONField(
         default=list, blank=True, help_text="Histórico de mudanças de status"
     )
-    tags: models.JSONField = models.JSONField(
+    tags = models.JSONField(
         default=list, blank=True, help_text="Tags para categorização do atendimento"
     )
-    avaliacao: models.IntegerField = models.IntegerField(
+    avaliacao = models.IntegerField(
         blank=True,
         null=True,
         choices=[(i, i) for i in range(1, 6)],
         help_text="Avaliação do atendimento (1-5)",
     )
-    feedback: models.TextField = models.TextField(
+    feedback = models.TextField(
         blank=True, null=True, help_text="Feedback do contato"
     )
 
@@ -1222,32 +1223,32 @@ class Mensagem(models.Model):
         confianca_resposta: Nível de confiança da resposta do bot
     """
 
-    id: models.AutoField = models.AutoField(
+    id = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    atendimento: models.ForeignKey = models.ForeignKey(
+    atendimento = models.ForeignKey(
         Atendimento,
         on_delete=models.CASCADE,
         related_name="mensagens",
         help_text="Atendimento ao qual a mensagem pertence",
     )
-    tipo: models.CharField = models.CharField(
+    tipo = models.CharField(
         max_length=25,
         choices=TipoMensagem.choices,
         default=TipoMensagem.TEXTO_FORMATADO,
         help_text="Tipo da mensagem",
     )
-    conteudo: models.TextField = models.TextField(help_text="Conteúdo da mensagem")
-    remetente: models.CharField = models.CharField(
+    conteudo = models.TextField(help_text="Conteúdo da mensagem")
+    remetente = models.CharField(
         max_length=20,
         choices=TipoRemetente.choices,
         default=TipoRemetente.CONTATO,
         help_text="Tipo do remetente da mensagem",
     )
-    timestamp: models.DateTimeField = models.DateTimeField(
+    timestamp = models.DateTimeField(
         auto_now_add=True, help_text="Timestamp da mensagem"
     )
-    message_id_whatsapp: models.CharField = models.CharField(
+    message_id_whatsapp = models.CharField(
         max_length=100, blank=True, null=True, help_text="ID da mensagem no WhatsApp"
     )
     metadados = models.JSONField(
@@ -1255,10 +1256,10 @@ class Mensagem(models.Model):
         blank=True,
         help_text="Metadados adicionais da mensagem (mídia, localização, etc.)",
     )
-    respondida: models.BooleanField = models.BooleanField(
+    respondida = models.BooleanField(
         default=False, help_text="Indica se a mensagem foi respondida"
     )
-    resposta_bot: models.TextField = models.TextField(
+    resposta_bot = models.TextField(
         blank=True, null=True, help_text="Resposta gerada pelo bot"
     )
     intent_detectado = models.JSONField(
@@ -1271,7 +1272,7 @@ class Mensagem(models.Model):
         blank=True,
         help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
     )
-    confianca_resposta: models.FloatField = models.FloatField(
+    confianca_resposta = models.FloatField(
         blank=True, null=True, help_text="Nível de confiança da resposta do bot (0-1)"
     )
 
@@ -1424,26 +1425,26 @@ class FluxoConversa(models.Model):
         data_modificacao: Data de última modificação automática
     """
 
-    id: models.AutoField = models.AutoField(
+    id = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    nome: models.CharField = models.CharField(
+    nome = models.CharField(
         max_length=100, unique=True, help_text="Nome do fluxo de conversa"
     )
-    descricao: models.TextField = models.TextField(
+    descricao = models.TextField(
         blank=True, null=True, help_text="Descrição do fluxo"
     )
-    condicoes_entrada: models.JSONField = models.JSONField(
+    condicoes_entrada = models.JSONField(
         default=dict, help_text="Condições para entrar neste fluxo"
     )
-    estados: models.JSONField = models.JSONField(
+    estados = models.JSONField(
         default=dict, help_text="Estados e transições do fluxo"
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo = models.BooleanField(
         default=True, help_text="Fluxo ativo"
     )
-    data_criacao: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    data_modificacao: models.DateTimeField = models.DateTimeField(auto_now=True)
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    data_modificacao = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Fluxo de Conversa"

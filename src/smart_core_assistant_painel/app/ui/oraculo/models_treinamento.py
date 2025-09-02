@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false
 import datetime
 from django.db.models.indexes import Index
 import re
@@ -57,41 +58,41 @@ class Treinamento(models.Model):
         data_atualizacao: Data da última atualização
     """
 
-    id: models.AutoField[int, int] = models.AutoField(
+    id = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    tag: models.CharField[str, str] = models.CharField(
+    tag = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o treinamento",
     )
-    grupo: models.CharField[str, str] = models.CharField(
+    grupo = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento",
     )
-    conteudo: models.TextField[str, None] = models.TextField(
+    conteudo = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo completo do treinamento (antes da divisão em chunks)",
     )
-    treinamento_finalizado: models.BooleanField[bool, bool] = models.BooleanField(
+    treinamento_finalizado = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi finalizado",
     )
-    treinamento_vetorizado: models.BooleanField[bool, bool] = models.BooleanField(
+    treinamento_vetorizado = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
-    data_criacao: models.DateTimeField[datetime.datetime, datetime.datetime] = models.DateTimeField(
+    data_criacao = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do treinamento",
     )
-    data_atualizacao: models.DateTimeField[datetime.datetime, datetime.datetime] = models.DateTimeField(
+    data_atualizacao = models.DateTimeField(
         auto_now=True,
         help_text="Data da última atualização do treinamento",
     )

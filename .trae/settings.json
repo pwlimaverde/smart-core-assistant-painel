@@ -21,6 +21,7 @@
         "langchain": 2,
         "py_return_success_or_error": 2
     },
+    "python.analysis.stubPath": "./typings",
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.logLevel": "Information",
     "python.analysis.importFormat": "absolute",

@@ -113,8 +113,7 @@ dev = [
     "taskipy>=1.14.1",
     "types-beautifulsoup4>=4.12.0.20250516",
     "types-requests>=2.32.0.20250602",
-    "types-python-dateutil==2.9.0.20250516",
-    "django-stubs>=5.2.2",
+    "django-types>=0.22.0",
     "django-stubs-ext>=5.2.2",
 ]
 doc = [
@@ -141,6 +140,7 @@ exclude = ["**/migrations/**"]
 # Força alerta/erro quando tipos genéricos não têm parâmetros
 reportMissingTypeArgument = "error"
 reportMissingTypeStubs = false
+strictParameterNoneValue = false
 # Alinha com a versão de Python do projeto
 pythonVersion = "3.13"
 # Caminhos extras para resolver imports no layout em src/
@@ -169,7 +169,6 @@ base = "python scripts/new_feature_script.py --type base"
 call-data = "python scripts/new_feature_script.py --type call_data"
 
 # Servidor Django - Local
-dev = "python -m smart_core_assistant_painel.main runserver"
 start = "python -m smart_core_assistant_painel.main runserver"
 server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 cluster = "python -m smart_core_assistant_painel.main qcluster"
@@ -195,7 +194,6 @@ startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
 # Django management commands (Docker)
 migrate-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"
 makemigrations-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-createsuperuser-docker = "docker compose exec django-app uv run --active python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 collectstatic-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput"
 shell-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell"
 startapp-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py startapp"
@@ -220,7 +218,6 @@ setup = "uv sync --dev && uv run task migrate && uv run task createsuperuser"
 dev-setup = "uv sync --dev && uv run task migrate"
 
 # Combined routines (Docker)
-setup-docker = "docker compose up -d --build && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 dev-setup-docker = "docker compose up -d --build"
 
 
@@ -232,4 +229,4 @@ test-docker-coverage = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core
 # Executa testes específicos dentro do container; passe o caminho/expressão após `uv run task test-docker-specific`
 # Ex.: uv run task test-docker-specific -- src/smart_core_assistant_painel/app/ui/oraculo/tests/
 # Removido $TASK_ARGS; Taskipy anexará os argumentos passados após o comando abaixo.
-test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v"
+ test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v"

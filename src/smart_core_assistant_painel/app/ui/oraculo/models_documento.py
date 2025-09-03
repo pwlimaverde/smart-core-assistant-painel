@@ -7,6 +7,8 @@ from django.db.models.query import QuerySet
 from loguru import logger
 from pgvector.django import CosineDistance, VectorField
 
+from .models_treinamento import Treinamento
+
 
 class Documento(models.Model):
     """
@@ -29,7 +31,7 @@ class Documento(models.Model):
     )
 
     treinamento = models.ForeignKey(
-        "Treinamento",
+        Treinamento,
         on_delete=models.CASCADE,
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",

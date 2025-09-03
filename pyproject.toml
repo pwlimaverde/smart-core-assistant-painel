@@ -140,6 +140,7 @@ include = ["src", "tests"]
 exclude = ["**/migrations/**"]
 # Força alerta/erro quando tipos genéricos não têm parâmetros
 reportMissingTypeArgument = "error"
+reportMissingTypeStubs = false
 # Alinha com a versão de Python do projeto
 pythonVersion = "3.13"
 # Caminhos extras para resolver imports no layout em src/
@@ -149,8 +150,7 @@ extraPaths = [
     "src/smart_core_assistant_painel/app",
     "src/smart_core_assistant_painel/modules",
 ]
-# Analisa todo o workspace (equivalente à IDE)
-diagnosticMode = "workspace"
+
 
 
 [tool.hatch.build.targets.wheel]

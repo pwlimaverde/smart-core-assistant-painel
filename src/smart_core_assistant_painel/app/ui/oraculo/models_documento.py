@@ -1,3 +1,5 @@
+
+
 from typing import Any, Self, override
 
 from django.db import models

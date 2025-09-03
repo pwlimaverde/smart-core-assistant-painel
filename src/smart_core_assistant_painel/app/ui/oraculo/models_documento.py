@@ -1,7 +1,8 @@
 from datetime import datetime
-from typing import Any, Self, override
+from typing import Self, override
 
 from django.db import models
+from django.db.models.indexes import Index
 from django.db.models.query import QuerySet
 from loguru import logger
 from pgvector.django import CosineDistance, VectorField
@@ -25,11 +26,11 @@ class Documento(models.Model):
         data_criacao: Timestamp de criação
     """
 
-    id:models.AutoField = models.AutoField(
+    id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
 
-    treinamento:models.ForeignKey[Treinamento] = models.ForeignKey(
+    treinamento: models.ForeignKey[Treinamento] = models.ForeignKey(
         Treinamento,
         on_delete=models.CASCADE,
         related_name="documentos",
@@ -42,25 +43,25 @@ class Documento(models.Model):
         help_text="Conteúdo do chunk de treinamento",
     )
 
-    metadata: models.JSONField[str | None] = models.JSONField(
+    metadata: models.JSONField[dict[str, str] | None] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
     )
 
-    embedding:VectorField = VectorField(
+    embedding: VectorField = VectorField(
         dimensions=1024,
         null=True,
         blank=True,
         help_text="Vetor de embeddings do conteúdo do documento",
     )
 
-    ordem:models.PositiveIntegerField[int] = models.PositiveIntegerField(
+    ordem: models.PositiveIntegerField[int] = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
 
-    data_criacao:models.DateTimeField[datetime] = models.DateTimeField(
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )
@@ -69,7 +70,7 @@ class Documento(models.Model):
         verbose_name: str = "Documento"
         verbose_name_plural: str = "Documentos"
         ordering: list[str] = ["treinamento", "ordem"]
-        indexes: list[Any] = [
+        indexes: list[Index] = [
             models.Index(fields=["treinamento", "ordem"]),
         ]
 
@@ -127,8 +128,7 @@ class Documento(models.Model):
     @classmethod
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
         """Remove todos os documentos de um treinamento."""
-        count: int = cls.objects.filter(treinamento_id=treinamento_id).count()
         docs = cls.objects.filter(treinamento_id=treinamento_id).delete()
         logger.info(
-            f"Removidos {count} documentos do treinamento {treinamento_id} {docs}"
+            f"Removidos {docs} documentos do treinamento {treinamento_id}"
         )

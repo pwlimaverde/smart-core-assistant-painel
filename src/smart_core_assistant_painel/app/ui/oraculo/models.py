@@ -1,3 +1,4 @@
+from datetime import datetime
 import re
 from typing import Any, Optional, override
 
@@ -28,7 +29,7 @@ def validate_telefone(value: str) -> None:
         >>> validate_telefone("123")           # inválido - muito curto
     """
     # Remove caracteres não numéricos
-    telefone_limpo = re.sub(r"\D", "", value)
+    telefone_limpo:str = re.sub(r"\D", "", value)
 
     # Verifica se tem pelo menos 10 dígitos (formato brasileiro)
     if len(telefone_limpo) < 10 or len(telefone_limpo) > 15:
@@ -63,7 +64,7 @@ def validate_cnpj(value: str) -> None:
         return
 
     # Remove caracteres não numéricos
-    cnpj_limpo = re.sub(r"\D", "", value)
+    cnpj_limpo:str = re.sub(r"\D", "", value)
 
     # Verifica se tem exatamente 14 dígitos
     if len(cnpj_limpo) != 14:
@@ -137,7 +138,7 @@ def validate_cep(value: str) -> None:
         return
 
     # Remove caracteres não numéricos
-    cep_limpo = re.sub(r"\D", "", value)
+    cep_limpo:str = re.sub(r"\D", "", value)
 
     # Verifica se tem exatamente 8 dígitos
     if len(cep_limpo) != 8:
@@ -176,7 +177,7 @@ class AtendenteHumano(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    telefone: models.CharField = models.CharField(
+    telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone],
@@ -184,68 +185,69 @@ class AtendenteHumano(models.Model):
         blank=True,
         help_text="Número de telefone do atendente (usado como sessão única)",
     )
-    nome: models.CharField = models.CharField(
+    nome: models.CharField[str] = models.CharField(
         max_length=100, help_text="Nome completo do atendente"
     )
-    cargo: models.CharField = models.CharField(
+    cargo: models.CharField[str] = models.CharField(
         max_length=100, help_text="Cargo/função do atendente"
     )
-    departamento: models.ForeignKey = models.ForeignKey(
+    departamento: models.ForeignKey[Departamento] = models.ForeignKey(
         Departamento,
         on_delete=models.SET_NULL,
         blank=True,
-        null=True,
         related_name="atendentes",
         help_text="Departamento ao qual o atendente pertence",
     )
-    email: models.EmailField = models.EmailField(
+    email: models.EmailField[str | None] = models.EmailField(
         blank=True, null=True, help_text="E-mail corporativo do atendente"
     )
-    usuario_sistema: models.CharField = models.CharField(
+    usuario_sistema: models.CharField[str | None] = models.CharField(
         max_length=50,
         blank=True,
         null=True,
         help_text="Usuário do sistema para login (se aplicável)",
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do atendente"
     )
-    disponivel: models.BooleanField = models.BooleanField(
+    disponivel: models.BooleanField[bool] = models.BooleanField(
         default=True,
         help_text="Disponibilidade atual para receber novos atendimentos",
     )
-    max_atendimentos_simultaneos: models.PositiveIntegerField = (
+    max_atendimentos_simultaneos: models.PositiveIntegerField[int] = (
         models.PositiveIntegerField(
             default=5,
             help_text="Máximo de atendimentos simultâneos permitidos",
         )
     )
-    especialidades: models.JSONField = models.JSONField(
+    especialidades: models.JSONField[list[str] | None] = models.JSONField(
         default=list,
         blank=True,
         help_text="Lista de especialidades/áreas de conhecimento do atendente",
     )
-    horario_trabalho: models.JSONField = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})",
+    horario_trabalho: models.JSONField[dict[str, str] | None] = (
+        models.JSONField(
+            default=dict,
+            blank=True,
+            help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})",
+        )
     )
-    data_cadastro: models.DateTimeField = models.DateTimeField(
+    data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro no sistema"
     )
-    ultima_atividade: models.DateTimeField = models.DateTimeField(
+    ultima_atividade: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última atividade no sistema"
     )
-    metadados: models.JSONField = models.JSONField(
+    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
     )
 
     class Meta:
-        verbose_name = "Atendente Humano"
-        verbose_name_plural = "Atendentes Humanos"
-        ordering = ["nome"]
+        verbose_name: str = "Atendente Humano"
+        verbose_name_plural: str = "Atendentes Humanos"
+        ordering: list[str] = ["nome"]
 
     @override
     def __str__(self) -> str:
@@ -292,63 +294,6 @@ class AtendenteHumano(models.Model):
         """
         super().clean()
 
-    def get_atendimentos_ativos(self) -> int:
-        """
-        Retorna a quantidade de atendimentos ativos do atendente.
-
-        Returns:
-            int: Número de atendimentos ativos
-        """
-        return self.atendimentos.filter(
-            status__in=[
-                StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CONTATO,
-                StatusAtendimento.AGUARDANDO_ATENDENTE,
-            ]
-        ).count()
-
-    def pode_receber_atendimento(self) -> bool:
-        """
-        Verifica se o atendente pode receber um novo atendimento.
-
-        Considera se está ativo, disponível e se não excedeu o limite
-        de atendimentos simultâneos.
-
-        Returns:
-            bool: True se pode receber atendimento, False caso contrário
-        """
-        if not self.ativo or not self.disponivel:
-            return False
-
-        atendimentos_ativos = self.get_atendimentos_ativos()
-        return atendimentos_ativos < self.max_atendimentos_simultaneos
-
-    def adicionar_especialidade(self, especialidade: str) -> None:
-        """
-        Adiciona uma especialidade à lista de especialidades do atendente.
-
-        Args:
-            especialidade (str): Especialidade a ser adicionada
-        """
-        if not self.especialidades:
-            self.especialidades = []
-
-        if especialidade not in self.especialidades:
-            self.especialidades.append(especialidade)
-            self.save()
-
-    def remover_especialidade(self, especialidade: str) -> None:
-        """
-        Remove uma especialidade da lista de especialidades do atendente.
-
-        Args:
-            especialidade (str): Especialidade a ser removida
-        """
-        if self.especialidades and especialidade in self.especialidades:
-            self.especialidades.remove(especialidade)
-            self.save()
-
-
 class Contato(models.Model):
     """
     Modelo para armazenar informações dos contatos.
@@ -369,45 +314,45 @@ class Contato(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    telefone: models.CharField = models.CharField(
+    telefone: models.CharField[str] = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone],
         help_text="Número de telefone do contato (formato: 5511999999999)",
     )
-    nome_contato: models.CharField = models.CharField(
+    nome_contato: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Nome do contato"
     )
     # Campo de e-mail do contato (opcional), usado para comunicações por e-mail
-    email: models.EmailField = models.EmailField(
+    email: models.EmailField[str | None] = models.EmailField(
         max_length=254,
         blank=True,
         null=True,
         help_text="E-mail do contato",
     )
-    nome_perfil_whatsapp: models.CharField = models.CharField(
+    nome_perfil_whatsapp: models.CharField[str | None] = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         help_text="Nome do perfil cadastrado no WhatsApp do contato",
     )
-    data_cadastro: models.DateTimeField = models.DateTimeField(
+    data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro do contato"
     )
-    ultima_interacao: models.DateTimeField = models.DateTimeField(
+    ultima_interacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última interação"
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do contato"
     )
-    metadados = models.JSONField(
+    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do contato"
     )
 
     class Meta:
-        verbose_name = "Contato"
-        verbose_name_plural = "Contatos"
-        ordering = ["-ultima_interacao"]
+        verbose_name:str = "Contato"
+        verbose_name_plural:str = "Contatos"
+        ordering:list[str] = ["-ultima_interacao"]
 
     @override
     def __str__(self) -> str:
@@ -481,94 +426,94 @@ class Cliente(models.Model):
     )
 
     # Dados básicos do cliente
-    nome_fantasia: models.CharField = models.CharField(
+    nome_fantasia: models.CharField[str] = models.CharField(
         max_length=200,
         blank=False,
         null=False,
         help_text="Nome comum do cliente (obrigatório)",
     )
-    razao_social: models.CharField = models.CharField(
+    razao_social: models.CharField[str | None] = models.CharField(
         max_length=200,
         blank=True,
         null=True,
         help_text="Nome legal/oficial do cliente",
     )
-    tipo: models.CharField = models.CharField(
+    tipo: models.CharField[str | None] = models.CharField(
         max_length=20,
         choices=[("fisica", "Pessoa Física"), ("juridica", "Pessoa Jurídica")],
         blank=True,
         null=True,
         help_text="Tipo de pessoa (física ou jurídica)",
     )
-    cnpj: models.CharField = models.CharField(
+    cnpj: models.CharField[str | None] = models.CharField(
         max_length=18,  # formato XX.XXX.XXX/XXXX-XX
         blank=True,
         null=True,
         validators=[validate_cnpj],
         help_text="CNPJ do cliente (formato: 12.345.678/0001-99)",
     )
-    cpf: models.CharField = models.CharField(
+    cpf: models.CharField[str | None] = models.CharField(
         max_length=14,  # formato XXX.XXX.XXX-XX
         blank=True,
         null=True,
         validators=[validate_cpf],
         help_text="CPF do cliente informado durante a conversa (formato: 123.456.789-00)",
     )
-    telefone: models.CharField = models.CharField(
+    telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
         blank=True,
         null=True,
         validators=[validate_telefone],
         help_text="Telefone fixo ou corporativo do cliente",
     )
-    site: models.URLField = models.URLField(
+    site: models.URLField[str | None] = models.URLField(
         blank=True, null=True, help_text="Website do cliente"
     )
-    ramo_atividade: models.CharField = models.CharField(
+    ramo_atividade: models.CharField[str | None] = models.CharField(
         max_length=200,
         blank=True,
         null=True,
         help_text="Área de atuação do cliente",
     )
-    observacoes = models.TextField(
+    observacoes: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
         help_text="Informações adicionais sobre o cliente",
     )
 
     # Dados de endereço
-    cep: models.CharField = models.CharField(
+    cep: models.CharField[str | None] = models.CharField(
         max_length=10,  # formato XXXXX-XXX
         blank=True,
         null=True,
         validators=[validate_cep],
         help_text="CEP do endereço (formato: 12345-678)",
     )
-    logradouro: models.CharField = models.CharField(
+    logradouro: models.CharField[str | None] = models.CharField(
         max_length=200,
         blank=True,
         null=True,
         help_text="Rua, avenida ou logradouro",
     )
-    numero: models.CharField = models.CharField(
+    numero: models.CharField[str | None] = models.CharField(
         max_length=10, blank=True, null=True, help_text="Número do endereço"
     )
-    complemento: models.CharField = models.CharField(
+    complemento: models.CharField[str | None] = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         help_text="Complemento do endereço (sala, andar, etc.)",
     )
-    bairro: models.CharField = models.CharField(
+    bairro: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Bairro do cliente"
     )
-    cidade: models.CharField = models.CharField(
+    cidade: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Cidade do cliente"
     )
-    uf: models.CharField = models.CharField(
+    uf: models.CharField[str | None] = models.CharField(
         max_length=2, blank=True, null=True, help_text="Estado (UF) do cliente"
     )
-    pais: models.CharField = models.CharField(
+    pais: models.CharField[str | None] = models.CharField(
         max_length=50,
         blank=True,
         null=True,
@@ -577,7 +522,7 @@ class Cliente(models.Model):
     )
 
     # Relacionamentos
-    contatos: models.ManyToManyField = models.ManyToManyField(
+    contatos:models.ManyToManyField = models.ManyToManyField(
         Contato,
         blank=True,
         related_name="clientes",

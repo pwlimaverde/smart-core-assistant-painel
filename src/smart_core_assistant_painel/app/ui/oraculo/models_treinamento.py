@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from typing import override
 
 from django.core.exceptions import ValidationError
@@ -61,41 +62,41 @@ class Treinamento(models.Model):
         data_atualizacao: Data da última atualização
     """
 
-    id = models.AutoField(
+    id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    tag = models.CharField(
+    tag: models.CharField[str] = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o treinamento",
     )
-    grupo = models.CharField(
+    grupo: models.CharField[str] = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento",
     )
-    conteudo = models.TextField(
+    conteudo: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo completo do treinamento (antes da divisão em chunks)",
     )
-    treinamento_finalizado = models.BooleanField(
+    treinamento_finalizado: models.BooleanField[bool] = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi finalizado",
     )
-    treinamento_vetorizado = models.BooleanField(
+    treinamento_vetorizado: models.BooleanField[bool] = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
-    data_criacao = models.DateTimeField(
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do treinamento",
     )
-    data_atualizacao = models.DateTimeField(
+    data_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True,
         help_text="Data da última atualização do treinamento",
     )

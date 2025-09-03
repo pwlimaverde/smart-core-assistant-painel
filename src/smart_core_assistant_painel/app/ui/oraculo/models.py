@@ -1,4 +1,3 @@
-# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false
 import re
 from typing import Any, Optional, override
 
@@ -8,6 +7,7 @@ from django.utils import timezone
 from loguru import logger
 
 from .models_departamento import Departamento
+
 
 def validate_telefone(value: str) -> None:
     """
@@ -32,7 +32,9 @@ def validate_telefone(value: str) -> None:
 
     # Verifica se tem pelo menos 10 dígitos (formato brasileiro)
     if len(telefone_limpo) < 10 or len(telefone_limpo) > 15:
-        raise ValidationError("Número de telefone deve ter entre 10 e 15 dígitos.")
+        raise ValidationError(
+            "Número de telefone deve ter entre 10 e 15 dígitos."
+        )
 
     # Verifica se contém apenas números
     if not telefone_limpo.isdigit():
@@ -209,11 +211,13 @@ class AtendenteHumano(models.Model):
         default=True, help_text="Status de atividade do atendente"
     )
     disponivel: models.BooleanField = models.BooleanField(
-        default=True, help_text="Disponibilidade atual para receber novos atendimentos"
+        default=True,
+        help_text="Disponibilidade atual para receber novos atendimentos",
     )
     max_atendimentos_simultaneos: models.PositiveIntegerField = (
         models.PositiveIntegerField(
-            default=5, help_text="Máximo de atendimentos simultâneos permitidos"
+            default=5,
+            help_text="Máximo de atendimentos simultâneos permitidos",
         )
     )
     especialidades: models.JSONField = models.JSONField(
@@ -484,7 +488,10 @@ class Cliente(models.Model):
         help_text="Nome comum do cliente (obrigatório)",
     )
     razao_social: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Nome legal/oficial do cliente"
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Nome legal/oficial do cliente",
     )
     tipo: models.CharField = models.CharField(
         max_length=20,
@@ -518,10 +525,15 @@ class Cliente(models.Model):
         blank=True, null=True, help_text="Website do cliente"
     )
     ramo_atividade: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Área de atuação do cliente"
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Área de atuação do cliente",
     )
     observacoes = models.TextField(
-        blank=True, null=True, help_text="Informações adicionais sobre o cliente"
+        blank=True,
+        null=True,
+        help_text="Informações adicionais sobre o cliente",
     )
 
     # Dados de endereço
@@ -533,7 +545,10 @@ class Cliente(models.Model):
         help_text="CEP do endereço (formato: 12345-678)",
     )
     logradouro: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Rua, avenida ou logradouro"
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Rua, avenida ou logradouro",
     )
     numero: models.CharField = models.CharField(
         max_length=10, blank=True, null=True, help_text="Número do endereço"
@@ -659,7 +674,9 @@ class Cliente(models.Model):
 
         # Valida se o nome fantasia não está vazio
         if not self.nome_fantasia or not self.nome_fantasia.strip():
-            raise ValidationError({"nome_fantasia": "Nome fantasia é obrigatório."})
+            raise ValidationError(
+                {"nome_fantasia": "Nome fantasia é obrigatório."}
+            )
 
     def get_endereco_completo(self) -> str:
         """
@@ -913,7 +930,10 @@ class Atendimento(models.Model):
         blank=True, null=True, help_text="Data de finalização do atendimento"
     )
     assunto = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Assunto/resumo do atendimento"
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Assunto/resumo do atendimento",
     )
     prioridade = models.CharField(
         max_length=10,
@@ -943,7 +963,9 @@ class Atendimento(models.Model):
         default=list, blank=True, help_text="Histórico de mudanças de status"
     )
     tags = models.JSONField(
-        default=list, blank=True, help_text="Tags para categorização do atendimento"
+        default=list,
+        blank=True,
+        help_text="Tags para categorização do atendimento",
     )
     avaliacao = models.IntegerField(
         blank=True,
@@ -1073,7 +1095,8 @@ class Atendimento(models.Model):
             nome_anterior = self.atendente_humano.nome
             self.atendente_humano = None
             self.adicionar_historico_status(
-                self.status, observacao or f"Liberado do atendente {nome_anterior}"
+                self.status,
+                observacao or f"Liberado do atendente {nome_anterior}",
             )
             self.save()
 
@@ -1111,7 +1134,9 @@ class Atendimento(models.Model):
 
             # Exclui mensagem específica se solicitado
             if excluir_mensagem_id:
-                mensagens_query = mensagens_query.exclude(id=excluir_mensagem_id)
+                mensagens_query = mensagens_query.exclude(
+                    id=excluir_mensagem_id
+                )
 
             mensagens = mensagens_query
 
@@ -1135,8 +1160,14 @@ class Atendimento(models.Model):
                             if isinstance(intent_dict, dict):
                                 # Formato padrão: {"saudacao": "Olá"} -
                                 # pega todos os valores dos intents
-                                for tipo_intent, valor_intent in intent_dict.items():
-                                    if valor_intent and str(valor_intent).strip():
+                                for (
+                                    tipo_intent,
+                                    valor_intent,
+                                ) in intent_dict.items():
+                                    if (
+                                        valor_intent
+                                        and str(valor_intent).strip()
+                                    ):
                                         intents_detectados.add(
                                             f"{tipo_intent}: {valor_intent}"
                                         )
@@ -1175,7 +1206,9 @@ class Atendimento(models.Model):
 
             for atendimento_anterior in atendimentos_anteriores:
                 if atendimento_anterior.assunto:
-                    data_formatada = atendimento_anterior.data_fim.strftime("%d/%m/%Y")
+                    data_formatada = atendimento_anterior.data_fim.strftime(
+                        "%d/%m/%Y"
+                    )
                     historico_atendimentos.append(
                         f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
                     )
@@ -1249,7 +1282,10 @@ class Mensagem(models.Model):
         auto_now_add=True, help_text="Timestamp da mensagem"
     )
     message_id_whatsapp = models.CharField(
-        max_length=100, blank=True, null=True, help_text="ID da mensagem no WhatsApp"
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="ID da mensagem no WhatsApp",
     )
     metadados = models.JSONField(
         default=dict,
@@ -1273,7 +1309,9 @@ class Mensagem(models.Model):
         help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
     )
     confianca_resposta = models.FloatField(
-        blank=True, null=True, help_text="Nível de confiança da resposta do bot (0-1)"
+        blank=True,
+        null=True,
+        help_text="Nível de confiança da resposta do bot (0-1)",
     )
 
     class Meta:
@@ -1291,7 +1329,9 @@ class Mensagem(models.Model):
         """
         remetente_display = self.get_remetente_display()
         conteudo_preview = (
-            self.conteudo[:50] + "..." if len(self.conteudo) > 50 else self.conteudo
+            self.conteudo[:50] + "..."
+            if len(self.conteudo) > 50
+            else self.conteudo
         )
         return f"{remetente_display}: {conteudo_preview}"
 
@@ -1367,7 +1407,10 @@ class Mensagem(models.Model):
         valores = []
         if self.intent_detectado:
             for intent_dict in self.intent_detectado:
-                if isinstance(intent_dict, dict) and tipo_intent in intent_dict:
+                if (
+                    isinstance(intent_dict, dict)
+                    and tipo_intent in intent_dict
+                ):
                     valores.append(intent_dict[tipo_intent])
         return valores
 
@@ -1440,9 +1483,7 @@ class FluxoConversa(models.Model):
     estados = models.JSONField(
         default=dict, help_text="Estados e transições do fluxo"
     )
-    ativo = models.BooleanField(
-        default=True, help_text="Fluxo ativo"
-    )
+    ativo = models.BooleanField(default=True, help_text="Fluxo ativo")
     data_criacao = models.DateTimeField(auto_now_add=True)
     data_modificacao = models.DateTimeField(auto_now=True)
 
@@ -1679,7 +1720,8 @@ def processar_mensagem_whatsapp(
             if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:
                 atendimento.status = StatusAtendimento.EM_ANDAMENTO
                 atendimento.adicionar_historico_status(
-                    StatusAtendimento.EM_ANDAMENTO, "Primeira mensagem recebida"
+                    StatusAtendimento.EM_ANDAMENTO,
+                    "Primeira mensagem recebida",
                 )
                 atendimento.save()
 
@@ -1718,7 +1760,10 @@ def buscar_atendente_disponivel(
             if atendente.pode_receber_atendimento():
                 # Verifica especialidades se especificadas
                 if especialidades:
-                    if any(esp in atendente.especialidades for esp in especialidades):
+                    if any(
+                        esp in atendente.especialidades
+                        for esp in especialidades
+                    ):
                         atendentes_disponiveis.append(atendente)
                 else:
                     atendentes_disponiveis.append(atendente)
@@ -1727,7 +1772,9 @@ def buscar_atendente_disponivel(
             return None
 
         # Retorna o atendente com menos atendimentos ativos (balanceamento)
-        return min(atendentes_disponiveis, key=lambda a: a.get_atendimentos_ativos())
+        return min(
+            atendentes_disponiveis, key=lambda a: a.get_atendimentos_ativos()
+        )
 
     except Exception as e:
         logger.error(f"Erro ao buscar atendente disponível: {e}")
@@ -1775,7 +1822,9 @@ def transferir_atendimento_automatico(
         raise
 
 
-def listar_atendentes_por_disponibilidade() -> dict[str, list["AtendenteHumano"]]:
+def listar_atendentes_por_disponibilidade() -> dict[
+    str, list["AtendenteHumano"]
+]:
     """
     Lista todos os atendentes agrupados por disponibilidade.
 

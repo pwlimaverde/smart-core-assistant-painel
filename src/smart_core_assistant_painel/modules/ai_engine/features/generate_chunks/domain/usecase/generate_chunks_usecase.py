@@ -4,15 +4,12 @@ Este módulo contém a implementação do caso de uso para divisão de texto
 em chunks utilizando o RecursiveCharacterTextSplitter do LangChain.
 """
 
-
-
-
-from langchain_core.documents.base import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.documents.base import Document
 from py_return_success_or_error import (
+    ErrorReturn,
     ReturnSuccessOrError,
     SuccessReturn,
-    ErrorReturn,
 )
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
@@ -54,21 +51,20 @@ class GenerateChunksUseCase(GCUsecase):
 
             # Cria documento temporário para chunking
             temp_document = Document(
-                page_content=parameters.conteudo,
-                metadata=parameters.metadata
+                page_content=parameters.conteudo, metadata=parameters.metadata
             )
-            
+
             # Configura o splitter com as configurações do ServiceHub
             splitter = RecursiveCharacterTextSplitter(
-                chunk_size=SERVICEHUB.CHUNK_SIZE, 
-                chunk_overlap=SERVICEHUB.CHUNK_OVERLAP
+                chunk_size=SERVICEHUB.CHUNK_SIZE,
+                chunk_overlap=SERVICEHUB.CHUNK_OVERLAP,
             )
-            
+
             # Gera os chunks
             chunks = splitter.split_documents(documents=[temp_document])
-            
+
             return SuccessReturn(chunks)
-            
+
         except Exception as e:
             error = parameters.error
             error.message = f"{error.message} - Exception: {str(e)}"

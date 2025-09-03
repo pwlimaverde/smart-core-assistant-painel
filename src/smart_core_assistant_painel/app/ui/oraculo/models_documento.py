@@ -1,24 +1,18 @@
-from django.db.models.query import QuerySet
+from typing import Any, Self, override
 
-from typing import Any, Self
 from django.db import models
+from django.db.models.query import QuerySet
 from loguru import logger
-from pgvector.django import CosineDistance, VectorField  # type: ignore
-
-
-
-from typing import override
-
-# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false, reportUnknownMemberType=false
+from pgvector.django import CosineDistance, VectorField
 
 
 class Documento(models.Model):
     """
     Modelo que representa um documento vetorizado individual.
-    
+
     Cada instância armazena um chunk de conteúdo de treinamento
     com seu respectivo embedding vetorial para busca semântica.
-    
+
     Attributes:
         treinamento: Relacionamento com o modelo Treinamento
         conteudo: Conteúdo do chunk de treinamento
@@ -27,7 +21,7 @@ class Documento(models.Model):
         ordem: Ordem do documento no treinamento
         data_criacao: Timestamp de criação
     """
-    
+
     id = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -38,36 +32,36 @@ class Documento(models.Model):
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
-    
+
     conteudo = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo do chunk de treinamento",
     )
-    
+
     metadata = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
     )
-    
+
     embedding = VectorField(
         dimensions=1024,
         null=True,
         blank=True,
         help_text="Vetor de embeddings do conteúdo do documento",
     )
-    
+
     ordem = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
-    
+
     data_criacao = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )
-    
+
     class Meta:
         verbose_name: str = "Documento"
         verbose_name_plural: str = "Documentos"
@@ -87,38 +81,42 @@ class Documento(models.Model):
         top_k: int = 5,
     ) -> str:
         """Busca documentos relacionados à mensagem recebida pelo webhook.
-        
+
         Args:
             mensagem: Texto da mensagem recebida
             top_k: Número de documentos a retornar
-            
+
         Returns:
             Contexto formatado com os documentos mais relevantes
         """
-        try:         
+        try:
             # Busca documentos similares
-            documentos: QuerySet[Self] = cls.objects.filter(
-                treinamento__treinamento_finalizado=True,
-                embedding__isnull=False
-            ).annotate(
-                distance=CosineDistance('embedding', query_vec)
-            ).order_by('distance')[:top_k]
-            
+            documentos: QuerySet[Self] = (
+                cls.objects.filter(
+                    treinamento__treinamento_finalizado=True,
+                    embedding__isnull=False,
+                )
+                .annotate(distance=CosineDistance("embedding", query_vec))
+                .order_by("distance")[:top_k]
+            )
+
             # Formata contexto
             if not documentos:
                 return ""
-                
+
             contexto_lines: list[str] = ["📚 Contexto relevante:"]
             for i, doc in enumerate(documentos, 1):
                 if doc.conteudo:
-                    contexto_lines.extend([
-                        f"\n[{i}] {doc.treinamento.tag} - {doc.treinamento.grupo}",
-                        doc.conteudo.strip(),
-                    "---"
-                    ])
-            
+                    contexto_lines.extend(
+                        [
+                            f"\n[{i}] {doc.treinamento.tag} - {doc.treinamento.grupo}",
+                            doc.conteudo.strip(),
+                            "---",
+                        ]
+                    )
+
             return "\n".join(contexto_lines)
-            
+
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
             return ""
@@ -128,7 +126,6 @@ class Documento(models.Model):
         """Remove todos os documentos de um treinamento."""
         count: int = cls.objects.filter(treinamento_id=treinamento_id).count()
         docs = cls.objects.filter(treinamento_id=treinamento_id).delete()
-        logger.info(f"Removidos {count} documentos do treinamento {treinamento_id} {docs}")
-
-    
-        
+        logger.info(
+            f"Removidos {count} documentos do treinamento {treinamento_id} {docs}"
+        )

@@ -31,7 +31,9 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
     """
 
     @staticmethod
-    async def _load_remote_config_values(config_mapping: dict[str, str]) -> None:
+    async def _load_remote_config_values(
+        config_mapping: dict[str, str],
+    ) -> None:
         """Carrega e define variáveis de ambiente a partir do Firebase Remote Config.
 
         Inicializa a conexão com o Firebase, busca o template de configuração remota
@@ -50,7 +52,9 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
                        inicialização do Firebase ou o processo de carregamento do template.
         """
         try:
-            logger.info("🔧 Iniciando carregamento do Firebase Remote Config...")
+            logger.info(
+                "🔧 Iniciando carregamento do Firebase Remote Config..."
+            )
 
             # Verifica se o Firebase está inicializado, se não, inicializa
             try:
@@ -78,22 +82,30 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
 
             # Log detalhado do estado do template
             logger.info(f"📊 Estado do template: {type(config)}")
-            
+
             # Tentar listar todos os parâmetros disponíveis no Remote Config
             try:
                 all_params = config.get_all()
-                logger.info(f"📋 Parâmetros disponíveis no Remote Config: {list(all_params.keys()) if all_params else 'Nenhum'}")
+                logger.info(
+                    f"📋 Parâmetros disponíveis no Remote Config: {list(all_params.keys()) if all_params else 'Nenhum'}"
+                )
             except Exception as e:
                 logger.warning(f"⚠️ Não foi possível listar parâmetros: {e}")
 
-            logger.info(f"🔑 Carregando {len(config_mapping)} variáveis de ambiente...")
+            logger.info(
+                f"🔑 Carregando {len(config_mapping)} variáveis de ambiente..."
+            )
             loaded_count = 0
 
             for remote_key, env_key in config_mapping.items():
                 try:
-                    logger.info(f"📝 Tentando carregar {remote_key} -> {env_key}")
+                    logger.info(
+                        f"📝 Tentando carregar {remote_key} -> {env_key}"
+                    )
                     value = config.get_string(remote_key)
-                    logger.info(f"🔍 Valor obtido para {remote_key}: {'[DEFINIDO]' if value else '[VAZIO/NULO]'}")
+                    logger.info(
+                        f"🔍 Valor obtido para {remote_key}: {'[DEFINIDO]' if value else '[VAZIO/NULO]'}"
+                    )
                     if value:
                         os.environ[env_key] = value
                         loaded_count += 1
@@ -103,7 +115,10 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
                 except Exception as e:
                     logger.error(f"❌ Erro ao carregar {remote_key}: {e}")
                     import traceback
-                    logger.error(f"📋 Traceback detalhado: {traceback.format_exc()}")
+
+                    logger.error(
+                        f"📋 Traceback detalhado: {traceback.format_exc()}"
+                    )
                     raise TypeError(
                         f"Erro ao carregar variável de ambiente {remote_key}: {str(e)}"
                     )
@@ -113,7 +128,9 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
             )
 
         except Exception as e:
-            logger.error(f"💥 Erro fatal no carregamento do Remote Config: {e}")
+            logger.error(
+                f"💥 Erro fatal no carregamento do Remote Config: {e}"
+            )
             import traceback
 
             logger.error(f"📋 Traceback: {traceback.format_exc()}")
@@ -138,9 +155,15 @@ class SetEnvironRemoteFirebaseDatasource(SERData):
         """
         try:
             logger.info("🚀 Iniciando SetEnvironRemoteFirebaseDatasource...")
-            asyncio.run(self._load_remote_config_values(parameters.config_mapping))
-            logger.info("✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!")
+            asyncio.run(
+                self._load_remote_config_values(parameters.config_mapping)
+            )
+            logger.info(
+                "✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!"
+            )
             return True
         except Exception as e:
             logger.error(f"❌ Erro em SetEnvironRemoteFirebaseDatasource: {e}")
-            raise TypeError(f"Erro ao carregar variáveis de ambiente: {str(e)}")
+            raise TypeError(
+                f"Erro ao carregar variáveis de ambiente: {str(e)}"
+            )

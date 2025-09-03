@@ -191,8 +191,9 @@ class TestAtendimentoAdmin(TestCase):
         # Testa atendimento finalizado
         import datetime
 
-        self.atendimento.data_fim = self.atendimento.data_inicio + datetime.timedelta(
-            hours=1, minutes=30
+        self.atendimento.data_fim = (
+            self.atendimento.data_inicio
+            + datetime.timedelta(hours=1, minutes=30)
         )
         self.atendimento.save()
 
@@ -339,7 +340,9 @@ class TestTreinamentosAdmin(TestCase):
             ],
         )
 
-        preview_multiplo = self.admin.get_documentos_preview(treinamento_multiplo)
+        preview_multiplo = self.admin.get_documentos_preview(
+            treinamento_multiplo
+        )
         self.assertIn("Doc 1", preview_multiplo)
         self.assertIn("content", preview_multiplo)
 
@@ -414,7 +417,9 @@ class TestAdminIntegration(TestCase):
             response = self.client.post(url, data)
 
             # Verifica se o contato foi criado
-            novo_contato = Contato.objects.filter(telefone="5511777777777").first()
+            novo_contato = Contato.objects.filter(
+                telefone="5511777777777"
+            ).first()
 
             self.assertIsNotNone(novo_contato)
             self.assertEqual(novo_contato.nome_contato, "Novo Cliente Admin")
@@ -446,7 +451,9 @@ class TestAdminIntegration(TestCase):
 
             # Verifica se o atendimento foi atualizado
             self.atendimento.refresh_from_db()
-            self.assertEqual(self.atendimento.status, StatusAtendimento.RESOLVIDO)
+            self.assertEqual(
+                self.atendimento.status, StatusAtendimento.RESOLVIDO
+            )
 
         except Exception:
             # Se a URL não existir, pula o teste
@@ -464,7 +471,9 @@ class TestAdminIntegration(TestCase):
             pass
 
         # Usuário comum (não staff)
-        user_comum = User.objects.create_user(username="comum", password="testpass123")
+        user_comum = User.objects.create_user(
+            username="comum", password="testpass123"
+        )
 
         self.client.force_login(user_comum)
 

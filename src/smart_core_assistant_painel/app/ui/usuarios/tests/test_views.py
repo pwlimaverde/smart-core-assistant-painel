@@ -1,9 +1,10 @@
 """Testes para as views do app de usuários."""
 
-from django.test import TestCase, Client
-from django.urls import reverse
 from django.contrib.auth.models import User
+from django.test import Client, TestCase
+from django.urls import reverse
 from rolepermissions.roles import assign_role, get_user_roles
+
 from smart_core_assistant_painel.app.ui.core.roles import Gerente
 
 
@@ -13,7 +14,9 @@ class TestUsuariosViews(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpassword")
+        self.user = User.objects.create_user(
+            username="testuser", password="testpassword"
+        )
         assign_role(self.user, "gerente")
 
     def test_cadastro_get(self) -> None:
@@ -26,7 +29,11 @@ class TestUsuariosViews(TestCase):
         """Testa o cadastro de um novo usuário com sucesso."""
         response = self.client.post(
             reverse("cadastro"),
-            {"username": "newuser", "senha": "newpassword", "confirmar_senha": "newpassword"},
+            {
+                "username": "newuser",
+                "senha": "newpassword",
+                "confirmar_senha": "newpassword",
+            },
         )
         self.assertRedirects(response, reverse("login"))
         self.assertTrue(User.objects.filter(username="newuser").exists())
@@ -35,7 +42,11 @@ class TestUsuariosViews(TestCase):
         """Testa o cadastro com senhas que não coincidem."""
         response = self.client.post(
             reverse("cadastro"),
-            {"username": "newuser", "senha": "newpassword", "confirmar_senha": "wrongpassword"},
+            {
+                "username": "newuser",
+                "senha": "newpassword",
+                "confirmar_senha": "wrongpassword",
+            },
             follow=True,
         )
         self.assertContains(response, "As senhas não coincidem.")
@@ -47,13 +58,19 @@ class TestUsuariosViews(TestCase):
             {"username": "newuser", "senha": "123", "confirmar_senha": "123"},
             follow=True,
         )
-        self.assertContains(response, "A senha deve ter pelo menos 6 caracteres.")
+        self.assertContains(
+            response, "A senha deve ter pelo menos 6 caracteres."
+        )
 
     def test_cadastro_post_existing_username(self) -> None:
         """Testa o cadastro com um nome de usuário que já existe."""
         response = self.client.post(
             reverse("cadastro"),
-            {"username": "testuser", "senha": "newpassword", "confirmar_senha": "newpassword"},
+            {
+                "username": "testuser",
+                "senha": "newpassword",
+                "confirmar_senha": "newpassword",
+            },
             follow=True,
         )
         self.assertContains(response, "Este nome de usuário já existe.")
@@ -94,9 +111,13 @@ class TestUsuariosViews(TestCase):
     def test_tornar_gerente(self) -> None:
         """Testa se a view atribui a role de 'gerente' ao usuário."""
         self.client.login(username="testuser", password="testpassword")
-        user_to_promote = User.objects.create_user(username="user_to_promote", password="password")
+        user_to_promote = User.objects.create_user(
+            username="user_to_promote", password="password"
+        )
 
-        response = self.client.get(reverse("tornar_gerente", args=[user_to_promote.id]))
+        response = self.client.get(
+            reverse("tornar_gerente", args=[user_to_promote.id])
+        )
 
         self.assertRedirects(response, reverse("permissoes"))
         user_to_promote.refresh_from_db()

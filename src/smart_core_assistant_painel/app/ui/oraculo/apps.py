@@ -52,7 +52,8 @@ class OraculoConfig(AppConfig):
             self._set_send_to_robust(pre_delete, "pre_delete")
         except Exception as e:
             logger.error(
-                f"Falha ao configurar signals como robustos: {e}", exc_info=True
+                f"Falha ao configurar signals como robustos: {e}",
+                exc_info=True,
             )
 
     @staticmethod
@@ -62,7 +63,7 @@ class OraculoConfig(AppConfig):
         Args:
             signal_obj: O objeto de signal a ser modificado.
             label (str): Um rótulo para fins de logging.
-        """        
+        """
         try:
             if getattr(signal_obj.send, "__name__", "") == "send_robust":
                 return

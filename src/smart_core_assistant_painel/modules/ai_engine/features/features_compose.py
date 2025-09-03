@@ -6,14 +6,24 @@ interação com modelos de linguagem.
 """
 
 from typing import Any, cast
-from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
-from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import GenerateChunksUseCase
-from smart_core_assistant_painel.modules.ai_engine.utils.parameters import GenerateEmbeddingsParameters
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import EmbeddingError
 
 from langchain_core.documents.base import Document
 from loguru import logger
+from py_return_success_or_error import (
+    ErrorReturn,
+    ReturnSuccessOrError,
+    SuccessReturn,
+)
 
+from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import (
+    GenerateChunksUseCase,
+)
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    EmbeddingError,
+)
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    GenerateEmbeddingsParameters,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from ..utils.erros import (
@@ -35,13 +45,13 @@ from ..utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
+    GCUsecase,
     GEData,
     GEUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
     LMDUsecase,
-    GCUsecase,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
@@ -54,6 +64,12 @@ from .analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensa
 )
 from .analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
     AnalisePreviaMensagemUsecase,
+)
+from .generate_embeddings.datasource.generate_embeddings_langchain_datasource import (
+    GenerateEmbeddingsLangchainDatasource,
+)
+from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
+    GenerateEmbeddingsUseCase,
 )
 from .load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
     LoadDocumentConteudoUseCase,
@@ -68,12 +84,7 @@ from .load_mensage_data.domain.model.message_data import MessageData
 from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
 )
-from .generate_embeddings.datasource.generate_embeddings_langchain_datasource import (
-    GenerateEmbeddingsLangchainDatasource,
-)
-from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
-    GenerateEmbeddingsUseCase,
-)
+
 
 class FeaturesCompose:
     """Facade para os casos de uso do módulo AI Engine."""
@@ -115,7 +126,9 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def load_document_file(id: str, path: str, tag: str, grupo: str) -> list[Document]:
+    def load_document_file(
+        id: str, path: str, tag: str, grupo: str
+    ) -> list[Document]:
         """Carrega e processa um arquivo de documento para treinamento.
 
         Args:
@@ -337,7 +350,9 @@ class FeaturesCompose:
             ValueError: Se o tipo de retorno do caso de uso for inesperado.
         """
         error: EmbeddingError = EmbeddingError("Erro ao gerar embeddings!")
-        parameters: GenerateEmbeddingsParameters = GenerateEmbeddingsParameters(text=text, error=error)
+        parameters: GenerateEmbeddingsParameters = (
+            GenerateEmbeddingsParameters(text=text, error=error)
+        )
         datasource: GEData = GenerateEmbeddingsLangchainDatasource()
         usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
         data: ReturnSuccessOrError[list[float]] = usecase(parameters)
@@ -350,7 +365,9 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def generate_chunks(conteudo: str, metadata: dict[str, Any]) -> list[Document]:
+    def generate_chunks(
+        conteudo: str, metadata: dict[str, Any]
+    ) -> list[Document]:
         """Gera chunks a partir do conteúdo informado.
 
         Args:

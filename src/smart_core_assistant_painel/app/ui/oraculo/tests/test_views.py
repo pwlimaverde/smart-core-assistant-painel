@@ -80,7 +80,9 @@ class TestWebhookWhatsApp(TestCase):
         self.assertEqual(response.status_code, 401)  # Unauthorized
         mock_validar.assert_called_once_with(self.whatsapp_data)
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response")
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response"
+    )
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer")
     @patch(
         "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
@@ -155,7 +157,9 @@ class TestWebhookWhatsApp(TestCase):
         # Pode retornar 500 se load_message_data falhar com dados inválidos
         self.assertIn(response.status_code, [200, 500])
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response")
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response"
+    )
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer")
     @patch(
         "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
@@ -231,7 +235,9 @@ class TestViewsIntegration(TestCase):
         self.mock_departamento.api_key = "test_api_key"
         self.mock_departamento.telefone_instancia = "test_instance"
 
-    @patch("smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response")
+    @patch(
+        "smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response"
+    )
     @patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer")
     @patch(
         "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
@@ -271,7 +277,9 @@ class TestViewsIntegration(TestCase):
         }
 
         response = self.client.post(
-            self.webhook_url, data=json.dumps(payload), content_type="application/json"
+            self.webhook_url,
+            data=json.dumps(payload),
+            content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 200)

@@ -2,6 +2,7 @@
 
 Este script inicializa os serviços necessários e, em seguida, inicia a aplicação Django.
 """
+
 import os
 from pathlib import Path
 
@@ -9,7 +10,9 @@ from smart_core_assistant_painel.app.ui.manage import start_app
 from smart_core_assistant_painel.modules.initial_loading.start_initial_loading import (
     start_initial_loading,
 )
-from smart_core_assistant_painel.modules.services.start_services import start_services
+from smart_core_assistant_painel.modules.services.start_services import (
+    start_services,
+)
 
 
 def _resolve_firebase_credentials_path() -> None:
@@ -47,10 +50,14 @@ def _resolve_firebase_credentials_path() -> None:
             current_dir = Path.cwd()
             absolute_path_current = current_dir / credentials_path_str
             print(f"🔍 Tentando diretório atual: {absolute_path_current}")
-            print(f"📄 Arquivo existe no diretório atual: {absolute_path_current.exists()}")
-            
+            print(
+                f"📄 Arquivo existe no diretório atual: {absolute_path_current.exists()}"
+            )
+
             if absolute_path_current.exists():
-                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(absolute_path_current)
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(
+                    absolute_path_current
+                )
                 print(
                     "Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: "
                     f"{absolute_path_current}"

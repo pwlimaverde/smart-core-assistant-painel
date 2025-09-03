@@ -1,10 +1,9 @@
-# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false
-import datetime
-from django.db.models.indexes import Index
 import re
+from typing import override
+
 from django.core.exceptions import ValidationError
 from django.db import models
-from typing import override
+from django.db.models.indexes import Index
 
 
 def validate_identificador(value: str) -> None:
@@ -25,13 +24,17 @@ def validate_identificador(value: str) -> None:
         >>> validate_identificador("minha tag")      # inválida - espaço
     """
     if len(value) > 40:
-        raise ValidationError("Identificador deve ter no máximo 40 caracteres.")
+        raise ValidationError(
+            "Identificador deve ter no máximo 40 caracteres."
+        )
 
     if " " in value:
         raise ValidationError("Identificador não deve conter espaços.")
 
     if not value.islower():
-        raise ValidationError("Identificador deve conter apenas letras minúsculas.")
+        raise ValidationError(
+            "Identificador deve conter apenas letras minúsculas."
+        )
 
     # Validar se contém apenas letras, números e underscore
     if not re.match(r"^[a-z0-9_]+$", value):
@@ -104,7 +107,9 @@ class Treinamento(models.Model):
         indexes: list[Index] = [
             models.Index(fields=["tag", "grupo"]),
             models.Index(fields=["data_criacao"]),
-            models.Index(fields=["treinamento_finalizado", "treinamento_vetorizado"]),
+            models.Index(
+                fields=["treinamento_finalizado", "treinamento_vetorizado"]
+            ),
         ]
 
     @override
@@ -121,7 +126,9 @@ class Treinamento(models.Model):
 
         # Validação customizada: tag não pode ser igual ao grupo
         if self.tag and self.grupo and self.tag == self.grupo:
-            raise ValidationError(message={"grupo": "O grupo não pode ser igual à tag."})
+            raise ValidationError(
+                message={"grupo": "O grupo não pode ser igual à tag."}
+            )
 
     @override
     def __str__(self) -> str:

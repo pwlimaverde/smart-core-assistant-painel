@@ -4,6 +4,7 @@ da aplicação, simplificando o acesso e a inicialização de componentes
 essenciais como o ServiceHub, armazenamento de vetores e comunicação
 com o WhatsApp.
 """
+
 from .features.features_compose import FeaturesCompose
 from .features.service_hub import SERVICEHUB, ServiceHub
 from .start_services import start_services

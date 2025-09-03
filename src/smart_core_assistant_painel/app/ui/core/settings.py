@@ -39,7 +39,9 @@ def _get_allowed_hosts() -> list[str]:
     django_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
     if django_allowed_hosts:
         return [
-            host.strip() for host in django_allowed_hosts.split(",") if host.strip()
+            host.strip()
+            for host in django_allowed_hosts.split(",")
+            if host.strip()
         ]
 
     if DEBUG:
@@ -220,5 +222,9 @@ Q_CLUSTER = {
 # Configurações de serviços externos (ambiente_chat)
 # Estas variáveis permitem que a aplicação Django consuma Evolution API e Ollama
 # que rodam em outro ambiente Docker separado.
-EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080").strip()
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://192.168.3.127:11434").strip()
+EVOLUTION_API_URL = os.getenv(
+    "EVOLUTION_API_URL", "http://localhost:8080"
+).strip()
+OLLAMA_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL", "http://192.168.3.127:11434"
+).strip()

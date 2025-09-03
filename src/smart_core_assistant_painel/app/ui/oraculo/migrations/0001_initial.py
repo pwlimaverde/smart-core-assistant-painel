@@ -3,224 +3,1035 @@
 import django.db.models.deletion
 import pgvector.django.indexes
 import pgvector.django.vector
-import smart_core_assistant_painel.app.ui.oraculo.models
-import smart_core_assistant_painel.app.ui.oraculo.models_departamento
-import smart_core_assistant_painel.app.ui.oraculo.models_treinamento
 from django.db import migrations, models
 from pgvector.django import VectorExtension, VectorField
 
+import smart_core_assistant_painel.app.ui.oraculo.models
+import smart_core_assistant_painel.app.ui.oraculo.models_departamento
+import smart_core_assistant_painel.app.ui.oraculo.models_treinamento
+
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         VectorExtension(),
         migrations.CreateModel(
-            name='AtendenteHumano',
+            name="AtendenteHumano",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('telefone', models.CharField(blank=True, help_text='Número de telefone do atendente (usado como sessão única)', max_length=20, null=True, unique=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models.validate_telefone])),
-                ('nome', models.CharField(help_text='Nome completo do atendente', max_length=100)),
-                ('cargo', models.CharField(help_text='Cargo/função do atendente', max_length=100)),
-                ('email', models.EmailField(blank=True, help_text='E-mail corporativo do atendente', max_length=254, null=True)),
-                ('usuario_sistema', models.CharField(blank=True, help_text='Usuário do sistema para login (se aplicável)', max_length=50, null=True)),
-                ('ativo', models.BooleanField(default=True, help_text='Status de atividade do atendente')),
-                ('disponivel', models.BooleanField(default=True, help_text='Disponibilidade atual para receber novos atendimentos')),
-                ('max_atendimentos_simultaneos', models.PositiveIntegerField(default=5, help_text='Máximo de atendimentos simultâneos permitidos')),
-                ('especialidades', models.JSONField(blank=True, default=list, help_text='Lista de especialidades/áreas de conhecimento do atendente')),
-                ('horario_trabalho', models.JSONField(blank=True, default=dict, help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})")),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro no sistema')),
-                ('ultima_atividade', models.DateTimeField(auto_now=True, help_text='Data da última atividade no sistema')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais do atendente (configurações, preferências, etc.)')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Número de telefone do atendente (usado como sessão única)",
+                        max_length=20,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models.validate_telefone
+                        ],
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        help_text="Nome completo do atendente", max_length=100
+                    ),
+                ),
+                (
+                    "cargo",
+                    models.CharField(
+                        help_text="Cargo/função do atendente", max_length=100
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        blank=True,
+                        help_text="E-mail corporativo do atendente",
+                        max_length=254,
+                        null=True,
+                    ),
+                ),
+                (
+                    "usuario_sistema",
+                    models.CharField(
+                        blank=True,
+                        help_text="Usuário do sistema para login (se aplicável)",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Status de atividade do atendente",
+                    ),
+                ),
+                (
+                    "disponivel",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Disponibilidade atual para receber novos atendimentos",
+                    ),
+                ),
+                (
+                    "max_atendimentos_simultaneos",
+                    models.PositiveIntegerField(
+                        default=5,
+                        help_text="Máximo de atendimentos simultâneos permitidos",
+                    ),
+                ),
+                (
+                    "especialidades",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Lista de especialidades/áreas de conhecimento do atendente",
+                    ),
+                ),
+                (
+                    "horario_trabalho",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})",
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de cadastro no sistema",
+                    ),
+                ),
+                (
+                    "ultima_atividade",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Data da última atividade no sistema",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Atendente Humano',
-                'verbose_name_plural': 'Atendentes Humanos',
-                'ordering': ['nome'],
+                "verbose_name": "Atendente Humano",
+                "verbose_name_plural": "Atendentes Humanos",
+                "ordering": ["nome"],
             },
         ),
         migrations.CreateModel(
-            name='Contato',
+            name="Contato",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('telefone', models.CharField(help_text='Número de telefone do contato (formato: 5511999999999)', max_length=20, unique=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models.validate_telefone])),
-                ('nome_contato', models.CharField(blank=True, help_text='Nome do contato', max_length=100, null=True)),
-                ('email', models.EmailField(blank=True, help_text='E-mail do contato', max_length=254, null=True)),
-                ('nome_perfil_whatsapp', models.CharField(blank=True, help_text='Nome do perfil cadastrado no WhatsApp do contato', max_length=100, null=True)),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro do contato')),
-                ('ultima_interacao', models.DateTimeField(auto_now=True, help_text='Data da última interação')),
-                ('ativo', models.BooleanField(default=True, help_text='Status de atividade do contato')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais do contato')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        help_text="Número de telefone do contato (formato: 5511999999999)",
+                        max_length=20,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models.validate_telefone
+                        ],
+                    ),
+                ),
+                (
+                    "nome_contato",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome do contato",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        blank=True,
+                        help_text="E-mail do contato",
+                        max_length=254,
+                        null=True,
+                    ),
+                ),
+                (
+                    "nome_perfil_whatsapp",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome do perfil cadastrado no WhatsApp do contato",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de cadastro do contato",
+                    ),
+                ),
+                (
+                    "ultima_interacao",
+                    models.DateTimeField(
+                        auto_now=True, help_text="Data da última interação"
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Status de atividade do contato",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais do contato",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Contato',
-                'verbose_name_plural': 'Contatos',
-                'ordering': ['-ultima_interacao'],
+                "verbose_name": "Contato",
+                "verbose_name_plural": "Contatos",
+                "ordering": ["-ultima_interacao"],
             },
         ),
         migrations.CreateModel(
-            name='FluxoConversa',
+            name="FluxoConversa",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('nome', models.CharField(help_text='Nome do fluxo de conversa', max_length=100, unique=True)),
-                ('descricao', models.TextField(blank=True, help_text='Descrição do fluxo', null=True)),
-                ('condicoes_entrada', models.JSONField(default=dict, help_text='Condições para entrar neste fluxo')),
-                ('estados', models.JSONField(default=dict, help_text='Estados e transições do fluxo')),
-                ('ativo', models.BooleanField(default=True, help_text='Fluxo ativo')),
-                ('data_criacao', models.DateTimeField(auto_now_add=True)),
-                ('data_modificacao', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        help_text="Nome do fluxo de conversa",
+                        max_length=100,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "descricao",
+                    models.TextField(
+                        blank=True, help_text="Descrição do fluxo", null=True
+                    ),
+                ),
+                (
+                    "condicoes_entrada",
+                    models.JSONField(
+                        default=dict,
+                        help_text="Condições para entrar neste fluxo",
+                    ),
+                ),
+                (
+                    "estados",
+                    models.JSONField(
+                        default=dict, help_text="Estados e transições do fluxo"
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(default=True, help_text="Fluxo ativo"),
+                ),
+                ("data_criacao", models.DateTimeField(auto_now_add=True)),
+                ("data_modificacao", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Fluxo de Conversa',
-                'verbose_name_plural': 'Fluxos de Conversa',
+                "verbose_name": "Fluxo de Conversa",
+                "verbose_name_plural": "Fluxos de Conversa",
             },
         ),
         migrations.CreateModel(
-            name='Cliente',
+            name="Cliente",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('nome_fantasia', models.CharField(help_text='Nome comum do cliente (obrigatório)', max_length=200)),
-                ('razao_social', models.CharField(blank=True, help_text='Nome legal/oficial do cliente', max_length=200, null=True)),
-                ('tipo', models.CharField(blank=True, choices=[('fisica', 'Pessoa Física'), ('juridica', 'Pessoa Jurídica')], help_text='Tipo de pessoa (física ou jurídica)', max_length=20, null=True)),
-                ('cnpj', models.CharField(blank=True, help_text='CNPJ do cliente (formato: 12.345.678/0001-99)', max_length=18, null=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models.validate_cnpj])),
-                ('cpf', models.CharField(blank=True, help_text='CPF do cliente informado durante a conversa (formato: 123.456.789-00)', max_length=14, null=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models.validate_cpf])),
-                ('telefone', models.CharField(blank=True, help_text='Telefone fixo ou corporativo do cliente', max_length=20, null=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models.validate_telefone])),
-                ('site', models.URLField(blank=True, help_text='Website do cliente', null=True)),
-                ('ramo_atividade', models.CharField(blank=True, help_text='Área de atuação do cliente', max_length=200, null=True)),
-                ('observacoes', models.TextField(blank=True, help_text='Informações adicionais sobre o cliente', null=True)),
-                ('cep', models.CharField(blank=True, help_text='CEP do endereço (formato: 12345-678)', max_length=10, null=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models.validate_cep])),
-                ('logradouro', models.CharField(blank=True, help_text='Rua, avenida ou logradouro', max_length=200, null=True)),
-                ('numero', models.CharField(blank=True, help_text='Número do endereço', max_length=10, null=True)),
-                ('complemento', models.CharField(blank=True, help_text='Complemento do endereço (sala, andar, etc.)', max_length=100, null=True)),
-                ('bairro', models.CharField(blank=True, help_text='Bairro do cliente', max_length=100, null=True)),
-                ('cidade', models.CharField(blank=True, help_text='Cidade do cliente', max_length=100, null=True)),
-                ('uf', models.CharField(blank=True, help_text='Estado (UF) do cliente', max_length=2, null=True)),
-                ('pais', models.CharField(blank=True, default='Brasil', help_text='País do cliente', max_length=50, null=True)),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro do cliente')),
-                ('ultima_atualizacao', models.DateTimeField(auto_now=True, help_text='Data da última atualização')),
-                ('ativo', models.BooleanField(default=True, help_text='Status de atividade do cliente')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais do cliente')),
-                ('contatos', models.ManyToManyField(blank=True, help_text='Contatos vinculados ao cliente', related_name='clientes', to='oraculo.contato')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "nome_fantasia",
+                    models.CharField(
+                        help_text="Nome comum do cliente (obrigatório)",
+                        max_length=200,
+                    ),
+                ),
+                (
+                    "razao_social",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome legal/oficial do cliente",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("fisica", "Pessoa Física"),
+                            ("juridica", "Pessoa Jurídica"),
+                        ],
+                        help_text="Tipo de pessoa (física ou jurídica)",
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cnpj",
+                    models.CharField(
+                        blank=True,
+                        help_text="CNPJ do cliente (formato: 12.345.678/0001-99)",
+                        max_length=18,
+                        null=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models.validate_cnpj
+                        ],
+                    ),
+                ),
+                (
+                    "cpf",
+                    models.CharField(
+                        blank=True,
+                        help_text="CPF do cliente informado durante a conversa (formato: 123.456.789-00)",
+                        max_length=14,
+                        null=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models.validate_cpf
+                        ],
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Telefone fixo ou corporativo do cliente",
+                        max_length=20,
+                        null=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models.validate_telefone
+                        ],
+                    ),
+                ),
+                (
+                    "site",
+                    models.URLField(
+                        blank=True, help_text="Website do cliente", null=True
+                    ),
+                ),
+                (
+                    "ramo_atividade",
+                    models.CharField(
+                        blank=True,
+                        help_text="Área de atuação do cliente",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "observacoes",
+                    models.TextField(
+                        blank=True,
+                        help_text="Informações adicionais sobre o cliente",
+                        null=True,
+                    ),
+                ),
+                (
+                    "cep",
+                    models.CharField(
+                        blank=True,
+                        help_text="CEP do endereço (formato: 12345-678)",
+                        max_length=10,
+                        null=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models.validate_cep
+                        ],
+                    ),
+                ),
+                (
+                    "logradouro",
+                    models.CharField(
+                        blank=True,
+                        help_text="Rua, avenida ou logradouro",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "numero",
+                    models.CharField(
+                        blank=True,
+                        help_text="Número do endereço",
+                        max_length=10,
+                        null=True,
+                    ),
+                ),
+                (
+                    "complemento",
+                    models.CharField(
+                        blank=True,
+                        help_text="Complemento do endereço (sala, andar, etc.)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "bairro",
+                    models.CharField(
+                        blank=True,
+                        help_text="Bairro do cliente",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "cidade",
+                    models.CharField(
+                        blank=True,
+                        help_text="Cidade do cliente",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "uf",
+                    models.CharField(
+                        blank=True,
+                        help_text="Estado (UF) do cliente",
+                        max_length=2,
+                        null=True,
+                    ),
+                ),
+                (
+                    "pais",
+                    models.CharField(
+                        blank=True,
+                        default="Brasil",
+                        help_text="País do cliente",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de cadastro do cliente",
+                    ),
+                ),
+                (
+                    "ultima_atualizacao",
+                    models.DateTimeField(
+                        auto_now=True, help_text="Data da última atualização"
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Status de atividade do cliente",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais do cliente",
+                    ),
+                ),
+                (
+                    "contatos",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Contatos vinculados ao cliente",
+                        related_name="clientes",
+                        to="oraculo.contato",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Cliente',
-                'verbose_name_plural': 'Clientes',
-                'ordering': ['nome_fantasia'],
+                "verbose_name": "Cliente",
+                "verbose_name_plural": "Clientes",
+                "ordering": ["nome_fantasia"],
             },
         ),
         migrations.CreateModel(
-            name='Atendimento',
+            name="Atendimento",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('status', models.CharField(choices=[('aguardando_inicial', 'Aguardando Interação Inicial'), ('em_andamento', 'Em Andamento'), ('aguardando_contato', 'Aguardando Contato'), ('aguardando_atendente', 'Aguardando Atendente'), ('resolvido', 'Resolvido'), ('cancelado', 'Cancelado'), ('transferido', 'Transferido para Humano')], default='aguardando_inicial', help_text='Status atual do atendimento', max_length=20)),
-                ('data_inicio', models.DateTimeField(auto_now_add=True, help_text='Data de início do atendimento')),
-                ('data_fim', models.DateTimeField(blank=True, help_text='Data de finalização do atendimento', null=True)),
-                ('assunto', models.CharField(blank=True, help_text='Assunto/resumo do atendimento', max_length=200, null=True)),
-                ('prioridade', models.CharField(choices=[('baixa', 'Baixa'), ('normal', 'Normal'), ('alta', 'Alta'), ('urgente', 'Urgente')], default='normal', help_text='Prioridade do atendimento', max_length=10)),
-                ('contexto_conversa', models.JSONField(blank=True, default=dict, help_text='Contexto atual da conversa (variáveis, estado, etc.)')),
-                ('historico_status', models.JSONField(blank=True, default=list, help_text='Histórico de mudanças de status')),
-                ('tags', models.JSONField(blank=True, default=list, help_text='Tags para categorização do atendimento')),
-                ('avaliacao', models.IntegerField(blank=True, choices=[(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)], help_text='Avaliação do atendimento (1-5)', null=True)),
-                ('feedback', models.TextField(blank=True, help_text='Feedback do contato', null=True)),
-                ('atendente_humano', models.ForeignKey(blank=True, help_text='Atendente humano responsável pelo atendimento (se transferido)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendimentos', to='oraculo.atendentehumano')),
-                ('contato', models.ForeignKey(help_text='Contato vinculado ao atendimento', on_delete=django.db.models.deletion.CASCADE, related_name='atendimentos', to='oraculo.contato')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            (
+                                "aguardando_inicial",
+                                "Aguardando Interação Inicial",
+                            ),
+                            ("em_andamento", "Em Andamento"),
+                            ("aguardando_contato", "Aguardando Contato"),
+                            ("aguardando_atendente", "Aguardando Atendente"),
+                            ("resolvido", "Resolvido"),
+                            ("cancelado", "Cancelado"),
+                            ("transferido", "Transferido para Humano"),
+                        ],
+                        default="aguardando_inicial",
+                        help_text="Status atual do atendimento",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "data_inicio",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de início do atendimento",
+                    ),
+                ),
+                (
+                    "data_fim",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data de finalização do atendimento",
+                        null=True,
+                    ),
+                ),
+                (
+                    "assunto",
+                    models.CharField(
+                        blank=True,
+                        help_text="Assunto/resumo do atendimento",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "prioridade",
+                    models.CharField(
+                        choices=[
+                            ("baixa", "Baixa"),
+                            ("normal", "Normal"),
+                            ("alta", "Alta"),
+                            ("urgente", "Urgente"),
+                        ],
+                        default="normal",
+                        help_text="Prioridade do atendimento",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "contexto_conversa",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Contexto atual da conversa (variáveis, estado, etc.)",
+                    ),
+                ),
+                (
+                    "historico_status",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Histórico de mudanças de status",
+                    ),
+                ),
+                (
+                    "tags",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Tags para categorização do atendimento",
+                    ),
+                ),
+                (
+                    "avaliacao",
+                    models.IntegerField(
+                        blank=True,
+                        choices=[(1, 1), (2, 2), (3, 3), (4, 4), (5, 5)],
+                        help_text="Avaliação do atendimento (1-5)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "feedback",
+                    models.TextField(
+                        blank=True, help_text="Feedback do contato", null=True
+                    ),
+                ),
+                (
+                    "atendente_humano",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Atendente humano responsável pelo atendimento (se transferido)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="atendimentos",
+                        to="oraculo.atendentehumano",
+                    ),
+                ),
+                (
+                    "contato",
+                    models.ForeignKey(
+                        help_text="Contato vinculado ao atendimento",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="atendimentos",
+                        to="oraculo.contato",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Atendimento',
-                'verbose_name_plural': 'Atendimentos',
-                'ordering': ['-data_inicio'],
+                "verbose_name": "Atendimento",
+                "verbose_name_plural": "Atendimentos",
+                "ordering": ["-data_inicio"],
             },
         ),
         migrations.CreateModel(
-            name='Departamento',
+            name="Departamento",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('nome', models.CharField(max_length=100, unique=True)),
-                ('descricao', models.TextField(blank=True, null=True)),
-                ('telefone_instancia', models.CharField(max_length=20, unique=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models_departamento.validate_telefone_instancia])),
-                ('api_key', models.CharField(max_length=100, unique=True, validators=[smart_core_assistant_painel.app.ui.oraculo.models_departamento.validate_api_key])),
-                ('instance_id', models.CharField(blank=True, max_length=100, null=True)),
-                ('url_evolution_api', models.URLField(default='http://www.evolution-api:8080')),
-                ('ativo', models.BooleanField(default=True)),
-                ('configuracoes', models.JSONField(blank=True, default=dict)),
-                ('data_criacao', models.DateTimeField(auto_now_add=True)),
-                ('ultima_validacao', models.DateTimeField(blank=True, null=True)),
-                ('metadados', models.JSONField(blank=True, default=dict)),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("nome", models.CharField(max_length=100, unique=True)),
+                ("descricao", models.TextField(blank=True, null=True)),
+                (
+                    "telefone_instancia",
+                    models.CharField(
+                        max_length=20,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models_departamento.validate_telefone_instancia
+                        ],
+                    ),
+                ),
+                (
+                    "api_key",
+                    models.CharField(
+                        max_length=100,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models_departamento.validate_api_key
+                        ],
+                    ),
+                ),
+                (
+                    "instance_id",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "url_evolution_api",
+                    models.URLField(default="http://www.evolution-api:8080"),
+                ),
+                ("ativo", models.BooleanField(default=True)),
+                ("configuracoes", models.JSONField(blank=True, default=dict)),
+                ("data_criacao", models.DateTimeField(auto_now_add=True)),
+                (
+                    "ultima_validacao",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                ("metadados", models.JSONField(blank=True, default=dict)),
             ],
             options={
-                'verbose_name': 'Departamento',
-                'verbose_name_plural': 'Departamentos',
-                'ordering': ['nome'],
-                'indexes': [models.Index(fields=['api_key'], name='oraculo_dep_api_key_7c8ebb_idx'), models.Index(fields=['telefone_instancia'], name='oraculo_dep_telefon_bc96c8_idx'), models.Index(fields=['ativo', 'nome'], name='oraculo_dep_ativo_c6d037_idx')],
+                "verbose_name": "Departamento",
+                "verbose_name_plural": "Departamentos",
+                "ordering": ["nome"],
+                "indexes": [
+                    models.Index(
+                        fields=["api_key"],
+                        name="oraculo_dep_api_key_7c8ebb_idx",
+                    ),
+                    models.Index(
+                        fields=["telefone_instancia"],
+                        name="oraculo_dep_telefon_bc96c8_idx",
+                    ),
+                    models.Index(
+                        fields=["ativo", "nome"],
+                        name="oraculo_dep_ativo_c6d037_idx",
+                    ),
+                ],
             },
         ),
         migrations.AddField(
-            model_name='atendentehumano',
-            name='departamento',
-            field=models.ForeignKey(blank=True, help_text='Departamento ao qual o atendente pertence', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendentes', to='oraculo.departamento'),
+            model_name="atendentehumano",
+            name="departamento",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Departamento ao qual o atendente pertence",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="atendentes",
+                to="oraculo.departamento",
+            ),
         ),
         migrations.CreateModel(
-            name='Mensagem',
+            name="Mensagem",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('tipo', models.CharField(choices=[('extendedTextMessage', 'Texto com formatação, citações, fontes, etc.'), ('imageMessage', 'Imagem recebida, JPG/PNG, com caption possível'), ('videoMessage', 'Vídeo recebido, com legenda possível'), ('audioMessage', 'Áudio recebido (.mp4, .mp3), com duração/ptt'), ('documentMessage', 'Arquivo genérico (PDF, DOCX etc.)'), ('stickerMessage', 'Sticker no formato WebP'), ('locationMessage', 'Coordinates de localização (lat/long)'), ('contactMessage', 'vCard com dados de contato'), ('listMessage', 'Mensagem interativa com opções em lista'), ('buttonsMessage', 'Botões clicáveis dentro da mensagem'), ('pollMessage', 'Opções de enquete dentro da mensagem'), ('reactMessage', 'Reação (emoji) a uma mensagem existente')], default='extendedTextMessage', help_text='Tipo da mensagem', max_length=25)),
-                ('conteudo', models.TextField(help_text='Conteúdo da mensagem')),
-                ('remetente', models.CharField(choices=[('contato', 'Contato'), ('bot', 'Bot/Sistema'), ('atendente_humano', 'Atendente Humano')], default='contato', help_text='Tipo do remetente da mensagem', max_length=20)),
-                ('timestamp', models.DateTimeField(auto_now_add=True, help_text='Timestamp da mensagem')),
-                ('message_id_whatsapp', models.CharField(blank=True, help_text='ID da mensagem no WhatsApp', max_length=100, null=True)),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Metadados adicionais da mensagem (mídia, localização, etc.)')),
-                ('respondida', models.BooleanField(default=False, help_text='Indica se a mensagem foi respondida')),
-                ('resposta_bot', models.TextField(blank=True, help_text='Resposta gerada pelo bot', null=True)),
-                ('intent_detectado', models.JSONField(blank=True, default=list, help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})")),
-                ('entidades_extraidas', models.JSONField(blank=True, default=list, help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})")),
-                ('confianca_resposta', models.FloatField(blank=True, help_text='Nível de confiança da resposta do bot (0-1)', null=True)),
-                ('atendimento', models.ForeignKey(help_text='Atendimento ao qual a mensagem pertence', on_delete=django.db.models.deletion.CASCADE, related_name='mensagens', to='oraculo.atendimento')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            (
+                                "extendedTextMessage",
+                                "Texto com formatação, citações, fontes, etc.",
+                            ),
+                            (
+                                "imageMessage",
+                                "Imagem recebida, JPG/PNG, com caption possível",
+                            ),
+                            (
+                                "videoMessage",
+                                "Vídeo recebido, com legenda possível",
+                            ),
+                            (
+                                "audioMessage",
+                                "Áudio recebido (.mp4, .mp3), com duração/ptt",
+                            ),
+                            (
+                                "documentMessage",
+                                "Arquivo genérico (PDF, DOCX etc.)",
+                            ),
+                            ("stickerMessage", "Sticker no formato WebP"),
+                            (
+                                "locationMessage",
+                                "Coordinates de localização (lat/long)",
+                            ),
+                            ("contactMessage", "vCard com dados de contato"),
+                            (
+                                "listMessage",
+                                "Mensagem interativa com opções em lista",
+                            ),
+                            (
+                                "buttonsMessage",
+                                "Botões clicáveis dentro da mensagem",
+                            ),
+                            (
+                                "pollMessage",
+                                "Opções de enquete dentro da mensagem",
+                            ),
+                            (
+                                "reactMessage",
+                                "Reação (emoji) a uma mensagem existente",
+                            ),
+                        ],
+                        default="extendedTextMessage",
+                        help_text="Tipo da mensagem",
+                        max_length=25,
+                    ),
+                ),
+                (
+                    "conteudo",
+                    models.TextField(help_text="Conteúdo da mensagem"),
+                ),
+                (
+                    "remetente",
+                    models.CharField(
+                        choices=[
+                            ("contato", "Contato"),
+                            ("bot", "Bot/Sistema"),
+                            ("atendente_humano", "Atendente Humano"),
+                        ],
+                        default="contato",
+                        help_text="Tipo do remetente da mensagem",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "timestamp",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Timestamp da mensagem"
+                    ),
+                ),
+                (
+                    "message_id_whatsapp",
+                    models.CharField(
+                        blank=True,
+                        help_text="ID da mensagem no WhatsApp",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Metadados adicionais da mensagem (mídia, localização, etc.)",
+                    ),
+                ),
+                (
+                    "respondida",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica se a mensagem foi respondida",
+                    ),
+                ),
+                (
+                    "resposta_bot",
+                    models.TextField(
+                        blank=True,
+                        help_text="Resposta gerada pelo bot",
+                        null=True,
+                    ),
+                ),
+                (
+                    "intent_detectado",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
+                    ),
+                ),
+                (
+                    "entidades_extraidas",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
+                    ),
+                ),
+                (
+                    "confianca_resposta",
+                    models.FloatField(
+                        blank=True,
+                        help_text="Nível de confiança da resposta do bot (0-1)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "atendimento",
+                    models.ForeignKey(
+                        help_text="Atendimento ao qual a mensagem pertence",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="mensagens",
+                        to="oraculo.atendimento",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Mensagem',
-                'verbose_name_plural': 'Mensagens',
-                'ordering': ['timestamp'],
+                "verbose_name": "Mensagem",
+                "verbose_name_plural": "Mensagens",
+                "ordering": ["timestamp"],
             },
         ),
         migrations.CreateModel(
-            name='Treinamento',
+            name="Treinamento",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('tag', models.CharField(help_text='Campo obrigatório para identificar o treinamento', max_length=40, validators=[smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_identificador])),
-                ('grupo', models.CharField(help_text='Campo obrigatório para identificar o grupo do treinamento', max_length=40, validators=[smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_identificador])),
-                ('conteudo', models.TextField(blank=True, help_text='Conteúdo completo do treinamento (antes da divisão em chunks)', null=True)),
-                ('treinamento_finalizado', models.BooleanField(default=False, help_text='Indica se o treinamento foi finalizado')),
-                ('treinamento_vetorizado', models.BooleanField(default=False, help_text='Indica se o treinamento foi vetorizado com sucesso')),
-                ('data_criacao', models.DateTimeField(auto_now_add=True, help_text='Data de criação do treinamento')),
-                ('data_atualizacao', models.DateTimeField(auto_now=True, help_text='Data da última atualização do treinamento')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "tag",
+                    models.CharField(
+                        help_text="Campo obrigatório para identificar o treinamento",
+                        max_length=40,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_identificador
+                        ],
+                    ),
+                ),
+                (
+                    "grupo",
+                    models.CharField(
+                        help_text="Campo obrigatório para identificar o grupo do treinamento",
+                        max_length=40,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.oraculo.models_treinamento.validate_identificador
+                        ],
+                    ),
+                ),
+                (
+                    "conteudo",
+                    models.TextField(
+                        blank=True,
+                        help_text="Conteúdo completo do treinamento (antes da divisão em chunks)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "treinamento_finalizado",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica se o treinamento foi finalizado",
+                    ),
+                ),
+                (
+                    "treinamento_vetorizado",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica se o treinamento foi vetorizado com sucesso",
+                    ),
+                ),
+                (
+                    "data_criacao",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de criação do treinamento",
+                    ),
+                ),
+                (
+                    "data_atualizacao",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Data da última atualização do treinamento",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Treinamento',
-                'verbose_name_plural': 'Treinamentos',
-                'ordering': ['-data_criacao'],
-                'indexes': [models.Index(fields=['tag', 'grupo'], name='oraculo_tre_tag_680c1e_idx'), models.Index(fields=['data_criacao'], name='oraculo_tre_data_cr_87588e_idx'), models.Index(fields=['treinamento_finalizado', 'treinamento_vetorizado'], name='oraculo_tre_treinam_cc7b72_idx')],
+                "verbose_name": "Treinamento",
+                "verbose_name_plural": "Treinamentos",
+                "ordering": ["-data_criacao"],
+                "indexes": [
+                    models.Index(
+                        fields=["tag", "grupo"],
+                        name="oraculo_tre_tag_680c1e_idx",
+                    ),
+                    models.Index(
+                        fields=["data_criacao"],
+                        name="oraculo_tre_data_cr_87588e_idx",
+                    ),
+                    models.Index(
+                        fields=[
+                            "treinamento_finalizado",
+                            "treinamento_vetorizado",
+                        ],
+                        name="oraculo_tre_treinam_cc7b72_idx",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='Documento',
+            name="Documento",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('conteudo', models.TextField(blank=True, help_text='Conteúdo do chunk de treinamento', null=True)),
-                ('metadata', models.JSONField(blank=True, default=dict, help_text='Metadados do documento (tag, grupo, source, etc.)')),
-                ('embedding', VectorField(blank=True, dimensions=1024, help_text='Vetor de embeddings do conteúdo do documento', null=True)),
-                ('ordem', models.PositiveIntegerField(default=1, help_text='Ordem do documento no treinamento')),
-                ('data_criacao', models.DateTimeField(auto_now_add=True, help_text='Data de criação do documento')),
-                ('treinamento', models.ForeignKey(help_text='Treinamento ao qual este documento pertence', on_delete=django.db.models.deletion.CASCADE, related_name='documentos', to='oraculo.treinamento')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "conteudo",
+                    models.TextField(
+                        blank=True,
+                        help_text="Conteúdo do chunk de treinamento",
+                        null=True,
+                    ),
+                ),
+                (
+                    "metadata",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Metadados do documento (tag, grupo, source, etc.)",
+                    ),
+                ),
+                (
+                    "embedding",
+                    VectorField(
+                        blank=True,
+                        dimensions=1024,
+                        help_text="Vetor de embeddings do conteúdo do documento",
+                        null=True,
+                    ),
+                ),
+                (
+                    "ordem",
+                    models.PositiveIntegerField(
+                        default=1,
+                        help_text="Ordem do documento no treinamento",
+                    ),
+                ),
+                (
+                    "data_criacao",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de criação do documento",
+                    ),
+                ),
+                (
+                    "treinamento",
+                    models.ForeignKey(
+                        help_text="Treinamento ao qual este documento pertence",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="documentos",
+                        to="oraculo.treinamento",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Documento',
-                'verbose_name_plural': 'Documentos',
-                'ordering': ['treinamento', 'ordem'],
-                'indexes': [models.Index(fields=['treinamento', 'ordem'], name='oraculo_doc_treinam_7b2674_idx'), models.Index(fields=['data_criacao'], name='oraculo_doc_data_cr_f7d25e_idx'), pgvector.django.indexes.HnswIndex(ef_construction=64, fields=['embedding'], m=16, name='documento_embedding_hnsw_idx', opclasses=['vector_cosine_ops'])],
+                "verbose_name": "Documento",
+                "verbose_name_plural": "Documentos",
+                "ordering": ["treinamento", "ordem"],
+                "indexes": [
+                    models.Index(
+                        fields=["treinamento", "ordem"],
+                        name="oraculo_doc_treinam_7b2674_idx",
+                    ),
+                    models.Index(
+                        fields=["data_criacao"],
+                        name="oraculo_doc_data_cr_f7d25e_idx",
+                    ),
+                    pgvector.django.indexes.HnswIndex(
+                        ef_construction=64,
+                        fields=["embedding"],
+                        m=16,
+                        name="documento_embedding_hnsw_idx",
+                        opclasses=["vector_cosine_ops"],
+                    ),
+                ],
             },
         ),
     ]

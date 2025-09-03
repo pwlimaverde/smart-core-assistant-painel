@@ -7,6 +7,7 @@ As configurações vêm do ServiceHub seguindo o padrão do projeto.
 """
 
 from langchain_core.embeddings.embeddings import Embeddings
+
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     GenerateEmbeddingsParameters,
 )
@@ -22,7 +23,9 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
     provedor e modelo apropriados.
     """
 
-    def __call__(self, parameters: GenerateEmbeddingsParameters) -> list[float]:
+    def __call__(
+        self, parameters: GenerateEmbeddingsParameters
+    ) -> list[float]:
         """Gera embeddings para o texto fornecido.
 
         Args:
@@ -37,46 +40,59 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
         """
         try:
             # Criar instância de embeddings usando configurações do ServiceHub
-            embeddings_instance: Embeddings = self._create_embeddings_instance()
-            
+            embeddings_instance: Embeddings = (
+                self._create_embeddings_instance()
+            )
+
             # Gerar embeddings usando LangChain
-            embedding_vector: list[float] = embeddings_instance.embed_query(parameters.text)
-            
+            embedding_vector: list[float] = embeddings_instance.embed_query(
+                parameters.text
+            )
+
             return embedding_vector
-            
+
         except Exception as e:
             raise Exception(f"Erro ao gerar embeddings: {str(e)}")
-    
+
     def _create_embeddings_instance(self) -> Embeddings:
         """Cria uma instância de embeddings baseada na configuração do ServiceHub.
-        
+
         Returns:
             Instância do modelo de embeddings configurado.
         """
         embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
         embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
-        
+
         if embeddings_class == "OpenAIEmbeddings":
             from langchain_openai import OpenAIEmbeddings
+
             return OpenAIEmbeddings(model=embeddings_model)
-        
+
         elif embeddings_class == "OllamaEmbeddings":
             from langchain_ollama import OllamaEmbeddings
+
             return OllamaEmbeddings(model=embeddings_model)
-        
+
         elif embeddings_class == "HuggingFaceEmbeddings":
             from langchain_community.embeddings import HuggingFaceEmbeddings
+
             return HuggingFaceEmbeddings(model_name=embeddings_model)
-        
+
         elif embeddings_class == "HuggingFaceInferenceAPIEmbeddings":
-            from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
+            from langchain_community.embeddings import (
+                HuggingFaceInferenceAPIEmbeddings,
+            )
             from pydantic import SecretStr
+
             return HuggingFaceInferenceAPIEmbeddings(
                 api_key=SecretStr(secret_value=SERVICEHUB.HUGGINGFACE_API_KEY),
-                model_name=embeddings_model
+                model_name=embeddings_model,
             )
-        
+
         else:
             # Fallback para OpenAI como padrão
             from langchain_openai import OpenAIEmbeddings
-            return OpenAIEmbeddings(model=embeddings_model or "text-embedding-ada-002")
+
+            return OpenAIEmbeddings(
+                model=embeddings_model or "text-embedding-ada-002"
+            )

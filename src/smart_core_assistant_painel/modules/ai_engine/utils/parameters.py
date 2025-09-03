@@ -205,7 +205,6 @@ class GenerateEmbeddingsParameters(ParametersReturnResult):
         return self.__repr__()
 
 
-
 @dataclass
 class SearchSimilarEmbeddingsParameters(ParametersReturnResult):
     """Parâmetros para busca por similaridade de embeddings.

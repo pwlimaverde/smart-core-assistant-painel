@@ -47,7 +47,7 @@ class ServiceHub:
         apenas uma vez.
         """
         if not self._initialized:
-            #Instancias
+            # Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
             self._whatsapp_service: Optional[WhatsAppService] = None
             # Api_Keys
@@ -93,7 +93,7 @@ class ServiceHub:
 
     def reload_config(self) -> None:
         """Recarrega as configurações a partir de variáveis de ambiente.
-        
+
         Este método deve ser chamado após o carregamento das variáveis
         do Firebase Remote Config para garantir que os valores mais
         recentes sejam utilizados.
@@ -105,12 +105,15 @@ class ServiceHub:
         self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
         self._model = os.environ.get("MODEL", "llama3.1")
         self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
-        
+
         # Limpa o cache da classe LLM para forçar recarregamento
         self._llm_class = None
 
         whatsapp_service_type = os.environ.get("WHATSAPP_SERVICE_TYPE")
-        if whatsapp_service_type is not None and self._whatsapp_service is None:
+        if (
+            whatsapp_service_type is not None
+            and self._whatsapp_service is None
+        ):
             raise RuntimeError(
                 "Falha ao auto-configurar WhatsAppService. "
                 "Use set_whatsapp_service() para definir a instância manualmente."
@@ -136,7 +139,9 @@ class ServiceHub:
         if self._huggingface_api_key is None:
             self._huggingface_api_key = os.environ.get("HUGGINGFACE_API_KEY")
             if not self._huggingface_api_key:
-                self._huggingface_api_key = os.environ.get("HUGGINGFACEHUB_API_KEY")
+                self._huggingface_api_key = os.environ.get(
+                    "HUGGINGFACEHUB_API_KEY"
+                )
         return self._huggingface_api_key if self._huggingface_api_key else ""
 
     # LLM
@@ -159,7 +164,9 @@ class ServiceHub:
         """Retorna a temperatura para o modelo de linguagem."""
         if self._llm_temperature is None:
             self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
-        return self._llm_temperature if self._llm_temperature is not None else 0
+        return (
+            self._llm_temperature if self._llm_temperature is not None else 0
+        )
 
     # Prompts
     @property
@@ -260,22 +267,31 @@ class ServiceHub:
         """Retorna o nome do modelo de embeddings."""
         if self._embeddings_model is None:
             self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
-        return self._embeddings_model if self._embeddings_model is not None else ""
+        return (
+            self._embeddings_model
+            if self._embeddings_model is not None
+            else ""
+        )
 
     @property
     def EMBEDDINGS_CLASS(self) -> str:
         """Retorna o nome da classe de embeddings."""
         if self._embeddings_class is None:
             self._embeddings_class = os.environ.get("EMBEDDINGS_CLASS")
-        return self._embeddings_class if self._embeddings_class is not None else "OpenAIEmbeddings"
-
+        return (
+            self._embeddings_class
+            if self._embeddings_class is not None
+            else "OpenAIEmbeddings"
+        )
 
     # Whatsapp
     @property
     def WHATSAPP_API_BASE_URL(self) -> str:
         """Retorna a URL base para a API do WhatsApp."""
         if self._whatsapp_api_base_url is None:
-            self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
+            self._whatsapp_api_base_url = os.environ.get(
+                "WHATSAPP_API_BASE_URL"
+            )
         return (
             self._whatsapp_api_base_url
             if self._whatsapp_api_base_url is not None
@@ -285,35 +301,38 @@ class ServiceHub:
     @property
     def WHATSAPP_API_SEND_TEXT_URL(self) -> str:
         if self._whatsapp_api_send_text_url is None:
-            self._whatsapp_api_send_text_url = os.environ.get("WHATSAPP_API_SEND_TEXT_URL")
+            self._whatsapp_api_send_text_url = os.environ.get(
+                "WHATSAPP_API_SEND_TEXT_URL"
+            )
         return (
             self._whatsapp_api_send_text_url
             if self._whatsapp_api_send_text_url is not None
             else ""
         )
 
-
     @property
     def WHATSAPP_API_START_TYPING_URL(self) -> str:
         if self._whatsapp_api_start_typing_url is None:
-            self._whatsapp_api_start_typing_url = os.environ.get("WHATSAPP_API_START_TYPING_URL")
+            self._whatsapp_api_start_typing_url = os.environ.get(
+                "WHATSAPP_API_START_TYPING_URL"
+            )
         return (
             self._whatsapp_api_start_typing_url
             if self._whatsapp_api_start_typing_url is not None
             else ""
         )
 
-
     @property
     def WHATSAPP_API_STOP_TYPING_URL(self) -> str:
         if self._whatsapp_api_stop_typing_url is None:
-            self._whatsapp_api_stop_typing_url = os.environ.get("WHATSAPP_API_STOP_TYPING_URL")
+            self._whatsapp_api_stop_typing_url = os.environ.get(
+                "WHATSAPP_API_STOP_TYPING_URL"
+            )
         return (
             self._whatsapp_api_stop_typing_url
             if self._whatsapp_api_stop_typing_url is not None
             else ""
         )
-
 
     @property
     def whatsapp_service(self) -> WhatsAppService:
@@ -335,14 +354,22 @@ class ServiceHub:
         """Retorna uma string JSON com entidades válidas, ou vazia se não definida."""
         if self._valid_entity_types is None:
             self._valid_entity_types = os.environ.get("VALID_ENTITY_TYPES")
-        return self._valid_entity_types if self._valid_entity_types is not None else ""
+        return (
+            self._valid_entity_types
+            if self._valid_entity_types is not None
+            else ""
+        )
 
     @property
     def VALID_INTENT_TYPES(self) -> str:
         """Retorna uma string JSON com intenções válidas, ou vazia se não definida."""
         if self._valid_intent_types is None:
             self._valid_intent_types = os.environ.get("VALID_INTENT_TYPES")
-        return self._valid_intent_types if self._valid_intent_types is not None else ""
+        return (
+            self._valid_intent_types
+            if self._valid_intent_types is not None
+            else ""
+        )
 
     @property
     def TIME_CACHE(self) -> int:

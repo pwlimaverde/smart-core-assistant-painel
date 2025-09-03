@@ -1,6 +1,6 @@
 """Testes para os modelos do app Oraculo."""
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
@@ -20,12 +20,16 @@ from ..models import (
     Treinamentos,
     buscar_atendimento_ativo,
     inicializar_atendimento_whatsapp,
-    validate_tag,
-    validate_telefone,
     validate_cnpj,
     validate_cpf,
+    validate_tag,
+    validate_telefone,
 )
-from ..models_departamento import Departamento, validate_api_key, validate_telefone_instancia
+from ..models_departamento import (
+    Departamento,
+    validate_api_key,
+    validate_telefone_instancia,
+)
 
 
 class TestContato(TestCase):
@@ -96,7 +100,9 @@ class TestAtendimento(TestCase):
     def test_atendimento_creation(self) -> None:
         """Testa a criação de um atendimento."""
         self.assertEqual(self.atendimento.contato, self.contato)
-        self.assertEqual(self.atendimento.status, StatusAtendimento.EM_ANDAMENTO)
+        self.assertEqual(
+            self.atendimento.status, StatusAtendimento.EM_ANDAMENTO
+        )
         self.assertIsNotNone(self.atendimento.data_inicio)
         self.assertIsNone(self.atendimento.data_fim)
 
@@ -168,7 +174,9 @@ class TestTreinamentos(TestCase):
         self.assertEqual(treinamento.grupo, "grupo_teste")
         self.assertFalse(treinamento.treinamento_finalizado)
         self.assertEqual(len(treinamento.documentos), 1)
-        self.assertEqual(treinamento.documentos[0]["content"], "Documento de teste")
+        self.assertEqual(
+            treinamento.documentos[0]["content"], "Documento de teste"
+        )
 
     def test_treinamentos_finalizacao(self) -> None:
         """Testa a finalização de um treinamento."""
@@ -257,7 +265,9 @@ class TestUtilityFunctions(TestCase):
         telefone = "5511999999999"  # Contato já existe no setUp
         conteudo = "Nova mensagem"
 
-        contato, atendimento = inicializar_atendimento_whatsapp(telefone, conteudo)
+        contato, atendimento = inicializar_atendimento_whatsapp(
+            telefone, conteudo
+        )
 
         # Deve retornar o contato existente
         self.assertEqual(contato, self.contato)
@@ -316,7 +326,9 @@ class TestModelPerformance(TestCase):
             mensagem = Mensagem(
                 atendimento=atendimento,
                 tipo=TipoMensagem.TEXTO_FORMATADO,
-                remetente=TipoRemetente.CONTATO if i % 2 == 0 else TipoRemetente.BOT,
+                remetente=TipoRemetente.CONTATO
+                if i % 2 == 0
+                else TipoRemetente.BOT,
                 conteudo=f"Mensagem {i}",
                 message_id_whatsapp=f"BULK_{i}",
             )
@@ -336,7 +348,9 @@ class TestModelPerformance(TestCase):
         self.assertLess(execution_time, 2.0)
 
         # Verifica se todas as mensagens foram criadas
-        total_mensagens = Mensagem.objects.filter(atendimento=atendimento).count()
+        total_mensagens = Mensagem.objects.filter(
+            atendimento=atendimento
+        ).count()
         self.assertEqual(total_mensagens, 50)
 
 
@@ -349,17 +363,17 @@ class TestValidators(TestCase):
         validate_tag("tag_valida")
         validate_tag("tag123")
         validate_tag("test_tag_123")
-        
+
         # Tags inválidas
         with self.assertRaises(ValidationError):
             validate_tag("Tag com maiúscula")
-        
+
         with self.assertRaises(ValidationError):
             validate_tag("tag com espaço")
-            
+
         with self.assertRaises(ValidationError):
             validate_tag("a" * 41)  # Muito longo
-            
+
         with self.assertRaises(ValidationError):
             validate_tag("tag-com-traço")
 
@@ -369,11 +383,11 @@ class TestValidators(TestCase):
         validate_telefone("11999999999")
         validate_telefone("+5511999999999")
         validate_telefone("(11) 99999-9999")
-        
+
         # Telefones inválidos
         with self.assertRaises(ValidationError):
             validate_telefone("123")  # Muito curto
-            
+
         with self.assertRaises(ValidationError):
             validate_telefone("1" * 16)  # Muito longo
 
@@ -382,14 +396,14 @@ class TestValidators(TestCase):
         # CNPJ válidos
         validate_cnpj("12.345.678/0001-99")
         validate_cnpj("12345678000199")
-        
+
         # CNPJ inválidos
         with self.assertRaises(ValidationError):
             validate_cnpj("123")  # Muito curto
-            
+
         with self.assertRaises(ValidationError):
             validate_cnpj("00000000000000")  # CNPJ inválido conhecido
-            
+
         # Deve aceitar valor vazio
         validate_cnpj("")
         validate_cnpj(None)
@@ -399,14 +413,14 @@ class TestValidators(TestCase):
         # CPF válidos
         validate_cpf("123.456.789-00")
         validate_cpf("12345678900")
-        
+
         # CPF inválidos
         with self.assertRaises(ValidationError):
             validate_cpf("123")  # Muito curto
-            
+
         with self.assertRaises(ValidationError):
             validate_cpf("00000000000")  # CPF inválido conhecido
-            
+
         # Deve aceitar valor vazio
         validate_cpf("")
         validate_cpf(None)
@@ -416,11 +430,11 @@ class TestValidators(TestCase):
         # Chaves válidas
         validate_api_key("chave123456")
         validate_api_key("api_key_muito_longa")
-        
+
         # Chaves inválidas
         with self.assertRaises(ValidationError):
             validate_api_key("")  # Vazia
-            
+
         with self.assertRaises(ValidationError):
             validate_api_key("curta")  # Muito curta
 
@@ -429,14 +443,14 @@ class TestValidators(TestCase):
         # Telefones válidos
         validate_telefone_instancia("11999999999")
         validate_telefone_instancia("+55 (11) 99999-9999")
-        
+
         # Telefones inválidos
         with self.assertRaises(ValidationError):
             validate_telefone_instancia("")  # Vazio
-            
+
         with self.assertRaises(ValidationError):
             validate_telefone_instancia("123")  # Muito curto
-            
+
         with self.assertRaises(ValidationError):
             validate_telefone_instancia("1" * 16)  # Muito longo
 
@@ -447,37 +461,29 @@ class TestTreinamentosAdvanced(TestCase):
     def setUp(self):
         """Configuração inicial."""
         self.treinamento = Treinamentos.objects.create(
-            tag="teste_avancado",
-            grupo="grupo_avancado"
+            tag="teste_avancado", grupo="grupo_avancado"
         )
 
     def test_clean_validation_tag_igual_grupo(self):
         """Testa validação que impede tag igual ao grupo."""
         with self.assertRaises(ValidationError):
-            treinamento = Treinamentos(
-                tag="mesma_tag",
-                grupo="mesma_tag"
-            )
+            treinamento = Treinamentos(tag="mesma_tag", grupo="mesma_tag")
             treinamento.full_clean()
 
     def test_save_calls_full_clean(self):
         """Testa que o método save chama full_clean."""
-        with patch.object(Treinamentos, 'full_clean') as mock_clean:
-            treinamento = Treinamentos(
-                tag="save_test",
-                grupo="grupo_save"
-            )
+        with patch.object(Treinamentos, "full_clean") as mock_clean:
+            treinamento = Treinamentos(tag="save_test", grupo="grupo_save")
             treinamento.save()
             mock_clean.assert_called_once()
 
     def test_str_representation(self):
         """Testa a representação string do treinamento."""
         self.assertEqual(str(self.treinamento), "teste_avancado")
-        
+
         # Testa com treinamento sem tag (criado diretamente no banco)
         treinamento_sem_tag = Treinamentos.objects.create(
-            tag="tag_temp",
-            grupo="grupo_temp"
+            tag="tag_temp", grupo="grupo_temp"
         )
         # Define tag como None após salvar
         treinamento_sem_tag.tag = None
@@ -488,9 +494,9 @@ class TestTreinamentosAdvanced(TestCase):
         """Testa a adição de documentos válidos."""
         docs = [
             Document(page_content="Texto 1", metadata={"source": "doc1.txt"}),
-            Document(page_content="Texto 2", metadata={"source": "doc2.txt"})
+            Document(page_content="Texto 2", metadata={"source": "doc2.txt"}),
         ]
-        
+
         self.treinamento.set_documentos(docs)
         self.assertEqual(len(self.treinamento._documentos), 2)
 
@@ -513,8 +519,10 @@ class TestTreinamentosAdvanced(TestCase):
         """Testa get_documentos com erro de JSON."""
         self.treinamento._documentos = ["invalid_json"]
         self.treinamento.save()
-        
-        with patch('smart_core_assistant_painel.app.ui.oraculo.models.logger') as mock_logger:
+
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.models.logger"
+        ) as mock_logger:
             docs = self.treinamento.get_documentos()
             self.assertEqual(docs, [])
             mock_logger.error.assert_called()
@@ -528,10 +536,10 @@ class TestTreinamentosAdvanced(TestCase):
         """Testa get_conteudo_unificado com conteúdo."""
         self.treinamento._documentos = [
             '{"page_content": "Conteúdo 1"}',
-            '{"page_content": "Conteúdo 2"}'
+            '{"page_content": "Conteúdo 2"}',
         ]
         self.treinamento.save()
-        
+
         resultado = self.treinamento.get_conteudo_unificado()
         self.assertIn("Conteúdo 1", resultado)
         self.assertIn("Conteúdo 2", resultado)
@@ -550,28 +558,38 @@ class TestTreinamentosAdvanced(TestCase):
         self.treinamento._documentos = test_docs
         self.assertEqual(self.treinamento.documentos, test_docs)
 
-    @patch('smart_core_assistant_painel.app.ui.oraculo.models.SERVICEHUB')
+    @patch("smart_core_assistant_painel.app.ui.oraculo.models.SERVICEHUB")
     def test_embed_text_with_embed_query(self, mock_servicehub):
         """Testa _embed_text usando embed_query."""
         mock_embeddings = MagicMock()
         mock_embeddings.embed_query.return_value = [0.1, 0.2, 0.3]
-        
-        with patch.object(Treinamentos, '_get_embeddings_instance', return_value=mock_embeddings):
+
+        with patch.object(
+            Treinamentos,
+            "_get_embeddings_instance",
+            return_value=mock_embeddings,
+        ):
             result = Treinamentos._embed_text("texto teste")
             self.assertEqual(result, [0.1, 0.2, 0.3])
             mock_embeddings.embed_query.assert_called_once_with("texto teste")
 
-    @patch('smart_core_assistant_painel.app.ui.oraculo.models.SERVICEHUB')
+    @patch("smart_core_assistant_painel.app.ui.oraculo.models.SERVICEHUB")
     def test_embed_text_with_embed_documents(self, mock_servicehub):
         """Testa _embed_text usando embed_documents como fallback."""
         mock_embeddings = MagicMock()
         del mock_embeddings.embed_query  # Remove o método para forçar fallback
         mock_embeddings.embed_documents.return_value = [[0.1, 0.2, 0.3]]
-        
-        with patch.object(Treinamentos, '_get_embeddings_instance', return_value=mock_embeddings):
+
+        with patch.object(
+            Treinamentos,
+            "_get_embeddings_instance",
+            return_value=mock_embeddings,
+        ):
             result = Treinamentos._embed_text("texto teste")
             self.assertEqual(result, [0.1, 0.2, 0.3])
-            mock_embeddings.embed_documents.assert_called_once_with(["texto teste"])
+            mock_embeddings.embed_documents.assert_called_once_with(
+                ["texto teste"]
+            )
 
     def test_cosine_distance(self):
         """Testa o cálculo de distância cosseno."""
@@ -580,17 +598,17 @@ class TestTreinamentosAdvanced(TestCase):
         vec2 = [1.0, 0.0, 0.0]
         dist = Treinamentos._cosine_distance(vec1, vec2)
         self.assertAlmostEqual(dist, 0.0, places=5)
-        
+
         # Vetores ortogonais devem ter distância 1
         vec3 = [1.0, 0.0, 0.0]
         vec4 = [0.0, 1.0, 0.0]
         dist = Treinamentos._cosine_distance(vec3, vec4)
         self.assertAlmostEqual(dist, 1.0, places=5)
-        
+
         # Vetores vazios devem retornar 1.0
         dist = Treinamentos._cosine_distance([], [])
         self.assertEqual(dist, 1.0)
-        
+
         # Vetores com norma zero devem retornar 1.0
         dist = Treinamentos._cosine_distance([0.0, 0.0], [1.0, 1.0])
         self.assertEqual(dist, 1.0)
@@ -599,7 +617,7 @@ class TestTreinamentosAdvanced(TestCase):
         """Testa busca por similaridade com query vazia."""
         result = Treinamentos.search_by_similarity("")
         self.assertEqual(result, [])
-        
+
         result = Treinamentos.search_by_similarity("   ")
         self.assertEqual(result, [])
 
@@ -607,7 +625,7 @@ class TestTreinamentosAdvanced(TestCase):
         """Testa busca por similaridade com top_k inválido."""
         result = Treinamentos.search_by_similarity("query", top_k=0)
         self.assertEqual(result, [])
-        
+
         result = Treinamentos.search_by_similarity("query", top_k=-1)
         self.assertEqual(result, [])
 
@@ -615,11 +633,13 @@ class TestTreinamentosAdvanced(TestCase):
         """Testa build_similarity_context com parâmetros vazios."""
         result = Treinamentos.build_similarity_context("")
         self.assertEqual(result, "")
-        
+
         result = Treinamentos.build_similarity_context("query", top_k_docs=0)
         self.assertEqual(result, "")
-        
-        result = Treinamentos.build_similarity_context("query", top_k_trainings=0)
+
+        result = Treinamentos.build_similarity_context(
+            "query", top_k_trainings=0
+        )
         self.assertEqual(result, "")
 
 
@@ -631,7 +651,7 @@ class TestDepartamento(TestCase):
         self.departamento = Departamento.objects.create(
             nome="Departamento Teste",
             telefone_instancia="11999999999",
-            api_key="chave_teste_12345"
+            api_key="chave_teste_12345",
         )
 
     def test_departamento_creation(self):
@@ -651,7 +671,7 @@ class TestDepartamento(TestCase):
         dept = Departamento(
             nome="Teste Normalização",
             telefone_instancia="+55 (11) 99999-9999",
-            api_key="chave_normalizar_123"
+            api_key="chave_normalizar_123",
         )
         dept.save()
         self.assertEqual(dept.telefone_instancia, "5511999999999")
@@ -661,7 +681,7 @@ class TestDepartamento(TestCase):
         dept = Departamento(
             nome="Teste Validação",
             telefone_instancia="11999999999",
-            api_key="curta"  # API key muito curta
+            api_key="curta",  # API key muito curta
         )
         with self.assertRaises(ValidationError):
             dept.clean()
@@ -674,18 +694,18 @@ class TestDepartamento(TestCase):
             cargo="Analista",
             telefone="11888888888",
             departamento=self.departamento,
-            ativo=True
+            ativo=True,
         )
-        
+
         # Cria atendente inativo
         AtendenteHumano.objects.create(
             nome="Atendente Inativo",
             cargo="Analista",
             telefone="11777777777",
             departamento=self.departamento,
-            ativo=False
+            ativo=False,
         )
-        
+
         atendentes = self.departamento.get_atendentes_ativos()
         self.assertEqual(atendentes.count(), 1)
         self.assertEqual(atendentes.first(), atendente_ativo)
@@ -699,9 +719,9 @@ class TestDepartamento(TestCase):
             telefone="11888888888",
             departamento=self.departamento,
             ativo=True,
-            disponivel=True
+            disponivel=True,
         )
-        
+
         # Cria atendente indisponível
         AtendenteHumano.objects.create(
             nome="Atendente Indisponível",
@@ -709,9 +729,9 @@ class TestDepartamento(TestCase):
             telefone="11777777777",
             departamento=self.departamento,
             ativo=True,
-            disponivel=False
+            disponivel=False,
         )
-        
+
         atendentes = self.departamento.get_atendentes_disponiveis()
         self.assertEqual(atendentes.count(), 1)
         self.assertEqual(atendentes.first(), atendente_disponivel)
@@ -721,12 +741,12 @@ class TestDepartamento(TestCase):
         self.departamento.atualizar_configuracao("timeout", 30)
         self.departamento.refresh_from_db()
         self.assertEqual(self.departamento.configuracoes["timeout"], 30)
-        
+
         # Testa com configuracoes vazio
         dept = Departamento.objects.create(
             nome="Teste Config Vazio",
             telefone_instancia="11888888888",
-            api_key="chave_config_vazio_123"
+            api_key="chave_config_vazio_123",
         )
         # O método atualizar_configuracao deve funcionar mesmo com dict vazio
         dept.configuracoes = {}
@@ -739,15 +759,15 @@ class TestDepartamento(TestCase):
         """Testa get_configuracao."""
         self.departamento.configuracoes = {"timeout": 30}
         self.departamento.save()
-        
+
         # Testa configuração existente
         valor = self.departamento.get_configuracao("timeout")
         self.assertEqual(valor, 30)
-        
+
         # Testa configuração inexistente
         valor = self.departamento.get_configuracao("inexistente", "padrão")
         self.assertEqual(valor, "padrão")
-        
+
         # Testa com configuracoes vazio
         self.departamento.configuracoes = {}
         self.departamento.save()
@@ -758,9 +778,11 @@ class TestDepartamento(TestCase):
         """Testa buscar_por_api_key."""
         result = Departamento.buscar_por_api_key("chave_teste_12345")
         self.assertEqual(result, self.departamento)
-        
+
         # Testa com chave inexistente
-        with patch('smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger') as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger"
+        ) as mock_logger:
             result = Departamento.buscar_por_api_key("chave_inexistente")
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
@@ -769,46 +791,51 @@ class TestDepartamento(TestCase):
         """Testa buscar_por_telefone_instancia."""
         result = Departamento.buscar_por_telefone_instancia("11999999999")
         self.assertEqual(result, self.departamento)
-        
+
         # Testa com telefone formatado (mesmo padrão, sem +55)
         result = Departamento.buscar_por_telefone_instancia("(11) 99999-9999")
         self.assertEqual(result, self.departamento)
-        
+
         # Testa com telefone inexistente
-        with patch('smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger') as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger"
+        ) as mock_logger:
             result = Departamento.buscar_por_telefone_instancia("11000000000")
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
 
     def test_validar_api_key_method(self):
         """Testa validar_api_key."""
-        data = {
-            "apikey": "chave_teste_12345",
-            "instance": "11999999999"
-        }
+        data = {"apikey": "chave_teste_12345", "instance": "11999999999"}
         result = Departamento.validar_api_key(data)
         self.assertEqual(result, self.departamento)
-        
+
         # Testa sem api_key
         data_sem_key = {"instance": "11999999999"}
-        with patch('smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger') as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger"
+        ) as mock_logger:
             result = Departamento.validar_api_key(data_sem_key)
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
-        
+
         # Testa sem instance
         data_sem_instance = {"apikey": "chave_teste_12345"}
-        with patch('smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger') as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger"
+        ) as mock_logger:
             result = Departamento.validar_api_key(data_sem_instance)
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
-        
+
         # Testa com dados inválidos
         data_invalida = {
             "apikey": "chave_inexistente",
-            "instance": "11000000000"
+            "instance": "11000000000",
         }
-        with patch('smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger') as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.models_departamento.logger"
+        ) as mock_logger:
             result = Departamento.validar_api_key(data_invalida)
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
@@ -820,53 +847,52 @@ class TestCliente(TestCase):
     def setUp(self):
         """Configuração inicial."""
         self.contato = Contato.objects.create(
-            telefone="11999999999",
-            nome_contato="Contato Cliente"
+            telefone="11999999999", nome_contato="Contato Cliente"
         )
-        
+
         self.cliente = Cliente.objects.create(
             nome_fantasia="Empresa Teste Ltda",
             razao_social="Empresa Teste Sociedade Limitada",
             tipo="juridica",
-            cnpj="12.345.678/0001-99"
+            cnpj="12.345.678/0001-99",
         )
-        
+
     def test_cliente_creation(self):
         """Testa a criação de um cliente."""
         self.assertEqual(self.cliente.nome_fantasia, "Empresa Teste Ltda")
-        self.assertEqual(self.cliente.razao_social, "Empresa Teste Sociedade Limitada")
+        self.assertEqual(
+            self.cliente.razao_social, "Empresa Teste Sociedade Limitada"
+        )
         self.assertEqual(self.cliente.tipo, "juridica")
         self.assertEqual(self.cliente.cnpj, "12.345.678/0001-99")
         self.assertTrue(self.cliente.ativo)
-        
+
     def test_cliente_str_representation(self):
         """Testa a representação string do cliente."""
         expected = "Empresa Teste Ltda"
         self.assertEqual(str(self.cliente), expected)
-        
+
     def test_cliente_pessoa_fisica(self):
         """Testa cliente pessoa física."""
         pf = Cliente.objects.create(
-            nome_fantasia="João da Silva",
-            tipo="fisica",
-            cpf="123.456.789-00"
+            nome_fantasia="João da Silva", tipo="fisica", cpf="123.456.789-00"
         )
         self.assertEqual(pf.tipo, "fisica")
         self.assertEqual(pf.cpf, "123.456.789-00")
-        
+
     def test_cliente_contatos_relacionamento(self):
         """Testa o relacionamento many-to-many com contatos."""
         self.cliente.contatos.add(self.contato)
         self.assertEqual(self.cliente.contatos.count(), 1)
         self.assertIn(self.contato, self.cliente.contatos.all())
-        
+
         # Testa o relacionamento reverso
         self.assertIn(self.cliente, self.contato.clientes.all())
 
 
 class TestFluxoConversa(TestCase):
     """Testes para o modelo FluxoConversa."""
-    
+
     def setUp(self):
         """Configuração inicial."""
         self.fluxo = FluxoConversa.objects.create(
@@ -875,44 +901,46 @@ class TestFluxoConversa(TestCase):
             condicoes_entrada={"tipo": "novo_cliente"},
             estados={
                 "inicio": {"mensagem": "Olá! Como posso ajudar?"},
-                "aguardando_resposta": {"timeout": 300}
-            }
+                "aguardando_resposta": {"timeout": 300},
+            },
         )
-        
+
     def test_fluxo_conversa_creation(self):
         """Testa a criação de um fluxo de conversa."""
         self.assertEqual(self.fluxo.nome, "Fluxo Atendimento Básico")
-        self.assertEqual(self.fluxo.descricao, "Fluxo para atendimento básico de clientes")
+        self.assertEqual(
+            self.fluxo.descricao, "Fluxo para atendimento básico de clientes"
+        )
         self.assertEqual(self.fluxo.condicoes_entrada["tipo"], "novo_cliente")
         self.assertTrue(self.fluxo.ativo)
-        
+
     def test_fluxo_conversa_str_representation(self):
         """Testa a representação string do fluxo."""
         expected = "Fluxo Atendimento Básico"
         self.assertEqual(str(self.fluxo), expected)
-        
+
     def test_fluxo_conversa_estados_complexos(self):
         """Testa estados mais complexos."""
         self.assertIn("inicio", self.fluxo.estados)
         self.assertIn("aguardando_resposta", self.fluxo.estados)
-        self.assertEqual(self.fluxo.estados["inicio"]["mensagem"], "Olá! Como posso ajudar?")
+        self.assertEqual(
+            self.fluxo.estados["inicio"]["mensagem"], "Olá! Como posso ajudar?"
+        )
 
 
 class TestMensagemAdvanced(TestCase):
     """Testes avançados para o modelo Mensagem."""
-    
+
     def setUp(self):
         """Configuração inicial."""
         self.contato = Contato.objects.create(
-            telefone="11999999999",
-            nome_contato="Cliente Teste Avançado"
+            telefone="11999999999", nome_contato="Cliente Teste Avançado"
         )
-        
+
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato,
-            status=StatusAtendimento.EM_ANDAMENTO
+            contato=self.contato, status=StatusAtendimento.EM_ANDAMENTO
         )
-        
+
     def test_mensagem_diferentes_tipos(self):
         """Testa diferentes tipos de mensagem."""
         # Mensagem de áudio
@@ -921,14 +949,11 @@ class TestMensagemAdvanced(TestCase):
             tipo=TipoMensagem.AUDIO,
             remetente=TipoRemetente.CONTATO,
             conteudo="Audio message",
-            metadados={
-                "duracao": 30,
-                "formato": "mp3"
-            }
+            metadados={"duracao": 30, "formato": "mp3"},
         )
         self.assertEqual(msg_audio.tipo, TipoMensagem.AUDIO)
         self.assertEqual(msg_audio.metadados["duracao"], 30)
-        
+
         # Mensagem de imagem
         msg_img = Mensagem.objects.create(
             atendimento=self.atendimento,
@@ -937,12 +962,14 @@ class TestMensagemAdvanced(TestCase):
             conteudo="Image caption",
             metadados={
                 "url": "https://example.com/image.jpg",
-                "tamanho": "1024x768"
-            }
+                "tamanho": "1024x768",
+            },
         )
         self.assertEqual(msg_img.tipo, TipoMensagem.IMAGEM)
-        self.assertEqual(msg_img.metadados["url"], "https://example.com/image.jpg")
-        
+        self.assertEqual(
+            msg_img.metadados["url"], "https://example.com/image.jpg"
+        )
+
     def test_mensagem_intent_e_entidades(self):
         """Testa detecção de intents e entidades."""
         mensagem = Mensagem.objects.create(
@@ -950,22 +977,16 @@ class TestMensagemAdvanced(TestCase):
             tipo=TipoMensagem.TEXTO_FORMATADO,
             remetente=TipoRemetente.CONTATO,
             conteudo="Meu nome é João e preciso de ajuda com meu pedido",
-            intent_detectado=[
-                {"saudacao": 0.8},
-                {"solicitar_ajuda": 0.9}
-            ],
-            entidades_extraidas=[
-                {"pessoa": "João"},
-                {"assunto": "pedido"}
-            ],
-            confianca_resposta=0.85
+            intent_detectado=[{"saudacao": 0.8}, {"solicitar_ajuda": 0.9}],
+            entidades_extraidas=[{"pessoa": "João"}, {"assunto": "pedido"}],
+            confianca_resposta=0.85,
         )
-        
+
         self.assertEqual(len(mensagem.intent_detectado), 2)
         self.assertEqual(len(mensagem.entidades_extraidas), 2)
         self.assertEqual(mensagem.confianca_resposta, 0.85)
         self.assertIn({"pessoa": "João"}, mensagem.entidades_extraidas)
-        
+
     def test_mensagem_resposta_bot(self):
         """Testa mensagem com resposta do bot."""
         mensagem = Mensagem.objects.create(
@@ -974,8 +995,8 @@ class TestMensagemAdvanced(TestCase):
             remetente=TipoRemetente.CONTATO,
             conteudo="Qual o status do meu pedido?",
             respondida=True,
-            resposta_bot="Seu pedido está em processo de separação. Prazo de entrega: 2 dias úteis."
+            resposta_bot="Seu pedido está em processo de separação. Prazo de entrega: 2 dias úteis.",
         )
-        
+
         self.assertTrue(mensagem.respondida)
         self.assertIn("separação", mensagem.resposta_bot)

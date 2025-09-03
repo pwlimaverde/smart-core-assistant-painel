@@ -2,12 +2,12 @@
     "python.analysis.indexing": true,
     "python.analysis.autoImportCompletions": true,
     "python.analysis.autoSearchPaths": true,
-    "python.analysis.stubPath": "src",
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "strict",
     "python.analysis.useLibraryCodeForTypes": true,
     "python.analysis.completeFunctionParens": true,
     "python.analysis.includeFileSpecs": [
-        "src/**/*.py"
+        "src/**/*.py",
+        "tests/**/*.py"
     ],
     "python.analysis.extraPaths": [
         "src",
@@ -27,5 +27,11 @@
     "python.analysis.fixAll": [
         "source.unusedImports",
         "source.convertImportFormat"
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingTypeArgument": "error"
+    },
+    "python.analysis.exclude": [
+        "**/migrations/**"
     ]
 }

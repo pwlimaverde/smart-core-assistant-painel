@@ -50,7 +50,9 @@ class PydanticModelFactory:
         return types_list
 
     @staticmethod
-    def _generate_documentation_section(types_json: str, section_title: str) -> str:
+    def _generate_documentation_section(
+        types_json: str, section_title: str
+    ) -> str:
         """Gera uma seção da documentação baseada no JSON de configuração.
 
         Args:
@@ -183,7 +185,8 @@ class PydanticModelFactory:
             intent_types_json, "1. INTENTS (intenções do usuário)"
         )
         entity_docs = cls._generate_documentation_section(
-            entity_types_json, "2. ENTITIES DINÂMICAS (informações específicas)"
+            entity_types_json,
+            "2. ENTITIES DINÂMICAS (informações específicas)",
         )
         fixed_entities_docs = cls._generate_fixed_entities_section()
         examples_docs = cls._generate_examples_section(
@@ -229,7 +232,9 @@ class PydanticModelFactory:
                 valores (campo "value") cujo tipo (campo "type") corresponde
                 ao parâmetro informado.
                 """
-                return [item.value for item in self.intent if item.type == tipo]
+                return [
+                    item.value for item in self.intent if item.type == tipo
+                ]
 
             def get_entities_by_type(self, tipo: str) -> list[str]:
                 """Retorna valores das entities filtradas por tipo.
@@ -237,7 +242,9 @@ class PydanticModelFactory:
                 Percorre a lista de entities e retorna os valores ("value")
                 cujo tipo ("type") seja igual ao parâmetro fornecido.
                 """
-                return [item.value for item in self.entities if item.type == tipo]
+                return [
+                    item.value for item in self.entities if item.type == tipo
+                ]
 
         return PydanticModel
 

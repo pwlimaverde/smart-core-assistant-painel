@@ -1,4 +1,3 @@
-# pyright: reportUnknownVariableType=false, reportUnannotatedClassAttribute=false
 """Modelo para gerenciar departamentos e configurações da Evolution API.
 
 Este módulo define o modelo Departamento, que centraliza as configurações
@@ -26,7 +25,9 @@ def validate_api_key(value: str) -> None:
     if not value:
         raise ValidationError("A chave de API não pode estar vazia.")
     if len(value) < 8:
-        raise ValidationError("A chave de API deve ter pelo menos 8 caracteres.")
+        raise ValidationError(
+            "A chave de API deve ter pelo menos 8 caracteres."
+        )
 
 
 def validate_telefone_instancia(value: str) -> None:
@@ -60,7 +61,9 @@ class Departamento(models.Model):
         max_length=100, unique=True, validators=[validate_api_key]
     )
     instance_id = models.CharField(max_length=100, blank=True, null=True)
-    url_evolution_api = models.URLField(default="http://www.evolution-api:8080")
+    url_evolution_api = models.URLField(
+        default="http://www.evolution-api:8080"
+    )
     ativo = models.BooleanField(default=True)
     configuracoes = models.JSONField(default=dict, blank=True)
     data_criacao = models.DateTimeField(auto_now_add=True)
@@ -86,7 +89,9 @@ class Departamento(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         """Salva o departamento, normalizando o telefone da instância."""
         if self.telefone_instancia:
-            self.telefone_instancia = re.sub(r"\D", "", self.telefone_instancia)
+            self.telefone_instancia = re.sub(
+                r"\D", "", self.telefone_instancia
+            )
         super().save(*args, **kwargs)
 
     @override
@@ -134,7 +139,11 @@ class Departamento(models.Model):
         Returns:
             O valor da configuração ou o valor padrão.
         """
-        return self.configuracoes.get(chave, padrao) if self.configuracoes else padrao
+        return (
+            self.configuracoes.get(chave, padrao)
+            if self.configuracoes
+            else padrao
+        )
 
     @classmethod
     def buscar_por_api_key(cls, api_key: str) -> Optional["Departamento"]:
@@ -153,7 +162,9 @@ class Departamento(models.Model):
             return None
 
     @classmethod
-    def buscar_por_telefone_instancia(cls, telefone: str) -> Optional["Departamento"]:
+    def buscar_por_telefone_instancia(
+        cls, telefone: str
+    ) -> Optional["Departamento"]:
         """Busca um departamento pelo telefone da instância.
 
         Args:
@@ -164,7 +175,9 @@ class Departamento(models.Model):
         """
         telefone_limpo = re.sub(r"\D", "", telefone)
         try:
-            return cls.objects.get(telefone_instancia=telefone_limpo, ativo=True)
+            return cls.objects.get(
+                telefone_instancia=telefone_limpo, ativo=True
+            )
         except cls.DoesNotExist:
             logger.warning(
                 f"Departamento não encontrado para o telefone: {telefone_limpo}"
@@ -184,7 +197,9 @@ class Departamento(models.Model):
         api_key = data.get("apikey")
         instance = data.get("instance")
         if not api_key or not instance:
-            logger.warning("Chave de API ou instância não fornecida no webhook.")
+            logger.warning(
+                "Chave de API ou instância não fornecida no webhook."
+            )
             return None
         try:
             return cls.objects.get(

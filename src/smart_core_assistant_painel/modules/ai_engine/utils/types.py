@@ -21,7 +21,6 @@ from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensa
 from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
     MessageData,
 )
-
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
@@ -60,7 +59,9 @@ APMUsecase: TypeAlias = UsecaseBaseCallData[
     AnalisePreviaMensagem,
     AnalisePreviaMensagemParameters,
 ]
-APMData: TypeAlias = Datasource[AnalisePreviaMensagem, AnalisePreviaMensagemParameters]
+APMData: TypeAlias = Datasource[
+    AnalisePreviaMensagem, AnalisePreviaMensagemParameters
+]
 
 LDFUsecase: TypeAlias = UsecaseBaseCallData[
     list[Document],

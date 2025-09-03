@@ -11,7 +11,9 @@ from django.core.cache import cache
 from django.utils import timezone
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import (
+    Documento,
+)
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -86,8 +88,9 @@ def send_message_response(phone: str) -> None:
             )
             logger.info(f"Teste similaridade: {teste_similaridade}")
 
-
-            atendimento_obj: Atendimento = cast(Atendimento, mensagem.atendimento)
+            atendimento_obj: Atendimento = cast(
+                Atendimento, mensagem.atendimento
+            )
             if _pode_bot_responder_atendimento(atendimento_obj):
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
@@ -96,7 +99,9 @@ def send_message_response(phone: str) -> None:
                     text="Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
                 )
         except Mensagem.DoesNotExist:
-            logger.error(f"Mensagem criada (ID: {mensagem_id}) não encontrada.")
+            logger.error(
+                f"Mensagem criada (ID: {mensagem_id}) não encontrada."
+            )
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {mensagem_id}: {e}")
     except Exception as e:
@@ -130,7 +135,10 @@ def _obter_entidades_metadados_validas() -> set[str]:
             return set()
         entidades_config = json.loads(valid_entity_types)
         entidades_validas: set[str] = set()
-        if isinstance(entidades_config, dict) and "entity_types" in entidades_config:
+        if (
+            isinstance(entidades_config, dict)
+            and "entity_types" in entidades_config
+        ):
             for _, entidades in entidades_config["entity_types"].items():
                 if isinstance(entidades, dict):
                     entidades_validas.update(entidades.keys())
@@ -162,9 +170,9 @@ def _processar_entidades_contato(
         for entidade_dict in entity_types:
             for tipo_entidade, valor in entidade_dict.items():
                 if tipo_entidade.lower() == "nome_contato" and valor:
-                    if not contato.nome_contato or len(str(valor).strip()) > len(
-                        contato.nome_contato or ""
-                    ):
+                    if not contato.nome_contato or len(
+                        str(valor).strip()
+                    ) > len(contato.nome_contato or ""):
                         contato.nome_contato = str(valor).strip()
                         contato_atualizado = True
                 elif tipo_entidade.lower() in entidades_metadados and valor:
@@ -174,9 +182,12 @@ def _processar_entidades_contato(
                             contato.metadados = {}
                         if (
                             tipo_entidade.lower() not in contato.metadados
-                            or contato.metadados[tipo_entidade.lower()] != valor_limpo
+                            or contato.metadados[tipo_entidade.lower()]
+                            != valor_limpo
                         ):
-                            contato.metadados[tipo_entidade.lower()] = valor_limpo
+                            contato.metadados[tipo_entidade.lower()] = (
+                                valor_limpo
+                            )
                             metadados_atualizados = True
 
         if contato_atualizado or metadados_atualizados:
@@ -216,17 +227,24 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         ):
             FeaturesCompose.mensagem_apresentacao()
         resultado_analise = FeaturesCompose.analise_previa_mensagem(
-            historico_atendimento=historico_atendimento, context=mensagem.conteudo
+            historico_atendimento=historico_atendimento,
+            context=mensagem.conteudo,
         )
         mensagem.intent_detectado = resultado_analise.intent_types
         mensagem.entidades_extraidas = resultado_analise.entity_types
-        mensagem.save(update_fields=["intent_detectado", "entidades_extraidas"])
+        mensagem.save(
+            update_fields=["intent_detectado", "entidades_extraidas"]
+        )
         _processar_entidades_contato(mensagem, resultado_analise.entity_types)
     except Exception as e:
-        logger.error(f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}")
+        logger.error(
+            f"Erro ao analisar conteúdo da mensagem {mensagem_id}: {e}"
+        )
 
 
-def _pode_bot_responder_atendimento(atendimento: Optional["Atendimento"]) -> bool:
+def _pode_bot_responder_atendimento(
+    atendimento: Optional["Atendimento"],
+) -> bool:
     """Verifica se o bot pode responder automaticamente a um atendimento.
 
     Args:
@@ -245,7 +263,9 @@ def _pode_bot_responder_atendimento(atendimento: Optional["Atendimento"]) -> boo
             has_human_messages = mm_any.filter(
                 remetente=TipoRemetente.ATENDENTE_HUMANO
             ).exists()
-        has_human_attendant = getattr(atendimento, "atendente_humano", None) is not None
+        has_human_attendant = (
+            getattr(atendimento, "atendente_humano", None) is not None
+        )
         return not (has_human_messages or has_human_attendant)
     except Exception as e:
         logger.error(f"Erro ao verificar se o bot pode responder: {e}")

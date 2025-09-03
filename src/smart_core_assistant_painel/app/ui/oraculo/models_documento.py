@@ -1,5 +1,4 @@
-
-
+from datetime import datetime
 from typing import Any, Self, override
 
 from django.db import models
@@ -26,42 +25,42 @@ class Documento(models.Model):
         data_criacao: Timestamp de criação
     """
 
-    id = models.AutoField(
+    id:models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
 
-    treinamento = models.ForeignKey(
+    treinamento:models.ForeignKey[Treinamento] = models.ForeignKey(
         Treinamento,
         on_delete=models.CASCADE,
         related_name="documentos",
         help_text="Treinamento ao qual este documento pertence",
     )
 
-    conteudo = models.TextField(
+    conteudo: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo do chunk de treinamento",
     )
 
-    metadata = models.JSONField(
+    metadata: models.JSONField[str | None] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
     )
 
-    embedding = VectorField(
+    embedding:VectorField = VectorField(
         dimensions=1024,
         null=True,
         blank=True,
         help_text="Vetor de embeddings do conteúdo do documento",
     )
 
-    ordem = models.PositiveIntegerField(
+    ordem:models.PositiveIntegerField[int] = models.PositiveIntegerField(
         default=1,
         help_text="Ordem do documento no treinamento",
     )
 
-    data_criacao = models.DateTimeField(
+    data_criacao:models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do documento",
     )

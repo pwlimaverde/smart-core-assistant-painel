@@ -853,34 +853,34 @@ class Atendimento(models.Model):
         feedback: Feedback do contato
     """
 
-    id = models.AutoField(
+    id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    contato = models.ForeignKey(
+    contato: models.ForeignKey[Contato] = models.ForeignKey(
         Contato,
         on_delete=models.CASCADE,
         related_name="atendimentos",
         help_text="Contato vinculado ao atendimento",
     )
-    status = models.CharField(
+    status: models.CharField[str] = models.CharField(
         max_length=20,
         choices=StatusAtendimento.choices,
         default=StatusAtendimento.AGUARDANDO_INICIAL,
         help_text="Status atual do atendimento",
     )
-    data_inicio = models.DateTimeField(
+    data_inicio: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de início do atendimento"
     )
-    data_fim = models.DateTimeField(
+    data_fim: models.DateTimeField[datetime | None] = models.DateTimeField(
         blank=True, null=True, help_text="Data de finalização do atendimento"
     )
-    assunto = models.CharField(
+    assunto: models.CharField[str | None] = models.CharField(
         max_length=200,
         blank=True,
         null=True,
         help_text="Assunto/resumo do atendimento",
     )
-    prioridade = models.CharField(
+    prioridade: models.CharField[str] = models.CharField(
         max_length=10,
         choices=[
             ("baixa", "Baixa"),
@@ -891,7 +891,7 @@ class Atendimento(models.Model):
         default="normal",
         help_text="Prioridade do atendimento",
     )
-    atendente_humano = models.ForeignKey(
+    atendente_humano: models.ForeignKey[AtendenteHumano | None] = models.ForeignKey(
         AtendenteHumano,
         on_delete=models.SET_NULL,
         blank=True,
@@ -899,26 +899,26 @@ class Atendimento(models.Model):
         related_name="atendimentos",
         help_text="Atendente humano responsável pelo atendimento (se transferido)",
     )
-    contexto_conversa = models.JSONField(
+    contexto_conversa: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Contexto atual da conversa (variáveis, estado, etc.)",
     )
-    historico_status = models.JSONField(
+    historico_status: models.JSONField[list[dict[str, Any]]] = models.JSONField(
         default=list, blank=True, help_text="Histórico de mudanças de status"
     )
-    tags = models.JSONField(
+    tags: models.JSONField[list[str]] = models.JSONField(
         default=list,
         blank=True,
         help_text="Tags para categorização do atendimento",
     )
-    avaliacao = models.IntegerField(
+    avaliacao: models.IntegerField[int | None] = models.IntegerField(
         blank=True,
         null=True,
         choices=[(i, i) for i in range(1, 6)],
         help_text="Avaliação do atendimento (1-5)",
     )
-    feedback = models.TextField(
+    feedback: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Feedback do contato"
     )
 
@@ -938,7 +938,7 @@ class Atendimento(models.Model):
         return f"Atendimento {self.id} - {self.contato.telefone} ({self.get_status_display()})"
 
     def finalizar_atendimento(
-        self, novo_status: str = StatusAtendimento.RESOLVIDO
+        self, novo_status: str = "resolvido"
     ) -> None:
         """
         Finaliza o atendimento alterando o status e registrando a data de fim.
@@ -1024,7 +1024,7 @@ class Atendimento(models.Model):
         self.atendente_humano = atendente_humano
         self.status = StatusAtendimento.TRANSFERIDO
         self.adicionar_historico_status(
-            StatusAtendimento.TRANSFERIDO,
+            "transferido",
             observacao or f"Transferido para {atendente_humano.nome}",
         )
         self.save()
@@ -1201,59 +1201,59 @@ class Mensagem(models.Model):
         confianca_resposta: Nível de confiança da resposta do bot
     """
 
-    id = models.AutoField(
+    id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    atendimento = models.ForeignKey(
+    atendimento: models.ForeignKey[Atendimento] = models.ForeignKey(
         Atendimento,
         on_delete=models.CASCADE,
         related_name="mensagens",
         help_text="Atendimento ao qual a mensagem pertence",
     )
-    tipo = models.CharField(
+    tipo: models.CharField[str] = models.CharField(
         max_length=25,
         choices=TipoMensagem.choices,
         default=TipoMensagem.TEXTO_FORMATADO,
         help_text="Tipo da mensagem",
     )
-    conteudo = models.TextField(help_text="Conteúdo da mensagem")
-    remetente = models.CharField(
+    conteudo: models.TextField[str] = models.TextField(help_text="Conteúdo da mensagem")
+    remetente: models.CharField[str] = models.CharField(
         max_length=20,
         choices=TipoRemetente.choices,
         default=TipoRemetente.CONTATO,
         help_text="Tipo do remetente da mensagem",
     )
-    timestamp = models.DateTimeField(
+    timestamp: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Timestamp da mensagem"
     )
-    message_id_whatsapp = models.CharField(
+    message_id_whatsapp: models.CharField[str | None] = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         help_text="ID da mensagem no WhatsApp",
     )
-    metadados = models.JSONField(
+    metadados: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados adicionais da mensagem (mídia, localização, etc.)",
     )
-    respondida = models.BooleanField(
+    respondida: models.BooleanField[bool] = models.BooleanField(
         default=False, help_text="Indica se a mensagem foi respondida"
     )
-    resposta_bot = models.TextField(
+    resposta_bot: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Resposta gerada pelo bot"
     )
-    intent_detectado = models.JSONField(
+    intent_detectado: models.JSONField[list[dict[str, str]]] = models.JSONField(
         default=list,
         blank=True,
         help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
     )
-    entidades_extraidas = models.JSONField(
+    entidades_extraidas: models.JSONField[list[dict[str, str]]] = models.JSONField(
         default=list,
         blank=True,
         help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
     )
-    confianca_resposta = models.FloatField(
+    confianca_resposta: models.FloatField[float | None] = models.FloatField(
         blank=True,
         null=True,
         help_text="Nível de confiança da resposta do bot (0-1)",
@@ -1374,7 +1374,7 @@ class Mensagem(models.Model):
                 'solicitacao': ['gostaria de uma cotação de uma embalagem']
             }
         """
-        intents_organizados = {}
+        intents_organizados: dict[str, Any] = {}
         if self.intent_detectado:
             for intent_dict in self.intent_detectado:
                 if isinstance(intent_dict, dict):
@@ -1413,24 +1413,24 @@ class FluxoConversa(models.Model):
         data_modificacao: Data de última modificação automática
     """
 
-    id = models.AutoField(
+    id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    nome = models.CharField(
+    nome: models.CharField[str] = models.CharField(
         max_length=100, unique=True, help_text="Nome do fluxo de conversa"
     )
-    descricao = models.TextField(
+    descricao: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Descrição do fluxo"
     )
-    condicoes_entrada = models.JSONField(
+    condicoes_entrada: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict, help_text="Condições para entrar neste fluxo"
     )
-    estados = models.JSONField(
+    estados: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict, help_text="Estados e transições do fluxo"
     )
-    ativo = models.BooleanField(default=True, help_text="Fluxo ativo")
-    data_criacao = models.DateTimeField(auto_now_add=True)
-    data_modificacao = models.DateTimeField(auto_now=True)
+    ativo: models.BooleanField[bool] = models.BooleanField(default=True, help_text="Fluxo ativo")
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
+    data_modificacao: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "Fluxo de Conversa"
@@ -1665,7 +1665,7 @@ def processar_mensagem_whatsapp(
             if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:
                 atendimento.status = StatusAtendimento.EM_ANDAMENTO
                 atendimento.adicionar_historico_status(
-                    StatusAtendimento.EM_ANDAMENTO,
+                    "em_andamento",
                     "Primeira mensagem recebida",
                 )
                 atendimento.save()
@@ -1700,7 +1700,7 @@ def buscar_atendente_disponivel(
             query = query.filter(departamento=departamento)
 
         # Filtra atendentes que podem receber novos atendimentos
-        atendentes_disponiveis = []
+        atendentes_disponiveis: list[AtendenteHumano] = []
         for atendente in query:
             if atendente.pode_receber_atendimento():
                 # Verifica especialidades se especificadas
@@ -1779,32 +1779,19 @@ def listar_atendentes_por_disponibilidade() -> dict[
     try:
         atendentes = AtendenteHumano.objects.filter(ativo=True)
 
-        resultado: dict[str, list[dict[str, Any]]] = {
+        resultado: dict[str, list[AtendenteHumano]] = {
             "disponiveis": [],
             "ocupados": [],
             "indisponiveis": [],
         }
 
         for atendente in atendentes:
-            info_atendente = {
-                "id": atendente.id,
-                "nome": atendente.nome,
-                "cargo": atendente.cargo,
-                "departamento": atendente.departamento.nome
-                if atendente.departamento
-                else None,
-                "telefone": atendente.telefone,
-                "atendimentos_ativos": atendente.get_atendimentos_ativos(),
-                "max_atendimentos": atendente.max_atendimentos_simultaneos,
-                "especialidades": atendente.especialidades,
-            }
-
             if not atendente.disponivel:
-                resultado["indisponiveis"].append(info_atendente)
+                resultado["indisponiveis"].append(atendente)
             elif atendente.pode_receber_atendimento():
-                resultado["disponiveis"].append(info_atendente)
+                resultado["disponiveis"].append(atendente)
             else:
-                resultado["ocupados"].append(info_atendente)
+                resultado["ocupados"].append(atendente)
 
         return resultado
 
@@ -1817,7 +1804,7 @@ def enviar_mensagem_atendente(
     atendimento: "Atendimento",
     atendente_humano: "AtendenteHumano",
     conteudo: str,
-    tipo_mensagem: "TipoMensagem" = TipoMensagem.TEXTO_FORMATADO,
+    tipo_mensagem: str = "extendedTextMessage",
     metadados: Optional[dict[str, Any]] = None,
 ) -> "Mensagem":
     """

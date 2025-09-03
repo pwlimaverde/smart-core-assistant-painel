@@ -522,7 +522,7 @@ class Cliente(models.Model):
     )
 
     # Relacionamentos
-    contatos:models.ManyToManyField = models.ManyToManyField(
+    contatos: models.ManyToManyField[Contato, Contato] = models.ManyToManyField(
         Contato,
         blank=True,
         related_name="clientes",
@@ -530,23 +530,23 @@ class Cliente(models.Model):
     )
 
     # Campos de controle
-    data_cadastro: models.DateTimeField = models.DateTimeField(
+    data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro do cliente"
     )
-    ultima_atualizacao: models.DateTimeField = models.DateTimeField(
+    ultima_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última atualização"
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do cliente"
     )
-    metadados: models.JSONField = models.JSONField(
+    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do cliente"
     )
 
     class Meta:
-        verbose_name = "Cliente"
-        verbose_name_plural = "Clientes"
-        ordering = ["nome_fantasia"]
+        verbose_name: str = "Cliente"
+        verbose_name_plural: str = "Clientes"
+        ordering: list[str] = ["nome_fantasia"]
 
     @override
     def __str__(self) -> str:
@@ -630,10 +630,10 @@ class Cliente(models.Model):
         Returns:
             str: Endereço completo do cliente
         """
-        partes_endereco = []
+        partes_endereco:list[str] = []
 
         if self.logradouro:
-            endereco_linha = self.logradouro
+            endereco_linha:str = self.logradouro
             if self.numero:
                 endereco_linha += f", {self.numero}"
             if self.complemento:

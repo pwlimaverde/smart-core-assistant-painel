@@ -794,7 +794,9 @@ class TipoMensagem(models.TextChoices):
         return mapeamento.get(chave_json, cls.TEXTO_FORMATADO)
 
     @classmethod
-    def obter_chave_json(cls, tipo_mensagem):
+    def obter_chave_json(
+        cls, tipo_mensagem: "TipoMensagem"
+    ) -> Optional[str]:
         """
         Retorna a chave JSON correspondente ao tipo de mensagem.
 
@@ -1150,10 +1152,8 @@ class Atendimento(models.Model):
             )
 
             for atendimento_anterior in atendimentos_anteriores:
-                if atendimento_anterior.assunto:
-                    data_formatada = atendimento_anterior.data_fim.strftime(
-                        "%d/%m/%Y"
-                    )
+                if atendimento_anterior.assunto and atendimento_anterior.data_fim is not None:
+                    data_formatada = atendimento_anterior.data_fim.strftime("%d/%m/%Y")
                     historico_atendimentos.append(
                         f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
                     )

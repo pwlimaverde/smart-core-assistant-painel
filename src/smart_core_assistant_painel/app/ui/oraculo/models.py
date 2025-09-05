@@ -1,9 +1,10 @@
 import re
 from datetime import datetime
-from typing import Any, Optional, override
+from typing import Any, Optional, cast, override
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.query import QuerySet
 from django.utils import timezone
 from loguru import logger
 
@@ -674,15 +675,6 @@ class Cliente(models.Model):
         """
         self.contatos.remove(contato)
 
-    def get_contatos_ativos(self):
-        """
-        Retorna todos os contatos ativos vinculados ao cliente.
-
-        Returns:
-            QuerySet: Contatos ativos do cliente
-        """
-        return self.contatos.filter(ativo=True)
-
     def atualizar_metadados(self, chave: str, valor: Any) -> None:
         """
         Atualiza uma chave nos metadados do cliente.
@@ -914,10 +906,9 @@ class Atendimento(models.Model):
         blank=True,
         help_text="Tags para categorização do atendimento",
     )
-    avaliacao: models.IntegerField[int | None] = models.IntegerField(
+    avaliacao: models.IntegerField[int] = models.IntegerField(
         blank=True,
-        null=True,
-        choices=[(i, i) for i in range(1, 6)],
+        choices=[(i, str(i)) for i in range(1, 6)],
         help_text="Avaliação do atendimento (1-5)",
     )
     feedback: models.TextField[str | None] = models.TextField(
@@ -937,7 +928,7 @@ class Atendimento(models.Model):
         Returns:
             str: ID do atendimento, telefone do contato e status atual
         """
-        return f"Atendimento {self.id} - {self.contato.telefone} ({self.get_status_display()})"
+        return f"Atendimento {self.id} - {self.contato.telefone}"
 
     def finalizar_atendimento(
         self, novo_status: str = "resolvido"
@@ -1017,11 +1008,6 @@ class Atendimento(models.Model):
         Raises:
             ValidationError: Se o atendente não pode receber o atendimento
         """
-        if not atendente_humano.pode_receber_atendimento():
-            raise ValidationError(
-                f"O atendente {atendente_humano.nome} não pode receber novos atendimentos. "
-                f"Motivos possíveis: inativo, indisponível ou limite de atendimentos atingido."
-            )
 
         self.atendente_humano = atendente_humano
         self.status = StatusAtendimento.TRANSFERIDO
@@ -1077,20 +1063,20 @@ class Atendimento(models.Model):
         try:
             # Busca todas as mensagens do atendimento ordenadas por timestamp
             # (mais antigas primeiro)
-            mensagens_query = self.mensagens.all().order_by("timestamp")
+            mensagens_query:QuerySet[Mensagem] = cast(QuerySet[Mensagem], self.mensagens.all().order_by("timestamp"))# type: ignore
 
             # Exclui mensagem específica se solicitado
             if excluir_mensagem_id:
-                mensagens_query = mensagens_query.exclude(
+                mensagens_query = mensagens_query.exclude(  # type: ignore
                     id=excluir_mensagem_id
                 )
 
-            mensagens = mensagens_query
+            mensagens:list[Mensagem] = list(mensagens_query)
 
             # Inicializa as estruturas de dados
-            conteudo_mensagens = []
-            intents_detectados = set()
-            entidades_extraidas = set()
+            conteudo_mensagens:list[str] = []
+            intents_detectados:set[dict[str, str]] = set[dict[str, str]]() 
+            entidades_extraidas:set[dict[str, str]] = set[dict[str, str]]()
 
             # Processa cada mensagem
             for mensagem in mensagens:
@@ -1100,50 +1086,18 @@ class Atendimento(models.Model):
 
                 # Processa intents detectados
                 if mensagem.intent_detectado:
-                    # Espera uma lista de dicionários no formato
-                    # {"saudacao": "Olá", "pergunta": "tudo bem?"}
-                    if isinstance(mensagem.intent_detectado, list):
-                        for intent_dict in mensagem.intent_detectado:
-                            if isinstance(intent_dict, dict):
-                                # Formato padrão: {"saudacao": "Olá"} -
-                                # pega todos os valores dos intents
-                                for (
-                                    tipo_intent,
-                                    valor_intent,
-                                ) in intent_dict.items():
-                                    if (
-                                        valor_intent
-                                        and str(valor_intent).strip()
-                                    ):
-                                        intents_detectados.add(
-                                            f"{tipo_intent}: {valor_intent}"
-                                        )
-
-                        # Se não é uma lista, continua sem processar
+                    for intent_dict in mensagem.intent_detectado:
+                        for tipo_intent, valor_intent in intent_dict.items():
+                            intents_detectados.add({tipo_intent: valor_intent})
 
                 # Processa entidades extraídas
                 if mensagem.entidades_extraidas:
-                    # Espera sempre uma lista de dicionários no formato
-                    # {"tipo": "valor"}
-                    if isinstance(mensagem.entidades_extraidas, list):
-                        for entidade_dict in mensagem.entidades_extraidas:
-                            if isinstance(entidade_dict, dict):
-                                # Formato padrão: {"pessoa": "João Silva"} -
-                                # pega todos os valores
-                                for chave, valor in entidade_dict.items():
-                                    if valor and str(valor).strip():
-                                        entidades_extraidas.add(str(valor))
-                    else:
-                        # Se não é uma lista, loga um aviso
-                        pass
-
-            # Remove strings vazias das entidades
-            entidades_extraidas.discard("")
-            entidades_extraidas.discard("None")
-            entidades_extraidas.discard("null")
+                    for entidade_dict in mensagem.entidades_extraidas:
+                        for tipo_entidade, valor_entidade in entidade_dict.items():
+                            entidades_extraidas.add({tipo_entidade: valor_entidade})
 
             # Busca histórico de atendimentos anteriores do contato
-            historico_atendimentos = []
+            historico_atendimentos:list[str] = []
             atendimentos_anteriores = (
                 Atendimento.objects.filter(contato=self.contato)
                 .exclude(id=self.id)
@@ -1175,6 +1129,7 @@ class Atendimento(models.Model):
                 "conteudo_mensagens": [],
                 "intents_detectados": set(),
                 "entidades_extraidas": set(),
+                "historico_atendimentos": [],
             }
 
 

@@ -152,7 +152,8 @@ class Documento(models.Model):
             cls.limpar_documentos_por_treinamento(treinamento_id)
             
             # Cria novos documentos a partir dos chunks
-            documentos_para_criar = []
+            # Usando save() individual para disparar signals
+            documentos_criados = 0
             for i, chunk in enumerate(chunks, 1):
                 documento = cls(
                     treinamento=treinamento,
@@ -160,13 +161,13 @@ class Documento(models.Model):
                     metadata=chunk.metadata,
                     ordem=i,
                 )
-                documentos_para_criar.append(documento)
-            
-            # Cria todos os documentos em batch
-            cls.objects.bulk_create(documentos_para_criar)
+                logger.info(f"[DEBUG] Salvando documento {i} - conteudo: {len(chunk.page_content)} chars")
+                documento.save()  # Dispara o signal post_save
+                logger.info(f"[DEBUG] Documento salvo com ID: {documento.pk}")
+                documentos_criados += 1
             
             logger.info(
-                f"Criados {len(documentos_para_criar)} documentos para o treinamento {treinamento_id}"
+                f"Criados {documentos_criados} documentos para o treinamento {treinamento_id}"
             )
             
         except Treinamento.DoesNotExist:

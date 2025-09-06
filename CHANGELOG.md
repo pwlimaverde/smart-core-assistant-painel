@@ -1,3 +1,46 @@
+## 0.8.4
+
+### Added
+- Script `migrar_remoto.py` para migração de dados remotos.
+- Campo `treinamento_vetorizado` no modelo Treinamento para controle de vetorização.
+- View para verificar treinamentos vetorizados.
+- Configuração do Qoder para análise de código.
+
+### Changed
+- **Refatoração completa dos modelos Treinamento e Documento**: Reestruturação dos modelos para melhor organização e performance.
+- **Melhoria significativa na tipagem**: Adicionadas anotações de tipo completas em models.py e correção de erros de tipo.
+- **Atualização de dependências**: Atualização das bibliotecas do projeto para versões mais recentes.
+- **Reorganização do ambiente Docker**: Melhorias na configuração e estrutura do ambiente de desenvolvimento.
+
+### Fixed
+- Correção de bug na avaliação de atendimento.
+- Resolução do erro `redis.typing` no comando migrate-remoto.
+- Ajuste no campo `models.JSONField` para aceitar `models.JSONField[dict[str, Any] | None]`.
+- Correção de erros de tipo em models.py, incluindo valores de enum e anotações.
+- Correção no salvamento e criação de documentos.
+- Correção no admin do treinamento vetorizado.
+- Correção na funcionalidade de editar treinamento.
+- Correção no carregamento das variáveis de ambiente.
+
+### Tests
+- **Aumento significativo da cobertura de testes**: Cobertura aumentou de 47% para 66% com a adição de testes abrangentes em múltiplos módulos.
+- Remoção da feature WAHA e melhoria na cobertura de testes.
+- Correção de problemas nos testes e execução bem-sucedida da suíte completa.
+- Resolução de problema com fixture `django_db_setup` vazio.
+
+### Refactor
+- **Refatoração da feature de busca similar**: Melhorias na funcionalidade de busca.
+- **Refatoração da feature de chunks**: Otimização do processamento de chunks de texto.
+- **Refatoração do treinamento**: Melhorias no processo de treinamento e geração de embeddings.
+- Organização de imports e limpeza de código.
+- Desmembramento do modelo Document para melhor estruturação.
+
+### Chore
+- Remoção do arquivo `uv.lock` do controle de versão.
+- Adição do `uv.lock` ao `.gitignore`.
+- Configuração de script para criação de novas features.
+- Limpeza de imports e organização do código.
+
 ## 0.8.3
 
 ### Fixed

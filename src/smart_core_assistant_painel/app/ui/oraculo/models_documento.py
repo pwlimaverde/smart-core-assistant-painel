@@ -4,6 +4,7 @@ from typing import Self, override
 from django.db import models
 from django.db.models.indexes import Index
 from django.db.models.query import QuerySet
+from langchain_core.documents.base import Document as LangchainDocument
 from loguru import logger
 from pgvector.django import CosineDistance, VectorField
 
@@ -132,3 +133,47 @@ class Documento(models.Model):
         logger.info(
             f"Removidos {docs} documentos do treinamento {treinamento_id}"
         )
+
+    @classmethod
+    def criar_documentos_de_chunks(
+        cls, chunks: list[LangchainDocument], treinamento_id: int
+    ) -> None:
+        """Cria documentos a partir de uma lista de chunks.
+
+        Args:
+            chunks: Lista de documentos (chunks) do LangChain
+            treinamento_id: ID do treinamento associado
+        """
+        try:
+            # Busca o treinamento
+            treinamento = Treinamento.objects.get(id=treinamento_id)
+            
+            # Remove documentos existentes para evitar duplicatas
+            cls.limpar_documentos_por_treinamento(treinamento_id)
+            
+            # Cria novos documentos a partir dos chunks
+            documentos_para_criar = []
+            for i, chunk in enumerate(chunks, 1):
+                documento = cls(
+                    treinamento=treinamento,
+                    conteudo=chunk.page_content,
+                    metadata=chunk.metadata,
+                    ordem=i,
+                )
+                documentos_para_criar.append(documento)
+            
+            # Cria todos os documentos em batch
+            cls.objects.bulk_create(documentos_para_criar)
+            
+            logger.info(
+                f"Criados {len(documentos_para_criar)} documentos para o treinamento {treinamento_id}"
+            )
+            
+        except Treinamento.DoesNotExist:
+            logger.error(f"Treinamento {treinamento_id} não encontrado")
+            raise
+        except Exception as e:
+            logger.error(
+                f"Erro ao criar documentos para treinamento {treinamento_id}: {e}"
+            )
+            raise

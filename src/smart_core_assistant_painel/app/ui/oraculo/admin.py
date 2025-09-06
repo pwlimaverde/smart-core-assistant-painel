@@ -15,7 +15,6 @@ from .models import (
     Atendimento,
     Cliente,
     Contato,
-    FluxoConversa,
     Mensagem,
 )
 from .models_departamento import Departamento
@@ -836,16 +835,6 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
             .get_queryset(request)
             .select_related("atendimento", "atendimento__contato")
         )
-
-
-@admin.register(FluxoConversa)
-class FluxoConversaAdmin(admin.ModelAdmin[FluxoConversa]):
-    """Admin para o modelo FluxoConversa."""
-
-    list_display = ["nome", "ativo", "data_criacao", "data_modificacao"]
-    list_filter = ["ativo", "data_criacao"]
-    search_fields = ["nome", "descricao"]
-    readonly_fields = ["data_criacao", "data_modificacao"]
 
 
 @admin.register(Departamento)

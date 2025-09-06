@@ -907,8 +907,9 @@ class Atendimento(models.Model):
         blank=True,
         help_text="Tags para categorização do atendimento",
     )
-    avaliacao: models.IntegerField[int] = models.IntegerField(
+    avaliacao: models.IntegerField[int | None] = models.IntegerField(
         blank=True,
+        null=True,
         choices=[(i, str(i)) for i in range(1, 6)],
         help_text="Avaliação do atendimento (1-5)",
     )
@@ -1017,22 +1018,6 @@ class Atendimento(models.Model):
             observacao or f"Transferido para {atendente_humano.nome}",
         )
         self.save()
-
-    def liberar_atendente_humano(self, observacao: str = "") -> None:
-        """
-        Remove a atribuição do atendente humano do atendimento.
-
-        Args:
-            observacao (str): Observação sobre a liberação (opcional)
-        """
-        if self.atendente_humano:
-            nome_anterior = self.atendente_humano.nome
-            self.atendente_humano = None
-            self.adicionar_historico_status(
-                self.status,
-                observacao or f"Liberado do atendente {nome_anterior}",
-            )
-            self.save()
 
     def carregar_historico_mensagens(
         self, excluir_mensagem_id: Optional[int] = None
@@ -1228,179 +1213,12 @@ class Mensagem(models.Model):
         Returns:
             str: Remetente e preview do conteúdo
         """
-        remetente_display = self.get_remetente_display()
         conteudo_preview = (
             self.conteudo[:50] + "..."
             if len(self.conteudo) > 50
             else self.conteudo
         )
-        return f"{remetente_display}: {conteudo_preview}"
-
-    def marcar_como_respondida(
-        self, resposta: str, confianca: Optional[float] = None
-    ) -> None:
-        """
-        Marca a mensagem como respondida com a resposta fornecida.
-
-        Args:
-            resposta (str): Resposta gerada para a mensagem
-            confianca (float, optional): Nível de confiança da resposta (0-1)
-        """
-        self.respondida = True
-        self.resposta_bot = resposta
-        if confianca is not None:
-            self.confianca_resposta = confianca
-        self.save()
-
-    @property
-    def is_from_client(self) -> bool:
-        """
-        Propriedade para compatibilidade com código existente.
-
-        Returns:
-            bool: True se a mensagem é do contato
-        """
-        return self.remetente == TipoRemetente.CONTATO
-
-    @property
-    def is_from_bot(self) -> bool:
-        """
-        Verifica se a mensagem é do bot.
-
-        Returns:
-            bool: True se a mensagem é do bot
-        """
-        return self.remetente == TipoRemetente.BOT
-
-    def adicionar_intent(self, tipo_intent: str, valor_intent: str) -> None:
-        """
-        Adiciona um intent à lista de intents detectados.
-
-        Args:
-            tipo_intent (str): Tipo do intent (ex: 'saudacao', 'pergunta', 'solicitacao')
-            valor_intent (str): Valor/conteúdo do intent
-
-        Example:
-            >>> mensagem.adicionar_intent('saudacao', 'Olá')
-            >>> mensagem.adicionar_intent('pergunta', 'tudo bem?')
-        """
-        if not self.intent_detectado:
-            self.intent_detectado = []
-
-        # Adiciona o intent como dicionário
-        intent_dict = {tipo_intent: valor_intent}
-        self.intent_detectado.append(intent_dict)
-
-    def get_intents_por_tipo(self, tipo_intent: str) -> list[str]:
-        """
-        Retorna todos os valores de um tipo específico de intent.
-
-        Args:
-            tipo_intent (str): Tipo do intent a buscar
-
-        Returns:
-            list[str]: Lista com todos os valores encontrados para o tipo
-
-        Example:
-            >>> mensagem.get_intents_por_tipo('pergunta')
-            ['tudo bem?', 'vocês produzem cones para crepe?']
-        """
-        valores = []
-        if self.intent_detectado:
-            for intent_dict in self.intent_detectado:
-                if (
-                    isinstance(intent_dict, dict)
-                    and tipo_intent in intent_dict
-                ):
-                    valores.append(intent_dict[tipo_intent])
-        return valores
-
-    def get_todos_intents(self) -> dict[str, list[str]]:
-        """
-        Retorna todos os intents organizados por tipo.
-
-        Returns:
-            dict: Dicionário com tipos como chaves e listas de valores
-
-        Example:
-            >>> mensagem.get_todos_intents()
-            {
-                'saudacao': ['Olá'],
-                'pergunta': ['tudo bem?', 'vocês produzem cones para crepe?'],
-                'solicitacao': ['gostaria de uma cotação de uma embalagem']
-            }
-        """
-        intents_organizados: dict[str, Any] = {}
-        if self.intent_detectado:
-            for intent_dict in self.intent_detectado:
-                if isinstance(intent_dict, dict):
-                    for tipo, valor in intent_dict.items():
-                        if tipo not in intents_organizados:
-                            intents_organizados[tipo] = []
-                        intents_organizados[tipo].append(valor)
-        return intents_organizados
-
-    @property
-    def is_from_atendente_humano(self) -> bool:
-        """
-        Verifica se a mensagem é de um atendente humano.
-
-        Returns:
-            bool: True se a mensagem é de um atendente humano
-        """
-        return self.remetente == TipoRemetente.ATENDENTE_HUMANO
-
-
-class FluxoConversa(models.Model):
-    """
-    Modelo para definir fluxos de conversa e estados.
-
-    Gerencia os fluxos de conversação automatizados do sistema,
-    incluindo condições de entrada, estados e transições.
-
-    Attributes:
-        id: Chave primária do registro
-        nome: Nome único do fluxo de conversa
-        descricao: Descrição detalhada do fluxo
-        condicoes_entrada: Condições JSON para ativação do fluxo
-        estados: Estados e transições do fluxo em formato JSON
-        ativo: Indica se o fluxo está ativo
-        data_criacao: Data de criação automática
-        data_modificacao: Data de última modificação automática
-    """
-
-    id: models.AutoField = models.AutoField(
-        primary_key=True, help_text="Chave primária do registro"
-    )
-    nome: models.CharField[str] = models.CharField(
-        max_length=100, unique=True, help_text="Nome do fluxo de conversa"
-    )
-    descricao: models.TextField[str | None] = models.TextField(
-        blank=True, null=True, help_text="Descrição do fluxo"
-    )
-    condicoes_entrada: models.JSONField[dict[str, Any]] = models.JSONField(
-        default=dict, help_text="Condições para entrar neste fluxo"
-    )
-    estados: models.JSONField[dict[str, Any]] = models.JSONField(
-        default=dict, help_text="Estados e transições do fluxo"
-    )
-    ativo: models.BooleanField[bool] = models.BooleanField(default=True, help_text="Fluxo ativo")
-    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
-    data_modificacao: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Fluxo de Conversa"
-        verbose_name_plural = "Fluxos de Conversa"
-
-    def __str__(self) -> str:
-        """
-        Retorna representação string do fluxo de conversa.
-
-        Returns:
-            str: Nome do fluxo de conversa
-        """
-        return self.nome
-
+        return f"{self.remetente}: {conteudo_preview}"
 
 # Função utilitária para inicializar contato e atendimento
 def inicializar_atendimento_whatsapp(
@@ -1460,6 +1278,8 @@ def inicializar_atendimento_whatsapp(
                 atualizado = True
 
             if metadata_contato:
+                if contato.metadados is None:
+                    contato.metadados = {}
                 contato.metadados.update(metadata_contato)
                 atualizado = True
 
@@ -1618,7 +1438,7 @@ def processar_mensagem_whatsapp(
             atendimento.contato.save()
 
             # Atualiza status do atendimento se for a primeira mensagem
-            if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:
+            if atendimento.status in StatusAtendimento.AGUARDANDO_INICIAL:
                 atendimento.status = StatusAtendimento.EM_ANDAMENTO
                 atendimento.adicionar_historico_status(
                     "em_andamento",
@@ -1631,180 +1451,4 @@ def processar_mensagem_whatsapp(
     except Exception as e:
         logger.error(f"Erro ao processar mensagem WhatsApp: {e}")
         raise
-
-
-def buscar_atendente_disponivel(
-    especialidades: Optional[list[str]] = None,
-    departamento: Optional["Departamento"] = None,
-) -> Optional["AtendenteHumano"]:
-    """
-    Busca um atendente humano disponível para receber um novo atendimento.
-
-    Args:
-        especialidades (list, optional): Lista de especialidades requeridas
-        departamento (Departamento, optional): Objeto departamento específico
-
-    Returns:
-        AtendenteHumano: Atendente disponível ou None se nenhum encontrado
-    """
-    try:
-        # Query base: atendentes ativos e disponíveis
-        query = AtendenteHumano.objects.filter(ativo=True, disponivel=True)
-
-        # Filtra por departamento se especificado
-        if departamento:
-            query = query.filter(departamento=departamento)
-
-        # Filtra atendentes que podem receber novos atendimentos
-        atendentes_disponiveis: list[AtendenteHumano] = []
-        for atendente in query:
-            if atendente.pode_receber_atendimento():
-                # Verifica especialidades se especificadas
-                if especialidades:
-                    if any(
-                        esp in atendente.especialidades
-                        for esp in especialidades
-                    ):
-                        atendentes_disponiveis.append(atendente)
-                else:
-                    atendentes_disponiveis.append(atendente)
-
-        if not atendentes_disponiveis:
-            return None
-
-        # Retorna o atendente com menos atendimentos ativos (balanceamento)
-        return min(
-            atendentes_disponiveis, key=lambda a: a.get_atendimentos_ativos()
-        )
-
-    except Exception as e:
-        logger.error(f"Erro ao buscar atendente disponível: {e}")
-        return None
-
-
-def transferir_atendimento_automatico(
-    atendimento: "Atendimento",
-    especialidades: Optional[list[str]] = None,
-    departamento: Optional["Departamento"] = None,
-) -> Optional["AtendenteHumano"]:
-    """
-    Transfere automaticamente um atendimento para um atendente humano disponível.
-
-    Args:
-        atendimento (Atendimento): Atendimento a ser transferido
-        especialidades (list, optional): Lista de especialidades requeridas
-        departamento (Departamento, optional): Objeto departamento específico
-
-    Returns:
-        AtendenteHumano: Atendente que recebeu o atendimento ou None se nenhum disponível
-
-    Raises:
-        Exception: Se houver erro durante a transferência
-    """
-    try:
-        atendente = buscar_atendente_disponivel(especialidades, departamento)
-
-        if not atendente:
-            return None
-
-        # Realiza a transferência
-        observacao = "Transferência automática do sistema"
-        if especialidades:
-            observacao += f" - Especialidades: {', '.join(especialidades)}"
-        if departamento:
-            observacao += f" - Departamento: {departamento.nome}"
-
-        atendimento.transferir_para_humano(atendente, observacao)
-
-        return atendente
-
-    except Exception as e:
-        logger.error(f"Erro ao transferir atendimento automaticamente: {e}")
-        raise
-
-
-def listar_atendentes_por_disponibilidade() -> dict[
-    str, list["AtendenteHumano"]
-]:
-    """
-    Lista todos os atendentes agrupados por disponibilidade.
-
-    Returns:
-        dict: Dicionário com atendentes agrupados por status de disponibilidade
-    """
-    try:
-        atendentes = AtendenteHumano.objects.filter(ativo=True)
-
-        resultado: dict[str, list[AtendenteHumano]] = {
-            "disponiveis": [],
-            "ocupados": [],
-            "indisponiveis": [],
-        }
-
-        for atendente in atendentes:
-            if not atendente.disponivel:
-                resultado["indisponiveis"].append(atendente)
-            elif atendente.pode_receber_atendimento():
-                resultado["disponiveis"].append(atendente)
-            else:
-                resultado["ocupados"].append(atendente)
-
-        return resultado
-
-    except Exception as e:
-        logger.error(f"Erro ao listar atendentes por disponibilidade: {e}")
-        return {"disponiveis": [], "ocupados": [], "indisponiveis": []}
-
-
-def enviar_mensagem_atendente(
-    atendimento: "Atendimento",
-    atendente_humano: "AtendenteHumano",
-    conteudo: str,
-    tipo_mensagem: str = "extendedTextMessage",
-    metadados: Optional[dict[str, Any]] = None,
-) -> "Mensagem":
-    """
-    Envia uma mensagem de um atendente humano para um atendimento.
-
-    Args:
-        atendimento (Atendimento): Atendimento onde a mensagem será enviada
-        atendente_humano (AtendenteHumano): Atendente que está enviando a mensagem
-        conteudo (str): Conteúdo da mensagem
-        tipo_mensagem (TipoMensagem): Tipo da mensagem (padrão: TEXTO)
-        metadados (dict, optional): Metadados adicionais da mensagem
-
-    Returns:
-        Mensagem: Objeto mensagem criado
-
-    Raises:
-        ValidationError: Se o atendente não estiver associado ao atendimento
-    """
-    try:
-        # Verifica se o atendente está associado ao atendimento
-        if atendimento.atendente_humano != atendente_humano:
-            raise ValidationError(
-                f"O atendente {atendente_humano.nome} não está associado a este atendimento."
-            )
-
-        # Cria a mensagem
-        mensagem = Mensagem.objects.create(
-            atendimento=atendimento,
-            tipo=tipo_mensagem,
-            conteudo=conteudo,
-            remetente=TipoRemetente.ATENDENTE_HUMANO,
-            metadados=metadados
-            or {
-                "atendente_id": atendente_humano.id,
-                "atendente_nome": atendente_humano.nome,
-            },
-        )
-
-        # Atualiza a última atividade do atendente
-        atendente_humano.ultima_atividade = timezone.now()
-        atendente_humano.save()
-
-        return mensagem
-
-    except Exception as e:
-        logger.error(f"Erro ao enviar mensagem do atendente: {e}")
-        raise
+    

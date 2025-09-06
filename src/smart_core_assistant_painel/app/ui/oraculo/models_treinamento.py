@@ -1,8 +1,10 @@
-from django.db.models.indexes import Index
 import re
+from datetime import datetime
+from typing import override
+
 from django.core.exceptions import ValidationError
 from django.db import models
-from loguru import logger
+from django.db.models.indexes import Index
 
 
 def validate_identificador(value: str) -> None:
@@ -23,13 +25,17 @@ def validate_identificador(value: str) -> None:
         >>> validate_identificador("minha tag")      # inválida - espaço
     """
     if len(value) > 40:
-        raise ValidationError("Identificador deve ter no máximo 40 caracteres.")
+        raise ValidationError(
+            "Identificador deve ter no máximo 40 caracteres."
+        )
 
     if " " in value:
         raise ValidationError("Identificador não deve conter espaços.")
 
     if not value.islower():
-        raise ValidationError("Identificador deve conter apenas letras minúsculas.")
+        raise ValidationError(
+            "Identificador deve conter apenas letras minúsculas."
+        )
 
     # Validar se contém apenas letras, números e underscore
     if not re.match(r"^[a-z0-9_]+$", value):
@@ -59,38 +65,38 @@ class Treinamento(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    tag: models.CharField = models.CharField(
+    tag: models.CharField[str] = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o treinamento",
     )
-    grupo: models.CharField = models.CharField(
+    grupo: models.CharField[str] = models.CharField(
         max_length=40,
         validators=[validate_identificador],
         blank=False,
         null=False,
         help_text="Campo obrigatório para identificar o grupo do treinamento",
     )
-    conteudo: models.TextField = models.TextField(
+    conteudo: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
         help_text="Conteúdo completo do treinamento (antes da divisão em chunks)",
     )
-    treinamento_finalizado: models.BooleanField = models.BooleanField(
+    treinamento_finalizado: models.BooleanField[bool] = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi finalizado",
     )
-    treinamento_vetorizado: models.BooleanField = models.BooleanField(
+    treinamento_vetorizado: models.BooleanField[bool] = models.BooleanField(
         default=False,
         help_text="Indica se o treinamento foi vetorizado com sucesso",
     )
-    data_criacao: models.DateTimeField = models.DateTimeField(
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
         help_text="Data de criação do treinamento",
     )
-    data_atualizacao: models.DateTimeField = models.DateTimeField(
+    data_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True,
         help_text="Data da última atualização do treinamento",
     )
@@ -102,9 +108,12 @@ class Treinamento(models.Model):
         indexes: list[Index] = [
             models.Index(fields=["tag", "grupo"]),
             models.Index(fields=["data_criacao"]),
-            models.Index(fields=["treinamento_finalizado", "treinamento_vetorizado"]),
+            models.Index(
+                fields=["treinamento_finalizado", "treinamento_vetorizado"]
+            ),
         ]
 
+    @override
     def clean(self) -> None:
         """Validação personalizada do modelo.
 
@@ -118,8 +127,11 @@ class Treinamento(models.Model):
 
         # Validação customizada: tag não pode ser igual ao grupo
         if self.tag and self.grupo and self.tag == self.grupo:
-            raise ValidationError(message={"grupo": "O grupo não pode ser igual à tag."})
+            raise ValidationError(
+                message={"grupo": "O grupo não pode ser igual à tag."}
+            )
 
+    @override
     def __str__(self) -> str:
         """Retorna representação string do objeto.
 
@@ -127,20 +139,3 @@ class Treinamento(models.Model):
             str: Tag do treinamento ou identificador padrão
         """
         return str(self.tag) if self.tag else f"Treinamento {self.id}"
-
-    def clear_all_data(self) -> None:
-        """Limpa completamente todos os dados do treinamento para reutilização.
-        
-        Este método é especialmente útil durante edição de treinamentos,
-        garantindo que não haja conflitos ou problemas de ambiguidade.
-        """
-        self.conteudo = ""
-        self.treinamento_finalizado = False
-        self.treinamento_vetorizado = False
-        
-        # Delega a limpeza de documentos para o modelo Documento
-        if self.pk:
-            from .models_documento import Documento
-            Documento.limpar_documentos_por_treinamento(treinamento_id=self.pk)
-            
-        logger.info(f"Dados do treinamento {self.pk or 'novo'} limpos completamente")

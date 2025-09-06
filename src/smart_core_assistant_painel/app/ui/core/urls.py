@@ -24,9 +24,15 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("health/", views.health_check, name="health_check"),
     path("admin/", admin.site.urls),
-    path("usuarios/", include("smart_core_assistant_painel.app.ui.usuarios.urls")),
+    path(
+        "usuarios/",
+        include("smart_core_assistant_painel.app.ui.usuarios.urls"),
+    ),
     path(
         "oraculo/",
-        include("smart_core_assistant_painel.app.ui.oraculo.urls", namespace="oraculo"),
+        include(
+            "smart_core_assistant_painel.app.ui.oraculo.urls",
+            namespace="oraculo",
+        ),
     ),
 ]

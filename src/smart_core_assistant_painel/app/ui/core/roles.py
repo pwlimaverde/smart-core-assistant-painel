@@ -10,7 +10,7 @@ Classes:
 from rolepermissions.roles import AbstractUserRole
 
 
-class Gerente(AbstractUserRole):
+class Gerente(AbstractUserRole):  # type: ignore
     """Define a função de Gerente e suas permissões.
 
     A função de Gerente tem permissão para treinar a IA.

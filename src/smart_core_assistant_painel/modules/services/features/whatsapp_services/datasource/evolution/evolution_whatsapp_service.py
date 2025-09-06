@@ -156,15 +156,21 @@ class EvolutionWhatsAppService(
                        seja ao definir o status 'digitando' ou ao enviar
                        a mensagem em si.
         """
-        self._typing(typing=True, instance=instance, number=number, api_key=api_key)
+        self._typing(
+            typing=True, instance=instance, number=number, api_key=api_key
+        )
         # Ajuste do endpoint conforme esperado nos testes
         path = f"/message/sendText/{instance}"
         body = {
             "number": number,
             "text": text,
         }
-        response = self._send_request(path, method="POST", body=body, api_key=api_key)
-        self._typing(typing=False, instance=instance, number=number, api_key=api_key)
+        response = self._send_request(
+            path, method="POST", body=body, api_key=api_key
+        )
+        self._typing(
+            typing=False, instance=instance, number=number, api_key=api_key
+        )
 
         if not response.ok:
             raise Exception(
@@ -200,7 +206,9 @@ class EvolutionWhatsAppService(
             "delay": 1200,
         }
 
-        response = self._send_request(path, method="POST", body=body, api_key=api_key)
+        response = self._send_request(
+            path, method="POST", body=body, api_key=api_key
+        )
 
         if not response.ok:
             raise Exception(

@@ -20,7 +20,9 @@ class TestURLsResolution(TestCase):
             self.assertEqual(resolver.func, webhook_whatsapp)
         except Exception:
             # Se a URL não estiver configurada, testa o padrão esperado
-            self.assertTrue(True)  # Placeholder para quando URLs forem implementadas
+            self.assertTrue(
+                True
+            )  # Placeholder para quando URLs forem implementadas
 
     # Removido teste de resolução de URL para nova_mensagem pois não existe rota
 
@@ -91,7 +93,9 @@ class TestWebhookWhatsAppURL(TestCase):
             patch(
                 "smart_core_assistant_painel.app.ui.oraculo.views.FeaturesCompose.load_message_data"
             ) as mock_load,
-            patch("smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer"),
+            patch(
+                "smart_core_assistant_painel.app.ui.oraculo.views.set_wa_buffer"
+            ),
             patch(
                 "smart_core_assistant_painel.app.ui.oraculo.views.sched_message_response"
             ),
@@ -120,7 +124,9 @@ class TestWebhookWhatsAppURL(TestCase):
         invalid_data = {"invalid": "data"}
 
         response = self.client.post(
-            self.webhook_url, data=invalid_data, content_type="application/json"
+            self.webhook_url,
+            data=invalid_data,
+            content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 401)
@@ -234,7 +240,9 @@ class TestURLsWithAuthentication(TestCase):
     def setUp(self) -> None:
         """Configuração inicial."""
         self.client = Client()
-        self.user = User.objects.create_user(username="testuser", password="testpass")
+        self.user = User.objects.create_user(
+            username="testuser", password="testpass"
+        )
 
     def test_admin_urls_require_authentication(self) -> None:
         """Testa que URLs do admin requerem autenticação."""

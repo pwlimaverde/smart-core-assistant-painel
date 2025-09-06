@@ -17,30 +17,29 @@ class TestVerificarTreinamentosView(TestCase):
         """Configuração inicial para os testes."""
         self.client = Client()
         self.user = User.objects.create_user(
-            username='testuser', 
-            password='testpass123'
+            username="testuser", password="testpass123"
         )
-        assign_role(self.user, 'gerente')  # Atribui a função de gerente
-        self.client.login(username='testuser', password='testpass123')
-        
+        assign_role(self.user, "gerente")  # Atribui a função de gerente
+        self.client.login(username="testuser", password="testpass123")
+
         # Cria treinamentos de teste
         self.treinamento_vetorizado = Treinamentos.objects.create(
             tag="teste_vetorizado",
             grupo="grupo_teste",
             treinamento_finalizado=True,
             treinamento_vetorizado=True,
-            _documentos=[{"content": "Documento vetorizado"}]
+            _documentos=[{"content": "Documento vetorizado"}],
         )
-        
+
         self.treinamento_erro = Treinamentos.objects.create(
             tag="teste_erro",
             grupo="grupo_teste",
             treinamento_finalizado=True,
             treinamento_vetorizado=False,
-            _documentos=[{"content": "Documento com erro"}]
+            _documentos=[{"content": "Documento com erro"}],
         )
-        
-        self.url = reverse('oraculo:verificar_treinamentos_vetorizados')
+
+        self.url = reverse("oraculo:verificar_treinamentos_vetorizados")
 
     def test_verificar_treinamentos_get(self):
         """Testa o acesso à página de verificação de treinamentos via GET."""
@@ -48,7 +47,7 @@ class TestVerificarTreinamentosView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Treinamentos Vetorizados")
         self.assertContains(response, "Treinamentos com Erro")
-        
+
         # Verifica se os treinamentos aparecem na página
         self.assertContains(response, "teste_vetorizado")
         self.assertContains(response, "teste_erro")
@@ -56,15 +55,14 @@ class TestVerificarTreinamentosView(TestCase):
     def test_verificar_treinamentos_excluir(self):
         """Testa a exclusão de um treinamento."""
         treinamento_id = self.treinamento_vetorizado.id
-        
-        response = self.client.post(self.url, {
-            'acao': 'excluir',
-            'treinamento_id': treinamento_id
-        })
-        
+
+        response = self.client.post(
+            self.url, {"acao": "excluir", "treinamento_id": treinamento_id}
+        )
+
         # Verifica redirecionamento
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifica se o treinamento foi excluído
         with self.assertRaises(Treinamentos.DoesNotExist):
             Treinamentos.objects.get(id=treinamento_id)
@@ -72,30 +70,35 @@ class TestVerificarTreinamentosView(TestCase):
     def test_verificar_treinamentos_vetorizar(self):
         """Testa a tentativa de vetorizar novamente um treinamento."""
         treinamento_id = self.treinamento_erro.id
-        
-        with patch('smart_core_assistant_painel.app.ui.oraculo.views.__task_treinar_ia') as mock_task:
-            with patch('django_q.tasks.async_task') as mock_async_task:
-                response = self.client.post(self.url, {
-                    'acao': 'vetorizar',
-                    'treinamento_id': treinamento_id
-                })
-                
+
+        with patch(
+            "smart_core_assistant_painel.app.ui.oraculo.views.__task_treinar_ia"
+        ):
+            with patch("django_q.tasks.async_task") as mock_async_task:
+                response = self.client.post(
+                    self.url,
+                    {"acao": "vetorizar", "treinamento_id": treinamento_id},
+                )
+
                 # Verifica redirecionamento
                 self.assertEqual(response.status_code, 302)
-                
+
                 # Verifica se a task assíncrona foi chamada
                 mock_async_task.assert_called_once()
 
     def test_verificar_treinamentos_acao_invalida(self):
         """Testa uma ação inválida."""
-        response = self.client.post(self.url, {
-            'acao': 'acao_invalida',
-            'treinamento_id': self.treinamento_erro.id
-        })
-        
+        response = self.client.post(
+            self.url,
+            {
+                "acao": "acao_invalida",
+                "treinamento_id": self.treinamento_erro.id,
+            },
+        )
+
         # Verifica redirecionamento
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifica se a mensagem de erro está na sessão
         messages = list(response.wsgi_request._messages)
         self.assertEqual(len(messages), 1)
@@ -105,20 +108,22 @@ class TestVerificarTreinamentosView(TestCase):
         """Testa o acesso à página sem permissão."""
         # Desloga o usuário
         self.client.logout()
-        
+
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 404)
 
     def test_verificar_treinamentos_post_sem_acao(self):
         """Testa POST sem especificar ação."""
-        response = self.client.post(self.url, {
-            'treinamento_id': self.treinamento_erro.id
-        })
-        
+        response = self.client.post(
+            self.url, {"treinamento_id": self.treinamento_erro.id}
+        )
+
         # Verifica redirecionamento
         self.assertEqual(response.status_code, 302)
-        
+
         # Verifica se a mensagem de erro está na sessão
         messages = list(response.wsgi_request._messages)
         self.assertEqual(len(messages), 1)
-        self.assertEqual(str(messages[0]), "Ação ou ID do treinamento não especificado.")
+        self.assertEqual(
+            str(messages[0]), "Ação ou ID do treinamento não especificado."
+        )

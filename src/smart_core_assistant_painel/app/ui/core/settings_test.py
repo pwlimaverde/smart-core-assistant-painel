@@ -10,7 +10,7 @@ DEBUG = False
 TESTING = True
 
 # Usa SQLite em memória para testes mais rápidos (substitui a configuração importada)
-DATABASES: Dict[str, Dict[str, Any]] = {
+DATABASES: Dict[str, Dict[str, Any]] = {  # type: ignore[no-redef]
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": ":memory:",
@@ -21,7 +21,7 @@ DATABASES: Dict[str, Dict[str, Any]] = {
 }
 
 # Desabilita Django Q para testes (substitui a configuração importada)
-Q_CLUSTER: Dict[str, Any] = {
+Q_CLUSTER: Dict[str, Any] = {  # type: ignore[no-redef]
     "name": "test_cluster",
     "workers": 1,
     "timeout": 30,
@@ -33,7 +33,7 @@ Q_CLUSTER: Dict[str, Any] = {
 }
 
 # Configurações de cache para testes
-CACHES: Dict[str, Dict[str, Any]] = {
+CACHES: Dict[str, Dict[str, Any]] = {  # type: ignore[no-redef]
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
         "TIMEOUT": 120,

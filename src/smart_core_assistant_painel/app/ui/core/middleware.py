@@ -19,7 +19,9 @@ class AdminStaffRequiredMiddleware:
     redirecionamento e atendemos a expectativa dos testes.
     """
 
-    def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]) -> None:
+    def __init__(
+        self, get_response: Callable[[HttpRequest], HttpResponse]
+    ) -> None:
         self.get_response = get_response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
@@ -27,11 +29,16 @@ class AdminStaffRequiredMiddleware:
 
         # Somente trata URLs do admin que não sejam login/logout
         if path.startswith("/admin/") and not (
-            path.startswith("/admin/login/") or path.startswith("/admin/logout/")
+            path.startswith("/admin/login/")
+            or path.startswith("/admin/logout/")
         ):
             user = getattr(request, "user", None)
             # Se autenticado e não-staff, retorna 403 ao invés de 302
-            if user is not None and user.is_authenticated and not user.is_staff:
+            if (
+                user is not None
+                and user.is_authenticated
+                and not user.is_staff
+            ):
                 return HttpResponseForbidden("Acesso negado ao Django Admin.")
 
         # Caso contrário, segue o fluxo normal

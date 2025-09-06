@@ -44,32 +44,32 @@ class FeaturesCompose:
                                    as variáveis de ambiente.
         """
         config_mapping = {
-            #Api_Keys
+            # Api_Keys
             "groq_api_key": "GROQ_API_KEY",
             "openai_api_key": "OPENAI_API_KEY",
             "huggingface_api_key": "HUGGINGFACE_API_KEY",
-            #LLM
+            # LLM
             "llm_class": "LLM_CLASS",
             "model": "MODEL",
             "llm_temperature": "LLM_TEMPERATURE",
-            #Prompts
+            # Prompts
             "prompt_system_analise_conteudo": "PROMPT_SYSTEM_ANALISE_CONTEUDO",
             "prompt_human_analise_conteudo": "PROMPT_HUMAN_ANALISE_CONTEUDO",
             "prompt_system_melhoria_conteudo": "PROMPT_SYSTEM_MELHORIA_CONTEUDO",
             "prompt_human_melhoria_conteudo": "PROMPT_HUMAN_MELHORIA_CONTEUDO",
             "prompt_human_analise_previa_mensagem": "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM",
             "prompt_system_analise_previa_mensagem": "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM",
-            #Embeddings
+            # Embeddings
             "chunk_overlap": "CHUNK_OVERLAP",
             "chunk_size": "CHUNK_SIZE",
             "embeddings_model": "EMBEDDINGS_MODEL",
             "embeddings_class": "EMBEDDINGS_CLASS",
-            #Whatsapp
+            # Whatsapp
             "whatsapp_api_base_url": "WHATSAPP_API_BASE_URL",
             "whatsapp_api_send_text_url": "WHATSAPP_API_SEND_TEXT_URL",
             "whatsapp_api_start_typing_url": "WHATSAPP_API_START_TYPING_URL",
             "whatsapp_api_stop_typing_url": "WHATSAPP_API_STOP_TYPING_URL",
-            #Utilitarios
+            # Utilitarios
             "valid_entity_types": "VALID_ENTITY_TYPES",
             "valid_intent_types": "VALID_INTENT_TYPES",
             "time_cache": "TIME_CACHE",
@@ -87,7 +87,7 @@ class FeaturesCompose:
         data = usecase(parameters)
         if isinstance(data, ErrorReturn):
             raise data.result
-        
+
         # Recarrega as configurações do SERVICEHUB após carregar as variáveis do Firebase
         SERVICEHUB.reload_config()
 

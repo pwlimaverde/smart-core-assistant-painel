@@ -6,6 +6,7 @@ sejam iniciados corretamente quando a aplicação é lançada.
 """
 
 import os
+
 from loguru import logger
 
 from .features.features_compose import FeaturesCompose
@@ -16,7 +17,7 @@ _services_initialized = False
 
 def _log_environment_variables() -> None:
     """Loga as variáveis de ambiente configuradas no config_mapping.
-    
+
     Esta função exibe todas as variáveis de ambiente que foram carregadas
     do Firebase Remote Config e estão sendo utilizadas pela aplicação.
     """
@@ -52,15 +53,17 @@ def _log_environment_variables() -> None:
         "valid_intent_types": "VALID_INTENT_TYPES",
         "time_cache": "TIME_CACHE",
     }
-    
+
     logger.info("=== VARIÁVEIS DE AMBIENTE CARREGADAS ===")
-    
+
     for key, env_var in config_mapping.items():
         value = os.environ.get(env_var, "[NÃO DEFINIDA]")
-        
+
         # Mascarar chaves de API por segurança
         if "api_key" in key.lower() and value != "[NÃO DEFINIDA]":
-            masked_value = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
+            masked_value = (
+                f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
+            )
             logger.info(f"{env_var}: {masked_value}")
         else:
             # Truncar valores muito longos (como prompts)
@@ -69,8 +72,9 @@ def _log_environment_variables() -> None:
                 logger.info(f"{env_var}: {truncated_value}")
             else:
                 logger.info(f"{env_var}: {value}")
-    
+
     logger.info("=== FIM DAS VARIÁVEIS DE AMBIENTE ===")
+
 
 def start_services() -> None:
     """Inicia e configura os serviços essenciais da aplicação.
@@ -88,20 +92,20 @@ def start_services() -> None:
             inicialização de um dos serviços, após registrar o erro.
     """
     global _services_initialized
-    
+
     # Evita inicialização dupla dos serviços
     if _services_initialized:
         logger.debug("Serviços já foram inicializados, pulando inicialização")
         return
-    
+
     try:
         logger.info("Iniciando serviços essenciais da aplicação...")
         FeaturesCompose.set_environ_remote()
         FeaturesCompose.whatsapp_service()
-        
+
         _services_initialized = True
         logger.info("Serviços inicializados com sucesso")
-        
+
         # Log das variáveis de ambiente após carregamento do Firebase Remote Config
         _log_environment_variables()
 

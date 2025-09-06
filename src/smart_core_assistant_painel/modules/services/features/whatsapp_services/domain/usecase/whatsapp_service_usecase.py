@@ -31,7 +31,9 @@ class WhatsAppServiceUsecase(WSUsecase):
     em caso de sucesso ou um objeto de erro em caso de falha.
     """
 
-    def __call__(self, parameters: NoParams) -> ReturnSuccessOrError[WhatsAppService]:
+    def __call__(
+        self, parameters: NoParams
+    ) -> ReturnSuccessOrError[WhatsAppService]:
         """Executa o caso de uso para obter uma instância do serviço de WhatsApp.
 
         Args:

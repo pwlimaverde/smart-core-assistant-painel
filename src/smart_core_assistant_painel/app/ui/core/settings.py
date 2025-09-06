@@ -13,9 +13,11 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+import django_stubs_ext
 from django.contrib.messages import constants
 from dotenv import load_dotenv
 
+django_stubs_ext.monkeypatch()
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -31,26 +33,30 @@ SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-# Configuração de hosts permitidos com suporte a variável de ambiente
-# Permite ajustar rapidamente em diferentes ambientes (local, Docker, etc.).
-DJANGO_ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
-if DJANGO_ALLOWED_HOSTS:
-    ALLOWED_HOSTS: list[str] = [
-        host.strip() for host in DJANGO_ALLOWED_HOSTS.split(",") if host.strip()
-    ]
-else:
-    # Em modo DEBUG, permitir qualquer host para facilitar desenvolvimento em LAN
-    if DEBUG:
-        ALLOWED_HOSTS: list[str] = ["*"]
-    else:
-        # Padrão compatível com execução via Docker e acesso externo pelo host
-        ALLOWED_HOSTS: list[str] = [
-            "django-app",
-            "localhost",
-            "127.0.0.1",
-            "0.0.0.0",
-            "host.docker.internal",
+
+def _get_allowed_hosts() -> list[str]:
+    """Determina a lista de hosts permitidos com base no ambiente."""
+    django_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
+    if django_allowed_hosts:
+        return [
+            host.strip()
+            for host in django_allowed_hosts.split(",")
+            if host.strip()
         ]
+
+    if DEBUG:
+        return ["*"]
+
+    return [
+        "django-app",
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "host.docker.internal",
+    ]
+
+
+ALLOWED_HOSTS = _get_allowed_hosts()
 
 
 # Application definition
@@ -216,5 +222,9 @@ Q_CLUSTER = {
 # Configurações de serviços externos (ambiente_chat)
 # Estas variáveis permitem que a aplicação Django consuma Evolution API e Ollama
 # que rodam em outro ambiente Docker separado.
-EVOLUTION_API_URL = os.getenv("EVOLUTION_API_URL", "http://localhost:8080").strip()
-OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://192.168.3.127:11434").strip()
+EVOLUTION_API_URL = os.getenv(
+    "EVOLUTION_API_URL", "http://localhost:8080"
+).strip()
+OLLAMA_BASE_URL = os.getenv(
+    "OLLAMA_BASE_URL", "http://192.168.3.127:11434"
+).strip()

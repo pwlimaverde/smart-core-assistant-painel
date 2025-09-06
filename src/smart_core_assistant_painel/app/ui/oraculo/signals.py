@@ -6,23 +6,26 @@ processamento de mensagens em buffer.
 """
 
 from datetime import timedelta
-from langchain_core.documents.base import Document
+from typing import Any, cast
 
-from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import Treinamento
-from typing import Any
-
-from django.conf import settings
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import Signal, receiver
 from django.utils import timezone
 from django_q.models import Schedule
-from django_q.tasks import async_task
+from django_q.tasks import async_task  # type: ignore
+from langchain_core.documents.base import Document
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.oraculo.models_documento import Documento
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import (
+    Documento,
+)
+from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import (
+    Treinamento,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 mensagem_bufferizada = Signal()
+
 
 @receiver(post_save, sender=Treinamento)
 def signals_gerar_documentos_treinamento(
@@ -39,10 +42,14 @@ def signals_gerar_documentos_treinamento(
     try:
         # Só executa se o treinamento foi finalizado E ainda não foi vetorizado
         # Isso evita loops infinitos quando a vetorização atualiza o status
-        if instance.treinamento_finalizado and not instance.treinamento_vetorizado:
+        if (
+            instance.treinamento_finalizado
+            and not instance.treinamento_vetorizado
+        ):
             async_task(__gerar_documentos, instance.id)
     except Exception as e:
         logger.error(f"Erro ao processar signal de treinamento: {e}")
+
 
 @receiver(post_save, sender=Documento)
 def signals_embeddings_documento(
@@ -58,7 +65,7 @@ def signals_embeddings_documento(
     """
     try:
         # Só gera embedding se não existe ou se o conteúdo foi alterado
-        if not instance.embedding or not instance.conteudo:
+        if not instance.embedding or not instance.conteudo:  # pyright: ignore[reportUnknownMemberType]
             if instance.conteudo and instance.conteudo.strip():
                 async_task(__gerar_embedding_documento, instance.pk)
             else:
@@ -110,59 +117,76 @@ def __limpar_schedules_telefone(phone: str) -> None:
         logger.warning(f"Erro ao limpar schedules para {phone}: {e}")
 
 
-def __processar_conteudo_para_chunks(treinamento: Treinamento) -> list[Document]:
+def __processar_conteudo_para_chunks(
+    treinamento: Treinamento,
+) -> list[Document]:
     """Processa conteúdo e cria chunks."""
-    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
-    
+    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+        FeaturesCompose,
+    )
+
     # Prepara metadados
     metadata = {
-        "source": "treinamento_manual", 
+        "source": "treinamento_manual",
         "treinamento_id": str(treinamento.pk),
         "tag": treinamento.tag,
-        "grupo": treinamento.grupo
+        "grupo": treinamento.grupo,
     }
-    
+
+    # Garante que o conteúdo não é None
+    conteudo = cast(str, treinamento.conteudo)
+
     # Usa a nova feature para gerar chunks
     chunks = FeaturesCompose.generate_chunks(
-        conteudo=treinamento.conteudo,
-        metadata=metadata
+        conteudo=conteudo, metadata=metadata
     )
-    
+
     return chunks
+
 
 def __gerar_embedding_documento(documento_id: int) -> None:
     """Gera embedding para um documento específico.
-    
+
     Args:
         documento_id: ID do documento para gerar embedding
     """
     try:
-        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import FeaturesCompose
-        
-        
+        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+            FeaturesCompose,
+        )
+
         documento: Documento = Documento.objects.get(id=documento_id)
-        
+
         if not documento.conteudo or not documento.conteudo.strip():
             logger.warning(f"Documento {documento_id} sem conteúdo válido")
             return
-            
-        embedding_vector: list[float] = FeaturesCompose.generate_embeddings(text=documento.conteudo)
-        
+
+        embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
+            text=documento.conteudo
+        )
+
         if embedding_vector:
             # Salva o embedding no documento
-            Documento.objects.filter(id=documento_id).update(embedding=embedding_vector)
-            logger.info(f"Embedding gerado e salvo para documento {documento_id}")
+            Documento.objects.filter(id=documento_id).update(
+                embedding=embedding_vector
+            )
+            logger.info(
+                f"Embedding gerado e salvo para documento {documento_id}"
+            )
         else:
-            logger.error(f"Falha ao gerar embedding para documento {documento_id}")
-            
+            logger.error(
+                f"Falha ao gerar embedding para documento {documento_id}"
+            )
+
     except Documento.DoesNotExist:
         logger.error(f"Documento {documento_id} não encontrado")
     except Exception as e:
-        logger.error(f"Erro ao gerar embedding para documento {documento_id}: {e}")
+        logger.error(
+            f"Erro ao gerar embedding para documento {documento_id}: {e}"
+        )
 
 
 def __gerar_documentos(instance_id: int) -> None:
-
     try:
         instance: Treinamento = Treinamento.objects.get(id=instance_id)
 
@@ -171,14 +195,20 @@ def __gerar_documentos(instance_id: int) -> None:
                 "Treinamento %s sem conteúdo para embedding.", instance_id
             )
             return
-            
+
         if instance.treinamento_vetorizado:
-            logger.info(f"Treinamento {instance_id} já está vetorizado, pulando...")
+            logger.info(
+                f"Treinamento {instance_id} já está vetorizado, pulando..."
+            )
             return
-        chunks: list[Document] = __processar_conteudo_para_chunks(treinamento=instance)
+        chunks: list[Document] = __processar_conteudo_para_chunks(
+            treinamento=instance
+        )
         from .models_documento import Documento
 
-        Documento.criar_documentos_de_chunks(chunks=chunks, treinamento_id=instance_id)
+        Documento.criar_documentos_de_chunks(
+            chunks=chunks, treinamento_id=instance_id
+        )
         instance.treinamento_vetorizado = True
         instance.save()
         logger.info("Documentos gerados: %s", instance_id)
@@ -225,9 +255,12 @@ def __task_remover_treinamento_ia(instance_id: int) -> None:
         # Os embeddings ficam nos documentos relacionados que são removidos
         # automaticamente devido ao CASCADE no ForeignKey.
         # Apenas marca como não vetorizado
-        Treinamento.objects.filter(id=instance_id).update(treinamento_vetorizado=False)
+        Treinamento.objects.filter(id=instance_id).update(
+            treinamento_vetorizado=False
+        )
         logger.info(
-            "Treinamento marcado como não vetorizado: %s (pre_delete)", instance_id
+            "Treinamento marcado como não vetorizado: %s (pre_delete)",
+            instance_id,
         )
     except Exception as e:
         logger.error(f"Erro ao remover treinamento {instance_id}: {e}")

@@ -35,7 +35,9 @@ class ContatoForm(ModelForm):
 
             # Valida tamanho
             if len(telefone_limpo) < 10 or len(telefone_limpo) > 13:
-                raise ValidationError("Telefone deve ter entre 10 e 13 dígitos.")
+                raise ValidationError(
+                    "Telefone deve ter entre 10 e 13 dígitos."
+                )
 
             # Retorna o telefone limpo - o modelo fará a normalização para
             # formato internacional
@@ -78,7 +80,11 @@ class AtendenteHumanoForm(ModelForm):
             try:
                 parsed = json.loads(value)
                 if isinstance(parsed, list):
-                    return [str(v).strip() for v in parsed if isinstance(v, (str, int))]
+                    return [
+                        str(v).strip()
+                        for v in parsed
+                        if isinstance(v, (str, int))
+                    ]
             except Exception:
                 # Não é JSON, segue para CSV
                 pass
@@ -107,7 +113,13 @@ class AtendimentoForm(ModelForm):
 
     class Meta:
         model = Atendimento
-        fields = ["contato", "atendente_humano", "status", "assunto", "prioridade"]
+        fields = [
+            "contato",
+            "atendente_humano",
+            "status",
+            "assunto",
+            "prioridade",
+        ]
 
     def clean(self) -> dict:
         """Validação geral do formulário."""
@@ -126,7 +138,6 @@ class AtendimentoForm(ModelForm):
             raise ValidationError("Atendente selecionado não está ativo.")
 
         return cleaned_data
-
 
 
 class TestContatoForm(TestCase):
@@ -148,7 +159,10 @@ class TestContatoForm(TestCase):
 
     def test_telefone_com_formatacao(self) -> None:
         """Testa limpeza de telefone com formatação."""
-        form_data = {"telefone": "(11) 99999-9999", "nome_contato": "Cliente Teste"}
+        form_data = {
+            "telefone": "(11) 99999-9999",
+            "nome_contato": "Cliente Teste",
+        }
         form = ContatoForm(data=form_data)
 
         self.assertTrue(form.is_valid())
@@ -164,7 +178,10 @@ class TestContatoForm(TestCase):
 
     def test_telefone_muito_longo(self) -> None:
         """Testa validação de telefone muito longo."""
-        form_data = {"telefone": "551199999999999", "nome_contato": "Cliente Teste"}
+        form_data = {
+            "telefone": "551199999999999",
+            "nome_contato": "Cliente Teste",
+        }
         form = ContatoForm(data=form_data)
 
         self.assertFalse(form.is_valid())
@@ -237,7 +254,9 @@ class TestAtendenteHumanoForm(TestCase):
             "email": "existente@teste.com",  # Mesmo email do atendente
             "ativo": True,
         }
-        form = AtendenteHumanoForm(data=form_data, instance=self.atendente_existente)
+        form = AtendenteHumanoForm(
+            data=form_data, instance=self.atendente_existente
+        )
 
         self.assertTrue(form.is_valid())
 

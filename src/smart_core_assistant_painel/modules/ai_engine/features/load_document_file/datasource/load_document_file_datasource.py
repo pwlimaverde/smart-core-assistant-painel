@@ -31,7 +31,9 @@ class LoadDocumentFileDatasource(LDFData):
         ".csv": TextLoader,
     }
 
-    def __call__(self, parameters: LoadDocumentFileParameters) -> list[Document]:
+    def __call__(
+        self, parameters: LoadDocumentFileParameters
+    ) -> list[Document]:
         """Carrega um arquivo do caminho especificado nos parâmetros.
 
         Args:

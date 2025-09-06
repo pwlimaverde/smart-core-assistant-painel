@@ -59,14 +59,19 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             )
             # Escapar chaves JSON no prompt system para evitar conflito com
             # variáveis do template
-            prompt_system_escaped = parameters.llm_parameters.prompt_system.replace(
-                "{", "{{"
-            ).replace("}", "}}")
+            prompt_system_escaped = (
+                parameters.llm_parameters.prompt_system.replace(
+                    "{", "{{"
+                ).replace("}", "}}")
+            )
 
             messages = ChatPromptTemplate.from_messages(
                 [
                     ("system", prompt_system_escaped),
-                    ("user", "{historico_context}\n\n{prompt_human}: {context}"),
+                    (
+                        "user",
+                        "{historico_context}\n\n{prompt_human}: {context}",
+                    ),
                 ]
             )
 
@@ -93,9 +98,13 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             intent_data = getattr(response, "intent", [])
             entities_data = getattr(response, "entities", [])
 
-            intent_dicts = [{str(item.type): item.value} for item in intent_data]
+            intent_dicts = [
+                {str(item.type): item.value} for item in intent_data
+            ]
 
-            entity_dicts = [{str(item.type): item.value} for item in entities_data]
+            entity_dicts = [
+                {str(item.type): item.value} for item in entities_data
+            ]
 
             # Criar instância de AnalisePreviaMensagem
             resultado = AnalisePreviaMensagemLangchain(
@@ -126,7 +135,9 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             "historico_atendimentos", []
         )
 
-        historico_parts = ["REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"]
+        historico_parts = [
+            "REGISTROS PARA ANÁLISE DO CONTEXTO DO ATENDIMENTO:"
+        ]
 
         # Atendimentos anteriores - para contexto histórico
         if atendimentos_anteriores:

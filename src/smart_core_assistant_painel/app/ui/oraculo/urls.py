@@ -13,8 +13,14 @@ app_name = "oraculo"
 urlpatterns = [
     path("treinar_ia", views.treinar_ia, name="treinar_ia"),
     path(
-        "pre-processamento/<int:id>/", views.pre_processamento, name="pre_processamento"
+        "pre-processamento/<int:id>/",
+        views.pre_processamento,
+        name="pre_processamento",
     ),
     path("webhook_whatsapp/", views.webhook_whatsapp, name="webhook_whatsapp"),
-    path("verificar_treinamentos/", views.verificar_treinamentos_vetorizados, name="verificar_treinamentos_vetorizados"),
+    path(
+        "verificar_treinamentos/",
+        views.verificar_treinamentos_vetorizados,
+        name="verificar_treinamentos_vetorizados",
+    ),
 ]

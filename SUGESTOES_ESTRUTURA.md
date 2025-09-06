@@ -48,6 +48,9 @@ Para melhor organização e separação de responsabilidades, sugiro a seguinte 
 - Histórico de conversas
 - Integração entre operacional e clientes
 - Métricas e relatórios
+- Webhook do WhatsApp
+- Processamento inicial de mensagens
+- Validação e roteamento de eventos
 
 ### 4. **treinamento**
 **Responsabilidade**: Sistema de treinamento e conhecimento da IA
@@ -59,18 +62,3 @@ Para melhor organização e separação de responsabilidades, sugiro a seguinte 
 - Gestão de base de conhecimento
 - Processamento e vetorização de conteúdo
 - Interface administrativa para treinamento
-
-### 5. **webhooks**
-**Responsabilidade**: Integrações e recebimento de eventos externos
-**Funcionalidades**:
-- Webhook do WhatsApp
-- Processamento inicial de mensagens
-- Validação e roteamento de eventos
-
-### 6. **core**
-**Responsabilidade**: Componentes compartilhados e utilitários
-**Funcionalidades**:
-- Validações comuns
-- Utilitários reutilizáveis
-- Configurações base
-- Signals e handlers globais

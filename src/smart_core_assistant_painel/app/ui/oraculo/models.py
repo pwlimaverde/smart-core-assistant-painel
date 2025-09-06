@@ -192,10 +192,11 @@ class AtendenteHumano(models.Model):
     cargo: models.CharField[str] = models.CharField(
         max_length=100, help_text="Cargo/função do atendente"
     )
-    departamento: models.ForeignKey[Departamento] = models.ForeignKey(
+    departamento: models.ForeignKey[Departamento | None] = models.ForeignKey(
         Departamento,
         on_delete=models.SET_NULL,
         blank=True,
+        null=True,
         related_name="atendentes",
         help_text="Departamento ao qual o atendente pertence",
     )

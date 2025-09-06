@@ -70,7 +70,7 @@ class Departamento(models.Model):
         default="http://www.evolution-api:8080"
     )
     ativo: models.BooleanField[bool] = models.BooleanField(default=True)
-    configuracoes: models.JSONField[dict[str, str] | None] = models.JSONField(
+    configuracoes: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True
     )
     data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
@@ -79,7 +79,7 @@ class Departamento(models.Model):
     ultima_validacao: models.DateTimeField[datetime | None] = (
         models.DateTimeField(blank=True, null=True)
     )
-    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True
     )
 

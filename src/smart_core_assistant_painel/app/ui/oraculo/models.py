@@ -227,7 +227,7 @@ class AtendenteHumano(models.Model):
         blank=True,
         help_text="Lista de especialidades/áreas de conhecimento do atendente",
     )
-    horario_trabalho: models.JSONField[dict[str, str] | None] = (
+    horario_trabalho: models.JSONField[dict[str, Any] | None] = (
         models.JSONField(
             default=dict,
             blank=True,
@@ -240,7 +240,7 @@ class AtendenteHumano(models.Model):
     ultima_atividade: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última atividade no sistema"
     )
-    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
@@ -347,7 +347,7 @@ class Contato(models.Model):
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do contato"
     )
-    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do contato"
     )
 
@@ -541,7 +541,7 @@ class Cliente(models.Model):
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do cliente"
     )
-    metadados: models.JSONField[dict[str, str] | None] = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do cliente"
     )
 

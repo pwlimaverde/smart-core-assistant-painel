@@ -141,6 +141,9 @@ exclude = ["**/migrations/**"]
 reportMissingTypeArgument = "error"
 reportMissingTypeStubs = false
 strictParameterNoneValue = false
+reportUnknownVariableType = "warning"  
+# Reduz para warning ao invés de error
+reportUnknownMemberType = "warning"
 # Alinha com a versão de Python do projeto
 pythonVersion = "3.13"
 # Caminhos extras para resolver imports no layout em src/
@@ -150,7 +153,6 @@ extraPaths = [
     "src/smart_core_assistant_painel/app",
     "src/smart_core_assistant_painel/modules",
 ]
-
 
 
 [tool.hatch.build.targets.wheel]

@@ -1,10 +1,10 @@
 from datetime import datetime
-from typing import Self, override
+from typing import Any, Self, cast, override
 
 from django.db import models
 from django.db.models.indexes import Index
 from django.db.models.query import QuerySet
-from langchain_core.documents.base import Document as LangchainDocument
+from langchain_core.documents.base import Document
 from loguru import logger
 from pgvector.django import CosineDistance, VectorField
 
@@ -44,7 +44,7 @@ class Documento(models.Model):
         help_text="Conteúdo do chunk de treinamento",
     )
 
-    metadata: models.JSONField[dict[str, str] | None] = models.JSONField(
+    metadata: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados do documento (tag, grupo, source, etc.)",
@@ -136,45 +136,30 @@ class Documento(models.Model):
 
     @classmethod
     def criar_documentos_de_chunks(
-        cls, chunks: list[LangchainDocument], treinamento_id: int
-    ) -> None:
-        """Cria documentos a partir de uma lista de chunks.
-
+        cls,
+        chunks: list[Document],
+        treinamento_id: int
+    ) -> list['Documento']:
+        """Cria documentos a partir de uma lista de chunks e o ID do treinamento.
+        
         Args:
-            chunks: Lista de documentos (chunks) do LangChain
-            treinamento_id: ID do treinamento associado
+            chunks: lista de objetos Document (chunks) do LangChain
+            treinamento_id: ID do treinamento ao qual os documentos pertencem
+            
+        Returns:
+            lista de objetos Documento criados
         """
-        try:
-            # Busca o treinamento
-            treinamento = Treinamento.objects.get(id=treinamento_id)
-            
-            # Remove documentos existentes para evitar duplicatas
-            cls.limpar_documentos_por_treinamento(treinamento_id)
-            
-            # Cria novos documentos a partir dos chunks
-            # Usando save() individual para disparar signals
-            documentos_criados = 0
-            for i, chunk in enumerate(chunks, 1):
-                documento = cls(
-                    treinamento=treinamento,
-                    conteudo=chunk.page_content,
-                    metadata=chunk.metadata,
-                    ordem=i,
-                )
-                logger.info(f"[DEBUG] Salvando documento {i} - conteudo: {len(chunk.page_content)} chars")
-                documento.save()  # Dispara o signal post_save
-                logger.info(f"[DEBUG] Documento salvo com ID: {documento.pk}")
-                documentos_criados += 1
-            
-            logger.info(
-                f"Criados {documentos_criados} documentos para o treinamento {treinamento_id}"
+        documentos_criados: list[Documento] = []
+        
+        for ordem, chunk in enumerate(chunks, start=1):
+            metadata_dict: dict[str, Any] = cast(dict[str, Any], chunk.metadata or {})
+            documento = cls.objects.create(
+                treinamento_id=treinamento_id,
+                conteudo=chunk.page_content,
+                metadata=metadata_dict,
+                ordem=ordem
             )
+            documentos_criados.append(documento)
             
-        except Treinamento.DoesNotExist:
-            logger.error(f"Treinamento {treinamento_id} não encontrado")
-            raise
-        except Exception as e:
-            logger.error(
-                f"Erro ao criar documentos para treinamento {treinamento_id}: {e}"
-            )
-            raise
+        logger.info(f"Criados {len(documentos_criados)} documentos para o treinamento {treinamento_id}")
+        return documentos_criados

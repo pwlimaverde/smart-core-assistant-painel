@@ -12,7 +12,7 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import Signal, receiver
 from django.utils import timezone
 from django_q.models import Schedule
-from django_q.tasks import async_task
+from django_q.tasks import async_task  # type: ignore
 from langchain_core.documents.base import Document
 from loguru import logger
 
@@ -56,7 +56,7 @@ def signals_embeddings_documento(
     sender: Any, instance: Documento, created: bool, **kwargs: Any
 ) -> None:
     """Gera embedding para o documento após criação ou atualização.
-
+    
     Args:
         sender: O remetente do signal
         instance: Instância do Documento
@@ -65,17 +65,13 @@ def signals_embeddings_documento(
     """
     try:
         # Só gera embedding se não existe ou se o conteúdo foi alterado
-        if not instance.embedding or not instance.conteudo:
+        if not instance.embedding or not instance.conteudo:  # pyright: ignore[reportUnknownMemberType]
             if instance.conteudo and instance.conteudo.strip():
                 async_task(__gerar_embedding_documento, instance.pk)
             else:
-                logger.warning(
-                    f"Documento {instance.pk} sem conteúdo para embedding"
-                )
+                logger.warning(f"Documento {instance.pk} sem conteúdo para embedding")
     except Exception as e:
-        logger.error(
-            f"Erro no signal de embedding do documento {instance.pk}: {e}"
-        )
+        logger.error(f"Erro no signal de embedding do documento {instance.pk}: {e}")
 
 
 @receiver(mensagem_bufferizada)

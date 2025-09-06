@@ -11,7 +11,6 @@ from typing import Any, NamedTuple, TypeAlias
 from langchain.docstore.document import Document
 from py_return_success_or_error import (
     Datasource,
-    Empty,
     UsecaseBase,
     UsecaseBaseCallData,
 )
@@ -22,20 +21,16 @@ from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensa
 from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.domain.model.message_data import (
     MessageData,
 )
-from smart_core_assistant_painel.modules.ai_engine.features.whatsapp_services.domain.interfaces.whatsapp_api import (
-    WhatsappApi,
-)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
+    GenerateChunksParameters,
+    GenerateEmbeddingsParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
-    MessageParameters,
+    SearchSimilarEmbeddingsParameters,
 )
-
-WSUsecase: TypeAlias = UsecaseBaseCallData[Empty, WhatsappApi, MessageParameters]
-WSData: TypeAlias = Datasource[WhatsappApi, MessageParameters]
 
 ACUsecase: TypeAlias = UsecaseBaseCallData[
     str,
@@ -64,7 +59,9 @@ APMUsecase: TypeAlias = UsecaseBaseCallData[
     AnalisePreviaMensagem,
     AnalisePreviaMensagemParameters,
 ]
-APMData: TypeAlias = Datasource[AnalisePreviaMensagem, AnalisePreviaMensagemParameters]
+APMData: TypeAlias = Datasource[
+    AnalisePreviaMensagem, AnalisePreviaMensagemParameters
+]
 
 LDFUsecase: TypeAlias = UsecaseBaseCallData[
     list[Document],
@@ -81,4 +78,24 @@ LDCUsecase: TypeAlias = UsecaseBase[
 LMDUsecase: TypeAlias = UsecaseBase[
     MessageData,
     DataMensageParameters,
+]
+
+# Aliases para Generate Embeddings
+GEUsecase: TypeAlias = UsecaseBaseCallData[
+    list[float],
+    list[float],
+    GenerateEmbeddingsParameters,
+]
+GEData: TypeAlias = Datasource[list[float], GenerateEmbeddingsParameters]
+
+# Aliases para Search Similar Embeddings
+SSEUsecase: TypeAlias = UsecaseBase[
+    list[dict[str, Any]],
+    SearchSimilarEmbeddingsParameters,
+]
+
+# Aliases para Generate Chunks
+GCUsecase: TypeAlias = UsecaseBase[
+    list[Document],
+    GenerateChunksParameters,
 ]

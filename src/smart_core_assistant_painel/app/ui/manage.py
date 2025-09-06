@@ -3,17 +3,19 @@
 
 import os
 import sys
+
 from loguru import logger
 
 
 def start_app() -> None:
     """Executa tarefas administrativas.
-    
+
     Configura o DJANGO_SETTINGS_MODULE e delega para o Django. Após a
     execução do comando, realiza um log das variáveis de ambiente mapeadas.
     """
     os.environ.setdefault(
-        "DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.ui.core.settings"
+        "DJANGO_SETTINGS_MODULE",
+        "smart_core_assistant_painel.app.ui.core.settings",
     )
 
     # Garantir que o servidor escute na rede local quando o comando for runserver
@@ -25,7 +27,9 @@ def start_app() -> None:
         host = os.environ.get("SERVER_HOST", "0.0.0.0").strip() or "0.0.0.0"
         port = os.environ.get("SERVER_PORT", "8000").strip() or "8000"
         # Detecta se já foi especificado um endereço/porta (ex.: 127.0.0.1:8000 ou apenas 8000)
-        address_specified = any((":" in arg) or arg.isdigit() for arg in sys.argv[2:])
+        address_specified = any(
+            (":" in arg) or arg.isdigit() for arg in sys.argv[2:]
+        )
         if not address_specified:
             sys.argv.append(f"{host}:{port}")
             logger.info(
@@ -47,7 +51,7 @@ def start_app() -> None:
 
 def _log_environment_variables() -> None:
     """Loga as variáveis de ambiente configuradas no config_mapping.
-    
+
     Esta função exibe todas as variáveis de ambiente que foram carregadas
     do Firebase Remote Config e estão sendo utilizadas pela aplicação.
     """
@@ -91,7 +95,9 @@ def _log_environment_variables() -> None:
 
         # Mascarar chaves de API por segurança
         if "api_key" in key.lower() and value != "[NÃO DEFINIDA]":
-            masked_value = f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
+            masked_value = (
+                f"{value[:8]}...{value[-4:]}" if len(value) > 12 else "***"
+            )
             logger.info(f"{env_var}: {masked_value}")
         else:
             # Truncar valores muito longos (como prompts)

@@ -5,15 +5,25 @@ de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
 
-from typing import Any
+from typing import Any, cast
 
-from langchain.docstore.document import Document
+from langchain_core.documents.base import Document
 from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
+    ReturnSuccessOrError,
     SuccessReturn,
 )
 
+from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import (
+    GenerateChunksUseCase,
+)
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    EmbeddingError,
+)
+from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    GenerateEmbeddingsParameters,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from ..utils.erros import (
@@ -24,6 +34,7 @@ from ..utils.erros import (
 from ..utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
+    GenerateChunksParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -34,6 +45,9 @@ from ..utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
+    GCUsecase,
+    GEData,
+    GEUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
@@ -50,6 +64,12 @@ from .analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensa
 )
 from .analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase import (
     AnalisePreviaMensagemUsecase,
+)
+from .generate_embeddings.datasource.generate_embeddings_langchain_datasource import (
+    GenerateEmbeddingsLangchainDatasource,
+)
+from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
+    GenerateEmbeddingsUseCase,
 )
 from .load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
     LoadDocumentConteudoUseCase,
@@ -99,14 +119,16 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(list[Document], data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def load_document_file(id: str, path: str, tag: str, grupo: str) -> list[Document]:
+    def load_document_file(
+        id: str, path: str, tag: str, grupo: str
+    ) -> list[Document]:
         """Carrega e processa um arquivo de documento para treinamento.
 
         Args:
@@ -131,7 +153,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(list[Document], data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -158,14 +180,14 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context=context,
-            error=LlmError("Error ao analisar o conteúdo"),
+            error=LlmError,
         )
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(str, data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -192,14 +214,14 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
             context=context,
-            error=LlmError("Error ao gerar conteudo melhorado"),
+            error=LlmError,
         )
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(str, data.result)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -229,7 +251,7 @@ class FeaturesCompose:
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
             context=context,
-            error=LlmError("Erro ao processar llm"),
+            error=LlmError,
         )
         parameters = AnalisePreviaMensagemParameters(
             historico_atendimento=historico_atendimento,
@@ -243,9 +265,8 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            return cast(APMTuple, data.result)
         elif isinstance(data, ErrorReturn):
-            logger.error(f"Erro ao analisar prévia da mensagem: {data.result}")
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
@@ -286,7 +307,7 @@ class FeaturesCompose:
         message_data = usecase(parameters)
 
         if isinstance(message_data, SuccessReturn):
-            result: MessageData = message_data.result
+            result: MessageData = cast(MessageData, message_data.result)
             if result.metadados:
                 conteudo_media: str = FeaturesCompose._converter_contexto(
                     result.metadados
@@ -313,3 +334,61 @@ class FeaturesCompose:
     def resumo_atendimento() -> None:
         """Envia uma mensagem de resumo do atendimento."""
         pass
+
+    @staticmethod
+    def generate_embeddings(text: str) -> list[float]:
+        """Gera embeddings para um texto.
+
+        Args:
+            text (str): Texto para gerar embeddings.
+
+        Returns:
+            list[float]: Vetor de embeddings gerado.
+
+        Raises:
+            EmbeddingError: Se ocorrer um erro durante a geração.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error: EmbeddingError = EmbeddingError("Erro ao gerar embeddings!")
+        parameters: GenerateEmbeddingsParameters = (
+            GenerateEmbeddingsParameters(text=text, error=error)
+        )
+        datasource: GEData = GenerateEmbeddingsLangchainDatasource()
+        usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
+        data: ReturnSuccessOrError[list[float]] = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return cast(list[float], data.result)
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def generate_chunks(
+        conteudo: str, metadata: dict[str, Any]
+    ) -> list[Document]:
+        """Gera chunks a partir do conteúdo informado.
+
+        Args:
+            conteudo (str): Texto de entrada para gerar chunks.
+            metadata (dict[str, Any]): Metadados associados ao conteúdo.
+
+        Returns:
+            list[Document]: Lista de documentos (chunks) gerados.
+        """
+        error = DocumentError("Erro ao gerar chunks do conteúdo!")
+        parameters = GenerateChunksParameters(
+            metadata=metadata,
+            conteudo=conteudo,
+            error=error,
+        )
+        usecase: GCUsecase = GenerateChunksUseCase()
+        data: ReturnSuccessOrError[list[Document]] = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return cast(list[Document], data.result)
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")

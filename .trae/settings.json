@@ -2,12 +2,12 @@
     "python.analysis.indexing": true,
     "python.analysis.autoImportCompletions": true,
     "python.analysis.autoSearchPaths": true,
-    "python.analysis.stubPath": "src",
-    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.typeCheckingMode": "strict",
     "python.analysis.useLibraryCodeForTypes": true,
     "python.analysis.completeFunctionParens": true,
     "python.analysis.includeFileSpecs": [
-        "src/**/*.py"
+        "src/**/*.py",
+        "tests/**/*.py"
     ],
     "python.analysis.extraPaths": [
         "src",
@@ -21,11 +21,21 @@
         "langchain": 2,
         "py_return_success_or_error": 2
     },
+    "python.analysis.stubPath": "./typings",
     "python.analysis.diagnosticMode": "workspace",
     "python.analysis.logLevel": "Information",
     "python.analysis.importFormat": "absolute",
     "python.analysis.fixAll": [
         "source.unusedImports",
         "source.convertImportFormat"
-    ]
+    ],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportMissingTypeArgument": "error"
+    },
+    "python.analysis.exclude": [
+        "**/migrations/**"
+    ],
+    "explorer.decorations.badges": true,
+    "explorer.decorations.colors": true,
+    "problems.decorations.enabled": true
 }

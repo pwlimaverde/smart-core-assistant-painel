@@ -122,10 +122,14 @@ class TestSignalHandlers(TestCase):
             sender: Any, instance: Contato, created: bool, **kwargs: Any
         ) -> None:
             if created:
-                self.handler_calls.append(f"Contato criado: {instance.nome_contato}")
+                self.handler_calls.append(
+                    f"Contato criado: {instance.nome_contato}"
+                )
 
         # Cria contato (sem atribuição, apenas para disparar o sinal)
-        Contato.objects.create(telefone="5511666666666", nome_contato="Handler Test")
+        Contato.objects.create(
+            telefone="5511666666666", nome_contato="Handler Test"
+        )
 
         # Verifica se o handler foi chamado
         self.assertEqual(len(self.handler_calls), 1)
@@ -170,7 +174,9 @@ class TestSignalIntegration(TransactionTestCase):
         signals_fired = []
 
         @receiver(post_save, sender=Contato)
-        def track_signal(sender: Any, instance: Contato, **kwargs: Any) -> None:
+        def track_signal(
+            sender: Any, instance: Contato, **kwargs: Any
+        ) -> None:
             signals_fired.append(instance.id)
 
         # Testa rollback
@@ -195,7 +201,9 @@ class TestSignalIntegration(TransactionTestCase):
         signals_fired = []
 
         @receiver(post_save, sender=Contato)
-        def track_bulk_signal(sender: Any, instance: Contato, **kwargs: Any) -> None:
+        def track_bulk_signal(
+            sender: Any, instance: Contato, **kwargs: Any
+        ) -> None:
             signals_fired.append(instance.nome_contato)
 
         # Bulk create não dispara sinais post_save por padrão
@@ -210,7 +218,9 @@ class TestSignalIntegration(TransactionTestCase):
         self.assertEqual(len(signals_fired), 0)
 
         # Create individual dispara sinais
-        Contato.objects.create(telefone="5511333333333", nome_contato="Individual")
+        Contato.objects.create(
+            telefone="5511333333333", nome_contato="Individual"
+        )
 
         # Agora deve ter 1 sinal
         self.assertEqual(len(signals_fired), 1)
@@ -225,7 +235,9 @@ class TestMemoryLeaks(TestCase):
         # Simula um handler que armazena dados
         data_store = {}
 
-        def memory_handler(sender: Any, instance: Mensagem, **kwargs: Any) -> None:
+        def memory_handler(
+            sender: Any, instance: Mensagem, **kwargs: Any
+        ) -> None:
             data_store[instance.id] = {
                 "id": instance.id,
                 "conteudo": instance.conteudo,
@@ -263,7 +275,9 @@ class TestMemoryLeaks(TestCase):
         """Testa tratamento de exceções em handlers."""
         exceptions_caught = []
 
-        def failing_handler(sender: Any, instance: Contato, **kwargs: Any) -> None:
+        def failing_handler(
+            sender: Any, instance: Contato, **kwargs: Any
+        ) -> None:
             exceptions_caught.append("Handler executado")
             raise Exception("Handler falhou")
 
@@ -298,7 +312,9 @@ class TestSignalPerformance(TestCase):
         for i in range(10):
 
             def make_handler(index):
-                def handler(sender: Any, instance: Contato, **kwargs: Any) -> None:
+                def handler(
+                    sender: Any, instance: Contato, **kwargs: Any
+                ) -> None:
                     pass  # Handler vazio para teste de performance
 
                 return handler
@@ -315,7 +331,8 @@ class TestSignalPerformance(TestCase):
             # Cria contatos
             for i in range(50):
                 Contato.objects.create(
-                    telefone=f"551199999{i:04d}", nome_contato=f"Performance Test {i}"
+                    telefone=f"551199999{i:04d}",
+                    nome_contato=f"Performance Test {i}",
                 )
 
             end_time = time.time()

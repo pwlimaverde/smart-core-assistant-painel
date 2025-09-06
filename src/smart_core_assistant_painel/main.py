@@ -2,6 +2,7 @@
 
 Este script inicializa os serviços necessários e, em seguida, inicia a aplicação Django.
 """
+
 import os
 from pathlib import Path
 
@@ -9,7 +10,9 @@ from smart_core_assistant_painel.app.ui.manage import start_app
 from smart_core_assistant_painel.modules.initial_loading.start_initial_loading import (
     start_initial_loading,
 )
-from smart_core_assistant_painel.modules.services.start_services import start_services
+from smart_core_assistant_painel.modules.services.start_services import (
+    start_services,
+)
 
 
 def _resolve_firebase_credentials_path() -> None:
@@ -27,9 +30,14 @@ def _resolve_firebase_credentials_path() -> None:
     credentials_path = Path(credentials_path_str)
     if not credentials_path.is_absolute():
         # O __file__ aponta para src/smart_core_assistant_painel/main.py
-        # A raiz do projeto está 3 níveis acima.
-        project_root = Path(__file__).resolve().parents[3]
+        # A raiz do projeto está 4 níveis acima.
+        project_root = Path(__file__).resolve().parent.parent.parent.parent
         absolute_path = project_root / credentials_path
+
+        print(f"🔍 Caminho relativo fornecido: {credentials_path_str}")
+        print(f"📁 Raiz do projeto calculada: {project_root}")
+        print(f"📂 Caminho absoluto resultante: {absolute_path}")
+        print(f"📄 Arquivo existe: {absolute_path.exists()}")
 
         if absolute_path.exists():
             os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(absolute_path)
@@ -38,10 +46,27 @@ def _resolve_firebase_credentials_path() -> None:
                 f"{absolute_path}"
             )
         else:
+            # Verificar se o arquivo existe no diretório atual
+            current_dir = Path.cwd()
+            absolute_path_current = current_dir / credentials_path_str
+            print(f"🔍 Tentando diretório atual: {absolute_path_current}")
             print(
-                "Aviso: O arquivo de credenciais não foi encontrado em: "
-                f"{absolute_path}"
+                f"📄 Arquivo existe no diretório atual: {absolute_path_current.exists()}"
             )
+
+            if absolute_path_current.exists():
+                os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(
+                    absolute_path_current
+                )
+                print(
+                    "Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: "
+                    f"{absolute_path_current}"
+                )
+            else:
+                print(
+                    "Aviso: O arquivo de credenciais não foi encontrado em: "
+                    f"{absolute_path} nem em {absolute_path_current}"
+                )
 
 
 def main() -> None:

@@ -7,6 +7,7 @@ dados e o webhook para receber mensagens do WhatsApp.
 import json
 import os
 import tempfile
+from typing import Any
 
 from django.contrib import messages
 from django.db import transaction
@@ -17,10 +18,15 @@ from langchain.docstore.document import Document
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import (
+    Documento,
+)
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
-from .models import Treinamentos
 from .models_departamento import Departamento
+
+# Atualizando a importação do modelo Treinamento
+from .models_treinamento import Treinamento
 from .utils import sched_message_response, set_wa_buffer
 
 
@@ -42,8 +48,10 @@ class TreinamentoService:
         documentos_processados = []
         for documento in documentos:
             try:
-                pre_analise_content = FeaturesCompose.pre_analise_ia_treinamento(
-                    documento.page_content
+                pre_analise_content = (
+                    FeaturesCompose.pre_analise_ia_treinamento(
+                        documento.page_content
+                    )
                 )
                 documento.page_content = pre_analise_content
                 documentos_processados.append(documento)
@@ -53,7 +61,7 @@ class TreinamentoService:
         return documentos_processados
 
     @staticmethod
-    def processar_arquivo_upload(arquivo):
+    def processar_arquivo_upload(arquivo: Any) -> str | None:
         """Processa um arquivo enviado e retorna seu caminho temporário.
 
         Args:
@@ -65,14 +73,14 @@ class TreinamentoService:
         if not arquivo:
             return None
         try:
-            return arquivo.temporary_file_path()
+            return str(arquivo.temporary_file_path())
         except AttributeError:
             with tempfile.NamedTemporaryFile(
                 delete=False, suffix=os.path.splitext(arquivo.name)[1]
             ) as temp_file:
                 for chunk in arquivo.chunks():
                     temp_file.write(chunk)
-                return temp_file.name
+                return str(temp_file.name)
 
     @staticmethod
     def processar_conteudo_texto(
@@ -92,7 +100,9 @@ class TreinamentoService:
         if not conteudo:
             raise ValueError("Conteúdo não pode ser vazio")
         try:
-            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(conteudo)
+            pre_analise_conteudo = FeaturesCompose.pre_analise_ia_treinamento(
+                conteudo
+            )
             return FeaturesCompose.load_document_conteudo(
                 id=str(treinamento_id),
                 conteudo=pre_analise_conteudo,
@@ -122,7 +132,10 @@ class TreinamentoService:
             raise ValueError("Caminho do documento não pode ser vazio")
         try:
             data_file = FeaturesCompose.load_document_file(
-                id=str(treinamento_id), path=documento_path, tag=tag, grupo=grupo
+                id=str(treinamento_id),
+                path=documento_path,
+                tag=tag,
+                grupo=grupo,
             )
             return TreinamentoService.aplicar_pre_analise_documentos(data_file)
         except Exception as e:
@@ -130,7 +143,7 @@ class TreinamentoService:
             raise
 
     @staticmethod
-    def limpar_arquivo_temporario(arquivo_path):
+    def limpar_arquivo_temporario(arquivo_path: str | None) -> None:
         """Remove um arquivo temporário, se existir.
 
         Args:
@@ -153,12 +166,37 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     if not has_permission(request.user, "treinar_ia"):
-        messages.error(request, "Você não tem permissão para acessar esta página.")
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
         return redirect("oraculo:treinar_ia")
+
     if request.method == "GET":
-        return render(request, "treinar_ia.html")
+        # Verifica se está em modo de edição (dados na sessão)
+        dados_edicao = request.session.get("treinamento_edicao")
+
+        if dados_edicao:
+            context = {
+                "modo_edicao": True,
+                "treinamento_id": dados_edicao["id"],
+                "tag_inicial": dados_edicao["tag"],
+                "grupo_inicial": dados_edicao["grupo"],
+                "conteudo_inicial": dados_edicao["conteudo"],
+            }
+        else:
+            context = {
+                "modo_edicao": False,
+                "treinamento_id": None,
+                "tag_inicial": "",
+                "grupo_inicial": "",
+                "conteudo_inicial": "",
+            }
+
+        return render(request, "treinar_ia.html", context)
+
     if request.method == "POST":
         return _processar_treinamento(request)
+
     return render(request, "treinar_ia.html")
 
 
@@ -175,6 +213,13 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     grupo = request.POST.get("grupo")
     conteudo = request.POST.get("conteudo")
     documento = request.FILES.get("documento")
+    treinamento_id = request.POST.get("treinamento_id")
+
+    # Se não tem ID no POST, verifica se tem dados de edição na sessão
+    if not treinamento_id:
+        dados_edicao = request.session.get("treinamento_edicao")
+        if dados_edicao:
+            treinamento_id = dados_edicao["id"]
 
     if not tag or not grupo:
         messages.error(request, "Tag e Grupo são obrigatórios.")
@@ -186,22 +231,64 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     documento_path = None
     try:
         with transaction.atomic():
-            treinamento = Treinamentos.objects.create(tag=tag, grupo=grupo)
-            documents_list = []
-            if documento:
-                documento_path = TreinamentoService.processar_arquivo_upload(documento)
-                if documento_path:
-                    docs_arquivo = TreinamentoService.processar_arquivo_documento(
-                        treinamento.id, documento_path, tag, grupo
+            # Verifica se está editando um treinamento existente
+            if treinamento_id:
+                try:
+                    treinamento: Treinamento = Treinamento.objects.get(
+                        id=treinamento_id
                     )
-                    documents_list.extend(docs_arquivo)
-            if conteudo:
-                docs_conteudo = TreinamentoService.processar_conteudo_texto(
-                    treinamento.id, conteudo, tag, grupo
+                    # Atualiza os campos básicos
+                    treinamento.tag = tag
+                    treinamento.grupo = grupo
+                    # LIMPA COMPLETAMENTE TODOS OS DADOS EXISTENTES
+                    Documento.limpar_documentos_por_treinamento(treinamento.id)
+                    messages.success(
+                        request,
+                        f"Treinamento ID {treinamento_id} editado com sucesso!",
+                    )
+                except Treinamento.DoesNotExist:
+                    messages.error(
+                        request, "Treinamento não encontrado para edição."
+                    )
+                    return render(request, "treinar_ia.html")
+            else:
+                # Cria novo treinamento
+                treinamento = Treinamento.objects.create(tag=tag, grupo=grupo)
+                messages.success(request, "Treinamento criado com sucesso!")
+
+            # Processa conteúdo (tanto para criação quanto edição)
+            conteudo_completo = ""
+
+            if documento:
+                documento_path = TreinamentoService.processar_arquivo_upload(
+                    documento
                 )
-                documents_list.extend(docs_conteudo)
-            treinamento.set_documentos(documents_list)
+                if documento_path:
+                    docs_arquivo = (
+                        TreinamentoService.processar_arquivo_documento(
+                            treinamento.id, documento_path, tag, grupo
+                        )
+                    )
+                    conteudo_completo += "\n\n".join(
+                        [doc.page_content for doc in docs_arquivo]
+                    )
+
+            if conteudo:
+                if conteudo_completo:
+                    conteudo_completo += "\n\n" + conteudo
+                else:
+                    conteudo_completo = conteudo
+
+            # CRUCIAL: Salva o conteúdo no modelo Treinamento
+            if conteudo_completo:
+                treinamento.conteudo = conteudo_completo
+
             treinamento.save()
+
+            # Limpa dados de edição da sessão se existirem
+            if "treinamento_edicao" in request.session:
+                del request.session["treinamento_edicao"]
+
             messages.success(request, "Treinamento criado com sucesso!")
             return redirect("oraculo:pre_processamento", id=treinamento.id)
     except Exception as e:
@@ -223,7 +310,9 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     if not has_permission(request.user, "treinar_ia"):
-        messages.error(request, "Você não tem permissão para acessar esta página.")
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
         return redirect("oraculo:treinar_ia")
     if request.method == "GET":
         return _exibir_pre_processamento(request, id)
@@ -232,7 +321,9 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     return redirect("oraculo:treinar_ia")
 
 
-def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
+def _processar_pre_processamento(
+    request: HttpRequest, id: int
+) -> HttpResponse:
     """Processa a ação do pré-processamento.
 
     Args:
@@ -243,11 +334,11 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     try:
-        treinamento = Treinamentos.objects.get(id=id)
-    except Treinamentos.DoesNotExist:
+        treinamento = Treinamento.objects.get(id=id)
+    except Treinamento.DoesNotExist:
         messages.error(request, "Treinamento não encontrado.")
         return redirect("oraculo:treinar_ia")
-    
+
     acao = request.POST.get("acao")
     if not acao:
         messages.error(request, "Ação não especificada.")
@@ -274,23 +365,42 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     return redirect("oraculo:treinar_ia")
 
 
-def _aceitar_treinamento(id: int):
-    """Aceita o treinamento e atualiza o conteúdo de cada documento.
+def _aceitar_treinamento(id: int) -> None:
+    """Aceita o treinamento aplicando melhorias de IA e finalizando.
 
     Args:
         id (int): O ID do treinamento.
     """
     try:
-        treinamento = Treinamentos.objects.get(id=id)
-        documentos_lista = treinamento.get_documentos()
-        if not documentos_lista:
+        treinamento = Treinamento.objects.get(id=id)
+
+        # Obtém conteúdo unificado atual
+        conteudo_atual = treinamento.conteudo or ""
+
+        # Verificação segura se há conteúdo
+        if not conteudo_atual.strip():
+            logger.warning(
+                f"Treinamento {id} não possui conteúdo para processar"
+            )
             return
-        documentos_melhorados = TreinamentoService.aplicar_pre_analise_documentos(
-            documentos_lista
+
+        # Aplica melhoria de IA ao conteúdo unificado
+        conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+            conteudo_atual
         )
-        treinamento.set_documentos(documentos_melhorados)
+
+        # Atualiza o conteúdo do treinamento
+        treinamento.conteudo = conteudo_melhorado
+        treinamento.save(update_fields=["conteudo"])
+
+        # Finaliza o treinamento
         treinamento.treinamento_finalizado = True
         treinamento.save()
+
+        logger.info(
+            f"Treinamento {id} aceito e finalizado com melhorias aplicadas"
+        )
+
     except Exception as e:
         logger.error(f"Erro ao aceitar treinamento {id}: {e}")
         raise
@@ -307,9 +417,24 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         HttpResponse: A resposta HTTP.
     """
     try:
-        treinamento = Treinamentos.objects.get(id=id)
-        conteudo_unificado = treinamento.get_conteudo_unificado()
-        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
+        treinamento = Treinamento.objects.get(id=id)
+        conteudo_unificado = treinamento.conteudo or ""
+
+        # Verifica se há conteúdo para processar
+        if not conteudo_unificado.strip():
+            logger.warning(
+                f"Treinamento {id} sem conteúdo para pré-processamento"
+            )
+            messages.warning(
+                request,
+                "Treinamento sem conteúdo. Verifique se o conteúdo foi salvo corretamente.",
+            )
+            # Retorna para edição
+            return redirect("oraculo:treinar_ia")
+
+        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+            conteudo_unificado
+        )
         return render(
             request,
             "pre_processamento.html",
@@ -319,7 +444,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
                 "texto_melhorado": texto_melhorado,
             },
         )
-    except Treinamentos.DoesNotExist:
+    except Treinamento.DoesNotExist:
         messages.error(request, "Treinamento não encontrado.")
         return redirect("oraculo:treinar_ia")
     except Exception as e:
@@ -342,7 +467,9 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
         if request.method != "POST":
             return JsonResponse({"error": "Método não permitido"}, status=405)
         if not request.body:
-            return JsonResponse({"error": "Corpo da requisição vazio"}, status=400)
+            return JsonResponse(
+                {"error": "Corpo da requisição vazio"}, status=400
+            )
         try:
             body_str = request.body.decode("utf-8")
         except UnicodeDecodeError:
@@ -352,9 +479,13 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
         data = json.loads(body_str)
         departamento = Departamento.validar_api_key(data)
         if not departamento:
-            return JsonResponse({"error": "API key inválida ou inativa"}, status=401)
+            return JsonResponse(
+                {"error": "API key inválida ou inativa"}, status=401
+            )
         if not isinstance(data, dict):
-            return JsonResponse({"error": "Formato de dados inválido"}, status=400)
+            return JsonResponse(
+                {"error": "Formato de dados inválido"}, status=400
+            )
 
         logger.info(f"Recebido webhook: {data}")
         message = FeaturesCompose.load_message_data(data)
@@ -378,48 +509,65 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
     """
     if not has_permission(request.user, "treinar_ia"):
         raise Http404()
-    
+
     if request.method == "POST":
         acao = request.POST.get("acao")
         treinamento_id = request.POST.get("treinamento_id")
-        
+
         if not acao or not treinamento_id:
-            messages.error(request, "Ação ou ID do treinamento não especificado.")
+            messages.error(
+                request, "Ação ou ID do treinamento não especificado."
+            )
             return redirect("oraculo:verificar_treinamentos_vetorizados")
-            
+
         try:
-            treinamento = Treinamentos.objects.get(id=treinamento_id)
-            
+            treinamento = Treinamento.objects.get(id=treinamento_id)
+
             if acao == "excluir":
                 treinamento.delete()
                 messages.success(request, "Treinamento excluído com sucesso!")
-            elif acao == "vetorizar":
-                # Tenta vetorizar novamente
-                from django_q.tasks import async_task
-                async_task(__task_treinar_ia, treinamento.id)
-                messages.success(request, "Processo de vetorização iniciado!")
+            elif acao == "editar":
+                # Armazena os dados do treinamento na sessão para edição
+                conteudo_atual = treinamento.conteudo or ""
+
+                # Armazena na sessão para evitar URLs extensas
+                request.session["treinamento_edicao"] = {
+                    "id": treinamento.id,
+                    "tag": treinamento.tag,
+                    "grupo": treinamento.grupo,
+                    "conteudo": conteudo_atual,
+                }
+
+                messages.info(
+                    request, f"Editando treinamento ID: {treinamento.id}"
+                )
+                return redirect("oraculo:treinar_ia")
             else:
                 messages.error(request, "Ação inválida.")
-        except Treinamentos.DoesNotExist:
+        except Treinamento.DoesNotExist:
             messages.error(request, "Treinamento não encontrado.")
         except Exception as e:
-            logger.error(f"Erro ao processar ação {acao} no treinamento {treinamento_id}: {e}")
+            logger.error(
+                f"Erro ao processar ação {acao} no treinamento {treinamento_id}: {e}"
+            )
             messages.error(request, "Erro ao processar ação. Tente novamente.")
-        
+
         return redirect("oraculo:verificar_treinamentos_vetorizados")
-    
+
     # GET request - exibir lista de treinamentos
-    treinamentos_vetorizados = Treinamentos.objects.filter(
-        treinamento_finalizado=True,
-        treinamento_vetorizado=True
+    treinamentos_vetorizados = Treinamento.objects.filter(
+        treinamento_finalizado=True, treinamento_vetorizado=True
     ).order_by("-data_criacao")
-    
-    treinamentos_com_erro = Treinamentos.objects.filter(
-        treinamento_finalizado=True,
-        treinamento_vetorizado=False
+
+    treinamentos_com_erro = Treinamento.objects.filter(
+        treinamento_finalizado=True, treinamento_vetorizado=False
     ).order_by("-data_criacao")
-    
-    return render(request, "verificar_treinamentos.html", {
-        "treinamentos_vetorizados": treinamentos_vetorizados,
-        "treinamentos_com_erro": treinamentos_com_erro,
-    })
+
+    return render(
+        request,
+        "verificar_treinamentos.html",
+        {
+            "treinamentos_vetorizados": treinamentos_vetorizados,
+            "treinamentos_com_erro": treinamentos_com_erro,
+        },
+    )

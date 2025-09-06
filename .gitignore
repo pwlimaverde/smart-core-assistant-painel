@@ -188,4 +188,5 @@ firebase_key.json
 src/smart_core_assistant_painel/app/ui/staticfiles/
 src/smart_core_assistant_painel/app/ui/media/
 src/smart_core_assistant_painel/app/ui/db/
+uv.lock
 

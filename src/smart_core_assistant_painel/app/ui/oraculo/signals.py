@@ -6,40 +6,72 @@ processamento de mensagens em buffer.
 """
 
 from datetime import timedelta
-from typing import Any, List
+from typing import Any, cast
 
-from django.conf import settings
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import Signal, receiver
 from django.utils import timezone
 from django_q.models import Schedule
-from django_q.tasks import async_task
+from django_q.tasks import async_task  # type: ignore
+from langchain_core.documents.base import Document
 from loguru import logger
 
+from smart_core_assistant_painel.app.ui.oraculo.models_documento import (
+    Documento,
+)
+from smart_core_assistant_painel.app.ui.oraculo.models_treinamento import (
+    Treinamento,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
-
-from .models import Treinamentos
 
 mensagem_bufferizada = Signal()
 
 
-@receiver(post_save, sender=Treinamentos)
-def signals_treinamento_ia(
-    sender: Any, instance: Treinamentos, created: bool, **kwargs: Any
+@receiver(post_save, sender=Treinamento)
+def signals_gerar_documentos_treinamento(
+    sender: Any, instance: Treinamento, created: bool, **kwargs: Any
 ) -> None:
     """Executa o treinamento da IA de forma assíncrona após salvar um treinamento.
 
     Args:
         sender (Any): O remetente do signal.
-        instance (Treinamentos): A instância do modelo de treinamento.
+        instance (Treinamento): A instância do modelo de treinamento.
         created (bool): True se um novo registro foi criado.
         **kwargs (Any): Argumentos de palavra-chave adicionais.
     """
     try:
-        if instance.treinamento_finalizado:
-            async_task(__task_treinar_ia, instance.id)
+        # Só executa se o treinamento foi finalizado E ainda não foi vetorizado
+        # Isso evita loops infinitos quando a vetorização atualiza o status
+        if (
+            instance.treinamento_finalizado
+            and not instance.treinamento_vetorizado
+        ):
+            async_task(__gerar_documentos, instance.id)
     except Exception as e:
         logger.error(f"Erro ao processar signal de treinamento: {e}")
+
+
+@receiver(post_save, sender=Documento)
+def signals_embeddings_documento(
+    sender: Any, instance: Documento, created: bool, **kwargs: Any
+) -> None:
+    """Gera embedding para o documento após criação ou atualização.
+    
+    Args:
+        sender: O remetente do signal
+        instance: Instância do Documento
+        created: True se foi criado, False se foi atualizado
+        **kwargs: Argumentos adicionais
+    """
+    try:
+        # Só gera embedding se não existe ou se o conteúdo foi alterado
+        if not instance.embedding or not instance.conteudo:  # pyright: ignore[reportUnknownMemberType]
+            if instance.conteudo and instance.conteudo.strip():
+                async_task(__gerar_embedding_documento, instance.pk)
+            else:
+                logger.warning(f"Documento {instance.pk} sem conteúdo para embedding")
+    except Exception as e:
+        logger.error(f"Erro no signal de embedding do documento {instance.pk}: {e}")
 
 
 @receiver(mensagem_bufferizada)
@@ -85,132 +117,117 @@ def __limpar_schedules_telefone(phone: str) -> None:
         logger.warning(f"Erro ao limpar schedules para {phone}: {e}")
 
 
-# -------------------------
-# Helpers de Embeddings
-# -------------------------
+def __processar_conteudo_para_chunks(
+    treinamento: Treinamento,
+) -> list[Document]:
+    """Processa conteúdo e cria chunks."""
+    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+        FeaturesCompose,
+    )
 
-def __get_embeddings_instance() -> Any:
-    """Constrói a instância de embeddings conforme configuração do ServiceHub.
+    # Prepara metadados
+    metadata = {
+        "source": "treinamento_manual",
+        "treinamento_id": str(treinamento.pk),
+        "tag": treinamento.tag,
+        "grupo": treinamento.grupo,
+    }
 
-    Returns:
-        Any: Instância de embeddings compatível com LangChain.
+    # Garante que o conteúdo não é None
+    conteudo = cast(str, treinamento.conteudo)
 
-    Raises:
-        ValueError: Caso a classe configurada não seja suportada.
-    """
-    embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
-    embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
+    # Usa a nova feature para gerar chunks
+    chunks = FeaturesCompose.generate_chunks(
+        conteudo=conteudo, metadata=metadata
+    )
 
-    try:
-        if embeddings_class == "OllamaEmbeddings":
-            # Usa Ollama via URL configurada no settings/env
-            from langchain_ollama import OllamaEmbeddings
-
-            base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
-            kwargs: dict[str, Any] = {}
-            if embeddings_model:
-                kwargs["model"] = embeddings_model
-            if base_url:
-                kwargs["base_url"] = base_url
-            return OllamaEmbeddings(**kwargs)
-
-        if embeddings_class == "OpenAIEmbeddings":
-            from langchain_openai import OpenAIEmbeddings
-
-            if embeddings_model:
-                return OpenAIEmbeddings(model=embeddings_model)
-            return OpenAIEmbeddings()
-
-        if embeddings_class == "HuggingFaceEmbeddings":
-            from langchain_huggingface import HuggingFaceEmbeddings
-
-            if embeddings_model:
-                return HuggingFaceEmbeddings(model_name=embeddings_model)
-            return HuggingFaceEmbeddings()
-
-        raise ValueError(
-            "Classe de embeddings não suportada: " f"{embeddings_class}"
-        )
-    except Exception as exc:  # pragma: no cover - proteção adicional
-        # Loga erro e repassa para tratamento na chamada
-        logger.error(
-            "Falha ao criar instancia de embeddings: " f"{exc}",
-            exc_info=True,
-        )
-        raise
+    return chunks
 
 
-def __embed_text(text: str) -> List[float]:
-    """Gera o vetor de embedding para um texto.
-
-    Tenta usar embed_query se disponível (preferível para uma única string),
-    caso contrário, utiliza embed_documents.
+def __gerar_embedding_documento(documento_id: int) -> None:
+    """Gera embedding para um documento específico.
 
     Args:
-        text (str): Texto a ser convertido em embedding.
-
-    Returns:
-        List[float]: Vetor de embedding como lista de floats.
+        documento_id: ID do documento para gerar embedding
     """
-    embeddings = __get_embeddings_instance()
-
     try:
-        if hasattr(embeddings, "embed_query"):
-            vec: List[float] = list(map(float, embeddings.embed_query(text)))
+        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+            FeaturesCompose,
+        )
+
+        documento: Documento = Documento.objects.get(id=documento_id)
+
+        if not documento.conteudo or not documento.conteudo.strip():
+            logger.warning(f"Documento {documento_id} sem conteúdo válido")
+            return
+
+        embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
+            text=documento.conteudo
+        )
+
+        if embedding_vector:
+            # Salva o embedding no documento
+            Documento.objects.filter(id=documento_id).update(
+                embedding=embedding_vector
+            )
+            logger.info(
+                f"Embedding gerado e salvo para documento {documento_id}"
+            )
         else:
-            # Fallback para APIs que suportam apenas embed_documents
-            docs_vec: List[List[float]] = embeddings.embed_documents([text])
-            vec = list(map(float, docs_vec[0]))
-        return vec
-    except Exception as exc:  # pragma: no cover - proteção adicional
+            logger.error(
+                f"Falha ao gerar embedding para documento {documento_id}"
+            )
+
+    except Documento.DoesNotExist:
+        logger.error(f"Documento {documento_id} não encontrado")
+    except Exception as e:
         logger.error(
-            "Erro ao gerar embedding do texto: " f"{exc}",
-            exc_info=True,
+            f"Erro ao gerar embedding para documento {documento_id}: {e}"
         )
-        raise
 
 
-def __task_treinar_ia(instance_id: int) -> None:
-    """Tarefa para treinar a IA com os documentos de um treinamento.
-
-    Args:
-        instance_id (int): O ID da instância de Treinamento.
-    """
+def __gerar_documentos(instance_id: int) -> None:
     try:
-        instance = Treinamentos.objects.get(id=instance_id)
+        instance: Treinamento = Treinamento.objects.get(id=instance_id)
 
-        # 1) Limpa embedding anterior sem disparar signals
-        Treinamentos.objects.filter(id=instance_id).update(embedding=None)
-
-        # 2) Extrai conteúdo unificado e gera embedding
-        texto_unificado: str = instance.get_conteudo_unificado() or ""
-        if not texto_unificado.strip():
+        if not instance.conteudo or not instance.conteudo.strip():
             logger.warning(
                 "Treinamento %s sem conteúdo para embedding.", instance_id
             )
             return
 
-        vetor: List[float] = __embed_text(texto_unificado)
+        if instance.treinamento_vetorizado:
+            logger.info(
+                f"Treinamento {instance_id} já está vetorizado, pulando..."
+            )
+            return
+        chunks: list[Document] = __processar_conteudo_para_chunks(
+            treinamento=instance
+        )
+        from .models_documento import Documento
 
-        # 3) Persiste vetor via update() para evitar loop de signals
-        Treinamentos.objects.filter(id=instance_id).update(embedding=vetor)
-        logger.info("Embedding atualizado para treinamento %s", instance_id)
+        Documento.criar_documentos_de_chunks(
+            chunks=chunks, treinamento_id=instance_id
+        )
+        instance.treinamento_vetorizado = True
+        instance.save()
+        logger.info("Documentos gerados: %s", instance_id)
 
-    except Treinamentos.DoesNotExist:
+    except Treinamento.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")
     except Exception as e:
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
 
 
-@receiver(pre_delete, sender=Treinamentos)
+@receiver(pre_delete, sender=Treinamento)
 def signal_remover_treinamento_ia(
-    sender: Any, instance: Treinamentos, **kwargs: Any
+    sender: Any, instance: Treinamento, **kwargs: Any
 ) -> None:
     """Remove os dados de treinamento do banco vetorial antes de deletar.
 
     Args:
         sender (Any): O remetente do signal.
-        instance (Treinamentos): A instância do modelo de treinamento.
+        instance (Treinamento): A instância do modelo de treinamento.
         **kwargs (Any): Argumentos de palavra-chave adicionais.
 
     Raises:
@@ -234,10 +251,16 @@ def __task_remover_treinamento_ia(instance_id: int) -> None:
         Exception: Se ocorrer um erro durante a remoção.
     """
     try:
-        # Como os dados ficam no próprio modelo, basta limpar o vetor.
-        Treinamentos.objects.filter(id=instance_id).update(embedding=None)
+        # Na nova arquitetura, não há campo embedding no Treinamento.
+        # Os embeddings ficam nos documentos relacionados que são removidos
+        # automaticamente devido ao CASCADE no ForeignKey.
+        # Apenas marca como não vetorizado
+        Treinamento.objects.filter(id=instance_id).update(
+            treinamento_vetorizado=False
+        )
         logger.info(
-            "Embedding removido para treinamento %s (pre_delete)", instance_id
+            "Treinamento marcado como não vetorizado: %s (pre_delete)",
+            instance_id,
         )
     except Exception as e:
         logger.error(f"Erro ao remover treinamento {instance_id}: {e}")

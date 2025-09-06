@@ -30,27 +30,33 @@ def cadastro(request: HttpRequest) -> HttpResponse:
         confirmar_senha = request.POST.get("confirmar_senha")
 
         if not senha == confirmar_senha:
-            messages.add_message(request, constants.ERROR, "As senhas não coincidem.")
-            return redirect("/usuarios/cadastro/")
+            messages.add_message(
+                request, constants.ERROR, "As senhas não coincidem."
+            )
+            return redirect("cadastro")
         if len(senha or "") < 6:
             messages.add_message(
-                request, constants.ERROR, "A senha deve ter pelo menos 6 caracteres."
+                request,
+                constants.ERROR,
+                "A senha deve ter pelo menos 6 caracteres.",
             )
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
         if User.objects.filter(username=username).exists():
             messages.add_message(
                 request, constants.ERROR, "Este nome de usuário já existe."
             )
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
         if not username or not senha:
             messages.add_message(
-                request, constants.ERROR, "Nome de usuário e senha são obrigatórios."
+                request,
+                constants.ERROR,
+                "Nome de usuário e senha são obrigatórios.",
             )
-            return redirect("/usuarios/cadastro/")
+            return redirect("cadastro")
 
         User.objects.create_user(username=username, password=senha)
-        return redirect("/usuarios/login")
-    return redirect("/usuarios/cadastro/")
+        return redirect("login")
+    return redirect("cadastro")
 
 
 def login(request: HttpRequest) -> HttpResponse:
@@ -67,7 +73,9 @@ def login(request: HttpRequest) -> HttpResponse:
     elif request.method == "POST":
         username = request.POST.get("username")
         senha = request.POST.get("senha")
-        user = authenticate(request, username=username or "", password=senha or "")
+        user = authenticate(
+            request, username=username or "", password=senha or ""
+        )
         if user:
             auth.login(request, user)
             return redirect("oraculo:treinar_ia")

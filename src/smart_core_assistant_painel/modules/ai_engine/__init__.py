@@ -17,7 +17,6 @@ from .utils.erros import (
     DocumentError,
     HtmlStrError,
     LlmError,
-    WahaApiError,
 )
 from .utils.parameters import (
     AnalisePreviaMensagemParameters,
@@ -25,7 +24,6 @@ from .utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
-    MessageParameters,
 )
 from .utils.types import (
     ACData,
@@ -37,8 +35,6 @@ from .utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
-    WSData,
-    WSUsecase,
 )
 
 __all__ = [
@@ -49,14 +45,12 @@ __all__ = [
     "DocumentError",
     "HtmlStrError",
     "LlmError",
-    "WahaApiError",
     # Parameters
     "AnalisePreviaMensagemParameters",
     "DataMensageParameters",
     "LlmParameters",
     "LoadDocumentConteudoParameters",
     "LoadDocumentFileParameters",
-    "MessageParameters",
     "MessageData",
     # Types
     "ACData",
@@ -68,6 +62,4 @@ __all__ = [
     "LDFData",
     "LDFUsecase",
     "LMDUsecase",
-    "WSData",
-    "WSUsecase",
 ]

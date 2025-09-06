@@ -1,596 +1,14 @@
-import json
 import re
-from typing import Any, List, Optional
+from datetime import datetime
+from typing import Any, Optional, cast, override
 
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.query import QuerySet
 from django.utils import timezone
-from django.conf import settings
-from pgvector.django import VectorField, CosineDistance
-from langchain.docstore.document import Document
 from loguru import logger
-from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models_departamento import Departamento
-
-
-def validate_tag(value: str) -> None:
-    """
-    Valida se a tag está em formato válido.
-
-    A tag deve estar em minúsculo, sem espaços, com no máximo 40 caracteres
-    e conter apenas letras minúsculas, números e underscore.
-
-    Args:
-        value (str): Valor da tag a ser validada
-
-    Raises:
-        ValidationError: Se a tag não atender aos critérios de validação
-
-    Examples:
-        >>> validate_tag("minha_tag_123")  # válida
-        >>> validate_tag("MinhaTag")       # inválida - maiúsculas
-        >>> validate_tag("minha tag")      # inválida - espaço
-    """
-    if len(value) > 40:
-        raise ValidationError("Tag deve ter no máximo 40 caracteres.")
-
-    if " " in value:
-        raise ValidationError("Tag não deve conter espaços.")
-
-    if not value.islower():
-        raise ValidationError("Tag deve conter apenas letras minúsculas.")
-
-    # Opcional: validar se contém apenas letras, números e underscore
-    if not re.match(r"^[a-z0-9_]+$", value):
-        raise ValidationError(
-            "Tag deve conter apenas letras minúsculas, números e underscore."
-        )
-
-
-class Treinamentos(models.Model):
-    """
-    Modelo para armazenar informações de treinamento de IA.
-
-    Este modelo gerencia documentos de treinamento organizados por tags e grupos,
-    permitindo armazenar e recuperar documentos LangChain serializados.
-
-    Attributes:
-        id: Chave primária do registro
-        tag: Identificador único do treinamento
-        grupo: Grupo ao qual o treinamento pertence
-        _documentos: Lista de documentos LangChain serializados
-        treinamento_finalizado: Status de finalização do treinamento
-        treinamento_vetorizado: Status de vetorização do treinamento
-        data_criacao: Data de criação automática do treinamento
-    """
-
-    id: models.AutoField = models.AutoField(
-        primary_key=True, help_text="Chave primária do registro"
-    )
-    tag: models.CharField = models.CharField(
-        max_length=40,
-        validators=[validate_tag],
-        blank=False,
-        null=False,
-        help_text="Campo obrigatório para identificar o treinamento",
-    )
-    grupo: models.CharField = models.CharField(
-        max_length=40,
-        validators=[validate_tag],
-        blank=False,
-        null=False,
-        help_text="Campo obrigatório para identificar o grupo do treinamento",
-    )
-    _documentos: models.JSONField = models.JSONField(
-        default=list,
-        blank=True,
-        null=True,
-        help_text="Lista de documentos LangChain serializados (campo privado)",
-        db_column="documentos",
-    )
-    embedding: VectorField = VectorField(
-        dimensions=1024,
-        null=True,
-        blank=True,
-        help_text="Vetor de embedding (dim=1024) para busca semântica via pgvector",
-    )
-    treinamento_finalizado: models.BooleanField = models.BooleanField(
-        default=False,
-        help_text="Indica se o treinamento foi finalizado",
-    )
-    treinamento_vetorizado: models.BooleanField = models.BooleanField(
-        default=False,
-        help_text="Indica se o treinamento foi vetorizado com sucesso",
-    )
-    data_criacao: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True,
-        null=True,
-        blank=True,
-        help_text="Data de criação do treinamento",
-    )
-
-    def save(self, *args, **kwargs):
-        """
-        Salva o modelo executando validação completa antes do salvamento.
-
-        Args:
-            *args: Argumentos posicionais do método save
-            **kwargs: Argumentos nomeados do método save
-        """
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-    def clean(self):
-        """
-        Validação personalizada do modelo.
-
-        Valida que a tag não seja igual ao grupo e executa outras
-        validações customizadas do modelo.
-
-        Raises:
-            ValidationError: Se houver violação das regras de validação
-        """
-        super().clean()
-
-        # Validação customizada: tag não pode ser igual ao grupo
-        if self.tag and self.grupo and self.tag == self.grupo:
-            raise ValidationError({"grupo": "O grupo não pode ser igual à tag."})
-
-    def __str__(self):
-        """
-        Retorna representação string do objeto.
-
-        Returns:
-            str: Tag do treinamento ou identificador padrão
-        """
-        return str(self.tag) if self.tag else f"Treinamento {self.id}"
-
-    def get_conteudo_unificado(self) -> str:
-        """
-        Retorna todos os page_content da lista de documentos concatenados.
-
-        Processa a lista de documentos LangChain serializados e extrai
-        o conteúdo de texto (page_content) de cada documento, concatenando
-        tudo em uma única string.
-
-        Returns:
-            str: Conteúdo unificado de todos os documentos, separados por quebras de linha duplas
-
-        Note:
-            Se não houver documentos ou se houver erro no processamento,
-            retorna uma string vazia.
-        """
-        todos_page_contents = []
-
-        if self._documentos:
-            # documentos é sempre uma lista (JSONField)
-            documentos_lista = self._documentos
-
-            for i, doc in enumerate(documentos_lista):
-                # Se o documento é uma string JSON, faz o parse
-                if isinstance(doc, str):
-                    doc_parsed = json.loads(doc)
-                else:
-                    doc_parsed = doc
-
-                # Extrai o page_content do documento parseado
-                if isinstance(doc_parsed, dict) and "page_content" in doc_parsed:
-                    page_content = doc_parsed["page_content"]
-                    todos_page_contents.append(page_content)
-
-        # Concatena todos os conteúdos em uma única string
-        resultado = "\n\n".join(
-            str(content) for content in todos_page_contents if content
-        )
-        return resultado
-
-    def set_documentos(self, documentos: List[Document]) -> None:
-        """
-        Define uma lista de documentos LangChain, serializando-os para JSON.
-
-        Este método processa uma lista de objetos Document do LangChain e os
-        serializa adequadamente para armazenamento no campo JSONField do modelo.
-
-        Args:
-            documentos: Lista de objetos Document do LangChain a serem armazenados
-
-        Raises:
-            TypeError: Se algum item da lista não for um objeto Document válido
-            ValueError: Se houver erro na serialização dos dados
-
-        Example:
-            >>> from langchain.docstore.document import Document
-            >>> docs = [
-            ...     Document(page_content="Texto 1", metadata={"source": "doc1.txt"}),
-            ...     Document(page_content="Texto 2", metadata={"source": "doc2.txt"})
-            ... ]
-            >>> treinamento.set_documentos(docs)
-        """
-        if not documentos:
-            self._documentos = []
-            return
-
-        try:
-            serialized_docs = []
-
-            for i, documento in enumerate(documentos):
-                if not isinstance(documento, Document):
-                    error_msg = f"Item na posição {i} não é um Document válido: {type(documento)}"
-                    logger.error(error_msg)
-                    raise TypeError(error_msg)
-
-                try:
-                    # Serializa o Document para dicionário
-                    doc_dict = documento.model_dump_json(indent=2)
-                    serialized_docs.append(doc_dict)
-
-                except Exception as e:
-                    error_msg = f"Erro ao serializar documento na posição {i}: {e}"
-                    logger.error(error_msg)
-                    raise ValueError(error_msg) from e
-
-            self._documentos = serialized_docs
-
-        except (TypeError, ValueError):
-            # Re-raise erros já tratados
-            raise
-        except Exception as e:
-            error_msg = f"Erro inesperado ao processar documentos: {e}"
-            logger.error(error_msg)
-            self._documentos = []
-            raise ValueError(error_msg) from e
-
-    def get_documentos(self) -> List[Document]:
-        """
-        Processa e converte documentos JSON para objetos Document.
-
-        Desserializa a lista de documentos armazenados no campo JSONField
-        e converte cada item para um objeto Document do LangChain.
-
-        Returns:
-            List[Document]: Lista de documentos processados. Retorna lista vazia
-                          se não houver documentos ou se houver erro no processamento.
-
-        Note:
-            Em caso de erro na desserialização, o erro é logado e uma lista
-            vazia é retornada para manter a estabilidade da aplicação.
-        """
-        documentos: list[Document] = []
-
-        if not self._documentos:
-            return documentos
-
-        try:
-            # documentos é sempre uma lista (JSONField)
-            documentos_lista = self._documentos or []
-
-            # Converte cada documento para objeto Document
-            for doc_json in documentos_lista:
-                if isinstance(doc_json, str):
-                    # Se é string JSON, faz parse primeiro
-                    documento = Document.model_validate_json(doc_json)
-                else:
-                    # Se já é dicionário, converte para Document
-                    documento = Document(**doc_json)
-                documentos.append(documento)
-
-        except (json.JSONDecodeError, TypeError, ValueError) as e:
-            logger.error(
-                f"Erro ao processar documentos do treinamento {self.pk or 'novo'}: {e}"
-            )
-
-        return documentos
-
-    @property
-    def documentos(self) -> list:
-        """
-        Propriedade para compatibilidade com testes existentes.
-
-        Returns:
-            list: Lista de documentos diretamente do campo _documentos
-        """
-        return self._documentos or []
-
-    def finalize(self) -> None:
-        """
-        Marca o treinamento como finalizado e persiste no banco.
-        """
-        self.treinamento_finalizado = True
-        self.save(update_fields=["treinamento_finalizado"])
-
-    # -------------------------
-    # Busca por similaridade (pgvector)
-    # -------------------------
-
-    @staticmethod
-    def _get_embeddings_instance() -> Any:
-        """Cria a instância de embeddings conforme configuração do ServiceHub.
-
-        Returns:
-            Any: Instância compatível com LangChain.
-
-        Raises:
-            ValueError: Quando a classe configurada não é suportada.
-        """
-        embeddings_class: str = SERVICEHUB.EMBEDDINGS_CLASS
-        embeddings_model: str = SERVICEHUB.EMBEDDINGS_MODEL
-
-        try:
-            if embeddings_class == "OllamaEmbeddings":
-                # Usa Ollama via URL configurada no settings/env
-                from langchain_ollama import OllamaEmbeddings
-
-                base_url: str = getattr(settings, "OLLAMA_BASE_URL", "")
-                kwargs: dict[str, Any] = {}
-                if embeddings_model:
-                    kwargs["model"] = embeddings_model
-                if base_url:
-                    kwargs["base_url"] = base_url
-                return OllamaEmbeddings(**kwargs)
-
-            if embeddings_class == "OpenAIEmbeddings":
-                from langchain_openai import OpenAIEmbeddings
-
-                if embeddings_model:
-                    return OpenAIEmbeddings(model=embeddings_model)
-                return OpenAIEmbeddings()
-
-            if embeddings_class == "HuggingFaceEmbeddings":
-                from langchain_huggingface import HuggingFaceEmbeddings
-
-                if embeddings_model:
-                    return HuggingFaceEmbeddings(
-                        model_name=embeddings_model
-                    )
-                return HuggingFaceEmbeddings()
-
-            raise ValueError(
-                "Classe de embeddings não suportada: " f"{embeddings_class}"
-            )
-        except Exception as exc:  # pragma: no cover
-            # Loga erro e repassa para tratamento na chamada
-            logger.error(
-                "Falha ao criar instancia de embeddings: " f"{exc}",
-                exc_info=True,
-            )
-            raise
-
-    @staticmethod
-    def _embed_text(text: str) -> List[float]:
-        """Gera o vetor de embedding para um texto.
-
-        Usa embed_query (preferível para uma única string) quando disponível,
-        com fallback para embed_documents.
-
-        Args:
-            text (str): Texto de entrada.
-
-        Returns:
-            List[float]: Vetor de floats (dimensão 1024).
-        """
-        embeddings = Treinamentos._get_embeddings_instance()
-
-        try:
-            if hasattr(embeddings, "embed_query"):
-                vec: List[float] = list(
-                    map(float, embeddings.embed_query(text))
-                )
-            else:
-                docs_vec: List[List[float]] = embeddings.embed_documents([text])
-                vec = list(map(float, docs_vec[0]))
-            return vec
-        except Exception as exc:  # pragma: no cover
-            logger.error(
-                "Erro ao gerar embedding do texto: " f"{exc}",
-                exc_info=True,
-            )
-            raise
-
-    @classmethod
-    def search_by_similarity(
-        cls,
-        query: str,
-        top_k: int = 5,
-        grupo: Optional[str] = None,
-        tag: Optional[str] = None,
-    ) -> List[tuple["Treinamentos", float]]:
-        """Busca treinamentos mais similares a um texto de consulta.
-
-        A distância usada é a CosineDistance (menor valor = mais similar),
-        conforme configuração do pgvector (operador <=>).
-
-        Args:
-            query (str): Texto de consulta para gerar o embedding.
-            top_k (int): Número máximo de resultados a retornar.
-            grupo (Optional[str]): Filtro opcional por grupo.
-            tag (Optional[str]): Filtro opcional por tag.
-
-        Returns:
-            List[tuple[Treinamentos, float]]: Lista de tuplas
-            (objeto, distancia), ordenada por menor distância.
-        """
-        if not query or not query.strip():
-            return []
-        # Validação defensiva de limite
-        if top_k <= 0:
-            return []
-
-        # Gera vetor do texto de consulta
-        query_vec: List[float] = cls._embed_text(query.strip())
-
-        # Base queryset: somente treinamentos finalizados com embedding
-        qs = cls.objects.filter(
-            treinamento_finalizado=True, embedding__isnull=False
-        )
-        if grupo:
-            qs = qs.filter(grupo=grupo)
-        if tag:
-            qs = qs.filter(tag=tag)
-
-        # Anota e ordena por distância cosseno (menor = mais perto)
-        qs = qs.annotate(
-            distance=CosineDistance("embedding", query_vec)
-        ).order_by("distance")[:top_k]
-
-        resultados: List[tuple["Treinamentos", float]] = []
-        for obj in qs:
-            # type: ignore[attr-defined] - campo anotado em runtime
-            distancia_val: float = float(getattr(obj, "distance", 0.0))
-            resultados.append((obj, distancia_val))
-
-        return resultados
-
-    @staticmethod
-    def _cosine_distance(vec_a: List[float], vec_b: List[float]) -> float:
-        """Calcula a distância cosseno entre dois vetores.
-
-        Retorna valor em [0, 2]; quanto menor, mais similares.
-
-        Args:
-            vec_a (List[float]): Vetor A.
-            vec_b (List[float]): Vetor B.
-
-        Returns:
-            float: Distância cosseno (1 - similaridade).
-        """
-        # Tratamento defensivo para vetores vazios
-        if not vec_a or not vec_b:
-            return 1.0
-
-        # Garante o mesmo tamanho por segurança
-        n = min(len(vec_a), len(vec_b))
-        dot = 0.0
-        norm_a = 0.0
-        norm_b = 0.0
-        for i in range(n):
-            a = float(vec_a[i])
-            b = float(vec_b[i])
-            dot += a * b
-            norm_a += a * a
-            norm_b += b * b
-
-        if norm_a == 0.0 or norm_b == 0.0:
-            return 1.0
-
-        cosine = dot / ((norm_a ** 0.5) * (norm_b ** 0.5))
-        return 1.0 - cosine
-
-    @classmethod
-    def build_similarity_context(
-        cls,
-        query: str,
-        top_k_docs: int = 5,
-        top_k_trainings: int = 5,
-        grupo: Optional[str] = None,
-        tag: Optional[str] = None,
-    ) -> str:
-        """Retorna string com os N documentos mais similares como contexto.
-
-        Passos:
-        1) Busca treinamentos mais similares via pgvector;
-        2) Coleta os documentos desses treinamentos;
-        3) Gera embeddings em lote destes documentos;
-        4) Calcula distância cosseno para cada documento;
-        5) Retorna uma string estruturada com separadores.
-
-        Args:
-            query (str): Texto de consulta.
-            top_k_docs (int): Quantidade de documentos no contexto.
-            top_k_trainings (int): Quantidade de treinamentos a considerar.
-            grupo (Optional[str]): Filtro por grupo.
-            tag (Optional[str]): Filtro por tag.
-
-        Returns:
-            str: Contexto concatenado com '---' entre os chunks.
-        """
-        if not query or not query.strip():
-            return ""
-        if top_k_docs <= 0 or top_k_trainings <= 0:
-            return ""
-
-        # Embedding da consulta
-        query_vec: List[float] = cls._embed_text(query.strip())
-
-        # Seleciona treinamentos mais similares (com filtros opcionais)
-        top_trainings = cls.search_by_similarity(
-            query=query,
-            top_k=top_k_trainings,
-            grupo=grupo,
-            tag=tag,
-        )
-
-        if not top_trainings:
-            return ""
-
-        # Coleta documentos e metadados (tag/grupo) de cada treinamento
-        docs: List[Document] = []
-        doc_meta: List[tuple[str, str]] = []  # (tag, grupo)
-        for tr_obj, _dist in top_trainings:
-            for doc in tr_obj.get_documentos():
-                docs.append(doc)
-                doc_meta.append((tr_obj.tag, tr_obj.grupo))
-
-        if not docs:
-            return ""
-
-        # Gera embeddings em lote para os documentos
-        embeddings = cls._get_embeddings_instance()
-        try:
-            docs_vecs_raw = embeddings.embed_documents(
-                [d.page_content for d in docs]
-            )
-        except Exception as exc:  # pragma: no cover
-            logger.error(
-                f"Falha ao gerar embeddings dos documentos: {exc}",
-                exc_info=True,
-            )
-            return ""
-
-        # Normaliza para List[List[float]]
-        docs_vecs: List[List[float]] = []
-        for vec in docs_vecs_raw:
-            docs_vecs.append([float(x) for x in vec])
-
-        # Calcula as distâncias cosseno
-        scored: List[tuple[float, int]] = []
-        for idx, vec in enumerate(docs_vecs):
-            dist = cls._cosine_distance(query_vec, vec)
-            scored.append((dist, idx))
-
-        # Ordena por menor distância (mais similar primeiro)
-        scored.sort(key=lambda t: t[0])
-
-        # Seleciona os top_k_docs
-        top_scored = scored[:top_k_docs]
-
-        # Monta a string de contexto
-        lines: List[str] = []
-        lines.append(
-            "Contexto de suporte (documentos mais similares):"
-        )
-        for rank, (dist, i) in enumerate(top_scored, start=1):
-            doc = docs[i]
-            tag_i, grupo_i = doc_meta[i]
-            source = "-"
-            try:
-                source = str(doc.metadata.get("source", "-"))
-            except Exception:
-                pass
-
-            header = (
-                f"[{rank}] Treinamento={tag_i} | Grupo={grupo_i} | "
-                f"Fonte={source} | Distância={dist:.4f}"
-            )
-            lines.append(header)
-            lines.append(str(doc.page_content).strip())
-            lines.append("---")
-
-        return "\n".join(lines)
-
-    class Meta:
-        verbose_name = "Treinamento"
-        verbose_name_plural = "Treinamentos"
 
 
 def validate_telefone(value: str) -> None:
@@ -612,11 +30,13 @@ def validate_telefone(value: str) -> None:
         >>> validate_telefone("123")           # inválido - muito curto
     """
     # Remove caracteres não numéricos
-    telefone_limpo = re.sub(r"\D", "", value)
+    telefone_limpo:str = re.sub(r"\D", "", value)
 
     # Verifica se tem pelo menos 10 dígitos (formato brasileiro)
     if len(telefone_limpo) < 10 or len(telefone_limpo) > 15:
-        raise ValidationError("Número de telefone deve ter entre 10 e 15 dígitos.")
+        raise ValidationError(
+            "Número de telefone deve ter entre 10 e 15 dígitos."
+        )
 
     # Verifica se contém apenas números
     if not telefone_limpo.isdigit():
@@ -645,7 +65,7 @@ def validate_cnpj(value: str) -> None:
         return
 
     # Remove caracteres não numéricos
-    cnpj_limpo = re.sub(r"\D", "", value)
+    cnpj_limpo:str = re.sub(r"\D", "", value)
 
     # Verifica se tem exatamente 14 dígitos
     if len(cnpj_limpo) != 14:
@@ -719,7 +139,7 @@ def validate_cep(value: str) -> None:
         return
 
     # Remove caracteres não numéricos
-    cep_limpo = re.sub(r"\D", "", value)
+    cep_limpo:str = re.sub(r"\D", "", value)
 
     # Verifica se tem exatamente 8 dígitos
     if len(cep_limpo) != 8:
@@ -758,7 +178,7 @@ class AtendenteHumano(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    telefone: models.CharField = models.CharField(
+    telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone],
@@ -766,13 +186,13 @@ class AtendenteHumano(models.Model):
         blank=True,
         help_text="Número de telefone do atendente (usado como sessão única)",
     )
-    nome: models.CharField = models.CharField(
+    nome: models.CharField[str] = models.CharField(
         max_length=100, help_text="Nome completo do atendente"
     )
-    cargo: models.CharField = models.CharField(
+    cargo: models.CharField[str] = models.CharField(
         max_length=100, help_text="Cargo/função do atendente"
     )
-    departamento: models.ForeignKey = models.ForeignKey(
+    departamento: models.ForeignKey[Departamento | None] = models.ForeignKey(
         Departamento,
         on_delete=models.SET_NULL,
         blank=True,
@@ -780,54 +200,59 @@ class AtendenteHumano(models.Model):
         related_name="atendentes",
         help_text="Departamento ao qual o atendente pertence",
     )
-    email: models.EmailField = models.EmailField(
+    email: models.EmailField[str | None] = models.EmailField(
         blank=True, null=True, help_text="E-mail corporativo do atendente"
     )
-    usuario_sistema: models.CharField = models.CharField(
+    usuario_sistema: models.CharField[str | None] = models.CharField(
         max_length=50,
         blank=True,
         null=True,
         help_text="Usuário do sistema para login (se aplicável)",
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do atendente"
     )
-    disponivel: models.BooleanField = models.BooleanField(
-        default=True, help_text="Disponibilidade atual para receber novos atendimentos"
+    disponivel: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Disponibilidade atual para receber novos atendimentos",
     )
-    max_atendimentos_simultaneos: models.PositiveIntegerField = (
+    max_atendimentos_simultaneos: models.PositiveIntegerField[int] = (
         models.PositiveIntegerField(
-            default=5, help_text="Máximo de atendimentos simultâneos permitidos"
+            default=5,
+            help_text="Máximo de atendimentos simultâneos permitidos",
         )
     )
-    especialidades: models.JSONField = models.JSONField(
+    especialidades: models.JSONField[list[str] | None] = models.JSONField(
         default=list,
         blank=True,
         help_text="Lista de especialidades/áreas de conhecimento do atendente",
     )
-    horario_trabalho: models.JSONField = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})",
+    horario_trabalho: models.JSONField[dict[str, Any] | None] = (
+        models.JSONField(
+            default=dict,
+            blank=True,
+            help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})",
+        )
     )
-    data_cadastro: models.DateTimeField = models.DateTimeField(
+    data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro no sistema"
     )
-    ultima_atividade: models.DateTimeField = models.DateTimeField(
+    ultima_atividade: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última atividade no sistema"
     )
-    metadados: models.JSONField = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
     )
 
     class Meta:
-        verbose_name = "Atendente Humano"
-        verbose_name_plural = "Atendentes Humanos"
-        ordering = ["nome"]
+        verbose_name: str = "Atendente Humano"
+        verbose_name_plural: str = "Atendentes Humanos"
+        ordering: list[str] = ["nome"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do atendente.
 
@@ -836,7 +261,8 @@ class AtendenteHumano(models.Model):
         """
         return f"{self.nome} - {self.cargo}"
 
-    def save(self, *args, **kwargs):
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Salva o atendente normalizando o número de telefone.
 
@@ -858,6 +284,7 @@ class AtendenteHumano(models.Model):
 
         super().save(*args, **kwargs)
 
+    @override
     def clean(self) -> None:
         """
         Validação personalizada do modelo.
@@ -868,63 +295,6 @@ class AtendenteHumano(models.Model):
             ValidationError: Se houver violação das regras de validação
         """
         super().clean()
-
-    def get_atendimentos_ativos(self) -> int:
-        """
-        Retorna a quantidade de atendimentos ativos do atendente.
-
-        Returns:
-            int: Número de atendimentos ativos
-        """
-        return self.atendimentos.filter(
-            status__in=[
-                StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CONTATO,
-                StatusAtendimento.AGUARDANDO_ATENDENTE,
-            ]
-        ).count()
-
-    def pode_receber_atendimento(self) -> bool:
-        """
-        Verifica se o atendente pode receber um novo atendimento.
-
-        Considera se está ativo, disponível e se não excedeu o limite
-        de atendimentos simultâneos.
-
-        Returns:
-            bool: True se pode receber atendimento, False caso contrário
-        """
-        if not self.ativo or not self.disponivel:
-            return False
-
-        atendimentos_ativos = self.get_atendimentos_ativos()
-        return atendimentos_ativos < self.max_atendimentos_simultaneos
-
-    def adicionar_especialidade(self, especialidade: str) -> None:
-        """
-        Adiciona uma especialidade à lista de especialidades do atendente.
-
-        Args:
-            especialidade (str): Especialidade a ser adicionada
-        """
-        if not self.especialidades:
-            self.especialidades = []
-
-        if especialidade not in self.especialidades:
-            self.especialidades.append(especialidade)
-            self.save()
-
-    def remover_especialidade(self, especialidade: str) -> None:
-        """
-        Remove uma especialidade da lista de especialidades do atendente.
-
-        Args:
-            especialidade (str): Especialidade a ser removida
-        """
-        if self.especialidades and especialidade in self.especialidades:
-            self.especialidades.remove(especialidade)
-            self.save()
-
 
 class Contato(models.Model):
     """
@@ -946,47 +316,48 @@ class Contato(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    telefone: models.CharField = models.CharField(
+    telefone: models.CharField[str] = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone],
         help_text="Número de telefone do contato (formato: 5511999999999)",
     )
-    nome_contato: models.CharField = models.CharField(
+    nome_contato: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Nome do contato"
     )
     # Campo de e-mail do contato (opcional), usado para comunicações por e-mail
-    email: models.EmailField = models.EmailField(
+    email: models.EmailField[str | None] = models.EmailField(
         max_length=254,
         blank=True,
         null=True,
         help_text="E-mail do contato",
     )
-    nome_perfil_whatsapp: models.CharField = models.CharField(
+    nome_perfil_whatsapp: models.CharField[str | None] = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         help_text="Nome do perfil cadastrado no WhatsApp do contato",
     )
-    data_cadastro: models.DateTimeField = models.DateTimeField(
+    data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro do contato"
     )
-    ultima_interacao: models.DateTimeField = models.DateTimeField(
+    ultima_interacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última interação"
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do contato"
     )
-    metadados = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do contato"
     )
 
     class Meta:
-        verbose_name = "Contato"
-        verbose_name_plural = "Contatos"
-        ordering = ["-ultima_interacao"]
+        verbose_name:str = "Contato"
+        verbose_name_plural:str = "Contatos"
+        ordering:list[str] = ["-ultima_interacao"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do contato.
 
@@ -995,7 +366,8 @@ class Contato(models.Model):
         """
         return f"{self.nome_contato or 'Contato'} ({self.telefone})"
 
-    def save(self, *args, **kwargs):
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Salva o contato normalizando o número de telefone.
 
@@ -1056,83 +428,94 @@ class Cliente(models.Model):
     )
 
     # Dados básicos do cliente
-    nome_fantasia: models.CharField = models.CharField(
+    nome_fantasia: models.CharField[str] = models.CharField(
         max_length=200,
         blank=False,
         null=False,
         help_text="Nome comum do cliente (obrigatório)",
     )
-    razao_social: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Nome legal/oficial do cliente"
+    razao_social: models.CharField[str | None] = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Nome legal/oficial do cliente",
     )
-    tipo: models.CharField = models.CharField(
+    tipo: models.CharField[str | None] = models.CharField(
         max_length=20,
         choices=[("fisica", "Pessoa Física"), ("juridica", "Pessoa Jurídica")],
         blank=True,
         null=True,
         help_text="Tipo de pessoa (física ou jurídica)",
     )
-    cnpj: models.CharField = models.CharField(
+    cnpj: models.CharField[str | None] = models.CharField(
         max_length=18,  # formato XX.XXX.XXX/XXXX-XX
         blank=True,
         null=True,
         validators=[validate_cnpj],
         help_text="CNPJ do cliente (formato: 12.345.678/0001-99)",
     )
-    cpf: models.CharField = models.CharField(
+    cpf: models.CharField[str | None] = models.CharField(
         max_length=14,  # formato XXX.XXX.XXX-XX
         blank=True,
         null=True,
         validators=[validate_cpf],
         help_text="CPF do cliente informado durante a conversa (formato: 123.456.789-00)",
     )
-    telefone: models.CharField = models.CharField(
+    telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
         blank=True,
         null=True,
         validators=[validate_telefone],
         help_text="Telefone fixo ou corporativo do cliente",
     )
-    site: models.URLField = models.URLField(
+    site: models.URLField[str | None] = models.URLField(
         blank=True, null=True, help_text="Website do cliente"
     )
-    ramo_atividade: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Área de atuação do cliente"
+    ramo_atividade: models.CharField[str | None] = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Área de atuação do cliente",
     )
-    observacoes: models.TextField = models.TextField(
-        blank=True, null=True, help_text="Informações adicionais sobre o cliente"
+    observacoes: models.TextField[str | None] = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Informações adicionais sobre o cliente",
     )
 
     # Dados de endereço
-    cep: models.CharField = models.CharField(
+    cep: models.CharField[str | None] = models.CharField(
         max_length=10,  # formato XXXXX-XXX
         blank=True,
         null=True,
         validators=[validate_cep],
         help_text="CEP do endereço (formato: 12345-678)",
     )
-    logradouro: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Rua, avenida ou logradouro"
+    logradouro: models.CharField[str | None] = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Rua, avenida ou logradouro",
     )
-    numero: models.CharField = models.CharField(
+    numero: models.CharField[str | None] = models.CharField(
         max_length=10, blank=True, null=True, help_text="Número do endereço"
     )
-    complemento: models.CharField = models.CharField(
+    complemento: models.CharField[str | None] = models.CharField(
         max_length=100,
         blank=True,
         null=True,
         help_text="Complemento do endereço (sala, andar, etc.)",
     )
-    bairro: models.CharField = models.CharField(
+    bairro: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Bairro do cliente"
     )
-    cidade: models.CharField = models.CharField(
+    cidade: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Cidade do cliente"
     )
-    uf: models.CharField = models.CharField(
+    uf: models.CharField[str | None] = models.CharField(
         max_length=2, blank=True, null=True, help_text="Estado (UF) do cliente"
     )
-    pais: models.CharField = models.CharField(
+    pais: models.CharField[str | None] = models.CharField(
         max_length=50,
         blank=True,
         null=True,
@@ -1141,7 +524,7 @@ class Cliente(models.Model):
     )
 
     # Relacionamentos
-    contatos: models.ManyToManyField = models.ManyToManyField(
+    contatos: models.ManyToManyField[Contato, Contato] = models.ManyToManyField(
         Contato,
         blank=True,
         related_name="clientes",
@@ -1149,25 +532,26 @@ class Cliente(models.Model):
     )
 
     # Campos de controle
-    data_cadastro: models.DateTimeField = models.DateTimeField(
+    data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro do cliente"
     )
-    ultima_atualizacao: models.DateTimeField = models.DateTimeField(
+    ultima_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última atualização"
     )
-    ativo: models.BooleanField = models.BooleanField(
+    ativo: models.BooleanField[bool] = models.BooleanField(
         default=True, help_text="Status de atividade do cliente"
     )
-    metadados: models.JSONField = models.JSONField(
+    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do cliente"
     )
 
     class Meta:
-        verbose_name = "Cliente"
-        verbose_name_plural = "Clientes"
-        ordering = ["nome_fantasia"]
+        verbose_name: str = "Cliente"
+        verbose_name_plural: str = "Clientes"
+        ordering: list[str] = ["nome_fantasia"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do cliente.
 
@@ -1176,7 +560,8 @@ class Cliente(models.Model):
         """
         return self.nome_fantasia
 
-    def save(self, *args, **kwargs):
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
         """
         Salva o cliente normalizando dados antes do salvamento.
 
@@ -1222,6 +607,7 @@ class Cliente(models.Model):
 
         super().save(*args, **kwargs)
 
+    @override
     def clean(self) -> None:
         """
         Validação personalizada do modelo.
@@ -1235,7 +621,9 @@ class Cliente(models.Model):
 
         # Valida se o nome fantasia não está vazio
         if not self.nome_fantasia or not self.nome_fantasia.strip():
-            raise ValidationError({"nome_fantasia": "Nome fantasia é obrigatório."})
+            raise ValidationError(
+                {"nome_fantasia": "Nome fantasia é obrigatório."}
+            )
 
     def get_endereco_completo(self) -> str:
         """
@@ -1244,10 +632,10 @@ class Cliente(models.Model):
         Returns:
             str: Endereço completo do cliente
         """
-        partes_endereco = []
+        partes_endereco:list[str] = []
 
         if self.logradouro:
-            endereco_linha = self.logradouro
+            endereco_linha:str = self.logradouro
             if self.numero:
                 endereco_linha += f", {self.numero}"
             if self.complemento:
@@ -1287,15 +675,6 @@ class Cliente(models.Model):
             contato (Contato): Contato a ser removido do cliente
         """
         self.contatos.remove(contato)
-
-    def get_contatos_ativos(self):
-        """
-        Retorna todos os contatos ativos vinculados ao cliente.
-
-        Returns:
-            QuerySet: Contatos ativos do cliente
-        """
-        return self.contatos.filter(ativo=True)
 
     def atualizar_metadados(self, chave: str, valor: Any) -> None:
         """
@@ -1408,7 +787,9 @@ class TipoMensagem(models.TextChoices):
         return mapeamento.get(chave_json, cls.TEXTO_FORMATADO)
 
     @classmethod
-    def obter_chave_json(cls, tipo_mensagem):
+    def obter_chave_json(
+        cls, tipo_mensagem: "TipoMensagem"
+    ) -> Optional[str]:
         """
         Retorna a chave JSON correspondente ao tipo de mensagem.
 
@@ -1470,28 +851,31 @@ class Atendimento(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    contato: models.ForeignKey = models.ForeignKey(
+    contato: models.ForeignKey[Contato] = models.ForeignKey(
         Contato,
         on_delete=models.CASCADE,
         related_name="atendimentos",
         help_text="Contato vinculado ao atendimento",
     )
-    status: models.CharField = models.CharField(
+    status: models.CharField[str] = models.CharField(
         max_length=20,
         choices=StatusAtendimento.choices,
         default=StatusAtendimento.AGUARDANDO_INICIAL,
         help_text="Status atual do atendimento",
     )
-    data_inicio: models.DateTimeField = models.DateTimeField(
+    data_inicio: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de início do atendimento"
     )
-    data_fim: models.DateTimeField = models.DateTimeField(
+    data_fim: models.DateTimeField[datetime | None] = models.DateTimeField(
         blank=True, null=True, help_text="Data de finalização do atendimento"
     )
-    assunto: models.CharField = models.CharField(
-        max_length=200, blank=True, null=True, help_text="Assunto/resumo do atendimento"
+    assunto: models.CharField[str | None] = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Assunto/resumo do atendimento",
     )
-    prioridade: models.CharField = models.CharField(
+    prioridade: models.CharField[str] = models.CharField(
         max_length=10,
         choices=[
             ("baixa", "Baixa"),
@@ -1502,7 +886,7 @@ class Atendimento(models.Model):
         default="normal",
         help_text="Prioridade do atendimento",
     )
-    atendente_humano: models.ForeignKey = models.ForeignKey(
+    atendente_humano: models.ForeignKey[AtendenteHumano | None] = models.ForeignKey(
         AtendenteHumano,
         on_delete=models.SET_NULL,
         blank=True,
@@ -1510,24 +894,26 @@ class Atendimento(models.Model):
         related_name="atendimentos",
         help_text="Atendente humano responsável pelo atendimento (se transferido)",
     )
-    contexto_conversa: models.JSONField = models.JSONField(
+    contexto_conversa: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Contexto atual da conversa (variáveis, estado, etc.)",
     )
-    historico_status: models.JSONField = models.JSONField(
+    historico_status: models.JSONField[list[dict[str, Any]]] = models.JSONField(
         default=list, blank=True, help_text="Histórico de mudanças de status"
     )
-    tags: models.JSONField = models.JSONField(
-        default=list, blank=True, help_text="Tags para categorização do atendimento"
+    tags: models.JSONField[list[str]] = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Tags para categorização do atendimento",
     )
-    avaliacao: models.IntegerField = models.IntegerField(
+    avaliacao: models.IntegerField[int | None] = models.IntegerField(
         blank=True,
         null=True,
-        choices=[(i, i) for i in range(1, 6)],
+        choices=[(i, str(i)) for i in range(1, 6)],
         help_text="Avaliação do atendimento (1-5)",
     )
-    feedback: models.TextField = models.TextField(
+    feedback: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Feedback do contato"
     )
 
@@ -1536,17 +922,18 @@ class Atendimento(models.Model):
         verbose_name_plural = "Atendimentos"
         ordering = ["-data_inicio"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string do atendimento.
 
         Returns:
             str: ID do atendimento, telefone do contato e status atual
         """
-        return f"Atendimento {self.id} - {self.contato.telefone} ({self.get_status_display()})"
+        return f"Atendimento {self.id} - {self.contato.telefone}"
 
     def finalizar_atendimento(
-        self, novo_status: str = StatusAtendimento.RESOLVIDO
+        self, novo_status: str = "resolvido"
     ) -> None:
         """
         Finaliza o atendimento alterando o status e registrando a data de fim.
@@ -1623,34 +1010,14 @@ class Atendimento(models.Model):
         Raises:
             ValidationError: Se o atendente não pode receber o atendimento
         """
-        if not atendente_humano.pode_receber_atendimento():
-            raise ValidationError(
-                f"O atendente {atendente_humano.nome} não pode receber novos atendimentos. "
-                f"Motivos possíveis: inativo, indisponível ou limite de atendimentos atingido."
-            )
 
         self.atendente_humano = atendente_humano
         self.status = StatusAtendimento.TRANSFERIDO
         self.adicionar_historico_status(
-            StatusAtendimento.TRANSFERIDO,
+            "transferido",
             observacao or f"Transferido para {atendente_humano.nome}",
         )
         self.save()
-
-    def liberar_atendente_humano(self, observacao: str = "") -> None:
-        """
-        Remove a atribuição do atendente humano do atendimento.
-
-        Args:
-            observacao (str): Observação sobre a liberação (opcional)
-        """
-        if self.atendente_humano:
-            nome_anterior = self.atendente_humano.nome
-            self.atendente_humano = None
-            self.adicionar_historico_status(
-                self.status, observacao or f"Liberado do atendente {nome_anterior}"
-            )
-            self.save()
 
     def carregar_historico_mensagens(
         self, excluir_mensagem_id: Optional[int] = None
@@ -1682,18 +1049,20 @@ class Atendimento(models.Model):
         try:
             # Busca todas as mensagens do atendimento ordenadas por timestamp
             # (mais antigas primeiro)
-            mensagens_query = self.mensagens.all().order_by("timestamp")
+            mensagens_query:QuerySet[Mensagem] = cast(QuerySet[Mensagem], self.mensagens.all().order_by("timestamp"))# type: ignore
 
             # Exclui mensagem específica se solicitado
             if excluir_mensagem_id:
-                mensagens_query = mensagens_query.exclude(id=excluir_mensagem_id)
+                mensagens_query = mensagens_query.exclude(  # type: ignore
+                    id=excluir_mensagem_id
+                )
 
-            mensagens = mensagens_query
+            mensagens:list[Mensagem] = list(mensagens_query)
 
             # Inicializa as estruturas de dados
-            conteudo_mensagens = []
-            intents_detectados = set()
-            entidades_extraidas = set()
+            conteudo_mensagens:list[str] = []
+            intents_detectados:set[dict[str, str]] = set[dict[str, str]]() 
+            entidades_extraidas:set[dict[str, str]] = set[dict[str, str]]()
 
             # Processa cada mensagem
             for mensagem in mensagens:
@@ -1703,44 +1072,18 @@ class Atendimento(models.Model):
 
                 # Processa intents detectados
                 if mensagem.intent_detectado:
-                    # Espera uma lista de dicionários no formato
-                    # {"saudacao": "Olá", "pergunta": "tudo bem?"}
-                    if isinstance(mensagem.intent_detectado, list):
-                        for intent_dict in mensagem.intent_detectado:
-                            if isinstance(intent_dict, dict):
-                                # Formato padrão: {"saudacao": "Olá"} -
-                                # pega todos os valores dos intents
-                                for tipo_intent, valor_intent in intent_dict.items():
-                                    if valor_intent and str(valor_intent).strip():
-                                        intents_detectados.add(
-                                            f"{tipo_intent}: {valor_intent}"
-                                        )
-
-                        # Se não é uma lista, continua sem processar
+                    for intent_dict in mensagem.intent_detectado:
+                        for tipo_intent, valor_intent in intent_dict.items():
+                            intents_detectados.add({tipo_intent: valor_intent})
 
                 # Processa entidades extraídas
                 if mensagem.entidades_extraidas:
-                    # Espera sempre uma lista de dicionários no formato
-                    # {"tipo": "valor"}
-                    if isinstance(mensagem.entidades_extraidas, list):
-                        for entidade_dict in mensagem.entidades_extraidas:
-                            if isinstance(entidade_dict, dict):
-                                # Formato padrão: {"pessoa": "João Silva"} -
-                                # pega todos os valores
-                                for chave, valor in entidade_dict.items():
-                                    if valor and str(valor).strip():
-                                        entidades_extraidas.add(str(valor))
-                    else:
-                        # Se não é uma lista, loga um aviso
-                        pass
-
-            # Remove strings vazias das entidades
-            entidades_extraidas.discard("")
-            entidades_extraidas.discard("None")
-            entidades_extraidas.discard("null")
+                    for entidade_dict in mensagem.entidades_extraidas:
+                        for tipo_entidade, valor_entidade in entidade_dict.items():
+                            entidades_extraidas.add({tipo_entidade: valor_entidade})
 
             # Busca histórico de atendimentos anteriores do contato
-            historico_atendimentos = []
+            historico_atendimentos:list[str] = []
             atendimentos_anteriores = (
                 Atendimento.objects.filter(contato=self.contato)
                 .exclude(id=self.id)
@@ -1749,7 +1092,7 @@ class Atendimento(models.Model):
             )
 
             for atendimento_anterior in atendimentos_anteriores:
-                if atendimento_anterior.assunto:
+                if atendimento_anterior.assunto and atendimento_anterior.data_fim is not None:
                     data_formatada = atendimento_anterior.data_fim.strftime("%d/%m/%Y")
                     historico_atendimentos.append(
                         f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
@@ -1772,6 +1115,7 @@ class Atendimento(models.Model):
                 "conteudo_mensagens": [],
                 "intents_detectados": set(),
                 "entidades_extraidas": set(),
+                "historico_atendimentos": [],
             }
 
 
@@ -1801,54 +1145,59 @@ class Mensagem(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    atendimento: models.ForeignKey = models.ForeignKey(
+    atendimento: models.ForeignKey[Atendimento] = models.ForeignKey(
         Atendimento,
         on_delete=models.CASCADE,
         related_name="mensagens",
         help_text="Atendimento ao qual a mensagem pertence",
     )
-    tipo: models.CharField = models.CharField(
+    tipo: models.CharField[str] = models.CharField(
         max_length=25,
         choices=TipoMensagem.choices,
         default=TipoMensagem.TEXTO_FORMATADO,
         help_text="Tipo da mensagem",
     )
-    conteudo: models.TextField = models.TextField(help_text="Conteúdo da mensagem")
-    remetente: models.CharField = models.CharField(
+    conteudo: models.TextField[str] = models.TextField(help_text="Conteúdo da mensagem")
+    remetente: models.CharField[str] = models.CharField(
         max_length=20,
         choices=TipoRemetente.choices,
         default=TipoRemetente.CONTATO,
         help_text="Tipo do remetente da mensagem",
     )
-    timestamp: models.DateTimeField = models.DateTimeField(
+    timestamp: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Timestamp da mensagem"
     )
-    message_id_whatsapp: models.CharField = models.CharField(
-        max_length=100, blank=True, null=True, help_text="ID da mensagem no WhatsApp"
+    message_id_whatsapp: models.CharField[str | None] = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="ID da mensagem no WhatsApp",
     )
-    metadados = models.JSONField(
+    metadados: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
         help_text="Metadados adicionais da mensagem (mídia, localização, etc.)",
     )
-    respondida: models.BooleanField = models.BooleanField(
+    respondida: models.BooleanField[bool] = models.BooleanField(
         default=False, help_text="Indica se a mensagem foi respondida"
     )
-    resposta_bot: models.TextField = models.TextField(
+    resposta_bot: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Resposta gerada pelo bot"
     )
-    intent_detectado = models.JSONField(
+    intent_detectado: models.JSONField[list[dict[str, str]]] = models.JSONField(
         default=list,
         blank=True,
         help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
     )
-    entidades_extraidas = models.JSONField(
+    entidades_extraidas: models.JSONField[list[dict[str, str]]] = models.JSONField(
         default=list,
         blank=True,
         help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
     )
-    confianca_resposta: models.FloatField = models.FloatField(
-        blank=True, null=True, help_text="Nível de confiança da resposta do bot (0-1)"
+    confianca_resposta: models.FloatField[float | None] = models.FloatField(
+        blank=True,
+        null=True,
+        help_text="Nível de confiança da resposta do bot (0-1)",
     )
 
     class Meta:
@@ -1856,183 +1205,20 @@ class Mensagem(models.Model):
         verbose_name_plural = "Mensagens"
         ordering = ["timestamp"]
 
-    def __str__(self):
+    @override
+    def __str__(self) -> str:
         """
         Retorna representação string da mensagem.
 
         Returns:
             str: Remetente e preview do conteúdo
         """
-        remetente_display = self.get_remetente_display()
         conteudo_preview = (
-            self.conteudo[:50] + "..." if len(self.conteudo) > 50 else self.conteudo
+            self.conteudo[:50] + "..."
+            if len(self.conteudo) > 50
+            else self.conteudo
         )
-        return f"{remetente_display}: {conteudo_preview}"
-
-    def marcar_como_respondida(
-        self, resposta: str, confianca: Optional[float] = None
-    ) -> None:
-        """
-        Marca a mensagem como respondida com a resposta fornecida.
-
-        Args:
-            resposta (str): Resposta gerada para a mensagem
-            confianca (float, optional): Nível de confiança da resposta (0-1)
-        """
-        self.respondida = True
-        self.resposta_bot = resposta
-        if confianca is not None:
-            self.confianca_resposta = confianca
-        self.save()
-
-    @property
-    def is_from_client(self) -> bool:
-        """
-        Propriedade para compatibilidade com código existente.
-
-        Returns:
-            bool: True se a mensagem é do contato
-        """
-        return self.remetente == TipoRemetente.CONTATO
-
-    @property
-    def is_from_bot(self) -> bool:
-        """
-        Verifica se a mensagem é do bot.
-
-        Returns:
-            bool: True se a mensagem é do bot
-        """
-        return self.remetente == TipoRemetente.BOT
-
-    def adicionar_intent(self, tipo_intent: str, valor_intent: str) -> None:
-        """
-        Adiciona um intent à lista de intents detectados.
-
-        Args:
-            tipo_intent (str): Tipo do intent (ex: 'saudacao', 'pergunta', 'solicitacao')
-            valor_intent (str): Valor/conteúdo do intent
-
-        Example:
-            >>> mensagem.adicionar_intent('saudacao', 'Olá')
-            >>> mensagem.adicionar_intent('pergunta', 'tudo bem?')
-        """
-        if not self.intent_detectado:
-            self.intent_detectado = []
-
-        # Adiciona o intent como dicionário
-        intent_dict = {tipo_intent: valor_intent}
-        self.intent_detectado.append(intent_dict)
-
-    def get_intents_por_tipo(self, tipo_intent: str) -> list[str]:
-        """
-        Retorna todos os valores de um tipo específico de intent.
-
-        Args:
-            tipo_intent (str): Tipo do intent a buscar
-
-        Returns:
-            list[str]: Lista com todos os valores encontrados para o tipo
-
-        Example:
-            >>> mensagem.get_intents_por_tipo('pergunta')
-            ['tudo bem?', 'vocês produzem cones para crepe?']
-        """
-        valores = []
-        if self.intent_detectado:
-            for intent_dict in self.intent_detectado:
-                if isinstance(intent_dict, dict) and tipo_intent in intent_dict:
-                    valores.append(intent_dict[tipo_intent])
-        return valores
-
-    def get_todos_intents(self) -> dict[str, list[str]]:
-        """
-        Retorna todos os intents organizados por tipo.
-
-        Returns:
-            dict: Dicionário com tipos como chaves e listas de valores
-
-        Example:
-            >>> mensagem.get_todos_intents()
-            {
-                'saudacao': ['Olá'],
-                'pergunta': ['tudo bem?', 'vocês produzem cones para crepe?'],
-                'solicitacao': ['gostaria de uma cotação de uma embalagem']
-            }
-        """
-        intents_organizados = {}
-        if self.intent_detectado:
-            for intent_dict in self.intent_detectado:
-                if isinstance(intent_dict, dict):
-                    for tipo, valor in intent_dict.items():
-                        if tipo not in intents_organizados:
-                            intents_organizados[tipo] = []
-                        intents_organizados[tipo].append(valor)
-        return intents_organizados
-
-    @property
-    def is_from_atendente_humano(self) -> bool:
-        """
-        Verifica se a mensagem é de um atendente humano.
-
-        Returns:
-            bool: True se a mensagem é de um atendente humano
-        """
-        return self.remetente == TipoRemetente.ATENDENTE_HUMANO
-
-
-class FluxoConversa(models.Model):
-    """
-    Modelo para definir fluxos de conversa e estados.
-
-    Gerencia os fluxos de conversação automatizados do sistema,
-    incluindo condições de entrada, estados e transições.
-
-    Attributes:
-        id: Chave primária do registro
-        nome: Nome único do fluxo de conversa
-        descricao: Descrição detalhada do fluxo
-        condicoes_entrada: Condições JSON para ativação do fluxo
-        estados: Estados e transições do fluxo em formato JSON
-        ativo: Indica se o fluxo está ativo
-        data_criacao: Data de criação automática
-        data_modificacao: Data de última modificação automática
-    """
-
-    id: models.AutoField = models.AutoField(
-        primary_key=True, help_text="Chave primária do registro"
-    )
-    nome: models.CharField = models.CharField(
-        max_length=100, unique=True, help_text="Nome do fluxo de conversa"
-    )
-    descricao: models.TextField = models.TextField(
-        blank=True, null=True, help_text="Descrição do fluxo"
-    )
-    condicoes_entrada: models.JSONField = models.JSONField(
-        default=dict, help_text="Condições para entrar neste fluxo"
-    )
-    estados: models.JSONField = models.JSONField(
-        default=dict, help_text="Estados e transições do fluxo"
-    )
-    ativo: models.BooleanField = models.BooleanField(
-        default=True, help_text="Fluxo ativo"
-    )
-    data_criacao: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    data_modificacao: models.DateTimeField = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "Fluxo de Conversa"
-        verbose_name_plural = "Fluxos de Conversa"
-
-    def __str__(self):
-        """
-        Retorna representação string do fluxo de conversa.
-
-        Returns:
-            str: Nome do fluxo de conversa
-        """
-        return self.nome
-
+        return f"{self.remetente}: {conteudo_preview}"
 
 # Função utilitária para inicializar contato e atendimento
 def inicializar_atendimento_whatsapp(
@@ -2092,6 +1278,8 @@ def inicializar_atendimento_whatsapp(
                 atualizado = True
 
             if metadata_contato:
+                if contato.metadados is None:
+                    contato.metadados = {}
                 contato.metadados.update(metadata_contato)
                 atualizado = True
 
@@ -2250,10 +1438,11 @@ def processar_mensagem_whatsapp(
             atendimento.contato.save()
 
             # Atualiza status do atendimento se for a primeira mensagem
-            if atendimento.status == StatusAtendimento.AGUARDANDO_INICIAL:
+            if atendimento.status in StatusAtendimento.AGUARDANDO_INICIAL:
                 atendimento.status = StatusAtendimento.EM_ANDAMENTO
                 atendimento.adicionar_historico_status(
-                    StatusAtendimento.EM_ANDAMENTO, "Primeira mensagem recebida"
+                    "em_andamento",
+                    "Primeira mensagem recebida",
                 )
                 atendimento.save()
 
@@ -2262,186 +1451,4 @@ def processar_mensagem_whatsapp(
     except Exception as e:
         logger.error(f"Erro ao processar mensagem WhatsApp: {e}")
         raise
-
-
-def buscar_atendente_disponivel(
-    especialidades: Optional[list[str]] = None,
-    departamento: Optional["Departamento"] = None,
-) -> Optional["AtendenteHumano"]:
-    """
-    Busca um atendente humano disponível para receber um novo atendimento.
-
-    Args:
-        especialidades (list, optional): Lista de especialidades requeridas
-        departamento (Departamento, optional): Objeto departamento específico
-
-    Returns:
-        AtendenteHumano: Atendente disponível ou None se nenhum encontrado
-    """
-    try:
-        # Query base: atendentes ativos e disponíveis
-        query = AtendenteHumano.objects.filter(ativo=True, disponivel=True)
-
-        # Filtra por departamento se especificado
-        if departamento:
-            query = query.filter(departamento=departamento)
-
-        # Filtra atendentes que podem receber novos atendimentos
-        atendentes_disponiveis = []
-        for atendente in query:
-            if atendente.pode_receber_atendimento():
-                # Verifica especialidades se especificadas
-                if especialidades:
-                    if any(esp in atendente.especialidades for esp in especialidades):
-                        atendentes_disponiveis.append(atendente)
-                else:
-                    atendentes_disponiveis.append(atendente)
-
-        if not atendentes_disponiveis:
-            return None
-
-        # Retorna o atendente com menos atendimentos ativos (balanceamento)
-        return min(atendentes_disponiveis, key=lambda a: a.get_atendimentos_ativos())
-
-    except Exception as e:
-        logger.error(f"Erro ao buscar atendente disponível: {e}")
-        return None
-
-
-def transferir_atendimento_automatico(
-    atendimento: "Atendimento",
-    especialidades: Optional[list[str]] = None,
-    departamento: Optional["Departamento"] = None,
-) -> Optional["AtendenteHumano"]:
-    """
-    Transfere automaticamente um atendimento para um atendente humano disponível.
-
-    Args:
-        atendimento (Atendimento): Atendimento a ser transferido
-        especialidades (list, optional): Lista de especialidades requeridas
-        departamento (Departamento, optional): Objeto departamento específico
-
-    Returns:
-        AtendenteHumano: Atendente que recebeu o atendimento ou None se nenhum disponível
-
-    Raises:
-        Exception: Se houver erro durante a transferência
-    """
-    try:
-        atendente = buscar_atendente_disponivel(especialidades, departamento)
-
-        if not atendente:
-            return None
-
-        # Realiza a transferência
-        observacao = "Transferência automática do sistema"
-        if especialidades:
-            observacao += f" - Especialidades: {', '.join(especialidades)}"
-        if departamento:
-            observacao += f" - Departamento: {departamento.nome}"
-
-        atendimento.transferir_para_humano(atendente, observacao)
-
-        return atendente
-
-    except Exception as e:
-        logger.error(f"Erro ao transferir atendimento automaticamente: {e}")
-        raise
-
-
-def listar_atendentes_por_disponibilidade() -> dict[str, list["AtendenteHumano"]]:
-    """
-    Lista todos os atendentes agrupados por disponibilidade.
-
-    Returns:
-        dict: Dicionário com atendentes agrupados por status de disponibilidade
-    """
-    try:
-        atendentes = AtendenteHumano.objects.filter(ativo=True)
-
-        resultado: dict[str, list[dict[str, Any]]] = {
-            "disponiveis": [],
-            "ocupados": [],
-            "indisponiveis": [],
-        }
-
-        for atendente in atendentes:
-            info_atendente = {
-                "id": atendente.id,
-                "nome": atendente.nome,
-                "cargo": atendente.cargo,
-                "departamento": atendente.departamento.nome
-                if atendente.departamento
-                else None,
-                "telefone": atendente.telefone,
-                "atendimentos_ativos": atendente.get_atendimentos_ativos(),
-                "max_atendimentos": atendente.max_atendimentos_simultaneos,
-                "especialidades": atendente.especialidades,
-            }
-
-            if not atendente.disponivel:
-                resultado["indisponiveis"].append(info_atendente)
-            elif atendente.pode_receber_atendimento():
-                resultado["disponiveis"].append(info_atendente)
-            else:
-                resultado["ocupados"].append(info_atendente)
-
-        return resultado
-
-    except Exception as e:
-        logger.error(f"Erro ao listar atendentes por disponibilidade: {e}")
-        return {"disponiveis": [], "ocupados": [], "indisponiveis": []}
-
-
-def enviar_mensagem_atendente(
-    atendimento: "Atendimento",
-    atendente_humano: "AtendenteHumano",
-    conteudo: str,
-    tipo_mensagem: "TipoMensagem" = TipoMensagem.TEXTO_FORMATADO,
-    metadados: Optional[dict[str, Any]] = None,
-) -> "Mensagem":
-    """
-    Envia uma mensagem de um atendente humano para um atendimento.
-
-    Args:
-        atendimento (Atendimento): Atendimento onde a mensagem será enviada
-        atendente_humano (AtendenteHumano): Atendente que está enviando a mensagem
-        conteudo (str): Conteúdo da mensagem
-        tipo_mensagem (TipoMensagem): Tipo da mensagem (padrão: TEXTO)
-        metadados (dict, optional): Metadados adicionais da mensagem
-
-    Returns:
-        Mensagem: Objeto mensagem criado
-
-    Raises:
-        ValidationError: Se o atendente não estiver associado ao atendimento
-    """
-    try:
-        # Verifica se o atendente está associado ao atendimento
-        if atendimento.atendente_humano != atendente_humano:
-            raise ValidationError(
-                f"O atendente {atendente_humano.nome} não está associado a este atendimento."
-            )
-
-        # Cria a mensagem
-        mensagem = Mensagem.objects.create(
-            atendimento=atendimento,
-            tipo=tipo_mensagem,
-            conteudo=conteudo,
-            remetente=TipoRemetente.ATENDENTE_HUMANO,
-            metadados=metadados
-            or {
-                "atendente_id": atendente_humano.id,
-                "atendente_nome": atendente_humano.nome,
-            },
-        )
-
-        # Atualiza a última atividade do atendente
-        atendente_humano.ultima_atividade = timezone.now()
-        atendente_humano.save()
-
-        return mensagem
-
-    except Exception as e:
-        logger.error(f"Erro ao enviar mensagem do atendente: {e}")
-        raise
+    

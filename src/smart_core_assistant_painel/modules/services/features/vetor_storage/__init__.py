@@ -1,0 +1,1 @@
+"""Pacote de armazenamento vetorial (Vector Storage)."""

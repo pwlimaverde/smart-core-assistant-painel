@@ -11,6 +11,7 @@ from django.db.models.signals import (
     pre_delete,
     pre_save,
 )
+from django.dispatch import Signal
 from loguru import logger
 
 
@@ -51,11 +52,12 @@ class OraculoConfig(AppConfig):
             self._set_send_to_robust(pre_delete, "pre_delete")
         except Exception as e:
             logger.error(
-                f"Falha ao configurar signals como robustos: {e}", exc_info=True
+                f"Falha ao configurar signals como robustos: {e}",
+                exc_info=True,
             )
 
     @staticmethod
-    def _set_send_to_robust(signal_obj, label: str) -> None:
+    def _set_send_to_robust(signal_obj: Signal, label: str) -> None:
         """Substitui o método send por send_robust de forma idempotente.
 
         Args:

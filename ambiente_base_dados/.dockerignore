@@ -1,0 +1,19 @@
+# Arquivos e diretórios a serem ignorados no build do Docker
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Dados de desenvolvimento
+postgres_remote_data/
+redis_remote_data/
+
+# Arquivos de configuração local
+.env.local
+.env.development
+
+# Backups
+*.bak
+*.backup

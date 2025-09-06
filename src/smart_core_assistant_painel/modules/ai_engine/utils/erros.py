@@ -11,17 +11,6 @@ from py_return_success_or_error import AppError
 
 
 @dataclass
-class WahaApiError(AppError):
-    """Erro relacionado à API WAHA (WhatsApp)."""
-
-    message: str
-
-    def __str__(self) -> str:
-        """Retorna uma mensagem de erro formatada."""
-        return f"WahaApiError - {self.message}"
-
-
-@dataclass
 class HtmlStrError(AppError):
     """Erro relacionado ao processamento de strings HTML."""
 
@@ -63,3 +52,25 @@ class DataMessageError(AppError):
     def __str__(self) -> str:
         """Retorna uma mensagem de erro formatada."""
         return f"DataMessageError - {self.message}"
+
+
+@dataclass
+class EmbeddingError(AppError):
+    """Erro relacionado à geração ou processamento de embeddings."""
+
+    message: str
+
+    def __str__(self) -> str:
+        """Retorna uma mensagem de erro formatada."""
+        return f"EmbeddingError - {self.message}"
+
+
+@dataclass
+class GenerateChunksError(AppError):
+    """Erro relacionado à geração ou processamento de chunks."""
+
+    message: str
+
+    def __str__(self) -> str:
+        """Retorna uma mensagem de erro formatada."""
+        return f"GenerateChunksError - {self.message}"

@@ -78,31 +78,41 @@ class LoadMensageDataUseCase(LMDUsecase):
             instance = parameters.data.get("instance")
             if not instance:
                 error = parameters.error
-                error.message = "Campo 'instance' não encontrado no payload do webhook"
+                error.message = (
+                    "Campo 'instance' não encontrado no payload do webhook"
+                )
                 return ErrorReturn(error)
 
             data_section = parameters.data.get("data")
             api_key = parameters.data.get("apikey")
             if not api_key:
                 error = parameters.error
-                error.message = "Campo 'api_key' não encontrado no payload do webhook"
+                error.message = (
+                    "Campo 'api_key' não encontrado no payload do webhook"
+                )
                 return ErrorReturn(error)
 
             if not data_section:
                 error = parameters.error
-                error.message = "Campo 'data' não encontrado no payload do webhook"
+                error.message = (
+                    "Campo 'data' não encontrado no payload do webhook"
+                )
                 return ErrorReturn(error)
 
             key_section = data_section.get("key")
             if not key_section:
                 error = parameters.error
-                error.message = "Campo 'key' não encontrado no payload do webhook"
+                error.message = (
+                    "Campo 'key' não encontrado no payload do webhook"
+                )
                 return ErrorReturn(error)
 
             remote_jid = key_section.get("remoteJid")
             if not remote_jid:
                 error = parameters.error
-                error.message = "Campo 'remoteJid' não encontrado no payload do webhook"
+                error.message = (
+                    "Campo 'remoteJid' não encontrado no payload do webhook"
+                )
                 return ErrorReturn(error)
 
             # Extrair e normalizar telefone do remoteJid
@@ -120,7 +130,9 @@ class LoadMensageDataUseCase(LMDUsecase):
             # Priorizar a primeira chave do message sobre messageType
             message_section = data_section.get("message")
             if not message_section:
-                raise ValueError("Campo 'message' não encontrado nos dados do webhook")
+                raise ValueError(
+                    "Campo 'message' não encontrado nos dados do webhook"
+                )
 
             # Usar primeira chave do message como tipo real da mensagem
             message_keys = message_section.keys()
@@ -137,7 +149,9 @@ class LoadMensageDataUseCase(LMDUsecase):
 
             # Adicionar timestamp da mensagem nos metadados se disponível
             if "messageTimestamp" in data_section:
-                metadados["messageTimestamp"] = data_section["messageTimestamp"]
+                metadados["messageTimestamp"] = data_section[
+                    "messageTimestamp"
+                ]
 
             if messageType:
                 message_data = message_section.get(messageType, {})
@@ -177,7 +191,9 @@ class LoadMensageDataUseCase(LMDUsecase):
                     )  # Se é mensagem de voz
                 elif messageType == "documentMessage":
                     # Para documentos
-                    conteudo = message_data.get("fileName", "Documento recebido")
+                    conteudo = message_data.get(
+                        "fileName", "Documento recebido"
+                    )
                     metadados["mimetype"] = message_data.get("mimetype")
                     metadados["url"] = message_data.get("url")
                     metadados["fileLength"] = message_data.get("fileLength")
@@ -190,7 +206,9 @@ class LoadMensageDataUseCase(LMDUsecase):
                     # Para localização
                     conteudo = "Localização recebida"
                     metadados["latitude"] = message_data.get("degreesLatitude")
-                    metadados["longitude"] = message_data.get("degreesLongitude")
+                    metadados["longitude"] = message_data.get(
+                        "degreesLongitude"
+                    )
                     metadados["name"] = message_data.get("name")
                     metadados["address"] = message_data.get("address")
                 elif messageType == "contactMessage":
@@ -206,14 +224,18 @@ class LoadMensageDataUseCase(LMDUsecase):
                     metadados["listType"] = message_data.get("listType")
                 elif messageType == "buttonsMessage":
                     # Para mensagens com botões
-                    conteudo = message_data.get("contentText", "Botões recebidos")
+                    conteudo = message_data.get(
+                        "contentText", "Botões recebidos"
+                    )
                     metadados["headerType"] = message_data.get("headerType")
                     metadados["footerText"] = message_data.get("footerText")
                 elif messageType == "pollMessage":
                     # Para enquetes
                     conteudo = message_data.get("name", "Enquete recebida")
                     metadados["options"] = message_data.get("options")
-                    metadados["selectableCount"] = message_data.get("selectableCount")
+                    metadados["selectableCount"] = message_data.get(
+                        "selectableCount"
+                    )
                 elif messageType == "reactMessage":
                     # Para reações
                     conteudo = "Reação recebida"

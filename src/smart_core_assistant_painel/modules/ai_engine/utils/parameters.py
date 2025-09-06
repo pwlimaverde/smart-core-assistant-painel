@@ -14,8 +14,8 @@ from py_return_success_or_error import ParametersReturnResult
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DataMessageError,
     DocumentError,
+    EmbeddingError,
     LlmError,
-    WahaApiError,
 )
 
 
@@ -30,27 +30,6 @@ class DataMensageParameters(ParametersReturnResult):
 
     data: dict[str, Any]
     error: DataMessageError
-
-    def __str__(self) -> str:
-        """Retorna uma representação em string do objeto."""
-        return self.__repr__()
-
-
-@dataclass
-class MessageParameters(ParametersReturnResult):
-    """Parâmetros para o envio de uma mensagem.
-
-    Attributes:
-        session (str): A sessão associada à mensagem.
-        chat_id (str): O ID do chat para onde a mensagem será enviada.
-        message (Optional[str]): O conteúdo da mensagem.
-        error (WahaApiError): O erro a ser levantado em caso de falha.
-    """
-
-    session: str
-    chat_id: str
-    message: Optional[str]
-    error: WahaApiError
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""
@@ -203,6 +182,63 @@ class AnalisePreviaMensagemParameters(ParametersReturnResult):
     valid_entity_types: str
     llm_parameters: LlmParameters
     error: LlmError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class GenerateEmbeddingsParameters(ParametersReturnResult):
+    """Parâmetros para geração de embeddings.
+
+    Attributes:
+        text (str): Texto para o qual gerar o embedding.
+        error (EmbeddingError): O erro a ser levantado em caso de falha.
+    """
+
+    text: str
+    error: EmbeddingError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class SearchSimilarEmbeddingsParameters(ParametersReturnResult):
+    """Parâmetros para busca por similaridade de embeddings.
+
+    Attributes:
+        query_embedding (list[float]): Vetor de embedding da consulta.
+        embeddings_data (list[dict[str, Any]]): Lista de dados com embeddings para busca.
+        top_k (int): Número máximo de resultados a retornar.
+        error (EmbeddingError): O erro a ser levantado em caso de falha.
+    """
+
+    query_embedding: list[float]
+    embeddings_data: list[dict[str, Any]]
+    top_k: int = 5
+    error: EmbeddingError
+
+    def __str__(self) -> str:
+        """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class GenerateChunksParameters(ParametersReturnResult):
+    """Parâmetros para geração de chunks a partir de conteúdo.
+
+    Attributes:
+        conteudo (str): Conteúdo de texto para ser dividido em chunks.
+        metadata (dict[str, Any]): Metadados a serem associados aos chunks.
+        error (DocumentError): O erro a ser levantado em caso de falha.
+    """
+
+    conteudo: str
+    metadata: dict[str, Any]
+    error: DocumentError
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""

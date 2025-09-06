@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "0.8.3"
+version = "0.8.4"
 description = "Add your description here"
 readme = "README.md"
 authors = [
@@ -22,7 +22,7 @@ dependencies = [
     "charset-normalizer==3.4.2",
     "dataclasses-json==0.6.7",
     "distro==1.9.0",
-    "django==5.2.1",
+    "django==5.2.5",
     "django-picklefield==3.3",
     "django-q2==1.8.0",
     "django-role-permissions==3.2.0",
@@ -51,53 +51,49 @@ dependencies = [
     "markdown>=3.8",
     "marshmallow==3.26.1",
     "multidict==6.4.4",
-    "mypy>=1.17.0",
     "mypy-extensions==1.1.0",
     "networkx>=3.5",
-
     "openai==1.82.0",
     "openpyxl>=3.1.5",
     "orjson==3.10.18",
     "packaging==24.2",
-
     "propcache==0.3.1",
     "psycopg[binary]==3.2.3",
     "py-return-success-or-error==0.6.1",
-    "pydantic==2.11.5",
+    "pydantic==2.11.7",
     "pydantic-core==2.33.2",
-    "pydantic-settings==2.9.1",
-    "pypdf==5.5.0",
+    "pydantic-settings==2.10.1",
+    "pypdf==6.0.0",
     "python-dateutil==2.9.0.post0",
     "python-decouple==3.8",
-    "python-dotenv[cli]==1.1.0",
+    "python-dotenv[cli]==1.1.1",
     "pyyaml==6.0.2",
-    "redis==3.5.3",
-    "django-redis==5.4.0",
-    "regex==2024.11.6",
-    "requests==2.32.3",
+    "redis>=4.5.0",
+    "django-redis==6.0.0",
+    "regex==2025.9.1",
+    "requests==2.32.5",
     "requests-toolbelt==1.0.0",
     "setuptools==80.9.0",
     "six==1.17.0",
     "sniffio==1.3.1",
-    "soupsieve==2.7",
+    "soupsieve==2.8",
     "sqlalchemy==2.0.41",
     "sqlparse==0.5.3",
     "tenacity==9.1.2",
-    "tiktoken==0.9.0",
+    "tiktoken==0.11.0",
     "tqdm==4.67.1",
-    "types-python-dateutil==2.9.0.20250516",
-    "typing-extensions==4.13.2",
+    "typing-extensions==4.15.0",
     "typing-inspect==0.9.0",
     "typing-inspection==0.4.1",
     "tzlocal==5.3.1",
     "unstructured>=0.17.2",
-    "urllib3==2.4.0",
+    "urllib3==2.5.0",
     "wcwidth==0.2.13",
     "xlrd>=2.0.1",
-    "yarl==1.20.0",
+    "yarl==1.20.1",
     "zstandard==0.23.0",
-    # Substitui langchain-huggingface por dependencia leve para API
     "huggingface-hub>=0.24.0",
+    "langchain-huggingface>=0.2.0",
 ]
 
 
@@ -107,19 +103,18 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "autopep8>=1.6.0",
-    "blue>=0.9.1",
-    "django-stubs>=5.2.0",
-    "isort>=6.0.1",
     "loguru>=0.7.3",
+    "pyright>=1.1.380",
     "pytest>=8.4.0",
     "pytest-cov>=6.1.1",
     "pytest-django>=4.9.0",
-    "rich>=14.0.0",
+    "rich>=14.1.0",
     "ruff>=0.11.13",
     "taskipy>=1.14.1",
     "types-beautifulsoup4>=4.12.0.20250516",
     "types-requests>=2.32.0.20250602",
+    "django-types>=0.22.0",
+    "django-stubs-ext>=5.2.2",
 ]
 doc = [
     "mkdocs>=1.6.1",
@@ -128,20 +123,37 @@ doc = [
     "mkdocstrings-python>=1.16.12",
 ]
 
-[tool.autopep8]
-max-line-length = 79
-aggressive = 3
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 79
-
 [tool.ruff]
-exclude = ["__init__.py"]
+line-length = 79
+target-version = "py313"
+
+[tool.ruff.lint]
+extend-select = ["I"]
+
+[tool.pyright]
+# Verificação de tipos em modo estrito no CLI
+typeCheckingMode = "strict"
+# Incluir src e tests na análise
+include = ["src", "tests"]
+# Excluir migrations da análise para reduzir ruído
+exclude = ["**/migrations/**"]
+# Força alerta/erro quando tipos genéricos não têm parâmetros
+reportMissingTypeArgument = "error"
+reportMissingTypeStubs = false
+strictParameterNoneValue = false
+reportUnknownVariableType = "warning"  
+# Reduz para warning ao invés de error
+reportUnknownMemberType = "warning"
+# Alinha com a versão de Python do projeto
+pythonVersion = "3.13"
+# Caminhos extras para resolver imports no layout em src/
+extraPaths = [
+    "src",
+    "src/smart_core_assistant_painel",
+    "src/smart_core_assistant_painel/app",
+    "src/smart_core_assistant_painel/modules",
+]
+
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/smart_core_assistant_painel"]
@@ -154,8 +166,11 @@ start-server = "smart_core_assistant_painel.main:main"
 
 
 [tool.taskipy.tasks]
+# Scripts de automação
+base = "python scripts/new_feature_script.py --type base"
+call-data = "python scripts/new_feature_script.py --type call_data"
+
 # Servidor Django - Local
-dev = "python -m smart_core_assistant_painel.main runserver"
 start = "python -m smart_core_assistant_painel.main runserver"
 server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 cluster = "python -m smart_core_assistant_painel.main qcluster"
@@ -178,10 +193,12 @@ collectstatic = "cd src/smart_core_assistant_painel/app/ui && python manage.py c
 shell = "cd src/smart_core_assistant_painel/app/ui && python manage.py shell"
 startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
 
+# Atalho: migração remota (aplica migrations no PostgreSQL remoto)
+migrate-remoto = "python scripts/migrar_remoto.py"
+
 # Django management commands (Docker)
 migrate-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"
 makemigrations-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-createsuperuser-docker = "docker compose exec django-app uv run --active python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 collectstatic-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput"
 shell-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell"
 startapp-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py startapp"
@@ -199,14 +216,13 @@ test-all = "pytest -v --cov=src --cov-report=term-missing"
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"
 lint = "ruff check src/"
 format = "ruff format src/"
-type-check = "mypy src/"
+type-check = "pyright"
 
 # Comandos combinados - Local
 setup = "uv sync --dev && uv run task migrate && uv run task createsuperuser"
 dev-setup = "uv sync --dev && uv run task migrate"
 
 # Combined routines (Docker)
-setup-docker = "docker compose up -d --build && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate && docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 dev-setup-docker = "docker compose up -d --build"
 
 
@@ -218,7 +234,4 @@ test-docker-coverage = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core
 # Executa testes específicos dentro do container; passe o caminho/expressão após `uv run task test-docker-specific`
 # Ex.: uv run task test-docker-specific -- src/smart_core_assistant_painel/app/ui/oraculo/tests/
 # Removido $TASK_ARGS; Taskipy anexará os argumentos passados após o comando abaixo.
-test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v"
-
-[tool.mypy]
-ignore_missing_imports = true
+ test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v"

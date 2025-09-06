@@ -68,7 +68,7 @@ dependencies = [
     "python-decouple==3.8",
     "python-dotenv[cli]==1.1.0",
     "pyyaml==6.0.2",
-    "redis==3.5.3",
+    "redis>=4.5.0",
     "django-redis==5.4.0",
     "regex==2024.11.6",
     "requests==2.32.3",
@@ -194,7 +194,7 @@ shell = "cd src/smart_core_assistant_painel/app/ui && python manage.py shell"
 startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
 
 # Atalho: migração remota (aplica migrations no PostgreSQL remoto)
-migrate-remoto = "scripts/migrar_remoto.bat"
+migrate-remoto = "python scripts/migrar_remoto.py"
 
 # Django management commands (Docker)
 migrate-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"

@@ -23,8 +23,8 @@ class MensagemInline(admin.TabularInline[Mensagem, Atendimento]):
         "remetente",
         "respondida",
         "entidades_extraidas_preview",
-        "timestamp",
     )
+    readonly_fields = ("timestamp", "entidades_extraidas_preview")
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
         """Ordena as mensagens por timestamp."""

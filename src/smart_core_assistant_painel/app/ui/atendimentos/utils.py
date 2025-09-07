@@ -1,11 +1,12 @@
 """Funções utilitárias para o aplicativo Atendimentos."""
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, Optional
 
 from django.core.cache import cache
 from django.utils import timezone
 from loguru import logger
+from ui.clientes.models import Contato
 
 from smart_core_assistant_painel.app.ui.treinamento.models import Documento
 from smart_core_assistant_painel.modules.ai_engine import (
@@ -16,9 +17,9 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models import (
     Atendimento,
-    Contato,
     Mensagem,
     TipoRemetente,
+    processar_mensagem_whatsapp,
 )
 from .signals import mensagem_bufferizada
 
@@ -70,9 +71,8 @@ def send_message_response(phone: str) -> None:
             )
             logger.info(f"Teste similaridade: {teste_similaridade}")
 
-            atendimento_obj: Atendimento = cast(
-                Atendimento, mensagem.atendimento
-            )
+            atendimento_obj: Atendimento = mensagem.atendimento
+            
             if _pode_bot_responder_atendimento(atendimento_obj):
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
@@ -107,15 +107,12 @@ def _obter_entidades_metadados_validas() -> set[str]:
         valid_entity_types = SERVICEHUB.VALID_ENTITY_TYPES
         if not valid_entity_types:
             return set()
-        entidades_config = json.loads(valid_entity_types)
+        entidades_config: dict[str, Any] = json.loads(valid_entity_types)
         entidades_validas: set[str] = set()
-        if (
-            isinstance(entidades_config, dict)
-            and "entity_types" in entidades_config
-        ):
+        if "entity_types" in entidades_config:
+            entidades: dict[str, Any] = entidades_config["entity_types"]
             for _, entidades in entidades_config["entity_types"].items():
-                if isinstance(entidades, dict):
-                    entidades_validas.update(entidades.keys())
+                entidades_validas.update(entidades.keys())
         entidades_validas.discard("contato")
         entidades_validas.discard("telefone")
         entidades_validas.discard("nome_contato")
@@ -129,8 +126,8 @@ def _processar_entidades_contato(
 ) -> None:
     """Processa entidades extraídas para atualizar dados do contato."""
     try:
-        atendimento = cast(Atendimento, mensagem.atendimento)
-        contato = cast(Contato, atendimento.contato)
+        atendimento: Atendimento = mensagem.atendimento
+        contato: Contato = atendimento.contato
         contato_atualizado = False
         metadados_atualizados = False
         entidades_metadados = _obter_entidades_metadados_validas()
@@ -177,7 +174,7 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
     """Analisa o conteúdo da mensagem para detectar intenção e entidades."""
     try:
         mensagem: Mensagem = Mensagem.objects.get(id=mensagem_id)
-        atendimento: Atendimento = cast(Atendimento, mensagem.atendimento)
+        atendimento: Atendimento = mensagem.atendimento
         exists_atendimento_anterior = (
             Atendimento.objects.filter(contato=atendimento.contato)
             .exclude(id=atendimento.id)
@@ -216,7 +213,7 @@ def _pode_bot_responder_atendimento(
         mensagens_manager = getattr(atendimento, "mensagens", None)
         has_human_messages = False
         if mensagens_manager is not None:
-            mm_any = cast(Any, mensagens_manager)
+            mm_any = mensagens_manager
             has_human_messages = mm_any.filter(
                 remetente=TipoRemetente.ATENDENTE_HUMANO
             ).exists()
@@ -232,8 +229,6 @@ def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
     """Compila uma lista de MessageData em um único objeto."""
     if not messages:
         raise ValueError("lista de mensagens não pode estar vazia")
-    if not isinstance(messages, list):
-        raise ValueError("O parâmetro 'messages' deve ser uma lista")
 
     ultima_mensagem = messages[-1]
     conteudos_validos = [
@@ -244,7 +239,7 @@ def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
     conteudo_compilado = "\n".join(conteudos_validos)
     metadados_compilados: dict[str, Any] = {}
     for msg in messages:
-        if msg.metadados and isinstance(msg.metadados, dict):
+        if msg.metadados:
             metadados_compilados.update(msg.metadados)
 
     return MessageData(

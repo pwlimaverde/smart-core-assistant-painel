@@ -14,10 +14,10 @@
                         </h1>
                     </div>
                     <div class="flex items-center gap-x-4 sm:gap-x-6">
-                        <a href="{% url 'oraculo:treinar_ia' %}"
+                        <a href="{% url 'treinamento:treinar_ia' %}"
                            type="button"
                            class="hidden text-sm/6 font-semibold text-gray-900 sm:block">Treinamento da IA</a>
-                        <a href="{% url 'oraculo:verificar_treinamentos_vetorizados' %}"
+                        <a href="{% url 'treinamento:verificar_treinamentos_vetorizados' %}"
                            type="button"
                            class="hidden text-sm/6 font-semibold text-gray-900 sm:block">Verificar Treinamentos</a>
                         <a href=""
@@ -55,13 +55,13 @@
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ treinamento.grupo }}</td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ treinamento.data_criacao|date:"d/m/Y H:i" }}</td>
                                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
+                                                    <form method="post" action="{% url 'treinamento:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="acao" value="editar">
                                                         <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                         <button type="submit" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar Treinamento</button>
                                                     </form>
-                                                    <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
+                                                    <form method="post" action="{% url 'treinamento:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="acao" value="excluir">
                                                         <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
@@ -105,13 +105,13 @@
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ treinamento.grupo }}</td>
                                                 <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ treinamento.data_criacao|date:"d/m/Y H:i" }}</td>
                                                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                                                    <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
+                                                    <form method="post" action="{% url 'treinamento:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="acao" value="editar">
                                                         <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                         <button type="submit" class="text-indigo-600 hover:text-indigo-900 mr-4">Editar Treinamento</button>
                                                     </form>
-                                                    <form method="post" action="{% url 'oraculo:verificar_treinamentos_vetorizados' %}" style="display: inline;">
+                                                    <form method="post" action="{% url 'treinamento:verificar_treinamentos_vetorizados' %}" style="display: inline;">
                                                         {% csrf_token %}
                                                         <input type="hidden" name="acao" value="excluir">
                                                         <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">

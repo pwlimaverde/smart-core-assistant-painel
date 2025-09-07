@@ -354,9 +354,9 @@ class TestFeaturesCompose(unittest.TestCase):
             FeaturesCompose.analise_previa_mensagem(
                 historico_atendimento={}, context="Test context"
             )
-        # Verifica se o logger.error foi chamado
-        mock_logger.error.assert_called_once()
-        self.assertIn("Erro ao analisar prévia da mensagem", str(mock_logger.error.call_args))
+        # A função deve apenas propagar a exceção, não logar.
+        # O log é responsabilidade de quem chama a função.
+        mock_logger.error.assert_not_called()
 
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnalisePreviaMensagemLangchainDatasource"

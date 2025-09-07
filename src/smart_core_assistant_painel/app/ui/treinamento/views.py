@@ -78,6 +78,8 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                     treinamento: Treinamento = Treinamento.objects.get(id=treinamento_id)
                     treinamento.tag = tag
                     treinamento.grupo = grupo
+                    treinamento.treinamento_finalizado = False
+                    treinamento.treinamento_vetorizado = False
                     Documento.limpar_documentos_por_treinamento(treinamento.id)
                     messages.success(
                         request,

@@ -87,7 +87,7 @@ class TestUsuariosViews(TestCase):
             reverse("login"),
             {"username": "testuser", "senha": "testpassword"},
         )
-        self.assertRedirects(response, reverse("oraculo:treinar_ia"))
+        self.assertRedirects(response, reverse("treinamento:treinar_ia"))
 
     def test_login_post_invalid_credentials(self) -> None:
         """Testa o login com credenciais inválidas."""

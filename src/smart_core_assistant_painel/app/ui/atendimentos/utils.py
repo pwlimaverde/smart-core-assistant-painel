@@ -6,8 +6,8 @@ from typing import Any, Optional
 from django.core.cache import cache
 from django.utils import timezone
 from loguru import logger
-from ui.clientes.models import Contato
 
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.treinamento.models import Documento
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,

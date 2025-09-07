@@ -73,7 +73,11 @@ INSTALLED_APPS = [
     "rolepermissions",
     "django_q",
     "smart_core_assistant_painel.app.ui.usuarios",
-    "smart_core_assistant_painel.app.ui.oraculo",
+    "smart_core_assistant_painel.app.ui.operacional",
+    "smart_core_assistant_painel.app.ui.clientes",
+    "smart_core_assistant_painel.app.ui.atendimentos",
+    "smart_core_assistant_painel.app.ui.treinamento",
+    
 ]
 
 ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
@@ -187,7 +191,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, "media")
 MEDIA_URL = "/media/"
 
-STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -3,11 +3,11 @@
 from django.contrib.admin.sites import AdminSite
 from django.test import TestCase
 
-from ..admin import TreinamentoAdmin
-from ..models import Treinamento
+from smart_core_assistant_painel.app.ui.treinamento.admin import TreinamentoAdmin
+from smart_core_assistant_painel.app.ui.treinamento.models import Treinamento
 
 
-class TestTreinamentosAdmin(TestCase):
+class TestTreinamentoTreinamentosAdmin(TestCase):
     """Testes para o admin do modelo Treinamentos."""
 
     def setUp(self) -> None:

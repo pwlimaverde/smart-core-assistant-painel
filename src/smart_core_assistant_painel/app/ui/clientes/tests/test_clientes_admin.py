@@ -6,8 +6,8 @@ from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.test import RequestFactory, TestCase
 
-from ..admin import ContatoAdmin
-from ..models import Contato
+from smart_core_assistant_painel.app.ui.clientes.admin import ContatoAdmin
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
 
 class MockRequest:
@@ -17,7 +17,7 @@ class MockRequest:
         self.user = user or User()
 
 
-class TestContatoAdmin(TestCase):
+class TestClientesContatoAdmin(TestCase):
     """Testes para o admin do modelo Contato."""
 
     def setUp(self) -> None:

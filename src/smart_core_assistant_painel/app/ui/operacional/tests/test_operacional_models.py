@@ -5,7 +5,7 @@ from unittest.mock import patch
 from django.core.exceptions import ValidationError
 from django.test import TestCase
 
-from ..models import (
+from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
     Departamento,
     validate_api_key,
@@ -13,7 +13,7 @@ from ..models import (
 )
 
 
-class TestAtendenteHumano(TestCase):
+class TestOperacionalAtendenteHumano(TestCase):
     """Testes para o modelo AtendenteHumano."""
 
     def setUp(self) -> None:
@@ -39,7 +39,7 @@ class TestAtendenteHumano(TestCase):
         self.assertEqual(str(self.atendente), expected)
 
 
-class TestDepartamento(TestCase):
+class TestOperacionalDepartamento(TestCase):
     """Testes para o modelo Departamento."""
 
     def setUp(self):

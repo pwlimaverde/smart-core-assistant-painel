@@ -4,10 +4,10 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.test import TestCase
 
-from ..models import Treinamento
+from smart_core_assistant_painel.app.ui.treinamento.models import Treinamento
 
 
-class TreinamentosForm(ModelForm):
+class TreinamentoTreinamentosForm(ModelForm):
     """Formulário para modelo Treinamentos."""
 
     class Meta:
@@ -29,7 +29,7 @@ class TreinamentosForm(ModelForm):
         return grupo
 
 
-class TestTreinamentosForm(TestCase):
+class TestTreinamentoTreinamentosForm(TestCase):
     """Testes para TreinamentosForm."""
 
     def test_form_valido(self) -> None:

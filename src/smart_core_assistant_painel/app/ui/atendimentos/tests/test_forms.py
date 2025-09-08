@@ -6,8 +6,7 @@ from django.test import TestCase
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import AtendenteHumano
-
-from ..models import (
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
     StatusAtendimento,

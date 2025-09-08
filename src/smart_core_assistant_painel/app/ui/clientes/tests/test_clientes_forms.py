@@ -4,10 +4,10 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.test import TestCase
 
-from ..models import Contato
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
 
-class ContatoForm(ModelForm):
+class ClientesContatoForm(ModelForm):
     """Formulário para modelo Contato."""
 
     class Meta:
@@ -25,7 +25,7 @@ class ContatoForm(ModelForm):
         return telefone
 
 
-class TestContatoForm(TestCase):
+class TestClientesContatoForm(TestCase):
     """Testes para ContatoForm."""
 
     def test_form_valido(self) -> None:
@@ -35,7 +35,7 @@ class TestContatoForm(TestCase):
             "nome_contato": "Cliente Teste",
             "nome_perfil_whatsapp": "Cliente WhatsApp",
         }
-        form = ContatoForm(data=form_data)
+        form = ClientesContatoForm(data=form_data)
         self.assertTrue(form.is_valid())
         contato = form.save()
         self.assertEqual(contato.telefone, "5511999999999")
@@ -47,14 +47,14 @@ class TestContatoForm(TestCase):
             "telefone": "(11) 99999-9999",
             "nome_contato": "Cliente Teste",
         }
-        form = ContatoForm(data=form_data)
+        form = ClientesContatoForm(data=form_data)
         self.assertTrue(form.is_valid())
         self.assertEqual(form.cleaned_data["telefone"], "11999999999")
 
     def test_telefone_muito_curto(self) -> None:
         """Testa validação de telefone muito curto."""
         form_data = {"telefone": "119999", "nome_contato": "Cliente Teste"}
-        form = ContatoForm(data=form_data)
+        form = ClientesContatoForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("telefone", form.errors)
 
@@ -64,13 +64,13 @@ class TestContatoForm(TestCase):
             "telefone": "551199999999999",
             "nome_contato": "Cliente Teste",
         }
-        form = ContatoForm(data=form_data)
+        form = ClientesContatoForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("telefone", form.errors)
 
     def test_campos_obrigatorios(self) -> None:
         """Testa validação de campos obrigatórios."""
-        form = ContatoForm(data={})
+        form = ClientesContatoForm(data={})
         self.assertFalse(form.is_valid())
         self.assertIn("telefone", form.errors)
 
@@ -79,5 +79,5 @@ class TestContatoForm(TestCase):
         form_data = {
             "telefone": "11999999999",
         }
-        form = ContatoForm(data=form_data)
+        form = ClientesContatoForm(data=form_data)
         self.assertTrue(form.is_valid())

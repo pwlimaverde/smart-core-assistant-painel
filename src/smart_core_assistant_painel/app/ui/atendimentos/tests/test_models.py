@@ -4,8 +4,7 @@ from django.test import TestCase
 from django.utils import timezone
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-
-from ..models import (
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
     StatusAtendimento,

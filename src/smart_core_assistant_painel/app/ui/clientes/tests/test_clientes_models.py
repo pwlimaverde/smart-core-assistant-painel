@@ -2,18 +2,16 @@
 
 from django.test import TestCase
 
-from ..models import Cliente, Contato
+from smart_core_assistant_painel.app.ui.clientes.models import Cliente, Contato
 
 
-class TestContato(TestCase):
+class TestClientesContato(TestCase):
     """Testes para o modelo Contato."""
 
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999",
-            nome_contato="Cliente Teste",
-            email="cliente@teste.com",
+            telefone="5511999999999", nome_contato="Cliente Teste", email="cliente@teste.com"
         )
 
     def test_contato_creation(self) -> None:
@@ -31,7 +29,7 @@ class TestContato(TestCase):
             )
 
 
-class TestCliente(TestCase):
+class TestClientesCliente(TestCase):
     """Testes para o modelo Cliente."""
 
     def setUp(self):

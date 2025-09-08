@@ -108,6 +108,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-cov>=6.1.1",
     "pytest-django>=4.9.0",
+    "pytest-env>=1.1.5",
     "rich>=14.1.0",
     "ruff>=0.11.13",
     "taskipy>=1.14.1",
@@ -224,14 +225,3 @@ dev-setup = "uv sync --dev && uv run task migrate"
 
 # Combined routines (Docker)
 dev-setup-docker = "docker compose up -d --build"
-
-
-# Testes (Docker)
-# Executa toda a suíte de testes no container com cobertura em src e relatório no terminal
-test-docker = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v --cov=src --cov-report=term-missing"
-# Executa testes com relatório de cobertura em HTML (artefato gerado dentro do container)
-test-docker-coverage = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v --cov=src --cov-report=html"
-# Executa testes específicos dentro do container; passe o caminho/expressão após `uv run task test-docker-specific`
-# Ex.: uv run task test-docker-specific -- src/smart_core_assistant_painel/app/ui/oraculo/tests/
-# Removido $TASK_ARGS; Taskipy anexará os argumentos passados após o comando abaixo.
- test-docker-specific = "docker compose exec -e DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings_test django-app uv run pytest -v"

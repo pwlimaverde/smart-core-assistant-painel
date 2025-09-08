@@ -6,10 +6,10 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from langchain.docstore.document import Document
 
-from ..models import Treinamento, validate_identificador
+from smart_core_assistant_painel.app.ui.treinamento.models import Treinamento, validate_identificador
 
 
-class TestTreinamentos(TestCase):
+class TestTreinamentoTreinamentos(TestCase):
     """Testes para o modelo Treinamentos."""
 
     def test_treinamentos_creation(self) -> None:
@@ -37,7 +37,7 @@ class TestTreinamentos(TestCase):
         self.assertTrue(treinamento.treinamento_finalizado)
 
 
-class TestValidators(TestCase):
+class TestTreinamentoValidators(TestCase):
     """Testes para os validadores dos modelos."""
 
     def test_validate_identificador(self):
@@ -59,7 +59,7 @@ class TestValidators(TestCase):
             validate_identificador("tag-com-traço")
 
 
-class TestTreinamentosAdvanced(TestCase):
+class TestTreinamentoTreinamentosAdvanced(TestCase):
     """Testes avançados para o modelo Treinamentos."""
 
     def setUp(self):

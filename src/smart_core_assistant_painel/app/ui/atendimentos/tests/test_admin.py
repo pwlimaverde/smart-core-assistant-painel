@@ -7,9 +7,8 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-
-from ..admin import AtendimentoAdmin, MensagemAdmin
-from ..models import (
+from smart_core_assistant_painel.app.ui.atendimentos.admin import AtendimentoAdmin, MensagemAdmin
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
     StatusAtendimento,

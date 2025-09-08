@@ -4,10 +4,10 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.test import TestCase
 
-from ..models import Treinamento
+from smart_core_assistant_painel.app.ui.treinamento.models import Treinamento
 
 
-class TreinamentosForm(ModelForm):
+class TreinamentoTreinamentosForm(ModelForm):
     """Formulário para modelo Treinamentos."""
 
     class Meta:
@@ -29,7 +29,7 @@ class TreinamentosForm(ModelForm):
         return grupo
 
 
-class TestTreinamentosForm(TestCase):
+class TestTreinamentoTreinamentosForm(TestCase):
     """Testes para TreinamentosForm."""
 
     def test_form_valido(self) -> None:
@@ -39,7 +39,7 @@ class TestTreinamentosForm(TestCase):
             "grupo": "atendimento",
             "treinamento_finalizado": True,
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertTrue(form.is_valid())
         treinamento = form.save()
         self.assertEqual(treinamento.tag, "atendimento_geral")
@@ -51,7 +51,7 @@ class TestTreinamentosForm(TestCase):
             "grupo": "teste",
             "treinamento_finalizado": False,
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("tag", form.errors)
 
@@ -62,13 +62,13 @@ class TestTreinamentosForm(TestCase):
             "grupo": "ab",
             "treinamento_finalizado": False,
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("grupo", form.errors)
 
     def test_campos_obrigatorios(self) -> None:
         """Testa validação de campos obrigatórios."""
-        form = TreinamentosForm(data={})
+        form = TreinamentoTreinamentosForm(data={})
         self.assertFalse(form.is_valid())
         self.assertIn("tag", form.errors)
         self.assertIn("grupo", form.errors)
@@ -79,5 +79,5 @@ class TestTreinamentosForm(TestCase):
             "tag": "tag_valida",
             "grupo": "grupo_valido",
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertTrue(form.is_valid())

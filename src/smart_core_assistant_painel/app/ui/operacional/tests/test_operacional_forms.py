@@ -7,10 +7,10 @@ from django.core.exceptions import ValidationError
 from django.forms import ModelForm
 from django.test import TestCase
 
-from ..models import AtendenteHumano
+from smart_core_assistant_painel.app.ui.operacional.models import AtendenteHumano
 
 
-class AtendenteHumanoForm(ModelForm):
+class OperacionalAtendenteHumanoForm(ModelForm):
     """Formulário para modelo AtendenteHumano."""
 
     especialidades = forms.CharField(required=False)
@@ -53,7 +53,7 @@ class AtendenteHumanoForm(ModelForm):
         return email
 
 
-class TestAtendenteHumanoForm(TestCase):
+class TestOperacionalAtendenteHumanoForm(TestCase):
     """Testes para AtendenteHumanoForm."""
 
     def setUp(self) -> None:
@@ -74,7 +74,7 @@ class TestAtendenteHumanoForm(TestCase):
             "ativo": True,
             "especialidades": "Vendas, Suporte",
         }
-        form = AtendenteHumanoForm(data=form_data)
+        form = OperacionalAtendenteHumanoForm(data=form_data)
         self.assertTrue(form.is_valid())
         atendente = form.save()
         self.assertEqual(atendente.nome, "Novo Atendente")
@@ -87,7 +87,7 @@ class TestAtendenteHumanoForm(TestCase):
             "email": "existente@teste.com",
             "ativo": True,
         }
-        form = AtendenteHumanoForm(data=form_data)
+        form = OperacionalAtendenteHumanoForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("email", form.errors)
 
@@ -99,14 +99,14 @@ class TestAtendenteHumanoForm(TestCase):
             "email": "existente@teste.com",
             "ativo": True,
         }
-        form = AtendenteHumanoForm(
+        form = OperacionalAtendenteHumanoForm(
             data=form_data, instance=self.atendente_existente
         )
         self.assertTrue(form.is_valid())
 
     def test_campos_obrigatorios(self) -> None:
         """Testa validação de campos obrigatórios."""
-        form = AtendenteHumanoForm(data={})
+        form = OperacionalAtendenteHumanoForm(data={})
         self.assertFalse(form.is_valid())
         self.assertIn("nome", form.errors)
         self.assertIn("cargo", form.errors)

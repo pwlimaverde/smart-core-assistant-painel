@@ -29,12 +29,20 @@ def cadastro(request: HttpRequest) -> HttpResponse:
         senha = request.POST.get("senha")
         confirmar_senha = request.POST.get("confirmar_senha")
 
-        if not senha == confirmar_senha:
+        # Validação de campos obrigatórios deve ocorrer antes das demais
+        if not username or not senha:
+            messages.add_message(
+                request,
+                constants.ERROR,
+                "Nome de usuário e senha são obrigatórios.",
+            )
+            return redirect("cadastro")
+        if senha != confirmar_senha:
             messages.add_message(
                 request, constants.ERROR, "As senhas não coincidem."
             )
             return redirect("cadastro")
-        if len(senha or "") < 6:
+        if len(senha) < 6:
             messages.add_message(
                 request,
                 constants.ERROR,
@@ -44,13 +52,6 @@ def cadastro(request: HttpRequest) -> HttpResponse:
         if User.objects.filter(username=username).exists():
             messages.add_message(
                 request, constants.ERROR, "Este nome de usuário já existe."
-            )
-            return redirect("cadastro")
-        if not username or not senha:
-            messages.add_message(
-                request,
-                constants.ERROR,
-                "Nome de usuário e senha são obrigatórios.",
             )
             return redirect("cadastro")
 

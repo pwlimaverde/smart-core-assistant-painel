@@ -39,7 +39,7 @@ class TestTreinamentoTreinamentosForm(TestCase):
             "grupo": "atendimento",
             "treinamento_finalizado": True,
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertTrue(form.is_valid())
         treinamento = form.save()
         self.assertEqual(treinamento.tag, "atendimento_geral")
@@ -51,7 +51,7 @@ class TestTreinamentoTreinamentosForm(TestCase):
             "grupo": "teste",
             "treinamento_finalizado": False,
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("tag", form.errors)
 
@@ -62,13 +62,13 @@ class TestTreinamentoTreinamentosForm(TestCase):
             "grupo": "ab",
             "treinamento_finalizado": False,
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertFalse(form.is_valid())
         self.assertIn("grupo", form.errors)
 
     def test_campos_obrigatorios(self) -> None:
         """Testa validação de campos obrigatórios."""
-        form = TreinamentosForm(data={})
+        form = TreinamentoTreinamentosForm(data={})
         self.assertFalse(form.is_valid())
         self.assertIn("tag", form.errors)
         self.assertIn("grupo", form.errors)
@@ -79,5 +79,5 @@ class TestTreinamentoTreinamentosForm(TestCase):
             "tag": "tag_valida",
             "grupo": "grupo_valido",
         }
-        form = TreinamentosForm(data=form_data)
+        form = TreinamentoTreinamentosForm(data=form_data)
         self.assertTrue(form.is_valid())

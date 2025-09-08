@@ -23,8 +23,11 @@ class TestTreinamentoViews(TestCase):
         )
         self.client.login(username='testuser', password='testpass123')
 
-    def test_treinar_ia_get_initial(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_get_initial(self, mock_has_permission: MagicMock) -> None:
         """Test treinar_ia view GET request with no session data."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.get(reverse('treinamento:treinar_ia'))
 
@@ -34,9 +37,11 @@ class TestTreinamentoViews(TestCase):
         self.assertFalse(response.context['modo_edicao'])
         self.assertIsNone(response.context['treinamento_id'])
 
-    def test_treinar_ia_get_with_session_data(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_get_with_session_data(self, mock_has_permission: MagicMock) -> None:
         """Test treinar_ia view GET request with session data."""
         # Arrange
+        mock_has_permission.return_value = True
         session = self.client.session
         session['treinamento_edicao'] = {
             'id': 1,
@@ -45,10 +50,10 @@ class TestTreinamentoViews(TestCase):
             'conteudo': 'test_conteudo'
         }
         session.save()
-
+    
         # Act
         response = self.client.get(reverse('treinamento:treinar_ia'))
-
+    
         # Assert
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'treinamento/treinar_ia.html')
@@ -71,8 +76,11 @@ class TestTreinamentoViews(TestCase):
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), "Você não tem permissão para acessar esta página.")
 
-    def test_treinar_ia_post_missing_tag_and_group(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_post_missing_tag_and_group(self, mock_has_permission: MagicMock) -> None:
         """Test treinar_ia POST with missing tag and group."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:treinar_ia'), {
             'conteudo': 'test content'
@@ -84,8 +92,11 @@ class TestTreinamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Tag e Grupo são obrigatórios" in str(m) for m in messages))
 
-    def test_treinar_ia_post_missing_content_and_document(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_post_missing_content_and_document(self, mock_has_permission: MagicMock) -> None:
         """Test treinar_ia POST with missing content and document."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:treinar_ia'), {
             'tag': 'test_tag',
@@ -99,9 +110,11 @@ class TestTreinamentoViews(TestCase):
         self.assertTrue(any("É necessário fornecer conteúdo ou documento" in str(m) for m in messages))
 
     @patch('smart_core_assistant_painel.app.ui.treinamento.views.TreinamentoService')
-    def test_treinar_ia_post_success_with_content(self, mock_treinamento_service: MagicMock) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_post_success_with_content(self, mock_has_permission: MagicMock, mock_treinamento_service: MagicMock) -> None:
         """Test treinar_ia POST success with content."""
         # Arrange
+        mock_has_permission.return_value = True
         mock_treinamento_service.processar_arquivo_upload.return_value = None
         mock_treinamento_service.limpar_arquivo_temporario.return_value = None
 
@@ -121,9 +134,11 @@ class TestTreinamentoViews(TestCase):
         self.assertEqual(treinamento.conteudo, 'test content')
 
     @patch('smart_core_assistant_painel.app.ui.treinamento.views.TreinamentoService')
-    def test_treinar_ia_post_success_with_document(self, mock_treinamento_service: MagicMock) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_post_success_with_document(self, mock_has_permission: MagicMock, mock_treinamento_service: MagicMock) -> None:
         """Test treinar_ia POST success with document."""
         # Arrange
+        mock_has_permission.return_value = True
         mock_document = MagicMock()
         mock_document.page_content = "Document content"
         mock_treinamento_service.processar_arquivo_upload.return_value = "/tmp/test.txt"
@@ -152,9 +167,11 @@ class TestTreinamentoViews(TestCase):
 
     @patch('smart_core_assistant_painel.app.ui.treinamento.views.TreinamentoService')
     @patch('smart_core_assistant_painel.app.ui.treinamento.views.transaction')
-    def test_treinar_ia_post_exception_handling(self, mock_transaction: MagicMock, mock_treinamento_service: MagicMock) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_treinar_ia_post_exception_handling(self, mock_has_permission: MagicMock, mock_transaction: MagicMock, mock_treinamento_service: MagicMock) -> None:
         """Test treinar_ia POST exception handling."""
         # Arrange
+        mock_has_permission.return_value = True
         mock_transaction.atomic.side_effect = Exception("Test exception")
         mock_treinamento_service.limpar_arquivo_temporario.return_value = None
 
@@ -204,8 +221,11 @@ class TestPreProcessamentoViews(TestCase):
         self.assertEqual(len(messages), 1)
         self.assertEqual(str(messages[0]), "Você não tem permissão para acessar esta página.")
 
-    def test_pre_processamento_get_success(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_get_success(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento GET request success."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         with patch('smart_core_assistant_painel.app.ui.treinamento.views.FeaturesCompose.melhoria_ia_treinamento') as mock_melhoria:
             mock_melhoria.return_value = "improved content"
@@ -216,8 +236,11 @@ class TestPreProcessamentoViews(TestCase):
         self.assertTemplateUsed(response, 'treinamento/pre_processamento.html')
         self.assertEqual(response.context['treinamento'], self.treinamento)
 
-    def test_pre_processamento_get_nonexistent_training(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_get_nonexistent_training(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento GET with nonexistent training."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.get(reverse('treinamento:pre_processamento', args=[999]))
 
@@ -226,9 +249,11 @@ class TestPreProcessamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Treinamento não encontrado" in str(m) for m in messages))
 
-    def test_pre_processamento_get_empty_content(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_get_empty_content(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento GET with empty content."""
         # Arrange
+        mock_has_permission.return_value = True
         self.treinamento.conteudo = ""
         self.treinamento.save()
 
@@ -240,8 +265,11 @@ class TestPreProcessamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Treinamento sem conteúdo" in str(m) for m in messages))
 
-    def test_pre_processamento_post_accept_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_post_accept_action(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento POST with 'accept' action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         with patch('smart_core_assistant_painel.app.ui.treinamento.views.FeaturesCompose.melhoria_ia_treinamento') as mock_melhoria:
             mock_melhoria.return_value = "improved content"
@@ -256,8 +284,11 @@ class TestPreProcessamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Treinamento aceito e finalizado" in str(m) for m in messages))
 
-    def test_pre_processamento_post_keep_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_post_keep_action(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento POST with 'keep' action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:pre_processamento', args=[self.treinamento.id]), {
             'acao': 'manter'
@@ -270,8 +301,11 @@ class TestPreProcessamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Treinamento mantido e finalizado" in str(m) for m in messages))
 
-    def test_pre_processamento_post_discard_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_post_discard_action(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento POST with 'discard' action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:pre_processamento', args=[self.treinamento.id]), {
             'acao': 'descartar'
@@ -283,8 +317,11 @@ class TestPreProcessamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Treinamento descartado" in str(m) for m in messages))
 
-    def test_pre_processamento_post_invalid_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_post_invalid_action(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento POST with invalid action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:pre_processamento', args=[self.treinamento.id]), {
             'acao': 'invalid_action'
@@ -295,8 +332,11 @@ class TestPreProcessamentoViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Ação inválida" in str(m) for m in messages))
 
-    def test_pre_processamento_post_missing_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_pre_processamento_post_missing_action(self, mock_has_permission: MagicMock) -> None:
         """Test pre_processamento POST with missing action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:pre_processamento', args=[self.treinamento.id]), {})
 
@@ -318,6 +358,13 @@ class TestVerificarTreinamentosViews(TestCase):
         )
         self.client.login(username='testuser', password='testpass123')
         
+        # Evita execução dos tasks do django-q nos signals (mantém flags conforme criadas)
+        self.async_task_patcher = patch(
+            'smart_core_assistant_painel.app.ui.treinamento.signals.async_task',
+            return_value=None
+        )
+        self.mock_async_task = self.async_task_patcher.start()
+        
         # Create test trainings
         self.treinamento_vetorizado = Treinamento.objects.create(
             tag='test_tag1',
@@ -335,6 +382,13 @@ class TestVerificarTreinamentosViews(TestCase):
             treinamento_vetorizado=False
         )
 
+    def tearDown(self) -> None:
+        """Tear down mocks started in setUp."""
+        try:
+            self.async_task_patcher.stop()
+        except Exception:
+            pass
+
     @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
     def test_verificar_treinamentos_no_permission(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos when user has no permission."""
@@ -342,11 +396,16 @@ class TestVerificarTreinamentosViews(TestCase):
         mock_has_permission.return_value = False
 
         # Act
-        with self.assertRaises(Exception):  # Should raise Http404
-            self.client.get(reverse('treinamento:verificar_treinamentos_vetorizados'))
+        response = self.client.get(reverse('treinamento:verificar_treinamentos_vetorizados'))
 
-    def test_verificar_treinamentos_get_success(self) -> None:
+        # Assert
+        self.assertEqual(response.status_code, 404)
+
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_verificar_treinamentos_get_success(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos GET request success."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.get(reverse('treinamento:verificar_treinamentos_vetorizados'))
 
@@ -356,8 +415,11 @@ class TestVerificarTreinamentosViews(TestCase):
         self.assertIn(self.treinamento_vetorizado, response.context['treinamentos_vetorizados'])
         self.assertIn(self.treinamento_com_erro, response.context['treinamentos_com_erro'])
 
-    def test_verificar_treinamentos_post_delete_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_verificar_treinamentos_post_delete_action(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos POST with 'delete' action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:verificar_treinamentos_vetorizados'), {
             'acao': 'excluir',
@@ -370,8 +432,11 @@ class TestVerificarTreinamentosViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Treinamento excluído com sucesso" in str(m) for m in messages))
 
-    def test_verificar_treinamentos_post_edit_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_verificar_treinamentos_post_edit_action(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos POST with 'edit' action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:verificar_treinamentos_vetorizados'), {
             'acao': 'editar',
@@ -386,8 +451,11 @@ class TestVerificarTreinamentosViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Editando treinamento ID" in str(m) for m in messages))
 
-    def test_verificar_treinamentos_post_invalid_action(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_verificar_treinamentos_post_invalid_action(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos POST with invalid action."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:verificar_treinamentos_vetorizados'), {
             'acao': 'invalid_action',
@@ -399,8 +467,11 @@ class TestVerificarTreinamentosViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Ação inválida" in str(m) for m in messages))
 
-    def test_verificar_treinamentos_post_missing_action_or_id(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_verificar_treinamentos_post_missing_action_or_id(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos POST with missing action or ID."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:verificar_treinamentos_vetorizados'), {
             'acao': 'excluir'
@@ -412,8 +483,11 @@ class TestVerificarTreinamentosViews(TestCase):
         messages = list(get_messages(response.wsgi_request))
         self.assertTrue(any("Ação ou ID do treinamento não especificado" in str(m) for m in messages))
 
-    def test_verificar_treinamentos_post_nonexistent_training(self) -> None:
+    @patch('smart_core_assistant_painel.app.ui.treinamento.views.has_permission')
+    def test_verificar_treinamentos_post_nonexistent_training(self, mock_has_permission: MagicMock) -> None:
         """Test verificar_treinamentos POST with nonexistent training."""
+        # Arrange
+        mock_has_permission.return_value = True
         # Act
         response = self.client.post(reverse('treinamento:verificar_treinamentos_vetorizados'), {
             'acao': 'excluir',

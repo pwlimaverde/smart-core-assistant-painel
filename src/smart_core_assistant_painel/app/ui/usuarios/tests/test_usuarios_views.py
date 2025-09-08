@@ -113,9 +113,6 @@ class TestUsuariosAppViews(TestCase):
 
     def test_login_post_success(self) -> None:
         """Test successful user login."""
-        # Arrange
-        User.objects.create_user(username='testuser', password='testpass123')
-
         # Act
         response = self.client.post(reverse('login'), {
             'username': 'testuser',
@@ -123,7 +120,11 @@ class TestUsuariosAppViews(TestCase):
         })
 
         # Assert
-        self.assertRedirects(response, reverse('treinamento:treinar_ia'))
+        self.assertRedirects(
+            response,
+            reverse('treinamento:treinar_ia'),
+            fetch_redirect_response=False,
+        )
 
     def test_login_post_invalid_credentials(self) -> None:
         """Test login with invalid credentials."""
@@ -158,7 +159,7 @@ class TestUsuariosAppViews(TestCase):
     def test_tornar_gerente_success(self) -> None:
         """Test successful assignment of manager role."""
         # Arrange
-        user = User.objects.create_user(username='testuser', password='testpass123')
+        user = User.objects.create_user(username='manager_user', password='testpass123')
 
         # Act
         response = self.client.get(reverse('tornar_gerente', args=[user.id]))

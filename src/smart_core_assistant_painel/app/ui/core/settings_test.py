@@ -91,3 +91,11 @@ MEDIA_URL = "/media/"
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
 ]
+
+# Desabilita migrações para apps que utilizam recursos específicos do PostgreSQL
+# (ex.: CREATE EXTENSION vector, campos do pgvector) para que o SQLite em memória
+# consiga criar as tabelas via run_syncdb durante os testes.
+MIGRATION_MODULES = {  # type: ignore[no-redef]
+    "atendimentos": None,
+    "treinamento": None,
+}

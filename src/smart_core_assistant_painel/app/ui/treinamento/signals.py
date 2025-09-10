@@ -1,6 +1,6 @@
 """Signals para o aplicativo Treinamento."""
 
-from typing import Any, cast
+from typing import Any
 
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
@@ -8,7 +8,7 @@ from django_q.tasks import async_task
 from langchain_core.documents.base import Document
 from loguru import logger
 
-from .models import Documento, Treinamento
+from .models import Documento, QueryCompose, Treinamento
 
 
 @receiver(post_save, sender=Treinamento)
@@ -22,7 +22,7 @@ def signals_gerar_documentos_treinamento(
             and not instance.treinamento_vetorizado
         ):
             async_task(__gerar_documentos, instance.id)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Erro ao processar signal de treinamento: {e}")
 
 
@@ -37,15 +37,38 @@ def signals_embeddings_documento(
                 async_task(__gerar_embedding_documento, instance.pk)
             else:
                 logger.warning(f"Documento {instance.pk} sem conteúdo para embedding")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Erro no signal de embedding do documento {instance.pk}: {e}")
+
+
+@receiver(post_save, sender=QueryCompose)
+def signals_embeddings_query_compose(
+    sender: Any, instance: QueryCompose, created: bool, **kwargs: Any
+) -> None:
+    """Gera embedding para QueryCompose após criação ou atualização.
+
+    - Quando o registro for salvo sem embedding, agenda uma tarefa assíncrona
+      para gerar o vetor com base em ``description``.
+    """
+    try:
+        if not instance.embedding or not instance.description:
+            if instance.description and instance.description.strip():
+                async_task(__gerar_embedding_query_compose, instance.pk)
+            else:
+                logger.warning(
+                    f"QueryCompose {instance.pk} sem description para embedding"
+                )
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Erro no signal de embedding do QueryCompose {instance.pk}: {e}"
+        )
 
 
 def __processar_conteudo_para_chunks(
     treinamento: Treinamento,
 ) -> list[Document]:
     """Processa conteúdo e cria chunks."""
-    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+    from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (  # noqa: E501
         FeaturesCompose,
     )
 
@@ -56,7 +79,7 @@ def __processar_conteudo_para_chunks(
         "grupo": treinamento.grupo,
     }
 
-    conteudo = cast(str, treinamento.conteudo)
+    conteudo = treinamento.conteudo or ""
 
     chunks = FeaturesCompose.generate_chunks(conteudo=conteudo, metadata=metadata)
 
@@ -66,7 +89,7 @@ def __processar_conteudo_para_chunks(
 def __gerar_embedding_documento(documento_id: int) -> None:
     """Gera embedding para um documento específico."""
     try:
-        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (
+        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (  # noqa: E501
             FeaturesCompose,
         )
 
@@ -90,8 +113,47 @@ def __gerar_embedding_documento(documento_id: int) -> None:
 
     except Documento.DoesNotExist:
         logger.error(f"Documento {documento_id} não encontrado")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Erro ao gerar embedding para documento {documento_id}: {e}")
+
+
+def __gerar_embedding_query_compose(query_compose_id: int) -> None:
+    """Gera embedding para um QueryCompose específico."""
+    try:
+        from smart_core_assistant_painel.modules.ai_engine.features.features_compose import (  # noqa: E501
+            FeaturesCompose,
+        )
+
+        qc: QueryCompose = QueryCompose.objects.get(id=query_compose_id)
+
+        if not qc.description or not qc.description.strip():
+            logger.warning(
+                f"QueryCompose {query_compose_id} sem description válido"
+            )
+            return
+
+        embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
+            text=qc.description
+        )
+
+        if embedding_vector:
+            QueryCompose.objects.filter(id=query_compose_id).update(
+                embedding=embedding_vector
+            )
+            logger.info(
+                f"Embedding gerado e salvo para QueryCompose {query_compose_id}"
+            )
+        else:
+            logger.error(
+                f"Falha ao gerar embedding para QueryCompose {query_compose_id}"
+            )
+
+    except QueryCompose.DoesNotExist:
+        logger.error(f"QueryCompose {query_compose_id} não encontrado")
+    except Exception as e:  # noqa: BLE001
+        logger.error(
+            f"Erro ao gerar embedding para QueryCompose {query_compose_id}: {e}"
+        )
 
 
 def __gerar_documentos(instance_id: int) -> None:
@@ -118,7 +180,7 @@ def __gerar_documentos(instance_id: int) -> None:
 
     except Treinamento.DoesNotExist:
         logger.error(f"Treinamento com ID {instance_id} não encontrado.")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Erro ao executar treinamento {instance_id}: {e}")
 
 
@@ -130,7 +192,7 @@ def signal_remover_treinamento_ia(
     try:
         if instance.treinamento_finalizado:
             __task_remover_treinamento_ia(instance.id)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Erro ao processar remoção de treinamento: {e}")
         raise Exception(f"Falha ao remover treinamento {instance.id}: {e}")
 
@@ -145,6 +207,6 @@ def __task_remover_treinamento_ia(instance_id: int) -> None:
             "Treinamento marcado como não vetorizado: %s (pre_delete)",
             instance_id,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"Erro ao remover treinamento {instance_id}: {e}")
         raise

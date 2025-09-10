@@ -18,4 +18,9 @@ urlpatterns = [
         views.verificar_treinamentos_vetorizados,
         name="verificar_treinamentos_vetorizados",
     ),
+    path(
+        "cadastrar_query_compose",
+        views.cadastrar_query_compose,
+        name="cadastrar_query_compose",
+    ),
 ]

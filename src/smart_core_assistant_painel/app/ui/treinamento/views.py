@@ -11,9 +11,9 @@ from django.shortcuts import redirect, render
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
-from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
+# Removido: from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
-from .models import Documento, Treinamento
+from .models import Documento, QueryCompose, Treinamento
 from .services import TreinamentoService
 
 
@@ -279,3 +279,72 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
             "treinamentos_com_erro": treinamentos_com_erro,
         },
     )
+
+
+def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
+    """View para cadastrar um intent (QueryCompose).
+
+    - Exibe formulário para inserir tag, grupo, description e comportamento.
+    - Ao enviar (POST), persiste o registro; o embedding será gerado de forma
+      assíncrona pelo signal post_save (sem bloqueio no request).
+    """
+    if not has_permission(request.user, "treinar_ia"):
+        messages.error(request, "Você não tem permissão para acessar esta página.")
+        return redirect("home")
+
+    if request.method == "GET":
+        context = {
+            "tag_inicial": "",
+            "grupo_inicial": "",
+            "description_inicial": "",
+            "comportamento_inicial": "",
+        }
+        return render(request, "treinamento/cadastrar_query_compose.html", context)
+
+    if request.method == "POST":
+        tag = request.POST.get("tag")
+        grupo = request.POST.get("grupo")
+        description = request.POST.get("description")
+        comportamento = request.POST.get("comportamento")
+
+        if not tag or not grupo or not description or not comportamento:
+            messages.error(request, "Tag, Grupo, Description e Comportamento são obrigatórios.")
+            return render(
+                request,
+                "treinamento/cadastrar_query_compose.html",
+                {
+                    "tag_inicial": tag or "",
+                    "grupo_inicial": grupo or "",
+                    "description_inicial": description or "",
+                    "comportamento_inicial": comportamento or "",
+                },
+            )
+
+        try:
+            with transaction.atomic():
+                # Cria o registro QueryCompose; embedding será gerado via signal post_save
+                QueryCompose.objects.create(
+                    tag=tag,
+                    grupo=grupo,
+                    description=description,
+                    comportamento=comportamento,
+                )
+
+                messages.success(request, "Intent cadastrada com sucesso!")
+                return redirect("treinamento:cadastrar_query_compose")
+        except Exception as e:
+            logger.error(f"Erro ao cadastrar QueryCompose: {e}")
+            messages.error(request, "Erro interno do servidor. Tente novamente.")
+            return render(
+                request,
+                "treinamento/cadastrar_query_compose.html",
+                {
+                    "tag_inicial": tag or "",
+                    "grupo_inicial": grupo or "",
+                    "description_inicial": description or "",
+                    "comportamento_inicial": comportamento or "",
+                },
+            )
+
+    # Fallback
+    return render(request, "treinamento/cadastrar_query_compose.html")

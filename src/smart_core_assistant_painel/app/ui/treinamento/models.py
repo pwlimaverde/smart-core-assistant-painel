@@ -194,3 +194,81 @@ class Documento(models.Model):
             f"Criados {len(documentos_criados)} documentos para o treinamento {treinamento_id}"
         )
         return documentos_criados
+
+class QueryCompose(models.Model):
+    """
+    Representa um intent: descrição -> embedding + prompt system associado.
+    """
+    id: models.AutoField = models.AutoField(
+        primary_key=True, help_text="Chave primária do registro"
+    )
+    tag: models.CharField[str] = models.CharField(
+        max_length=40,
+        validators=[validate_identificador],
+        blank=False,
+        null=False,
+        help_text="Tag auxiliar para organizar intents (ex: 'orcamento', 'suporte')"
+    )
+    grupo: models.CharField[str] = models.CharField(
+        max_length=40,
+        validators=[validate_identificador],
+        blank=False,
+        null=False,
+        help_text="Campo obrigatório para identificar o grupo do QueryCompose",
+    )
+    description: models.TextField[str] = models.TextField(
+        blank=False,
+        null=False,
+        help_text="Texto descritivo usado para gerar o embedding (representação do intent)"
+    )
+    comportamento: models.TextField[str] = models.TextField(
+        blank=False,
+        null=False,
+        help_text="Prompt system que orienta o comportamento da LLM para esse intent"
+    )
+    embedding: VectorField = VectorField(
+        dimensions=1024,
+        null=True,
+        blank=True,
+        help_text="Embedding gerado a partir da description"
+    )
+
+    created_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Query Compose"
+        verbose_name_plural = "Query Composes"
+        indexes = [
+        models.Index(fields=['tag']),
+        models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.tag or 'sem-tag'}"
+
+    @classmethod
+    def buscar_comportamento_similar(
+        cls,
+        query_vec: list[float],
+        top_k: int = 1,
+    ) -> str:
+        try:
+            comportamento: QuerySet[Self] = (
+                cls.objects.filter(embedding__isnull=False,)
+                .annotate(distance=CosineDistance("embedding", query_vec))
+                .only("tag", "description", "comportamento")
+                .order_by("distance")[:top_k]
+            )
+            if not comportamento:
+                return ""
+            # Formatação conforme especificado no planejamento
+            prompt = (
+                f"📚 Comportamento que deve ser seguido:\n"
+                f"{comportamento[0].tag} - {comportamento[0].description}\n"
+                f"{comportamento[0].comportamento}"
+            )
+            return prompt
+        except Exception as e:
+            logger.error(f"Erro na busca semântica: {e}")
+            return ""

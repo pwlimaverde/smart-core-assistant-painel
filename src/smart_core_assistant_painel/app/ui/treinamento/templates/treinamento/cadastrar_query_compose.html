@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block content %}
+{% block 'conteudo' %}
 <div class="container mx-auto px-4 py-6">
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">{{ modo_edicao|yesno:"Editar Intent, Cadastrar Intent" }}</h1>
@@ -78,4 +78,4 @@
     </div>
   </form>
 </div>
-{% endblock %}
+{% endblock 'conteudo' %}

@@ -8,6 +8,8 @@ app_name = "treinamento"
 
 urlpatterns = [
     path("treinar-ia/", views.treinar_ia, name="treinar_ia"),
+    # Alias legado (underscore) para compatibilidade
+    path("treinar_ia/", views.treinar_ia),
     path(
         "pre-processamento/<int:id>/",
         views.pre_processamento,

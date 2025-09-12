@@ -325,7 +325,7 @@ class QueryComposeAdmin(admin.ModelAdmin[QueryCompose]):
         "created_at",
         "updated_at",
     ]
-    search_fields = ["tag", "grupo", "description"]
+    search_fields = ["tag", "grupo", "descricao", "exemplo", "comportamento"]
     list_filter = ["tag", "grupo", "created_at"]
     ordering = ["-created_at"]
     exclude = ["embedding"]  # evita edição manual
@@ -335,10 +335,10 @@ class QueryComposeAdmin(admin.ModelAdmin[QueryCompose]):
 
     @admin.display(description="Descrição (prévia)")
     def description_preview(self, obj: QueryCompose) -> str:
-        """Exibe uma prévia do campo description."""
-        if obj and obj.description:
-            preview = obj.description[:120]
-            return preview + "..." if len(obj.description) > 120 else preview
+        """Exibe uma prévia do campo descrição."""
+        if obj and getattr(obj, "descricao", None):
+            preview = obj.descricao[:120]
+            return preview + "..." if len(obj.descricao) > 120 else preview
         return "-"
 
     @admin.display(description="Comportamento (prévia)")

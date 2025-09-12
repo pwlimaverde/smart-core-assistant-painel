@@ -48,15 +48,27 @@
     </div>
 
     <div>
-      <label for="description" class="block text-sm font-medium">Description</label>
+      <label for="descricao" class="block text-sm font-medium">Descrição</label>
       <textarea
-        id="description"
-        name="description"
+        id="descricao"
+        name="descricao"
         class="mt-1 block w-full border rounded p-2"
         rows="3"
         placeholder="Descrição do comportamento para gerar embedding"
         required
-      >{{ description_inicial }}</textarea>
+      >{{ descricao_inicial }}</textarea>
+    </div>
+
+    <div>
+      <label for="exemplo" class="block text-sm font-medium">Exemplo</label>
+      <textarea
+        id="exemplo"
+        name="exemplo"
+        class="mt-1 block w-full border rounded p-2"
+        rows="3"
+        placeholder="Exemplo de query que representa o intent"
+        required
+      >{{ exemplo_inicial }}</textarea>
     </div>
 
     <div>

@@ -312,7 +312,8 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
                     "id": qc.id,
                     "tag": qc.tag,
                     "grupo": qc.grupo,
-                    "description": qc.description,
+                    "descricao": qc.descricao,
+                    "exemplo": qc.exemplo,
                     "comportamento": qc.comportamento,
                 }
                 messages.info(request, f"Editando intent ID: {qc.id}")
@@ -363,7 +364,8 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                 "query_compose_id": dados_edicao["id"],
                 "tag_inicial": dados_edicao.get("tag", ""),
                 "grupo_inicial": dados_edicao.get("grupo", ""),
-                "description_inicial": dados_edicao.get("description", ""),
+                "descricao_inicial": dados_edicao.get("descricao", ""),
+                "exemplo_inicial": dados_edicao.get("exemplo", ""),
                 "comportamento_inicial": dados_edicao.get("comportamento", ""),
             }
         else:
@@ -372,7 +374,8 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                 "query_compose_id": None,
                 "tag_inicial": "",
                 "grupo_inicial": "",
-                "description_inicial": "",
+                "descricao_inicial": "",
+                "exemplo_inicial": "",
                 "comportamento_inicial": "",
             }
         return render(request, "treinamento/cadastrar_query_compose.html", context)
@@ -380,7 +383,8 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         tag = request.POST.get("tag")
         grupo = request.POST.get("grupo")
-        description = request.POST.get("description")
+        descricao = request.POST.get("descricao")
+        exemplo = request.POST.get("exemplo")
         comportamento = request.POST.get("comportamento")
         query_compose_id = request.POST.get("query_compose_id")
 
@@ -390,10 +394,10 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
             if dados_edicao:
                 query_compose_id = str(dados_edicao.get("id"))
 
-        if not tag or not grupo or not description or not comportamento:
+        if not tag or not grupo or not descricao or not exemplo or not comportamento:
             messages.error(
                 request,
-                "Tag, Grupo, Description e Comportamento são obrigatórios.",
+                "Tag, Grupo, Descrição, Exemplo e Comportamento são obrigatórios.",
             )
             return render(
                 request,
@@ -403,7 +407,8 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                     "query_compose_id": query_compose_id,
                     "tag_inicial": tag or "",
                     "grupo_inicial": grupo or "",
-                    "description_inicial": description or "",
+                    "descricao_inicial": descricao or "",
+                    "exemplo_inicial": exemplo or "",
                     "comportamento_inicial": comportamento or "",
                 },
             )
@@ -413,13 +418,14 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                 if query_compose_id:
                     # Edição
                     qc = QueryCompose.objects.get(id=query_compose_id)
-                    descricao_antiga = qc.description or ""
+                    descricao_antiga = qc.descricao or ""
                     qc.tag = tag
                     qc.grupo = grupo
-                    qc.description = description
+                    qc.descricao = descricao
+                    qc.exemplo = exemplo
                     qc.comportamento = comportamento
-                    # Se a description mudou, forçar reprocessamento do embedding
-                    if (descricao_antiga or "").strip() != (description or "").strip():
+                    # Se a descrição mudou, forçar reprocessamento do embedding
+                    if (descricao_antiga or "").strip() != (descricao or "").strip():
                         qc.embedding = None
                     qc.save()
                     if "query_compose_edicao" in request.session:
@@ -430,7 +436,8 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                     QueryCompose.objects.create(
                         tag=tag,
                         grupo=grupo,
-                        description=description,
+                        descricao=descricao,
+                        exemplo=exemplo,
                         comportamento=comportamento,
                     )
                     messages.success(request, "Intent cadastrada com sucesso!")
@@ -450,7 +457,8 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                     "query_compose_id": query_compose_id,
                     "tag_inicial": tag or "",
                     "grupo_inicial": grupo or "",
-                    "description_inicial": description or "",
+                    "descricao_inicial": descricao or "",
+                    "exemplo_inicial": exemplo or "",
                     "comportamento_inicial": comportamento or "",
                 },
             )

@@ -48,15 +48,15 @@ def signals_embeddings_query_compose(
     """Gera embedding para QueryCompose após criação ou atualização.
 
     - Quando o registro for salvo sem embedding, agenda uma tarefa assíncrona
-      para gerar o vetor com base em ``description``.
+      para gerar o vetor com base em ``descricao``.
     """
     try:
-        if not instance.embedding or not instance.description:
-            if instance.description and instance.description.strip():
+        if not instance.embedding or not instance.descricao:
+            if instance.descricao and instance.descricao.strip():
                 async_task(__gerar_embedding_query_compose, instance.pk)
             else:
                 logger.warning(
-                    f"QueryCompose {instance.pk} sem description para embedding"
+                    f"QueryCompose {instance.pk} sem descricao para embedding"
                 )
     except Exception as e:  # noqa: BLE001
         logger.error(
@@ -125,15 +125,9 @@ def __gerar_embedding_query_compose(query_compose_id: int) -> None:
         )
 
         qc: QueryCompose = QueryCompose.objects.get(id=query_compose_id)
-
-        if not qc.description or not qc.description.strip():
-            logger.warning(
-                f"QueryCompose {query_compose_id} sem description válido"
-            )
-            return
-
+        text:str = f"{qc.tag}: {qc.exemplo}"
         embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
-            text=qc.description
+            text=text
         )
 
         if embedding_vector:

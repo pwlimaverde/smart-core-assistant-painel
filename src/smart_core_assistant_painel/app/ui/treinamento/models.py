@@ -216,10 +216,15 @@ class QueryCompose(models.Model):
         null=False,
         help_text="Campo obrigatório para identificar o grupo do QueryCompose",
     )
-    description: models.TextField[str] = models.TextField(
+    descricao: models.TextField[str] = models.TextField(
         blank=False,
         null=False,
         help_text="Texto descritivo usado para gerar o embedding (representação do intent)"
+    )
+    exemplo: models.TextField[str] = models.TextField(
+        blank=False,
+        null=False,
+        help_text="Exemplo de query que representa o intent"
     )
     comportamento: models.TextField[str] = models.TextField(
         blank=False,
@@ -265,7 +270,7 @@ class QueryCompose(models.Model):
             # Formatação conforme especificado no planejamento
             prompt = (
                 f"📚 Comportamento que deve ser seguido:\n"
-                f"{comportamento[0].tag} - {comportamento[0].description}\n"
+                f"{comportamento[0].tag} - {comportamento[0].descricao}\n"
                 f"{comportamento[0].comportamento}"
             )
             return prompt

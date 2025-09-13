@@ -11,7 +11,7 @@ from django.shortcuts import redirect, render
 from loguru import logger
 from rolepermissions.checkers import has_permission
 
-# Removido: from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
+from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
 from .models import Documento, QueryCompose, Treinamento
 from .services import TreinamentoService

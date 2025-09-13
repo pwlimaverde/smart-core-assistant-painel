@@ -1,5 +1,6 @@
 """Testes para os modelos do app Treinamento."""
 
+import logging
 from unittest.mock import MagicMock, patch
 
 from django.core.exceptions import ValidationError
@@ -11,6 +12,10 @@ from smart_core_assistant_painel.app.ui.treinamento.models import (
     Treinamento,
     validate_identificador,
 )
+
+# Configurar logging para testes
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class TestTreinamentoTreinamentos(TestCase):
@@ -235,3 +240,61 @@ class TestQueryCompose(TestCase):
                 comportamento="Comportamento"
             )
             query_invalido.full_clean()
+
+    def test_buscar_comportamento_similar_com_threshold(self) -> None:
+        """Testa o threshold de similaridade no método buscar_comportamento_similar."""
+        # Salvar o estado original
+        original_queries = list(QueryCompose.objects.all())
+        
+        # Limpar todos os QueryCompose existentes para evitar interferência
+        QueryCompose.objects.all().delete()
+        
+        # Criar um QueryCompose com embedding único
+        query_com_embedding = QueryCompose.objects.create(
+            tag="teste_threshold_unico",
+            grupo="teste_unico",
+            descricao="Teste de similaridade único",
+            exemplo="Como testar similaridade única?",
+            comportamento="Você deve responder sobre testes únicos",
+            embedding=[0.5, 0.5] + [0.0] * 1022  # Embedding único
+        )
+
+        try:
+            # Teste com threshold alto (0.9) e vetor muito diferente - deve retornar None
+            result_high = QueryCompose.buscar_comportamento_similar(
+                query_vec=[0.0] + [1.0] * 1023,  # Vetor ortogonal (muito diferente)
+                similarity_threshold=0.9
+            )
+            self.assertIsNone(result_high)
+
+            # Verificar se o QueryCompose foi criado corretamente
+            logger.info(f"Total de queries no banco: {QueryCompose.objects.count()}")
+            logger.info(f"Query criada: {query_com_embedding}")
+            logger.info(f"Embedding existe: {query_com_embedding.embedding is not None}")
+            if query_com_embedding.embedding:
+                logger.info(f"Tamanho do embedding: {len(query_com_embedding.embedding)}")
+                logger.info(f"Primeiros valores: {query_com_embedding.embedding[:5]}")
+            
+            # Teste com threshold baixo (0.1) e vetor idêntico - deve retornar resultado
+            logger.info("ANTES DE CHAMAR O MÉTODO buscar_comportamento_similar")
+            logger.info(f"Método existe? {hasattr(QueryCompose, 'buscar_comportamento_similar')}")
+            logger.info(f"Tipo do método: {type(QueryCompose.buscar_comportamento_similar)}")
+            result_low = QueryCompose.buscar_comportamento_similar(
+                query_vec=[0.5, 0.5] + [0.0] * 1022,  # Vetor idêntico
+                similarity_threshold=0.1
+            )
+            logger.info("DEPOIS DE CHAMAR O MÉTODO buscar_comportamento_similar")
+            logger.info(f"Resultado: {result_low}")
+            logger.info(f"Tipo: {type(result_low)}")
+            logger.info(f"É None? {result_low is None}")
+            
+            self.assertIsNotNone(result_low)
+            self.assertIn("📚 Comportamento que deve ser seguido:", result_low)
+            self.assertIn("Você deve responder sobre testes únicos", result_low)
+
+        finally:
+            # Limpeza completa
+            QueryCompose.objects.all().delete()
+            # Restaurar o estado original
+            for query in original_queries:
+                query.save()

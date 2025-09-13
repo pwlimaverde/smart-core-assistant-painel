@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from typing import Any, Self, cast, override
@@ -273,7 +275,7 @@ class QueryCompose(models.Model):
         cls,
         query_vec: list[float],
         top_k: int = 1,
-    ) -> str:
+    ) -> str | None:
         try:
             comportamento: QuerySet[Self] = (
                 cls.objects.filter(embedding__isnull=False,)
@@ -290,13 +292,15 @@ class QueryCompose(models.Model):
                 f"Comportamento similar encontrado - Tag: {comportamento[0].tag}, "
                 f"Distância: {most_similar_distance:.4f}"
             )
-            
+            if most_similar_distance > 0.29:
+                return None
             # Formatação conforme especificado no planejamento
             prompt = (
                 f"📚 Comportamento que deve ser seguido:\n"
                 f"{comportamento[0].comportamento}"
             )
             return prompt
+            
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
-            return ""
+            return None

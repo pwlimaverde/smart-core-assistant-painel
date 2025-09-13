@@ -227,7 +227,7 @@ class TestPreProcessamentoViews(TestCase):
         # Arrange
         mock_has_permission.return_value = True
         # Act
-        with patch('smart_core_assistant_painel.app.ui.treinamento.views.FeaturesCompose.melhoria_ia_treinamento') as mock_melhoria:
+        with patch('smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.melhoria_ia_treinamento') as mock_melhoria:
             mock_melhoria.return_value = "improved content"
             response = self.client.get(reverse('treinamento:pre_processamento', args=[self.treinamento.id]))
 
@@ -271,7 +271,7 @@ class TestPreProcessamentoViews(TestCase):
         # Arrange
         mock_has_permission.return_value = True
         # Act
-        with patch('smart_core_assistant_painel.app.ui.treinamento.views.FeaturesCompose.melhoria_ia_treinamento') as mock_melhoria:
+        with patch('smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.melhoria_ia_treinamento') as mock_melhoria:
             mock_melhoria.return_value = "improved content"
             response = self.client.post(reverse('treinamento:pre_processamento', args=[self.treinamento.id]), {
                 'acao': 'aceitar'

@@ -123,7 +123,7 @@ def demonstrate_embedding_text(queries: List[QueryCompose]) -> None:
         
         # Gerar texto para embedding
         embedding_text = query.to_embedding_text()
-        consulta = 'agradecimento: Agradeço a atenção'	
+        consulta = 'orçamento: goataria de um orçamento de 5 batons'	
         embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
             text=consulta
         )

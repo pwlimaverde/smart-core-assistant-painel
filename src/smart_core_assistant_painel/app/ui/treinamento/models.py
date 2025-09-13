@@ -266,8 +266,8 @@ class QueryCompose(models.Model):
         if self.tag:
             embedding_parts.append(f"{self.tag}:")
  
-        if self.exemplo:
-            embedding_parts.append(f"{self.exemplo.strip()}")
+        if self.descricao:
+            embedding_parts.append(f"{self.descricao.strip()}")
         return "\n".join(embedding_parts)
 
     @classmethod
@@ -292,7 +292,7 @@ class QueryCompose(models.Model):
                 f"Comportamento similar encontrado - Tag: {comportamento[0].tag}, "
                 f"Distância: {most_similar_distance:.4f}"
             )
-            if most_similar_distance > 0.29:
+            if most_similar_distance > 0.25:
                 return None
             # Formatação conforme especificado no planejamento
             prompt = (

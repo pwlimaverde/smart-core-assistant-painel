@@ -66,12 +66,13 @@ def send_message_response(phone: str) -> None:
             atendimento_obj: Atendimento = mensagem.atendimento
             
             if _pode_bot_responder_atendimento(atendimento_obj):
-                prompt_intent: str = "" 
-                for intent in mensagem.intent_detectado:
-                    tag:str = list(intent.keys())[0]
+                prompt_intent: str = ""
+                for index, intent in enumerate(mensagem.intent_detectado, start=1):
+                    tag: str = list(intent.keys())[0]
                     qc = QueryCompose.objects.filter(tag=tag).first()
                     if qc:
-                        prompt_intent += qc.comportamento
+                        prompt_intent += f"{index} - {qc.comportamento}\n"
+                logger.warning(f"Prompt intent: {prompt_intent}")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,

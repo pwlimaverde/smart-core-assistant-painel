@@ -251,6 +251,22 @@ class QueryCompose(models.Model):
 
     def __str__(self) -> str:
         return f"{self.tag or 'sem-tag'}"
+    
+    def to_embedding_text(self) -> str:
+        """
+        Gera texto otimizado para criação de embeddings.
+        Combina descrição e exemplo de forma que capture melhor a semântica do intent.
+        
+        Returns:
+            str: Texto otimizado para embedding
+        """
+        embedding_parts: list[str] = []
+        if self.tag:
+            embedding_parts.append(f"{self.tag}:")
+ 
+        if self.exemplo:
+            embedding_parts.append(f"{self.exemplo.strip()}")
+        return "\n".join(embedding_parts)
 
     @classmethod
     def buscar_comportamento_similar(
@@ -262,15 +278,22 @@ class QueryCompose(models.Model):
             comportamento: QuerySet[Self] = (
                 cls.objects.filter(embedding__isnull=False,)
                 .annotate(distance=CosineDistance("embedding", query_vec))
-                .only("tag", "description", "comportamento")
+                .only("tag", "descricao", "comportamento")
                 .order_by("distance")[:top_k]
             )
             if not comportamento:
                 return ""
+            
+            # Log da distância mais similar encontrada
+            most_similar_distance = comportamento[0].distance
+            logger.warning(
+                f"Comportamento similar encontrado - Tag: {comportamento[0].tag}, "
+                f"Distância: {most_similar_distance:.4f}"
+            )
+            
             # Formatação conforme especificado no planejamento
             prompt = (
                 f"📚 Comportamento que deve ser seguido:\n"
-                f"{comportamento[0].tag} - {comportamento[0].descricao}\n"
                 f"{comportamento[0].comportamento}"
             )
             return prompt

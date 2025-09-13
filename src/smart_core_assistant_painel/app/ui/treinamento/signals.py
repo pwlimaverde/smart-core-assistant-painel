@@ -125,7 +125,7 @@ def __gerar_embedding_query_compose(query_compose_id: int) -> None:
         )
 
         qc: QueryCompose = QueryCompose.objects.get(id=query_compose_id)
-        text:str = f"{qc.tag}: {qc.exemplo}"
+        text:str = qc.to_embedding_text()
         embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
             text=text
         )

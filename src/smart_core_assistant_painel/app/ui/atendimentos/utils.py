@@ -8,7 +8,7 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.treinamento.models import Documento, QueryCompose
+from smart_core_assistant_painel.app.ui.treinamento.models import QueryCompose
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -63,16 +63,35 @@ def send_message_response(phone: str) -> None:
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
             _analisar_conteudo_mensagem(mensagem_id)
+            # Garante que os campos atualizados pela análise sejam refletidos neste objeto
+            try:
+                mensagem.refresh_from_db(
+                    fields=["intent_detectado", "entidades_extraidas"]
+                )
+            except Exception:
+                mensagem.refresh_from_db()
             atendimento_obj: Atendimento = mensagem.atendimento
             
-            if _pode_bot_responder_atendimento(atendimento_obj):
-                prompt_intent: str = ""
+            logger.warning(f"DEBUG: Verificando se bot pode responder. Atendimento: {atendimento_obj}")
+            pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
+            logger.warning(f"DEBUG: Bot pode responder: {pode_responder}")
+            
+            if pode_responder:
+                logger.warning(f"DEBUG: Intent detectado id: {mensagem.id}, type: {type(mensagem.intent_detectado)}, value: {mensagem.intent_detectado}")
+                prompt_intent: str = "Instruções personalizada para a resposta"
                 for index, intent in enumerate(mensagem.intent_detectado, start=1):
+                    logger.warning(f"Intent: {intent}")
                     tag: str = list(intent.keys())[0]
+                    logger.warning(f"DEBUG: Tag extraída: '{tag}'")
                     qc = QueryCompose.objects.filter(tag=tag).first()
                     if qc:
+                        logger.warning(f"DEBUG: QueryCompose encontrado para '{tag}': {qc.comportamento[:50]}...")
                         prompt_intent += f"{index} - {qc.comportamento}\n"
+                    else:
+                        logger.warning(f"DEBUG: QueryCompose NÃO encontrado para tag '{tag}'")
                 logger.warning(f"Prompt intent: {prompt_intent}")
+            else:
+                logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,

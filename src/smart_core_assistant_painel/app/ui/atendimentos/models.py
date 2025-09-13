@@ -197,22 +197,19 @@ class Atendimento(models.Model):
                 mensagens_query = mensagens_query.exclude(id=excluir_mensagem_id)
             mensagens: list["Mensagem"] = list(mensagens_query)
             conteudo_mensagens: list[str] = []
-            intents_detectados: set[dict[str, str]] = set()
-            entidades_extraidas: set[dict[str, str]] = set()
+            intents_detectados: list[dict[str, str]] = []
+            entidades_extraidas: list[dict[str, str]] = []
             for mensagem in mensagens:
                 if mensagem.conteudo:
                     conteudo_mensagens.append(mensagem.conteudo)
                 if mensagem.intent_detectado:
                     for intent_dict in mensagem.intent_detectado:
-                        for tipo_intent, valor_intent in intent_dict.items():
-                            intents_detectados.add({tipo_intent: valor_intent})
+                        if intent_dict not in intents_detectados:
+                            intents_detectados.append(intent_dict)
                 if mensagem.entidades_extraidas:
                     for entidade_dict in mensagem.entidades_extraidas:
-                        for (
-                            tipo_entidade, 
-                            valor_entidade,
-                        ) in entidade_dict.items():
-                            entidades_extraidas.add({tipo_entidade: valor_entidade})
+                        if entidade_dict not in entidades_extraidas:
+                            entidades_extraidas.append(entidade_dict)
             historico_atendimentos: list[str] = []
             atendimentos_anteriores = (
                 Atendimento.objects.filter(contato=self.contato)
@@ -242,8 +239,8 @@ class Atendimento(models.Model):
             )
             return {
                 "conteudo_mensagens": [],
-                "intents_detectados": set(),
-                "entidades_extraidas": set(),
+                "intents_detectados": [],
+                "entidades_extraidas": [],
                 "historico_atendimentos": [],
             }
 

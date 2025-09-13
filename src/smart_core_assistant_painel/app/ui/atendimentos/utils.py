@@ -71,33 +71,45 @@ def send_message_response(phone: str) -> None:
             except Exception:
                 mensagem.refresh_from_db()
             atendimento_obj: Atendimento = mensagem.atendimento
-            
-            logger.warning(f"DEBUG: Verificando se bot pode responder. Atendimento: {atendimento_obj}")
             pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
-            logger.warning(f"DEBUG: Bot pode responder: {pode_responder}")
-            
             if pode_responder:
-                logger.warning(f"DEBUG: Intent detectado id: {mensagem.id}, type: {type(mensagem.intent_detectado)}, value: {mensagem.intent_detectado}")
-                prompt_intent: str = "Instruções personalizada para a resposta"
+                # Monta um prompt de sistema claro e objetivo para orientar a LLM
+                # sobre como responder de acordo com as intenções detectadas.
+                prompt_lines: list[str] = [
+                    (
+                        "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
+                        "Siga estritamente as orientações abaixo, em "
+                        "português claro e objetivo.\n"
+                        "Adapte a resposta ao contexto do atendimento atual."
+                    ),
+                    "Intenções detectadas e orientações:",
+                ]
                 for index, intent in enumerate(mensagem.intent_detectado, start=1):
-                    logger.warning(f"Intent: {intent}")
                     tag: str = list(intent.keys())[0]
-                    logger.warning(f"DEBUG: Tag extraída: '{tag}'")
                     qc = QueryCompose.objects.filter(tag=tag).first()
                     if qc:
-                        logger.warning(f"DEBUG: QueryCompose encontrado para '{tag}': {qc.comportamento[:50]}...")
-                        prompt_intent += f"{index} - {qc.comportamento}\n"
-                    else:
-                        logger.warning(f"DEBUG: QueryCompose NÃO encontrado para tag '{tag}'")
+                        # Normaliza espaços e remove quebras de linha acidentais
+                        behavior: str = " ".join(
+                            str(qc.comportamento).split()
+                        ).strip()
+                        prompt_lines.append(f"{index}. [{tag}] {behavior}")
+                prompt_lines.append(
+                    (
+                        "Se houver múltiplas intenções, priorize a ordem "
+                        "listada e mantenha a resposta concisa."
+                    )
+                )
+                prompt_intent: str = "\n".join(prompt_lines)
                 logger.warning(f"Prompt intent: {prompt_intent}")
-            else:
-                logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,
                     number=message_data.numero_telefone,
                     text="Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
                 )
+            else:
+                logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
+                
         except Mensagem.DoesNotExist:
             logger.error(
                 f"Mensagem criada (ID: {mensagem_id}) não encontrada."

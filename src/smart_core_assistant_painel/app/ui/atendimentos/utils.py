@@ -93,6 +93,11 @@ def send_message_response(phone: str) -> None:
                             str(qc.comportamento).split()
                         ).strip()
                         prompt_lines.append(f"{index}. [{tag}] {behavior}")
+                    else:
+                        intent_vector: list[float] = FeaturesCompose.generate_embeddings(f"{tag}: {intent[tag]}")
+                        comportamento: str|None = QueryCompose.buscar_comportamento_similar(intent_vector) 
+                        if comportamento:
+                            prompt_lines.append(f"{index}. [{tag}] {comportamento}")
                 prompt_lines.append(
                     (
                         "Se houver múltiplas intenções, priorize a ordem "

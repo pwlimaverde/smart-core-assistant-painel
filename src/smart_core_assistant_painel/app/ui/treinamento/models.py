@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime
 from typing import Any, Self, cast, override
@@ -304,3 +305,73 @@ class QueryCompose(models.Model):
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
             return None
+
+    @classmethod
+    def build_intent_types_config(
+        cls,
+    ) -> str:
+        """Gera JSON (string) de intent_types baseado nos registros.
+
+        Estrutura:
+            {
+                "intent_types": {
+                    "<grupo>": {
+                        "<tag>": "<descricao> e exemplos estruturados"
+                    }
+                }
+            }
+
+        Returns:
+            str: JSON válido (string) com a chave raiz "intent_types".
+        """
+        # Consulta ordenada para previsibilidade da saída
+        qs: QuerySet[Self] = (
+            cls.objects
+            .only("grupo", "tag", "descricao", "exemplo")
+            .order_by("grupo", "tag")
+        )
+
+        result: dict[str, dict[str, dict[str, str]]] = {"intent_types": {}}
+
+        for qc in qs:
+            grupo: str = (qc.grupo or "").strip()
+            tag: str = (qc.tag or "").strip()
+            if not grupo or not tag:
+                # Ignora registros sem grupo ou tag válidos
+                continue
+
+            group_map: dict[str, str]
+            group_map = result["intent_types"].setdefault(grupo, {})
+
+            # Normaliza descricao em linha única e prepara exemplos multilinha
+            descricao_clean: str = re.sub(
+                r"\s+", " ", (qc.descricao or "")
+            ).strip()
+            exemplo_raw: str = (qc.exemplo or "").strip()
+            exemplos: list[str] = [
+                ln.strip() for ln in exemplo_raw.splitlines() if ln.strip()
+            ]
+
+            # Monta string estruturada para interpretação clara pela LLM
+            if descricao_clean or exemplos:
+                lines: list[str] = []
+                if descricao_clean:
+                    lines.append(f"Descrição: {descricao_clean}")
+                if exemplos:
+                    lines.append("Exemplos:")
+                    for item in exemplos:
+                        lines.append(f"- {item}")
+                value: str = "\n".join(lines)
+            else:
+                # Mantém compatibilidade caso ambos estejam vazios
+                value = ""
+
+            group_map[tag] = value
+
+        # Retorna string JSON válida e estável (ordenada)
+        return json.dumps(
+            result,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )

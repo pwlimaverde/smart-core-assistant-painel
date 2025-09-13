@@ -106,6 +106,8 @@ def send_message_response(phone: str) -> None:
                 )
                 prompt_intent: str = "\n".join(prompt_lines)
                 logger.warning(f"Prompt intent: {prompt_intent}")
+                json = QueryCompose.build_intent_types_config()
+                logger.warning(f"JSON:\n {json}")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,

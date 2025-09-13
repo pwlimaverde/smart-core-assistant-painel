@@ -224,9 +224,11 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
             "conteudo_mensagens"
         ):
             FeaturesCompose.mensagem_apresentacao()
+        intent_types = QueryCompose.build_intent_types_config()
         resultado_analise = FeaturesCompose.analise_previa_mensagem(
             historico_atendimento=historico_atendimento,
             context=mensagem.conteudo,
+            valid_intent_types=intent_types,
         )
         mensagem.intent_detectado = resultado_analise.intent_types
         mensagem.entidades_extraidas = resultado_analise.entity_types

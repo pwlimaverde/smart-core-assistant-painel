@@ -229,7 +229,7 @@ class FeaturesCompose:
 
     @staticmethod
     def analise_previa_mensagem(
-        historico_atendimento: dict[str, Any], context: str
+        historico_atendimento: dict[str, Any], context: str, valid_intent_types: str
     ) -> APMTuple:
         """Realiza análise prévia de mensagem para extrair intenção e entidades.
 
@@ -255,7 +255,7 @@ class FeaturesCompose:
         )
         parameters = AnalisePreviaMensagemParameters(
             historico_atendimento=historico_atendimento,
-            valid_intent_types=SERVICEHUB.VALID_INTENT_TYPES,
+            valid_intent_types=valid_intent_types,
             valid_entity_types=SERVICEHUB.VALID_ENTITY_TYPES,
             llm_parameters=llm_parameters,
             error=LlmError("Erro ao processar mensagem"),

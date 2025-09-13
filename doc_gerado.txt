@@ -1,0 +1,154 @@
+Analise a mensagem do contato e extraia intents e entities.
+    1. INTENTS (intenções do usuário):
+       ACOES COMERCIAIS:
+       - cotacao: Descrição: solicitações de orçamento, solicitação de cotação ou consulta de preço
+Exemplos:
+- quanto custa?
+- quero um orçamento
+- gostaria de uma cotação
+- quero saber o preço
+- preciso de uma cotação
+- me passa os valores
+
+       COMUNICACAO BASICA:
+       - agradecimento: Descrição: expressões de gratidão e agradecimento
+Exemplos:
+- agradeço
+- obrigado
+- foi boa
+- valeu
+- entendi, obrigado
+       - despedida: Descrição: finalizações de conversa, despedida ou indicação de satisfação
+Exemplos:
+- obrigado, deu certo.
+- Valeu
+- entendi. obrigado.
+- só isso mesmo
+- ok, obrigado.
+- beleza
+- vou avaliar e retorno. obrigado
+       - saudacao: Descrição: cumprimentos, apresentações e saudação
+Exemplos:
+- Olá, tudo bem?
+- bom dia, tudo bem?
+- boa tarde, pode me ajudar?
+- Olá!
+- oi
+
+    2. ENTITIES DINÂMICAS (informações específicas):
+       PRODUTOS SERVICOS:
+       - tipo_produto: Categoria do produto citada na conversa, exemplo: Notebook
+       - produto: Nome específico do produto mencionado, exemplo: Dell Inspiron 15
+       - servico: Tipo de serviço solicitado ou informado, exemplo: Instalação
+       - marca: Marca do produto ou serviço citado, exemplo: Samsung
+
+       QUANTIDADES MEDIDAS:
+       - quantidade: Quantidade mencionada relacionada ao produto ou serviço, exemplo: 2 unidades
+       - preco: Valor ou preço informado na conversa, exemplo: R$ 2.500,00
+       - desconto: Percentual de desconto mencionado, exemplo: 10%
+
+       TEMPO LOCALIZACAO:
+       - prazo: Prazo informado para entrega, execução ou resposta, exemplo: até sexta-feira
+       - data: Data específica mencionada, exemplo: 22/07/2025
+       - horario: Horário citado, exemplo: 14h
+       - local: Localidade ou endereço informados no contexto da conversa, exemplo: sede da empresa
+       - cidade: Cidade mencionada em contexto temporo-espacial, exemplo: Fortaleza
+
+       CARACTERISTICAS TECNICAS:
+       - cor: Cor do produto ou item citado, exemplo: Preto
+       - tamanho: Tamanho ou medida mencionada, exemplo: 42 polegadas
+       - material: Material do produto ou item informado, exemplo: Aço inox
+       - modelo: Modelo específico mencionado, exemplo: iPhone 14 Pro
+
+       IDENTIFICADORES SISTEMA:
+       - numero_protocolo: Número ou código do protocolo fornecido pelo cliente para rastreamento, exemplo: PROT-12345
+       - id_pedido: Código de identificação do pedido citado, exemplo: PED-000789
+       - codigo_cliente: Código único do cliente no sistema informado, exemplo: CL1234
+       - numero_ticket: Número do ticket de suporte mencionado, exemplo: TCK-56789
+       - codigo_produto: Código do produto citado, exemplo: SKU-112233
+
+       DADOS FINANCEIROS:
+       - forma_pagamento: Método ou forma de pagamento informado, exemplo: Boleto bancário
+       - numero_parcelas: Quantidade de parcelas do pagamento citada, exemplo: 3x
+       - vencimento: Data de vencimento do pagamento mencionada, exemplo: 10/08/2025
+       - valor_total: Valor total da negociação ou compra informado, exemplo: R$ 3.500,00
+       - juros: Taxa ou percentual de juros citado, exemplo: 1.99% ao mês
+
+       STATUS ESTADOS:
+       - status_pedido: Situação atual do pedido informada, exemplo: Em separação
+       - situacao_cliente: Estado ou fase do cliente na negociação ou atendimento, exemplo: Em negociação
+       - nivel_prioridade: Grau de prioridade citado para o atendimento ou pedido, exemplo: Alta prioridade       
+       - canal_origem: Canal pelo qual o contato foi originado, conforme informado na conversa, exemplo: Falei pelo WhatsApp
+
+       ENTREGA LOGISTICA:
+       - cep: Código postal citado para entrega, exemplo: 63.000-000
+       - endereco: Endereço completo informado para entrega, exemplo: Rua A, nº 100, Centro
+       - transportadora: Nome da empresa responsável pela entrega mencionada, exemplo: Jadlog
+       - codigo_rastreamento: Código para rastreamento da entrega citado, exemplo: BR123456789LL
+
+       SUPORTE TECNICO:
+       - versao_sistema: Versão do sistema ou software referida no atendimento, exemplo: v2.5.0
+       - codigo_erro: Código do erro informado durante o suporte, exemplo: ERR-403
+       - categoria_problema: Tipo ou categoria do problema relatado, exemplo: Falha de autenticação
+       - departamento: Departamento técnico citado no contexto do atendimento, exemplo: Infraestrutura
+
+
+    3. ENTIDADES FIXAS (dados para cadastro no banco) - extraia quando identificadas claramente:
+       CONTATO:
+       - nome_contato: Nome completo da pessoa que participou da conversa e deve ser cadastrado como contato no sistema, exemplo: Ana Souza
+       - cargo_contato: Cargo ou função profissional mencionada pelo contato durante a conversa, exemplo: Gerente de Projetos
+       - departamento_contato: Departamento ou setor referente ao contato, conforme mencionado na conversa, exemplo: Financeiro
+       - email_contato: Endereço de e-mail fornecido pelo contato na conversa, exemplo: ana.souza@email.com       
+       - rg_contato: Número do Registro Geral (RG) do contato informado na conversa, exemplo: MG-12.345.678       
+       - observacoes_contato: Informações adicionais ou comentários relevantes sobre o contato capturados durante a conversa, exemplo: Prefiro conversar à tarde
+
+       CLIENTE:
+       - tipo_cliente: Tipo de cliente identificado na conversa, podendo ser 'pessoa física' ou 'pessoa jurídica', exemplo: juridica
+       - nome_fantasia_cliente: Nome comum ou comercial da empresa mencionado na conversa, usado para cadastro simplificado, exemplo: Microsoft
+       - razao_social_cliente: Nome legal ou razão social oficial da empresa, se mencionado na conversa, exemplo: Microsoft Corporation
+       - cnpj_cliente: Número do Cadastro Nacional de Pessoa Jurídica (CNPJ) informado na conversa, em formato válido, exemplo: 12.345.678/0001-99
+       - cpf_cliente: Número do Cadastro de Pessoa Física (CPF) informado na conversa, em formato válido (utilizado quando o cliente for pessoa física), exemplo: 123.456.789-09
+       - telefone_cliente: Número de telefone fixo ou corporativo da empresa informado na conversa, incluindo código de área, exemplo: (11) 3333-4444
+       - site_cliente: Endereço do website ou URL oficial da empresa mencionada na conversa, exemplo: https://www.microsoft.com
+       - ramo_atividade_cliente: Ramo de atividade ou setor em que a empresa atua, conforme citado durante a conversa, exemplo: Tecnologia da Informação
+       - observacoes_cliente: Informações adicionais relevantes sobre a empresa capturadas durante a conversa, exemplo: Cliente desde 2020
+       - cep_cliente: Código de Endereçamento Postal (CEP) do endereço da empresa informado na conversa, exemplo: 01234-567
+       - logradouro_cliente: Nome da rua, avenida ou logradouro onde a empresa está situada, conforme informação na conversa, exemplo: Avenida Paulista
+       - numero_cliente: Número do endereço da empresa informado na conversa, exemplo: 1000
+       - complemento_cliente: Complemento do endereço, como sala, andar ou bloco, informado durante a conversa, exemplo: Sala 101
+       - bairro_cliente: Nome do bairro onde a empresa está localizada, conforme mencionado na conversa, exemplo: Bela Vista
+       - cidade_cliente: Nome da cidade onde a empresa está sediada, conforme identificado na conversa, exemplo: São Paulo
+       - uf_cliente: Sigla da unidade federativa (estado) da empresa informada na conversa, exemplo: SP
+       - pais_cliente: Nome do país onde a empresa está localizada, conforme mencionado, exemplo: Brasil
+
+       ATENDIMENTO:
+       - tags_atendimento: lista de tags ou palavras-chave que categorizam o atendimento, extraídas da conversa, exemplo: ["orcamento", "urgente"]
+       - avaliacao_atendimento: Avaliação numérica do atendimento, variando de 1 (pior) até 5 (melhor), conforme opinião do contato, exemplo: 4
+       - feedback_atendimento: Comentário qualitativo ou crítica fornecida pelo contato sobre o atendimento recebido, exemplo: Atendimento muito bom e rápido
+        
+    EXEMPLOS DE ANÁLISE:
+
+    EXEMPLO 1: "Olá, tudo bem? meu nome é Paulo Silva, trabalho na Microsoft como Gerente de TI"
+    - intent: [
+        {"type": "saudacao", "value": "Olá, tudo bem?"},
+        {"type": "apresentacao", "value": "meu nome é Paulo Silva, trabalho na Microsoft como Gerente de TI"}     
+      ]
+    - entities: [
+        {"type": "nome_contato", "value": "Paulo Silva"},
+        {"type": "nome_fantasia_cliente", "value": "Microsoft"},
+        {"type": "cargo_contato", "value": "Gerente de TI"},
+        {"type": "tipo_cliente", "value": "pessoa jurídica"}
+      ]
+
+    EXEMPLO 2: "Preciso de um orçamento para desenvolvimento de site, meu e-mail é maria@empresa.com"
+    - intent: [
+        {"type": "informacao", "value": "Preciso de um orçamento para desenvolvimento de site"}
+      ]
+    - entities: [
+        {"type": "email", "value": "maria@empresa.com"}
+      ]
+
+    REGRAS IMPORTANTES:
+    - Extraia apenas informações explícitas no texto, sem inferências.
+    - Mantenha o texto original encontrado como value, sem reescrever.
+    - Se nada for encontrado para intent ou entities, retorne listas vazias.

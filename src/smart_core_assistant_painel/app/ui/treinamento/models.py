@@ -356,7 +356,7 @@ class QueryCompose(models.Model):
             if descricao_clean or exemplos:
                 lines: list[str] = []
                 if descricao_clean:
-                    lines.append(f"Descrição: {descricao_clean}")
+                    lines.append(descricao_clean)
                 if exemplos:
                     lines.append("Exemplos:")
                     for item in exemplos:

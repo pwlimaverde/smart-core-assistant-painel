@@ -257,19 +257,38 @@ class QueryCompose(models.Model):
     
     def to_embedding_text(self) -> str:
         """
-        Gera texto otimizado para criação de embeddings.
-        Combina descrição e exemplo de forma que capture melhor a semântica do intent.
-        
+        Gera texto otimizado para criação de embeddings, padronizando o
+        conteúdo conforme esperado pelos testes e pelo pipeline de
+        embeddings.
+
+        Regras:
+        - Primeira linha: "Categoria: <tag>" quando houver tag.
+        - Segunda linha: descrição (quando houver)
+        - Terceira linha: "Exemplo: <exemplo>" (quando houver)
+        - Quando descrição e exemplo estiverem vazios, retornar string vazia.
+
         Returns:
-            str: Texto otimizado para embedding
+            str: Texto formatado para geração de embedding.
         """
-        embedding_parts: list[str] = []
-        if self.tag:
-            embedding_parts.append(f"{self.tag}:")
- 
-        if self.descricao:
-            embedding_parts.append(f"{self.descricao.strip()}")
-        return "\n".join(embedding_parts)
+        # Partes que compõem o texto final, respeitando as regras acima
+        parts: list[str] = []
+
+        tag: str = (self.tag or "").strip()
+        descricao: str = (self.descricao or "").strip()
+        exemplo: str = (self.exemplo or "").strip()
+
+        # Se não houver conteúdo semântico (descrição e exemplo), retornar vazio
+        if not descricao and not exemplo:
+            return ""
+
+        if tag:
+            parts.append(f"Categoria: {tag}")
+        if descricao:
+            parts.append(descricao)
+        if exemplo:
+            parts.append(f"Exemplo: {exemplo}")
+
+        return "\n".join(parts)
 
     @classmethod
     def buscar_comportamento_similar(

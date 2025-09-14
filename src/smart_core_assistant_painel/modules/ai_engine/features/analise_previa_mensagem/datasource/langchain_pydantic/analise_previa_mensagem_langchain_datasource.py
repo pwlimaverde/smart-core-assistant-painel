@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Iterable, List, Dict
 
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
@@ -71,17 +71,21 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
             )
-            # Escapar chaves JSON no prompt system para evitar conflito com
-            # variáveis do template
-            prompt_system_escaped = (
-                parameters.llm_parameters.prompt_system.replace(
-                    "{", "{{"
-                ).replace("}", "}}")
+
+            # Seleção do system prompt:
+            # - Prioriza o prompt_system vindo dos parâmetros (se fornecido)
+            # - Usa a docstring do modelo como fallback
+            # Observação: escapamos chaves para não conflitar com o template
+            raw_system_prompt = (
+                parameters.llm_parameters.prompt_system
+                if getattr(parameters.llm_parameters, "prompt_system", None)
+                else doc
             )
+            system_prompt = raw_system_prompt.replace("{", "{{").replace("}", "}}")
 
             messages = ChatPromptTemplate.from_messages(
                 [
-                    ("system", prompt_system_escaped),
+                    ("system", system_prompt),
                     (
                         "user",
                         "{historico_context}\n\n{prompt_human}: {context}",
@@ -107,18 +111,12 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             # Invocar a chain
             response = chain.invoke(invoke_data)
 
-            # Converter PydanticModel para AnalisePreviaMensagem
-            # Extrair dados de intent e entities do response
+            # Pós-processamento: conversão simples mantendo itens válidos
             intent_data = getattr(response, "intent", [])
             entities_data = getattr(response, "entities", [])
 
-            intent_dicts = [
-                {str(item.type): item.value} for item in intent_data
-            ]
-
-            entity_dicts = [
-                {str(item.type): item.value} for item in entities_data
-            ]
+            intent_dicts = self._filter_and_convert_items(intent_data)
+            entity_dicts = self._filter_and_convert_items(entities_data)
 
             # Criar instância de AnalisePreviaMensagem
             resultado = AnalisePreviaMensagemLangchain(
@@ -187,3 +185,41 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             historico_parts.append("Nenhuma mensagem anterior disponível.")
 
         return "\n".join(historico_parts)
+
+    def _filter_and_convert_items(
+        self, items: Iterable[Any]
+    ) -> List[Dict[str, str]]:
+        """Converte itens válidos no formato {type: value}.
+
+        - Mantém somente itens cujo `type` e `value` existam e sejam strings
+          não vazias (após strip).
+        - Converte cada item válido para o formato {type: value}.
+        - Ignora itens inválidos; quando nenhum for válido, retorna lista vazia.
+
+        Args:
+            items: Iterável de objetos com atributos `type` e `value`.
+
+        Returns:
+            Lista de dicionários convertidos com pares {type: value}.
+        """
+        results: List[Dict[str, str]] = []
+        if not items:
+            return results
+
+        for item in items:
+            try:
+                item_type = getattr(item, "type", None)
+                item_value = getattr(item, "value", None)
+                if item_type is None or item_value is None:
+                    continue
+                type_str = str(item_type).strip()
+                value_str = str(item_value).strip()
+                if not type_str or not value_str:
+                    continue
+                # Conversão simples sem exigir literalidade no contexto
+                results.append({type_str: value_str})
+            except Exception as exc:  # proteção defensiva
+                # Log em nível debug para não poluir saída de produção
+                logger.debug(f"Falha ao processar item '{item}': {exc}")
+                continue
+        return results

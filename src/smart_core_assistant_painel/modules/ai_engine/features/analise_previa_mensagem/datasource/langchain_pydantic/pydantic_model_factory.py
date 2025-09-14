@@ -15,7 +15,7 @@ import json
 from enum import Enum
 from typing import Type
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, AliasChoices
 
 
 class PydanticModelFactory:
@@ -438,16 +438,7 @@ class PydanticModelFactory:
             type: str
             value: str
 
-            # Validador para garantir que o 'type' é permitido
-            @field_validator('type')
-            def validate_type(cls, v: str) -> str:  # noqa: D401
-                # Validação explícita contra a lista de intents permitidas
-                if allowed_intents_set and v not in allowed_intents_set:
-                    raise ValueError(
-                        'type inválido para intent; use um dos valores '
-                        'permitidos.'
-                    )
-                return v
+            # Removido validador estrito que lançava erro para permitir filtragem posterior
 
         class EntityItem(BaseModel):
             '''Representa uma entidade extraída.
@@ -458,22 +449,56 @@ class PydanticModelFactory:
             type: str
             value: str
 
-            @field_validator('type')
-            def validate_type(cls, v: str) -> str:  # noqa: D401
-                if allowed_entities_set and v not in allowed_entities_set:
-                    raise ValueError(
-                        'type inválido para entity; use um dos valores '
-                        'permitidos.'
-                    )
-                return v
+            # Removido validador estrito que lançava erro para permitir filtragem posterior
 
         class PydanticModel(BaseModel):
             '''Modelo para estruturar a análise de intenções e entidades.'''
 
             __doc__ = full_documentation.strip()
 
-            intent: list[IntentItem] = Field(default_factory=list)
-            entities: list[EntityItem] = Field(default_factory=list)
+            # Aceita tanto 'intent' quanto 'intents' na entrada e padroniza para 'intent'
+            # Aceita tanto 'entities' quanto 'entity' na entrada e padroniza para 'entities'
+            intent: list[IntentItem] = Field(
+                default_factory=list,
+                validation_alias=AliasChoices('intent', 'intents'),
+            )
+            entities: list[EntityItem] = Field(
+                default_factory=list,
+                validation_alias=AliasChoices('entities', 'entity'),
+            )
+
+            # Filtra itens com types inválidos ao invés de lançar erro
+            @field_validator('intent', mode='after')
+            def _filter_invalid_intents(cls, v: list[IntentItem]) -> list[IntentItem]:  # noqa: D401
+                filtered: list[IntentItem] = []
+                for item in v or []:
+                    try:
+                        t = (getattr(item, 'type', None) or '').strip()
+                        val = (getattr(item, 'value', None) or '').strip()
+                        if not t or not val:
+                            continue
+                        if allowed_intents_set and t not in allowed_intents_set:
+                            continue
+                        filtered.append(item)
+                    except Exception:
+                        continue
+                return filtered
+
+            @field_validator('entities', mode='after')
+            def _filter_invalid_entities(cls, v: list[EntityItem]) -> list[EntityItem]:  # noqa: D401
+                filtered: list[EntityItem] = []
+                for item in v or []:
+                    try:
+                        t = (getattr(item, 'type', None) or '').strip()
+                        val = (getattr(item, 'value', None) or '').strip()
+                        if not t or not val:
+                            continue
+                        if allowed_entities_set and t not in allowed_entities_set:
+                            continue
+                        filtered.append(item)
+                    except Exception:
+                        continue
+                return filtered
 
             def add_intent(self, tipo: str, conteudo: str) -> None:
                 '''Adiciona uma intenção à lista.

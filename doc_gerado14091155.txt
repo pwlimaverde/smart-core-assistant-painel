@@ -24,10 +24,10 @@ Analise a mensagem do contato e extraia intents e entities.
     - desconto
 
     POLÍTICA DE DECISÃO POR PALAVRAS-CHAVE (guia rápido):
-    - cotacao: Perguntas de preço, orçamento ou valores. Palavras-chave: 'preço', 'preco', 'custa', 'quanto custa', 'cotação', 'cotacao', 'orçamento', 'orcamento', 'valor', 'valores', 'quanto sai'.
-    - saudacao: Cumprimentos iniciais. Palavras-chave: 'olá', 'oi', 'bom dia', 'boa tarde', 'boa noite'.
-    - despedida: Encerramentos. Palavras-chave: 'obrigado, deu certo', 'valeu', 'só isso', 'até mais'.
-    - agradecimento: Gratidão. Palavras-chave: 'obrigado', 'agradeço', 'valeu'.
+    - cotacao: Exemplos: 'quanto custa?'; 'quero um orçamento'; 'gostaria de uma cotação'.
+    - agradecimento: Exemplos: 'agradeço'; 'obrigado'; 'foi boa'.
+    - despedida: Exemplos: 'obrigado, deu certo.'; 'Valeu'; 'entendi. obrigado.'.
+    - saudacao: Exemplos: 'Olá, tudo bem?'; 'bom dia, tudo bem?'; 'boa tarde, pode me ajudar?'.
 
     1. INTENTS (intenções do usuário):
        LISTA OFICIAL DE TYPES PERMITIDOS:
@@ -95,23 +95,23 @@ Exemplos:
 
     3. ENTIDADES FIXAS (dados para cadastro no banco) - extraia quando identificadas claramente:
        CONTATO:
-       - nome_contato: Nome completo da pessoa que participou da conversa e deve ser cadastrado como contato no sistema, exemplo: Ana Souza   
+       - nome_contato: Nome completo da pessoa que participou da conversa e deve ser cadastrado como contato no sistema, exemplo: Ana Souza
        - cargo_contato: Cargo ou função profissional mencionada pelo contato durante a conversa, exemplo: Gerente de Projetos
        - departamento_contato: Departamento ou setor referente ao contato, conforme mencionado na conversa, exemplo: Financeiro
-       - email_contato: Endereço de e-mail fornecido pelo contato na conversa, exemplo: ana.souza@email.com
-       - rg_contato: Número do Registro Geral (RG) do contato informado na conversa, exemplo: MG-12.345.678
+       - email_contato: Endereço de e-mail fornecido pelo contato na conversa, exemplo: ana.souza@email.com      
+       - rg_contato: Número do Registro Geral (RG) do contato informado na conversa, exemplo: MG-12.345.678      
        - observacoes_contato: Informações adicionais ou comentários relevantes sobre o contato capturados durante a conversa, exemplo: Prefiro conversar à tarde
 
        CLIENTE:
        - tipo_cliente: Tipo de cliente identificado na conversa, podendo ser 'pessoa física' ou 'pessoa jurídica', exemplo: juridica
        - nome_fantasia_cliente: Nome comum ou comercial da empresa mencionado na conversa, usado para cadastro simplificado, exemplo: Microsoft
-       - razao_social_cliente: Nome legal ou razão social oficial da empresa, se mencionado na conversa, exemplo: Microsoft Corporation       
+       - razao_social_cliente: Nome legal ou razão social oficial da empresa, se mencionado na conversa, exemplo: Microsoft Corporation
        - cnpj_cliente: Número do Cadastro Nacional de Pessoa Jurídica (CNPJ) informado na conversa, em formato válido, exemplo: 12.345.678/0001-99
        - cpf_cliente: Número do Cadastro de Pessoa Física (CPF) informado na conversa, em formato válido (utilizado quando o cliente for pessoa física), exemplo: 123.456.789-09
        - telefone_cliente: Número de telefone fixo ou corporativo da empresa informado na conversa, incluindo código de área, exemplo: (11) 3333-4444
        - site_cliente: Endereço do website ou URL oficial da empresa mencionada na conversa, exemplo: https://www.microsoft.com
        - ramo_atividade_cliente: Ramo de atividade ou setor em que a empresa atua, conforme citado durante a conversa, exemplo: Tecnologia da Informação
-       - observacoes_cliente: Informações adicionais relevantes sobre a empresa capturadas durante a conversa, exemplo: Cliente desde 2020    
+       - observacoes_cliente: Informações adicionais relevantes sobre a empresa capturadas durante a conversa, exemplo: Cliente desde 2020
        - cep_cliente: Código de Endereçamento Postal (CEP) do endereço da empresa informado na conversa, exemplo: 01234-567
        - logradouro_cliente: Nome da rua, avenida ou logradouro onde a empresa está situada, conforme informação na conversa, exemplo: Avenida Paulista
        - numero_cliente: Número do endereço da empresa informado na conversa, exemplo: 1000
@@ -128,31 +128,36 @@ Exemplos:
             EXEMPLOS DE ANÁLISE:
 
 
-    EXEMPLO 1: 'Quanto custa o baton?'
+    EXEMPLO 1: 'quanto custa?'
     - intent: [
-        {'type': 'cotacao', 'value': 'Quanto custa o baton?'}
+        {'type': 'cotacao', 'value': 'quanto custa?'}
       ]
+    - entities: []
 
-    - entities: [
-        {'type': 'produto', 'value': 'baton'}
+
+    EXEMPLO 2: 'agradeço'
+    - intent: [
+        {'type': 'agradecimento', 'value': 'agradeço'}
       ]
+    - entities: []
 
 
-    EXEMPLO 2: 'Olá, tudo bem?'
+    EXEMPLO 3: 'obrigado, deu certo.'
+    - intent: [
+        {'type': 'despedida', 'value': 'obrigado, deu certo.'}
+      ]
+    - entities: []
+
+
+    EXEMPLO 4: 'Olá, tudo bem?'
     - intent: [
         {'type': 'saudacao', 'value': 'Olá, tudo bem?'}
       ]
     - entities: []
 
 
-    EXEMPLO 3: 'Obrigado pela ajuda!'
-    - intent: [
-        {'type': 'agradecimento', 'value': 'Obrigado pela ajuda!'}
-      ]
-    - entities: []
-
-
-    EXEMPLO 4: 'Só isso mesmo, até mais.'
-    - intent: [
-        {'type': 'despedida', 'value': 'Só isso mesmo, até mais.'}
+    REGRAS IMPORTANTES:
+    - Dê prioridade a atribuir intents quando houver correspondência clara com os types permitidos.
+    - Extraia apenas informações explícitas no texto, sem inferências.
+    - Mantenha o texto original encontrado como value, sem reescrever.
     - Se realmente nada for encontrado para intent ou entities, retorne listas vazias.

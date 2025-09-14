@@ -178,6 +178,35 @@ class PydanticModelFactory:
         '''
 
     @staticmethod
+    def _extract_examples_from_description(description: str) -> list[str]:
+        '''Extrai exemplos de uma descrição de type com a seção 'Exemplos:'.
+
+        Apenas linhas que sucedem 'Exemplos:' e começam com '-' serão consideradas.
+        A extração para quando encontra uma linha vazia ou uma linha que não começa com '-'.
+        '''
+        examples: list[str] = []
+        if not description:
+            return examples
+        lines = description.splitlines()
+        inside = False
+        for raw in lines:
+            line = raw.strip()
+            if not inside:
+                if line.startswith('Exemplos:'):
+                    inside = True
+                continue
+            # Estamos dentro da seção de exemplos
+            if not line:
+                break
+            if line.startswith('-'):
+                ex = line.lstrip('-').strip()
+                if ex:
+                    examples.append(ex)
+            else:
+                break
+        return examples
+
+    @staticmethod
     def _generate_examples_section(
         intent_types_json: str, entity_types_json: str
     ) -> str:
@@ -190,70 +219,37 @@ class PydanticModelFactory:
         Returns:
             str: Uma string formatada com exemplos coerentes com os types permitidos.
         '''
-        # Deriva as listas de types permitidos para construir exemplos consistentes
-        allowed_intents = PydanticModelFactory._extract_types_from_json(
-            intent_types_json
-        )
-        allowed_entities = PydanticModelFactory._extract_types_from_json(
-            entity_types_json
-        )
+        # Monta exemplos exclusivamente a partir das descrições dos intents (seção 'Exemplos:')
+        try:
+            intents_data = json.loads(intent_types_json)
+        except json.JSONDecodeError:
+            intents_data = {}
 
-        examples: list[str] = ["    EXEMPLOS DE ANÁLISE:\n"]
+        if 'intent_types' in intents_data:
+            intents_data = intents_data['intent_types']
+
+        examples_lines: list[str] = ["    EXEMPLOS DE ANÁLISE:\n"]
         example_idx: int = 1
 
-        # EXEMPLO para 'cotacao'
-        if "cotacao" in allowed_intents:
-            examples.append(
-                f"\n    EXEMPLO {example_idx}: 'Quanto custa o baton?'\n"
-                "    - intent: [\n"
-                "        {'type': 'cotacao', 'value': 'Quanto custa o baton?'}\n"
-                "      ]\n"
-            )
-            example_idx += 1
-            if "produto" in allowed_entities:
-                examples.append(
-                    "    - entities: [\n"
-                    "        {'type': 'produto', 'value': 'baton'}\n"
+        # Percorre categorias e types, coletando até 1 exemplo por intent para evitar verbosidade
+        for _category_key, category_dict in (intents_data or {}).items():
+            for type_key, description in category_dict.items():
+                extracted = PydanticModelFactory._extract_examples_from_description(str(description))
+                if not extracted:
+                    continue
+                # Usa apenas o primeiro exemplo para compor um caso simples
+                ex_text = extracted[0]
+                examples_lines.append(
+                    f"\n    EXEMPLO {example_idx}: '{ex_text}'\n"
+                    "    - intent: [\n"
+                    f"        {{'type': '{type_key}', 'value': '{ex_text}'}}\n"
                     "      ]\n"
+                    "    - entities: []\n"
                 )
-            else:
-                examples.append("    - entities: []\n")
+                example_idx += 1
 
-        # EXEMPLO para 'saudacao'
-        if "saudacao" in allowed_intents:
-            examples.append(
-                f"\n    EXEMPLO {example_idx}: 'Olá, tudo bem?'\n"
-                "    - intent: [\n"
-                "        {'type': 'saudacao', 'value': 'Olá, tudo bem?'}\n"
-                "      ]\n"
-                "    - entities: []\n"
-            )
-            example_idx += 1
-
-        # EXEMPLO para 'agradecimento'
-        if "agradecimento" in allowed_intents:
-            examples.append(
-                f"\n    EXEMPLO {example_idx}: 'Obrigado pela ajuda!'\n"
-                "    - intent: [\n"
-                "        {'type': 'agradecimento', 'value': 'Obrigado pela ajuda!'}\n"
-                "      ]\n"
-                "    - entities: []\n"
-            )
-            example_idx += 1
-
-        # EXEMPLO para 'despedida'
-        if "despedida" in allowed_intents:
-            examples.append(
-                f"\n    EXEMPLO {example_idx}: 'Só isso mesmo, até mais.'\n"
-                "    - intent: [\n"
-                "        {'type': 'despedida', 'value': 'Só isso mesmo, até mais.'}\n"
-                "      ]\n"
-                "    - entities: []\n"
-            )
-            example_idx += 1
-
-        # Regras gerais de extração (reforçadas para evitar listas vazias quando houver correspondência)
-        examples.append(
+        # Regras gerais de extração
+        examples_lines.append(
             "\n    REGRAS IMPORTANTES:\n"
             "    - Dê prioridade a atribuir intents quando houver correspondência clara com os types permitidos.\n"
             "    - Extraia apenas informações explícitas no texto, sem inferências.\n"
@@ -261,7 +257,7 @@ class PydanticModelFactory:
             "    - Se realmente nada for encontrado para intent ou entities, retorne listas vazias.\n"
         )
 
-        return "\n".join(examples)
+        return "\n".join(examples_lines)
 
     @staticmethod
     def _generate_strict_rules_section(
@@ -298,6 +294,33 @@ class PydanticModelFactory:
         text += '\n'
         return text
 
+    @staticmethod
+    def _generate_keyword_policy_section(intent_types_json: str) -> str:
+        '''Gera a seção de decisão por palavras-chave baseada nos exemplos do JSON.
+
+        Para cada intent com exemplos declarados, lista os exemplos como guia.
+        '''
+        header = '    POLÍTICA DE DECISÃO POR PALAVRAS-CHAVE (guia rápido):\n'
+        lines: list[str] = []
+        try:
+            intents_data = json.loads(intent_types_json)
+        except json.JSONDecodeError:
+            intents_data = {}
+        if 'intent_types' in (intents_data or {}):
+            intents_data = intents_data['intent_types']
+
+        for _category_key, category_dict in (intents_data or {}).items():
+            for type_key, description in category_dict.items():
+                exs = PydanticModelFactory._extract_examples_from_description(str(description))
+                if not exs:
+                    continue
+                snippet = '; '.join(f"'{e}'" for e in exs[:3])
+                lines.append(
+                    f"    - {type_key}: Exemplos: {snippet}.\n"
+                )
+
+        return header + (''.join(lines)) + '\n'
+
     @classmethod
     def create_pydantic_model(
         cls, intent_types_json: str, entity_types_json: str
@@ -331,35 +354,8 @@ class PydanticModelFactory:
             intent_types_json, entity_types_json
         )
 
-        # Seção de decisão por palavras-chave para orientar a LLM a não retornar listas vazias quando houver correspondência clara
-        keyword_section = ''
-        if intent_types:
-            keyword_section = (
-                '    POLÍTICA DE DECISÃO POR PALAVRAS-CHAVE (guia rápido):\n'
-            )
-            if 'cotacao' in intent_types:
-                keyword_section += (
-                    "    - cotacao: Perguntas de preço, orçamento ou valores. "
-                    "Palavras-chave: 'preço', 'preco', 'custa', 'quanto custa', "
-                    "'cotação', 'cotacao', 'orçamento', 'orcamento', 'valor', "
-                    "'valores', 'quanto sai'.\n"
-                )
-            if 'saudacao' in intent_types:
-                keyword_section += (
-                    "    - saudacao: Cumprimentos iniciais. Palavras-chave: "
-                    "'olá', 'oi', 'bom dia', 'boa tarde', 'boa noite'.\n"
-                )
-            if 'despedida' in intent_types:
-                keyword_section += (
-                    "    - despedida: Encerramentos. Palavras-chave: 'obrigado, "
-                    "deu certo', 'valeu', 'só isso', 'até mais'.\n"
-                )
-            if 'agradecimento' in intent_types:
-                keyword_section += (
-                    "    - agradecimento: Gratidão. Palavras-chave: 'obrigado', "
-                    "'agradeço', 'valeu'.\n"
-                )
-            keyword_section += '\n'
+        # Seção de decisão por palavras-chave derivada dos exemplos do JSON
+        keyword_section = cls._generate_keyword_policy_section(intent_types_json)
 
         full_documentation = f'''Analise a mensagem do contato e extraia intents e entities.
 {strict_rules}{keyword_section}{intent_docs}{entity_docs}{fixed_entities_docs}{examples_docs}

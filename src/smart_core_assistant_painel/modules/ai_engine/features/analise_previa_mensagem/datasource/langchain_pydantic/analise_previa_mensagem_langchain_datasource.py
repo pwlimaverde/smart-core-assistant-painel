@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Dict
+from typing import Any, Dict, Iterable, List
 
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger

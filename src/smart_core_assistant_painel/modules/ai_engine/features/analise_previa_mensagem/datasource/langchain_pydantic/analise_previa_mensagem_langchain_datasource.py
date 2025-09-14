@@ -55,17 +55,17 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
 
             # Log de prévia da documentação dinâmica gerada a partir dos JSONs
             # (limitada para evitar excesso de log)
-            doc = getattr(PydanticModel, "__doc__", "") or ""
-            if doc:
-                preview = "\n".join(doc.splitlines())
-                logger.debug(
-                    f"Prévia da documentação dinâmica (completa):\n{preview}"
-                )
-            else:
-                logger.warning(
-                    "Documentação dinâmica não encontrada em "
-                    "PydanticModel.__doc__"
-                )
+            # doc = getattr(PydanticModel, "__doc__", "") or ""
+            # if doc:
+            #     preview = "\n".join(doc.splitlines())
+            #     logger.debug(
+            #         f"Prévia da documentação dinâmica (completa):\n{preview}"
+            #     )
+            # else:
+            #     logger.warning(
+            #         "Documentação dinâmica não encontrada em "
+            #         "PydanticModel.__doc__"
+            #     )
 
             # Processar histórico do atendimento
             historico_formatado = self._formatar_historico_atendimento(

@@ -184,6 +184,42 @@ class PydanticModelFactory:
         '''
 
     @staticmethod
+    def _get_fixed_entity_types() -> set[str]:
+        """Retorna o conjunto de entidades fixas que devem ser aceitas.
+
+        Estas entidades não devem ser filtradas pelo conjunto de entities
+        dinâmicas vindas do JSON.
+        """
+        return {
+            'nome_contato',
+            'cargo_contato',
+            'departamento_contato',
+            'email_contato',
+            'rg_contato',
+            'observacoes_contato',
+            'tipo_cliente',
+            'nome_fantasia_cliente',
+            'razao_social_cliente',
+            'cnpj_cliente',
+            'cpf_cliente',
+            'telefone_cliente',
+            'site_cliente',
+            'ramo_atividade_cliente',
+            'observacoes_cliente',
+            'cep_cliente',
+            'logradouro_cliente',
+            'numero_cliente',
+            'complemento_cliente',
+            'bairro_cliente',
+            'cidade_cliente',
+            'uf_cliente',
+            'pais_cliente',
+            'tags_atendimento',
+            'avaliacao_atendimento',
+            'feedback_atendimento',
+        }
+
+    @staticmethod
     def _extract_examples_from_description(description: str) -> list[str]:
         '''Extrai exemplos de uma descrição de type com a seção 'Exemplos:'.
 
@@ -428,6 +464,7 @@ class PydanticModelFactory:
         # Coleções de validação (mantidas como strings para alinhar com os testes)
         allowed_intents_set = set(intent_types)
         allowed_entities_set = set(entity_types)
+        fixed_entities_set = cls._get_fixed_entity_types()
 
         class IntentItem(BaseModel):
             '''Representa uma intenção extraída.
@@ -493,7 +530,11 @@ class PydanticModelFactory:
                         val = (getattr(item, 'value', None) or '').strip()
                         if not t or not val:
                             continue
-                        if allowed_entities_set and t not in allowed_entities_set:
+                        # Aceita entities se forem dinâmicas válidas OU se forem entidades fixas
+                        if (
+                            (allowed_entities_set and t not in allowed_entities_set)
+                            and t not in fixed_entities_set
+                        ):
                             continue
                         filtered.append(item)
                     except Exception:

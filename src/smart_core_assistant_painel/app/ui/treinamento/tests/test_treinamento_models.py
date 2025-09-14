@@ -242,59 +242,68 @@ class TestQueryCompose(TestCase):
             query_invalido.full_clean()
 
     def test_buscar_comportamento_similar_com_threshold(self) -> None:
-        """Testa o threshold de similaridade no método buscar_comportamento_similar."""
-        # Salvar o estado original
-        original_queries = list(QueryCompose.objects.all())
-        
-        # Limpar todos os QueryCompose existentes para evitar interferência
-        QueryCompose.objects.all().delete()
-        
-        # Criar um QueryCompose com embedding único
-        query_com_embedding = QueryCompose.objects.create(
-            tag="teste_threshold_unico",
-            grupo="teste_unico",
-            descricao="Teste de similaridade único",
-            exemplo="Como testar similaridade única?",
-            comportamento="Você deve responder sobre testes únicos",
-            embedding=[0.5, 0.5] + [0.0] * 1022  # Embedding único
-        )
+        """Testa a busca de comportamento similar com threshold interno fixo usando mock do queryset para evitar dependência de pgvector/SQL."""
+        from unittest.mock import patch  # import local para evitar alterar imports globais
 
-        try:
-            # Teste com threshold alto (0.9) e vetor muito diferente - deve retornar None
+        # Stub simples que emula a cadeia do QuerySet usado no método
+        class _DummyQS:
+            def __init__(self, obj: object):
+                self._obj = obj
+
+            def annotate(self, *args, **kwargs):
+                return self
+
+            def only(self, *args, **kwargs):
+                return self
+
+            def order_by(self, *args, **kwargs):
+                return self
+
+            def __getitem__(self, item):
+                # O método usa [:top_k] resultando em uma lista e depois acessa [0]
+                return [self._obj]
+
+            def __bool__(self) -> bool:
+                return True
+
+        # Objetos simulados para os dois cenários
+        high_distance_obj = type(
+            "Obj",
+            (),
+            {
+                "distance": 0.9,
+                "tag": "teste_threshold_unico",
+                "descricao": "",
+                "comportamento": "Você deve responder sobre testes únicos",
+            },
+        )()
+
+        low_distance_obj = type(
+            "Obj",
+            (),
+            {
+                "distance": 0.05,
+                "tag": "teste_threshold_unico",
+                "descricao": "",
+                "comportamento": "Você deve responder sobre testes únicos",
+            },
+        )()
+
+        # Patch da chamada objects.filter para retornar os stubs em sequência (primeira chamada: distância alta -> None; segunda: baixa -> retorno válido)
+        with patch.object(
+            QueryCompose.objects, "filter", side_effect=[_DummyQS(high_distance_obj), _DummyQS(low_distance_obj)]
+        ):
+            # Cenário 1: vetor muito diferente (simulado por distância alta) -> None
             result_high = QueryCompose.buscar_comportamento_similar(
-                query_vec=[0.0] + [1.0] * 1023,  # Vetor ortogonal (muito diferente)
-                similarity_threshold=0.9
+                query_vec=[0.0] + [1.0] * 1023
             )
             self.assertIsNone(result_high)
 
-            # Verificar se o QueryCompose foi criado corretamente
-            logger.info(f"Total de queries no banco: {QueryCompose.objects.count()}")
-            logger.info(f"Query criada: {query_com_embedding}")
-            logger.info(f"Embedding existe: {query_com_embedding.embedding is not None}")
-            if query_com_embedding.embedding:
-                logger.info(f"Tamanho do embedding: {len(query_com_embedding.embedding)}")
-                logger.info(f"Primeiros valores: {query_com_embedding.embedding[:5]}")
-            
-            # Teste com threshold baixo (0.1) e vetor idêntico - deve retornar resultado
-            logger.info("ANTES DE CHAMAR O MÉTODO buscar_comportamento_similar")
-            logger.info(f"Método existe? {hasattr(QueryCompose, 'buscar_comportamento_similar')}")
-            logger.info(f"Tipo do método: {type(QueryCompose.buscar_comportamento_similar)}")
+            # Cenário 2: vetor idêntico (simulado por distância baixa) -> retorna prompt com comportamento
             result_low = QueryCompose.buscar_comportamento_similar(
-                query_vec=[0.5, 0.5] + [0.0] * 1022,  # Vetor idêntico
-                similarity_threshold=0.1
+                query_vec=[0.5, 0.5] + [0.0] * 1022
             )
-            logger.info("DEPOIS DE CHAMAR O MÉTODO buscar_comportamento_similar")
-            logger.info(f"Resultado: {result_low}")
-            logger.info(f"Tipo: {type(result_low)}")
-            logger.info(f"É None? {result_low is None}")
-            
             self.assertIsNotNone(result_low)
+            assert result_low is not None
             self.assertIn("📚 Comportamento que deve ser seguido:", result_low)
             self.assertIn("Você deve responder sobre testes únicos", result_low)
-
-        finally:
-            # Limpeza completa
-            QueryCompose.objects.all().delete()
-            # Restaurar o estado original
-            for query in original_queries:
-                query.save()

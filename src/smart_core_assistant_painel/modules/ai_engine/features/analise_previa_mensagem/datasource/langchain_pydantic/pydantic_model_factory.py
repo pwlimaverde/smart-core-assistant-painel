@@ -116,11 +116,17 @@ class PydanticModelFactory:
         elif 'entity_types' in data:
             data = data['entity_types']
 
-        for category_key, category_dict in data.items():
-            allowed_types.extend(list(category_dict.keys()))
+        for category_dict in data.values():
+            allowed_types.extend(category_dict.keys())
 
         if allowed_types:
-            documentation += '       LISTA OFICIAL DE TYPES PERMITIDOS:\n'
+            # Heading amigável e consistente com os testes
+            upper_title = section_title.upper()
+            if 'INTENTS' in upper_title:
+                list_heading = 'INTENTS PERMITIDAS (valores exatos):'
+            else:
+                list_heading = 'ENTITIES DINÂMICAS PERMITIDAS (valores exatos):'
+            documentation += f'       {list_heading}\n'
             for t in allowed_types:
                 documentation += f'       - {t}\n'
             documentation += '\n'
@@ -207,6 +213,22 @@ class PydanticModelFactory:
         return examples
 
     @staticmethod
+    def _extract_entity_example_value(description: str) -> str | None:
+        """Extrai um valor de exemplo da descrição de uma entity.
+
+        Procura por o padrão 'exemplo: <valor>' (case-insensitive) e retorna o texto até o fim da linha.
+        """
+        if not description:
+            return None
+        import re
+        match = re.search(r"(?i)exemplo\s*:\s*(.+)$", description.strip())
+        if match:
+            value = match.group(1).strip()
+            # Remove possíveis comentários residuais após ponto final + espaço, mantendo casos como 'R$ 2.500,00'
+            return value
+        return None
+
+    @staticmethod
     def _generate_examples_section(
         intent_types_json: str, entity_types_json: str
     ) -> str:
@@ -219,36 +241,87 @@ class PydanticModelFactory:
         Returns:
             str: Uma string formatada com exemplos coerentes com os types permitidos.
         '''
-        # Monta exemplos exclusivamente a partir das descrições dos intents (seção 'Exemplos:')
+        # 1) Exemplos de intents (extraídos do JSON) SEM entities
         try:
             intents_data = json.loads(intent_types_json)
         except json.JSONDecodeError:
             intents_data = {}
-
-        if 'intent_types' in intents_data:
+        if 'intent_types' in (intents_data or {}):
             intents_data = intents_data['intent_types']
 
         examples_lines: list[str] = ["    EXEMPLOS DE ANÁLISE:\n"]
         example_idx: int = 1
 
-        # Percorre categorias e types, coletando até 1 exemplo por intent para evitar verbosidade
+        # Coletar até 2 exemplos de intents: intent preenchida e entities []
+        collected_intent_examples: list[tuple[str, str]] = []
         for _category_key, category_dict in (intents_data or {}).items():
             for type_key, description in category_dict.items():
                 extracted = PydanticModelFactory._extract_examples_from_description(str(description))
                 if not extracted:
                     continue
-                # Usa apenas o primeiro exemplo para compor um caso simples
+                # Usa somente o primeiro exemplo de cada type
                 ex_text = extracted[0]
-                examples_lines.append(
-                    f"\n    EXEMPLO {example_idx}: '{ex_text}'\n"
-                    "    - intent: [\n"
-                    f"        {{'type': '{type_key}', 'value': '{ex_text}'}}\n"
-                    "      ]\n"
-                    "    - entities: []\n"
-                )
-                example_idx += 1
+                collected_intent_examples.append((type_key, ex_text))
+                if len(collected_intent_examples) >= 2:
+                    break
+            if len(collected_intent_examples) >= 2:
+                break
 
-        # Regras gerais de extração
+        for type_key, ex_text in collected_intent_examples:
+            examples_lines.append(
+                f"\n    EXEMPLO {example_idx}: '{ex_text}'\n"
+                "    - intent: [\n"
+                f"        {{'type': '{type_key}', 'value': '{ex_text}'}}\n"
+                "      ]\n"
+                "    - entities: []\n"
+            )
+            example_idx += 1
+
+        # 2) Exemplos focados em ENTIDADES (fixos) com intents []
+        #    Estes exemplos NÃO são dinâmicos e usam o conteúdo de _generate_fixed_entities_section.
+        #    Objetivo: demonstrar extração de entidades quando identificadas claramente no texto.
+        entity_only_examples: list[tuple[str, list[tuple[str, str]]]] = [
+            (
+                # Mensagem contendo dados de contato
+                "Meu nome é Ana Souza, sou Gerente de Projetos do Financeiro. Meu e-mail é ana.souza@email.com.",
+                [
+                    ("nome_contato", "Ana Souza"),
+                    ("cargo_contato", "Gerente de Projetos"),
+                    ("departamento_contato", "Financeiro"),
+                    ("email_contato", "ana.souza@email.com"),
+                ],
+            ),
+            (
+                # Mensagem contendo dados do cliente
+                "Somos a Microsoft (CNPJ 12.345.678/0001-99), telefone (11) 3333-4444 e site https://www.microsoft.com. Atuamos em Tecnologia da Informação.",
+                [
+                    ("tipo_cliente", "juridica"),
+                    ("nome_fantasia_cliente", "Microsoft"),
+                    ("cnpj_cliente", "12.345.678/0001-99"),
+                    ("telefone_cliente", "(11) 3333-4444"),
+                    ("site_cliente", "https://www.microsoft.com"),
+                    ("ramo_atividade_cliente", "Tecnologia da Informação"),
+                ],
+            ),
+        ]
+
+        for message_text, entity_items in entity_only_examples:
+            examples_lines.append(
+                f"\n    EXEMPLO {example_idx}: '{message_text}'\n"
+                "    - intent: []\n"
+                "    - entities: [\n"
+            )
+            # Renderiza cada entidade fixa
+            for i, (ent_type, ent_val) in enumerate(entity_items):
+                is_last = i == len(entity_items) - 1
+                comma = '' if is_last else ','
+                examples_lines.append(
+                    f"        {{'type': '{ent_type}', 'value': '{ent_val}'}}{comma}\n"
+                )
+            examples_lines.append("      ]\n")
+            example_idx += 1
+
+        # 3) Regras gerais de extração para orientar a leitura dos exemplos
         examples_lines.append(
             "\n    REGRAS IMPORTANTES:\n"
             "    - Dê prioridade a atribuir intents quando houver correspondência clara com os types permitidos.\n"
@@ -281,16 +354,7 @@ class PydanticModelFactory:
         for r in rules:
             text += f'    - {r}\n'
 
-        # Acrescenta listas resumidas de types validos (reforço)
-        if allowed_intents:
-            text += '\n    INTENTS PERMITIDAS (valores exatos):\n'
-            for t in allowed_intents:
-                text += f'    - {t}\n'
-        if allowed_entities:
-            text += '\n    ENTITIES DINÂMICAS PERMITIDAS (valores exatos):\n'
-            for t in allowed_entities:
-                text += f'    - {t}\n'
-
+        # Removido: listagens de types permitidos nesta seção para evitar repetição com as seções 1 e 2
         text += '\n'
         return text
 

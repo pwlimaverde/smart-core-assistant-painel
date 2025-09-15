@@ -9,7 +9,10 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.operacional.models import AtendenteHumano
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    AtendenteHumano,
+)
+
 
 class StatusAtendimento(models.TextChoices):
     AGUARDANDO_INICIAL = "aguardando_inicial", "Aguardando Interação Inicial"
@@ -317,6 +320,37 @@ class Mensagem(models.Model):
             else self.conteudo
         )
         return f"{self.remetente}: {conteudo_preview}"
+
+    def registrar_resposta_bot(self, resposta: str, confianca: float) -> None:
+        """
+        Registra a resposta gerada pelo bot nesta mensagem, persistindo o conteúdo e o nível de confiança.
+
+        Parâmetros:
+            resposta: Texto da resposta do bot.
+            confianca: Nível de confiança entre 0.0 e 1.0.
+
+        Levanta:
+            ValidationError: Se a resposta for vazia ou se a confiança não estiver entre 0 e 1.
+        """
+        if resposta is None or not isinstance(resposta, str) or not resposta.strip():
+            raise ValidationError("A resposta do bot não pode ser vazia.")
+
+        try:
+            conf = float(confianca)
+        except (TypeError, ValueError):
+            raise ValidationError("O parâmetro 'confianca' deve ser um número entre 0 e 1.")
+
+        if not (0.0 <= conf <= 1.0):
+            raise ValidationError("O parâmetro 'confianca' deve estar entre 0 e 1.")
+
+        self.resposta_bot = resposta.strip()
+        self.confianca_resposta = conf
+        self.respondida = True
+        self.save(update_fields=["resposta_bot", "confianca_resposta", "respondida"])
+
+        logger.info(
+            f"Resposta do bot registrada na mensagem {self.id} (atendimento {self.atendimento_id}) com confianca={conf:.3f}"
+        )
 
 def inicializar_atendimento_whatsapp(
     numero_telefone: str,

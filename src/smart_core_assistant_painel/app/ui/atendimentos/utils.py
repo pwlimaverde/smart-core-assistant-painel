@@ -112,16 +112,24 @@ def send_message_response(phone: str) -> None:
                         "listada e mantenha a resposta concisa."
                     )
                 )
+                historico_atendimento = atendimento_obj.carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
                 prompt_intent: str = "\n".join(prompt_lines)
                 vector_conteudo = FeaturesCompose.generate_embeddings(mensagem.conteudo)
                 dados_treinamento = Documento.buscar_documentos_similares(query_vec=vector_conteudo)
-                logger.warning(f"Prompt intent: {prompt_intent}")
-                SERVICEHUB.whatsapp_service.send_message(
-                    instance=message_data.instance,
-                    api_key=message_data.api_key,
-                    number=message_data.numero_telefone,
-                    text="Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
+                result = FeaturesCompose.analise_mensage(
+                    historico_atendimento=historico_atendimento,
+                    prompt_human=prompt_intent,
+                    context=mensagem.conteudo,
+                    dados_treinamento=dados_treinamento,
                 )
+                if result.confiabilidade > 0.8:
+                    SERVICEHUB.whatsapp_service.send_message(
+                        instance=message_data.instance,
+                        api_key=message_data.api_key,
+                        number=message_data.numero_telefone,
+                        text=result.resposta_bot,
+                    )
+                    mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
             else:
                 logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
                 

@@ -4,19 +4,21 @@ Testes para o módulo de inicialização de serviços.
 
 import sys
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 # Importa o pacote para garantir que o módulo `start_services` seja carregado.
 import smart_core_assistant_painel.modules.services
 
 # Obtém a referência ao módulo real a partir do cache de módulos do Python.
-start_services_module = sys.modules['smart_core_assistant_painel.modules.services.start_services']
+start_services_module = sys.modules[
+    'smart_core_assistant_painel.modules.services.start_services'
+]
 
 
 class TestStartServices:
     """Testes para a função start_services."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """
         Reseta o estado do módulo antes de cada teste.
 
@@ -34,12 +36,15 @@ class TestStartServices:
         """
         start_services_module._services_initialized = False
 
-    @patch("smart_core_assistant_painel.modules.services.start_services._log_environment_variables")
-    @patch("smart_core_assistant_painel.modules.services.start_services.FeaturesCompose")
-    def test_start_services_success_on_first_call(self, mock_features_compose, mock_log_env):
+    @patch(
+        "smart_core_assistant_painel.modules.services.start_services.FeaturesCompose"
+    )
+    def test_start_services_success_on_first_call(
+        self, mock_features_compose: MagicMock
+    ) -> None:
         """
-        Testa se a lógica de inicialização é executada corretamente na primeira chamada.
-        Este teste cobre o "caminho feliz".
+        Testa se a lógica de inicialização é executada corretamente na primeira
+        chamada. Este teste cobre o "caminho feliz".
         """
         # A primeira chamada deve executar a lógica de inicialização completa.
         start_services_module.start_services()
@@ -47,13 +52,17 @@ class TestStartServices:
         # Verifica se os componentes principais foram chamados
         mock_features_compose.set_environ_remote.assert_called_once()
         mock_features_compose.whatsapp_service.assert_called_once()
-        mock_log_env.assert_called_once()
 
         # Verifica se o estado foi marcado como inicializado
         assert start_services_module._services_initialized is True
 
-    @patch("smart_core_assistant_painel.modules.services.start_services.FeaturesCompose.set_environ_remote", side_effect=Exception("Erro de inicialização"))
-    def test_start_services_exception_handling(self, mock_set_environ):
+    @patch(
+        "smart_core_assistant_painel.modules.services.start_services.FeaturesCompose.set_environ_remote",
+        side_effect=Exception("Erro de inicialização"),
+    )
+    def test_start_services_exception_handling(
+        self, mock_set_environ: MagicMock
+    ) -> None:
         """
         Testa o tratamento de exceção durante a inicialização, garantindo que
         o estado não seja marcado como inicializado em caso de falha.

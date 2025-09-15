@@ -74,3 +74,10 @@ class GenerateChunksError(AppError):
     def __str__(self) -> str:
         """Retorna uma mensagem de erro formatada."""
         return f"GenerateChunksError - {self.message}"
+
+@dataclass
+class AnaliseMensageError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f"AnaliseMensageError - {self.message}"

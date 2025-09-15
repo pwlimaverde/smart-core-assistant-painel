@@ -4,7 +4,6 @@ Esta classe fornece uma interface simplificada para acessar as funcionalidades
 de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
-
 from typing import Any, cast
 
 from langchain_core.documents.base import Document
@@ -27,11 +26,13 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from ..utils.erros import (
+    AnaliseMensageError,
     DataMessageError,
     DocumentError,
     LlmError,
 )
 from ..utils.parameters import (
+    AnaliseMensageParameters,
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
     GenerateChunksParameters,
@@ -42,6 +43,8 @@ from ..utils.parameters import (
 from ..utils.types import (
     ACData,
     ACUsecase,
+    AMData,
+    AMUsecase,
     APMData,
     APMTuple,
     APMUsecase,
@@ -58,6 +61,12 @@ from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
 )
 from .analise_conteudo.domain.usecase.analise_conteudo_usecase import (
     AnaliseConteudoUseCase,
+)
+from .analise_mensage.datasource.analise_mensage_datasource import (
+    AnaliseMensageDatasource,
+)
+from .analise_mensage.domain.usecase.analise_mensage_usecase import (
+    AnaliseMensageUseCase,
 )
 from .analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
     AnalisePreviaMensagemLangchainDatasource,
@@ -192,6 +201,7 @@ class FeaturesCompose:
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
+
 
     @staticmethod
     def melhoria_ia_treinamento(context: str) -> str:
@@ -388,6 +398,34 @@ class FeaturesCompose:
 
         if isinstance(data, SuccessReturn):
             return cast(list[Document], data.result)
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def analise_mensage(context: str, historico_atendimento: dict[str, Any], dados_treinamento: str,) -> str:
+        error = AnaliseMensageError("Erro ao executar analise_mensage!")
+        llm_parameters = LlmParameters(
+            llm_class=SERVICEHUB.LLM_CLASS,
+            model=SERVICEHUB.MODEL,
+            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+            prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
+            prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
+            context=context,
+            error=LlmError,
+        )
+        parameters = AnaliseMensageParameters(
+            historico_atendimento=historico_atendimento,
+            dados_treinamento=dados_treinamento,
+            llm_parameters=llm_parameters,
+            error=error,
+        )
+        datasource: AMData = AnaliseMensageDatasource()
+        usecase: AMUsecase = AnaliseMensageUseCase(datasource)
+        data= usecase(parameters)
+        if isinstance(data, SuccessReturn):
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:

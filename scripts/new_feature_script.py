@@ -107,7 +107,7 @@ def gen_types_block(module: str, cc_name: str, fi: str, feature_type: str) -> st
             f"from .parameters import {cc_name}Parameters\n\n"
             f"{fi}Data: TypeAlias = Datasource[None, {cc_name}Parameters]\n"
             f"{fi}Usecase: TypeAlias = UsecaseBaseCallData[\n"
-            f"    None,\n    {fi}Data,\n    {cc_name}Parameters,\n]"
+            f"    None,\n    None,\n    {cc_name}Parameters,\n]"
         )
 
 

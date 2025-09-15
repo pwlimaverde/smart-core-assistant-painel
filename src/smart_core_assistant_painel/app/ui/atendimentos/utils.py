@@ -8,7 +8,7 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.treinamento.models import QueryCompose
+from smart_core_assistant_painel.app.ui.treinamento.models import Documento, QueryCompose
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -113,6 +113,8 @@ def send_message_response(phone: str) -> None:
                     )
                 )
                 prompt_intent: str = "\n".join(prompt_lines)
+                vector_conteudo = FeaturesCompose.generate_embeddings(mensagem.conteudo)
+                dados_treinamento = Documento.buscar_documentos_similares(query_vec=vector_conteudo)
                 logger.warning(f"Prompt intent: {prompt_intent}")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,

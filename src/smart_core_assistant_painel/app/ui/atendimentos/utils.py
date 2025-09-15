@@ -130,6 +130,16 @@ def send_message_response(phone: str) -> None:
                         text=result.resposta_bot,
                     )
                     mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
+                else:
+                    SERVICEHUB.whatsapp_service.send_message(
+                        instance=message_data.instance,
+                        api_key=message_data.api_key,
+                        number=message_data.numero_telefone,
+                        text="Desculpe, não encontrei informações suficientes para responder. Vou transferir seu atendimento para o setor responsável.",
+                    )
+                    mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
+                    
+                    logger.warning(f"DEBUG: Bot não pode responder - confiança baixa ({result.confiabilidade:.3f})")
             else:
                 logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
                 

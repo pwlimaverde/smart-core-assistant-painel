@@ -5,8 +5,10 @@ from unittest.mock import MagicMock, patch
 
 from django.core.cache import cache
 from django.test import TestCase
+from dataclasses import dataclass
+from typing import Any, Dict
 
-from smart_core_assistant_painel.modules.ai_engine import MessageData
+# Removido: from smart_core_assistant_painel.modules.ai_engine import MessageData
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 from smart_core_assistant_painel.app.ui.atendimentos.utils import (
     _analisar_conteudo_mensagem,
@@ -19,6 +21,24 @@ from smart_core_assistant_painel.app.ui.atendimentos.utils import (
     send_message_response,
     set_wa_buffer,
 )
+
+
+@dataclass
+class MessageData:
+    """Representa dados de mensagem para testes (stub local).
+    
+    Esta classe substitui a dependência de ai_engine nos testes para evitar
+    importações profundas durante a execução dos testes.
+    """
+    instance: str
+    api_key: str
+    numero_telefone: str
+    from_me: bool
+    conteudo: str
+    message_type: str
+    message_id: str
+    metadados: Dict[str, Any]
+    nome_perfil_whatsapp: str
 
 
 class TestAtendimentosUtilsBuffer(TestCase):
@@ -409,7 +429,7 @@ class TestAtendimentosUtilsSendMessage(TestCase):
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.models.processar_mensagem_whatsapp')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem.objects.get')
-    @patch('smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.generate_embeddings')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings')
     @patch('smart_core_assistant_painel.app.ui.treinamento.models.Documento.buscar_documentos_similares')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._analisar_conteudo_mensagem')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._pode_bot_responder_atendimento')

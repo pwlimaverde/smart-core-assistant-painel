@@ -160,7 +160,7 @@ class TestAtendimentosUtilsScheduling(TestCase):
         timer_value = cache.get(timer_key)
         self.assertTrue(timer_value)
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.signals.mensagem_bufferizada.send')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.mensagem_bufferizada.send')
     def test_sched_message_response_sends_signal_when_no_timer(
         self,
         mock_signal_send: MagicMock
@@ -172,7 +172,7 @@ class TestAtendimentosUtilsScheduling(TestCase):
         # Assert
         mock_signal_send.assert_called_once_with(sender="atendimentos", phone=self.phone)
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.signals.mensagem_bufferizada.send')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.mensagem_bufferizada.send')
     def test_sched_message_response_no_signal_when_timer_exists(
         self,
         mock_signal_send: MagicMock
@@ -414,12 +414,12 @@ class TestAtendimentosUtilsSendMessage(TestCase):
 
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.processar_mensagem_whatsapp')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem.objects.get')
-    @patch('smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.generate_embeddings')
-    @patch('smart_core_assistant_painel.app.ui.treinamento.models.Documento.buscar_documentos_similares')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.Mensagem.objects.get')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.Documento.buscar_documentos_similares')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._analisar_conteudo_mensagem')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._pode_bot_responder_atendimento')
-    @patch('smart_core_assistant_painel.modules.services.SERVICEHUB.whatsapp_service.send_message')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.SERVICEHUB.whatsapp_service.send_message')
     def test_send_message_response_success(
         self,
         mock_send_message: MagicMock,
@@ -455,11 +455,12 @@ class TestAtendimentosUtilsSendMessage(TestCase):
         mock_compile_message_data.assert_called_once()
         mock_processar_mensagem.assert_called_once()
         mock_analisar_conteudo.assert_called_once_with(1)
-        mock_generate_embeddings.assert_called_once()
+        # Espera-se 2 chamadas: uma para a tag desconhecida e outra para o conteúdo
+        self.assertEqual(mock_generate_embeddings.call_count, 2)
         mock_send_message.assert_called_once()
 
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.models.processar_mensagem_whatsapp')
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.processar_mensagem_whatsapp')
     @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.logger')
     def test_send_message_response_exception_handling(
         self,
@@ -480,3 +481,13 @@ class TestAtendimentosUtilsSendMessage(TestCase):
         # Assert
         mock_logger.error.assert_called_once()
         self.assertIn("Erro ao processar mensagens para", mock_logger.error.call_args[0][0])
+
+
+class TestAtendimentosUtilsAiEnginePatch(TestCase):
+    """Tests to ensure ai_engine usage is patched at utils namespace."""
+
+    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings')
+    def test_generate_embeddings_in_utils(self, mock_generate_embeddings: MagicMock) -> None:
+        from smart_core_assistant_painel.app.ui.atendimentos import utils
+        utils.FeaturesCompose.generate_embeddings("texto")
+        mock_generate_embeddings.assert_called_once_with("texto")

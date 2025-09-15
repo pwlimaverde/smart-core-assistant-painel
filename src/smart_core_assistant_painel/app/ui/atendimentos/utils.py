@@ -29,7 +29,7 @@ def set_wa_buffer(message: MessageData) -> None:
     cache_key = f"wa_buffer_{message.numero_telefone}"
     buffer = cache.get(cache_key, [])
     buffer.append(message)
-    timeout = SERVICEHUB.TIME_CACHE + 120
+    timeout = SERVICEHUB.TIME_CACHE + 90
     cache.set(cache_key, buffer, timeout=timeout)
 
 
@@ -130,16 +130,27 @@ def send_message_response(phone: str) -> None:
                         text=result.resposta_bot,
                     )
                     mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
-                else:
+                elif result.confiabilidade >= 0.5:
+                    # Faixa intermediária (0.50–0.69): enviar resposta com perguntas de esclarecimento
                     SERVICEHUB.whatsapp_service.send_message(
                         instance=message_data.instance,
                         api_key=message_data.api_key,
                         number=message_data.numero_telefone,
-                        text="Desculpe, não encontrei informações suficientes para responder. Vou transferir seu atendimento para o setor responsável.",
+                        text=result.resposta_bot,
+                    )
+                    mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
+                    logger.info(f"DEBUG: Resposta enviada com pedidos de esclarecimento (confiabilidade={result.confiabilidade:.3f})")
+                else:
+                    # Baixa confiabilidade (< 0.50): mensagem de transferência (conteúdo já pós-processado)
+                    SERVICEHUB.whatsapp_service.send_message(
+                        instance=message_data.instance,
+                        api_key=message_data.api_key,
+                        number=message_data.numero_telefone,
+                        text=result.resposta_bot,
                     )
                     mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
                     
-                    logger.warning(f"DEBUG: Bot não pode responder - confiança baixa ({result.confiabilidade:.3f})")
+                    logger.warning(f"DEBUG: Bot transferiu atendimento - confiança muito baixa ({result.confiabilidade:.3f})")
             else:
                 logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
                 

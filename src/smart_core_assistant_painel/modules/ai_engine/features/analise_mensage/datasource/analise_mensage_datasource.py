@@ -49,24 +49,20 @@ class AnaliseMensageDatasource(AMData):
                 )),
             ]
 
-            messages = ChatPromptTemplate.from_messages(messages_spec)
-            
-            
-            llm = parameters.llm_parameters.create_llm
-            parser = StrOutputParser()
-            # Chain com LLM estruturado
-            chain = messages | llm | parser
-
             # Preparar dados para invocação com validação
             invoke_data = {
                 "historico_context": historico_formatado,
                 "dados_treinamento": parameters.dados_treinamento,
                 "context": parameters.llm_parameters.context,
             }
-            logger.info(f"Prompt: {messages.invoke(invoke_data)}")
-            # Invocar a chain
-            resposta_bot = chain.invoke(invoke_data)
-
+            # Substitui a chamada direta por função reutilizável de invocação LLM
+            resposta_bot = self._invoke_llm(
+                parameters=parameters,
+                messages_spec=messages_spec,
+                variables=invoke_data,
+                log_prefix="Main",
+            )
+            logger.warning(f"Resposta bruta do LLM: {resposta_bot}")
             # Calcular confiabilidade da resposta (0 a 1)
             confiabilidade: float = self._compute_reliability(
                 str(resposta_bot),
@@ -76,8 +72,18 @@ class AnaliseMensageDatasource(AMData):
 
             logger.info(f"Confiabilidade calculada: {confiabilidade:.2f}")
 
+            # Pós-processamento conforme política de limiares de confiabilidade
+            resposta_final: str = self._apply_policy_postprocess(
+                answer=str(resposta_bot),
+                reliability=confiabilidade,
+                user_question=parameters.llm_parameters.context or "",
+                rag_context=parameters.dados_treinamento or "",
+                parameters=parameters,
+                historico_context=historico_formatado,
+            )
+
             return AnaliseMensagemLangchain(
-                resposta_bot=resposta_bot,
+                resposta_bot=resposta_final,
                 confiabilidade=confiabilidade,
             )
 
@@ -355,3 +361,153 @@ class AnaliseMensageDatasource(AMData):
             return 0.0
 
         return best_score
+
+    def _apply_policy_postprocess(
+        self,
+        answer: str,
+        reliability: float,
+        user_question: str,
+        rag_context: str,
+        *,
+        parameters: AnaliseMensageParameters,
+        historico_context: str,
+    ) -> str:
+        """Aplica a política de resposta com base no score de confiabilidade.
+
+        Regras:
+        - >= 0.70: mantém a resposta original (alta confiança).
+        - 0.50–0.30: mantém a resposta e acrescenta perguntas de
+          esclarecimento objetivas.
+        - < 0.30: responde que não encontrou resposta satisfatória e
+          informa transferência para o setor responsável.
+
+        Args:
+            answer: Resposta textual produzida pela LLM.
+            reliability: Score de confiabilidade calculado.
+            user_question: Pergunta original do usuário.
+            rag_context: Contexto RAG utilizado na resposta.
+            parameters: Parâmetros para criação/uso da LLM.
+            historico_context: Histórico formatado do atendimento.
+
+        Returns:
+            str: Resposta final após aplicar a política.
+        """
+        # Alta confiança: mantém a resposta como está
+        if reliability >= 0.70:
+            return answer or ""
+
+        # Confiança intermediária: acrescenta perguntas de esclarecimento
+        if 0.20 <= reliability < 0.70:
+            clarifying = self._build_clarifying_questions(
+                parameters=parameters,
+                user_question=user_question,
+                rag_context=rag_context,
+                historico_context=historico_context,
+            )
+            if clarifying:
+                return (
+                    "\n\nPara garantir a melhor orientação, poderia confirmar:"
+                    "\n" + clarifying
+                )
+            return answer or ""
+
+        # Baixa confiança: comunica insuficiência e transfere atendimento
+        return (
+            f"{answer}\n\n"
+            "Vou transferir seu atendimento para o setor responsável para "
+            "que possam ajudar você da melhor forma."
+        )
+
+    # Função utilitária reutilizável para invocar a LLM com prompts distintos
+    def _invoke_llm(
+        self,
+        *,
+        parameters: AnaliseMensageParameters,
+        messages_spec: list[tuple[str, str]],
+        variables: dict[str, Any],
+        log_prefix: str | None = None,
+    ) -> str:
+        """Invoca a LLM usando a mesma base de criação de chain.
+
+        Centraliza a construção do prompt, chain e parsing para ser
+        reutilizada na resposta principal e em variações (ex.: perguntas
+        de esclarecimento), alterando apenas o prompt e variáveis.
+        """
+        messages = ChatPromptTemplate.from_messages(messages_spec)
+        llm = parameters.llm_parameters.create_llm
+        parser = StrOutputParser()
+        chain = messages | llm | parser
+
+        if log_prefix:
+            logger.info(f"{log_prefix} Prompt: {messages.invoke(variables)}")
+        else:
+            logger.info(f"Prompt: {messages.invoke(variables)}")
+
+        return chain.invoke(variables)
+
+    def _build_clarifying_questions(
+        self,
+        *,
+        parameters: AnaliseMensageParameters,
+        user_question: str,
+        rag_context: str,
+        historico_context: str,
+    ) -> str:
+        """Gera 2-3 perguntas de esclarecimento via LLM.
+
+        A LLM recebe a pergunta do usuário, o contexto RAG e o histórico
+        formatado para produzir perguntas curtas, objetivas e úteis.
+        """
+        system_text = (
+            "Você é um assistente que gera perguntas de esclarecimento "
+            "curtas e objetivas (em português). Siga rigorosamente:\n"
+            "1) Gere entre 2 e 3 perguntas.\n"
+            "2) Use apenas o <contexto_rag> e a <pergunta_usuario> como base; "
+            "considere <historico_conversa> apenas para entender intenção.\n"
+            "3) Não invente informações e não explique; apenas liste as "
+            "perguntas.\n"
+            "4) Formato de saída: cada pergunta deve iniciar com '- '."
+        )
+
+        user_text = (
+            "<historico_conversa>\n"
+            "(Apenas para referência de contexto, não como fonte factual)\n"
+            "{historico_context}\n"
+            "</historico_conversa>\n\n"
+            "<contexto_rag>\n"
+            "{dados_treinamento}\n"
+            "</contexto_rag>\n\n"
+            "<pergunta_usuario>\n"
+            "{user_question}\n"
+            "</pergunta_usuario>\n\n"
+            "Liste 2-3 perguntas de esclarecimento começando cada linha com '- '."
+        )
+
+        messages_spec: list[tuple[str, str]] = [
+            ("system", system_text),
+            ("user", user_text),
+        ]
+
+        variables: dict[str, Any] = {
+            "historico_context": historico_context or "",
+            "dados_treinamento": rag_context or "",
+            "user_question": user_question or "",
+        }
+
+        clarifying_raw = self._invoke_llm(
+            parameters=parameters,
+            messages_spec=messages_spec,
+            variables=variables,
+            log_prefix="Clarifying",
+        )
+
+        # Normaliza e limita a no máximo 3 linhas iniciadas por '- '
+        lines = [
+            ln.strip() for ln in str(clarifying_raw).splitlines() if ln.strip()
+        ]
+        bullet_lines = [ln for ln in lines if ln.startswith("- ")]
+        if not bullet_lines:
+            # Se a LLM não respeitar o formato, ainda assim retorna as
+            # 3 primeiras linhas como fallback.
+            bullet_lines = lines[:3]
+        return "\n".join(bullet_lines[:3])

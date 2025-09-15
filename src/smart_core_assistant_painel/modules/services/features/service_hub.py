@@ -75,7 +75,6 @@ class ServiceHub:
             self._whatsapp_api_stop_typing_url: Optional[str] = None
             # Utilitarios
             self._valid_entity_types: Optional[str] = None
-            self._valid_intent_types: Optional[str] = None
             self._time_cache: Optional[int] = None
 
             self._load_config()
@@ -360,16 +359,7 @@ class ServiceHub:
             else ""
         )
 
-    @property
-    def VALID_INTENT_TYPES(self) -> str:
-        """Retorna uma string JSON com intenções válidas, ou vazia se não definida."""
-        if self._valid_intent_types is None:
-            self._valid_intent_types = os.environ.get("VALID_INTENT_TYPES")
-        return (
-            self._valid_intent_types
-            if self._valid_intent_types is not None
-            else ""
-        )
+
 
     @property
     def TIME_CACHE(self) -> int:

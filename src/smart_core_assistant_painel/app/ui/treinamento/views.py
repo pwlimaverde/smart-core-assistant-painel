@@ -13,7 +13,7 @@ from rolepermissions.checkers import has_permission
 
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
-from .models import Documento, Treinamento
+from .models import Documento, QueryCompose, Treinamento
 from .services import TreinamentoService
 
 
@@ -279,3 +279,189 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
             "treinamentos_com_erro": treinamentos_com_erro,
         },
     )
+
+
+# NOVO: View para verificar e editar QueryCompose (intents)
+def verificar_query_compose(request: HttpRequest) -> HttpResponse:
+    """Lista intents (QueryCompose) com sucesso e com erro, permite editar/excluir.
+
+    - Sucesso: registros com embedding preenchido.
+    - Erro: registros sem embedding ("embedding" nulo).
+    - Ação "editar": popula sessão e redireciona para a página de cadastro.
+    - Ação "excluir": remove o registro.
+    """
+    if not has_permission(request.user, "treinar_ia"):
+        raise Http404()
+
+    if request.method == "POST":
+        acao = request.POST.get("acao")
+        qc_id = request.POST.get("query_compose_id")
+
+        if not acao or not qc_id:
+            messages.error(request, "Ação ou ID do intent não especificado.")
+            return redirect("treinamento:verificar_query_compose")
+
+        try:
+            qc = QueryCompose.objects.get(id=qc_id)
+
+            if acao == "excluir":
+                qc.delete()
+                messages.success(request, "Intent excluída com sucesso!")
+            elif acao == "editar":
+                request.session["query_compose_edicao"] = {
+                    "id": qc.id,
+                    "tag": qc.tag,
+                    "grupo": qc.grupo,
+                    "descricao": qc.descricao,
+                    "exemplo": qc.exemplo,
+                    "comportamento": qc.comportamento,
+                }
+                messages.info(request, f"Editando intent ID: {qc.id}")
+                return redirect("treinamento:cadastrar_query_compose")
+            else:
+                messages.error(request, "Ação inválida.")
+        except QueryCompose.DoesNotExist:
+            messages.error(request, "Intent não encontrada.")
+        except Exception as e:
+            logger.error(
+                f"Erro ao processar ação {acao} no QueryCompose {qc_id}: {e}"
+            )
+            messages.error(request, "Erro ao processar ação. Tente novamente.")
+
+        return redirect("treinamento:verificar_query_compose")
+
+    intents_ok = QueryCompose.objects.filter(embedding__isnull=False).order_by(
+        "-created_at"
+    )
+    intents_erro = QueryCompose.objects.filter(embedding__isnull=True).order_by(
+        "-created_at"
+    )
+
+    return render(
+        request,
+        "treinamento/verificar_query_compose.html",
+        {"intents_ok": intents_ok, "intents_erro": intents_erro},
+    )
+
+
+def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
+    """View para cadastrar um intent (QueryCompose).
+
+    - Exibe formulário para inserir tag, grupo, description e comportamento.
+    - Ao enviar (POST), persiste o registro; o embedding será gerado de forma
+      assíncrona pelo signal post_save (sem bloqueio no request).
+    - Suporta modo de edição quando há dados salvos em sessão.
+    """
+    if not has_permission(request.user, "treinar_ia"):
+        messages.error(request, "Você não tem permissão para acessar esta página.")
+        return redirect("home")
+
+    if request.method == "GET":
+        dados_edicao = request.session.get("query_compose_edicao")
+        if dados_edicao:
+            context = {
+                "modo_edicao": True,
+                "query_compose_id": dados_edicao["id"],
+                "tag_inicial": dados_edicao.get("tag", ""),
+                "grupo_inicial": dados_edicao.get("grupo", ""),
+                "descricao_inicial": dados_edicao.get("descricao", ""),
+                "exemplo_inicial": dados_edicao.get("exemplo", ""),
+                "comportamento_inicial": dados_edicao.get("comportamento", ""),
+            }
+        else:
+            context = {
+                "modo_edicao": False,
+                "query_compose_id": None,
+                "tag_inicial": "",
+                "grupo_inicial": "",
+                "descricao_inicial": "",
+                "exemplo_inicial": "",
+                "comportamento_inicial": "",
+            }
+        return render(request, "treinamento/cadastrar_query_compose.html", context)
+
+    if request.method == "POST":
+        tag = request.POST.get("tag")
+        grupo = request.POST.get("grupo")
+        descricao = request.POST.get("descricao")
+        exemplo = request.POST.get("exemplo")
+        comportamento = request.POST.get("comportamento")
+        query_compose_id = request.POST.get("query_compose_id")
+
+        # Fallback para sessão caso o hidden não venha
+        if not query_compose_id:
+            dados_edicao = request.session.get("query_compose_edicao")
+            if dados_edicao:
+                query_compose_id = str(dados_edicao.get("id"))
+
+        if not tag or not grupo or not descricao or not exemplo or not comportamento:
+            messages.error(
+                request,
+                "Tag, Grupo, Descrição, Exemplo e Comportamento são obrigatórios.",
+            )
+            return render(
+                request,
+                "treinamento/cadastrar_query_compose.html",
+                {
+                    "modo_edicao": bool(query_compose_id),
+                    "query_compose_id": query_compose_id,
+                    "tag_inicial": tag or "",
+                    "grupo_inicial": grupo or "",
+                    "descricao_inicial": descricao or "",
+                    "exemplo_inicial": exemplo or "",
+                    "comportamento_inicial": comportamento or "",
+                },
+            )
+
+        try:
+            with transaction.atomic():
+                if query_compose_id:
+                    # Edição
+                    qc = QueryCompose.objects.get(id=query_compose_id)
+                    descricao_antiga = qc.descricao or ""
+                    qc.tag = tag
+                    qc.grupo = grupo
+                    qc.descricao = descricao
+                    qc.exemplo = exemplo
+                    qc.comportamento = comportamento
+                    # Se a descrição mudou, forçar reprocessamento do embedding
+                    if (descricao_antiga or "").strip() != (descricao or "").strip():
+                        qc.embedding = None
+                    qc.save()
+                    if "query_compose_edicao" in request.session:
+                        del request.session["query_compose_edicao"]
+                    messages.success(request, "Intent editada com sucesso!")
+                else:
+                    # Criação; embedding será gerado via signal post_save
+                    QueryCompose.objects.create(
+                        tag=tag,
+                        grupo=grupo,
+                        descricao=descricao,
+                        exemplo=exemplo,
+                        comportamento=comportamento,
+                    )
+                    messages.success(request, "Intent cadastrada com sucesso!")
+
+                return redirect("treinamento:cadastrar_query_compose")
+        except QueryCompose.DoesNotExist:
+            messages.error(request, "Intent não encontrada para edição.")
+            return redirect("treinamento:verificar_query_compose")
+        except Exception as e:
+            logger.error(f"Erro ao cadastrar/editar QueryCompose: {e}")
+            messages.error(request, "Erro interno do servidor. Tente novamente.")
+            return render(
+                request,
+                "treinamento/cadastrar_query_compose.html",
+                {
+                    "modo_edicao": bool(query_compose_id),
+                    "query_compose_id": query_compose_id,
+                    "tag_inicial": tag or "",
+                    "grupo_inicial": grupo or "",
+                    "descricao_inicial": descricao or "",
+                    "exemplo_inicial": exemplo or "",
+                    "comportamento_inicial": comportamento or "",
+                },
+            )
+
+    # Fallback
+    return render(request, "treinamento/cadastrar_query_compose.html")

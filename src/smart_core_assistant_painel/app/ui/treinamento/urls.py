@@ -7,15 +7,27 @@ from . import views
 app_name = "treinamento"
 
 urlpatterns = [
-    path("treinar_ia", views.treinar_ia, name="treinar_ia"),
+    path("treinar-ia/", views.treinar_ia, name="treinar_ia"),
+    # Alias legado (underscore) para compatibilidade
+    path("treinar_ia/", views.treinar_ia),
     path(
         "pre-processamento/<int:id>/",
         views.pre_processamento,
         name="pre_processamento",
     ),
     path(
-        "verificar_treinamentos/",
+        "verificar-treinamentos/",
         views.verificar_treinamentos_vetorizados,
         name="verificar_treinamentos_vetorizados",
+    ),
+    path(
+        "cadastrar-query-compose/",
+        views.cadastrar_query_compose,
+        name="cadastrar_query_compose",
+    ),
+    path(
+        "verificar-query-compose/",
+        views.verificar_query_compose,
+        name="verificar_query_compose",
     ),
 ]

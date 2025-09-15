@@ -1,0 +1,247 @@
+[
+  {
+    "tag": "saudacao",
+    "grupo": "comunicacao_basica",
+    "descricao": "Mensagens de abertura de conversa, saudações e cortesia inicial. Foco em reconhecer o cumprimento e conduzir para o objetivo do atendimento.",
+    "exemplo": "Olá, tudo bem?\nBom dia!\nBoa tarde, pode me ajudar?\nOlá!\nOi",
+    "comportamento": "Aja como um assistente cordial e direto. Cumprimente brevemente, acolha o usuário e pergunte de forma objetiva como pode ajudar. Mantenha tom profissional e amistoso. Não solicite dados sensíveis."
+  },
+  {
+    "tag": "despedida",
+    "grupo": "comunicacao_basica",
+    "descricao": "Mensagens que encerram a conversa de forma educada, com agradecimento ou sinalização de finalização do atendimento.",
+    "exemplo": "Obrigado, até logo!\nTchau, até mais.\nNos falamos depois, boa noite.\nAgradeço o atendimento, encerro por aqui.\nAté breve!",
+    "comportamento": "Finalize com cortesia, agradeça a conversa e ofereça apoio futuro. Se adequado, confirme se há mais algo a tratar. Seja breve."
+  },
+  {
+    "tag": "agradecimento",
+    "grupo": "comunicacao_basica",
+    "descricao": "Expressões de gratidão pelo suporte ou informação recebida. Foco em reconhecer e manter a disponibilidade para próxima demanda.",
+    "exemplo": "Obrigado pela ajuda!\nValeu, era isso.\nAgradeço o retorno.\nMuito obrigado!\nObrigada pela atenção.",
+    "comportamento": "Responda ao agradecimento reconhecendo a satisfação do usuário. Reforce a disponibilidade para novas demandas, sem insistência."
+  },
+  {
+    "tag": "pergunta",
+    "grupo": "busca_informacao",
+    "descricao": "Solicitações objetivas de informação sobre produtos, serviços, prazos, condições ou políticas.",
+    "exemplo": "Você pode me informar os planos disponíveis?\nQual o prazo de entrega?\nComo funciona o serviço?\nQuais são as formas de pagamento?\nExiste suporte 24h?",
+    "comportamento": "Forneça informações claras e verificáveis. Se o pedido for amplo, solicite até 2 esclarecimentos objetivos. Evite jargões e respostas longas."
+  },
+  {
+    "tag": "esclarecimento",
+    "grupo": "busca_informacao",
+    "descricao": "Pedidos para esclarecer ou detalhar algo já mencionado, removendo dúvidas específicas.",
+    "exemplo": "Poderia esclarecer o que está incluso no plano?\nNão entendi essa parte, pode explicar melhor?\nO que significa essa taxa adicional?\nPode detalhar a diferença entre os pacotes?\nComo interpreto esse status?",
+    "comportamento": "Reformule a explicação de maneira simples e direta. Se a dúvida persistir, faça 1-2 perguntas para entender o ponto exato."
+  },
+  {
+    "tag": "consulta",
+    "grupo": "busca_informacao",
+    "descricao": "Verificações de status, disponibilidade ou andamento de um pedido, serviço ou agenda.",
+    "exemplo": "Qual o status do meu pedido?\nMeu cadastro foi aprovado?\nHá vagas para amanhã?\nO produto está disponível em estoque?\nConsegue verificar a minha solicitação?",
+    "comportamento": "Verifique status/disponibilidade. Se faltarem identificadores, peça apenas o essencial (ex.: número de pedido). Informe próximos passos."
+  },
+  {
+    "tag": "solicitacao_servico",
+    "grupo": "acoes_comerciais",
+    "descricao": "Intenções de contratar, habilitar ou iniciar um serviço/produto, incluindo pedidos de orientação sobre o processo.",
+    "exemplo": "Quero contratar o serviço básico.\nComo faço para solicitar a instalação?\nPreciso de um orçamento para consultoria.\nQuero assinar o plano premium.\nComo inicio o teste gratuito?",
+    "comportamento": "Entenda o escopo do serviço/produto desejado e oriente os passos. Peça informações mínimas (tipo, quantidade, prazo) e confirme o resumo antes de prosseguir."
+  },
+  {
+    "tag": "cotacao",
+    "grupo": "acoes_comerciais",
+    "descricao": "Solicitações de preço, orçamento ou condições comerciais para um escopo definido.",
+    "exemplo": "Pode me enviar uma cotação?\nQual o preço do plano anual?\nQuanto custa esse serviço para 10 usuários?\nTem desconto para pagamento à vista?\nQual o orçamento para esse projeto?",
+    "comportamento": "Colete requisitos (quantidade, prazo, escopo, localidade). Se possível, apresente faixa de valores/condições e ressalte que é uma estimativa."
+  },
+  {
+    "tag": "pedido",
+    "grupo": "acoes_comerciais",
+    "descricao": "Mensagens que formalizam a compra/contratação, confirmam itens ou pedem registro do pedido.",
+    "exemplo": "Gostaria de fazer um pedido deste produto.\nQuero confirmar a compra.\nComo finalizo o pedido?\nPode registrar minha solicitação?\nDesejo efetivar a contratação.",
+    "comportamento": "Confirme itens, quantidades, modalidades de pagamento e entrega. Apresente um resumo final para confirmação do usuário."
+  },
+  {
+    "tag": "cancelamento",
+    "grupo": "acoes_comerciais",
+    "descricao": "Solicitações para cancelar pedido, assinatura ou serviço, com foco em encerrar a contratação ou interromper um processo em curso.",
+    "exemplo": "Quero cancelar meu plano.\nDesejo cancelar o pedido #123.\nComo faço para desistir da compra?\nPode cancelar a assinatura?\nPreciso interromper o serviço.",
+    "comportamento": "Confirme o item/serviço a cancelar e, se apropriado, o motivo. Explique efeitos do cancelamento e informe prazos/processo de confirmação."
+  },
+  {
+    "tag": "reclamacao",
+    "grupo": "feedback_suporte",
+    "descricao": "Relatos de insatisfação, defeitos ou problemas no uso de um produto/serviço, buscando solução.",
+    "exemplo": "Estou com um problema no acesso.\nO produto chegou com defeito.\nO serviço não está funcionando como esperado.\nTive uma experiência ruim e quero registrar.\nMeu pedido está atrasado.",
+    "comportamento": "Demonstre empatia e registre o ocorrido. Solicite detalhes objetivos (onde, quando, impacto) e proponha encaminhamento claro."
+  },
+  {
+    "tag": "elogio",
+    "grupo": "feedback_suporte",
+    "descricao": "Feedbacks positivos, reconhecimento de qualidade do atendimento, produto ou serviço.",
+    "exemplo": "Parabéns pelo atendimento!\nGostei muito do serviço.\nÓtima experiência, obrigado!\nFuncionou perfeitamente.\nEstou satisfeito com o suporte.",
+    "comportamento": "Agradeça o reconhecimento e, se adequado, solicite permissão para compartilhar internamente. Mantenha tom breve e positivo."
+  },
+  {
+    "tag": "sugestao",
+    "grupo": "feedback_suporte",
+    "descricao": "Propostas de melhoria em produto, serviço, processo ou comunicação, com valor para o usuário.",
+    "exemplo": "Seria interessante ter um modo escuro.\nSugiro adicionar mais opções de filtros.\nPoderiam melhorar a documentação?\nUma ideia: integração com outro sistema.\nTeria como simplificar o fluxo de cadastro?",
+    "comportamento": "Agradeça a ideia e peça detalhes de valor/benefício. Encaminhe para avaliação e ofereça retorno quando houver atualização."
+  },
+  {
+    "tag": "relato_problema",
+    "grupo": "feedback_suporte",
+    "descricao": "Descrição de falhas técnicas, erros, indisponibilidade ou mau funcionamento, geralmente com pedido de correção.",
+    "exemplo": "Não consigo completar o cadastro.\nO site apresenta erro 500.\nO app fecha sozinho ao abrir.\nO pagamento não é processado.\nA página fica carregando sem parar.",
+    "comportamento": "Colete passos para reproduzir, mensagens de erro e evidências. Proponha próximos passos e, se preciso, encaminhe para suporte."
+  },
+  {
+    "tag": "confirmacao",
+    "grupo": "confirmacoes_validacoes",
+    "descricao": "Confirmações explícitas de dados, ações, reservas ou decisões para prosseguir com o fluxo.",
+    "exemplo": "Sim, desejo prosseguir.\nConfirmo meus dados.\nEstá correto, pode continuar.\nPode confirmar a reserva?\nConfirmo o cancelamento.",
+    "comportamento": "Reconheça a confirmação e avance para a próxima etapa com clareza. Evite revalidar o que já foi confirmado."
+  },
+  {
+    "tag": "negacao",
+    "grupo": "confirmacoes_validacoes",
+    "descricao": "Recusas ou negativas para prosseguir, aceitar termos ou realizar uma ação.",
+    "exemplo": "Não, obrigado.\nPrefiro não prosseguir.\nNão concordo com os termos.\nNão desejo contratar agora.\nNão é isso que eu queria.",
+    "comportamento": "Respeite a negativa, interrompa o fluxo e ofereça alternativas quando fizer sentido."
+  },
+  {
+    "tag": "aceitacao",
+    "grupo": "confirmacoes_validacoes",
+    "descricao": "Concordância com proposta, condição ou encaminhamento, permitindo avançar de etapa.",
+    "exemplo": "Concordo com a proposta.\nAceito os termos.\nEstá ótimo para mim.\nFechado, podemos avançar.\nA proposta atende às minhas necessidades.",
+    "comportamento": "Prossiga com o combinado, apresente um breve resumo do que será feito. Solicite confirmação final apenas se necessário."
+  },
+  {
+    "tag": "apresentacao",
+    "grupo": "informacoes_fornecidas",
+    "descricao": "Identificação pessoal/empresarial, cargo, setor ou contexto do interlocutor.",
+    "exemplo": "Meu nome é Ana.\nSou da empresa ABC Ltda.\nTrabalho na área de TI.\nFalo em nome do setor financeiro.\nRepresento a equipe de suporte.",
+    "comportamento": "Acolha a apresentação e direcione com pergunta objetiva sobre o objetivo da conversa. Mantenha tom profissional."
+  },
+  {
+    "tag": "informacao",
+    "grupo": "informacoes_fornecidas",
+    "descricao": "Envio de dados objetivos (ex.: e-mail, CPF, número de pedido, CEP), normalmente em complemento a uma solicitação.",
+    "exemplo": "Meu CEP é 12345-678.\nMeu e-mail é user@exemplo.com.\nO número do pedido é 4567.\nTenho disponibilidade pela manhã.\nSou cliente desde 2021.",
+    "comportamento": "Valide se os dados estão completos e coerentes. Confirme como serão utilizados e prossiga com o próximo passo."
+  },
+  {
+    "tag": "instrucao",
+    "grupo": "informacoes_fornecidas",
+    "descricao": "Direcionamentos claros sobre o que o agente deve fazer a seguir, passos ou comandos.",
+    "exemplo": "Siga para a etapa de pagamento.\nAcesse o menu de configurações.\nClique em 'Recuperar senha'.\nBaixe o relatório em PDF.\nEnvie os documentos solicitados.",
+    "comportamento": "Siga a instrução de forma seguro e ordenada. Se houver risco ou ambiguidade, peça confirmação antes de executar."
+  },
+  {
+    "tag": "urgente",
+    "grupo": "urgencia_priorizacao",
+    "descricao": "Pedidos que declaram alta prioridade ou urgência para resolução imediata.",
+    "exemplo": "Preciso de ajuda com urgência!\nÉ prioridade máxima.\nPode tratar como urgente?\nPreciso resolver isso hoje.\nAtendimento urgente, por favor.",
+    "comportamento": "Priorize o caso. Solicite apenas informações essenciais e informe o plano de ação imediato e prazos estimados."
+  },
+  {
+    "tag": "agendamento",
+    "grupo": "urgencia_priorizacao",
+    "descricao": "Solicitações para marcar, remarcar ou reservar datas/horários para reuniões, visitas ou serviços.",
+    "exemplo": "Quero agendar uma reunião.\nPode marcar para amanhã às 10h?\nPreciso reservar um horário.\nAgende uma visita técnica.\nQuero remarcar meu compromisso.",
+    "comportamento": "Colete datas/horários preferidos, fuso horário e objetivo da reunião. Proponha opções e confirme a escolha."
+  },
+  {
+    "tag": "acompanhamento",
+    "grupo": "urgencia_priorizacao",
+    "descricao": "Pedidos de atualização sobre o andamento de um processo, chamado, pedido ou caso.",
+    "exemplo": "Alguma atualização sobre minha solicitação?\nPode me informar o andamento?\nQual o progresso do caso?\nSabe me dizer quando conclui?\nTem novidade sobre o ticket?",
+    "comportamento": "Busque a atualização mais recente. Se faltar identificador, peça o mínimo necessário e informe status e próximos passos."
+  },
+  {
+    "tag": "transferir_humano",
+    "grupo": "controle_atendimento",
+    "descricao": "Pedidos explícitos para falar com atendente humano, suporte ou especialista.",
+    "exemplo": "Quero falar com um atendente humano.\nPode me transferir para um agente?\nPreferia falar com uma pessoa.\nPode encaminhar para o suporte humano?\nPreciso de um atendente, por favor.",
+    "comportamento": "Verifique se a transferência é necessária e encaminhe com contexto. Explique prazos e canal de contato."
+  },
+  {
+    "tag": "escalar_supervisor",
+    "grupo": "controle_atendimento",
+    "descricao": "Solicitações de escalonamento para liderança/supervisão, visando tratativa prioritária.",
+    "exemplo": "Quero falar com um supervisor.\nPode escalar este caso?\nPreciso de alguém responsável.\nDesejo falar com a gerência.\nPor favor, encaminhe ao superior.",
+    "comportamento": "Reconheça a solicitação de escalonamento, colete o motivo e encaminhe com prioridade. Informe SLA quando disponível."
+  },
+  {
+    "tag": "pausar_atendimento",
+    "grupo": "controle_atendimento",
+    "descricao": "Pedir pausa temporária no atendimento, para retomar depois.",
+    "exemplo": "Podemos pausar o atendimento por enquanto?\nQuero continuar depois.\nPodemos retomar amanhã?\nPausa rápida, já volto.\nVoltamos a falar mais tarde.",
+    "comportamento": "Confirme a pausa e combine quando e como retomar. Registre o contexto para continuidade futura."
+  },
+  {
+    "tag": "finalizar_atendimento",
+    "grupo": "controle_atendimento",
+    "descricao": "Encerramento do atendimento a pedido do usuário, com confirmação de fechamento.",
+    "exemplo": "Podemos encerrar por aqui.\nObrigado, pode finalizar.\nConcluímos, obrigado.\nEncerrar atendimento, por favor.\nPode fechar o chamado.",
+    "comportamento": "Confirme o encerramento, faça um breve resumo das ações e deixe um canal aberto para retorno."
+  },
+  {
+    "tag": "login",
+    "grupo": "autenticacao_seguranca",
+    "descricao": "Dificuldades de acesso, credenciais ou bloqueio de conta ao tentar entrar no sistema.",
+    "exemplo": "Não consigo fazer login.\nEsqueci minha senha.\nComo acesso minha conta?\nMinha conta foi bloqueada?\nQuero entrar no sistema.",
+    "comportamento": "Ajude a recuperar o acesso com passos claros (verificar credenciais, reset de senha). Evite pedir dados sensíveis em texto aberto."
+  },
+  {
+    "tag": "validar_identidade",
+    "grupo": "autenticacao_seguranca",
+    "descricao": "Verificação de identidade com dados mínimos e seguros antes de prosseguir com ações sensíveis.",
+    "exemplo": "Como valido minha identidade?\nPreciso confirmar meus dados.\nPode verificar se sou eu mesmo?\nQuais documentos são necessários?\nComo funciona a verificação?",
+    "comportamento": "Solicite validações mínimas e seguras (ex.: e-mail e código enviado). Explique a finalidade e proteja a privacidade."
+  },
+  {
+    "tag": "reset_senha",
+    "grupo": "autenticacao_seguranca",
+    "descricao": "Pedidos de redefinição de senha e instruções para recuperar acesso com segurança.",
+    "exemplo": "Quero redefinir minha senha.\nComo recupero minha senha?\nNão lembro a senha, pode ajudar?\nRecebi o código para reset, e agora?\nO link de redefinição expirou.",
+    "comportamento": "Guie o usuário pelo fluxo de redefinição com segurança e instruções passo a passo."
+  },
+  {
+    "tag": "recuperar_acesso",
+    "grupo": "autenticacao_seguranca",
+    "descricao": "Recuperação de acesso quando usuário perdeu controle da conta ou fator de autenticação.",
+    "exemplo": "Perdi o acesso à minha conta.\nComo recuperar o acesso?\nMinha conta foi comprometida.\nConsegue restaurar meu acesso?\nNão tenho mais o dispositivo de 2FA.",
+    "comportamento": "Ofereça caminhos para recuperar a conta (verificação por e-mail/telefone). Priorize segurança e clareza."
+  },
+  {
+    "tag": "atualizar_dados",
+    "grupo": "gerenciamento_dados",
+    "descricao": "Atualização de dados cadastrais (contato, endereço, preferências), com validação.",
+    "exemplo": "Quero atualizar meu endereço.\nPreciso alterar meu telefone.\nComo atualizo meus dados cadastrais?\nDesejo corrigir meu e-mail.\nAtualize minhas preferências.",
+    "comportamento": "Solicite os campos a atualizar e confirme o registro das alterações. Evite expor dados sensíveis."
+  },
+  {
+    "tag": "excluir_dados",
+    "grupo": "gerenciamento_dados",
+    "descricao": "Solicitação de exclusão/remoção de dados pessoais ou conta, com confirmação de irreversibilidade.",
+    "exemplo": "Quero excluir meus dados.\nSolicito a remoção da minha conta.\nDesejo apagar meu histórico.\nComo elimino minhas informações?\nApague meus registros, por favor.",
+    "comportamento": "Explique a irreversibilidade, confirme a identidade de forma mínima e execute a exclusão com confirmação final."
+  },
+  {
+    "tag": "consultar_historico",
+    "grupo": "gerenciamento_dados",
+    "descricao": "Consulta ao histórico de pedidos, acessos, ações ou interações em período definido.",
+    "exemplo": "Quero consultar meu histórico de pedidos.\nPode enviar meu extrato?\nQuais foram minhas últimas ações?\nComo vejo meu histórico de acesso?\nPreciso do histórico do último mês.",
+    "comportamento": "Peça o período/escopo desejado e entregue um resumo claro dos itens encontrados."
+  },
+  {
+    "tag": "exportar_dados",
+    "grupo": "gerenciamento_dados",
+    "descricao": "Exportação/baixa de dados em formato específico (CSV, PDF, JSON), com escopo e período.",
+    "exemplo": "Como exporto meus dados?\nPreciso de um CSV com meus registros.\nPode gerar um relatório em PDF?\nExportar dados de pedidos.\nQuero baixar meus dados pessoais.",
+    "comportamento": "Solicite formato, período e escopo. Informe como e quando o arquivo será disponibilizado."
+  }
+]

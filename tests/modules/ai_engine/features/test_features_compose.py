@@ -159,7 +159,7 @@ class TestFeaturesCompose(unittest.TestCase):
 
         # Act
         result = FeaturesCompose.analise_previa_mensagem(
-            historico_atendimento={}, context="Test context"
+            historico_atendimento={}, context="Test context", valid_intent_types="{}"
         )
 
         # Assert
@@ -352,7 +352,7 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(LlmError):
             FeaturesCompose.analise_previa_mensagem(
-                historico_atendimento={}, context="Test context"
+                historico_atendimento={}, context="Test context", valid_intent_types="{}"
             )
         # A função deve apenas propagar a exceção, não logar.
         # O log é responsabilidade de quem chama a função.
@@ -378,7 +378,7 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.analise_previa_mensagem(
-                historico_atendimento={}, context="Test context"
+                historico_atendimento={}, context="Test context", valid_intent_types="{}"
             )
         self.assertIn("Unexpected return type from usecase", str(context.exception))
 

@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import json
 import re
 from datetime import datetime
 from typing import Any, Self, cast, override
@@ -194,3 +197,200 @@ class Documento(models.Model):
             f"Criados {len(documentos_criados)} documentos para o treinamento {treinamento_id}"
         )
         return documentos_criados
+
+class QueryCompose(models.Model):
+    """
+    Representa um intent: descrição -> embedding + prompt system associado.
+    """
+    id: models.AutoField = models.AutoField(
+        primary_key=True, help_text="Chave primária do registro"
+    )
+    tag: models.CharField[str] = models.CharField(
+        max_length=40,
+        validators=[validate_identificador],
+        blank=False,
+        null=False,
+        help_text="Tag auxiliar para organizar intents (ex: 'orcamento', 'suporte')"
+    )
+    grupo: models.CharField[str] = models.CharField(
+        max_length=40,
+        validators=[validate_identificador],
+        blank=False,
+        null=False,
+        help_text="Campo obrigatório para identificar o grupo do QueryCompose",
+    )
+    descricao: models.TextField[str] = models.TextField(
+        blank=False,
+        null=False,
+        help_text="Texto descritivo usado para gerar o embedding (representação do intent)"
+    )
+    exemplo: models.TextField[str] = models.TextField(
+        blank=False,
+        null=False,
+        help_text="Exemplo de query que representa o intent"
+    )
+    comportamento: models.TextField[str] = models.TextField(
+        blank=False,
+        null=False,
+        help_text="Prompt system que orienta o comportamento da LLM para esse intent"
+    )
+    embedding: VectorField = VectorField(
+        dimensions=1024,
+        null=True,
+        blank=True,
+        help_text="Embedding gerado a partir da description"
+    )
+
+    created_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Query Compose"
+        verbose_name_plural = "Query Composes"
+        indexes = [
+        models.Index(fields=['tag']),
+        models.Index(fields=['created_at']),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.tag or 'sem-tag'}"
+    
+    def to_embedding_text(self) -> str:
+        """
+        Gera texto otimizado para criação de embeddings, padronizando o
+        conteúdo conforme esperado pelos testes e pelo pipeline de
+        embeddings.
+
+        Regras:
+        - Primeira linha: "Categoria: <tag>" quando houver tag.
+        - Segunda linha: descrição (quando houver)
+        - Terceira linha: "Exemplo: <exemplo>" (quando houver)
+        - Quando descrição e exemplo estiverem vazios, retornar string vazia.
+
+        Returns:
+            str: Texto formatado para geração de embedding.
+        """
+        # Partes que compõem o texto final, respeitando as regras acima
+        parts: list[str] = []
+
+        tag: str = (self.tag or "").strip()
+        descricao: str = (self.descricao or "").strip()
+        exemplo: str = (self.exemplo or "").strip()
+
+        # Se não houver conteúdo semântico (descrição e exemplo), retornar vazio
+        if not descricao and not exemplo:
+            return ""
+
+        if tag:
+            parts.append(f"Categoria: {tag}")
+        if descricao:
+            parts.append(descricao)
+        if exemplo:
+            parts.append(f"Exemplo: {exemplo}")
+
+        return "\n".join(parts)
+
+    @classmethod
+    def buscar_comportamento_similar(
+        cls,
+        query_vec: list[float],
+        top_k: int = 1,
+    ) -> str | None:
+        try:
+            comportamento: QuerySet[Self] = (
+                cls.objects.filter(embedding__isnull=False,)
+                .annotate(distance=CosineDistance("embedding", query_vec))
+                .only("tag", "descricao", "comportamento")
+                .order_by("distance")[:top_k]
+            )
+            if not comportamento:
+                return ""
+            
+            # Log da distância mais similar encontrada
+            most_similar_distance = comportamento[0].distance
+            logger.warning(
+                f"Comportamento similar encontrado - Tag: {comportamento[0].tag}, "
+                f"Distância: {most_similar_distance:.4f}"
+            )
+            if most_similar_distance > 0.25:
+                return None
+            # Formatação conforme especificado no planejamento
+            prompt = (
+                f"📚 Comportamento que deve ser seguido:\n"
+                f"{comportamento[0].comportamento}"
+            )
+            return prompt
+            
+        except Exception as e:
+            logger.error(f"Erro na busca semântica: {e}")
+            return None
+
+    @classmethod
+    def build_intent_types_config(
+        cls,
+    ) -> str:
+        """Gera JSON (string) de intent_types baseado nos registros.
+
+        Estrutura:
+            {
+                "intent_types": {
+                    "<grupo>": {
+                        "<tag>": "<descricao> e exemplos estruturados"
+                    }
+                }
+            }
+
+        Returns:
+            str: JSON válido (string) com a chave raiz "intent_types".
+        """
+        # Consulta ordenada para previsibilidade da saída
+        qs: QuerySet[Self] = (
+            cls.objects
+            .only("grupo", "tag", "descricao", "exemplo")
+            .order_by("grupo", "tag")
+        )
+
+        result: dict[str, dict[str, dict[str, str]]] = {"intent_types": {}}
+
+        for qc in qs:
+            grupo: str = (qc.grupo or "").strip()
+            tag: str = (qc.tag or "").strip()
+            if not grupo or not tag:
+                # Ignora registros sem grupo ou tag válidos
+                continue
+
+            group_map: dict[str, str]
+            group_map = result["intent_types"].setdefault(grupo, {})
+
+            # Normaliza descricao em linha única e prepara exemplos multilinha
+            descricao_clean: str = re.sub(
+                r"\s+", " ", (qc.descricao or "")
+            ).strip()
+            exemplo_raw: str = (qc.exemplo or "").strip()
+            exemplos: list[str] = [
+                ln.strip() for ln in exemplo_raw.splitlines() if ln.strip()
+            ]
+
+            # Monta string estruturada para interpretação clara pela LLM
+            if descricao_clean or exemplos:
+                lines: list[str] = []
+                if descricao_clean:
+                    lines.append(descricao_clean)
+                if exemplos:
+                    lines.append("Exemplos:")
+                    for item in exemplos:
+                        lines.append(f"- {item}")
+                value: str = "\n".join(lines)
+            else:
+                # Mantém compatibilidade caso ambos estejam vazios
+                value = ""
+
+            group_map[tag] = value
+
+        # Retorna string JSON válida e estável (ordenada)
+        return json.dumps(
+            result,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )

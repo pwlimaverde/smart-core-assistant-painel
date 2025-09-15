@@ -145,17 +145,6 @@ class TestServiceHub(unittest.TestCase):
         hub = ServiceHub()
         self.assertEqual(hub.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM, "")
 
-    @patch.dict(os.environ, {"VALID_INTENT_TYPES": '["intent1", "intent2"]'})
-    def test_valid_intent_types_with_env_var(self):
-        hub = ServiceHub()
-        self.assertEqual(hub.VALID_INTENT_TYPES, '["intent1", "intent2"]')
-
-    def test_valid_intent_types_without_env_var(self):
-        if "VALID_INTENT_TYPES" in os.environ:
-            del os.environ["VALID_INTENT_TYPES"]
-        hub = ServiceHub()
-        self.assertEqual(hub.VALID_INTENT_TYPES, "")
-
     @patch.dict(os.environ, {"VALID_ENTITY_TYPES": '["entity1", "entity2"]'})
     def test_valid_entity_types_with_env_var(self):
         hub = ServiceHub()
@@ -455,15 +444,6 @@ class TestServiceHub(unittest.TestCase):
         result = hub.VALID_ENTITY_TYPES
         self.assertEqual(result, "")
 
-    def test_valid_intent_types_when_none(self):
-        """Testa propriedade VALID_INTENT_TYPES quando valor interno é None."""
-        hub = ServiceHub()
-        hub._valid_intent_types = None
-        if "VALID_INTENT_TYPES" in os.environ:
-            del os.environ["VALID_INTENT_TYPES"]
-        
-        result = hub.VALID_INTENT_TYPES
-        self.assertEqual(result, "")
 
     def test_time_cache_when_none(self):
         """Testa propriedade TIME_CACHE quando valor interno é None."""

@@ -71,7 +71,6 @@ class FeaturesCompose:
             "whatsapp_api_stop_typing_url": "WHATSAPP_API_STOP_TYPING_URL",
             # Utilitarios
             "valid_entity_types": "VALID_ENTITY_TYPES",
-            "valid_intent_types": "VALID_INTENT_TYPES",
             "time_cache": "TIME_CACHE",
         }
         error: SetEnvironRemoteError = SetEnvironRemoteError(

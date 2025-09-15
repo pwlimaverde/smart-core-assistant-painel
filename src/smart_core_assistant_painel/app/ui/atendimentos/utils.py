@@ -8,7 +8,7 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.treinamento.models import Documento
+from smart_core_assistant_painel.app.ui.treinamento.models import QueryCompose
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -63,23 +63,60 @@ def send_message_response(phone: str) -> None:
         try:
             mensagem = Mensagem.objects.get(id=mensagem_id)
             _analisar_conteudo_mensagem(mensagem_id)
-            query_vec = FeaturesCompose.generate_embeddings(
-                text=mensagem.conteudo
-            )
-            teste_similaridade = Documento.buscar_documentos_similares(
-                query_vec=query_vec
-            )
-            logger.info(f"Teste similaridade: {teste_similaridade}")
-
+            # Garante que os campos atualizados pela análise sejam refletidos neste objeto
+            try:
+                mensagem.refresh_from_db(
+                    fields=["intent_detectado", "entidades_extraidas"]
+                )
+            except Exception:
+                mensagem.refresh_from_db()
             atendimento_obj: Atendimento = mensagem.atendimento
-            
-            if _pode_bot_responder_atendimento(atendimento_obj):
+            pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
+            if pode_responder:
+                # Monta um prompt de sistema claro e objetivo para orientar a LLM
+                # sobre como responder de acordo com as intenções detectadas.
+                prompt_lines: list[str] = [
+                    (
+                        "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
+                        "Siga estritamente as orientações abaixo, em "
+                        "português claro e objetivo.\n"
+                        "Adapte a resposta ao contexto do atendimento atual."
+                    ),
+                    "Intenções detectadas e orientações:",
+                ]
+                for index, intent in enumerate(mensagem.intent_detectado, start=1):
+                    tag: str = list(intent.keys())[0]
+                    qc = QueryCompose.objects.filter(tag=tag).first()
+                    if qc:
+                        # Normaliza espaços e remove quebras de linha acidentais
+                        behavior: str = " ".join(
+                            str(qc.comportamento).split()
+                        ).strip()
+                        prompt_lines.append(f"{index}. [{tag}] {behavior}")
+                    else:
+                        intent_vector: list[float] = FeaturesCompose.generate_embeddings(f"{tag}: {intent[tag]}")
+                        comportamento: str|None = QueryCompose.buscar_comportamento_similar(intent_vector) 
+                        if comportamento:
+                            prompt_lines.append(f"{index}. [{tag}] {comportamento}")
+                prompt_lines.append(
+                    (
+                        "Se houver múltiplas intenções, priorize a ordem "
+                        "listada e mantenha a resposta concisa."
+                    )
+                )
+                prompt_intent: str = "\n".join(prompt_lines)
+                logger.warning(f"Prompt intent: {prompt_intent}")
+                json = QueryCompose.build_intent_types_config()
+                logger.warning(f"JSON:\n {json}")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,
                     number=message_data.numero_telefone,
                     text="Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
                 )
+            else:
+                logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
+                
         except Mensagem.DoesNotExist:
             logger.error(
                 f"Mensagem criada (ID: {mensagem_id}) não encontrada."
@@ -187,9 +224,11 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
             "conteudo_mensagens"
         ):
             FeaturesCompose.mensagem_apresentacao()
+        intent_types = QueryCompose.build_intent_types_config()
         resultado_analise = FeaturesCompose.analise_previa_mensagem(
             historico_atendimento=historico_atendimento,
             context=mensagem.conteudo,
+            valid_intent_types=intent_types,
         )
         mensagem.intent_detectado = resultado_analise.intent_types
         mensagem.entidades_extraidas = resultado_analise.entity_types

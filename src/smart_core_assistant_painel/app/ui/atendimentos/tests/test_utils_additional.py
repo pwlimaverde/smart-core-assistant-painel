@@ -440,6 +440,7 @@ class TestAtendimentosUtilsSendMessage(TestCase):
         mock_processar_mensagem.return_value = 1  # mensagem_id
         
         mensagem_mock = MagicMock()
+        mensagem_mock.intent_detectado = [{"unknown_tag": "detected value"}]
         mock_get_mensagem.return_value = mensagem_mock
         
         mock_pode_responder.return_value = True

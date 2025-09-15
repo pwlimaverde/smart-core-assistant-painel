@@ -10,7 +10,7 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from .models import Documento, Treinamento
+from .models import Documento, Treinamento, QueryCompose
 
 
 @admin.register(Treinamento)
@@ -239,6 +239,118 @@ class DocumentoAdmin(admin.ModelAdmin[Documento]):
 
     @admin.display(description="Embedding (prévia)")
     def embedding_preview(self, obj: Documento) -> str:
+        """Exibe uma prévia do vetor de embedding salvo."""
+        try:
+            vetor = getattr(obj, "embedding", None)
+            if vetor is None:
+                return "-"
+            try:
+                if hasattr(vetor, "size") and getattr(vetor, "size", 0) == 0:
+                    return "[embedding vazio]"
+                elif hasattr(vetor, "__len__"):
+                    try:
+                        if len(vetor) == 0:
+                            return "[embedding vazio]"
+                    except (ValueError, TypeError):
+                        pass
+            except Exception:
+                pass
+
+            seq: list[Any] = []
+            try:
+                if isinstance(vetor, (list, tuple)):
+                    seq = list(vetor)
+                elif hasattr(vetor, "tolist") and callable(getattr(vetor, "tolist")):
+                    seq = vetor.tolist()
+                else:
+                    try:
+                        for i, item in enumerate(vetor):
+                            if i >= 10:
+                                break
+                            seq.append(item)
+                    except (TypeError, ValueError):
+                        return "[embedding inválido]"
+            except Exception:
+                return "[embedding inválido]"
+
+            if not seq:
+                return "[embedding vazio]"
+
+            normalizado: list[float] = []
+            for i, x in enumerate(seq):
+                if i >= 10:
+                    break
+                try:
+                    normalizado.append(float(x))
+                except (ValueError, TypeError):
+                    continue
+
+            if not normalizado:
+                return "[embedding vazio]"
+
+            tam_total = len(normalizado)
+            try:
+                if hasattr(vetor, "size"):
+                    tam_total = getattr(vetor, "size", tam_total)
+                elif hasattr(vetor, "__len__"):
+                    try:
+                        tam_total = len(vetor)
+                    except (ValueError, TypeError):
+                        tam_total = len(seq)
+                else:
+                    tam_total = len(seq)
+            except Exception:
+                pass
+
+            head = normalizado[:10]
+            fmt_head = ", ".join(f"{x:.4f}" for x in head)
+            sufixo = ", ..." if tam_total > 10 else ""
+            return f"[{fmt_head}{sufixo}] (dim={tam_total})"
+
+        except Exception as e:
+            return f"Erro: {type(e).__name__}"
+
+
+@admin.register(QueryCompose)
+class QueryComposeAdmin(admin.ModelAdmin[QueryCompose]):
+    """Admin para o modelo QueryCompose."""
+
+    list_display = [
+        "id",
+        "tag",
+        "grupo",
+        "description_preview",
+        "comportamento_preview",
+        "embedding_preview",
+        "created_at",
+        "updated_at",
+    ]
+    search_fields = ["tag", "grupo", "descricao", "exemplo", "comportamento"]
+    list_filter = ["tag", "grupo", "created_at"]
+    ordering = ["-created_at"]
+    exclude = ["embedding"]  # evita edição manual
+    readonly_fields = ["embedding_preview", "created_at", "updated_at"]
+    list_per_page = 25
+    save_on_top = True
+
+    @admin.display(description="Descrição (prévia)")
+    def description_preview(self, obj: QueryCompose) -> str:
+        """Exibe uma prévia do campo descrição."""
+        if obj and getattr(obj, "descricao", None):
+            preview = obj.descricao[:120]
+            return preview + "..." if len(obj.descricao) > 120 else preview
+        return "-"
+
+    @admin.display(description="Comportamento (prévia)")
+    def comportamento_preview(self, obj: QueryCompose) -> str:
+        """Exibe uma prévia do campo comportamento."""
+        if obj and obj.comportamento:
+            preview = obj.comportamento[:120]
+            return preview + "..." if len(obj.comportamento) > 120 else preview
+        return "-"
+
+    @admin.display(description="Embedding (prévia)")
+    def embedding_preview(self, obj: QueryCompose) -> str:
         """Exibe uma prévia do vetor de embedding salvo."""
         try:
             vetor = getattr(obj, "embedding", None)

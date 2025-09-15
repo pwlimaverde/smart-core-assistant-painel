@@ -7,7 +7,7 @@ Classes:
     AnalisePreviaMensagemLangchain: Implementação da análise com LangChain.
 """
 
-from ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
+from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
     AnaliseMensagem,
 )
 

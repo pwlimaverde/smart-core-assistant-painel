@@ -8,7 +8,7 @@ de dados específicas.
 
 from typing import Any, NamedTuple, TypeAlias
 
-from ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
+from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
     AnaliseMensagem,
 )
 from langchain.docstore.document import Document

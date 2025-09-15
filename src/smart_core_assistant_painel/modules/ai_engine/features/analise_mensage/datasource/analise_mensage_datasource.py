@@ -1,7 +1,7 @@
 import re
 from typing import Any
 
-from ai_engine.features.analise_mensage.datasource.analise_mensagem_langchain import (
+from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensagem_langchain import (
     AnaliseMensagemLangchain,
 )
 from langchain_core.output_parsers import StrOutputParser

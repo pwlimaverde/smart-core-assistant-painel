@@ -122,7 +122,7 @@ def send_message_response(phone: str) -> None:
                     context=mensagem.conteudo,
                     dados_treinamento=dados_treinamento,
                 )
-                if result.confiabilidade > 0.8:
+                if result.confiabilidade >= 0.7:
                     SERVICEHUB.whatsapp_service.send_message(
                         instance=message_data.instance,
                         api_key=message_data.api_key,

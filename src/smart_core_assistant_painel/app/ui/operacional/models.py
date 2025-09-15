@@ -203,3 +203,24 @@ class AtendenteHumano(models.Model):
     @override
     def clean(self) -> None:
         super().clean()
+
+    def get_atendimentos_ativos(self) -> int:
+        """Retorna a quantidade de atendimentos ativos deste atendente.
+
+        "Atendimentos ativos" são considerados aqueles cujo status ainda não
+        é finalizador (ou seja, não "resolvido" nem "cancelado"). Para evitar
+        import circular, a enum de status é importada localmente.
+        """
+        # Import local para evitar import circular com app de atendimentos.
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            StatusAtendimento,
+        )
+
+        ativos = [
+            StatusAtendimento.AGUARDANDO_INICIAL,
+            StatusAtendimento.EM_ANDAMENTO,
+            StatusAtendimento.AGUARDANDO_CONTATO,
+            StatusAtendimento.AGUARDANDO_ATENDENTE,
+            StatusAtendimento.TRANSFERIDO,
+        ]
+        return self.atendimentos.filter(status__in=ativos).count()

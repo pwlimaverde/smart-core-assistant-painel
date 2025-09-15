@@ -1,13 +1,13 @@
 import re
 from typing import Any
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensagem_langchain import (
-    AnaliseMensagemLangchain,
-)
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
+from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensagem_langchain import (
+    AnaliseMensagemLangchain,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnaliseMensageParameters,
 )
@@ -142,21 +142,28 @@ class AnaliseMensageDatasource(AMData):
 
         return "\n".join(historico_parts)
 
-    def _compute_reliability(self, answer: str, rag_context: str, user_question: str) -> float:
+    def _compute_reliability(
+        self, answer: str, rag_context: str, user_question: str
+    ) -> float:
         """Calcula um score de confiabilidade (0.0 a 1.0) para a resposta.
 
+        Ajustado para basear a análise principalmente em ``dados_treinamento``
+        (argumento ``rag_context``), incluindo também a aderência à pergunta
+        do usuário. Avalia por blocos do contexto para evitar diluição quando
+        o contexto é grande.
+
         Heurística utilizada:
-        - Similaridade léxica (Jaccard) entre a resposta e o contexto RAG.
+        - Similaridade por bloco: precisão (|∩|/|ans|), Jaccard e suporte
+          (|∩| normalizado), escolhendo o melhor bloco.
         - Penalização por respostas longas (> 5 frases).
-        - Penalização por sobreposição excessiva com a pergunta.
-        - Penalização quando números da resposta não estão no contexto; pequeno
-        bônus quando todos os números da resposta estão no contexto.
-        - Teto (cap) de confiança quando o contexto é curto.
+        - Bônus/penalização baseados em números e horários presentes na
+          resposta e no contexto (por bloco).
+        - Teto (cap) de confiança quando o bloco de contexto é curto.
 
         Args:
             answer: Resposta gerada pela LLM (texto).
-            rag_context: Texto do contexto RAG utilizado na pergunta.
-            user_question: Pergunta original do usuário.
+            rag_context: Texto do contexto RAG utilizado (dados_treinamento).
+            user_question: Pergunta original (usada na avaliação de aderência).
 
         Returns:
             float: Score de confiabilidade normalizado entre 0.0 e 1.0.
@@ -168,10 +175,13 @@ class AnaliseMensageDatasource(AMData):
         ):
             return 0.0
 
-        # Tokenização simples com remoção de stopwords comuns em PT-BR
+        # Tokenização simples com remoção de stopwords comuns em PT-BR e
+        # termos genéricos que tendem a aparecer em saudações/respostas
+        # educadas (evita diluir a métrica quando a resposta é correta).
         def _tok(s: str) -> set[str]:
             tokens = re.findall(r"\b\w+\b", s.lower())
             stop = {
+                # Stopwords comuns
                 "de", "da", "do", "das", "dos", "em", "um",
                 "uma", "e", "a", "o", "para", "com", "no",
                 "na", "que", "se", "por", "as", "os", "ao",
@@ -179,52 +189,123 @@ class AnaliseMensageDatasource(AMData):
                 "seus", "é", "ser", "foi", "são", "tem", "ter",
                 "há", "como", "mais", "menos", "muito", "muita",
                 "muitos", "muitas", "já", "também",
+                # Termos genéricos/sociais
+                "ola", "olá", "prazer", "conhecer", "duvida",
+                "dúvida", "informacao", "informação", "precisar",
+                "precise", "perguntar", "pergunta", "estou", "aqui",
+                "ajudar", "posso", "ajuda", "obrigado", "obrigada",
             }
             return {t for t in tokens if len(t) > 2 and t not in stop}
 
-        ans_tokens = _tok(answer)
-        ctx_tokens = _tok(rag_context or "")
-        q_tokens = _tok(user_question or "")
+        # Divide o contexto em blocos relevantes para reduzir diluição
+        # por partes não relacionadas (ex.: separados por '---').
+        def _split_blocks(s: str) -> list[str]:
+            if not s:
+                return []
+            parts = re.split(r"\n?-{3,}\n?", s)
+            parts = [p.strip() for p in parts if p.strip()]
+            return parts or [s]
 
-        inter = ans_tokens & ctx_tokens
-        union = ans_tokens | ctx_tokens
-        jaccard = (len(inter) / len(union)) if union else 0.0
+        ans_tokens = _tok(answer)
+        ctx_blocks = _split_blocks(rag_context or "")
+        question_tokens = _tok(user_question or "")
+
+        # Padrões numéricos e horários (genéricos)
+        time_pattern = r"\b(?:[01]?\d|2[0-3]):[0-5]\d\b"
+        num_pattern = r"\b\d+(?:[\.,]\d+)?\b"
+
+        times_answer = set(re.findall(time_pattern, answer))
+        nums_answer = set(re.findall(num_pattern, answer))
 
         # Penalização por respostas muito longas (> 5 frases)
-        sent_count = len(re.findall(r"[\.!\?…]+", answer))
+        sent_count = len(re.findall(r"[\.!.\?…]+", answer))
         length_penalty = max(0.0, min(0.5, 0.1 * max(0, sent_count - 5)))
 
-        # Penalização por copiar excessivamente a pergunta
-        overlap_question = (
-            (len(ans_tokens & q_tokens) / len(ans_tokens)) if ans_tokens else 0.0
-        )
-        question_penalty = 0.0
-        if overlap_question > 0.6:
-            question_penalty = min(0.3, (overlap_question - 0.6) * 0.75)
+        # Avalia por bloco e escolhe o melhor score
+        best_score = 0.0
 
-        # Checagem de números: penaliza números na resposta não presentes no contexto
-        nums_answer = set(re.findall(r"\b\d+(?:[\.,]\d+)?\b", answer))
-        nums_context = set(
-            re.findall(r"\b\d+(?:[\.,]\d+)?\b", rag_context or "")
-        )
-        numbers_penalty = 0.0
-        if nums_answer:
-            if nums_answer - nums_context:
-                numbers_penalty = 0.2
-            else:
-                # Pequeno bônus se todos os números da resposta estão no contexto
-                numbers_penalty = -0.05
+        # Se não houver blocos (contexto vazio), avalia uma vez com bloco
+        # vazio para manter comportamento definido.
+        blocks = ctx_blocks if ctx_blocks else [""]
 
-        # Limite superior em caso de contexto muito curto
-        ctx_len = len(ctx_tokens)
-        cap = 1.0
-        if ctx_len < 20:
-            cap = 0.6
-        elif ctx_len < 50:
-            cap = 0.8
+        for block in blocks:
+            ctx_tokens = _tok(block)
+            inter = ans_tokens & ctx_tokens
+            union = ans_tokens | ctx_tokens
 
-        # Score base: alinhamento com o contexto e presença de termos do contexto
-        base = 0.7 * jaccard + 0.3 * min(1.0, len(inter) / 10.0)
+            # Métricas principais por bloco
+            jaccard = (len(inter) / len(union)) if union else 0.0
+            precision = (
+                (len(inter) / len(ans_tokens)) if ans_tokens else 0.0
+            )
+            support = min(1.0, len(inter) / 7.0)  # valoriza interseções curtas
 
-        score = max(0.0, base - length_penalty - question_penalty - numbers_penalty)
-        return max(0.0, min(cap, score))
+            # Checagens numéricas/horários por bloco (genéricas)
+            times_ctx = set(re.findall(time_pattern, block))
+            nums_ctx = set(re.findall(num_pattern, block))
+
+            times_alignment = (
+                len(times_answer & times_ctx) / len(times_answer)
+                if times_answer
+                else 0.0
+            )
+            nums_alignment = (
+                len(nums_answer & nums_ctx) / len(nums_answer)
+                if nums_answer
+                else 0.0
+            )
+
+            # Alinhamento estrutural médio quando existem elementos
+            struct_parts = [
+                p for p in (times_alignment, nums_alignment) if p > 0.0
+            ]
+            struct_alignment = (
+                sum(struct_parts) / len(struct_parts)
+                if struct_parts
+                else 0.0
+            )
+
+            # Aderência da resposta à pergunta do usuário
+            inter_q = ans_tokens & question_tokens
+            question_coverage = (
+                len(inter_q) / len(question_tokens)
+                if question_tokens
+                else 0.0
+            )
+
+            # Limite superior em caso de bloco muito curto
+            ctx_len = len(ctx_tokens)
+            cap = 1.0
+            if ctx_len < 20:
+                cap = 0.6
+            elif ctx_len < 50:
+                cap = 0.8
+
+            # Score de conteúdo baseado no contexto
+            content_score = 0.6 * precision + 0.25 * jaccard + 0.15 * support
+
+            # Score estrutural valoriza aderência de números/horários, com
+            # fallback para conteúdo quando não houver elementos estruturados
+            structural_score = max(struct_alignment, 0.5 * content_score)
+
+            # Composição final inclui aderência à pergunta do usuário
+            combined = 0.7 * structural_score + 0.3 * question_coverage
+
+            # Ajuste fino com números/horários
+            if (times_answer and times_alignment >= 0.8) or (
+                nums_answer and nums_alignment >= 0.8
+            ):
+                combined += 0.05
+            elif (times_answer and times_alignment < 0.4) or (
+                nums_answer and nums_alignment < 0.4
+            ):
+                combined -= 0.05
+
+            # Penalização por tamanho da resposta
+            combined -= length_penalty
+
+            score_block = max(0.0, min(cap, combined))
+            if score_block > best_score:
+                best_score = score_block
+
+        return best_score

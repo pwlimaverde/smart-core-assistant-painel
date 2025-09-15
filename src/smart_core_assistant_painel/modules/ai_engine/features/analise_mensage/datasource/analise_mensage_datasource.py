@@ -29,8 +29,8 @@ class AnaliseMensageDatasource(AMData):
                     "### Regras de Resposta (siga rigorosamente):\n"
                     "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
                     "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
-                    "2. **Informação Insuficiente:** Se o <contexto_rag> não contiver informações suficientes para responder à <pergunta_usuario>, "
-                    "responda exatamente: \"Desculpe, não encontrei informações suficientes para responder. Vou transferir seu atendimento para o setor responsável.\"\n"
+                    "2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, "
+                    "responda exatamente: \"Desculpe, não encontrei informações relacionadas à sua pergunta.\n"
                     "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
                     "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
                 )),
@@ -171,9 +171,27 @@ class AnaliseMensageDatasource(AMData):
         # Caso especial: resposta padrão de falta de informação => 0.0
         lower = answer.lower()
         if (
-            "desculpe, não encontrei informações suficientes" in lower
+            "não encontrei informações" in lower
         ):
             return 0.0
+
+        # Palavras/expressões relacionadas a transferência de atendimento
+        transfer_markers = {
+            "transferir", "transferência", "transferencia", "transferido",
+            "encaminhar", "encaminharei", "encaminhado", "encaminho",
+            "vou transferir", "vou encaminhar", "direcionar", "direcionarei",
+            "setor responsável", "setor responsavel", "equipe responsável",
+            "equipe responsavel", "atendente humano", "suporte humano",
+        }
+
+        request_transfer_markers = {
+            "transferir", "transferência", "transferencia", "encaminhar",
+            "falar com atendente", "falar com humano", "setor responsável",
+            "setor responsavel", "quero falar com", "transferência de atendimento",
+        }
+
+        user_lower = (user_question or "").lower()
+        user_requested_transfer = any(m in user_lower for m in request_transfer_markers)
 
         # Tokenização simples com remoção de stopwords comuns em PT-BR e
         # termos genéricos que tendem a aparecer em saudações/respostas
@@ -218,11 +236,14 @@ class AnaliseMensageDatasource(AMData):
         nums_answer = set(re.findall(num_pattern, answer))
 
         # Penalização por respostas muito longas (> 5 frases)
-        sent_count = len(re.findall(r"[\.!.\?…]+", answer))
+        sent_count = len(re.findall(r"[\.!.?…]+", answer))
         length_penalty = max(0.0, min(0.5, 0.1 * max(0, sent_count - 5)))
 
         # Avalia por bloco e escolhe o melhor score
         best_score = 0.0
+        best_content_score = 0.0
+        best_question_coverage = 0.0
+        max_intersection_tokens = 0
 
         # Se não houver blocos (contexto vazio), avalia uma vez com bloco
         # vazio para manter comportamento definido.
@@ -307,5 +328,30 @@ class AnaliseMensageDatasource(AMData):
             score_block = max(0.0, min(cap, combined))
             if score_block > best_score:
                 best_score = score_block
+                best_content_score = content_score
+                best_question_coverage = question_coverage
+                max_intersection_tokens = max(max_intersection_tokens, len(inter))
+
+        # Regras de transferência de atendimento
+        has_transfer = any(m in lower for m in transfer_markers)
+        # Contexto suficiente: conteúdo forte + alguma cobertura da pergunta
+        context_sufficient = (
+            (best_content_score >= 0.5 and best_question_coverage >= 0.3)
+            or max_intersection_tokens >= 2
+            or best_score >= 0.6
+        )
+
+        # 1) Se o usuário pediu transferência => 0.0
+        if user_requested_transfer:
+            return 0.0
+
+        # 2) Se há menção de transferência na resposta sem ter sido solicitada
+        # trata como violação de política (transferência injustificada) => 0.0
+        if has_transfer and not user_requested_transfer:
+            return 0.0
+
+        # 3) Se não há contexto suficiente => 0.0 para acionar fluxo correto
+        if not context_sufficient:
+            return 0.0
 
         return best_score

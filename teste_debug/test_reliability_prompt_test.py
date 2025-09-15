@@ -1,8 +1,8 @@
-"""Teste manual de confiabilidade para o caso do horário de funcionamento.
+"""Teste manual de confiabilidade.
 
 Este script lê o arquivo de prompt de teste, extrai o bloco <contexto_rag>,
-monta a pergunta e a resposta fornecidas e calcula a confiabilidade usando a
-heurística atual. O resultado deve ser >= 0.8 para ser considerado aceitável.
+monta cenários de pergunta e resposta e calcula a confiabilidade usando a
+heurística atual.
 
 Execute diretamente com Python (a partir da raiz do projeto):
     uv run python teste_debug/test_reliability_prompt_test.py
@@ -67,16 +67,49 @@ def load_prompt_context(path: Optional[Path] = None) -> str:
     )
 
 
+def run_scenario(description: str, user_question: str, answer_ai: str, rag_context: str) -> float:
+    """Executa um cenário e imprime o score calculado."""
+    ds = AnaliseMensageDatasource()
+    score = ds._compute_reliability(  # type: ignore[attr-defined]
+        answer=answer_ai,
+        rag_context=rag_context,
+        user_question=user_question,
+    )
+    print(f"\n[{description}] Confiabilidade calculada: {score:.4f}")
+    return score
+
+
 def main() -> None:
-    """Executa o cálculo de confiabilidade para o cenário informado."""
+    """Executa o cálculo de confiabilidade para dois cenários."""
     rag_context = load_prompt_context()
 
-    user_question = (
+    # Cenário 1: Setor/ano com transferência injustificada => score esperado 0.0
+    user_question_1 = (
+        "Quais é o setor que a empresa atua?\n"
+        "Qual foi o ano de fundação?"
+    )
+    answer_ai_1 = (
+        "Boa tarde, Paulo!\n\n"
+        "A Fique Bela é uma boutique de cosméticos, portanto, o setor que a empresa atua é o de beleza e cosméticos.\n\n"
+        "A empresa foi fundada em março de 2025.\n\n"
+        "Vou transferir seu atendimento para o setor responsável para que possam fornecer mais informações e atender às suas necessidades."
+    )
+    score1 = run_scenario(
+        description="Setor/Ano com transferência injustificada",
+        user_question=user_question_1,
+        answer_ai=answer_ai_1,
+        rag_context=rag_context,
+    )
+    assert score1 == 0.0, (
+        f"Esperado score 0.0 para transferência injustificada; obtido {score1:.4f}"
+    )
+
+    # Cenário 2: Horário de funcionamento, sem contexto no RAG => score baixo
+    user_question_2 = (
         "Boa tarde, tudo bem?\nMeu nome é paulo\n"
         "Qual o horário de funcionamento de vocês?"
     )
-
-    answer_ai = (
+    answer_ai_2 = (
         "Olá Paulo, é um prazer conhecê-lo! Estou aqui para ajudá-lo com "
         "qualquer dúvida ou informação que precise.\n\n"
         "Para responder à sua pergunta, o horário de funcionamento da "
@@ -88,23 +121,18 @@ def main() -> None:
         "precisar de mais informações, não hesite em perguntar. Estou aqui "
         "para ajudá-lo."
     )
-
-    ds = AnaliseMensageDatasource()
-    score = ds._compute_reliability(  # type: ignore[attr-defined]
-        answer=answer_ai,
+    score2 = run_scenario(
+        description="Horário sem contexto explícito no RAG",
+        user_question=user_question_2,
+        answer_ai=answer_ai_2,
         rag_context=rag_context,
-        user_question=user_question,
+    )
+    # Com a nova heurística, esperamos score baixo quando a resposta não está no contexto
+    assert score2 < 0.5, (
+        f"Esperado score baixo (<0.5) quando não há suporte no RAG; obtido {score2:.4f}"
     )
 
-    print(f"Confiabilidade calculada: {score:.4f}")
-
-    threshold = 0.8
-    assert score >= threshold, (
-        f"Score abaixo do mínimo aceitável ({threshold}). "
-        f"Obtido: {score:.4f}"
-    )
-
-    print("Teste OK: confiabilidade acima do mínimo aceitável.")
+    print("\nTeste OK: cenários validados conforme política de confiabilidade.")
 
 
 if __name__ == "__main__":

@@ -68,90 +68,11 @@ class AnaliseMensageDatasource(AMData):
             resposta_bot = chain.invoke(invoke_data)
 
             # Calcular confiabilidade da resposta (0 a 1)
-            # Heurística baseada em:
-            # - Similaridade léxica com o contexto RAG (Jaccard)
-            # - Penalização por resposta muito longa (> 5 frases)
-            # - Penalização por sobreposição excessiva com a pergunta
-            # - Penalização por números presentes na resposta mas não no contexto
-            confiabilidade: float = 0.0
-
-            resposta_lower = str(resposta_bot).lower()
-
-            if (
-                "desculpe, não encontrei informações suficientes" in resposta_lower
-            ):
-                # Resposta padrão de falta de informação => confiabilidade 0
-                confiabilidade = 0.0
-            else:
-                # Tokenização simples e remoção de stopwords comuns em PT-BR
-                def _tok(s: str) -> set[str]:
-                    tokens = re.findall(r"\b\w+\b", s.lower())
-                    stop = {
-                        "de", "da", "do", "das", "dos", "em", "um",
-                        "uma", "e", "a", "o", "para", "com", "no",
-                        "na", "que", "se", "por", "as", "os", "ao",
-                        "à", "às", "uns", "umas", "sua", "seu", "suas",
-                        "seus", "é", "ser", "foi", "são", "tem", "ter",
-                        "há", "como", "mais", "menos", "muito", "muita",
-                        "muitos", "muitas", "já", "também",
-                    }
-                    return {t for t in tokens if len(t) > 2 and t not in stop}
-
-                ans_tokens = _tok(str(resposta_bot))
-                ctx_tokens = _tok(parameters.dados_treinamento or "")
-                per_tokens = _tok(parameters.llm_parameters.context or "")
-
-                inter = ans_tokens & ctx_tokens
-                union = ans_tokens | ctx_tokens
-                jaccard = (len(inter) / len(union)) if union else 0.0
-
-                # Penalização por respostas muito longas (> 5 frases)
-                sent_count = len(re.findall(r"[\.!\?…]+", str(resposta_bot)))
-                length_penalty = max(0.0, min(0.5, 0.1 * max(0, sent_count - 5)))
-
-                # Penalização por copiar excessivamente a pergunta
-                overlap_pergunta = (
-                    (len(ans_tokens & per_tokens) / len(ans_tokens))
-                    if ans_tokens
-                    else 0.0
-                )
-                pergunta_penalty = 0.0
-                if overlap_pergunta > 0.6:
-                    pergunta_penalty = min(0.3, (overlap_pergunta - 0.6) * 0.75)
-
-                # Checagem de números: números na resposta não presentes no contexto
-                nums_resposta = set(
-                    re.findall(r"\b\d+(?:[\.,]\d+)?\b", str(resposta_bot))
-                )
-                nums_contexto = set(
-                    re.findall(
-                        r"\b\d+(?:[\.,]\d+)?\b",
-                        parameters.dados_treinamento or "",
-                    )
-                )
-                numbers_penalty = 0.0
-                if nums_resposta:
-                    if nums_resposta - nums_contexto:
-                        numbers_penalty = 0.2
-                    else:
-                        # Pequeno bônus se todos os números da resposta estão no contexto
-                        numbers_penalty = -0.05
-
-                # Limite superior em caso de contexto muito curto
-                ctx_len = len(ctx_tokens)
-                cap = 1.0
-                if ctx_len < 20:
-                    cap = 0.6
-                elif ctx_len < 50:
-                    cap = 0.8
-
-                # Score base: alinhamento com o contexto e presença de termos do contexto
-                base = 0.7 * jaccard + 0.3 * min(1.0, len(inter) / 10.0)
-
-                score = max(
-                    0.0, base - length_penalty - pergunta_penalty - numbers_penalty
-                )
-                confiabilidade = max(0.0, min(cap, score))
+            confiabilidade: float = self._compute_reliability(
+                str(resposta_bot),
+                parameters.dados_treinamento or "",
+                parameters.llm_parameters.context or "",
+            )
 
             logger.info(f"Confiabilidade calculada: {confiabilidade:.2f}")
 
@@ -220,3 +141,90 @@ class AnaliseMensageDatasource(AMData):
             historico_parts.append("Nenhuma mensagem anterior disponível.")
 
         return "\n".join(historico_parts)
+
+    def _compute_reliability(self, answer: str, rag_context: str, user_question: str) -> float:
+        """Calcula um score de confiabilidade (0.0 a 1.0) para a resposta.
+
+        Heurística utilizada:
+        - Similaridade léxica (Jaccard) entre a resposta e o contexto RAG.
+        - Penalização por respostas longas (> 5 frases).
+        - Penalização por sobreposição excessiva com a pergunta.
+        - Penalização quando números da resposta não estão no contexto; pequeno
+        bônus quando todos os números da resposta estão no contexto.
+        - Teto (cap) de confiança quando o contexto é curto.
+
+        Args:
+            answer: Resposta gerada pela LLM (texto).
+            rag_context: Texto do contexto RAG utilizado na pergunta.
+            user_question: Pergunta original do usuário.
+
+        Returns:
+            float: Score de confiabilidade normalizado entre 0.0 e 1.0.
+        """
+        # Caso especial: resposta padrão de falta de informação => 0.0
+        lower = answer.lower()
+        if (
+            "desculpe, não encontrei informações suficientes" in lower
+        ):
+            return 0.0
+
+        # Tokenização simples com remoção de stopwords comuns em PT-BR
+        def _tok(s: str) -> set[str]:
+            tokens = re.findall(r"\b\w+\b", s.lower())
+            stop = {
+                "de", "da", "do", "das", "dos", "em", "um",
+                "uma", "e", "a", "o", "para", "com", "no",
+                "na", "que", "se", "por", "as", "os", "ao",
+                "à", "às", "uns", "umas", "sua", "seu", "suas",
+                "seus", "é", "ser", "foi", "são", "tem", "ter",
+                "há", "como", "mais", "menos", "muito", "muita",
+                "muitos", "muitas", "já", "também",
+            }
+            return {t for t in tokens if len(t) > 2 and t not in stop}
+
+        ans_tokens = _tok(answer)
+        ctx_tokens = _tok(rag_context or "")
+        q_tokens = _tok(user_question or "")
+
+        inter = ans_tokens & ctx_tokens
+        union = ans_tokens | ctx_tokens
+        jaccard = (len(inter) / len(union)) if union else 0.0
+
+        # Penalização por respostas muito longas (> 5 frases)
+        sent_count = len(re.findall(r"[\.!\?…]+", answer))
+        length_penalty = max(0.0, min(0.5, 0.1 * max(0, sent_count - 5)))
+
+        # Penalização por copiar excessivamente a pergunta
+        overlap_question = (
+            (len(ans_tokens & q_tokens) / len(ans_tokens)) if ans_tokens else 0.0
+        )
+        question_penalty = 0.0
+        if overlap_question > 0.6:
+            question_penalty = min(0.3, (overlap_question - 0.6) * 0.75)
+
+        # Checagem de números: penaliza números na resposta não presentes no contexto
+        nums_answer = set(re.findall(r"\b\d+(?:[\.,]\d+)?\b", answer))
+        nums_context = set(
+            re.findall(r"\b\d+(?:[\.,]\d+)?\b", rag_context or "")
+        )
+        numbers_penalty = 0.0
+        if nums_answer:
+            if nums_answer - nums_context:
+                numbers_penalty = 0.2
+            else:
+                # Pequeno bônus se todos os números da resposta estão no contexto
+                numbers_penalty = -0.05
+
+        # Limite superior em caso de contexto muito curto
+        ctx_len = len(ctx_tokens)
+        cap = 1.0
+        if ctx_len < 20:
+            cap = 0.6
+        elif ctx_len < 50:
+            cap = 0.8
+
+        # Score base: alinhamento com o contexto e presença de termos do contexto
+        base = 0.7 * jaccard + 0.3 * min(1.0, len(inter) / 10.0)
+
+        score = max(0.0, base - length_penalty - question_penalty - numbers_penalty)
+        return max(0.0, min(cap, score))

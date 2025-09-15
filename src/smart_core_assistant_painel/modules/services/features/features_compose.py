@@ -59,6 +59,7 @@ class FeaturesCompose:
             "prompt_human_melhoria_conteudo": "PROMPT_HUMAN_MELHORIA_CONTEUDO",
             "prompt_human_analise_previa_mensagem": "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM",
             "prompt_system_analise_previa_mensagem": "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM",
+            "prompt_system_analise_mensagem": "PROMPT_SYSTEM_ANALISE_MENSAGEM",
             # Embeddings
             "chunk_overlap": "CHUNK_OVERLAP",
             "chunk_size": "CHUNK_SIZE",

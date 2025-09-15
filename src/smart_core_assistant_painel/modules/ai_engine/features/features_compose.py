@@ -44,6 +44,7 @@ from ..utils.types import (
     ACData,
     ACUsecase,
     AMData,
+    AMTuple,
     AMUsecase,
     APMData,
     APMTuple,
@@ -404,14 +405,14 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def analise_mensage(context: str, historico_atendimento: dict[str, Any], dados_treinamento: str,) -> str:
+    def analise_mensage(context: str, historico_atendimento: dict[str, Any], prompt_human: str, dados_treinamento: str,) -> AMTuple:
         error = AnaliseMensageError("Erro ao executar analise_mensage!")
         llm_parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
             extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
-            prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
-            prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
+            prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_MENSAGEM,
+            prompt_human=prompt_human,
             context=context,
             error=LlmError,
         )

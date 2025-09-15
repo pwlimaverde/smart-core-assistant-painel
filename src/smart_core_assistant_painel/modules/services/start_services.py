@@ -5,8 +5,6 @@ ambiente, armazenamento de vetores (vector storage) e serviços de WhatsApp,
 sejam iniciados corretamente quando a aplicação é lançada.
 """
 
-import os
-
 from loguru import logger
 
 from .features.features_compose import FeaturesCompose
@@ -94,16 +92,13 @@ def start_services() -> None:
 
     # Evita inicialização dupla dos serviços
     if _services_initialized:
-        logger.debug("Serviços já foram inicializados, pulando inicialização")
         return
 
     try:
-        logger.info("Iniciando serviços essenciais da aplicação...")
         FeaturesCompose.set_environ_remote()
         FeaturesCompose.whatsapp_service()
 
         _services_initialized = True
-        logger.info("Serviços inicializados com sucesso")
 
         # Log das variáveis de ambiente após carregamento do Firebase Remote Config
         # _log_environment_variables()

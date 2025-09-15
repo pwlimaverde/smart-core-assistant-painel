@@ -24,7 +24,7 @@
     "tag": "pergunta",
     "grupo": "busca_informacao",
     "descricao": "Solicitações objetivas de informação sobre produtos, serviços, prazos, condições ou políticas.",
-    "exemplo": "Você pode me informar os planos disponíveis?\nQual o prazo de entrega?\nComo funciona o serviço?\nQuais são as formas de pagamento?\nExiste suporte 24h?",
+    "exemplo": "Qual é o horário de funcionamento de vocês?\nVocês abrem aos sábados? Até que horas?\nQuando vocês fecham?\nQual o prazo de entrega?\nComo funciona o serviço?\nQuais são as formas de pagamento?\nExiste suporte 24h?",
     "comportamento": "Forneça informações claras e verificáveis. Se o pedido for amplo, solicite até 2 esclarecimentos objetivos. Evite jargões e respostas longas."
   },
   {
@@ -187,61 +187,5 @@
     "descricao": "Encerramento do atendimento a pedido do usuário, com confirmação de fechamento.",
     "exemplo": "Podemos encerrar por aqui.\nObrigado, pode finalizar.\nConcluímos, obrigado.\nEncerrar atendimento, por favor.\nPode fechar o chamado.",
     "comportamento": "Confirme o encerramento, faça um breve resumo das ações e deixe um canal aberto para retorno."
-  },
-  {
-    "tag": "login",
-    "grupo": "autenticacao_seguranca",
-    "descricao": "Dificuldades de acesso, credenciais ou bloqueio de conta ao tentar entrar no sistema.",
-    "exemplo": "Não consigo fazer login.\nEsqueci minha senha.\nComo acesso minha conta?\nMinha conta foi bloqueada?\nQuero entrar no sistema.",
-    "comportamento": "Ajude a recuperar o acesso com passos claros (verificar credenciais, reset de senha). Evite pedir dados sensíveis em texto aberto."
-  },
-  {
-    "tag": "validar_identidade",
-    "grupo": "autenticacao_seguranca",
-    "descricao": "Verificação de identidade com dados mínimos e seguros antes de prosseguir com ações sensíveis.",
-    "exemplo": "Como valido minha identidade?\nPreciso confirmar meus dados.\nPode verificar se sou eu mesmo?\nQuais documentos são necessários?\nComo funciona a verificação?",
-    "comportamento": "Solicite validações mínimas e seguras (ex.: e-mail e código enviado). Explique a finalidade e proteja a privacidade."
-  },
-  {
-    "tag": "reset_senha",
-    "grupo": "autenticacao_seguranca",
-    "descricao": "Pedidos de redefinição de senha e instruções para recuperar acesso com segurança.",
-    "exemplo": "Quero redefinir minha senha.\nComo recupero minha senha?\nNão lembro a senha, pode ajudar?\nRecebi o código para reset, e agora?\nO link de redefinição expirou.",
-    "comportamento": "Guie o usuário pelo fluxo de redefinição com segurança e instruções passo a passo."
-  },
-  {
-    "tag": "recuperar_acesso",
-    "grupo": "autenticacao_seguranca",
-    "descricao": "Recuperação de acesso quando usuário perdeu controle da conta ou fator de autenticação.",
-    "exemplo": "Perdi o acesso à minha conta.\nComo recuperar o acesso?\nMinha conta foi comprometida.\nConsegue restaurar meu acesso?\nNão tenho mais o dispositivo de 2FA.",
-    "comportamento": "Ofereça caminhos para recuperar a conta (verificação por e-mail/telefone). Priorize segurança e clareza."
-  },
-  {
-    "tag": "atualizar_dados",
-    "grupo": "gerenciamento_dados",
-    "descricao": "Atualização de dados cadastrais (contato, endereço, preferências), com validação.",
-    "exemplo": "Quero atualizar meu endereço.\nPreciso alterar meu telefone.\nComo atualizo meus dados cadastrais?\nDesejo corrigir meu e-mail.\nAtualize minhas preferências.",
-    "comportamento": "Solicite os campos a atualizar e confirme o registro das alterações. Evite expor dados sensíveis."
-  },
-  {
-    "tag": "excluir_dados",
-    "grupo": "gerenciamento_dados",
-    "descricao": "Solicitação de exclusão/remoção de dados pessoais ou conta, com confirmação de irreversibilidade.",
-    "exemplo": "Quero excluir meus dados.\nSolicito a remoção da minha conta.\nDesejo apagar meu histórico.\nComo elimino minhas informações?\nApague meus registros, por favor.",
-    "comportamento": "Explique a irreversibilidade, confirme a identidade de forma mínima e execute a exclusão com confirmação final."
-  },
-  {
-    "tag": "consultar_historico",
-    "grupo": "gerenciamento_dados",
-    "descricao": "Consulta ao histórico de pedidos, acessos, ações ou interações em período definido.",
-    "exemplo": "Quero consultar meu histórico de pedidos.\nPode enviar meu extrato?\nQuais foram minhas últimas ações?\nComo vejo meu histórico de acesso?\nPreciso do histórico do último mês.",
-    "comportamento": "Peça o período/escopo desejado e entregue um resumo claro dos itens encontrados."
-  },
-  {
-    "tag": "exportar_dados",
-    "grupo": "gerenciamento_dados",
-    "descricao": "Exportação/baixa de dados em formato específico (CSV, PDF, JSON), com escopo e período.",
-    "exemplo": "Como exporto meus dados?\nPreciso de um CSV com meus registros.\nPode gerar um relatório em PDF?\nExportar dados de pedidos.\nQuero baixar meus dados pessoais.",
-    "comportamento": "Solicite formato, período e escopo. Informe como e quando o arquivo será disponibilizado."
   }
 ]

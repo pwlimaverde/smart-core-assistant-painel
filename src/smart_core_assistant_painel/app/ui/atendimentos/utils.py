@@ -84,8 +84,16 @@ def send_message_response(phone: str) -> None:
                     ),
                     "Intenções detectadas e orientações:",
                 ]
-                for index, intent in enumerate(mensagem.intent_detectado, start=1):
+                # Remove tags duplicadas mantendo a primeira ocorrência
+                seen_tags: set[str] = set()
+                index: int = 0
+                for intent in mensagem.intent_detectado:
                     tag: str = list(intent.keys())[0]
+                    # Pula intents com tag já utilizada para evitar instruções repetidas
+                    if tag in seen_tags:
+                        continue
+                    seen_tags.add(tag)
+                    index += 1
                     qc = QueryCompose.objects.filter(tag=tag).first()
                     if qc:
                         # Normaliza espaços e remove quebras de linha acidentais
@@ -106,8 +114,6 @@ def send_message_response(phone: str) -> None:
                 )
                 prompt_intent: str = "\n".join(prompt_lines)
                 logger.warning(f"Prompt intent: {prompt_intent}")
-                json = QueryCompose.build_intent_types_config()
-                logger.warning(f"JSON:\n {json}")
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,

@@ -4,21 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treinamento', '0003_alter_querycompose_embedding'),
+        ("treinamento", "0003_alter_querycompose_embedding"),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='querycompose',
-            old_name='description',
-            new_name='descricao',
+            model_name="querycompose",
+            old_name="description",
+            new_name="descricao",
         ),
         migrations.AddField(
-            model_name='querycompose',
-            name='exemplo',
-            field=models.TextField(default='Exemplo não informado', help_text='Exemplo de query que representa o intent'),
+            model_name="querycompose",
+            name="exemplo",
+            field=models.TextField(
+                default="Exemplo não informado",
+                help_text="Exemplo de query que representa o intent",
+            ),
             preserve_default=False,
         ),
     ]

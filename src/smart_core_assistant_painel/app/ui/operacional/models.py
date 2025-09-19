@@ -14,16 +14,22 @@ def validate_telefone(value: str) -> None:
     """
     telefone_limpo: str = re.sub(r"\D", "", value)
     if len(telefone_limpo) < 10 or len(telefone_limpo) > 15:
-        raise ValidationError("Número de telefone deve ter entre 10 e 15 dígitos.")
+        raise ValidationError(
+            "Número de telefone deve ter entre 10 e 15 dígitos."
+        )
     if not telefone_limpo.isdigit():
         raise ValidationError("Número de telefone deve conter apenas números.")
+
 
 def validate_api_key(value: str) -> None:
     """Valida o formato da chave de API da Evolution API."""
     if not value:
         raise ValidationError("A chave de API não pode estar vazia.")
     if len(value) < 8:
-        raise ValidationError("A chave de API deve ter pelo menos 8 caracteres.")
+        raise ValidationError(
+            "A chave de API deve ter pelo menos 8 caracteres."
+        )
+
 
 def validate_telefone_instancia(value: str) -> None:
     """Valida o formato do telefone da instância da Evolution API."""
@@ -35,12 +41,15 @@ def validate_telefone_instancia(value: str) -> None:
     if len(telefone_limpo) > 15:
         raise ValidationError("O telefone não pode ter mais de 15 dígitos.")
 
+
 class Departamento(models.Model):
     """Modelo para departamentos com configurações da Evolution API."""
 
     id: models.AutoField = models.AutoField(primary_key=True)
     nome: models.CharField[str] = models.CharField(max_length=100, unique=True)
-    descricao: models.TextField[str | None] = models.TextField(blank=True, null=True)
+    descricao: models.TextField[str | None] = models.TextField(
+        blank=True, null=True
+    )
     telefone_instancia: models.CharField[str] = models.CharField(
         max_length=20, unique=True, validators=[validate_telefone_instancia]
     )
@@ -57,9 +66,11 @@ class Departamento(models.Model):
     configuracoes: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True
     )
-    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
-    ultima_validacao: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True, null=True
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+    ultima_validacao: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(blank=True, null=True)
     )
     metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True
@@ -83,7 +94,9 @@ class Departamento(models.Model):
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
         if self.telefone_instancia:
-            self.telefone_instancia = re.sub(r"\D", "", self.telefone_instancia)
+            self.telefone_instancia = re.sub(
+                r"\D", "", self.telefone_instancia
+            )
         super().save(*args, **kwargs)
 
     @override
@@ -97,7 +110,9 @@ class Departamento(models.Model):
         api_key = data.get("apikey")
         instance = data.get("instance")
         if not api_key or not instance:
-            logger.warning("Chave de API ou instância não fornecida no webhook.")
+            logger.warning(
+                "Chave de API ou instância não fornecida no webhook."
+            )
             return None
         try:
             return cls.objects.get(
@@ -108,6 +123,7 @@ class Departamento(models.Model):
                 f"Tentativa de acesso com chave de API inválida para a instância {instance}."
             )
             return None
+
 
 class AtendenteHumano(models.Model):
     id: models.AutoField = models.AutoField(
@@ -127,13 +143,15 @@ class AtendenteHumano(models.Model):
     cargo: models.CharField[str] = models.CharField(
         max_length=100, help_text="Cargo/função do atendente"
     )
-    departamento: models.ForeignKey[Optional["Departamento"]] = models.ForeignKey(
-        "Departamento",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name="atendentes",
-        help_text="Departamento ao qual o atendente pertence",
+    departamento: models.ForeignKey[Optional["Departamento"]] = (
+        models.ForeignKey(
+            "Departamento",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendentes",
+            help_text="Departamento ao qual o atendente pertence",
+        )
     )
     email: models.EmailField[str | None] = models.EmailField(
         blank=True, null=True, help_text="E-mail corporativo do atendente"

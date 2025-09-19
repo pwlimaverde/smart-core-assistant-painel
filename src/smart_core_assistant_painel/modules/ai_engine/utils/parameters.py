@@ -245,6 +245,7 @@ class GenerateChunksParameters(ParametersReturnResult):
         """Retorna uma representação em string do objeto."""
         return self.__repr__()
 
+
 @dataclass
 class AnaliseMensageParameters(ParametersReturnResult):
     historico_atendimento: dict[str, Any]

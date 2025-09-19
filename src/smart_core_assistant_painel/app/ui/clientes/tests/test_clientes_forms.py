@@ -20,7 +20,9 @@ class ClientesContatoForm(ModelForm):
         if telefone:
             telefone_limpo = "".join(filter(str.isdigit, telefone))
             if len(telefone_limpo) < 10 or len(telefone_limpo) > 13:
-                raise ValidationError("Telefone deve ter entre 10 e 13 dígitos.")
+                raise ValidationError(
+                    "Telefone deve ter entre 10 e 13 dígitos."
+                )
             return telefone_limpo
         return telefone
 

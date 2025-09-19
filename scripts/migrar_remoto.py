@@ -93,7 +93,7 @@ def test_connectivity(host: str, port: int, timeout: int = 120) -> bool:
     Returns:
         True se a conexão for bem-sucedida, False caso contrário
     """
-    print(f"[2/3] Testando conectividade com o PostgreSQL remoto...")
+    print("[2/3] Testando conectividade com o PostgreSQL remoto...")
     
     max_attempts = timeout // 3
     

@@ -1,7 +1,5 @@
 """Testes para AnalisePreviaMensagemLangchain."""
 
-import pytest
-from typing import Any, Optional
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
     AnalisePreviaMensagemLangchain,

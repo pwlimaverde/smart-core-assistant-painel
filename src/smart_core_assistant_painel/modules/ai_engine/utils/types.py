@@ -8,9 +8,6 @@ de dados específicas.
 
 from typing import Any, NamedTuple, TypeAlias
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
-    AnaliseMensagem,
-)
 from langchain.docstore.document import Document
 from py_return_success_or_error import (
     Datasource,
@@ -18,6 +15,9 @@ from py_return_success_or_error import (
     UsecaseBaseCallData,
 )
 
+from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
+    AnaliseMensagem,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem,
 )
@@ -104,6 +104,7 @@ GCUsecase: TypeAlias = UsecaseBase[
     GenerateChunksParameters,
 ]
 
+
 class AMTuple(NamedTuple):
     """Tupla nomeada para dados de Análise Prévia de Mensagem.
 
@@ -116,6 +117,7 @@ class AMTuple(NamedTuple):
 
     resposta_bot: str
     confiabilidade: float
+
 
 AMData: TypeAlias = Datasource[AnaliseMensagem, AnaliseMensageParameters]
 AMUsecase: TypeAlias = UsecaseBaseCallData[

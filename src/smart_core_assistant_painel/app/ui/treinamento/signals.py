@@ -36,9 +36,13 @@ def signals_embeddings_documento(
             if instance.conteudo and instance.conteudo.strip():
                 async_task(__gerar_embedding_documento, instance.pk)
             else:
-                logger.warning(f"Documento {instance.pk} sem conteúdo para embedding")
+                logger.warning(
+                    f"Documento {instance.pk} sem conteúdo para embedding"
+                )
     except Exception as e:  # noqa: BLE001
-        logger.error(f"Erro no signal de embedding do documento {instance.pk}: {e}")
+        logger.error(
+            f"Erro no signal de embedding do documento {instance.pk}: {e}"
+        )
 
 
 @receiver(post_save, sender=QueryCompose)
@@ -81,7 +85,9 @@ def __processar_conteudo_para_chunks(
 
     conteudo = treinamento.conteudo or ""
 
-    chunks = FeaturesCompose.generate_chunks(conteudo=conteudo, metadata=metadata)
+    chunks = FeaturesCompose.generate_chunks(
+        conteudo=conteudo, metadata=metadata
+    )
 
     return chunks
 
@@ -107,14 +113,20 @@ def __gerar_embedding_documento(documento_id: int) -> None:
             Documento.objects.filter(id=documento_id).update(
                 embedding=embedding_vector
             )
-            logger.info(f"Embedding gerado e salvo para documento {documento_id}")
+            logger.info(
+                f"Embedding gerado e salvo para documento {documento_id}"
+            )
         else:
-            logger.error(f"Falha ao gerar embedding para documento {documento_id}")
+            logger.error(
+                f"Falha ao gerar embedding para documento {documento_id}"
+            )
 
     except Documento.DoesNotExist:
         logger.error(f"Documento {documento_id} não encontrado")
     except Exception as e:  # noqa: BLE001
-        logger.error(f"Erro ao gerar embedding para documento {documento_id}: {e}")
+        logger.error(
+            f"Erro ao gerar embedding para documento {documento_id}: {e}"
+        )
 
 
 def __gerar_embedding_query_compose(query_compose_id: int) -> None:
@@ -125,7 +137,7 @@ def __gerar_embedding_query_compose(query_compose_id: int) -> None:
         )
 
         qc: QueryCompose = QueryCompose.objects.get(id=query_compose_id)
-        text:str = qc.to_embedding_text()
+        text: str = qc.to_embedding_text()
         embedding_vector: list[float] = FeaturesCompose.generate_embeddings(
             text=text
         )
@@ -155,11 +167,15 @@ def __gerar_documentos(instance_id: int) -> None:
         instance: Treinamento = Treinamento.objects.get(id=instance_id)
 
         if not instance.conteudo or not instance.conteudo.strip():
-            logger.warning("Treinamento %s sem conteúdo para embedding.", instance_id)
+            logger.warning(
+                "Treinamento %s sem conteúdo para embedding.", instance_id
+            )
             return
 
         if instance.treinamento_vetorizado:
-            logger.info(f"Treinamento {instance_id} já está vetorizado, pulando...")
+            logger.info(
+                f"Treinamento {instance_id} já está vetorizado, pulando..."
+            )
             return
         chunks: list[Document] = __processar_conteudo_para_chunks(
             treinamento=instance

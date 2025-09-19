@@ -20,7 +20,9 @@ from .services import TreinamentoService
 def treinar_ia(request: HttpRequest) -> HttpResponse:
     """View para o treinamento da IA."""
     if not has_permission(request.user, "treinar_ia"):
-        messages.error(request, "Você não tem permissão para acessar esta página.")
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
         return redirect("treinamento:treinar_ia")
 
     if request.method == "GET":
@@ -50,6 +52,7 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
 
     return render(request, "treinamento/treinar_ia.html")
 
+
 def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     """Processa os dados de treinamento enviados via POST."""
     tag = request.POST.get("tag")
@@ -75,7 +78,9 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
         with transaction.atomic():
             if treinamento_id:
                 try:
-                    treinamento: Treinamento = Treinamento.objects.get(id=treinamento_id)
+                    treinamento: Treinamento = Treinamento.objects.get(
+                        id=treinamento_id
+                    )
                     treinamento.tag = tag
                     treinamento.grupo = grupo
                     treinamento.treinamento_finalizado = False
@@ -86,7 +91,9 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
                         f"Treinamento ID {treinamento_id} editado com sucesso!",
                     )
                 except Treinamento.DoesNotExist:
-                    messages.error(request, "Treinamento não encontrado para edição.")
+                    messages.error(
+                        request, "Treinamento não encontrado para edição."
+                    )
                     return render(request, "treinamento/treinar_ia.html")
             else:
                 treinamento = Treinamento.objects.create(tag=tag, grupo=grupo)
@@ -95,10 +102,14 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
             conteudo_completo = ""
 
             if documento:
-                documento_path = TreinamentoService.processar_arquivo_upload(documento)
+                documento_path = TreinamentoService.processar_arquivo_upload(
+                    documento
+                )
                 if documento_path:
-                    docs_arquivo = TreinamentoService.processar_arquivo_documento(
-                        treinamento.id, documento_path, tag, grupo
+                    docs_arquivo = (
+                        TreinamentoService.processar_arquivo_documento(
+                            treinamento.id, documento_path, tag, grupo
+                        )
                     )
                     conteudo_completo += "\n\n".join(
                         [doc.page_content for doc in docs_arquivo]
@@ -127,10 +138,13 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
     finally:
         TreinamentoService.limpar_arquivo_temporario(documento_path)
 
+
 def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     """View para o pré-processamento do treinamento."""
     if not has_permission(request.user, "treinar_ia"):
-        messages.error(request, "Você não tem permissão para acessar esta página.")
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
         return redirect("treinamento:treinar_ia")
     if request.method == "GET":
         return _exibir_pre_processamento(request, id)
@@ -138,7 +152,10 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         return _processar_pre_processamento(request, id)
     return redirect("treinamento:treinar_ia")
 
-def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
+
+def _processar_pre_processamento(
+    request: HttpRequest, id: int
+) -> HttpResponse:
     """Processa a ação do pré-processamento."""
     try:
         treinamento = Treinamento.objects.get(id=id)
@@ -164,12 +181,15 @@ def _processar_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
                 messages.info(request, "Treinamento descartado.")
             else:
                 messages.error(request, "Ação inválida.")
-                return redirect("treinamento:pre_processamento", id=treinamento.id)
+                return redirect(
+                    "treinamento:pre_processamento", id=treinamento.id
+                )
     except Exception as e:
         logger.error(f"Erro ao processar ação {acao}: {e}")
         messages.error(request, "Erro ao processar ação. Tente novamente.")
         return redirect("treinamento:pre_processamento", id=treinamento.id)
     return redirect("treinamento:treinar_ia")
+
 
 def _aceitar_treinamento(id: int) -> None:
     """Aceita o treinamento aplicando melhorias de IA e finalizando."""
@@ -177,18 +197,25 @@ def _aceitar_treinamento(id: int) -> None:
         treinamento = Treinamento.objects.get(id=id)
         conteudo_atual = treinamento.conteudo or ""
         if not conteudo_atual.strip():
-            logger.warning(f"Treinamento {id} não possui conteúdo para processar")
+            logger.warning(
+                f"Treinamento {id} não possui conteúdo para processar"
+            )
             return
 
-        conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_atual)
+        conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+            conteudo_atual
+        )
         treinamento.conteudo = conteudo_melhorado
         treinamento.save(update_fields=["conteudo"])
         treinamento.treinamento_finalizado = True
         treinamento.save()
-        logger.info(f"Treinamento {id} aceito e finalizado com melhorias aplicadas")
+        logger.info(
+            f"Treinamento {id} aceito e finalizado com melhorias aplicadas"
+        )
     except Exception as e:
         logger.error(f"Erro ao aceitar treinamento {id}: {e}")
         raise
+
 
 def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
     """Exibe a página de pré-processamento."""
@@ -197,14 +224,18 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         conteudo_unificado = treinamento.conteudo or ""
 
         if not conteudo_unificado.strip():
-            logger.warning(f"Treinamento {id} sem conteúdo para pré-processamento")
+            logger.warning(
+                f"Treinamento {id} sem conteúdo para pré-processamento"
+            )
             messages.warning(
                 request,
                 "Treinamento sem conteúdo. Verifique se o conteúdo foi salvo corretamente.",
             )
             return redirect("treinamento:treinar_ia")
 
-        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(conteudo_unificado)
+        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+            conteudo_unificado
+        )
         return render(
             request,
             "treinamento/pre_processamento.html",
@@ -222,6 +253,7 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
         messages.error(request, "Erro interno do servidor. Tente novamente.")
         return redirect("treinamento:treinar_ia")
 
+
 def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
     """View para verificar treinamentos vetorizados com sucesso e com erro."""
     if not has_permission(request.user, "treinar_ia"):
@@ -232,7 +264,9 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
         treinamento_id = request.POST.get("treinamento_id")
 
         if not acao or not treinamento_id:
-            messages.error(request, "Ação ou ID do treinamento não especificado.")
+            messages.error(
+                request, "Ação ou ID do treinamento não especificado."
+            )
             return redirect("treinamento:verificar_treinamentos_vetorizados")
 
         try:
@@ -249,7 +283,9 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
                     "grupo": treinamento.grupo,
                     "conteudo": conteudo_atual,
                 }
-                messages.info(request, f"Editando treinamento ID: {treinamento.id}")
+                messages.info(
+                    request, f"Editando treinamento ID: {treinamento.id}"
+                )
                 return redirect("treinamento:treinar_ia")
             else:
                 messages.error(request, "Ação inválida.")
@@ -333,9 +369,9 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
     intents_ok = QueryCompose.objects.filter(embedding__isnull=False).order_by(
         "-created_at"
     )
-    intents_erro = QueryCompose.objects.filter(embedding__isnull=True).order_by(
-        "-created_at"
-    )
+    intents_erro = QueryCompose.objects.filter(
+        embedding__isnull=True
+    ).order_by("-created_at")
 
     return render(
         request,
@@ -353,7 +389,9 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
     - Suporta modo de edição quando há dados salvos em sessão.
     """
     if not has_permission(request.user, "treinar_ia"):
-        messages.error(request, "Você não tem permissão para acessar esta página.")
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
         return redirect("home")
 
     if request.method == "GET":
@@ -378,7 +416,9 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                 "exemplo_inicial": "",
                 "comportamento_inicial": "",
             }
-        return render(request, "treinamento/cadastrar_query_compose.html", context)
+        return render(
+            request, "treinamento/cadastrar_query_compose.html", context
+        )
 
     if request.method == "POST":
         tag = request.POST.get("tag")
@@ -394,7 +434,13 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
             if dados_edicao:
                 query_compose_id = str(dados_edicao.get("id"))
 
-        if not tag or not grupo or not descricao or not exemplo or not comportamento:
+        if (
+            not tag
+            or not grupo
+            or not descricao
+            or not exemplo
+            or not comportamento
+        ):
             messages.error(
                 request,
                 "Tag, Grupo, Descrição, Exemplo e Comportamento são obrigatórios.",
@@ -425,7 +471,9 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
                     qc.exemplo = exemplo
                     qc.comportamento = comportamento
                     # Se a descrição mudou, forçar reprocessamento do embedding
-                    if (descricao_antiga or "").strip() != (descricao or "").strip():
+                    if (descricao_antiga or "").strip() != (
+                        descricao or ""
+                    ).strip():
                         qc.embedding = None
                     qc.save()
                     if "query_compose_edicao" in request.session:
@@ -448,7 +496,9 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
             return redirect("treinamento:verificar_query_compose")
         except Exception as e:
             logger.error(f"Erro ao cadastrar/editar QueryCompose: {e}")
-            messages.error(request, "Erro interno do servidor. Tente novamente.")
+            messages.error(
+                request, "Erro interno do servidor. Tente novamente."
+            )
             return render(
                 request,
                 "treinamento/cadastrar_query_compose.html",

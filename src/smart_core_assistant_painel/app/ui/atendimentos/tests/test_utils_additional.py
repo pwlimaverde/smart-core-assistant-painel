@@ -1,26 +1,25 @@
 """Additional tests for the Atendimentos app utils."""
 
-from unittest.mock import patch, MagicMock
-import json
 import os
+from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
 from django.core.cache import cache
-from django.utils import timezone
+from django.test import TestCase
 
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.treinamento.models import Documento
-from smart_core_assistant_painel.modules.ai_engine import MessageData, FeaturesCompose
-from smart_core_assistant_painel.modules.services import SERVICEHUB
-
-from smart_core_assistant_painel.app.ui.atendimentos.models import Atendimento, Mensagem, TipoRemetente, processar_mensagem_whatsapp
-from smart_core_assistant_painel.app.ui.atendimentos.signals import mensagem_bufferizada
 from smart_core_assistant_painel.app.ui.atendimentos.utils import (
-    set_wa_buffer, clear_wa_buffer, send_message_response, sched_message_response,
-    _obter_entidades_metadados_validas, _processar_entidades_contato,
-    _analisar_conteudo_mensagem, _pode_bot_responder_atendimento,
-    _compile_message_data_list
+    _compile_message_data_list,
+    _obter_entidades_metadados_validas,
+    _pode_bot_responder_atendimento,
+    _processar_entidades_contato,
+    clear_wa_buffer,
+    sched_message_response,
+    send_message_response,
+    set_wa_buffer,
 )
+from smart_core_assistant_painel.modules.ai_engine import (
+    MessageData,
+)
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class TestAtendimentosUtilsBuffer(TestCase):
@@ -39,7 +38,7 @@ class TestAtendimentosUtilsBuffer(TestCase):
             message_type="text",
             message_id="test_message_id",
             metadados={},
-            nome_perfil_whatsapp="Test User"
+            nome_perfil_whatsapp="Test User",
         )
 
     def test_set_wa_buffer_success(self) -> None:
@@ -93,7 +92,7 @@ class TestAtendimentosUtilsCompilation(TestCase):
                 message_type="text",
                 message_id="msg1",
                 metadados={"key1": "value1"},
-                nome_perfil_whatsapp="Test User"
+                nome_perfil_whatsapp="Test User",
             ),
             MessageData(
                 instance="test_instance",
@@ -104,8 +103,8 @@ class TestAtendimentosUtilsCompilation(TestCase):
                 message_type="text",
                 message_id="msg2",
                 metadados={"key2": "value2"},
-                nome_perfil_whatsapp="Test User"
-            )
+                nome_perfil_whatsapp="Test User",
+            ),
         ]
 
     def test_compile_message_data_list_success(self) -> None:
@@ -120,8 +119,12 @@ class TestAtendimentosUtilsCompilation(TestCase):
         self.assertEqual(result.from_me, False)
         self.assertEqual(result.conteudo, "First message\nSecond message")
         self.assertEqual(result.message_type, "text")
-        self.assertEqual(result.message_id, "msg2")  # Should be from last message
-        self.assertEqual(result.metadados, {"key1": "value1", "key2": "value2"})
+        self.assertEqual(
+            result.message_id, "msg2"
+        )  # Should be from last message
+        self.assertEqual(
+            result.metadados, {"key1": "value1", "key2": "value2"}
+        )
         self.assertEqual(result.nome_perfil_whatsapp, "Test User")
 
     def test_compile_message_data_list_empty_list_raises_error(self) -> None:
@@ -129,8 +132,10 @@ class TestAtendimentosUtilsCompilation(TestCase):
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             _compile_message_data_list([])
-        
-        self.assertEqual(str(context.exception), "lista de mensagens não pode estar vazia")
+
+        self.assertEqual(
+            str(context.exception), "lista de mensagens não pode estar vazia"
+        )
 
     def test_compile_message_data_list_single_message(self) -> None:
         """Test compilation with single message."""
@@ -160,22 +165,26 @@ class TestAtendimentosUtilsScheduling(TestCase):
         timer_value = cache.get(timer_key)
         self.assertTrue(timer_value)
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.mensagem_bufferizada.send')
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.mensagem_bufferizada.send"
+    )
     def test_sched_message_response_sends_signal_when_no_timer(
-        self,
-        mock_signal_send: MagicMock
+        self, mock_signal_send: MagicMock
     ) -> None:
         """Test that sched_message_response sends signal when no timer exists."""
         # Act
         sched_message_response(self.phone)
 
         # Assert
-        mock_signal_send.assert_called_once_with(sender="atendimentos", phone=self.phone)
+        mock_signal_send.assert_called_once_with(
+            sender="atendimentos", phone=self.phone
+        )
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.mensagem_bufferizada.send')
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.mensagem_bufferizada.send"
+    )
     def test_sched_message_response_no_signal_when_timer_exists(
-        self,
-        mock_signal_send: MagicMock
+        self, mock_signal_send: MagicMock
     ) -> None:
         """Test that sched_message_response doesn't send signal when timer exists."""
         # Arrange
@@ -192,12 +201,17 @@ class TestAtendimentosUtilsScheduling(TestCase):
 class TestAtendimentosUtilsEntidades(TestCase):
     """Tests for the entity processing utility functions."""
 
-    @patch.dict(os.environ, {'VALID_ENTITY_TYPES': '{"entity_types": {"pessoa": {"cpf": "", "nome": ""}, "contato": {"telefone": ""}}}'})
+    @patch.dict(
+        os.environ,
+        {
+            "VALID_ENTITY_TYPES": '{"entity_types": {"pessoa": {"cpf": "", "nome": ""}, "contato": {"telefone": ""}}}'
+        },
+    )
     def test_obter_entidades_metadados_validas_success(self) -> None:
         """Test successful retrieval of valid metadata entities."""
         # Reset the cached value in SERVICEHUB
         SERVICEHUB._valid_entity_types = None
-        
+
         # Act
         result = _obter_entidades_metadados_validas()
 
@@ -209,28 +223,27 @@ class TestAtendimentosUtilsEntidades(TestCase):
         self.assertNotIn("telefone", result)
         self.assertNotIn("nome_contato", result)
 
-    @patch.dict(os.environ, {'VALID_ENTITY_TYPES': ''})
+    @patch.dict(os.environ, {"VALID_ENTITY_TYPES": ""})
     def test_obter_entidades_metadados_validas_empty_config(self) -> None:
         """Test entity retrieval with empty configuration."""
         # Reset the cached value in SERVICEHUB
         SERVICEHUB._valid_entity_types = None
-        
+
         # Act
         result = _obter_entidades_metadados_validas()
 
         # Assert
         self.assertEqual(result, set())
 
-    @patch.dict(os.environ, {'VALID_ENTITY_TYPES': 'invalid_json'})
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.logger')
+    @patch.dict(os.environ, {"VALID_ENTITY_TYPES": "invalid_json"})
+    @patch("smart_core_assistant_painel.app.ui.atendimentos.utils.logger")
     def test_obter_entidades_metadados_validas_invalid_json(
-        self,
-        mock_logger: MagicMock
+        self, mock_logger: MagicMock
     ) -> None:
         """Test entity retrieval with invalid JSON."""
         # Reset the cached value in SERVICEHUB
         SERVICEHUB._valid_entity_types = None
-        
+
         # Act
         result = _obter_entidades_metadados_validas()
 
@@ -244,10 +257,10 @@ class TestAtendimentosUtilsEntidades(TestCase):
         contato = MagicMock()
         contato.nome_contato = "Old"
         contato.metadados = {}
-        
+
         mensagem = MagicMock()
         mensagem.atendimento.contato = contato
-        
+
         entity_types = [{"nome_contato": "New Full Name"}]
 
         # Act
@@ -263,10 +276,10 @@ class TestAtendimentosUtilsEntidades(TestCase):
         contato = MagicMock()
         contato.nome_contato = "Test Name"
         contato.metadados = {}
-        
+
         mensagem = MagicMock()
         mensagem.atendimento.contato = contato
-        
+
         entity_types = [{"cpf": "12345678900"}]
 
         # Act
@@ -282,11 +295,14 @@ class TestAtendimentosUtilsEntidades(TestCase):
         contato = MagicMock()
         contato.nome_contato = "Current Name"
         contato.metadados = {"cpf": "12345678900"}
-        
+
         mensagem = MagicMock()
         mensagem.atendimento.contato = contato
-        
-        entity_types = [{"nome_contato": "Current Name"}, {"cpf": "12345678900"}]
+
+        entity_types = [
+            {"nome_contato": "Current Name"},
+            {"cpf": "12345678900"},
+        ]
 
         # Act
         _processar_entidades_contato(mensagem, entity_types)
@@ -294,17 +310,18 @@ class TestAtendimentosUtilsEntidades(TestCase):
         # Assert
         contato.save.assert_not_called()
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.logger')
+    @patch("smart_core_assistant_painel.app.ui.atendimentos.utils.logger")
     def test_processar_entidades_contato_exception_handling(
-        self,
-        mock_logger: MagicMock
+        self, mock_logger: MagicMock
     ) -> None:
         """Test exception handling in _processar_entidades_contato."""
         # Arrange
         mensagem = MagicMock()
         mensagem.atendimento.contato = MagicMock()
-        mensagem.atendimento.contato.save.side_effect = Exception("Test exception")
-        
+        mensagem.atendimento.contato.save.side_effect = Exception(
+            "Test exception"
+        )
+
         entity_types = [{"nome_contato": "Test Name"}]
 
         # Act
@@ -312,7 +329,10 @@ class TestAtendimentosUtilsEntidades(TestCase):
 
         # Assert
         mock_logger.error.assert_called_once()
-        self.assertIn("Erro ao processar entidades do contato", mock_logger.error.call_args[0][0])
+        self.assertIn(
+            "Erro ao processar entidades do contato",
+            mock_logger.error.call_args[0][0],
+        )
 
 
 class TestAtendimentosUtilsBotResponse(TestCase):
@@ -364,10 +384,9 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         # Assert
         self.assertFalse(result)
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.logger')
+    @patch("smart_core_assistant_painel.app.ui.atendimentos.utils.logger")
     def test_pode_bot_responder_atendimento_exception_handling(
-        self,
-        mock_logger: MagicMock
+        self, mock_logger: MagicMock
     ) -> None:
         """Test exception handling in _pode_bot_responder_atendimento."""
         # Arrange
@@ -381,7 +400,10 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         # Assert
         self.assertFalse(result)
         mock_logger.error.assert_called_once()
-        self.assertIn("Erro ao verificar se o bot pode responder", mock_logger.error.call_args[0][0])
+        self.assertIn(
+            "Erro ao verificar se o bot pode responder",
+            mock_logger.error.call_args[0][0],
+        )
 
 
 class TestAtendimentosUtilsSendMessage(TestCase):
@@ -400,26 +422,46 @@ class TestAtendimentosUtilsSendMessage(TestCase):
             message_type="text",
             message_id="test_message_id",
             metadados={},
-            nome_perfil_whatsapp="Test User"
+            nome_perfil_whatsapp="Test User",
         )
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.logger')
-    def test_send_message_response_empty_buffer(self, mock_logger: MagicMock) -> None:
+    @patch("smart_core_assistant_painel.app.ui.atendimentos.utils.logger")
+    def test_send_message_response_empty_buffer(
+        self, mock_logger: MagicMock
+    ) -> None:
         """Test send_message_response with empty buffer."""
         # Act
         send_message_response(self.phone)
 
         # Assert
-        mock_logger.warning.assert_called_once_with(f"Buffer vazio para {self.phone}")
+        mock_logger.warning.assert_called_once_with(
+            f"Buffer vazio para {self.phone}"
+        )
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.processar_mensagem_whatsapp')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.Mensagem.objects.get')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.Documento.buscar_documentos_similares')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._analisar_conteudo_mensagem')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._pode_bot_responder_atendimento')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.SERVICEHUB.whatsapp_service.send_message')
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.processar_mensagem_whatsapp"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.Mensagem.objects.get"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.Documento.buscar_documentos_similares"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils._analisar_conteudo_mensagem"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils._pode_bot_responder_atendimento"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.SERVICEHUB.whatsapp_service.send_message"
+    )
     def test_send_message_response_success(
         self,
         mock_send_message: MagicMock,
@@ -429,25 +471,25 @@ class TestAtendimentosUtilsSendMessage(TestCase):
         mock_generate_embeddings: MagicMock,
         mock_get_mensagem: MagicMock,
         mock_processar_mensagem: MagicMock,
-        mock_compile_message_data: MagicMock
+        mock_compile_message_data: MagicMock,
     ) -> None:
         """Test successful message sending."""
         # Arrange
         cache_key = f"wa_buffer_{self.phone}"
         cache.set(cache_key, [self.message_data])
-        
+
         mock_compile_message_data.return_value = self.message_data
         mock_processar_mensagem.return_value = 1  # mensagem_id
-        
+
         mensagem_mock = MagicMock()
         mensagem_mock.intent_detectado = [{"unknown_tag": "detected value"}]
         mock_get_mensagem.return_value = mensagem_mock
-        
+
         mock_pode_responder.return_value = True
-        
+
         # Mock WhatsApp service methods to avoid exceptions
         mock_send_message.return_value = None
-        
+
         # Act
         send_message_response(self.phone)
 
@@ -459,20 +501,24 @@ class TestAtendimentosUtilsSendMessage(TestCase):
         self.assertEqual(mock_generate_embeddings.call_count, 2)
         mock_send_message.assert_called_once()
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.processar_mensagem_whatsapp')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.logger')
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils._compile_message_data_list"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.processar_mensagem_whatsapp"
+    )
+    @patch("smart_core_assistant_painel.app.ui.atendimentos.utils.logger")
     def test_send_message_response_exception_handling(
         self,
         mock_logger: MagicMock,
         mock_processar_mensagem: MagicMock,
-        mock_compile_message_data: MagicMock
+        mock_compile_message_data: MagicMock,
     ) -> None:
         """Test exception handling in send_message_response."""
         # Arrange
         cache_key = f"wa_buffer_{self.phone}"
         cache.set(cache_key, [self.message_data])
-        
+
         mock_compile_message_data.side_effect = Exception("Test exception")
 
         # Act
@@ -480,14 +526,22 @@ class TestAtendimentosUtilsSendMessage(TestCase):
 
         # Assert
         mock_logger.error.assert_called_once()
-        self.assertIn("Erro ao processar mensagens para", mock_logger.error.call_args[0][0])
+        self.assertIn(
+            "Erro ao processar mensagens para",
+            mock_logger.error.call_args[0][0],
+        )
 
 
 class TestAtendimentosUtilsAiEnginePatch(TestCase):
     """Tests to ensure ai_engine usage is patched at utils namespace."""
 
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings')
-    def test_generate_embeddings_in_utils(self, mock_generate_embeddings: MagicMock) -> None:
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.generate_embeddings"
+    )
+    def test_generate_embeddings_in_utils(
+        self, mock_generate_embeddings: MagicMock
+    ) -> None:
         from smart_core_assistant_painel.app.ui.atendimentos import utils
+
         utils.FeaturesCompose.generate_embeddings("texto")
         mock_generate_embeddings.assert_called_once_with("texto")

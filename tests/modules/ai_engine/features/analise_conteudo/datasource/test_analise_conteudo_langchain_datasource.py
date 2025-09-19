@@ -1,16 +1,16 @@
 """Testes para AnaliseConteudoLangchainDatasource."""
 
-import pytest
-import re
 from unittest.mock import Mock, patch
+
+import pytest
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
 )
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LlmParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 
 
 class TestAnaliseConteudoLangchainDatasource:

@@ -23,6 +23,7 @@ class StatusAtendimento(models.TextChoices):
     CANCELADO = "cancelado", "Cancelado"
     TRANSFERIDO = "transferido", "Transferido para Humano"
 
+
 class TipoMensagem(models.TextChoices):
     TEXTO_FORMATADO = (
         "extendedTextMessage",
@@ -65,10 +66,12 @@ class TipoMensagem(models.TextChoices):
             return tipo_mensagem.value
         return None
 
+
 class TipoRemetente(models.TextChoices):
     CONTATO = "contato", "Contato"
     BOT = "bot", "Bot/Sistema"
     ATENDENTE_HUMANO = "atendente_humano", "Atendente Humano"
+
 
 class Atendimento(models.Model):
     id: models.AutoField = models.AutoField(
@@ -109,7 +112,9 @@ class Atendimento(models.Model):
         default="normal",
         help_text="Prioridade do atendimento",
     )
-    atendente_humano: models.ForeignKey[Optional["operacional.AtendenteHumano"]] = models.ForeignKey(
+    atendente_humano: models.ForeignKey[
+        Optional["operacional.AtendenteHumano"]
+    ] = models.ForeignKey(
         "operacional.AtendenteHumano",
         on_delete=models.SET_NULL,
         blank=True,
@@ -122,8 +127,12 @@ class Atendimento(models.Model):
         blank=True,
         help_text="Contexto atual da conversa (variáveis, estado, etc.)",
     )
-    historico_status: models.JSONField[list[dict[str, Any]]] = models.JSONField(
-        default=list, blank=True, help_text="Histórico de mudanças de status"
+    historico_status: models.JSONField[list[dict[str, Any]]] = (
+        models.JSONField(
+            default=list,
+            blank=True,
+            help_text="Histórico de mudanças de status",
+        )
     )
     tags: models.JSONField[list[str]] = models.JSONField(
         default=list,
@@ -156,7 +165,9 @@ class Atendimento(models.Model):
         self.adicionar_historico_status(novo_status, "Atendimento finalizado")
         self.save()
 
-    def adicionar_historico_status(self, novo_status: str, observacao: str = "") -> None:
+    def adicionar_historico_status(
+        self, novo_status: str, observacao: str = ""
+    ) -> None:
         if not self.historico_status:
             self.historico_status = []
         self.historico_status.append(
@@ -194,10 +205,13 @@ class Atendimento(models.Model):
     ) -> dict[str, Any]:
         try:
             mensagens_query: QuerySet["Mensagem"] = cast(
-                QuerySet["Mensagem"], self.mensagens.all().order_by("timestamp")
+                QuerySet["Mensagem"],
+                self.mensagens.all().order_by("timestamp"),
             )
             if excluir_mensagem_id:
-                mensagens_query = mensagens_query.exclude(id=excluir_mensagem_id)
+                mensagens_query = mensagens_query.exclude(
+                    id=excluir_mensagem_id
+                )
             mensagens: list["Mensagem"] = list(mensagens_query)
             conteudo_mensagens: list[str] = []
             intents_detectados: list[dict[str, str]] = []
@@ -225,7 +239,9 @@ class Atendimento(models.Model):
                     atendimento_anterior.assunto
                     and atendimento_anterior.data_fim is not None
                 ):
-                    data_formatada = atendimento_anterior.data_fim.strftime("%d/%m/%Y")
+                    data_formatada = atendimento_anterior.data_fim.strftime(
+                        "%d/%m/%Y"
+                    )
                     historico_atendimentos.append(
                         f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
                     )
@@ -247,6 +263,7 @@ class Atendimento(models.Model):
                 "historico_atendimentos": [],
             }
 
+
 class Mensagem(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
@@ -263,7 +280,9 @@ class Mensagem(models.Model):
         default=TipoMensagem.TEXTO_FORMATADO,
         help_text="Tipo da mensagem",
     )
-    conteudo: models.TextField[str] = models.TextField(help_text="Conteúdo da mensagem")
+    conteudo: models.TextField[str] = models.TextField(
+        help_text="Conteúdo da mensagem"
+    )
     remetente: models.CharField[str] = models.CharField(
         max_length=20,
         choices=TipoRemetente.choices,
@@ -290,15 +309,19 @@ class Mensagem(models.Model):
     resposta_bot: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Resposta gerada pelo bot"
     )
-    intent_detectado: models.JSONField[list[dict[str, str]]] = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
+    intent_detectado: models.JSONField[list[dict[str, str]]] = (
+        models.JSONField(
+            default=list,
+            blank=True,
+            help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
+        )
     )
-    entidades_extraidas: models.JSONField[list[dict[str, str]]] = models.JSONField(
-        default=list,
-        blank=True,
-        help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
+    entidades_extraidas: models.JSONField[list[dict[str, str]]] = (
+        models.JSONField(
+            default=list,
+            blank=True,
+            help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
+        )
     )
     confianca_resposta: models.FloatField[float | None] = models.FloatField(
         blank=True,
@@ -332,25 +355,36 @@ class Mensagem(models.Model):
         Levanta:
             ValidationError: Se a resposta for vazia ou se a confiança não estiver entre 0 e 1.
         """
-        if resposta is None or not isinstance(resposta, str) or not resposta.strip():
+        if (
+            resposta is None
+            or not isinstance(resposta, str)
+            or not resposta.strip()
+        ):
             raise ValidationError("A resposta do bot não pode ser vazia.")
 
         try:
             conf = float(confianca)
         except (TypeError, ValueError):
-            raise ValidationError("O parâmetro 'confianca' deve ser um número entre 0 e 1.")
+            raise ValidationError(
+                "O parâmetro 'confianca' deve ser um número entre 0 e 1."
+            )
 
         if not (0.0 <= conf <= 1.0):
-            raise ValidationError("O parâmetro 'confianca' deve estar entre 0 e 1.")
+            raise ValidationError(
+                "O parâmetro 'confianca' deve estar entre 0 e 1."
+            )
 
         self.resposta_bot = resposta.strip()
         self.confianca_resposta = conf
         self.respondida = True
-        self.save(update_fields=["resposta_bot", "confianca_resposta", "respondida"])
+        self.save(
+            update_fields=["resposta_bot", "confianca_resposta", "respondida"]
+        )
 
         logger.info(
             f"Resposta do bot registrada na mensagem {self.id} (atendimento {self.atendimento_id}) com confianca={conf:.3f}"
         )
+
 
 def inicializar_atendimento_whatsapp(
     numero_telefone: str,
@@ -430,6 +464,7 @@ def inicializar_atendimento_whatsapp(
         logger.error(f"Erro ao inicializar atendimento WhatsApp: {e}")
         raise
 
+
 def buscar_atendimento_ativo(numero_telefone: str) -> Optional[Atendimento]:
     """
     Busca um atendimento ativo para o número de telefone fornecido.
@@ -459,6 +494,7 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional[Atendimento]:
     except Exception as e:
         logger.error(f"Erro ao buscar atendimento ativo: {e}")
         return None
+
 
 def processar_mensagem_whatsapp(
     numero_telefone: str,

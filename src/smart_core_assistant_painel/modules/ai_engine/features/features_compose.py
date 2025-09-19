@@ -4,6 +4,8 @@ Esta classe fornece uma interface simplificada para acessar as funcionalidades
 de IA do sistema, como processamento de documentos, análise de mensagens e
 interação com modelos de linguagem.
 """
+
+import math
 from typing import Any, cast
 
 from langchain_core.documents.base import Document
@@ -203,7 +205,6 @@ class FeaturesCompose:
         else:
             raise ValueError("Unexpected return type from usecase")
 
-
     @staticmethod
     def melhoria_ia_treinamento(context: str) -> str:
         """Solicita ao LLM uma versão melhorada de um conteúdo para treinamento.
@@ -240,7 +241,9 @@ class FeaturesCompose:
 
     @staticmethod
     def analise_previa_mensagem(
-        historico_atendimento: dict[str, Any], context: str, valid_intent_types: str
+        historico_atendimento: dict[str, Any],
+        context: str,
+        valid_intent_types: str,
     ) -> APMTuple:
         """Realiza análise prévia de mensagem para extrair intenção e entidades.
 
@@ -376,6 +379,56 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
+    def calculate_embedding_similarity(
+        embedding1: list[float], embedding2: list[float]
+    ) -> float:
+        """Calcula a similaridade do cosseno entre dois embeddings.
+
+        A similaridade do cosseno mede o ângulo entre dois vetores,
+        retornando um valor entre -1 e 1, onde:
+        - 1 indica vetores idênticos (máxima similaridade)
+        - 0 indica vetores ortogonais (sem similaridade)
+        - -1 indica vetores opostos (mínima similaridade)
+
+        Args:
+            embedding1 (list[float]): Primeiro vetor de embedding.
+            embedding2 (list[float]): Segundo vetor de embedding.
+
+        Returns:
+            float: Valor da similaridade do cosseno entre -1 e 1.
+
+        Raises:
+            ValueError: Se os embeddings tiverem dimensões diferentes ou
+                       se algum dos vetores for zero.
+        """
+        if len(embedding1) != len(embedding2):
+            raise ValueError(
+                f"Embeddings devem ter a mesma dimensão. "
+                f"Recebido: {len(embedding1)} e {len(embedding2)}"
+            )
+
+        if not embedding1 or not embedding2:
+            raise ValueError("Embeddings não podem estar vazios")
+
+        # Calcula o produto escalar (dot product)
+        dot_product = sum(a * b for a, b in zip(embedding1, embedding2))
+
+        # Calcula a magnitude (norma) de cada vetor
+        magnitude1 = math.sqrt(sum(a * a for a in embedding1))
+        magnitude2 = math.sqrt(sum(b * b for b in embedding2))
+
+        # Evita divisão por zero
+        if magnitude1 == 0 or magnitude2 == 0:
+            raise ValueError(
+                "Não é possível calcular similaridade para vetores zero"
+            )
+
+        # Calcula a similaridade do cosseno
+        similarity = dot_product / (magnitude1 * magnitude2)
+
+        return similarity
+
+    @staticmethod
     def generate_chunks(
         conteudo: str, metadata: dict[str, Any]
     ) -> list[Document]:
@@ -405,7 +458,12 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def analise_mensage(context: str, historico_atendimento: dict[str, Any], prompt_human: str, dados_treinamento: str,) -> AMTuple:
+    def analise_mensage(
+        context: str,
+        historico_atendimento: dict[str, Any],
+        prompt_human: str,
+        dados_treinamento: str,
+    ) -> AMTuple:
         error = AnaliseMensageError("Erro ao executar analise_mensage!")
         llm_parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
@@ -424,8 +482,28 @@ class FeaturesCompose:
         )
         datasource: AMData = AnaliseMensageDatasource()
         usecase: AMUsecase = AnaliseMensageUseCase(datasource)
-        data= usecase(parameters)
+        data = usecase(parameters)
         if isinstance(data, SuccessReturn):
+            # Gera embeddings para dados de treinamento e resposta do bot
+            vector_treinamento: list[float] = (
+                FeaturesCompose.generate_embeddings(dados_treinamento)
+            )
+            vector_resposta: list[float] = FeaturesCompose.generate_embeddings(
+                data.result.resposta_bot
+            )
+
+            # Calcula a similaridade entre os embeddings
+            similarity_score: float = (
+                FeaturesCompose.calculate_embedding_similarity(
+                    vector_treinamento, vector_resposta
+                )
+            )
+
+            # Log da similaridade para análise
+            logger.info(
+                f"Similaridade entre treinamento e resposta: {similarity_score:.4f}"
+            )
+
             return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result

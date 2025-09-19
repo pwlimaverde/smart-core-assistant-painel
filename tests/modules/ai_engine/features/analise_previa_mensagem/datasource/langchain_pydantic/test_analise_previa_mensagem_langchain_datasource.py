@@ -1,7 +1,7 @@
-import pytest
 from typing import Any
 from unittest.mock import Mock, patch
-from langchain_core.messages import AIMessage
+
+import pytest
 
 from smart_core_assistant_painel.modules.ai_engine import (
     AnalisePreviaMensagemParameters,
@@ -26,7 +26,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
     @pytest.fixture
     def sample_parameters(self) -> AnalisePreviaMensagemParameters:
         """Fixture para criar parâmetros de exemplo."""
-        from smart_core_assistant_painel.modules.ai_engine.utils.parameters import LlmParameters
+        from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+            LlmParameters,
+        )
 
         llm_params = LlmParameters(
             llm_class=Mock,
@@ -84,7 +86,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -185,7 +189,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -222,7 +228,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -259,7 +267,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -521,7 +531,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
 
             # Verificar se os intents foram processados corretamente
@@ -579,7 +591,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
 
             # Verificar se o histórico foi formatado corretamente na invocação
@@ -622,7 +636,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -659,7 +675,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -696,7 +714,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == []
             assert result.entities == []
@@ -757,7 +777,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == [{"saudacao": "ola"}, {"pergunta": "como_esta"}]
             assert result.entities == [{"pessoa": "João"}, {"local": "São Paulo"}]
@@ -889,7 +911,9 @@ class TestAnalisePreviaMensagemLangchainDatasource:
             result = datasource(sample_parameters)
 
             # Assert - estas linhas cobrem especificamente as linhas 107-110 do arquivo fonte
-            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
+            from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain import (
+                AnalisePreviaMensagemLangchain,
+            )
             assert isinstance(result, AnalisePreviaMensagemLangchain)
             assert result.intent == [{"saudacao": "ola"}, {"pergunta": "como_esta"}]
             assert result.entities == [{"pessoa": "João"}, {"local": "São Paulo"}]

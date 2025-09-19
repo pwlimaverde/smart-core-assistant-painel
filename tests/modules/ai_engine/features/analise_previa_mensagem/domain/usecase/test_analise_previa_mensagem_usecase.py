@@ -1,13 +1,14 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
 )
 
 from smart_core_assistant_painel.modules.ai_engine import (
-    APMTuple,
     AnalisePreviaMensagemParameters,
+    APMTuple,
     LlmError,
     LlmParameters,
 )

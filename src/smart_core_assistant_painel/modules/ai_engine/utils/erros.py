@@ -75,6 +75,7 @@ class GenerateChunksError(AppError):
         """Retorna uma mensagem de erro formatada."""
         return f"GenerateChunksError - {self.message}"
 
+
 @dataclass
 class AnaliseMensageError(AppError):
     message: str

@@ -5,15 +5,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('treinamento', '0002_querycompose'),
+        ("treinamento", "0002_querycompose"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='querycompose',
-            name='embedding',
-            field=pgvector.django.vector.VectorField(blank=True, dimensions=1024, help_text='Embedding gerado a partir da description', null=True),
+            model_name="querycompose",
+            name="embedding",
+            field=pgvector.django.vector.VectorField(
+                blank=True,
+                dimensions=1024,
+                help_text="Embedding gerado a partir da description",
+                null=True,
+            ),
         ),
     ]

@@ -3,11 +3,11 @@ Testes para o módulo de inicialização de serviços.
 """
 
 import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 
 # Importa o pacote para garantir que o módulo `start_services` seja carregado.
-import smart_core_assistant_painel.modules.services
 
 # Obtém a referência ao módulo real a partir do cache de módulos do Python.
 start_services_module = sys.modules[

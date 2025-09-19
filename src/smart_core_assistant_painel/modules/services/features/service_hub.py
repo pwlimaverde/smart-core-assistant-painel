@@ -373,8 +373,6 @@ class ServiceHub:
             else ""
         )
 
-
-
     @property
     def TIME_CACHE(self) -> int:
         """Retorna o tempo de cache em segundos."""

@@ -1,8 +1,8 @@
 """Testes para PydanticModelFactory."""
 
 import json
+
 import pytest
-from typing import Type
 from pydantic import BaseModel
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (

@@ -15,38 +15,45 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import AMData
 
 
 class AnaliseMensageDatasource(AMData):
-    def __call__(self, parameters: AnaliseMensageParameters) -> AnaliseMensagemLangchain:
+    def __call__(
+        self, parameters: AnaliseMensageParameters
+    ) -> AnaliseMensagemLangchain:
         try:
-
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
             )
 
             messages_spec: list[tuple[str, str]] = [
-                ("system", (
-                    f"{parameters.llm_parameters.prompt_system}\n\n"
-                    f"{parameters.llm_parameters.prompt_human}\n\n"
-                    "### Regras de Resposta (siga rigorosamente):\n"
-                    "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
-                    "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
-                    "2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, "
-                    "responda exatamente: \"Desculpe, não encontrei informações relacionadas à sua pergunta.\n"
-                    "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
-                    "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
-                )),
-                ("user", (
-                    "<historico_conversa>\n"
-                    "(Apenas para referência de contexto, não como fonte factual)\n"
-                    "{historico_context}\n"
-                    "</historico_conversa>\n\n"
-                    "<contexto_rag>\n"
-                    "{dados_treinamento}\n"
-                    "</contexto_rag>\n\n"
-                    "<pergunta_usuario>\n"
-                    "{context}\n"
-                    "</pergunta_usuario>\n\n"
-                    "Com base apenas nas regras acima, elabore a resposta final ao usuário."
-                )),
+                (
+                    "system",
+                    (
+                        f"{parameters.llm_parameters.prompt_system}\n\n"
+                        f"{parameters.llm_parameters.prompt_human}\n\n"
+                        "### Regras de Resposta (siga rigorosamente):\n"
+                        "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
+                        "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
+                        "2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, "
+                        'responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta.\n'
+                        "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
+                        "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
+                    ),
+                ),
+                (
+                    "user",
+                    (
+                        "<historico_conversa>\n"
+                        "(Apenas para referência de contexto, não como fonte factual)\n"
+                        "{historico_context}\n"
+                        "</historico_conversa>\n\n"
+                        "<contexto_rag>\n"
+                        "{dados_treinamento}\n"
+                        "</contexto_rag>\n\n"
+                        "<pergunta_usuario>\n"
+                        "{context}\n"
+                        "</pergunta_usuario>\n\n"
+                        "Com base apenas nas regras acima, elabore a resposta final ao usuário."
+                    ),
+                ),
             ]
 
             # Preparar dados para invocação com validação
@@ -176,28 +183,48 @@ class AnaliseMensageDatasource(AMData):
         """
         # Caso especial: resposta padrão de falta de informação => 0.0
         lower = answer.lower()
-        if (
-            "não encontrei informações" in lower
-        ):
+        if "não encontrei informações" in lower:
             return 0.0
 
         # Palavras/expressões relacionadas a transferência de atendimento
         transfer_markers = {
-            "transferir", "transferência", "transferencia", "transferido",
-            "encaminhar", "encaminharei", "encaminhado", "encaminho",
-            "vou transferir", "vou encaminhar", "direcionar", "direcionarei",
-            "setor responsável", "setor responsavel", "equipe responsável",
-            "equipe responsavel", "atendente humano", "suporte humano",
+            "transferir",
+            "transferência",
+            "transferencia",
+            "transferido",
+            "encaminhar",
+            "encaminharei",
+            "encaminhado",
+            "encaminho",
+            "vou transferir",
+            "vou encaminhar",
+            "direcionar",
+            "direcionarei",
+            "setor responsável",
+            "setor responsavel",
+            "equipe responsável",
+            "equipe responsavel",
+            "atendente humano",
+            "suporte humano",
         }
 
         request_transfer_markers = {
-            "transferir", "transferência", "transferencia", "encaminhar",
-            "falar com atendente", "falar com humano", "setor responsável",
-            "setor responsavel", "quero falar com", "transferência de atendimento",
+            "transferir",
+            "transferência",
+            "transferencia",
+            "encaminhar",
+            "falar com atendente",
+            "falar com humano",
+            "setor responsável",
+            "setor responsavel",
+            "quero falar com",
+            "transferência de atendimento",
         }
 
         user_lower = (user_question or "").lower()
-        user_requested_transfer = any(m in user_lower for m in request_transfer_markers)
+        user_requested_transfer = any(
+            m in user_lower for m in request_transfer_markers
+        )
 
         # Tokenização simples com remoção de stopwords comuns em PT-BR e
         # termos genéricos que tendem a aparecer em saudações/respostas
@@ -206,18 +233,71 @@ class AnaliseMensageDatasource(AMData):
             tokens = re.findall(r"\b\w+\b", s.lower())
             stop = {
                 # Stopwords comuns
-                "de", "da", "do", "das", "dos", "em", "um",
-                "uma", "e", "a", "o", "para", "com", "no",
-                "na", "que", "se", "por", "as", "os", "ao",
-                "à", "às", "uns", "umas", "sua", "seu", "suas",
-                "seus", "é", "ser", "foi", "são", "tem", "ter",
-                "há", "como", "mais", "menos", "muito", "muita",
-                "muitos", "muitas", "já", "também",
+                "de",
+                "da",
+                "do",
+                "das",
+                "dos",
+                "em",
+                "um",
+                "uma",
+                "e",
+                "a",
+                "o",
+                "para",
+                "com",
+                "no",
+                "na",
+                "que",
+                "se",
+                "por",
+                "as",
+                "os",
+                "ao",
+                "à",
+                "às",
+                "uns",
+                "umas",
+                "sua",
+                "seu",
+                "suas",
+                "seus",
+                "é",
+                "ser",
+                "foi",
+                "são",
+                "tem",
+                "ter",
+                "há",
+                "como",
+                "mais",
+                "menos",
+                "muito",
+                "muita",
+                "muitos",
+                "muitas",
+                "já",
+                "também",
                 # Termos genéricos/sociais
-                "ola", "olá", "prazer", "conhecer", "duvida",
-                "dúvida", "informacao", "informação", "precisar",
-                "precise", "perguntar", "pergunta", "estou", "aqui",
-                "ajudar", "posso", "ajuda", "obrigado", "obrigada",
+                "ola",
+                "olá",
+                "prazer",
+                "conhecer",
+                "duvida",
+                "dúvida",
+                "informacao",
+                "informação",
+                "precisar",
+                "precise",
+                "perguntar",
+                "pergunta",
+                "estou",
+                "aqui",
+                "ajudar",
+                "posso",
+                "ajuda",
+                "obrigado",
+                "obrigada",
             }
             return {t for t in tokens if len(t) > 2 and t not in stop}
 
@@ -262,9 +342,7 @@ class AnaliseMensageDatasource(AMData):
 
             # Métricas principais por bloco
             jaccard = (len(inter) / len(union)) if union else 0.0
-            precision = (
-                (len(inter) / len(ans_tokens)) if ans_tokens else 0.0
-            )
+            precision = (len(inter) / len(ans_tokens)) if ans_tokens else 0.0
             support = min(1.0, len(inter) / 7.0)  # valoriza interseções curtas
 
             # Checagens numéricas/horários por bloco (genéricas)
@@ -287,17 +365,13 @@ class AnaliseMensageDatasource(AMData):
                 p for p in (times_alignment, nums_alignment) if p > 0.0
             ]
             struct_alignment = (
-                sum(struct_parts) / len(struct_parts)
-                if struct_parts
-                else 0.0
+                sum(struct_parts) / len(struct_parts) if struct_parts else 0.0
             )
 
             # Aderência da resposta à pergunta do usuário
             inter_q = ans_tokens & question_tokens
             question_coverage = (
-                len(inter_q) / len(question_tokens)
-                if question_tokens
-                else 0.0
+                len(inter_q) / len(question_tokens) if question_tokens else 0.0
             )
 
             # Limite superior em caso de bloco muito curto
@@ -336,7 +410,9 @@ class AnaliseMensageDatasource(AMData):
                 best_score = score_block
                 best_content_score = content_score
                 best_question_coverage = question_coverage
-                max_intersection_tokens = max(max_intersection_tokens, len(inter))
+                max_intersection_tokens = max(
+                    max_intersection_tokens, len(inter)
+                )
 
         # Regras de transferência de atendimento
         has_transfer = any(m in lower for m in transfer_markers)

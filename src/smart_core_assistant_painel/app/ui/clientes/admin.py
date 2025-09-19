@@ -58,7 +58,9 @@ class ContatoAdmin(admin.ModelAdmin[Contato]):
         """Retorna o número total de clientes vinculados ao contato."""
         return cast(
             int,
-            getattr(obj, "clientes").count() if hasattr(obj, "clientes") else 0,
+            getattr(obj, "clientes").count()
+            if hasattr(obj, "clientes")
+            else 0,
         )
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Contato]:
@@ -128,7 +130,9 @@ class ClienteAdmin(admin.ModelAdmin[Cliente]):
     ) -> None:
         """Marca os clientes selecionados como ativos."""
         queryset.update(ativo=True)
-        self.message_user(request, f"{queryset.count()} clientes marcados como ativos.")
+        self.message_user(
+            request, f"{queryset.count()} clientes marcados como ativos."
+        )
 
     @admin.action(description="Marcar clientes selecionados como inativos")
     def marcar_como_inativa(
@@ -136,7 +140,9 @@ class ClienteAdmin(admin.ModelAdmin[Cliente]):
     ) -> None:
         """Marca os clientes selecionados como inativos."""
         queryset.update(ativo=False)
-        self.message_user(request, f"{queryset.count()} clientes marcados como inativos.")
+        self.message_user(
+            request, f"{queryset.count()} clientes marcados como inativos."
+        )
 
     @admin.action(description="Exportar dados dos clientes selecionados (CSV)")
     def exportar_dados(

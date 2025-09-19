@@ -14,14 +14,17 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
 
 
 class AnaliseMensageUseCase(AMUsecase):
-    def __call__(self, parameters: AnaliseMensageParameters) -> ReturnSuccessOrError[AMTuple]:
-
+    def __call__(
+        self, parameters: AnaliseMensageParameters
+    ) -> ReturnSuccessOrError[AMTuple]:
         data = self._resultDatasource(
             parameters=parameters, datasource=self._datasource
         )
 
         if isinstance(data, SuccessReturn):
-            return SuccessReturn(AMTuple(data.result.resposta_bot, data.result.confiabilidade))
+            return SuccessReturn(
+                AMTuple(data.result.resposta_bot, data.result.confiabilidade)
+            )
         elif isinstance(data, ErrorReturn):
             return ErrorReturn(data.result)
         else:

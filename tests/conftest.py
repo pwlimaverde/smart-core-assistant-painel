@@ -3,8 +3,8 @@
 import os
 import sys
 from pathlib import Path
+
 import django
-from typing import Any
 
 # Ensure the src directory is in the path
 repo_root = Path(__file__).resolve().parents[1]
@@ -43,4 +43,3 @@ os.environ.setdefault(
 django.setup()
 
 # Configure pytest-django
-import pytest

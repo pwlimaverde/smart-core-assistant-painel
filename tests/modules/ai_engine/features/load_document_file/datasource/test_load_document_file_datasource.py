@@ -1,18 +1,19 @@
 """Testes para LoadDocumentFileDatasource."""
 
-import pytest
-from pathlib import Path
-from unittest.mock import Mock, patch, mock_open
+from unittest.mock import Mock, patch
 
+import pytest
 from langchain.docstore.document import Document
 
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
     LoadDocumentFileDatasource,
 )
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    DocumentError,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentFileParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import DocumentError
 
 
 class TestLoadDocumentFileDatasource:
@@ -106,8 +107,8 @@ class TestLoadDocumentFileDatasource:
     def test_call_pdf_file_success(self, datasource):
         """Testa carregamento bem-sucedido de arquivo .pdf."""
         # Arrange - Cria um arquivo temporário para simular o PDF
-        import tempfile
         import os
+        import tempfile
         
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
             temp_pdf.write(b"%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n>>\nendobj\nxref\n0 1\n0000000000 65535 f \ntrailer\n<<\n/Size 1\n/Root 1 0 R\n>>\nstartxref\n9\n%%EOF")
@@ -140,8 +141,8 @@ class TestLoadDocumentFileDatasource:
     def test_call_docx_file_success(self, datasource):
         """Testa carregamento bem-sucedido de arquivo .docx."""
         # Arrange - Cria um arquivo temporário
-        import tempfile
         import os
+        import tempfile
         
         with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as temp_docx:
             temp_docx.write(b"fake docx content")  # Conteúdo fake para teste
@@ -173,8 +174,8 @@ class TestLoadDocumentFileDatasource:
     def test_call_doc_file_success(self, datasource):
         """Testa carregamento bem-sucedido de arquivo .doc."""
         # Arrange - Cria um arquivo temporário
-        import tempfile
         import os
+        import tempfile
         
         with tempfile.NamedTemporaryFile(suffix=".doc", delete=False) as temp_doc:
             temp_doc.write(b"fake doc content")
@@ -206,8 +207,8 @@ class TestLoadDocumentFileDatasource:
     def test_call_xlsx_file_success(self, datasource):
         """Testa carregamento bem-sucedido de arquivo .xlsx."""
         # Arrange - Cria um arquivo temporário
-        import tempfile
         import os
+        import tempfile
         
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as temp_xlsx:
             temp_xlsx.write(b"fake xlsx content")
@@ -239,8 +240,8 @@ class TestLoadDocumentFileDatasource:
     def test_call_xls_file_success(self, datasource):
         """Testa carregamento bem-sucedido de arquivo .xls."""
         # Arrange - Cria um arquivo temporário
-        import tempfile
         import os
+        import tempfile
         
         with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as temp_xls:
             temp_xls.write(b"fake xls content")
@@ -375,8 +376,8 @@ class TestLoadDocumentFileDatasource:
     def test_path_suffix_extraction(self, datasource):
         """Testa se a extração da extensão do arquivo funciona corretamente."""
         # Arrange - Cria um arquivo PDF temporário real com nome complexo
-        import tempfile
         import os
+        import tempfile
         
         with tempfile.NamedTemporaryFile(suffix=".name.pdf", delete=False) as temp_pdf:
             # Cria um PDF válido mínimo

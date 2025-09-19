@@ -6,8 +6,10 @@ from django.contrib.admin.sites import AdminSite
 from django.contrib.auth.models import User
 from django.test import TestCase
 
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.atendimentos.admin import AtendimentoAdmin, MensagemAdmin
+from smart_core_assistant_painel.app.ui.atendimentos.admin import (
+    AtendimentoAdmin,
+    MensagemAdmin,
+)
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
@@ -15,6 +17,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoMensagem,
     TipoRemetente,
 )
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
 
 class MockRequest:
@@ -90,7 +93,8 @@ class TestAtendimentoAdmin(TestCase):
         import datetime
 
         self.atendimento.data_fim = (
-            self.atendimento.data_inicio + datetime.timedelta(hours=1, minutes=30)
+            self.atendimento.data_inicio
+            + datetime.timedelta(hours=1, minutes=30)
         )
         self.atendimento.save()
 

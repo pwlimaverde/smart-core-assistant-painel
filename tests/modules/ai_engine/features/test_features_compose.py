@@ -248,7 +248,9 @@ class TestFeaturesCompose(unittest.TestCase):
     ):
         """Testa ErrorReturn em pre_analise_ia_treinamento - cobre linha 169."""
         # Arrange
-        from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
+        from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+            LlmError,
+        )
         
         mock_use_case_instance = mock_use_case.return_value
         error = LlmError("Test LLM error")
@@ -294,7 +296,9 @@ class TestFeaturesCompose(unittest.TestCase):
     ):
         """Testa ErrorReturn em melhoria_ia_treinamento - cobre linha 203."""
         # Arrange
-        from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
+        from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+            LlmError,
+        )
         
         mock_use_case_instance = mock_use_case.return_value
         error = LlmError("Test LLM error")
@@ -343,7 +347,9 @@ class TestFeaturesCompose(unittest.TestCase):
     ):
         """Testa ErrorReturn em analise_previa_mensagem - cobre linhas 247-249."""
         # Arrange
-        from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
+        from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+            LlmError,
+        )
         
         mock_use_case_instance = mock_use_case.return_value
         error = LlmError("Test LLM error")
@@ -440,7 +446,9 @@ class TestFeaturesCompose(unittest.TestCase):
     def test_load_message_data_error_return(self, mock_use_case):
         """Testa ErrorReturn em load_message_data - cobre linha 297."""
         # Arrange
-        from smart_core_assistant_painel.modules.ai_engine.utils.erros import DataMessageError
+        from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+            DataMessageError,
+        )
         
         mock_instance = mock_use_case.return_value
         error = DataMessageError("Test message error")

@@ -81,7 +81,9 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
                 if getattr(parameters.llm_parameters, "prompt_system", None)
                 else doc
             )
-            system_prompt = raw_system_prompt.replace("{", "{{").replace("}", "}}")
+            system_prompt = raw_system_prompt.replace("{", "{{").replace(
+                "}", "}}"
+            )
 
             messages = ChatPromptTemplate.from_messages(
                 [

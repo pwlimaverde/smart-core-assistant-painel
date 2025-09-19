@@ -30,4 +30,7 @@ class AnaliseMensagemLangchain(AnaliseMensagem):
             resposta_bot (str): Resposta do bot.
             confiabilidade (float): Confiabilidade da resposta do bot.
         """
-        super().__init__(resposta_bot=resposta_bot or "", confiabilidade=confiabilidade or 0.0)
+        super().__init__(
+            resposta_bot=resposta_bot or "",
+            confiabilidade=confiabilidade or 0.0,
+        )

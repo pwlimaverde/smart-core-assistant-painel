@@ -8,7 +8,10 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.treinamento.models import Documento, QueryCompose
+from smart_core_assistant_painel.app.ui.treinamento.models import (
+    Documento,
+    QueryCompose,
+)
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -50,7 +53,7 @@ def send_message_response(phone: str) -> None:
         return
     try:
         message_data = _compile_message_data_list(message_data_list)
-        
+
         mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=message_data.numero_telefone,
             conteudo=message_data.conteudo,
@@ -102,20 +105,38 @@ def send_message_response(phone: str) -> None:
                         ).strip()
                         prompt_lines.append(f"{index}. [{tag}] {behavior}")
                     else:
-                        intent_vector: list[float] = FeaturesCompose.generate_embeddings(f"{tag}: {intent[tag]}")
-                        comportamento: str|None = QueryCompose.buscar_comportamento_similar(intent_vector) 
+                        intent_vector: list[float] = (
+                            FeaturesCompose.generate_embeddings(
+                                f"{tag}: {intent[tag]}"
+                            )
+                        )
+                        comportamento: str | None = (
+                            QueryCompose.buscar_comportamento_similar(
+                                intent_vector
+                            )
+                        )
                         if comportamento:
-                            prompt_lines.append(f"{index}. [{tag}] {comportamento}")
+                            prompt_lines.append(
+                                f"{index}. [{tag}] {comportamento}"
+                            )
                 prompt_lines.append(
                     (
                         "Se houver múltiplas intenções, priorize a ordem "
                         "listada e mantenha a resposta concisa."
                     )
                 )
-                historico_atendimento = atendimento_obj.carregar_historico_mensagens(excluir_mensagem_id=mensagem_id)
+                historico_atendimento = (
+                    atendimento_obj.carregar_historico_mensagens(
+                        excluir_mensagem_id=mensagem_id
+                    )
+                )
                 prompt_intent: str = "\n".join(prompt_lines)
-                vector_conteudo = FeaturesCompose.generate_embeddings(mensagem.conteudo)
-                dados_treinamento = Documento.buscar_documentos_similares(query_vec=vector_conteudo)
+                vector_conteudo = FeaturesCompose.generate_embeddings(
+                    mensagem.conteudo
+                )
+                dados_treinamento = Documento.buscar_documentos_similares(
+                    query_vec=vector_conteudo
+                )
                 result = FeaturesCompose.analise_mensage(
                     historico_atendimento=historico_atendimento,
                     prompt_human=prompt_intent,
@@ -129,7 +150,10 @@ def send_message_response(phone: str) -> None:
                         number=message_data.numero_telefone,
                         text=result.resposta_bot,
                     )
-                    mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
+                    mensagem.registrar_resposta_bot(
+                        resposta=result.resposta_bot,
+                        confianca=result.confiabilidade,
+                    )
                 elif result.confiabilidade >= 0.5:
                     # Faixa intermediária (0.50–0.69): enviar resposta com perguntas de esclarecimento
                     SERVICEHUB.whatsapp_service.send_message(
@@ -138,8 +162,13 @@ def send_message_response(phone: str) -> None:
                         number=message_data.numero_telefone,
                         text=result.resposta_bot,
                     )
-                    mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
-                    logger.info(f"DEBUG: Resposta enviada com pedidos de esclarecimento (confiabilidade={result.confiabilidade:.3f})")
+                    mensagem.registrar_resposta_bot(
+                        resposta=result.resposta_bot,
+                        confianca=result.confiabilidade,
+                    )
+                    logger.info(
+                        f"DEBUG: Resposta enviada com pedidos de esclarecimento (confiabilidade={result.confiabilidade:.3f})"
+                    )
                 else:
                     # Baixa confiabilidade (< 0.50): mensagem de transferência (conteúdo já pós-processado)
                     SERVICEHUB.whatsapp_service.send_message(
@@ -148,12 +177,19 @@ def send_message_response(phone: str) -> None:
                         number=message_data.numero_telefone,
                         text=result.resposta_bot,
                     )
-                    mensagem.registrar_resposta_bot(resposta=result.resposta_bot, confianca=result.confiabilidade)
-                    
-                    logger.warning(f"DEBUG: Bot transferiu atendimento - confiança muito baixa ({result.confiabilidade:.3f})")
+                    mensagem.registrar_resposta_bot(
+                        resposta=result.resposta_bot,
+                        confianca=result.confiabilidade,
+                    )
+
+                    logger.warning(
+                        f"DEBUG: Bot transferiu atendimento - confiança muito baixa ({result.confiabilidade:.3f})"
+                    )
             else:
-                logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
-                
+                logger.warning(
+                    "DEBUG: Bot não pode responder - pulando processamento de intents"
+                )
+
         except Mensagem.DoesNotExist:
             logger.error(
                 f"Mensagem criada (ID: {mensagem_id}) não encontrada."
@@ -194,6 +230,7 @@ def _obter_entidades_metadados_validas() -> set[str]:
     except Exception as e:
         logger.error(f"Erro ao obter entidades válidas: {e}")
         return set()
+
 
 def _processar_entidades_contato(
     mensagem: "Mensagem", entity_types: list[dict[str, Any]]
@@ -300,6 +337,7 @@ def _pode_bot_responder_atendimento(
     except Exception as e:
         logger.error(f"Erro ao verificar se o bot pode responder: {e}")
         return False
+
 
 def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
     """Compila uma lista de MessageData em um único objeto."""

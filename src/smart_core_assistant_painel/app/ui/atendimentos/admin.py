@@ -148,12 +148,15 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
     date_hierarchy = "timestamp"
     list_per_page = 25
 
-    @admin.display(description="Telefone", ordering="atendimento__contato__telefone")
+    @admin.display(
+        description="Telefone", ordering="atendimento__contato__telefone"
+    )
     def contato_telefone(self, obj: Mensagem) -> str:
         """Retorna o telefone do contato associado à mensagem."""
         return (
             obj.atendimento.contato.telefone
-            if hasattr(obj, "atendimento") and hasattr(obj.atendimento, "contato")
+            if hasattr(obj, "atendimento")
+            and hasattr(obj.atendimento, "contato")
             else "-"
         )
 
@@ -162,7 +165,9 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
         """Retorna uma versão truncada do conteúdo da mensagem."""
         return cast(
             str,
-            (obj.conteudo[:47] + "...") if len(obj.conteudo) > 50 else obj.conteudo,
+            (obj.conteudo[:47] + "...")
+            if len(obj.conteudo) > 50
+            else obj.conteudo,
         )
 
     @admin.display(description="Entidades Extraídas")

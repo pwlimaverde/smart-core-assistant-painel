@@ -151,7 +151,7 @@ class Documento(models.Model):
         cls,
         query_vec: list[float],
         top_k: int = 5,
-        distance_threshold: float = 0.38,  # valor de corte para distância
+        distance_threshold: float = 0.40,  # valor de corte para distância
     ) -> str:
         try:
             documentos: QuerySet[Self] = (

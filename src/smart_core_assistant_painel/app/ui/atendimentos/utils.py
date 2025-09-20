@@ -32,7 +32,7 @@ def set_wa_buffer(message: MessageData) -> None:
     cache_key = f"wa_buffer_{message.numero_telefone}"
     buffer = cache.get(cache_key, [])
     buffer.append(message)
-    timeout = SERVICEHUB.TIME_CACHE + 90
+    timeout = SERVICEHUB.TIME_CACHE + 60
     cache.set(cache_key, buffer, timeout=timeout)
 
 
@@ -206,7 +206,7 @@ def sched_message_response(phone: str) -> None:
     """Agenda o processamento da resposta via signal."""
     timer_key = f"wa_timer_{phone}"
     if not cache.get(timer_key):
-        timeout_value = SERVICEHUB.TIME_CACHE + 120
+        timeout_value = SERVICEHUB.TIME_CACHE + 60
         cache.set(timer_key, True, timeout=timeout_value)
         mensagem_bufferizada.send(sender="atendimentos", phone=phone)
 

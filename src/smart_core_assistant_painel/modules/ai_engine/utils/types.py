@@ -15,9 +15,6 @@ from py_return_success_or_error import (
     UsecaseBaseCallData,
 )
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
-    AnaliseMensagem,
-)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem,
 )
@@ -119,9 +116,9 @@ class AMTuple(NamedTuple):
     confiabilidade: float
 
 
-AMData: TypeAlias = Datasource[AnaliseMensagem, AnaliseMensageParameters]
+AMData: TypeAlias = Datasource[str, AnaliseMensageParameters]
 AMUsecase: TypeAlias = UsecaseBaseCallData[
-    AMTuple,
-    AnaliseMensagem,
+    str,
+    str,
     AnaliseMensageParameters,
 ]

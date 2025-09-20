@@ -486,10 +486,10 @@ class FeaturesCompose:
         if isinstance(data, SuccessReturn):
             # Gera embeddings para dados de treinamento e resposta do bot
             vector_treinamento: list[float] = (
-                FeaturesCompose.generate_embeddings(dados_treinamento)
+                FeaturesCompose.generate_embeddings(context)
             )
             vector_resposta: list[float] = FeaturesCompose.generate_embeddings(
-                data.result.resposta_bot
+                data.result
             )
 
             # Calcula a similaridade entre os embeddings
@@ -504,7 +504,7 @@ class FeaturesCompose:
                 f"Similaridade entre treinamento e resposta: {similarity_score:.4f}"
             )
 
-            return data.result
+            return AMTuple(resposta_bot=data.result, confiabilidade=similarity_score)
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:

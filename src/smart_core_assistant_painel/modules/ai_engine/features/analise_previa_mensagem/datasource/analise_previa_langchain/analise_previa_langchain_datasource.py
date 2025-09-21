@@ -5,7 +5,9 @@ import re
 import unicodedata
 from typing import Any, Dict, Iterable, List, Tuple, cast
 
+from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import Runnable
 from loguru import logger
 from pydantic import BaseModel
 
@@ -63,12 +65,6 @@ class AnalisePreviaLangchainDatasource(APMData):
             system_prompt = raw_system_prompt.replace("{", "{{").replace(
                 "}", "}}"
             )
-            logger.info(
-                "System prompt gerado:\n{}",
-                system_prompt,
-            )   
-            # Tipagem explícita para satisfazer o Pyright
-            # (evita Unknown em from_messages)
             messages_spec: List[Tuple[str, str]] = [
                 ("system", system_prompt),
                 (
@@ -76,17 +72,20 @@ class AnalisePreviaLangchainDatasource(APMData):
                     "{historico_context}\n\n{prompt_human}: {context}",
                 ),
             ]
-            messages: ChatPromptTemplate = ChatPromptTemplate.from_messages(
+            messages: ChatPromptTemplate = ChatPromptTemplate.from_messages(  # type: ignore[reportUnknownMemberType]
                 messages_spec
             )
 
-            llm: Any = parameters.llm_parameters.create_llm
+            llm: BaseChatModel = parameters.llm_parameters.create_llm
 
             # 5) Structured output com preferencia por json_schema
-            structured_llm: Any | None = None
+            structured_llm: Runnable[Any, BaseModel | Dict[str, Any]] | None = None
             try:
-                structured_llm = llm.with_structured_output(
-                    PydanticModel, method="json_schema"
+                structured_llm = cast(
+                    Runnable[Any, BaseModel | Dict[str, Any]],
+                    llm.with_structured_output(  # type: ignore[reportUnknownMemberType]
+                        PydanticModel, method="json_schema"
+                    ),
                 )
             except Exception as e_json_schema:
                 logger.debug(
@@ -94,7 +93,10 @@ class AnalisePreviaLangchainDatasource(APMData):
                     f"{e_json_schema}"
                 )
                 try:
-                    structured_llm = llm.with_structured_output(PydanticModel)
+                    structured_llm = cast(
+                        Runnable[Any, BaseModel | Dict[str, Any]],
+                        llm.with_structured_output(PydanticModel),  # type: ignore[reportUnknownMemberType]
+                    )
                 except Exception as e_default:
                     logger.debug(
                         "with_structured_output padrão falhou: "
@@ -111,7 +113,11 @@ class AnalisePreviaLangchainDatasource(APMData):
             response: Any | None = None
             if structured_llm is not None:
                 try:
-                    chain = messages | structured_llm
+                    # Define o tipo explicitamente para evitar Unknown
+                    chain: Runnable[Dict[str, Any], BaseModel | Dict[str, Any]] = cast(
+                        Runnable[Dict[str, Any], BaseModel | Dict[str, Any]],
+                        messages | structured_llm,
+                    )
                     response = chain.invoke(invoke_data)
                 except Exception as exc_structured:
                     logger.warning(
@@ -121,12 +127,35 @@ class AnalisePreviaLangchainDatasource(APMData):
 
             if response is None:
                 # Fallback: chama sem structured e tenta extrair JSON do texto
-                chain_fallback = messages | llm
+                # Define o tipo explicitamente para evitar Unknown no input
+                chain_fallback: Runnable[Dict[str, Any], Any] = cast(
+                    Runnable[Dict[str, Any], Any],
+                    messages | llm,
+                )
                 raw = chain_fallback.invoke(invoke_data)
-                text = raw.content if hasattr(raw, "content") else str(raw)
+                # Normaliza para string, pois content pode ser str ou lista/objeto
+                content = getattr(raw, "content", raw)
+                if isinstance(content, str):
+                    text = content
+                else:
+                    try:
+                        text = json.dumps(content, ensure_ascii=False)
+                    except Exception:
+                        text = str(content)
                 model_obj: BaseModel = self._parse_json_to_model(text, PydanticModel)
             else:
-                model_obj = response
+                # Garante que model_obj seja sempre BaseModel
+                if isinstance(response, BaseModel):
+                    model_obj = response
+                elif isinstance(response, dict):
+                    try:
+                        model_obj = PydanticModel.model_validate(response)
+                    except Exception:
+                        model_obj = self._parse_json_to_model(
+                            json.dumps(response, ensure_ascii=False), PydanticModel
+                        )
+                else:
+                    model_obj = self._parse_json_to_model(str(response), PydanticModel)
 
             # 6) Pós-processamento: converter em dicts simples {type: value}
             intent_dicts = self._filter_and_convert_items(
@@ -364,11 +393,11 @@ class AnalisePreviaLangchainDatasource(APMData):
                     return flattened_e
 
                 # 2.3) Dict genérico (mantém compatibilidade anterior)
-                items: List[Dict[str, Any] | str] = [cast(Dict[str, Any], value)]
+                items = [cast(Dict[str, Any], value)]
 
             # 3) Se já for lista, processa itens
             elif isinstance(value, list):
-                items: List[Dict[str, Any] | str] = []
+                items = []
                 i: Any
                 for i in cast(List[Any], value):
                     if isinstance(i, dict):
@@ -525,23 +554,23 @@ class AnalisePreviaLangchainDatasource(APMData):
                 for _obj in cast(List[Any], intents_obj):
                     if isinstance(_obj, dict):
                         typed_intents.append(cast(Dict[str, Any], _obj))
-                for it in typed_intents:
-                    t: Any = it.get("type")
-                    v: Any = it.get("value")
-                    if not t:
+                for intent_item in typed_intents:
+                    intent_type: Any = intent_item.get("type")
+                    intent_value: Any = intent_item.get("value")
+                    if not intent_type:
                         continue
                     mapped = self._map_to_allowed(
-                        str(t), intents_allowed, "intent"
+                        str(intent_type), intents_allowed, "intent"
                     )
                     if mapped is None:
                         logger.debug(
                             "Descartando intent com tipo não permitido: {}",
-                            t,
+                            intent_type,
                         )
                         continue
-                    if v is None:
+                    if intent_value is None:
                         continue
-                    norm_intents.append({"type": mapped, "value": str(v)})
+                    norm_intents.append({"type": mapped, "value": str(intent_value)})
                 result["intent"] = norm_intents
 
             # Normaliza entidades
@@ -552,23 +581,23 @@ class AnalisePreviaLangchainDatasource(APMData):
                 for _obj in cast(List[Any], entities_obj):
                     if isinstance(_obj, dict):
                         typed_entities.append(cast(Dict[str, Any], _obj))
-                for en in typed_entities:
-                    t: Any = en.get("type")
-                    v: Any = en.get("value")
-                    if not t:
+                for entity_item in typed_entities:
+                    entity_type: Any = entity_item.get("type")
+                    entity_value: Any = entity_item.get("value")
+                    if not entity_type:
                         continue
                     mapped = self._map_to_allowed(
-                        str(t), entities_allowed, "entity"
+                        str(entity_type), entities_allowed, "entity"
                     )
                     if mapped is None:
                         logger.debug(
                             "Descartando entity com tipo não permitido: {}",
-                            t,
+                            entity_type,
                         )
                         continue
-                    if v is None:
+                    if entity_value is None:
                         continue
-                    norm_entities.append({"type": mapped, "value": str(v)})
+                    norm_entities.append({"type": mapped, "value": str(entity_value)})
                 result["entities"] = norm_entities
 
             return result

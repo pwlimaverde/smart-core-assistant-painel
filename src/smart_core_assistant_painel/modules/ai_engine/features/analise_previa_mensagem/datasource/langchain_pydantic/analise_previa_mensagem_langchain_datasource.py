@@ -1,3 +1,5 @@
+import json
+import re
 from typing import Any, Dict, Iterable, List
 
 from langchain_core.prompts import ChatPromptTemplate
@@ -53,20 +55,6 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
                 entity_types_json=parameters.valid_entity_types,
             )
 
-            # Log de prévia da documentação dinâmica gerada a partir dos JSONs
-            # (limitada para evitar excesso de log)
-            # doc = getattr(PydanticModel, "__doc__", "") or ""
-            # if doc:
-            #     preview = "\n".join(doc.splitlines())
-            #     logger.debug(
-            #         f"Prévia da documentação dinâmica (completa):\n{preview}"
-            #     )
-            # else:
-            #     logger.warning(
-            #         "Documentação dinâmica não encontrada em "
-            #         "PydanticModel.__doc__"
-            #     )
-
             # Processar histórico do atendimento
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
@@ -76,6 +64,7 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
             # - Prioriza o prompt_system vindo dos parâmetros (se fornecido)
             # - Usa a docstring do modelo como fallback
             # Observação: escapamos chaves para não conflitar com o template
+            doc = getattr(PydanticModel, "__doc__", "") or ""
             raw_system_prompt = (
                 parameters.llm_parameters.prompt_system
                 if getattr(parameters.llm_parameters, "prompt_system", None)
@@ -97,11 +86,27 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
 
             llm = parameters.llm_parameters.create_llm
 
-            # Aplicar structured output
-            structured_llm = llm.with_structured_output(PydanticModel)
-
-            # Chain com LLM estruturado
-            chain = messages | structured_llm
+            # Tenta usar structured output com json_schema primeiro (melhor
+            # compatibilidade com alguns modelos OpenAI que não utilizam tools)
+            structured_llm = None
+            try:
+                structured_llm = llm.with_structured_output(
+                    PydanticModel, method="json_schema"
+                )
+            except Exception as e_method_json_schema:
+                logger.debug(
+                    "with_structured_output(method='json_schema') falhou: "
+                    f"{e_method_json_schema}"
+                )
+                try:
+                    # Fallback para método padrão (auto/tool calling)
+                    structured_llm = llm.with_structured_output(PydanticModel)
+                except Exception as e_method_auto:
+                    logger.debug(
+                        "with_structured_output padrão falhou: "
+                        f"{e_method_auto}"
+                    )
+                    structured_llm = None
 
             # Preparar dados para invocação com validação
             invoke_data = {
@@ -110,12 +115,36 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
                 "historico_context": historico_formatado,
             }
 
-            # Invocar a chain
-            response = chain.invoke(invoke_data)
+            response = None
+            if structured_llm is not None:
+                try:
+                    # Chain com LLM estruturado
+                    chain = messages | structured_llm
+                    # Invocar a chain
+                    response = chain.invoke(invoke_data)
+                except Exception as exc_structured:
+                    # Quando a API exigir tool_choice e o modelo não chamar,
+                    # fazemos fallback para parsing manual de JSON
+                    logger.warning(
+                        "Falha no structured output, aplicando fallback de "
+                        f"JSON: {exc_structured}"
+                    )
+
+            if response is None:
+                # Fallback: invoca sem structured output e tenta extrair JSON
+                chain_fallback = messages | llm
+                raw = chain_fallback.invoke(invoke_data)
+                text = (
+                    raw.content if hasattr(raw, "content") else str(raw)
+                )
+                model_obj = self._parse_json_to_model(text, PydanticModel)
+            else:
+                # Resposta já é instancia do PydanticModel (structured output)
+                model_obj = response
 
             # Pós-processamento: conversão simples mantendo itens válidos
-            intent_data = getattr(response, "intent", [])
-            entities_data = getattr(response, "entities", [])
+            intent_data = getattr(model_obj, "intent", [])
+            entities_data = getattr(model_obj, "entities", [])
 
             intent_dicts = self._filter_and_convert_items(intent_data)
             entity_dicts = self._filter_and_convert_items(entities_data)
@@ -225,3 +254,27 @@ class AnalisePreviaMensagemLangchainDatasource(APMData):
                 logger.debug(f"Falha ao processar item '{item}': {exc}")
                 continue
         return results
+
+    def _parse_json_to_model(self, text: str, PydanticModel: Any) -> Any:
+        """Normaliza a resposta em texto para JSON e valida no PydanticModel.
+
+        - Remove cercas de código ``` e anotações como ```json.
+        - Extrai o primeiro objeto JSON encontrado.
+        - Faz o parse via json.loads e valida com o modelo Pydantic.
+        """
+        cleaned = text.strip()
+        # Remove cercas de código no início/fim, se existirem
+        if cleaned.startswith("```"):
+            cleaned = re.sub(r"^```[a-zA-Z0-9_-]*\s*", "", cleaned)
+        if cleaned.endswith("```"):
+            cleaned = cleaned[:-3]
+        # Extrai o primeiro objeto JSON
+        match = re.search(r"\{.*\}", cleaned, flags=re.DOTALL)
+        if not match:
+            raise ValueError(
+                "Não foi possível identificar um objeto JSON na resposta."
+            )
+        json_str = match.group(0)
+        data = json.loads(json_str)
+        # Valida/instancia usando Pydantic v2
+        return PydanticModel.model_validate(data)

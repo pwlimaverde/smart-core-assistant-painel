@@ -16,6 +16,9 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
+from .analise_previa_mensagem.datasource.analise_previa_langchain import (
+    AnalisePreviaLangchainDatasource,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import (
     GenerateChunksUseCase,
 )
@@ -274,7 +277,7 @@ class FeaturesCompose:
             llm_parameters=llm_parameters,
             error=LlmError("Erro ao processar mensagem"),
         )
-        datasource: APMData = AnalisePreviaMensagemLangchainDatasource()
+        datasource: APMData = AnalisePreviaLangchainDatasource()
         usecase: APMUsecase = AnalisePreviaMensagemUsecase(datasource)
         data = usecase(parameters)
 

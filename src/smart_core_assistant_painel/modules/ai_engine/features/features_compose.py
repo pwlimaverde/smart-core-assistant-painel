@@ -8,6 +8,9 @@ interação com modelos de linguagem.
 import math
 from typing import Any, cast
 
+from ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource import (
+    AnalisePreviaLangchainDatasource,
+)
 from langchain_core.documents.base import Document
 from loguru import logger
 from py_return_success_or_error import (
@@ -16,9 +19,6 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
-from .analise_previa_mensagem.datasource.analise_previa_langchain.datasource import (
-    AnalisePreviaLangchainDatasource,
-)
 from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import (
     GenerateChunksUseCase,
 )
@@ -74,6 +74,7 @@ from .analise_mensage.datasource.analise_mensage_datasource import (
 from .analise_mensage.domain.usecase.analise_mensage_usecase import (
     AnaliseMensageUseCase,
 )
+
 # REMOVIDO: import legado AnalisePreviaMensagemLangchainDatasource
 # from .analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
 #     AnalisePreviaMensagemLangchainDatasource,

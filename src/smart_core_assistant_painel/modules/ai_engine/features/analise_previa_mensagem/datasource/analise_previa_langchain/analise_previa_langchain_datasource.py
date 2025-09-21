@@ -5,12 +5,12 @@ import re
 import unicodedata
 from typing import Any, Dict, Iterable, List
 
+from ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.pydantic_model_builder import (
+    build_analise_previa_model,
+)
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.model_builder import (
-    build_analise_previa_model,
-)
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_mensagem_langchain import (
     AnalisePreviaMensagemLangchain,
 )
@@ -45,37 +45,15 @@ class AnalisePreviaLangchainDatasource(APMData):
             entity_types_json = self._normalize_types_config(
                 parameters.valid_entity_types
             )
-            logger.debug(
-                "Tipos de intents recebidos: {} -> {} itens",
-                type(parameters.valid_intent_types).__name__,
-                len(intent_types_json),
-            )
-            logger.debug(
-                "Tipos de entidades recebidos: {} -> {} itens",
-                type(parameters.valid_entity_types).__name__,
-                len(entity_types_json),
-            )
             PydanticModel = build_analise_previa_model(
                 intent_types_json=intent_types_json,
                 entity_types_json=entity_types_json,
             )
-
-            # 2) Histórico
-            logger.debug(
-                "Tipo de historico_atendimento recebido: {}",
-                type(parameters.historico_atendimento).__name__,
-            )
             historico_formatado = self._format_service_history(
                 parameters.historico_atendimento
             )
-
-            # 3) System prompt (prioriza parâmetro, fallback docstring)
             doc = getattr(PydanticModel, "__doc__", "") or ""
-            # Loga a documentação dinâmica gerada para facilitar a inspeção
-            logger.info(
-                "Documentação dinâmica gerada (PydanticModel.__doc__):\n{}",
-                doc,
-            )
+
             raw_system_prompt = (
                 parameters.llm_parameters.prompt_system
                 if getattr(parameters.llm_parameters, "prompt_system", None)
@@ -84,7 +62,10 @@ class AnalisePreviaLangchainDatasource(APMData):
             system_prompt = raw_system_prompt.replace("{", "{{").replace(
                 "}", "}}"
             )
-
+            logger.info(
+                "System prompt gerado:\n{}",
+                system_prompt,
+            )   
             # 4) Prompt template
             messages = ChatPromptTemplate.from_messages(
                 [

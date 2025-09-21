@@ -8,7 +8,7 @@ interação com modelos de linguagem.
 import math
 from typing import Any, cast
 
-from ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource import (
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource import (
     AnalisePreviaLangchainDatasource,
 )
 from langchain_core.documents.base import Document

@@ -5,12 +5,6 @@ import re
 import unicodedata
 from typing import Any, Dict, Iterable, List
 
-from ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.pydantic_model_builder import (
-    build_analise_previa_model,
-)
-from langchain_core.prompts import ChatPromptTemplate
-from loguru import logger
-
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_mensagem_langchain import (
     AnalisePreviaMensagemLangchain,
 )
@@ -18,6 +12,11 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnalisePreviaMensagemParameters,
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.types import APMData
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.pydantic_model_builder import (
+    build_analise_previa_model,
+)
+from langchain_core.prompts import ChatPromptTemplate
+from loguru import logger
 
 
 class AnalisePreviaLangchainDatasource(APMData):

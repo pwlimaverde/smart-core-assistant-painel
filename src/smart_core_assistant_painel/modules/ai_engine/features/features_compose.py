@@ -6,11 +6,8 @@ interação com modelos de linguagem.
 """
 
 import math
-from typing import Any, cast
+from typing import Any
 
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource import (
-    AnalisePreviaLangchainDatasource,
-)
 from langchain_core.documents.base import Document
 from loguru import logger
 from py_return_success_or_error import (
@@ -19,6 +16,9 @@ from py_return_success_or_error import (
     SuccessReturn,
 )
 
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource import (
+    AnalisePreviaLangchainDatasource,
+)
 from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import (
     GenerateChunksUseCase,
 )
@@ -136,7 +136,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(list[Document], data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -170,7 +170,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(list[Document], data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -204,7 +204,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(str, data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -238,7 +238,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(str, data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -284,7 +284,7 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(APMTuple, data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -326,7 +326,7 @@ class FeaturesCompose:
         message_data = usecase(parameters)
 
         if isinstance(message_data, SuccessReturn):
-            result: MessageData = cast(MessageData, message_data.result)
+            result: MessageData = message_data.result
             if result.metadados:
                 conteudo_media: str = FeaturesCompose._converter_contexto(
                     result.metadados
@@ -377,14 +377,14 @@ class FeaturesCompose:
         data: ReturnSuccessOrError[list[float]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(list[float], data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def calculate_embedding_similarity(
+    def _calculate_embedding_similarity(
         embedding1: list[float], embedding2: list[float]
     ) -> float:
         """Calcula a similaridade do cosseno entre dois embeddings.
@@ -434,6 +434,61 @@ class FeaturesCompose:
         return similarity
 
     @staticmethod
+    def _evaluate_triple_similarity(
+        message_vec: list[float],
+        response_vec: list[float],
+        training_vec: list[float] | None = None,
+    ) -> float:
+        """Avalia a consistência entre pergunta, resposta e treinamento.
+
+        A métrica final considera as similaridades pareadas:
+        - sr: pergunta vs resposta
+        - sq: pergunta vs treinamento (se houver)
+        - st: resposta vs treinamento (se houver)
+
+        Estratégia:
+        - Se não houver ``training_vec``, o score final é reduzido, pois há
+          maior risco de alucinação. Usamos 0.75 * sr.
+        - Se houver ``training_vec``, combinamos as três similaridades com
+          pesos e penalizamos inconsistências (quando alguma fica muito baixa).
+
+        Returns:
+            float: Score final normalizado entre 0 e 1.
+        """
+        # Similaridade entre pergunta e resposta
+        sr: float = FeaturesCompose._calculate_embedding_similarity(
+            message_vec, response_vec
+        )
+
+        # Sem dados de treinamento: score com penalidade leve
+        if training_vec is None:
+            final_score: float = max(0.0, min(1.0, 0.75 * sr))
+            return final_score
+
+        # Com dados de treinamento: calcular as demais similaridades
+        sq: float = FeaturesCompose._calculate_embedding_similarity(
+            message_vec, training_vec
+        )
+        st: float = FeaturesCompose._calculate_embedding_similarity(
+            response_vec, training_vec
+        )
+
+        # Combinação ponderada das três similaridades
+        base_score: float = 0.5 * sr + 0.25 * sq + 0.25 * st
+
+        # Penalização por inconsistência com o treinamento
+        # (se uma das duas ficar muito baixa, reduzimos o score)
+        min_qt: float = min(sq, st)
+        if min_qt < 0.4:
+            # Redução proporcional ao quão abaixo do limite está
+            penalty: float = (0.4 - min_qt) * 0.5
+            base_score = max(0.0, base_score - penalty)
+
+        # Garantir faixa [0, 1]
+        final_score = max(0.0, min(1.0, base_score))
+        return final_score
+
+    @staticmethod
     def generate_chunks(
         conteudo: str, metadata: dict[str, Any]
     ) -> list[Document]:
@@ -456,7 +511,7 @@ class FeaturesCompose:
         data: ReturnSuccessOrError[list[Document]] = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return cast(list[Document], data.result)
+            return data.result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -489,27 +544,69 @@ class FeaturesCompose:
         usecase: AMUsecase = AnaliseMensageUseCase(datasource)
         data = usecase(parameters)
         if isinstance(data, SuccessReturn):
-            # Gera embeddings para dados de treinamento e resposta do bot
-            vector_treinamento: list[float] = (
+            # Normaliza resposta do bot para avaliação e regras de negócio
+            response_text: str = str(data.result).strip()
+
+            # Define flag de transferência quando a resposta indica não ter
+            # encontrado informações relacionadas OU solicitação de transferência
+            transfer_attendance: bool = False
+            apology_phrase: str = (
+                "Desculpe, não encontrei informações relacionadas à sua pergunta."
+            )
+            transfer_phrase: str = (
+                "Estarei transferindo seu atendimento para o setor responsável."
+            )
+            if (
+                apology_phrase in response_text
+                or transfer_phrase in response_text
+            ):
+                transfer_attendance = True
+                # Log para depuração do fluxo de transferência de atendimento
+                logger.info(
+                    "Regra de transferência acionada. "
+                    "transferir_atendimento=True."
+                )
+
+            # Gera embeddings para pergunta (context), treinamento (se houver)
+            # e resposta do bot. Quando não há treinamento, evitamos gerar
+            # embedding para string vazia.
+            vector_mensagem: list[float] = (
                 FeaturesCompose.generate_embeddings(context)
             )
-            vector_resposta: list[float] = FeaturesCompose.generate_embeddings(
-                data.result
-            )
-
-            # Calcula a similaridade entre os embeddings
-            similarity_score: float = (
-                FeaturesCompose.calculate_embedding_similarity(
-                    vector_treinamento, vector_resposta
+            vector_treinamento: list[float] | None = None
+            if dados_treinamento and str(dados_treinamento).strip():
+                vector_treinamento = FeaturesCompose.generate_embeddings(
+                    dados_treinamento
                 )
+            vector_resposta: list[float] = FeaturesCompose.generate_embeddings(
+                response_text
             )
 
-            # Log da similaridade para análise
+            # Calcula a similaridade considerando os 3 vetores
+            final_score = FeaturesCompose._evaluate_triple_similarity(
+                message_vec=vector_mensagem,
+                response_vec=vector_resposta,
+                training_vec=vector_treinamento,
+            )
+
+            # Log do score final para análise
             logger.info(
-                f"Similaridade entre treinamento e resposta: {similarity_score:.4f}"
+                "Score de confiabilidade (triádico): %.4f" % final_score
             )
 
-            return AMTuple(resposta_bot=data.result, confiabilidade=similarity_score)
+            # Se o score ficar abaixo do limiar, transfere atendimento
+            if final_score < 0.6:
+                transfer_attendance = True
+                logger.info(
+                    "Score abaixo do limiar (0.6). "
+                    "transferir_atendimento=True."
+                )
+
+            return AMTuple(
+                resposta_bot=response_text,
+                confiabilidade=final_score,
+                transferir_atendimento=transfer_attendance,
+            )
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:

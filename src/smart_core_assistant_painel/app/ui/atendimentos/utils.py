@@ -143,47 +143,19 @@ def send_message_response(phone: str) -> None:
                     context=mensagem.conteudo,
                     dados_treinamento=dados_treinamento,
                 )
-                if result.confiabilidade >= 0.7:
-                    SERVICEHUB.whatsapp_service.send_message(
-                        instance=message_data.instance,
-                        api_key=message_data.api_key,
-                        number=message_data.numero_telefone,
-                        text=result.resposta_bot,
-                    )
-                    mensagem.registrar_resposta_bot(
-                        resposta=result.resposta_bot,
-                        confianca=result.confiabilidade,
-                    )
-                elif result.confiabilidade >= 0.5:
-                    # Faixa intermediária (0.50–0.69): enviar resposta com perguntas de esclarecimento
-                    SERVICEHUB.whatsapp_service.send_message(
-                        instance=message_data.instance,
-                        api_key=message_data.api_key,
-                        number=message_data.numero_telefone,
-                        text=result.resposta_bot,
-                    )
-                    mensagem.registrar_resposta_bot(
-                        resposta=result.resposta_bot,
-                        confianca=result.confiabilidade,
-                    )
-                    logger.info(
-                        f"DEBUG: Resposta enviada com pedidos de esclarecimento (confiabilidade={result.confiabilidade:.3f})"
-                    )
-                else:
-                    # Baixa confiabilidade (< 0.50): mensagem de transferência (conteúdo já pós-processado)
-                    SERVICEHUB.whatsapp_service.send_message(
-                        instance=message_data.instance,
-                        api_key=message_data.api_key,
-                        number=message_data.numero_telefone,
-                        text=result.resposta_bot,
-                    )
-                    mensagem.registrar_resposta_bot(
-                        resposta=result.resposta_bot,
-                        confianca=result.confiabilidade,
-                    )
-
+                SERVICEHUB.whatsapp_service.send_message(
+                    instance=message_data.instance,
+                    api_key=message_data.api_key,
+                    number=message_data.numero_telefone,
+                    text=result.resposta_bot,
+                )
+                mensagem.registrar_resposta_bot(
+                    resposta=result.resposta_bot,
+                    confianca=result.confiabilidade,
+                )
+                if result.transferir_atendimento:
                     logger.warning(
-                        f"DEBUG: Bot transferiu atendimento - confiança muito baixa ({result.confiabilidade:.3f})"
+                        "DEBUG: Bot transferiu atendimento"
                     )
             else:
                 logger.warning(

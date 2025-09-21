@@ -1,4 +1,3 @@
-import re
 from typing import Any
 
 from langchain_core.output_parsers import StrOutputParser
@@ -30,9 +29,10 @@ class AnaliseMensageDatasource(AMData):
                         "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
                         "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
                         "2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, "
-                        'responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta.\n'
+                        'responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."\n'
                         "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
                         "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
+                        "5. **Solicitação de Transferência (Regra Prioritária):** Se o usuário solicitar transferência para um setor específico, para um atendente específico, ou pedir para falar com um humano, responda exatamente: \"Estarei transferindo seu atendimento para o setor responsável.\"\n"
                     ),
                 ),
                 (

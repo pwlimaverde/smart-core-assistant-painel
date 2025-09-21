@@ -8,7 +8,10 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.treinamento.models import Documento, QueryCompose
+from smart_core_assistant_painel.app.ui.treinamento.models import (
+    Documento,
+    QueryCompose,
+)
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
@@ -29,7 +32,7 @@ def set_wa_buffer(message: MessageData) -> None:
     cache_key = f"wa_buffer_{message.numero_telefone}"
     buffer = cache.get(cache_key, [])
     buffer.append(message)
-    timeout = SERVICEHUB.TIME_CACHE + 120
+    timeout = SERVICEHUB.TIME_CACHE + 60
     cache.set(cache_key, buffer, timeout=timeout)
 
 
@@ -50,7 +53,7 @@ def send_message_response(phone: str) -> None:
         return
     try:
         message_data = _compile_message_data_list(message_data_list)
-        
+
         mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=message_data.numero_telefone,
             conteudo=message_data.conteudo,
@@ -102,29 +105,63 @@ def send_message_response(phone: str) -> None:
                         ).strip()
                         prompt_lines.append(f"{index}. [{tag}] {behavior}")
                     else:
-                        intent_vector: list[float] = FeaturesCompose.generate_embeddings(f"{tag}: {intent[tag]}")
-                        comportamento: str|None = QueryCompose.buscar_comportamento_similar(intent_vector) 
+                        intent_vector: list[float] = (
+                            FeaturesCompose.generate_embeddings(
+                                f"{tag}: {intent[tag]}"
+                            )
+                        )
+                        comportamento: str | None = (
+                            QueryCompose.buscar_comportamento_similar(
+                                intent_vector
+                            )
+                        )
                         if comportamento:
-                            prompt_lines.append(f"{index}. [{tag}] {comportamento}")
+                            prompt_lines.append(
+                                f"{index}. [{tag}] {comportamento}"
+                            )
                 prompt_lines.append(
                     (
                         "Se houver múltiplas intenções, priorize a ordem "
                         "listada e mantenha a resposta concisa."
                     )
                 )
+                historico_atendimento = (
+                    atendimento_obj.carregar_historico_mensagens(
+                        excluir_mensagem_id=mensagem_id
+                    )
+                )
                 prompt_intent: str = "\n".join(prompt_lines)
-                vector_conteudo = FeaturesCompose.generate_embeddings(mensagem.conteudo)
-                dados_treinamento = Documento.buscar_documentos_similares(query_vec=vector_conteudo)
-                logger.warning(f"Prompt intent: {prompt_intent}")
+                vector_conteudo = FeaturesCompose.generate_embeddings(
+                    mensagem.conteudo
+                )
+                dados_treinamento = Documento.buscar_documentos_similares(
+                    query_vec=vector_conteudo
+                )
+                result = FeaturesCompose.analise_mensage(
+                    historico_atendimento=historico_atendimento,
+                    prompt_human=prompt_intent,
+                    context=mensagem.conteudo,
+                    dados_treinamento=dados_treinamento,
+                )
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,
                     number=message_data.numero_telefone,
-                    text="Obrigado pela sua mensagem, em breve um atendente entrará em contato.",
+                    text=result.resposta_bot,
                 )
+                mensagem.registrar_resposta_bot(
+                    resposta=result.resposta_bot,
+                    confianca=result.confiabilidade,
+                )
+                if result.transferir_atendimento:
+                    logger.warning(
+                        "DEBUG: Bot transferiu atendimento"
+                    )
             else:
-                logger.warning(f"DEBUG: Bot não pode responder - pulando processamento de intents")
-                
+                logger.warning(
+                    "DEBUG: Bot não pode responder - pulando processamento de intents"
+                )
+
         except Mensagem.DoesNotExist:
             logger.error(
                 f"Mensagem criada (ID: {mensagem_id}) não encontrada."
@@ -141,7 +178,7 @@ def sched_message_response(phone: str) -> None:
     """Agenda o processamento da resposta via signal."""
     timer_key = f"wa_timer_{phone}"
     if not cache.get(timer_key):
-        timeout_value = SERVICEHUB.TIME_CACHE + 120
+        timeout_value = SERVICEHUB.TIME_CACHE + 60
         cache.set(timer_key, True, timeout=timeout_value)
         mensagem_bufferizada.send(sender="atendimentos", phone=phone)
 
@@ -165,6 +202,7 @@ def _obter_entidades_metadados_validas() -> set[str]:
     except Exception as e:
         logger.error(f"Erro ao obter entidades válidas: {e}")
         return set()
+
 
 def _processar_entidades_contato(
     mensagem: "Mensagem", entity_types: list[dict[str, Any]]
@@ -271,6 +309,7 @@ def _pode_bot_responder_atendimento(
     except Exception as e:
         logger.error(f"Erro ao verificar se o bot pode responder: {e}")
         return False
+
 
 def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
     """Compila uma lista de MessageData em um único objeto."""

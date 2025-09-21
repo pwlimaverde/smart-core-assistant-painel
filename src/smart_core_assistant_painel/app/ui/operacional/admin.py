@@ -78,7 +78,9 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
         """Retorna a quantidade de atendimentos ativos do atendente."""
         return obj.get_atendimentos_ativos() if obj else 0
 
-    @admin.action(description="Marcar atendentes selecionados como disponíveis")
+    @admin.action(
+        description="Marcar atendentes selecionados como disponíveis"
+    )
     def marcar_como_disponivel(
         self, request: HttpRequest, queryset: QuerySet[AtendenteHumano]
     ) -> None:
@@ -89,7 +91,9 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
             f"{queryset.count()} atendentes marcados como disponíveis.",
         )
 
-    @admin.action(description="Marcar atendentes selecionados como indisponíveis")
+    @admin.action(
+        description="Marcar atendentes selecionados como indisponíveis"
+    )
     def marcar_como_indisponivel(
         self, request: HttpRequest, queryset: QuerySet[AtendenteHumano]
     ) -> None:

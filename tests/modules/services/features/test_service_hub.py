@@ -2,8 +2,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-from langchain.docstore.document import Document
-
 from smart_core_assistant_painel.modules.services import ServiceHub
 
 
@@ -207,8 +205,11 @@ class TestServiceHub(unittest.TestCase):
 
     # Testes para métodos
     def test_set_whatsapp_service(self):
-        from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import WhatsAppService
         from unittest.mock import Mock
+
+        from smart_core_assistant_painel.modules.services.features.whatsapp_services.domain.interface.whatsapp_service import (
+            WhatsAppService,
+        )
         
         mock_service = Mock(spec=WhatsAppService)
         hub = ServiceHub()

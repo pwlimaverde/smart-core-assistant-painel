@@ -1,12 +1,18 @@
 """Testes para o FirebaseInitUseCase."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from smart_core_assistant_painel.modules.initial_loading.features.firebase_init.domain.usecase.firebase_init_usecase import FirebaseInitUseCase
-from smart_core_assistant_painel.modules.initial_loading.utils.parameters import FirebaseInitParameters
-from smart_core_assistant_painel.modules.initial_loading.utils.erros import FirebaseInitError
 from py_return_success_or_error import EMPTY, ErrorReturn, SuccessReturn
+
+from smart_core_assistant_painel.modules.initial_loading.features.firebase_init.domain.usecase.firebase_init_usecase import (
+    FirebaseInitUseCase,
+)
+from smart_core_assistant_painel.modules.initial_loading.utils.erros import (
+    FirebaseInitError,
+)
+from smart_core_assistant_painel.modules.initial_loading.utils.parameters import (
+    FirebaseInitParameters,
+)
 
 
 class TestFirebaseInitUseCase:

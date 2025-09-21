@@ -1,8 +1,5 @@
 from typing import Any
 
-from ai_engine.features.analise_mensage.datasource.analise_mensagem_langchain import (
-    AnaliseMensagemLangchain,
-)
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
@@ -14,62 +11,59 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import AMData
 
 
 class AnaliseMensageDatasource(AMData):
-    def __call__(self, parameters: AnaliseMensageParameters) -> AnaliseMensagemLangchain:
+    def __call__(
+        self, parameters: AnaliseMensageParameters
+    ) -> str:
         try:
-
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
             )
 
             messages_spec: list[tuple[str, str]] = [
-                ("system", (
-                    f"{parameters.llm_parameters.prompt_system}\n\n"
-                    f"{parameters.llm_parameters.prompt_human}\n\n"
-                    "### Regras de Resposta (siga rigorosamente):\n"
-                    "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
-                    "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
-                    "2. **Informação Insuficiente:** Se o <contexto_rag> não contiver informações suficientes para responder à <pergunta_usuario>, "
-                    "responda exatamente: \"Desculpe, não encontrei informações suficientes para responder. Vou transferir seu atendimento para o setor responsável.\"\n"
-                    "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
-                    "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
-                )),
-                ("user", (
-                    "<historico_conversa>\n"
-                    "(Apenas para referência de contexto, não como fonte factual)\n"
-                    "{historico_context}\n"
-                    "</historico_conversa>\n\n"
-                    "<contexto_rag>\n"
-                    "{dados_treinamento}\n"
-                    "</contexto_rag>\n\n"
-                    "<pergunta_usuario>\n"
-                    "{context}\n"
-                    "</pergunta_usuario>\n\n"
-                    "Com base apenas nas regras acima, elabore a resposta final ao usuário."
-                )),
+                (
+                    "system",
+                    (
+                        f"{parameters.llm_parameters.prompt_system}\n\n"
+                        f"{parameters.llm_parameters.prompt_human}\n\n"
+                        "### Regras de Resposta (siga rigorosamente):\n"
+                        "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
+                        "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
+                        "2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, "
+                        'responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."\n'
+                        "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
+                        "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
+                        "5. **Solicitação de Transferência (Regra Prioritária):** Se o usuário solicitar transferência para um setor específico, para um atendente específico, ou pedir para falar com um humano, responda exatamente: \"Estarei transferindo seu atendimento para o setor responsável.\"\n"
+                    ),
+                ),
+                (
+                    "user",
+                    (
+                        "<historico_conversa>\n"
+                        "(Apenas para referência de contexto, não como fonte factual)\n"
+                        "{historico_context}\n"
+                        "</historico_conversa>\n\n"
+                        "<contexto_rag>\n"
+                        "{dados_treinamento}\n"
+                        "</contexto_rag>\n\n"
+                        "<pergunta_usuario>\n"
+                        "{context}\n"
+                        "</pergunta_usuario>\n\n"
+                        "Com base apenas nas regras acima, elabore a resposta final ao usuário."
+                    ),
+                ),
             ]
-
             messages = ChatPromptTemplate.from_messages(messages_spec)
-            
-            
             llm = parameters.llm_parameters.create_llm
             parser = StrOutputParser()
-            # Chain com LLM estruturado
             chain = messages | llm | parser
-
-            # Preparar dados para invocação com validação
             invoke_data = {
                 "historico_context": historico_formatado,
                 "dados_treinamento": parameters.dados_treinamento,
                 "context": parameters.llm_parameters.context,
             }
-            logger.info(f"Prompt: {messages.invoke(invoke_data)}")
-            # Invocar a chain
             resposta_bot = chain.invoke(invoke_data)
-
-            return AnaliseMensagemLangchain(
-                resposta_bot=resposta_bot,
-                confiabilidade=0.0,
-            )
+            
+            return resposta_bot
 
         except Exception as e:
             logger.error(f"Erro ao processar análise prévia: {e}")

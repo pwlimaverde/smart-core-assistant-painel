@@ -1,7 +1,6 @@
 """Tests for the Operacional app URLs."""
 
 from django.test import TestCase
-from django.urls import reverse, resolve
 
 
 class TestOperacionalAppUrls(TestCase):

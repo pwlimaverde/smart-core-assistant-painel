@@ -63,6 +63,7 @@ class ServiceHub:
             self._prompt_human_melhoria_conteudo: Optional[str] = None
             self._prompt_human_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_previa_mensagem: Optional[str] = None
+            self._prompt_system_analise_mensagem: Optional[str] = None
             # Embeddings
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
@@ -246,6 +247,19 @@ class ServiceHub:
             else ""
         )
 
+    @property
+    def PROMPT_SYSTEM_ANALISE_MENSAGEM(self) -> str:
+        """Retorna o prompt de sistema para análise de mensagem."""
+        if self._prompt_system_analise_mensagem is None:
+            self._prompt_system_analise_mensagem = os.environ.get(
+                "PROMPT_SYSTEM_ANALISE_MENSAGEM"
+            )
+        return (
+            self._prompt_system_analise_mensagem
+            if self._prompt_system_analise_mensagem is not None
+            else ""
+        )
+
     # Embeddings
     @property
     def CHUNK_OVERLAP(self) -> int:
@@ -358,8 +372,6 @@ class ServiceHub:
             if self._valid_entity_types is not None
             else ""
         )
-
-
 
     @property
     def TIME_CACHE(self) -> int:

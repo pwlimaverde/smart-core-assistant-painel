@@ -8,9 +8,6 @@ de dados específicas.
 
 from typing import Any, NamedTuple, TypeAlias
 
-from ai_engine.features.analise_mensage.domain.interface.analise_mensagem import (
-    AnaliseMensagem,
-)
 from langchain.docstore.document import Document
 from py_return_success_or_error import (
     Datasource,
@@ -104,6 +101,7 @@ GCUsecase: TypeAlias = UsecaseBase[
     GenerateChunksParameters,
 ]
 
+
 class AMTuple(NamedTuple):
     """Tupla nomeada para dados de Análise Prévia de Mensagem.
 
@@ -116,10 +114,12 @@ class AMTuple(NamedTuple):
 
     resposta_bot: str
     confiabilidade: float
+    transferir_atendimento: bool
 
-AMData: TypeAlias = Datasource[AnaliseMensagem, AnaliseMensageParameters]
+
+AMData: TypeAlias = Datasource[str, AnaliseMensageParameters]
 AMUsecase: TypeAlias = UsecaseBaseCallData[
-    AMTuple,
-    AnaliseMensagem,
+    str,
+    str,
     AnaliseMensageParameters,
 ]

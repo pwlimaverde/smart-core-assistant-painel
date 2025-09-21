@@ -8,8 +8,6 @@ from django.test import TestCase
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
     Departamento,
-    validate_api_key,
-    validate_telefone_instancia,
 )
 
 
@@ -89,13 +87,17 @@ class TestOperacionalDepartamento(TestCase):
         self.assertEqual(result, self.departamento)
 
         data_sem_key = {"instance": "11999999999"}
-        with patch("smart_core_assistant_painel.app.ui.operacional.models.logger") as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.operacional.models.logger"
+        ) as mock_logger:
             result = Departamento.validar_api_key(data_sem_key)
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
 
         data_sem_instance = {"apikey": "chave_teste_12345"}
-        with patch("smart_core_assistant_painel.app.ui.operacional.models.logger") as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.operacional.models.logger"
+        ) as mock_logger:
             result = Departamento.validar_api_key(data_sem_instance)
             self.assertIsNone(result)
             mock_logger.warning.assert_called()
@@ -104,7 +106,9 @@ class TestOperacionalDepartamento(TestCase):
             "apikey": "chave_inexistente",
             "instance": "11000000000",
         }
-        with patch("smart_core_assistant_painel.app.ui.operacional.models.logger") as mock_logger:
+        with patch(
+            "smart_core_assistant_painel.app.ui.operacional.models.logger"
+        ) as mock_logger:
             result = Departamento.validar_api_key(data_invalida)
             self.assertIsNone(result)
             mock_logger.warning.assert_called()

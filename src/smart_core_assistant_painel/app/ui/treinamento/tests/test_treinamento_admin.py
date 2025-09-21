@@ -3,7 +3,9 @@
 from django.contrib.admin.sites import AdminSite
 from django.test import TestCase
 
-from smart_core_assistant_painel.app.ui.treinamento.admin import TreinamentoAdmin
+from smart_core_assistant_painel.app.ui.treinamento.admin import (
+    TreinamentoAdmin,
+)
 from smart_core_assistant_painel.app.ui.treinamento.models import Treinamento
 
 

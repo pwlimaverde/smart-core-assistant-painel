@@ -1,5 +1,5 @@
-import os
 import argparse
+import os
 
 from rich.console import Console
 from rich.panel import Panel

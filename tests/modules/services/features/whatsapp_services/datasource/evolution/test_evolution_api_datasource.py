@@ -1,8 +1,8 @@
 """Testes para EvolutionAPIDatasource."""
 
-import pytest
 from unittest.mock import Mock, patch
 
+import pytest
 from py_return_success_or_error import NoParams
 
 from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_api_datasource import (

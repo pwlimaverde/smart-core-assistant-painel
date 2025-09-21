@@ -12,7 +12,9 @@ def validate_telefone(value: str) -> None:
     """
     telefone_limpo: str = re.sub(r"\D", "", value)
     if len(telefone_limpo) < 10 or len(telefone_limpo) > 15:
-        raise ValidationError("Número de telefone deve ter entre 10 e 15 dígitos.")
+        raise ValidationError(
+            "Número de telefone deve ter entre 10 e 15 dígitos."
+        )
     if not telefone_limpo.isdigit():
         raise ValidationError("Número de telefone deve conter apenas números.")
 
@@ -214,11 +216,13 @@ class Cliente(models.Model):
         default="Brasil",
         help_text="País do cliente",
     )
-    contatos: models.ManyToManyField["Contato", "Contato"] = models.ManyToManyField(
-        "Contato",
-        blank=True,
-        related_name="clientes",
-        help_text="Contatos vinculados ao cliente",
+    contatos: models.ManyToManyField["Contato", "Contato"] = (
+        models.ManyToManyField(
+            "Contato",
+            blank=True,
+            related_name="clientes",
+            help_text="Contatos vinculados ao cliente",
+        )
     )
     data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro do cliente"
@@ -270,7 +274,9 @@ class Cliente(models.Model):
     def clean(self) -> None:
         super().clean()
         if not self.nome_fantasia or not self.nome_fantasia.strip():
-            raise ValidationError({"nome_fantasia": "Nome fantasia é obrigatório."})
+            raise ValidationError(
+                {"nome_fantasia": "Nome fantasia é obrigatório."}
+            )
 
     def get_endereco_completo(self) -> str:
         partes_endereco: list[str] = []

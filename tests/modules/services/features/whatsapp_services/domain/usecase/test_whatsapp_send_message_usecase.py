@@ -1,8 +1,8 @@
-import pytest
 from unittest.mock import MagicMock
-import requests
 
-from py_return_success_or_error import SuccessReturn, ErrorReturn
+import pytest
+import requests
+from py_return_success_or_error import ErrorReturn, SuccessReturn
 
 from smart_core_assistant_painel.modules.services import (
     WhatsAppMensagemParameters,

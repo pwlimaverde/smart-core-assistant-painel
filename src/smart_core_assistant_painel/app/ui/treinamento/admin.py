@@ -10,7 +10,7 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from .models import Documento, Treinamento, QueryCompose
+from .models import Documento, QueryCompose, Treinamento
 
 
 @admin.register(Treinamento)
@@ -87,7 +87,9 @@ class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
             try:
                 if isinstance(vetor, (list, tuple)):
                     seq = list(vetor)
-                elif hasattr(vetor, "tolist") and callable(getattr(vetor, "tolist")):
+                elif hasattr(vetor, "tolist") and callable(
+                    getattr(vetor, "tolist")
+                ):
                     seq = vetor.tolist()
                 else:
                     try:
@@ -137,7 +139,9 @@ class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
         except Exception as e:
             return f"Erro: {type(e).__name__}"
 
-    @admin.action(description="Marcar treinamentos selecionados como vetorizados")
+    @admin.action(
+        description="Marcar treinamentos selecionados como vetorizados"
+    )
     def marcar_como_vetorizado(
         self, request: HttpRequest, queryset: QuerySet[Treinamento]
     ) -> None:
@@ -148,7 +152,9 @@ class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
             f"{queryset.count()} treinamentos marcados como vetorizados.",
         )
 
-    @admin.action(description="Marcar treinamentos selecionados como não vetorizados")
+    @admin.action(
+        description="Marcar treinamentos selecionados como não vetorizados"
+    )
     def marcar_como_nao_vetorizado(
         self, request: HttpRequest, queryset: QuerySet[Treinamento]
     ) -> None:
@@ -166,7 +172,9 @@ class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
         self, request: HttpRequest, queryset: QuerySet[Treinamento]
     ) -> None:
         """Reprocessa os treinamentos selecionados marcando como finalizados."""
-        queryset.update(treinamento_finalizado=True, treinamento_vetorizado=False)
+        queryset.update(
+            treinamento_finalizado=True, treinamento_vetorizado=False
+        )
         self.message_user(
             request,
             f"{queryset.count()} treinamentos marcados para reprocessamento.",
@@ -260,7 +268,9 @@ class DocumentoAdmin(admin.ModelAdmin[Documento]):
             try:
                 if isinstance(vetor, (list, tuple)):
                     seq = list(vetor)
-                elif hasattr(vetor, "tolist") and callable(getattr(vetor, "tolist")):
+                elif hasattr(vetor, "tolist") and callable(
+                    getattr(vetor, "tolist")
+                ):
                     seq = vetor.tolist()
                 else:
                     try:
@@ -372,7 +382,9 @@ class QueryComposeAdmin(admin.ModelAdmin[QueryCompose]):
             try:
                 if isinstance(vetor, (list, tuple)):
                     seq = list(vetor)
-                elif hasattr(vetor, "tolist") and callable(getattr(vetor, "tolist")):
+                elif hasattr(vetor, "tolist") and callable(
+                    getattr(vetor, "tolist")
+                ):
                     seq = vetor.tolist()
                 else:
                     try:

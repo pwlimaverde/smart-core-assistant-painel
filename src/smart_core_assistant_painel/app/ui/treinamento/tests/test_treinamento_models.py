@@ -1,11 +1,10 @@
 """Testes para os modelos do app Treinamento."""
 
 import logging
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
 from django.test import TestCase
-from langchain.docstore.document import Document
 
 from smart_core_assistant_painel.app.ui.treinamento.models import (
     QueryCompose,
@@ -105,53 +104,67 @@ class TestQueryCompose(TestCase):
             grupo="vendas",
             descricao="Solicitação de orçamento para produtos ou serviços",
             exemplo="Preciso de um orçamento para 100 camisetas personalizadas",
-            comportamento="Você deve solicitar detalhes específicos sobre o produto e fornecer informações de preço."
+            comportamento="Você deve solicitar detalhes específicos sobre o produto e fornecer informações de preço.",
         )
 
     def test_query_compose_creation(self) -> None:
         """Testa a criação de um QueryCompose."""
         self.assertEqual(self.query_compose.tag, "orcamento")
         self.assertEqual(self.query_compose.grupo, "vendas")
-        self.assertEqual(self.query_compose.descricao, "Solicitação de orçamento para produtos ou serviços")
-        self.assertEqual(self.query_compose.exemplo, "Preciso de um orçamento para 100 camisetas personalizadas")
+        self.assertEqual(
+            self.query_compose.descricao,
+            "Solicitação de orçamento para produtos ou serviços",
+        )
+        self.assertEqual(
+            self.query_compose.exemplo,
+            "Preciso de um orçamento para 100 camisetas personalizadas",
+        )
         self.assertIsNotNone(self.query_compose.created_at)
         self.assertIsNotNone(self.query_compose.updated_at)
 
     def test_query_compose_str_representation(self) -> None:
         """Testa a representação string do QueryCompose."""
         self.assertEqual(str(self.query_compose), "orcamento")
-        
+
         # Teste com tag vazia
         query_sem_tag = QueryCompose.objects.create(
             tag="",
             grupo="teste",
             descricao="Teste sem tag",
             exemplo="Exemplo teste",
-            comportamento="Comportamento teste"
+            comportamento="Comportamento teste",
         )
         self.assertEqual(str(query_sem_tag), "sem-tag")
-
-
 
     def test_to_embedding_text(self) -> None:
         """Testa o método to_embedding_text."""
         result = self.query_compose.to_embedding_text()
-        
+
         # Verifica se contém a descrição
-        self.assertIn("Solicitação de orçamento para produtos ou serviços", result)
-        
+        self.assertIn(
+            "Solicitação de orçamento para produtos ou serviços", result
+        )
+
         # Verifica se contém o exemplo formatado
-        self.assertIn("Exemplo: Preciso de um orçamento para 100 camisetas personalizadas", result)
-        
+        self.assertIn(
+            "Exemplo: Preciso de um orçamento para 100 camisetas personalizadas",
+            result,
+        )
+
         # Verifica se contém a categoria (tag)
         self.assertIn("Categoria: orcamento", result)
-        
+
         # Verifica a estrutura com quebras de linha
         lines = result.split("\n")
         self.assertEqual(len(lines), 3)
         self.assertEqual(lines[0], "Categoria: orcamento")
-        self.assertEqual(lines[1], "Solicitação de orçamento para produtos ou serviços")
-        self.assertEqual(lines[2], "Exemplo: Preciso de um orçamento para 100 camisetas personalizadas")
+        self.assertEqual(
+            lines[1], "Solicitação de orçamento para produtos ou serviços"
+        )
+        self.assertEqual(
+            lines[2],
+            "Exemplo: Preciso de um orçamento para 100 camisetas personalizadas",
+        )
 
     def test_to_embedding_text_campos_vazios(self) -> None:
         """Testa o método to_embedding_text com campos vazios."""
@@ -160,16 +173,16 @@ class TestQueryCompose(TestCase):
             grupo="grupo_teste",
             descricao="Apenas descrição",
             exemplo="",
-            comportamento="Comportamento teste"
+            comportamento="Comportamento teste",
         )
-        
+
         result = query_minimo.to_embedding_text()
-        
+
         # Deve conter apenas descrição e categoria
         self.assertIn("Apenas descrição", result)
         self.assertIn("Categoria: teste", result)
         self.assertNotIn("Exemplo:", result)
-        
+
         lines = result.split("\n")
         self.assertEqual(len(lines), 2)
 
@@ -180,15 +193,15 @@ class TestQueryCompose(TestCase):
             grupo="grupo_teste",
             descricao="",
             exemplo="Apenas exemplo",
-            comportamento="Comportamento teste"
+            comportamento="Comportamento teste",
         )
-        
+
         result = query_sem_desc.to_embedding_text()
-        
+
         # Deve conter exemplo e categoria
         self.assertIn("Exemplo: Apenas exemplo", result)
         self.assertIn("Categoria: teste", result)
-        
+
         lines = result.split("\n")
         self.assertEqual(len(lines), 2)
 
@@ -199,11 +212,11 @@ class TestQueryCompose(TestCase):
             grupo="grupo_teste",
             descricao="",
             exemplo="",
-            comportamento="Comportamento teste"
+            comportamento="Comportamento teste",
         )
-        
+
         result = query_vazio.to_embedding_text()
-        
+
         # Deve retornar string vazia quando não há conteúdo relevante
         self.assertEqual(result, "")
 
@@ -215,10 +228,10 @@ class TestQueryCompose(TestCase):
             grupo="grupo_valido",
             descricao="Teste",
             exemplo="Exemplo",
-            comportamento="Comportamento"
+            comportamento="Comportamento",
         )
         query_valido.full_clean()  # Não deve gerar exceção
-        
+
         # Teste com tag inválida
         with self.assertRaises(ValidationError):
             query_invalido = QueryCompose(
@@ -226,10 +239,10 @@ class TestQueryCompose(TestCase):
                 grupo="grupo_valido",
                 descricao="Teste",
                 exemplo="Exemplo",
-                comportamento="Comportamento"
+                comportamento="Comportamento",
             )
             query_invalido.full_clean()
-        
+
         # Teste com grupo inválido
         with self.assertRaises(ValidationError):
             query_invalido = QueryCompose(
@@ -237,13 +250,12 @@ class TestQueryCompose(TestCase):
                 grupo="Grupo Inválido",
                 descricao="Teste",
                 exemplo="Exemplo",
-                comportamento="Comportamento"
+                comportamento="Comportamento",
             )
             query_invalido.full_clean()
 
     def test_buscar_comportamento_similar_com_threshold(self) -> None:
         """Testa a busca de comportamento similar com threshold interno fixo usando mock do queryset para evitar dependência de pgvector/SQL."""
-        from unittest.mock import patch  # import local para evitar alterar imports globais
 
         # Stub simples que emula a cadeia do QuerySet usado no método
         class _DummyQS:
@@ -291,7 +303,12 @@ class TestQueryCompose(TestCase):
 
         # Patch da chamada objects.filter para retornar os stubs em sequência (primeira chamada: distância alta -> None; segunda: baixa -> retorno válido)
         with patch.object(
-            QueryCompose.objects, "filter", side_effect=[_DummyQS(high_distance_obj), _DummyQS(low_distance_obj)]
+            QueryCompose.objects,
+            "filter",
+            side_effect=[
+                _DummyQS(high_distance_obj),
+                _DummyQS(low_distance_obj),
+            ],
         ):
             # Cenário 1: vetor muito diferente (simulado por distância alta) -> None
             result_high = QueryCompose.buscar_comportamento_similar(
@@ -306,4 +323,6 @@ class TestQueryCompose(TestCase):
             self.assertIsNotNone(result_low)
             assert result_low is not None
             self.assertIn("📚 Comportamento que deve ser seguido:", result_low)
-            self.assertIn("Você deve responder sobre testes únicos", result_low)
+            self.assertIn(
+                "Você deve responder sobre testes únicos", result_low
+            )

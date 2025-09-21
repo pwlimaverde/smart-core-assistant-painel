@@ -3,7 +3,6 @@
 from django.test import TestCase
 from django.utils import timezone
 
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
@@ -11,6 +10,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoMensagem,
     TipoRemetente,
 )
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
 
 class TestAtendimento(TestCase):
@@ -29,7 +29,9 @@ class TestAtendimento(TestCase):
     def test_atendimento_creation(self) -> None:
         """Testa a criação de um atendimento."""
         self.assertEqual(self.atendimento.contato, self.contato)
-        self.assertEqual(self.atendimento.status, StatusAtendimento.EM_ANDAMENTO)
+        self.assertEqual(
+            self.atendimento.status, StatusAtendimento.EM_ANDAMENTO
+        )
         self.assertIsNotNone(self.atendimento.data_inicio)
         self.assertIsNone(self.atendimento.data_fim)
 

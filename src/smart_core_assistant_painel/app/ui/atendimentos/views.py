@@ -27,10 +27,12 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
             body_str = request.body.decode("utf-8", errors="ignore")
             logger.warning("Decoding with errors='ignore' applied")
 
-        data:dict[str, Any] = json.loads(body_str)
+        data: dict[str, Any] = json.loads(body_str)
         departamento = Departamento.validar_api_key(data)
         if not departamento:
-            return JsonResponse({"error": "Invalid or inactive API key"}, status=401)
+            return JsonResponse(
+                {"error": "Invalid or inactive API key"}, status=401
+            )
 
         logger.info(f"Received webhook: {data}")
         message = FeaturesCompose.load_message_data(data)

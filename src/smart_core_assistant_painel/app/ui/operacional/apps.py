@@ -3,8 +3,8 @@ from loguru import logger
 
 
 class OperacionalConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'smart_core_assistant_painel.app.ui.operacional'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "smart_core_assistant_painel.app.ui.operacional"
 
     def ready(self) -> None:
         """Inicializa Firebase e carrega variáveis de ambiente.

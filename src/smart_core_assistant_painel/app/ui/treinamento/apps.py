@@ -8,6 +8,7 @@ class TreinamentoConfig(AppConfig):
 
     def ready(self) -> None:
         from . import signals  # noqa: F401
+
         # Inicialização idempotente dos serviços essenciais
         try:
             from smart_core_assistant_painel.modules.initial_loading import (

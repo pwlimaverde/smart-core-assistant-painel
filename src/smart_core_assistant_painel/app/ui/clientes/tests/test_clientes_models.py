@@ -11,7 +11,9 @@ class TestClientesContato(TestCase):
     def setUp(self) -> None:
         """Configuração inicial para os testes."""
         self.contato = Contato.objects.create(
-            telefone="5511999999999", nome_contato="Cliente Teste", email="cliente@teste.com"
+            telefone="5511999999999",
+            nome_contato="Cliente Teste",
+            email="cliente@teste.com",
         )
 
     def test_contato_creation(self) -> None:

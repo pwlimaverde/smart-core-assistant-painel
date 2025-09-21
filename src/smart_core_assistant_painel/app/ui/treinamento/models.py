@@ -17,15 +17,20 @@ from pgvector.django import CosineDistance, VectorField
 def validate_identificador(value: str) -> None:
     """Valida se o identificador está em formato válido."""
     if len(value) > 40:
-        raise ValidationError("Identificador deve ter no máximo 40 caracteres.")
+        raise ValidationError(
+            "Identificador deve ter no máximo 40 caracteres."
+        )
     if " " in value:
         raise ValidationError("Identificador não deve conter espaços.")
     if not value.islower():
-        raise ValidationError("Identificador deve conter apenas letras minúsculas.")
+        raise ValidationError(
+            "Identificador deve conter apenas letras minúsculas."
+        )
     if not re.match(r"^[a-z0-9_]+$", value):
         raise ValidationError(
             "Identificador deve conter apenas letras minúsculas, números e underscore."
         )
+
 
 class Treinamento(models.Model):
     id: models.AutoField = models.AutoField(
@@ -92,6 +97,7 @@ class Treinamento(models.Model):
     def __str__(self) -> str:
         return str(self.tag) if self.tag else f"Treinamento {self.id}"
 
+
 class Documento(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
@@ -145,14 +151,18 @@ class Documento(models.Model):
         cls,
         query_vec: list[float],
         top_k: int = 5,
+        distance_threshold: float = 0.40,  # valor de corte para distância
     ) -> str:
         try:
             documentos: QuerySet[Self] = (
-                cls.objects.filter(
+                cls.objects.annotate(
+                    distance=CosineDistance("embedding", query_vec)
+                )
+                .filter(
                     treinamento__treinamento_finalizado=True,
                     embedding__isnull=False,
+                    distance__lte=distance_threshold,
                 )
-                .annotate(distance=CosineDistance("embedding", query_vec))
                 .order_by("distance")[:top_k]
             )
             if not documentos:
@@ -167,6 +177,9 @@ class Documento(models.Model):
                             "---",
                         ]
                     )
+                logger.warning(
+                    f"Documento encontrado com distância {doc.distance:.4f} (limiar {distance_threshold:.4f}): {doc.conteudo}"
+                )
             return "\n".join(contexto_lines)
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
@@ -175,7 +188,9 @@ class Documento(models.Model):
     @classmethod
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
         docs = cls.objects.filter(treinamento_id=treinamento_id).delete()
-        logger.info(f"Removidos {docs} documentos do treinamento {treinamento_id}")
+        logger.info(
+            f"Removidos {docs} documentos do treinamento {treinamento_id}"
+        )
 
     @classmethod
     def criar_documentos_de_chunks(
@@ -185,7 +200,9 @@ class Documento(models.Model):
     ) -> list["Documento"]:
         documentos_criados: list[Documento] = []
         for ordem, chunk in enumerate(chunks, start=1):
-            metadata_dict: dict[str, Any] = cast(dict[str, Any], chunk.metadata or {})
+            metadata_dict: dict[str, Any] = cast(
+                dict[str, Any], chunk.metadata or {}
+            )
             documento = cls.objects.create(
                 treinamento_id=treinamento_id,
                 conteudo=chunk.page_content,
@@ -198,10 +215,12 @@ class Documento(models.Model):
         )
         return documentos_criados
 
+
 class QueryCompose(models.Model):
     """
     Representa um intent: descrição -> embedding + prompt system associado.
     """
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -210,7 +229,7 @@ class QueryCompose(models.Model):
         validators=[validate_identificador],
         blank=False,
         null=False,
-        help_text="Tag auxiliar para organizar intents (ex: 'orcamento', 'suporte')"
+        help_text="Tag auxiliar para organizar intents (ex: 'orcamento', 'suporte')",
     )
     grupo: models.CharField[str] = models.CharField(
         max_length=40,
@@ -222,39 +241,43 @@ class QueryCompose(models.Model):
     descricao: models.TextField[str] = models.TextField(
         blank=False,
         null=False,
-        help_text="Texto descritivo usado para gerar o embedding (representação do intent)"
+        help_text="Texto descritivo usado para gerar o embedding (representação do intent)",
     )
     exemplo: models.TextField[str] = models.TextField(
         blank=False,
         null=False,
-        help_text="Exemplo de query que representa o intent"
+        help_text="Exemplo de query que representa o intent",
     )
     comportamento: models.TextField[str] = models.TextField(
         blank=False,
         null=False,
-        help_text="Prompt system que orienta o comportamento da LLM para esse intent"
+        help_text="Prompt system que orienta o comportamento da LLM para esse intent",
     )
     embedding: VectorField = VectorField(
         dimensions=1024,
         null=True,
         blank=True,
-        help_text="Embedding gerado a partir da description"
+        help_text="Embedding gerado a partir da description",
     )
 
-    created_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now_add=True)
-    updated_at: models.DateTimeField[datetime] = models.DateTimeField(auto_now=True)
+    created_at: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+    updated_at: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now=True
+    )
 
     class Meta:
         verbose_name = "Query Compose"
         verbose_name_plural = "Query Composes"
         indexes = [
-        models.Index(fields=['tag']),
-        models.Index(fields=['created_at']),
+            models.Index(fields=["tag"]),
+            models.Index(fields=["created_at"]),
         ]
 
     def __str__(self) -> str:
         return f"{self.tag or 'sem-tag'}"
-    
+
     def to_embedding_text(self) -> str:
         """
         Gera texto otimizado para criação de embeddings, padronizando o
@@ -298,14 +321,16 @@ class QueryCompose(models.Model):
     ) -> str | None:
         try:
             comportamento: QuerySet[Self] = (
-                cls.objects.filter(embedding__isnull=False,)
+                cls.objects.filter(
+                    embedding__isnull=False,
+                )
                 .annotate(distance=CosineDistance("embedding", query_vec))
                 .only("tag", "descricao", "comportamento")
                 .order_by("distance")[:top_k]
             )
             if not comportamento:
                 return ""
-            
+
             # Log da distância mais similar encontrada
             most_similar_distance = comportamento[0].distance
             logger.warning(
@@ -320,7 +345,7 @@ class QueryCompose(models.Model):
                 f"{comportamento[0].comportamento}"
             )
             return prompt
-            
+
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
             return None
@@ -344,11 +369,9 @@ class QueryCompose(models.Model):
             str: JSON válido (string) com a chave raiz "intent_types".
         """
         # Consulta ordenada para previsibilidade da saída
-        qs: QuerySet[Self] = (
-            cls.objects
-            .only("grupo", "tag", "descricao", "exemplo")
-            .order_by("grupo", "tag")
-        )
+        qs: QuerySet[Self] = cls.objects.only(
+            "grupo", "tag", "descricao", "exemplo"
+        ).order_by("grupo", "tag")
 
         result: dict[str, dict[str, dict[str, str]]] = {"intent_types": {}}
 

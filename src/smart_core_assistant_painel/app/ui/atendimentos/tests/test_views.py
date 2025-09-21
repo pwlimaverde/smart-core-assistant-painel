@@ -1,13 +1,12 @@
 """Tests for the Atendimentos app views."""
 
-from unittest.mock import patch, MagicMock
 import json
+from unittest.mock import MagicMock, patch
 
-from django.test import TestCase, Client
-from django.urls import reverse
 from django.http import JsonResponse
+from django.test import Client, TestCase
+from django.urls import reverse
 
-from smart_core_assistant_painel.app.ui.operacional.models import Departamento
 from smart_core_assistant_painel.modules.ai_engine import MessageData
 
 
@@ -24,30 +23,36 @@ class TestAtendimentosViews(TestCase):
                 "key": {
                     "remoteJid": "5511999999999@s.whatsapp.net",
                     "fromMe": False,
-                    "id": "test_message_id"
+                    "id": "test_message_id",
                 },
-                "message": {
-                    "conversation": "Test message"
-                }
-            }
+                "message": {"conversation": "Test message"},
+            },
         }
 
-    @patch('smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.views.FeaturesCompose.load_message_data')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.views.set_wa_buffer')
-    @patch('smart_core_assistant_painel.app.ui.atendimentos.views.sched_message_response')
+    @patch(
+        "smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.views.FeaturesCompose.load_message_data"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.views.set_wa_buffer"
+    )
+    @patch(
+        "smart_core_assistant_painel.app.ui.atendimentos.views.sched_message_response"
+    )
     def test_webhook_whatsapp_post_success(
         self,
         mock_sched_message_response: MagicMock,
         mock_set_wa_buffer: MagicMock,
         mock_load_message_data: MagicMock,
-        mock_validar_api_key: MagicMock
+        mock_validar_api_key: MagicMock,
     ) -> None:
         """Test successful WhatsApp webhook POST request."""
         # Arrange
         departamento_mock = MagicMock()
         mock_validar_api_key.return_value = departamento_mock
-        
+
         message_data_mock = MessageData(
             instance="test_instance",
             api_key="test_api_key",
@@ -57,22 +62,22 @@ class TestAtendimentosViews(TestCase):
             message_type="text",
             message_id="test_message_id",
             metadados={},
-            nome_perfil_whatsapp="Test User"
+            nome_perfil_whatsapp="Test User",
         )
         mock_load_message_data.return_value = message_data_mock
 
         # Act
         response = self.client.post(
-            reverse('atendimentos:webhook_whatsapp'),
+            reverse("atendimentos:webhook_whatsapp"),
             data=json.dumps(self.valid_webhook_data),
-            content_type='application/json'
+            content_type="application/json",
         )
 
         # Assert
         self.assertEqual(response.status_code, 200)
         self.assertIsInstance(response, JsonResponse)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['status'], 'success')
+        self.assertEqual(response_data["status"], "success")
 
         mock_validar_api_key.assert_called_once_with(self.valid_webhook_data)
         mock_load_message_data.assert_called_once_with(self.valid_webhook_data)
@@ -85,10 +90,11 @@ class TestAtendimentosViews(TestCase):
         self.assertEqual(called_message_data.conteudo, "Test message")
         mock_sched_message_response.assert_called_once_with("5511999999999")
 
-    @patch('smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key')
+    @patch(
+        "smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key"
+    )
     def test_webhook_whatsapp_post_invalid_api_key(
-        self,
-        mock_validar_api_key: MagicMock
+        self, mock_validar_api_key: MagicMock
     ) -> None:
         """Test WhatsApp webhook with invalid API key."""
         # Arrange
@@ -96,46 +102,50 @@ class TestAtendimentosViews(TestCase):
 
         # Act
         response = self.client.post(
-            reverse('atendimentos:webhook_whatsapp'),
+            reverse("atendimentos:webhook_whatsapp"),
             data=json.dumps(self.valid_webhook_data),
-            content_type='application/json'
+            content_type="application/json",
         )
 
         # Assert
         self.assertEqual(response.status_code, 401)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'Invalid or inactive API key')
+        self.assertEqual(response_data["error"], "Invalid or inactive API key")
 
     def test_webhook_whatsapp_get_method_not_allowed(self) -> None:
         """Test WhatsApp webhook with GET method (should return 405)."""
         # Act
-        response = self.client.get(reverse('atendimentos:webhook_whatsapp'))
+        response = self.client.get(reverse("atendimentos:webhook_whatsapp"))
 
         # Assert
         self.assertEqual(response.status_code, 405)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'Method not allowed')
+        self.assertEqual(response_data["error"], "Method not allowed")
 
     def test_webhook_whatsapp_post_empty_body(self) -> None:
         """Test WhatsApp webhook with empty POST body."""
         # Act
         response = self.client.post(
-            reverse('atendimentos:webhook_whatsapp'),
-            data='',
-            content_type='application/json'
+            reverse("atendimentos:webhook_whatsapp"),
+            data="",
+            content_type="application/json",
         )
 
         # Assert
         self.assertEqual(response.status_code, 400)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'Empty request body')
+        self.assertEqual(response_data["error"], "Empty request body")
 
-    @patch('smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key')
-    @patch('smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.load_message_data')
+    @patch(
+        "smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.load_message_data"
+    )
     def test_webhook_whatsapp_post_exception_handling(
         self,
         mock_load_message_data: MagicMock,
-        mock_validar_api_key: MagicMock
+        mock_validar_api_key: MagicMock,
     ) -> None:
         """Test WhatsApp webhook exception handling."""
         # Arrange
@@ -145,12 +155,12 @@ class TestAtendimentosViews(TestCase):
 
         # Act
         response = self.client.post(
-            reverse('atendimentos:webhook_whatsapp'),
+            reverse("atendimentos:webhook_whatsapp"),
             data=json.dumps(self.valid_webhook_data),
-            content_type='application/json'
+            content_type="application/json",
         )
 
         # Assert
         self.assertEqual(response.status_code, 500)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error'], 'Internal server error')
+        self.assertEqual(response_data["error"], "Internal server error")

@@ -1,88 +1,127 @@
-# Checklist de Desenvolvimento da Central de Atendimento
+# Checklist de Desenvolvimento: Central de Atendimento Kanban
 
-Este checklist detalha as tarefas técnicas necessárias para implementar a central de atendimento humano, com base no planejamento definido nos documentos de arquitetura e lógica de roteamento.
+Este documento detalha as tarefas técnicas necessárias para implementar a Central de Atendimento com a interface Kanban, alinhado aos modelos Django existentes e ao planejamento de UI.
 
-## Fase 1: Estrutura e Modelos de Dados
+---
 
-- [ ] **1.1. Modificar o modelo `Atendimento`:**
-    - [ ] Adicionar o campo `departamento` (`ForeignKey` para `operacional.Departamento`).
-    - [ ] Alterar o campo `atendente_humano` para permitir valores nulos (`null=True`).
-    - [ ] Gerar e aplicar a migração do banco de dados (`uv run task makemigrations` e `uv run task migrate`).
+## Fase 1: Backend - Lógica de Negócio e Serviços
 
-- [ ] **1.2. Modificar o modelo `AtendenteHumano`:**
-    - [ ] Adicionar o campo `data_ultima_atribuicao` (`DateTimeField`, `null=True`, `blank=True`).
-    - [ ] Gerar e aplicar a migração correspondente.
+Implementação das regras de negócio que governam o fluxo de atendimento, utilizando os modelos já existentes.
 
-- [ ] **1.3. Atualizar os Testes dos Modelos:**
-    - [ ] Adaptar os testes existentes em `atendimentos/tests/test_models.py` para refletir as mudanças.
-    - [ ] Criar novos testes para garantir que a relação com `Departamento` funciona e que `atendente_humano` pode ser nulo.
-    - [ ] Adaptar os testes em `operacional/tests/test_models.py` para o novo campo em `AtendenteHumano`.
+- **Tarefa 1.1: Implementar Lógica de Roteamento e Atribuição**
+  - **Local Sugerido:** `src/smart_core_assistant_painel/app/ui/atendimentos/services.py` (criar se não existir).
+  - **Ações:**
+    - [ ] **Função `atribuir_proximo_atendimento(departamento_id)`:**
+      - [ ] Implementar a lógica "Round Robin com Nivelamento":
+        1. Buscar atendentes com `disponivel=True` no departamento especificado.
+        2. Filtrar atendentes que ainda não atingiram `max_atendimentos_simultaneos` (contando seus atendimentos `ativos`).
+        3. Ordenar os atendentes elegíveis pela `data_ultima_atribuicao` (do mais antigo para o mais novo).
+        4. Buscar o atendimento mais antigo na fila (ex: `status__nome='Pendente'`) para aquele departamento.
+        5. Atribuir o atendimento ao atendente selecionado, atualizando `atendimento.atendente`.
+        6. Atualizar o status do atendimento para `Em Andamento` (`status__nome='Em Andamento'`).
+        7. Atualizar a `data_ultima_atribuicao` do atendente.
 
-## Fase 2: Lógica de Roteamento e Atribuição
+- **Tarefa 1.2: Implementar Lógica de Transferência**
+  - **Local Sugerido:** `src/smart_core_assistant_painel/app/ui/atendimentos/services.py`.
+  - **Ações:**
+    - [ ] **Função `transferir_atendimento_para_departamento(atendimento_id, novo_departamento_id, nota_interna)`:**
+      - [ ] Desvincular o `atendente` do atendimento (`atendimento.atendente = None`).
+      - [ ] Atualizar o `departamento` do atendimento para o `novo_departamento_id`.
+      - [ ] Mudar o `status` do atendimento para `Pendente`.
+      - [ ] (Opcional) Adicionar a `nota_interna` a um futuro modelo de histórico/log.
+      - [ ] Disparar a lógica de `atribuir_proximo_atendimento` para o novo departamento.
+    - [ ] **Função `transferir_atendimento_para_atendente(atendimento_id, novo_atendente_id, nota_interna)`:**
+      - [ ] Validar se o `novo_atendente_id` pertence a um departamento e está `disponivel`.
+      - [ ] Atribuir o atendimento ao `novo_atendente_id`.
+      - [ ] Atualizar o `departamento` do atendimento para o departamento do novo atendente.
+      - [ ] Manter o `status` como `Em Andamento`.
+      - [ ] (Opcional) Adicionar a `nota_interna` ao histórico.
 
-- [ ] **2.1. Criar o Serviço de Roteamento (`RoutingService`):**
-    - [ ] Criar um novo módulo de serviço, por exemplo, `src/smart_core_assistant_painel/app/atendimento_humano/services.py`.
-    - [ ] Implementar a função `transferir_para_departamento(atendimento_id, departamento_id)`:
-        - [ ] Altera o status do atendimento para `AGUARDANDO_ATENDENTE`.
-        - [ ] Associa o `departamento` ao atendimento.
-        - [ ] Garante que `atendente_humano` seja `None`.
-        - [ ] Adiciona um registro ao histórico da conversa.
+---
 
-- [ ] **2.2. Criar o Serviço de Atribuição (`AssignmentService`):**
-    - [ ] No mesmo módulo de serviço, implementar a função `atribuir_proximo_atendimento(departamento_id)`.
-    - [ ] Implementar a lógica de seleção do atendente ideal, seguindo os critérios:
-        1.  Filtros essenciais (ativo, disponível, no departamento, horário de trabalho).
-        2.  Menor número de atendimentos ativos (`get_atendimentos_ativos() < max_atendimentos_simultaneos`).
-        3.  Round-robin (ordenar por `data_ultima_atribuicao` ascendente).
-    - [ ] Implementar a lógica de atribuição (vincular atendente, atualizar status, atualizar `data_ultima_atribuicao`).
-    - [ ] Adicionar tratamento para o caso de nenhum atendente estar disponível.
+## Fase 2: Backend - API e Comunicação em Tempo Real
 
-- [ ] **2.3. Criar Tarefa Assíncrona (Celery/RQ):**
-    - [ ] Criar uma tarefa que chama `AssignmentService.atribuir_proximo_atendimento` para um departamento.
-    - [ ] Esta tarefa será acionada quando um novo atendimento entrar na fila ou quando um atendente ficar disponível.
+Exposição dos dados e eventos para o frontend consumir.
 
-- [ ] **2.4. Implementar Testes para os Serviços:**
-    - [ ] Criar testes unitários e de integração para `RoutingService` e `AssignmentService`.
-    - [ ] Simular diferentes cenários: atendente disponível, múltiplos atendentes com cargas diferentes, nenhum atendente disponível, etc.
+- **Tarefa 2.1: Criar/Ajustar Endpoints da API (Django REST Framework)**
+  - **Local:** `src/smart_core_assistant_painel/app/ui/atendimentos/views.py` e `serializers.py`.
+  - **Ações:**
+    - [ ] **Endpoint `GET /api/departamentos/`:**
+      - [ ] Listar todos os departamentos `ativos`.
+    - [ ] **Endpoint `GET /api/departamentos/{id}/atendimentos/`:**
+      - [ ] Retornar os atendimentos `ativos` de um departamento, serializados com informações do cliente e status.
+      - [ ] O frontend será responsável por agrupar em colunas (Fila, Em Atendimento, etc.) com base no campo `status.nome`.
+    - [ ] **Endpoint `POST /api/atendimentos/{id}/transferir-departamento/`:**
+      - [ ] Body: `{ "novo_departamento_id": "ID" }`.
+      - [ ] Chama o serviço `transferir_atendimento_para_departamento`.
+    - [ ] **Endpoint `POST /api/atendimentos/{id}/transferir-atendente/`:**
+      - [ ] Body: `{ "novo_atendente_id": "ID", "nota_interna": "texto" }`.
+      - [ ] Chama o serviço `transferir_atendimento_para_atendente`.
+    - [ ] **Endpoint `POST /api/atendimentos/{id}/atualizar-status/`:**
+      - [ ] Body: `{ "novo_status_id": "ID" }`.
+      - [ ] Implementar a lógica para alterar o status de um atendimento (ex: de `Em Andamento` para `Aguardando Cliente`).
 
-## Fase 3: Integração e API
+- **Tarefa 2.2: Configurar Comunicação via WebSocket (Django Channels)**
+  - **Local:** `src/smart_core_assistant_painel/app/ui/atendimentos/consumers.py` (criar se não existir).
+  - **Ações:**
+    - [ ] **Consumer `KanbanConsumer`:**
+      - [ ] Permitir que o frontend se inscreva em "grupos" baseados no departamento (ex: `kanban_departamento_{id}`).
+      - [ ] Transmitir eventos quando um atendimento for alterado (criado, atribuído, transferido, status modificado).
+        - Exemplo de evento: `evento: 'ATENDIMENTO_ATUALIZADO', dados: { ...serialização completa do atendimento... }`
 
-- [ ] **3.1. Adaptar o Webhook de Mensagens:**
-    - [ ] Modificar a view que recebe os webhooks do chatbot/Evolution API.
-    - [ ] Quando o chatbot decidir pela transferência, a view deve chamar o `RoutingService.transferir_para_departamento`.
+- **Tarefa 2.3: Integrar Sinais do Django com Channels**
+  - **Local:** `src/smart_core_assistant_painel/app/ui/atendimentos/signals.py`.
+  - **Ação:**
+    - [ ] Usar o sinal `post_save` no modelo `Atendimento` para detectar alterações.
+    - [ ] No handler do sinal, obter o `departamento` do atendimento e disparar o evento WebSocket para o grupo correspondente (`kanban_departamento_{atendimento.departamento.id}`).
 
-- [ ] **3.2. Criar Endpoints de API (DRF):**
-    - [ ] Criar um endpoint para que um atendente possa se marcar como `disponivel` / `indisponivel`.
-    - [ ] Criar um endpoint para listar os atendimentos na fila de um departamento.
-    - [ ] Criar um endpoint para um atendente "pegar" um atendimento manualmente (opcional, mas útil).
+---
 
-- [ ] **3.3. Integração com WebSocket (Django Channels):**
-    - [ ] Configurar um consumidor WebSocket para o painel dos atendentes.
-    - [ ] Enviar notificações em tempo real quando:
-        - [ ] Um novo atendimento entra na fila do departamento.
-        - [ ] Um atendimento é atribuído a um atendente específico.
-        - [ ] O status de um atendimento muda.
+## Fase 3: Frontend - Implementação da UI Kanban
 
-## Fase 4: Interface do Atendente (UI)
+Construção da interface visual da central de atendimento.
 
-- [ ] **4.1. Criar a Visualização da Fila de Atendimento:**
-    - [ ] Desenvolver um componente de UI que exiba a lista de atendimentos no status `AGUARDANDO_ATENDENTE` para o departamento do atendente logado.
-    - [ ] A lista deve ser atualizada em tempo real via WebSocket.
+- **Tarefa 3.1: Estrutura do Painel (React/Vue/etc.)**
+  - **Ações:**
+    - [ ] Criar um componente `PainelKanban` que recebe um `departamentoId`.
+    - [ ] Ao montar, buscar os dados iniciais via API (`GET /api/departamentos/{id}/atendimentos/`).
+    - [ ] Renderizar as colunas com base nos `StatusAtendimento` possíveis (ex: "Pendente", "Em Andamento", "Aguardando Cliente").
+    - [ ] Renderizar os `CardsAtendimento` dentro das colunas apropriadas, com base no `atendimento.status.nome`.
 
-- [ ] **4.2. Adaptar a Tela de Atendimento:**
-    - [ ] A UI deve exibir claramente a qual atendente um atendimento está atribuído.
-    - [ ] Implementar a funcionalidade para o atendente enviar e receber mensagens no contexto do atendimento.
+- **Tarefa 3.2: Componente `CardAtendimento`**
+  - **Ações:**
+    - [ ] Exibir informações: `cliente.nome_social`, tempo desde `data_ultima_mensagem`.
+    - [ ] Implementar drag-and-drop entre as colunas.
+      - Ao soltar, chamar o endpoint `POST /api/atendimentos/{id}/atualizar-status/` com o ID do novo status.
 
-- [ ] **4.3. Adicionar Controles de Disponibilidade:**
-    - [ ] Implementar um botão/toggle na UI para que o atendente possa alterar seu status de `disponivel` para `indisponivel` (e vice-versa), chamando a API correspondente.
+- **Tarefa 3.3: Funcionalidade de Transferência na UI**
+  - **Ações:**
+    - [ ] Adicionar um menu de opções no `CardAtendimento`.
+    - [ ] Criar um modal de transferência que permita selecionar um novo departamento ou um atendente específico.
+    - [ ] Ao confirmar, chamar o endpoint de transferência correspondente na API.
 
-## Fase 5: Testes End-to-End e Validação
+- **Tarefa 3.4: Integração com WebSocket no Frontend**
+  - **Ações:**
+    - [ ] Conectar ao WebSocket e se inscrever no grupo do departamento (`kanban_departamento_{id}`).
+    - [ ] Implementar a lógica para atualizar o estado da UI em tempo real quando o evento `ATENDIMENTO_ATUALIZADO` for recebido, movendo, adicionando ou atualizando os cards sem recarregar a página.
 
-- [ ] **5.1. Criar Cenários de Teste E2E:**
-    - [ ] Simular um fluxo completo: cliente inicia conversa -> chatbot transfere -> atendimento cai na fila -> sistema atribui ao atendente A -> atendente A resolve.
-    - [ ] Testar o cenário com múltiplos atendentes para validar o balanceamento de carga.
-    - [ ] Testar o cenário sem atendentes disponíveis e a posterior atribuição quando um se torna disponível.
+---
 
-- [ ] **5.2. Validação Funcional:**
-    - [ ] Realizar testes manuais no painel para garantir que a UI se comporta como esperado.
-    - [ ] Validar que as notificações e atualizações em tempo real estão funcionando corretamente.
+## Fase 4: Testes e Validação
+
+Garantir a robustez e o funcionamento correto da implementação.
+
+- **Tarefa 4.1: Testes de Backend**
+  - **Ações:**
+    - [ ] Criar testes unitários para os serviços em `atendimentos/services.py`.
+    - [ ] Criar testes de integração para os endpoints da API, validando as respostas e os dados.
+    - [ ] **Comando:** `uv run task test-docker`
+
+- **Tarefa 4.2: Testes de Frontend**
+  - **Ações:**
+    - [ ] Criar testes de componentes para `PainelKanban` e `CardAtendimento`.
+    - [ ] Simular interações do usuário, como drag-and-drop e transferência.
+
+- **Tarefa 4.3: Testes End-to-End (E2E)**
+  - **Ação:**
+    - [ ] Criar um cenário de teste completo simulando o fluxo de um atendimento, desde a chegada na fila até a transferência e finalização, validando as atualizações na UI em tempo real.

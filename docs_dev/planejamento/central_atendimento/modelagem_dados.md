@@ -1,82 +1,109 @@
-# Modelagem de Dados - Central de Atendimento
+# Modelagem de Dados da Central de Atendimento
 
-Este documento detalha o esquema do banco de dados PostgreSQL para as novas entidades da central de atendimento.
+Este documento detalha a estrutura de dados da Central de Atendimento, alinhada com os modelos Django existentes no projeto.
 
-## 1. Diagrama de Entidade e Relacionamento (DER)
+## 1. App `atendimentos`
 
-(Será adicionado um diagrama aqui posteriormente, gerado a partir dos modelos Django)
+Responsável por gerenciar todas as informações relacionadas aos atendimentos.
 
-## 2. Detalhamento das Tabelas
+### 1.1. `StatusAtendimento`
 
-### Tabela: `atendimentos_departamento`
+Representa os diferentes status que um atendimento pode ter.
 
-Armazena os departamentos da empresa.
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | `INTEGER` | Identificador único do status. |
+| `nome` | `VARCHAR(100)` | Nome do status (ex: "Pendente", "Em Andamento", "Resolvido"). |
 
-| Coluna | Tipo | Chave | Descrição |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador único do departamento. |
-| `nome` | `VARCHAR(100)` | | Nome do departamento (ex: "Comercial", "Suporte"). |
-| `descricao` | `TEXT` | | Descrição das responsabilidades do departamento. |
-| `ativo` | `BOOLEAN` | | Indica se o departamento está ativo no sistema. |
-| `created_at` | `TIMESTAMP` | | Data de criação do registro. |
-| `updated_at` | `TIMESTAMP` | | Data da última atualização. |
+### 1.2. `TipoMensagem`
 
-### Tabela: `atendimentos_atendente`
+Define o tipo de uma mensagem (ex: texto, imagem).
 
-Representa os agentes/atendentes humanos.
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | `INTEGER` | Identificador único do tipo de mensagem. |
+| `nome` | `VARCHAR(50)` | Nome do tipo de mensagem. |
 
-| Coluna | Tipo | Chave | Descrição |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador único do atendente. |
-| `user_id` | `INTEGER` | FK (`auth_user.id`) | Relacionamento com o modelo de usuário do Django. |
-| `departamento_id` | `UUID` | FK (`atendimentos_departamento.id`) | Departamento ao qual o atendente pertence. |
+### 1.3. `TipoRemetente`
+
+Identifica quem enviou a mensagem (cliente, atendente ou sistema).
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | `INTEGER` | Identificador único do tipo de remetente. |
+| `nome` | `VARCHAR(50)` | Nome do tipo de remetente. |
+
+### 1.4. `Atendimento`
+
+Modelo central que armazena as informações de cada atendimento.
+
+| Campo | Tipo | Chave Estrangeira | Descrição |
+| --- | --- | --- | --- |
+| `id` | `UUID` | | Identificador único do atendimento. |
+| `cliente` | `INTEGER` | `clientes.Cliente` | Cliente associado ao atendimento. |
+| `atendente` | `INTEGER` | `operacional.AtendenteHumano` | Atendente responsável pelo atendimento (pode ser nulo). |
+| `departamento` | `INTEGER` | `operacional.Departamento` | Departamento atual do atendimento. |
+| `status` | `INTEGER` | `atendimentos.StatusAtendimento` | Status atual do atendimento. |
+| `data_inicio` | `DATETIME` | | Data e hora de início do atendimento. |
+| `data_fim` | `DATETIME` | | Data e hora de finalização (pode ser nulo). |
+| `resolucao` | `TEXT` | | Descrição da resolução do atendimento. |
+| `nivel_satisfacao` | `INTEGER` | | Nível de satisfação do cliente (1 a 5). |
+| `data_ultima_mensagem` | `DATETIME` | | Data da última mensagem trocada. |
+| `ativo` | `BOOLEAN` | | Indica se o atendimento está ativo. |
+
+## 2. App `clientes`
+
+Gerencia as informações dos clientes e seus contatos.
+
+### 2.1. `Contato`
+
+Armazena os dados de contato de um cliente.
+
+| Campo | Tipo | Chave Estrangeira | Descrição |
+| --- | --- | --- | --- |
+| `id` | `UUID` | | Identificador único do contato. |
+| `cliente` | `INTEGER` | `clientes.Cliente` | Cliente ao qual o contato pertence. |
+| `whatsapp` | `VARCHAR(20)` | | Número do WhatsApp. |
+
+### 2.2. `Cliente`
+
+Modelo que representa um cliente.
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | `UUID` | Identificador único do cliente. |
+| `nome_social` | `VARCHAR(255)` | Nome social ou apelido do cliente. |
+| `cpf` | `VARCHAR(11)` | CPF do cliente (único). |
+| `data_nascimento` | `DATE` | Data de nascimento do cliente. |
+| `ativo` | `BOOLEAN` | Indica se o cliente está ativo. |
+
+## 3. App `operacional`
+
+Responsável pela estrutura organizacional, como departamentos e atendentes.
+
+### 3.1. `Departamento`
+
+Representa um departamento da empresa.
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | `INTEGER` | Identificador único do departamento. |
+| `nome` | `VARCHAR(100)` | Nome do departamento. |
+| `descricao` | `TEXT` | Descrição das responsabilidades do departamento. |
+| `ativo` | `BOOLEAN` | Indica se o departamento está ativo. |
+
+### 3.2. `AtendenteHumano`
+
+Modelo que representa um atendente humano.
+
+| Campo | Tipo | Chave Estrangeira | Descrição |
+| --- | --- | --- | --- |
+| `id` | `INTEGER` | | Identificador único do atendente. |
+| `user` | `INTEGER` | `auth.User` | Usuário do sistema associado ao atendente. |
+| `departamento` | `INTEGER` | `operacional.Departamento` | Departamento ao qual o atendente pertence. |
 | `nome_completo` | `VARCHAR(255)` | | Nome completo do atendente. |
-| `status_disponibilidade` | `VARCHAR(50)` | | Status atual do atendente (ex: "Online", "Offline", "Ocupado"). |
-| `whatsapp_instance_id` | `VARCHAR(255)` | | ID da instância do WhatsApp associada a este atendente (da Evolution API). |
-| `ativo` | `BOOLEAN` | | Indica se o atendente está ativo no sistema. |
-| `created_at` | `TIMESTAMP` | | Data de criação do registro. |
-| `updated_at` | `TIMESTAMP` | | Data da última atualização. |
-
-### Tabela: `atendimentos_cliente`
-
-Dados dos clientes que entram em contato.
-
-| Coluna | Tipo | Chave | Descrição |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador único do cliente. |
-| `nome` | `VARCHAR(255)` | | Nome do cliente. |
-| `numero_whatsapp` | `VARCHAR(50)` | UNIQUE | Número do WhatsApp do cliente (usado como identificador principal). |
-| `email` | `VARCHAR(254)` | | E-mail do cliente (opcional). |
-| `created_at` | `TIMESTAMP` | | Data de criação do registro. |
-| `updated_at` | `TIMESTAMP` | | Data da última atualização. |
-
-### Tabela: `atendimentos_atendimento`
-
-Coração do sistema, registra cada sessão de atendimento.
-
-| Coluna | Tipo | Chave | Descrição |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador único do atendimento. |
-| `cliente_id` | `UUID` | FK (`atendimentos_cliente.id`) | Cliente que está sendo atendido. |
-| `atendente_id` | `UUID` | FK (`atendimentos_atendente.id`) | Atendente humano que assumiu o chat (pode ser nulo no início). |
-| `departamento_id` | `UUID` | FK (`atendimentos_departamento.id`) | Departamento para o qual o atendimento foi direcionado. |
-| `status` | `VARCHAR(50)` | | Status do atendimento (ex: "Aguardando", "Com Chatbot", "Em Atendimento", "Finalizado", "Cancelado"). |
-| `data_inicio` | `TIMESTAMP` | | Quando o atendimento começou. |
-| `data_transferencia` | `TIMESTAMP` | | Quando foi transferido para um humano (se aplicável). |
-| `data_finalizacao` | `TIMESTAMP` | | Quando o atendimento foi finalizado. |
-| `contexto_chatbot` | `JSONB` | | Último estado/contexto da conversa com o chatbot antes da transferência. |
-
-### Tabela: `atendimentos_mensagem`
-
-Armazena cada mensagem trocada durante um atendimento.
-
-| Coluna | Tipo | Chave | Descrição |
-|---|---|---|---|
-| `id` | `UUID` | PK | Identificador único da mensagem. |
-| `atendimento_id` | `UUID` | FK (`atendimentos_atendimento.id`) | Atendimento ao qual a mensagem pertence. |
-| `remetente_tipo` | `VARCHAR(20)` | | Tipo de remetente ("Cliente", "Atendente", "Chatbot"). |
-| `remetente_id` | `VARCHAR(255)` | | ID do remetente (pode ser `cliente.id`, `atendente.id`, ou um ID fixo para o bot). |
-| `conteudo` | `TEXT` | | O texto da mensagem. |
-| `tipo_conteudo` | `VARCHAR(50)` | | Tipo de mensagem (texto, imagem, áudio, etc.). |
-| `timestamp_envio` | `TIMESTAMP` | | Data e hora em que a mensagem foi enviada. |
-| `metadata` | `JSONB` | | Metadados adicionais da mensagem (ex: ID da mensagem do WhatsApp). |
+| `max_atendimentos_simultaneos` | `INTEGER` | | Número máximo de atendimentos simultâneos. |
+| `horario_trabalho` | `VARCHAR(255)` | | Horário de trabalho do atendente. |
+| `data_ultima_atribuicao` | `DATETIME` | | Data da última atribuição de atendimento. |
+| `disponivel` | `BOOLEAN` | | Indica se o atendente está disponível. |
+| `especialidades` | `TEXT` | | Especialidades ou habilidades do atendente. |

@@ -1,64 +1,46 @@
-# Arquitetura da Central de Atendimento
+# Arquitetura da Central de Atendimento: Abordagem Monolítica com Django
 
 ## 1. Visão Geral
 
-O objetivo é criar uma central de atendimento multicanal e multidepartamental, onde um chatbot realiza a triagem inicial e, quando necessário, transfere o atendimento para um agente humano do departamento apropriado.
+O objetivo é criar uma central de atendimento multicanal e multidepartamental, onde um chatbot realiza a triagem inicial e transfere o atendimento para um agente humano quando necessário.
 
-A arquitetura será baseada em microsserviços e eventos para garantir escalabilidade, resiliência e manutenibilidade.
+Para acelerar o desenvolvimento e aproveitar a estrutura existente, a implementação será feita dentro da **aplicação monolítica Django** atual. A arquitetura utilizará os recursos robustos do ecossistema Django para garantir escalabilidade e manutenibilidade.
 
-## 2. Componentes Principais
+## 2. Componentes Principais (Arquitetura Monolítica Django)
 
-1.  **Gateway de Mensagens (Webhook)**: Ponto de entrada para todas as mensagens recebidas (WhatsApp, etc.). Responsável por receber o evento, normalizá-lo e publicá-lo em um tópico específico no broker de mensagens.
+1.  **Aplicação Django Principal**: O coração do sistema, orquestrando todas as funcionalidades. A lógica da central de atendimento será modularizada em apps Django específicos.
+    *   **App `atendimentos`**: Conterá os modelos (`Atendimento`, `StatusAtendimento`), a lógica de negócio (`services.py`), os endpoints da API (`views.py`, `serializers.py`) e a comunicação em tempo real (`consumers.py`).
+    *   **App `clientes`**: Gerencia os dados dos clientes (`Cliente`, `Contato`).
+    *   **App `operacional`**: Gerencia a estrutura interna da empresa (`Departamento`, `AtendenteHumano`).
 
-2.  **Broker de Mensagens (Redis Pub/Sub ou RabbitMQ)**: Fila central que desacopla os serviços. O Gateway publica as mensagens aqui, e os outros serviços (Chatbot, Roteador) consomem essas mensagens.
+2.  **Django REST Framework (DRF)**: Será utilizado para construir a API RESTful que servirá como ponte entre o backend e a interface do usuário (frontend).
 
-3.  **Serviço do Chatbot**: Consome as mensagens do broker, processa o diálogo com o usuário usando o `AI Engine` já existente e, se a transferência for necessária, publica um evento de "solicitação de transferência" no broker.
+3.  **Django Channels**: Para a comunicação em tempo real. Permitirá que o servidor envie atualizações automáticas para a interface do Kanban via WebSockets sempre que um atendimento mudar de estado (novo, atribuído, transferido, etc.).
 
-4.  **Serviço de Roteamento de Atendimento**:
-    *   Consome os eventos de "solicitação de transferência".
-    *   Contém a lógica para determinar para qual departamento e, em seguida, para qual atendente disponível o chat deve ser direcionado.
-    *   Critérios de roteamento: departamento solicitado, disponibilidade do atendente, carga de trabalho atual, etc.
-    *   Após decidir o destino, publica um evento de "atendimento atribuído".
+4.  **Django Signals**: Atuarão como um mecanismo de eventos interno. Por exemplo, um sinal `post_save` no modelo `Atendimento` será usado para disparar uma notificação via WebSocket após qualquer alteração, garantindo que a UI esteja sempre sincronizada.
 
-5.  **Serviço de Atendimento Humano**:
-    *   Cada atendente terá uma interface (UI) para visualizar e responder aos chats atribuídos.
-    *   Este serviço consome os eventos de "atendimento atribuído".
-    *   Gerencia o estado da conversa entre o cliente e o atendente.
-    *   Envia as respostas do atendente para o Gateway de Mensagens, que as encaminhará para o cliente final via WhatsApp.
+5.  **Banco de Dados (PostgreSQL)**: O banco de dados relacional existente, gerenciado inteiramente pelo ORM do Django.
 
-6.  **Banco de Dados**:
-    *   **PostgreSQL**: Para dados relacionais e estruturados (Departamentos, Atendentes, Clientes, Histórico de Atendimentos).
-    *   **PGVector**: Para armazenar e consultar embeddings vetoriais, se necessário para buscas semânticas em conversas futuras.
-    *   **Redis**: Para cache e gerenciamento de estado em tempo real (ex: status de disponibilidade dos atendentes, sessões de chat ativas).
+6.  **Frontend (SPA)**: Uma aplicação de página única (desenvolvida em React, Vue.js, ou similar) que consumirá a API DRF para buscar dados e se conectará via WebSocket para receber atualizações em tempo real.
 
-7.  **Painel de Administração (UI)**: Interface onde os administradores poderão:
-    *   Cadastrar/Gerenciar Departamentos.
-    *   Cadastrar/Gerenciar Atendentes e associá-los a departamentos.
-    *   Visualizar métricas e relatórios de atendimento.
+## 3. Fluxo de Atendimento (Integrado ao Django)
 
-## 3. Fluxo de Atendimento
+1.  **Entrada de Mensagens**: Um serviço externo (ex: webhook de um provedor de WhatsApp) interage com um endpoint específico da nossa API, criado com DRF.
 
-1.  **Cliente Inicia Conversa**: O cliente envia uma mensagem para o número de WhatsApp da empresa.
-2.  **Webhook Recebe**: A instância da Evolution API (ou similar) associada a esse número dispara um evento para o nosso Gateway de Mensagens.
-3.  **Gateway Publica**: O Gateway normaliza a mensagem e a publica no tópico `mensagens_recebidas`.
-4.  **Chatbot Processa**: O Serviço do Chatbot consome a mensagem, identifica o cliente (ou o cadastra) e inicia o diálogo. O contexto da conversa é mantido em Redis.
-5.  **Transferência Solicitada**: O chatbot identifica a necessidade de transferir. Ele publica um evento no tópico `solicitacoes_transferencia` com informações como `cliente_id` e `departamento_destino`.
-6.  **Roteamento Decide**: O Serviço de Roteamento consome o evento, consulta o banco de dados para encontrar um atendente disponível no departamento solicitado e publica um evento no tópico `atendimentos_atribuidos` com `atendimento_id`, `cliente_id` e `atendente_id`.
-7.  **Atendente Notificado**: O Serviço de Atendimento Humano (via WebSocket, talvez) notifica a UI do atendente sobre o novo chat.
-8.  **Conversa Humana**:
-    *   O atendente aceita o chat. A UI exibe o histórico da conversa com o bot.
-    *   As mensagens do atendente são enviadas para o Gateway (via API REST ou outro evento).
-    *   As mensagens do cliente continuam chegando pelo fluxo normal, mas o Roteador agora as direciona para o tópico do atendente específico.
-9.  **Finalização**: O atendente finaliza o atendimento. O sistema registra o histórico completo no PostgreSQL.
+2.  **Processamento na API View**: A `APIView` correspondente recebe a requisição, identifica o cliente (ou o cadastra), e cria ou atualiza um registro do modelo `Atendimento`.
 
-## 4. Modelagem de Dados Inicial
+3.  **Lógica de Roteamento**: Se o atendimento precisar de intervenção humana, a `APIView` invoca uma função de serviço (ex: `atribuir_proximo_atendimento` do `atendimentos/services.py`). Esta função contém a lógica de negócio para encontrar o atendente mais adequado.
 
-Precisaremos das seguintes entidades no banco de dados:
+4.  **Disparo do Sinal `post_save`**: Ao salvar o modelo `Atendimento` com seu novo status ou atendente, o Django dispara automaticamente um sinal `post_save`.
 
-*   `Departamento`
-*   `Atendente` (com relacionamento para `Departamento`)
-*   `Cliente`
-*   `Atendimento` (registra todo o ciclo, desde o bot até a finalização, com status, timestamps, etc.)
-*   `Mensagem` (armazena cada mensagem trocada, com referência ao `Atendimento`)
+5.  **Notificação via WebSocket**: Um *handler* conectado a esse sinal executa a lógica para enviar uma mensagem através do Django Channels para um grupo específico (ex: `kanban_departamento_{id_do_departamento}`).
 
-Este plano será detalhado nos próximos documentos.
+6.  **Atualização da UI em Tempo Real**: O frontend, que está inscrito nesse grupo de WebSocket, recebe a mensagem e atualiza o estado do painel Kanban, movendo, adicionando ou atualizando o card do atendimento sem a necessidade de recarregar a página.
+
+7.  **Interação do Atendente na UI**: Quando um atendente realiza uma ação (ex: arrasta um card para uma nova coluna, clica em "transferir"), o frontend envia uma requisição para o endpoint DRF correspondente (ex: `POST /api/atendimentos/{id}/atualizar-status/`).
+
+8.  **Ciclo de Atualização**: A `APIView` processa a requisição, atualiza o modelo no banco de dados, o que novamente dispara o sinal `post_save`, e a mudança é transmitida em tempo real para todos os clientes conectados.
+
+## 4. Modelagem de Dados
+
+A estrutura detalhada das tabelas e campos, perfeitamente alinhada com os modelos Django já implementados, está documentada no arquivo [modelagem_dados.md](./modelagem_dados.md).

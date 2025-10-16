@@ -168,6 +168,8 @@ def kanban_departamento(
 
         csrf_token = get_token(request)
         csrf_hidden = f'<input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">'  # nosec - token gerado pelo Django
+        assunto_value = escape(atendimento.assunto or "")
+        active_departamentos_qs = Departamento.objects.filter(ativo=True).order_by("nome")
 
         html = f"""
         <div class=\"space-y-2\">
@@ -193,6 +195,10 @@ def kanban_departamento(
               <div class=\"text-sm\">Início: {data_inicio}</div>
               <div class=\"text-sm\">Última: {data_ultima}</div>
               <div class=\"text-sm\">Fim: {data_fim}</div>
+            </div>
+            <div>
+              <div class=\"text-xs text-gray-500\">Assunto</div>
+              <div class=\"text-sm\">{assunto_value or '-'}\n</div>
             </div>
           </div>
           <div class=\"pt-2 border-t mt-2\">
@@ -237,6 +243,71 @@ def kanban_departamento(
               <button class=\"px-3 py-1 bg-blue-600 text-white rounded text-sm\">Enviar</button>
             </form>
           </div>
+          <div class=\"pt-2 border-t mt-2\">
+            <div class=\"text-xs text-gray-500 mb-1\">Transferir atendimento</div>
+            <form method=\"post\" class=\"space-y-2\">
+              {csrf_hidden}
+              <input type=\"hidden\" name=\"atendimento_id\" value=\"{atendimento.id}\">\n              <input type=\"hidden\" name=\"action\" value=\"transfer\">\n              <div>
+                <label class=\"text-xs text-gray-500\">Departamento alvo</label>
+                <select name=\"target_departamento_id\" class=\"w-full border rounded p-1 text-sm\">
+        """
+        for d in active_departamentos_qs:
+            sel = " selected" if atendimento.departamento_id == d.id else ""
+            html += f"<option value=\"{d.id}\"{sel}>{escape(d.nome)}</option>"
+        html += """
+                </select>
+              </div>
+              <div>
+                <label class=\"text-xs text-gray-500\">Motivo da transferência</label>
+                <textarea name=\"reason\" rows=\"2\" class=\"w-full border rounded p-2 text-sm\" placeholder=\"Descreva o motivo\" required></textarea>
+              </div>
+              <button class=\"px-3 py-1 bg-purple-600 text-white rounded text-sm\">Transferir</button>
+            </form>
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Histórico de status</div>
+            <div class=\"space-y-2 max-h-48 overflow-y-auto\">
+        """
+        historico = atendimento.historico_status or []
+        if isinstance(historico, list) and historico:
+            for h in historico:
+                ts = escape(str(h.get("timestamp", "")))
+                st = escape(str(h.get("status", "")))
+                obs = escape(str(h.get("observacao", "")))
+                html += f"<div class=\"text-xs text-gray-500\">{ts} • {st}</div>"
+                if obs:
+                    html += f"<div class=\"text-sm\">{obs}</div>"
+                html += "<div class=\"h-px bg-gray-100\"></div>"
+        else:
+            html += "<div class=\"text-sm text-gray-500\">Sem histórico registrado.</div>"
+        html += """
+            </div>
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Contexto da conversa</div>
+        """
+        ctx = atendimento.contexto_conversa or {}
+        try:
+            ctx_json = json.dumps(ctx, ensure_ascii=False, indent=2)
+        except Exception:
+            ctx_json = escape(str(ctx))
+        html += f"<pre class=\"text-xs bg-gray-50 p-2 rounded overflow-x-auto\">{escape(ctx_json)}</pre>"
+        html += """
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Tags</div>
+            <div class=\"flex flex-wrap gap-2\">
+        """
+        tags_list = atendimento.tags or []
+        if isinstance(tags_list, list) and tags_list:
+            for t in tags_list:
+                tag_str = escape(str(t))
+                html += f"<span class=\"px-2 py-0.5 bg-gray-200 rounded text-xs\">{tag_str}</span>"
+        else:
+            html += "<span class=\"text-xs text-gray-500\">Sem tags</span>"
+        html += """
+            </div>
+          </div>
           <div class=\"pt-4 mt-4 border-t\">
             <div class=\"text-xs text-gray-500 mb-2\">Editar atendimento</div>
             <form method=\"post\" class=\"space-y-2\">
@@ -265,25 +336,6 @@ def kanban_departamento(
             html += f"<option value=\"{s.value}\"{sel}>{escape(s.label)}</option>"
         html += """
                 </select>
-              </div>
-              <div>
-                <label class=\"text-xs text-gray-500\">Departamento</label>
-                <select name=\"departamento_id\" class=\"w-full border rounded p-1 text-sm\">
-        """
-        # Filtrar departamentos disponíveis de acordo com permissões
-        for d in allowed_departamentos_qs:
-            sel = " selected" if atendimento.departamento_id == d.id else ""
-            html += f"<option value=\"{d.id}\"{sel}>{escape(d.nome)}</option>"
-        html += """
-                </select>
-              </div>
-              <div>
-                <label class=\"text-xs text-gray-500\">Avaliação (1-5)</label>
-                <input type=\"number\" min=\"1\" max=\"5\" name=\"avaliacao\" value=\"{escape(str(atendimento.avaliacao or ''))}\" class=\"w-full border rounded p-1 text-sm\">
-              </div>
-              <div>
-                <label class=\"text-xs text-gray-500\">Feedback</label>
-                <textarea name=\"feedback\" rows=\"2\" class=\"w-full border rounded p-2 text-sm\">{escape(atendimento.feedback or '')}</textarea>
               </div>
               <button class=\"px-3 py-1 bg-indigo-600 text-white rounded text-sm\">Salvar alterações</button>
             </form>
@@ -331,18 +383,20 @@ def kanban_departamento(
                 atendimento.unassign_agent("Desatribuição manual")
             elif action == "transfer":
                 target_id_str = request.POST.get("target_departamento_id", "0")
+                motivo: str = request.POST.get("reason", "").strip()
                 try:
                     target_id = int(target_id_str)
                 except ValueError:
                     target_id = 0
                 if target_id > 0:
-                    # Permitir apenas departamentos válidos e acessíveis ao usuário (se não gerente)
-                    if is_manager or target_id in allowed_departamentos_ids:
-                        target_dep = get_object_or_404(Departamento, id=target_id)
-                        atendimento.transfer_to_department(target_dep)
-                    else:
-                        error_occurred = True
-                        error_message = "Departamento alvo não permitido para este usuário."
+                    # Permitir transferência para qualquer departamento ativo
+                    target_dep = get_object_or_404(Departamento, id=target_id, ativo=True)
+                    actor = (getattr(request.user, "username", None) or getattr(request.user, "email", None) or "usuário")
+                    observacao = f"Transferido por {actor} para {target_dep.nome}. Motivo: {motivo}" if motivo else f"Transferido por {actor} para {target_dep.nome}."
+                    atendimento.transfer_to_department(target_dep, observacao=observacao)
+                else:
+                    error_occurred = True
+                    error_message = "Departamento alvo inválido."
             elif action == "change_status":
                 status_value: str = request.POST.get("status", "")
                 valid_values = [s.value for s in StatusAtendimento]

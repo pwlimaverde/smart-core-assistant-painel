@@ -53,31 +53,11 @@
           <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-blue-300 hover:bg-blue-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="fila" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
-                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
                 <div class="text-xs text-gray-500 mt-0.5">Status: <span class="status-label font-semibold">{{ a.get_status_display }}</span></div>
                 <div class="text-xs text-gray-500 mt-0.5">Última: {{ a.data_ultima_mensagem|default:"None" }}</div>
               </div>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Fila</span>
-            </div>
-            <!-- Ações discretas (inicialmente ocultas na Fila) -->
-            <div class="card-actions mt-2 pt-2 flex items-center gap-2 justify-end hidden">
-              <form method="post" class="inline-flex">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="unassign">
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Desatribuir</button>
-              </form>
-              <form method="post" class="inline-flex items-center gap-2">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="transfer">
-                <select name="target_departamento_id" class="ui-select ui-select--sm">
-                  {% for d in departamentos %}
-                    <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
-                  {% endfor %}
-                </select>
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Transferir</button>
-              </form>
             </div>
           </article>
         {% empty %}
@@ -100,30 +80,11 @@
           <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-amber-300 hover:bg-amber-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="em_atendimento" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
-                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
                 <div class="text-xs text-gray-500 mt-0.5">Status: <span class="status-label font-semibold">{{ a.get_status_display }}</span></div>
                 <div class="text-xs text-gray-500">Última: {{ a.data_ultima_mensagem|default:"None" }}</div>
               </div>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Meus</span>
-            </div>
-            <div class="card-actions mt-2 pt-2 flex items-center gap-2 justify-end">
-              <form method="post" class="inline-flex">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="unassign">
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Desatribuir</button>
-              </form>
-              <form method="post" class="inline-flex items-center gap-2">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="transfer">
-                <select name="target_departamento_id" class="ui-select ui-select--sm">
-                  {% for d in departamentos %}
-                    <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
-                  {% endfor %}
-                </select>
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Transferir</button>
-              </form>
             </div>
           </article>
         {% empty %}
@@ -146,31 +107,11 @@
           <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-sky-300 hover:bg-sky-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="aguardando_retorno" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
-                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
                 <div class="text-xs text-gray-500 mt-0.5">Status: <span class="status-label font-semibold">{{ a.get_status_display }}</span></div>
                 <div class="text-xs text-gray-500 mt-0.5">Última: {{ a.data_ultima_mensagem|default:"None" }}</div>
               </div>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Cliente</span>
-            </div>
-            <!-- Ações discretas (visíveis nesta coluna) -->
-            <div class="card-actions mt-2 pt-2 flex items-center gap-2 justify-end">
-              <form method="post" class="inline-flex">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="unassign">
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Desatribuir</button>
-              </form>
-              <form method="post" class="inline-flex items-center gap-2">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="transfer">
-                <select name="target_departamento_id" class="ui-select ui-select--sm">
-                  {% for d in departamentos %}
-                    <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
-                  {% endfor %}
-                </select>
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Transferir</button>
-              </form>
             </div>
           </article>
         {% empty %}
@@ -193,31 +134,11 @@
           <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-emerald-300 hover:bg-emerald-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="resolvidos" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
-                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
                 <div class="text-xs text-gray-500 mt-0.5">Status: <span class="status-label font-semibold">{{ a.get_status_display }}</span></div>
                 <div class="text-xs text-gray-500">Finalizado em: {{ a.data_fim|default:"None" }}</div>
               </div>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Done</span>
-            </div>
-            <!-- Ações (mantidas ocultas em Resolvidos) -->
-            <div class="card-actions mt-2 pt-2 flex items-center gap-2 justify-end hidden">
-              <form method="post" class="inline-flex">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="unassign">
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Desatribuir</button>
-              </form>
-              <form method="post" class="inline-flex items-center gap-2">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="transfer">
-                <select name="target_departamento_id" class="ui-select ui-select--sm">
-                  {% for d in departamentos %}
-                    <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
-                  {% endfor %}
-                </select>
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Transferir</button>
-              </form>
             </div>
           </article>
         {% empty %}
@@ -240,31 +161,11 @@
           <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-red-300 hover:bg-red-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="cancelados" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
-                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
                 <div class="text-xs text-gray-500 mt-0.5">Status: <span class="status-label font-semibold">{{ a.get_status_display }}</span></div>
                 <div class="text-xs text-gray-500">Finalizado em: {{ a.data_fim|default:"None" }}</div>
               </div>
               <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Cancelado</span>
-            </div>
-            <!-- Ações (mantidas ocultas em Cancelados) -->
-            <div class="card-actions mt-2 pt-2 flex items-center gap-2 justify-end hidden">
-              <form method="post" class="inline-flex">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="unassign">
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Desatribuir</button>
-              </form>
-              <form method="post" class="inline-flex items-center gap-2">
-                {% csrf_token %}
-                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
-                <input type="hidden" name="action" value="transfer">
-                <select name="target_departamento_id" class="ui-select ui-select--sm">
-                  {% for d in departamentos %}
-                    <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
-                  {% endfor %}
-                </select>
-                <button class="ui-btn ui-btn--sm text-xs opacity-70 hover:opacity-100 border border-gray-200 bg-gray-50 text-gray-600">Transferir</button>
-              </form>
             </div>
           </article>
         {% empty %}

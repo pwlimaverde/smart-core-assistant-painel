@@ -94,11 +94,12 @@ def _get_current_agent(request: HttpRequest) -> Optional[AtendenteHumano]:
 def kanban_departamento(
     request: HttpRequest, departamento_id: int
 ) -> HttpResponse:
-    """Renderiza o Kanban de atendimentos por departamento e processa ações.
+    """Renderiza o Kanban por status e processa ações.
 
-    - Colunas: Fila (aguardando atendente), Meus (atribuídos ao agente),
-      Aguardando Cliente, Finalizados.
-    - Ações via POST: assign_next, unassign, transfer, change_status.
+    - Colunas: Fila, Em Atendimento, Aguardando Retorno, Resolvidos, Cancelados.
+    - Para usuários não gerentes: exibe a fila geral do departamento atual e
+      apenas os atendimentos atribuídos ao próprio usuário nas demais colunas.
+    - Ações via POST: assign_next, assign_to_me, unassign, transfer, change_status.
     """
     # Autenticação obrigatória: redireciona para login se necessário
     if not request.user.is_authenticated:
@@ -441,7 +442,9 @@ def kanban_departamento(
                 "ok": True,
                 "atendimento_id": atendimento.id,
                 "status": atendimento.status.value,
+                "status_label": atendimento.get_status_display(),
                 "assigned": atendimento.atendente_humano_id is not None,
+                "atendente_humano_id": atendimento.atendente_humano_id,
             })
 
         return redirect(
@@ -457,52 +460,24 @@ def kanban_departamento(
 
     current_agent = _get_current_agent(request)
 
-    # Colunas do Kanban
-    fila_qs = base_qs.filter(
-        status=StatusAtendimento.AGUARDANDO_ATENDENTE,
-        atendente_humano__isnull=True,
-    )
-
-    # Se gerente, permite visualizar atendimentos de todos os agentes do departamento
+    # Colunas do Kanban com base exclusivamente em StatusAtendimento (fluxo unificado)
+    fila_qs = base_qs.filter(status=StatusAtendimento.FILA, atendente_humano__isnull=True)
     if is_manager:
-        assigned_qs = base_qs.filter(atendente_humano__isnull=False).exclude(
-            status__in=[
-                StatusAtendimento.RESOLVIDO,
-                StatusAtendimento.CANCELADO,
-            ]
-        )
-        aguardando_cliente_qs = base_qs.filter(
-            status=StatusAtendimento.AGUARDANDO_CONTATO,
-        )
-        finalizados_qs = base_qs.filter(
-            status__in=[
-                StatusAtendimento.RESOLVIDO,
-                StatusAtendimento.CANCELADO,
-            ],
-        )
+        em_atendimento_qs = base_qs.filter(status=StatusAtendimento.EM_ATENDIMENTO)
+        aguardando_retorno_qs = base_qs.filter(status=StatusAtendimento.AGUARDANDO_RETORNO)
+        resolvidos_qs = base_qs.filter(status=StatusAtendimento.RESOLVIDO)
+        cancelados_qs = base_qs.filter(status=StatusAtendimento.CANCELADO)
     else:
         if current_agent:
-            assigned_qs = base_qs.filter(atendente_humano=current_agent).exclude(
-                status__in=[
-                    StatusAtendimento.RESOLVIDO,
-                    StatusAtendimento.CANCELADO,
-                ]
-            )
-            aguardando_cliente_qs = base_qs.filter(
-                atendente_humano=current_agent,
-                status=StatusAtendimento.AGUARDANDO_CONTATO,
-            )
-            finalizados_qs = base_qs.filter(
-                atendente_humano=current_agent,
-                status__in=[
-                    StatusAtendimento.RESOLVIDO,
-                    StatusAtendimento.CANCELADO,
-                ],
-            )
+            em_atendimento_qs = base_qs.filter(status=StatusAtendimento.EM_ATENDIMENTO, atendente_humano=current_agent)
+            aguardando_retorno_qs = base_qs.filter(status=StatusAtendimento.AGUARDANDO_RETORNO, atendente_humano=current_agent)
+            resolvidos_qs = base_qs.filter(status=StatusAtendimento.RESOLVIDO, atendente_humano=current_agent)
+            cancelados_qs = base_qs.filter(status=StatusAtendimento.CANCELADO, atendente_humano=current_agent)
         else:
-            assigned_qs = base_qs.none()
-            aguardando_cliente_qs = base_qs.none()
-            finalizados_qs = base_qs.none()
+            em_atendimento_qs = base_qs.none()
+            aguardando_retorno_qs = base_qs.none()
+            resolvidos_qs = base_qs.none()
+            cancelados_qs = base_qs.none()
 
     context: dict[str, Any] = {
         "departamento": departamento,
@@ -510,9 +485,10 @@ def kanban_departamento(
         "is_manager": is_manager,
         "columns": {
             "fila": fila_qs,
-            "meus": assigned_qs,
-            "aguardando_cliente": aguardando_cliente_qs,
-            "finalizados": finalizados_qs,
+            "em_atendimento": em_atendimento_qs,
+            "aguardando_retorno": aguardando_retorno_qs,
+            "resolvidos": resolvidos_qs,
+            "cancelados": cancelados_qs,
         },
         "statuses": list(StatusAtendimento),
         # Dropdown de departamentos limitado aos que o usuário pode acessar

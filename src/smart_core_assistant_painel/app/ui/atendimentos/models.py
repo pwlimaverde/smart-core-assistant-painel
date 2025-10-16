@@ -24,13 +24,11 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 
 
 class StatusAtendimento(models.TextChoices):
-    AGUARDANDO_INICIAL = "aguardando_inicial", "Aguardando Interação Inicial"
-    EM_ANDAMENTO = "em_andamento", "Em Andamento"
-    AGUARDANDO_CONTATO = "aguardando_contato", "Aguardando Contato"
-    AGUARDANDO_ATENDENTE = "aguardando_atendente", "Aguardando Atendente"
+    FILA = "fila", "Fila"
+    EM_ATENDIMENTO = "em_atendimento", "Em Atendimento"
+    AGUARDANDO_RETORNO = "aguardando_retorno", "Aguardando Retorno"
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
-    TRANSFERIDO = "transferido", "Transferido para Humano"
 
 
 class TipoMensagem(models.TextChoices):
@@ -104,7 +102,7 @@ class Atendimento(models.Model):
     status: models.CharField[str] = models.CharField(
         max_length=20,
         choices=StatusAtendimento.choices,
-        default=StatusAtendimento.AGUARDANDO_INICIAL,
+        default=StatusAtendimento.FILA,
         help_text="Status atual do atendimento",
     )
     data_inicio: models.DateTimeField[datetime] = models.DateTimeField(
@@ -231,7 +229,7 @@ class Atendimento(models.Model):
         """Atribui o atendimento a um atendente humano, atualiza status e histórico.
 
         - Atualiza `departamento` para o do atendente, se existir.
-        - Define `status=EM_ANDAMENTO`.
+        - Define `status=EM_ATENDIMENTO`.
         - Registra `data_ultima_atribuicao` do atendente para fairness.
         """
         # Atualiza departamento de acordo com o atendente (se definido)
@@ -241,9 +239,9 @@ class Atendimento(models.Model):
             self.departamento_id = atendente.departamento_id
 
         self.atendente_humano = atendente
-        self.status = StatusAtendimento.EM_ANDAMENTO
+        self.status = StatusAtendimento.EM_ATENDIMENTO
         self.adicionar_historico_status(
-            StatusAtendimento.EM_ANDAMENTO.value,
+            StatusAtendimento.EM_ATENDIMENTO.value,
             observacao or f"Atribuído a {atendente.nome}",
         )
         self.save()
@@ -255,9 +253,9 @@ class Atendimento(models.Model):
     def unassign_agent(self, observacao: str = "") -> None:
         """Remove a atribuição do atendente e retorna o atendimento à fila."""
         self.atendente_humano = None
-        self.status = StatusAtendimento.AGUARDANDO_ATENDENTE
+        self.status = StatusAtendimento.FILA
         self.adicionar_historico_status(
-            StatusAtendimento.AGUARDANDO_ATENDENTE.value,
+            StatusAtendimento.FILA.value,
             observacao or "Desatribuído e retornado à fila",
         )
         self.save()
@@ -268,9 +266,9 @@ class Atendimento(models.Model):
         """Transfere atendimento para outro departamento e volta para fila."""
         self.departamento_id = departamento.id
         self.atendente_humano = None
-        self.status = StatusAtendimento.AGUARDANDO_ATENDENTE
+        self.status = StatusAtendimento.FILA
         self.adicionar_historico_status(
-            StatusAtendimento.AGUARDANDO_ATENDENTE.value,
+            StatusAtendimento.FILA.value,
             observacao or f"Transferido para {departamento.nome}",
         )
         self.save()
@@ -295,9 +293,9 @@ class Atendimento(models.Model):
         self, atendente_humano: AtendenteHumano, observacao: str = ""
     ) -> None:
         self.atendente_humano = atendente_humano
-        self.status = StatusAtendimento.TRANSFERIDO
+        self.status = StatusAtendimento.EM_ATENDIMENTO
         self.adicionar_historico_status(
-            "transferido",
+            StatusAtendimento.EM_ATENDIMENTO.value,
             observacao or f"Transferido para {atendente_humano.nome}",
         )
         self.save()

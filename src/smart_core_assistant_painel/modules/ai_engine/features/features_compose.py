@@ -602,6 +602,14 @@ class FeaturesCompose:
                     "transferir_atendimento=True."
                 )
 
+            # Quando a transferência estiver habilitada, acrescenta a mensagem
+            # solicitada ao texto de resposta do bot.
+            if transfer_attendance:
+                transfer_message: str = (
+                    "/n/n Vou transferir seu atendimento para o setor rersponsável"
+                )
+                response_text = f"{response_text} {transfer_message}"
+
             return AMTuple(
                 resposta_bot=response_text,
                 confiabilidade=final_score,

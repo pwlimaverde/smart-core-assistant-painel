@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "pgvector.django",
     "rolepermissions",
     "django_q",
+    "smart_core_assistant_painel.app.ui.core",
     "smart_core_assistant_painel.app.ui.usuarios",
     "smart_core_assistant_painel.app.ui.operacional",
     "smart_core_assistant_painel.app.ui.clientes",
@@ -97,13 +98,14 @@ ROOT_URLCONF = "smart_core_assistant_painel.app.ui.core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],  # Usar apenas templates por app (APP_DIRS)
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "smart_core_assistant_painel.app.ui.core.context_processors.project_version",
             ],
         },
     },
@@ -185,7 +187,8 @@ USE_TZ = True
 
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "templates/static"),)
+# Centraliza assets opcionais em core/static e permite AppDirectoriesFinder
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "core", "static"),)
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, "media")
 MEDIA_URL = "/media/"

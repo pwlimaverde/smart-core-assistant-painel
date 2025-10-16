@@ -6,4 +6,9 @@ app_name = "atendimentos"
 
 urlpatterns = [
     path("webhook_whatsapp/", views.webhook_whatsapp, name="webhook_whatsapp"),
+    path(
+        "kanban/<int:departamento_id>/",
+        views.kanban_departamento,
+        name="kanban_departamento",
+    ),
 ]

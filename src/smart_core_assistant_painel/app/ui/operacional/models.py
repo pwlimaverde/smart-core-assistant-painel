@@ -124,6 +124,25 @@ class Departamento(models.Model):
             )
             return None
 
+    def selecionar_proximo_atendente(self) -> Optional["AtendenteHumano"]:
+        """Seleciona o próximo atendente disponível por round-robin simples.
+
+        Critérios:
+        - Atendentes ativos e disponíveis no departamento.
+        - Ordenação crescente por `data_ultima_atribuicao` (nulos primeiro), depois por `id`.
+        - Escolhe o primeiro que ainda não atingiu sua capacidade máxima.
+        """
+        elegiveis = self.atendentes.filter(
+            ativo=True,
+            disponivel=True,
+        ).order_by("data_ultima_atribuicao", "id")
+
+        for atendente in elegiveis:
+            # Usa helper do modelo para contar atendimentos ativos
+            if atendente.get_atendimentos_ativos() < atendente.max_atendimentos_simultaneos:
+                return atendente
+        return None
+
 
 class AtendenteHumano(models.Model):
     id: models.AutoField = models.AutoField(
@@ -163,29 +182,36 @@ class AtendenteHumano(models.Model):
         help_text="Usuário do sistema para login (se aplicável)",
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
-        default=True, help_text="Status de atividade do atendente"
+        default=True, help_text="Indica se o atendente está ativo"
     )
     disponivel: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Disponibilidade atual para receber novos atendimentos",
+        help_text="Se o atendente está aceitando novos atendimentos",
     )
     max_atendimentos_simultaneos: models.PositiveIntegerField[int] = (
         models.PositiveIntegerField(
             default=5,
-            help_text="Máximo de atendimentos simultâneos permitidos",
+            help_text="Capacidade máxima de atendimentos simultâneos",
         )
     )
-    especialidades: models.JSONField[list[str] | None] = models.JSONField(
-        default=list,
+    # Campo para registro da última atribuição, usado para ordenação (round-robin / fairness)
+    data_ultima_atribuicao: models.DateTimeField[datetime | None] = models.DateTimeField(
         blank=True,
-        help_text="Lista de especialidades/áreas de conhecimento do atendente",
+        null=True,
+        help_text="Data e hora da última atribuição de um novo atendimento",
     )
-    horario_trabalho: models.JSONField[dict[str, Any] | None] = (
-        models.JSONField(
-            default=dict,
-            blank=True,
-            help_text="Horário de trabalho (ex: {'segunda': '08:00-18:00', 'terca': '08:00-18:00'})",
-        )
+    horario_trabalho: models.JSONField[dict[str, Any]] = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Horários de trabalho do atendente",
+    )
+    especialidades: models.JSONField[list[str]] = models.JSONField(
+        default=list, blank=True, help_text="Especialidades do atendente"
+    )
+    metadados: models.JSONField[dict[str, Any]] = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
     )
     data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro no sistema"
@@ -193,17 +219,17 @@ class AtendenteHumano(models.Model):
     ultima_atividade: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True, help_text="Data da última atividade no sistema"
     )
-    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
-    )
 
     class Meta:
         verbose_name = "Atendente Humano"
         verbose_name_plural = "Atendentes Humanos"
         ordering = ["nome"]
         db_table = "oraculo_atendentehumano"
+        indexes = [
+            models.Index(fields=["departamento", "disponivel"]),
+            models.Index(fields=["disponivel", "max_atendimentos_simultaneos"]),
+            models.Index(fields=["data_ultima_atribuicao"]),
+        ]
 
     @override
     def __str__(self) -> str:
@@ -242,3 +268,13 @@ class AtendenteHumano(models.Model):
             StatusAtendimento.TRANSFERIDO,
         ]
         return self.atendimentos.filter(status__in=ativos).count()
+
+    def is_available(self) -> bool:
+        """Verifica se o atendente está disponível considerando capacidade atual."""
+        if not self.ativo or not self.disponivel:
+            return False
+        return self.get_atendimentos_ativos() < self.max_atendimentos_simultaneos
+
+    def current_load(self) -> int:
+        """Retorna a carga atual de atendimentos ativos do atendente."""
+        return self.get_atendimentos_ativos()

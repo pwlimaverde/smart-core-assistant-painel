@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Any, Optional, cast, override
+from typing import Any, Optional, cast, override, TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -9,6 +9,15 @@ from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    AtendenteHumano,
+)
+if TYPE_CHECKING:
+    # Import apenas para type hints, evitando ciclo de import em runtime
+    from smart_core_assistant_painel.app.ui.operacional.models import (
+        Departamento,
+    )
+
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
 )
@@ -83,6 +92,15 @@ class Atendimento(models.Model):
         related_name="atendimentos",
         help_text="Contato vinculado ao atendimento",
     )
+    # Campo de departamento para suportar fila por departamento na central de atendimento
+    departamento: models.ForeignKey[Optional["operacional.Departamento"]] = models.ForeignKey(
+        "operacional.Departamento",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="atendimentos",
+        help_text="Departamento atual do atendimento (fila Kanban)",
+    )
     status: models.CharField[str] = models.CharField(
         max_length=20,
         choices=StatusAtendimento.choices,
@@ -94,6 +112,12 @@ class Atendimento(models.Model):
     )
     data_fim: models.DateTimeField[datetime | None] = models.DateTimeField(
         blank=True, null=True, help_text="Data de finalização do atendimento"
+    )
+    # Campo para registrar a última mensagem trocada, usado para SLAs e ordenação
+    data_ultima_mensagem: models.DateTimeField[datetime | None] = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Data/hora da última mensagem (para ordenação e SLA)",
     )
     assunto: models.CharField[str | None] = models.CharField(
         max_length=200,
@@ -154,6 +178,12 @@ class Atendimento(models.Model):
         verbose_name_plural = "Atendimentos"
         ordering = ["-data_inicio"]
         db_table = "oraculo_atendimento"
+        # Índices para performance nas consultas do Kanban e filtros comuns
+        indexes = [
+            models.Index(fields=["status", "departamento"]),
+            models.Index(fields=["departamento", "data_ultima_mensagem"]),
+            models.Index(fields=["atendente_humano", "status"]),
+        ]
 
     @override
     def __str__(self) -> str:
@@ -163,6 +193,23 @@ class Atendimento(models.Model):
         self.status = novo_status
         self.data_fim = timezone.now()
         self.adicionar_historico_status(novo_status, "Atendimento finalizado")
+        self.save()
+
+    def change_status(
+        self, novo_status: StatusAtendimento, observacao: str = ""
+    ) -> None:
+        """Altera o status do atendimento com histórico e efeitos colaterais.
+
+        - Se finalizador (RESOLVIDO/CANCELADO), marca `data_fim`.
+        - Mantém coerência com UI Kanban.
+        """
+        self.status = novo_status
+        if novo_status in (
+            StatusAtendimento.RESOLVIDO,
+            StatusAtendimento.CANCELADO,
+        ):
+            self.data_fim = timezone.now()
+        self.adicionar_historico_status(novo_status.value, observacao)
         self.save()
 
     def adicionar_historico_status(
@@ -177,6 +224,61 @@ class Atendimento(models.Model):
                 "observacao": observacao,
             }
         )
+
+    def assign_to_agent(
+        self, atendente: AtendenteHumano, observacao: str = ""
+    ) -> None:
+        """Atribui o atendimento a um atendente humano, atualiza status e histórico.
+
+        - Atualiza `departamento` para o do atendente, se existir.
+        - Define `status=EM_ANDAMENTO`.
+        - Registra `data_ultima_atribuicao` do atendente para fairness.
+        """
+        # Atualiza departamento de acordo com o atendente (se definido)
+        if atendente.departamento and (
+            self.departamento_id != atendente.departamento_id
+        ):
+            self.departamento_id = atendente.departamento_id
+
+        self.atendente_humano = atendente
+        self.status = StatusAtendimento.EM_ANDAMENTO
+        self.adicionar_historico_status(
+            StatusAtendimento.EM_ANDAMENTO.value,
+            observacao or f"Atribuído a {atendente.nome}",
+        )
+        self.save()
+
+        # Atualiza métrica de última atribuição do atendente
+        atendente.data_ultima_atribuicao = timezone.now()
+        atendente.save(update_fields=["data_ultima_atribuicao"])
+
+    def unassign_agent(self, observacao: str = "") -> None:
+        """Remove a atribuição do atendente e retorna o atendimento à fila."""
+        self.atendente_humano = None
+        self.status = StatusAtendimento.AGUARDANDO_ATENDENTE
+        self.adicionar_historico_status(
+            StatusAtendimento.AGUARDANDO_ATENDENTE.value,
+            observacao or "Desatribuído e retornado à fila",
+        )
+        self.save()
+
+    def transfer_to_department(
+        self, departamento: "Departamento", observacao: str = ""
+    ) -> None:
+        """Transfere atendimento para outro departamento e volta para fila."""
+        self.departamento_id = departamento.id
+        self.atendente_humano = None
+        self.status = StatusAtendimento.AGUARDANDO_ATENDENTE
+        self.adicionar_historico_status(
+            StatusAtendimento.AGUARDANDO_ATENDENTE.value,
+            observacao or f"Transferido para {departamento.nome}",
+        )
+        self.save()
+
+    def touch_last_message(self, quando: Optional[datetime] = None) -> None:
+        """Atualiza `data_ultima_mensagem` para ordenação/SLA."""
+        self.data_ultima_mensagem = quando or timezone.now()
+        self.save(update_fields=["data_ultima_mensagem"])
 
     def atualizar_contexto(self, chave: str, valor: Any) -> None:
         if not self.contexto_conversa:

@@ -21,14 +21,15 @@ class ContatoAdmin(admin.ModelAdmin[Contato]):
     list_display = [
         "telefone",
         "nome_contato",
+        "email",
         "nome_perfil_whatsapp",
         "data_cadastro",
         "ultima_interacao",
         "total_atendimentos",
         "total_clientes",
     ]
-    list_filter = ["data_cadastro", "ultima_interacao", "ativo"]
-    search_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp"]
+    list_filter = ["ativo", "data_cadastro", "ultima_interacao"]
+    search_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp", "email"]
     readonly_fields = ["data_cadastro", "ultima_interacao"]
     ordering = ["-ultima_interacao"]
     list_per_page = 25
@@ -40,6 +41,7 @@ class ContatoAdmin(admin.ModelAdmin[Contato]):
                     "telefone",
                     "nome_contato",
                     "nome_perfil_whatsapp",
+                    "email",
                     "ativo",
                 )
             },

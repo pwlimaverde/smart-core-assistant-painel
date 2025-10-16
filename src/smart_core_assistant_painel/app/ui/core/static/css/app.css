@@ -1,0 +1,204 @@
+/*
+  Identidade visual base do painel
+  - Tokens de cor e espaçamento
+  - Ajustes tipográficos
+  - Estilos utilitários para Kanban (cabeçalhos fixos, rolagem)
+*/
+
+:root {
+  /* Paleta base (claro) */
+  --brand-bg: #0b1021;          /* Fundo navbar escuro elegante */
+  --brand-primary: #3b82f6;     /* Azul principal */
+  --brand-primary-600: #2563eb; /* Azul intenso */
+  --brand-accent: #22c55e;      /* Verde de sucesso */
+  --brand-warning: #f59e0b;     /* Amarelo de aviso */
+  --brand-danger: #ef4444;      /* Vermelho de erro */
+  --surface-0: #ffffff;         /* Cartões */
+  --surface-1: #f8fafc;         /* Background */
+  --text-0: #0f172a;            /* Títulos */
+  --text-1: #334155;            /* Conteúdo */
+  --border-0: #e2e8f0;          /* Bordas leves */
+
+  --radius-lg: 14px;
+  --radius-md: 10px;
+}
+
+html, body {
+  background-color: var(--surface-1);
+  color: var(--text-1);
+}
+
+/* Navbar superior */
+.app-navbar {
+  background: var(--brand-bg);
+  color: #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid #111827;
+}
+.app-navbar a { color: #e5e7eb; text-decoration: none; }
+.app-navbar .brand {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+/* Container máximo para o conteúdo */
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Kanban - cabeçalho da coluna fixo e corpo rolável */
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-lg);
+  background: var(--surface-0);
+}
+.kanban-column__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--surface-0);
+  border-bottom: 1px solid var(--border-0);
+}
+.kanban-column__body {
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+}
+
+/* Cartões com microinterações */
+.kanban-card {
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-md);
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+.kanban-card:hover {
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Badges minimalistas */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-0);
+  background: #f1f5f9;
+  color: var(--text-1);
+}
+.badge.badge--success { background: #dcfce7; color: #14532d; }
+.badge.badge--warning { background: #fef9c3; color: #78350f; }
+.badge.badge--danger  { background: #fee2e2; color: #7f1d1d; }
+
+/* Footer discreto */
+.app-footer {
+  border-top: 1px solid var(--border-0);
+}
+
+/* Utilitário para linhas separadoras suaves */
+.divider { border-top: 1px dashed var(--border-0); }
+
+/* ----------------------------- */
+/* Controles de UI padronizados  */
+/* ----------------------------- */
+.ui-input,
+.ui-select {
+  height: 40px;
+  border: 1px solid var(--border-0);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--text-1);
+}
+
+/* Variantes compactas */
+.ui-input--sm,
+.ui-select--sm { height: 32px; padding: 0 10px; font-size: 13px; border-radius: 8px; }
+
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 60ms ease;
+}
+.ui-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+}
+
+/* Variante compacta para ações dentro do card */
+.ui-btn--sm { height: 32px; padding: 0 10px; font-size: 13px; border-radius: 8px; }
+
+.ui-btn--primary { background: var(--brand-primary); color: #fff; }
+.ui-btn--primary:hover { background: var(--brand-primary-600); }
+
+.ui-btn--success { background: var(--brand-accent); color: #fff; }
+.ui-btn--success:hover { filter: saturate(1.05) brightness(0.98); }
+
+.ui-btn--warning { background: #f59e0b; color: #fff; }
+.ui-btn--warning:hover { background: #d97706; }
+
+.ui-btn--purple { background: #7c3aed; color: #fff; }
+.ui-btn--purple:hover { background: #6d28d9; }
+
+.ui-btn--ghost { background: transparent; color: var(--text-1); border-color: var(--border-0); }
+.ui-btn--ghost:hover { background: #f8fafc; }
+
+.ui-btn--icon { height: 32px; padding: 0 8px; }
+
+/* Ações em cards: espaçamento coeso e quebra controlada */
+.card-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* ----------------------------- */
+/* Modal de detalhes             */
+/* ----------------------------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.45);
+  z-index: 60; /* acima de navbar (40) e cabeçalhos (10) */
+}
+.modal__dialog {
+  background: var(--surface-0);
+  border-radius: var(--radius-lg);
+  width: min(720px, calc(100vw - 48px));
+  max-height: min(80vh, 720px);
+  box-shadow: 0 20px 50px rgba(2, 6, 23, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal__header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal__title { font-size: 16px; font-weight: 600; color: var(--text-0); }
+.modal__body { padding: 16px 20px; overflow-y: auto; }
+.modal__close { border: none; background: transparent; color: #64748b; cursor: pointer; padding: 6px; border-radius: 8px; }
+.modal__close:hover { background: #f1f5f9; color: #334155; }
+
+/* Checkboxes proporcionais e com cor de destaque */
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand-primary);
+}

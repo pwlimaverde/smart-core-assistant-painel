@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block 'conteudo' %}
+<div class="container mx-auto px-4 py-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Kanban - {{ departamento.nome }}</h1>
+      <p class="text-sm text-gray-500 mt-1">Gerencie seus atendimentos de forma prática e visual.</p>
+    </div>
+    <div class="space-x-3">
+      <a href="/admin/" class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">Admin</a>
+      <a href="/" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Home</a>
+    </div>
+  </div>
+
+  <!-- Barra de filtros -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+    <form method="get" class="flex items-center gap-2">
+      <label for="dept" class="text-sm text-gray-600">Departamento</label>
+      <select id="dept" name="target_department_id" class="ui-select" onchange="this.form.submit()">
+        {% for d in departamentos %}
+          <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <div class="md:col-span-2 flex items-center gap-2">
+      <label for="kanban-search" class="text-sm text-gray-600">Buscar</label>
+      <input id="kanban-search" type="search" placeholder="Filtrar por nome ou telefone" class="ui-input flex-1" oninput="filterCards(this.value)">
+    </div>
+  </div>
+
+  <!-- Board -->
+  <div id="kanban-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    <!-- Coluna Fila -->
+    <section class="kanban-column p-0" data-column="fila" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'fila')">
+      <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-semibold">F</span>
+          <h2 class="text-lg font-semibold text-gray-800">Fila</h2>
+        </div>
+        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" id="count-fila"></span>
+      </div>
+      <div class="kanban-column__body space-y-3 p-4" id="col-fila">
+        {% for a in columns.fila %}
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-blue-300 hover:bg-blue-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="fila">
+            <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
+              <div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Última: {{ a.data_ultima_mensagem|default:"None" }}</div>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Fila</span>
+            </div>
+            <!-- Removido botão 'Atribuir próximo' e input hidden 'assign_next' -->
+          </article>
+        {% empty %}
+          <p class="text-sm text-gray-500">Sem itens na fila.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Coluna Meus -->
+    <section class="kanban-column p-0" data-column="meus" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'meus')">
+      <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-50 text-amber-600 font-semibold">M</span>
+          <h2 class="text-lg font-semibold text-gray-800">Meus</h2>
+        </div>
+        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" id="count-meus"></span>
+      </div>
+      <div class="kanban-column__body space-y-3 p-4" id="col-meus">
+        {% for a in columns.meus %}
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-amber-300 hover:bg-amber-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="meus">
+            <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
+              <div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Status: <span class="font-semibold">{{ a.status.value }}</span></div>
+                <div class="text-xs text-gray-500">Última: {{ a.data_ultima_mensagem|default:"None" }}</div>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Meus</span>
+            </div>
+            <div class="card-actions mt-3">
+              <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
+                <input type="hidden" name="action" value="unassign">
+                <button class="ui-btn ui-btn--warning ui-btn--sm">Desatribuir</button>
+              </form>
+              <form method="post" class="flex items-center gap-2">
+                {% csrf_token %}
+                <input type="hidden" name="atendimento_id" value="{{ a.id }}">
+                <input type="hidden" name="action" value="transfer">
+                <select name="target_departamento_id" class="ui-select ui-select--sm">
+                  {% for d in departamentos %}
+                    <option value="{{ d.id }}" {% if d.id == departamento.id %}selected{% endif %}>{{ d.nome }}</option>
+                  {% endfor %}
+                </select>
+                <button class="ui-btn ui-btn--purple ui-btn--sm">Transferir</button>
+              </form>
+            </div>
+            <form method="post" class="card-actions mt-2">
+              {% csrf_token %}
+              <input type="hidden" name="atendimento_id" value="{{ a.id }}">
+              <input type="hidden" name="action" value="change_status">
+              <select name="status" class="ui-select ui-select--sm">
+                {% for s in statuses %}
+                  <option value="{{ s.value }}" {% if s == a.status %}selected{% endif %}>{{ s.value }}</option>
+                {% endfor %}
+              </select>
+              <button class="ui-btn ui-btn--success ui-btn--sm">Atualizar</button>
+            </form>
+          </article>
+        {% empty %}
+          <p class="text-sm text-gray-500">Você não possui atendimentos.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Coluna Aguardando Cliente -->
+    <section class="kanban-column p-0" data-column="aguardando_cliente" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'aguardando_cliente')">
+      <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-50 text-sky-600 font-semibold">C</span>
+          <h2 class="text-lg font-semibold text-gray-800">Aguardando Cliente</h2>
+        </div>
+        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" id="count-aguardando_cliente"></span>
+      </div>
+      <div class="kanban-column__body space-y-3 p-4" id="col-aguardando_cliente">
+        {% for a in columns.aguardando_cliente %}
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-sky-300 hover:bg-sky-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="aguardando_cliente">
+            <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
+              <div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Última: {{ a.data_ultima_mensagem|default:"None" }}</div>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Cliente</span>
+            </div>
+            <form method="post" class="card-actions mt-3">
+              {% csrf_token %}
+              <input type="hidden" name="atendimento_id" value="{{ a.id }}">
+              <input type="hidden" name="action" value="change_status">
+              <select name="status" class="ui-select ui-select--sm">
+                {% for s in statuses %}
+                  <option value="{{ s.value }}" {% if s == a.status %}selected{% endif %}>{{ s.value }}</option>
+                {% endfor %}
+              </select>
+              <button class="ui-btn ui-btn--success ui-btn--sm">Atualizar</button>
+            </form>
+          </article>
+        {% empty %}
+          <p class="text-sm text-gray-500">Nenhum atendimento aguardando cliente.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- Coluna Finalizados -->
+    <section class="kanban-column p-0" data-column="finalizados" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'finalizados')">
+      <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 font-semibold">F</span>
+          <h2 class="text-lg font-semibold text-gray-800">Finalizados</h2>
+        </div>
+        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" id="count-finalizados"></span>
+      </div>
+      <div class="kanban-column__body space-y-3 p-4" id="col-finalizados">
+        {% for a in columns.finalizados %}
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-emerald-300 hover:bg-emerald-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="finalizados">
+            <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
+              <div>
+                <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.nome_contato|default:a.contato.telefone }}</div>
+                <div class="text-xs text-gray-500 mt-0.5">Status: <span class="font-semibold">{{ a.status.value }}</span></div>
+                <div class="text-xs text-gray-500">Finalizado em: {{ a.data_fim|default:"None" }}</div>
+              </div>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">Done</span>
+            </div>
+          </article>
+        {% empty %}
+          <p class="text-sm text-gray-500">Nenhum atendimento finalizado.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- Modal Detalhes -->
+<div id="details-modal" class="modal hidden items-center justify-center">
+  <div class="modal__dialog w-full">
+    <div class="modal__header">
+      <h3 class="modal__title">Detalhes do Atendimento</h3>
+      <button class="modal__close" onclick="closeDetails()" aria-label="Fechar">✕</button>
+    </div>
+    <div id="details-content" class="modal__body text-sm text-gray-800">
+      Carregando...
+    </div>
+  </div>
+</div>
+
+<script>
+  // Contadores por coluna
+  function updateCounts() {
+    const cols = ['fila','meus','aguardando_cliente','finalizados'];
+    cols.forEach(c => {
+      const el = document.getElementById('col-' + c);
+      const count = el ? el.querySelectorAll('article:not(.hidden)').length : 0;
+      const badge = document.getElementById('count-' + c);
+      if (badge) badge.textContent = count + ' itens';
+    });
+  }
+
+  // Filtro por texto em tempo real
+  function filterCards(query) {
+    const q = (query || '').toLowerCase();
+    const cards = document.querySelectorAll('#kanban-board article');
+    cards.forEach(card => {
+      const text = card.textContent.toLowerCase();
+      const match = text.includes(q);
+      card.classList.toggle('hidden', !match);
+    });
+    updateCounts();
+  }
+
+  // Drag and Drop simples
+  let draggedId = null;
+  function handleDragStart(ev) {
+    draggedId = ev.currentTarget.getAttribute('data-id');
+    ev.dataTransfer.setData('text/plain', draggedId);
+  }
+  async function handleDrop(ev, targetColumn) {
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData('text/plain') || draggedId;
+    if (!id) return;
+
+    // Mapeia colunas para ações/status
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCsrf());
+    formData.append('atendimento_id', id);
+
+    // Regras de transição por coluna
+    if (targetColumn === 'meus') {
+      formData.append('action', 'assign_to_me');
+    } else if (targetColumn === 'fila') {
+      formData.append('action', 'unassign');
+    } else if (targetColumn === 'aguardando_cliente') {
+      formData.append('action', 'change_status');
+      formData.append('status', 'aguardando_contato');
+    } else if (targetColumn === 'finalizados') {
+      formData.append('action', 'change_status');
+      formData.append('status', 'resolvido');
+    } else {
+      return; // coluna desconhecida
+    }
+
+    try {
+      const res = await fetch(window.location.href, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData,
+      });
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Falha ao atualizar');
+
+      // Move DOM
+      const card = document.querySelector('[data-id="' + id + '"]');
+      const target = document.getElementById('col-' + targetColumn);
+      if (card && target) {
+        target.prepend(card);
+        card.setAttribute('data-current', targetColumn);
+      }
+      updateCounts();
+    } catch (err) {
+      console.error(err);
+      alert('Erro: ' + err.message);
+    }
+  }
+
+  function getCsrf() {
+    const el = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    return el ? el.value : '';
+  }
+
+  // Modal de detalhes
+  function openDetails(id) {
+    const modal = document.getElementById('details-modal');
+    const content = document.getElementById('details-content');
+    content.textContent = 'Carregando...';
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+
+    // Busca detalhes simples via HTML parcial (fallback: renderizar na mesma view com ?partial=1)
+    fetch(`${window.location.href}?partial=1&atendimento_id=${id}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' }})
+      .then(r => r.text())
+      .then(html => { content.innerHTML = html; })
+      .catch(() => { content.textContent = 'Falha ao carregar detalhes.'; });
+  }
+  function closeDetails() {
+    const modal = document.getElementById('details-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+
+  // Inicialização
+  document.addEventListener('DOMContentLoaded', updateCounts);
+</script>
+
+{% endblock %}

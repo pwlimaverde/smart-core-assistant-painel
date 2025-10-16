@@ -19,6 +19,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
         "id",
         "nome",
         "cargo",
+        "departamento",
         "telefone",
         "email",
         "ativo",
@@ -34,7 +35,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
         "email",
         "departamento__nome",
     ]
-    list_filter = ["ativo", "disponivel", "cargo", "data_cadastro"]
+    list_filter = ["ativo", "disponivel", "cargo", "departamento", "data_cadastro"]
     readonly_fields = [
         "data_cadastro",
         "ultima_atividade",
@@ -115,12 +116,14 @@ class DepartamentoAdmin(admin.ModelAdmin[Departamento]):
         "telefone_instancia",
         "api_key",
         "instance_id",
+        "url_evolution_api",
         "ativo",
         "data_criacao",
+        "ultima_validacao",
     ]
-    search_fields = ["nome", "telefone_instancia", "api_key", "instance_id"]
+    search_fields = ["nome", "telefone_instancia", "api_key", "instance_id", "url_evolution_api"]
     list_filter = ["ativo", "data_criacao", "ultima_validacao"]
     ordering = ["nome"]
-    readonly_fields = ["data_criacao"]
+    readonly_fields = ["data_criacao", "ultima_validacao"]
     list_per_page = 25
     save_on_top = True

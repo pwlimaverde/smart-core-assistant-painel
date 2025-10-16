@@ -11,6 +11,13 @@ from django.contrib.messages import constants
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from rolepermissions.roles import assign_role
+from smart_core_assistant_painel.app.ui.operacional.models import AtendenteHumano, Departamento
+from django.db.models import Count
+from rolepermissions.checkers import has_permission
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    Atendimento,
+    StatusAtendimento,
+)
 
 
 def cadastro(request: HttpRequest) -> HttpResponse:
@@ -63,11 +70,8 @@ def cadastro(request: HttpRequest) -> HttpResponse:
 def login(request: HttpRequest) -> HttpResponse:
     """Realiza o login de um usuário.
 
-    Args:
-        request (HttpRequest): O objeto de requisição.
-
-    Returns:
-        HttpResponse: A resposta HTTP.
+    Após login bem-sucedido, redireciona para o Kanban do departamento
+    associado ao atendente humano vinculado ao usuário (usuario_sistema).
     """
     if request.method == "GET":
         return render(request, "login.html")
@@ -79,6 +83,18 @@ def login(request: HttpRequest) -> HttpResponse:
         )
         if user:
             auth.login(request, user)
+            # Encontrar atendente vinculado ao usuário para redirecionamento
+            agente = (
+                AtendenteHumano.objects.filter(usuario_sistema=user.username)
+                .select_related("departamento")
+                .first()
+            )
+            if agente and agente.departamento and agente.departamento_id:
+                return redirect(
+                    "atendimentos:kanban_departamento",
+                    departamento_id=agente.departamento_id,
+                )
+            # Fallback: se não houver vínculo, redireciona para seleção/treinamento
             return redirect("treinamento:treinar_ia")
         messages.add_message(
             request, constants.ERROR, "Nome de usuário ou senha inválidos."
@@ -113,3 +129,60 @@ def tornar_gerente(request: HttpRequest, id: int) -> HttpResponseRedirect:
     user = User.objects.get(id=id)
     assign_role(user, "gerente")
     return redirect("permissoes")
+
+
+def dashboard_gerente(request: HttpRequest) -> HttpResponse:
+    """Exibe o dashboard para gerentes com métricas de atendimentos.
+
+    Requer a permissão "treinar_ia" para acesso, conforme política de
+    permissões do projeto.
+    """
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    # Checagem de permissão seguindo o padrão do módulo de treinamento
+    if not has_permission(request.user, "treinar_ia"):
+        messages.add_message(
+            request,
+            constants.ERROR,
+            "Você não tem permissão para acessar o dashboard do gerente.",
+        )
+        return redirect("permissoes")
+
+    # Consulta base com otimização por relacionamento
+    qs = Atendimento.objects.all().select_related("departamento")
+
+    # Agregação por status
+    by_status_qs = qs.values("status").annotate(total=Count("id")).order_by()
+    status_label_map = dict(StatusAtendimento.choices)
+    status_counts = [
+        {
+            "code": item["status"],
+            "label": status_label_map.get(item["status"], item["status"]),
+            "total": item["total"],
+        }
+        for item in by_status_qs
+    ]
+
+    # Agregação por departamento
+    by_dept_qs = (
+        qs.values("departamento__id", "departamento__nome")
+        .annotate(total=Count("id"))
+        .order_by("departamento__nome")
+    )
+    department_counts = [
+        {
+            "id": item["departamento__id"],
+            "name": item["departamento__nome"] or "Sem departamento",
+            "total": item["total"],
+        }
+        for item in by_dept_qs
+    ]
+
+    context = {
+        "total_atendimentos": qs.count(),
+        "status_counts": status_counts,
+        "department_counts": department_counts,
+        "statuses": list(StatusAtendimento),
+    }
+    return render(request, "dashboard_gerente.html", context)

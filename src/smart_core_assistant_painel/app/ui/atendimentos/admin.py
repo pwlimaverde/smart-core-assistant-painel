@@ -67,14 +67,16 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "data_inicio",
         "avaliacao",
         "atendente_humano",
+        "departamento",
     ]
     search_fields = [
         "contato__telefone",
         "contato__nome_contato",
         "assunto",
         "atendente_humano__nome",
+        "departamento__nome",
     ]
-    readonly_fields = ["data_inicio"]
+    readonly_fields = ["data_inicio", "data_fim"]
     inlines = [MensagemInline]
     date_hierarchy = "data_inicio"
     ordering = ["-data_inicio"]
@@ -115,7 +117,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         return (
             super()
             .get_queryset(request)
-            .select_related("contato", "atendente_humano")
+            .select_related("contato", "atendente_humano", "departamento")
             .prefetch_related("mensagens")
         )
 

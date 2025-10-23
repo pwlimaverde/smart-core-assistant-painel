@@ -1,0 +1,112 @@
+Perfeito — suas premissas estão sólidas. Reorganizei as ideias, corrigi conflitos (especialmente sobre o relacionamento atendente⇄departamento) e refiz o plano com um desenho mais robusto e consistente.
+
+Visão Geral
+
+- Centralizar credenciais e estado por instância em WhatsAppInstance (nome genérico, não acoplado ao Evolution API).
+- Fila de atendimento vinculada ao Departamento , não ao atendente.
+- Cada Departamento agrega suas WhatsAppInstance (inclui instâncias “gerais” sem atendente).
+- Cada AtendenteHumano pertence a um único Departamento (1:N) e deve ter exatamente uma WhatsAppInstance própria (quando ativo).
+- validar_api_key sai do Departamento e passa a viver em WhatsAppInstance .
+Modelo de Dados (Revisado)
+
+- Departamento
+  - Campos: nome , slug , ativo
+  - Relacionamentos: hasMany WhatsAppInstance , hasMany AtendenteHumano
+  - Papel: possuir uma fila de atendimentos e instâncias associadas; pode ter 0 ou N atendentes.
+- WhatsAppInstance (novo, substitui EvolutionApiInstance)
+  - Campos: provider (choices: evolution , … ), instance_id , api_key , phone_number , ativo , metadata (JSON opcional)
+  - Relacionamentos: ForeignKey Departamento (obrigatório) , OneToOne AtendenteHumano (opcional) como owner (instâncias gerais não têm owner)
+  - Regras:
+    - instance_id único.
+    - Se tiver owner , o owner.departamento deve ser igual ao departamento da instância.
+  - Observação: remover url do modelo; base URL vem de .env ( WHATSAPP_API_BASE_URL ), e o provider determina cliente/integration.
+- AtendenteHumano
+  - Campos: user ( OneToOne com auth.User ), ativo
+  - Relacionamentos: ForeignKey Departamento (obrigatório, 1 atendente pertence a 1 departamento) , OneToOne WhatsAppInstance (obrigatório quando ativo)
+  - Regra: o departamento do atendente deve coincidir com o departamento da instância vinculada.
+- Atendimento (sessão/conversa)
+  - Campos: status ( FILA , EM_ATENDIMENTO , AGUARDANDO_RETORNO , RESOLVIDO , CANCELADO ), cliente , last_message_at , etc.
+  - Relacionamentos: ForeignKey Departamento (obrigatório) , ForeignKey WhatsAppInstance (obrigatório) , ForeignKey AtendenteHumano (opcional)
+  - Regra: em FILA , atendente é NULL ; ao assumir, seta atendente e muda status para EM_ATENDIMENTO .
+Invariantes e Decisões
+
+- Fila por Departamento : todos os atendimentos criados entram na fila do departamento vinculado à instância que os originou.
+- Instância por atendente: atendentes ativos precisam estar vinculados a exatamente uma WhatsAppInstance do mesmo departamento.
+- Instância geral: é apenas uma WhatsAppInstance sem owner ; não tratamos “bot” como atendente nem como departamento especial. Basta criar um departamento “Atendimento Geral” e vincular instâncias gerais a ele.
+- Envio de mensagens sempre usa a WhatsAppInstance do atendimento (não a do atendente). O atendente é quem assume a conversa, mas o canal permanece o mesmo número/instância que originou a conversa.
+Fluxo de Atendimento
+
+- Entrada (webhook/evento):
+  - Extrai api_key / instance_id do payload.
+  - WhatsAppInstance.validar_api_key(payload) retorna a instância.
+  - Departamento = instancia.departamento .
+  - Cria/atualiza Atendimento(departamento=..., whatsapp_instance=..., status=FILA) e adiciona à fila do departamento.
+- Triagem/Assunção:
+  - Painel lista a fila por departamento.
+  - Ao assumir: seta atendente (que pertence ao mesmo departamento) e muda status para EM_ATENDIMENTO .
+- Respostas:
+  - As respostas saem pela whatsapp_instance do atendimento; o cliente sempre vê o mesmo número.
+- Bot/Serviço:
+  - Instâncias sem owner (gerais) podem ter automações; continuam alimentando a mesma fila do departamento.
+  - Nenhum “is_general” é necessário — a ausência de owner já indica instância de serviço.
+Validação de Credenciais
+
+- Assinatura sugerida:
+  - @classmethod WhatsAppInstance.validar_api_key(cls, payload: dict) -> WhatsAppInstance
+- Estratégia:
+  - Preferir combinar instance_id e api_key se ambos presentes (mais forte).
+  - Fallback: só instance_id ou só api_key , se o provider suportar.
+  - Erros:
+    - ValidationError se nulo/ausente.
+    - DoesNotExist se não achar instância.
+    - InactiveInstanceError (custom) se instância existe mas está inativa.
+- Base URL:
+  - WHATSAPP_API_BASE_URL via .env .
+  - provider escolhe o cliente correto (Evolution API, etc). Nada disso fica em models .
+Ajustes no Código
+
+- Trocar chamadas em views de Departamento.validar_api_key(data) para:
+  - instancia = WhatsAppInstance.validar_api_key(data)
+  - departamento = instancia.departamento
+- Exemplo na c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\views.py :
+  - De: departamento = Departamento.validar_api_key(data)
+  - Para:
+    - instancia = WhatsAppInstance.validar_api_key(data)
+    - departamento = instancia.departamento
+- Admin:
+  - WhatsAppInstanceAdmin : filtros por departamento , provider , ativo .
+  - AtendenteHumanoAdmin : mostrar departamento e instance , impedir salvar inconsistente (departamentos diferentes).
+Migração de Dados
+
+- Criar tabela WhatsAppInstance .
+- Migrar credenciais:
+  - Se hoje Departamento guarda api_key / instance_id , criar instância por departamento com esses dados e vincular.
+  - Se hoje AtendenteHumano guarda credenciais, criar instância por atendente, vincular ao mesmo departamento e setar como owner .
+- Atualizar Atendimento :
+  - Adicionar departamento e whatsapp_instance .
+  - Preencher via migração: inferir departamento a partir de fonte atual (provavelmente AtendenteHumano ou Departamento usado na criação original) e setar whatsapp_instance .
+- Remover do modelo qualquer url evolution api .
+- Corrigir referências em services/utils para ler WHATSAPP_API_BASE_URL do ambiente.
+Plano de Implementação
+
+- Etapa 1: Modelos e Migrations
+  - Criar WhatsAppInstance .
+  - Adicionar departamento em Atendimento e whatsapp_instance .
+  - Ajustar AtendenteHumano para ForeignKey departamento e OneToOne whatsapp_instance .
+  - Constraints e validações de consistência.
+- Etapa 2: Migração de Dados
+  - Scripts de migração para criar instâncias e preencher relacionamentos.
+  - Backfill em Atendimento .
+- Etapa 3: Código de Integração
+  - Implementar validar_api_key no WhatsAppInstance .
+  - Substituir usos de Departamento.validar_api_key .
+  - Adaptar clients para usar provider e .env .
+- Etapa 4: Fila por Departamento
+  - Ajustar consultas e telas da fila para departamento .
+  - Garantir que criação/assunção de atendimento obedece às novas regras.
+- Etapa 5: Admin e Tests
+  - Admins para instâncias e atendentes com validações.
+  - Testes unitários e e2e para o fluxo (entrada → fila → assunção → resposta).
+Observações de Nome
+
+- Sugiro padronizar o nome como WhatsAppInstance (com “h”), pois coincide com a marca e evita ambiguidade futura. Internamente usar provider para diferenciar Evolution ou outros.

@@ -16,6 +16,7 @@ from rolepermissions.checkers import has_permission
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
     Departamento,
+    WhatsAppInstance,
 )
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
@@ -55,11 +56,16 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
             logger.warning("Decoding with errors='ignore' applied")
 
         data: dict[str, Any] = json.loads(body_str)
-        departamento = Departamento.validar_api_key(data)
-        if not departamento:
+        # Validar credenciais via WhatsAppInstance (substitui Departamento.validar_api_key)
+        whatsapp_instance = WhatsAppInstance.validar_api_key(data)
+        if not whatsapp_instance:
             return JsonResponse(
                 {"error": "Invalid or inactive API key"}, status=401
             )
+
+        # Garantir que os campos de credenciais usem os valores canônicos da instância
+        data["instance"] = whatsapp_instance.instance_id or whatsapp_instance.telefone_instancia
+        data["apikey"] = whatsapp_instance.api_key
 
         logger.info(f"Received webhook: {data}")
         message = FeaturesCompose.load_message_data(data)

@@ -7,7 +7,7 @@ do Django e personaliza a forma como eles são exibidos e gerenciados.
 from typing import cast
 
 from django.contrib import admin
-from django.db.models import QuerySet
+from django.db.models import QuerySet, F
 from django.http import HttpRequest
 
 from .models import Atendimento, Mensagem
@@ -56,8 +56,6 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "status",
         "data_inicio",
         "data_fim",
-        "atendente_humano_nome",
-        "avaliacao",
         "total_mensagens",
         "duracao_formatada",
     ]
@@ -65,18 +63,14 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "status",
         "prioridade",
         "data_inicio",
-        "avaliacao",
-        "atendente_humano",
-        "departamento",
     ]
     search_fields = [
         "contato__telefone",
         "contato__nome_contato",
         "assunto",
-        "atendente_humano__nome",
-        "departamento__nome",
     ]
     readonly_fields = ["data_inicio", "data_fim"]
+    exclude = ("departamento", "atendente_humano")
     inlines = [MensagemInline]
     date_hierarchy = "data_inicio"
     ordering = ["-data_inicio"]
@@ -87,13 +81,6 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         """Retorna o telefone do contato."""
         if obj.contato:
             return cast(str, obj.contato.telefone)
-        return "-"
-
-    @admin.display(description="Atendente")
-    def atendente_humano_nome(self, obj: Atendimento) -> str:
-        """Retorna o nome do atendente humano."""
-        if obj.atendente_humano:
-            return cast(str, obj.atendente_humano.nome)
         return "-"
 
     @admin.display(description="Mensagens")
@@ -113,12 +100,25 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         return "Em andamento"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Atendimento]:
-        """Otimiza a consulta pré-carregando dados relacionados."""
+        """Otimiza a consulta evitando FKs ausentes e pré-carrega dados necessários."""
         return (
             super()
             .get_queryset(request)
-            .select_related("contato", "atendente_humano", "departamento")
+            .select_related("contato")
             .prefetch_related("mensagens")
+            .only("id", "contato", "status", "data_inicio", "data_fim")
+            .defer(
+                "departamento",
+                "atendente_humano",
+                "data_ultima_mensagem",
+                "assunto",
+                "prioridade",
+                "contexto_conversa",
+                "historico_status",
+                "tags",
+                "avaliacao",
+                "feedback",
+            )
         )
 
 
@@ -129,7 +129,6 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
     list_display = [
         "id",
         "atendimento_id",
-        "atendimento",
         "remetente",
         "tipo",
         "conteudo_truncado",
@@ -155,12 +154,7 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
     )
     def contato_telefone(self, obj: Mensagem) -> str:
         """Retorna o telefone do contato associado à mensagem."""
-        return (
-            obj.atendimento.contato.telefone
-            if hasattr(obj, "atendimento")
-            and hasattr(obj.atendimento, "contato")
-            else "-"
-        )
+        return cast(str, getattr(obj, "contato_tel", "-"))
 
     @admin.display(description="Conteúdo")
     def conteudo_truncado(self, obj: Mensagem) -> str:
@@ -188,9 +182,9 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
         return "-"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Mensagem]:
-        """Otimiza as consultas carregando dados relacionados."""
+        """Otimiza as consultas evitando carregar o Atendimento completo."""
         return (
             super()
             .get_queryset(request)
-            .select_related("atendimento", "atendimento__contato")
+            .annotate(contato_tel=F("atendimento__contato__telefone"))
         )

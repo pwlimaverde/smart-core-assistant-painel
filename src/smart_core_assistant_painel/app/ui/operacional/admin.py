@@ -48,7 +48,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
             {"fields": ("nome", "cargo", "departamento")},
         ),
         ("Contatos", {"fields": ("telefone", "email")}),
-        ("Sistema", {"fields": ("usuario_sistema", "ativo", "disponivel")}),
+        ("Sistema", {"fields": ("usuario", "usuario_sistema", "ativo", "disponivel")}),
         (
             "Capacidades",
             {"fields": ("max_atendimentos_simultaneos", "especialidades")},
@@ -113,17 +113,13 @@ class DepartamentoAdmin(admin.ModelAdmin[Departamento]):
     list_display = [
         "id",
         "nome",
-        "telefone_instancia",
-        "api_key",
-        "instance_id",
-        "url_evolution_api",
+        "slug",
         "ativo",
         "data_criacao",
-        "ultima_validacao",
     ]
-    search_fields = ["nome", "telefone_instancia", "api_key", "instance_id", "url_evolution_api"]
-    list_filter = ["ativo", "data_criacao", "ultima_validacao"]
+    search_fields = ["nome", "slug"]
+    list_filter = ["ativo", "data_criacao"]
     ordering = ["nome"]
-    readonly_fields = ["data_criacao", "ultima_validacao"]
+    readonly_fields = ["data_criacao"]
     list_per_page = 25
     save_on_top = True

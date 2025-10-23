@@ -30,7 +30,7 @@ class TestAtendimentosViews(TestCase):
         }
 
     @patch(
-        "smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key"
+        "smart_core_assistant_painel.app.ui.operacional.models.WhatsAppInstance.validar_api_key"
     )
     @patch(
         "smart_core_assistant_painel.app.ui.atendimentos.views.FeaturesCompose.load_message_data"
@@ -50,8 +50,8 @@ class TestAtendimentosViews(TestCase):
     ) -> None:
         """Test successful WhatsApp webhook POST request."""
         # Arrange
-        departamento_mock = MagicMock()
-        mock_validar_api_key.return_value = departamento_mock
+        instancia_mock = MagicMock()
+        mock_validar_api_key.return_value = instancia_mock
 
         message_data_mock = MessageData(
             instance="test_instance",
@@ -91,7 +91,7 @@ class TestAtendimentosViews(TestCase):
         mock_sched_message_response.assert_called_once_with("5511999999999")
 
     @patch(
-        "smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key"
+        "smart_core_assistant_painel.app.ui.operacional.models.WhatsAppInstance.validar_api_key"
     )
     def test_webhook_whatsapp_post_invalid_api_key(
         self, mock_validar_api_key: MagicMock
@@ -137,7 +137,7 @@ class TestAtendimentosViews(TestCase):
         self.assertEqual(response_data["error"], "Empty request body")
 
     @patch(
-        "smart_core_assistant_painel.app.ui.operacional.models.Departamento.validar_api_key"
+        "smart_core_assistant_painel.app.ui.operacional.models.WhatsAppInstance.validar_api_key"
     )
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.load_message_data"
@@ -149,8 +149,8 @@ class TestAtendimentosViews(TestCase):
     ) -> None:
         """Test WhatsApp webhook exception handling."""
         # Arrange
-        departamento_mock = MagicMock()
-        mock_validar_api_key.return_value = departamento_mock
+        instancia_mock = MagicMock()
+        mock_validar_api_key.return_value = instancia_mock
         mock_load_message_data.side_effect = Exception("Test exception")
 
         # Act

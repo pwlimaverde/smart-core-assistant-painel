@@ -144,7 +144,7 @@ def with_circuit_breaker(func: Callable) -> Callable:
   ```
 - [ ] Instalar dependências
   ```bash
-  uv add notion-client
+  uv add notion-py-client==0.1.14
   uv add celery redis  # Para sincronização assíncrona
   ```
 - [ ] Criar databases no Notion seguindo schemas definidos

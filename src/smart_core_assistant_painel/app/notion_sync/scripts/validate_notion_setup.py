@@ -22,8 +22,18 @@ import os
 import sys
 from pathlib import Path
 
-# Adiciona o diretório src ao path
-project_root = Path(__file__).resolve().parent
+# Torna o script independente da localização: encontra a raiz do projeto
+
+def _find_project_root(start: Path) -> Path:
+    cur = start.resolve()
+    for parent in [cur] + list(cur.parents):
+        if (parent / "pyproject.toml").exists() or (parent / ".env").exists() or (
+            parent / "src" / "smart_core_assistant_painel"
+        ).exists():
+            return parent
+    return cur
+
+project_root = _find_project_root(Path(__file__))
 src_path = project_root / "src"
 sys.path.insert(0, str(src_path))
 
@@ -38,8 +48,8 @@ django.setup()
 
 from decouple import config
 from loguru import logger
-from notion_client import Client
-from notion_client.errors import APIResponseError
+from notion_py_client import Client
+from notion_py_client.errors import APIResponseError
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
@@ -90,24 +100,6 @@ def check_environment_variables() -> dict[str, bool]:
     else:
         console.print("[yellow]  ⚠ NOTION_PAGE_ID: não configurado (opcional)[/yellow]")
         results["page_id"] = False
-
-    # Database IDs (fallback do .env)
-    contato_id = config("NOTION_DATABASE_CONTATO_ID", default=None)
-    cliente_id = config("NOTION_DATABASE_CLIENTE_ID", default=None)
-
-    if contato_id:
-        console.print(f"[green]  ✓ NOTION_DATABASE_CONTATO_ID: {contato_id[:8]}...[/green]")
-        results["contato_env"] = True
-    else:
-        console.print("[yellow]  ⚠ NOTION_DATABASE_CONTATO_ID: não configurado[/yellow]")
-        results["contato_env"] = False
-
-    if cliente_id:
-        console.print(f"[green]  ✓ NOTION_DATABASE_CLIENTE_ID: {cliente_id[:8]}...[/green]")
-        results["cliente_env"] = True
-    else:
-        console.print("[yellow]  ⚠ NOTION_DATABASE_CLIENTE_ID: não configurado[/yellow]")
-        results["cliente_env"] = False
 
     return results
 

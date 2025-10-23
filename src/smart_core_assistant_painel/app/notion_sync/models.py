@@ -6,6 +6,7 @@ Este módulo contém os models que armazenam:
 - Logs e auditoria de operações (SyncLog)
 - Metadados de sincronização por model (Shadow Models)
 """
+from __future__ import annotations
 
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, override

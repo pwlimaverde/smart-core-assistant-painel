@@ -11,8 +11,8 @@ from typing import Any, override
 
 from decouple import config
 from loguru import logger
-from notion_client import Client
-from notion_client.errors import APIResponseError
+from notion_py_client import Client
+from notion_py_client.errors import APIResponseError
 
 from ..exceptions import (
     MappingError,
@@ -46,8 +46,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
         (NotionDatabaseConfig) e inicializa o cliente da API.
 
         Prioridade de busca de database IDs:
-        1. NotionDatabaseConfig (banco de dados Django) - PREFERENCIAL
-        2. .env (variáveis de ambiente) - FALLBACK
+-        1. NotionDatabaseConfig (banco de dados Django) - PREFERENCIAL
+-        2. .env (variáveis de ambiente) - FALLBACK
++        1. NotionDatabaseConfig (banco de dados Django)
 
         Raises:
             SyncConfigError: Se configurações necessárias estão ausentes.
@@ -72,35 +73,19 @@ class NotionSyncService(ExternalSyncServiceInterface):
             ) from e
 
         # Busca database IDs do NotionDatabaseConfig (preferencial)
-        # com fallback para .env se não encontrado
         self.database_ids: dict[str, str | None] = {}
 
         for model_name in ["Contato", "Cliente"]:
-            # Tenta buscar do NotionDatabaseConfig primeiro
             db_id = NotionDatabaseConfig.get_database_id(model_name)
-
+            self.database_ids[model_name] = db_id
             if db_id:
-                self.database_ids[model_name] = db_id
                 logger.info(
-                    f"Database ID para {model_name} carregado do "
-                    f"NotionDatabaseConfig: {db_id[:8]}..."
+                    f"Database ID para {model_name} carregado do NotionDatabaseConfig: {db_id[:8]}..."
                 )
             else:
-                # Fallback para .env
-                env_key = f"NOTION_DATABASE_{model_name.upper()}_ID"
-                env_value = config(env_key, default=None)
-                self.database_ids[model_name] = env_value
-
-                if env_value:
-                    logger.warning(
-                        f"Database ID para {model_name} carregado do .env "
-                        f"(fallback): {env_value[:8]}..."
-                    )
-                else:
-                    logger.warning(
-                        f"Database ID para {model_name} não encontrado nem "
-                        f"no NotionDatabaseConfig nem no .env"
-                    )
+                logger.warning(
+                    f"Database ID para {model_name} não encontrado no NotionDatabaseConfig"
+                )
 
         # Mappers para conversão de dados
         self._mappers = {
@@ -134,8 +119,8 @@ class NotionSyncService(ExternalSyncServiceInterface):
         database_id = self.get_database_id(model_name)
         if not database_id:
             raise SyncConfigError(
-                message=f"Database ID não configurado para {model_name}",
-                config_key=f"NOTION_DATABASE_{model_name.upper()}_ID",
+                message=f"Database ID não configurado para {model_name}. Persista via NotionDatabaseConfig executando o setup.",
+                config_key=f"NotionDatabaseConfig[{model_name}]",
             )
 
         try:
@@ -551,10 +536,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
         Retorna o ID do database no Notion para o modelo especificado.
 
         Busca primeiro no cache (self.database_ids) que foi populado na
-        inicialização a partir do NotionDatabaseConfig ou .env.
+        inicialização a partir do NotionDatabaseConfig.
 
-        Como fallback de última chance, tenta buscar novamente do
-        NotionDatabaseConfig em caso de atualização recente.
+        Em caso de atualização recente, tenta buscar novamente do
+        NotionDatabaseConfig para preencher o cache.
 
         Args:
             model_name: Nome do modelo Django ("Cliente" ou "Contato").
@@ -568,7 +553,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         if db_id:
             return db_id
 
-        # Fallback: tenta buscar novamente do NotionDatabaseConfig
+        # Busca dinâmica: tenta buscar novamente do NotionDatabaseConfig
         # (pode ter sido configurado após a inicialização do serviço)
         db_id = NotionDatabaseConfig.get_database_id(model_name)
 

@@ -1,625 +1,456 @@
 """
-Script para configurar databases no Notion com persistência no Django.
+Funções de setup para criar databases do Notion e persistir referências.
 
-Este script cria automaticamente os databases de Contatos e Clientes
-no Notion com todas as propriedades necessárias e salva os IDs no
-model NotionDatabaseConfig para persistência permanente.
-
-Para executar:
-    python setup_notion.py
-
-Requisitos:
-    - NOTION_TOKEN configurado no .env
-    - NOTION_PAGE_ID configurado no .env
-    - Django configurado e migrations aplicadas
+Este módulo cria/atualiza os databases "Contatos - CRM" e "Clientes - CRM"
+no Notion, garantindo que as propriedades esperadas existam, e persiste
+os IDs e schemas no model Django NotionDatabaseConfig. Opcionalmente,
+salva os IDs no .env como backup.
 """
+from __future__ import annotations
 
-import os
-import sys
-import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
+from datetime import date
 
 from decouple import config
 from loguru import logger
-from notion_client import Client
-from notion_client.errors import APIResponseError
-from rich.console import Console
-from rich.panel import Panel
-from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.table import Table
+from notion_py_client import Client
+from notion_py_client.errors import APIResponseError
 
-console = Console()
+from ..exceptions import SyncConfigError, NotionSyncError
+from ..models import NotionDatabaseConfig
+from ..services.mappers import ContatoMapper, ClienteMapper
 
 
-def get_notion_client() -> Client:
+def _find_project_root(start: Path) -> Path:
+    """Tenta encontrar o root do projeto (com pyproject.toml)."""
+    cur = start.resolve()
+    for parent in [cur] + list(cur.parents):
+        if (parent / "pyproject.toml").exists() or (parent / ".env").exists():
+            return parent
+    return start.resolve().parents[4]  # fallback razoável para repos com /src
+
+
+def _write_env_backup(updates: Dict[str, str]) -> None:
+    """Atualiza ou cria variáveis no .env na raiz do projeto."""
+    root = _find_project_root(Path(__file__))
+    env_path = root / ".env"
+
+    lines: list[str] = []
+    existing: dict[str, str] = {}
+
+    if env_path.exists():
+        content = env_path.read_text(encoding="utf-8")
+        for line in content.splitlines():
+            if not line.strip() or line.strip().startswith("#"):
+                lines.append(line)
+                continue
+            if "=" in line:
+                k, v = line.split("=", 1)
+                existing[k.strip()] = v
+                # mantemos a linha por enquanto; vamos reescrever no final
+        # reconstruir após merge
+
+    # merge
+    existing.update(updates)
+
+    # reconstruir conteúdo mantendo comentários e linhas vazias no topo
+    new_lines: list[str] = []
+    seen_keys: set[str] = set()
+    for line in lines:
+        new_lines.append(line)
+    for key, value in existing.items():
+        if key in seen_keys:
+            continue
+        new_lines.append(f"{key}={value}")
+        seen_keys.add(key)
+
+    env_path.write_text("\n".join(new_lines) + "\n", encoding="utf-8")
+    logger.info("Backup de IDs do Notion gravado em .env")
+
+
+def _ensure_properties(client: Client, database_id: str, target_schema: Dict[str, Any]) -> None:
+    """Garante que todas as propriedades de target_schema existam no database.
+
+    - Trata propriedade de título (só pode existir uma) renomeando a existente
+      para o nome desejado, em vez de tentar adicionar uma nova.
+    - Adiciona demais propriedades de forma incremental para evitar que uma
+      falha bloqueie todas as outras.
     """
-    Obtém cliente do Notion configurado.
+    try:
+        db = client.databases.retrieve(database_id=database_id)
+        existing_props: Dict[str, Any] = db.get("properties", {})
+
+        # Descobre nomes de título (existente e desejado)
+        existing_title_name: str | None = None
+        for prop_name, prop_def in existing_props.items():
+            if prop_def.get("type") == "title":
+                existing_title_name = prop_name
+                break
+
+        desired_title_name: str | None = None
+        for name, definition in target_schema.items():
+            if "title" in definition:
+                desired_title_name = name
+                break
+
+        # Renomeia o título, se necessário
+        if existing_title_name and desired_title_name and existing_title_name != desired_title_name:
+            try:
+                logger.info(
+                    f"Renomeando propriedade de título '{existing_title_name}' para '{desired_title_name}' em {database_id[:8]}..."
+                )
+                client.databases.update(
+                    database_id=database_id,
+                    properties={existing_title_name: {"name": desired_title_name}},
+                )
+                # Atualiza cache local
+                existing_props[desired_title_name] = existing_props.pop(existing_title_name)
+                existing_title_name = desired_title_name
+                logger.success(
+                    f"✅ Título renomeado para '{desired_title_name}' em {database_id[:8]}..."
+                )
+            except APIResponseError as e:
+                logger.warning(
+                    f"⚠️ Falha ao renomear título: {e.code} - {str(e)}. Continuando com adição das outras propriedades."
+                )
+
+        # Calcula propriedades faltantes (ignorando título se já existe)
+        missing: Dict[str, Any] = {}
+        for name, definition in target_schema.items():
+            if name in existing_props:
+                continue
+            # Evita tentar adicionar uma segunda propriedade de título
+            if "title" in definition and existing_title_name:
+                continue
+            missing[name] = definition
+
+        if not missing:
+            logger.info(f"Propriedades já estão completas em {database_id[:8]}...")
+            return
+
+        # Adiciona propriedades uma a uma para maior resiliência
+        added_count = 0
+        for name, definition in missing.items():
+            try:
+                client.databases.update(
+                    database_id=database_id,
+                    properties={name: definition},
+                )
+                added_count += 1
+                logger.info(
+                    f"➕ Propriedade adicionada: '{name}' em {database_id[:8]}..."
+                )
+            except APIResponseError as e:
+                logger.error(
+                    f"❌ Erro ao adicionar propriedade '{name}': {e.code} - {str(e)}"
+                )
+                # Continua tentando as demais propriedades
+                continue
+
+        if added_count:
+            logger.success(
+                f"✅ Propriedades atualizadas para {database_id[:8]}... ({added_count} adicionadas)"
+            )
+        else:
+            logger.warning(
+                f"⚠️ Nenhuma propriedade foi adicionada em {database_id[:8]}... verifique permissões e schema."
+            )
+
+    except APIResponseError as e:
+        err = str(e)
+        logger.error(f"Erro ao garantir propriedades: {e.code} - {err}")
+        raise NotionSyncError(
+            message=f"Erro ao atualizar propriedades do database: {err}",
+            status_code=e.status,
+            notion_error=e.code,
+            details={"database_id": database_id},
+        ) from e
+
+
+def _force_materialize_by_dummy_page(client: Client, database_id: str, target_schema: Dict[str, Any]) -> None:
+    """Cria uma página temporária com apenas o título para materializar colunas.
+
+    Alguns workspaces não mostram propriedades adicionadas via API em databases
+    inline enquanto não há páginas. Para evitar erros de validação, definimos
+    apenas o título na criação da página temporária e depois garantimos as
+    propriedades novamente.
+    """
+    try:
+        # Define somente o título
+        title_name = next((n for n, d in target_schema.items() if "title" in d), "Nome")
+        props = {
+            title_name: {
+                "title": [{"type": "text", "text": {"content": "Materialize"}}]
+            }
+        }
+
+        page = client.pages.create(
+            parent={"type": "database_id", "database_id": database_id},
+            properties=props,
+        )
+        logger.info(f"Criada página temporária para materialização: {page.get('id', '')[:8]}...")
+        # Arquiva a página para não sujar o database
+        try:
+            client.pages.update(page_id=page["id"], archived=True)
+            logger.info("Página temporária arquivada.")
+        except Exception:
+            logger.warning("Falha ao arquivar página temporária; prosseguindo.")
+    except APIResponseError as e:
+        logger.warning(f"Falha ao criar página temporária: {e.code} - {str(e)}")
+    except Exception as e:
+        logger.warning(f"Falha genérica ao materializar propriedades: {str(e)}")
+
+
+def _ensure_and_materialize(client: Client, database_id: str, target_schema: Dict[str, Any]) -> None:
+    """Garante propriedades e força materialização se contagem estiver abaixo do esperado."""
+    _ensure_properties(client, database_id, target_schema)
+    try:
+        db_after = client.databases.retrieve(database_id=database_id)
+        props_after = db_after.get("properties", {})
+        expected = len(target_schema)
+        current = len(props_after)
+        if current < expected:
+            logger.warning(
+                f"Propriedades visíveis ({current}) abaixo do esperado ({expected}). Forçando materialização via página..."
+            )
+            _force_materialize_by_dummy_page(client, database_id, target_schema)
+            # garante novamente após existir ao menos uma página
+            _ensure_properties(client, database_id, target_schema)
+            # nova checagem
+            db_final = client.databases.retrieve(database_id=database_id)
+            final_count = len(db_final.get("properties", {}))
+            if final_count >= expected:
+                logger.success("Propriedades materializadas e visíveis no Notion.")
+            else:
+                logger.warning(
+                    f"Ainda abaixo do esperado ({final_count}/{expected}). Verifique manualmente no Notion."
+                )
+    except Exception as e:
+        logger.warning(f"Falha ao revalidar propriedades após materialização: {str(e)}")
+
+
+def _create_or_get_database(
+    client: Client,
+    page_id: str,
+    title_text: str,
+    properties_schema: Dict[str, Any],
+) -> str:
+    """Cria o database no Notion sob page_id ou retorna existente.
+
+    Tenta criar com propriedades; se a API recusar a criação de certas
+    propriedades, cria minimalmente e depois completa via update.
+    """
+    try:
+        # Criação direta com propriedades
+        logger.info(f"Criando database '{title_text}' no Notion...")
+        response = client.databases.create(
+            parent={"type": "page_id", "page_id": page_id},
+            title=[{"type": "text", "text": {"content": title_text}}],
+            properties=properties_schema,
+        )
+        db_id = response["id"]
+        logger.success(f"✅ Database criado: {title_text} ({db_id[:8]}...)")
+        # Garante e materializa
+        _ensure_and_materialize(client, db_id, properties_schema)
+        return db_id
+
+    except APIResponseError as e:
+        msg = str(e)
+        # Alguns workspaces permitem criar apenas com título; então criamos mínimo
+        logger.warning(
+            f"Falha ao criar com propriedades ({e.code}). Tentando criação mínima..."
+        )
+        try:
+            minimal = client.databases.create(
+                parent={"type": "page_id", "page_id": page_id},
+                title=[{"type": "text", "text": {"content": title_text}}],
+                properties={"Título": {"title": {}}},
+            )
+            db_id = minimal["id"]
+            logger.success(
+                f"✅ Database criado minimamente: {title_text} ({db_id[:8]}...), completando propriedades"
+            )
+            # completa propriedades faltantes + materialização
+            _ensure_and_materialize(client, db_id, properties_schema)
+            return db_id
+        except APIResponseError as e2:
+            err2 = str(e2)
+            logger.error(
+                f"❌ Erro ao criar database '{title_text}': {e2.code} - {err2}"
+            )
+            raise NotionSyncError(
+                message=f"Erro ao criar database no Notion: {err2}",
+                status_code=e2.status,
+                notion_error=e2.code,
+                details={"title": title_text},
+            ) from e2
+
+
+def setup_notion_databases() -> dict[str, Any]:
+    """
+    Cria/valida os databases de Contatos e Clientes no Notion e persiste no Django.
+
+    - Lê `NOTION_TOKEN` e `NOTION_PAGE_ID`
+    - Cria ou atualiza os databases "Contatos - CRM" e "Clientes - CRM"
+    - Garante propriedades via mappers
+    - Persiste em `NotionDatabaseConfig`
+    - IDs são persistidos apenas no Django (NotionDatabaseConfig)
 
     Returns:
-        Cliente do Notion autenticado.
-
-    Raises:
-        SystemExit: Se token não estiver configurado.
+        Resumo da operação com IDs e flags de criação/atualização.
     """
     token = config("NOTION_TOKEN", default=None)
     if not token:
-        console.print(
-            "\n[bold red]ERRO: NOTION_TOKEN não encontrado no .env[/bold red]"
+        raise SyncConfigError(
+            message="NOTION_TOKEN não configurado no .env",
+            config_key="NOTION_TOKEN",
         )
-        console.print("Configure a variável NOTION_TOKEN no arquivo .env")
-        sys.exit(1)
 
-    return Client(auth=token)
+    # IDs de databases existentes via .env (opcional)
+    contatos_env_id = config("NOTION_SOURCE_CONTATOS_ID", default=None)
+    clientes_env_id = config("NOTION_SOURCE_CLIENTES_ID", default=None)
 
-
-def get_parent_page_id() -> str:
-    """
-    Obtém o ID da página pai onde serão criados os databases.
-
-    Returns:
-        ID da página no Notion.
-
-    Raises:
-        SystemExit: Se page ID não estiver configurado.
-    """
+    # PAGE_ID só é necessário quando precisamos criar um novo database
     page_id = config("NOTION_PAGE_ID", default=None)
-    if not page_id:
-        console.print(
-            "\n[bold red]ERRO: NOTION_PAGE_ID não encontrado no .env[/bold red]"
+    if not page_id and not (contatos_env_id or clientes_env_id):
+        raise SyncConfigError(
+            message="NOTION_PAGE_ID não configurado no .env (necessário apenas para criar databases)",
+            config_key="NOTION_PAGE_ID",
         )
-        console.print("Configure a variável NOTION_PAGE_ID no arquivo .env")
-        console.print("\nComo obter o Page ID:")
-        console.print("1. Abra a página no Notion")
-        console.print("2. Clique em '...' -> 'Copy link'")
-        console.print("3. O ID é a parte após o último '/' e antes do '?'")
-        sys.exit(1)
 
-    return page_id
+    client = Client(auth=token)
 
+    # Schemas pelas classes mapper
+    contato_schema = ContatoMapper.get_database_schema()
+    cliente_schema = ClienteMapper.get_database_schema()
 
-def create_database_with_properties(
-    client: Client,
-    parent_page_id: str,
-    title: str,
-    title_property: str,
-    properties: dict[str, Any],
-    max_retries: int = 3,
-) -> tuple[str, dict[str, Any]]:
-    """
-    Cria database no Notion COM todas as propriedades.
+    results: dict[str, Any] = {
+        "contato": {},
+        "cliente": {},
+    }
 
-    Estratégia:
-    1. Cria database com TODAS as propriedades já no CREATE
-    2. Aguarda API processar
-    3. Se propriedades não forem criadas, cria página de exemplo para forçá-las
-    4. Valida que propriedades foram criadas
-    5. Remove página de exemplo (opcional)
-    6. Retorna ID e schema das propriedades
-
-    Args:
-        client: Cliente do Notion.
-        parent_page_id: ID da página pai.
-        title: Título do database.
-        title_property: Nome da propriedade title.
-        properties: Dicionário com todas as propriedades.
-        max_retries: Número máximo de tentativas de validação.
-
-    Returns:
-        Tupla (database_id, properties_schema).
-
-    Raises:
-        APIResponseError: Se houver erro na API.
-        RuntimeError: Se propriedades não forem criadas após retries.
-    """
-    console.print(f"[yellow]-> Criando database: {title}[/yellow]")
-
-    # Passo 1: Criar database apenas com propriedade title (obrigatória)
-    console.print("[dim]  • Criando database básico (apenas title)...[/dim]")
-
+    # Contatos
     try:
-        database = client.databases.create(
-            parent={"type": "page_id", "page_id": parent_page_id},
-            title=[{"type": "text", "text": {"content": title}}],
-            properties={title_property: {"title": {}}},
-        )
-
-        database_id = database["id"]
-        console.print(f"[green]  OK Database criado: {database_id}[/green]")
-    except APIResponseError as e:
-        console.print(f"[red]  X Erro ao criar database: {e.code}[/red]")
-        console.print(f"[dim]    {str(e)}[/dim]")
-        raise
-
-    # Passo 2: Adicionar propriedades via PATCH
-    console.print("[dim]  • Adicionando propriedades via PATCH...[/dim]")
-
-    try:
-        client.databases.update(
-            database_id=database_id,
-            properties=properties,
-        )
-        console.print(f"[green]  OK PATCH executado com sucesso[/green]")
-    except APIResponseError as e:
-        console.print(f"[red]  X Erro ao adicionar propriedades: {e.code}[/red]")
-        console.print(f"[dim]    {str(e)}[/dim]")
-        raise
-
-    # Passo 3: Criar página de exemplo para forçar propriedades
-    console.print("[dim]  • Criando página de exemplo para forçar propriedades...[/dim]")
-
-    try:
-        # Cria propriedades para página de exemplo
-        example_props = create_example_page_properties(properties, title_property)
-
-        # Cria página de exemplo
-        example_page = client.pages.create(
-            parent={"database_id": database_id},
-            properties=example_props,
-        )
-
-        example_page_id = example_page["id"]
-        console.print(f"[green]  OK Página de exemplo criada[/green]")
-
-        # Aguarda API processar
-        time.sleep(3)
-
-        # Deleta página de exemplo
-        try:
-            client.blocks.delete(block_id=example_page_id)
-            console.print("[dim]  • Página de exemplo removida[/dim]")
-        except Exception:
-            console.print("[dim]  • Página de exemplo mantida (pode remover manualmente)[/dim]")
-
-    except APIResponseError as e:
-        console.print(f"[yellow]  ! Erro ao criar página de exemplo: {e.code}[/yellow]")
-        # Continua mesmo com erro
-
-    # Passo 4: Validar propriedades criadas (com retry)
-    console.print("[dim]  • Validando propriedades criadas...[/dim]")
-
-    props_created = False
-    props = {}
-
-    for attempt in range(1, max_retries + 1):
-        time.sleep(2 * attempt)  # Backoff progressivo
-
-        # Verifica se as propriedades foram criadas
-        db_check = client.databases.retrieve(database_id=database_id)
-        props = db_check.get("properties", {})
-
-        if len(props) >= len(properties):
-            console.print(
-                f"[bold green]  OK SUCESSO! {len(props)} propriedades "
-                f"criadas![/bold green]"
+        existing_contato_id = NotionDatabaseConfig.get_database_id("Contato")
+        if existing_contato_id:
+            logger.info(
+                f"Database de Contatos já configurado: {existing_contato_id[:8]}..."
             )
-            props_created = True
-            break
-
-        console.print(
-            f"[yellow]  ! Tentativa {attempt}/{max_retries}: "
-            f"apenas {len(props)} propriedades encontradas[/yellow]"
-        )
-
-    # Passo 5: Se ainda não funcionou, retornar com aviso
-    if not props_created:
-        console.print(
-            "[yellow]  ! Propriedades não foram validadas via API[/yellow]"
-        )
-        console.print(
-            "[yellow]  -> Mas provavelmente foram criadas no Notion[/yellow]"
-        )
-        console.print(
-            "[dim]  -> Verifique manualmente no Notion[/dim]"
-        )
-        # Retorna com schema esperado (a API inline não retorna properties)
-        return database_id, properties
-
-    # Passo 6: Propriedades foram criadas com sucesso
-    # Lista as propriedades criadas
-    for prop_name in sorted(props.keys()):
-        console.print(f"    - {prop_name}")
-
-    return database_id, props
-
-
-def create_example_page_properties(
-    properties: dict[str, Any], title_property: str
-) -> dict[str, Any]:
-    """
-    Cria propriedades para uma página de exemplo.
-
-    Esta função cria valores de exemplo para cada tipo de propriedade
-    do Notion, forçando a criação das colunas no database.
-
-    Args:
-        properties: Schema das propriedades do database.
-        title_property: Nome da propriedade título.
-
-    Returns:
-        Dicionário com propriedades preenchidas para a página de exemplo.
-    """
-    page_props: dict[str, Any] = {}
-
-    for prop_name, prop_config in properties.items():
-        prop_type = list(prop_config.keys())[0] if prop_config else "title"
-
-        if prop_type == "title":
-            page_props[prop_name] = {
-                "title": [{"text": {"content": "Exemplo - Pode deletar"}}]
+            _ensure_and_materialize(client, existing_contato_id, contato_schema)
+            NotionDatabaseConfig.set_database(
+                model_name="Contato",
+                database_id=existing_contato_id,
+                database_name="Contatos - CRM",
+                properties_schema=contato_schema,
+            )
+            results["contato"] = {
+                "database_id": existing_contato_id,
+                "created": False,
+                "updated": True,
             }
-        elif prop_type == "rich_text":
-            page_props[prop_name] = {
-                "rich_text": [{"text": {"content": "exemplo"}}]
+        elif contatos_env_id:
+            logger.info(
+                f"Usando NOTION_SOURCE_CONTATOS_ID do .env: {contatos_env_id[:8]}..."
+            )
+            _ensure_and_materialize(client, contatos_env_id, contato_schema)
+            NotionDatabaseConfig.set_database(
+                model_name="Contato",
+                database_id=contatos_env_id,
+                database_name="Contatos - CRM",
+                properties_schema=contato_schema,
+            )
+            results["contato"] = {
+                "database_id": contatos_env_id,
+                "created": False,
+                "updated": True,
             }
-        elif prop_type == "number":
-            page_props[prop_name] = {"number": 0}
-        elif prop_type == "select":
-            # Usa primeira opção disponível
-            options = prop_config.get("select", {}).get("options", [])
-            if options:
-                page_props[prop_name] = {"select": {"name": options[0]["name"]}}
-        elif prop_type == "email":
-            page_props[prop_name] = {"email": "exemplo@exemplo.com"}
-        elif prop_type == "phone_number":
-            page_props[prop_name] = {"phone_number": "0000000000"}
-        elif prop_type == "url":
-            page_props[prop_name] = {"url": "https://exemplo.com"}
-        elif prop_type == "checkbox":
-            page_props[prop_name] = {"checkbox": False}
-        elif prop_type == "date":
-            page_props[prop_name] = {"date": {"start": "2024-01-01"}}
-
-    return page_props
-
-
-def create_contatos_database(
-    client: Client, parent_page_id: str
-) -> tuple[str, dict[str, Any]]:
-    """
-    Cria database de Contatos no Notion COM todas as propriedades.
-
-    Args:
-        client: Cliente do Notion.
-        parent_page_id: ID da página pai.
-
-    Returns:
-        Tupla (database_id, properties_schema).
-    """
-    properties = {
-        "Nome": {"title": {}},
-        "Telefone": {"rich_text": {}},
-        "Email": {"email": {}},
-        "WhatsApp": {"rich_text": {}},
-        "Ativo": {"checkbox": {}},
-        "Data Cadastro": {"date": {}},
-        "Última Interação": {"date": {}},
-        "Django ID": {"number": {"format": "number"}},
-    }
-
-    return create_database_with_properties(
-        client=client,
-        parent_page_id=parent_page_id,
-        title="Contatos - CRM",
-        title_property="Nome",
-        properties=properties,
-    )
-
-
-def create_clientes_database(
-    client: Client, parent_page_id: str
-) -> tuple[str, dict[str, Any]]:
-    """
-    Cria database de Clientes no Notion COM todas as propriedades.
-
-    Args:
-        client: Cliente do Notion.
-        parent_page_id: ID da página pai.
-
-    Returns:
-        Tupla (database_id, properties_schema).
-    """
-    properties = {
-        "Nome Fantasia": {"title": {}},
-        "Razão Social": {"rich_text": {}},
-        "Tipo": {
-            "select": {
-                "options": [
-                    {"name": "Pessoa Física", "color": "blue"},
-                    {"name": "Pessoa Jurídica", "color": "green"},
-                ]
-            }
-        },
-        "CNPJ": {"rich_text": {}},
-        "CPF": {"rich_text": {}},
-        "Telefone": {"phone_number": {}},
-        "Site": {"url": {}},
-        "Ramo de Atividade": {"rich_text": {}},
-        "Endereço": {"rich_text": {}},
-        "CEP": {"rich_text": {}},
-        "Cidade": {"rich_text": {}},
-        "UF": {"rich_text": {}},
-        "País": {"rich_text": {}},
-        "Ativo": {"checkbox": {}},
-        "Data Cadastro": {"date": {}},
-        "Última Atualização": {"date": {}},
-        "Django ID": {"number": {"format": "number"}},
-    }
-
-    return create_database_with_properties(
-        client=client,
-        parent_page_id=parent_page_id,
-        title="Clientes - CRM",
-        title_property="Nome Fantasia",
-        properties=properties,
-    )
-
-
-def save_to_django_database(
-    model_name: str,
-    database_id: str,
-    database_name: str,
-    properties_schema: dict[str, Any],
-) -> None:
-    """
-    Salva configuração de database no model NotionDatabaseConfig.
-
-    Args:
-        model_name: Nome do modelo Django (ex: "Cliente", "Contato").
-        database_id: ID do database no Notion.
-        database_name: Nome do database no Notion.
-        properties_schema: Schema das propriedades do database.
-
-    Raises:
-        Exception: Se houver erro ao salvar no banco de dados.
-    """
-    from smart_core_assistant_painel.app.notion_sync.models import (
-        NotionDatabaseConfig,
-    )
-
-    console.print(f"[dim]  • Salvando {model_name} no banco de dados...[/dim]")
-
-    try:
-        config_obj = NotionDatabaseConfig.set_database(
-            model_name=model_name,
-            database_id=database_id,
-            database_name=database_name,
-            properties_schema=properties_schema,
-        )
-
-        console.print(
-            f"[green]  OK Configuração salva: {config_obj}[/green]"
-        )
-
-        logger.info(
-            f"Database {model_name} salvo no NotionDatabaseConfig",
-            extra={
-                "model_name": model_name,
-                "database_id": database_id,
-                "database_name": database_name,
-            },
-        )
-
-    except Exception as e:
-        console.print(
-            f"[red]  X Erro ao salvar no banco: {str(e)}[/red]"
-        )
-        raise
-
-
-def save_to_env_file(contato_db_id: str, cliente_db_id: str) -> None:
-    """
-    Salva os IDs dos databases no arquivo .env (opcional/backup).
-
-    Args:
-        contato_db_id: ID do database de Contatos.
-        cliente_db_id: ID do database de Clientes.
-    """
-    console.print("\n[yellow]-> Salvando IDs no .env (backup)...[/yellow]")
-
-    # Busca o arquivo .env
-    project_root = (
-        Path(__file__).resolve().parent.parent.parent.parent.parent.parent
-    )
-    env_file = project_root / ".env"
-
-    if not env_file.exists():
-        console.print(
-            f"[yellow]  ! Arquivo .env não encontrado em: {env_file}[/yellow]"
-        )
-        console.print("  IDs salvos apenas no banco de dados Django")
-        return
-
-    # Lê o conteúdo atual do .env
-    with open(env_file, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    # Atualiza ou adiciona as variáveis
-    contato_found = False
-    cliente_found = False
-    new_lines = []
-
-    for line in lines:
-        if line.startswith("NOTION_DATABASE_CONTATO_ID="):
-            new_lines.append(f"NOTION_DATABASE_CONTATO_ID={contato_db_id}\n")
-            contato_found = True
-        elif line.startswith("NOTION_DATABASE_CLIENTE_ID="):
-            new_lines.append(f"NOTION_DATABASE_CLIENTE_ID={cliente_db_id}\n")
-            cliente_found = True
         else:
-            new_lines.append(line)
-
-    # Adiciona se não existirem
-    if not contato_found or not cliente_found:
-        new_lines.append("\n# Database IDs do Notion\n")
-        if not contato_found:
-            new_lines.append(f"NOTION_DATABASE_CONTATO_ID={contato_db_id}\n")
-        if not cliente_found:
-            new_lines.append(f"NOTION_DATABASE_CLIENTE_ID={cliente_db_id}\n")
-
-    # Salva o arquivo atualizado
-    with open(env_file, "w", encoding="utf-8") as f:
-        f.writelines(new_lines)
-
-    console.print(f"[green]  OK IDs salvos em: {env_file}[/green]")
-
-
-def setup_notion_databases() -> dict[str, str]:
-    """
-    Configura os databases no Notion com persistência no Django.
-
-    Esta função:
-    1. Conecta com a API do Notion
-    2. Cria database de Contatos COM propriedades
-    3. Cria database de Clientes COM propriedades
-    4. Salva os IDs e schemas no NotionDatabaseConfig (Django DB)
-    5. Salva os IDs no .env como backup (opcional)
-
-    Returns:
-        Dicionário com os IDs dos databases criados.
-
-    Raises:
-        SystemExit: Se houver erro na configuração.
-    """
-    console.print("\n")
-    console.print(
-        Panel.fit(
-            "[bold cyan]Configuração de Databases no Notion[/bold cyan]\n"
-            "[dim]Criando estrutura COMPLETA de Contatos e Clientes[/dim]\n"
-            "[dim]com persistência no banco de dados Django[/dim]",
-            border_style="cyan",
-        )
-    )
-
-    try:
-        # 1. Obtém cliente e page ID
-        console.print("\n[bold cyan]1. Configurando conexão[/bold cyan]")
-        client = get_notion_client()
-        parent_page_id = get_parent_page_id()
-        console.print("[green]  OK Cliente configurado[/green]")
-        console.print(f"[green]  OK Página pai: {parent_page_id}[/green]")
-
-        # 2. Cria database de Contatos COM propriedades
-        console.print(
-            "\n[bold cyan]2. Criando Database de Contatos "
-            "(com propriedades)[/bold cyan]"
-        )
-        contato_db_id, contato_props = create_contatos_database(
-            client, parent_page_id
-        )
-
-        # 3. Cria database de Clientes COM propriedades
-        console.print(
-            "\n[bold cyan]3. Criando Database de Clientes "
-            "(com propriedades)[/bold cyan]"
-        )
-        cliente_db_id, cliente_props = create_clientes_database(
-            client, parent_page_id
-        )
-
-        # 4. Salva configurações no banco de dados Django
-        console.print(
-            "\n[bold cyan]4. Salvando Configurações no Django[/bold cyan]"
-        )
-
-        save_to_django_database(
-            model_name="Contato",
-            database_id=contato_db_id,
-            database_name="Contatos - CRM",
-            properties_schema=contato_props,
-        )
-
-        save_to_django_database(
-            model_name="Cliente",
-            database_id=cliente_db_id,
-            database_name="Clientes - CRM",
-            properties_schema=cliente_props,
-        )
-
-        # 5. Salva IDs no .env como backup
-        save_to_env_file(contato_db_id, cliente_db_id)
-
-        # 6. Resumo
-        console.print("\n[bold cyan]5. Resumo Final[/bold cyan]")
-        table = Table(show_header=True, title="Databases Criados e Persistidos")
-        table.add_column("Database", style="cyan")
-        table.add_column("ID", style="green")
-        table.add_column("Status", style="yellow")
-
-        table.add_row("Contatos", contato_db_id[:16] + "...", f"{len(contato_props)} props")
-        table.add_row("Clientes", cliente_db_id[:16] + "...", f"{len(cliente_props)} props")
-
-        console.print(table)
-
-        # Sucesso
-        console.print("\n")
-        console.print(
-            Panel.fit(
-                "[bold green]OK SETUP COMPLETO COM SUCESSO![/bold green]\n\n"
-                "[dim]Os databases foram criados com TODAS as "
-                "propriedades![/dim]\n"
-                "[dim]IDs e schemas salvos no banco de dados Django "
-                "(NotionDatabaseConfig)[/dim]\n\n"
-                "[yellow]Próximos passos:[/yellow]\n"
-                "1. Verifique os databases no Notion\n"
-                "2. Execute: python validate_notion_setup.py\n"
-                "3. Crie contatos/clientes no Django e veja no Notion!\n\n"
-                "[green]A sincronização está PRONTA e PERSISTIDA![/green]",
-                border_style="green",
+            contato_id = _create_or_get_database(
+                client=client,
+                page_id=page_id,
+                title_text="Contatos - CRM",
+                properties_schema=contato_schema,
             )
-        )
-
-        return {
-            "contato": contato_db_id,
-            "cliente": cliente_db_id,
-        }
-
-    except KeyboardInterrupt:
-        console.print("\n\n[yellow]Operação cancelada pelo usuário.[/yellow]")
-        sys.exit(0)
-
-    except APIResponseError as e:
-        console.print("\n")
-        console.print(
-            Panel.fit(
-                f"[bold red]Erro na API do Notion[/bold red]\n\n"
-                f"[dim]Status:[/dim] {e.status}\n"
-                f"[dim]Código:[/dim] {e.code}\n"
-                f"[dim]Erro:[/dim] {str(e)}\n\n"
-                "[yellow]Possíveis causas:[/yellow]\n"
-                "- Token inválido ou expirado\n"
-                "- Page ID incorreto ou sem permissão\n"
-                "- Integração não tem acesso à página",
-                border_style="red",
+            NotionDatabaseConfig.set_database(
+                model_name="Contato",
+                database_id=contato_id,
+                database_name="Contatos - CRM",
+                properties_schema=contato_schema,
             )
-        )
-        logger.error(
-            "Erro na API do Notion",
-            extra={"status": e.status, "code": e.code, "message": str(e)},
-        )
-        sys.exit(1)
-
-
-
+            results["contato"] = {
+                "database_id": contato_id,
+                "created": True,
+                "updated": False,
+            }
+    except (SyncConfigError, NotionSyncError) as e:
+        raise
     except Exception as e:
-        console.print("\n")
-        console.print(
-            Panel.fit(
-                f"[bold red]Erro Inesperado[/bold red]\n\n{str(e)}",
-                border_style="red",
+        raise NotionSyncError(
+            message=f"Erro ao configurar database de Contatos: {str(e)}",
+            details={"stage": "contatos"},
+        ) from e
+
+    # Clientes
+    try:
+        existing_cliente_id = NotionDatabaseConfig.get_database_id("Cliente")
+        if existing_cliente_id:
+            logger.info(
+                f"Database de Clientes já configurado: {existing_cliente_id[:8]}..."
             )
-        )
-        import traceback
+            _ensure_and_materialize(client, existing_cliente_id, cliente_schema)
+            NotionDatabaseConfig.set_database(
+                model_name="Cliente",
+                database_id=existing_cliente_id,
+                database_name="Clientes - CRM",
+                properties_schema=cliente_schema,
+            )
+            results["cliente"] = {
+                "database_id": existing_cliente_id,
+                "created": False,
+                "updated": True,
+            }
+        elif clientes_env_id:
+            logger.info(
+                f"Usando NOTION_SOURCE_CLIENTES_ID do .env: {clientes_env_id[:8]}..."
+            )
+            _ensure_and_materialize(client, clientes_env_id, cliente_schema)
+            NotionDatabaseConfig.set_database(
+                model_name="Cliente",
+                database_id=clientes_env_id,
+                database_name="Clientes - CRM",
+                properties_schema=cliente_schema,
+            )
+            results["cliente"] = {
+                "database_id": clientes_env_id,
+                "created": False,
+                "updated": True,
+            }
+        else:
+            cliente_id = _create_or_get_database(
+                client=client,
+                page_id=page_id,
+                title_text="Clientes - CRM",
+                properties_schema=cliente_schema,
+            )
+            NotionDatabaseConfig.set_database(
+                model_name="Cliente",
+                database_id=cliente_id,
+                database_name="Clientes - CRM",
+                properties_schema=cliente_schema,
+            )
+            results["cliente"] = {
+                "database_id": cliente_id,
+                "created": True,
+                "updated": False,
+            }
+    except (SyncConfigError, NotionSyncError) as e:
+        raise
+    except Exception as e:
+        raise NotionSyncError(
+            message=f"Erro ao configurar database de Clientes: {str(e)}",
+            details={"stage": "clientes"},
+        ) from e
 
-        console.print(f"\n[dim]{traceback.format_exc()}[/dim]")
-        logger.exception("Erro inesperado no setup do Notion")
-        sys.exit(1)
-
-
-def main() -> None:
-    """Função principal para execução como script."""
-    setup_notion_databases()
-
-
-if __name__ == "__main__":
-    main()
+    logger.success("✅ Setup dos databases do Notion concluído!")
+    return results

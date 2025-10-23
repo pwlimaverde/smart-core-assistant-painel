@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "pwlimaverde", email = "pwlimaverde@gmail.com" }
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "aiohappyeyeballs==2.6.1",
     "aiohttp==3.12.2",
@@ -73,7 +73,6 @@ dependencies = [
     "regex==2025.9.1",
     "requests==2.32.5",
     "requests-toolbelt==1.0.0",
-    "setuptools==80.9.0",
     "six==1.17.0",
     "sniffio==1.3.1",
     "soupsieve==2.8",
@@ -94,7 +93,7 @@ dependencies = [
     "zstandard==0.23.0",
     "huggingface-hub>=0.24.0",
     "langchain-huggingface>=0.2.0",
-    "notion-client>=2.6.0",
+    "notion-py-client==0.1.14",
 ]
 
 
@@ -127,7 +126,7 @@ doc = [
 
 [tool.ruff]
 line-length = 79
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 extend-select = ["I"]
@@ -143,11 +142,11 @@ exclude = ["**/migrations/**"]
 reportMissingTypeArgument = "error"
 reportMissingTypeStubs = false
 strictParameterNoneValue = false
-reportUnknownVariableType = "warning"  
+reportUnknownVariableType = "warning"
 # Reduz para warning ao invés de error
 reportUnknownMemberType = "warning"
 # Alinha com a versão de Python do projeto
-pythonVersion = "3.13"
+pythonVersion = "3.14"
 # Caminhos extras para resolver imports no layout em src/
 extraPaths = [
     "src",

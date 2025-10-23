@@ -265,7 +265,7 @@ Esta pasta contém toda a documentação relacionada à integração entre o sis
 | Categoria | Tecnologia | Versão | Uso |
 |-----------|-----------|--------|-----|
 | **Backend** | Django | 4.x+ | Framework principal |
-| **API Client** | notion-client | latest | SDK Python Notion |
+| **API Client** | notion-py-client | 0.1.14 | SDK Python Notion |
 | **Task Queue** | Celery | 5.x+ | Sincronização assíncrona |
 | **Broker** | Redis | 6.x+ | Message broker Celery |
 | **Testing** | pytest | latest | Testes unitários/integração |

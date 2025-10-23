@@ -31,10 +31,18 @@ import os
 import sys
 from pathlib import Path
 
-# Adiciona o diretório src ao path
-project_root = Path(__file__).resolve().parent
+# Adiciona o diretório src ao path de forma robusta
+cur = Path(__file__).resolve()
+project_root = None
+for parent in [cur] + list(cur.parents):
+    if (parent / "pyproject.toml").exists() or (parent / "src").exists():
+        project_root = parent
+        break
+if project_root is None:
+    project_root = cur.parents[3]
 src_path = project_root / "src"
-sys.path.insert(0, str(src_path))
+if str(src_path) not in sys.path:
+    sys.path.insert(0, str(src_path))
 
 # Configura o Django
 os.environ.setdefault(

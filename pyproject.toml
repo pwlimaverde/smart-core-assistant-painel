@@ -94,6 +94,7 @@ dependencies = [
     "zstandard==0.23.0",
     "huggingface-hub>=0.24.0",
     "langchain-huggingface>=0.2.0",
+    "notion-client>=2.6.0",
 ]
 
 

@@ -170,6 +170,22 @@ class Atendimento(models.Model):
     feedback: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Feedback do contato"
     )
+    data_primeira_resposta: models.DateTimeField[datetime | None] = models.DateTimeField(
+        blank=True,
+        null=True,
+        help_text="Data e hora da primeira resposta ao contato"
+    )
+    canal: models.CharField[str] = models.CharField(
+        max_length=20,
+        choices=[
+            ("whatsapp", "WhatsApp"),
+            ("email", "E-mail"),
+            ("telefone", "Telefone"),
+            ("web", "Website"),
+        ],
+        default="whatsapp",
+        help_text="Canal de origem do atendimento"
+    )
 
     class Meta:
         verbose_name = "Atendimento"
@@ -186,6 +202,13 @@ class Atendimento(models.Model):
     @override
     def __str__(self) -> str:
         return f"Atendimento {self.id} - {self.contato.telefone}"
+
+    @property
+    def cliente(self) -> Optional["clientes.Cliente"]:
+        """Retorna o cliente principal vinculado ao contato."""
+        if TYPE_CHECKING:
+            from smart_core_assistant_painel.app.ui.clientes.models import Cliente
+        return self.contato.clientes.first() if self.contato.clientes.exists() else None
 
     def finalizar_atendimento(self, novo_status: str = "resolvido") -> None:
         self.status = novo_status

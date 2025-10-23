@@ -483,16 +483,16 @@ Mensagem        Departamento (1)      AtendenteHumano (1)
 - [x] Modelo `Mensagem` - rico e completo
 - [x] Modelo `WhatsAppInstance` - excluído da sincronização
 
-### ⚠️ Ajustes Necessários
-- [ ] **Atendimento:** Adicionar campo `data_primeira_resposta`
-- [ ] **Atendimento:** Adicionar campo `canal`
-- [ ] **Atendimento:** Adicionar property `cliente`
-- [ ] **Atendimento:** Documentar mapeamento de status
+### ✅ Ajustes Realizados
+- [x] **Atendimento:** ✅ Campo `data_primeira_resposta` adicionado
+- [x] **Atendimento:** ✅ Campo `canal` adicionado (choices: whatsapp, email, telefone, web)
+- [x] **Atendimento:** ✅ Property `cliente` implementada
+- [x] **Atendimento:** ✅ Mapeamento de status documentado
 
 ### 📝 Documentação
-- [ ] Criar constante de mapeamento de status
-- [ ] Documentar campos que não existem no Django mas sim no Notion
-- [ ] Atualizar plano Notion com enums reais
+- [x] ✅ Constantes de mapeamento criadas (STATUS_NOTION_MAPPING)
+- [x] ✅ Campos Django vs Notion documentados
+- [x] ✅ Plano Notion atualizado com enums reais
 
 ---
 
@@ -508,14 +508,18 @@ Mensagem        Departamento (1)      AtendenteHumano (1)
 - ✅ Timestamps automáticos
 - ✅ Métodos helper úteis
 
-**Ajustes Mínimos Necessários:**
-1. Adicionar 2 campos em `Atendimento` (data_primeira_resposta, canal)
-2. Adicionar property `cliente` em `Atendimento`
-3. Atualizar documentação do plano Notion
+**Ajustes Realizados com Sucesso:**
+1. ✅ 2 campos adicionados em `Atendimento` (data_primeira_resposta, canal)
+2. ✅ Property `cliente` implementada em `Atendimento`
+3. ✅ Documentação atualizada com enums e mapeamentos reais
 
-**Recomendação:**
-✅ **Prosseguir com criação do app `notion_sync`** - models principais estão estruturalmente sólidos e prontos para integração via app dedicado.
+**Status Atual:**
+✅ **MODELS PRONTOS - AJUSTES CONCLUÍDOS** - Todos os ajustes necessários foram implementados. Models principais estão estruturalmente sólidos e prontos para integração via app dedicado `notion_sync`.
 
 ---
 
-**Próximo Passo:** Criar estrutura do app `notion_sync` com models de mapeamento
+**Próximo Passo:** Revisar arquitetura do app `notion_sync` considerando:
+- Foco em Kanban para gestão de Atendimentos
+- Model intermediário com apenas campos necessários para sincronização
+- Comunicação via interfaces abstratas (substituibilidade futura)
+- Atendimentos devem incluir visualização de mensagens

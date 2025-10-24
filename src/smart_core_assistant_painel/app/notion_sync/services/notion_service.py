@@ -11,8 +11,8 @@ from typing import Any, override
 
 from decouple import config
 from loguru import logger
-from notion_py_client import Client
-from notion_py_client.errors import APIResponseError
+import asyncio
+from notion_py_client.notion_client import NotionAsyncClient, APIResponseError
 
 from ..exceptions import (
     MappingError,
@@ -46,9 +46,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         (NotionDatabaseConfig) e inicializa o cliente da API.
 
         Prioridade de busca de database IDs:
--        1. NotionDatabaseConfig (banco de dados Django) - PREFERENCIAL
--        2. .env (variáveis de ambiente) - FALLBACK
-+        1. NotionDatabaseConfig (banco de dados Django)
+        1. NotionDatabaseConfig (banco de dados Django)
 
         Raises:
             SyncConfigError: Se configurações necessárias estão ausentes.
@@ -64,7 +62,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
         # Inicializa cliente do Notion
         try:
-            self.client = Client(auth=self.token)
+            self.client = NotionAsyncClient(auth=self.token)
             logger.info("Cliente do Notion inicializado com sucesso")
         except Exception as e:
             raise SyncConfigError(
@@ -92,6 +90,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Contato": ContatoMapper,
             "Cliente": ClienteMapper,
         }
+
+    def _run(self, coro):
+        return asyncio.run(coro)
 
     @override
     def create_record(
@@ -142,10 +143,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 f"Criando página no Notion para {model_name} #{django_id}"
             )
 
-            response = self.client.pages.create(
+            response = self._run(self.client.pages.create(
                 parent={"database_id": database_id},
                 properties=properties,
-            )
+            ))
 
             page_id = response["id"]
             logger.success(
@@ -227,10 +228,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 f"para {model_name} #{django_id}"
             )
 
-            self.client.pages.update(
+            self._run(self.client.pages.update(
                 page_id=external_id,
                 properties=properties,
-            )
+            ))
 
             logger.success(
                 f"✅ Página atualizada no Notion: {external_id} "
@@ -301,10 +302,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
             )
 
             # Arquiva página (Notion não permite deleção real)
-            self.client.pages.update(
+            self._run(self.client.pages.update(
                 page_id=external_id,
                 archived=True,
-            )
+            ))
 
             logger.success(
                 f"✅ Página arquivada no Notion: {external_id} "
@@ -358,7 +359,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
             # Testa autenticação obtendo informações do bot
             try:
-                bot_info = self.client.users.me()
+                bot_info = self._run(self.client.users.me())
                 logger.info(f"✅ Autenticação OK - Bot: {bot_info.get('name', 'N/A')}")
             except APIResponseError as e:
                 if e.status == 401:
@@ -373,7 +374,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             for model_name, database_id in self.database_ids.items():
                 if database_id:
                     try:
-                        db = self.client.databases.retrieve(database_id=database_id)
+                        db = self._run(self.client.databases.retrieve(database_id=database_id))
                         logger.info(
                             f"✅ Database '{model_name}' OK - "
                             f"Título: {db.get('title', [{}])[0].get('plain_text', 'N/A')}"
@@ -438,7 +439,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 )
 
             # Busca página no Notion para obter dados atualizados
-            page = self.client.pages.retrieve(page_id=page_id)
+            page = self._run(self.client.pages.retrieve(page_id=page_id))
             properties = page.get("properties", {})
 
             # Extrai Django ID para identificar o registro
@@ -587,7 +588,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
         try:
             # Testa conectividade básica
-            self.client.users.me()
+            self._run(self.client.users.me())
             health["api_reachable"] = True
             health["status"] = "healthy"
             health["message"] = "Conexão com Notion OK"

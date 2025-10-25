@@ -101,24 +101,44 @@ class ContatoMapper:
                     }
                 }
 
-            # External ID (rich text - se existir)
-            if contato_sync.external_id:
-                properties["Notion ID"] = {
-                    "rich_text": [
-                        {
-                            "type": "text",
-                            "text": {"content": contato_sync.external_id}
-                        }
-                    ]
-                }
+            # 🆕 Relacionamento ManyToMany com Clientes
+            # Lista de empresas vinculadas ao contato
+            try:
+                empresas_vinculadas = contato.clientes.all()
+                if empresas_vinculadas.exists():
+                    # Prepara lista de empresas para o campo relation
+                    empresas_ids = []
+                    empresas_nomes = [cliente.nome_fantasia for cliente in empresas_vinculadas]
 
-            # Última sincronização
-            if contato_sync.last_sync_at:
-                properties["Última Sincronização"] = {
-                    "date": {
-                        "start": contato_sync.last_sync_at.isoformat()
-                    }
-                }
+                    # Busca external_ids dos clientes sincronizados
+                    from ..models import ClienteSync
+                    for cliente in empresas_vinculadas:
+                        try:
+                            cliente_sync = ClienteSync.objects.get(cliente_id=cliente.id)
+                            if cliente_sync.external_id:
+                                empresas_ids.append(cliente_sync.external_id)
+                        except ClienteSync.DoesNotExist:
+                            # Se não tem sync, pula este cliente
+                            continue
+
+                    if empresas_ids:
+                        # 🆕 Usa campo relation nativo do Notion (se existir)
+                        properties["Empresas Relacionadas"] = {
+                            "relation": [
+                                {"id": emp_id} for emp_id in empresas_ids
+                            ]
+                        }
+
+                    # Armazena informações adicionais em metadados (backup)
+                    if not hasattr(contato_sync, 'metadados'):
+                        contato_sync.metadados = {}
+                    contato_sync.metadados['empresas_vinculadas'] = [
+                        f"{cliente.id}:{cliente.nome_fantasia}"
+                        for cliente in empresas_vinculadas
+                    ]
+            except Exception as e:
+                # Log silencioso para não quebrar sincronização principal
+                print(f"Aviso: Erro ao processar relacionamento de empresas: {e}")
 
             return properties
 
@@ -238,6 +258,22 @@ class ContatoMapper:
                     except (ValueError, AttributeError):
                         pass
 
+            # 🆕 Relacionamento com Empresas (campo relation)
+            # Nota: Se o campo relation existir no Notion, os dados virão formatados
+            # Se não existir, os dados ficam apenas em metadados para referência
+            if "metadados" in data and "empresas_vinculadas" in data["metadados"]:
+                # Converte de lista para processamento
+                empresas_info = data["metadados"]["empresas_vinculadas"]
+                if isinstance(empresas_info, list):
+                    data["metadados"]["empresas_vinculadas_lista"] = empresas_info
+
+                # Processa informações antigas em formato texto (compatibilidade)
+                elif "empresas_vinculadas_notion" in data["metadados"]:
+                    empresas_text = data["metadados"]["empresas_vinculadas_notion"]
+                    if empresas_text and "|" in empresas_text:
+                        empresas_info = [item.strip() for item in empresas_text.split("|")]
+                        data["metadados"]["empresas_vinculadas_lista"] = empresas_info
+
             return data
 
         except KeyError as e:
@@ -330,7 +366,7 @@ class ContatoMapper:
             if "Telefone" in properties:
                 phone = properties["Telefone"].get("phone_number", "")
                 if phone:
-                    pass
+                    pass  # Validação básica seria implementada aqui
 
             return True
 
@@ -381,18 +417,32 @@ class ContatoMapper:
                 "date": {},
                 "description": "Data da última interação registrada"
             },
-            "Django ID": {
-                "number": {
-                    "format": "number"
-                },
-                "description": "ID do registro no Django (referência)"
+            # 🆕 Campo para relacionamento com Empresas (relation)
+            "Empresas Relacionadas": {
+                "relation": {},
+                "description": "Empresas vinculadas a este contato (campo relation)"
             },
-            "Notion ID": {
-                "rich_text": {},
-                "description": "ID da página no Notion"
-            },
-            "Última Sincronização": {
-                "date": {},
-                "description": "Data da última sincronização"
-            }
+            # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
+            # Se preferir usar rich_text em vez de relation, descomente:
+            # "Empresas Vinculadas": {
+            #     "rich_text": {},
+            #     "description": "IDs e nomes das empresas vinculadas (formato: id:nome | id2:nome2)"
+            # }
+            # REMOVIDO: Django ID - campo opcional, pode não existir
+            # "Django ID": {
+            #     "number": {
+            #         "format": "number"
+            #     },
+            #     "description": "ID do registro no Django (referência)"
+            # },
+            # REMOVIDO: Notion ID - campo não existe no database atual
+            # "Notion ID": {
+            #     "rich_text": {},
+            #     "description": "ID da página no Notion"
+            # },
+            # REMOVIDO: Última Sincronização - campo não existe no database atual
+            # "Última Sincronização": {
+            #     "date": {},
+            #     "description": "Data da última sincronização"
+            # }
         }

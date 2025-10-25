@@ -235,7 +235,34 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     source_value=model_name,
                 )
 
+            # Converte dados para formato Notion
+            # data é a instância do model Django
+            properties = mapper.to_notion_properties(data)
 
+            # Atualiza página no Notion
+            logger.info(f"Atualizando página {external_id} no Notion para {model_name} #{django_id}")
+
+            # Prepara dados para atualização
+            page_data = {
+                "properties": properties,
+            }
+
+            # Faz chamada direta usando o método request do client
+            response = self._run(
+                self.client.request(
+                    method="patch",
+                    path=f"pages/{external_id}",
+                    body=page_data
+                )
+            )
+
+            page_id = response.get("id")
+            logger.success(
+                f"✅ Página atualizada no Notion: {page_id} "
+                f"para {model_name} #{django_id}"
+            )
+
+            return True
 
         except APIResponseError as e:
             error_msg = str(e)
@@ -299,7 +326,26 @@ class NotionSyncService(ExternalSyncServiceInterface):
             )
 
             # Arquiva página (Notion não permite deleção real)
+            page_data = {
+                "archived": True,
+            }
 
+            # Faz chamada direta usando o método request do client
+            response = self._run(
+                self.client.request(
+                    method="patch",
+                    path=f"pages/{external_id}",
+                    body=page_data
+                )
+            )
+
+            page_id = response.get("id")
+            logger.success(
+                f"✅ Página arquivada no Notion: {page_id} "
+                f"para {model_name}"
+            )
+
+            return True
 
         except APIResponseError as e:
             error_msg = str(e)
@@ -361,7 +407,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             for model_name, database_id in self.database_ids.items():
                 if database_id:
                     try:
-                        db = self._run(self.client.databases.retrieve(database_id=database_id))
+                        db = self._run(self.client.databases.retrieve(database_id))
                         logger.info(
                             f"✅ Database '{model_name}' OK - "
                             f"Título: {db.get('title', [{}])[0].get('plain_text', 'N/A')}"

@@ -8,7 +8,7 @@ com plataformas externas (Notion, Airtable, etc).
 
 from typing import Any
 
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from loguru import logger
 
@@ -98,7 +98,13 @@ def schedule_sync_operation(
     try:
         service = NotionSyncService()
 
-        # Obter o registro sync correspondente
+        # Operações de delete são tratadas nos signals pre_delete
+        # para evitar problemas com CASCADE do OneToOneField
+        if operation == "delete":
+            logger.warning(f"Operação de delete para {model_name} deve ser tratada em pre_delete signal")
+            return
+
+        # Obter o registro sync correspondente (para create/update)
         if model_name == "Contato":
             sync_record = ContatoSync.objects.get(contato_id=instance_id)
         elif model_name == "Cliente":
@@ -127,12 +133,7 @@ def schedule_sync_operation(
                 # Se não tem external_id, tenta criar
                 external_id = service.create_record(model_name, instance_id, sync_record)
                 sync_record.external_id = external_id
-                sync_record.sync_status = "synced"
-                sync_record.mark_as_synced()
-        elif operation == "delete":
-            if sync_record.external_id:
-                service.delete_record(model_name, sync_record.external_id)
-
+                sync_record.mark_as_synced(external_id)
         logger.info(f"Sincronização executada com sucesso: {model_name} #{instance_id} - {operation}")
 
     except Exception as e:
@@ -257,8 +258,13 @@ def on_cliente_saved(
         logger.error(f"Erro ao processar signal de Cliente #{instance.id}: {e}")
 
 
-@receiver(post_delete, sender=Contato)
-def on_contato_deleted(
+# Removido: on_contato_deleted - substituído por on_contato_pre_delete
+# para evitar problemas com CASCADE do OneToOneField
+
+
+# Usar pre_delete em vez de post_delete para capturar sync_record antes do CASCADE
+@receiver(pre_delete, sender=Contato)
+def on_contato_pre_delete(
     sender: Any,
     instance: "Contato",
     **kwargs: Any
@@ -266,30 +272,34 @@ def on_contato_deleted(
     """
     Signal receiver para sincronizar deleção de Contato.
 
-    Este receiver é disparado quando um Contato é deletado.
-    Ele agenda a sincronização de deleção para as plataformas externas.
+    Este receiver é disparado ANTES de um Contato ser deletado
+    para que possamos capturar o external_id antes do CASCADE.
 
     Args:
         sender: Classe do model que enviou o signal (Contato).
-        instance: Instância do Contato que foi deletada.
+        instance: Instância do Contato que será deletada.
         **kwargs: Argumentos adicionais do signal.
     """
     try:
-        # Agenda sincronização de deleção
-        schedule_sync_operation(
-            model_name="Contato",
-            instance_id=instance.id,
-            operation="delete"
-        )
+        # Busca o external_id antes do delete
+        from .models import ContatoSync
 
-        logger.info(f"Contato #{instance.id} deletado - Sincronização agendada")
+        sync_record = ContatoSync.objects.filter(contato_id=instance.id).first()
+        if sync_record and sync_record.external_id:
+            # Executa sincronização de deleção imediatamente
+            service = NotionSyncService()
+            service.delete_record("Contato", sync_record.external_id)
+            logger.info(f"Contato #{instance.id} arquivado no Notion (external_id: {sync_record.external_id})")
+        else:
+            logger.warning(f"Contato #{instance.id} não possui external_id para arquivar no Notion")
 
     except Exception as e:
         logger.error(f"Erro ao processar deleção de Contato #{instance.id}: {e}")
 
 
-@receiver(post_delete, sender=Cliente)
-def on_cliente_deleted(
+# Usar pre_delete em vez de post_delete para capturar sync_record antes do CASCADE
+@receiver(pre_delete, sender=Cliente)
+def on_cliente_pre_delete(
     sender: Any,
     instance: "Cliente",
     **kwargs: Any
@@ -297,23 +307,140 @@ def on_cliente_deleted(
     """
     Signal receiver para sincronizar deleção de Cliente.
 
-    Este receiver é disparado quando um Cliente é deletado.
-    Ele agenda a sincronização de deleção para as plataformas externas.
+    Este receiver é disparado ANTES de um Cliente ser deletado
+    para que possamos capturar o external_id antes do CASCADE.
 
     Args:
         sender: Classe do model que enviou o signal (Cliente).
-        instance: Instância do Cliente que foi deletada.
+        instance: Instância do Cliente que será deletada.
         **kwargs: Argumentos adicionais do signal.
     """
     try:
-        # Agenda sincronização de deleção
-        schedule_sync_operation(
-            model_name="Cliente",
-            instance_id=instance.id,
-            operation="delete"
-        )
+        # Busca o external_id antes do delete
+        from .models import ClienteSync
 
-        logger.info(f"Cliente #{instance.id} deletado - Sincronização agendada")
+        sync_record = ClienteSync.objects.filter(cliente_id=instance.id).first()
+        if sync_record and sync_record.external_id:
+            # Executa sincronização de deleção imediatamente
+            service = NotionSyncService()
+            service.delete_record("Cliente", sync_record.external_id)
+            logger.info(f"Cliente #{instance.id} arquivado no Notion (external_id: {sync_record.external_id})")
+        else:
+            logger.warning(f"Cliente #{instance.id} não possui external_id para arquivar no Notion")
 
     except Exception as e:
         logger.error(f"Erro ao processar deleção de Cliente #{instance.id}: {e}")
+
+
+@receiver(m2m_changed, sender=Contato.clientes.through)
+def on_contato_clientes_changed(
+    sender: Any,
+    instance: "Contato",
+    action: str,
+    reverse: bool,
+    model: "Cliente",
+    pk_set: Any,
+    **kwargs: Any
+) -> None:
+    """
+    Signal receiver para sincronizar mudanças no relacionamento Contato <-> Clientes.
+
+    Este receiver é disparado quando um contato é associado/desassociado de clientes.
+    Ele atualiza o campo de relacionamento no Notion.
+
+    Args:
+        sender: Classe do model through do relacionamento.
+        instance: Instância do Contato que teve o relacionamento modificado.
+        action: Tipo de ação ("post_add", "post_remove", "post_clear").
+        reverse: Se a operação foi no sentido inverso.
+        model: Model do outro lado do relacionamento (Cliente).
+        pk_set: Set de primary keys adicionados/removidos.
+        **kwargs: Argumentos adicionais do signal.
+    """
+    # Ignora se for operação reversa (será tratada no signal de Cliente)
+    if reverse:
+        return
+
+    try:
+        # Obtém o registro de sincronização
+        from .models import ContatoSync
+
+        sync_record = ContatoSync.objects.filter(contato_id=instance.id).first()
+        if not sync_record or not sync_record.external_id:
+            logger.warning(f"Contato #{instance.id} não possui sync_record para atualizar relacionamentos")
+            return
+
+        # Prepara dados atualizados para sincronização
+        sync_record.prepare_notion_data()
+        sync_record.save()
+
+        # Executa sincronização de atualização
+        service = NotionSyncService()
+        success = service.update_record("Contato", sync_record.external_id, instance.id, sync_record)
+
+        if success:
+            sync_record.mark_as_synced()
+            logger.info(f"Relacionamentos do Contato #{instance.id} atualizados no Notion (action: {action})")
+        else:
+            sync_record.mark_as_failed(f"Falha na atualização de relacionamentos (action: {action})")
+            logger.error(f"Falha ao atualizar relacionamentos do Contato #{instance.id} (action: {action})")
+
+    except Exception as e:
+        logger.error(f"Erro ao processar mudança de relacionamento do Contato #{instance.id}: {e}")
+
+
+@receiver(m2m_changed, sender=Cliente.contatos.through)
+def on_cliente_contatos_changed(
+    sender: Any,
+    instance: "Cliente",
+    action: str,
+    reverse: bool,
+    model: "Contato",
+    pk_set: Any,
+    **kwargs: Any
+) -> None:
+    """
+    Signal receiver para sincronizar mudanças no relacionamento Cliente <-> Contatos.
+
+    Este receiver é disparado quando um cliente tem contatos associados/desassociados.
+    Ele atualiza o campo de relacionamento no Notion.
+
+    Args:
+        sender: Classe do model through do relacionamento.
+        instance: Instância do Cliente que teve o relacionamento modificado.
+        action: Tipo de ação ("post_add", "post_remove", "post_clear").
+        reverse: Se a operação foi no sentido inverso.
+        model: Model do outro lado do relacionamento (Contato).
+        pk_set: Set de primary keys adicionados/removidos.
+        **kwargs: Argumentos adicionais do signal.
+    """
+    # Ignora se for operação reversa (será tratada no signal de Contato)
+    if reverse:
+        return
+
+    try:
+        # Obtém o registro de sincronização
+        from .models import ClienteSync
+
+        sync_record = ClienteSync.objects.filter(cliente_id=instance.id).first()
+        if not sync_record or not sync_record.external_id:
+            logger.warning(f"Cliente #{instance.id} não possui sync_record para atualizar relacionamentos")
+            return
+
+        # Prepara dados atualizados para sincronização
+        sync_record.prepare_notion_data()
+        sync_record.save()
+
+        # Executa sincronização de atualização
+        service = NotionSyncService()
+        success = service.update_record("Cliente", sync_record.external_id, instance.id, sync_record)
+
+        if success:
+            sync_record.mark_as_synced()
+            logger.info(f"Relacionamentos do Cliente #{instance.id} atualizados no Notion (action: {action})")
+        else:
+            sync_record.mark_as_failed(f"Falha na atualização de relacionamentos (action: {action})")
+            logger.error(f"Falha ao atualizar relacionamentos do Cliente #{instance.id} (action: {action})")
+
+    except Exception as e:
+        logger.error(f"Erro ao processar mudança de relacionamento do Cliente #{instance.id}: {e}")

@@ -947,14 +947,15 @@ class ContatoSync(models.Model):
 
         return self.sync_status in ['pending', 'error']
 
-    def mark_as_synced(self, external_id: str) -> None:
+    def mark_as_synced(self, external_id: str | None = None) -> None:
         """
         Marca o contato como sincronizado com sucesso.
 
         Args:
-            external_id: ID do registro criado no Notion.
+            external_id: ID do registro criado no Notion (opcional para updates).
         """
-        self.external_id = external_id
+        if external_id:
+            self.external_id = external_id
         self.sync_status = 'synced'
         self.last_sync_at = timezone.now()
         self.sync_error = None
@@ -1240,14 +1241,15 @@ class ClienteSync(models.Model):
 
         return self.sync_status in ['pending', 'error']
 
-    def mark_as_synced(self, external_id: str) -> None:
+    def mark_as_synced(self, external_id: str | None = None) -> None:
         """
         Marca o cliente como sincronizado com sucesso.
 
         Args:
-            external_id: ID do registro criado no Notion.
+            external_id: ID do registro criado no Notion (opcional para updates).
         """
-        self.external_id = external_id
+        if external_id:
+            self.external_id = external_id
         self.sync_status = 'synced'
         self.last_sync_at = timezone.now()
         self.sync_error = None

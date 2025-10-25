@@ -88,6 +88,46 @@ class ClienteMapper:
                     ]
                 }
 
+            # 🆕 Relacionamento ManyToMany com Contatos
+            # Lista de contatos vinculados ao cliente
+            try:
+                contatos_vinculados = cliente.contatos.all()
+                if contatos_vinculados.exists():
+                    # Prepara lista de contatos para o campo relation
+                    contatos_ids = []
+
+                    # Busca external_ids dos contatos sincronizados
+                    from ..models import ContatoSync
+                    for contato in contatos_vinculados:
+                        try:
+                            contato_sync = ContatoSync.objects.get(contato_id=contato.id)
+                            if contato_sync.external_id:
+                                contatos_ids.append(contato_sync.external_id)
+                        except ContatoSync.DoesNotExist:
+                            # Se não tem sync, pula este contato
+                            continue
+
+                    if contatos_ids:
+                        # 🆕 Usa campo relation nativo do Notion (se existir)
+                        properties["Contatos Relacionados"] = {
+                            "relation": [
+                                {"id": contato_id} for contato_id in contatos_ids
+                            ]
+                        }
+
+                    # Armazena informações adicionais em metadados (backup)
+                    contatos_nomes = [contato.nome_contato for contato in contatos_vinculados]
+                    contatos_info = []
+                    for i, contato in enumerate(contatos_vinculados):
+                        contatos_info.append(f"{contato.id}:{contatos_nomes[i]}")
+
+                    if not hasattr(cliente_sync, 'metadados'):
+                        cliente_sync.metadados = {}
+                    cliente_sync.metadados['contatos_vinculados'] = contatos_info
+            except Exception as e:
+                # Log silencioso para não quebrar sincronização principal
+                print(f"Aviso: Erro ao processar relacionamento de contatos: {e}")
+
             # CPF (se presente)
             if getattr(cliente, "cpf", None):
                 cpf_limpo = re.sub(r"\D", "", cliente.cpf)
@@ -279,6 +319,22 @@ class ClienteMapper:
                         except (ValueError, AttributeError):
                             pass  # Ignora datas inválidas
 
+            # 🆕 Relacionamento com Contatos (campo relation)
+            # Nota: Se o campo relation existir no Notion, os dados virão formatados
+            # Se não existir, os dados ficam em metadados para referência
+            if "metadados" in data and "contatos_vinculados" in data["metadados"]:
+                # Converte de lista para processamento (backup em metadados)
+                contatos_info = data["metadados"]["contatos_vinculados"]
+                if isinstance(contatos_info, list):
+                    data["metadados"]["contatos_vinculados_lista"] = contatos_info
+
+                # Processa informações antigas em formato texto (compatibilidade)
+                elif "contatos_vinculados_notion" in data["metadados"]:
+                    contatos_text = data["metadados"]["contatos_vinculados_notion"]
+                    if contatos_text and "|" in contatos_text:
+                        contatos_info = [item.strip() for item in contatos_text.split("|")]
+                        data["metadados"]["contatos_vinculados_lista"] = contatos_info
+
             return data
 
         except KeyError as e:
@@ -463,5 +519,16 @@ class ClienteMapper:
             "Observações": {
                 "rich_text": {},
                 "description": "Observações adicionais"
-            }
+            },
+            # 🆕 Campo para relacionamento com Contatos (relation)
+            "Contatos Relacionados": {
+                "relation": {},
+                "description": "Contatos vinculados a este cliente (campo relation)"
+            },
+            # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
+            # Se preferir usar rich_text em vez de relation, descomente:
+            # "Contatos Vinculados": {
+            #     "rich_text": {},
+            #     "description": "IDs e nomes dos contatos vinculados (formato: id:nome | id2:nome2)"
+            # }
         }

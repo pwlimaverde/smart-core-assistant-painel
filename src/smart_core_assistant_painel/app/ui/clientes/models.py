@@ -183,7 +183,7 @@ class Cliente(models.Model):
         blank=True,
         null=True,
         validators=[validate_cep],
-        help_text="CEP do endereço (formato: 12345-678)",
+        help_text="CEP do endereço (formato: 12.345-678)",
     )
     logradouro: models.CharField[str | None] = models.CharField(
         max_length=200,

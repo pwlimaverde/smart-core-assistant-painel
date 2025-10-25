@@ -8,7 +8,7 @@ interação com modelos de linguagem.
 import math
 from typing import Any
 
-from langchain_core.documents.base import Document
+from langchain_core.documents import Document
 from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,

@@ -9,7 +9,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.indexes import Index
 from django.db.models.query import QuerySet
-from langchain_core.documents.base import Document
+from langchain_core.documents import Document
 from loguru import logger
 from pgvector.django import CosineDistance, VectorField
 

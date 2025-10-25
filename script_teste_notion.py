@@ -19,9 +19,9 @@ async def create_contato_db(notion_token: str, parent_page_id: str):
             "initial_data_source": {
                 "name": "Contato",
                 "properties": {
-                    "nome": {"name": "nome", "type": "title", "title": {}},
-                    "telefone": {"name": "telefone", "type": "phone_number", "phone_number": {}},
-                    "endereço": {"name": "endereço", "type": "rich_text", "rich_text": {}}
+                    "Nome": {"name": "nome", "type": "title", "title": {}},
+                    "Telefone": {"name": "telefone", "type": "phone_number", "phone_number": {}},
+                    "Endereço": {"name": "endereço", "type": "rich_text", "rich_text": {}}
                 }
             }
         }

@@ -26,10 +26,9 @@ class SyncConfigAdmin(admin.ModelAdmin[SyncConfig]):
     list_display = (
         "key",
         "value_preview",
-        "is_active",
         "updated_at",
     )
-    list_filter = ("is_active", "created_at", "updated_at")
+    list_filter = ("created_at", "updated_at")
     search_fields = ("key", "description")
     readonly_fields = ("created_at", "updated_at")
     ordering = ("key",)
@@ -77,33 +76,34 @@ class NotionDatabaseConfigAdmin(admin.ModelAdmin[NotionDatabaseConfig]):
     """
 
     list_display = (
-        "model_name",
-        "database_name",
-        "database_id_short",
-        "is_active",
+        "django_model",
+        "name",
+        "notion_database_id_short",
+        "sync_enabled",
         "updated_at",
     )
-    list_filter = ("is_active", "created_at", "updated_at")
-    search_fields = ("model_name", "database_name", "database_id")
+    list_filter = ("sync_enabled", "created_at", "updated_at")
+    search_fields = ("django_model", "name", "notion_database_id")
     readonly_fields = ("created_at", "updated_at")
-    ordering = ("model_name",)
+    ordering = ("django_model",)
 
     fieldsets = (
         (
             "Informações Principais",
             {
                 "fields": (
-                    "model_name",
-                    "database_id",
-                    "database_name",
-                    "is_active"
+                    "slug",
+                    "name",
+                    "django_model",
+                    "notion_database_id",
+                    "sync_enabled"
                 )
             },
         ),
         (
             "Schema",
             {
-                "fields": ("properties_schema",),
+                "fields": ("notion_schema", "field_mappings"),
                 "classes": ("collapse",),
             },
         ),
@@ -116,9 +116,9 @@ class NotionDatabaseConfigAdmin(admin.ModelAdmin[NotionDatabaseConfig]):
         ),
     )
 
-    def database_id_short(self, obj: NotionDatabaseConfig) -> str:
+    def notion_database_id_short(self, obj: NotionDatabaseConfig) -> str:
         """
-        Retorna versão curta do database_id.
+        Retorna versão curta do notion_database_id.
 
         Args:
             obj: Instância de NotionDatabaseConfig.
@@ -126,9 +126,11 @@ class NotionDatabaseConfigAdmin(admin.ModelAdmin[NotionDatabaseConfig]):
         Returns:
             Database ID truncado.
         """
-        return f"{obj.database_id[:20]}..."
+        if obj.notion_database_id:
+            return f"{str(obj.notion_database_id)[:20]}..."
+        return "-"
 
-    database_id_short.short_description = "Database ID"  # type: ignore
+    notion_database_id_short.short_description = "Database ID"  # type: ignore
 
 
 @admin.register(SyncLog)
@@ -142,77 +144,86 @@ class SyncLogAdmin(admin.ModelAdmin[SyncLog]):
     list_display = (
         "id",
         "model_name",
-        "django_id",
-        "operation",
-        "direction",
+        "object_id",
+        "operation_type",
         "status_colored",
         "duration_formatted",
-        "retry_count",
-        "created_at",
+        "started_at",
     )
     list_filter = (
         "status",
-        "operation",
-        "direction",
+        "operation_type",
         "model_name",
-        "created_at",
+        "started_at",
     )
     search_fields = (
         "model_name",
-        "django_id",
+        "object_id",
         "external_id",
-        "error_message",
+        "message",
     )
     readonly_fields = (
+        "operation_type",
         "model_name",
-        "django_id",
+        "object_id",
         "external_id",
-        "operation",
-        "direction",
         "status",
-        "error_message",
+        "message",
         "error_details",
+        "request_data",
+        "response_data",
+        "config",
+        "started_at",
+        "completed_at",
         "duration_ms",
-        "retry_count",
-        "created_at",
+        "metadata",
     )
-    ordering = ("-created_at",)
-    date_hierarchy = "created_at"
+    ordering = ("-started_at",)
+    date_hierarchy = "started_at"
 
     fieldsets = (
         (
             "Identificação",
             {
                 "fields": (
+                    "operation_type",
                     "model_name",
-                    "django_id",
+                    "object_id",
                     "external_id",
                 )
             },
         ),
         (
-            "Operação",
+            "Status e Timing",
             {
                 "fields": (
-                    "operation",
-                    "direction",
                     "status",
+                    "message",
+                    "started_at",
+                    "completed_at",
                     "duration_ms",
-                    "retry_count",
                 )
+            },
+        ),
+        (
+            "Dados",
+            {
+                "fields": ("request_data", "response_data"),
+                "classes": ("collapse",),
             },
         ),
         (
             "Erro (se aplicável)",
             {
-                "fields": ("error_message", "error_details"),
+                "fields": ("error_details",),
                 "classes": ("collapse",),
             },
         ),
         (
             "Metadados",
             {
-                "fields": ("created_at",),
+                "fields": ("config", "metadata"),
+                "classes": ("collapse",),
             },
         ),
     )
@@ -237,7 +248,7 @@ class SyncLogAdmin(admin.ModelAdmin[SyncLog]):
         return format_html(
             '<span style="color: {}; font-weight: bold;">{}</span>',
             color,
-            obj.get_status_display(),
+            obj.status,
         )
 
     status_colored.short_description = "Status"  # type: ignore
@@ -287,12 +298,12 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
         "contato_info",
         "external_id_short",
         "sync_status_colored",
-        "last_synced_at",
-        "sync_attempts",
+        "last_sync_at",
+        "retry_count",
     )
     list_filter = (
-        "is_synced",
-        "last_synced_at",
+        "sync_status",
+        "last_sync_at",
         "created_at",
     )
     search_fields = (
@@ -303,15 +314,16 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
     readonly_fields = (
         "contato",
         "external_id",
-        "is_synced",
-        "last_synced_at",
+        "sync_status",
+        "last_sync_at",
         "sync_error",
-        "sync_attempts",
+        "retry_count",
+        "sync_metadata",
         "created_at",
         "updated_at",
     )
     ordering = ("-updated_at",)
-    date_hierarchy = "last_synced_at"
+    date_hierarchy = "last_sync_at"
 
     fieldsets = (
         (
@@ -325,9 +337,9 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
             {
                 "fields": (
                     "external_id",
-                    "is_synced",
-                    "last_synced_at",
-                    "sync_attempts",
+                    "sync_status",
+                    "last_sync_at",
+                    "retry_count",
                 )
             },
         ),
@@ -341,7 +353,8 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
         (
             "Metadados",
             {
-                "fields": ("created_at", "updated_at"),
+                "fields": ("sync_metadata", "created_at", "updated_at"),
+                "classes": ("collapse",),
             },
         ),
     )
@@ -371,7 +384,7 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
             External ID truncado ou "-".
         """
         if obj.external_id:
-            return f"{obj.external_id[:20]}..."
+            return f"{str(obj.external_id)[:20]}..."
         return "-"
 
     external_id_short.short_description = "ID Externo"  # type: ignore
@@ -386,13 +399,19 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
         Returns:
             HTML com status colorido.
         """
-        if obj.is_synced:
+        if obj.sync_status == 'synced':
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
             )
+        elif obj.sync_status == 'error':
+            return format_html(
+                '<span style="color: red; font-weight: bold;">✗ Erro</span>'
+            )
         else:
             return format_html(
-                '<span style="color: red; font-weight: bold;">✗ Não Sincronizado</span>'
+                '<span style="color: orange; font-weight: bold;">⏳ {}</span>'.format(
+                    obj.get_sync_status_display()
+                )
             )
 
     sync_status_colored.short_description = "Status"  # type: ignore
@@ -426,12 +445,12 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
         "cliente_info",
         "external_id_short",
         "sync_status_colored",
-        "last_synced_at",
-        "sync_attempts",
+        "last_sync_at",
+        "retry_count",
     )
     list_filter = (
-        "is_synced",
-        "last_synced_at",
+        "sync_status",
+        "last_sync_at",
         "created_at",
     )
     search_fields = (
@@ -443,15 +462,16 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
     readonly_fields = (
         "cliente",
         "external_id",
-        "is_synced",
-        "last_synced_at",
+        "sync_status",
+        "last_sync_at",
         "sync_error",
-        "sync_attempts",
+        "retry_count",
+        "notion_properties",
         "created_at",
         "updated_at",
     )
     ordering = ("-updated_at",)
-    date_hierarchy = "last_synced_at"
+    date_hierarchy = "last_sync_at"
 
     fieldsets = (
         (
@@ -465,9 +485,9 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
             {
                 "fields": (
                     "external_id",
-                    "is_synced",
-                    "last_synced_at",
-                    "sync_attempts",
+                    "sync_status",
+                    "last_sync_at",
+                    "retry_count",
                 )
             },
         ),
@@ -481,7 +501,8 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
         (
             "Metadados",
             {
-                "fields": ("created_at", "updated_at"),
+                "fields": ("notion_properties", "created_at", "updated_at"),
+                "classes": ("collapse",),
             },
         ),
     )
@@ -511,7 +532,7 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
             External ID truncado ou "-".
         """
         if obj.external_id:
-            return f"{obj.external_id[:20]}..."
+            return f"{str(obj.external_id)[:20]}..."
         return "-"
 
     external_id_short.short_description = "ID Externo"  # type: ignore
@@ -526,13 +547,19 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
         Returns:
             HTML com status colorido.
         """
-        if obj.is_synced:
+        if obj.sync_status == 'synced':
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
             )
+        elif obj.sync_status == 'error':
+            return format_html(
+                '<span style="color: red; font-weight: bold;">✗ Erro</span>'
+            )
         else:
             return format_html(
-                '<span style="color: red; font-weight: bold;">✗ Não Sincronizado</span>'
+                '<span style="color: orange; font-weight: bold;">⏳ {}</span>'.format(
+                    obj.get_sync_status_display()
+                )
             )
 
     sync_status_colored.short_description = "Status"  # type: ignore

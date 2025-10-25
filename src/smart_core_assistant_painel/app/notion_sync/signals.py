@@ -18,10 +18,143 @@ from .models import ClienteSync, ContatoSync, SyncLog
 from .services import NotionSyncService
 
 
+def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
+    """
+    Obtém ou cria registro ContatoSync para um contato.
+
+    Esta é uma função auxiliar que será usada pelos signals
+    quando forem reabilitados.
+
+    Args:
+        contato_id: ID do contato no Django.
+
+    Returns:
+        Instância do ContatoSync.
+    """
+    from .models import ContatoSync, NotionDatabaseConfig
+
+    # Obter configuração do Notion para Contatos
+    config = NotionDatabaseConfig.objects.get(slug="ui_clientes_contato")
+
+    sync, created = ContatoSync.objects.get_or_create(
+        contato_id=contato_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config
+        }
+    )
+    return sync
+
+
+def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
+    """
+    Obtém ou cria registro ClienteSync para um cliente.
+
+    Esta é uma função auxiliar que será usada pelos signals
+    quando forem reabilitados.
+
+    Args:
+        cliente_id: ID do cliente no Django.
+
+    Returns:
+        Instância do ClienteSync.
+    """
+    from .models import ClienteSync, NotionDatabaseConfig
+
+    # Obter configuração do Notion para Clientes
+    config = NotionDatabaseConfig.objects.get(slug="ui_clientes_cliente")
+
+    sync, created = ClienteSync.objects.get_or_create(
+        cliente_id=cliente_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config
+        }
+    )
+    return sync
+
+
+def schedule_sync_operation(
+    model_name: str,
+    instance_id: int,
+    operation: str
+) -> None:
+    """
+    Agenda uma operação de sincronização.
+
+    Esta função centraliza a lógica de agendamento de sincronizações
+    e será usada pelos signals quando forem reabilitados.
+
+    Args:
+        model_name: Nome do modelo (ex: "Contato", "Cliente").
+        instance_id: ID da instância.
+        operation: Tipo de operação ("create", "update", "delete").
+    """
+    from .services import NotionSyncService
+    from .models import ContatoSync, ClienteSync
+
+    try:
+        service = NotionSyncService()
+
+        # Obter o registro sync correspondente
+        if model_name == "Contato":
+            sync_record = ContatoSync.objects.get(contato_id=instance_id)
+        elif model_name == "Cliente":
+            sync_record = ClienteSync.objects.get(cliente_id=instance_id)
+        else:
+            logger.warning(f"Modelo não suportado: {model_name}")
+            return
+
+        # Para simplificar, executamos sincronização síncrona por enquanto
+        # Em produção, isso deve ser assíncrono (Celery, Django Q, etc)
+        logger.info(f"Executando sincronização: {model_name} #{instance_id} - {operation}")
+        logger.debug(f"Sync record: {sync_record}")
+
+        if operation == "create":
+            external_id = service.create_record(model_name, instance_id, sync_record)
+            sync_record.mark_as_synced(external_id)
+
+        elif operation == "update":
+            if sync_record.external_id:
+                success = service.update_record(model_name, sync_record.external_id, instance_id, sync_record)
+                if success:
+                    sync_record.mark_as_synced()
+                else:
+                    sync_record.mark_as_failed("Falha na atualização")
+            else:
+                # Se não tem external_id, tenta criar
+                external_id = service.create_record(model_name, instance_id, sync_record)
+                sync_record.external_id = external_id
+                sync_record.sync_status = "synced"
+                sync_record.mark_as_synced()
+        elif operation == "delete":
+            if sync_record.external_id:
+                service.delete_record(model_name, sync_record.external_id)
+
+        logger.info(f"Sincronização executada com sucesso: {model_name} #{instance_id} - {operation}")
+
+    except Exception as e:
+        logger.error(f"Erro ao executar sincronização: {e}")
+        logger.exception("Stack trace completo do erro:")
+        # Tentar marcar como falha se tiver o sync_record
+        try:
+            if model_name == "Contato":
+                sync_record = ContatoSync.objects.get(contato_id=instance_id)
+            elif model_name == "Cliente":
+                sync_record = ClienteSync.objects.get(cliente_id=instance_id)
+            logger.info(f"Marcando sync_record como falha: {model_name} #{instance_id}")
+            sync_record.mark_as_failed(str(e))
+        except Exception as mark_error:
+            logger.error(f"Erro ao marcar como falha: {mark_error}")
+            logger.exception("Stack trace do erro de marcação:")
+
+
 @receiver(post_save, sender=Contato)
 def on_contato_saved(
     sender: Any,
-    instance: Contato,
+    instance: "Contato",
     created: bool,
     **kwargs: Any
 ) -> None:
@@ -31,8 +164,8 @@ def on_contato_saved(
     Este receiver é disparado sempre que um Contato é criado ou
     atualizado. Ele:
     1. Cria ou obtém o registro de tracking (ContatoSync)
-    2. Marca o contato para sincronização
-    3. Registra a operação nos logs
+    2. Prepara os dados para sincronização
+    3. Agenda a sincronização assíncrona
 
     Args:
         sender: Classe do model que enviou o signal (Contato).
@@ -41,186 +174,40 @@ def on_contato_saved(
         **kwargs: Argumentos adicionais do signal.
     """
     # Verifica se existe flag para ignorar sincronização
-    # (usado para evitar loops quando atualizamos via webhook)
     if kwargs.get("skip_sync", False):
-        logger.debug(
-            f"Sincronização ignorada para Contato #{instance.id} "
-            f"(flag skip_sync=True)"
-        )
+        logger.debug(f"Sincronização ignorada para Contato #{instance.id}")
         return
 
     try:
         # Obtém ou cria o registro de tracking
-        sync_metadata, sync_created = ContatoSync.objects.get_or_create(
-            contato=instance
-        )
+        sync_metadata = get_or_create_contato_sync(instance.id)
 
         operation = "create" if created else "update"
 
-        # Log da operação
-        logger.info(
-            f"Contato #{instance.id} {'criado' if created else 'atualizado'}"
-            f" - Preparando para sincronização"
-        )
-
-        # Marca como não sincronizado para disparar sincronização
-        sync_metadata.is_synced = False
+        # Prepara os dados para sincronização
+        sync_metadata.prepare_notion_data()
         sync_metadata.save()
 
-        # Registra no log de sincronização
-        SyncLog.log_operation(
+        # Agenda sincronização assíncrona
+        schedule_sync_operation(
             model_name="Contato",
-            django_id=instance.id,
-            external_id=sync_metadata.external_id,
-            operation=operation,
-            direction="django_to_external",
-            status="pending",
+            instance_id=instance.id,
+            operation=operation
         )
 
-        # Sincroniza com o Notion (síncrono por enquanto)
-        # TODO: Migrar para Celery Task assíncrono
-        try:
-            service = NotionSyncService()
-            page_id = service.create_record(
-                model_name="Contato",
-                django_id=instance.id,
-                data=instance  # Passa a instância completa
-            )
-
-            # Marca como sincronizado com sucesso
-            sync_metadata.mark_as_synced(external_id=page_id)
-
-            # Atualiza log para success
-            SyncLog.log_operation(
-                model_name="Contato",
-                django_id=instance.id,
-                external_id=page_id,
-                operation=operation,
-                direction="django_to_external",
-                status="success",
-            )
-
-            logger.success(
-                f"✅ Contato #{instance.id} sincronizado com Notion: {page_id}"
-            )
-
-        except (NotionSyncError, SyncConfigError, SyncError) as e:
-            # Marca como falha
-            sync_metadata.mark_as_failed(error_message=str(e))
-
-            # Atualiza log para error
-            SyncLog.log_operation(
-                model_name="Contato",
-                django_id=instance.id,
-                external_id=sync_metadata.external_id,
-                operation=operation,
-                direction="django_to_external",
-                status="error",
-                error_message=str(e),
-                error_details=e.details if hasattr(e, 'details') else {}
-            )
-
-            logger.error(
-                f"❌ Erro ao sincronizar Contato #{instance.id}: {e}"
-            )
-
-    except Exception as e:
-        logger.error(
-            f"Erro ao processar signal de Contato #{instance.id}: {e}"
-        )
-        # Registra erro no log
-        SyncLog.log_operation(
-            model_name="Contato",
-            django_id=instance.id,
-            external_id=None,
-            operation="create" if created else "update",
-            direction="django_to_external",
-            status="error",
-            error_message=str(e),
-        )
-
-
-@receiver(post_delete, sender=Contato)
-def on_contato_deleted(
-    sender: Any,
-    instance: Contato,
-    **kwargs: Any
-) -> None:
-    """
-    Signal receiver para sincronizar deleção de Contato.
-
-    Este receiver é disparado quando um Contato é deletado. Ele:
-    1. Verifica se existe registro de tracking
-    2. Registra a operação de deleção
-    3. Dispara sincronização para arquivar/deletar na plataforma externa
-
-    Args:
-        sender: Classe do model que enviou o signal (Contato).
-        instance: Instância do Contato que foi deletada.
-        **kwargs: Argumentos adicionais do signal.
-    """
-    # Verifica se existe flag para ignorar sincronização
-    if kwargs.get("skip_sync", False):
-        logger.debug(
-            f"Sincronização de deleção ignorada para Contato #{instance.id}"
-        )
-        return
-
-    try:
-        # Verifica se existe tracking (o OneToOne já foi deletado)
-        # Então precisamos buscar antes da deleção
         logger.info(
-            f"Contato #{instance.id} deletado - "
-            f"Preparando sincronização de deleção"
+            f"Contato #{instance.id} {'criado' if created else 'atualizado'}"
+            f" - Sincronização agendada"
         )
-
-        # Registra no log de sincronização
-        SyncLog.log_operation(
-            model_name="Contato",
-            django_id=instance.id,
-            external_id=None,
-            operation="delete",
-            direction="django_to_external",
-            status="pending",
-        )
-
-        # Sincroniza deleção com o Notion (se tinha external_id)
-        # TODO: Migrar para Celery Task assíncrono
-        try:
-            # Busca external_id antes que o tracking seja deletado
-            from .models import ContatoSync
-            try:
-                sync_meta = ContatoSync.objects.get(contato=instance)
-                external_id = sync_meta.external_id
-
-                if external_id:
-                    service = NotionSyncService()
-                    service.delete_record(
-                        model_name="Contato",
-                        external_id=external_id
-                    )
-
-                    logger.success(
-                        f"✅ Contato #{instance.id} arquivado no Notion"
-                    )
-            except ContatoSync.DoesNotExist:
-                logger.debug(f"Contato #{instance.id} não tinha tracking")
-
-        except Exception as e:
-            logger.error(
-                f"❌ Erro ao arquivar Contato #{instance.id} no Notion: {e}"
-            )
 
     except Exception as e:
-        logger.error(
-            f"Erro ao processar deleção de Contato #{instance.id}: {e}"
-        )
+        logger.error(f"Erro ao processar signal de Contato #{instance.id}: {e}")
 
 
 @receiver(post_save, sender=Cliente)
 def on_cliente_saved(
     sender: Any,
-    instance: Cliente,
+    instance: "Cliente",
     created: bool,
     **kwargs: Any
 ) -> None:
@@ -230,8 +217,8 @@ def on_cliente_saved(
     Este receiver é disparado sempre que um Cliente é criado ou
     atualizado. Ele:
     1. Cria ou obtém o registro de tracking (ClienteSync)
-    2. Marca o cliente para sincronização
-    3. Registra a operação nos logs
+    2. Prepara os dados para sincronização
+    3. Agenda a sincronização assíncrona
 
     Args:
         sender: Classe do model que enviou o signal (Cliente).
@@ -241,173 +228,92 @@ def on_cliente_saved(
     """
     # Verifica se existe flag para ignorar sincronização
     if kwargs.get("skip_sync", False):
-        logger.debug(
-            f"Sincronização ignorada para Cliente #{instance.id} "
-            f"(flag skip_sync=True)"
-        )
+        logger.debug(f"Sincronização ignorada para Cliente #{instance.id}")
         return
 
     try:
         # Obtém ou cria o registro de tracking
-        sync_metadata, sync_created = ClienteSync.objects.get_or_create(
-            cliente=instance
-        )
+        sync_metadata = get_or_create_cliente_sync(instance.id)
 
         operation = "create" if created else "update"
 
-        # Log da operação
-        logger.info(
-            f"Cliente #{instance.id} {'criado' if created else 'atualizado'}"
-            f" - Preparando para sincronização"
-        )
-
-        # Marca como não sincronizado para disparar sincronização
-        sync_metadata.is_synced = False
+        # Prepara os dados para sincronização
+        sync_metadata.prepare_notion_data()
         sync_metadata.save()
 
-        # Registra no log de sincronização
-        SyncLog.log_operation(
+        # Agenda sincronização assíncrona
+        schedule_sync_operation(
             model_name="Cliente",
-            django_id=instance.id,
-            external_id=sync_metadata.external_id,
-            operation=operation,
-            direction="django_to_external",
-            status="pending",
+            instance_id=instance.id,
+            operation=operation
         )
 
-        # Sincroniza com o Notion (síncrono por enquanto)
-        # TODO: Migrar para Celery Task assíncrono
-        try:
-            service = NotionSyncService()
-            page_id = service.create_record(
-                model_name="Cliente",
-                django_id=instance.id,
-                data=instance  # Passa a instância completa
-            )
-
-            # Marca como sincronizado com sucesso
-            sync_metadata.mark_as_synced(external_id=page_id)
-
-            # Atualiza log para success
-            SyncLog.log_operation(
-                model_name="Cliente",
-                django_id=instance.id,
-                external_id=page_id,
-                operation=operation,
-                direction="django_to_external",
-                status="success",
-            )
-
-            logger.success(
-                f"✅ Cliente #{instance.id} sincronizado com Notion: {page_id}"
-            )
-
-        except (NotionSyncError, SyncConfigError, SyncError) as e:
-            # Marca como falha
-            sync_metadata.mark_as_failed(error_message=str(e))
-
-            # Atualiza log para error
-            SyncLog.log_operation(
-                model_name="Cliente",
-                django_id=instance.id,
-                external_id=sync_metadata.external_id,
-                operation=operation,
-                direction="django_to_external",
-                status="error",
-                error_message=str(e),
-                error_details=e.details if hasattr(e, 'details') else {}
-            )
-
-            logger.error(
-                f"❌ Erro ao sincronizar Cliente #{instance.id}: {e}"
-            )
+        logger.info(
+            f"Cliente #{instance.id} {'criado' if created else 'atualizado'}"
+            f" - Sincronização agendada"
+        )
 
     except Exception as e:
-        logger.error(
-            f"Erro ao processar signal de Cliente #{instance.id}: {e}"
+        logger.error(f"Erro ao processar signal de Cliente #{instance.id}: {e}")
+
+
+@receiver(post_delete, sender=Contato)
+def on_contato_deleted(
+    sender: Any,
+    instance: "Contato",
+    **kwargs: Any
+) -> None:
+    """
+    Signal receiver para sincronizar deleção de Contato.
+
+    Este receiver é disparado quando um Contato é deletado.
+    Ele agenda a sincronização de deleção para as plataformas externas.
+
+    Args:
+        sender: Classe do model que enviou o signal (Contato).
+        instance: Instância do Contato que foi deletada.
+        **kwargs: Argumentos adicionais do signal.
+    """
+    try:
+        # Agenda sincronização de deleção
+        schedule_sync_operation(
+            model_name="Contato",
+            instance_id=instance.id,
+            operation="delete"
         )
-        # Registra erro no log
-        SyncLog.log_operation(
-            model_name="Cliente",
-            django_id=instance.id,
-            external_id=None,
-            operation="create" if created else "update",
-            direction="django_to_external",
-            status="error",
-            error_message=str(e),
-        )
+
+        logger.info(f"Contato #{instance.id} deletado - Sincronização agendada")
+
+    except Exception as e:
+        logger.error(f"Erro ao processar deleção de Contato #{instance.id}: {e}")
 
 
 @receiver(post_delete, sender=Cliente)
 def on_cliente_deleted(
     sender: Any,
-    instance: Cliente,
+    instance: "Cliente",
     **kwargs: Any
 ) -> None:
     """
     Signal receiver para sincronizar deleção de Cliente.
 
-    Este receiver é disparado quando um Cliente é deletado. Ele:
-    1. Verifica se existe registro de tracking
-    2. Registra a operação de deleção
-    3. Dispara sincronização para arquivar/deletar na plataforma externa
+    Este receiver é disparado quando um Cliente é deletado.
+    Ele agenda a sincronização de deleção para as plataformas externas.
 
     Args:
         sender: Classe do model que enviou o signal (Cliente).
         instance: Instância do Cliente que foi deletada.
         **kwargs: Argumentos adicionais do signal.
     """
-    # Verifica se existe flag para ignorar sincronização
-    if kwargs.get("skip_sync", False):
-        logger.debug(
-            f"Sincronização de deleção ignorada para Cliente #{instance.id}"
-        )
-        return
-
     try:
-        logger.info(
-            f"Cliente #{instance.id} deletado - "
-            f"Preparando sincronização de deleção"
-        )
-
-        # Registra no log de sincronização
-        SyncLog.log_operation(
+        # Agenda sincronização de deleção
+        schedule_sync_operation(
             model_name="Cliente",
-            django_id=instance.id,
-            external_id=None,
-            operation="delete",
-            direction="django_to_external",
-            status="pending",
+            instance_id=instance.id,
+            operation="delete"
         )
 
-        # Sincroniza deleção com o Notion (se tinha external_id)
-        # TODO: Migrar para Celery Task assíncrono
-        try:
-            # Busca external_id antes que o tracking seja deletado
-            from .models import ClienteSync
-            try:
-                sync_meta = ClienteSync.objects.get(cliente=instance)
-                external_id = sync_meta.external_id
-
-                if external_id:
-                    service = NotionSyncService()
-                    service.delete_record(
-                        model_name="Cliente",
-                        external_id=external_id
-                    )
-
-                    logger.success(
-                        f"✅ Cliente #{instance.id} arquivado no Notion"
-                    )
-            except ClienteSync.DoesNotExist:
-                logger.debug(f"Cliente #{instance.id} não tinha tracking")
-
-        except Exception as e:
-            logger.error(
-                f"❌ Erro ao arquivar Cliente #{instance.id} no Notion: {e}"
-            )
+        logger.info(f"Cliente #{instance.id} deletado - Sincronização agendada")
 
     except Exception as e:
-        logger.error(
-            f"Erro ao processar deleção de Cliente #{instance.id}: {e}"
-        )
+        logger.error(f"Erro ao processar deleção de Cliente #{instance.id}: {e}")

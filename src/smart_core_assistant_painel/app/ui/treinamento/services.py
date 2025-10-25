@@ -4,7 +4,7 @@ import os
 import tempfile
 from typing import Any
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose

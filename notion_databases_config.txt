@@ -1,0 +1,12 @@
+=== Configuração das Databases Notion ===
+
+As databases foram criadas com sucesso no Notion!
+
+Próximos passos:
+1. Acesse suas databases no Notion através dos URLs fornecidos nos logs
+2. Configure a sincronização no painel Django usando os IDs das databases
+3. Mapeie os campos dos modelos Django para os campos do Notion
+
+Modelos mapeados:
+- Contato (clientes.Contato)
+- Cliente (clientes.Cliente)

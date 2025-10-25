@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "pwlimaverde", email = "pwlimaverde@gmail.com" }
 ]
-requires-python = ">=3.13.1"
+requires-python = ">=3.13"
 dependencies = [
     "aiohappyeyeballs==2.6.1",
     "aiohttp==3.13.1",
@@ -93,7 +93,8 @@ dependencies = [
     "zstandard==0.23.0",
     "huggingface-hub>=0.24.0",
     "langchain-huggingface>=0.2.0",
-    "notion-py-client==0.1.14",
+    "notion-py-client>=0.1.14",
+    "brazilcep>=7.0.1",
 ]
 
 

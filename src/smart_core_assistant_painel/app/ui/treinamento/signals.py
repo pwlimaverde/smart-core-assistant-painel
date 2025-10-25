@@ -5,7 +5,7 @@ from typing import Any
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from django_q.tasks import async_task
-from langchain_core.documents.base import Document
+from langchain_core.documents import Document
 from loguru import logger
 
 from .models import Documento, QueryCompose, Treinamento

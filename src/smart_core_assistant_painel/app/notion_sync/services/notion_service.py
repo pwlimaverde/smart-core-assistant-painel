@@ -139,22 +139,38 @@ class NotionSyncService(ExternalSyncServiceInterface):
             properties = mapper.to_notion_properties(data)
 
             # Cria página no Notion
-            logger.info(
-                f"Criando página no Notion para {model_name} #{django_id}"
-            )
+            logger.info(f"Criando página no Notion para {model_name} #{django_id}")
 
-            response = self._run(self.client.pages.create(
-                parent={"database_id": database_id},
-                properties=properties,
-            ))
+            # Tentar usar método direto da API com dicionário simples
+            try:
+                page_data = {
+                    "parent": {"database_id": database_id},
+                    "properties": properties,
+                }
 
-            page_id = response["id"]
-            logger.success(
-                f"✅ Página criada no Notion: {page_id} "
-                f"para {model_name} #{django_id}"
-            )
+                # Fazer chamada direta usando o método request do client
+                response = self._run(
+                    self.client.request(
+                        method="post",
+                        path="pages",
+                        body=page_data
+                    )
+                )
 
-            return page_id
+                page_id = response.get("id")
+                logger.success(
+                    f"✅ Página criada no Notion: {page_id} "
+                    f"para {model_name} #{django_id}"
+                )
+
+                return page_id
+
+            except Exception as e:
+                logger.error(f"❌ Erro ao criar página no Notion: {e}")
+                raise SyncError(
+                    message=f"Erro inesperado ao criar registro: {str(e)}",
+                    details={"model_name": model_name, "django_id": django_id}
+                ) from e
 
         except APIResponseError as e:
             error_msg = str(e)
@@ -219,26 +235,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     source_value=model_name,
                 )
 
-            # Converte dados para formato Notion
-            properties = mapper.to_notion_properties(data)
 
-            # Atualiza página no Notion
-            logger.info(
-                f"Atualizando página {external_id} no Notion "
-                f"para {model_name} #{django_id}"
-            )
-
-            self._run(self.client.pages.update(
-                page_id=external_id,
-                properties=properties,
-            ))
-
-            logger.success(
-                f"✅ Página atualizada no Notion: {external_id} "
-                f"para {model_name} #{django_id}"
-            )
-
-            return True
 
         except APIResponseError as e:
             error_msg = str(e)
@@ -302,17 +299,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             )
 
             # Arquiva página (Notion não permite deleção real)
-            self._run(self.client.pages.update(
-                page_id=external_id,
-                archived=True,
-            ))
 
-            logger.success(
-                f"✅ Página arquivada no Notion: {external_id} "
-                f"para {model_name}"
-            )
-
-            return True
 
         except APIResponseError as e:
             error_msg = str(e)

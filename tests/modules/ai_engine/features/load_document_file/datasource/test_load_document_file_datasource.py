@@ -3,7 +3,7 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 
 from smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource import (
     LoadDocumentFileDatasource,
@@ -46,7 +46,7 @@ class TestLoadDocumentFileDatasource:
             TextLoader,
             UnstructuredExcelLoader,
         )
-        
+
         assert datasource.SUPPORTED_EXTENSIONS[".pdf"] == PyPDFLoader
         assert datasource.SUPPORTED_EXTENSIONS[".doc"] == Docx2txtLoader
         assert datasource.SUPPORTED_EXTENSIONS[".docx"] == Docx2txtLoader
@@ -66,15 +66,15 @@ class TestLoadDocumentFileDatasource:
             grupo="test-group",
             error=DocumentError("Test error"),
         )
-        
+
         mock_document = Document(page_content="Test content", metadata={"source": "/path/to/test.txt"})
         mock_loader_instance = Mock()
         mock_loader_instance.load.return_value = [mock_document]
         mock_text_loader.return_value = mock_loader_instance
-        
+
         # Act
         result = datasource(parameters)
-        
+
         # Assert
         assert result == [mock_document]
         mock_text_loader.assert_called_once_with("/path/to/test.txt", encoding="utf-8")
@@ -91,15 +91,15 @@ class TestLoadDocumentFileDatasource:
             grupo="csv-group",
             error=DocumentError("Test error"),
         )
-        
+
         mock_document = Document(page_content="CSV,Content", metadata={"source": "/path/to/test.csv"})
         mock_loader_instance = Mock()
         mock_loader_instance.load.return_value = [mock_document]
         mock_text_loader.return_value = mock_loader_instance
-        
+
         # Act
         result = datasource(parameters)
-        
+
         # Assert
         assert result == [mock_document]
         mock_text_loader.assert_called_once_with("/path/to/test.csv", encoding="utf-8")
@@ -109,11 +109,11 @@ class TestLoadDocumentFileDatasource:
         # Arrange - Cria um arquivo temporário para simular o PDF
         import os
         import tempfile
-        
+
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as temp_pdf:
             temp_pdf.write(b"%PDF-1.4\n1 0 obj\n<<\n/Type /Catalog\n>>\nendobj\nxref\n0 1\n0000000000 65535 f \ntrailer\n<<\n/Size 1\n/Root 1 0 R\n>>\nstartxref\n9\n%%EOF")
             temp_pdf_path = temp_pdf.name
-        
+
         try:
             parameters = LoadDocumentFileParameters(
                 id="test-pdf",
@@ -122,15 +122,15 @@ class TestLoadDocumentFileDatasource:
                 grupo="pdf-group",
                 error=DocumentError("Test error"),
             )
-            
+
             # Mocka apenas o load method para evitar processamento real do PDF
             with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.PyPDFLoader.load') as mock_load:
                 mock_document = Document(page_content="PDF content", metadata={"source": temp_pdf_path})
                 mock_load.return_value = [mock_document]
-                
+
                 # Act
                 result = datasource(parameters)
-                
+
                 # Assert
                 assert result == [mock_document]
                 mock_load.assert_called_once()
@@ -143,11 +143,11 @@ class TestLoadDocumentFileDatasource:
         # Arrange - Cria um arquivo temporário
         import os
         import tempfile
-        
+
         with tempfile.NamedTemporaryFile(suffix=".docx", delete=False) as temp_docx:
             temp_docx.write(b"fake docx content")  # Conteúdo fake para teste
             temp_docx_path = temp_docx.name
-        
+
         try:
             parameters = LoadDocumentFileParameters(
                 id="test-docx",
@@ -156,15 +156,15 @@ class TestLoadDocumentFileDatasource:
                 grupo="docx-group",
                 error=DocumentError("Test error"),
             )
-            
+
             # Mocka apenas o load method
             with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.Docx2txtLoader.load') as mock_load:
                 mock_document = Document(page_content="DOCX content", metadata={})
                 mock_load.return_value = [mock_document]
-                
+
                 # Act
                 result = datasource(parameters)
-                
+
                 # Assert
                 assert result == [mock_document]
                 mock_load.assert_called_once()
@@ -176,11 +176,11 @@ class TestLoadDocumentFileDatasource:
         # Arrange - Cria um arquivo temporário
         import os
         import tempfile
-        
+
         with tempfile.NamedTemporaryFile(suffix=".doc", delete=False) as temp_doc:
             temp_doc.write(b"fake doc content")
             temp_doc_path = temp_doc.name
-        
+
         try:
             parameters = LoadDocumentFileParameters(
                 id="test-doc",
@@ -189,15 +189,15 @@ class TestLoadDocumentFileDatasource:
                 grupo="doc-group",
                 error=DocumentError("Test error"),
             )
-            
+
             # Mocka apenas o load method
             with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.Docx2txtLoader.load') as mock_load:
                 mock_document = Document(page_content="DOC content", metadata={})
                 mock_load.return_value = [mock_document]
-                
+
                 # Act
                 result = datasource(parameters)
-                
+
                 # Assert
                 assert result == [mock_document]
                 mock_load.assert_called_once()
@@ -209,11 +209,11 @@ class TestLoadDocumentFileDatasource:
         # Arrange - Cria um arquivo temporário
         import os
         import tempfile
-        
+
         with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as temp_xlsx:
             temp_xlsx.write(b"fake xlsx content")
             temp_xlsx_path = temp_xlsx.name
-        
+
         try:
             parameters = LoadDocumentFileParameters(
                 id="test-xlsx",
@@ -222,15 +222,15 @@ class TestLoadDocumentFileDatasource:
                 grupo="xlsx-group",
                 error=DocumentError("Test error"),
             )
-            
+
             # Mocka apenas o load method
             with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.UnstructuredExcelLoader.load') as mock_load:
                 mock_document = Document(page_content="Excel content", metadata={})
                 mock_load.return_value = [mock_document]
-                
+
                 # Act
                 result = datasource(parameters)
-                
+
                 # Assert
                 assert result == [mock_document]
                 mock_load.assert_called_once()
@@ -242,11 +242,11 @@ class TestLoadDocumentFileDatasource:
         # Arrange - Cria um arquivo temporário
         import os
         import tempfile
-        
+
         with tempfile.NamedTemporaryFile(suffix=".xls", delete=False) as temp_xls:
             temp_xls.write(b"fake xls content")
             temp_xls_path = temp_xls.name
-        
+
         try:
             parameters = LoadDocumentFileParameters(
                 id="test-xls",
@@ -255,15 +255,15 @@ class TestLoadDocumentFileDatasource:
                 grupo="xls-group",
                 error=DocumentError("Test error"),
             )
-            
+
             # Mocka apenas o load method
             with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.UnstructuredExcelLoader.load') as mock_load:
                 mock_document = Document(page_content="XLS content", metadata={})
                 mock_load.return_value = [mock_document]
-                
+
                 # Act
                 result = datasource(parameters)
-                
+
                 # Assert
                 assert result == [mock_document]
                 mock_load.assert_called_once()
@@ -280,7 +280,7 @@ class TestLoadDocumentFileDatasource:
             grupo="unsupported-group",
             error=DocumentError("Test error"),
         )
-        
+
         # Act & Assert
         with pytest.raises(RuntimeError, match=r"Falha carregar o documento 'test-unsupported'.*Extensão \.xyz não suportada"):
             datasource(parameters)
@@ -295,15 +295,15 @@ class TestLoadDocumentFileDatasource:
             grupo="case-group",
             error=DocumentError("Test error"),
         )
-        
+
         with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.TextLoader') as mock_text_loader:
             mock_loader_instance = Mock()
             mock_loader_instance.load.return_value = [Document(page_content="content")]
             mock_text_loader.return_value = mock_loader_instance
-            
+
             # Act
             result = datasource(parameters)
-            
+
             # Assert
             assert len(result) == 1
             mock_text_loader.assert_called_once_with("/path/to/test.TXT", encoding="utf-8")
@@ -319,9 +319,9 @@ class TestLoadDocumentFileDatasource:
             grupo="fail-group",
             error=DocumentError("Test error"),
         )
-        
+
         mock_text_loader.side_effect = FileNotFoundError("File not found")
-        
+
         # Act & Assert
         with pytest.raises(RuntimeError, match=r"Falha carregar o documento 'test-fail'.*File not found"):
             datasource(parameters)
@@ -337,11 +337,11 @@ class TestLoadDocumentFileDatasource:
             grupo="load-fail-group",
             error=DocumentError("Test error"),
         )
-        
+
         mock_loader_instance = Mock()
         mock_loader_instance.load.side_effect = IOError("IO Error")
         mock_text_loader.return_value = mock_loader_instance
-        
+
         # Act & Assert
         with pytest.raises(RuntimeError, match=r"Falha carregar o documento 'test-load-fail'.*IO Error"):
             datasource(parameters)
@@ -356,18 +356,18 @@ class TestLoadDocumentFileDatasource:
             grupo="multi-group",
             error=DocumentError("Test error"),
         )
-        
+
         with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.TextLoader') as mock_text_loader:
             doc1 = Document(page_content="Content 1", metadata={"page": 1})
             doc2 = Document(page_content="Content 2", metadata={"page": 2})
-            
+
             mock_loader_instance = Mock()
             mock_loader_instance.load.return_value = [doc1, doc2]
             mock_text_loader.return_value = mock_loader_instance
-            
+
             # Act
             result = datasource(parameters)
-            
+
             # Assert
             assert len(result) == 2
             assert result[0] == doc1
@@ -378,12 +378,12 @@ class TestLoadDocumentFileDatasource:
         # Arrange - Cria um arquivo PDF temporário real com nome complexo
         import os
         import tempfile
-        
+
         with tempfile.NamedTemporaryFile(suffix=".name.pdf", delete=False) as temp_pdf:
             # Cria um PDF válido mínimo
             temp_pdf.write(b"%PDF-1.4\n1 0 obj\n<<>>\nstream\nBT\n/F1 12 Tf\n100 100 Td\n(Hello World) Tj\nET\nendstream\nendobj\nxref\n0 2\n0000000000 65535 f \n0000000009 00000 n \ntrailer\n<<\n/Size 2\n/Root 1 0 R\n>>\nstartxref\n74\n%%EOF")
             temp_pdf_path = temp_pdf.name
-        
+
         try:
             parameters = LoadDocumentFileParameters(
                 id="test-path",
@@ -392,14 +392,14 @@ class TestLoadDocumentFileDatasource:
                 grupo="path-group",
                 error=DocumentError("Test error"),
             )
-            
+
             with patch('smart_core_assistant_painel.modules.ai_engine.features.load_document_file.datasource.load_document_file_datasource.PyPDFLoader.load') as mock_load:
                 mock_document = Document(page_content="PDF content", metadata={})
                 mock_load.return_value = [mock_document]
-                
+
                 # Act
                 result = datasource(parameters)
-                
+
                 # Assert
                 assert len(result) == 1
                 assert result[0] == mock_document
@@ -417,7 +417,7 @@ class TestLoadDocumentFileDatasource:
             grupo="empty-group",
             error=DocumentError("Test error"),
         )
-        
+
         # Act & Assert
         with pytest.raises(RuntimeError, match=r"Falha carregar o documento 'test-empty'"):
             datasource(parameters)

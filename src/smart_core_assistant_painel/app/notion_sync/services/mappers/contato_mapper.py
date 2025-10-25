@@ -82,29 +82,8 @@ class ContatoMapper:
                     ]
                 }
 
-            # Campo Status removido - não existe na database do Notion
-            # Ativo está sendo mapeado como checkbox
-
-            # Tags (multi-select)
-            if contato_sync.tags_formatadas:
-                # Garante que as tags estão no formato correto
-                tags_validas = [
-                    tag.strip()[:20]  # Limite de 20 caracteres no Notion
-                    for tag in contato_sync.tags_formatadas
-                    if tag.strip()
-                ]
-
-                if tags_validas:
-                    properties["Tags"] = {
-                        "multi_select": [
-                            {"name": tag} for tag in tags_validas
-                        ]
-                    }
-
-            # Campo Contato Principal removido - não existe na database do Notion
-            # properties["Contato Principal"] = {
-            #     "checkbox": contato_sync.principal
-            # }
+            # Ativo como checkbox
+            properties["Ativo"] = {"checkbox": bool(contato.ativo)}
 
             # Datas
             if contato.data_cadastro:
@@ -121,7 +100,6 @@ class ContatoMapper:
                         "start": contato.ultima_interacao.isoformat()
                     }
                 }
-
 
             # External ID (rich text - se existir)
             if contato_sync.external_id:
@@ -182,8 +160,8 @@ class ContatoMapper:
             data: Dict[str, Any] = {}
 
             # Nome do contato (do título)
-            if "Nome" in properties and properties["Nome"].get("title"):
-                title_list = properties["Nome"]["title"]
+            if "Nome Contato" in properties and properties["Nome Contato"].get("title"):
+                title_list = properties["Nome Contato"]["title"]
                 if title_list:
                     nome = "".join(
                         item.get("plain_text", "")
@@ -195,13 +173,10 @@ class ContatoMapper:
             # Telefone (do phone_number ou rich_text)
             if "Telefone" in properties:
                 telefone_field = properties["Telefone"]
-
-                # Tenta phone_number primeiro
                 if telefone_field.get("phone_number"):
                     data["telefone"] = ContatoMapper._normalize_phone_from_notion(
                         telefone_field["phone_number"]
                     )
-                # Fallback para rich_text
                 elif telefone_field.get("rich_text"):
                     text_list = telefone_field["rich_text"]
                     if text_list:
@@ -221,8 +196,8 @@ class ContatoMapper:
                     data["email"] = email
 
             # Nome do perfil WhatsApp
-            if "WhatsApp Profile" in properties:
-                wp_field = properties["WhatsApp Profile"]
+            if "Nome Perfil WhatsApp" in properties:
+                wp_field = properties["Nome Perfil WhatsApp"]
                 if wp_field.get("rich_text"):
                     text_list = wp_field["rich_text"]
                     if text_list:
@@ -233,34 +208,14 @@ class ContatoMapper:
                         if nome_wp:
                             data["nome_perfil_whatsapp"] = nome_wp
 
-            # Status (do select)
-            if "Status" in properties:
+            # Ativo (checkbox) ou fallback para Status
+            if "Ativo" in properties and "checkbox" in properties["Ativo"]:
+                data["ativo"] = bool(properties["Ativo"]["checkbox"])
+            elif "Status" in properties:
                 status_field = properties["Status"]
                 if status_field.get("select"):
                     status_name = status_field["select"].get("name", "")
                     data["ativo"] = status_name.lower() in ["ativo", "active", "enabled"]
-
-            # Tags (do multi-select)
-            if "Tags" in properties:
-                tags_field = properties["Tags"]
-                if tags_field.get("multi_select"):
-                    tags = [
-                        item.get("name", "").strip()
-                        for item in tags_field["multi_select"]
-                        if item.get("name")
-                    ]
-                    if tags:
-                        # Armazena como string separada por vírgulas
-                        data["tags"] = ", ".join(tags)
-
-            # Contato Principal (do checkbox)
-            if "Contato Principal" in properties:
-                principal_field = properties["Contato Principal"]
-                if "checkbox" in principal_field:
-                    # Salva nos metadados
-                    if "metadados" not in data:
-                        data["metadados"] = {}
-                    data["metadados"]["principal"] = principal_field["checkbox"]
 
             # Datas
             if "Data Cadastro" in properties:
@@ -271,7 +226,7 @@ class ContatoMapper:
                             date_field["date"]["start"].replace('Z', '+00:00')
                         )
                     except (ValueError, AttributeError):
-                        pass  # Ignora datas inválidas
+                        pass
 
             if "Última Interação" in properties:
                 date_field = properties["Última Interação"]
@@ -281,7 +236,7 @@ class ContatoMapper:
                             date_field["date"]["start"].replace('Z', '+00:00')
                         )
                     except (ValueError, AttributeError):
-                        pass  # Ignora datas inválidas
+                        pass
 
             return data
 
@@ -353,12 +308,12 @@ class ContatoMapper:
             True se válido, False caso contrário.
         """
         try:
-            # Verifica campo obrigatório Nome
-            if "Nome" not in properties or not properties["Nome"].get("title"):
+            # Verifica campo obrigatório Nome Contato
+            if "Nome Contato" not in properties or not properties["Nome Contato"].get("title"):
                 return False
 
             # Verifica se há conteúdo no título
-            title_content = properties["Nome"]["title"]
+            title_content = properties["Nome Contato"]["title"]
             if not title_content or not any(
                 item.get("text", {}).get("content", "").strip()
                 for item in title_content
@@ -374,8 +329,7 @@ class ContatoMapper:
             # Valida formato do telefone se presente
             if "Telefone" in properties:
                 phone = properties["Telefone"].get("phone_number", "")
-                if phone and not re.match(r'^\+\d{1,3}\s\d{2,}\s\d{4,}\s\d{4}$', phone):
-                    # Não impede, mas poderia logar warning
+                if phone:
                     pass
 
             return True
@@ -399,7 +353,7 @@ class ContatoMapper:
             >>> # Use para criar database no Notion
         """
         return {
-            "Nome": {
+            "Nome Contato": {
                 "title": {},
                 "description": "Nome completo do contato"
             },
@@ -411,34 +365,13 @@ class ContatoMapper:
                 "email": {},
                 "description": "Endereço de email"
             },
-            "WhatsApp Profile": {
+            "Nome Perfil WhatsApp": {
                 "rich_text": {},
                 "description": "Nome do perfil no WhatsApp"
             },
-            "Status": {
-                "select": {
-                    "options": [
-                        {"name": "Ativo", "color": "green"},
-                        {"name": "Inativo", "color": "red"},
-                        {"name": "Bloqueado", "color": "gray"}
-                    ]
-                },
-                "description": "Status atual do contato"
-            },
-            "Tags": {
-                "multi_select": {
-                    "options": [
-                        {"name": "Cliente", "color": "blue"},
-                        {"name": "Lead", "color": "yellow"},
-                        {"name": "Prospect", "color": "orange"},
-                        {"name": "VIP", "color": "purple"}
-                    ]
-                },
-                "description": "Tags para categorização"
-            },
-            "Contato Principal": {
+            "Ativo": {
                 "checkbox": {},
-                "description": "É o contato principal do cliente?"
+                "description": "Status ativo/inativo"
             },
             "Data Cadastro": {
                 "date": {},

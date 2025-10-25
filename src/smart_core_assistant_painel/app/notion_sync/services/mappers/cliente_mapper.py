@@ -8,7 +8,7 @@ seguindo o planejamento de integração definido.
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from ...exceptions import MappingError
 
@@ -70,29 +70,15 @@ class ClienteMapper:
                     ]
                 }
 
-            # Tipo (select)
-            tipo_options = [
-                {"name": "Pessoa Jurídica", "color": "green"},
-                {"name": "Pessoa Física", "color": "blue"}
-            ]
+            # Tipo (select) → usar valores: "juridica" | "fisica"
+            if getattr(cliente, "tipo", None):
+                tipo_value = str(cliente.tipo).lower()
+                if tipo_value not in ["juridica", "fisica"]:
+                    tipo_value = "juridica"
+                properties["Tipo"] = {"select": {"name": tipo_value}}
 
-            if cliente.tipo:
-                tipo_map = {
-                    "juridica": "Pessoa Jurídica",
-                    "fisica": "Pessoa Física"
-                }
-                tipo_notion = tipo_map.get(cliente.tipo, cliente.tipo.title())
-
-                # Garante que o tipo existe nas opções
-                if not any(opt["name"] == tipo_notion for opt in tipo_options):
-                    tipo_options.append({"name": tipo_notion, "color": "gray"})
-
-                properties["Tipo"] = {
-                    "select": {"name": tipo_notion}
-                }
-
-            # CNPJ (formatado - apenas dígitos)
-            if cliente_sync.cnpj_formatado:
+            # CNPJ (apenas dígitos)
+            if getattr(cliente_sync, "cnpj_formatado", None):
                 properties["CNPJ"] = {
                     "rich_text": [
                         {
@@ -103,8 +89,8 @@ class ClienteMapper:
                 }
 
             # CPF (se presente)
-            if cliente.cpf:
-                cpf_limpo = re.sub(r'\D', '', cliente.cpf)
+            if getattr(cliente, "cpf", None):
+                cpf_limpo = re.sub(r"\D", "", cliente.cpf)
                 properties["CPF"] = {
                     "rich_text": [
                         {
@@ -115,20 +101,42 @@ class ClienteMapper:
                 }
 
             # Telefone (formatado)
-            if cliente_sync.telefone_formatado:
+            if getattr(cliente_sync, "telefone_formatado", None):
                 properties["Telefone"] = {
                     "phone_number": cliente_sync.telefone_formatado
                 }
 
+            # Site (url)
+            if getattr(cliente, "site", None):
+                properties["Site"] = {"url": cliente.site}
 
+            # Ramo Atividade
+            if getattr(cliente, "ramo_atividade", None):
+                properties["Ramo Atividade"] = {
+                    "rich_text": [{"type": "text", "text": {"content": cliente.ramo_atividade}}]
+                }
+
+            # Endereço componentes (se presentes)
+            if getattr(cliente, "cep", None):
+                properties["CEP"] = {
+                    "rich_text": [{"type": "text", "text": {"content": cliente.cep}}]
+                }
+            if getattr(cliente, "logradouro", None):
+                properties["Logradouro"] = {
+                    "rich_text": [{"type": "text", "text": {"content": cliente.logradouro}}]
+                }
+            if getattr(cliente, "numero", None):
+                properties["Número"] = {
+                    "rich_text": [{"type": "text", "text": {"content": cliente.numero}}]
+                }
 
             # Observações (se presentes)
-            if cliente.observacoes:
+            if getattr(cliente, "observacoes", None):
                 properties["Observações"] = {
                     "rich_text": [
                         {
                             "type": "text",
-                            "text": {"content": cliente.observacoes[:2000]}  # Limite
+                            "text": {"content": str(cliente.observacoes)[:2000]}
                         }
                     ]
                 }
@@ -154,20 +162,6 @@ class ClienteMapper:
 
         Este método extrai dados das propriedades do Notion e os converte
         para o formato esperado pelo model Cliente do Django.
-
-        Args:
-            properties: Dicionário com propriedades do Notion.
-
-        Returns:
-            Dicionário com dados formatados para o model Cliente do Django.
-
-        Raises:
-            MappingError: Se houver erro na conversão dos dados.
-
-        Example:
-            >>> notion_props = {"Nome Fantasia": {"title": [...]}, ...}
-            >>> data = ClienteMapper.from_notion_properties(notion_props)
-            >>> # Retorna dict com campos do Django
         """
         try:
             data: Dict[str, Any] = {}
@@ -196,58 +190,29 @@ class ClienteMapper:
                         if razao_social:
                             data["razao_social"] = razao_social
 
-            # Tipo
+            # Tipo (select)
             if "Tipo" in properties:
                 tipo_field = properties["Tipo"]
                 if tipo_field.get("select"):
                     tipo_notion = tipo_field["select"].get("name", "")
-                    tipo_map_reverse = {
-                        "Pessoa Jurídica": "juridica",
-                        "Pessoa Física": "fisica"
-                    }
-                    data["tipo"] = tipo_map_reverse.get(tipo_notion, "juridica")
-
-            # CNPJ
-            if "CNPJ" in properties:
-                cnpj_field = properties["CNPJ"]
-                if cnpj_field.get("rich_text"):
-                    text_list = cnpj_field["rich_text"]
-                    if text_list:
-                        cnpj = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
-                        ).strip()
-                        if cnpj:
-                            data["cnpj"] = ClienteMapper._format_cnpj(cnpj)
-
-            # CPF
-            if "CPF" in properties:
-                cpf_field = properties["CPF"]
-                if cpf_field.get("rich_text"):
-                    text_list = cpf_field["rich_text"]
-                    if text_list:
-                        cpf = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
-                        ).strip()
-                        if cpf:
-                            data["cpf"] = ClienteMapper._format_cpf(cpf)
-
-            # Telefone
-            if "Telefone" in properties:
-                tel_field = properties["Telefone"]
-                if tel_field.get("phone_number"):
-                    data["telefone"] = tel_field["phone_number"]
+                    if tipo_notion.lower() in ["juridica", "fisica"]:
+                        data["tipo"] = tipo_notion.lower()
+                    else:
+                        tipo_map_reverse = {
+                            "Pessoa Jurídica": "juridica",
+                            "Pessoa Física": "fisica",
+                        }
+                        data["tipo"] = tipo_map_reverse.get(tipo_notion, "juridica")
 
             # Site
-            if "Website" in properties:
-                site_field = properties["Website"]
+            if "Site" in properties:
+                site_field = properties["Site"]
                 if site_field.get("url"):
                     data["site"] = site_field["url"]
 
             # Ramo de Atividade
-            if "Ramo de Atividade" in properties:
-                ramo_field = properties["Ramo de Atividade"]
+            if "Ramo Atividade" in properties:
+                ramo_field = properties["Ramo Atividade"]
                 if ramo_field.get("rich_text"):
                     text_list = ramo_field["rich_text"]
                     if text_list:
@@ -258,45 +223,25 @@ class ClienteMapper:
                         if ramo:
                             data["ramo_atividade"] = ramo
 
-            # Endereço (campo completo)
-            if "Endereço" in properties:
-                end_field = properties["Endereço"]
-                if end_field.get("rich_text"):
-                    text_list = end_field["rich_text"]
+            # Logradouro e Número
+            if "Logradouro" in properties:
+                log_field = properties["Logradouro"]
+                if log_field.get("rich_text"):
+                    text_list = log_field["rich_text"]
                     if text_list:
-                        endereco = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
-                        ).strip()
-                        if endereco:
-                            # Armazena endereço completo nos metadados
-                            if "metadados" not in data:
-                                data["metadados"] = {}
-                            data["metadados"]["endereco_completo"] = endereco
+                        val = "".join(item.get("plain_text", "") for item in text_list).strip()
+                        if val:
+                            data["logradouro"] = val
+            if "Número" in properties:
+                num_field = properties["Número"]
+                if num_field.get("rich_text"):
+                    text_list = num_field["rich_text"]
+                    if text_list:
+                        val = "".join(item.get("plain_text", "") for item in text_list).strip()
+                        if val:
+                            data["numero"] = val
 
-            # Componentes do Endereço
-            endereco_campos = ["CEP", "Cidade", "UF", "País"]
-            for campo in endereco_campos:
-                if campo in properties:
-                    campo_field = properties[campo]
-                    if campo_field.get("rich_text"):
-                        text_list = campo_field["rich_text"]
-                        if text_list:
-                            valor = "".join(
-                                item.get("plain_text", "")
-                                for item in text_list
-                            ).strip()
-                            if valor:
-                                # Mapeia nomes dos campos
-                                campo_map = {
-                                    "CEP": "cep",
-                                    "Cidade": "cidade",
-                                    "UF": "uf",
-                                    "País": "pais"
-                                }
-                                data[campo_map.get(campo, campo.lower())] = valor
-
-            # Status
+            # Status (opcional)
             if "Status" in properties:
                 status_field = properties["Status"]
                 if status_field.get("select"):
@@ -326,10 +271,9 @@ class ClienteMapper:
                             data_iso = date_field["date"]["start"].replace('Z', '+00:00')
                             data_obj = datetime.fromisoformat(data_iso)
 
-                            # Mapeia nomes dos campos
                             campo_map = {
                                 "Data Cadastro": "data_cadastro",
-                                "Última Atualização": "ultima_atualizacao"
+                                "Última Atualização": "ultima_atualizacao",
                             }
                             data[campo_map.get(campo, campo.lower())] = data_obj
                         except (ValueError, AttributeError):
@@ -353,52 +297,26 @@ class ClienteMapper:
     def _format_cnpj(cnpj: str) -> str:
         """
         Formata CNPJ para o padrão brasileiro.
-
-        Args:
-            cnpj: CNPJ (apenas dígitos ou formatado).
-
-        Returns:
-            CNPJ formatado (XX.XXX.XXX/XXXX-XX).
         """
-        # Remove tudo que não é dígito
-        digits = re.sub(r'\D', '', cnpj)
-
-        # Verifica se tem 14 dígitos
+        digits = re.sub(r"\D", "", cnpj)
         if len(digits) == 14:
             return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:14]}"
-
-        return cnpj  # Retorna original se não conseguir formatar
+        return cnpj
 
     @staticmethod
     def _format_cpf(cpf: str) -> str:
         """
         Formata CPF para o padrão brasileiro.
-
-        Args:
-            cpf: CPF (apenas dígitos ou formatado).
-
-        Returns:
-            CPF formatado (XXX.XXX.XXX-XX).
         """
-        # Remove tudo que não é dígito
-        digits = re.sub(r'\D', '', cpf)
-
-        # Verifica se tem 11 dígitos
+        digits = re.sub(r"\D", "", cpf)
         if len(digits) == 11:
             return f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:11]}"
-
-        return cpf  # Retorna original se não conseguir formatar
+        return cpf
 
     @staticmethod
     def validate_for_notion(properties: Dict[str, Any]) -> bool:
         """
         Valida se as propriedades são válidas para o Notion.
-
-        Args:
-            properties: Propriedades a serem validadas.
-
-        Returns:
-            True se válido, False caso contrário.
         """
         try:
             # Verifica campo obrigatório Nome Fantasia
@@ -419,11 +337,8 @@ class ClienteMapper:
                 if cnpj_field.get("rich_text"):
                     text_list = cnpj_field["rich_text"]
                     if text_list:
-                        cnpj = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
-                        )
-                        digits = re.sub(r'\D', '', cnpj)
+                        cnpj = "".join(item.get("plain_text", "") for item in text_list)
+                        digits = re.sub(r"\D", "", cnpj)
                         if digits and len(digits) != 14:
                             return False
 
@@ -433,22 +348,18 @@ class ClienteMapper:
                 if cpf_field.get("rich_text"):
                     text_list = cpf_field["rich_text"]
                     if text_list:
-                        cpf = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
-                        )
-                        digits = re.sub(r'\D', '', cpf)
+                        cpf = "".join(item.get("plain_text", "") for item in text_list)
+                        digits = re.sub(r"\D", "", cpf)
                         if digits and len(digits) != 11:
                             return False
 
             # Valida URL do site se presente
-            if "Website" in properties:
-                site = properties["Website"].get("url", "")
+            if "Site" in properties:
+                site = properties["Site"].get("url", "")
                 if site and not (site.startswith("http://") or site.startswith("https://")):
                     return False
 
             return True
-
         except Exception:
             return False
 
@@ -456,16 +367,6 @@ class ClienteMapper:
     def get_database_schema() -> Dict[str, Any]:
         """
         Retorna o schema do database do Notion para Clientes.
-
-        Este schema pode ser usado para criar ou validar o database no Notion,
-        seguindo as melhores práticas definidas no planejamento.
-
-        Returns:
-            Dicionário com definição das propriedades do database.
-
-        Example:
-            >>> schema = ClienteMapper.get_database_schema()
-            >>> # Use para criar database no Notion
         """
         return {
             "Nome Fantasia": {
@@ -479,8 +380,8 @@ class ClienteMapper:
             "Tipo": {
                 "select": {
                     "options": [
-                        {"name": "Pessoa Jurídica", "color": "green"},
-                        {"name": "Pessoa Física", "color": "blue"}
+                        {"name": "fisica", "color": "blue"},
+                        {"name": "juridica", "color": "green"}
                     ]
                 },
                 "description": "Tipo de pessoa jurídica"
@@ -497,21 +398,25 @@ class ClienteMapper:
                 "phone_number": {},
                 "description": "Telefone no formato internacional"
             },
-            "Website": {
+            "Site": {
                 "url": {},
                 "description": "Site da empresa"
             },
-            "Ramo de Atividade": {
+            "Ramo Atividade": {
                 "rich_text": {},
                 "description": "Área de atuação do cliente"
-            },
-            "Endereço": {
-                "rich_text": {},
-                "description": "Endereço completo"
             },
             "CEP": {
                 "rich_text": {},
                 "description": "CEP do endereço"
+            },
+            "Logradouro": {
+                "rich_text": {},
+                "description": "Logradouro"
+            },
+            "Número": {
+                "rich_text": {},
+                "description": "Número"
             },
             "Cidade": {
                 "rich_text": {},
@@ -535,16 +440,6 @@ class ClienteMapper:
                 "rich_text": {},
                 "description": "País (se não for Brasil)"
             },
-            "Status": {
-                "select": {
-                    "options": [
-                        {"name": "Ativo", "color": "green"},
-                        {"name": "Inativo", "color": "red"},
-                        {"name": "Suspenso", "color": "yellow"}
-                    ]
-                },
-                "description": "Status atual do cliente"
-            },
             "Data Cadastro": {
                 "date": {},
                 "description": "Data de cadastro no sistema"
@@ -554,9 +449,7 @@ class ClienteMapper:
                 "description": "Data da última atualização"
             },
             "Django ID": {
-                "number": {
-                    "format": "number"
-                },
+                "number": {"format": "number"},
                 "description": "ID do registro no Django (referência)"
             },
             "Notion ID": {

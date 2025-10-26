@@ -13,4 +13,4 @@ Arquitetura:
     - Mappers: Conversão de dados Django ↔ Plataforma Externa
 """
 
-default_app_config = "smart_core_assistant_painel.app.notion_sync.apps.NotionSyncConfig"
+# default_app_config = "smart_core_assistant_painel.app.notion_sync.apps.NotionSyncConfig"

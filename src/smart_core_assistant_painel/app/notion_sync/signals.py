@@ -13,8 +13,8 @@ from django.dispatch import receiver
 from loguru import logger
 
 from ..ui.clientes.models import Cliente, Contato
-from .exceptions import NotionSyncError, SyncConfigError, SyncError
-from .models import ClienteSync, ContatoSync, SyncLog
+from .exceptions import NotionSyncError, SyncError
+from .models import ClienteSync, ContatoSync
 from .services import NotionSyncService
 
 

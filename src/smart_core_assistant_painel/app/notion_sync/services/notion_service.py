@@ -17,7 +17,6 @@ from notion_py_client.notion_client import NotionAsyncClient, APIResponseError
 from ..exceptions import (
     MappingError,
     NotionSyncError,
-    SyncConfigError,
     SyncError,
 )
 from ..interfaces import ExternalSyncServiceInterface
@@ -401,7 +400,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 logger.info(f"✅ Autenticação OK - Bot: {bot_info.get('name', 'N/A')}")
             except APIResponseError as e:
                 if e.status == 401:
-                    raise SyncConfigError(
+                    raise Exception(
                         message="Token do Notion inválido ou expirado",
                         config_key="NOTION_TOKEN",
                         details={"error": str(e)}

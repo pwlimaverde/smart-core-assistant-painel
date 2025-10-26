@@ -86,41 +86,8 @@ class NotionSyncError(SyncError):
         super().__init__(message=message, details=error_details)
 
 
-class SyncConfigError(SyncError):
-    """
-    Exceção para erros de configuração do sistema de sincronização.
-
-    Utilizada quando há problemas com configurações necessárias para
-    a sincronização funcionar corretamente (ex: tokens ausentes,
-    database IDs inválidos, etc).
-
-    Args:
-        message: Mensagem descritiva do erro.
-        config_key: Chave de configuração que causou o erro (opcional).
-        details: Detalhes adicionais sobre o erro (opcional).
-    """
-
-    def __init__(
-        self,
-        message: str,
-        config_key: str | None = None,
-        details: dict[str, Any] | None = None,
-    ) -> None:
-        """
-        Inicializa exceção de configuração.
-
-        Args:
-            message: Mensagem descritiva do erro.
-            config_key: Nome da configuração problemática.
-            details: Informações adicionais sobre o erro.
-        """
-        self.config_key = config_key
-        error_details = details or {}
-
-        if config_key is not None:
-            error_details["config_key"] = config_key
-
-        super().__init__(message=message, details=error_details)
+# SyncConfigError removido - não é mais necessário
+# pois SyncConfig foi eliminado em favor de abordagem mais simples
 
 
 class WebhookValidationError(SyncError):

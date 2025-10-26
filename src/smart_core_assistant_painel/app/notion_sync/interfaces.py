@@ -120,8 +120,7 @@ class ExternalSyncServiceInterface(ABC):
             True se a conexão está válida e funcional.
 
         Raises:
-            SyncConfigError: Erro de configuração (token ausente, etc).
-            SyncError: Erro genérico de conexão.
+            SyncError: Erro genérico de conexão ou configuração.
         """
         pass
 
@@ -206,7 +205,7 @@ class ExternalSyncServiceInterface(ABC):
             ID do database/tabela na plataforma externa, ou None se não configurado.
 
         Raises:
-            SyncConfigError: Erro de configuração.
+            SyncError: Erro de configuração.
         """
         pass
 

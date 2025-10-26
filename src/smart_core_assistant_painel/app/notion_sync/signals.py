@@ -385,6 +385,52 @@ def on_contato_clientes_changed(
             sync_record.mark_as_failed(f"Falha na atualização de relacionamentos (action: {action})")
             logger.error(f"Falha ao atualizar relacionamentos do Contato #{instance.id} (action: {action})")
 
+        # 🆕 Atualiza também cada Cliente impactado para manter relação bidirecional
+        if action in ("post_add", "post_remove", "post_clear"):
+            try:
+                from .models import ClienteSync
+
+                for cliente_id in (pk_set or []):
+                    cliente_obj = Cliente.objects.filter(pk=cliente_id).first()
+                    if not cliente_obj:
+                        continue
+
+                    cliente_sync = ClienteSync.objects.filter(cliente_id=cliente_obj.id).first()
+                    if not cliente_sync:
+                        cliente_sync = get_or_create_cliente_sync(cliente_obj.id)
+
+                    # Prepara dados e cria/atualiza no Notion
+                    cliente_sync.prepare_notion_data()
+                    cliente_sync.save()
+
+                    # Cria página se necessário
+                    if not cliente_sync.external_id:
+                        try:
+                            created_id = service.create_record("Cliente", cliente_obj.id, cliente_sync)
+                            cliente_sync.external_id = created_id
+                            cliente_sync.mark_as_synced()
+                            cliente_sync.save()
+                            logger.info(f"Cliente #{cliente_obj.id} criado no Notion (external_id: {created_id})")
+                        except Exception as ce:
+                            cliente_sync.mark_as_failed(str(ce))
+                            logger.error(f"Erro ao criar Cliente #{cliente_obj.id} no Notion: {ce}")
+                            continue
+
+                    # Atualiza relação no lado do Cliente
+                    try:
+                        ok = service.update_record("Cliente", cliente_sync.external_id, cliente_obj.id, cliente_sync)
+                        if ok:
+                            cliente_sync.mark_as_synced()
+                            logger.info(f"Relacionamentos do Cliente #{cliente_obj.id} atualizados (via Contato action: {action})")
+                        else:
+                            cliente_sync.mark_as_failed("Falha ao atualizar relacionamento (via Contato)")
+                            logger.error(f"Falha ao atualizar Cliente #{cliente_obj.id} (via Contato)")
+                    except Exception as ue:
+                        cliente_sync.mark_as_failed(str(ue))
+                        logger.error(f"Erro ao atualizar Cliente #{cliente_obj.id} (via Contato): {ue}")
+            except Exception as e_inner:
+                logger.error(f"Erro ao sincronizar clientes impactados (Contato #{instance.id}): {e_inner}")
+
     except Exception as e:
         logger.error(f"Erro ao processar mudança de relacionamento do Contato #{instance.id}: {e}")
 
@@ -441,6 +487,52 @@ def on_cliente_contatos_changed(
         else:
             sync_record.mark_as_failed(f"Falha na atualização de relacionamentos (action: {action})")
             logger.error(f"Falha ao atualizar relacionamentos do Cliente #{instance.id} (action: {action})")
+
+        # 🆕 Atualiza também cada Contato impactado para manter relação bidirecional
+        if action in ("post_add", "post_remove", "post_clear"):
+            try:
+                from .models import ContatoSync
+
+                for contato_id in (pk_set or []):
+                    contato_obj = Contato.objects.filter(pk=contato_id).first()
+                    if not contato_obj:
+                        continue
+
+                    contato_sync = ContatoSync.objects.filter(contato_id=contato_obj.id).first()
+                    if not contato_sync:
+                        contato_sync = get_or_create_contato_sync(contato_obj.id)
+
+                    # Prepara dados e cria/atualiza no Notion
+                    contato_sync.prepare_notion_data()
+                    contato_sync.save()
+
+                    # Cria página se necessário
+                    if not contato_sync.external_id:
+                        try:
+                            created_id = service.create_record("Contato", contato_obj.id, contato_sync)
+                            contato_sync.external_id = created_id
+                            contato_sync.mark_as_synced()
+                            contato_sync.save()
+                            logger.info(f"Contato #{contato_obj.id} criado no Notion (external_id: {created_id})")
+                        except Exception as ce:
+                            contato_sync.mark_as_failed(str(ce))
+                            logger.error(f"Erro ao criar Contato #{contato_obj.id} no Notion: {ce}")
+                            continue
+
+                    # Atualiza relação no lado do Contato
+                    try:
+                        ok = service.update_record("Contato", contato_sync.external_id, contato_obj.id, contato_sync)
+                        if ok:
+                            contato_sync.mark_as_synced()
+                            logger.info(f"Relacionamentos do Contato #{contato_obj.id} atualizados (via Cliente action: {action})")
+                        else:
+                            contato_sync.mark_as_failed("Falha ao atualizar relacionamento (via Cliente)")
+                            logger.error(f"Falha ao atualizar Contato #{contato_obj.id} (via Cliente)")
+                    except Exception as ue:
+                        contato_sync.mark_as_failed(str(ue))
+                        logger.error(f"Erro ao atualizar Contato #{contato_obj.id} (via Cliente): {ue}")
+            except Exception as e_inner:
+                logger.error(f"Erro ao sincronizar contatos impactados (Cliente #{instance.id}): {e_inner}")
 
     except Exception as e:
         logger.error(f"Erro ao processar mudança de relacionamento do Cliente #{instance.id}: {e}")

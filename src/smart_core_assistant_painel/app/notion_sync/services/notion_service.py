@@ -94,6 +94,11 @@ class NotionSyncService(ExternalSyncServiceInterface):
     def _run(self, coro):
         return asyncio.run(coro)
 
+    async def _request_async(self, method: str, path: str, body: dict[str, Any]):
+        # Evita reuso de cliente assíncrono entre múltiplos asyncio.run
+        client = NotionAsyncClient(auth=self.token)
+        return await client.request(method=method, path=path, body=body)
+
     @override
     def create_record(
         self,
@@ -150,7 +155,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
                 # Fazer chamada direta usando o método request do client
                 response = self._run(
-                    self.client.request(
+                    self._request_async(
                         method="post",
                         path="pages",
                         body=page_data
@@ -249,7 +254,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
             # Faz chamada direta usando o método request do client
             response = self._run(
-                self.client.request(
+                self._request_async(
                     method="patch",
                     path=f"pages/{external_id}",
                     body=page_data
@@ -332,7 +337,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
             # Faz chamada direta usando o método request do client
             response = self._run(
-                self.client.request(
+                self._request_async(
                     method="patch",
                     path=f"pages/{external_id}",
                     body=page_data

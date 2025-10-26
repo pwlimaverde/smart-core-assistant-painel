@@ -101,8 +101,7 @@ class ContatoMapper:
                     }
                 }
 
-            # 🆕 Relacionamento ManyToMany com Clientes
-            # Lista de empresas vinculadas ao contato
+            # Relacionamento ManyToMany com Clientes
             try:
                 empresas_vinculadas = contato.clientes.all()
                 if empresas_vinculadas.exists():
@@ -111,7 +110,7 @@ class ContatoMapper:
                     empresas_nomes = [cliente.nome_fantasia for cliente in empresas_vinculadas]
 
                     # Busca external_ids dos clientes sincronizados
-                    from ..models import ClienteSync
+                    from smart_core_assistant_painel.app.notion_sync.models import ClienteSync
                     for cliente in empresas_vinculadas:
                         try:
                             cliente_sync = ClienteSync.objects.get(cliente_id=cliente.id)
@@ -122,20 +121,18 @@ class ContatoMapper:
                             continue
 
                     if empresas_ids:
-                        # 🆕 Usa campo relation nativo do Notion (se existir)
-                        properties["Empresas Relacionadas"] = {
+                        # Usa campo relation nativo do Notion (se existir)
+                        properties["Clientes Relacionados"] = {
                             "relation": [
                                 {"id": emp_id} for emp_id in empresas_ids
                             ]
                         }
 
-                    # Armazena informações adicionais em metadados (backup)
-                    if not hasattr(contato_sync, 'metadados'):
-                        contato_sync.metadados = {}
-                    contato_sync.metadados['empresas_vinculadas'] = [
-                        f"{cliente.id}:{cliente.nome_fantasia}"
-                        for cliente in empresas_vinculadas
-                    ]
+                        # Armazena informações adicionais em metadados (backup)
+                        contato_sync.metadados['empresas_vinculadas'] = [
+                            f"{cliente.id}:{cliente.nome_fantasia}"
+                            for cliente in empresas_vinculadas
+                        ]
             except Exception as e:
                 # Log silencioso para não quebrar sincronização principal
                 print(f"Aviso: Erro ao processar relacionamento de empresas: {e}")
@@ -200,79 +197,46 @@ class ContatoMapper:
                 elif telefone_field.get("rich_text"):
                     text_list = telefone_field["rich_text"]
                     if text_list:
-                        telefone = "".join(
+                        # compatibilidade legada
+                        content = "".join(
                             item.get("plain_text", "")
                             for item in text_list
                         ).strip()
-                        if telefone:
-                            data["telefone"] = ContatoMapper._normalize_phone_from_notion(
-                                telefone
-                            )
+                        if content:
+                            data["telefone"] = content
 
             # Email
             if "Email" in properties and properties["Email"].get("email"):
-                email = properties["Email"]["email"].strip().lower()
-                if email:
-                    data["email"] = email
+                data["email"] = properties["Email"]["email"].strip()
 
-            # Nome do perfil WhatsApp
-            if "Nome Perfil WhatsApp" in properties:
-                wp_field = properties["Nome Perfil WhatsApp"]
-                if wp_field.get("rich_text"):
-                    text_list = wp_field["rich_text"]
-                    if text_list:
-                        nome_wp = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
-                        ).strip()
-                        if nome_wp:
-                            data["nome_perfil_whatsapp"] = nome_wp
+            # Nome Perfil WhatsApp
+            if "Nome Perfil WhatsApp" in properties and properties["Nome Perfil WhatsApp"].get("rich_text"):
+                text_list = properties["Nome Perfil WhatsApp"]["rich_text"]
+                if text_list:
+                    content = "".join(
+                        item.get("plain_text", "")
+                        for item in text_list
+                    ).strip()
+                    if content:
+                        data["nome_perfil_whatsapp"] = content
 
-            # Ativo (checkbox) ou fallback para Status
-            if "Ativo" in properties and "checkbox" in properties["Ativo"]:
+            # Ativo
+            if "Ativo" in properties and isinstance(properties["Ativo"].get("checkbox"), bool):
                 data["ativo"] = bool(properties["Ativo"]["checkbox"])
-            elif "Status" in properties:
-                status_field = properties["Status"]
-                if status_field.get("select"):
-                    status_name = status_field["select"].get("name", "")
-                    data["ativo"] = status_name.lower() in ["ativo", "active", "enabled"]
 
             # Datas
-            if "Data Cadastro" in properties:
-                date_field = properties["Data Cadastro"]
-                if date_field.get("date") and date_field["date"].get("start"):
-                    try:
-                        data["data_cadastro"] = datetime.fromisoformat(
-                            date_field["date"]["start"].replace('Z', '+00:00')
-                        )
-                    except (ValueError, AttributeError):
-                        pass
+            if "Data Cadastro" in properties and properties["Data Cadastro"].get("date"):
+                date_info = properties["Data Cadastro"]["date"]
+                if isinstance(date_info, dict) and date_info.get("start"):
+                    data["data_cadastro"] = datetime.fromisoformat(date_info["start"]) if date_info["start"] else None
 
-            if "Última Interação" in properties:
-                date_field = properties["Última Interação"]
-                if date_field.get("date") and date_field["date"].get("start"):
-                    try:
-                        data["ultima_interacao"] = datetime.fromisoformat(
-                            date_field["date"]["start"].replace('Z', '+00:00')
-                        )
-                    except (ValueError, AttributeError):
-                        pass
+            if "Última Interação" in properties and properties["Última Interação"].get("date"):
+                date_info = properties["Última Interação"]["date"]
+                if isinstance(date_info, dict) and date_info.get("start"):
+                    data["ultima_interacao"] = datetime.fromisoformat(date_info["start"]) if date_info["start"] else None
 
-            # 🆕 Relacionamento com Empresas (campo relation)
-            # Nota: Se o campo relation existir no Notion, os dados virão formatados
-            # Se não existir, os dados ficam apenas em metadados para referência
-            if "metadados" in data and "empresas_vinculadas" in data["metadados"]:
-                # Converte de lista para processamento
-                empresas_info = data["metadados"]["empresas_vinculadas"]
-                if isinstance(empresas_info, list):
-                    data["metadados"]["empresas_vinculadas_lista"] = empresas_info
-
-                # Processa informações antigas em formato texto (compatibilidade)
-                elif "empresas_vinculadas_notion" in data["metadados"]:
-                    empresas_text = data["metadados"]["empresas_vinculadas_notion"]
-                    if empresas_text and "|" in empresas_text:
-                        empresas_info = [item.strip() for item in empresas_text.split("|")]
-                        data["metadados"]["empresas_vinculadas_lista"] = empresas_info
+            # Validação básica
+            ContatoMapper.validate_for_notion(properties)
 
             return data
 
@@ -290,95 +254,39 @@ class ContatoMapper:
 
     @staticmethod
     def _prepare_rich_text(content: str) -> List[Dict[str, Any]]:
-        """
-        Prepara conteúdo no formato rich_text do Notion.
-
-        Args:
-            content: Conteúdo a ser formatado.
-
-        Returns:
-            Lista formatada para rich_text do Notion.
-        """
-        if not content or not content.strip():
+        """Prepara rich_text para Notion com formatação simples e segura."""
+        if not content:
             return []
 
-        return [
-            {
-                "type": "text",
-                "text": {"content": content.strip()[:2000]}  # Limite de caracteres
-            }
-        ]
+        # Remove HTML básico e normaliza espaços
+        content = re.sub(r"<[^>]+>", " ", content)
+        content = re.sub(r"\s+", " ", content).strip()
+
+        return [{
+            "type": "text",
+            "text": {"content": content[:2000]}
+        }]
 
     @staticmethod
     def _normalize_phone_from_notion(phone: str) -> str:
-        """
-        Normaliza telefone vindo do Notion para formato Django.
-
-        Args:
-            phone: Telefone no formato do Notion.
-
-        Returns:
-            Telefone normalizado (apenas dígitos, com 55 se brasileiro).
-        """
+        """Normaliza telefone vindo do Notion para formato simples."""
         if not phone:
             return ""
-
-        # Remove tudo que não é dígito
-        digits = re.sub(r'\D', '', phone)
-
-        # Se não começa com 55 e tem 10-11 dígitos, assume Brasil
-        if len(digits) in [10, 11] and not digits.startswith('55'):
-            digits = '55' + digits
-
-        return digits
+        # Remove tudo que não for dígito
+        return re.sub(r"\D", "", phone)
 
     @staticmethod
     def validate_for_notion(properties: Dict[str, Any]) -> bool:
-        """
-        Valida se as propriedades são válidas para o Notion.
-
-        Args:
-            properties: Propriedades a serem validadas.
-
-        Returns:
-            True se válido, False caso contrário.
-        """
-        try:
-            # Verifica campo obrigatório Nome Contato
-            if "Nome Contato" not in properties or not properties["Nome Contato"].get("title"):
-                return False
-
-            # Verifica se há conteúdo no título
-            title_content = properties["Nome Contato"]["title"]
-            if not title_content or not any(
-                item.get("text", {}).get("content", "").strip()
-                for item in title_content
-            ):
-                return False
-
-            # Valida formato do email se presente
-            if "Email" in properties:
-                email = properties["Email"].get("email", "")
-                if email and "@" not in email:
-                    return False
-
-            # Valida formato do telefone se presente
-            if "Telefone" in properties:
-                phone = properties["Telefone"].get("phone_number", "")
-                if phone:
-                    pass  # Validação básica seria implementada aqui
-
-            return True
-
-        except Exception:
-            return False
+        """Valida estrutura mínima exigida pelo Notion."""
+        # Título é obrigatório
+        if "Nome Contato" not in properties:
+            raise MappingError(message="Campo 'Nome Contato' é obrigatório no Notion")
+        return True
 
     @staticmethod
     def get_database_schema() -> Dict[str, Any]:
         """
-        Retorna o schema do database do Notion para Contatos.
-
-        Este schema pode ser usado para criar ou validar o database no Notion,
+        Retorna definição de schema da database de Contatos no Notion,
         seguindo as melhores práticas definidas no planejamento.
 
         Returns:
@@ -417,13 +325,17 @@ class ContatoMapper:
                 "date": {},
                 "description": "Data da última interação registrada"
             },
-            # 🆕 Campo para relacionamento com Empresas (relation)
-            "Empresas Relacionadas": {
+            # Campo para relacionamento com Clientes (relation)
+            "Clientes Relacionados": {
                 "relation": {},
-                "description": "Empresas vinculadas a este contato (campo relation)"
+                "description": "Clientes vinculados a este contato (campo relation)"
             },
             # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
-            # Se preferir usar rich_text em vez de relation, descomente:
+            # "Empresas Vinculadas": {
+            #     "rich_text": {},
+            #     "description": "IDs e nomes das empresas vinculadas (formato: id:nome | id2:nome2)"
+            # }
+            # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
             # "Empresas Vinculadas": {
             #     "rich_text": {},
             #     "description": "IDs e nomes das empresas vinculadas (formato: id:nome | id2:nome2)"

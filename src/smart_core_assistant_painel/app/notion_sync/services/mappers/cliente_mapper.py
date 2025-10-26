@@ -97,7 +97,7 @@ class ClienteMapper:
                     contatos_ids = []
 
                     # Busca external_ids dos contatos sincronizados
-                    from ..models import ContatoSync
+                    from smart_core_assistant_painel.app.notion_sync.models import ContatoSync
                     for contato in contatos_vinculados:
                         try:
                             contato_sync = ContatoSync.objects.get(contato_id=contato.id)
@@ -115,15 +115,13 @@ class ClienteMapper:
                             ]
                         }
 
-                    # Armazena informações adicionais em metadados (backup)
-                    contatos_nomes = [contato.nome_contato for contato in contatos_vinculados]
-                    contatos_info = []
-                    for i, contato in enumerate(contatos_vinculados):
-                        contatos_info.append(f"{contato.id}:{contatos_nomes[i]}")
+                        # Armazena informações adicionais em metadados (backup)
+                        contatos_nomes = [contato.nome_contato for contato in contatos_vinculados]
+                        contatos_info = []
+                        for i, contato in enumerate(contatos_vinculados):
+                            contatos_info.append(f"{contato.id}:{contatos_nomes[i]}")
 
-                    if not hasattr(cliente_sync, 'metadados'):
-                        cliente_sync.metadados = {}
-                    cliente_sync.metadados['contatos_vinculados'] = contatos_info
+                        cliente_sync.metadados['contatos_vinculados'] = contatos_info
             except Exception as e:
                 # Log silencioso para não quebrar sincronização principal
                 print(f"Aviso: Erro ao processar relacionamento de contatos: {e}")

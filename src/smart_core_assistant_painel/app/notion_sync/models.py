@@ -695,11 +695,6 @@ class ContatoSync(models.Model):
         help_text="Nome já formatado e validado para o Notion"
     )
 
-    nome_formatado: models.CharField = models.CharField(
-        max_length=200,
-        help_text="Nome já formatado e validado para o Notion"
-    )
-
     email_normalizado: models.EmailField = models.EmailField(
         max_length=254,
         null=True,
@@ -764,6 +759,12 @@ class ContatoSync(models.Model):
         default=dict,
         blank=True,
         help_text="Informações adicionais sobre a sincronização"
+    )
+
+    metadados: models.JSONField = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Metadados adicionais para sincronização"
     )
 
     created_at: models.DateTimeField = models.DateTimeField(
@@ -1041,11 +1042,6 @@ class ClienteSync(models.Model):
         help_text="Nome fantasia formatado"
     )
 
-    nome_fantasia_formatado: models.CharField = models.CharField(
-        max_length=200,
-        help_text="Nome fantasia formatado"
-    )
-
     razao_social_formatada: models.CharField = models.CharField(
         max_length=200,
         null=True,
@@ -1106,6 +1102,12 @@ class ClienteSync(models.Model):
     notion_properties: models.JSONField = models.JSONField(
         default=dict,
         help_text="Propriedades completas formatadas para API Notion"
+    )
+
+    metadados: models.JSONField = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Metadados adicionais para sincronização"
     )
 
     created_at: models.DateTimeField = models.DateTimeField(

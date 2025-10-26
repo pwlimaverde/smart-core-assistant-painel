@@ -1,14 +1,14 @@
 """
-Script para construção de databases no Notion para Contatos e Clientes.
+Script para construção de databases no Notion para Contatos e Clientes com Relacionamentos.
 
 Este script cria as databases necessárias para sincronização dos modelos Contato e Cliente
-do Django com o Notion, utilizando a API 2025-09-03 e salvando as configurações
-no modelo NotionDatabaseConfig.
+do Django com o Notion, utilizando a API 2025-09-03 e configurando
+relacionamentos bidirecionais entre as databases.
 
 Uso:
     uv run python manage.py shell < notion_sync/scripts/script_constructor_notion.py
     ou
-    uv run python -m notion_sync.scripts.script_constructor_notion
+    uv run python -m notion_sync.scripts.script_constructor_notion.py
 """
 import os
 import sys
@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Adicionar o path do projeto ao sys.path para importar Django
-sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 # Configurar Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'smart_core_assistant_painel.app.ui.core.settings')
@@ -43,7 +43,7 @@ from smart_core_assistant_painel.app.notion_sync.models import NotionDatabaseCon
 
 class NotionDatabaseConstructor:
     """
-    Construtor de databases no Notion.
+    Construtor de databases no Notion com relacionamentos configurados corretamente.
     """
 
     def __init__(self) -> None:
@@ -58,46 +58,11 @@ class NotionDatabaseConstructor:
 
         self.client = NotionAsyncClient(auth=self.notion_token)
 
-    async def create_contato_database(self) -> Any:
-        """Cria a database de Contatos no Notion."""
-        logger.info("Criando database de Contatos no Notion...")
-
-        # Definição das propriedades para Contato baseadas no modelo Django
-        properties = {
-            "Nome Contato": {"title": {}},
-            "Telefone": {"phone_number": {}},
-            "Email": {"email": {}},
-            "Nome Perfil WhatsApp": {"rich_text": {}},
-            "Ativo": {
-                "checkbox": {}
-            },
-            "Data Cadastro": {"date": {}},
-            "Última Interação": {"date": {}}
-        }
-
-        parameters = {
-            "parent": {"type": "page_id", "page_id": self.notion_page_id},
-            "title": [{"type": "text", "text": {"content": "👥 Contatos CRM"}}],
-            "icon": {"type": "emoji", "emoji": "👥"},
-            "initial_data_source": {
-                "name": "Contatos",
-                "properties": properties
-            }
-        }
-
-        try:
-            created = await self.client.databases.create(parameters)
-            logger.info(f"✅ Database de Contatos criada: {created.id}")
-            return created
-        except Exception as e:
-            logger.error(f"❌ Erro ao criar database de Contatos: {e}")
-            raise
-
-    async def create_cliente_database(self, contato_db: Any) -> Any:
-        """Cria a database de Clientes no Notion com relacionamento para Contatos."""
+    async def create_cliente_database(self) -> Any:
+        """Cria a database de Clientes no Notion (simples, sem relacionamentos iniciais)."""
         logger.info("Criando database de Clientes no Notion...")
 
-        # Primeiro cria a database sem relacionamento
+        # Propriedades básicas para Clientes
         properties = {
             "Nome Fantasia": {"title": {}},
             "Razão Social": {"rich_text": {}},
@@ -133,67 +98,241 @@ class NotionDatabaseConstructor:
         try:
             created = await self.client.databases.create(parameters)
             logger.info(f"✅ Database de Clientes criada: {created.id}")
+            if created.data_sources:
+                logger.info(f"🔑 Data Source ID Clientes: {created.data_sources[0]['id']}")
             return created
         except Exception as e:
             logger.error(f"❌ Erro ao criar database de Clientes: {e}")
             raise
 
-    async def add_relations_between_databases(self, contato_db: Any, cliente_db: Any) -> None:
-        """Adiciona relacionamentos bidirecionais entre as databases após criação."""
-        logger.info("Verificando se relacionamentos são necessários...")
+    async def create_contato_database(self, cliente_db: Any) -> Any:
+        """
+        Cria a database de Contatos no Notion COM RELACIONAMENTO para Clientes.
+        """
+        logger.info("Criando database de Contatos no Notion com relacionamento...")
 
-        # Por enquanto, apenas logamos que os relacionamentos podem ser criados manualmente
-        logger.info("✅ Databases criadas com sucesso (relacionamentos opcionais)")
+        # Obter o data_source_id da database de clientes
+        if not cliente_db.data_sources:
+            raise ValueError("Database de clientes não possui data_source")
 
-        # Relacionamentos serão criados manualmente ou via UI do Notion
-        logger.info("⚠️ Relacionamentos omitidos por simplicidade - podem ser criados manualmente no Notion")
+        cliente_data_source_id = cliente_db.data_sources[0]['id']
+
+        # Propriedades para Contatos COM O RELACIONAMENTO
+        properties = {
+            "Nome Contato": {"title": {}},
+            "Telefone": {"phone_number": {}},
+            "Email": {"email": {}},
+            "Nome Perfil WhatsApp": {"rich_text": {}},
+            "Ativo": {"checkbox": {}},
+            "Data Cadastro": {"date": {}},
+            "Última Interação": {"date": {}},
+            # Propriedade relation apontando para Clientes
+            "Clientes Relacionados": {
+                "relation": {
+                    "data_source_id": cliente_data_source_id,
+                    "single_property": {},
+                    "dual_property": {
+                        "synced_property_name": "Contatos Relacionados"
+                    }
+                }
+            }
+        }
+
+        parameters = {
+            "parent": {"type": "page_id", "page_id": self.notion_page_id},
+            "title": [{"type": "text", "text": {"content": "👥 Contatos CRM"}}],
+            "icon": {"type": "emoji", "emoji": "👥"},
+            "initial_data_source": {
+                "name": "Contatos",
+                "properties": properties
+            }
+        }
+
+        try:
+            created = await self.client.databases.create(parameters)
+            logger.info(f"✅ Database de Contatos criada: {created.id}")
+            if created.data_sources:
+                logger.info(f"🔑 Data Source ID Contatos: {created.data_sources[0]['id']}")
+            return created
+        except Exception as e:
+            logger.error(f"❌ Erro ao criar database de Contatos: {e}")
+            raise
+
+    async def add_relation_to_cliente_database(self, contato_db: Any, cliente_db: Any) -> None:
+        """
+        Adiciona o campo de relacionamento "Contatos Relacionados" na database de Clientes.
+        """
+        logger.info("Adicionando campo 'Contatos Relacionados' na database de Clientes...")
+
+        try:
+            # Obter data_source_ids
+            contato_data_source_id = contato_db.data_sources[0]['id']
+            cliente_data_source_id = cliente_db.data_sources[0]['id']
+
+            # Adicionar campo "Contatos Relacionados" no data source de Clientes (API 2025-09-03)
+            update_params = {
+                "properties": {
+                    "Contatos Relacionados": {
+                        "type": "relation",
+                        "relation": {
+                            "data_source_id": contato_data_source_id,
+                            # Para manter bidirecionalidade com o campo já criado em Contatos
+                            "single_property": {},
+                            "dual_property": {
+                                "synced_property_name": "Clientes Relacionados"
+                            }
+                        }
+                    }
+                }
+            }
+
+            # Atualizar via endpoint de data sources
+            response = await self.client.request(
+                method="patch",
+                path=f"data_sources/{cliente_data_source_id}",
+                body=update_params
+            )
+
+            logger.info("✅ Campo 'Contatos Relacionados' adicionado na database de Clientes")
+
+        except Exception as e:
+            logger.error(f"❌ Erro ao adicionar relacionamento na database de Clientes: {e}")
+            raise
+
+    async def create_example_pages_and_relation(self, contato_db: Any, cliente_db: Any) -> None:
+        """
+        Cria páginas de exemplo e estabelece o relacionamento entre elas.
+        """
+        logger.info("Criando páginas de exemplo para testar relacionamento...")
+
+        try:
+            # Obter data_source_ids
+            contato_data_source_id = contato_db.data_sources[0]['id']
+            cliente_data_source_id = cliente_db.data_sources[0]['id']
+
+            # 1. Criar página de cliente exemplo
+            logger.info("Criando página de cliente exemplo...")
+            cliente_page_params = {
+                "parent": {
+                    "type": "data_source_id",
+                    "data_source_id": cliente_data_source_id
+                },
+                "properties": {
+                    "Nome Fantasia": {
+                        "title": [
+                            {"text": {"content": "Empresa Exemplo LTDA"}}
+                        ]
+                    },
+                    "Tipo": {"select": {"name": "juridica"}},
+
+                    "Telefone": {
+                        "phone_number": "+55 11 99999-8888"
+                    }
+                }
+            }
+
+            # Criar página de cliente exemplo via endpoint /pages
+            cliente_page_body = {
+                "parent": {
+                    "type": "database_id",
+                    "database_id": cliente_db.id
+                },
+                "properties": cliente_page_params["properties"]
+            }
+            cliente_page = await self.client.request(
+                method="post",
+                path="pages",
+                body=cliente_page_body
+            )
+            cliente_page_id = cliente_page.get("id") or getattr(cliente_page, "id", None)
+            logger.info(f"✅ Página de cliente exemplo criada: {cliente_page_id}")
+
+            # 2. Criar página de contato exemplo via endpoint /pages
+            logger.info("Criando página de contato exemplo...")
+            contato_properties = {
+                "Nome Contato": {
+                    "title": [
+                        {"text": {"content": "João Silva Exemplo"}}
+                    ]
+                },
+                "Email": {"email": "joao@exemplo.com"},
+                "Telefone": {"phone_number": "+55 11 99999-7777"},
+                "Ativo": {"checkbox": True}
+            }
+            contato_page_body = {
+                "parent": {
+                    "type": "database_id",
+                    "database_id": contato_db.id
+                },
+                "properties": contato_properties
+            }
+            contato_page = await self.client.request(
+                method="post",
+                path="pages",
+                body=contato_page_body
+            )
+            contato_page_id = contato_page.get("id") or getattr(contato_page, "id", None)
+            logger.info(f"✅ Página de contato exemplo criada: {contato_page_id}")
+
+            # Aguardar um pouco antes de criar relacionamento
+            await asyncio.sleep(2)
+
+            # 3. Vincular o contato ao cliente (relação principal)
+            logger.info("Vinculando contato ao cliente...")
+            contato_update_params = {
+                "properties": {
+                    "Clientes Relacionados": {
+                        "relation": [
+                            {"id": cliente_page_id}
+                        ]
+                    }
+                }
+            }
+
+            await self.client.request(
+                method="patch",
+                path=f"pages/{contato_page_id}",
+                body=contato_update_params
+            )
+
+            logger.info("✅ Relacionamento criado: Contato → Cliente")
+
+            # 4. Vincular o cliente ao contato (relação inversa)
+            logger.info("Vinculando cliente ao contato...")
+            cliente_update_params = {
+                "properties": {
+                    "Contatos Relacionados": {
+                        "relation": [
+                            {"id": contato_page_id}
+                        ]
+                    }
+                }
+            }
+
+            await self.client.request(
+                method="patch",
+                path=f"pages/{cliente_page_id}",
+                body=cliente_update_params
+            )
+
+            logger.info("✅ Relacionamento criado: Cliente → Contato")
+            logger.info("🎉 Relacionamento bidirecional testado com sucesso!")
+
+        except Exception as e:
+            logger.warning(f"⚠️ Erro ao criar exemplo: {e}")
+            logger.info("💡 Isso não afeta a criação das databases, apenas os testes")
 
     @sync_to_async
     def save_database_configs(self, contato_db: Any, cliente_db: Any) -> None:
         """
         Salva as configurações das databases no modelo NotionDatabaseConfig.
-
-        Este é o ponto crucial: salva os artefatos criados no NotionDatabaseConfig
-        para que o sistema possa recuperar os IDs posteriormente.
         """
         logger.info("💾 Salvando configurações no modelo NotionDatabaseConfig...")
 
         try:
-            # Configuração para Contatos
-            contato_config = NotionDatabaseConfig.objects.update_or_create(
-                slug="ui_clientes_contato",
-                defaults={
-                    "name": "👥 Contatos CRM",
-                    "description": "Database para sincronização de contatos do sistema",
-                    "notion_database_id": contato_db.id,
-                    "data_source_id": contato_db.data_sources[0]['id'] if contato_db.data_sources else None,
-                    "django_model": "ui.clientes.Contato",
-                    "django_app_label": "ui",
-                    "notion_schema": {
-                        "Nome Contato": {"title": {}},
-                        "Telefone": {"phone_number": {}},
-                        "Email": {"email": {}},
-                        "Nome Perfil WhatsApp": {"rich_text": {}},
-                        "Ativo": {"checkbox": {}},
-                        "Data Cadastro": {"date": {}},
-                        "Última Interação": {"date": {}}
-                    },
-                    "field_mappings": {
-                        "nome_contato": "Nome Contato",
-                        "telefone": "Telefone",
-                        "email": "Email",
-                        "nome_perfil_whatsapp": "Nome Perfil WhatsApp",
-                        "ativo": "Ativo",
-                        "data_cadastro": "Data Cadastro",
-                        "ultima_interacao": "Última Interação"
-                    },
-                    "sync_enabled": True,
-                    "sync_direction": "bidirectional",
-                    "sync_priority": 10,
-                    "auto_sync": True,
-                }
-            )
-            logger.info(f"✅ Configuração de Contatos salva: {contato_config[0].id}")
+            # Obter data_source_ids
+            contato_data_source_id = contato_db.data_sources[0]['id'] if contato_db.data_sources else None
+            cliente_data_source_id = cliente_db.data_sources[0]['id'] if cliente_db.data_sources else None
 
             # Configuração para Clientes
             cliente_config = NotionDatabaseConfig.objects.update_or_create(
@@ -202,7 +341,7 @@ class NotionDatabaseConstructor:
                     "name": "🏢 Clientes CRM",
                     "description": "Database para sincronização de clientes do sistema",
                     "notion_database_id": cliente_db.id,
-                    "data_source_id": cliente_db.data_sources[0]['id'] if cliente_db.data_sources else None,
+                    "data_source_id": cliente_data_source_id,
                     "django_model": "ui.clientes.Cliente",
                     "django_app_label": "ui",
                     "notion_schema": {
@@ -224,7 +363,16 @@ class NotionDatabaseConstructor:
                         "Observações": {"rich_text": {}},
                         "CEP": {"rich_text": {}},
                         "Logradouro": {"rich_text": {}},
-                        "Número": {"rich_text": {}}
+                        "Número": {"rich_text": {}},
+                        "Contatos Relacionados": {
+                            "relation": {
+                                "data_source_id": contato_data_source_id,
+                                "single_property": {},
+                                "dual_property": {
+                                    "synced_property_name": "Clientes Relacionados"
+                                }
+                            }
+                        }
                     },
                     "field_mappings": {
                         "nome_fantasia": "Nome Fantasia",
@@ -238,7 +386,8 @@ class NotionDatabaseConstructor:
                         "observacoes": "Observações",
                         "cep": "CEP",
                         "logradouro": "Logradouro",
-                        "numero": "Número"
+                        "numero": "Número",
+                        "contatos_relacionados": "Contatos Relacionados"
                     },
                     "sync_enabled": True,
                     "sync_direction": "bidirectional",
@@ -248,13 +397,59 @@ class NotionDatabaseConstructor:
             )
             logger.info(f"✅ Configuração de Clientes salva: {cliente_config[0].id}")
 
+            # Configuração para Contatos
+            contato_config = NotionDatabaseConfig.objects.update_or_create(
+                slug="ui_clientes_contato",
+                defaults={
+                    "name": "👥 Contatos CRM",
+                    "description": "Database para sincronização de contatos do sistema",
+                    "notion_database_id": contato_db.id,
+                    "data_source_id": contato_data_source_id,
+                    "django_model": "ui.clientes.Contato",
+                    "django_app_label": "ui",
+                    "notion_schema": {
+                        "Nome Contato": {"title": {}},
+                        "Telefone": {"phone_number": {}},
+                        "Email": {"email": {}},
+                        "Nome Perfil WhatsApp": {"rich_text": {}},
+                        "Ativo": {"checkbox": {}},
+                        "Data Cadastro": {"date": {}},
+                        "Última Interação": {"date": {}},
+                        "Clientes Relacionados": {
+                            "relation": {
+                                "data_source_id": cliente_data_source_id,
+                                "single_property": {},
+                                "dual_property": {
+                                    "synced_property_name": "Contatos Relacionados"
+                                }
+                            }
+                        }
+                    },
+                    "field_mappings": {
+                        "nome_contato": "Nome Contato",
+                        "telefone": "Telefone",
+                        "email": "Email",
+                        "nome_perfil_whatsapp": "Nome Perfil WhatsApp",
+                        "ativo": "Ativo",
+                        "data_cadastro": "Data Cadastro",
+                        "ultima_interacao": "Última Interação",
+                        "clientes_relacionados": "Clientes Relacionados"
+                    },
+                    "sync_enabled": True,
+                    "sync_direction": "bidirectional",
+                    "sync_priority": 10,
+                    "auto_sync": True,
+                }
+            )
+            logger.info(f"✅ Configuração de Contatos salva: {contato_config[0].id}")
+
             # Atualizar last_sync_at para indicar que as databases estão prontas
             from django.utils import timezone
-            contato_config[0].last_sync_at = timezone.now()
-            contato_config[0].save()
-
             cliente_config[0].last_sync_at = timezone.now()
             cliente_config[0].save()
+
+            contato_config[0].last_sync_at = timezone.now()
+            contato_config[0].save()
 
             logger.info("🎉 Configurações salvas com sucesso no NotionDatabaseConfig!")
 
@@ -263,23 +458,32 @@ class NotionDatabaseConstructor:
             raise
 
     async def construct_all_databases(self) -> None:
-        """Constrói todas as databases necessárias."""
-        logger.info("🚀 Iniciando construção de databases no Notion...")
+        """Constrói todas as databases necessárias com relacionamentos corretos."""
+        logger.info("🚀 Iniciando construção de databases no Notion com relacionamentos...")
 
         try:
-            # Criar database de Contatos
-            contato_db = await self.create_contato_database()
+            # 1. Criar database de Clientes primeiro (simples, sem relacionamentos)
+            cliente_db = await self.create_cliente_database()
 
-            # Criar database de Clientes (sem relacionamento inicial)
-            cliente_db = await self.create_cliente_database(contato_db)
+            # 2. Criar database de Contatos COM RELACIONAMENTO para Clientes
+            contato_db = await self.create_contato_database(cliente_db)
 
-            # Adicionar relacionamentos (se necessário)
-            await self.add_relations_between_databases(contato_db, cliente_db)
+            # 3. Aguardar um momento para as databases serem processadas
+            await asyncio.sleep(2)
+
+            # 4. Adicionar campo de relacionamento na database de Clientes
+            await self.add_relation_to_cliente_database(contato_db, cliente_db)
+
+            # 5. Aguardar um momento antes de criar exemplos
+            await asyncio.sleep(2)
+
+            # 6. Criar páginas de exemplo para testar relacionamento
+            await self.create_example_pages_and_relation(contato_db, cliente_db)
 
             # Exibir informações importantes das databases criadas
             logger.info("🎉 Databases criadas com sucesso no Notion!")
-            logger.info(f"📋 Contatos: {contato_db.url}")
-            logger.info(f"📋 Clientes: {cliente_db.url}")
+            logger.info(f"📋 Contatos: https://www.notion.so/{contato_db.id.replace('-', '')}")
+            logger.info(f"📋 Clientes: https://www.notion.so/{cliente_db.id.replace('-', '')}")
             logger.info(f"🔑 ID Contatos: {contato_db.id}")
             logger.info(f"🔑 ID Clientes: {cliente_db.id}")
 
@@ -288,31 +492,18 @@ class NotionDatabaseConstructor:
             if cliente_db.data_sources:
                 logger.info(f"🔑 Data Source ID Clientes: {cliente_db.data_sources[0]['id']}")
 
-            # Tentar salvar configurações no modelo NotionDatabaseConfig (separado para evitar erros)
-            try:
-                await self.save_database_configs(contato_db, cliente_db)
-                logger.info("✅ Configurações salvas com sucesso no Django!")
+            # Salvar configurações no modelo NotionDatabaseConfig
+            await self.save_database_configs(contato_db, cliente_db)
+            logger.info("✅ Configurações salvas com sucesso no Django!")
 
-                # Verificar configurações salvas
-                contato_config = await sync_to_async(NotionDatabaseConfig.objects.get)(slug="ui_clientes_contato")
-                cliente_config = await sync_to_async(NotionDatabaseConfig.objects.get)(slug="ui_clientes_cliente")
+            # Verificar configurações salvas
+            contato_config = await sync_to_async(NotionDatabaseConfig.objects.get)(slug="ui_clientes_contato")
+            cliente_config = await sync_to_async(NotionDatabaseConfig.objects.get)(slug="ui_clientes_cliente")
 
-                logger.info("✅ Configurações verificadas no Django:")
-                logger.info(f"   - Contato Config ID: {contato_config.id}")
-                logger.info(f"   - Cliente Config ID: {cliente_config.id}")
-                logger.info(f"   - Ambas prontas para sincronização: {contato_config.is_ready_for_sync() and cliente_config.is_ready_for_sync()}")
-
-            except Exception as e:
-                logger.warning(f"⚠️ Erro ao salvar configurações no Django: {e}")
-                logger.info("💡 As databases foram criadas no Notion, mas você precisará configurar o NotionDatabaseConfig manualmente:")
-                logger.info("   1. Acesse o admin do Django")
-                logger.info("   2. Crie NotionDatabaseConfig com os seguintes slugs:")
-                logger.info(f"      - ui_clientes_contato (ID: {contato_db.id})")
-                logger.info(f"      - ui_clientes_cliente (ID: {cliente_db.id})")
-                if contato_db.data_sources:
-                    logger.info(f"      - Data Source ID Contatos: {contato_db.data_sources[0]['id']}")
-                if cliente_db.data_sources:
-                    logger.info(f"      - Data Source ID Clientes: {cliente_db.data_sources[0]['id']}")
+            logger.info("✅ Configurações verificadas no Django:")
+            logger.info(f"   - Contato Config ID: {contato_config.id}")
+            logger.info(f"   - Cliente Config ID: {cliente_config.id}")
+            logger.info(f"   - Ambas prontas para sincronização: {contato_config.is_ready_for_sync() and cliente_config.is_ready_for_sync()}")
 
         except Exception as e:
             logger.error(f"❌ Falha na construção das databases: {e}")
@@ -331,7 +522,6 @@ async def run_construction() -> None:
 
 def run() -> None:
     """Entry point para execução do script."""
-    # Executar a construção assíncrona
     try:
         asyncio.run(run_construction())
     except KeyboardInterrupt:
@@ -342,5 +532,5 @@ def run() -> None:
 
 
 if __name__ == "__main__":
-    """Execução direta do script."""
+    # Execução direta do script.
     run()

@@ -1,8 +1,16 @@
 # Mapeamento de Dados Django ↔ Notion
 
-**Versão:** 4.0  
-**Status:** ✅ Mappers Definidos e Testados  
+**Versão:** 4.1  
+**Status:** ✅ Fase 1 Implementada - Fase 2 Em Progresso  
 **Data:** Janeiro 2025
+
+**Implementados:**
+- ✅ ContatoMapper (funcionando em produção)
+- ✅ ClienteMapper (funcionando em produção)
+- 🔄 DepartamentoMapper (para implementar - Fase 2)
+- 🔄 AtendenteHumanoMapper (para implementar - Fase 2)
+- 🔄 AtendimentoMapper (para implementar - Fase 3)
+- 🔄 MensagemMapper (para implementar - Fase 3)
 
 ---
 

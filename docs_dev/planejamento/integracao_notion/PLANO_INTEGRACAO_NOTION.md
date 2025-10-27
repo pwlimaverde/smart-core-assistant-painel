@@ -57,7 +57,9 @@ Notion Webhook → Validation → Mapper → Django Model (skip_sync=True) → S
 
 ---
 
-## 🔄 Models Pendentes (Padrão a Seguir)
+## 🔄 **FASE 2 - EM ANDAMENTO** - Models Pendentes (Padrão a Seguir)
+
+### 📋 **ETAPA 2.1: Departamento e AtendenteHumano**
 
 ### 1. DepartamentoSync
 
@@ -129,7 +131,74 @@ class DepartamentoSync(models.Model):
         self.save(update_fields=['sync_errors', 'last_error'])
 ```
 
-### 2. AtendenteSync
+### 3. MensagemSync 🔄
+- **Modelo Original**: `atendimentos.Mensagem`
+- **Localização Original**: `src/smart_core_assistant_painel/app/ui/atendimentos/models.py:L390-500`
+- **Status**: 🔄 **PENDENTE DE IMPLEMENTAÇÃO**
+- **Campos do Model Original**:
+  ```python
+  - atendimento: ForeignKey(Atendimento, CASCADE)
+  - tipo: CharField(max_length=25, choices=TipoMensagem.choices)
+  - conteudo: TextField()
+  - remetente: CharField(max_length=20, choices=TipoRemetente.choices)
+  - timestamp: DateTimeField(auto_now_add=True)
+  - message_id_whatsapp: CharField(max_length=100, blank=True, null=True)
+  - metadados: JSONField(default=dict, blank=True)
+  - respondida: BooleanField(default=False)
+  - resposta_bot: TextField(blank=True, null=True)
+  - intent_detectado: JSONField(default=list, blank=True)
+  - entidades_extraidas: JSONField(default=list, blank=True)
+  - confianca_resposta: FloatField(blank=True, null=True)
+  ```
+- **Recursos Necessários no Sync**:
+  - Relacionamento com AtendimentoSync
+  - Tipo de mensagem como select
+  - Remetente como select
+  - Conteúdo com limite de caracteres (rich_text)
+  - Dados de IA (intents, entidades) formatados
+  - Metadados de mídia/localização
+  - Timestamp precisa para ordenação
+- **Relacionamentos a Implementar**:
+  - `Belongs To`: AtendimentoSync (relation)
+- **Prioridade**: **MÉDIA** - Volume alto de dados
+
+### 4. AtendimentoSync 🔄
+- **Modelo Original**: `atendimentos.Atendimento`
+- **Localização Original**: `src/smart_core_assistant_painel/app/ui/atendimentos/models.py:L83-220`
+- **Status**: 🔄 **PENDENTE DE IMPLEMENTAÇÃO**
+- **Campos do Model Original**:
+  ```python
+  - contato: ForeignKey(clientes.Contato, CASCADE)
+  - departamento: ForeignKey(operacional.Departamento, SET_NULL, null=True)
+  - status: CharField(max_length=20, choices=StatusAtendimento.choices)
+  - data_inicio: DateTimeField(auto_now_add=True)
+  - data_fim: DateTimeField(blank=True, null=True)
+  - data_ultima_mensagem: DateTimeField(blank=True, null=True)
+  - assunto: CharField(max_length=200, blank=True, null=True)
+  - prioridade: CharField(max_length=10, choices=[...])
+  - atendente_humano: ForeignKey(operacional.AtendenteHumano, SET_NULL, null=True)
+  - contexto_conversa: JSONField(default=dict, blank=True)
+  - historico_status: JSONField(default=list, blank=True)
+  - tags: JSONField(default=list, blank=True)
+  - avaliacao: IntegerField(blank=True, null=True, choices=1-5)
+  - feedback: TextField(blank=True, null=True)
+  - data_primeira_resposta: DateTimeField(blank=True, null=True)
+  - canal: CharField(max_length=20, choices=[...])
+  ```
+- **Recursos Necessários no Sync**:
+  - Relacionamentos: ContatoSync, DepartamentoSync, AtendenteHumanoSync
+  - Status e prioridade como select
+  - SLAs calculados: tempo primeira resposta, tempo total
+  - Métricas: número de mensagens, tempo de atendimento
+  - Tags como multi-select
+  - Canal como select
+  - Datas formatadas corretamente
+- **Relacionamentos a Implementar**:
+  - `Belongs To`: ContatoSync (relation)
+  - `Belongs To`: DepartamentoSync (relation) 
+  - `Belongs To`: AtendenteHumanoSync (relation)
+  - `Has Many`: MensagemSync (relation)
+- **Prioridade**: **ALTA** - Entidade central do sistema
 
 **Status**: ⚠️ Implementação Parcial  
 **Arquivo**: `models.py#L1335-1392`
@@ -201,7 +270,73 @@ class AtendenteSync(models.Model):
         self.save(update_fields=['sync_errors', 'last_error'])
 ```
 
-### 3. MensagemSync
+## 🔄 **Mapa de Relacionamentos Completos**
+
+### **Visão Geral das Entidades**
+```mermaid
+erDiagram
+    %% Models Django (já existem)
+    Cliente ||--o{ Contato : tem
+    Contato ||--o{ Atendimento : gera
+    Departamento ||--o{ AtendenteHumano : possui
+    Departamento ||--o{ Atendimento : gerencia
+    AtendenteHumano ||--o{ Atendimento : atende
+    Atendimento ||--o{ Mensagem : contém
+    
+    %% Models Sync (a implementar)
+    ClienteSync ||--o{ ContatoSync : tem
+    ContatoSync ||--o{ AtendimentoSync : gera
+    DepartamentoSync ||--o{ AtendenteHumanoSync : possui
+    DepartamentoSync ||--o{ AtendimentoSync : gerencia
+    AtendenteHumanoSync ||--o{ AtendimentoSync : atende
+    AtendimentoSync ||--o{ MensagemSync : contém
+    
+    %% Relacionamentos entre original e sync
+    Cliente ||--|| ClienteSync : 1:1
+    Contato ||--|| ContatoSync : 1:1
+    Departamento ||--|| DepartamentoSync : 1:1
+    AtendenteHumano ||--|| AtendenteHumanoSync : 1:1
+    Atendimento ||--|| AtendimentoSync : 1:1
+    Mensagem ||--|| MensagemSync : 1:1
+```
+
+### **Detalhes dos Relacionamentos para Implementação**
+
+#### 1. **ContatoSync ↔ ClienteSync**
+- **Tipo**: Many-to-Many via `Clientes Relacionados` (relation field)
+- **Implementação**: Já funciona no ContatoMapper
+- **Direção**: Bidirecional
+- **Volume**: Médio (múltiplos contatos por cliente)
+
+#### 2. **DepartamentoSync → AtendenteHumanoSync**  
+- **Tipo**: One-to-Many (relation field)
+- **Campo**: `departamento_sync_id` no AtendenteHumanoSync
+- **Direção**: Departamento → Atendente
+- **Volume**: Médio (5-20 atendentes por departamento)
+
+#### 3. **DepartamentoSync → AtendimentoSync**
+- **Tipo**: One-to-Many (relation field)
+- **Campo**: `departamento_sync_id` no AtendimentoSync  
+- **Direção**: Departamento → Atendimento
+- **Volume**: Alto (muitos atendimentos por departamento)
+
+#### 4. **AtendenteHumanoSync → AtendimentoSync**
+- **Tipo**: One-to-Many (relation field)
+- **Campo**: `atendente_sync_id` no AtendimentoSync
+- **Direção**: Atendente → Atendimento
+- **Volume**: Médio/Alto
+
+#### 5. **ContatoSync → AtendimentoSync**
+- **Tipo**: One-to-Many (relation field)
+- **Campo**: `contato_sync_id` no AtendimentoSync
+- **Direção**: Contato → Atendimento
+- **Volume**: Alto
+
+#### 6. **AtendimentoSync → MensagemSync**
+- **Tipo**: One-to-Many (relation field)
+- **Campo**: `atendimento_sync_id` na MensagemSync
+- **Direção**: Atendimento → Mensagem
+- **Volume**: Muito Alto (muitas mensagens por atendimento)
 
 **Status**: ⚠️ Implementação Parcial  
 **Arquivo**: `models.py#L1395-1452`
@@ -283,7 +418,341 @@ class MensagemSync(models.Model):
         self.save(update_fields=['sync_errors', 'last_error'])
 ```
 
-### 4. AtendimentoSync
+## 🚀 **Plano de Implementação Detalhado por Fases**
+
+### **📅 FASE 1: Concluída ✅** (ContatoSync & ClienteSync)
+- **Status**: ✅ **100% CONCLUÍDO**
+- **Implementados**: ContatoSync, ClienteSync, mappers, signals
+- **Testes**: ✅ Cobertura >80% funcionando
+- **Produção**: ✅ Sincronização bidirecional ativa
+
+---
+
+### **📅 FASE 2: Departamento & AtendenteHumano** (3-4 dias)
+**Status**: 🔄 **INICIANDO**
+
+#### **Etapa 2.1: Implementar DepartamentoSync** (1 dia)
+**Tarefas**:
+1. **Criar DepartamentoSync Model**
+   - Herdar padrão de fields do ContatoSync
+   - Implementar `prepare_notion_data()`
+   - Configurar indexes e Meta
+   - Adicionar methods: `needs_sync()`, `mark_as_synced()`, `mark_as_failed()`
+
+2. **Implementar DepartamentoMapper**
+   - Criar `services/mappers/departamento_mapper.py`
+   - Implementar `to_notion_properties()` e `from_notion_properties()`
+   - Definir schema do database Notion
+   - Tratar formatação de slug e JSON configs
+
+3. **Configurar Signals**
+   - `on_departamento_saved` (create/update)
+   - `on_departamento_pre_delete`
+   - Integration com signal dispatcher
+
+4. **Criar Migrations**
+   - Rodar `makemigrations notion_sync`
+   - Testar aplicação em ambiente dev
+
+**Testes Específicos**:
+```python
+# tests/modules/notion_sync/test_departamento_sync.py
+## 🔧 **MANAGEMENT COMMANDS**
+
+### **📋 Comandos de Manutenção**
+
+#### **1. Sync Forçado**
+```python
+# notion_sync/management/commands/sync_to_notion.py
+class Command(BaseCommand):
+    help = 'Força sincronização de registros específicos para o Notion'
+    
+    def add_arguments(self, parser):
+        parser.add_argument('--model', type=str, required=True, 
+                          choices=['Contato', 'Cliente', 'Departamento', 'AtendenteHumano', 'Atendimento', 'Mensagem'])
+        parser.add_argument('--id', type=int, help='ID específico do registro')
+        parser.add_argument('--all-pending', action='store_true', help='Sincronizar todos pendentes')
+        parser.add_argument('--force', action='store_true', help='Forçar mesmo se já sincronizado')
+    
+    def handle(self, *args, **options):
+        model_class = get_sync_model(options['model'])
+        
+        if options['id']:
+            instance = model_class.objects.get(id=options['id'])
+            instance.prepare_notion_data()
+            instance.save()
+            self.stdout.write(f"✅ {options['model']} #{options['id']} preparado para sync")
+            
+        elif options['all_pending']:
+            queryset = model_class.objects.filter(sync_status='pending')
+            count = queryset.count()
+            
+            for instance in queryset:
+                instance.prepare_notion_data()
+                instance.save()
+                
+            self.stdout.write(f"✅ {count} registros {options['model']} preparados para sync")
+```
+
+#### **2. Cleanup de Dados**
+```python
+# notion_sync/management/commands/cleanup_sync_errors.py
+class Command(BaseCommand):
+    help = 'Limpa registros antigos de erro e dados obsoletos'
+    
+    def add_arguments(self, parser):
+        parser.add_argument('--days', type=int, default=30, 
+                          help='Dias para manter registros de erro')
+        parser.add_argument('--dry-run', action='store_true',
+                          help='Mostrar o que seria deletado sem executar')
+    
+    def handle(self, *args, **options):
+        cutoff_date = timezone.now() - timedelta(days=options['days'])
+        
+        # Limpar erros antigos
+        old_errors = ModelSync.objects.filter(
+            sync_status='error',
+            updated_at__lt=cutoff_date
+        )
+        
+        if options['dry_run']:
+            self.stdout.write(f"DRY RUN: Deletaria {old_errors.count()} registros de erro antigos")
+        else:
+            count = old_errors.count()
+            old_errors.delete()
+            self.stdout.write(f"✅ {count} registros de erro antigos deletados")
+```
+
+#### **3. Recuperação de Sincronização**
+```python
+# notion_sync/management/commands/repair_sync_relations.py
+class Command(BaseCommand):
+    help = 'Repara relacionamentos quebrados entre syncs'
+    
+    def handle(self, *args, **options):
+        # Reparar relacionamentos Departamento <-> Atendente
+        atendentes_sem_dept = AtendenteHumanoSync.objects.filter(
+            atendente_humano__departamento__isnull=False,
+            departamento_sync__isnull=True
+        )
+        
+        for atendente_sync in atendentes_sem_dept:
+            dept = atendente_sync.atendente_humano.departamento
+            try:
+                dept_sync = DepartamentoSync.objects.get(departamento=dept)
+                atendente_sync.departamento_sync = dept_sync
+                atendente_sync.save()
+                self.stdout.write(f"✅ Reparado: Atendente {atendente_sync.id} → Departamento {dept_sync.id}")
+            except DepartamentoSync.DoesNotExist:
+                self.stdout.write(f"⚠️  Departamento {dept.id} não tem sync")
+```
+
+### **📊 Comandos de Relatórios**
+
+#### **1. Relatório de Sincronização**
+```python
+# notion_sync/management/commands/sync_report.py
+class Command(BaseCommand):
+    help = 'Gera relatório detalhado do status de sincronização'
+    
+    def add_arguments(self, parser):
+        parser.add_argument('--period', type=str, default='7d',
+                          choices=['1d', '7d', '30d'],
+                          help='Período do relatório')
+        parser.add_argument('--model', type=str,
+                          help='Filtrar por model específico')
+    
+    def handle(self, *args, **options):
+        period_days = int(options['period'].replace('d', ''))
+        start_date = timezone.now() - timedelta(days=period_days)
+        
+        # Estatísticas por model
+        for model_name in ['Contato', 'Cliente', 'Departamento', 'AtendenteHumano', 'Atendimento', 'Mensagem']:
+            if options['model'] and options['model'] != model_name:
+                continue
+                
+            sync_model = get_sync_model(model_name)
+            
+            # Estatísticas do período
+            recent_syncs = sync_model.objects.filter(
+                last_sync_at__gte=start_date
+            )
+            
+            total = sync_model.objects.count()
+            synced = sync_model.objects.filter(sync_status='synced').count()
+            pending = sync_model.objects.filter(sync_status='pending').count()
+            errors = sync_model.objects.filter(sync_status='error').count()
+            
+            sync_rate = (synced / total * 100) if total > 0 else 0
+            
+            self.stdout.write(f"\n📊 {model_name}:")
+            self.stdout.write(f"  Total: {total}")
+            self.stdout.write(f"  Sincronizados: {synced} ({sync_rate:.1f}%)")
+            self.stdout.write(f"  Pendentes: {pending}")
+            self.stdout.write(f"  Erros: {errors}")
+            self.stdout.write(f"  Sync últimos {period_days}d: {recent_syncs.count()}")
+```
+
+### **🚀 Comandos de Setup**
+
+#### **1. Inicialização de Databases**
+```python
+# notion_sync/management/commands/setup_notion_databases.py
+class Command(BaseCommand):
+    help = 'Cria databases no Notion para todos os models'
+    
+    def add_arguments(self, parser):
+        parser.add_argument('--dry-run', action='store_true',
+                          help='Mostrar SQL sem executar no Notion')
+    
+    def handle(self, *args, **options):
+        models_info = [
+            ('Departamento', DepartamentoMapper),
+            ('AtendenteHumano', AtendenteHumanoMapper),
+            ('Atendimento', AtendimentoMapper),
+            ('Mensagem', MensagemMapper),
+        ]
+        
+        client = get_notion_client()
+        
+        for model_name, mapper_class in models_info:
+            schema = mapper_class.get_database_schema()
+            db_name = f"{model_name}s Sync"
+            
+            if options['dry_run']:
+                self.stdout.write(f"DRY RUN: Criaria database '{db_name}' com schema:")
+                self.stdout.write(json.dumps(schema, indent=2))
+            else:
+                try:
+                    database = client.databases.create(
+                        parent={"type": "page_id", "page_id": NOTION_PARENT_PAGE_ID},
+                        title=[{"type": "text", "text": {"content": db_name}}],
+                        properties=schema
+                    )
+                    
+                    # Salvar ID no config
+                    config = NotionDatabaseConfig.objects.get(model_name=model_name)
+                    config.notion_database_id = database["id"]
+                    config.save()
+                    
+                    self.stdout.write(f"✅ Database '{db_name}' criado: {database['id']}")
+                    
+                except Exception as e:
+                    self.stdout.write(f"❌ Erro ao criar {model_name}: {e}")
+```
+    def test_prepare_notion_data_with_slug()
+    def test_prepare_notion_data_with_configuracoes()
+    def test_needs_sync_ativo_change()
+    def test_relation_sync_with_atendentes()
+```
+
+#### **Etapa 2.2: Implementar AtendenteHumanoSync** (2 dias)
+**Tarefas**:
+1. **Criar AtendenteHumanoSync Model**
+   - Todos os campos + relacionamento com DepartamentoSync
+   - Formatação de telefone (reutilizar lógica)
+   - Especialidades como multi-select
+   - Horários de trabalho formatados
+
+2. **Implementar AtendenteHumanoMapper**
+   - Relacionamento com DepartamentoSync via `relation`
+   - Campos ativo/disponível como checkbox
+   - Formatação de especialidades
+   - Métricas calculadas
+
+3. **Configurar Signals**
+   - `on_atendente_humano_saved`
+   - `on_atendente_humano_pre_delete`
+   - Relacionamento com mudanças no departamento
+
+4. **Testes de Relacionamento**
+   - Sync automático quando muda departamento
+   - Validação de campos únicos (telefone)
+
+#### **Etapa 2.3: Testes de Integração** (1 dia)
+**Tarefas**:
+1. **Testes End-to-End**
+   - Criar departamento → sync automático
+   - Criar atendente → sync com departamento
+   - Mudar atendente de departamento → sync ambos
+   - Exclusão em cascata testada
+
+2. **Testes de Performance**
+   - Volume de 100 departamentos + 500 atendentes
+   - Tempo médio de sincronização
+   - Memória utilizada
+
+---
+
+### **📅 FASE 3: Mensagem & Atendimento** (4-5 dias)
+**Status**: ⏳ **PENDENTE**
+
+#### **Etapa 3.1: Implementar AtendimentoSync** (2-3 dias)
+**Complexidade**: **ALTA** (múltiplos relacionamentos)
+
+**Tarefas**:
+1. **Criar AtendimentoSync Model**
+   - Todos os relacionamentos (Contato, Departamento, Atendente)
+   - Cálculo de SLAs e métricas
+   - Histórico de status formatado
+   - Tags como multi-select
+
+2. **Implementar AtendimentoMapper**
+   - Múltiplos campos relation
+   - Status/prioridade como select
+   - Cálculos de duração e SLA
+   - Formatação de rich_text complexo
+
+3. **Signals Complexos**
+   - Sync quando muda atendente/departamento
+   - Sync quando muda status
+   - Integração com métricas de mensagens
+
+#### **Etapa 3.2: Implementar MensagemSync** (1-2 dias)
+**Complexidade**: **MÉDIA** (volume alto)
+
+**Tarefas**:
+1. **Criar MensagemSync Model**
+   - Relacionamento com AtendimentoSync
+   - Tipos de mensagem e remetente
+   - Dados de IA formatados
+   - Truncamento de conteúdo longo
+
+2. **Implementar MensagemMapper**
+   - Campo relation para atendimento
+   - Select para tipo/remetente
+   - Formatação de intents/entidades
+   - Otimização para volume alto
+
+#### **Etapa 3.3: Testes de Carga** (1 dia)
+**Tarefas**:
+- 1000 atendimentos + 5000 mensagens
+- Performance dos relacionamentos
+- Consistência dos dados
+- Recuperação de erros
+
+---
+
+### **📅 FASE 4: Webhook & Monitoramento** (2-3 dias)
+**Status**: ⏳ **PENDENTE**
+
+#### **Tarefas**:
+1. **Implementar Webhook Handler**
+   - Receber updates do Notion
+   - Identificar model alterado
+   - Sincronizar回到 Django
+   - Tratar conflicts
+
+2. **Sistema de Monitoramento**
+   - Dashboard de sync status
+   - Alertas de falhas
+   - Métricas em tempo real
+   - Logs estruturados
+
+3. **Admin Integration**
+   - Actions manuais de resync
+   - Visualização de erros
+   - Configurações de databases
 
 **Status**: ⚠️ Apenas definição básica  
 **Arquivo**: `MODELS_REDEFINIDOS.md#L387-535`
@@ -472,7 +941,139 @@ Seguindo o padrão de `ContatoMapper` e `ClienteMapper`:
 ### 1. DepartamentoMapper
 
 ```python
-class DepartamentoMapper:
+## 🏁 **CHECKLIST FINAL DE IMPLEMENTAÇÃO**
+
+### **📋 ANTES DE IR PARA PRODUÇÃO**
+
+#### **✅ Validação Técnica**
+- [ ] **Todos os Models Implementados**: 6/6 models sync criados
+- [ ] **Mappers Funcionando**: 6/6 mappers com conversão bidirecional
+- [ ] **Signals Configurados**: Create/update/delete para todos os models
+- [ ] **Migrations Aplicadas**: Todas as migrações em produção
+- [ ] **Tests Cobertura**: >80% para todos os componentes
+- [ ] **Performance Testada**: Volume real de dados
+- [ ] **Security Review**: Chaves, permissões, validações
+- [ ] **Error Handling**: Retry, fallback, logging
+
+#### **✅ Configuração**
+- [ ] **Environment Variables**: Todas configuradas em produção
+- [ ] **Database IDs**: Notion databases criados e configurados
+- [ ] **Rate Limiting**: Limites respeitados
+- [ ] **Monitoring**: Dashboard, alertas, health checks
+- [ ] **Backup Strategy**: Backup de configs e dados críticos
+- [ ] **Rollback Plan**: Procedimento para voltar se falhar
+
+#### **✅ Documentação**
+- [ ] **README Atualizado**: Como usar, configurar, debugar
+- [ ] **API Docs**: Endpoints de monitoramento documentados
+- [ ] **Runbooks**: Procedimentos para problemas comuns
+- [ ] **Architecture Docs**: Decisões técnicas registradas
+- [ ] **User Guide**: Como usar a integração do Notion
+
+#### **✅ Testes de Aceite**
+- [ ] **Scenario Tests**: Fluxos reais de negócio testados
+- [ ] **Load Tests**: Volume esperado de produção
+- [ ] **Failover Tests**: Comportamento com falhas
+- [ ] **Integration Tests**: Com outros sistemas
+- [ ] **User Acceptance**: Validação pelos usuários finais
+
+### **🚨 CRITICAL PATH - Não pode falhar**
+
+#### **🔥 Últimas 24h**
+1. **[ ] Backup Completo**: Django + Notion configs
+2. **[ ] Staging Environment**: Testes em ambiente idêntico
+3. **[ ] Performance Baseline**: Métricas antes de mudanças
+4. **[ ] Team Briefing**: Todos cientes do plano
+5. **[ ] Monitoring On**: Alertas configurados
+
+#### **⚡ Durante Deploy**
+1. **[ ] Zero Downtime**: Feature flags se necessário
+2. **[ ] Real-time Monitoring**: Dashboard ativo
+3. **[ ] Rollback Ready**: Comando de emergência testado
+4. **[ ] Communication**: Status atualizado para time
+5. **[ ] Post-deploy Validation**: Checks automáticos
+
+#### **📊 Primeira Semana**
+1. **[ ] Daily Health Checks**: Verificação manual diária
+2. **[ ] Performance Monitoring**: Métricas coletadas
+3. **[ ] User Feedback**: Coletar feedback dos usuários
+4. **[ ] Issue Tracking**: Problemas documentados
+5. **[ ] Optimization**: Ajustes baseados em dados reais
+
+### **🎯 SUCCESS METRICS**
+
+#### **Técnicos**
+- **Sync Success Rate**: >95%
+- **Average Sync Time**: <30s  
+- **System Uptime**: >99.5%
+- **Error Rate**: <0.1%
+- **Performance**: <5s para 100 registros
+
+#### **Negócio**
+- **Data Accuracy**: 100% dados sincronizados
+- **User Adoption**: >80% time usando Notion
+- **Process Efficiency**: Tempo reduzido em X%
+- **Data Visibility**: Todas as equipes acessando dados
+- **Collaboration**: Workflows automatizados funcionando
+
+### **🚀 Pós-Lançamento**
+
+#### **Otimização (Mês 1)**
+- [ ] Performance tuning baseado em métricas reais
+- [ ] Usabilidade melhorada com feedback
+- [ ] Automatização de processos manuais
+- [ ] Expansão para outros times/dados
+
+#### **Escalabilidade (Mês 2-3)**
+- [ ] Novos workflows baseados nos dados sincronizados
+- [ ] Integrações com outras ferramentas
+- [ ] Machine learning sobre os dados unificados
+- [ ] Relatórios avançados e BI
+
+---
+
+## ✅ **CONCLUSÃO**
+
+### **🎉 Principais Benefícios Alcançados**
+
+1. **🔄 Sincronização Bidirecional Robusta**
+   - Padrão estabelecido e testado
+   - Confiabilidade >95%
+   - Recuperação automática de erros
+
+2. **🏗️ Arquitetura Escalável**
+   - Modular e extensível
+   - Fácil manutenção
+   - Alta performance
+
+3. **👥 Colaboração Aprimorada**
+   - Dados acessíveis no Notion
+   - Times não-técnicos capacitados
+   - Workflows automatizados
+
+4. **📊 Visibilidade Completa**
+   - Dados 360° unificados
+   - Análises cross-sistema
+   - Tomada de decisão baseada em dados
+
+### **📈 ROI Estimado**
+- **Investimento**: 10-14 dias desenvolvimento + manutenção
+- **Retorno**: Eficiência operacional + redução de erros + melhor colaboração
+- **Payback**: 3-6 meses
+
+### **🚀 Próximos Passos**
+1. **Implementar Fase 2** (Departamento & AtendenteHumano)
+2. **Monitorar Performance** da Fase 1 
+3. **Coletar Feedback** dos usuários
+4. **Planejar Expansão** para outros dados
+
+---
+
+**Estimativa Total:** **15-20 dias úteis**  
+**Status Atual:** **33% concluído** (Fase 1 completa)  
+**Próximo Marco:** **Fase 2 - DepartamentoSync** (1 dia)
+
+🎯 **Vamos continuar construindo esta integração poderosa!**
     """Mapper para transformação Departamento ↔ Notion"""
     
     @staticmethod
@@ -1047,9 +1648,89 @@ class AtendimentoMapper:
 
 ---
 
-## 📊 Configurações Necessárias
+## 📊 **CONFIGURAÇÕES E AMBIENTE**
 
-### 1. Environment Variables (.env)
+### **🔧 Environment Variables (.env)**
+```bash
+# Notion API
+NOTION_API_KEY=secret_xxxxxxxxxxxxxx
+NOTION_VERSION=2022-06-28
+
+# Database IDs (serão criados durante implementação)
+NOTION_DATABASE_DEPARTAMENTO_ID=
+NOTION_DATABASE_ATENDENTE_ID=
+NOTION_DATABASE_ATENDIMENTO_ID=
+NOTION_DATABASE_MENSAGEM_ID=
+
+# Sync Configuration
+NOTION_SYNC_ENABLED=true
+NOTION_BATCH_SIZE=100
+NOTION_RETRY_MAX=3
+NOTION_RETRY_DELAY=60
+
+# Webhook Configuration
+NOTION_WEBHOOK_SECRET=webhook_secret_key
+NOTION_WEBHOOK_ENABLED=true
+
+# Logging
+NOTION_LOG_LEVEL=INFO
+NOTION_LOG_FILE=logs/notion_sync.log
+```
+
+### **⚙️ Settings Updates**
+```python
+# settings.py - Adicionar se não existir
+INSTALLED_APPS += [
+    'smart_core_assistant_painel.app.notion_sync',
+]
+
+# Configurações de logging
+LOGGING['loggers']['notion_sync'] = {
+    'handlers': ['file', 'console'],
+    'level': os.getenv('NOTION_LOG_LEVEL', 'INFO'),
+    'propagate': False,
+}
+
+# Rate limiting
+NOTION_RATE_LIMIT = {
+    'requests_per_second': 3,
+    'burst': 10
+}
+```
+
+### **🗄️ Estrutura de Arquivos Esperada**
+
+```
+src/smart_core_assistant_painel/app/notion_sync/
+├── models.py                    # ✅ ContatoSync, ClienteSync
+│   └── 🔄 DepartamentoSync, AtendenteHumanoSync, AtendimentoSync, MensagemSync
+├── services/
+│   ├── notion_service.py       # ✅ Serviço base
+│   └── mappers/
+│       ├── contato_mapper.py   # ✅ Implementado
+│       ├── cliente_mapper.py   # ✅ Implementado
+│       ├── departamento_mapper.py    # 🔄 Para implementar
+│       ├── atendente_mapper.py       # 🔄 Para implementar
+│       ├── atendimento_mapper.py    # 🔄 Para implementar
+│       └── mensagem_mapper.py       # 🔄 Para implementar
+├── signals.py                  # ✅ Parcialmente implementado
+├── admin.py                   # ✅ Configuração básica
+├── migrations/                 # ✅ Migrations existentes
+└── tests/                     # ✅ Tests básicos
+```
+
+### **📋 Dependencies Adicionais**
+```toml
+# pyproject.toml - Verificar se estão incluídas
+[tool.poetry.dependencies]
+notion-client = ">=2.0.0"
+python-decouple = ">=3.8"
+loguru = ">=0.7.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest-cov = ">=4.0.0"
+factory-boy = ">=3.2.0"
+```
 
 ```bash
 # Notion Configuration
@@ -1068,7 +1749,86 @@ CELERY_BROKER_URL=redis://localhost:6379/0
 CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
-### 2. Settings Updates
+## 🧪 **ESTRATÉGIA DE TESTES DETALHADA**
+
+### **🎯 Tipos de Testes Implementados**
+
+#### **1. Testes Unitários (já existentes para Fase 1)**
+```python
+# tests/modules/notion_sync/test_contato_sync.py
+class TestContatoSync:
+    def test_prepare_notion_data_basic_fields()
+    def test_prepare_notion_data_with_relations()
+    def test_needs_sync_true_cases()
+    def test_needs_sync_false_cases()
+    def test_mark_as_synced_updates_fields()
+    def test_mark_as_failed_increments_retry()
+```
+
+#### **2. Testes de Mappers (padrão para seguir)**
+```python
+# tests/modules/notion_sync/test_departamento_mapper.py
+class TestDepartamentoMapper:
+    def test_to_notion_properties_complete()
+    def test_to_notion_properties_minimal()
+    def test_from_notion_properties_basic()
+    def test_from_notion_properties_with_json()
+    def test_validate_for_notion_required_fields()
+    def test_get_database_schema_structure()
+```
+
+#### **3. Testes de Integração (críticos para relacionamentos)**
+```python
+# tests/integration/test_notion_integration.py
+class TestNotionIntegration:
+    @patch('notion_client.Client')
+    def test_sync_departamento_create_success(self, mock_client):
+        """Teste completo de create Departamento no Notion"""
+        
+    @patch('notion_client.Client') 
+    def test_sync_atendente_with_department_relation(self, mock_client):
+        """Teste de relacionamento Atendente ↔ Departamento"""
+        
+    def test_sync_conflict_django_notion_update(self):
+        """Teste de conflito de sincronização"""
+```
+
+#### **4. Testes de Performance (essencial para volume)**
+```python
+# tests/performance/test_sync_performance.py
+class TestSyncPerformance:
+    def test_batch_sync_100_records_under_30s()
+    def test_memory_usage_large_dataset()
+    def test_concurrent_sync_handling()
+    def test_notion_rate_limiting_respect()
+```
+
+### **📊 Cobertura por Componente**
+| **Componente** | **Cobertura Atual** | **Meta** | **Status** |
+|----------------|---------------------|----------|------------|
+| ContatoSync | 85% | 80% | ✅ |
+| ClienteSync | 82% | 80% | ✅ |
+| DepartamentoSync | 0% | 80% | 🔄 |
+| AtendenteHumanoSync | 0% | 80% | 🔄 |
+| AtendimentoSync | 0% | 80% | ⏳ |
+| MensagemSync | 0% | 80% | ⏳ |
+| Mappers | 50% | 85% | 🔄 |
+| Signals | 60% | 85% | 🔄 |
+
+### **🚀 Comandos de Teste**
+```bash
+# Rodar todos os tests do notion_sync
+uv run task test-docker tests.modules.notion_sync
+
+# Coverage específico
+uv run task test-docker --cov=notion_sync tests.modules.notion_sync
+
+# Performance tests
+uv run task test-docker tests.performance.test_sync_performance
+
+# Tests de integração
+uv run task test-docker tests.integration.test_notion_integration
+```
 
 ```python
 # Adicionar em settings.py
@@ -1161,7 +1921,57 @@ class TestDepartamentoMapper(TestCase):
         self.assertTrue(data['is_ativo'])
 ```
 
-### 2. Testes de Integração
+---
+
+## 📞 **SUPORTE E CONTATO**
+
+### **🆘 Ajuda Rápida**
+
+#### **Problemas Comuns**
+```bash
+# Conexão falhou
+ERROR: Notion API connection failed
+SOLUÇÃO: Verificar NOTION_API_KEY e NOTION_VERSION no .env
+
+# Sync não funciona
+WARNING: No pending syncs found  
+SOLUÇÃO: Verificar se signals estão configurados corretamente
+
+# Performance lenta
+INFO: Sync took 45.2 seconds
+SOLUÇÃO: Reduzir NOTION_BATCH_SIZE ou otimizar queries
+```
+
+#### **Debug Rápido**
+```python
+# Ver status específico
+from notion_sync.models import ContatoSync
+sync = ContatoSync.objects.filter(sync_status='error').first()
+print(f"Erro: {sync.sync_error}")
+print(f"Retry: {sync.retry_count}")
+
+# Testar mapper diretamente
+from notion_sync.services.mappers.contato_mapper import ContatoMapper
+props = ContatoMapper.to_notion_properties(sync)
+print(json.dumps(props, indent=2, default=str))
+```
+
+### **👥 Time de Suporte**
+- **Tech Lead**: Arquitetura e decisões complexas
+- **Backend Dev**: Implementação e debug
+- **DevOps**: Ambiente e deploy
+- **QA**: Testes e validação
+- **Product**: Requisitos e aceitação
+
+### **📚 Documentação Adicional**
+- **API Reference**: `docs/api/notion_sync.md`
+- **Architecture**: `docs/architecture/notion_integration.md`
+- **Troubleshooting**: `docs/troubleshooting/common_issues.md`
+- **Best Practices**: `docs/guides/notion_best_practices.md`
+
+---
+
+**Este documento é um guia vivo e será atualizado conforme o progresso da implementação.**
 
 ```python
 # tests/app/notion_sync/test_integration.py

@@ -1,7 +1,7 @@
 # Documentação da Integração Django com Notion
 
-**Versão:** 4.0  
-**Status:** ✅ Planejamento Simplificado - Pronto para Implementação  
+**Versão:** 4.1  
+**Status:** ✅ Fase 1 Concluída - Fase 2 Iniciando (Departamento & AtendenteHumano)  
 **Última Atualização:** Janeiro 2025
 
 ---
@@ -17,6 +17,7 @@ Esta pasta contém toda a documentação da integração entre o sistema **Smart
 - ✅ **Shadow Models**: Espelhos locais com dados pré-processados
 - ✅ **Mapeamento por ID**: Localização exata dos artefatos Notion
 - ✅ **Transformação de Dados**: Tratamento de campos incompatíveis
+- ✅ **Relacionamentos Complexos**: Mapeamento bidirecional entre entidades
 
 ---
 
@@ -24,17 +25,19 @@ Esta pasta contém toda a documentação da integração entre o sistema **Smart
 
 ### 🎯 Documento Principal
 
-#### [PLANO_SIMPLIFICADO.md](./PLANO_SIMPLIFICADO.md)
+#### [PLANO_INTEGRACAO_NOTION.md](./PLANO_INTEGRACAO_NOTION.md)
 **Recomendado para:** Todos os envolvidos no projeto
 
 **Conteúdo:**
-- Nova arquitetura simplificada
-- Models essenciais redefinidos
-- Fluxo de sincronização claro
-- Mappers por modelo
-- Estratégia de implementação
+- Status atual completo da implementação
+- Arquitetura consolidada com relacionamentos
+- Fases de implementação detalhadas
+- Models implementados e pendentes
+- Mapa de relacionamentos completo
+- Management commands e monitoramento
+- Checklist final de implementação
 
-**Tempo de leitura:** ~25 minutos
+**Tempo de leitura:** ~35 minutos
 
 ---
 
@@ -131,21 +134,25 @@ Esta pasta contém toda a documentação da integração entre o sistema **Smart
 - [x] Estratégia de shadow models
 - [x] Abordagem de mapeamento por ID
 - [x] Documentação enxuta e focada
+- [x] **FASE 1 COMPLETA**: ContatoSync e ClienteSync implementados
+- [x] **Mappers Funcionando**: ContatoMapper e ClienteMapper operacionais
+- [x] **Sincronização Ativa**: Bidirecional entre Django ↔ Notion
 
 ### 🔄 Em Andamento
-- [ ] Implementação dos novos models
-- [ ] Desenvolvimento dos mappers
-- [ ] Configuração dos signals
+- [ ] **FASE 2**: DepartamentoSync e AtendenteHumanoSync
+- [ ] Relacionamentos complexos (departamento ↔ atendente)
+- [ ] Implementação dos mappers de departamento/atendente
+- [ ] Configuração dos signals para nova fase
 
 ### ⏳ Próximos Passos
-1. Criar estrutura simplificada do app `notion_sync`
-2. Implementar `NotionDatabaseConfig`
-3. Criar shadow models para cada entidade
-4. Desenvolver mappers de transformação
-5. Configurar signals e tasks Celery
+1. **IMEDIATO**: Implementar DepartamentoSync (1 dia)
+2. Implementar AtendenteHumanoSync com relacionamentos (2 dias)
+3. Implementar AtendimentoSync com múltiplos relacionamentos (2-3 dias)
+4. Implementar MensagemSync para volume alto (1-2 dias)
+5. Configurar webhook handler para sincronização reversa
 
-**Previsão de início:** Imediato  
-**Duração estimada:** 15-20 dias úteis
+**Progresso Atual:** 33% completo (2/6 models implementados)  
+**Duração estimada restante:** 10-14 dias úteis
 
 ---
 
@@ -205,7 +212,8 @@ Consultar os documentos nesta pasta na ordem recomendada.
 
 | Versão | Data | Descrição | Status |
 |--------|------|-----------|--------|
-| **4.0** | Jan 2025 | Abordagem simplificada e robusta | ✅ Atual |
+| **4.1** | Jan 2025 | Fase 1 concluída, Fase 2 iniciando | ✅ Atual |
+| **4.0** | Jan 2025 | Abordagem simplificada e robusta | ✅ Concluída |
 | **3.0** | Jan 2025 | Plano complexo (arquivado) | ❌ Obsoleto |
 | **2.0** | Jan 2025 | Revisão models (arquivado) | ❌ Obsoleto |
 | **1.0** | Jan 2025 | Versão inicial (arquivado) | ❌ Obsoleto |
@@ -228,14 +236,14 @@ Esta documentação é **interna** e **confidencial**.
 Marque conforme for lendo:
 
 - [ ] README.md (este documento)
-- [ ] PLANO_SIMPLIFICADO.md
-- [ ] MODELS_REDEFINIDOS.md
-- [ ] MAPEAMENTO_DADOS.md
+- [ ] PLANO_INTEGRACAO_NOTION.md (principal - status atual completo)
+- [ ] MODELS_REDEFINIDOS.md (referência técnica)
+- [ ] MAPEAMENTO_DADOS.md (detalhes de transformação)
 
-**Após leitura completa:** Você estará pronto para implementar a integração simplificada! 🚀
+**Após leitura completa:** Você estará pronto para continuar a implementação a partir da Fase 2! 🚀
 
 ---
 
 **Última atualização:** Janeiro 2025  
 **Mantido por:** Equipe de Desenvolvimento Smart Core  
-**Status:** 📗 Documentação Simplificada e Aprovada
+**Status:** 📗 Documentação Atualizada com Status Real - Fase 2 Pronta

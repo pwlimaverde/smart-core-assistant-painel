@@ -185,7 +185,7 @@ Concluí todas as alterações solicitadas para remover a complexidade desnecess
    - Atualizados docstrings que faziam referência aos models removidos
 
 4. **Migrações:**
-   - Criada migração `0002_remove_sync_config_sync_log.py` para remover as tabelas
+   - Criada migração para remover as tabelas
    - Corrigidas migrações existentes que referenciavam os models removidos
 
 ### 📋 **O que foi mantido:**

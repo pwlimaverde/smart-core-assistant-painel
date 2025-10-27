@@ -327,6 +327,18 @@ class WhatsAppInstance(models.Model):
             validate_api_key(self.api_key)
         if self.phone_number:
             validate_telefone_instancia(self.phone_number)
+
+        # Validação de exclusividade: OU departamento OU owner, nunca ambos ou nenhum
+        if self.departamento and self.owner:
+            raise ValidationError(
+                "Uma instância deve estar vinculada a UM departamento OU UM atendente, nunca ambos."
+            )
+        if not self.departamento and not self.owner:
+            raise ValidationError(
+                "Uma instância deve estar vinculada a pelo menos UM departamento ou UM atendente."
+            )
+
+        # Validação de consistência se ambos estiverem preenchidos (caso a regra mude no futuro)
         if self.owner and self.owner.departamento and self.departamento:
             if self.owner.departamento_id != self.departamento_id:
                 raise ValidationError(
@@ -334,7 +346,7 @@ class WhatsAppInstance(models.Model):
                 )
 
     @property
-    def atendentes(self):
+    def atendentes(self) -> models.QuerySet["AtendenteHumano"]:
         """Retorna QuerySet de atendentes do departamento desta instância.
 
         Caso a instância não esteja vinculada a um departamento, retorna um QuerySet vazio.
@@ -343,6 +355,45 @@ class WhatsAppInstance(models.Model):
         if not self.departamento:
             return AtendenteHumano.objects.none()
         return self.departamento.atendentes.all()
+
+    @property
+    def tipo_instancia(self) -> str:
+        """Retorna o tipo da instância para lógica de negócio."""
+        if self.departamento:
+            return "departamental"
+        elif self.owner:
+            return "individual"
+        return "desconhecido"
+
+    @property
+    def responsavel_principal(self):
+        """Retorna o responsável principal para roteamento."""
+        if self.owner:
+            return self.owner
+        elif self.departamento:
+            return self.departamento
+        return None
+
+    def rotear_atendimento(self, mensagem: dict[str, Any]) -> Optional["AtendenteHumano"]:
+        """Roteia mensagem baseada no tipo de instância.
+
+        Args:
+            mensagem: Dicionário com dados da mensagem recebida
+
+        Returns:
+            AtendenteHumano ou None se não houver atendente disponível
+        """
+        if self.tipo_instancia == "individual":
+            # Instância individual: atribui diretamente ao owner
+            if self.owner and self.owner.is_available():
+                return self.owner
+            return None
+
+        elif self.tipo_instancia == "departamental":
+            # Instância departamental: usa lógica de distribuição existente
+            return self.selecionar_proximo_atendente()
+
+        return None
 
     @classmethod
     def validar_api_key(cls, data: dict[str, Any]) -> Optional["WhatsAppInstance"]:

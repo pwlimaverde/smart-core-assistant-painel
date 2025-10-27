@@ -671,17 +671,31 @@ def on_departamento_pre_delete(
     logger.info(f"Departamento para exclusão: {instance.nome}")
 
     try:
-        sync = get_or_create_departamento_sync(instance.id)
+        from .models import DepartamentoSync
 
-        # Agenda operação de exclusão
-        schedule_sync_operation(
-            model_name="Departamento",
-            instance_id=instance.id,
-            operation="delete"
-        )
+        sync_record = DepartamentoSync.objects.filter(
+            departamento_id=instance.id
+        ).first()
+        if sync_record and sync_record.external_id:
+            service = NotionSyncService()
+            service.delete_record(
+                "Departamento",
+                sync_record.external_id
+            )
+            logger.info(
+                f"Departamento #{instance.id} arquivado no Notion "
+                f"(external_id: {sync_record.external_id})"
+            )
+        else:
+            logger.warning(
+                f"Departamento #{instance.id} não possui external_id "
+                "para arquivar no Notion"
+            )
 
     except Exception as exc:
-        logger.error(f"Erro ao processar exclusão do departamento {instance.id}: {exc}")
+        logger.error(
+            f"Erro ao processar exclusão do departamento {instance.id}: {exc}"
+        )
 
 
 # Signal para detectar mudanças de atendentes no departamento (através do AtendenteHumano)
@@ -749,7 +763,7 @@ def on_atendente_deleted(
             dept_sync.save()
             schedule_sync_operation(
                 model_name="Departamento",
-                instance_id=old_dept.id,
+                instance_id=instance.departamento.id,
                 operation="update"
             )
         except Exception as exc:
@@ -786,6 +800,26 @@ def on_atendente_saved(
             operation="create" if created else "update"
         )
 
+        # Após sincronizar o atendente, atualiza o departamento vinculado
+        # para garantir que o relacionamento apareça no Notion.
+        if instance.departamento_id:
+            try:
+                dept_sync = get_or_create_departamento_sync(
+                    instance.departamento_id
+                )
+                dept_sync.prepare_notion_data()
+                dept_sync.save()
+                schedule_sync_operation(
+                    model_name="Departamento",
+                    instance_id=instance.departamento_id,
+                    operation="update"
+                )
+            except Exception as exc:
+                logger.error(
+                    f"Erro ao atualizar departamento relacionado "
+                    f"{instance.departamento_id}: {exc}"
+                )
+
         # Se mudou de departamento, atualiza sync do departamento antigo e novo
         if not created and hasattr(instance, '_original_departamento_id'):
             if instance._original_departamento_id != instance.departamento_id:
@@ -797,7 +831,7 @@ def on_atendente_saved(
                         old_dept_sync.save()
                         schedule_sync_operation(
                             model_name="Departamento",
-                            instance_id=instance.departamento.id,
+                            instance_id=instance._original_departamento_id,
                             operation="update"
                         )
                     except Exception as exc:
@@ -811,7 +845,7 @@ def on_atendente_saved(
                         new_dept_sync.save()
                         schedule_sync_operation(
                             model_name="Departamento",
-                            instance_id=instance.departamento.id,
+                            instance_id=instance.departamento_id,
                             operation="update"
                         )
                     except Exception as exc:
@@ -835,14 +869,26 @@ def on_atendente_pre_delete(
     logger.info(f"Atendente para exclusão: {instance.nome}")
 
     try:
-        sync = get_or_create_atendente_sync(instance.id)
+        from .models import AtendenteHumanoSync
 
-        # Agenda operação de exclusão
-        schedule_sync_operation(
-            model_name="AtendenteHumano",
-            instance_id=instance.id,
-            operation="delete"
-        )
+        sync_record = AtendenteHumanoSync.objects.filter(
+            atendente_id=instance.id
+        ).first()
+        if sync_record and sync_record.external_id:
+            service = NotionSyncService()
+            service.delete_record(
+                "AtendenteHumano",
+                sync_record.external_id
+            )
+            logger.info(
+                f"AtendenteHumano #{instance.id} arquivado no Notion "
+                f"(external_id: {sync_record.external_id})"
+            )
+        else:
+            logger.warning(
+                f"AtendenteHumano #{instance.id} não possui external_id "
+                "para arquivar no Notion"
+            )
 
         # Se tinha departamento, atualiza contadores
         if instance.departamento_id:
@@ -852,7 +898,7 @@ def on_atendente_pre_delete(
                 dept_sync.save()
                 schedule_sync_operation(
                     model_name="Departamento",
-                    instance_id=instance.departamento.id,
+                    instance_id=instance.departamento_id,
                     operation="update"
                 )
             except Exception as exc:

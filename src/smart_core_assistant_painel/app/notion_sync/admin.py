@@ -12,7 +12,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.html import format_html
 
-from .models import ClienteSync, ContatoSync, NotionDatabaseConfig
+from .models import AtendenteHumanoSync, ClienteSync, ContatoSync, DepartamentoSync, NotionDatabaseConfig
 
 
 @admin.register(NotionDatabaseConfig)
@@ -339,6 +339,370 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
 
         Args:
             obj: Instância de ClienteSync.
+
+        Returns:
+            HTML com status colorido.
+        """
+        if obj.sync_status == 'synced':
+            return format_html(
+                '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
+            )
+        elif obj.sync_status == 'error':
+            return format_html(
+                '<span style="color: red; font-weight: bold;">✗ Erro</span>'
+            )
+        else:
+            return format_html(
+                '<span style="color: orange; font-weight: bold;">⏳ {}</span>'.format(
+                    obj.get_sync_status_display()
+                )
+            )
+
+    sync_status_colored.short_description = "Status"  # type: ignore
+
+    def has_add_permission(
+        self,
+        request: HttpRequest
+    ) -> bool:
+        """
+        Remove permissão de adicionar manualmente.
+
+        Args:
+            request: Requisição HTTP.
+
+        Returns:
+            False (registros criados automaticamente via signals).
+        """
+        return False
+
+
+@admin.register(DepartamentoSync)
+class DepartamentoSyncAdmin(admin.ModelAdmin[DepartamentoSync]):
+    """
+    Admin para o model DepartamentoSync.
+
+    Permite visualizar e gerenciar sincronização de Departamentos.
+    """
+
+    list_display = (
+        "id",
+        "departamento_info",
+        "external_id_short",
+        "sync_status_colored",
+        "last_sync_at",
+        "count_atendentes",
+        "retry_count",
+    )
+    list_filter = (
+        "sync_status",
+        "last_sync_at",
+        "created_at",
+    )
+    search_fields = (
+        "departamento__nome",
+        "departamento__slug",
+        "external_id",
+    )
+    readonly_fields = (
+        "departamento",
+        "external_id",
+        "sync_status",
+        "last_sync_at",
+        "sync_error",
+        "retry_count",
+        "notion_properties",
+        "created_at",
+        "updated_at",
+    )
+    ordering = ("-updated_at",)
+    date_hierarchy = "last_sync_at"
+
+    fieldsets = (
+        (
+            "Relacionamento",
+            {
+                "fields": ("departamento",)
+            },
+        ),
+        (
+            "Sincronização",
+            {
+                "fields": (
+                    "external_id",
+                    "sync_status",
+                    "last_sync_at",
+                    "retry_count",
+                )
+            },
+        ),
+        (
+            "Dados Formatados",
+            {
+                "fields": (
+                    "nome_formatado",
+                    "slug_formatado",
+                    "status_formatado",
+                    "count_atendentes",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Erro (se aplicável)",
+            {
+                "fields": ("sync_error",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Metadados",
+            {
+                "fields": ("notion_properties", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def departamento_info(self, obj: DepartamentoSync) -> str:
+        """
+        Retorna informações do departamento.
+
+        Args:
+            obj: Instância de DepartamentoSync.
+
+        Returns:
+            String com nome e status do departamento.
+        """
+        status = "✓" if obj.departamento.ativo else "✗"
+        return f"{obj.departamento.nome} {status}"
+
+    departamento_info.short_description = "Departamento"  # type: ignore
+
+    def external_id_short(self, obj: DepartamentoSync) -> str:
+        """
+        Retorna versão curta do external_id.
+
+        Args:
+            obj: Instância de DepartamentoSync.
+
+        Returns:
+            External ID truncado ou "-".
+        """
+        if obj.external_id:
+            return f"{str(obj.external_id)[:20]}..."
+        return "-"
+
+    external_id_short.short_description = "ID Externo"  # type: ignore
+
+    def sync_status_colored(self, obj: DepartamentoSync) -> str:
+        """
+        Retorna o status de sincronização com cor HTML.
+
+        Args:
+            obj: Instância de DepartamentoSync.
+
+        Returns:
+            HTML com status colorido.
+        """
+        if obj.sync_status == 'synced':
+            return format_html(
+                '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
+            )
+        elif obj.sync_status == 'error':
+            return format_html(
+                '<span style="color: red; font-weight: bold;">✗ Erro</span>'
+            )
+        else:
+            return format_html(
+                '<span style="color: orange; font-weight: bold;">⏳ {}</span>'.format(
+                    obj.get_sync_status_display()
+                )
+            )
+
+    sync_status_colored.short_description = "Status"  # type: ignore
+
+    def has_add_permission(
+        self,
+        request: HttpRequest
+    ) -> bool:
+        """
+        Remove permissão de adicionar manualmente.
+
+        Args:
+            request: Requisição HTTP.
+
+        Returns:
+            False (registros criados automaticamente via signals).
+        """
+        return False
+
+
+@admin.register(AtendenteHumanoSync)
+class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
+    """
+    Admin para o model AtendenteHumanoSync.
+
+    Permite visualizar e gerenciar sincronização de Atendentes Humanos.
+    """
+
+    list_display = (
+        "id",
+        "atendente_info",
+        "departamento_nome",
+        "external_id_short",
+        "sync_status_colored",
+        "last_sync_at",
+        "carga_info",
+        "retry_count",
+    )
+    list_filter = (
+        "sync_status",
+        "last_sync_at",
+        "created_at",
+        "departamento_sync__departamento__nome",
+    )
+    search_fields = (
+        "atendente__nome",
+        "atendente__cargo",
+        "atendente__email",
+        "atendente__telefone",
+        "external_id",
+    )
+    readonly_fields = (
+        "atendente",
+        "external_id",
+        "sync_status",
+        "last_sync_at",
+        "sync_error",
+        "retry_count",
+        "notion_properties",
+        "created_at",
+        "updated_at",
+    )
+    ordering = ("-updated_at",)
+    date_hierarchy = "last_sync_at"
+
+    fieldsets = (
+        (
+            "Relacionamento",
+            {
+                "fields": ("atendente", "departamento_sync")
+            },
+        ),
+        (
+            "Sincronização",
+            {
+                "fields": (
+                    "external_id",
+                    "sync_status",
+                    "last_sync_at",
+                    "retry_count",
+                )
+            },
+        ),
+        (
+            "Dados Formatados",
+            {
+                "fields": (
+                    "nome_formatado",
+                    "cargo_formatado",
+                    "departamento_nome",
+                    "status_formatado",
+                    "disponibilidade_formatada",
+                    "carga_atual",
+                    "capacidade_maxima",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Erro (se aplicável)",
+            {
+                "fields": ("sync_error",),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Metadados",
+            {
+                "fields": ("notion_properties", "created_at", "updated_at"),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def atendente_info(self, obj: AtendenteHumanoSync) -> str:
+        """
+        Retorna informações do atendente.
+
+        Args:
+            obj: Instância de AtendenteHumanoSync.
+
+        Returns:
+            String com nome e cargo do atendente.
+        """
+        status = "✓" if obj.atendente.ativo else "✗"
+        return f"{obj.atendente.nome} - {obj.atendente.cargo} {status}"
+
+    atendente_info.short_description = "Atendente"  # type: ignore
+
+    def departamento_nome(self, obj: AtendenteHumanoSync) -> str:
+        """
+        Retorna o nome do departamento.
+
+        Args:
+            obj: Instância de AtendenteHumanoSync.
+
+        Returns:
+            Nome do departamento ou "-".
+        """
+        return obj.atendente.departamento.nome if obj.atendente.departamento else "-"
+
+    departamento_nome.short_description = "Departamento"  # type: ignore
+
+    def external_id_short(self, obj: AtendenteHumanoSync) -> str:
+        """
+        Retorna versão curta do external_id.
+
+        Args:
+            obj: Instância de AtendenteHumanoSync.
+
+        Returns:
+            External ID truncado ou "-".
+        """
+        if obj.external_id:
+            return f"{str(obj.external_id)[:20]}..."
+        return "-"
+
+    external_id_short.short_description = "ID Externo"  # type: ignore
+
+    def carga_info(self, obj: AtendenteHumanoSync) -> str:
+        """
+        Retorna informação da carga de trabalho.
+
+        Args:
+            obj: Instância de AtendenteHumanoSync.
+
+        Returns:
+            String com carga atual/capacidade máxima.
+        """
+        if obj.capacidade_maxima > 0:
+            pct = (obj.carga_atual / obj.capacidade_maxima) * 100
+            cor = "green" if pct < 70 else "orange" if pct < 90 else "red"
+            return format_html(
+                '<span style="color: {};">{}/{} ({:.0f}%)</span>',
+                cor, obj.carga_atual, obj.capacidade_maxima, pct
+            )
+        return f"{obj.carga_atual}/{obj.capacidade_maxima}"
+
+    carga_info.short_description = "Carga"  # type: ignore
+
+    def sync_status_colored(self, obj: AtendenteHumanoSync) -> str:
+        """
+        Retorna o status de sincronização com cor HTML.
+
+        Args:
+            obj: Instância de AtendenteHumanoSync.
 
         Returns:
             HTML com status colorido.

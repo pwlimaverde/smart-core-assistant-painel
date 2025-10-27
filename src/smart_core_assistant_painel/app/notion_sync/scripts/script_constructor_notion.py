@@ -1,14 +1,22 @@
 """
-Script para construção de databases no Notion para Contatos e Clientes com Relacionamentos.
+Script para construção de databases no Notion com Relacionamentos.
 
-Este script cria as databases necessárias para sincronização dos modelos Contato e Cliente
-do Django com o Notion, utilizando a API 2025-09-03 e configurando
-relacionamentos bidirecionais entre as databases.
+Este script cria as databases necessárias para sincronização de modelos do Django
+com o Notion, utilizando a API 2025-09-03 e configurando relacionamentos
+bidirecionais entre as databases.
+
+Módulos disponíveis:
+1. Clientes/Contatos - Cria databases para Cliente e Contato com relacionamento
+2. Operacional - Cria databases para Departamento e AtendenteHumano com relacionamento
 
 Uso:
+    # Para construir databases de clientes/contatos
     uv run python manage.py shell < notion_sync/scripts/script_constructor_notion.py
-    ou
     uv run python -m notion_sync.scripts.script_constructor_notion.py
+
+    # Para construir databases operacionais (departamento/atendente)
+    from notion_sync.scripts.script_constructor_notion import run
+    run("operacional")
 """
 import os
 import sys
@@ -41,7 +49,7 @@ django.setup()
 from smart_core_assistant_painel.app.notion_sync.models import NotionDatabaseConfig
 
 
-class NotionDatabaseConstructor:
+class NotionClientesDatabaseConstructor:
     """
     Construtor de databases no Notion com relacionamentos configurados corretamente.
     """
@@ -457,7 +465,7 @@ class NotionDatabaseConstructor:
             logger.error(f"❌ Erro ao salvar configurações: {e}")
             raise
 
-    async def construct_all_databases(self) -> None:
+    async def construct_clientes_databases(self) -> None:
         """Constrói todas as databases necessárias com relacionamentos corretos."""
         logger.info("🚀 Iniciando construção de databases no Notion com relacionamentos...")
 
@@ -510,20 +518,534 @@ class NotionDatabaseConstructor:
             raise
 
 
-async def run_construction() -> None:
-    """Função principal que executa a construção das databases."""
+class NotionOperacionalDatabaseConstructor:
+    """
+    Construtor de databases no Notion para Departamento e Atendente Humano
+    com relacionamentos configurados corretamente.
+    """
+
+    def __init__(self) -> None:
+        """Inicializa o construtor com as configurações necessárias."""
+        self.notion_token = os.getenv("NOTION_TOKEN")
+        self.notion_page_id = os.getenv("NOTION_PAGE_ID")
+
+        if not self.notion_token or not self.notion_page_id:
+            raise ValueError(
+                "NOTION_TOKEN e NOTION_PAGE_ID devem ser definidos no .env"
+            )
+
+        self.client = NotionAsyncClient(auth=self.notion_token)
+
+    async def create_departamento_database(self) -> Any:
+        """Cria a database de Departamentos no Notion (simples, sem relacionamentos iniciais)."""
+        logger.info("Criando database de Departamentos no Notion...")
+
+        # Propriedades básicas para Departamentos
+        properties = {
+            "Nome": {"title": {}},
+            "Descrição": {"rich_text": {}},
+            "Setor": {
+                "select": {
+                    "options": [
+                        {"name": "suporte", "color": "blue"},
+                        {"name": "vendas", "color": "green"},
+                        {"name": "financeiro", "color": "yellow"},
+                        {"name": "marketing", "color": "purple"},
+                        {"name": "ti", "color": "red"}
+                    ]
+                }
+            },
+            "Responsável": {"rich_text": {}},
+            "Telefone Interno": {"phone_number": {}},
+            "Email Interno": {"email": {}},
+            "Ativo": {"checkbox": {}},
+            "Data Criação": {"date": {}},
+            "Observações": {"rich_text": {}}
+        }
+
+        parameters = {
+            "parent": {"type": "page_id", "page_id": self.notion_page_id},
+            "title": [{"type": "text", "text": {"content": "🏛️ Departamentos CRM"}}],
+            "icon": {"type": "emoji", "emoji": "🏛️"},
+            "initial_data_source": {
+                "name": "Departamentos",
+                "properties": properties
+            }
+        }
+
+        try:
+            created = await self.client.databases.create(parameters)
+            logger.info(f"✅ Database de Departamentos criada: {created.id}")
+            if created.data_sources:
+                logger.info(f"🔑 Data Source ID Departamentos: {created.data_sources[0]['id']}")
+            return created
+        except Exception as e:
+            logger.error(f"❌ Erro ao criar database de Departamentos: {e}")
+            raise
+
+    async def create_atendente_humano_database(self, departamento_db: Any) -> Any:
+        """
+        Cria a database de Atendentes Humanos no Notion COM RELACIONAMENTO para Departamentos.
+        """
+        logger.info("Criando database de Atendentes Humanos no Notion com relacionamento...")
+
+        # Obter o data_source_id da database de departamentos
+        if not departamento_db.data_sources:
+            raise ValueError("Database de departamentos não possui data_source")
+
+        departamento_data_source_id = departamento_db.data_sources[0]['id']
+
+        # Propriedades para Atendentes Humanos COM O RELACIONAMENTO
+        properties = {
+            "Nome": {"title": {}},
+            "Email": {"email": {}},
+            "Telefone": {"phone_number": {}},
+            "Cargo": {"rich_text": {}},
+            "Matrícula": {"rich_text": {}},
+            "Ativo": {"checkbox": {}},
+            "Data Admissão": {"date": {}},
+            "Setor": {
+                "select": {
+                    "options": [
+                        {"name": "suporte", "color": "blue"},
+                        {"name": "vendas", "color": "green"},
+                        {"name": "financeiro", "color": "yellow"},
+                        {"name": "marketing", "color": "purple"},
+                        {"name": "ti", "color": "red"}
+                    ]
+                }
+            },
+            "Especialidade": {"rich_text": {}},
+            "Horário Trabalho": {"rich_text": {}},
+            # Propriedade relation apontando para Departamentos
+            "Departamentos Relacionados": {
+                "relation": {
+                    "data_source_id": departamento_data_source_id,
+                    "single_property": {},
+                    "dual_property": {
+                        "synced_property_name": "Atendentes Relacionados"
+                    }
+                }
+            }
+        }
+
+        parameters = {
+            "parent": {"type": "page_id", "page_id": self.notion_page_id},
+            "title": [{"type": "text", "text": {"content": "👨‍💼 Atendentes Humanos CRM"}}],
+            "icon": {"type": "emoji", "emoji": "👨‍💼"},
+            "initial_data_source": {
+                "name": "AtendentesHumanos",
+                "properties": properties
+            }
+        }
+
+        try:
+            created = await self.client.databases.create(parameters)
+            logger.info(f"✅ Database de Atendentes Humanos criada: {created.id}")
+            if created.data_sources:
+                logger.info(f"🔑 Data Source ID Atendentes Humanos: {created.data_sources[0]['id']}")
+            return created
+        except Exception as e:
+            logger.error(f"❌ Erro ao criar database de Atendentes Humanos: {e}")
+            raise
+
+    async def add_relation_to_departamento_database(self, atendente_db: Any, departamento_db: Any) -> None:
+        """
+        Adiciona o campo de relacionamento "Atendentes Relacionados" na database de Departamentos.
+        """
+        logger.info("Adicionando campo 'Atendentes Relacionados' na database de Departamentos...")
+
+        try:
+            # Obter data_source_ids
+            atendente_data_source_id = atendente_db.data_sources[0]['id']
+            departamento_data_source_id = departamento_db.data_sources[0]['id']
+
+            # Adicionar campo "Atendentes Relacionados" no data source de Departamentos (API 2025-09-03)
+            update_params = {
+                "properties": {
+                    "Atendentes Relacionados": {
+                        "type": "relation",
+                        "relation": {
+                            "data_source_id": atendente_data_source_id,
+                            # Para manter bidirecionalidade com o campo já criado em Atendentes
+                            "single_property": {},
+                            "dual_property": {
+                                "synced_property_name": "Departamentos Relacionados"
+                            }
+                        }
+                    }
+                }
+            }
+
+            # Atualizar via endpoint de data sources
+            response = await self.client.request(
+                method="patch",
+                path=f"data_sources/{departamento_data_source_id}",
+                body=update_params
+            )
+
+            logger.info("✅ Campo 'Atendentes Relacionados' adicionado na database de Departamentos")
+
+        except Exception as e:
+            logger.error(f"❌ Erro ao adicionar relacionamento na database de Departamentos: {e}")
+            raise
+
+    async def create_example_pages_and_relation(self, atendente_db: Any, departamento_db: Any) -> None:
+        """
+        Cria páginas de exemplo e estabelece o relacionamento entre elas.
+        """
+        logger.info("Criando páginas de exemplo para testar relacionamento operacional...")
+
+        try:
+            # Obter data_source_ids
+            atendente_data_source_id = atendente_db.data_sources[0]['id']
+            departamento_data_source_id = departamento_db.data_sources[0]['id']
+
+            # 1. Criar página de departamento exemplo
+            logger.info("Criando página de departamento exemplo...")
+            departamento_page_params = {
+                "parent": {
+                    "type": "data_source_id",
+                    "data_source_id": departamento_data_source_id
+                },
+                "properties": {
+                    "Nome": {
+                        "title": [
+                            {"text": {"content": "Suporte Técnico"}}
+                        ]
+                    },
+                    "Setor": {"select": {"name": "suporte"}},
+                    "Responsável": {"rich_text": [{"text": {"content": "João Gestor"}}]},
+                    "Ativo": {"checkbox": True}
+                }
+            }
+
+            # Criar página de departamento exemplo via endpoint /pages
+            departamento_page_body = {
+                "parent": {
+                    "type": "database_id",
+                    "database_id": departamento_db.id
+                },
+                "properties": departamento_page_params["properties"]
+            }
+            departamento_page = await self.client.request(
+                method="post",
+                path="pages",
+                body=departamento_page_body
+            )
+            departamento_page_id = departamento_page.get("id") or getattr(departamento_page, "id", None)
+            logger.info(f"✅ Página de departamento exemplo criada: {departamento_page_id}")
+
+            # 2. Criar página de atendente humano exemplo via endpoint /pages
+            logger.info("Criando página de atendente humano exemplo...")
+            atendente_properties = {
+                "Nome": {
+                    "title": [
+                        {"text": {"content": "Maria Atendente Exemplo"}}
+                    ]
+                },
+                "Email": {"email": "maria.atendente@empresa.com"},
+                "Telefone": {"phone_number": "+55 11 99999-5555"},
+                "Cargo": {"rich_text": [{"text": {"content": "Analista de Suporte Nível 2"}}]},
+                "Setor": {"select": {"name": "suporte"}},
+                "Ativo": {"checkbox": True}
+            }
+            atendente_page_body = {
+                "parent": {
+                    "type": "database_id",
+                    "database_id": atendente_db.id
+                },
+                "properties": atendente_properties
+            }
+            atendente_page = await self.client.request(
+                method="post",
+                path="pages",
+                body=atendente_page_body
+            )
+            atendente_page_id = atendente_page.get("id") or getattr(atendente_page, "id", None)
+            logger.info(f"✅ Página de atendente humano exemplo criada: {atendente_page_id}")
+
+            # Aguardar um pouco antes de criar relacionamento
+            await asyncio.sleep(2)
+
+            # 3. Vincular o atendente ao departamento (relação principal)
+            logger.info("Vinculando atendente ao departamento...")
+            atendente_update_params = {
+                "properties": {
+                    "Departamentos Relacionados": {
+                        "relation": [
+                            {"id": departamento_page_id}
+                        ]
+                    }
+                }
+            }
+
+            await self.client.request(
+                method="patch",
+                path=f"pages/{atendente_page_id}",
+                body=atendente_update_params
+            )
+
+            logger.info("✅ Relacionamento criado: Atendente → Departamento")
+
+            # 4. Vincular o departamento ao atendente (relação inversa)
+            logger.info("Vinculando departamento ao atendente...")
+            departamento_update_params = {
+                "properties": {
+                    "Atendentes Relacionados": {
+                        "relation": [
+                            {"id": atendente_page_id}
+                        ]
+                    }
+                }
+            }
+
+            await self.client.request(
+                method="patch",
+                path=f"pages/{departamento_page_id}",
+                body=departamento_update_params
+            )
+
+            logger.info("✅ Relacionamento criado: Departamento → Atendente")
+            logger.info("🎉 Relacionamento bidirecional operacional testado com sucesso!")
+
+        except Exception as e:
+            logger.warning(f"⚠️ Erro ao criar exemplo operacional: {e}")
+            logger.info("💡 Isso não afeta a criação das databases, apenas os testes")
+
+    @sync_to_async
+    def save_database_configs(self, atendente_db: Any, departamento_db: Any) -> None:
+        """
+        Salva as configurações das databases no modelo NotionDatabaseConfig.
+        """
+        logger.info("💾 Salvando configurações operacionais no modelo NotionDatabaseConfig...")
+
+        try:
+            # Obter data_source_ids
+            atendente_data_source_id = atendente_db.data_sources[0]['id'] if atendente_db.data_sources else None
+            departamento_data_source_id = departamento_db.data_sources[0]['id'] if departamento_db.data_sources else None
+
+            # Configuração para Departamentos
+            departamento_config = NotionDatabaseConfig.objects.update_or_create(
+                slug="ui_operacional_departamento",
+                defaults={
+                    "name": "🏛️ Departamentos CRM",
+                    "description": "Database para sincronização de departamentos do sistema",
+                    "notion_database_id": departamento_db.id,
+                    "data_source_id": departamento_data_source_id,
+                    "django_model": "ui.operacional.Departamento",
+                    "django_app_label": "ui",
+                    "notion_schema": {
+                        "Nome": {"title": {}},
+                        "Descrição": {"rich_text": {}},
+                        "Setor": {
+                            "select": {
+                                "options": [
+                                    {"name": "suporte", "color": "blue"},
+                                    {"name": "vendas", "color": "green"},
+                                    {"name": "financeiro", "color": "yellow"},
+                                    {"name": "marketing", "color": "purple"},
+                                    {"name": "ti", "color": "red"}
+                                ]
+                            }
+                        },
+                        "Responsável": {"rich_text": {}},
+                        "Telefone Interno": {"phone_number": {}},
+                        "Email Interno": {"email": {}},
+                        "Ativo": {"checkbox": {}},
+                        "Data Criação": {"date": {}},
+                        "Observações": {"rich_text": {}},
+                        "Atendentes Relacionados": {
+                            "relation": {
+                                "data_source_id": atendente_data_source_id,
+                                "single_property": {},
+                                "dual_property": {
+                                    "synced_property_name": "Departamentos Relacionados"
+                                }
+                            }
+                        }
+                    },
+                    "field_mappings": {
+                        "nome": "Nome",
+                        "descricao": "Descrição",
+                        "setor": "Setor",
+                        "responsavel": "Responsável",
+                        "telefone_interno": "Telefone Interno",
+                        "email_interno": "Email Interno",
+                        "ativo": "Ativo",
+                        "data_criacao": "Data Criação",
+                        "observacoes": "Observações",
+                        "atendentes_relacionados": "Atendentes Relacionados"
+                    },
+                    "sync_enabled": True,
+                    "sync_direction": "bidirectional",
+                    "sync_priority": 7,
+                    "auto_sync": True,
+                }
+            )
+            logger.info(f"✅ Configuração de Departamentos salva: {departamento_config[0].id}")
+
+            # Configuração para Atendentes Humanos
+            atendente_config = NotionDatabaseConfig.objects.update_or_create(
+                slug="ui_operacional_atendentehumano",
+                defaults={
+                    "name": "👨‍💼 Atendentes Humanos CRM",
+                    "description": "Database para sincronização de atendentes humanos do sistema",
+                    "notion_database_id": atendente_db.id,
+                    "data_source_id": atendente_data_source_id,
+                    "django_model": "ui.operacional.AtendenteHumano",
+                    "django_app_label": "ui",
+                    "notion_schema": {
+                        "Nome": {"title": {}},
+                        "Email": {"email": {}},
+                        "Telefone": {"phone_number": {}},
+                        "Cargo": {"rich_text": {}},
+                        "Matrícula": {"rich_text": {}},
+                        "Ativo": {"checkbox": {}},
+                        "Data Admissão": {"date": {}},
+                        "Setor": {
+                            "select": {
+                                "options": [
+                                    {"name": "suporte", "color": "blue"},
+                                    {"name": "vendas", "color": "green"},
+                                    {"name": "financeiro", "color": "yellow"},
+                                    {"name": "marketing", "color": "purple"},
+                                    {"name": "ti", "color": "red"}
+                                ]
+                            }
+                        },
+                        "Especialidade": {"rich_text": {}},
+                        "Horário Trabalho": {"rich_text": {}},
+                        "Departamentos Relacionados": {
+                            "relation": {
+                                "data_source_id": departamento_data_source_id,
+                                "single_property": {},
+                                "dual_property": {
+                                    "synced_property_name": "Atendentes Relacionados"
+                                }
+                            }
+                        }
+                    },
+                    "field_mappings": {
+                        "nome": "Nome",
+                        "email": "Email",
+                        "telefone": "Telefone",
+                        "cargo": "Cargo",
+                        "matricula": "Matrícula",
+                        "ativo": "Ativo",
+                        "data_admissao": "Data Admissão",
+                        "setor": "Setor",
+                        "especialidade": "Especialidade",
+                        "horario_trabalho": "Horário Trabalho",
+                        "departamentos_relacionados": "Departamentos Relacionados"
+                    },
+                    "sync_enabled": True,
+                    "sync_direction": "bidirectional",
+                    "sync_priority": 8,
+                    "auto_sync": True,
+                }
+            )
+            logger.info(f"✅ Configuração de Atendentes Humanos salva: {atendente_config[0].id}")
+
+            # Atualizar last_sync_at para indicar que as databases estão prontas
+            from django.utils import timezone
+            departamento_config[0].last_sync_at = timezone.now()
+            departamento_config[0].save()
+
+            atendente_config[0].last_sync_at = timezone.now()
+            atendente_config[0].save()
+
+            logger.info("🎉 Configurações operacionais salvas com sucesso no NotionDatabaseConfig!")
+
+        except Exception as e:
+            logger.error(f"❌ Erro ao salvar configurações operacionais: {e}")
+            raise
+
+    async def construct_operacional_databases(self) -> None:
+        """Constrói todas as databases operacionais necessárias com relacionamentos corretos."""
+        logger.info("🚀 Iniciando construção de databases operacionais no Notion com relacionamentos...")
+
+        try:
+            # 1. Criar database de Departamentos primeiro (simples, sem relacionamentos)
+            departamento_db = await self.create_departamento_database()
+
+            # 2. Criar database de Atendentes Humanos COM RELACIONAMENTO para Departamentos
+            atendente_db = await self.create_atendente_humano_database(departamento_db)
+
+            # 3. Aguardar um momento para as databases serem processadas
+            await asyncio.sleep(2)
+
+            # 4. Adicionar campo de relacionamento na database de Departamentos
+            await self.add_relation_to_departamento_database(atendente_db, departamento_db)
+
+            # 5. Aguardar um momento antes de criar exemplos
+            await asyncio.sleep(2)
+
+            # 6. Criar páginas de exemplo para testar relacionamento
+            await self.create_example_pages_and_relation(atendente_db, departamento_db)
+
+            # Exibir informações importantes das databases criadas
+            logger.info("🎉 Databases operacionais criadas com sucesso no Notion!")
+            logger.info(f"📋 Atendentes Humanos: https://www.notion.so/{atendente_db.id.replace('-', '')}")
+            logger.info(f"📋 Departamentos: https://www.notion.so/{departamento_db.id.replace('-', '')}")
+            logger.info(f"🔑 ID Atendentes Humanos: {atendente_db.id}")
+            logger.info(f"🔑 ID Departamentos: {departamento_db.id}")
+
+            if atendente_db.data_sources:
+                logger.info(f"🔑 Data Source ID Atendentes Humanos: {atendente_db.data_sources[0]['id']}")
+            if departamento_db.data_sources:
+                logger.info(f"🔑 Data Source ID Departamentos: {departamento_db.data_sources[0]['id']}")
+
+            # Salvar configurações no modelo NotionDatabaseConfig
+            await self.save_database_configs(atendente_db, departamento_db)
+            logger.info("✅ Configurações operacionais salvas com sucesso no Django!")
+
+            # Verificar configurações salvas
+            atendente_config = await sync_to_async(NotionDatabaseConfig.objects.get)(slug="ui_operacional_atendentehumano")
+            departamento_config = await sync_to_async(NotionDatabaseConfig.objects.get)(slug="ui_operacional_departamento")
+
+            logger.info("✅ Configurações operacionais verificadas no Django:")
+            logger.info(f"   - Atendente Humano Config ID: {atendente_config.id}")
+            logger.info(f"   - Departamento Config ID: {departamento_config.id}")
+            logger.info(f"   - Ambas prontas para sincronização: {atendente_config.is_ready_for_sync() and departamento_config.is_ready_for_sync()}")
+
+        except Exception as e:
+            logger.error(f"❌ Falha na construção das databases operacionais: {e}")
+            raise
+
+
+async def run_construction_clientes() -> None:
+    """Função principal que executa a construção das databases de clientes/contatos."""
     try:
-        constructor = NotionDatabaseConstructor()
-        await constructor.construct_all_databases()
+        constructor = NotionClientesDatabaseConstructor()
+        await constructor.construct_clientes_databases()
     except Exception as e:
         logger.error(f"❌ Erro durante a execução: {e}")
         raise
 
 
-def run() -> None:
-    """Entry point para execução do script."""
+async def run_construction_operacional() -> None:
+    """Função principal que executa a construção das databases operacionais."""
     try:
-        asyncio.run(run_construction())
+        constructor = NotionOperacionalDatabaseConstructor()
+        await constructor.construct_operacional_databases()
+    except Exception as e:
+        logger.error(f"❌ Erro durante a execução operacional: {e}")
+        raise
+
+
+def run(construction_type: str = "clientes") -> None:
+    """
+    Entry point para execução do script.
+
+    Args:
+        construction_type: Tipo de construção a ser executada ("clientes" ou "operacional")
+    """
+    try:
+
+        asyncio.run(run_construction_clientes())
+        asyncio.run(run_construction_operacional())
+
     except KeyboardInterrupt:
         logger.info("⏹️ Operação cancelada pelo usuário")
     except Exception as e:
@@ -531,6 +1053,24 @@ def run() -> None:
         raise
 
 
+def run_operacional() -> None:
+    """Função de conveniência para executar apenas a construção operacional."""
+    run("operacional")
+
+
 if __name__ == "__main__":
-    # Execução direta do script.
-    run()
+    """Permite execução direta do script com argumentos de linha de comando."""
+    import sys
+
+    if len(sys.argv) > 1:
+        construction_type = sys.argv[1]
+        if construction_type in ["clientes", "operacional"]:
+            run(construction_type)
+        else:
+            print("❌ Argumento inválido!")
+            print("💡 Uso:")
+            print("   python script_constructor_notion.py clientes")
+            print("   python script_constructor_notion.py operacional")
+    else:
+        # Default: constrói databases de clientes
+        run("clientes")

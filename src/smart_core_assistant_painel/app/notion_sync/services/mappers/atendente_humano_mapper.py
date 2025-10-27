@@ -63,8 +63,29 @@ class AtendenteHumanoMapper:
                     ]
                 }
 
-            # Setor removido conforme solicitação do usuário
-            # Não incluiremos o departamento para evitar relacionamentos
+            # Relacionamento com Departamento
+            try:
+                if atendente.departamento:
+                    # Busca sync do departamento
+                    from smart_core_assistant_painel.app.notion_sync.models import DepartamentoSync
+                    try:
+                        dept_sync = DepartamentoSync.objects.get(departamento=atendente.departamento)
+                        if dept_sync.external_id:
+                            # Usa campo relation nativo do Notion
+                            properties['Departamentos Relacionados'] = {
+                                'relation': [
+                                    {'id': dept_sync.external_id}
+                                ]
+                            }
+
+                            # Armazena informações adicionais em metadados (backup)
+                            atendente_sync.metadados['departamento_vinculado'] = f"{atendente.departamento.id}:{atendente.departamento.nome}"
+                    except DepartamentoSync.DoesNotExist:
+                        # Se não tem sync, pula este departamento
+                        pass
+            except Exception as e:
+                # Log silencioso para não quebrar sincronização principal
+                print(f"Aviso: Erro ao processar relacionamento de departamento: {e}")
 
             # Email (Email)
             if atendente.email:
@@ -228,6 +249,48 @@ class AtendenteHumanoMapper:
 
         except Exception as exc:
             raise MappingError(f"Erro ao converter Notion para AtendenteHumano: {exc}") from exc
+
+    @staticmethod
+    def _normalize_phone_from_notion(phone: str) -> str:
+        """Normaliza telefone vindo do Notion para formato simples."""
+        if not phone:
+            return ""
+        # Remove tudo que não for dígito
+        import re
+        return re.sub(r"\D", "", phone)
+
+    @staticmethod
+    def validate_notion_data(properties: Dict[str, Any]) -> List[str]:
+        """
+        Valida se os dados do Notion são compatíveis com o model AtendenteHumano.
+
+        Args:
+            properties: Propriedades do Notion a validar.
+
+        Returns:
+            Lista de erros encontrados (vazia se estiver tudo OK).
+        """
+        errors: List[str] = []
+
+        # Nome é obrigatório
+        if 'Nome' not in properties or not properties['Nome'].get('title'):
+            errors.append("Campo 'Nome' é obrigatório")
+
+        # Validar nome se existe
+        if 'Nome' in properties and properties['Nome'].get('title'):
+            nome = properties['Nome']['title'][0]['text']['content'].strip()
+            if not nome:
+                errors.append("Campo 'Nome' não pode estar vazio")
+            elif len(nome) > 100:
+                errors.append("Campo 'Nome' não pode ter mais de 100 caracteres")
+
+        # Validar email se existe
+        if 'Email' in properties and properties['Email'].get('email'):
+            email = properties['Email']['email']
+            if '@' not in email:
+                errors.append("Campo 'Email' deve ser um email válido")
+
+        return errors
 
     @staticmethod
     def _format_phone(phone: str) -> str:

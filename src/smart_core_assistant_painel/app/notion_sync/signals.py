@@ -810,9 +810,9 @@ def on_atendente_saved(
                         new_dept_sync.prepare_notion_data()
                         new_dept_sync.save()
                         schedule_sync_operation(
-                            sync_instance=new_dept_sync,
-                            operation="update",
-                            priority=3
+                            model_name="Departamento",
+                            instance_id=instance.departamento.id,
+                            operation="update"
                         )
                     except Exception as exc:
                         logger.error(f"Erro ao atualizar sync do departamento novo {instance.departamento_id}: {exc}")

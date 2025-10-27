@@ -64,7 +64,7 @@ class DepartamentoMapper:
 
             # Ativo (Checkbox)
             properties['Ativo'] = {
-                'checkbox': departamento.ativo
+                'checkbox': bool(departamento.ativo)
             }
 
             # Data Criação (Date)
@@ -75,6 +75,43 @@ class DepartamentoMapper:
                     }
                 }
 
+            # Relacionamento ManyToMany com Atendentes
+            try:
+                atendentes_vinculados = departamento.atendentes.filter(ativo=True)
+                if atendentes_vinculados.exists():
+                    # Prepara lista de atendentes para o campo relation
+                    atendentes_ids = []
+
+                    # Busca external_ids dos atendentes sincronizados
+                    from smart_core_assistant_painel.app.notion_sync.models import AtendenteHumanoSync
+                    for atendente in atendentes_vinculados:
+                        try:
+                            atendente_sync = AtendenteHumanoSync.objects.get(atendente_id=atendente.id)
+                            if atendente_sync.external_id:
+                                atendentes_ids.append(atendente_sync.external_id)
+                        except AtendenteHumanoSync.DoesNotExist:
+                            # Se não tem sync, pula este atendente
+                            continue
+
+                    if atendentes_ids:
+                        # Usa campo relation nativo do Notion
+                        properties['Atendentes Relacionados'] = {
+                            'relation': [
+                                {'id': aten_id} for aten_id in atendentes_ids
+                            ]
+                        }
+
+                        # Armazena informações adicionais em metadados (backup)
+                        if not hasattr(departamento_sync, 'metadados') or departamento_sync.metadados is None:
+                            departamento_sync.metadados = {}
+                        departamento_sync.metadados['atendentes_vinculados'] = [
+                            f"{atendente.id}:{atendente.nome}"
+                            for atendente in atendentes_vinculados
+                        ]
+            except Exception as e:
+                # Log silencioso para não quebrar sincronização principal
+                print(f"Aviso: Erro ao processar relacionamento de atendentes: {e}")
+
             # Observações (Rich Text)
             if departamento.descricao:
                 properties['Observações'] = {
@@ -82,8 +119,6 @@ class DepartamentoMapper:
                         {'text': {'content': departamento.descricao}}
                     ]
                 }
-
-            # Metadados adicionais em Observações (se não houver descrição)
             elif departamento.metadados:
                 import json
                 observacoes = json.dumps(departamento.metadados, ensure_ascii=False)
@@ -182,8 +217,6 @@ class DepartamentoMapper:
             elif len(nome) > 100:
                 errors.append("Campo 'Nome' não pode ter mais de 100 caracteres")
 
-
-
         return errors
 
     @staticmethod
@@ -206,6 +239,9 @@ class DepartamentoMapper:
             },
             "Data Criação": {
                 "date": {}
+            },
+            "Atendentes Relacionados": {
+                "relation": {}
             },
             "Observações": {
                 "rich_text": {}

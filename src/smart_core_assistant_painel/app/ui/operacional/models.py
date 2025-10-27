@@ -215,11 +215,9 @@ class AtendenteHumano(models.Model):
         )
 
         ativos = [
-            StatusAtendimento.AGUARDANDO_INICIAL,
-            StatusAtendimento.EM_ANDAMENTO,
-            StatusAtendimento.AGUARDANDO_CONTATO,
-            StatusAtendimento.AGUARDANDO_ATENDENTE,
-            StatusAtendimento.TRANSFERIDO,
+            StatusAtendimento.FILA,
+            StatusAtendimento.EM_ATENDIMENTO,
+            StatusAtendimento.AGUARDANDO_RETORNO,
         ]
         return self.atendimentos.filter(status__in=ativos).count()
 

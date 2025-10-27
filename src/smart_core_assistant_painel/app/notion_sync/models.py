@@ -944,3 +944,685 @@ class ClienteSync(models.Model):
         self.sync_error = error_message
         self.retry_count += 1
         self.save()
+
+
+class DepartamentoSync(models.Model):
+    """
+    Espelho do modelo Departamento para integração com Notion.
+
+    Contém dados pré-processados e formatados para compatibilidade
+    com as propriedades do Notion.
+    """
+
+    # Relação com Modelo Original
+    departamento = models.OneToOneField(
+        "operacional.Departamento",
+        on_delete=models.CASCADE,
+        related_name='notion_sync',
+        help_text="Referência ao departamento original"
+    )
+
+    # ID Externo
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID da página correspondente no Notion"
+    )
+
+    # Configuração Relacionada
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name='departamento_syncs',
+        help_text="Configuração Notion para este modelo"
+    )
+
+    # Dados Pré-processados
+    nome_formatado: models.CharField = models.CharField(
+        max_length=100,
+        help_text="Nome formatado"
+    )
+
+    slug_formatado: models.SlugField = models.SlugField(
+        max_length=120,
+        help_text="Slug formatado para URL"
+    )
+
+    descricao_formatada: models.TextField = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Descrição formatada"
+    )
+
+    status_formatado: models.CharField = models.CharField(
+        max_length=20,
+        default="Ativo",
+        help_text="Status formatado (Ativo/Inativo)"
+    )
+
+    count_atendentes: models.IntegerField = models.IntegerField(
+        default=0,
+        help_text="Número de atendentes no departamento"
+    )
+
+    especialidades_formatadas: models.JSONField = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Especialidades formatadas para multi-select do Notion"
+    )
+
+    # Campos de Controle de Sincronização
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pendente'),
+            ('syncing', 'Sincronizando'),
+            ('synced', 'Sincronizado'),
+            ('error', 'Erro'),
+            ('disabled', 'Desabilitado'),
+        ],
+        default='pending',
+        help_text="Status atual da sincronização"
+    )
+
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora da última sincronização"
+    )
+
+    sync_error: models.TextField = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Detalhes do último erro de sincronização"
+    )
+
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0,
+        help_text="Número de tentativas de sincronização"
+    )
+
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict,
+        help_text="Propriedades completas formatadas para API Notion"
+    )
+
+    metadados: models.JSONField = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Metadados adicionais para sincronização"
+    )
+
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at: models.DateTimeField = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = "Departamento Sync"
+        verbose_name_plural = "Departamentos Sync"
+        ordering = ['departamento__nome']
+        db_table = "notion_sync_departamento"
+        indexes = [
+            models.Index(fields=['external_id']),
+            models.Index(fields=['sync_status']),
+            models.Index(fields=['departamento']),
+            models.Index(fields=['last_sync_at']),
+            models.Index(fields=['sync_status', 'config']),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        nome = self.departamento.nome or 'Sem Nome'
+        external = self.external_id or 'No ID'
+        return f"{nome} ({external})"
+
+    def prepare_notion_data(self) -> None:
+        """
+        Prepara e formata os dados para sincronização com Notion.
+        """
+        try:
+            from .services.mappers.departamento_mapper import DepartamentoMapper
+
+            # Usa mapper para transformar dados
+            self.notion_properties = DepartamentoMapper.to_notion_properties(self)
+
+            # Formata campos específicos
+            self.nome_formatado = self.departamento.nome.strip().title()
+            self.slug_formatado = self.departamento.slug or self.nome_formatado.lower().replace(' ', '-')
+
+            if self.departamento.descricao:
+                self.descricao_formatada = self.departamento.descricao.strip()
+
+            # Formata status
+            self.status_formatado = "Ativo" if self.departamento.ativo else "Inativo"
+
+            # Conta atendentes ativos
+            self.count_atendentes = self.departamento.atendentes.filter(ativo=True).count()
+
+            # Prepara especialidades a partir da configuração
+            especialidades = []
+            if self.departamento.configuracoes and 'especialidades' in self.departamento.configuracoes:
+                especs = self.departamento.configuracoes['especialidades']
+                if isinstance(especs, list):
+                    especialidades = [espec.strip().title() for espec in especs if espec.strip()]
+                elif isinstance(especs, str):
+                    especialidades = [espec.strip().title() for espec in especs.split(',') if espec.strip()]
+
+            self.especialidades_formatadas = especialidades
+
+        except ImportError:
+            # Fallback se mapper não estiver disponível
+            self._prepare_notion_data_fallback()
+
+    def _prepare_notion_data_fallback(self) -> None:
+        """
+        Método fallback para preparação de dados sem mapper.
+        """
+        self.nome_formatado = self.departamento.nome.strip().title()
+        self.slug_formatado = self.departamento.slug or self.nome_formatado.lower().replace(' ', '-')
+
+        if self.departamento.descricao:
+            self.descricao_formatada = self.departamento.descricao.strip()
+
+        self.status_formatado = "Ativo" if self.departamento.ativo else "Inativo"
+        self.count_atendentes = self.departamento.atendentes.filter(ativo=True).count()
+
+        # Propriedades básicas para Notion
+        self.notion_properties = {
+            'Nome': {
+                'title': [
+                    {'text': {'content': self.nome_formatado}}
+                ]
+            },
+            'Status': {
+                'select': {'name': self.status_formatado}
+            },
+            'Quantidade de Atendentes': {
+                'number': self.count_atendentes
+            }
+        }
+
+        if self.descricao_formatada:
+            self.notion_properties['Descrição'] = {
+                'rich_text': [
+                    {'text': {'content': self.descricao_formatada}}
+                ]
+            }
+
+    def needs_sync(self) -> bool:
+        """
+        Verifica se precisa sincronizar.
+
+        Returns:
+            True se precisar sincronizar.
+        """
+        if not self.config.sync_enabled:
+            return False
+
+        if self.sync_status == 'syncing':
+            return False
+
+        # Verifica se houve alterações após último sync
+        if self.last_sync_at and self.departamento.data_criacao > self.last_sync_at:
+            return True
+
+        return self.sync_status in ['pending', 'error']
+
+    def mark_as_synced(self, external_id: str | None = None) -> None:
+        """
+        Marca o departamento como sincronizado com sucesso.
+
+        Args:
+            external_id: ID do registro criado no Notion (opcional para updates).
+        """
+        if external_id:
+            self.external_id = external_id
+        self.sync_status = 'synced'
+        self.last_sync_at = timezone.now()
+        self.sync_error = None
+        self.retry_count = 0
+        self.save()
+
+    def mark_as_failed(self, error_message: str) -> None:
+        """
+        Marca o departamento como falha na sincronização.
+
+        Args:
+            error_message: Mensagem de erro da falha.
+        """
+        self.sync_status = 'error'
+        self.sync_error = error_message
+        self.retry_count += 1
+        self.save()
+
+    # Property methods para compatibilidade
+    @property
+    def is_synced(self) -> bool:
+        """Verifica se está sincronizado (compatibilidade)."""
+        return self.sync_status == 'synced'
+
+    @property
+    def sync_age_hours(self) -> int:
+        """Idade da última sincronização em horas."""
+        if not self.last_sync_at:
+            return 999
+        delta = timezone.now() - self.last_sync_at
+        return int(delta.total_seconds() // 3600)
+
+    @property
+    def has_sync_errors(self) -> bool:
+        """Verifica se há erros de sincronização."""
+        return self.sync_status == 'error' and bool(self.sync_error)
+
+    @property
+    def notion_url(self) -> str:
+        """URL da página no Notion."""
+        if not self.external_id:
+            return "#"
+        return f"https://notion.so/{self.config.notion_page_id or self.config.notion_database_id}?p={self.external_id}"
+
+
+class AtendenteHumanoSync(models.Model):
+    """
+    Espelho do modelo AtendenteHumano para integração com Notion.
+
+    Contém dados pré-processados e formatados para compatibilidade
+    com as propriedades do Notion, incluindo relacionamento com Departamento.
+    """
+
+    # Relação com Modelo Original
+    atendente = models.OneToOneField(
+        "operacional.AtendenteHumano",
+        on_delete=models.CASCADE,
+        related_name='notion_sync',
+        help_text="Referência ao atendente original"
+    )
+
+    # ID Externo
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID da página correspondente no Notion"
+    )
+
+    # Configuração Relacionada
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name='atendente_syncs',
+        help_text="Configuração Notion para este modelo"
+    )
+
+    # Relacionamento com Departamento (para consulta otimizada)
+    departamento_sync = models.ForeignKey(
+        DepartamentoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='atendentes_sync',
+        help_text="Referência ao sync do departamento (cache)"
+    )
+
+    # Dados Pré-processados
+    nome_formatado: models.CharField = models.CharField(
+        max_length=100,
+        help_text="Nome formatado"
+    )
+
+    cargo_formatado: models.CharField = models.CharField(
+        max_length=100,
+        help_text="Cargo formatado"
+    )
+
+    departamento_nome: models.CharField = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text="Nome do departamento (cache)"
+    )
+
+    email_formatado: models.EmailField = models.EmailField(
+        max_length=254,
+        null=True,
+        blank=True,
+        help_text="Email normalizado"
+    )
+
+    telefone_formatado: models.CharField = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+        help_text="Telefone formatado"
+    )
+
+    status_formatado: models.CharField = models.CharField(
+        max_length=20,
+        default="Ativo",
+        help_text="Status formatado (Ativo/Inativo)"
+    )
+
+    disponibilidade_formatada: models.CharField = models.CharField(
+        max_length=20,
+        default="Disponível",
+        help_text="Disponibilidade formatada"
+    )
+
+    carga_atual: models.IntegerField = models.IntegerField(
+        default=0,
+        help_text="Carga atual de atendimentos"
+    )
+
+    capacidade_maxima: models.IntegerField = models.IntegerField(
+        default=5,
+        help_text="Capacidade máxima de atendimentos"
+    )
+
+    especialidades_formatadas: models.JSONField = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Especialidades formatadas para multi-select do Notion"
+    )
+
+    # Campos de Controle de Sincronização
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pendente'),
+            ('syncing', 'Sincronizando'),
+            ('synced', 'Sincronizado'),
+            ('error', 'Erro'),
+            ('disabled', 'Desabilitado'),
+        ],
+        default='pending',
+        help_text="Status atual da sincronização"
+    )
+
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora da última sincronização"
+    )
+
+    sync_error: models.TextField = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Detalhes do último erro de sincronização"
+    )
+
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0,
+        help_text="Número de tentativas de sincronização"
+    )
+
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict,
+        help_text="Propriedades completas formatadas para API Notion"
+    )
+
+    metadados: models.JSONField = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Metadados adicionais para sincronização"
+    )
+
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at: models.DateTimeField = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = "Atendente Humano Sync"
+        verbose_name_plural = "Atendentes Humanos Sync"
+        ordering = ['atendente__nome']
+        db_table = "notion_sync_atendente_humano"
+        indexes = [
+            models.Index(fields=['external_id']),
+            models.Index(fields=['sync_status']),
+            models.Index(fields=['atendente']),
+            models.Index(fields=['departamento_sync']),
+            models.Index(fields=['last_sync_at']),
+            models.Index(fields=['sync_status', 'config']),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        nome = self.atendente.nome or 'Sem Nome'
+        external = self.external_id or 'No ID'
+        return f"{nome} ({external})"
+
+    def prepare_notion_data(self) -> None:
+        """
+        Prepara e formata os dados para sincronização com Notion.
+        """
+        try:
+            from .services.mappers.atendente_humano_mapper import AtendenteHumanoMapper
+
+            # Usa mapper para transformar dados
+            self.notion_properties = AtendenteHumanoMapper.to_notion_properties(self)
+
+            # Formata campos específicos
+            self.nome_formatado = self.atendente.nome.strip().title()
+            self.cargo_formatado = self.atendente.cargo.strip().title()
+
+            # Cache do departamento
+            if self.atendente.departamento:
+                self.departamento_nome = self.atendente.departamento.nome
+                # Busca sync do departamento
+                try:
+                    self.departamento_sync = DepartamentoSync.objects.get(
+                        departamento=self.atendente.departamento
+                    )
+                except DepartamentoSync.DoesNotExist:
+                    self.departamento_sync = None
+            else:
+                self.departamento_nome = None
+                self.departamento_sync = None
+
+            if self.atendente.email:
+                self.email_formatado = self.atendente.email.lower().strip()
+
+            if self.atendente.telefone:
+                self.telefone_formatado = self._format_phone(self.atendente.telefone)
+
+            # Formata status
+            self.status_formatado = "Ativo" if self.atendente.ativo else "Inativo"
+            self.disponibilidade_formatada = "Disponível" if self.atendente.disponivel else "Indisponível"
+
+            # Calcula carga atual
+            self.carga_atual = self.atendente.get_atendimentos_ativos()
+            self.capacidade_maxima = self.atendente.max_atendimentos_simultaneos
+
+            # Prepara especialidades
+            especialidades = []
+            if self.atendente.especialidades:
+                if isinstance(self.atendente.especialidades, list):
+                    especialidades = [
+                        espec.strip().title()
+                        for espec in self.atendente.especialidades
+                        if espec.strip()
+                    ]
+                elif isinstance(self.atendente.especialidades, str):
+                    especialidades = [
+                        espec.strip().title()
+                        for espec in self.atendente.especialidades.split(',')
+                        if espec.strip()
+                    ]
+
+            self.especialidades_formatadas = especialidades
+
+        except ImportError:
+            # Fallback se mapper não estiver disponível
+            self._prepare_notion_data_fallback()
+
+    def _prepare_notion_data_fallback(self) -> None:
+        """
+        Método fallback para preparação de dados sem mapper.
+        """
+        self.nome_formatado = self.atendente.nome.strip().title()
+        self.cargo_formatado = self.atendente.cargo.strip().title()
+
+        if self.atendente.departamento:
+            self.departamento_nome = self.atendente.departamento.nome
+
+        if self.atendente.email:
+            self.email_formatado = self.atendente.email.lower().strip()
+
+        if self.atendente.telefone:
+            self.telefone_formatado = self._format_phone(self.atendente.telefone)
+
+        self.status_formatado = "Ativo" if self.atendente.ativo else "Inativo"
+        self.disponibilidade_formatada = "Disponível" if self.atendente.disponivel else "Indisponível"
+
+        self.carga_atual = self.atendente.get_atendimentos_ativos()
+        self.capacidade_maxima = self.atendente.max_atendimentos_simultaneos
+
+        # Propriedades básicas para Notion
+        self.notion_properties = {
+            'Nome': {
+                'title': [
+                    {'text': {'content': self.nome_formatado}}
+                ]
+            },
+            'Cargo': {
+                'rich_text': [
+                    {'text': {'content': self.cargo_formatado}}
+                ]
+            },
+            'Status': {
+                'select': {'name': self.status_formatado}
+            },
+            'Disponibilidade': {
+                'select': {'name': self.disponibilidade_formatada}
+            },
+            'Carga Atual': {
+                'number': self.carga_atual
+            },
+            'Capacidade Máxima': {
+                'number': self.capacidade_maxima
+            }
+        }
+
+        if self.departamento_nome:
+            self.notion_properties['Departamento'] = {
+                'rich_text': [
+                    {'text': {'content': self.departamento_nome}}
+                ]
+            }
+
+        if self.email_formatado:
+            self.notion_properties['Email'] = {
+                'email': self.email_formatado
+            }
+
+        if self.telefone_formatado:
+            self.notion_properties['Telefone'] = {
+                'phone_number': self.telefone_formatado
+            }
+
+    def _format_phone(self, phone: str) -> str:
+        """
+        Formata telefone para padrão internacional.
+
+        Args:
+            phone: Telefone original.
+
+        Returns:
+            Telefone formatado.
+        """
+        # Remove tudo que não é dígito
+        digits = re.sub(r'\D', '', phone)
+
+        # Verifica se tem código do Brasil
+        if digits.startswith('55') and len(digits) > 11:
+            return f"+{digits[:2]} {digits[2:4]} {digits[4:-4]} {digits[-4:]}"
+        elif len(digits) == 11:  # Celular com 9
+            return f"+55 {digits[0:2]} {digits[2:7]} {digits[7:]}"
+        elif len(digits) == 10:  # Fixo
+            return f"+55 {digits[0:2]} {digits[2:6]} {digits[6:]}"
+        else:
+            return phone  # Retorna original se não conseguir formatar
+
+    def needs_sync(self) -> bool:
+        """
+        Verifica se precisa sincronizar.
+
+        Returns:
+            True se precisar sincronizar.
+        """
+        if not self.config.sync_enabled:
+            return False
+
+        if self.sync_status == 'syncing':
+            return False
+
+        # Verifica se houve alterações após último sync
+        if self.last_sync_at and self.atendente.ultima_atividade > self.last_sync_at:
+            return True
+
+        return self.sync_status in ['pending', 'error']
+
+    def mark_as_synced(self, external_id: str | None = None) -> None:
+        """
+        Marca o atendente como sincronizado com sucesso.
+
+        Args:
+            external_id: ID do registro criado no Notion (opcional para updates).
+        """
+        if external_id:
+            self.external_id = external_id
+        self.sync_status = 'synced'
+        self.last_sync_at = timezone.now()
+        self.sync_error = None
+        self.retry_count = 0
+        self.save()
+
+    def mark_as_failed(self, error_message: str) -> None:
+        """
+        Marca o atendente como falha na sincronização.
+
+        Args:
+            error_message: Mensagem de erro da falha.
+        """
+        self.sync_status = 'error'
+        self.sync_error = error_message
+        self.retry_count += 1
+        self.save()
+
+    # Property methods para compatibilidade
+    @property
+    def is_synced(self) -> bool:
+        """Verifica se está sincronizado (compatibilidade)."""
+        return self.sync_status == 'synced'
+
+    @property
+    def sync_age_hours(self) -> int:
+        """Idade da última sincronização em horas."""
+        if not self.last_sync_at:
+            return 999
+        delta = timezone.now() - self.last_sync_at
+        return int(delta.total_seconds() // 3600)
+
+    @property
+    def has_sync_errors(self) -> bool:
+        """Verifica se há erros de sincronização."""
+        return self.sync_status == 'error' and bool(self.sync_error)
+
+    @property
+    def notion_url(self) -> str:
+        """URL da página no Notion."""
+        if not self.external_id:
+            return "#"
+        return f"https://notion.so/{self.config.notion_page_id or self.config.notion_database_id}?p={self.external_id}"

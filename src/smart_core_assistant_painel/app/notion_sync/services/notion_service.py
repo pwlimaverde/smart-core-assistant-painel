@@ -123,9 +123,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
         """
         database_id = self.get_database_id(model_name)
         if not database_id:
-            raise SyncConfigError(
+            raise NotionSyncError(
                 message=f"Database ID não configurado para {model_name}. Persista via NotionDatabaseConfig executando o setup.",
-                config_key=f"NotionDatabaseConfig[{model_name}]",
+                details={"config_key": f"NotionDatabaseConfig[{model_name}]"},
             )
 
         try:

@@ -2,19 +2,20 @@
 Signals para sincronização automática de models com plataformas externas.
 
 Este módulo contém os signal receivers que capturam mudanças nos models
-principais (Cliente, Contato) e disparam o processo de sincronização
-com plataformas externas (Notion, Airtable, etc).
+principais (Cliente, Contato, Departamento, AtendenteHumano) e disparam
+o processo de sincronização com plataformas externas (Notion, Airtable, etc).
 """
 
 from typing import Any
 
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from loguru import logger
 
 from ..ui.clientes.models import Cliente, Contato
+from ..ui.operacional.models import AtendenteHumano, Departamento
 from .exceptions import NotionSyncError, SyncError
-from .models import ClienteSync, ContatoSync
+from .models import AtendenteHumanoSync, ClienteSync, ContatoSync, DepartamentoSync
 from .services import NotionSyncService
 
 
@@ -76,6 +77,86 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
     return sync
 
 
+def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
+    """
+    Obtém ou cria registro DepartamentoSync para um departamento.
+
+    Esta é uma função auxiliar para os signals de Departamento.
+
+    Args:
+        departamento_id: ID do departamento no Django.
+
+    Returns:
+        Instância do DepartamentoSync.
+    """
+    from .models import DepartamentoSync, NotionDatabaseConfig
+
+    # Obter configuração do Notion para Departamentos
+    try:
+        config = NotionDatabaseConfig.objects.get(slug="ui_operacional_departamento")
+    except NotionDatabaseConfig.DoesNotExist:
+        # Criar configuração padrão se não existir
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_operacional_departamento",
+            name="Departamentos",
+            django_model="operacional.Departamento",
+            django_app_label="ui",
+            notion_database_id="",  # Será preenchido depois
+            sync_enabled=False,  # Inicia desabilitado
+            description="Departamentos da organização"
+        )
+
+    sync, created = DepartamentoSync.objects.get_or_create(
+        departamento_id=departamento_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config
+        }
+    )
+    return sync
+
+
+def get_or_create_atendente_sync(atendente_id: int) -> AtendenteHumanoSync:
+    """
+    Obtém ou cria registro AtendenteHumanoSync para um atendente.
+
+    Esta é uma função auxiliar para os signals de AtendenteHumano.
+
+    Args:
+        atendente_id: ID do atendente no Django.
+
+    Returns:
+        Instância do AtendenteHumanoSync.
+    """
+    from .models import AtendenteHumanoSync, NotionDatabaseConfig
+
+    # Obter configuração do Notion para Atendentes Humanos
+    try:
+        config = NotionDatabaseConfig.objects.get(slug="ui_operacional_atendentehumano")
+    except NotionDatabaseConfig.DoesNotExist:
+        # Criar configuração padrão se não existir
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_operacional_atendentehumano",
+            name="Atendentes Humanos",
+            django_model="operacional.AtendenteHumano",
+            django_app_label="ui",
+            notion_database_id="",  # Será preenchido depois
+            sync_enabled=False,  # Inicia desabilitado
+            description="Atendentes humanos da organização"
+        )
+
+    sync, created = AtendenteHumanoSync.objects.get_or_create(
+        atendente_id=atendente_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config
+        }
+    )
+    return sync
+
+
 def schedule_sync_operation(
     model_name: str,
     instance_id: int,
@@ -88,12 +169,12 @@ def schedule_sync_operation(
     e será usada pelos signals quando forem reabilitados.
 
     Args:
-        model_name: Nome do modelo (ex: "Contato", "Cliente").
+        model_name: Nome do modelo (ex: "Contato", "Cliente", "Departamento", "AtendenteHumano").
         instance_id: ID da instância.
         operation: Tipo de operação ("create", "update", "delete").
     """
     from .services import NotionSyncService
-    from .models import ContatoSync, ClienteSync
+    from .models import AtendenteHumanoSync, ClienteSync, ContatoSync, DepartamentoSync
 
     try:
         service = NotionSyncService()
@@ -109,6 +190,10 @@ def schedule_sync_operation(
             sync_record = ContatoSync.objects.get(contato_id=instance_id)
         elif model_name == "Cliente":
             sync_record = ClienteSync.objects.get(cliente_id=instance_id)
+        elif model_name == "Departamento":
+            sync_record = DepartamentoSync.objects.get(departamento_id=instance_id)
+        elif model_name == "AtendenteHumano":
+            sync_record = AtendenteHumanoSync.objects.get(atendente_id=instance_id)
         else:
             logger.warning(f"Modelo não suportado: {model_name}")
             return
@@ -534,5 +619,266 @@ def on_cliente_contatos_changed(
             except Exception as e_inner:
                 logger.error(f"Erro ao sincronizar contatos impactados (Cliente #{instance.id}): {e_inner}")
 
-    except Exception as e:
-        logger.error(f"Erro ao processar mudança de relacionamento do Cliente #{instance.id}: {e}")
+    except Exception as exc:
+        logger.error(f"Erro ao processar mudança de contatos no cliente {instance.id}: {exc}")
+
+
+# Signals para Departamento
+@receiver(post_save, sender=Departamento)
+def on_departamento_saved(
+    sender: type[Departamento],
+    instance: Departamento,
+    created: bool,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado após salvar um Departamento.
+
+    Cria/atualiza registro DepartamentoSync e agenda sincronização.
+    """
+    logger.info(f"Departamento salvo: {instance.nome} (created={created})")
+
+    try:
+        sync = get_or_create_departamento_sync(instance.id)
+        logger.info(f"Sync criado/atualizado: {sync}")
+
+        # Prepara dados para sincronização
+        sync.prepare_notion_data()
+        sync.save()
+
+        # Agenda operação de sincronização
+        schedule_sync_operation(
+            model_name="Departamento",
+            instance_id=instance.id,
+            operation="create" if created else "update"
+        )
+
+    except Exception as exc:
+        logger.error(f"Erro ao processar sync do departamento {instance.id}: {exc}")
+
+
+@receiver(pre_delete, sender=Departamento)
+def on_departamento_pre_delete(
+    sender: type[Departamento],
+    instance: Departamento,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado antes de excluir um Departamento.
+
+    Remove sincronização do Notion.
+    """
+    logger.info(f"Departamento para exclusão: {instance.nome}")
+
+    try:
+        sync = get_or_create_departamento_sync(instance.id)
+
+        # Agenda operação de exclusão
+        schedule_sync_operation(
+            model_name="Departamento",
+            instance_id=instance.id,
+            operation="delete"
+        )
+
+    except Exception as exc:
+        logger.error(f"Erro ao processar exclusão do departamento {instance.id}: {exc}")
+
+
+# Signal para detectar mudanças de atendentes no departamento (através do AtendenteHumano)
+@receiver(post_save, sender=AtendenteHumano)
+def on_atendente_department_change(
+    sender: type[AtendenteHumano],
+    instance: AtendenteHumano,
+    created: bool,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado quando um AtendenteHumano é salvo para atualizar departamento.
+
+    Atualiza contadores e resincroniza departamento relacionado.
+    """
+    # Se é novo ou se mudou de departamento
+    if created or (hasattr(instance, '_original_departamento_id') and
+                  instance._original_departamento_id != instance.departamento_id):
+
+        # Atualiza departamento antigo
+        if hasattr(instance, '_original_departamento_id') and instance._original_departamento_id:
+            try:
+                old_dept = Departamento.objects.get(id=instance._original_departamento_id)
+                old_sync = get_or_create_departamento_sync(old_dept.id)
+                old_sync.prepare_notion_data()
+                old_sync.save()
+                schedule_sync_operation(
+                    model_name="Departamento",
+                    instance_id=old_dept.id,
+                    operation="update"
+                )
+            except Exception as exc:
+                logger.error(f"Erro ao atualizar departamento antigo {instance._original_departamento_id}: {exc}")
+
+        # Atualiza departamento novo
+        if instance.departamento:
+            try:
+                new_sync = get_or_create_departamento_sync(instance.departamento.id)
+                new_sync.prepare_notion_data()
+                new_sync.save()
+                schedule_sync_operation(
+                    model_name="Departamento",
+                    instance_id=instance.departamento.id,
+                    operation="update"
+                )
+            except Exception as exc:
+                logger.error(f"Erro ao atualizar departamento novo {instance.departamento.id}: {exc}")
+
+
+@receiver(post_delete, sender=AtendenteHumano)
+def on_atendente_deleted(
+    sender: type[AtendenteHumano],
+    instance: AtendenteHumano,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado quando um AtendenteHumano é excluído.
+
+    Atualiza contadores do departamento.
+    """
+    if instance.departamento:
+        try:
+            dept_sync = get_or_create_departamento_sync(instance.departamento.id)
+            dept_sync.prepare_notion_data()
+            dept_sync.save()
+            schedule_sync_operation(
+                model_name="Departamento",
+                instance_id=old_dept.id,
+                operation="update"
+            )
+        except Exception as exc:
+            logger.error(f"Erro ao atualizar departamento após exclusão do atendente: {exc}")
+
+
+# Signals para AtendenteHumano
+@receiver(post_save, sender=AtendenteHumano)
+def on_atendente_saved(
+    sender: type[AtendenteHumano],
+    instance: AtendenteHumano,
+    created: bool,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado após salvar um AtendenteHumano.
+
+    Cria/atualiza registro AtendenteHumanoSync e agenda sincronização.
+    """
+    logger.info(f"Atendente salvo: {instance.nome} (created={created})")
+
+    try:
+        sync = get_or_create_atendente_sync(instance.id)
+        logger.info(f"Sync criado/atualizado: {sync}")
+
+        # Prepara dados para sincronização
+        sync.prepare_notion_data()
+        sync.save()
+
+        # Agenda operação de sincronização
+        schedule_sync_operation(
+            model_name="AtendenteHumano",
+            instance_id=instance.id,
+            operation="create" if created else "update"
+        )
+
+        # Se mudou de departamento, atualiza sync do departamento antigo e novo
+        if not created and hasattr(instance, '_original_departamento_id'):
+            if instance._original_departamento_id != instance.departamento_id:
+                # Atualiza sync do departamento antigo
+                if instance._original_departamento_id:
+                    try:
+                        old_dept_sync = get_or_create_departamento_sync(instance._original_departamento_id)
+                        old_dept_sync.prepare_notion_data()
+                        old_dept_sync.save()
+                        schedule_sync_operation(
+                            model_name="Departamento",
+                            instance_id=instance.departamento.id,
+                            operation="update"
+                        )
+                    except Exception as exc:
+                        logger.error(f"Erro ao atualizar sync do departamento antigo {instance._original_departamento_id}: {exc}")
+
+                # Atualiza sync do departamento novo
+                if instance.departamento_id:
+                    try:
+                        new_dept_sync = get_or_create_departamento_sync(instance.departamento_id)
+                        new_dept_sync.prepare_notion_data()
+                        new_dept_sync.save()
+                        schedule_sync_operation(
+                            sync_instance=new_dept_sync,
+                            operation="update",
+                            priority=3
+                        )
+                    except Exception as exc:
+                        logger.error(f"Erro ao atualizar sync do departamento novo {instance.departamento_id}: {exc}")
+
+    except Exception as exc:
+        logger.error(f"Erro ao processar sync do atendente {instance.id}: {exc}")
+
+
+@receiver(pre_delete, sender=AtendenteHumano)
+def on_atendente_pre_delete(
+    sender: type[AtendenteHumano],
+    instance: AtendenteHumano,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado antes de excluir um AtendenteHumano.
+
+    Remove sincronização do Notion.
+    """
+    logger.info(f"Atendente para exclusão: {instance.nome}")
+
+    try:
+        sync = get_or_create_atendente_sync(instance.id)
+
+        # Agenda operação de exclusão
+        schedule_sync_operation(
+            model_name="AtendenteHumano",
+            instance_id=instance.id,
+            operation="delete"
+        )
+
+        # Se tinha departamento, atualiza contadores
+        if instance.departamento_id:
+            try:
+                dept_sync = get_or_create_departamento_sync(instance.departamento_id)
+                dept_sync.prepare_notion_data()
+                dept_sync.save()
+                schedule_sync_operation(
+                    model_name="Departamento",
+                    instance_id=instance.departamento.id,
+                    operation="update"
+                )
+            except Exception as exc:
+                logger.error(f"Erro ao atualizar sync do departamento após exclusão do atendente: {exc}")
+
+    except Exception as exc:
+        logger.error(f"Erro ao processar exclusão do atendente {instance.id}: {exc}")
+
+
+# Signal para capturar mudança de departamento no AtendenteHumano
+@receiver(pre_save, sender=AtendenteHumano)
+def on_atendente_pre_save(
+    sender: type[AtendenteHumano],
+    instance: AtendenteHumano,
+    **kwargs: Any
+) -> None:
+    """
+    Signal disparado antes de salvar um AtendenteHumano.
+
+    Captura ID original do departamento para detectar mudanças.
+    """
+    if instance.pk:
+        try:
+            original = AtendenteHumano.objects.get(pk=instance.pk)
+            instance._original_departamento_id = original.departamento_id
+        except AtendenteHumano.DoesNotExist:
+            instance._original_departamento_id = None
+    else:
+        instance._original_departamento_id = None

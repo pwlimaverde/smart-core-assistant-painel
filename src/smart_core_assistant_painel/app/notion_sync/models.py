@@ -1117,6 +1117,15 @@ class DepartamentoSync(models.Model):
 
             self.especialidades_formatadas = especialidades
 
+            # Armazena dados atuais nos metadados para detecção de mudanças futuras
+            if not self.metadados:
+                self.metadados = {}
+            self.metadados['last_synced_data'] = {
+                'nome': self.departamento.nome,
+                'descricao': self.departamento.descricao,
+                'ativo': self.departamento.ativo
+            }
+
         except ImportError:
             # Fallback se mapper não estiver disponível
             self._prepare_notion_data_fallback()
@@ -1170,8 +1179,21 @@ class DepartamentoSync(models.Model):
             return False
 
         # Verifica se houve alterações após último sync
-        if self.last_sync_at and self.departamento.data_criacao > self.last_sync_at:
-            return True
+        if self.last_sync_at:
+            # Verifica data de criação (para novos registros)
+            if self.departamento.data_criacao > self.last_sync_at:
+                return True
+            # Departamento não tem updated_at, então verificamos mudança no campo ativo
+            # Verifica se mudou o campo ativo (compara com valor formatado atual)
+            if self.status_formatado != ("Ativo" if self.departamento.ativo else "Inativo"):
+                return True
+            # Verifica se houve mudança em outros campos importantes
+            # Comparando valores atuais com os últimos sincronizados (se disponíveis nos metadados)
+            if hasattr(self, 'metadados') and self.metadados:
+                last_synced_data = self.metadados.get('last_synced_data', {})
+                if (last_synced_data.get('nome') != self.departamento.nome or
+                    last_synced_data.get('descricao') != self.departamento.descricao):
+                    return True
 
         return self.sync_status in ['pending', 'error']
 
@@ -1463,6 +1485,18 @@ class AtendenteHumanoSync(models.Model):
 
             self.especialidades_formatadas = especialidades
 
+            # Armazena dados atuais nos metadados para detecção de mudanças futuras
+            if not self.metadados:
+                self.metadados = {}
+            self.metadados['last_synced_data'] = {
+                'nome': self.atendente.nome,
+                'cargo': self.atendente.cargo,
+                'email': self.atendente.email,
+                'ativo': self.atendente.ativo,
+                'disponivel': self.atendente.disponivel,
+                'departamento_id': self.atendente.departamento_id
+            }
+
         except ImportError:
             # Fallback se mapper não estiver disponível
             self._prepare_notion_data_fallback()
@@ -1569,8 +1603,26 @@ class AtendenteHumanoSync(models.Model):
             return False
 
         # Verifica se houve alterações após último sync
-        if self.last_sync_at and self.atendente.ultima_atividade > self.last_sync_at:
-            return True
+        if self.last_sync_at:
+            # Verifica data de criação (para novos registros)
+            if self.atendente.data_cadastro > self.last_sync_at:
+                return True
+            # Verifica data de última atividade
+            if self.atendente.ultima_atividade > self.last_sync_at:
+                return True
+            # Verifica se mudou o campo ativo (compara com valor formatado atual)
+            if self.status_formatado != ("Ativo" if self.atendente.ativo else "Inativo"):
+                return True
+            # Verifica se houve mudança em outros campos importantes
+            # Comparando valores atuais com os últimos sincronizados (se disponíveis nos metadados)
+            if hasattr(self, 'metadados') and self.metadados:
+                last_synced_data = self.metadados.get('last_synced_data', {})
+                if (last_synced_data.get('nome') != self.atendente.nome or
+                    last_synced_data.get('cargo') != self.atendente.cargo or
+                    last_synced_data.get('email') != self.atendente.email or
+                    last_synced_data.get('disponivel') != self.atendente.disponivel or
+                    last_synced_data.get('departamento_id') != self.atendente.departamento_id):
+                    return True
 
         return self.sync_status in ['pending', 'error']
 

@@ -125,6 +125,11 @@ class AtendenteHumanoMapper:
                     ]
                 }
 
+            # Ativo (Checkbox)
+            properties['Ativo'] = {
+                'checkbox': bool(atendente.ativo)
+            }
+
             # Especialidade (Rich Text)
             if atendente.especialidades:
                 especialidades_text = ''

@@ -40,7 +40,7 @@ class TestAtendimentoAdmin(TestCase):
         )
 
         self.atendimento = Atendimento.objects.create(
-            contato=self.contato, status=StatusAtendimento.EM_ANDAMENTO
+            contato=self.contato, status=StatusAtendimento.EM_ATENDIMENTO
         )
 
     def test_list_display(self) -> None:

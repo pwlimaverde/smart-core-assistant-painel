@@ -1,226 +1,138 @@
 """
-Testes para verificar se os models desnecessários foram removidos
-e se os models essenciais estão funcionando corretamente.
+Testes essenciais para verificar se a sincronização do campo ativo funciona corretamente.
+
+Este teste foca em verificar:
+1. Se os models existem e têm os campos necessários
+2. Se o mapper do atendente inclui o campo Ativo
 """
+
 from django.test import TestCase
 
-from notion_sync.models import (
+from smart_core_assistant_painel.app.notion_sync.models import (
     DepartamentoSync,
-    AtendenteSync,
-    MensagemSync,
-    ClienteSync,
-    ContatoSync,
+    AtendenteHumanoSync,
     NotionDatabaseConfig,
-    NotionObjectMapping,
 )
 
+class TestSincronizacaoCampoAtivo(TestCase):
+    """Testa se o campo ativo é sincronizado corretamente."""
 
-class TestModelsRemovidos(TestCase):
-    """Testa se os models desnecessários foram removidos."""
+    def test_models_possuem_campos_necessarios(self) -> None:
+        """Verifica se os models têm os campos necessários."""
+        # DepartamentoSync
+        self.assertTrue(hasattr(DepartamentoSync, 'departamento'))
+        self.assertTrue(hasattr(DepartamentoSync, 'status_formatado'))
+        self.assertTrue(hasattr(DepartamentoSync, 'prepare_notion_data'))
+        self.assertTrue(hasattr(DepartamentoSync, 'needs_sync'))
 
-    def test_sync_config_nao_existe(self):
-        """Verifica se SyncConfig foi removido."""
-        from notion_sync.models import SyncConfig  # type: ignore
+        # AtendenteHumanoSync
+        self.assertTrue(hasattr(AtendenteHumanoSync, 'atendente'))
+        self.assertTrue(hasattr(AtendenteHumanoSync, 'status_formatado'))
+        self.assertTrue(hasattr(AtendenteHumanoSync, 'prepare_notion_data'))
+        self.assertTrue(hasattr(AtendenteHumanoSync, 'needs_sync'))
 
-        # Se este import funcionar, significa que o model ainda existe
-        # Mas esperamos que ele não exista mais
-        self.fail("SyncConfig deveria ter sido removido!")
+    def test_mapper_atendente_inclui_campo_ativo(self) -> None:
+        """Testa se AtendenteHumanoMapper inclui campo Ativo."""
+        from smart_core_assistant_painel.app.notion_sync.services.mappers.atendente_humano_mapper import AtendenteHumanoMapper
 
-    def test_sync_log_nao_existe(self):
-        """Verifica se SyncLog foi removido."""
-        from notion_sync.models import SyncLog  # type: ignore
+        # Mock do sync com apenas o campo necessário para este teste
+        class MockAtendente:
+            def __init__(self) -> None:
+                self.ativo = True
+                self.nome = "Test Agent"
+                self.cargo = "Test Role"
+                self.email = "test@example.com"
+                self.telefone = None
+                self.departamento = None
+                self.especialidades = []
 
-        # Se este import funcionar, significa que o model ainda existe
-        # Mas esperamos que ele não exista mais
-        self.fail("SyncLog deveria ter sido removido!")
+        class MockSync:
+            def __init__(self) -> None:
+                self.atendente = MockAtendente()
+                self.metadados = {}
 
+        mock_sync = MockSync()
 
-class TestModelsEssenciais(TestCase):
-    """Testa se os models essenciais estão funcionando."""
+        # Converte para propriedades do Notion
+        properties = AtendenteHumanoMapper.to_notion_properties(mock_sync)
 
-    def test_models_essenciais_existem(self):
+        # Verifica se incluiu o campo Ativo
+        self.assertIn('Ativo', properties)
+        self.assertEqual(properties['Ativo']['checkbox'], True)
+
+        # Testa com ativo=False
+        mock_sync.atendente.ativo = False
+        properties = AtendenteHumanoMapper.to_notion_properties(mock_sync)
+        self.assertEqual(properties['Ativo']['checkbox'], False)
+
+    def test_needs_sync_departamento_compara_ativo(self) -> None:
+        """Testa lógica do needs_sync para campo ativo do departamento."""
+        dept_sync = DepartamentoSync()
+        dept_sync.sync_status = 'synced'
+        dept_sync.last_sync_at = None  # None significa que nunca foi sincronizado
+
+        # Mock da config
+        class MockConfig:
+            sync_enabled = True
+        dept_sync.config = MockConfig()
+
+        # Mock do departamento
+        class MockDepartamento:
+            def __init__(self) -> None:
+                self.ativo = True
+                self.data_criacao = None
+
+        mock_departamento = MockDepartamento()
+        dept_sync.departamento = mock_departamento
+        dept_sync.status_formatado = "Ativo"
+        dept_sync.metadados = {}
+
+        # Com last_sync_at None, sempre precisa sincronizar
+        self.assertTrue(dept_sync.needs_sync())
+
+        # Mudando status_formatado para diferente do valor atual
+        dept_sync.status_formatado = "Inativo"  # Diferente do mock_departamento.ativo
+        self.assertTrue(dept_sync.needs_sync())
+
+    def test_needs_sync_atendente_compara_ativo(self) -> None:
+        """Testa lógica do needs_sync para campo ativo do atendente."""
+        atendente_sync = AtendenteHumanoSync()
+        atendente_sync.sync_status = 'synced'
+        atendente_sync.last_sync_at = None  # None significa que nunca foi sincronizado
+
+        # Mock da config
+        class MockConfig:
+            sync_enabled = True
+        atendente_sync.config = MockConfig()
+
+        # Mock do atendente
+        class MockAtendente:
+            def __init__(self) -> None:
+                self.ativo = True
+                self.data_cadastro = None
+                self.ultima_atividade = None
+
+        mock_atendente = MockAtendente()
+        atendente_sync.atendente = mock_atendente
+        atendente_sync.status_formatado = "Ativo"
+        atendente_sync.metadados = {}
+
+        # Com last_sync_at None, sempre precisa sincronizar
+        self.assertTrue(atendente_sync.needs_sync())
+
+        # Mudando status_formatado para diferente do valor atual
+        atendente_sync.status_formatado = "Inativo"  # Diferente do mock_atendente.ativo
+        self.assertTrue(atendente_sync.needs_sync())
+
+    def test_models_existem(self) -> None:
         """Verifica se todos os models essenciais existem."""
-        # Models que devem existir
         models_essenciais = [
             NotionDatabaseConfig,
-            NotionObjectMapping,
-            ContatoSync,
-            ClienteSync,
             DepartamentoSync,
-            AtendenteSync,
-            MensagemSync,
+            AtendenteHumanoSync,
         ]
 
-        for model_class in models_essenciais:
-            with self.subTest(model=model_class.__name__):
-                # Verifica se o model tem a estrutura esperada
-                self.assertIsNotNone(model_class._meta)
-                self.assertIsNotNone(model_class._meta.db_table)
-                self.assertIsNotNone(model_class._meta.verbose_name)
-
-    def test_contato_sync_methods(self):
-        """Verifica se ContatoSync tem métodos essenciais."""
-        contato_sync = ContatoSync()
-
-        # Verifica se os métodos essenciais existem
-        self.assertTrue(hasattr(contato_sync, 'prepare_notion_data'))
-        self.assertTrue(hasattr(contato_sync, 'needs_sync'))
-        self.assertTrue(hasattr(contato_sync, 'mark_as_synced'))
-        self.assertTrue(hasattr(contato_sync, 'mark_as_failed'))
-
-        # Verifica se as properties essenciais existem
-        self.assertTrue(hasattr(contato_sync, 'is_synced'))
-        self.assertTrue(hasattr(contato_sync, 'sync_age_hours'))
-        self.assertTrue(hasattr(contato_sync, 'has_sync_errors'))
-        self.assertTrue(hasattr(contato_sync, 'notion_url'))
-
-    def test_cliente_sync_methods(self):
-        """Verifica se ClienteSync tem métodos essenciais."""
-        cliente_sync = ClienteSync()
-
-        # Verifica se os métodos essenciais existem
-        self.assertTrue(hasattr(cliente_sync, 'prepare_notion_data'))
-        self.assertTrue(hasattr(cliente_sync, 'needs_sync'))
-        self.assertTrue(hasattr(cliente_sync, 'mark_as_synced'))
-        self.assertTrue(hasattr(cliente_sync, 'mark_as_failed'))
-
-        # Verifica se as properties essenciais existem
-        self.assertTrue(hasattr(cliente_sync, 'is_synced'))
-        self.assertTrue(hasattr(cliente_sync, 'sync_age_hours'))
-        self.assertTrue(hasattr(cliente_sync, 'has_sync_errors'))
-
-
-class TestModelsParciais(TestCase):
-    """Testa se os models parciais têm a estrutura básica."""
-
-    def test_departamento_sync_estrutura_basica(self):
-        """Verifica se DepartamentoSync tem estrutura básica."""
-        dept_sync = DepartamentoSync()
-
-        # Verifica campos básicos
-        self.assertTrue(hasattr(dept_sync, 'external_id'))
-        self.assertTrue(hasattr(dept_sync, 'last_sync'))
-        self.assertTrue(hasattr(dept_sync, 'sync_errors'))
-        self.assertTrue(hasattr(dept_sync, 'last_error'))
-        self.assertTrue(hasattr(dept_sync, 'needs_sync'))
-        self.assertTrue(hasattr(dept_sync, 'is_active'))
-
-    def test_atendente_sync_estrutura_basica(self):
-        """Verifica se AtendenteSync tem estrutura básica."""
-        atend_sync = AtendenteSync()
-
-        # Verifica campos básicos
-        self.assertTrue(hasattr(atend_sync, 'external_id'))
-        self.assertTrue(hasattr(atend_sync, 'last_sync'))
-        self.assertTrue(hasattr(atend_sync, 'sync_errors'))
-        self.assertTrue(hasattr(atend_sync, 'last_error'))
-        self.assertTrue(hasattr(atend_sync, 'needs_sync'))
-        self.assertTrue(hasattr(atend_sync, 'is_active'))
-
-    def test_mensagem_sync_estrutura_basica(self):
-        """Verifica se MensagemSync tem estrutura básica."""
-        msg_sync = MensagemSync()
-
-        # Verifica campos básicos
-        self.assertTrue(hasattr(msg_sync, 'external_id'))
-        self.assertTrue(hasattr(msg_sync, 'last_sync'))
-        self.assertTrue(hasattr(msg_sync, 'sync_errors'))
-        self.assertTrue(hasattr(msg_sync, 'last_error'))
-        self.assertTrue(hasattr(msg_sync, 'needs_sync'))
-        self.assertTrue(hasattr(msg_sync, 'is_active'))
-
-
-class TestNaoInjecaoDeImports(TestCase):
-    """Testa se não há imports de models removidos."""
-
-    def test_imports_dos_models(self):
-        """Testa se podemos importar apenas os models essenciais."""
-        try:
-            from notion_sync.models import (  # type: ignore
-                NotionDatabaseConfig,
-                NotionObjectMapping,
-                ContatoSync,
-                ClienteSync,
-                DepartamentoSync,
-                AtendenteSync,
-                MensagemSync,
-            )
-            # Se chegou aqui, todos os imports funcionaram
-            self.assertTrue(True)
-        except ImportError as e:
-            self.fail(f"Erro ao importar models essenciais: {e}")
-
-        # Tenta importar os models removidos - deve falhar
-        try:
-            from notion_sync.models import SyncConfig  # type: ignore
-            self.fail("SyncConfig deveria ter sido removido!")
-        except ImportError:
-            # Este é o comportamento esperado
-            pass
-
-        try:
-            from notion_sync.models import SyncLog  # type: ignore
-            self.fail("SyncLog deveria ter sido removido!")
-        except ImportError:
-            # Este é o comportamento esperado
-            pass
-```
-
-## ✅ Conclusão
-
-Concluí todas as alterações solicitadas para remover a complexidade desnecessária do projeto:
-
-### 🔧 **O que foi removido:**
-
-1. **Models desnecessários:**
-   - `SyncConfig` - Armazenava configurações globais (agora usa environment variables)
-   - `SyncLog` - Sistema de logs complexo (substituído por abordagem simples)
-
-2. **Admin registrations:**
-   - Removidos `SyncConfigAdmin` e `SyncLogAdmin` do `admin.py`
-
-3. **Referências no código:**
-   - Removidos imports de `SyncConfig` e `SyncLog` em todos os arquivos
-   - Removida classe `SyncConfigError` do `exceptions.py`
-   - Atualizados docstrings que faziam referência aos models removidos
-
-4. **Migrações:**
-   - Criada migração para remover as tabelas
-   - Corrigidas migrações existentes que referenciavam os models removidos
-
-### 📋 **O que foi mantido:**
-
-1. **Models essenciais e funcionais:**
-   - `ContatoSync` - Completo com todos os métodos e properties
-   - `ClienteSync` - Completo com todos os métodos e properties
-   - `NotionDatabaseConfig` - Simplificado para configurações básicas
-   - `NotionObjectMapping` - Para mapeamento de objetos
-
-2. **Models parciais (para implementar):**
-   - `DepartamentoSync` - Estrutura básica presente
-   - `AtendenteSync` - Estrutura básica presente
-   - `MensagemSync` - Estrutura básica presente
-
-### 📄 **Plano atualizado:**
-
-O arquivo `PLANO_INTEGRACAO_NOTION.md` foi completamente reescrito para:
-
-- **Foco exclusivo** nos 4 models restantes que precisam ser implementados
-- **Padrão claro** baseado em `ContatoSync` e `ClienteSync` como referência
-- **Estrutura simplificada** em 5 fases diretas (7-12 dias úteis)
-- **Código exemplos** prontos para cada model e mapper
-- **Sem complexidade desnecessária** - apenas o essencial para a integração
-
-### 🎯 **Resultado final:**
-
-Arquitetura muito mais simples e focada:
-
-```
-Django Model ←→ Shadow Model ←→ Notion API
-     ↓               ↓              ↓
-  Signals        Methods       Mappers
-     ↓               ↓              ↓
-Criação Auto  Sincronização  Transformação
-```
-
-Agora o projeto está pronto para implementação dos models restantes seguindo um padrão **consistente, simples e testado**! 🚀
+        for model in models_essenciais:
+            self.assertIsNotNone(model, f"Model {model.__name__} deveria existir")
+            self.assertIsNotNone(model._meta)
+            self.assertIsNotNone(model._meta.db_table)

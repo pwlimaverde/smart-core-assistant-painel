@@ -63,13 +63,8 @@ class AtendenteHumanoMapper:
                     ]
                 }
 
-            # Departamento (Rich Text)
-            if atendente.departamento:
-                properties['Departamento'] = {
-                    'rich_text': [
-                        {'text': {'content': atendente.departamento.nome}}
-                    ]
-                }
+            # Setor removido conforme solicitação do usuário
+            # Não incluiremos o departamento para evitar relacionamentos
 
             # Email (Email)
             if atendente.email:
@@ -84,83 +79,24 @@ class AtendenteHumanoMapper:
                     'phone_number': telefone_formatado
                 }
 
-            # Status (Select)
-            status_nome = "Ativo" if atendente.ativo else "Inativo"
-            properties['Status'] = {
-                'select': {'name': status_nome}
-            }
-
-            # Disponibilidade (Select)
-            disp_nome = "Disponível" if atendente.disponivel else "Indisponível"
-            properties['Disponibilidade'] = {
-                'select': {'name': disp_nome}
-            }
-
-            # Capacidade Máxima (Number)
-            properties['Capacidade Máxima'] = {
-                'number': atendente.max_atendimentos_simultaneos
-            }
-
-            # Carga Atual (Number) - calculada em tempo real
-            carga_atual = atendente.get_atendimentos_ativos()
-            properties['Carga Atual'] = {
-                'number': carga_atual
-            }
-
-            # Percentual de Ocupação (Formula - não suportado diretamente, usamos Number)
-            if atendente.max_atendimentos_simultaneos > 0:
-                ocupacao_pct = (carga_atual / atendente.max_atendimentos_simultaneos) * 100
-                properties['% Ocupação'] = {
-                    'number': round(ocupacao_pct, 1)
-                }
-
-            # Data de Cadastro (Date)
-            if atendente.data_cadastro:
-                properties['Data de Cadastro'] = {
-                    'date': {
-                        'start': atendente.data_cadastro.isoformat()
-                    }
-                }
-
-            # Última Atividade (Date)
-            if atendente.ultima_atividade:
-                properties['Última Atividade'] = {
-                    'date': {
-                        'start': atendente.ultima_atividade.isoformat()
-                    }
-                }
-
-            # Especialidades (Multi-select)
-            especialidades = []
-            if atendente.especialidades:
-                if isinstance(atendente.especialidades, list):
-                    especialidades = [
-                        espec.strip().title()
-                        for espec in atendente.especialidades
-                        if espec.strip()
-                    ]
-                elif isinstance(atendente.especialidades, str):
-                    especialidades = [
-                        espec.strip().title()
-                        for espec in atendente.especialidades.split(',')
-                        if espec.strip()
-                    ]
-
-            if especialidades:
-                properties['Especialidades'] = {
-                    'multi_select': [{'name': espec} for espec in especialidades]
-                }
-
-            # Usuário do Sistema (Rich Text)
-            if atendente.usuario_sistema:
-                properties['Usuário Sistema'] = {
+            # Matrícula (Rich Text)
+            if hasattr(atendente, 'matricula') and atendente.matricula:
+                properties['Matrícula'] = {
                     'rich_text': [
-                        {'text': {'content': atendente.usuario_sistema}}
+                        {'text': {'content': str(atendente.matricula)}}
                     ]
                 }
 
-            # Horário de Trabalho (Rich Text - JSON formatado)
-            if atendente.horario_trabalho:
+            # Data Admissão (Date)
+            if hasattr(atendente, 'data_admissao') and atendente.data_admissao:
+                properties['Data Admissão'] = {
+                    'date': {
+                        'start': atendente.data_admissao.isoformat()
+                    }
+                }
+
+            # Horário Trabalho (Rich Text)
+            if hasattr(atendente, 'horario_trabalho') and atendente.horario_trabalho:
                 import json
                 properties['Horário Trabalho'] = {
                     'rich_text': [
@@ -168,14 +104,22 @@ class AtendenteHumanoMapper:
                     ]
                 }
 
-            # Metadados (Rich Text - JSON formatado)
-            if atendente.metadados:
-                import json
-                properties['Metadados'] = {
+            # Especialidade (Rich Text)
+            if atendente.especialidades:
+                especialidades_text = ''
+                if isinstance(atendente.especialidades, list):
+                    especialidades_text = ', '.join(atendente.especialidades)
+                elif isinstance(atendente.especialidades, str):
+                    especialidades_text = atendente.especialidades
+
+                properties['Especialidade'] = {
                     'rich_text': [
-                        {'text': {'content': json.dumps(atendente.metadados, ensure_ascii=False)}}
+                        {'text': {'content': especialidades_text}}
                     ]
                 }
+
+            # Departamentos Relacionados (Relation -暂时不用关联，按用户要求不包含instance链接)
+            # Removido conforme solicitação do usuário - não usar relacionamentos
 
             return properties
 
@@ -388,67 +332,34 @@ class AtendenteHumanoMapper:
             "Nome": {
                 "title": {}
             },
-            "Cargo": {
-                "rich_text": {}
+            "Ativo": {
+                "checkbox": {}
             },
-            "Departamento": {
+            "Cargo": {
                 "rich_text": {}
             },
             "Email": {
                 "email": {}
             },
+            # "Setor": {
+            #     "rich_text": {}
+            # },
             "Telefone": {
                 "phone_number": {}
             },
-            "Status": {
-                "select": {
-                    "options": [
-                        {"name": "Ativo", "color": "green"},
-                        {"name": "Inativo", "color": "red"}
-                    ]
-                }
-            },
-            "Disponibilidade": {
-                "select": {
-                    "options": [
-                        {"name": "Disponível", "color": "green"},
-                        {"name": "Indisponível", "color": "red"}
-                    ]
-                }
-            },
-            "Capacidade Máxima": {
-                "number": {
-                    "format": "number"
-                }
-            },
-            "Carga Atual": {
-                "number": {
-                    "format": "number"
-                }
-            },
-            "% Ocupação": {
-                "number": {
-                    "format": "percent"
-                }
-            },
-            "Data de Cadastro": {
-                "date": {}
-            },
-            "Última Atividade": {
-                "date": {}
-            },
-            "Especialidades": {
-                "multi_select": {
-                    "options": []
-                }
-            },
-            "Usuário Sistema": {
+            "Matrícula": {
                 "rich_text": {}
+            },
+            "Especialidade": {
+                "rich_text": {}
+            },
+            "Data Admissão": {
+                "date": {}
             },
             "Horário Trabalho": {
                 "rich_text": {}
             },
-            "Metadados": {
+            "Setor": {
                 "rich_text": {}
             }
         }

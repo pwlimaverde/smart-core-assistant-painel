@@ -21,7 +21,12 @@ from ..exceptions import (
 )
 from ..interfaces import ExternalSyncServiceInterface
 from ..models import NotionDatabaseConfig
-from .mappers import ClienteMapper, ContatoMapper
+from .mappers import (
+    AtendenteHumanoMapper,
+    ClienteMapper,
+    ContatoMapper,
+    DepartamentoMapper,
+)
 
 
 class NotionSyncService(ExternalSyncServiceInterface):
@@ -72,22 +77,32 @@ class NotionSyncService(ExternalSyncServiceInterface):
         # Busca database IDs do NotionDatabaseConfig (preferencial)
         self.database_ids: dict[str, str | None] = {}
 
-        for model_name in ["Contato", "Cliente"]:
-            db_id = NotionDatabaseConfig.get_database_id(model_name)
-            self.database_ids[model_name] = db_id
+        # Mapeamento de nomes simples para nomes completos dos modelos
+        model_mapping = {
+            "Contato": "ui.clientes.Contato",
+            "Cliente": "ui.clientes.Cliente",
+            "Departamento": "ui.operacional.Departamento",
+            "AtendenteHumano": "ui.operacional.AtendenteHumano",
+        }
+
+        for simple_name, full_name in model_mapping.items():
+            db_id = NotionDatabaseConfig.get_database_id(full_name)
+            self.database_ids[simple_name] = db_id
             if db_id:
                 logger.info(
-                    f"Database ID para {model_name} carregado do NotionDatabaseConfig: {db_id[:8]}..."
+                    f"Database ID para {simple_name} carregado do NotionDatabaseConfig: {db_id[:8]}..."
                 )
             else:
                 logger.warning(
-                    f"Database ID para {model_name} não encontrado no NotionDatabaseConfig"
+                    f"Database ID para {simple_name} não encontrado no NotionDatabaseConfig"
                 )
 
         # Mappers para conversão de dados
         self._mappers = {
             "Contato": ContatoMapper,
             "Cliente": ClienteMapper,
+            "Departamento": DepartamentoMapper,
+            "AtendenteHumano": AtendenteHumanoMapper,
         }
 
     def _run(self, coro):

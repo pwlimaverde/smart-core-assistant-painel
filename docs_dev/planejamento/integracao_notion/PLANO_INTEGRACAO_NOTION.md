@@ -38,7 +38,7 @@ Notion Webhook → Validation → Mapper → Django Model (skip_sync=True) → S
 ### ✅ Models Implementados (Padrão Referência)
 
 #### 1. ContatoSync
-- **Arquivo**: `models.py#L657-1002`
+- **Arquivo**: `models.py#L316-667`
 - **Features**:
   - Manager customizado com queries específicas
   - Preparação de dados para Notion
@@ -46,28 +46,48 @@ Notion Webhook → Validation → Mapper → Django Model (skip_sync=True) → S
   - Detecção de contato principal
   - Métodos de sincronização completos
   - Controle de status (synced, failed, pending)
+  - Relacionamento com ClienteSync
 
 #### 2. ClienteSync  
-- **Arquivo**: `models.py#L1005-1271`
+- **Arquivo**: `models.py#L670-970`
 - **Features**:
   - Similar ao ContatoSync
-  - Formatação de CNPJ
+  - Formatação de CNPJ/CPF
   - Preparação de dados específicos de cliente
   - Métodos de sincronização
+  - Relacionamento bidirecional com ContatoSync
+
+#### 3. DepartamentoSync ✅
+- **Arquivo**: `models.py#L973-1286`
+- **Features**:
+  - Manager customizado implementado
+  - Preparação de dados para Notion
+  - Métodos de sincronização completos
+  - Relacionamento com AtendenteSync
+
+#### 4. AtendenteSync ✅
+- **Arquivo**: `models.py#L1289-1709`
+- **Features**:
+  - Manager customizado implementado
+  - Formatação de telefones
+  - Métodos de sincronização completos
+  - Relacionamento com DepartamentoSync
 
 ---
 
-## 🔄 **FASE 2 - EM ANDAMENTO** - Models Pendentes (Padrão a Seguir)
+## 🔄 **FASE 2 - CONCLUÍDA** - Models Operacionais
 
-### 📋 **ETAPA 2.1: Departamento e AtendenteHumano**
+### 📋 **ETAPA 2.1: Departamento e AtendenteHumano** - ✅ COMPLETO
 
-### 1. DepartamentoSync
+Todos os models operacionais já foram implementados seguindo o mesmo padrão dos models de clientes.
 
-**Status**: ⚠️ Implementação Parcial  
-**Arquivo**: `models.py#L1275-1332`
+### 🎯 **Próxima Fase Pendente**
 
-**O que falta implementar**:
-```python
+**ETAPA 2.2: MensagemSync e AtendimentoSync**
+- Status: ⏳ Não iniciado
+- Prioridade: Média
+- Complexidade: Alta (depende de outros models)
+
 class DepartamentoSyncManager(models.Manager):
     """Manager customizado para DepartamentoSync"""
     
@@ -418,6 +438,115 @@ class MensagemSync(models.Model):
         self.save(update_fields=['sync_errors', 'last_error'])
 ```
 
+## 📊 **Tabela de Mapeamentos Django ↔ Notion**
+
+### **Models Já Implementados ✅**
+
+#### **1. Cliente / ClienteSync**
+
+| Campo Django | Campo Notion | Tipo Notion | Observações |
+|--------------|--------------|-------------|-------------|
+| `nome_fantasia` | Nome Fantasia | title | Campo principal (título) |
+| `razao_social` | Razão Social | rich_text | Texto longo |
+| `tipo` | Tipo | select | Options: "fisica" (blue), "juridica" (green) |
+| `cnpj` | CNPJ | rich_text | Texto formatado |
+| `cpf` | CPF | rich_text | Texto formatado |
+| `telefone` | Telefone | phone_number | Telefone internacional |
+| `site` | Site | url | URL válida |
+| `ramo_atividade` | Ramo Atividade | rich_text | Texto descritivo |
+| `observacoes` | Observações | rich_text | Texto longo |
+| `cep` | CEP | rich_text | Texto formatado |
+| `logradouro` | Logradouro | rich_text | Endereço |
+| `numero` | Número | rich_text | Número do endereço |
+| `bairro` | Bairro | rich_text | Bairro |
+| `cidade` | Cidade | rich_text | Cidade |
+| `uf` | UF | rich_text | Estado |
+| `ativo` | Ativo | checkbox | Booleano |
+| `contatos_relacionados` | Contatos Relacionados | relation | Relacionamento bidirecional |
+
+#### **2. Contato / ContatoSync**
+
+| Campo Django | Campo Notion | Tipo Notion | Observações |
+|--------------|--------------|-------------|-------------|
+| `nome_contato` | Nome Contato | title | Campo principal (título) |
+| `telefone` | Telefone | phone_number | Telefone internacional |
+| `email` | Email | email | E-mail validado |
+| `nome_perfil_whatsapp` | Nome Perfil WhatsApp | rich_text | Nome no WhatsApp |
+| `ativo` | Ativo | checkbox | Booleano |
+| `data_cadastro` | Data Cadastro | date | Data de criação |
+| `ultima_interacao` | Última Interação | date | Data última interação |
+| `clientes_relacionados` | Clientes Relacionados | relation | Relacionamento bidirecional |
+
+#### **3. Departamento / DepartamentoSync**
+
+| Campo Django | Campo Notion | Tipo Notion | Observações |
+|--------------|--------------|-------------|-------------|
+| `nome` | Nome | title | Campo principal (título) |
+| `descricao` | Descrição | rich_text | Texto longo |
+| `ativo` | Ativo | checkbox | Booleano |
+| `data_criacao` | Data Criação | date | Data de criação |
+| `atendentes_relacionados` | Atendentes Relacionados | relation | Relacionamento bidirecional |
+
+#### **4. AtendenteHumano / AtendenteSync**
+
+| Campo Django | Campo Notion | Tipo Notion | Observações |
+|--------------|--------------|-------------|-------------|
+| `nome` | Nome | title | Campo principal (título) |
+| `email` | Email | email | E-mail corporativo |
+| `telefone` | Telefone | phone_number | Telefone internacional |
+| `cargo` | Cargo | rich_text | Cargo/Função |
+| `ativo` | Ativo | checkbox | Booleano |
+| `disponivel` | Disponível | checkbox | Status de disponibilidade |
+| `max_atendimentos_simultaneos` | Capacidade Máxima | number | Capacidade numérica |
+| `horario_trabalho` | Horário Trabalho | rich_text | JSON como texto |
+| `departamentos_relacionados` | Departamentos Relacionados | relation | Relacionamento bidirecional |
+
+### **Relacionamentos Implementados ✅**
+
+1. **Cliente ↔ Contato**:
+   - Cliente has_many Contatos
+   - Contato belongs_to Cliente
+   - Relacionamento bidirecional via `data_source_id`
+
+2. **Departamento ↔ Atendente**:
+   - Departamento has_many Atendentes
+   - Atendente belongs_to Departamento
+   - Relacionamento bidirecional via `data_source_id`
+
+### **Métodos de Construção Implementados ✅**
+
+#### **Script Constructor: `script_constructor_notion.py`**
+
+1. **`NotionClientesDatabaseConstructor`**:
+   ```python
+   - create_cliente_database()         # Cria database de Clientes
+   - create_contato_database()         # Cria database de Contatos com relação
+   - add_relation_to_cliente_database() # Adiciona relação em Clientes
+   - create_example_pages_and_relation() # Cria exemplos e relaciona
+   - save_database_configs()           # Salva configs no Django
+   - construct_clientes_databases()    # Executa fluxo completo
+   ```
+
+2. **`NotionOperacionalDatabaseConstructor`**:
+   ```python
+   - create_departamento_database()         # Cria database de Departamentos
+   - create_atendente_database()           # Cria database de Atendentes
+   - add_relation_to_departamento_database() # Adiciona relação em Departamentos
+   - create_example_pages_and_relation()   # Cria exemplos e relaciona
+   - save_database_configs()               # Salva configs no Django
+   - construct_operacional_databases()     # Executa fluxo completo
+   ```
+
+### **Executar Scripts**
+
+```bash
+# Para criar databases de Clientes
+python manage.py runscript script_constructor_notion.run_construction_clientes
+
+# Para criar databases Operacionais
+python manage.py runscript script_constructor_notion.run_construction_operacional
+```
+
 ## 🚀 **Plano de Implementação Detalhado por Fases**
 
 ### **📅 FASE 1: Concluída ✅** (ContatoSync & ClienteSync)
@@ -429,15 +558,33 @@ class MensagemSync(models.Model):
 ---
 
 ### **📅 FASE 2: Departamento & AtendenteHumano** (3-4 dias)
-**Status**: 🔄 **INICIANDO**
+**Status**: ✅ **100% CONCLUÍDO**
 
-#### **Etapa 2.1: Implementar DepartamentoSync** (1 dia)
-**Tarefas**:
-1. **Criar DepartamentoSync Model**
-   - Herdar padrão de fields do ContatoSync
-   - Implementar `prepare_notion_data()`
-   - Configurar indexes e Meta
-   - Adicionar methods: `needs_sync()`, `mark_as_synced()`, `mark_as_failed()`
+#### **Etapa 2.1: Implementar DepartamentoSync** ✅ **CONCLUÍDO**
+**Implementado**:
+1. ✅ DepartamentoSync Model criado em `models.py#L973-1286`
+2. ✅ Todos os métodos implementados: `prepare_notion_data()`, `needs_sync()`, `mark_as_synced()`, `mark_as_failed()`
+3. ✅ Manager customizado com queries específicas
+4. ✅ Relacionamento com AtendenteSync configurado
+
+#### **Etapa 2.2: Implementar AtendenteSync** ✅ **CONCLUÍDO**
+**Implementado**:
+1. ✅ AtendenteSync Model criado em `models.py#L1289-1709`
+2. ✅ Formatação de telefones e dados
+3. ✅ Todos os métodos de sincronização implementados
+4. ✅ Relacionamento com DepartamentoSync configurado
+
+#### **Etapa 2.3: Implementar Mappers** ✅ **CONCLUÍDO**
+**Implementado**:
+1. ✅ DepartamentoMapper em `services/mappers/departamento_mapper.py`
+2. ✅ AtendenteMapper em `services/mappers/atendente_mapper.py`
+3. ✅ Conversão bidirecional Django ↔ Notion
+
+#### **Etapa 2.4: Script Constructor** ✅ **CONCLUÍDO**
+**Implementado**:
+1. ✅ `NotionOperacionalDatabaseConstructor` em `scripts/script_constructor_notion.py`
+2. ✅ Criação das databases no Notion com relacionamentos
+3. ✅ Configuração automática via `save_database_configs()`
 
 2. **Implementar DepartamentoMapper**
    - Criar `services/mappers/departamento_mapper.py`
@@ -2177,7 +2324,80 @@ Este plano estabelece um caminho claro para finalizar a integração com Notion 
 
 ### Estimativa Total: **15-20 dias úteis**
 
+---
+
+## 📊 **RESUMO DA IMPLEMENTAÇÃO ATUAL** (Atualizado: 2024)
+
+### ✅ **O QUE JÁ FOI IMPLEMENTADO**
+
+#### **1. Models Sync (100% Concluído)**
+- ✅ `ContatoSync` - `models.py#L316-667`
+- ✅ `ClienteSync` - `models.py#L670-970`
+- ✅ `DepartamentoSync` - `models.py#L973-1286`
+- ✅ `AtendenteSync` - `models.py#L1289-1709`
+
+#### **2. Mappers (100% Concluído)**
+- ✅ `ContatoMapper` - `services/mappers/contato_mapper.py`
+- ✅ `ClienteMapper` - `services/mappers/cliente_mapper.py`
+- ✅ `DepartamentoMapper` - `services/mappers/departamento_mapper.py`
+- ✅ `AtendenteMapper` - `services/mappers/atendente_mapper.py`
+
+#### **3. Scripts de Construção (100% Concluído)**
+- ✅ `NotionClientesDatabaseConstructor` - cria databases de Clientes e Contatos
+- ✅ `NotionOperacionalDatabaseConstructor` - cria databases de Departamento e Atendentes
+- ✅ Relacionamentos bidirecionais configurados automaticamente
+- ✅ Configurações salvas em `NotionDatabaseConfig`
+
+#### **4. Serviços (100% Concluído)**
+- ✅ `NotionSyncService` - serviço principal de sincronização
+- ✅ Tratamento de erros e retries
+- ✅ Validação de conexão com API Notion
+
+#### **5. Relacionamentos Implementados**
+- ✅ Cliente ↔ Contato (bidirecional)
+- ✅ Departamento ↔ Atendente (bidirecional)
+
+### ⏳ **O QUE AINDA FALTA**
+
+#### **1. Models Pendentes (Prioridade Alta)**
+- ⏳ `MensagemSync` - dependente de `AtendimentoSync`
+- ⏳ `AtendimentoSync` - complexo, depende de todos os outros models
+
+#### **2. Implementações Futuras**
+- ⏳ Tasks Celery para sincronização assíncrona
+- ⏳ Webhook handler para Notion → Django
+- ⏳ Interface Admin para monitoramento
+- ⏳ Testes de integração completos
+- ⏳ Métricas e monitoramento avançado
+
+### 📈 **MÉTRICAS ATUAIS**
+- **Models implementados**: 4 de 6 (67%)
+- **Mappers implementados**: 4 de 6 (67%)
+- **Scripts de construção**: 2 de 2 (100%)
+- **Relacionamentos funcionais**: 2 de 4 (50%)
+- **Estimativa concluída**: ~60% do projeto
+
+### 🚀 **PRÓXIMOS PASSOS**
+1. **Imediato**: Implementar `AtendimentoSync` (3-4 dias)
+2. **Seguinte**: Implementar `MensagemSync` (2 dias)
+3. **Integração**: Tasks Celery + Webhooks (3-4 dias)
+4. **Finalização**: Tests + Admin + Documentação (2-3 dias)
+
+### 💡 **APRENDIZADOS DA IMPLEMENTAÇÃO**
+1. **Padrão estabelecido**: A estrutura básica funciona muito bem
+2. **Relacionamentos**: Implementação via `data_source_id` é robusta
+3. **Scripts de construção**: Automação facilita muito setup
+4. **Mappers**: Conversão bidirecional essencial para sync bidirecional
+
 Com este plano, a equipe poderá implementar a integração completa de forma organizada e eficiente, mantendo a qualidade e consistência do código.
+
+## 📋 **Documentação Complementar**
+
+- **Tabela Detalhada de Mapeamentos**: [`TABELA_MAPEAMENTOS.md`](TABELA_MAPEAMENTOS.md)
+  - Mapeamento campo a campo Django ↔ Notion
+  - Tipos de dados e exemplos
+  - Relacionamentos detalhados
+  - Scripts de construção
 
 ---
 

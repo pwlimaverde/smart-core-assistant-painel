@@ -2,7 +2,7 @@
 Signals para sincronização automática de models com plataformas externas.
 
 Este módulo contém os signal receivers que capturam mudanças nos models
-principais (Cliente, Contato, Departamento, AtendenteHumano) e disparam
+principais (Cliente, Contato, Departamento, Atendente) e disparam
 o processo de sincronização com plataformas externas (Notion, Airtable, etc).
 """
 
@@ -19,10 +19,10 @@ from django.dispatch import receiver
 from loguru import logger
 
 from ..ui.clientes.models import Cliente, Contato
-from ..ui.operacional.models import AtendenteHumano, Departamento
+from ..ui.operacional.models import Atendente, Departamento
 from .exceptions import NotionSyncError, SyncError
 from .models import (
-    AtendenteHumanoSync,
+    AtendenteSync,
     ClienteSync,
     ContatoSync,
     DepartamentoSync,
@@ -130,11 +130,11 @@ def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
     return sync
 
 
-def get_or_create_atendente_sync(atendente_id: int) -> AtendenteHumanoSync:
+def get_or_create_atendente_sync(atendente_id: int) -> AtendenteSync:
     """
-    Obtém ou cria registro AtendenteHumanoSync para um atendente.
+    Obtém ou cria registro AtendenteSync para um atendente.
 
-    Esta é uma função auxiliar para os signals de AtendenteHumano.
+    Esta é uma função auxiliar para os signals de Atendente.
 
     Args:
         atendente_id: ID do atendente no Django.
@@ -142,26 +142,26 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteHumanoSync:
     Returns:
         Instância do AtendenteHumanoSync.
     """
-    from .models import AtendenteHumanoSync, NotionDatabaseConfig
+    from .models import AtendenteSync, NotionDatabaseConfig
 
-    # Obter configuração do Notion para Atendentes Humanos
+    # Obter configuração do Notion para Atendentes
     try:
         config = NotionDatabaseConfig.objects.get(
-            slug="ui_operacional_atendentehumano"
+            slug="ui_operacional_atendente"
         )
     except NotionDatabaseConfig.DoesNotExist:
         # Criar configuração padrão se não existir
         config = NotionDatabaseConfig.objects.create(
-            slug="ui_operacional_atendentehumano",
-            name="Atendentes Humanos",
-            django_model="operacional.AtendenteHumano",
+            slug="ui_operacional_atendente",
+            name="Atendentes",
+            django_model="operacional.Atendente",
             django_app_label="ui",
             notion_database_id="",  # Será preenchido depois
             sync_enabled=False,  # Inicia desabilitado
-            description="Atendentes humanos da organização",
+            description="Atendentes da organização",
         )
 
-    sync, created = AtendenteHumanoSync.objects.get_or_create(
+    sync, created = AtendenteSync.objects.get_or_create(
         atendente_id=atendente_id,
         defaults={
             "external_id": None,
@@ -182,13 +182,13 @@ def schedule_sync_operation(
     e será usada pelos signals quando forem reabilitados.
 
     Args:
-        model_name: Nome do modelo (ex: "Contato", "Cliente", "Departamento", "AtendenteHumano").
+        model_name: Nome do modelo (ex: "Contato", "Cliente", "Departamento", "Atendente").
         instance_id: ID da instância.
         operation: Tipo de operação ("create", "update", "delete").
     """
     from .services import NotionSyncService
     from .models import (
-        AtendenteHumanoSync,
+        AtendenteSync,
         ClienteSync,
         ContatoSync,
         DepartamentoSync,
@@ -214,8 +214,8 @@ def schedule_sync_operation(
             sync_record = DepartamentoSync.objects.get(
                 departamento_id=instance_id
             )
-        elif model_name == "AtendenteHumano":
-            sync_record = AtendenteHumanoSync.objects.get(
+        elif model_name == "Atendente":
+            sync_record = AtendenteSync.objects.get(
                 atendente_id=instance_id
             )
         else:
@@ -849,16 +849,16 @@ def on_departamento_pre_delete(
         )
 
 
-# Signal para detectar mudanças de atendentes no departamento (através do AtendenteHumano)
-@receiver(post_save, sender=AtendenteHumano)
+# Signal para detectar mudanças de atendentes no departamento (através do Atendente)
+@receiver(post_save, sender=Atendente)
 def on_atendente_department_change(
-    sender: type[AtendenteHumano],
-    instance: AtendenteHumano,
+    sender: type[Atendente],
+    instance: Atendente,
     created: bool,
     **kwargs: Any,
 ) -> None:
     """
-    Signal disparado ao salvar AtendenteHumano.
+    Signal disparado ao salvar Atendente.
 
     Escrita unilateral: não atualiza Departamento aqui. A sincronização
     do atendente ocorre em on_atendente_saved; o Notion espelha a relação.
@@ -867,12 +867,12 @@ def on_atendente_department_change(
     return
 
 
-@receiver(post_delete, sender=AtendenteHumano)
+@receiver(post_delete, sender=Atendente)
 def on_atendente_deleted(
-    sender: type[AtendenteHumano], instance: AtendenteHumano, **kwargs: Any
+    sender: type[Atendente], instance: Atendente, **kwargs: Any
 ) -> None:
     """
-    Signal disparado quando um AtendenteHumano é excluído.
+    Signal disparado quando um Atendente é excluído.
 
     Escrita unilateral: não atualiza Departamento após exclusão. O Notion
     espelha a remoção via relação do atendente, quando aplicável.
@@ -882,17 +882,17 @@ def on_atendente_deleted(
 
 
 # Signals para AtendenteHumano
-@receiver(post_save, sender=AtendenteHumano)
+@receiver(post_save, sender=Atendente)
 def on_atendente_saved(
-    sender: type[AtendenteHumano],
-    instance: AtendenteHumano,
+    sender: type[Atendente],
+    instance: Atendente,
     created: bool,
     **kwargs: Any,
 ) -> None:
     """
-    Signal disparado após salvar um AtendenteHumano.
+    Signal disparado após salvar um Atendente.
 
-    Cria/atualiza registro AtendenteHumanoSync e agenda sincronização.
+    Cria/atualiza registro AtendenteSync e agenda sincronização.
     """
     logger.info(f"Atendente salvo: {instance.nome} (created={created})")
 
@@ -906,7 +906,7 @@ def on_atendente_saved(
 
         # Agenda operação de sincronização
         schedule_sync_operation(
-            model_name="AtendenteHumano",
+            model_name="Atendente",
             instance_id=instance.id,
             operation="create" if created else "update",
         )
@@ -953,33 +953,33 @@ def on_atendente_saved(
         )
 
 
-@receiver(pre_delete, sender=AtendenteHumano)
+@receiver(pre_delete, sender=Atendente)
 def on_atendente_pre_delete(
-    sender: type[AtendenteHumano], instance: AtendenteHumano, **kwargs: Any
+    sender: type[Atendente], instance: Atendente, **kwargs: Any
 ) -> None:
     """
-    Signal disparado antes de excluir um AtendenteHumano.
+    Signal disparado antes de excluir um Atendente.
 
     Remove sincronização do Notion.
     """
     logger.info(f"Atendente para exclusão: {instance.nome}")
 
     try:
-        from .models import AtendenteHumanoSync
+        from .models import AtendenteSync
 
-        sync_record = AtendenteHumanoSync.objects.filter(
+        sync_record = AtendenteSync.objects.filter(
             atendente_id=instance.id
         ).first()
         if sync_record and sync_record.external_id:
             service = NotionSyncService()
             service.delete_record("AtendenteHumano", sync_record.external_id)
             logger.info(
-                f"AtendenteHumano #{instance.id} arquivado no Notion "
+                f"Atendente #{instance.id} arquivado no Notion "
                 f"(external_id: {sync_record.external_id})"
             )
         else:
             logger.warning(
-                f"AtendenteHumano #{instance.id} não possui external_id "
+                f"Atendente #{instance.id} não possui external_id "
                 "para arquivar no Notion"
             )
 
@@ -1009,12 +1009,12 @@ def on_atendente_pre_delete(
 
 
 # Signal para capturar mudança de departamento no AtendenteHumano
-@receiver(pre_save, sender=AtendenteHumano)
+@receiver(pre_save, sender=Atendente)
 def on_atendente_pre_save(
-    sender: type[AtendenteHumano], instance: AtendenteHumano, **kwargs: Any
+    sender: type[Atendente], instance: Atendente, **kwargs: Any
 ) -> None:
     """
-    Signal disparado antes de salvar um AtendenteHumano.
+    Signal disparado antes de salvar um Atendente.
 
     Captura ID original do departamento para detectar mudanças.
     """

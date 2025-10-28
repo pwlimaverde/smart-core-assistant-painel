@@ -7,7 +7,7 @@ bidirecionais entre as databases.
 
 Módulos disponíveis:
 1. Clientes/Contatos - Cria databases para Cliente e Contato com relacionamento
-2. Operacional - Cria databases para Departamento e AtendenteHumano com relacionamento
+2. Operacional - Cria databases para Departamento e Atendente com relacionamento
 
 Uso:
     # Para construir databases de clientes/contatos
@@ -656,14 +656,14 @@ class NotionOperacionalDatabaseConstructor:
             logger.error(f"❌ Erro ao criar database de Departamentos: {e}")
             raise
 
-    async def create_atendente_humano_database(
+    async def create_atendente_database(
         self, departamento_db: Any
     ) -> Any:
         """
-        Cria a database de Atendentes Humanos no Notion COM RELACIONAMENTO para Departamentos.
+        Cria a database de Atendentes no Notion COM RELACIONAMENTO para Departamentos.
         """
         logger.info(
-            "Criando database de Atendentes Humanos no Notion com relacionamento..."
+            "Criando database de Atendentes no Notion com relacionamento..."
         )
 
         # Obter o data_source_id da database de departamentos
@@ -700,12 +700,12 @@ class NotionOperacionalDatabaseConstructor:
             "title": [
                 {
                     "type": "text",
-                    "text": {"content": "👨‍💼 Atendentes Humanos CRM"},
+                    "text": {"content": "👨‍💼 Atendentes CRM"},
                 }
             ],
             "icon": {"type": "emoji", "emoji": "👨‍💼"},
             "initial_data_source": {
-                "name": "AtendentesHumanos",
+                "name": "Atendentes",
                 "properties": properties,
             },
         }
@@ -713,16 +713,16 @@ class NotionOperacionalDatabaseConstructor:
         try:
             created = await self.client.databases.create(parameters)
             logger.info(
-                f"✅ Database de Atendentes Humanos criada: {created.id}"
+                f"✅ Database de Atendentes criada: {created.id}"
             )
             if created.data_sources:
                 logger.info(
-                    f"🔑 Data Source ID Atendentes Humanos: {created.data_sources[0]['id']}"
+                    f"🔑 Data Source ID Atendentes: {created.data_sources[0]['id']}"
                 )
             return created
         except Exception as e:
             logger.error(
-                f"❌ Erro ao criar database de Atendentes Humanos: {e}"
+                f"❌ Erro ao criar database de Atendentes: {e}"
             )
             raise
 
@@ -1018,13 +1018,13 @@ class NotionOperacionalDatabaseConstructor:
 
             # Configuração para Atendentes Humanos
             atendente_config = NotionDatabaseConfig.objects.update_or_create(
-                slug="ui_operacional_atendentehumano",
+                slug="ui_operacional_atendente",
                 defaults={
-                    "name": "👨‍💼 Atendentes Humanos CRM",
-                    "description": "Database para sincronização de atendentes humanos do sistema",
+                    "name": "👨‍💼 Atendentes CRM",
+                    "description": "Database para sincronização de atendentes do sistema",
                     "notion_database_id": atendente_db.id,
                     "data_source_id": atendente_data_source_id,
-                    "django_model": "ui.operacional.AtendenteHumano",
+                    "django_model": "ui.operacional.Atendente",
                     "django_app_label": "ui",
                     "notion_schema": {
                         "Nome": {"title": {}},
@@ -1107,8 +1107,8 @@ class NotionOperacionalDatabaseConstructor:
             # 1. Criar database de Departamentos primeiro (simples, sem relacionamentos)
             departamento_db = await self.create_departamento_database()
 
-            # 2. Criar database de Atendentes Humanos COM RELACIONAMENTO para Departamentos
-            atendente_db = await self.create_atendente_humano_database(
+            # 2. Criar database de Atendentes COM RELACIONAMENTO para Departamentos
+            atendente_db = await self.create_atendente_database(
                 departamento_db
             )
 
@@ -1159,7 +1159,7 @@ class NotionOperacionalDatabaseConstructor:
             # Verificar configurações salvas
             atendente_config = await sync_to_async(
                 NotionDatabaseConfig.objects.get
-            )(slug="ui_operacional_atendentehumano")
+            )(slug="ui_operacional_atendente")
             departamento_config = await sync_to_async(
                 NotionDatabaseConfig.objects.get
             )(slug="ui_operacional_departamento")

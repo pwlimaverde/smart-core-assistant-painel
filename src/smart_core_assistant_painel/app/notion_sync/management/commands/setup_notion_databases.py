@@ -2,7 +2,7 @@
 Management command para configurar databases do Notion.
 
 Este comando cria ou atualiza as configurações das databases do Notion
-para os models que serão sincronizados, incluindo Departamento e AtendenteHumano.
+para os models que serão sincronizados, incluindo Departamento e Atendente.
 """
 
 from typing import Any
@@ -12,7 +12,7 @@ from django.utils import timezone
 from loguru import logger
 
 from ...models import NotionDatabaseConfig
-from ...services.mappers import DepartamentoMapper, AtendenteHumanoMapper
+from ...services.mappers import DepartamentoMapper, AtendenteMapper
 
 
 class Command(BaseCommand):
@@ -60,8 +60,8 @@ class Command(BaseCommand):
                 database_id, data_source_id, update
             )
 
-            # Configuração para AtendenteHumano
-            self._setup_atendente_humano_database(
+            # Configuração para Atendente
+            self._setup_atendente_database(
                 database_id, data_source_id, update
             )
 
@@ -150,12 +150,12 @@ class Command(BaseCommand):
         self.stdout.write("Configurando database de Atendentes Humanos...")
 
         # Obtém schema do mapper
-        schema = AtendenteHumanoMapper.get_notion_schema()
+        schema = AtendenteMapper.get_notion_schema()
 
         defaults = {
-            "name": "Atendentes Humanos - Smart Core Assistant",
-            "description": "Database para sincronização de atendentes humanos da organização",
-            "django_model": "operacional.AtendenteHumano",
+            "name": "Atendentes - Smart Core Assistant",
+            "description": "Database para sincronização de atendentes da organização",
+            "django_model": "operacional.Atendente",
             "django_app_label": "ui",
             "notion_schema": schema,
             "sync_enabled": False,  # Inicia desabilitado até configuração completa
@@ -181,7 +181,7 @@ class Command(BaseCommand):
             defaults["data_source_id"] = data_source_id
 
         config, created = NotionDatabaseConfig.objects.update_or_create(
-            slug="ui_operacional_atendentehumano", defaults=defaults
+            slug="ui_operacional_atendente", defaults=defaults
         )
 
         if created:

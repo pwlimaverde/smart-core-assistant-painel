@@ -13,7 +13,7 @@ from django.http import HttpRequest
 from django.utils.html import format_html
 
 from .models import (
-    AtendenteHumanoSync,
+    AtendenteSync,
     ClienteSync,
     ContatoSync,
     DepartamentoSync,
@@ -528,12 +528,12 @@ class DepartamentoSyncAdmin(admin.ModelAdmin[DepartamentoSync]):
         return False
 
 
-@admin.register(AtendenteHumanoSync)
-class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
+@admin.register(AtendenteSync)
+class AtendenteSyncAdmin(admin.ModelAdmin[AtendenteSync]):
     """
-    Admin para o model AtendenteHumanoSync.
+    Admin para o model AtendenteSync.
 
-    Permite visualizar e gerenciar sincronização de Atendentes Humanos.
+    Permite visualizar e gerenciar sincronização de Atendentes.
     """
 
     list_display = (
@@ -620,12 +620,12 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
         ),
     )
 
-    def atendente_info(self, obj: AtendenteHumanoSync) -> str:
+    def atendente_info(self, obj: AtendenteSync) -> str:
         """
         Retorna informações do atendente.
 
         Args:
-            obj: Instância de AtendenteHumanoSync.
+            obj: Instância de AtendenteSync.
 
         Returns:
             String com nome e cargo do atendente.
@@ -635,12 +635,12 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
 
     atendente_info.short_description = "Atendente"  # type: ignore
 
-    def departamento_nome(self, obj: AtendenteHumanoSync) -> str:
+    def departamento_nome(self, obj: AtendenteSync) -> str:
         """
         Retorna o nome do departamento.
 
         Args:
-            obj: Instância de AtendenteHumanoSync.
+            obj: Instância de AtendenteSync.
 
         Returns:
             Nome do departamento ou "-".
@@ -653,12 +653,12 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
 
     departamento_nome.short_description = "Departamento"  # type: ignore
 
-    def external_id_short(self, obj: AtendenteHumanoSync) -> str:
+    def external_id_short(self, obj: AtendenteSync) -> str:
         """
         Retorna versão curta do external_id.
 
         Args:
-            obj: Instância de AtendenteHumanoSync.
+            obj: Instância de AtendenteSync.
 
         Returns:
             External ID truncado ou "-".
@@ -669,12 +669,12 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
 
     external_id_short.short_description = "ID Externo"  # type: ignore
 
-    def carga_info(self, obj: AtendenteHumanoSync) -> str:
+    def carga_info(self, obj: AtendenteSync) -> str:
         """
         Retorna informação da carga de trabalho.
 
         Args:
-            obj: Instância de AtendenteHumanoSync.
+            obj: Instância de AtendenteSync.
 
         Returns:
             String com carga atual/capacidade máxima.
@@ -693,12 +693,12 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
 
     carga_info.short_description = "Carga"  # type: ignore
 
-    def sync_status_colored(self, obj: AtendenteHumanoSync) -> str:
+    def sync_status_colored(self, obj: AtendenteSync) -> str:
         """
         Retorna o status de sincronização com cor HTML.
 
         Args:
-            obj: Instância de AtendenteHumanoSync.
+            obj: Instância de AtendenteSync.
 
         Returns:
             HTML com status colorido.

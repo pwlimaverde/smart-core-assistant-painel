@@ -1,7 +1,7 @@
 """
-Mapper para conversão de dados do model AtendenteHumano (Django ↔ Notion).
+Mapper para conversão de dados do model Atendente (Django ↔ Notion).
 
-Este módulo contém a classe responsável por mapear dados do model AtendenteHumano
+Este módulo contém a classe responsável por mapear dados do model Atendente
 do Django para o formato de propriedades da API do Notion e vice-versa,
 seguindo o planejamento de integração definido.
 """
@@ -13,11 +13,11 @@ from typing import Any, Dict, List, Optional
 from ...exceptions import MappingError
 
 
-class AtendenteHumanoMapper:
+class AtendenteMapper:
     """
-    Mapper para conversão de dados entre AtendenteHumano (Django) e Notion.
+    Mapper para conversão de dados entre Atendente (Django) e Notion.
 
-    Esta classe implementa métodos para converter dados do model AtendenteHumano
+    Esta classe implementa métodos para converter dados do model Atendente
     para o formato esperado pela API do Notion e vice-versa, incluindo
     formatação de telefones, status, cargos e relacionamentos.
     """
@@ -25,13 +25,13 @@ class AtendenteHumanoMapper:
     @staticmethod
     def to_notion_properties(atendente_sync: Any) -> Dict[str, Any]:
         """
-        Converte um objeto AtendenteHumanoSync do Django para propriedades do Notion.
+        Converte um objeto AtendenteSync do Django para propriedades do Notion.
 
-        Este método utiliza os dados pré-processados do AtendenteHumanoSync para
+        Este método utiliza os dados pré-processados do AtendenteSync para
         gerar as propriedades no formato esperado pela API do Notion.
 
         Args:
-            atendente_sync: Instância do model AtendenteHumanoSync.
+            atendente_sync: Instância do model AtendenteSync.
 
         Returns:
             Dicionário com propriedades formatadas para a API do Notion.
@@ -40,8 +40,8 @@ class AtendenteHumanoMapper:
             MappingError: Se houver erro na conversão dos dados.
 
         Example:
-            >>> atendente_sync = AtendenteHumanoSync.objects.get(id=1)
-            >>> properties = AtendenteHumanoMapper.to_notion_properties(atendente_sync)
+            >>> atendente_sync = AtendenteSync.objects.get(id=1)
+            >>> properties = AtendenteMapper.to_notion_properties(atendente_sync)
             >>> # Retorna dict com estrutura do Notion
         """
         try:
@@ -107,7 +107,7 @@ class AtendenteHumanoMapper:
 
             # Telefone (Phone Number)
             if atendente.telefone:
-                telefone_formatado = AtendenteHumanoMapper._format_phone(
+                telefone_formatado = AtendenteMapper._format_phone(
                     atendente.telefone
                 )
                 properties["Telefone"] = {"phone_number": telefone_formatado}
@@ -154,29 +154,29 @@ class AtendenteHumanoMapper:
 
         except Exception as exc:
             raise MappingError(
-                f"Erro ao converter AtendenteHumano para Notion: {exc}"
+                f"Erro ao converter Atendente para Notion: {exc}"
             ) from exc
 
     @staticmethod
     def from_notion_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Converte propriedades do Notion para dados do model AtendenteHumano.
+        Converte propriedades do Notion para dados do model Atendente.
 
         Este método converte as propriedades vindas da API do Notion
-        para o formato esperado pelo model AtendenteHumano do Django.
+        para o formato esperado pelo model Atendente do Django.
 
         Args:
             properties: Dicionário com propriedades do Notion.
 
         Returns:
-            Dicionário com dados formatados para o model AtendenteHumano.
+            Dicionário com dados formatados para o model Atendente.
 
         Raises:
             MappingError: Se houver erro na conversão dos dados.
 
         Example:
             >>> notion_data = {'properties': {...}}
-            >>> atendente_data = AtendenteHumanoMapper.from_notion_properties(notion_data['properties'])
+            >>> atendente_data = AtendenteMapper.from_notion_properties(notion_data['properties'])
             >>> # Retorna dict com dados para o model Django
         """
         try:
@@ -238,7 +238,7 @@ class AtendenteHumanoMapper:
                 )
 
             # Especialidades (se houver no model, são tratadas como JSON em metadados)
-            if hasattr(AtendenteHumano, 'especialidades'):
+            if hasattr(Atendente, 'especialidades'):
                 if "Especialidades" in properties and properties[
                     "Especialidades"
                 ].get("multi_select"):
@@ -290,7 +290,7 @@ class AtendenteHumanoMapper:
 
         except Exception as exc:
             raise MappingError(
-                f"Erro ao converter Notion para AtendenteHumano: {exc}"
+                f"Erro ao converter Notion para Atendente: {exc}"
             ) from exc
 
     @staticmethod
@@ -306,7 +306,7 @@ class AtendenteHumanoMapper:
     @staticmethod
     def validate_notion_data(properties: Dict[str, Any]) -> List[str]:
         """
-        Valida se os dados do Notion são compatíveis com o model AtendenteHumano.
+        Valida se os dados do Notion são compatíveis com o model Atendente.
 
         Args:
             properties: Propriedades do Notion a validar.
@@ -365,7 +365,7 @@ class AtendenteHumanoMapper:
     @staticmethod
     def validate_notion_data(properties: Dict[str, Any]) -> List[str]:
         """
-        Valida se os dados do Notion são compatíveis com o model AtendenteHumano.
+        Valida se os dados do Notion são compatíveis com o model Atendente.
 
         Args:
             properties: Propriedades do Notion a validar.
@@ -421,7 +421,7 @@ class AtendenteHumanoMapper:
     @staticmethod
     def get_notion_schema() -> Dict[str, Any]:
         """
-        Retorna o schema esperado para a database de Atendentes Humanos no Notion.
+        Retorna o schema esperado para a database de Atendentes no Notion.
 
         Returns:
             Schema da database no formato da API do Notion.

@@ -377,6 +377,10 @@ class ContatoSync(models.Model):
         help_text="Tags formatadas para select/multi-select do Notion",
     )
 
+    slug_formatado: models.SlugField = models.SlugField(
+        max_length=250, blank=True, default="", help_text="Slug formatado para URL"
+    )
+
     notion_properties: models.JSONField = models.JSONField(
         default=dict,
         help_text="Propriedades completas formatadas para API Notion",
@@ -486,6 +490,15 @@ class ContatoSync(models.Model):
 
             # Detecta se é contato principal
             self.principal = self._is_principal_contact()
+
+            # Prepara slug formatado
+            if self.contato.slug:
+                self.slug_formatado = self.contato.slug
+            elif self.nome_formatado:
+                # Gera slug a partir do nome formatado como fallback
+                self.slug_formatado = (
+                    self.nome_formatado.lower().replace(" ", "-")
+                )
 
         except ImportError:
             # Fallback se mapper não estiver disponível
@@ -715,6 +728,10 @@ class ClienteSync(models.Model):
         null=True, blank=True, help_text="Endereço completo formatado"
     )
 
+    slug_formatado: models.SlugField = models.SlugField(
+        max_length=250, blank=True, default="", help_text="Slug formatado para URL"
+    )
+
     sync_status: models.CharField = models.CharField(
         max_length=20,
         choices=[
@@ -803,6 +820,15 @@ class ClienteSync(models.Model):
 
             # Prepara endereço completo
             self.endereco_completo = self.cliente.get_endereco_completo()
+
+            # Prepara slug formatado
+            if self.cliente.slug:
+                self.slug_formatado = self.cliente.slug
+            else:
+                # Gera slug a partir do nome fantasia como fallback
+                self.slug_formatado = (
+                    self.nome_fantasia_formatado.lower().replace(" ", "-")
+                )
 
         except ImportError:
             # Fallback se mapper não estiver disponível
@@ -1260,9 +1286,9 @@ class DepartamentoSync(models.Model):
         return f"https://notion.so/{self.config.notion_page_id or self.config.notion_database_id}?p={self.external_id}"
 
 
-class AtendenteHumanoSync(models.Model):
+class AtendenteSync(models.Model):
     """
-    Espelho do modelo AtendenteHumano para integração com Notion.
+    Espelho do modelo Atendente para integração com Notion.
 
     Contém dados pré-processados e formatados para compatibilidade
     com as propriedades do Notion, incluindo relacionamento com Departamento.
@@ -1270,7 +1296,7 @@ class AtendenteHumanoSync(models.Model):
 
     # Relação com Modelo Original
     atendente = models.OneToOneField(
-        "operacional.AtendenteHumano",
+        "operacional.Atendente",
         on_delete=models.CASCADE,
         related_name="notion_sync",
         help_text="Referência ao atendente original",
@@ -1305,6 +1331,10 @@ class AtendenteHumanoSync(models.Model):
     )
 
     # Dados Pré-processados
+    slug_formatado: models.SlugField = models.SlugField(
+        max_length=250, blank=True, default="", help_text="Slug formatado para URL"
+    )
+
     nome_formatado: models.CharField = models.CharField(
         max_length=100, help_text="Nome formatado"
     )
@@ -1398,10 +1428,10 @@ class AtendenteHumanoSync(models.Model):
     updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
 
     class Meta:
-        verbose_name = "Atendente Humano Sync"
-        verbose_name_plural = "Atendentes Humanos Sync"
+        verbose_name = "Atendente Sync"
+        verbose_name_plural = "Atendentes Sync"
         ordering = ["atendente__nome"]
-        db_table = "notion_sync_atendente_humano"
+        db_table = "notion_sync_atendente"
         indexes = [
             models.Index(fields=["external_id"]),
             models.Index(fields=["sync_status"]),
@@ -1434,6 +1464,15 @@ class AtendenteHumanoSync(models.Model):
             # Formata campos específicos
             self.nome_formatado = self.atendente.nome.strip().title()
             self.cargo_formatado = self.atendente.cargo.strip().title()
+
+            # Prepara slug formatado
+            if self.atendente.slug:
+                self.slug_formatado = self.atendente.slug
+            else:
+                # Gera slug a partir do nome formatado como fallback
+                self.slug_formatado = (
+                    self.nome_formatado.lower().replace(" ", "-")
+                )
 
             # Cache do departamento
             if self.atendente.departamento:

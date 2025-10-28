@@ -75,6 +75,9 @@ class Contato(models.Model):
     nome_contato: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Nome do contato"
     )
+    slug: models.SlugField[str | None] = models.SlugField(
+        max_length=250, unique=True, blank=True, null=True, default=""
+    )
     email: models.EmailField[str | None] = models.EmailField(
         max_length=254,
         blank=True,
@@ -112,6 +115,21 @@ class Contato(models.Model):
 
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
+        from django.utils.text import slugify
+
+        # Gera slug automaticamente se não existir e houver nome
+        if not self.slug and self.nome_contato:
+            base_slug = slugify(self.nome_contato)
+            suffix = 1
+            slug = base_slug
+
+            # Garante unicidade do slug
+            while Contato.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{suffix}"
+                suffix += 1
+
+            self.slug = slug
+
         if self.telefone:
             telefone_limpo = re.sub(r"\D", "", self.telefone)
             if not telefone_limpo.startswith("55"):
@@ -129,6 +147,9 @@ class Cliente(models.Model):
         blank=False,
         null=False,
         help_text="Nome comum do cliente (obrigatório)",
+    )
+    slug: models.SlugField[str | None] = models.SlugField(
+        max_length=250, unique=True, blank=True, null=True, default=""
     )
     razao_social: models.CharField[str | None] = models.CharField(
         max_length=200,
@@ -249,6 +270,21 @@ class Cliente(models.Model):
 
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
+        from django.utils.text import slugify
+
+        # Gera slug automaticamente se não existir
+        if not self.slug:
+            base_slug = slugify(self.nome_fantasia)
+            suffix = 1
+            slug = base_slug
+
+            # Garante unicidade do slug
+            while Cliente.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{suffix}"
+                suffix += 1
+
+            self.slug = slug
+
         if self.cnpj:
             cnpj_limpo = re.sub(r"\D", "", self.cnpj)
             if len(cnpj_limpo) == 14:

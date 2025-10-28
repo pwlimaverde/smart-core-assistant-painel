@@ -12,18 +12,18 @@ from django.db import transaction
 from loguru import logger
 
 from ...models import (
-    AtendenteHumanoSync,
+    AtendenteSync,
     DepartamentoSync,
     NotionDatabaseConfig,
 )
-from ....ui.operacional.models import AtendenteHumano, Departamento
+from ....ui.operacional.models import Atendente, Departamento
 
 
 class Command(BaseCommand):
     """
     Command para inicializar registros de sincronização.
 
-    Cria registros DepartamentoSync e AtendenteHumanoSync para
+    Cria registros DepartamentoSync e AtendenteSync para
     todos os models existentes que ainda não possuem sync.
     """
 
@@ -172,7 +172,7 @@ class Command(BaseCommand):
         # Obtém configuração do Notion
         try:
             config = NotionDatabaseConfig.objects.get(
-                slug="ui_operacional_atendentehumano"
+                slug="ui_operacional_atendente"
             )
         except NotionDatabaseConfig.DoesNotExist:
             self.stdout.write(
@@ -188,10 +188,10 @@ class Command(BaseCommand):
         error_count = 0
 
         # Processa todos os atendentes
-        for atendente in AtendenteHumano.objects.all():
+        for atendente in Atendente.objects.all():
             try:
                 # Verifica se já existe sync
-                existing = AtendenteHumanoSync.objects.filter(
+                existing = AtendenteSync.objects.filter(
                     atendente=atendente
                 ).first()
 
@@ -232,7 +232,7 @@ class Command(BaseCommand):
                         pass
 
                 # Cria novo registro
-                sync = AtendenteHumanoSync.objects.create(
+                sync = AtendenteSync.objects.create(
                     atendente=atendente,
                     config=config,
                     external_id=None,
@@ -292,9 +292,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  Pendentes: {dept_pending}")
 
         # Atendentes
-        aten_total = AtendenteHumano.objects.count()
-        aten_sync = AtendenteHumanoSync.objects.count()
-        aten_pending = AtendenteHumanoSync.objects.filter(
+        aten_total = Atendente.objects.count()
+        aten_sync = AtendenteSync.objects.count()
+        aten_pending = AtendenteSync.objects.filter(
             sync_status="pending"
         ).count()
 

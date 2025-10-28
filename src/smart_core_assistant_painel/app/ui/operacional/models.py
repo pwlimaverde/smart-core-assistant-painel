@@ -92,9 +92,14 @@ class Departamento(models.Model):
         super().clean()
 
 
-class AtendenteHumano(models.Model):
+class Atendente(models.Model):
+    """Modelo para atendentes humanos da organização."""
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
+    )
+    slug: models.SlugField[str | None] = models.SlugField(
+        max_length=250, unique=True, blank=True, null=True, default=""
     )
     telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
@@ -179,10 +184,10 @@ class AtendenteHumano(models.Model):
     )
 
     class Meta:
-        verbose_name = "Atendente Humano"
-        verbose_name_plural = "Atendentes Humanos"
+        verbose_name = "Atendente"
+        verbose_name_plural = "Atendentes"
         ordering = ["nome"]
-        db_table = "oraculo_atendentehumano"
+        db_table = "oraculo_atendente"
         indexes = [
             models.Index(fields=["departamento", "disponivel"]),
             models.Index(
@@ -197,6 +202,21 @@ class AtendenteHumano(models.Model):
 
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
+        from django.utils.text import slugify
+
+        # Gera slug automaticamente se não existir
+        if not self.slug:
+            base_slug = slugify(self.nome)
+            suffix = 1
+            slug = base_slug
+
+            # Garante unicidade do slug
+            while Atendente.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{suffix}"
+                suffix += 1
+
+            self.slug = slug
+
         if self.telefone:
             telefone_limpo = re.sub(r"\D", "", self.telefone)
             if not telefone_limpo.startswith("55"):
@@ -283,9 +303,9 @@ class WhatsAppInstance(models.Model):
         default="evolution",
         help_text="Provedor da API de WhatsApp",
     )
-    owner: models.OneToOneField[Optional["AtendenteHumano"]] = (
+    owner: models.OneToOneField[Optional["Atendente"]] = (
         models.OneToOneField(
-            "AtendenteHumano",
+            "Atendente",
             on_delete=models.SET_NULL,
             blank=True,
             null=True,

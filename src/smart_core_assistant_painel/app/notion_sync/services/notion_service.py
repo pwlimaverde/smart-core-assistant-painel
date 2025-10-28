@@ -22,7 +22,7 @@ from ..exceptions import (
 from ..interfaces import ExternalSyncServiceInterface
 from ..models import NotionDatabaseConfig
 from .mappers import (
-    AtendenteHumanoMapper,
+    AtendenteMapper,
     ClienteMapper,
     ContatoMapper,
     DepartamentoMapper,
@@ -102,7 +102,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Contato": ContatoMapper,
             "Cliente": ClienteMapper,
             "Departamento": DepartamentoMapper,
-            "AtendenteHumano": AtendenteHumanoMapper,
+            "AtendenteHumano": AtendenteMapper,
         }
 
     def _run(self, coro):

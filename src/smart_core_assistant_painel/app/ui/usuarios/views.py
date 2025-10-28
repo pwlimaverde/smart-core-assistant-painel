@@ -12,7 +12,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from rolepermissions.roles import assign_role
 from smart_core_assistant_painel.app.ui.operacional.models import (
-    AtendenteHumano,
+    Atendente,
     Departamento,
 )
 from django.db.models import Count
@@ -88,7 +88,7 @@ def login(request: HttpRequest) -> HttpResponse:
             auth.login(request, user)
             # Encontrar atendente vinculado ao usuário para redirecionamento
             agente = (
-                AtendenteHumano.objects.filter(usuario_sistema=user.username)
+                Atendente.objects.filter(usuario_sistema=user.username)
                 .select_related("departamento")
                 .first()
             )

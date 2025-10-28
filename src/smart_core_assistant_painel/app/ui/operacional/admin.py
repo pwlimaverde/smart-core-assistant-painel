@@ -8,12 +8,12 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
-from .models import AtendenteHumano, Departamento, WhatsAppInstance
+from .models import Atendente, Departamento, WhatsAppInstance
 
 
-@admin.register(AtendenteHumano)
-class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
-    """Admin para o modelo AtendenteHumano."""
+@admin.register(Atendente)
+class AtendenteAdmin(admin.ModelAdmin[Atendente]):
+    """Admin para o modelo Atendente."""
 
     list_display = [
         "id",
@@ -87,7 +87,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
     actions = ["marcar_como_disponivel", "marcar_como_indisponivel"]
 
     @admin.display(description="Atendimentos Ativos")
-    def get_atendimentos_ativos(self, obj: AtendenteHumano) -> int:
+    def get_atendimentos_ativos(self, obj: Atendente) -> int:
         """Retorna a quantidade de atendimentos ativos do atendente."""
         return obj.get_atendimentos_ativos() if obj else 0
 
@@ -95,7 +95,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
         description="Marcar atendentes selecionados como disponíveis"
     )
     def marcar_como_disponivel(
-        self, request: HttpRequest, queryset: QuerySet[AtendenteHumano]
+        self, request: HttpRequest, queryset: QuerySet[Atendente]
     ) -> None:
         """Marca os atendentes selecionados como disponíveis."""
         queryset.update(disponivel=True)
@@ -108,7 +108,7 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
         description="Marcar atendentes selecionados como indisponíveis"
     )
     def marcar_como_indisponivel(
-        self, request: HttpRequest, queryset: QuerySet[AtendenteHumano]
+        self, request: HttpRequest, queryset: QuerySet[Atendente]
     ) -> None:
         """Marca os atendentes selecionados como indisponíveis."""
         queryset.update(disponivel=False)
@@ -287,7 +287,7 @@ class WhatsAppInstanceAdmin(admin.ModelAdmin[WhatsAppInstance]):
 
         if isinstance(responsavel, Departamento):
             return f"🏢 {responsavel.nome}"
-        elif isinstance(responsavel, AtendenteHumano):
+        elif isinstance(responsavel, Atendente):
             return f"👤 {responsavel.nome} ({responsavel.cargo})"
         return str(responsavel)
 

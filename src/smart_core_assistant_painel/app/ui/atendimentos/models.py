@@ -10,7 +10,7 @@ from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
-    AtendenteHumano,
+    Atendente,
 )
 
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
-    AtendenteHumano,
+    Atendente,
 )
 
 
@@ -140,9 +140,9 @@ class Atendimento(models.Model):
         help_text="Prioridade do atendimento",
     )
     atendente_humano: models.ForeignKey[
-        Optional["operacional.AtendenteHumano"]
+        Optional["operacional.Atendente"]
     ] = models.ForeignKey(
-        "operacional.AtendenteHumano",
+        "operacional.Atendente",
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -260,7 +260,7 @@ class Atendimento(models.Model):
         )
 
     def assign_to_agent(
-        self, atendente: AtendenteHumano, observacao: str = ""
+        self, atendente: Atendente, observacao: str = ""
     ) -> None:
         """Atribui o atendimento a um atendente humano, atualiza status e histórico.
 
@@ -326,7 +326,7 @@ class Atendimento(models.Model):
         return self.contexto_conversa.get(chave, padrao)
 
     def transferir_para_humano(
-        self, atendente_humano: AtendenteHumano, observacao: str = ""
+        self, atendente_humano: Atendente, observacao: str = ""
     ) -> None:
         self.atendente_humano = atendente_humano
         self.status = StatusAtendimento.EM_ATENDIMENTO

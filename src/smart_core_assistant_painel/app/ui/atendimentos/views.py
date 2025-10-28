@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 
 from rolepermissions.checkers import has_permission
 from smart_core_assistant_painel.app.ui.operacional.models import (
-    AtendenteHumano,
+    Atendente,
     Departamento,
     WhatsAppInstance,
 )
@@ -33,7 +33,7 @@ from .utils import sched_message_response, set_wa_buffer
 def _get_user_departamentos(request: HttpRequest):
     """Retorna os departamentos ativos aos quais o usuário pertence.
 
-    Um usuário pertence a um departamento se existir um AtendenteHumano
+    Um usuário pertence a um departamento se existir um Atendente
     vinculado ao seu `usuario_sistema` com `departamento` correspondente.
     """
     if not getattr(request, "user", None) or not request.user.is_authenticated:
@@ -90,11 +90,11 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": "Internal server error"}, status=500)
 
 
-def _get_current_agent(request: HttpRequest) -> Optional[AtendenteHumano]:
-    """Obtém o atendente humano vinculado ao usuário logado.
+def _get_current_agent(request: HttpRequest) -> Optional[Atendente]:
+    """Obtém o atendente vinculado ao usuário logado.
 
     Comentário: Para mapear a coluna "Meus", relacionamos o usuário
-    autenticado com o AtendenteHumano via campo `usuario_sistema`.
+    autenticado com o Atendente via campo `usuario_sistema`.
     """
     if not getattr(request, "user", None) or not request.user.is_authenticated:
         return None
@@ -102,7 +102,7 @@ def _get_current_agent(request: HttpRequest) -> Optional[AtendenteHumano]:
     if not username:
         return None
     return (
-        AtendenteHumano.objects.filter(usuario_sistema=username)
+        Atendente.objects.filter(usuario_sistema=username)
         .select_related("departamento")
         .first()
     )

@@ -49,99 +49,116 @@ class AtendenteHumanoMapper:
             properties: Dict[str, Any] = {}
 
             # Campo obrigatório: Nome (Title)
-            properties['Nome'] = {
-                'title': [
-                    {'text': {'content': atendente.nome or 'Sem Nome'}}
-                ]
+            properties["Nome"] = {
+                "title": [{"text": {"content": atendente.nome or "Sem Nome"}}]
             }
 
             # Cargo (Rich Text)
             if atendente.cargo:
-                properties['Cargo'] = {
-                    'rich_text': [
-                        {'text': {'content': atendente.cargo.strip()}}
+                properties["Cargo"] = {
+                    "rich_text": [
+                        {"text": {"content": atendente.cargo.strip()}}
                     ]
                 }
 
             # Relacionamento com Departamento
+            # Envia SEMPRE (inclusive vazio) para refletir remoções imediatas
+            # e garantir visualização no banco de Departamentos.
             try:
+                relation_list: List[Dict[str, str]] = []
                 if atendente.departamento:
                     # Busca sync do departamento
-                    from smart_core_assistant_painel.app.notion_sync.models import DepartamentoSync
-                    try:
-                        dept_sync = DepartamentoSync.objects.get(departamento=atendente.departamento)
-                        if dept_sync.external_id:
-                            # Usa campo relation nativo do Notion
-                            properties['Departamentos Relacionados'] = {
-                                'relation': [
-                                    {'id': dept_sync.external_id}
-                                ]
-                            }
+                    from smart_core_assistant_painel.app.notion_sync.models import (
+                        DepartamentoSync,
+                    )
 
-                            # Armazena informações adicionais em metadados (backup)
-                            atendente_sync.metadados['departamento_vinculado'] = f"{atendente.departamento.id}:{atendente.departamento.nome}"
+                    try:
+                        dept_sync = DepartamentoSync.objects.get(
+                            departamento=atendente.departamento
+                        )
+                        if dept_sync.external_id:
+                            relation_list = [{"id": dept_sync.external_id}]
+
+                            # Metadados auxiliares (backup do vínculo)
+                            atendente_sync.metadados[
+                                "departamento_vinculado"
+                            ] = (
+                                f"{atendente.departamento.id}:"
+                                f"{atendente.departamento.nome}"
+                            )
                     except DepartamentoSync.DoesNotExist:
-                        # Se não tem sync, pula este departamento
-                        pass
+                        # Sem sync do departamento, mantém lista vazia
+                        relation_list = []
+
+                properties["Departamentos Relacionados"] = {
+                    "relation": relation_list
+                }
             except Exception as e:
                 # Log silencioso para não quebrar sincronização principal
-                print(f"Aviso: Erro ao processar relacionamento de departamento: {e}")
+                print(
+                    f"Aviso: Erro ao processar relacionamento de departamento: {e}"
+                )
 
             # Email (Email)
             if atendente.email:
-                properties['Email'] = {
-                    'email': atendente.email.lower().strip()
+                properties["Email"] = {
+                    "email": atendente.email.lower().strip()
                 }
 
             # Telefone (Phone Number)
             if atendente.telefone:
-                telefone_formatado = AtendenteHumanoMapper._format_phone(atendente.telefone)
-                properties['Telefone'] = {
-                    'phone_number': telefone_formatado
-                }
+                telefone_formatado = AtendenteHumanoMapper._format_phone(
+                    atendente.telefone
+                )
+                properties["Telefone"] = {"phone_number": telefone_formatado}
 
             # Matrícula (Rich Text)
-            if hasattr(atendente, 'matricula') and atendente.matricula:
-                properties['Matrícula'] = {
-                    'rich_text': [
-                        {'text': {'content': str(atendente.matricula)}}
+            if hasattr(atendente, "matricula") and atendente.matricula:
+                properties["Matrícula"] = {
+                    "rich_text": [
+                        {"text": {"content": str(atendente.matricula)}}
                     ]
                 }
 
             # Data Admissão (Date)
-            if hasattr(atendente, 'data_admissao') and atendente.data_admissao:
-                properties['Data Admissão'] = {
-                    'date': {
-                        'start': atendente.data_admissao.isoformat()
-                    }
+            if hasattr(atendente, "data_admissao") and atendente.data_admissao:
+                properties["Data Admissão"] = {
+                    "date": {"start": atendente.data_admissao.isoformat()}
                 }
 
             # Horário Trabalho (Rich Text)
-            if hasattr(atendente, 'horario_trabalho') and atendente.horario_trabalho:
+            if (
+                hasattr(atendente, "horario_trabalho")
+                and atendente.horario_trabalho
+            ):
                 import json
-                properties['Horário Trabalho'] = {
-                    'rich_text': [
-                        {'text': {'content': json.dumps(atendente.horario_trabalho, ensure_ascii=False)}}
+
+                properties["Horário Trabalho"] = {
+                    "rich_text": [
+                        {
+                            "text": {
+                                "content": json.dumps(
+                                    atendente.horario_trabalho,
+                                    ensure_ascii=False,
+                                )
+                            }
+                        }
                     ]
                 }
 
             # Ativo (Checkbox)
-            properties['Ativo'] = {
-                'checkbox': bool(atendente.ativo)
-            }
+            properties["Ativo"] = {"checkbox": bool(atendente.ativo)}
 
             # Especialidade (Rich Text)
             if atendente.especialidades:
-                especialidades_text = ''
+                especialidades_text = ""
                 if isinstance(atendente.especialidades, list):
-                    especialidades_text = ', '.join(atendente.especialidades)
+                    especialidades_text = ", ".join(atendente.especialidades)
                 elif isinstance(atendente.especialidades, str):
                     especialidades_text = atendente.especialidades
 
-                properties['Especialidade'] = {
-                    'rich_text': [
-                        {'text': {'content': especialidades_text}}
-                    ]
+                properties["Especialidade"] = {
+                    "rich_text": [{"text": {"content": especialidades_text}}]
                 }
 
             # Departamentos Relacionados (Relation -暂时不用关联，按用户要求不包含instance链接)
@@ -150,7 +167,9 @@ class AtendenteHumanoMapper:
             return properties
 
         except Exception as exc:
-            raise MappingError(f"Erro ao converter AtendenteHumano para Notion: {exc}") from exc
+            raise MappingError(
+                f"Erro ao converter AtendenteHumano para Notion: {exc}"
+            ) from exc
 
     @staticmethod
     def from_notion_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
@@ -178,74 +197,108 @@ class AtendenteHumanoMapper:
             data: Dict[str, Any] = {}
 
             # Nome (Title)
-            if 'Nome' in properties and properties['Nome'].get('title'):
-                data['nome'] = properties['Nome']['title'][0]['text']['content'].strip()
+            if "Nome" in properties and properties["Nome"].get("title"):
+                data["nome"] = properties["Nome"]["title"][0]["text"][
+                    "content"
+                ].strip()
 
             # Cargo (Rich Text)
-            if 'Cargo' in properties and properties['Cargo'].get('rich_text'):
-                data['cargo'] = properties['Cargo']['rich_text'][0]['text']['content'].strip()
+            if "Cargo" in properties and properties["Cargo"].get("rich_text"):
+                data["cargo"] = properties["Cargo"]["rich_text"][0]["text"][
+                    "content"
+                ].strip()
 
             # Email (Email)
-            if 'Email' in properties and properties['Email'].get('email'):
-                data['email'] = properties['Email']['email'].lower().strip()
+            if "Email" in properties and properties["Email"].get("email"):
+                data["email"] = properties["Email"]["email"].lower().strip()
 
             # Telefone (Phone Number)
-            if 'Telefone' in properties and properties['Telefone'].get('phone_number'):
-                data['telefone'] = properties['Telefone']['phone_number']
+            if "Telefone" in properties and properties["Telefone"].get(
+                "phone_number"
+            ):
+                data["telefone"] = properties["Telefone"]["phone_number"]
 
             # Status (Select)
-            if 'Status' in properties and properties['Status'].get('select'):
-                status_nome = properties['Status']['select']['name']
-                data['ativo'] = status_nome.lower() == 'ativo'
+            if "Status" in properties and properties["Status"].get("select"):
+                status_nome = properties["Status"]["select"]["name"]
+                data["ativo"] = status_nome.lower() == "ativo"
 
             # Disponibilidade (Select)
-            if 'Disponibilidade' in properties and properties['Disponibilidade'].get('select'):
-                disp_nome = properties['Disponibilidade']['select']['name']
-                data['disponivel'] = disp_nome.lower() == 'disponível'
+            if "Disponibilidade" in properties and properties[
+                "Disponibilidade"
+            ].get("select"):
+                disp_nome = properties["Disponibilidade"]["select"]["name"]
+                data["disponivel"] = disp_nome.lower() == "disponível"
 
             # Capacidade Máxima (Number)
-            if 'Capacidade Máxima' in properties and properties['Capacidade Máxima'].get('number') is not None:
-                data['max_atendimentos_simultaneos'] = int(properties['Capacidade Máxima']['number'])
+            if (
+                "Capacidade Máxima" in properties
+                and properties["Capacidade Máxima"].get("number") is not None
+            ):
+                data["max_atendimentos_simultaneos"] = int(
+                    properties["Capacidade Máxima"]["number"]
+                )
 
             # Data de Cadastro (Date)
-            if 'Data de Cadastro' in properties and properties['Data de Cadastro'].get('date'):
-                data['data_cadastro'] = datetime.fromisoformat(
-                    properties['Data de Cadastro']['date']['start']
+            if "Data de Cadastro" in properties and properties[
+                "Data de Cadastro"
+            ].get("date"):
+                data["data_cadastro"] = datetime.fromisoformat(
+                    properties["Data de Cadastro"]["date"]["start"]
                 )
 
             # Última Atividade (Date)
-            if 'Última Atividade' in properties and properties['Última Atividade'].get('date'):
-                data['ultima_atividade'] = datetime.fromisoformat(
-                    properties['Última Atividade']['date']['start']
+            if "Última Atividade" in properties and properties[
+                "Última Atividade"
+            ].get("date"):
+                data["ultima_atividade"] = datetime.fromisoformat(
+                    properties["Última Atividade"]["date"]["start"]
                 )
 
             # Especialidades (Multi-select)
-            if 'Especialidades' in properties and properties['Especialidades'].get('multi_select'):
+            if "Especialidades" in properties and properties[
+                "Especialidades"
+            ].get("multi_select"):
                 especialidades = [
-                    item['name'] for item in properties['Especialidades']['multi_select']
+                    item["name"]
+                    for item in properties["Especialidades"]["multi_select"]
                 ]
-                data['especialidades'] = especialidades
+                data["especialidades"] = especialidades
 
             # Usuário do Sistema (Rich Text)
-            if 'Usuário Sistema' in properties and properties['Usuário Sistema'].get('rich_text'):
-                data['usuario_sistema'] = properties['Usuário Sistema']['rich_text'][0]['text']['content'].strip()
+            if "Usuário Sistema" in properties and properties[
+                "Usuário Sistema"
+            ].get("rich_text"):
+                data["usuario_sistema"] = properties["Usuário Sistema"][
+                    "rich_text"
+                ][0]["text"]["content"].strip()
 
             # Horário de Trabalho (Rich Text)
-            if 'Horário Trabalho' in properties and properties['Horário Trabalho'].get('rich_text'):
-                horario_text = properties['Horário Trabalho']['rich_text'][0]['text']['content']
+            if "Horário Trabalho" in properties and properties[
+                "Horário Trabalho"
+            ].get("rich_text"):
+                horario_text = properties["Horário Trabalho"]["rich_text"][0][
+                    "text"
+                ]["content"]
                 try:
                     import json
-                    data['horario_trabalho'] = json.loads(horario_text)
+
+                    data["horario_trabalho"] = json.loads(horario_text)
                 except (json.JSONDecodeError, ValueError):
                     # Se não for JSON válido, ignora
                     pass
 
             # Metadados (Rich Text)
-            if 'Metadados' in properties and properties['Metadados'].get('rich_text'):
-                metadados_text = properties['Metadados']['rich_text'][0]['text']['content']
+            if "Metadados" in properties and properties["Metadados"].get(
+                "rich_text"
+            ):
+                metadados_text = properties["Metadados"]["rich_text"][0][
+                    "text"
+                ]["content"]
                 try:
                     import json
-                    data['metadados'] = json.loads(metadados_text)
+
+                    data["metadados"] = json.loads(metadados_text)
                 except (json.JSONDecodeError, ValueError):
                     # Se não for JSON válido, ignora
                     pass
@@ -253,7 +306,9 @@ class AtendenteHumanoMapper:
             return data
 
         except Exception as exc:
-            raise MappingError(f"Erro ao converter Notion para AtendenteHumano: {exc}") from exc
+            raise MappingError(
+                f"Erro ao converter Notion para AtendenteHumano: {exc}"
+            ) from exc
 
     @staticmethod
     def _normalize_phone_from_notion(phone: str) -> str:
@@ -262,6 +317,7 @@ class AtendenteHumanoMapper:
             return ""
         # Remove tudo que não for dígito
         import re
+
         return re.sub(r"\D", "", phone)
 
     @staticmethod
@@ -278,21 +334,23 @@ class AtendenteHumanoMapper:
         errors: List[str] = []
 
         # Nome é obrigatório
-        if 'Nome' not in properties or not properties['Nome'].get('title'):
+        if "Nome" not in properties or not properties["Nome"].get("title"):
             errors.append("Campo 'Nome' é obrigatório")
 
         # Validar nome se existe
-        if 'Nome' in properties and properties['Nome'].get('title'):
-            nome = properties['Nome']['title'][0]['text']['content'].strip()
+        if "Nome" in properties and properties["Nome"].get("title"):
+            nome = properties["Nome"]["title"][0]["text"]["content"].strip()
             if not nome:
                 errors.append("Campo 'Nome' não pode estar vazio")
             elif len(nome) > 100:
-                errors.append("Campo 'Nome' não pode ter mais de 100 caracteres")
+                errors.append(
+                    "Campo 'Nome' não pode ter mais de 100 caracteres"
+                )
 
         # Validar email se existe
-        if 'Email' in properties and properties['Email'].get('email'):
-            email = properties['Email']['email']
-            if '@' not in email:
+        if "Email" in properties and properties["Email"].get("email"):
+            email = properties["Email"]["email"]
+            if "@" not in email:
                 errors.append("Campo 'Email' deve ser um email válido")
 
         return errors
@@ -309,10 +367,10 @@ class AtendenteHumanoMapper:
             Telefone formatado.
         """
         # Remove tudo que não é dígito
-        digits = re.sub(r'\D', '', phone)
+        digits = re.sub(r"\D", "", phone)
 
         # Verifica se tem código do Brasil
-        if digits.startswith('55') and len(digits) > 11:
+        if digits.startswith("55") and len(digits) > 11:
             return f"+{digits[:2]} {digits[2:4]} {digits[4:-4]} {digits[-4:]}"
         elif len(digits) == 11:  # Celular com 9
             return f"+55 {digits[0:2]} {digits[2:7]} {digits[7:]}"
@@ -335,56 +393,75 @@ class AtendenteHumanoMapper:
         errors: List[str] = []
 
         # Nome é obrigatório
-        if 'Nome' not in properties or not properties['Nome'].get('title'):
+        if "Nome" not in properties or not properties["Nome"].get("title"):
             errors.append("Campo 'Nome' é obrigatório")
 
         # Validar nome se existe
-        if 'Nome' in properties and properties['Nome'].get('title'):
-            nome = properties['Nome']['title'][0]['text']['content'].strip()
+        if "Nome" in properties and properties["Nome"].get("title"):
+            nome = properties["Nome"]["title"][0]["text"]["content"].strip()
             if not nome:
                 errors.append("Campo 'Nome' não pode estar vazio")
             elif len(nome) > 100:
-                errors.append("Campo 'Nome' não pode ter mais de 100 caracteres")
+                errors.append(
+                    "Campo 'Nome' não pode ter mais de 100 caracteres"
+                )
 
         # Validar cargo se existe
-        if 'Cargo' in properties and properties['Cargo'].get('rich_text'):
-            cargo = properties['Cargo']['rich_text'][0]['text']['content'].strip()
+        if "Cargo" in properties and properties["Cargo"].get("rich_text"):
+            cargo = properties["Cargo"]["rich_text"][0]["text"][
+                "content"
+            ].strip()
             if len(cargo) > 100:
-                errors.append("Campo 'Cargo' não pode ter mais de 100 caracteres")
+                errors.append(
+                    "Campo 'Cargo' não pode ter mais de 100 caracteres"
+                )
 
         # Validar email se existe
-        if 'Email' in properties and properties['Email'].get('email'):
-            email = properties['Email']['email']
-            if '@' not in email or '.' not in email:
+        if "Email" in properties and properties["Email"].get("email"):
+            email = properties["Email"]["email"]
+            if "@" not in email or "." not in email:
                 errors.append("Campo 'Email' deve ser um endereço válido")
 
         # Validar capacidade máxima se existe
-        if 'Capacidade Máxima' in properties and properties['Capacidade Máxima'].get('number') is not None:
-            capacidade = properties['Capacidade Máxima']['number']
+        if (
+            "Capacidade Máxima" in properties
+            and properties["Capacidade Máxima"].get("number") is not None
+        ):
+            capacidade = properties["Capacidade Máxima"]["number"]
             if capacidade < 1 or capacidade > 100:
-                errors.append("Campo 'Capacidade Máxima' deve estar entre 1 e 100")
+                errors.append(
+                    "Campo 'Capacidade Máxima' deve estar entre 1 e 100"
+                )
 
         # Validar status se existe
-        if 'Status' in properties and properties['Status'].get('select'):
-            status_nome = properties['Status']['select']['name']
-            if status_nome.lower() not in ['ativo', 'inativo']:
+        if "Status" in properties and properties["Status"].get("select"):
+            status_nome = properties["Status"]["select"]["name"]
+            if status_nome.lower() not in ["ativo", "inativo"]:
                 errors.append("Campo 'Status' deve ser 'Ativo' ou 'Inativo'")
 
         # Validar disponibilidade se existe
-        if 'Disponibilidade' in properties and properties['Disponibilidade'].get('select'):
-            disp_nome = properties['Disponibilidade']['select']['name']
-            if disp_nome.lower() not in ['disponível', 'indisponível']:
-                errors.append("Campo 'Disponibilidade' deve ser 'Disponível' ou 'Indisponível'")
+        if "Disponibilidade" in properties and properties[
+            "Disponibilidade"
+        ].get("select"):
+            disp_nome = properties["Disponibilidade"]["select"]["name"]
+            if disp_nome.lower() not in ["disponível", "indisponível"]:
+                errors.append(
+                    "Campo 'Disponibilidade' deve ser 'Disponível' ou 'Indisponível'"
+                )
 
         # Validar especialidades se existe
-        if 'Especialidades' in properties and properties['Especialidades'].get('multi_select'):
-            especialidades = properties['Especialidades']['multi_select']
+        if "Especialidades" in properties and properties["Especialidades"].get(
+            "multi_select"
+        ):
+            especialidades = properties["Especialidades"]["multi_select"]
             if len(especialidades) > 30:
                 errors.append("Máximo de 30 especialidades permitidas")
 
             for espec in especialidades:
-                if len(espec.get('name', '')) > 50:
-                    errors.append(f"Especialidade '{espec.get('name', '')}' excede 50 caracteres")
+                if len(espec.get("name", "")) > 50:
+                    errors.append(
+                        f"Especialidade '{espec.get('name', '')}' excede 50 caracteres"
+                    )
 
         return errors
 
@@ -397,37 +474,20 @@ class AtendenteHumanoMapper:
             Schema da database no formato da API do Notion.
         """
         return {
-            "Nome": {
-                "title": {}
-            },
-            "Ativo": {
-                "checkbox": {}
-            },
-            "Cargo": {
-                "rich_text": {}
-            },
-            "Email": {
-                "email": {}
-            },
+            "Nome": {"title": {}},
+            "Ativo": {"checkbox": {}},
+            "Cargo": {"rich_text": {}},
+            "Email": {"email": {}},
             # "Setor": {
             #     "rich_text": {}
             # },
-            "Telefone": {
-                "phone_number": {}
-            },
-            "Matrícula": {
-                "rich_text": {}
-            },
-            "Especialidade": {
-                "rich_text": {}
-            },
-            "Data Admissão": {
-                "date": {}
-            },
-            "Horário Trabalho": {
-                "rich_text": {}
-            },
-            "Setor": {
-                "rich_text": {}
-            }
+            "Telefone": {"phone_number": {}},
+            "Matrícula": {"rich_text": {}},
+            "Especialidade": {"rich_text": {}},
+            "Data Admissão": {"date": {}},
+            "Horário Trabalho": {"rich_text": {}},
+            # Campo relation canônico: vínculo com Departamento
+            "Departamentos Relacionados": {"relation": {}},
+            # Campo legado/auxiliar
+            "Setor": {"rich_text": {}},
         }

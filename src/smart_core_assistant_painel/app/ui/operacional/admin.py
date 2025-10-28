@@ -36,7 +36,13 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
         "email",
         "departamento__nome",
     ]
-    list_filter = ["ativo", "disponivel", "cargo", "departamento", "data_cadastro"]
+    list_filter = [
+        "ativo",
+        "disponivel",
+        "cargo",
+        "departamento",
+        "data_cadastro",
+    ]
     readonly_fields = [
         "data_cadastro",
         "ultima_atividade",
@@ -50,7 +56,10 @@ class AtendenteHumanoAdmin(admin.ModelAdmin[AtendenteHumano]):
             {"fields": ("nome", "cargo", "departamento")},
         ),
         ("Contatos", {"fields": ("telefone", "email")}),
-        ("Sistema", {"fields": ("usuario", "usuario_sistema", "ativo", "disponivel")}),
+        (
+            "Sistema",
+            {"fields": ("usuario", "usuario_sistema", "ativo", "disponivel")},
+        ),
         (
             "Capacidades",
             {"fields": ("max_atendimentos_simultaneos", "especialidades")},
@@ -199,7 +208,7 @@ class WhatsAppInstanceAdmin(admin.ModelAdmin[WhatsAppInstance]):
             "Tipo de Instância",
             {
                 "fields": ("departamento", "owner"),
-                "description": "Uma instância deve estar vinculada a UM departamento OU UM atendente, nunca ambos."
+                "description": "Uma instância deve estar vinculada a UM departamento OU UM atendente, nunca ambos.",
             },
         ),
         (
@@ -237,9 +246,7 @@ class WhatsAppInstanceAdmin(admin.ModelAdmin[WhatsAppInstance]):
     )
     actions = ["ativar_instancias", "desativar_instancias"]
 
-    @admin.action(
-        description="Ativar instâncias selecionadas"
-    )
+    @admin.action(description="Ativar instâncias selecionadas")
     def ativar_instancias(
         self, request: HttpRequest, queryset: QuerySet[WhatsAppInstance]
     ) -> None:
@@ -250,9 +257,7 @@ class WhatsAppInstanceAdmin(admin.ModelAdmin[WhatsAppInstance]):
             f"{queryset.count()} instâncias ativadas.",
         )
 
-    @admin.action(
-        description="Desativar instâncias selecionadas"
-    )
+    @admin.action(description="Desativar instâncias selecionadas")
     def desativar_instancias(
         self, request: HttpRequest, queryset: QuerySet[WhatsAppInstance]
     ) -> None:
@@ -293,14 +298,26 @@ class WhatsAppInstanceAdmin(admin.ModelAdmin[WhatsAppInstance]):
         if obj and obj.pk:
             # Se está editando um objeto existente
             if obj.departamento:
-                form.base_fields['owner'].widget.attrs['placeholder'] = "Não aplicável para instâncias departamentais"
-                form.base_fields['owner'].help_text = "Esta instância é departamental. Para mudar, primeiro remova o departamento."
+                form.base_fields["owner"].widget.attrs["placeholder"] = (
+                    "Não aplicável para instâncias departamentais"
+                )
+                form.base_fields[
+                    "owner"
+                ].help_text = "Esta instância é departamental. Para mudar, primeiro remova o departamento."
             elif obj.owner:
-                form.base_fields['departamento'].widget.attrs['placeholder'] = "Não aplicável para instâncias individuais"
-                form.base_fields['departamento'].help_text = "Esta instância é individual. Para mudar, primeiro remova o atendente."
+                form.base_fields["departamento"].widget.attrs[
+                    "placeholder"
+                ] = "Não aplicável para instâncias individuais"
+                form.base_fields[
+                    "departamento"
+                ].help_text = "Esta instância é individual. Para mudar, primeiro remova o atendente."
         else:
             # Se está criando um novo objeto
-            form.base_fields['departamento'].help_text = "Selecione um departamento para instância departamental OU deixe em branco para instância individual"
-            form.base_fields['owner'].help_text = "Selecione um atendente para instância individual OU deixe em branco para instância departamental"
+            form.base_fields[
+                "departamento"
+            ].help_text = "Selecione um departamento para instância departamental OU deixe em branco para instância individual"
+            form.base_fields[
+                "owner"
+            ].help_text = "Selecione um atendente para instância individual OU deixe em branco para instância departamental"
 
         return form

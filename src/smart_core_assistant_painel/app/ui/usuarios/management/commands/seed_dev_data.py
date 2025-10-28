@@ -54,7 +54,9 @@ class Command(BaseCommand):
                 "ativo": True,
             },
         )
-        self.stdout.write(self.style.SUCCESS(f"Departamento OK: {suporte_dep.nome}"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Departamento OK: {suporte_dep.nome}")
+        )
 
         # 2) Usuário Django
         user, created_user = User.objects.get_or_create(
@@ -67,12 +69,18 @@ class Command(BaseCommand):
         if created_user:
             user.set_password("123456")  # Apenas DEV
             user.save()
-            self.stdout.write(self.style.SUCCESS("Usuário criado: agent1/123456"))
+            self.stdout.write(
+                self.style.SUCCESS("Usuário criado: agent1/123456")
+            )
         else:
             # Garantir senha em dev
             user.set_password("123456")
             user.save(update_fields=["password"])
-            self.stdout.write(self.style.WARNING("Usuário existente atualizado com senha padrão DEV."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "Usuário existente atualizado com senha padrão DEV."
+                )
+            )
 
         # 3) AtendenteHumano vinculado ao usuário
         agente, created_agente = AtendenteHumano.objects.get_or_create(
@@ -88,13 +96,19 @@ class Command(BaseCommand):
             },
         )
         if created_agente:
-            self.stdout.write(self.style.SUCCESS("AtendenteHumano criado: agent1"))
+            self.stdout.write(
+                self.style.SUCCESS("AtendenteHumano criado: agent1")
+            )
         else:
             # Garantir que está no departamento certo
             if agente.departamento_id != suporte_dep.id:
                 agente.departamento = suporte_dep
                 agente.save(update_fields=["departamento"])
-            self.stdout.write(self.style.WARNING("AtendenteHumano já existia. Dados checados."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "AtendenteHumano já existia. Dados checados."
+                )
+            )
 
         # 4) Contatos de teste
         contatos_data: list[dict[str, str]] = [
@@ -113,7 +127,9 @@ class Command(BaseCommand):
                 },
             )
             contatos.append(contato)
-        self.stdout.write(self.style.SUCCESS(f"Contatos OK: {len(contatos)} criados/obtidos"))
+        self.stdout.write(
+            self.style.SUCCESS(f"Contatos OK: {len(contatos)} criados/obtidos")
+        )
 
         # 5) Atendimentos de teste (uma por coluna do Kanban)
         # - Fila: aguardando_atendente, sem atendente

@@ -61,7 +61,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             raise SyncConfigError(
                 message="Token do Notion não encontrado",
                 config_key="NOTION_TOKEN",
-                details={"message": "Configure NOTION_TOKEN no arquivo .env"}
+                details={"message": "Configure NOTION_TOKEN no arquivo .env"},
             )
 
         # Inicializa cliente do Notion
@@ -108,7 +108,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
     def _run(self, coro):
         return asyncio.run(coro)
 
-    async def _request_async(self, method: str, path: str, body: dict[str, Any]):
+    async def _request_async(
+        self, method: str, path: str, body: dict[str, Any]
+    ):
         # Evita reuso de cliente assíncrono entre múltiplos asyncio.run
         client = NotionAsyncClient(auth=self.token)
         return await client.request(method=method, path=path, body=body)
@@ -158,7 +160,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             properties = mapper.to_notion_properties(data)
 
             # Cria página no Notion
-            logger.info(f"Criando página no Notion para {model_name} #{django_id}")
+            logger.info(
+                f"Criando página no Notion para {model_name} #{django_id}"
+            )
 
             # Tentar usar método direto da API com dicionário simples
             try:
@@ -170,9 +174,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 # Fazer chamada direta usando o método request do client
                 response = self._run(
                     self._request_async(
-                        method="post",
-                        path="pages",
-                        body=page_data
+                        method="post", path="pages", body=page_data
                     )
                 )
 
@@ -188,7 +190,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 logger.error(f"❌ Erro ao criar página no Notion: {e}")
                 raise SyncError(
                     message=f"Erro inesperado ao criar registro: {str(e)}",
-                    details={"model_name": model_name, "django_id": django_id}
+                    details={"model_name": model_name, "django_id": django_id},
                 ) from e
 
         except APIResponseError as e:
@@ -205,7 +207,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     "model_name": model_name,
                     "django_id": django_id,
                     "response": error_msg,
-                }
+                },
             ) from e
 
         except MappingError:
@@ -217,7 +219,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             )
             raise SyncError(
                 message=f"Erro inesperado ao criar registro: {str(e)}",
-                details={"model_name": model_name, "django_id": django_id}
+                details={"model_name": model_name, "django_id": django_id},
             ) from e
 
     @override
@@ -259,7 +261,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             properties = mapper.to_notion_properties(data)
 
             # Atualiza página no Notion
-            logger.info(f"Atualizando página {external_id} no Notion para {model_name} #{django_id}")
+            logger.info(
+                f"Atualizando página {external_id} no Notion para {model_name} #{django_id}"
+            )
 
             # Prepara dados para atualização
             page_data = {
@@ -269,9 +273,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             # Faz chamada direta usando o método request do client
             response = self._run(
                 self._request_async(
-                    method="patch",
-                    path=f"pages/{external_id}",
-                    body=page_data
+                    method="patch", path=f"pages/{external_id}", body=page_data
                 )
             )
 
@@ -298,7 +300,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     "django_id": django_id,
                     "external_id": external_id,
                     "response": error_msg,
-                }
+                },
             ) from e
 
         except MappingError:
@@ -314,7 +316,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     "model_name": model_name,
                     "django_id": django_id,
                     "external_id": external_id,
-                }
+                },
             ) from e
 
     @override
@@ -340,8 +342,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         """
         try:
             logger.info(
-                f"Arquivando página {external_id} no Notion "
-                f"para {model_name}"
+                f"Arquivando página {external_id} no Notion para {model_name}"
             )
 
             # Arquiva página (Notion não permite deleção real)
@@ -352,16 +353,13 @@ class NotionSyncService(ExternalSyncServiceInterface):
             # Faz chamada direta usando o método request do client
             response = self._run(
                 self._request_async(
-                    method="patch",
-                    path=f"pages/{external_id}",
-                    body=page_data
+                    method="patch", path=f"pages/{external_id}", body=page_data
                 )
             )
 
             page_id = response.get("id")
             logger.success(
-                f"✅ Página arquivada no Notion: {page_id} "
-                f"para {model_name}"
+                f"✅ Página arquivada no Notion: {page_id} para {model_name}"
             )
 
             return True
@@ -380,16 +378,14 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     "model_name": model_name,
                     "external_id": external_id,
                     "response": error_msg,
-                }
+                },
             ) from e
 
         except Exception as e:
-            logger.error(
-                f"❌ Erro inesperado ao arquivar {model_name}: {e}"
-            )
+            logger.error(f"❌ Erro inesperado ao arquivar {model_name}: {e}")
             raise SyncError(
                 message=f"Erro inesperado ao arquivar registro: {str(e)}",
-                details={"model_name": model_name, "external_id": external_id}
+                details={"model_name": model_name, "external_id": external_id},
             ) from e
 
     @override
@@ -412,13 +408,15 @@ class NotionSyncService(ExternalSyncServiceInterface):
             # Testa autenticação obtendo informações do bot
             try:
                 bot_info = self._run(self.client.users.me())
-                logger.info(f"✅ Autenticação OK - Bot: {bot_info.get('name', 'N/A')}")
+                logger.info(
+                    f"✅ Autenticação OK - Bot: {bot_info.get('name', 'N/A')}"
+                )
             except APIResponseError as e:
                 if e.status == 401:
                     raise Exception(
                         message="Token do Notion inválido ou expirado",
                         config_key="NOTION_TOKEN",
-                        details={"error": str(e)}
+                        details={"error": str(e)},
                     )
                 raise
 
@@ -426,7 +424,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             for model_name, database_id in self.database_ids.items():
                 if database_id:
                     try:
-                        db = self._run(self.client.databases.retrieve(database_id))
+                        db = self._run(
+                            self.client.databases.retrieve(database_id)
+                        )
                         logger.info(
                             f"✅ Database '{model_name}' OK - "
                             f"Título: {db.get('title', [{}])[0].get('plain_text', 'N/A')}"
@@ -451,7 +451,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             logger.error(f"❌ Erro ao validar conexão: {e}")
             raise SyncError(
                 message=f"Erro ao validar conexão com Notion: {str(e)}",
-                details={"error": str(e)}
+                details={"error": str(e)},
             ) from e
 
     @override
@@ -487,7 +487,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             if not page_id:
                 raise SyncError(
                     message="Webhook do Notion sem ID de página",
-                    details={"payload": payload}
+                    details={"payload": payload},
                 )
 
             # Busca página no Notion para obter dados atualizados
@@ -501,7 +501,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             if not django_id:
                 raise SyncError(
                     message="Página do Notion sem Django ID",
-                    details={"page_id": page_id}
+                    details={"page_id": page_id},
                 )
 
             # TODO: Determinar model_name baseado no database
@@ -518,7 +518,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             logger.error(f"❌ Erro ao processar webhook: {e}")
             raise SyncError(
                 message=f"Erro ao processar webhook do Notion: {str(e)}",
-                details={"payload": payload}
+                details={"payload": payload},
             ) from e
 
     @override
@@ -540,14 +540,16 @@ class NotionSyncService(ExternalSyncServiceInterface):
         Raises:
             SyncError: Se houver erro na sincronização em lote.
         """
-        logger.info(f"Iniciando sincronização em lote de {len(records)} {model_name}(s)")
+        logger.info(
+            f"Iniciando sincronização em lote de {len(records)} {model_name}(s)"
+        )
 
         stats = {
             "total": len(records),
             "created": 0,
             "updated": 0,
             "failed": 0,
-            "errors": []
+            "errors": [],
         }
 
         for record in records:
@@ -558,7 +560,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             try:
                 if external_id:
                     # Atualiza registro existente
-                    self.update_record(model_name, external_id, django_id, data)
+                    self.update_record(
+                        model_name, external_id, django_id, data
+                    )
                     stats["updated"] += 1
                 else:
                     # Cria novo registro
@@ -567,10 +571,12 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
             except Exception as e:
                 stats["failed"] += 1
-                stats["errors"].append({
-                    "django_id": django_id,
-                    "error": str(e),
-                })
+                stats["errors"].append(
+                    {
+                        "django_id": django_id,
+                        "error": str(e),
+                    }
+                )
                 logger.error(
                     f"❌ Erro ao sincronizar {model_name} #{django_id}: {e}"
                 )

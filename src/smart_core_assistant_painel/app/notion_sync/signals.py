@@ -8,14 +8,25 @@ o processo de sincronização com plataformas externas (Notion, Airtable, etc).
 
 from typing import Any
 
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete, pre_save
+from django.db.models.signals import (
+    m2m_changed,
+    post_delete,
+    post_save,
+    pre_delete,
+    pre_save,
+)
 from django.dispatch import receiver
 from loguru import logger
 
 from ..ui.clientes.models import Cliente, Contato
 from ..ui.operacional.models import AtendenteHumano, Departamento
 from .exceptions import NotionSyncError, SyncError
-from .models import AtendenteHumanoSync, ClienteSync, ContatoSync, DepartamentoSync
+from .models import (
+    AtendenteHumanoSync,
+    ClienteSync,
+    ContatoSync,
+    DepartamentoSync,
+)
 from .services import NotionSyncService
 
 
@@ -42,8 +53,8 @@ def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
         defaults={
             "external_id": None,
             "sync_status": "pending",
-            "config": config
-        }
+            "config": config,
+        },
     )
     return sync
 
@@ -71,8 +82,8 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
         defaults={
             "external_id": None,
             "sync_status": "pending",
-            "config": config
-        }
+            "config": config,
+        },
     )
     return sync
 
@@ -93,7 +104,9 @@ def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
 
     # Obter configuração do Notion para Departamentos
     try:
-        config = NotionDatabaseConfig.objects.get(slug="ui_operacional_departamento")
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_operacional_departamento"
+        )
     except NotionDatabaseConfig.DoesNotExist:
         # Criar configuração padrão se não existir
         config = NotionDatabaseConfig.objects.create(
@@ -103,7 +116,7 @@ def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
             django_app_label="ui",
             notion_database_id="",  # Será preenchido depois
             sync_enabled=False,  # Inicia desabilitado
-            description="Departamentos da organização"
+            description="Departamentos da organização",
         )
 
     sync, created = DepartamentoSync.objects.get_or_create(
@@ -111,8 +124,8 @@ def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
         defaults={
             "external_id": None,
             "sync_status": "pending",
-            "config": config
-        }
+            "config": config,
+        },
     )
     return sync
 
@@ -133,7 +146,9 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteHumanoSync:
 
     # Obter configuração do Notion para Atendentes Humanos
     try:
-        config = NotionDatabaseConfig.objects.get(slug="ui_operacional_atendentehumano")
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_operacional_atendentehumano"
+        )
     except NotionDatabaseConfig.DoesNotExist:
         # Criar configuração padrão se não existir
         config = NotionDatabaseConfig.objects.create(
@@ -143,7 +158,7 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteHumanoSync:
             django_app_label="ui",
             notion_database_id="",  # Será preenchido depois
             sync_enabled=False,  # Inicia desabilitado
-            description="Atendentes humanos da organização"
+            description="Atendentes humanos da organização",
         )
 
     sync, created = AtendenteHumanoSync.objects.get_or_create(
@@ -151,16 +166,14 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteHumanoSync:
         defaults={
             "external_id": None,
             "sync_status": "pending",
-            "config": config
-        }
+            "config": config,
+        },
     )
     return sync
 
 
 def schedule_sync_operation(
-    model_name: str,
-    instance_id: int,
-    operation: str
+    model_name: str, instance_id: int, operation: str
 ) -> None:
     """
     Agenda uma operação de sincronização.
@@ -174,7 +187,12 @@ def schedule_sync_operation(
         operation: Tipo de operação ("create", "update", "delete").
     """
     from .services import NotionSyncService
-    from .models import AtendenteHumanoSync, ClienteSync, ContatoSync, DepartamentoSync
+    from .models import (
+        AtendenteHumanoSync,
+        ClienteSync,
+        ContatoSync,
+        DepartamentoSync,
+    )
 
     try:
         service = NotionSyncService()
@@ -182,7 +200,9 @@ def schedule_sync_operation(
         # Operações de delete são tratadas nos signals pre_delete
         # para evitar problemas com CASCADE do OneToOneField
         if operation == "delete":
-            logger.warning(f"Operação de delete para {model_name} deve ser tratada em pre_delete signal")
+            logger.warning(
+                f"Operação de delete para {model_name} deve ser tratada em pre_delete signal"
+            )
             return
 
         # Obter o registro sync correspondente (para create/update)
@@ -191,35 +211,52 @@ def schedule_sync_operation(
         elif model_name == "Cliente":
             sync_record = ClienteSync.objects.get(cliente_id=instance_id)
         elif model_name == "Departamento":
-            sync_record = DepartamentoSync.objects.get(departamento_id=instance_id)
+            sync_record = DepartamentoSync.objects.get(
+                departamento_id=instance_id
+            )
         elif model_name == "AtendenteHumano":
-            sync_record = AtendenteHumanoSync.objects.get(atendente_id=instance_id)
+            sync_record = AtendenteHumanoSync.objects.get(
+                atendente_id=instance_id
+            )
         else:
             logger.warning(f"Modelo não suportado: {model_name}")
             return
 
         # Para simplificar, executamos sincronização síncrona por enquanto
         # Em produção, isso deve ser assíncrono (Celery, Django Q, etc)
-        logger.info(f"Executando sincronização: {model_name} #{instance_id} - {operation}")
+        logger.info(
+            f"Executando sincronização: {model_name} #{instance_id} - {operation}"
+        )
         logger.debug(f"Sync record: {sync_record}")
 
         if operation == "create":
-            external_id = service.create_record(model_name, instance_id, sync_record)
+            external_id = service.create_record(
+                model_name, instance_id, sync_record
+            )
             sync_record.mark_as_synced(external_id)
 
         elif operation == "update":
             if sync_record.external_id:
-                success = service.update_record(model_name, sync_record.external_id, instance_id, sync_record)
+                success = service.update_record(
+                    model_name,
+                    sync_record.external_id,
+                    instance_id,
+                    sync_record,
+                )
                 if success:
                     sync_record.mark_as_synced()
                 else:
                     sync_record.mark_as_failed("Falha na atualização")
             else:
                 # Se não tem external_id, tenta criar
-                external_id = service.create_record(model_name, instance_id, sync_record)
+                external_id = service.create_record(
+                    model_name, instance_id, sync_record
+                )
                 sync_record.external_id = external_id
                 sync_record.mark_as_synced(external_id)
-        logger.info(f"Sincronização executada com sucesso: {model_name} #{instance_id} - {operation}")
+        logger.info(
+            f"Sincronização executada com sucesso: {model_name} #{instance_id} - {operation}"
+        )
 
     except Exception as e:
         logger.error(f"Erro ao executar sincronização: {e}")
@@ -230,7 +267,9 @@ def schedule_sync_operation(
                 sync_record = ContatoSync.objects.get(contato_id=instance_id)
             elif model_name == "Cliente":
                 sync_record = ClienteSync.objects.get(cliente_id=instance_id)
-            logger.info(f"Marcando sync_record como falha: {model_name} #{instance_id}")
+            logger.info(
+                f"Marcando sync_record como falha: {model_name} #{instance_id}"
+            )
             sync_record.mark_as_failed(str(e))
         except Exception as mark_error:
             logger.error(f"Erro ao marcar como falha: {mark_error}")
@@ -239,10 +278,7 @@ def schedule_sync_operation(
 
 @receiver(post_save, sender=Contato)
 def on_contato_saved(
-    sender: Any,
-    instance: "Contato",
-    created: bool,
-    **kwargs: Any
+    sender: Any, instance: "Contato", created: bool, **kwargs: Any
 ) -> None:
     """
     Signal receiver para sincronizar Contato quando salvo.
@@ -276,9 +312,7 @@ def on_contato_saved(
 
         # Agenda sincronização assíncrona
         schedule_sync_operation(
-            model_name="Contato",
-            instance_id=instance.id,
-            operation=operation
+            model_name="Contato", instance_id=instance.id, operation=operation
         )
 
         logger.info(
@@ -287,15 +321,14 @@ def on_contato_saved(
         )
 
     except Exception as e:
-        logger.error(f"Erro ao processar signal de Contato #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar signal de Contato #{instance.id}: {e}"
+        )
 
 
 @receiver(post_save, sender=Cliente)
 def on_cliente_saved(
-    sender: Any,
-    instance: "Cliente",
-    created: bool,
-    **kwargs: Any
+    sender: Any, instance: "Cliente", created: bool, **kwargs: Any
 ) -> None:
     """
     Signal receiver para sincronizar Cliente quando salvo.
@@ -329,9 +362,7 @@ def on_cliente_saved(
 
         # Agenda sincronização assíncrona
         schedule_sync_operation(
-            model_name="Cliente",
-            instance_id=instance.id,
-            operation=operation
+            model_name="Cliente", instance_id=instance.id, operation=operation
         )
 
         logger.info(
@@ -340,7 +371,9 @@ def on_cliente_saved(
         )
 
     except Exception as e:
-        logger.error(f"Erro ao processar signal de Cliente #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar signal de Cliente #{instance.id}: {e}"
+        )
 
 
 # Removido: on_contato_deleted - substituído por on_contato_pre_delete
@@ -350,9 +383,7 @@ def on_cliente_saved(
 # Usar pre_delete em vez de post_delete para capturar sync_record antes do CASCADE
 @receiver(pre_delete, sender=Contato)
 def on_contato_pre_delete(
-    sender: Any,
-    instance: "Contato",
-    **kwargs: Any
+    sender: Any, instance: "Contato", **kwargs: Any
 ) -> None:
     """
     Signal receiver para sincronizar deleção de Contato.
@@ -369,25 +400,31 @@ def on_contato_pre_delete(
         # Busca o external_id antes do delete
         from .models import ContatoSync
 
-        sync_record = ContatoSync.objects.filter(contato_id=instance.id).first()
+        sync_record = ContatoSync.objects.filter(
+            contato_id=instance.id
+        ).first()
         if sync_record and sync_record.external_id:
             # Executa sincronização de deleção imediatamente
             service = NotionSyncService()
             service.delete_record("Contato", sync_record.external_id)
-            logger.info(f"Contato #{instance.id} arquivado no Notion (external_id: {sync_record.external_id})")
+            logger.info(
+                f"Contato #{instance.id} arquivado no Notion (external_id: {sync_record.external_id})"
+            )
         else:
-            logger.warning(f"Contato #{instance.id} não possui external_id para arquivar no Notion")
+            logger.warning(
+                f"Contato #{instance.id} não possui external_id para arquivar no Notion"
+            )
 
     except Exception as e:
-        logger.error(f"Erro ao processar deleção de Contato #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar deleção de Contato #{instance.id}: {e}"
+        )
 
 
 # Usar pre_delete em vez de post_delete para capturar sync_record antes do CASCADE
 @receiver(pre_delete, sender=Cliente)
 def on_cliente_pre_delete(
-    sender: Any,
-    instance: "Cliente",
-    **kwargs: Any
+    sender: Any, instance: "Cliente", **kwargs: Any
 ) -> None:
     """
     Signal receiver para sincronizar deleção de Cliente.
@@ -404,17 +441,25 @@ def on_cliente_pre_delete(
         # Busca o external_id antes do delete
         from .models import ClienteSync
 
-        sync_record = ClienteSync.objects.filter(cliente_id=instance.id).first()
+        sync_record = ClienteSync.objects.filter(
+            cliente_id=instance.id
+        ).first()
         if sync_record and sync_record.external_id:
             # Executa sincronização de deleção imediatamente
             service = NotionSyncService()
             service.delete_record("Cliente", sync_record.external_id)
-            logger.info(f"Cliente #{instance.id} arquivado no Notion (external_id: {sync_record.external_id})")
+            logger.info(
+                f"Cliente #{instance.id} arquivado no Notion (external_id: {sync_record.external_id})"
+            )
         else:
-            logger.warning(f"Cliente #{instance.id} não possui external_id para arquivar no Notion")
+            logger.warning(
+                f"Cliente #{instance.id} não possui external_id para arquivar no Notion"
+            )
 
     except Exception as e:
-        logger.error(f"Erro ao processar deleção de Cliente #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar deleção de Cliente #{instance.id}: {e}"
+        )
 
 
 @receiver(m2m_changed, sender=Contato.clientes.through)
@@ -425,7 +470,7 @@ def on_contato_clientes_changed(
     reverse: bool,
     model: "Cliente",
     pk_set: Any,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Signal receiver para sincronizar mudanças no relacionamento Contato <-> Clientes.
@@ -450,9 +495,13 @@ def on_contato_clientes_changed(
         # Obtém o registro de sincronização
         from .models import ContatoSync
 
-        sync_record = ContatoSync.objects.filter(contato_id=instance.id).first()
+        sync_record = ContatoSync.objects.filter(
+            contato_id=instance.id
+        ).first()
         if not sync_record or not sync_record.external_id:
-            logger.warning(f"Contato #{instance.id} não possui sync_record para atualizar relacionamentos")
+            logger.warning(
+                f"Contato #{instance.id} não possui sync_record para atualizar relacionamentos"
+            )
             return
 
         # Prepara dados atualizados para sincronização
@@ -461,63 +510,98 @@ def on_contato_clientes_changed(
 
         # Executa sincronização de atualização
         service = NotionSyncService()
-        success = service.update_record("Contato", sync_record.external_id, instance.id, sync_record)
+        success = service.update_record(
+            "Contato", sync_record.external_id, instance.id, sync_record
+        )
 
         if success:
             sync_record.mark_as_synced()
-            logger.info(f"Relacionamentos do Contato #{instance.id} atualizados no Notion (action: {action})")
+            logger.info(
+                f"Relacionamentos do Contato #{instance.id} atualizados no Notion (action: {action})"
+            )
         else:
-            sync_record.mark_as_failed(f"Falha na atualização de relacionamentos (action: {action})")
-            logger.error(f"Falha ao atualizar relacionamentos do Contato #{instance.id} (action: {action})")
+            sync_record.mark_as_failed(
+                f"Falha na atualização de relacionamentos (action: {action})"
+            )
+            logger.error(
+                f"Falha ao atualizar relacionamentos do Contato #{instance.id} (action: {action})"
+            )
 
-        # 🆕 Atualiza também cada Cliente impactado para manter relação bidirecional
-        if action in ("post_add", "post_remove", "post_clear"):
-            try:
-                from .models import ClienteSync
+        # 🆕 Atualiza também os Clientes impactados para refletir no lado
+        # de Clientes. Em algumas contas do Notion, o espelhamento pode
+        # demorar; escrever dos dois lados evita inconsistências visuais.
+        try:
+            from .models import ClienteSync
 
-                for cliente_id in (pk_set or []):
-                    cliente_obj = Cliente.objects.filter(pk=cliente_id).first()
-                    if not cliente_obj:
+            service = NotionSyncService()
+            cliente_ids = list(pk_set or [])
+            for cliente_id in cliente_ids:
+                cliente_sync = ClienteSync.objects.filter(
+                    cliente_id=cliente_id
+                ).first()
+                if not cliente_sync:
+                    cliente_sync = get_or_create_cliente_sync(cliente_id)
+
+                cliente_sync.prepare_notion_data()
+                cliente_sync.save()
+
+                if not cliente_sync.external_id:
+                    try:
+                        created_id = service.create_record(
+                            "Cliente", cliente_id, cliente_sync
+                        )
+                        cliente_sync.external_id = created_id
+                        cliente_sync.mark_as_synced()
+                        cliente_sync.save()
+                        logger.info(
+                            f"Cliente #{cliente_id} criado no Notion "
+                            f"(external_id: {created_id})"
+                        )
+                    except Exception as ce:
+                        cliente_sync.mark_as_failed(str(ce))
+                        logger.error(
+                            f"Erro ao criar Cliente #{cliente_id} "
+                            f"no Notion: {ce}"
+                        )
                         continue
 
-                    cliente_sync = ClienteSync.objects.filter(cliente_id=cliente_obj.id).first()
-                    if not cliente_sync:
-                        cliente_sync = get_or_create_cliente_sync(cliente_obj.id)
-
-                    # Prepara dados e cria/atualiza no Notion
-                    cliente_sync.prepare_notion_data()
-                    cliente_sync.save()
-
-                    # Cria página se necessário
-                    if not cliente_sync.external_id:
-                        try:
-                            created_id = service.create_record("Cliente", cliente_obj.id, cliente_sync)
-                            cliente_sync.external_id = created_id
-                            cliente_sync.mark_as_synced()
-                            cliente_sync.save()
-                            logger.info(f"Cliente #{cliente_obj.id} criado no Notion (external_id: {created_id})")
-                        except Exception as ce:
-                            cliente_sync.mark_as_failed(str(ce))
-                            logger.error(f"Erro ao criar Cliente #{cliente_obj.id} no Notion: {ce}")
-                            continue
-
-                    # Atualiza relação no lado do Cliente
-                    try:
-                        ok = service.update_record("Cliente", cliente_sync.external_id, cliente_obj.id, cliente_sync)
-                        if ok:
-                            cliente_sync.mark_as_synced()
-                            logger.info(f"Relacionamentos do Cliente #{cliente_obj.id} atualizados (via Contato action: {action})")
-                        else:
-                            cliente_sync.mark_as_failed("Falha ao atualizar relacionamento (via Contato)")
-                            logger.error(f"Falha ao atualizar Cliente #{cliente_obj.id} (via Contato)")
-                    except Exception as ue:
-                        cliente_sync.mark_as_failed(str(ue))
-                        logger.error(f"Erro ao atualizar Cliente #{cliente_obj.id} (via Contato): {ue}")
-            except Exception as e_inner:
-                logger.error(f"Erro ao sincronizar clientes impactados (Contato #{instance.id}): {e_inner}")
+                try:
+                    ok_cliente = service.update_record(
+                        "Cliente",
+                        cliente_sync.external_id,
+                        cliente_id,
+                        cliente_sync,
+                    )
+                    if ok_cliente:
+                        cliente_sync.mark_as_synced()
+                        logger.info(
+                            f"Relacionamentos do Cliente #{cliente_id} "
+                            f"atualizados (via Contato action: {action})"
+                        )
+                    else:
+                        cliente_sync.mark_as_failed(
+                            "Falha ao atualizar relacionamento (via Contato)"
+                        )
+                        logger.error(
+                            f"Falha ao atualizar Cliente #{cliente_id} "
+                            f"(via Contato)"
+                        )
+                except Exception as ue:
+                    cliente_sync.mark_as_failed(str(ue))
+                    logger.error(
+                        f"Erro ao atualizar Cliente #{cliente_id} "
+                        f"(via Contato): {ue}"
+                    )
+        except Exception as e_inner:
+            logger.error(
+                f"Erro ao sincronizar Clientes impactados "
+                f"(Contato #{instance.id}): {e_inner}"
+            )
 
     except Exception as e:
-        logger.error(f"Erro ao processar mudança de relacionamento do Contato #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar mudança de relacionamento do Contato #{instance.id}: {e}"
+        )
 
 
 @receiver(m2m_changed, sender=Cliente.contatos.through)
@@ -528,7 +612,7 @@ def on_cliente_contatos_changed(
     reverse: bool,
     model: "Contato",
     pk_set: Any,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Signal receiver para sincronizar mudanças no relacionamento Cliente <-> Contatos.
@@ -550,77 +634,147 @@ def on_cliente_contatos_changed(
         return
 
     try:
-        # Obtém o registro de sincronização
-        from .models import ClienteSync
-
-        sync_record = ClienteSync.objects.filter(cliente_id=instance.id).first()
-        if not sync_record or not sync_record.external_id:
-            logger.warning(f"Cliente #{instance.id} não possui sync_record para atualizar relacionamentos")
-            return
-
-        # Prepara dados atualizados para sincronização
-        sync_record.prepare_notion_data()
-        sync_record.save()
-
-        # Executa sincronização de atualização
+        # Escrita unilateral: atualiza apenas os Contatos impactados
         service = NotionSyncService()
-        success = service.update_record("Cliente", sync_record.external_id, instance.id, sync_record)
 
-        if success:
-            sync_record.mark_as_synced()
-            logger.info(f"Relacionamentos do Cliente #{instance.id} atualizados no Notion (action: {action})")
-        else:
-            sync_record.mark_as_failed(f"Falha na atualização de relacionamentos (action: {action})")
-            logger.error(f"Falha ao atualizar relacionamentos do Cliente #{instance.id} (action: {action})")
-
-        # 🆕 Atualiza também cada Contato impactado para manter relação bidirecional
         if action in ("post_add", "post_remove", "post_clear"):
             try:
                 from .models import ContatoSync
 
-                for contato_id in (pk_set or []):
+                for contato_id in pk_set or []:
                     contato_obj = Contato.objects.filter(pk=contato_id).first()
                     if not contato_obj:
                         continue
 
-                    contato_sync = ContatoSync.objects.filter(contato_id=contato_obj.id).first()
+                    contato_sync = ContatoSync.objects.filter(
+                        contato_id=contato_obj.id
+                    ).first()
                     if not contato_sync:
-                        contato_sync = get_or_create_contato_sync(contato_obj.id)
+                        contato_sync = get_or_create_contato_sync(
+                            contato_obj.id
+                        )
 
-                    # Prepara dados e cria/atualiza no Notion
                     contato_sync.prepare_notion_data()
                     contato_sync.save()
 
-                    # Cria página se necessário
                     if not contato_sync.external_id:
                         try:
-                            created_id = service.create_record("Contato", contato_obj.id, contato_sync)
+                            created_id = service.create_record(
+                                "Contato", contato_obj.id, contato_sync
+                            )
                             contato_sync.external_id = created_id
                             contato_sync.mark_as_synced()
                             contato_sync.save()
-                            logger.info(f"Contato #{contato_obj.id} criado no Notion (external_id: {created_id})")
+                            logger.info(
+                                f"Contato #{contato_obj.id} criado no Notion "
+                                f"(external_id: {created_id})"
+                            )
                         except Exception as ce:
                             contato_sync.mark_as_failed(str(ce))
-                            logger.error(f"Erro ao criar Contato #{contato_obj.id} no Notion: {ce}")
+                            logger.error(
+                                f"Erro ao criar Contato #{contato_obj.id} "
+                                f"no Notion: {ce}"
+                            )
                             continue
 
-                    # Atualiza relação no lado do Contato
                     try:
-                        ok = service.update_record("Contato", contato_sync.external_id, contato_obj.id, contato_sync)
+                        ok = service.update_record(
+                            "Contato",
+                            contato_sync.external_id,
+                            contato_obj.id,
+                            contato_sync,
+                        )
                         if ok:
                             contato_sync.mark_as_synced()
-                            logger.info(f"Relacionamentos do Contato #{contato_obj.id} atualizados (via Cliente action: {action})")
+                            logger.info(
+                                f"Relacionamentos do Contato #{contato_obj.id} "
+                                f"atualizados (via Cliente action: {action})"
+                            )
                         else:
-                            contato_sync.mark_as_failed("Falha ao atualizar relacionamento (via Cliente)")
-                            logger.error(f"Falha ao atualizar Contato #{contato_obj.id} (via Cliente)")
+                            contato_sync.mark_as_failed(
+                                "Falha ao atualizar relacionamento (via Cliente)"
+                            )
+                            logger.error(
+                                f"Falha ao atualizar Contato #{contato_obj.id} "
+                                f"(via Cliente)"
+                            )
                     except Exception as ue:
                         contato_sync.mark_as_failed(str(ue))
-                        logger.error(f"Erro ao atualizar Contato #{contato_obj.id} (via Cliente): {ue}")
+                        logger.error(
+                            f"Erro ao atualizar Contato #{contato_obj.id} "
+                            f"(via Cliente): {ue}"
+                        )
             except Exception as e_inner:
-                logger.error(f"Erro ao sincronizar contatos impactados (Cliente #{instance.id}): {e_inner}")
+                logger.error(
+                    f"Erro ao sincronizar contatos impactados "
+                    f"(Cliente #{instance.id}): {e_inner}"
+                )
+
+        # 🆕 Atualiza também o próprio Cliente para refletir vínculos
+        try:
+            from .models import ClienteSync
+
+            cliente_sync = ClienteSync.objects.filter(
+                cliente_id=instance.id
+            ).first()
+            if not cliente_sync:
+                cliente_sync = get_or_create_cliente_sync(instance.id)
+
+            cliente_sync.prepare_notion_data()
+            cliente_sync.save()
+
+            if not cliente_sync.external_id:
+                try:
+                    created_id = service.create_record(
+                        "Cliente", instance.id, cliente_sync
+                    )
+                    cliente_sync.external_id = created_id
+                    cliente_sync.mark_as_synced()
+                    cliente_sync.save()
+                    logger.info(
+                        f"Cliente #{instance.id} criado no Notion "
+                        f"(external_id: {created_id})"
+                    )
+                except Exception as ce:
+                    cliente_sync.mark_as_failed(str(ce))
+                    logger.error(
+                        f"Erro ao criar Cliente #{instance.id} no Notion: {ce}"
+                    )
+            else:
+                try:
+                    ok_cli = service.update_record(
+                        "Cliente",
+                        cliente_sync.external_id,
+                        instance.id,
+                        cliente_sync,
+                    )
+                    if ok_cli:
+                        cliente_sync.mark_as_synced()
+                        logger.info(
+                            f"Cliente #{instance.id} atualizado "
+                            f"(action: {action})"
+                        )
+                    else:
+                        cliente_sync.mark_as_failed(
+                            "Falha ao atualizar relacionamento (Cliente)"
+                        )
+                        logger.error(
+                            f"Falha ao atualizar Cliente #{instance.id}"
+                        )
+                except Exception as ue:
+                    cliente_sync.mark_as_failed(str(ue))
+                    logger.error(
+                        f"Erro ao atualizar Cliente #{instance.id}: {ue}"
+                    )
+        except Exception as e_cliente:
+            logger.error(
+                f"Erro ao sincronizar o cliente #{instance.id}: {e_cliente}"
+            )
 
     except Exception as exc:
-        logger.error(f"Erro ao processar mudança de contatos no cliente {instance.id}: {exc}")
+        logger.error(
+            f"Erro ao processar mudança de contatos no cliente {instance.id}: {exc}"
+        )
 
 
 # Signals para Departamento
@@ -629,7 +783,7 @@ def on_departamento_saved(
     sender: type[Departamento],
     instance: Departamento,
     created: bool,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Signal disparado após salvar um Departamento.
@@ -650,18 +804,18 @@ def on_departamento_saved(
         schedule_sync_operation(
             model_name="Departamento",
             instance_id=instance.id,
-            operation="create" if created else "update"
+            operation="create" if created else "update",
         )
 
     except Exception as exc:
-        logger.error(f"Erro ao processar sync do departamento {instance.id}: {exc}")
+        logger.error(
+            f"Erro ao processar sync do departamento {instance.id}: {exc}"
+        )
 
 
 @receiver(pre_delete, sender=Departamento)
 def on_departamento_pre_delete(
-    sender: type[Departamento],
-    instance: Departamento,
-    **kwargs: Any
+    sender: type[Departamento], instance: Departamento, **kwargs: Any
 ) -> None:
     """
     Signal disparado antes de excluir um Departamento.
@@ -678,10 +832,7 @@ def on_departamento_pre_delete(
         ).first()
         if sync_record and sync_record.external_id:
             service = NotionSyncService()
-            service.delete_record(
-                "Departamento",
-                sync_record.external_id
-            )
+            service.delete_record("Departamento", sync_record.external_id)
             logger.info(
                 f"Departamento #{instance.id} arquivado no Notion "
                 f"(external_id: {sync_record.external_id})"
@@ -704,70 +855,30 @@ def on_atendente_department_change(
     sender: type[AtendenteHumano],
     instance: AtendenteHumano,
     created: bool,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
-    Signal disparado quando um AtendenteHumano é salvo para atualizar departamento.
+    Signal disparado ao salvar AtendenteHumano.
 
-    Atualiza contadores e resincroniza departamento relacionado.
+    Escrita unilateral: não atualiza Departamento aqui. A sincronização
+    do atendente ocorre em on_atendente_saved; o Notion espelha a relação.
     """
-    # Se é novo ou se mudou de departamento
-    if created or (hasattr(instance, '_original_departamento_id') and
-                  instance._original_departamento_id != instance.departamento_id):
-
-        # Atualiza departamento antigo
-        if hasattr(instance, '_original_departamento_id') and instance._original_departamento_id:
-            try:
-                old_dept = Departamento.objects.get(id=instance._original_departamento_id)
-                old_sync = get_or_create_departamento_sync(old_dept.id)
-                old_sync.prepare_notion_data()
-                old_sync.save()
-                schedule_sync_operation(
-                    model_name="Departamento",
-                    instance_id=old_dept.id,
-                    operation="update"
-                )
-            except Exception as exc:
-                logger.error(f"Erro ao atualizar departamento antigo {instance._original_departamento_id}: {exc}")
-
-        # Atualiza departamento novo
-        if instance.departamento:
-            try:
-                new_sync = get_or_create_departamento_sync(instance.departamento.id)
-                new_sync.prepare_notion_data()
-                new_sync.save()
-                schedule_sync_operation(
-                    model_name="Departamento",
-                    instance_id=instance.departamento.id,
-                    operation="update"
-                )
-            except Exception as exc:
-                logger.error(f"Erro ao atualizar departamento novo {instance.departamento.id}: {exc}")
+    # Sem ação: evitamos escrita redundante no Departamento.
+    return
 
 
 @receiver(post_delete, sender=AtendenteHumano)
 def on_atendente_deleted(
-    sender: type[AtendenteHumano],
-    instance: AtendenteHumano,
-    **kwargs: Any
+    sender: type[AtendenteHumano], instance: AtendenteHumano, **kwargs: Any
 ) -> None:
     """
     Signal disparado quando um AtendenteHumano é excluído.
 
-    Atualiza contadores do departamento.
+    Escrita unilateral: não atualiza Departamento após exclusão. O Notion
+    espelha a remoção via relação do atendente, quando aplicável.
     """
-    if instance.departamento:
-        try:
-            dept_sync = get_or_create_departamento_sync(instance.departamento.id)
-            dept_sync.prepare_notion_data()
-            dept_sync.save()
-            schedule_sync_operation(
-                model_name="Departamento",
-                instance_id=instance.departamento.id,
-                operation="update"
-            )
-        except Exception as exc:
-            logger.error(f"Erro ao atualizar departamento após exclusão do atendente: {exc}")
+    # Sem ação no Departamento.
+    return
 
 
 # Signals para AtendenteHumano
@@ -776,7 +887,7 @@ def on_atendente_saved(
     sender: type[AtendenteHumano],
     instance: AtendenteHumano,
     created: bool,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> None:
     """
     Signal disparado após salvar um AtendenteHumano.
@@ -797,69 +908,54 @@ def on_atendente_saved(
         schedule_sync_operation(
             model_name="AtendenteHumano",
             instance_id=instance.id,
-            operation="create" if created else "update"
+            operation="create" if created else "update",
         )
+        # Atualiza Departamento(s) vinculados para refletir relação
+        try:
+            prev_id = getattr(instance, "_original_departamento_id", None)
+            curr_id = instance.departamento_id
 
-        # Após sincronizar o atendente, atualiza o departamento vinculado
-        # para garantir que o relacionamento apareça no Notion.
-        if instance.departamento_id:
-            try:
-                dept_sync = get_or_create_departamento_sync(
-                    instance.departamento_id
-                )
-                dept_sync.prepare_notion_data()
-                dept_sync.save()
-                schedule_sync_operation(
-                    model_name="Departamento",
-                    instance_id=instance.departamento_id,
-                    operation="update"
-                )
-            except Exception as exc:
-                logger.error(
-                    f"Erro ao atualizar departamento relacionado "
-                    f"{instance.departamento_id}: {exc}"
-                )
+            ids_to_update: list[int] = []
+            if created:
+                if curr_id:
+                    ids_to_update.append(curr_id)
+            else:
+                if prev_id != curr_id:
+                    if prev_id:
+                        ids_to_update.append(prev_id)
+                    if curr_id:
+                        ids_to_update.append(curr_id)
 
-        # Se mudou de departamento, atualiza sync do departamento antigo e novo
-        if not created and hasattr(instance, '_original_departamento_id'):
-            if instance._original_departamento_id != instance.departamento_id:
-                # Atualiza sync do departamento antigo
-                if instance._original_departamento_id:
-                    try:
-                        old_dept_sync = get_or_create_departamento_sync(instance._original_departamento_id)
-                        old_dept_sync.prepare_notion_data()
-                        old_dept_sync.save()
-                        schedule_sync_operation(
-                            model_name="Departamento",
-                            instance_id=instance._original_departamento_id,
-                            operation="update"
-                        )
-                    except Exception as exc:
-                        logger.error(f"Erro ao atualizar sync do departamento antigo {instance._original_departamento_id}: {exc}")
-
-                # Atualiza sync do departamento novo
-                if instance.departamento_id:
-                    try:
-                        new_dept_sync = get_or_create_departamento_sync(instance.departamento_id)
-                        new_dept_sync.prepare_notion_data()
-                        new_dept_sync.save()
-                        schedule_sync_operation(
-                            model_name="Departamento",
-                            instance_id=instance.departamento_id,
-                            operation="update"
-                        )
-                    except Exception as exc:
-                        logger.error(f"Erro ao atualizar sync do departamento novo {instance.departamento_id}: {exc}")
+            for dep_id in ids_to_update:
+                try:
+                    dep_sync = get_or_create_departamento_sync(dep_id)
+                    dep_sync.prepare_notion_data()
+                    dep_sync.save()
+                    schedule_sync_operation(
+                        model_name="Departamento",
+                        instance_id=dep_id,
+                        operation="update",
+                    )
+                except Exception as e:
+                    logger.error(
+                        "Erro ao atualizar Departamento vinculado "
+                        f"#{dep_id}: {e}"
+                    )
+        except Exception as e_dep:
+            logger.error(
+                "Erro ao processar atualização de departamentos relacionados "
+                f"para atendente #{instance.id}: {e_dep}"
+            )
 
     except Exception as exc:
-        logger.error(f"Erro ao processar sync do atendente {instance.id}: {exc}")
+        logger.error(
+            f"Erro ao processar sync do atendente {instance.id}: {exc}"
+        )
 
 
 @receiver(pre_delete, sender=AtendenteHumano)
 def on_atendente_pre_delete(
-    sender: type[AtendenteHumano],
-    instance: AtendenteHumano,
-    **kwargs: Any
+    sender: type[AtendenteHumano], instance: AtendenteHumano, **kwargs: Any
 ) -> None:
     """
     Signal disparado antes de excluir um AtendenteHumano.
@@ -876,10 +972,7 @@ def on_atendente_pre_delete(
         ).first()
         if sync_record and sync_record.external_id:
             service = NotionSyncService()
-            service.delete_record(
-                "AtendenteHumano",
-                sync_record.external_id
-            )
+            service.delete_record("AtendenteHumano", sync_record.external_id)
             logger.info(
                 f"AtendenteHumano #{instance.id} arquivado no Notion "
                 f"(external_id: {sync_record.external_id})"
@@ -890,30 +983,35 @@ def on_atendente_pre_delete(
                 "para arquivar no Notion"
             )
 
-        # Se tinha departamento, atualiza contadores
-        if instance.departamento_id:
-            try:
-                dept_sync = get_or_create_departamento_sync(instance.departamento_id)
-                dept_sync.prepare_notion_data()
-                dept_sync.save()
+        # Escrita unilateral: sem atualização do Departamento aqui.
+        # Atualiza Departamento para refletir remoção do atendente.
+        try:
+            dep_id = instance.departamento_id
+            if dep_id:
+                dep_sync = get_or_create_departamento_sync(dep_id)
+                dep_sync.prepare_notion_data()
+                dep_sync.save()
                 schedule_sync_operation(
                     model_name="Departamento",
-                    instance_id=instance.departamento_id,
-                    operation="update"
+                    instance_id=dep_id,
+                    operation="update",
                 )
-            except Exception as exc:
-                logger.error(f"Erro ao atualizar sync do departamento após exclusão do atendente: {exc}")
+        except Exception as e:
+            logger.error(
+                "Erro ao atualizar Departamento após exclusão do "
+                f"atendente #{instance.id}: {e}"
+            )
 
     except Exception as exc:
-        logger.error(f"Erro ao processar exclusão do atendente {instance.id}: {exc}")
+        logger.error(
+            f"Erro ao processar exclusão do atendente {instance.id}: {exc}"
+        )
 
 
 # Signal para capturar mudança de departamento no AtendenteHumano
 @receiver(pre_save, sender=AtendenteHumano)
 def on_atendente_pre_save(
-    sender: type[AtendenteHumano],
-    instance: AtendenteHumano,
-    **kwargs: Any
+    sender: type[AtendenteHumano], instance: AtendenteHumano, **kwargs: Any
 ) -> None:
     """
     Signal disparado antes de salvar um AtendenteHumano.

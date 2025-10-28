@@ -48,90 +48,80 @@ class DepartamentoMapper:
             properties: Dict[str, Any] = {}
 
             # Campo obrigatório: Nome (Title)
-            properties['Nome'] = {
-                'title': [
-                    {'text': {'content': departamento.nome or 'Sem Nome'}}
+            properties["Nome"] = {
+                "title": [
+                    {"text": {"content": departamento.nome or "Sem Nome"}}
                 ]
             }
 
             # Descrição (Rich Text)
             if departamento.descricao:
-                properties['Descrição'] = {
-                    'rich_text': [
-                        {'text': {'content': departamento.descricao.strip()}}
+                properties["Descrição"] = {
+                    "rich_text": [
+                        {"text": {"content": departamento.descricao.strip()}}
                     ]
                 }
 
             # Ativo (Checkbox)
-            properties['Ativo'] = {
-                'checkbox': bool(departamento.ativo)
-            }
+            properties["Ativo"] = {"checkbox": bool(departamento.ativo)}
 
             # Data Criação (Date)
             if departamento.data_criacao:
-                properties['Data Criação'] = {
-                    'date': {
-                        'start': departamento.data_criacao.isoformat()
-                    }
+                properties["Data Criação"] = {
+                    "date": {"start": departamento.data_criacao.isoformat()}
                 }
 
-            # Relacionamento ManyToMany com Atendentes
+            # Atendentes Relacionados (Relation)
+            # Envia SEMPRE (inclusive vazio) para refletir remoções imediatas
+            # e garantir visualização no banco de Departamentos.
             try:
-                atendentes_vinculados = departamento.atendentes.filter(ativo=True)
-                if atendentes_vinculados.exists():
-                    # Prepara lista de atendentes para o campo relation
-                    atendentes_ids = []
+                from django.db.models import Q
+                from smart_core_assistant_painel.app.notion_sync.models import (
+                    AtendenteHumanoSync,
+                )
 
-                    # Busca external_ids dos atendentes sincronizados
-                    from smart_core_assistant_painel.app.notion_sync.models import AtendenteHumanoSync
-                    for atendente in atendentes_vinculados:
-                        try:
-                            atendente_sync = AtendenteHumanoSync.objects.get(atendente_id=atendente.id)
-                            if atendente_sync.external_id:
-                                atendentes_ids.append(atendente_sync.external_id)
-                        except AtendenteHumanoSync.DoesNotExist:
-                            # Se não tem sync, pula este atendente
-                            continue
+                relacionados = AtendenteHumanoSync.objects.filter(
+                    Q(departamento_sync=departamento_sync)
+                    | Q(atendente__departamento=departamento_sync.departamento)
+                )
 
-                    if atendentes_ids:
-                        # Usa campo relation nativo do Notion
-                        properties['Atendentes Relacionados'] = {
-                            'relation': [
-                                {'id': aten_id} for aten_id in atendentes_ids
-                            ]
-                        }
+                external_ids: List[str] = [
+                    s.external_id for s in relacionados if s.external_id
+                ]
 
-                        # Armazena informações adicionais em metadados (backup)
-                        if not hasattr(departamento_sync, 'metadados') or departamento_sync.metadados is None:
-                            departamento_sync.metadados = {}
-                        departamento_sync.metadados['atendentes_vinculados'] = [
-                            f"{atendente.id}:{atendente.nome}"
-                            for atendente in atendentes_vinculados
-                        ]
+                properties["Atendentes Relacionados"] = {
+                    "relation": [{"id": eid} for eid in external_ids]
+                }
             except Exception as e:
-                # Log silencioso para não quebrar sincronização principal
-                print(f"Aviso: Erro ao processar relacionamento de atendentes: {e}")
+                # Aviso silencioso: não interrompe a sincronização principal
+                print(
+                    "Aviso: erro ao montar relação de atendentes do "
+                    f"departamento: {e}"
+                )
 
             # Observações (Rich Text)
             if departamento.descricao:
-                properties['Observações'] = {
-                    'rich_text': [
-                        {'text': {'content': departamento.descricao}}
+                properties["Observações"] = {
+                    "rich_text": [
+                        {"text": {"content": departamento.descricao}}
                     ]
                 }
             elif departamento.metadados:
                 import json
-                observacoes = json.dumps(departamento.metadados, ensure_ascii=False)
-                properties['Observações'] = {
-                    'rich_text': [
-                        {'text': {'content': observacoes}}
-                    ]
+
+                observacoes = json.dumps(
+                    departamento.metadados, ensure_ascii=False
+                )
+                properties["Observações"] = {
+                    "rich_text": [{"text": {"content": observacoes}}]
                 }
 
             return properties
 
         except Exception as exc:
-            raise MappingError(f"Erro ao converter Departamento para Notion: {exc}") from exc
+            raise MappingError(
+                f"Erro ao converter Departamento para Notion: {exc}"
+            ) from exc
 
     @staticmethod
     def from_notion_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
@@ -159,38 +149,55 @@ class DepartamentoMapper:
             data: Dict[str, Any] = {}
 
             # Nome (Title)
-            if 'Nome' in properties and properties['Nome'].get('title'):
-                data['nome'] = properties['Nome']['title'][0]['text']['content'].strip()
+            if "Nome" in properties and properties["Nome"].get("title"):
+                data["nome"] = properties["Nome"]["title"][0]["text"][
+                    "content"
+                ].strip()
 
             # Descrição (Rich Text)
-            if 'Descrição' in properties and properties['Descrição'].get('rich_text'):
-                data['descricao'] = properties['Descrição']['rich_text'][0]['text']['content'].strip()
+            if "Descrição" in properties and properties["Descrição"].get(
+                "rich_text"
+            ):
+                data["descricao"] = properties["Descrição"]["rich_text"][0][
+                    "text"
+                ]["content"].strip()
 
             # Ativo (Checkbox)
-            if 'Ativo' in properties and isinstance(properties['Ativo'].get('checkbox'), bool):
-                data['ativo'] = properties['Ativo']['checkbox']
+            if "Ativo" in properties and isinstance(
+                properties["Ativo"].get("checkbox"), bool
+            ):
+                data["ativo"] = properties["Ativo"]["checkbox"]
 
             # Data Criação (Date)
-            if 'Data Criação' in properties and properties['Data Criação'].get('date'):
-                data['data_criacao'] = datetime.fromisoformat(
-                    properties['Data Criação']['date']['start']
+            if "Data Criação" in properties and properties["Data Criação"].get(
+                "date"
+            ):
+                data["data_criacao"] = datetime.fromisoformat(
+                    properties["Data Criação"]["date"]["start"]
                 )
 
             # Observações (Rich Text)
-            if 'Observações' in properties and properties['Observações'].get('rich_text'):
-                obs_text = properties['Observações']['rich_text'][0]['text']['content']
+            if "Observações" in properties and properties["Observações"].get(
+                "rich_text"
+            ):
+                obs_text = properties["Observações"]["rich_text"][0]["text"][
+                    "content"
+                ]
                 try:
                     import json
+
                     # Tenta converter para metadados se for JSON
-                    data['metadados'] = json.loads(obs_text)
+                    data["metadados"] = json.loads(obs_text)
                 except (json.JSONDecodeError, ValueError):
                     # Se não for JSON válido, salva como descrição
-                    data['descricao'] = obs_text
+                    data["descricao"] = obs_text
 
             return data
 
         except Exception as exc:
-            raise MappingError(f"Erro ao converter Notion para Departamento: {exc}") from exc
+            raise MappingError(
+                f"Erro ao converter Notion para Departamento: {exc}"
+            ) from exc
 
     @staticmethod
     def validate_notion_data(properties: Dict[str, Any]) -> List[str]:
@@ -206,16 +213,18 @@ class DepartamentoMapper:
         errors: List[str] = []
 
         # Nome é obrigatório
-        if 'Nome' not in properties or not properties['Nome'].get('title'):
+        if "Nome" not in properties or not properties["Nome"].get("title"):
             errors.append("Campo 'Nome' é obrigatório")
 
         # Validar nome se existe
-        if 'Nome' in properties and properties['Nome'].get('title'):
-            nome = properties['Nome']['title'][0]['text']['content'].strip()
+        if "Nome" in properties and properties["Nome"].get("title"):
+            nome = properties["Nome"]["title"][0]["text"]["content"].strip()
             if not nome:
                 errors.append("Campo 'Nome' não pode estar vazio")
             elif len(nome) > 100:
-                errors.append("Campo 'Nome' não pode ter mais de 100 caracteres")
+                errors.append(
+                    "Campo 'Nome' não pode ter mais de 100 caracteres"
+                )
 
         return errors
 
@@ -228,22 +237,10 @@ class DepartamentoMapper:
             Schema da database no formato da API do Notion.
         """
         return {
-            "Nome": {
-                "title": {}
-            },
-            "Descrição": {
-                "rich_text": {}
-            },
-            "Ativo": {
-                "checkbox": {}
-            },
-            "Data Criação": {
-                "date": {}
-            },
-            "Atendentes Relacionados": {
-                "relation": {}
-            },
-            "Observações": {
-                "rich_text": {}
-            }
+            "Nome": {"title": {}},
+            "Descrição": {"rich_text": {}},
+            "Ativo": {"checkbox": {}},
+            "Data Criação": {"date": {}},
+            "Atendentes Relacionados": {"relation": {}},
+            "Observações": {"rich_text": {}},
         }

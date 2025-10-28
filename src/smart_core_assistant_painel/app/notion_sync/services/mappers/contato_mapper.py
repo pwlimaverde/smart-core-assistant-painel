@@ -51,12 +51,7 @@ class ContatoMapper:
             # Nome (formatado) - Campo principal (title)
             nome = contato_sync.nome_formatado or "Sem Nome"
             properties["Nome Contato"] = {
-                "title": [
-                    {
-                        "type": "text",
-                        "text": {"content": nome}
-                    }
-                ]
+                "title": [{"type": "text", "text": {"content": nome}}]
             }
 
             # Telefone (formatado para padrão internacional)
@@ -67,9 +62,7 @@ class ContatoMapper:
 
             # Email (normalizado)
             if contato_sync.email_normalizado:
-                properties["Email"] = {
-                    "email": contato_sync.email_normalizado
-                }
+                properties["Email"] = {"email": contato_sync.email_normalizado}
 
             # Nome do perfil WhatsApp
             if contato.nome_perfil_whatsapp:
@@ -77,7 +70,7 @@ class ContatoMapper:
                     "rich_text": [
                         {
                             "type": "text",
-                            "text": {"content": contato.nome_perfil_whatsapp}
+                            "text": {"content": contato.nome_perfil_whatsapp},
                         }
                     ]
                 }
@@ -88,17 +81,13 @@ class ContatoMapper:
             # Datas
             if contato.data_cadastro:
                 properties["Data Cadastro"] = {
-                    "date": {
-                        "start": contato.data_cadastro.isoformat()
-                    }
+                    "date": {"start": contato.data_cadastro.isoformat()}
                 }
 
             # Última Interação
             if contato.ultima_interacao:
                 properties["Última Interação"] = {
-                    "date": {
-                        "start": contato.ultima_interacao.isoformat()
-                    }
+                    "date": {"start": contato.ultima_interacao.isoformat()}
                 }
 
             # Relacionamento ManyToMany com Clientes
@@ -107,13 +96,21 @@ class ContatoMapper:
                 if empresas_vinculadas.exists():
                     # Prepara lista de empresas para o campo relation
                     empresas_ids = []
-                    empresas_nomes = [cliente.nome_fantasia for cliente in empresas_vinculadas]
+                    empresas_nomes = [
+                        cliente.nome_fantasia
+                        for cliente in empresas_vinculadas
+                    ]
 
                     # Busca external_ids dos clientes sincronizados
-                    from smart_core_assistant_painel.app.notion_sync.models import ClienteSync
+                    from smart_core_assistant_painel.app.notion_sync.models import (
+                        ClienteSync,
+                    )
+
                     for cliente in empresas_vinculadas:
                         try:
-                            cliente_sync = ClienteSync.objects.get(cliente_id=cliente.id)
+                            cliente_sync = ClienteSync.objects.get(
+                                cliente_id=cliente.id
+                            )
                             if cliente_sync.external_id:
                                 empresas_ids.append(cliente_sync.external_id)
                         except ClienteSync.DoesNotExist:
@@ -129,13 +126,15 @@ class ContatoMapper:
                         }
 
                         # Armazena informações adicionais em metadados (backup)
-                        contato_sync.metadados['empresas_vinculadas'] = [
+                        contato_sync.metadados["empresas_vinculadas"] = [
                             f"{cliente.id}:{cliente.nome_fantasia}"
                             for cliente in empresas_vinculadas
                         ]
             except Exception as e:
                 # Log silencioso para não quebrar sincronização principal
-                print(f"Aviso: Erro ao processar relacionamento de empresas: {e}")
+                print(
+                    f"Aviso: Erro ao processar relacionamento de empresas: {e}"
+                )
 
             return properties
 
@@ -177,12 +176,13 @@ class ContatoMapper:
             data: Dict[str, Any] = {}
 
             # Nome do contato (do título)
-            if "Nome Contato" in properties and properties["Nome Contato"].get("title"):
+            if "Nome Contato" in properties and properties["Nome Contato"].get(
+                "title"
+            ):
                 title_list = properties["Nome Contato"]["title"]
                 if title_list:
                     nome = "".join(
-                        item.get("plain_text", "")
-                        for item in title_list
+                        item.get("plain_text", "") for item in title_list
                     ).strip()
                     if nome:
                         data["nome_contato"] = nome
@@ -191,16 +191,17 @@ class ContatoMapper:
             if "Telefone" in properties:
                 telefone_field = properties["Telefone"]
                 if telefone_field.get("phone_number"):
-                    data["telefone"] = ContatoMapper._normalize_phone_from_notion(
-                        telefone_field["phone_number"]
+                    data["telefone"] = (
+                        ContatoMapper._normalize_phone_from_notion(
+                            telefone_field["phone_number"]
+                        )
                     )
                 elif telefone_field.get("rich_text"):
                     text_list = telefone_field["rich_text"]
                     if text_list:
                         # compatibilidade legada
                         content = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
+                            item.get("plain_text", "") for item in text_list
                         ).strip()
                         if content:
                             data["telefone"] = content
@@ -210,30 +211,45 @@ class ContatoMapper:
                 data["email"] = properties["Email"]["email"].strip()
 
             # Nome Perfil WhatsApp
-            if "Nome Perfil WhatsApp" in properties and properties["Nome Perfil WhatsApp"].get("rich_text"):
+            if "Nome Perfil WhatsApp" in properties and properties[
+                "Nome Perfil WhatsApp"
+            ].get("rich_text"):
                 text_list = properties["Nome Perfil WhatsApp"]["rich_text"]
                 if text_list:
                     content = "".join(
-                        item.get("plain_text", "")
-                        for item in text_list
+                        item.get("plain_text", "") for item in text_list
                     ).strip()
                     if content:
                         data["nome_perfil_whatsapp"] = content
 
             # Ativo
-            if "Ativo" in properties and isinstance(properties["Ativo"].get("checkbox"), bool):
+            if "Ativo" in properties and isinstance(
+                properties["Ativo"].get("checkbox"), bool
+            ):
                 data["ativo"] = bool(properties["Ativo"]["checkbox"])
 
             # Datas
-            if "Data Cadastro" in properties and properties["Data Cadastro"].get("date"):
+            if "Data Cadastro" in properties and properties[
+                "Data Cadastro"
+            ].get("date"):
                 date_info = properties["Data Cadastro"]["date"]
                 if isinstance(date_info, dict) and date_info.get("start"):
-                    data["data_cadastro"] = datetime.fromisoformat(date_info["start"]) if date_info["start"] else None
+                    data["data_cadastro"] = (
+                        datetime.fromisoformat(date_info["start"])
+                        if date_info["start"]
+                        else None
+                    )
 
-            if "Última Interação" in properties and properties["Última Interação"].get("date"):
+            if "Última Interação" in properties and properties[
+                "Última Interação"
+            ].get("date"):
                 date_info = properties["Última Interação"]["date"]
                 if isinstance(date_info, dict) and date_info.get("start"):
-                    data["ultima_interacao"] = datetime.fromisoformat(date_info["start"]) if date_info["start"] else None
+                    data["ultima_interacao"] = (
+                        datetime.fromisoformat(date_info["start"])
+                        if date_info["start"]
+                        else None
+                    )
 
             # Validação básica
             ContatoMapper.validate_for_notion(properties)
@@ -262,10 +278,7 @@ class ContatoMapper:
         content = re.sub(r"<[^>]+>", " ", content)
         content = re.sub(r"\s+", " ", content).strip()
 
-        return [{
-            "type": "text",
-            "text": {"content": content[:2000]}
-        }]
+        return [{"type": "text", "text": {"content": content[:2000]}}]
 
     @staticmethod
     def _normalize_phone_from_notion(phone: str) -> str:
@@ -280,7 +293,9 @@ class ContatoMapper:
         """Valida estrutura mínima exigida pelo Notion."""
         # Título é obrigatório
         if "Nome Contato" not in properties:
-            raise MappingError(message="Campo 'Nome Contato' é obrigatório no Notion")
+            raise MappingError(
+                message="Campo 'Nome Contato' é obrigatório no Notion"
+            )
         return True
 
     @staticmethod
@@ -299,36 +314,30 @@ class ContatoMapper:
         return {
             "Nome Contato": {
                 "title": {},
-                "description": "Nome completo do contato"
+                "description": "Nome completo do contato",
             },
             "Telefone": {
                 "phone_number": {},
-                "description": "Telefone no formato internacional"
+                "description": "Telefone no formato internacional",
             },
-            "Email": {
-                "email": {},
-                "description": "Endereço de email"
-            },
+            "Email": {"email": {}, "description": "Endereço de email"},
             "Nome Perfil WhatsApp": {
                 "rich_text": {},
-                "description": "Nome do perfil no WhatsApp"
+                "description": "Nome do perfil no WhatsApp",
             },
-            "Ativo": {
-                "checkbox": {},
-                "description": "Status ativo/inativo"
-            },
+            "Ativo": {"checkbox": {}, "description": "Status ativo/inativo"},
             "Data Cadastro": {
                 "date": {},
-                "description": "Data de cadastro no sistema"
+                "description": "Data de cadastro no sistema",
             },
             "Última Interação": {
                 "date": {},
-                "description": "Data da última interação registrada"
+                "description": "Data da última interação registrada",
             },
             # Campo para relacionamento com Clientes (relation)
             "Clientes Relacionados": {
                 "relation": {},
-                "description": "Clientes vinculados a este contato (campo relation)"
+                "description": "Clientes vinculados a este contato (campo relation)",
             },
             # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
             # "Empresas Vinculadas": {

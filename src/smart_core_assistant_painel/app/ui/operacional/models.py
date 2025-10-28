@@ -48,7 +48,9 @@ class Departamento(models.Model):
 
     id: models.AutoField = models.AutoField(primary_key=True)
     nome: models.CharField[str] = models.CharField(max_length=100, unique=True)
-    slug: models.SlugField[str | None] = models.SlugField(max_length=120, unique=True, blank=True, null=True)
+    slug: models.SlugField[str | None] = models.SlugField(
+        max_length=120, unique=True, blank=True, null=True
+    )
     descricao: models.TextField[str | None] = models.TextField(
         blank=True, null=True
     )
@@ -80,6 +82,7 @@ class Departamento(models.Model):
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
         from django.utils.text import slugify
+
         if not self.slug:
             self.slug = slugify(self.nome)
         super().save(*args, **kwargs)
@@ -87,7 +90,6 @@ class Departamento(models.Model):
     @override
     def clean(self) -> None:
         super().clean()
-
 
 
 class AtendenteHumano(models.Model):
@@ -149,10 +151,12 @@ class AtendenteHumano(models.Model):
         )
     )
     # Campo para registro da última atribuição, usado para ordenação (round-robin / fairness)
-    data_ultima_atribuicao: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data e hora da última atribuição de um novo atendimento",
+    data_ultima_atribuicao: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data e hora da última atribuição de um novo atendimento",
+        )
     )
     horario_trabalho: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
@@ -181,7 +185,9 @@ class AtendenteHumano(models.Model):
         db_table = "oraculo_atendentehumano"
         indexes = [
             models.Index(fields=["departamento", "disponivel"]),
-            models.Index(fields=["disponivel", "max_atendimentos_simultaneos"]),
+            models.Index(
+                fields=["disponivel", "max_atendimentos_simultaneos"]
+            ),
             models.Index(fields=["data_ultima_atribuicao"]),
         ]
 
@@ -225,7 +231,9 @@ class AtendenteHumano(models.Model):
         """Verifica se o atendente está disponível considerando capacidade atual."""
         if not self.ativo or not self.disponivel:
             return False
-        return self.get_atendimentos_ativos() < self.max_atendimentos_simultaneos
+        return (
+            self.get_atendimentos_ativos() < self.max_atendimentos_simultaneos
+        )
 
     def current_load(self) -> int:
         """Retorna a carga atual de atendimentos ativos do atendente."""
@@ -275,13 +283,15 @@ class WhatsAppInstance(models.Model):
         default="evolution",
         help_text="Provedor da API de WhatsApp",
     )
-    owner: models.OneToOneField[Optional["AtendenteHumano"]] = models.OneToOneField(
-        "AtendenteHumano",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name="whatsapp_instance",
-        help_text="Atendente dono desta instância (opcional)",
+    owner: models.OneToOneField[Optional["AtendenteHumano"]] = (
+        models.OneToOneField(
+            "AtendenteHumano",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="whatsapp_instance",
+            help_text="Atendente dono desta instância (opcional)",
+        )
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True,
@@ -296,10 +306,12 @@ class WhatsAppInstance(models.Model):
         auto_now_add=True,
         help_text="Data de criação do registro",
     )
-    ultima_validacao: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data da última validação de credenciais",
+    ultima_validacao: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data da última validação de credenciais",
+        )
     )
 
     class Meta:
@@ -317,7 +329,9 @@ class WhatsAppInstance(models.Model):
     @override
     def __str__(self) -> str:
         ident = self.instance_id or self.phone_number
-        dep = self.departamento.nome if self.departamento else "sem-departamento"
+        dep = (
+            self.departamento.nome if self.departamento else "sem-departamento"
+        )
         return f"{dep} - {ident}"
 
     @override
@@ -352,6 +366,7 @@ class WhatsAppInstance(models.Model):
         Caso a instância não esteja vinculada a um departamento, retorna um QuerySet vazio.
         """
         from .models import AtendenteHumano  # import local para evitar ciclos
+
         if not self.departamento:
             return AtendenteHumano.objects.none()
         return self.departamento.atendentes.all()
@@ -374,7 +389,9 @@ class WhatsAppInstance(models.Model):
             return self.departamento
         return None
 
-    def rotear_atendimento(self, mensagem: dict[str, Any]) -> Optional["AtendenteHumano"]:
+    def rotear_atendimento(
+        self, mensagem: dict[str, Any]
+    ) -> Optional["AtendenteHumano"]:
         """Roteia mensagem baseada no tipo de instância.
 
         Args:
@@ -396,7 +413,9 @@ class WhatsAppInstance(models.Model):
         return None
 
     @classmethod
-    def validar_api_key(cls, data: dict[str, Any]) -> Optional["WhatsAppInstance"]:
+    def validar_api_key(
+        cls, data: dict[str, Any]
+    ) -> Optional["WhatsAppInstance"]:
         """Valida credenciais do webhook e retorna a instância correspondente.
 
         Preferência:
@@ -452,6 +471,9 @@ class WhatsAppInstance(models.Model):
 
         for atendente in elegiveis:
             # Usa helper do modelo para contar atendimentos ativos
-            if atendente.get_atendimentos_ativos() < atendente.max_atendimentos_simultaneos:
+            if (
+                atendente.get_atendimentos_ativos()
+                < atendente.max_atendimentos_simultaneos
+            ):
                 return atendente
         return None

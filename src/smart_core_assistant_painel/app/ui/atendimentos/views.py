@@ -20,7 +20,13 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 )
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
-from .models import Atendimento, StatusAtendimento, Mensagem, TipoRemetente, TipoMensagem
+from .models import (
+    Atendimento,
+    StatusAtendimento,
+    Mensagem,
+    TipoRemetente,
+    TipoMensagem,
+)
 from .utils import sched_message_response, set_wa_buffer
 
 
@@ -36,10 +42,13 @@ def _get_user_departamentos(request: HttpRequest):
     if not username:
         return Departamento.objects.none()
     return (
-        Departamento.objects.filter(ativo=True, atendentes__usuario_sistema=username)
+        Departamento.objects.filter(
+            ativo=True, atendentes__usuario_sistema=username
+        )
         .distinct()
         .order_by("nome")
     )
+
 
 @csrf_exempt
 def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
@@ -64,7 +73,10 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
             )
 
         # Garantir que os campos de credenciais usem os valores canônicos da instância
-        data["instance"] = whatsapp_instance.instance_id or whatsapp_instance.telefone_instancia
+        data["instance"] = (
+            whatsapp_instance.instance_id
+            or whatsapp_instance.telefone_instancia
+        )
         data["apikey"] = whatsapp_instance.api_key
 
         logger.info(f"Received webhook: {data}")
@@ -122,7 +134,9 @@ def kanban_departamento(
         if is_manager
         else _get_user_departamentos(request)
     )
-    allowed_departamentos_ids = set(allowed_departamentos_qs.values_list("id", flat=True))
+    allowed_departamentos_ids = set(
+        allowed_departamentos_qs.values_list("id", flat=True)
+    )
 
     # Bloquear acesso ao departamento se usuário não fizer parte
     if not is_manager and departamento.id not in allowed_departamentos_ids:
@@ -138,11 +152,14 @@ def kanban_departamento(
                 target_dep_id = 0
             if (
                 target_dep_id > 0
-                and Departamento.objects.filter(id=target_dep_id, ativo=True).exists()
+                and Departamento.objects.filter(
+                    id=target_dep_id, ativo=True
+                ).exists()
                 and (is_manager or target_dep_id in allowed_departamentos_ids)
             ):
                 return redirect(
-                    "atendimentos:kanban_departamento", departamento_id=target_dep_id
+                    "atendimentos:kanban_departamento",
+                    departamento_id=target_dep_id,
                 )
 
     # Suporte a resposta parcial (detalhes do atendimento) para modal
@@ -155,27 +172,46 @@ def kanban_departamento(
         except ValueError:
             atendimento_id = 0
         if atendimento_id <= 0:
-            return HttpResponse("<p>Atendimento inválido.</p>", content_type="text/html", status=400)
+            return HttpResponse(
+                "<p>Atendimento inválido.</p>",
+                content_type="text/html",
+                status=400,
+            )
 
         atendimento = get_object_or_404(
-            Atendimento.objects.select_related("contato", "atendente_humano", "departamento"),
+            Atendimento.objects.select_related(
+                "contato", "atendente_humano", "departamento"
+            ),
             id=atendimento_id,
         )
 
         # Escapar campos potencialmente controlados pelo usuário para evitar XSS
-        contato_nome = escape(getattr(atendimento.contato, "nome_contato", "") or "")
-        contato_tel = escape(getattr(atendimento.contato, "telefone", "") or "")
-        agente_nome = escape(getattr(getattr(atendimento, "atendente_humano", None), "nome", "") or "-")
+        contato_nome = escape(
+            getattr(atendimento.contato, "nome_contato", "") or ""
+        )
+        contato_tel = escape(
+            getattr(atendimento.contato, "telefone", "") or ""
+        )
+        agente_nome = escape(
+            getattr(getattr(atendimento, "atendente_humano", None), "nome", "")
+            or "-"
+        )
         dep_nome = escape(getattr(atendimento.departamento, "nome", "") or "-")
         status_value = escape(str(atendimento.status))
-        data_inicio = escape(str(getattr(atendimento, "data_inicio", "") or "-"))
-        data_ultima = escape(str(getattr(atendimento, "data_ultima_mensagem", "") or "-"))
+        data_inicio = escape(
+            str(getattr(atendimento, "data_inicio", "") or "-")
+        )
+        data_ultima = escape(
+            str(getattr(atendimento, "data_ultima_mensagem", "") or "-")
+        )
         data_fim = escape(str(getattr(atendimento, "data_fim", "") or "-"))
 
         csrf_token = get_token(request)
         csrf_hidden = f'<input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">'  # nosec - token gerado pelo Django
         assunto_value = escape(atendimento.assunto or "")
-        active_departamentos_qs = Departamento.objects.filter(ativo=True).order_by("nome")
+        active_departamentos_qs = Departamento.objects.filter(
+            ativo=True
+        ).order_by("nome")
 
         html = f"""
         <div class=\"space-y-2\">
@@ -186,7 +222,7 @@ def kanban_departamento(
           <div class=\"grid grid-cols-2 gap-4\">
             <div>
               <div class=\"text-xs text-gray-500\">Contato</div>
-              <div class=\"text-sm\">{contato_nome or '-'}<span class=\"text-gray-400\"> • </span>{contato_tel or '-'}</div>
+              <div class=\"text-sm\">{contato_nome or "-"}<span class=\"text-gray-400\"> • </span>{contato_tel or "-"}</div>
             </div>
             <div>
               <div class=\"text-xs text-gray-500\">Status</div>
@@ -204,7 +240,7 @@ def kanban_departamento(
             </div>
             <div>
               <div class=\"text-xs text-gray-500\">Assunto</div>
-              <div class=\"text-sm\">{assunto_value or '-'}\n</div>
+              <div class=\"text-sm\">{assunto_value or "-"}\n</div>
             </div>
           </div>
           <div class=\"pt-2 border-t mt-2\">
@@ -231,12 +267,14 @@ def kanban_departamento(
         """
         # Renderizar mensagens do atendimento
         for m in atendimento.mensagens.select_related().order_by("timestamp"):
-            remetente_label = escape(dict(TipoRemetente.choices).get(m.remetente, m.remetente))
+            remetente_label = escape(
+                dict(TipoRemetente.choices).get(m.remetente, m.remetente)
+            )
             conteudo_msg = escape(m.conteudo or "")
             ts = escape(m.timestamp.strftime("%d/%m/%Y %H:%M"))
             html += (
-                f"<div class=\"p-2 rounded bg-gray-50\"><div class=\"text-xs text-gray-500\">"
-                f"{ts} • {remetente_label}</div><div class=\"text-sm\">{conteudo_msg}</div></div>"
+                f'<div class="p-2 rounded bg-gray-50"><div class="text-xs text-gray-500">'
+                f'{ts} • {remetente_label}</div><div class="text-sm">{conteudo_msg}</div></div>'
             )
         html += f"""
             </div>
@@ -259,7 +297,7 @@ def kanban_departamento(
         """
         for d in active_departamentos_qs:
             sel = " selected" if atendimento.departamento_id == d.id else ""
-            html += f"<option value=\"{d.id}\"{sel}>{escape(d.nome)}</option>"
+            html += f'<option value="{d.id}"{sel}>{escape(d.nome)}</option>'
         html += """
                 </select>
               </div>
@@ -280,12 +318,12 @@ def kanban_departamento(
                 ts = escape(str(h.get("timestamp", "")))
                 st = escape(str(h.get("status", "")))
                 obs = escape(str(h.get("observacao", "")))
-                html += f"<div class=\"text-xs text-gray-500\">{ts} • {st}</div>"
+                html += f'<div class="text-xs text-gray-500">{ts} • {st}</div>'
                 if obs:
-                    html += f"<div class=\"text-sm\">{obs}</div>"
-                html += "<div class=\"h-px bg-gray-100\"></div>"
+                    html += f'<div class="text-sm">{obs}</div>'
+                html += '<div class="h-px bg-gray-100"></div>'
         else:
-            html += "<div class=\"text-sm text-gray-500\">Sem histórico registrado.</div>"
+            html += '<div class="text-sm text-gray-500">Sem histórico registrado.</div>'
         html += """
             </div>
           </div>
@@ -297,7 +335,7 @@ def kanban_departamento(
             ctx_json = json.dumps(ctx, ensure_ascii=False, indent=2)
         except Exception:
             ctx_json = escape(str(ctx))
-        html += f"<pre class=\"text-xs bg-gray-50 p-2 rounded overflow-x-auto\">{escape(ctx_json)}</pre>"
+        html += f'<pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">{escape(ctx_json)}</pre>'
         html += """
           </div>
           <div class=\"pt-4 mt-4 border-t\">
@@ -308,9 +346,9 @@ def kanban_departamento(
         if isinstance(tags_list, list) and tags_list:
             for t in tags_list:
                 tag_str = escape(str(t))
-                html += f"<span class=\"px-2 py-0.5 bg-gray-200 rounded text-xs\">{tag_str}</span>"
+                html += f'<span class="px-2 py-0.5 bg-gray-200 rounded text-xs">{tag_str}</span>'
         else:
-            html += "<span class=\"text-xs text-gray-500\">Sem tags</span>"
+            html += '<span class="text-xs text-gray-500">Sem tags</span>'
         html += """
             </div>
           </div>
@@ -339,7 +377,9 @@ def kanban_departamento(
         """
         for s in StatusAtendimento:
             sel = " selected" if str(atendimento.status) == s.value else ""
-            html += f"<option value=\"{s.value}\"{sel}>{escape(s.label)}</option>"
+            html += (
+                f'<option value="{s.value}"{sel}>{escape(s.label)}</option>'
+            )
         html += """
                 </select>
               </div>
@@ -368,7 +408,8 @@ def kanban_departamento(
 
         # Suporte a AJAX (drag-and-drop): identificar e preparar resposta JSON
         is_ajax: bool = (
-            request.headers.get("x-requested-with", "").lower() == "xmlhttprequest"
+            request.headers.get("x-requested-with", "").lower()
+            == "xmlhttprequest"
         )
         error_occurred: bool = False
         error_message: str = ""
@@ -396,10 +437,22 @@ def kanban_departamento(
                     target_id = 0
                 if target_id > 0:
                     # Permitir transferência para qualquer departamento ativo
-                    target_dep = get_object_or_404(Departamento, id=target_id, ativo=True)
-                    actor = (getattr(request.user, "username", None) or getattr(request.user, "email", None) or "usuário")
-                    observacao = f"Transferido por {actor} para {target_dep.nome}. Motivo: {motivo}" if motivo else f"Transferido por {actor} para {target_dep.nome}."
-                    atendimento.transfer_to_department(target_dep, observacao=observacao)
+                    target_dep = get_object_or_404(
+                        Departamento, id=target_id, ativo=True
+                    )
+                    actor = (
+                        getattr(request.user, "username", None)
+                        or getattr(request.user, "email", None)
+                        or "usuário"
+                    )
+                    observacao = (
+                        f"Transferido por {actor} para {target_dep.nome}. Motivo: {motivo}"
+                        if motivo
+                        else f"Transferido por {actor} para {target_dep.nome}."
+                    )
+                    atendimento.transfer_to_department(
+                        target_dep, observacao=observacao
+                    )
                 else:
                     error_occurred = True
                     error_message = "Departamento alvo inválido."
@@ -413,18 +466,19 @@ def kanban_departamento(
                 agente_atual = _get_current_agent(request)
                 if agente_atual is None:
                     error_occurred = True
-                    error_message = (
-                        "Usuário não está vinculado a um atendente humano ativo."
-                    )
+                    error_message = "Usuário não está vinculado a um atendente humano ativo."
                 else:
                     # Garantir que o atendente pertence ao departamento atual
                     if agente_atual.departamento_id == departamento.id:
                         atendimento.assign_to_agent(
-                            agente_atual, observacao="Atribuição manual (drag-and-drop)"
+                            agente_atual,
+                            observacao="Atribuição manual (drag-and-drop)",
                         )
                     else:
                         error_occurred = True
-                        error_message = "Atendente não pertence ao departamento atual."
+                        error_message = (
+                            "Atendente não pertence ao departamento atual."
+                        )
             elif action == "send_message":
                 conteudo_msg: str = request.POST.get("message", "").strip()
                 if not conteudo_msg:
@@ -465,7 +519,9 @@ def kanban_departamento(
                     atendimento.feedback = feedback
                 if avaliacao is not None and 1 <= avaliacao <= 5:
                     atendimento.avaliacao = avaliacao
-                if status_value and status_value in [s.value for s in StatusAtendimento]:
+                if status_value and status_value in [
+                    s.value for s in StatusAtendimento
+                ]:
                     atendimento.status = StatusAtendimento(status_value)
                 # Transferência de departamento, se alterado
                 if dep_id > 0 and dep_id != atendimento.departamento_id:
@@ -475,15 +531,15 @@ def kanban_departamento(
                         atendimento.departamento = target_dep
                     else:
                         error_occurred = True
-                        error_message = "Departamento selecionado não permitido."
+                        error_message = (
+                            "Departamento selecionado não permitido."
+                        )
                 atendimento.save()
         except Exception as exc:
             # Capturar exceções de processamento de ações para evitar SyntaxError
             # e garantir resposta consistente para AJAX.
             error_occurred = True
-            error_message = (
-                f"Ocorreu um erro ao processar a ação: {str(exc)}"
-            )
+            error_message = f"Ocorreu um erro ao processar a ação: {str(exc)}"
             logger.exception(
                 "Erro ao processar ação '%s' para atendimento %s",
                 action,
@@ -493,19 +549,24 @@ def kanban_departamento(
         # Para AJAX (drag-and-drop), responder JSON e evitar redirect
         if is_ajax:
             if error_occurred:
-                return JsonResponse({
-                    "ok": False,
-                    "error": error_message,
+                return JsonResponse(
+                    {
+                        "ok": False,
+                        "error": error_message,
+                        "atendimento_id": atendimento.id,
+                    },
+                    status=400,
+                )
+            return JsonResponse(
+                {
+                    "ok": True,
                     "atendimento_id": atendimento.id,
-                }, status=400)
-            return JsonResponse({
-                "ok": True,
-                "atendimento_id": atendimento.id,
-                "status": atendimento.status.value,
-                "status_label": atendimento.get_status_display(),
-                "assigned": atendimento.atendente_humano_id is not None,
-                "atendente_humano_id": atendimento.atendente_humano_id,
-            })
+                    "status": atendimento.status.value,
+                    "status_label": atendimento.get_status_display(),
+                    "assigned": atendimento.atendente_humano_id is not None,
+                    "atendente_humano_id": atendimento.atendente_humano_id,
+                }
+            )
 
         return redirect(
             "atendimentos:kanban_departamento", departamento_id=departamento.id
@@ -521,18 +582,36 @@ def kanban_departamento(
     current_agent = _get_current_agent(request)
 
     # Colunas do Kanban com base exclusivamente em StatusAtendimento (fluxo unificado)
-    fila_qs = base_qs.filter(status=StatusAtendimento.FILA, atendente_humano__isnull=True)
+    fila_qs = base_qs.filter(
+        status=StatusAtendimento.FILA, atendente_humano__isnull=True
+    )
     if is_manager:
-        em_atendimento_qs = base_qs.filter(status=StatusAtendimento.EM_ATENDIMENTO)
-        aguardando_retorno_qs = base_qs.filter(status=StatusAtendimento.AGUARDANDO_RETORNO)
+        em_atendimento_qs = base_qs.filter(
+            status=StatusAtendimento.EM_ATENDIMENTO
+        )
+        aguardando_retorno_qs = base_qs.filter(
+            status=StatusAtendimento.AGUARDANDO_RETORNO
+        )
         resolvidos_qs = base_qs.filter(status=StatusAtendimento.RESOLVIDO)
         cancelados_qs = base_qs.filter(status=StatusAtendimento.CANCELADO)
     else:
         if current_agent:
-            em_atendimento_qs = base_qs.filter(status=StatusAtendimento.EM_ATENDIMENTO, atendente_humano=current_agent)
-            aguardando_retorno_qs = base_qs.filter(status=StatusAtendimento.AGUARDANDO_RETORNO, atendente_humano=current_agent)
-            resolvidos_qs = base_qs.filter(status=StatusAtendimento.RESOLVIDO, atendente_humano=current_agent)
-            cancelados_qs = base_qs.filter(status=StatusAtendimento.CANCELADO, atendente_humano=current_agent)
+            em_atendimento_qs = base_qs.filter(
+                status=StatusAtendimento.EM_ATENDIMENTO,
+                atendente_humano=current_agent,
+            )
+            aguardando_retorno_qs = base_qs.filter(
+                status=StatusAtendimento.AGUARDANDO_RETORNO,
+                atendente_humano=current_agent,
+            )
+            resolvidos_qs = base_qs.filter(
+                status=StatusAtendimento.RESOLVIDO,
+                atendente_humano=current_agent,
+            )
+            cancelados_qs = base_qs.filter(
+                status=StatusAtendimento.CANCELADO,
+                atendente_humano=current_agent,
+            )
         else:
             em_atendimento_qs = base_qs.none()
             aguardando_retorno_qs = base_qs.none()

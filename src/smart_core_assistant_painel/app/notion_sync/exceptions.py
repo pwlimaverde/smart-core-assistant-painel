@@ -20,7 +20,9 @@ class SyncError(Exception):
         details: Detalhes adicionais sobre o erro (opcional).
     """
 
-    def __init__(self, message: str, details: dict[str, Any] | None = None) -> None:
+    def __init__(
+        self, message: str, details: dict[str, Any] | None = None
+    ) -> None:
         """
         Inicializa a exceção com mensagem e detalhes opcionais.
 

@@ -11,7 +11,10 @@ from django.contrib.messages import constants
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from rolepermissions.roles import assign_role
-from smart_core_assistant_painel.app.ui.operacional.models import AtendenteHumano, Departamento
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    AtendenteHumano,
+    Departamento,
+)
 from django.db.models import Count
 from rolepermissions.checkers import has_permission
 from smart_core_assistant_painel.app.ui.atendimentos.models import (

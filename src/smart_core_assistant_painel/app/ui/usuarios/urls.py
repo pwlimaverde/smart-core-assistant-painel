@@ -15,5 +15,7 @@ urlpatterns = [
     path(
         "tornar_gerente/<int:id>", views.tornar_gerente, name="tornar_gerente"
     ),
-    path("dashboard-gerente/", views.dashboard_gerente, name="dashboard_gerente"),
+    path(
+        "dashboard-gerente/", views.dashboard_gerente, name="dashboard_gerente"
+    ),
 ]

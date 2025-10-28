@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
     """Habilita a extensão pgvector no PostgreSQL."""
 
     dependencies = [
-        ('atendimentos', '0001_initial'),
+        ("atendimentos", "0001_initial"),
     ]
 
     operations = [

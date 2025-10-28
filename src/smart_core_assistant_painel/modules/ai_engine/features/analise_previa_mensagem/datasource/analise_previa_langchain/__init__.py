@@ -7,6 +7,7 @@ Este pacote expõe:
 - build_analise_previa_model: construtor do modelo Pydantic dinâmico com
   descrições e exemplos derivados da configuração atual (intents/entities).
 """
+
 from .analise_previa_langchain_datasource import (
     AnalisePreviaLangchainDatasource,
 )

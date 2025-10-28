@@ -12,6 +12,7 @@ from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
 )
+
 if TYPE_CHECKING:
     # Import apenas para type hints, evitando ciclo de import em runtime
     from smart_core_assistant_painel.app.ui.operacional.models import (
@@ -91,13 +92,15 @@ class Atendimento(models.Model):
         help_text="Contato vinculado ao atendimento",
     )
     # Campo de departamento para suportar fila por departamento na central de atendimento
-    departamento: models.ForeignKey[Optional["operacional.Departamento"]] = models.ForeignKey(
-        "operacional.Departamento",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name="atendimentos",
-        help_text="Departamento atual do atendimento (fila Kanban)",
+    departamento: models.ForeignKey[Optional["operacional.Departamento"]] = (
+        models.ForeignKey(
+            "operacional.Departamento",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text="Departamento atual do atendimento (fila Kanban)",
+        )
     )
     status: models.CharField[str] = models.CharField(
         max_length=20,
@@ -112,10 +115,12 @@ class Atendimento(models.Model):
         blank=True, null=True, help_text="Data de finalização do atendimento"
     )
     # Campo para registrar a última mensagem trocada, usado para SLAs e ordenação
-    data_ultima_mensagem: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data/hora da última mensagem (para ordenação e SLA)",
+    data_ultima_mensagem: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data/hora da última mensagem (para ordenação e SLA)",
+        )
     )
     assunto: models.CharField[str | None] = models.CharField(
         max_length=200,
@@ -170,10 +175,12 @@ class Atendimento(models.Model):
     feedback: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Feedback do contato"
     )
-    data_primeira_resposta: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data e hora da primeira resposta ao contato"
+    data_primeira_resposta: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data e hora da primeira resposta ao contato",
+        )
     )
     canal: models.CharField[str] = models.CharField(
         max_length=20,
@@ -184,7 +191,7 @@ class Atendimento(models.Model):
             ("web", "Website"),
         ],
         default="whatsapp",
-        help_text="Canal de origem do atendimento"
+        help_text="Canal de origem do atendimento",
     )
 
     class Meta:
@@ -207,8 +214,14 @@ class Atendimento(models.Model):
     def cliente(self) -> Optional["clientes.Cliente"]:
         """Retorna o cliente principal vinculado ao contato."""
         if TYPE_CHECKING:
-            from smart_core_assistant_painel.app.ui.clientes.models import Cliente
-        return self.contato.clientes.first() if self.contato.clientes.exists() else None
+            from smart_core_assistant_painel.app.ui.clientes.models import (
+                Cliente,
+            )
+        return (
+            self.contato.clientes.first()
+            if self.contato.clientes.exists()
+            else None
+        )
 
     def finalizar_atendimento(self, novo_status: str = "resolvido") -> None:
         self.status = novo_status

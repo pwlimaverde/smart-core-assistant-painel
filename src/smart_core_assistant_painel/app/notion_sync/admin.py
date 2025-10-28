@@ -12,7 +12,13 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.html import format_html
 
-from .models import AtendenteHumanoSync, ClienteSync, ContatoSync, DepartamentoSync, NotionDatabaseConfig
+from .models import (
+    AtendenteHumanoSync,
+    ClienteSync,
+    ContatoSync,
+    DepartamentoSync,
+    NotionDatabaseConfig,
+)
 
 
 @admin.register(NotionDatabaseConfig)
@@ -44,7 +50,7 @@ class NotionDatabaseConfigAdmin(admin.ModelAdmin[NotionDatabaseConfig]):
                     "name",
                     "django_model",
                     "notion_database_id",
-                    "sync_enabled"
+                    "sync_enabled",
                 )
             },
         ),
@@ -124,9 +130,7 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
     fieldsets = (
         (
             "Relacionamento",
-            {
-                "fields": ("contato",)
-            },
+            {"fields": ("contato",)},
         ),
         (
             "Sincronização",
@@ -195,11 +199,11 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
         Returns:
             HTML com status colorido.
         """
-        if obj.sync_status == 'synced':
+        if obj.sync_status == "synced":
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
             )
-        elif obj.sync_status == 'error':
+        elif obj.sync_status == "error":
             return format_html(
                 '<span style="color: red; font-weight: bold;">✗ Erro</span>'
             )
@@ -212,10 +216,7 @@ class ContatoSyncAdmin(admin.ModelAdmin[ContatoSync]):
 
     sync_status_colored.short_description = "Status"  # type: ignore
 
-    def has_add_permission(
-        self,
-        request: HttpRequest
-    ) -> bool:
+    def has_add_permission(self, request: HttpRequest) -> bool:
         """
         Remove permissão de adicionar manualmente.
 
@@ -272,9 +273,7 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
     fieldsets = (
         (
             "Relacionamento",
-            {
-                "fields": ("cliente",)
-            },
+            {"fields": ("cliente",)},
         ),
         (
             "Sincronização",
@@ -343,11 +342,11 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
         Returns:
             HTML com status colorido.
         """
-        if obj.sync_status == 'synced':
+        if obj.sync_status == "synced":
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
             )
-        elif obj.sync_status == 'error':
+        elif obj.sync_status == "error":
             return format_html(
                 '<span style="color: red; font-weight: bold;">✗ Erro</span>'
             )
@@ -360,10 +359,7 @@ class ClienteSyncAdmin(admin.ModelAdmin[ClienteSync]):
 
     sync_status_colored.short_description = "Status"  # type: ignore
 
-    def has_add_permission(
-        self,
-        request: HttpRequest
-    ) -> bool:
+    def has_add_permission(self, request: HttpRequest) -> bool:
         """
         Remove permissão de adicionar manualmente.
 
@@ -420,9 +416,7 @@ class DepartamentoSyncAdmin(admin.ModelAdmin[DepartamentoSync]):
     fieldsets = (
         (
             "Relacionamento",
-            {
-                "fields": ("departamento",)
-            },
+            {"fields": ("departamento",)},
         ),
         (
             "Sincronização",
@@ -504,11 +498,11 @@ class DepartamentoSyncAdmin(admin.ModelAdmin[DepartamentoSync]):
         Returns:
             HTML com status colorido.
         """
-        if obj.sync_status == 'synced':
+        if obj.sync_status == "synced":
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
             )
-        elif obj.sync_status == 'error':
+        elif obj.sync_status == "error":
             return format_html(
                 '<span style="color: red; font-weight: bold;">✗ Erro</span>'
             )
@@ -521,10 +515,7 @@ class DepartamentoSyncAdmin(admin.ModelAdmin[DepartamentoSync]):
 
     sync_status_colored.short_description = "Status"  # type: ignore
 
-    def has_add_permission(
-        self,
-        request: HttpRequest
-    ) -> bool:
+    def has_add_permission(self, request: HttpRequest) -> bool:
         """
         Remove permissão de adicionar manualmente.
 
@@ -585,9 +576,7 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
     fieldsets = (
         (
             "Relacionamento",
-            {
-                "fields": ("atendente", "departamento_sync")
-            },
+            {"fields": ("atendente", "departamento_sync")},
         ),
         (
             "Sincronização",
@@ -656,7 +645,11 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
         Returns:
             Nome do departamento ou "-".
         """
-        return obj.atendente.departamento.nome if obj.atendente.departamento else "-"
+        return (
+            obj.atendente.departamento.nome
+            if obj.atendente.departamento
+            else "-"
+        )
 
     departamento_nome.short_description = "Departamento"  # type: ignore
 
@@ -691,7 +684,10 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
             cor = "green" if pct < 70 else "orange" if pct < 90 else "red"
             return format_html(
                 '<span style="color: {};">{}/{} ({:.0f}%)</span>',
-                cor, obj.carga_atual, obj.capacidade_maxima, pct
+                cor,
+                obj.carga_atual,
+                obj.capacidade_maxima,
+                pct,
             )
         return f"{obj.carga_atual}/{obj.capacidade_maxima}"
 
@@ -707,11 +703,11 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
         Returns:
             HTML com status colorido.
         """
-        if obj.sync_status == 'synced':
+        if obj.sync_status == "synced":
             return format_html(
                 '<span style="color: green; font-weight: bold;">✓ Sincronizado</span>'
             )
-        elif obj.sync_status == 'error':
+        elif obj.sync_status == "error":
             return format_html(
                 '<span style="color: red; font-weight: bold;">✗ Erro</span>'
             )
@@ -724,10 +720,7 @@ class AtendenteHumanoSyncAdmin(admin.ModelAdmin[AtendenteHumanoSync]):
 
     sync_status_colored.short_description = "Status"  # type: ignore
 
-    def has_add_permission(
-        self,
-        request: HttpRequest
-    ) -> bool:
+    def has_add_permission(self, request: HttpRequest) -> bool:
         """
         Remove permissão de adicionar manualmente.
 

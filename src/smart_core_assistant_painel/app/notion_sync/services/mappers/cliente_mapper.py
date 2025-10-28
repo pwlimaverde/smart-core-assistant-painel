@@ -49,12 +49,14 @@ class ClienteMapper:
             properties: Dict[str, Any] = {}
 
             # Nome Fantasia (formatado) - Campo principal (title)
-            nome_fantasia = cliente_sync.nome_fantasia_formatado or cliente.nome_fantasia
+            nome_fantasia = (
+                cliente_sync.nome_fantasia_formatado or cliente.nome_fantasia
+            )
             properties["Nome Fantasia"] = {
                 "title": [
                     {
                         "type": "text",
-                        "text": {"content": nome_fantasia.strip()}
+                        "text": {"content": nome_fantasia.strip()},
                     }
                 ]
             }
@@ -65,7 +67,9 @@ class ClienteMapper:
                     "rich_text": [
                         {
                             "type": "text",
-                            "text": {"content": cliente_sync.razao_social_formatada}
+                            "text": {
+                                "content": cliente_sync.razao_social_formatada
+                            },
                         }
                     ]
                 }
@@ -83,58 +87,47 @@ class ClienteMapper:
                     "rich_text": [
                         {
                             "type": "text",
-                            "text": {"content": cliente_sync.cnpj_formatado}
+                            "text": {"content": cliente_sync.cnpj_formatado},
                         }
                     ]
                 }
 
-            # 🆕 Relacionamento ManyToMany com Contatos
-            # Lista de contatos vinculados ao cliente
+            # Relacionamento ManyToMany com Contatos (relation)
+            # Observação: para garantir visualização imediata no database de
+            # Clientes, escrevemos também o lado do Cliente. O Notion espelha
+            # automaticamente, mas algumas contas demoram a refletir.
             try:
-                contatos_vinculados = cliente.contatos.all()
-                if contatos_vinculados.exists():
-                    # Prepara lista de contatos para o campo relation
-                    contatos_ids = []
+                contatos = cliente.contatos.all()
+                from smart_core_assistant_painel.app.notion_sync.models import (
+                    ContatoSync,
+                )
 
-                    # Busca external_ids dos contatos sincronizados
-                    from smart_core_assistant_painel.app.notion_sync.models import ContatoSync
-                    for contato in contatos_vinculados:
-                        try:
-                            contato_sync = ContatoSync.objects.get(contato_id=contato.id)
-                            if contato_sync.external_id:
-                                contatos_ids.append(contato_sync.external_id)
-                        except ContatoSync.DoesNotExist:
-                            # Se não tem sync, pula este contato
-                            continue
+                contatos_ids: list[str] = []
+                for contato in contatos:
+                    try:
+                        contato_sync = ContatoSync.objects.get(
+                            contato_id=contato.id
+                        )
+                        if contato_sync.external_id:
+                            contatos_ids.append(str(contato_sync.external_id))
+                    except ContatoSync.DoesNotExist:
+                        # Sem sync para este contato; ignora
+                        continue
 
-                    if contatos_ids:
-                        # 🆕 Usa campo relation nativo do Notion (se existir)
-                        properties["Contatos Relacionados"] = {
-                            "relation": [
-                                {"id": contato_id} for contato_id in contatos_ids
-                            ]
-                        }
-
-                        # Armazena informações adicionais em metadados (backup)
-                        contatos_nomes = [contato.nome_contato for contato in contatos_vinculados]
-                        contatos_info = []
-                        for i, contato in enumerate(contatos_vinculados):
-                            contatos_info.append(f"{contato.id}:{contatos_nomes[i]}")
-
-                        cliente_sync.metadados['contatos_vinculados'] = contatos_info
-            except Exception as e:
-                # Log silencioso para não quebrar sincronização principal
-                print(f"Aviso: Erro ao processar relacionamento de contatos: {e}")
+                # Enviar sempre (inclusive vazio) para refletir remoções
+                properties["Contatos Relacionados"] = {
+                    "relation": [{"id": cid} for cid in contatos_ids]
+                }
+            except Exception:
+                # Não bloquear sincronização por erro em relação
+                pass
 
             # CPF (se presente)
             if getattr(cliente, "cpf", None):
                 cpf_limpo = re.sub(r"\D", "", cliente.cpf)
                 properties["CPF"] = {
                     "rich_text": [
-                        {
-                            "type": "text",
-                            "text": {"content": cpf_limpo}
-                        }
+                        {"type": "text", "text": {"content": cpf_limpo}}
                     ]
                 }
 
@@ -151,21 +144,35 @@ class ClienteMapper:
             # Ramo Atividade
             if getattr(cliente, "ramo_atividade", None):
                 properties["Ramo Atividade"] = {
-                    "rich_text": [{"type": "text", "text": {"content": cliente.ramo_atividade}}]
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {"content": cliente.ramo_atividade},
+                        }
+                    ]
                 }
 
             # Endereço componentes (se presentes)
             if getattr(cliente, "cep", None):
                 properties["CEP"] = {
-                    "rich_text": [{"type": "text", "text": {"content": cliente.cep}}]
+                    "rich_text": [
+                        {"type": "text", "text": {"content": cliente.cep}}
+                    ]
                 }
             if getattr(cliente, "logradouro", None):
                 properties["Logradouro"] = {
-                    "rich_text": [{"type": "text", "text": {"content": cliente.logradouro}}]
+                    "rich_text": [
+                        {
+                            "type": "text",
+                            "text": {"content": cliente.logradouro},
+                        }
+                    ]
                 }
             if getattr(cliente, "numero", None):
                 properties["Número"] = {
-                    "rich_text": [{"type": "text", "text": {"content": cliente.numero}}]
+                    "rich_text": [
+                        {"type": "text", "text": {"content": cliente.numero}}
+                    ]
                 }
 
             # Observações (se presentes)
@@ -174,7 +181,9 @@ class ClienteMapper:
                     "rich_text": [
                         {
                             "type": "text",
-                            "text": {"content": str(cliente.observacoes)[:2000]}
+                            "text": {
+                                "content": str(cliente.observacoes)[:2000]
+                            },
                         }
                     ]
                 }
@@ -205,12 +214,13 @@ class ClienteMapper:
             data: Dict[str, Any] = {}
 
             # Nome Fantasia (do título)
-            if "Nome Fantasia" in properties and properties["Nome Fantasia"].get("title"):
+            if "Nome Fantasia" in properties and properties[
+                "Nome Fantasia"
+            ].get("title"):
                 title_list = properties["Nome Fantasia"]["title"]
                 if title_list:
                     nome_fantasia = "".join(
-                        item.get("plain_text", "")
-                        for item in title_list
+                        item.get("plain_text", "") for item in title_list
                     ).strip()
                     if nome_fantasia:
                         data["nome_fantasia"] = nome_fantasia
@@ -222,8 +232,7 @@ class ClienteMapper:
                     text_list = rs_field["rich_text"]
                     if text_list:
                         razao_social = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
+                            item.get("plain_text", "") for item in text_list
                         ).strip()
                         if razao_social:
                             data["razao_social"] = razao_social
@@ -240,7 +249,9 @@ class ClienteMapper:
                             "Pessoa Jurídica": "juridica",
                             "Pessoa Física": "fisica",
                         }
-                        data["tipo"] = tipo_map_reverse.get(tipo_notion, "juridica")
+                        data["tipo"] = tipo_map_reverse.get(
+                            tipo_notion, "juridica"
+                        )
 
             # Site
             if "Site" in properties:
@@ -255,8 +266,7 @@ class ClienteMapper:
                     text_list = ramo_field["rich_text"]
                     if text_list:
                         ramo = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
+                            item.get("plain_text", "") for item in text_list
                         ).strip()
                         if ramo:
                             data["ramo_atividade"] = ramo
@@ -267,7 +277,9 @@ class ClienteMapper:
                 if log_field.get("rich_text"):
                     text_list = log_field["rich_text"]
                     if text_list:
-                        val = "".join(item.get("plain_text", "") for item in text_list).strip()
+                        val = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        ).strip()
                         if val:
                             data["logradouro"] = val
             if "Número" in properties:
@@ -275,7 +287,9 @@ class ClienteMapper:
                 if num_field.get("rich_text"):
                     text_list = num_field["rich_text"]
                     if text_list:
-                        val = "".join(item.get("plain_text", "") for item in text_list).strip()
+                        val = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        ).strip()
                         if val:
                             data["numero"] = val
 
@@ -284,7 +298,11 @@ class ClienteMapper:
                 status_field = properties["Status"]
                 if status_field.get("select"):
                     status_name = status_field["select"].get("name", "")
-                    data["ativo"] = status_name.lower() in ["ativo", "active", "enabled"]
+                    data["ativo"] = status_name.lower() in [
+                        "ativo",
+                        "active",
+                        "enabled",
+                    ]
 
             # Observações
             if "Observações" in properties:
@@ -293,8 +311,7 @@ class ClienteMapper:
                     text_list = obs_field["rich_text"]
                     if text_list:
                         obs = "".join(
-                            item.get("plain_text", "")
-                            for item in text_list
+                            item.get("plain_text", "") for item in text_list
                         ).strip()
                         if obs:
                             data["observacoes"] = obs
@@ -304,34 +321,51 @@ class ClienteMapper:
             for campo in datas_campos:
                 if campo in properties:
                     date_field = properties[campo]
-                    if date_field.get("date") and date_field["date"].get("start"):
+                    if date_field.get("date") and date_field["date"].get(
+                        "start"
+                    ):
                         try:
-                            data_iso = date_field["date"]["start"].replace('Z', '+00:00')
+                            data_iso = date_field["date"]["start"].replace(
+                                "Z", "+00:00"
+                            )
                             data_obj = datetime.fromisoformat(data_iso)
 
                             campo_map = {
                                 "Data Cadastro": "data_cadastro",
                                 "Última Atualização": "ultima_atualizacao",
                             }
-                            data[campo_map.get(campo, campo.lower())] = data_obj
+                            data[campo_map.get(campo, campo.lower())] = (
+                                data_obj
+                            )
                         except (ValueError, AttributeError):
                             pass  # Ignora datas inválidas
 
             # 🆕 Relacionamento com Contatos (campo relation)
             # Nota: Se o campo relation existir no Notion, os dados virão formatados
             # Se não existir, os dados ficam em metadados para referência
-            if "metadados" in data and "contatos_vinculados" in data["metadados"]:
+            if (
+                "metadados" in data
+                and "contatos_vinculados" in data["metadados"]
+            ):
                 # Converte de lista para processamento (backup em metadados)
                 contatos_info = data["metadados"]["contatos_vinculados"]
                 if isinstance(contatos_info, list):
-                    data["metadados"]["contatos_vinculados_lista"] = contatos_info
+                    data["metadados"]["contatos_vinculados_lista"] = (
+                        contatos_info
+                    )
 
                 # Processa informações antigas em formato texto (compatibilidade)
                 elif "contatos_vinculados_notion" in data["metadados"]:
-                    contatos_text = data["metadados"]["contatos_vinculados_notion"]
+                    contatos_text = data["metadados"][
+                        "contatos_vinculados_notion"
+                    ]
                     if contatos_text and "|" in contatos_text:
-                        contatos_info = [item.strip() for item in contatos_text.split("|")]
-                        data["metadados"]["contatos_vinculados_lista"] = contatos_info
+                        contatos_info = [
+                            item.strip() for item in contatos_text.split("|")
+                        ]
+                        data["metadados"]["contatos_vinculados_lista"] = (
+                            contatos_info
+                        )
 
             return data
 
@@ -374,7 +408,9 @@ class ClienteMapper:
         """
         try:
             # Verifica campo obrigatório Nome Fantasia
-            if "Nome Fantasia" not in properties or not properties["Nome Fantasia"].get("title"):
+            if "Nome Fantasia" not in properties or not properties[
+                "Nome Fantasia"
+            ].get("title"):
                 return False
 
             # Verifica se há conteúdo no título
@@ -391,7 +427,9 @@ class ClienteMapper:
                 if cnpj_field.get("rich_text"):
                     text_list = cnpj_field["rich_text"]
                     if text_list:
-                        cnpj = "".join(item.get("plain_text", "") for item in text_list)
+                        cnpj = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        )
                         digits = re.sub(r"\D", "", cnpj)
                         if digits and len(digits) != 14:
                             return False
@@ -402,7 +440,9 @@ class ClienteMapper:
                 if cpf_field.get("rich_text"):
                     text_list = cpf_field["rich_text"]
                     if text_list:
-                        cpf = "".join(item.get("plain_text", "") for item in text_list)
+                        cpf = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        )
                         digits = re.sub(r"\D", "", cpf)
                         if digits and len(digits) != 11:
                             return False
@@ -410,7 +450,9 @@ class ClienteMapper:
             # Valida URL do site se presente
             if "Site" in properties:
                 site = properties["Site"].get("url", "")
-                if site and not (site.startswith("http://") or site.startswith("https://")):
+                if site and not (
+                    site.startswith("http://") or site.startswith("https://")
+                ):
                     return False
 
             return True
@@ -425,103 +467,102 @@ class ClienteMapper:
         return {
             "Nome Fantasia": {
                 "title": {},
-                "description": "Nome comercial do cliente"
+                "description": "Nome comercial do cliente",
             },
             "Razão Social": {
                 "rich_text": {},
-                "description": "Nome legal/oficial do cliente"
+                "description": "Nome legal/oficial do cliente",
             },
             "Tipo": {
                 "select": {
                     "options": [
                         {"name": "fisica", "color": "blue"},
-                        {"name": "juridica", "color": "green"}
+                        {"name": "juridica", "color": "green"},
                     ]
                 },
-                "description": "Tipo de pessoa jurídica"
+                "description": "Tipo de pessoa jurídica",
             },
-            "CNPJ": {
-                "rich_text": {},
-                "description": "CNPJ (apenas dígitos)"
-            },
-            "CPF": {
-                "rich_text": {},
-                "description": "CPF (apenas dígitos)"
-            },
+            "CNPJ": {"rich_text": {}, "description": "CNPJ (apenas dígitos)"},
+            "CPF": {"rich_text": {}, "description": "CPF (apenas dígitos)"},
             "Telefone": {
                 "phone_number": {},
-                "description": "Telefone no formato internacional"
+                "description": "Telefone no formato internacional",
             },
-            "Site": {
-                "url": {},
-                "description": "Site da empresa"
-            },
+            "Site": {"url": {}, "description": "Site da empresa"},
             "Ramo Atividade": {
                 "rich_text": {},
-                "description": "Área de atuação do cliente"
+                "description": "Área de atuação do cliente",
             },
-            "CEP": {
-                "rich_text": {},
-                "description": "CEP do endereço"
-            },
-            "Logradouro": {
-                "rich_text": {},
-                "description": "Logradouro"
-            },
-            "Número": {
-                "rich_text": {},
-                "description": "Número"
-            },
-            "Cidade": {
-                "rich_text": {},
-                "description": "Cidade do cliente"
-            },
+            "CEP": {"rich_text": {}, "description": "CEP do endereço"},
+            "Logradouro": {"rich_text": {}, "description": "Logradouro"},
+            "Número": {"rich_text": {}, "description": "Número"},
+            "Cidade": {"rich_text": {}, "description": "Cidade do cliente"},
             "UF": {
                 "select": {
                     "options": [
-                        {"name": "AC"}, {"name": "AL"}, {"name": "AP"}, {"name": "AM"},
-                        {"name": "BA"}, {"name": "CE"}, {"name": "DF"}, {"name": "ES"},
-                        {"name": "GO"}, {"name": "MA"}, {"name": "MT"}, {"name": "MS"},
-                        {"name": "MG"}, {"name": "PA"}, {"name": "PB"}, {"name": "PR"},
-                        {"name": "PE"}, {"name": "PI"}, {"name": "RJ"}, {"name": "RN"},
-                        {"name": "RS"}, {"name": "RO"}, {"name": "RR"}, {"name": "SC"},
-                        {"name": "SP"}, {"name": "SE"}, {"name": "TO"}
+                        {"name": "AC"},
+                        {"name": "AL"},
+                        {"name": "AP"},
+                        {"name": "AM"},
+                        {"name": "BA"},
+                        {"name": "CE"},
+                        {"name": "DF"},
+                        {"name": "ES"},
+                        {"name": "GO"},
+                        {"name": "MA"},
+                        {"name": "MT"},
+                        {"name": "MS"},
+                        {"name": "MG"},
+                        {"name": "PA"},
+                        {"name": "PB"},
+                        {"name": "PR"},
+                        {"name": "PE"},
+                        {"name": "PI"},
+                        {"name": "RJ"},
+                        {"name": "RN"},
+                        {"name": "RS"},
+                        {"name": "RO"},
+                        {"name": "RR"},
+                        {"name": "SC"},
+                        {"name": "SP"},
+                        {"name": "SE"},
+                        {"name": "TO"},
                     ]
                 },
-                "description": "Estado (UF)"
+                "description": "Estado (UF)",
             },
             "País": {
                 "rich_text": {},
-                "description": "País (se não for Brasil)"
+                "description": "País (se não for Brasil)",
             },
             "Data Cadastro": {
                 "date": {},
-                "description": "Data de cadastro no sistema"
+                "description": "Data de cadastro no sistema",
             },
             "Última Atualização": {
                 "date": {},
-                "description": "Data da última atualização"
+                "description": "Data da última atualização",
             },
             "Django ID": {
                 "number": {"format": "number"},
-                "description": "ID do registro no Django (referência)"
+                "description": "ID do registro no Django (referência)",
             },
             "Notion ID": {
                 "rich_text": {},
-                "description": "ID da página no Notion"
+                "description": "ID da página no Notion",
             },
             "Última Sincronização": {
                 "date": {},
-                "description": "Data da última sincronização"
+                "description": "Data da última sincronização",
             },
             "Observações": {
                 "rich_text": {},
-                "description": "Observações adicionais"
+                "description": "Observações adicionais",
             },
             # 🆕 Campo para relacionamento com Contatos (relation)
             "Contatos Relacionados": {
                 "relation": {},
-                "description": "Contatos vinculados a este cliente (campo relation)"
+                "description": "Contatos vinculados a este cliente (campo relation)",
             },
             # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
             # Se preferir usar rich_text em vez de relation, descomente:

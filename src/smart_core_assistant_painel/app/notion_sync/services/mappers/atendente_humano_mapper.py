@@ -112,19 +112,7 @@ class AtendenteHumanoMapper:
                 )
                 properties["Telefone"] = {"phone_number": telefone_formatado}
 
-            # Matrícula (Rich Text)
-            if hasattr(atendente, "matricula") and atendente.matricula:
-                properties["Matrícula"] = {
-                    "rich_text": [
-                        {"text": {"content": str(atendente.matricula)}}
-                    ]
-                }
 
-            # Data Admissão (Date)
-            if hasattr(atendente, "data_admissao") and atendente.data_admissao:
-                properties["Data Admissão"] = {
-                    "date": {"start": atendente.data_admissao.isoformat()}
-                }
 
             # Horário Trabalho (Rich Text)
             if (
@@ -149,17 +137,15 @@ class AtendenteHumanoMapper:
             # Ativo (Checkbox)
             properties["Ativo"] = {"checkbox": bool(atendente.ativo)}
 
-            # Especialidade (Rich Text)
-            if atendente.especialidades:
-                especialidades_text = ""
-                if isinstance(atendente.especialidades, list):
-                    especialidades_text = ", ".join(atendente.especialidades)
-                elif isinstance(atendente.especialidades, str):
-                    especialidades_text = atendente.especialidades
+            # Disponível (Checkbox)
+            properties["Disponível"] = {"checkbox": bool(atendente.disponivel)}
 
-                properties["Especialidade"] = {
-                    "rich_text": [{"text": {"content": especialidades_text}}]
-                }
+            # Capacidade Máxima (Number)
+            properties["Capacidade Máxima"] = {
+                "number": atendente.max_atendimentos_simultaneos
+            }
+
+
 
             # Departamentos Relacionados (Relation -暂时不用关联，按用户要求不包含instance链接)
             # Removido conforme solicitação do usuário - não usar relacionamentos
@@ -218,17 +204,13 @@ class AtendenteHumanoMapper:
             ):
                 data["telefone"] = properties["Telefone"]["phone_number"]
 
-            # Status (Select)
-            if "Status" in properties and properties["Status"].get("select"):
-                status_nome = properties["Status"]["select"]["name"]
-                data["ativo"] = status_nome.lower() == "ativo"
+            # Ativo (Checkbox)
+            if "Ativo" in properties and isinstance(properties["Ativo"].get("checkbox"), bool):
+                data["ativo"] = properties["Ativo"]["checkbox"]
 
-            # Disponibilidade (Select)
-            if "Disponibilidade" in properties and properties[
-                "Disponibilidade"
-            ].get("select"):
-                disp_nome = properties["Disponibilidade"]["select"]["name"]
-                data["disponivel"] = disp_nome.lower() == "disponível"
+            # Disponível (Checkbox)
+            if "Disponível" in properties and isinstance(properties["Disponível"].get("checkbox"), bool):
+                data["disponivel"] = properties["Disponível"]["checkbox"]
 
             # Capacidade Máxima (Number)
             if (
@@ -255,15 +237,16 @@ class AtendenteHumanoMapper:
                     properties["Última Atividade"]["date"]["start"]
                 )
 
-            # Especialidades (Multi-select)
-            if "Especialidades" in properties and properties[
-                "Especialidades"
-            ].get("multi_select"):
-                especialidades = [
-                    item["name"]
-                    for item in properties["Especialidades"]["multi_select"]
-                ]
-                data["especialidades"] = especialidades
+            # Especialidades (se houver no model, são tratadas como JSON em metadados)
+            if hasattr(AtendenteHumano, 'especialidades'):
+                if "Especialidades" in properties and properties[
+                    "Especialidades"
+                ].get("multi_select"):
+                    especialidades = [
+                        item["name"]
+                        for item in properties["Especialidades"]["multi_select"]
+                    ]
+                    data["especialidades"] = especialidades
 
             # Usuário do Sistema (Rich Text)
             if "Usuário Sistema" in properties and properties[
@@ -433,36 +416,6 @@ class AtendenteHumanoMapper:
                     "Campo 'Capacidade Máxima' deve estar entre 1 e 100"
                 )
 
-        # Validar status se existe
-        if "Status" in properties and properties["Status"].get("select"):
-            status_nome = properties["Status"]["select"]["name"]
-            if status_nome.lower() not in ["ativo", "inativo"]:
-                errors.append("Campo 'Status' deve ser 'Ativo' ou 'Inativo'")
-
-        # Validar disponibilidade se existe
-        if "Disponibilidade" in properties and properties[
-            "Disponibilidade"
-        ].get("select"):
-            disp_nome = properties["Disponibilidade"]["select"]["name"]
-            if disp_nome.lower() not in ["disponível", "indisponível"]:
-                errors.append(
-                    "Campo 'Disponibilidade' deve ser 'Disponível' ou 'Indisponível'"
-                )
-
-        # Validar especialidades se existe
-        if "Especialidades" in properties and properties["Especialidades"].get(
-            "multi_select"
-        ):
-            especialidades = properties["Especialidades"]["multi_select"]
-            if len(especialidades) > 30:
-                errors.append("Máximo de 30 especialidades permitidas")
-
-            for espec in especialidades:
-                if len(espec.get("name", "")) > 50:
-                    errors.append(
-                        f"Especialidade '{espec.get('name', '')}' excede 50 caracteres"
-                    )
-
         return errors
 
     @staticmethod
@@ -476,18 +429,12 @@ class AtendenteHumanoMapper:
         return {
             "Nome": {"title": {}},
             "Ativo": {"checkbox": {}},
+            "Disponível": {"checkbox": {}},
             "Cargo": {"rich_text": {}},
             "Email": {"email": {}},
-            # "Setor": {
-            #     "rich_text": {}
-            # },
             "Telefone": {"phone_number": {}},
-            "Matrícula": {"rich_text": {}},
-            "Especialidade": {"rich_text": {}},
-            "Data Admissão": {"date": {}},
+            "Capacidade Máxima": {"number": {"format": "number"}},
             "Horário Trabalho": {"rich_text": {}},
             # Campo relation canônico: vínculo com Departamento
             "Departamentos Relacionados": {"relation": {}},
-            # Campo legado/auxiliar
-            "Setor": {"rich_text": {}},
         }

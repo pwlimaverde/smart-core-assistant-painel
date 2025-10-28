@@ -848,6 +848,31 @@ class ClienteSync(models.Model):
                 "rich_text": [{"text": {"content": self.cnpj_formatado}}]
             }
 
+        # Endereço completo
+        if self.endereco_completo:
+            self.notion_properties["Endereço"] = {
+                "rich_text": [{"text": {"content": self.endereco_completo}}]
+            }
+
+        # Componentes do endereço
+        if self.cliente.bairro:
+            self.notion_properties["Bairro"] = {
+                "rich_text": [{"text": {"content": self.cliente.bairro}}]
+            }
+
+        if self.cliente.cidade:
+            self.notion_properties["Cidade"] = {
+                "rich_text": [{"text": {"content": self.cliente.cidade}}]
+            }
+
+        if self.cliente.uf:
+            self.notion_properties["UF"] = {
+                "rich_text": [{"text": {"content": self.cliente.uf.upper()}}]
+            }
+
+        # Status Ativo
+        self.notion_properties["Ativo"] = {"checkbox": bool(self.cliente.ativo)}
+
     def _format_phone(self, phone: str) -> str:
         """
         Formata telefone para padrão internacional.
@@ -1136,8 +1161,7 @@ class DepartamentoSync(models.Model):
         # Propriedades básicas para Notion
         self.notion_properties = {
             "Nome": {"title": [{"text": {"content": self.nome_formatado}}]},
-            "Status": {"select": {"name": self.status_formatado}},
-            "Quantidade de Atendentes": {"number": self.count_atendentes},
+            "Ativo": {"checkbox": bool(self.departamento.ativo)},
         }
 
         if self.descricao_formatada:
@@ -1513,18 +1537,10 @@ class AtendenteHumanoSync(models.Model):
             "Cargo": {
                 "rich_text": [{"text": {"content": self.cargo_formatado}}]
             },
-            "Status": {"select": {"name": self.status_formatado}},
-            "Disponibilidade": {
-                "select": {"name": self.disponibilidade_formatada}
-            },
-            "Carga Atual": {"number": self.carga_atual},
+            "Ativo": {"checkbox": bool(self.atendente.ativo)},
+            "Disponível": {"checkbox": bool(self.atendente.disponivel)},
             "Capacidade Máxima": {"number": self.capacidade_maxima},
         }
-
-        if self.departamento_nome:
-            self.notion_properties["Departamento"] = {
-                "rich_text": [{"text": {"content": self.departamento_nome}}]
-            }
 
         if self.email_formatado:
             self.notion_properties["Email"] = {"email": self.email_formatado}

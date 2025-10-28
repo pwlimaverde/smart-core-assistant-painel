@@ -1,5 +1,4 @@
-"""
-Mapper para conversão de dados do model Cliente (Django ↔ Notion).
+"""Mapper para conversão de dados do model Cliente (Django ↔ Notion).
 
 Este módulo contém a classe responsável por mapear dados do model Cliente
 do Django para o formato de propriedades da API do Notion e vice-versa,
@@ -14,36 +13,11 @@ from ...exceptions import MappingError
 
 
 class ClienteMapper:
-    """
-    Mapper para conversão de dados entre Cliente (Django) e Notion.
-
-    Esta classe implementa métodos para converter dados do model Cliente
-    para o formato esperado pela API do Notion e vice-versa, incluindo
-    formatação de CNPJ, endereços e dados empresariais.
-    """
+    """Mapper para conversão de dados entre Cliente (Django) e Notion."""
 
     @staticmethod
     def to_notion_properties(cliente_sync: Any) -> Dict[str, Any]:
-        """
-        Converte um objeto ClienteSync do Django para propriedades do Notion.
-
-        Este método utiliza os dados pré-processados do ClienteSync para
-        gerar as propriedades no formato esperado pela API do Notion.
-
-        Args:
-            cliente_sync: Instância do model ClienteSync.
-
-        Returns:
-            Dicionário com propriedades formatadas para a API do Notion.
-
-        Raises:
-            MappingError: Se houver erro na conversão dos dados.
-
-        Example:
-            >>> cliente_sync = ClienteSync.objects.get(id=1)
-            >>> properties = ClienteMapper.to_notion_properties(cliente_sync)
-            >>> # Retorna dict com estrutura do Notion
-        """
+        """Converte um objeto ClienteSync do Django para propriedades do Notion."""
         try:
             cliente = cliente_sync.cliente
             properties: Dict[str, Any] = {}
@@ -93,9 +67,6 @@ class ClienteMapper:
                 }
 
             # Relacionamento ManyToMany com Contatos (relation)
-            # Observação: para garantir visualização imediata no database de
-            # Clientes, escrevemos também o lado do Cliente. O Notion espelha
-            # automaticamente, mas algumas contas demoram a refletir.
             try:
                 contatos = cliente.contatos.all()
                 from smart_core_assistant_painel.app.notion_sync.models import (
@@ -111,15 +82,12 @@ class ClienteMapper:
                         if contato_sync.external_id:
                             contatos_ids.append(str(contato_sync.external_id))
                     except ContatoSync.DoesNotExist:
-                        # Sem sync para este contato; ignora
                         continue
 
-                # Enviar sempre (inclusive vazio) para refletir remoções
                 properties["Contatos Relacionados"] = {
                     "relation": [{"id": cid} for cid in contatos_ids]
                 }
             except Exception:
-                # Não bloquear sincronização por erro em relação
                 pass
 
             # CPF (se presente)
@@ -174,6 +142,27 @@ class ClienteMapper:
                         {"type": "text", "text": {"content": cliente.numero}}
                     ]
                 }
+            if getattr(cliente, "bairro", None):
+                properties["Bairro"] = {
+                    "rich_text": [
+                        {"type": "text", "text": {"content": cliente.bairro}}
+                    ]
+                }
+            if getattr(cliente, "cidade", None):
+                properties["Cidade"] = {
+                    "rich_text": [
+                        {"type": "text", "text": {"content": cliente.cidade}}
+                    ]
+                }
+            if getattr(cliente, "uf", None):
+                properties["UF"] = {
+                    "rich_text": [
+                        {"type": "text", "text": {"content": cliente.uf.upper()}}
+                    ]
+                }
+
+            # Ativo (checkbox)
+            properties["Ativo"] = {"checkbox": bool(getattr(cliente, "ativo", True))}
 
             # Observações (se presentes)
             if getattr(cliente, "observacoes", None):
@@ -204,19 +193,12 @@ class ClienteMapper:
 
     @staticmethod
     def from_notion_properties(properties: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Converte propriedades do Notion para formato Django (Cliente).
-
-        Este método extrai dados das propriedades do Notion e os converte
-        para o formato esperado pelo model Cliente do Django.
-        """
+        """Converte propriedades do Notion para formato Django (Cliente)."""
         try:
             data: Dict[str, Any] = {}
 
             # Nome Fantasia (do título)
-            if "Nome Fantasia" in properties and properties[
-                "Nome Fantasia"
-            ].get("title"):
+            if "Nome Fantasia" in properties and properties["Nome Fantasia"].get("title"):
                 title_list = properties["Nome Fantasia"]["title"]
                 if title_list:
                     nome_fantasia = "".join(
@@ -249,9 +231,7 @@ class ClienteMapper:
                             "Pessoa Jurídica": "juridica",
                             "Pessoa Física": "fisica",
                         }
-                        data["tipo"] = tipo_map_reverse.get(
-                            tipo_notion, "juridica"
-                        )
+                        data["tipo"] = tipo_map_reverse.get(tipo_notion, "juridica")
 
             # Site
             if "Site" in properties:
@@ -293,16 +273,52 @@ class ClienteMapper:
                         if val:
                             data["numero"] = val
 
-            # Status (opcional)
+            # Bairro
+            if "Bairro" in properties:
+                bairro_field = properties["Bairro"]
+                if bairro_field.get("rich_text"):
+                    text_list = bairro_field["rich_text"]
+                    if text_list:
+                        bairro = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        ).strip()
+                        if bairro:
+                            data["bairro"] = bairro
+
+            # Cidade
+            if "Cidade" in properties:
+                cidade_field = properties["Cidade"]
+                if cidade_field.get("rich_text"):
+                    text_list = cidade_field["rich_text"]
+                    if text_list:
+                        cidade = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        ).strip()
+                        if cidade:
+                            data["cidade"] = cidade
+
+            # UF
+            if "UF" in properties:
+                uf_field = properties["UF"]
+                if uf_field.get("rich_text"):
+                    text_list = uf_field["rich_text"]
+                    if text_list:
+                        uf = "".join(
+                            item.get("plain_text", "") for item in text_list
+                        ).strip()
+                        if uf:
+                            data["uf"] = uf.upper()
+
+            # Ativo (checkbox)
+            if "Ativo" in properties and isinstance(properties["Ativo"].get("checkbox"), bool):
+                data["ativo"] = properties["Ativo"]["checkbox"]
+
+            # Status (opcional) - mantido para compatibilidade
             if "Status" in properties:
                 status_field = properties["Status"]
                 if status_field.get("select"):
                     status_name = status_field["select"].get("name", "")
-                    data["ativo"] = status_name.lower() in [
-                        "ativo",
-                        "active",
-                        "enabled",
-                    ]
+                    data["ativo"] = status_name.lower() in ["ativo", "active", "enabled"]
 
             # Observações
             if "Observações" in properties:
@@ -321,71 +337,41 @@ class ClienteMapper:
             for campo in datas_campos:
                 if campo in properties:
                     date_field = properties[campo]
-                    if date_field.get("date") and date_field["date"].get(
-                        "start"
-                    ):
+                    if date_field.get("date") and date_field["date"].get("start"):
                         try:
-                            data_iso = date_field["date"]["start"].replace(
-                                "Z", "+00:00"
-                            )
+                            data_iso = date_field["date"]["start"].replace("Z", "+00:00")
                             data_obj = datetime.fromisoformat(data_iso)
 
                             campo_map = {
                                 "Data Cadastro": "data_cadastro",
                                 "Última Atualização": "ultima_atualizacao",
                             }
-                            data[campo_map.get(campo, campo.lower())] = (
-                                data_obj
-                            )
+                            data[campo_map.get(campo, campo.lower())] = data_obj
                         except (ValueError, AttributeError):
-                            pass  # Ignora datas inválidas
+                            pass
 
-            # 🆕 Relacionamento com Contatos (campo relation)
-            # Nota: Se o campo relation existir no Notion, os dados virão formatados
-            # Se não existir, os dados ficam em metadados para referência
-            if (
-                "metadados" in data
-                and "contatos_vinculados" in data["metadados"]
-            ):
-                # Converte de lista para processamento (backup em metadados)
+            # Relacionamento com Contatos
+            if "metadados" in data and "contatos_vinculados" in data["metadados"]:
                 contatos_info = data["metadados"]["contatos_vinculados"]
                 if isinstance(contatos_info, list):
-                    data["metadados"]["contatos_vinculados_lista"] = (
-                        contatos_info
-                    )
-
-                # Processa informações antigas em formato texto (compatibilidade)
+                    data["metadados"]["contatos_vinculados_lista"] = contatos_info
                 elif "contatos_vinculados_notion" in data["metadados"]:
-                    contatos_text = data["metadados"][
-                        "contatos_vinculados_notion"
-                    ]
+                    contatos_text = data["metadados"]["contatos_vinculados_notion"]
                     if contatos_text and "|" in contatos_text:
-                        contatos_info = [
-                            item.strip() for item in contatos_text.split("|")
-                        ]
-                        data["metadados"]["contatos_vinculados_lista"] = (
-                            contatos_info
-                        )
+                        contatos_info = [item.strip() for item in contatos_text.split("|")]
+                        data["metadados"]["contatos_vinculados_lista"] = contatos_info
 
             return data
 
-        except KeyError as e:
+        except Exception as exc:
             raise MappingError(
-                message="Propriedade esperada não encontrada",
-                field_name=str(e),
+                message=f"Erro ao converter propriedades do Notion para Cliente: {exc}",
                 source_value=properties,
-            ) from e
-        except Exception as e:
-            raise MappingError(
-                message=f"Erro ao mapear propriedades do Notion: {str(e)}",
-                source_value=properties,
-            ) from e
+            ) from exc
 
     @staticmethod
     def _format_cnpj(cnpj: str) -> str:
-        """
-        Formata CNPJ para o padrão brasileiro.
-        """
+        """Formata CNPJ para o padrão brasileiro."""
         digits = re.sub(r"\D", "", cnpj)
         if len(digits) == 14:
             return f"{digits[:2]}.{digits[2:5]}.{digits[5:8]}/{digits[8:12]}-{digits[12:14]}"
@@ -393,77 +379,35 @@ class ClienteMapper:
 
     @staticmethod
     def _format_cpf(cpf: str) -> str:
-        """
-        Formata CPF para o padrão brasileiro.
-        """
+        """Formata CPF para o padrão brasileiro."""
         digits = re.sub(r"\D", "", cpf)
         if len(digits) == 11:
             return f"{digits[:3]}.{digits[3:6]}.{digits[6:9]}-{digits[9:11]}"
         return cpf
 
     @staticmethod
-    def validate_for_notion(properties: Dict[str, Any]) -> bool:
-        """
-        Valida se as propriedades são válidas para o Notion.
-        """
-        try:
-            # Verifica campo obrigatório Nome Fantasia
-            if "Nome Fantasia" not in properties or not properties[
-                "Nome Fantasia"
-            ].get("title"):
-                return False
+    def validate_for_notion(cliente_sync: Any) -> list[str]:
+        """Valida se o cliente está pronto para sincronização."""
+        errors: list[str] = []
 
-            # Verifica se há conteúdo no título
-            title_content = properties["Nome Fantasia"]["title"]
-            if not title_content or not any(
-                item.get("text", {}).get("content", "").strip()
-                for item in title_content
-            ):
-                return False
+        if not cliente_sync.cliente.nome_fantasia:
+            errors.append("Nome fantasia é obrigatório")
 
-            # Valida CNPJ se presente
-            if "CNPJ" in properties:
-                cnpj_field = properties["CNPJ"]
-                if cnpj_field.get("rich_text"):
-                    text_list = cnpj_field["rich_text"]
-                    if text_list:
-                        cnpj = "".join(
-                            item.get("plain_text", "") for item in text_list
-                        )
-                        digits = re.sub(r"\D", "", cnpj)
-                        if digits and len(digits) != 14:
-                            return False
+        if cliente_sync.cliente.cnpj:
+            cnpj_limpo = re.sub(r"\D", "", cliente_sync.cliente.cnpj)
+            if len(cnpj_limpo) != 14:
+                errors.append("CNPJ inválido")
 
-            # Valida CPF se presente
-            if "CPF" in properties:
-                cpf_field = properties["CPF"]
-                if cpf_field.get("rich_text"):
-                    text_list = cpf_field["rich_text"]
-                    if text_list:
-                        cpf = "".join(
-                            item.get("plain_text", "") for item in text_list
-                        )
-                        digits = re.sub(r"\D", "", cpf)
-                        if digits and len(digits) != 11:
-                            return False
+        if cliente_sync.cliente.cpf:
+            cpf_limpo = re.sub(r"\D", "", cliente_sync.cliente.cpf)
+            if len(cpf_limpo) != 11:
+                errors.append("CPF inválido")
 
-            # Valida URL do site se presente
-            if "Site" in properties:
-                site = properties["Site"].get("url", "")
-                if site and not (
-                    site.startswith("http://") or site.startswith("https://")
-                ):
-                    return False
-
-            return True
-        except Exception:
-            return False
+        return errors
 
     @staticmethod
     def get_database_schema() -> Dict[str, Any]:
-        """
-        Retorna o schema do database do Notion para Clientes.
-        """
+        """Retorna o schema do database do Notion para Clientes."""
         return {
             "Nome Fantasia": {
                 "title": {},
@@ -496,41 +440,10 @@ class ClienteMapper:
             "CEP": {"rich_text": {}, "description": "CEP do endereço"},
             "Logradouro": {"rich_text": {}, "description": "Logradouro"},
             "Número": {"rich_text": {}, "description": "Número"},
+            "Bairro": {"rich_text": {}, "description": "Bairro do cliente"},
             "Cidade": {"rich_text": {}, "description": "Cidade do cliente"},
-            "UF": {
-                "select": {
-                    "options": [
-                        {"name": "AC"},
-                        {"name": "AL"},
-                        {"name": "AP"},
-                        {"name": "AM"},
-                        {"name": "BA"},
-                        {"name": "CE"},
-                        {"name": "DF"},
-                        {"name": "ES"},
-                        {"name": "GO"},
-                        {"name": "MA"},
-                        {"name": "MT"},
-                        {"name": "MS"},
-                        {"name": "MG"},
-                        {"name": "PA"},
-                        {"name": "PB"},
-                        {"name": "PR"},
-                        {"name": "PE"},
-                        {"name": "PI"},
-                        {"name": "RJ"},
-                        {"name": "RN"},
-                        {"name": "RS"},
-                        {"name": "RO"},
-                        {"name": "RR"},
-                        {"name": "SC"},
-                        {"name": "SP"},
-                        {"name": "SE"},
-                        {"name": "TO"},
-                    ]
-                },
-                "description": "Estado (UF)",
-            },
+            "UF": {"rich_text": {}, "description": "Estado (UF) do cliente"},
+            "Ativo": {"checkbox": {}, "description": "Status de atividade do cliente"},
             "País": {
                 "rich_text": {},
                 "description": "País (se não for Brasil)",
@@ -559,15 +472,8 @@ class ClienteMapper:
                 "rich_text": {},
                 "description": "Observações adicionais",
             },
-            # 🆕 Campo para relacionamento com Contatos (relation)
             "Contatos Relacionados": {
                 "relation": {},
-                "description": "Contatos vinculados a este cliente (campo relation)",
+                "description": "Contatos vinculados a este cliente",
             },
-            # 📝 LEGADO: Mantido para compatibilidade com implementação anterior
-            # Se preferir usar rich_text em vez de relation, descomente:
-            # "Contatos Vinculados": {
-            #     "rich_text": {},
-            #     "description": "IDs e nomes dos contatos vinculados (formato: id:nome | id2:nome2)"
-            # }
         }

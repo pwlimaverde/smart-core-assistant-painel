@@ -242,5 +242,4 @@ class DepartamentoMapper:
             "Ativo": {"checkbox": {}},
             "Data Criação": {"date": {}},
             "Atendentes Relacionados": {"relation": {}},
-            "Observações": {"rich_text": {}},
         }

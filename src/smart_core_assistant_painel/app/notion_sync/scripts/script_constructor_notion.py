@@ -97,6 +97,10 @@ class NotionClientesDatabaseConstructor:
             "CEP": {"rich_text": {}},
             "Logradouro": {"rich_text": {}},
             "Número": {"rich_text": {}},
+            "Bairro": {"rich_text": {}},
+            "Cidade": {"rich_text": {}},
+            "UF": {"rich_text": {}},
+            "Ativo": {"checkbox": {}},
         }
 
         parameters = {
@@ -624,23 +628,8 @@ class NotionOperacionalDatabaseConstructor:
         properties = {
             "Nome": {"title": {}},
             "Descrição": {"rich_text": {}},
-            "Setor": {
-                "select": {
-                    "options": [
-                        {"name": "suporte", "color": "blue"},
-                        {"name": "vendas", "color": "green"},
-                        {"name": "financeiro", "color": "yellow"},
-                        {"name": "marketing", "color": "purple"},
-                        {"name": "ti", "color": "red"},
-                    ]
-                }
-            },
-            "Responsável": {"rich_text": {}},
-            "Telefone Interno": {"phone_number": {}},
-            "Email Interno": {"email": {}},
             "Ativo": {"checkbox": {}},
             "Data Criação": {"date": {}},
-            "Observações": {"rich_text": {}},
         }
 
         parameters = {
@@ -691,23 +680,10 @@ class NotionOperacionalDatabaseConstructor:
             "Email": {"email": {}},
             "Telefone": {"phone_number": {}},
             "Cargo": {"rich_text": {}},
-            "Matrícula": {"rich_text": {}},
             "Ativo": {"checkbox": {}},
-            "Data Admissão": {"date": {}},
-            "Setor": {
-                "select": {
-                    "options": [
-                        {"name": "suporte", "color": "blue"},
-                        {"name": "vendas", "color": "green"},
-                        {"name": "financeiro", "color": "yellow"},
-                        {"name": "marketing", "color": "purple"},
-                        {"name": "ti", "color": "red"},
-                    ]
-                }
-            },
-            "Especialidade": {"rich_text": {}},
+            "Disponível": {"checkbox": {}},
+            "Capacidade Máxima": {"number": {"format": "number"}},
             "Horário Trabalho": {"rich_text": {}},
-            # Propriedade relation apontando para Departamentos
             "Departamentos Relacionados": {
                 "relation": {
                     "data_source_id": departamento_data_source_id,

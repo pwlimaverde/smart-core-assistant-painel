@@ -91,45 +91,44 @@ class ContatoMapper:
                 }
 
             # Relacionamento ManyToMany com Clientes
+            # Sempre enviar o campo relation, inclusive vazio, para que
+            # remoções sejam refletidas imediatamente no Notion.
             try:
                 empresas_vinculadas = contato.clientes.all()
-                if empresas_vinculadas.exists():
-                    # Prepara lista de empresas para o campo relation
-                    empresas_ids = []
-                    empresas_nomes = [
-                        cliente.nome_fantasia
+
+                # Busca external_ids dos clientes sincronizados
+                from smart_core_assistant_painel.app.notion_sync.models import (
+                    ClienteSync,
+                )
+
+                empresas_ids: list[str] = []
+                for cliente in empresas_vinculadas:
+                    try:
+                        cliente_sync = ClienteSync.objects.get(
+                            cliente_id=cliente.id
+                        )
+                        if cliente_sync.external_id:
+                            empresas_ids.append(str(cliente_sync.external_id))
+                    except ClienteSync.DoesNotExist:
+                        # Sem sync para este cliente; ignora
+                        continue
+                    except Exception:
+                        # Falha ao coletar id; segue com os demais
+                        continue
+
+                properties["Clientes Relacionados"] = {
+                    "relation": [{"id": emp_id} for emp_id in empresas_ids]
+                }
+
+                # Metadados de backup (opcional)
+                try:
+                    contato_sync.metadados["empresas_vinculadas"] = [
+                        f"{cliente.id}:{cliente.nome_fantasia}"
                         for cliente in empresas_vinculadas
                     ]
-
-                    # Busca external_ids dos clientes sincronizados
-                    from smart_core_assistant_painel.app.notion_sync.models import (
-                        ClienteSync,
-                    )
-
-                    for cliente in empresas_vinculadas:
-                        try:
-                            cliente_sync = ClienteSync.objects.get(
-                                cliente_id=cliente.id
-                            )
-                            if cliente_sync.external_id:
-                                empresas_ids.append(cliente_sync.external_id)
-                        except ClienteSync.DoesNotExist:
-                            # Se não tem sync, pula este cliente
-                            continue
-
-                    if empresas_ids:
-                        # Usa campo relation nativo do Notion (se existir)
-                        properties["Clientes Relacionados"] = {
-                            "relation": [
-                                {"id": emp_id} for emp_id in empresas_ids
-                            ]
-                        }
-
-                        # Armazena informações adicionais em metadados (backup)
-                        contato_sync.metadados["empresas_vinculadas"] = [
-                            f"{cliente.id}:{cliente.nome_fantasia}"
-                            for cliente in empresas_vinculadas
-                        ]
+                except Exception:
+                    # Não bloquear por erro em metadados
+                    pass
             except Exception as e:
                 # Log silencioso para não quebrar sincronização principal
                 print(

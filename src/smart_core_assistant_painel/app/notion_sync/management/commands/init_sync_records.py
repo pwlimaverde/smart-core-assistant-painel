@@ -11,12 +11,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from loguru import logger
 
-from ...models import (
-    AtendenteSync,
-    DepartamentoSync,
-    NotionDatabaseConfig,
-)
-from ....ui.operacional.models import Atendente, Departamento
+
 
 
 class Command(BaseCommand):

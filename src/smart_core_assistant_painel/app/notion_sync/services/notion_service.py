@@ -53,15 +53,17 @@ class NotionSyncService(ExternalSyncServiceInterface):
         1. NotionDatabaseConfig (banco de dados Django)
 
         Raises:
-            SyncConfigError: Se configurações necessárias estão ausentes.
+            SyncError: Se configurações necessárias estão ausentes.
         """
         # Lê token do .env
         self.token = config("NOTION_TOKEN", default=None)
         if not self.token:
-            raise SyncConfigError(
+            raise SyncError(
                 message="Token do Notion não encontrado",
-                config_key="NOTION_TOKEN",
-                details={"message": "Configure NOTION_TOKEN no arquivo .env"},
+                details={
+                    "config_key": "NOTION_TOKEN",
+                    "hint": "Configure NOTION_TOKEN no arquivo .env",
+                },
             )
 
         # Inicializa cliente do Notion
@@ -69,9 +71,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             self.client = NotionAsyncClient(auth=self.token)
             logger.info("Cliente do Notion inicializado com sucesso")
         except Exception as e:
-            raise SyncConfigError(
+            raise SyncError(
                 message=f"Erro ao inicializar cliente do Notion: {str(e)}",
-                config_key="NOTION_TOKEN",
+                details={"config_key": "NOTION_TOKEN"},
             ) from e
 
         # Busca database IDs do NotionDatabaseConfig (preferencial)
@@ -82,7 +84,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Contato": "ui.clientes.Contato",
             "Cliente": "ui.clientes.Cliente",
             "Departamento": "ui.operacional.Departamento",
-            "AtendenteHumano": "ui.operacional.AtendenteHumano",
+            "Atendente": "ui.operacional.Atendente",
         }
 
         for simple_name, full_name in model_mapping.items():
@@ -102,7 +104,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Contato": ContatoMapper,
             "Cliente": ClienteMapper,
             "Departamento": DepartamentoMapper,
-            "AtendenteHumano": AtendenteMapper,
+            "Atendente": AtendenteMapper,
         }
 
     def _run(self, coro):
@@ -134,8 +136,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             ID da página criada no Notion (page_id).
 
         Raises:
-            SyncConfigError: Se database ID não está configurado.
-            NotionSyncError: Se houver erro na API do Notion.
+            NotionSyncError: Se database ID não está configurado ou erro na API.
             MappingError: Se houver erro no mapeamento de dados.
         """
         database_id = self.get_database_id(model_name)
@@ -399,8 +400,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
             True se a conexão está válida e funcional.
 
         Raises:
-            SyncConfigError: Se credenciais são inválidas.
-            SyncError: Se houver erro na validação.
+            SyncError: Se credenciais são inválidas ou houver erro na validação.
         """
         try:
             logger.info("Validando conexão com o Notion...")
@@ -413,10 +413,12 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 )
             except APIResponseError as e:
                 if e.status == 401:
-                    raise Exception(
+                    raise SyncError(
                         message="Token do Notion inválido ou expirado",
-                        config_key="NOTION_TOKEN",
-                        details={"error": str(e)},
+                        details={
+                            "config_key": "NOTION_TOKEN",
+                            "error": str(e),
+                        },
                     )
                 raise
 
@@ -443,9 +445,6 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
             logger.success("✅ Validação concluída - Conexão OK")
             return True
-
-        except SyncConfigError:
-            raise
 
         except Exception as e:
             logger.error(f"❌ Erro ao validar conexão: {e}")

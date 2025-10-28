@@ -136,18 +136,18 @@ class Command(BaseCommand):
                 self.style.WARNING(f"⚠ Configuração já existe: {config.name}")
             )
 
-    def _setup_atendente_humano_database(
+    def _setup_atendente_database(
         self, database_id: str, data_source_id: str, update: bool
     ) -> None:
         """
-        Configura a database de Atendentes Humanos.
+        Configura a database de Atendentes.
 
         Args:
             database_id: ID da database no Notion.
             data_source_id: ID do data source.
             update: Se deve atualizar configurações existentes.
         """
-        self.stdout.write("Configurando database de Atendentes Humanos...")
+        self.stdout.write("Configurando database de Atendentes...")
 
         # Obtém schema do mapper
         schema = AtendenteMapper.get_notion_schema()

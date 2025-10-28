@@ -140,7 +140,7 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteSync:
         atendente_id: ID do atendente no Django.
 
     Returns:
-        Instância do AtendenteHumanoSync.
+        Instância do AtendenteSync.
     """
     from .models import AtendenteSync, NotionDatabaseConfig
 
@@ -881,7 +881,7 @@ def on_atendente_deleted(
     return
 
 
-# Signals para AtendenteHumano
+# Signals para Atendente
 @receiver(post_save, sender=Atendente)
 def on_atendente_saved(
     sender: type[Atendente],
@@ -972,7 +972,7 @@ def on_atendente_pre_delete(
         ).first()
         if sync_record and sync_record.external_id:
             service = NotionSyncService()
-            service.delete_record("AtendenteHumano", sync_record.external_id)
+            service.delete_record("Atendente", sync_record.external_id)
             logger.info(
                 f"Atendente #{instance.id} arquivado no Notion "
                 f"(external_id: {sync_record.external_id})"
@@ -1008,7 +1008,7 @@ def on_atendente_pre_delete(
         )
 
 
-# Signal para capturar mudança de departamento no AtendenteHumano
+# Signal para capturar mudança de departamento no Atendente
 @receiver(pre_save, sender=Atendente)
 def on_atendente_pre_save(
     sender: type[Atendente], instance: Atendente, **kwargs: Any
@@ -1020,9 +1020,9 @@ def on_atendente_pre_save(
     """
     if instance.pk:
         try:
-            original = AtendenteHumano.objects.get(pk=instance.pk)
+            original = Atendente.objects.get(pk=instance.pk)
             instance._original_departamento_id = original.departamento_id
-        except AtendenteHumano.DoesNotExist:
+        except Atendente.DoesNotExist:
             instance._original_departamento_id = None
     else:
         instance._original_departamento_id = None

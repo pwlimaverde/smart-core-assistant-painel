@@ -172,9 +172,21 @@ start-server = "smart_core_assistant_painel.main:main"
 base = "python scripts/new_feature_script.py --type base"
 call-data = "python scripts/new_feature_script.py --type call_data"
 
+# Servidor Django - Local
+start = "python -m smart_core_assistant_painel.main runserver"
+server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
+cluster = "python -m smart_core_assistant_painel.main qcluster"
+start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 split-pane -V -d $proj powershell -NoExit -Command 'uv run task cluster' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster' }\""
 
+# Docker commands
 
-
+start-docker = "docker compose up -d"
+down-docker = "docker compose down"
+pause-docker = "docker compose pause"
+unpause-docker = "docker compose unpause"
+restart-docker = "docker compose down && docker compose up -d --build"
+logs-docker = "docker compose logs -f django-app"
+logs-cluster-docker = "docker compose logs -f django-qcluster"
 
 # Comandos Django úteis - Local
 migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
@@ -219,3 +231,4 @@ dev-setup = "uv sync --dev && uv run task migrate"
 dev-setup-docker = "docker compose up -d --build"
 # Reset do banco de dados
 reset-db = "python scripts/database_reset/reset_database.py"
+init-sync-records = "python src/smart_core_assistant_painel/app/notion_sync/management/commands/init_sync_records.py"

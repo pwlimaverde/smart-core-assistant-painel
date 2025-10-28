@@ -77,10 +77,10 @@ class DepartamentoMapper:
             try:
                 from django.db.models import Q
                 from smart_core_assistant_painel.app.notion_sync.models import (
-                    AtendenteHumanoSync,
+                    AtendenteSync,
                 )
 
-                relacionados = AtendenteHumanoSync.objects.filter(
+                relacionados = AtendenteSync.objects.filter(
                     Q(departamento_sync=departamento_sync)
                     | Q(atendente__departamento=departamento_sync.departamento)
                 )
@@ -99,22 +99,7 @@ class DepartamentoMapper:
                     f"departamento: {e}"
                 )
 
-            # Observações (Rich Text)
-            if departamento.descricao:
-                properties["Observações"] = {
-                    "rich_text": [
-                        {"text": {"content": departamento.descricao}}
-                    ]
-                }
-            elif departamento.metadados:
-                import json
 
-                observacoes = json.dumps(
-                    departamento.metadados, ensure_ascii=False
-                )
-                properties["Observações"] = {
-                    "rich_text": [{"text": {"content": observacoes}}]
-                }
 
             return properties
 

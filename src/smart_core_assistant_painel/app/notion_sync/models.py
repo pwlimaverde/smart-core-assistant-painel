@@ -1452,13 +1452,13 @@ class AtendenteSync(models.Model):
         Prepara e formata os dados para sincronização com Notion.
         """
         try:
-            from .services.mappers.atendente_humano_mapper import (
-                AtendenteHumanoMapper,
+            from .services.mappers.atendente_mapper import (
+                AtendenteMapper,
             )
 
             # Usa mapper para transformar dados
             self.notion_properties = (
-                AtendenteHumanoMapper.to_notion_properties(self)
+                AtendenteMapper.to_notion_properties(self)
             )
 
             # Formata campos específicos

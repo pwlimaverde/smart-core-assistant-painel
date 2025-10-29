@@ -195,16 +195,71 @@ def get_or_create_atendimento_sync(atendimento_id: int) -> AtendimentoSync:
 def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
     """
     Obtém ou cria registro MensagemSync para uma mensagem.
+
+    Comentário: Este helper garante que os campos obrigatórios
+    (atendimento_sync, conteudo_formatado, remetente_formatado)
+    sejam preenchidos na criação, evitando violações de NOT NULL.
     """
+    from typing import Any
     from .models import MensagemSync, NotionDatabaseConfig
+    from smart_core_assistant_painel.app.ui.atendimentos.models import (
+        Mensagem as MensagemModel,
+    )
+
     config = NotionDatabaseConfig.objects.get(slug="ui_atendimentos_mensagem")
-    sync, created = MensagemSync.objects.get_or_create(
+
+    mensagem_obj: MensagemModel | None = (
+        MensagemModel.objects.filter(id=mensagem_id).select_related("atendimento")
+        .first()
+    )
+
+    # Fallback defensivo caso mensagem não exista (não esperado)
+    if not mensagem_obj:
+        sync, _ = MensagemSync.objects.get_or_create(
+            mensagem_id=mensagem_id,
+            defaults={
+                "external_id": None,
+                "sync_status": "pending",
+                "config": config,
+                # Preenche mínimos para evitar falha
+                "conteudo_formatado": "",
+                "remetente_formatado": "Sistema",
+            },
+        )
+        return sync
+
+    # Garante que o atendimento_sync exista
+    atendimento_sync = get_or_create_atendimento_sync(
+        mensagem_obj.atendimento_id
+    )
+
+    # Formatação básica
+    conteudo: str = mensagem_obj.conteudo or ""
+    if mensagem_obj.remetente == "cliente" and mensagem_obj.atendimento \
+            and mensagem_obj.atendimento.contato:
+        remetente_formatado: str = (
+            mensagem_obj.atendimento.contato.nome_contato or "Cliente"
+        )
+    elif mensagem_obj.remetente == "atendente" and mensagem_obj.atendimento \
+            and mensagem_obj.atendimento.atendente_humano:
+        remetente_formatado = (
+            mensagem_obj.atendimento.atendente_humano.nome or "Atendente"
+        )
+    else:
+        remetente_formatado = "Sistema"
+
+    defaults: dict[str, Any] = {
+        "external_id": None,
+        "sync_status": "pending",
+        "config": config,
+        "atendimento_sync": atendimento_sync,
+        "conteudo_formatado": conteudo,
+        "remetente_formatado": remetente_formatado,
+    }
+
+    sync, _ = MensagemSync.objects.get_or_create(
         mensagem_id=mensagem_id,
-        defaults={
-            "external_id": None,
-            "sync_status": "pending",
-            "config": config,
-        },
+        defaults=defaults,
     )
     return sync
 

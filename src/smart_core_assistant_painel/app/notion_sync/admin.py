@@ -175,7 +175,9 @@ class AtendimentoSyncAdmin(BaseSyncAdmin):
     ordering = ("-updated_at",)
 
     def atendimento_info(self, obj: AtendimentoSync) -> str:
-        return obj.atendimento.protocolo or f"Atendimento #{obj.atendimento.id}"
+        # Usa getattr para evitar AttributeError caso protocolo não exista
+        protocolo = getattr(obj.atendimento, "protocolo", None)
+        return protocolo or f"Atendimento #{obj.atendimento.id}"
 
     atendimento_info.short_description = "Atendimento"
 

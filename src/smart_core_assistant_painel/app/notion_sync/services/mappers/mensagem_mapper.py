@@ -49,6 +49,35 @@ class MensagemMapper:
 
         header = f"{remetente_nome} ({remetente}) em {timestamp}:\n"
 
+        # Comentários: incluir dados de IA (intenção e entidades) se existirem
+        intent_text = ""
+        if mensagem.intent_detectado:
+            try:
+                partes = []
+                for item in mensagem.intent_detectado:
+                    tipo = str(item.get("type", "")).strip()
+                    valor = str(item.get("value", "")).strip()
+                    if tipo or valor:
+                        partes.append(f"{tipo}: {valor}".strip(": "))
+                if partes:
+                    intent_text = "\nIntenção: " + "; ".join(partes)
+            except Exception:
+                intent_text = ""
+
+        entidades_text = ""
+        if mensagem.entidades_extraidas:
+            try:
+                partes_ent = []
+                for ent in mensagem.entidades_extraidas:
+                    etipo = str(ent.get("type", "")).strip()
+                    evalor = str(ent.get("value", "")).strip()
+                    if etipo or evalor:
+                        partes_ent.append(f"{etipo}: {evalor}".strip(": "))
+                if partes_ent:
+                    entidades_text = "\nEntidades: " + "; ".join(partes_ent)
+            except Exception:
+                entidades_text = ""
+
         block = {
             "object": "block",
             "type": "callout",
@@ -63,6 +92,28 @@ class MensagemMapper:
                         "type": "text",
                         "text": {"content": mensagem.conteudo},
                     },
+                    *(
+                        [
+                            {
+                                "type": "text",
+                                "text": {"content": intent_text},
+                                "annotations": {"italic": True},
+                            }
+                        ]
+                        if intent_text
+                        else []
+                    ),
+                    *(
+                        [
+                            {
+                                "type": "text",
+                                "text": {"content": entidades_text},
+                                "annotations": {"italic": True},
+                            }
+                        ]
+                        if entidades_text
+                        else []
+                    ),
                 ],
                 "icon": icon,
                 "color": color,

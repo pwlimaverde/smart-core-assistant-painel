@@ -567,20 +567,21 @@ def inicializar_atendimento_whatsapp(
             if atualizado:
                 contato.save()
 
+        # Estados considerados "ativos" para reaproveitar atendimento existente
         atendimento_ativo = Atendimento.objects.filter(
             contato=contato,
             status__in=[
-                StatusAtendimento.AGUARDANDO_INICIAL,
-                StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CONTATO,
-                StatusAtendimento.AGUARDANDO_ATENDENTE,
+                StatusAtendimento.FILA,
+                StatusAtendimento.EM_ATENDIMENTO,
+                StatusAtendimento.AGUARDANDO_RETORNO,
             ],
         ).first()
 
         if not atendimento_ativo:
+            # Status inicial agora é FILA, aguardando atendimento
             atendimento = Atendimento.objects.create(
                 contato=contato,
-                status=StatusAtendimento.EM_ANDAMENTO,
+                status=StatusAtendimento.FILA,
                 contexto_conversa={
                     "canal": "whatsapp",
                     "primeira_interacao": True,
@@ -588,8 +589,8 @@ def inicializar_atendimento_whatsapp(
                 },
             )
             atendimento.adicionar_historico_status(
-                StatusAtendimento.EM_ANDAMENTO,
-                "Atendimento iniciado via WhatsApp",
+                StatusAtendimento.FILA.value,
+                "Atendimento iniciado via WhatsApp (fila)",
             )
         else:
             atendimento = atendimento_ativo
@@ -618,10 +619,9 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional[Atendimento]:
         atendimento = Atendimento.objects.filter(
             contato=contato,
             status__in=[
-                StatusAtendimento.AGUARDANDO_INICIAL,
-                StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CONTATO,
-                StatusAtendimento.AGUARDANDO_ATENDENTE,
+                StatusAtendimento.FILA,
+                StatusAtendimento.EM_ATENDIMENTO,
+                StatusAtendimento.AGUARDANDO_RETORNO,
             ],
         ).first()
 
@@ -681,10 +681,12 @@ def processar_mensagem_whatsapp(
             atendimento.contato.ultima_interacao = timezone.now()
             atendimento.contato.save()
 
-            if atendimento.status in StatusAtendimento.AGUARDANDO_INICIAL:
-                atendimento.status = StatusAtendimento.EM_ANDAMENTO
+            # Se estava em FILA e recebeu a primeira mensagem,
+            # transiciona para EM_ATENDIMENTO
+            if atendimento.status == StatusAtendimento.FILA:
+                atendimento.status = StatusAtendimento.EM_ATENDIMENTO
                 atendimento.adicionar_historico_status(
-                    "em_andamento",
+                    StatusAtendimento.EM_ATENDIMENTO.value,
                     "Primeira mensagem recebida",
                 )
                 atendimento.save()

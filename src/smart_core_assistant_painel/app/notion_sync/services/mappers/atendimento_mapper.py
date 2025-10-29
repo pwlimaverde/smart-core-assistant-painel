@@ -24,7 +24,8 @@ class AtendimentoMapper:
         Retorna o schema da database de Atendimentos para o Notion.
         """
         return {
-            "Protocolo": {"title": {}},
+            # Assunto como título principal
+            "Assunto": {"title": {}},
             "Status": {
                 "select": {
                     "options": [
@@ -56,7 +57,8 @@ class AtendimentoMapper:
                     ]
                 }
             },
-            "Assunto": {"rich_text": {}},
+            # Novo campo para contexto da conversa
+            "Contexto Conversa": {"rich_text": {}},
             "Tags": {"multi_select": {"options": []}}, # Options podem ser adicionadas dinamicamente
             "Data de Abertura": {"date": {}},
             "Última Mensagem": {"date": {}},
@@ -69,58 +71,120 @@ class AtendimentoMapper:
     @staticmethod
     def to_notion_properties(sync_instance: "AtendimentoSync") -> dict:
         """
-        Converte uma instância de AtendimentoSync para o formato de propriedades
-        da API do Notion.
+        Converte uma instância de AtendimentoSync para o formato de
+        propriedades da API do Notion, alinhando os nomes às chaves
+        definidas em field_mappings da NotionDatabaseConfig.
         """
         atendimento = sync_instance.atendimento
 
-        properties = {
-            "Protocolo": {
-                "title": [{"text": {"content": atendimento.protocolo or f"Atendimento #{atendimento.id}"}}]
-            },
-            "Status": {
-                "select": {"name": atendimento.get_status_display()}
-            },
-            "Prioridade": {
-                "select": {"name": atendimento.get_prioridade_display()}
-            },
-            "Canal": {
-                "select": {"name": atendimento.get_canal_display()}
-            },
-            "Assunto": {
-                "rich_text": [{"text": {"content": atendimento.assunto or ""}}]
-            },
-            "Tags": {
-                "multi_select": [{"name": tag} for tag in atendimento.tags]
-            },
-            "Data de Abertura": {
-                "date": {"start": atendimento.data_inicio.isoformat()}
-            },
-            "Última Mensagem": {
-                "date": {"start": atendimento.data_ultima_mensagem.isoformat()}
-                if atendimento.data_ultima_mensagem
-                else None
-            },
+        # Carrega mapeamento dinâmico de nomes das propriedades
+        config = getattr(sync_instance, "config", None)
+        field_mappings: dict = {}
+        if config and getattr(config, "field_mappings", None):
+            field_mappings = config.field_mappings or {}
+
+        def key(django_field: str, default: str) -> str:
+            return field_mappings.get(django_field, default)
+
+        status_key = key("status", "Status")
+        prioridade_key = key("prioridade", "Prioridade")
+        canal_key = key("canal", "Canal")
+        assunto_key = key("assunto", "Assunto")
+        contexto_key = key("contexto_conversa", "Contexto Conversa")
+        tags_key = key("tags", "Tags")
+        data_inicio_key = key("data_inicio", "Data Início")
+        data_fim_key = key("data_fim", "Data Fim")
+        ultima_msg_key = key(
+            "data_ultima_mensagem", "Data Última Mensagem"
+        )
+        contato_key = key("contato", "Contato")
+        departamento_key = key("departamento", "Departamento")
+        atendente_key = key("atendente_humano", "Atendente")
+
+        # Usa valores dos enums (em minúsculo), para casar com opções
+        status_value = str(getattr(atendimento, "status", "")).lower()
+        prioridade_value = str(getattr(atendimento, "prioridade", "")).lower()
+        canal_value = str(getattr(atendimento, "canal", "")).lower()
+
+        properties: dict = {}
+
+        # Título: Assunto
+        properties[assunto_key] = {
+            "title": [
+                {
+                    "text": {
+                        "content": atendimento.assunto or f"Atendimento #{atendimento.id}"
+                    }
+                }
+            ]
         }
 
-        if atendimento.data_fim:
-            properties["Data de Fechamento"] = {
+        # Selects (usar valores minúsculos)
+        if status_value:
+            properties[status_key] = {"select": {"name": status_value}}
+        if prioridade_value:
+            properties[prioridade_key] = {
+                "select": {"name": prioridade_value}
+            }
+        if canal_value:
+            properties[canal_key] = {"select": {"name": canal_value}}
+
+        # Contexto Conversa (rich text) e Tags (multi-select)
+        properties[contexto_key] = {
+            "rich_text": [
+                {"text": {"content": getattr(atendimento, "contexto_conversa", "")}}
+            ]
+        }
+        properties[tags_key] = {
+            "multi_select": [{"name": tag} for tag in getattr(atendimento, "tags", [])]
+        }
+
+        # Datas: usar nomes corretos do schema
+        properties[data_inicio_key] = {
+            "date": {"start": atendimento.data_inicio.isoformat()}
+        }
+
+        if getattr(atendimento, "data_ultima_mensagem", None):
+            properties[ultima_msg_key] = {
+                "date": {
+                    "start": atendimento.data_ultima_mensagem.isoformat()
+                }
+            }
+
+        if getattr(atendimento, "data_fim", None):
+            properties[data_fim_key] = {
                 "date": {"start": atendimento.data_fim.isoformat()}
             }
 
-        if sync_instance.contato_sync and sync_instance.contato_sync.external_id:
-            properties["Contato"] = {
-                "relation": [{"id": sync_instance.contato_sync.external_id}]
+        # Relações: só incluir se houver external_id
+        if (
+            getattr(sync_instance, "contato_sync", None)
+            and sync_instance.contato_sync.external_id
+        ):
+            properties[contato_key] = {
+                "relation": [
+                    {"id": sync_instance.contato_sync.external_id}
+                ]
             }
 
-        if sync_instance.departamento_sync and sync_instance.departamento_sync.external_id:
-            properties["Departamento"] = {
-                "relation": [{"id": sync_instance.departamento_sync.external_id}]
+        if (
+            getattr(sync_instance, "departamento_sync", None)
+            and sync_instance.departamento_sync.external_id
+        ):
+            properties[departamento_key] = {
+                "relation": [
+                    {"id": sync_instance.departamento_sync.external_id}
+                ]
             }
 
-        if sync_instance.atendente_sync and sync_instance.atendente_sync.external_id:
-            properties["Atendente"] = {
-                "relation": [{"id": sync_instance.atendente_sync.external_id}]
+        if (
+            getattr(sync_instance, "atendente_sync", None)
+            and sync_instance.atendente_sync.external_id
+        ):
+            properties[atendente_key] = {
+                "relation": [
+                    {"id": sync_instance.atendente_sync.external_id}
+                ]
             }
 
         return properties

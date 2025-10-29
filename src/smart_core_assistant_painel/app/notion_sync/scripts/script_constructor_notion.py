@@ -60,6 +60,8 @@ load_dotenv()
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 # Configurar Django
+# Bypass de serviços ao rodar este script: evita Firebase/WhatsApp.
+os.environ.setdefault("DISABLE_APP_SERVICES_INIT", "1")
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
     "smart_core_assistant_painel.app.ui.core.settings",
@@ -228,11 +230,22 @@ class NotionClientesDatabaseConstructor:
             )
 
             def _prop_id(db_info: Dict[str, Any], name: str) -> Optional[str]:
-                props: Dict[str, Any] = db_info.get("properties", {})
-                prop = props.get(name)
-                if not prop:
+                """Obtém o ID da propriedade por nome, priorizando data_sources.
+
+                Comentários em Português conforme padrão do projeto.
+                """
+                # Primeiro tenta dentro de cada data_source
+                for ds in (db_info.get("data_sources") or []):
+                    props_ds: Dict[str, Any] = ds.get("properties", {})
+                    prop_ds = props_ds.get(name)
+                    if prop_ds:
+                        return prop_ds.get("id") or getattr(prop_ds, "id", None)
+                # Fallback para propriedades raiz
+                props_root: Dict[str, Any] = db_info.get("properties", {})
+                prop_root = props_root.get(name)
+                if not prop_root:
                     return None
-                return prop.get("id") or getattr(prop, "id", None)
+                return prop_root.get("id") or getattr(prop_root, "id", None)
 
             clientes_rel_prop_id = _prop_id(
                 contato_db_info, "Clientes Relacionados"
@@ -309,8 +322,8 @@ class NotionClientesDatabaseConstructor:
             # Criar página de cliente exemplo via endpoint /pages
             cliente_page_body = {
                 "parent": {
-                    "type": "database_id",
-                    "database_id": cliente_db.id,
+                    "type": "data_source_id",
+                    "data_source_id": cliente_data_source_id,
                 },
                 "properties": cliente_page_params["properties"],
             }
@@ -336,8 +349,8 @@ class NotionClientesDatabaseConstructor:
             }
             contato_page_body = {
                 "parent": {
-                    "type": "database_id",
-                    "database_id": contato_db.id,
+                    "type": "data_source_id",
+                    "data_source_id": contato_data_source_id,
                 },
                 "properties": contato_properties,
             }
@@ -768,11 +781,17 @@ class NotionOperacionalDatabaseConstructor:
             )
 
             def _prop_id(db_info: Dict[str, Any], name: str) -> Optional[str]:
-                props: Dict[str, Any] = db_info.get("properties", {})
-                prop = props.get(name)
-                if not prop:
+                """Obtém o ID da propriedade por nome, priorizando data_sources."""
+                for ds in (db_info.get("data_sources") or []):
+                    props_ds: Dict[str, Any] = ds.get("properties", {})
+                    prop_ds = props_ds.get(name)
+                    if prop_ds:
+                        return prop_ds.get("id") or getattr(prop_ds, "id", None)
+                props_root: Dict[str, Any] = db_info.get("properties", {})
+                prop_root = props_root.get(name)
+                if not prop_root:
                     return None
-                return prop.get("id") or getattr(prop, "id", None)
+                return prop_root.get("id") or getattr(prop_root, "id", None)
 
             dep_rel_prop_id = _prop_id(
                 atendente_db_info, "Departamentos Relacionados"
@@ -852,8 +871,8 @@ class NotionOperacionalDatabaseConstructor:
             # Criar página de departamento exemplo via endpoint /pages
             departamento_page_body = {
                 "parent": {
-                    "type": "database_id",
-                    "database_id": departamento_db.id,
+                    "type": "data_source_id",
+                    "data_source_id": departamento_data_source_id,
                 },
                 "properties": departamento_page_params["properties"],
             }
@@ -885,8 +904,8 @@ class NotionOperacionalDatabaseConstructor:
             }
             atendente_page_body = {
                 "parent": {
-                    "type": "database_id",
-                    "database_id": atendente_db.id,
+                    "type": "data_source_id",
+                    "data_source_id": atendente_data_source_id,
                 },
                 "properties": atendente_properties,
             }
@@ -1224,7 +1243,8 @@ class NotionAtendimentosDatabaseConstructor:
 
         # Propriedades básicas para Atendimentos (sem relacionamentos iniciais)
         properties = {
-            "Protocolo": {"title": {}},
+            # Assunto passa a ser o título principal
+            "Assunto": {"title": {}},
             "Status": {
                 "select": {
                     "options": [
@@ -1246,7 +1266,8 @@ class NotionAtendimentosDatabaseConstructor:
                     ]
                 }
             },
-            "Assunto": {"rich_text": {}},
+            # Novo campo de contexto da conversa
+            "Contexto Conversa": {"rich_text": {}},
             "Data Início": {"date": {}},
             "Data Fim": {"date": {}},
             "Data Última Mensagem": {"date": {}},
@@ -1319,6 +1340,9 @@ class NotionAtendimentosDatabaseConstructor:
                     },
                 }
             },
+            # Campos de IA adicionais
+            "Intenção Detectada": {"rich_text": {}},
+            "Entidades Extraídas": {"rich_text": {}},
             "Tipo": {
                 "select": {
                     "options": [
@@ -1388,12 +1412,18 @@ class NotionAtendimentosDatabaseConstructor:
     async def add_all_relations_to_atendimento_database(
         self, mensagem_db: Any, atendimento_db: Any
     ) -> None:
-        """Adiciona todos os campos de relacionamento na database de Atendimentos."""
+        """
+        Adiciona todos os relacionamentos na database de Atendimentos e
+        cria as propriedades reversas em Contatos, Departamentos e
+        Atendentes.
+
+        Comentários em Português conforme padrão do projeto.
+        """
         logger.info(
-            "Adicionando todos os relacionamentos na database de Atendimentos..."
+            "Adicionando relacionamentos na database de Atendimentos..."
         )
 
-        # Obter as databases existentes para configurar relacionamentos
+        # Buscar configs para obter IDs das outras databases
         try:
             contato_config = await sync_to_async(
                 NotionDatabaseConfig.objects.get
@@ -1404,89 +1434,413 @@ class NotionAtendimentosDatabaseConstructor:
             atendente_config = await sync_to_async(
                 NotionDatabaseConfig.objects.get
             )(slug="ui_operacional_atendente")
-        except NotionDatabaseConfig.DoesNotExist as e:
+        except NotionDatabaseConfig.DoesNotExist as exc:
             logger.error(
-                f"❌ Database de configuração não encontrada: {e}"
+                f"❌ Configuração não encontrada: {exc}"
             )
             raise ValueError(
-                "Execute primeiro a construção de clientes/contatos e operacional"
+                "Execute primeiro clientes/contatos e operacional"
             )
 
-        # Obter as databases existentes para pegar os data_source_ids
-        contato_db = await self.client.databases.retrieve(str(contato_config.notion_database_id))
-        departamento_db = await self.client.databases.retrieve(str(departamento_config.notion_database_id))
-        atendente_db_existing = await self.client.databases.retrieve(str(atendente_config.notion_database_id))
+        # Recuperar databases para extrair data_source_ids
+        contato_db = await self.client.databases.retrieve(
+            {"database_id": str(contato_config.notion_database_id)}
+        )
+        departamento_db = await self.client.databases.retrieve(
+            {"database_id": str(departamento_config.notion_database_id)}
+        )
+        atendente_db_existing = await self.client.databases.retrieve(
+            {"database_id": str(atendente_config.notion_database_id)}
+        )
 
-        # Extrair os data_source_ids
-        contato_data_source_id = contato_db.data_sources[0]["id"] if contato_db.data_sources else None
-        departamento_data_source_id = departamento_db.data_sources[0]["id"] if departamento_db.data_sources else None
-        atendente_data_source_id = atendente_db_existing.data_sources[0]["id"] if atendente_db_existing.data_sources else None
-        mensagem_data_source_id = (
+        contato_ds_id = (
+            contato_db.data_sources[0]["id"]
+            if contato_db.data_sources
+            else None
+        )
+        departamento_ds_id = (
+            departamento_db.data_sources[0]["id"]
+            if departamento_db.data_sources
+            else None
+        )
+        atendente_ds_id = (
+            atendente_db_existing.data_sources[0]["id"]
+            if atendente_db_existing.data_sources
+            else None
+        )
+        mensagem_ds_id = (
             mensagem_db.data_sources[0]["id"]
             if mensagem_db.data_sources
             else None
         )
+        atendimento_ds_id = (
+            atendimento_db.data_sources[0]["id"]
+            if atendimento_db.data_sources
+            else None
+        )
 
-        if not all([contato_data_source_id, departamento_data_source_id, atendente_data_source_id, mensagem_data_source_id]):
-            raise ValueError("Uma ou mais databases não possuem data_source_id")
+        if not all(
+            [
+                contato_ds_id,
+                departamento_ds_id,
+                atendente_ds_id,
+                mensagem_ds_id,
+                atendimento_ds_id,
+            ]
+        ):
+            raise ValueError(
+                "Uma ou mais databases não possuem data_source_id"
+            )
 
-        # Atualizar a database de atendimentos para incluir todos os relacionamentos
-        properties_schema = atendimento_db.data_sources[0]["schema"]["properties"]
+        # Função auxiliar para obter o ID de uma propriedade por nome
+        def _prop_id(db_info: Dict[str, Any], name: str) -> Optional[str]:
+            """Obtém o ID da propriedade por nome, compatível com dict/obj."""
+            def _get(obj: Any, key: str) -> Any:
+                try:
+                    return getattr(obj, key)
+                except Exception:
+                    return obj.get(key) if isinstance(obj, dict) else None
 
-        # Adicionar Contato
-        properties_schema["Contato"] = {
-            "relation": {
-                "data_source_id": contato_data_source_id,
-                "single_property": {"type": "single_property"},
-            }
-        }
+            data_sources = _get(db_info, "data_sources") or []
+            for ds in data_sources:
+                props_ds: Dict[str, Any] = _get(ds, "properties") or {}
+                prop_ds = props_ds.get(name)
+                if prop_ds:
+                    return prop_ds.get("id") or getattr(prop_ds, "id", None)
+            props_root: Dict[str, Any] = _get(db_info, "properties") or {}
+            prop_root = props_root.get(name)
+            if not prop_root:
+                return None
+            return prop_root.get("id") or getattr(prop_root, "id", None)
 
-        # Adicionar Departamento
-        properties_schema["Departamento"] = {
-            "relation": {
-                "data_source_id": departamento_data_source_id,
-                "single_property": {"type": "single_property"},
-            }
-        }
+        # Obter IDs das propriedades existentes para garantir idempotência
+        # Comentários em Português conforme padrão do projeto.
+        # Mensagens: ID de "Atendimento Relacionado" (evita duplicatas)
+        atendimento_rel_prop_id: Optional[str] = None
+        try:
+            if mensagem_db.data_sources:
+                props_ds: Dict[str, Any] = (
+                    mensagem_db.data_sources[0].get("properties", {})
+                )
+                rel_prop = props_ds.get("Atendimento Relacionado")
+                if rel_prop:
+                    atendimento_rel_prop_id = rel_prop.get("id")
+        except Exception:
+            atendimento_rel_prop_id = None
+        if not atendimento_rel_prop_id:
+            mensagem_db_info = await self.client.databases.retrieve(
+                {"database_id": str(mensagem_db.id)}
+            )
+            atendimento_rel_prop_id = _prop_id(
+                mensagem_db_info, "Atendimento Relacionado"
+            )
 
-        # Adicionar Atendente
-        properties_schema["Atendente"] = {
-            "relation": {
-                "data_source_id": atendente_data_source_id,
-                "single_property": {"type": "single_property"},
-            }
-        }
+        # Atendimentos: IDs de "Contato", "Departamento",
+        # "Atendente" e "Mensagens Relacionadas"
+        atendimento_db_info_pre = await self.client.request(
+            method="get",
+            path=f"databases/{atendimento_db.id}",
+        )
+        contato_prop_id_pre = _prop_id(atendimento_db_info_pre, "Contato")
+        departamento_prop_id_pre = _prop_id(
+            atendimento_db_info_pre, "Departamento"
+        )
+        atendente_prop_id_pre = _prop_id(
+            atendimento_db_info_pre, "Atendente"
+        )
+        mensagens_rel_prop_id_pre = _prop_id(
+            atendimento_db_info_pre, "Mensagens Relacionadas"
+        )
 
-        # Adicionar Mensagens Relacionadas
-        properties_schema["Mensagens Relacionadas"] = {
-            "relation": {
-                "data_source_id": mensagem_data_source_id,
-                "dual_property": {
-                    "synced_property_name": "Atendimento Relacionado"
+        # Atualiza o data source de Atendimentos com TODAS as relações
+        # Montar atualização usando IDs quando disponíveis (evita duplicatas)
+        update_atendimento = {
+            "properties": {
+                "Contato": {
+                    "type": "relation",
+                    "relation": {
+                        "data_source_id": contato_ds_id,
+                        "single_property": {},
+                        "dual_property": {
+                            "synced_property_name":
+                                "Atendimentos Relacionados",
+                        },
+                    },
+                },
+                "Departamento": {
+                    "type": "relation",
+                    "relation": {
+                        "data_source_id": departamento_ds_id,
+                        "single_property": {},
+                        "dual_property": {
+                            "synced_property_name":
+                                "Atendimentos Relacionados",
+                        },
+                    },
+                },
+                "Atendente": {
+                    "type": "relation",
+                    "relation": {
+                        "data_source_id": atendente_ds_id,
+                        "single_property": {},
+                        "dual_property": {
+                            "synced_property_name":
+                                "Atendimentos Relacionados",
+                        },
+                    },
+                },
+                "Mensagens Relacionadas": {
+                    "type": "relation",
+                    "relation": {
+                        "data_source_id": mensagem_ds_id,
+                        # Sempre definir single_property para atender validação da API
+                        "single_property": {},
+                        # Usar dual_property por ID quando disponível; caso contrário, por nome
+                        **(
+                            {
+                                "dual_property": {
+                                    "synced_property_id": atendimento_rel_prop_id
+                                }
+                            }
+                            if atendimento_rel_prop_id
+                            else {
+                                "dual_property": {
+                                    "synced_property_name": "Atendimento Relacionado"
+                                }
+                            }
+                        ),
+                    },
                 },
             }
         }
 
         try:
-            await self.client.databases.update(
-                database_id=atendimento_db.id,
-                title=[
-                    {
-                        "type": "text",
-                        "text": {"content": "🎯 Atendimentos CRM"},
-                    }
-                ],
-                icon={"type": "emoji", "emoji": "🎯"},
-                properties=properties_schema,
+            await self.client.request(
+                method="patch",
+                path=f"data_sources/{atendimento_ds_id}",
+                body=update_atendimento,
             )
             logger.info(
-                "✅ Todos os relacionamentos adicionados na database de Atendimentos"
+                "✅ Relações principais adicionadas em Atendimentos"
             )
-        except Exception as e:
+        except Exception as exc:
             logger.error(
-                f"❌ Erro ao adicionar relacionamentos em Atendimentos: {e}"
+                f"❌ Erro ao atualizar relações em Atendimentos: {exc}"
             )
             raise
+
+        # Obter IDs das props finais em Atendimentos para vincular reversos
+        atendimento_db_info = await self.client.request(
+            method="get", path=f"databases/{atendimento_db.id}"
+        )
+        contato_prop_id = _prop_id(atendimento_db_info, "Contato")
+        departamento_prop_id = _prop_id(
+            atendimento_db_info, "Departamento"
+        )
+        atendente_prop_id = _prop_id(atendimento_db_info, "Atendente")
+
+        # Criar propriedades reversas nas outras databases
+        try:
+            # Contatos: Atendimentos Relacionados
+            # Atualizar/ criar reversos usando ID como chave quando existir
+            contato_db_info = await self.client.request(
+                method="get", path=f"databases/{contato_db.id}"
+            )
+            update_contato = {
+                "properties": {
+                    "Atendimentos Relacionados": {
+                        "type": "relation",
+                        "relation": {
+                            "data_source_id": atendimento_ds_id,
+                            "single_property": {},
+                            "dual_property": (
+                                {"synced_property_id": contato_prop_id}
+                                if contato_prop_id
+                                else {
+                                    "synced_property_name": "Contato",
+                                }
+                            ),
+                        },
+                    }
+                }
+            }
+            await self.client.request(
+                method="patch",
+                path=f"data_sources/{contato_ds_id}",
+                body=update_contato,
+            )
+
+            # Departamentos: Atendimentos Relacionados
+            departamento_db_info = await self.client.request(
+                method="get", path=f"databases/{departamento_db.id}"
+            )
+            update_departamento = {
+                "properties": {
+                    "Atendimentos Relacionados": {
+                        "type": "relation",
+                        "relation": {
+                            "data_source_id": atendimento_ds_id,
+                            "single_property": {},
+                            "dual_property": (
+                                {
+                                    "synced_property_id":
+                                        departamento_prop_id,
+                                }
+                                if departamento_prop_id
+                                else {
+                                    "synced_property_name":
+                                        "Departamento",
+                                }
+                            ),
+                        },
+                    }
+                }
+            }
+            await self.client.request(
+                method="patch",
+                path=f"data_sources/{departamento_ds_id}",
+                body=update_departamento,
+            )
+
+            # Atendentes: Atendimentos Relacionados
+            atendente_db_info = await self.client.request(
+                method="get", path=f"databases/{atendente_db_existing.id}"
+            )
+            update_atendente = {
+                "properties": {
+                    "Atendimentos Relacionados": {
+                        "type": "relation",
+                        "relation": {
+                            "data_source_id": atendimento_ds_id,
+                            "single_property": {},
+                            "dual_property": (
+                                {
+                                    "synced_property_id": atendente_prop_id,
+                                }
+                                if atendente_prop_id
+                                else {
+                                    "synced_property_name": "Atendente",
+                                }
+                            ),
+                        },
+                    }
+                }
+            }
+            await self.client.request(
+                method="patch",
+                path=f"data_sources/{atendente_ds_id}",
+                body=update_atendente,
+            )
+
+            logger.info(
+                "✅ Relações reversas adicionadas em Contatos, Departamentos e"
+            )
+            logger.info("   Atendentes")
+        except Exception as exc:
+            logger.error(
+                f"❌ Erro ao adicionar relações reversas: {exc}"
+            )
+            raise
+
+        # Após configurar, executar limpeza de duplicatas
+        try:
+            await self.cleanup_duplicate_relations(
+                atendimento_db=atendimento_db,
+                mensagem_db=mensagem_db,
+            )
+            logger.info("🧹 Limpeza de relações duplicadas concluída")
+        except Exception as exc:
+            logger.warning(
+                f"⚠️ Falha ao limpar duplicatas de relações: {exc}"
+            )
+
+    async def repair_atendimento_relations(self) -> None:
+        """Repara apenas os relacionamentos da database de Atendimentos.
+
+        - Não recria bancos.
+        - Usa IDs existentes quando disponíveis para evitar duplicações.
+        - Configura relação bidirecional com Mensagens via synced_property_id.
+        """
+        logger.info("🛠️ Reparando relacionamentos em Atendimentos...")
+
+        # Recuperar Mensagens e Atendimentos via config, com fallback por busca
+        atendimento_db: Any = None
+        mensagem_db: Any = None
+
+        try:
+            atendimento_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_atendimentos_atendimento")
+            atendimento_db = await self.client.databases.retrieve(
+                {"database_id": str(atendimento_config.notion_database_id)}
+            )
+        except Exception:
+            logger.warning(
+                "⚠️ Config de Atendimentos não encontrada; tentando busca"
+            )
+            try:
+                res = await self.client.request(
+                    method="post",
+                    path="search",
+                    body={
+                        "query": "Atendimentos CRM",
+                        "filter": {
+                            "value": "database",
+                            "property": "object",
+                        },
+                    },
+                )
+                results = (
+                    res.get("results")
+                    if isinstance(res, dict)
+                    else getattr(res, "results", None)
+                )
+                atendimento_db = results[0] if results else None
+            except Exception:
+                atendimento_db = None
+
+        try:
+            mensagem_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_atendimentos_mensagem")
+            mensagem_db = await self.client.databases.retrieve(
+                {"database_id": str(mensagem_config.notion_database_id)}
+            )
+        except Exception:
+            logger.warning(
+                "⚠️ Config de Mensagens não encontrada; tentando busca"
+            )
+            try:
+                res = await self.client.request(
+                    method="post",
+                    path="search",
+                    body={
+                        "query": "Mensagens CRM",
+                        "filter": {
+                            "value": "database",
+                            "property": "object",
+                        },
+                    },
+                )
+                results = (
+                    res.get("results")
+                    if isinstance(res, dict)
+                    else getattr(res, "results", None)
+                )
+                mensagem_db = results[0] if results else None
+            except Exception:
+                mensagem_db = None
+
+        if not (atendimento_db and mensagem_db):
+            raise ValueError(
+                "Não foi possível localizar as databases de Atendimentos/Mensagens"
+            )
+
+        # Reaplicar configuração de relacionamentos de forma idempotente
+        await self.add_all_relations_to_atendimento_database(
+            mensagem_db=mensagem_db, atendimento_db=atendimento_db
+        )
+        logger.info("✅ Reparação de relacionamentos concluída em Atendimentos")
 
     async def create_example_pages_and_relation(
         self, mensagem_db: Any, atendimento_db: Any
@@ -1511,12 +1865,15 @@ class NotionAtendimentosDatabaseConstructor:
 
             # 1. Criar uma página de Atendimento exemplo
             atendimento_page = await self.client.pages.create(
-                parent={"database_id": atendimento_db.id},
+                parent={
+                    "type": "data_source_id",
+                    "data_source_id": atendimento_data_source_id,
+                },
                 properties={
-                    "Protocolo": {"title": [{"text": {"content": "ATT-2024-001"}}]},
+                    "Assunto": {"title": [{"text": {"content": "Dúvida sobre produto"}}]},
                     "Status": {"select": {"name": "em_atendimento"}},
                     "Prioridade": {"select": {"name": "normal"}},
-                    "Assunto": {"rich_text": [{"text": {"content": "Dúvida sobre produto"}}]},
+                    "Contexto Conversa": {"rich_text": [{"text": {"content": "Cliente perguntando sobre políticas de troca."}}]},
                     "Data Início": {"date": {"start": "2024-01-15T09:00:00.000Z"}},
                     "Canal": {"select": {"name": "whatsapp"}},
                 },
@@ -1527,7 +1884,10 @@ class NotionAtendimentosDatabaseConstructor:
 
             # 2. Criar uma página de Mensagem exemplo relacionada ao atendimento
             mensagem_page = await self.client.pages.create(
-                parent={"database_id": mensagem_db.id},
+                parent={
+                    "type": "data_source_id",
+                    "data_source_id": mensagem_data_source_id,
+                },
                 properties={
                     "Conteúdo": {"title": [{"text": {"content": "Olá, gostaria de saber mais sobre o produto X"}}]},
                     "Atendimento Relacionado": {
@@ -1543,16 +1903,10 @@ class NotionAtendimentosDatabaseConstructor:
                 f"✅ Página de Mensagem exemplo criada: {mensagem_page.id}"
             )
 
-            # 3. Atualizar o atendimento para incluir a mensagem relacionada
-            await self.client.pages.update(
-                page_id=atendimento_page.id,
-                properties={
-                    "Mensagens Relacionadas": {
-                        "relation": [{"id": mensagem_page.id}]
-                    }
-                },
-            )
-            logger.info("✅ Relacionamento bidirecional criado com sucesso")
+            # 3. Não forçar o vínculo no atendimento.
+            #    Evitamos duplicação criando a relação apenas no lado da Mensagem.
+            #    O Notion mantém a relação bidirecional automaticamente via dual_property.
+            logger.info("✅ Relação criada pelo lado da Mensagem; Notion sincroniza o reverso")
 
         except Exception as e:
             logger.error(f"❌ Erro ao criar páginas de exemplo: {e}")
@@ -1717,14 +2071,13 @@ class NotionAtendimentosDatabaseConstructor:
                         "resposta_bot": "Resposta Bot",
                         "confianca_resposta": "Confiança Resposta",
                         "metadados": "Metadados",
-                    },
-                    "sync_enabled": True,
-                    "sync_direction": "bidirectional",
-                    "sync_priority": 8,  # Prioridade ainda maior para mensagens
-                    "auto_sync": True,
                 },
-            )
-
+                "sync_enabled": True,
+                "sync_direction": "bidirectional",
+                "sync_priority": 8,  # Prioridade ainda maior para mensagens
+                "auto_sync": True,
+            },
+        )
             logger.info("✅ Configurações de atendimentos salvas com sucesso:")
             logger.info(f"   - Atendimento Config: {atendimento_config[0].id}")
             logger.info(f"   - Mensagem Config: {mensagem_config[0].id}")
@@ -1732,6 +2085,264 @@ class NotionAtendimentosDatabaseConstructor:
         except Exception as e:
             logger.error(f"❌ Erro ao salvar configurações: {e}")
             raise
+
+    async def cleanup_duplicate_relations(
+        self, atendimento_db: Any, mensagem_db: Any
+    ) -> None:
+        """
+        Remove propriedades de relação duplicadas (ex.: "... 1") nas
+        databases de Atendimentos e Mensagens.
+
+        - Usa IDs das propriedades para remoção segura.
+        - Mantém apenas os nomes canônicos definidos pelo script.
+
+        Comentários em Português conforme padrão do projeto.
+        """
+
+        # Recuperar data_source_ids
+        atendimento_ds_id = (
+            atendimento_db.data_sources[0]["id"]
+            if atendimento_db.data_sources
+            else None
+        )
+        mensagem_ds_id = (
+            mensagem_db.data_sources[0]["id"]
+            if mensagem_db.data_sources
+            else None
+        )
+
+        if not atendimento_ds_id or not mensagem_ds_id:
+            raise ValueError(
+                "Databases não possuem data_source_id para limpeza"
+            )
+
+        # Buscar propriedades atuais
+        atendimento_info = await self.client.request(
+            method="get", path=f"databases/{atendimento_db.id}"
+        )
+        mensagem_info = await self.client.request(
+            method="get", path=f"databases/{mensagem_db.id}"
+        )
+
+        # Nomes canônicos em Atendimentos
+        canonical_at = {
+            "Contato",
+            "Departamento",
+            "Atendente",
+            "Mensagens Relacionadas",
+        }
+        # Deduplicar: remover qualquer relation com sufixo numérico
+        props_to_delete_at: Dict[str, None] = {}
+        for name, prop in (atendimento_info.get("properties") or {}).items():
+            if prop.get("type") == "relation":
+                last = (name.split(" ")[-1] if " " in name else "")
+                is_number = last.isdigit()
+                base = name.rsplit(" ", 1)[0] if is_number else name
+                if is_number and base in canonical_at:
+                    props_to_delete_at[name] = None
+                elif name not in canonical_at:
+                    # Se não é canônico, é potencial duplicata
+                    props_to_delete_at[name] = None
+
+        if props_to_delete_at:
+            await self.client.request(
+                method="patch",
+                path=f"data_sources/{atendimento_ds_id}",
+                body={"properties": props_to_delete_at},
+            )
+        # Remover propriedades canônicas dos data_sources adicionais
+        at_data_sources = [
+            ds.get("id") for ds in (atendimento_info.get("data_sources") or [])
+        ]
+        if at_data_sources and len(at_data_sources) > 1:
+            for ds_id in at_data_sources[1:]:
+                await self.client.request(
+                    method="patch",
+                    path=f"data_sources/{ds_id}",
+                    body={
+                        "properties": {name: None for name in canonical_at}
+                    },
+                )
+
+        # Nomes canônicos em Mensagens
+        canonical_msg = {"Atendimento Relacionado"}
+        props_to_delete_msg: Dict[str, None] = {}
+        for name, prop in (mensagem_info.get("properties") or {}).items():
+            if prop.get("type") == "relation":
+                last = (name.split(" ")[-1] if " " in name else "")
+                is_number = last.isdigit()
+                base = name.rsplit(" ", 1)[0] if is_number else name
+                if is_number and base in canonical_msg:
+                    props_to_delete_msg[name] = None
+                elif name not in canonical_msg:
+                    props_to_delete_msg[name] = None
+
+        if props_to_delete_msg:
+            await self.client.request(
+                method="patch",
+                path=f"data_sources/{mensagem_ds_id}",
+                body={"properties": props_to_delete_msg},
+            )
+        # Remover propriedades canônicas dos data_sources adicionais (Mensagens)
+        msg_data_sources = [
+            ds.get("id") for ds in (mensagem_info.get("data_sources") or [])
+        ]
+        if msg_data_sources and len(msg_data_sources) > 1:
+            for ds_id in msg_data_sources[1:]:
+                await self.client.request(
+                    method="patch",
+                    path=f"data_sources/{ds_id}",
+                    body={
+                        "properties": {
+                            name: None for name in canonical_msg
+                        }
+                    },
+                )
+
+        # Limpeza adicional nas databases de Contatos, Departamentos e Atendentes
+        try:
+            contato_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_clientes_contato")
+            departamento_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_operacional_departamento")
+            atendente_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_operacional_atendente")
+        except NotionDatabaseConfig.DoesNotExist:
+            # Caso não existam, prossegue sem limpar esses bancos
+            contato_config = None
+            departamento_config = None
+            atendente_config = None
+
+        async def _delete_rev_dups(
+            db_id: Optional[str], ds_id: Optional[str]
+        ) -> None:
+            if not db_id or not ds_id:
+                return
+            info = await self.client.request(
+                method="get", path=f"databases/{db_id}"
+            )
+            props_to_delete: Dict[str, None] = {}
+            for name, prop in (info.get("properties") or {}).items():
+                if prop.get("type") != "relation":
+                    continue
+                last = (name.split(" ")[-1] if " " in name else "")
+                is_number = last.isdigit()
+                base = name.rsplit(" ", 1)[0] if is_number else name
+                if base == "Atendimentos Relacionados" and is_number:
+                    props_to_delete[name] = None
+            if props_to_delete:
+                await self.client.request(
+                    method="patch",
+                    path=f"data_sources/{ds_id}",
+                    body={"properties": props_to_delete},
+                )
+            # Remover propriedade canônica de data_sources adicionais
+            ds_ids = [ds.get("id") for ds in (info.get("data_sources") or [])]
+            if ds_ids and len(ds_ids) > 1:
+                for extra_ds_id in ds_ids[1:]:
+                    await self.client.request(
+                        method="patch",
+                        path=f"data_sources/{extra_ds_id}",
+                        body={
+                            "properties": {"Atendimentos Relacionados": None}
+                        },
+                    )
+
+        # Limpeza ampla de duplicatas em Contatos, Departamentos e Atendentes
+        async def _clean_extra_ds_canonicals(
+            cfg: Optional[NotionDatabaseConfig], canonicals: set
+        ) -> None:
+            if not cfg:
+                return
+            # Recupera database e lista todos data_sources
+            db = await self.client.databases.retrieve(
+                {"database_id": str(cfg.notion_database_id)}
+            )
+            info = await self.client.request(
+                method="get", path=f"databases/{db.id}"
+            )
+            ds_ids = [ds.get("id") for ds in (info.get("data_sources") or [])]
+            # Apaga propriedades com sufixo numérico e remove canônicos dos DS extras
+            # 1) apagar duplicatas com sufixo
+            props_dups: Dict[str, None] = {}
+            for name, prop in (info.get("properties") or {}).items():
+                if prop.get("type") != "relation":
+                    continue
+                last = (name.split(" ")[-1] if " " in name else "")
+                is_number = last.isdigit()
+                base = name.rsplit(" ", 1)[0] if is_number else name
+                if base in canonicals and is_number:
+                    props_dups[name] = None
+            if props_dups and ds_ids:
+                await self.client.request(
+                    method="patch",
+                    path=f"data_sources/{ds_ids[0]}",
+                    body={"properties": props_dups},
+                )
+            # 2) remover canônicos dos data_sources adicionais
+            if ds_ids and len(ds_ids) > 1:
+                for extra_ds_id in ds_ids[1:]:
+                    await self.client.request(
+                        method="patch",
+                        path=f"data_sources/{extra_ds_id}",
+                        body={
+                            "properties": {name: None for name in canonicals}
+                        },
+                    )
+
+        await _clean_extra_ds_canonicals(
+            contato_config, {"Clientes Relacionados", "Atendimentos Relacionados"}
+        )
+        await _clean_extra_ds_canonicals(
+            departamento_config, {"Atendentes Relacionados", "Atendimentos Relacionados"}
+        )
+        await _clean_extra_ds_canonicals(
+            atendente_config, {"Departamentos Relacionados", "Atendimentos Relacionados"}
+        )
+
+        # Executa limpeza por nome nas três bases
+        if contato_config:
+            contato_db = await self.client.databases.retrieve(
+                {"database_id": str(contato_config.notion_database_id)}
+            )
+            contato_ds_id = (
+                contato_db.data_sources[0]["id"]
+                if contato_db.data_sources
+                else None
+            )
+            await _delete_rev_dups(
+                str(contato_config.notion_database_id), contato_ds_id
+            )
+
+        if departamento_config:
+            departamento_db = await self.client.databases.retrieve(
+                {"database_id": str(departamento_config.notion_database_id)}
+            )
+            departamento_ds_id = (
+                departamento_db.data_sources[0]["id"]
+                if departamento_db.data_sources
+                else None
+            )
+            await _delete_rev_dups(
+                str(departamento_config.notion_database_id),
+                departamento_ds_id,
+            )
+
+        if atendente_config:
+            atendente_db = await self.client.databases.retrieve(
+                {"database_id": str(atendente_config.notion_database_id)}
+            )
+            atendente_ds_id = (
+                atendente_db.data_sources[0]["id"]
+                if atendente_db.data_sources
+                else None
+            )
+            await _delete_rev_dups(
+                str(atendente_config.notion_database_id), atendente_ds_id
+            )
 
     async def construct_atendimentos_databases(self) -> None:
         """Constrói todas as databases de atendimentos necessárias com relacionamentos corretos."""
@@ -1752,13 +2363,9 @@ class NotionAtendimentosDatabaseConstructor:
             await asyncio.sleep(2)
 
             # 4. Adicionar todos os relacionamentos na database de Atendimentos
-            try:
-                await self.add_all_relations_to_atendimento_database(
-                    mensagem_db, atendimento_db
-                )
-            except Exception as e:
-                logger.warning(f"⚠️ Erro ao adicionar relacionamentos em Atendimentos: {e}")
-                logger.info("💡 As databases foram criadas, mas os relacionamentos precisam ser configurados manualmente")
+            await self.add_all_relations_to_atendimento_database(
+                mensagem_db, atendimento_db
+            )
 
             # 5. Aguardar um momento antes de criar exemplos
             await asyncio.sleep(2)
@@ -1853,6 +2460,18 @@ async def run_construction_atendimentos() -> None:
         await constructor.construct_atendimentos_databases()
     except Exception as e:
         logger.error(f"❌ Erro durante a execução de atendimentos: {e}")
+        raise
+
+
+async def run_repair_atendimentos_relations() -> None:
+    """Executa somente a rotina de reparo dos relacionamentos de Atendimentos."""
+    try:
+        constructor = NotionAtendimentosDatabaseConstructor()
+        await constructor.repair_atendimento_relations()
+    except Exception as e:
+        logger.error(
+            f"❌ Erro durante a reparação de relacionamentos: {e}"
+        )
         raise
 
 
@@ -2015,9 +2634,20 @@ def run(construction_type: str = "clientes") -> None:
         construction_type: Tipo de construção a ser executada ("clientes", "operacional", "atendimentos" ou "full")
     """
     try:
-
-        asyncio.run(run_full_construction_sequence())
-
+        if construction_type == "clientes":
+            asyncio.run(run_construction_clientes())
+        elif construction_type == "operacional":
+            asyncio.run(run_construction_operacional())
+        elif construction_type == "atendimentos":
+            asyncio.run(run_construction_atendimentos())
+        elif construction_type in ["repair_atendimentos", "repair_atendimentos_relations", "repair"]:
+            asyncio.run(run_repair_atendimentos_relations())
+        elif construction_type == "full":
+            asyncio.run(run_full_construction_sequence())
+        else:
+            raise ValueError(
+                "Tipo de construção inválido. Use: clientes, operacional, atendimentos ou full"
+            )
     except KeyboardInterrupt:
         logger.info("⏹️ Operação cancelada pelo usuário")
     except Exception as e:
@@ -2036,13 +2666,24 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         construction_type = sys.argv[1]
-        if construction_type in ["clientes", "operacional"]:
+        if construction_type in [
+            "clientes",
+            "operacional",
+            "atendimentos",
+            "full",
+            "repair",
+            "repair_atendimentos",
+            "repair_atendimentos_relations",
+        ]:
             run(construction_type)
         else:
             print("❌ Argumento inválido!")
             print("💡 Uso:")
             print("   python script_constructor_notion.py clientes")
             print("   python script_constructor_notion.py operacional")
+            print("   python script_constructor_notion.py atendimentos")
+            print("   python script_constructor_notion.py full")
+            print("   python script_constructor_notion.py repair")
     else:
-        # Default: constrói databases de clientes
-        run("clientes")
+        # Default: executa a sequência completa
+        run("full")

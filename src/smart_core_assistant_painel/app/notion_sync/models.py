@@ -1830,7 +1830,11 @@ class AtendimentoSync(models.Model):
 
     @override
     def __str__(self) -> str:
-        protocolo = self.atendimento.protocolo or f"#{self.atendimento.id}"
+        # Acesso defensivo ao protocolo para evitar AttributeError
+        protocolo = (
+            getattr(self.atendimento, "protocolo", None)
+            or f"#{self.atendimento.id}"
+        )
         external = self.external_id or "No ID"
         return f"{protocolo} ({external})"
 
@@ -1971,11 +1975,35 @@ class MensagemSync(models.Model):
         """Prepara e formata os dados para sincronização com Notion."""
         try:
             from .services.mappers.mensagem_mapper import MensagemMapper
-            self.notion_properties = MensagemMapper.to_notion_properties(self)
+            # Para mensagens, o Notion usa bloco; guardamos como properties
+            self.notion_properties = MensagemMapper.to_notion_block(self)
 
             # Garante que o atendimento_sync está linkado
             if not self.atendimento_sync and self.mensagem.atendimento:
                 self.atendimento_sync, _ = AtendimentoSync.objects.get_or_create(atendimento=self.mensagem.atendimento)
+
+            # Preenche campos obrigatórios de cache/formatados
+            conteudo: str = self.mensagem.conteudo or ""
+            remetente_nome: str
+            if self.mensagem.remetente == "cliente" and \
+                    self.mensagem.atendimento and \
+                    self.mensagem.atendimento.contato:
+                remetente_nome = (
+                    self.mensagem.atendimento.contato.nome_contato
+                    or "Cliente"
+                )
+            elif self.mensagem.remetente == "atendente" and \
+                    self.mensagem.atendimento and \
+                    self.mensagem.atendimento.atendente_humano:
+                remetente_nome = (
+                    self.mensagem.atendimento.atendente_humano.nome
+                    or "Atendente"
+                )
+            else:
+                remetente_nome = "Sistema"
+
+            self.conteudo_formatado = conteudo
+            self.remetente_formatado = remetente_nome
 
         except ImportError:
             # Lidar com o caso de o mapper ainda não existir

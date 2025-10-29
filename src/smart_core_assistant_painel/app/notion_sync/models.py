@@ -1707,3 +1707,296 @@ class AtendenteSync(models.Model):
         if not self.external_id:
             return "#"
         return f"https://notion.so/{self.config.notion_page_id or self.config.notion_database_id}?p={self.external_id}"
+
+
+class AtendimentoSync(models.Model):
+    """
+    Espelho do modelo Atendimento para integração com Notion.
+    """
+
+    # Relação com Modelo Original
+    atendimento = models.OneToOneField(
+        "atendimentos.Atendimento",
+        on_delete=models.CASCADE,
+        related_name="notion_sync",
+        help_text="Referência ao atendimento original",
+    )
+
+    # ID Externo
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID da página correspondente no Notion",
+    )
+
+    # Configuração Relacionada
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name="atendimento_syncs",
+        help_text="Configuração Notion para este modelo",
+    )
+
+    # Relacionamentos com outros Syncs (para consulta otimizada e mappers)
+    contato_sync = models.ForeignKey(
+        ContatoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="atendimentos_sync",
+        help_text="Referência ao sync do contato",
+    )
+    departamento_sync = models.ForeignKey(
+        DepartamentoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="atendimentos_sync",
+        help_text="Referência ao sync do departamento",
+    )
+    atendente_sync = models.ForeignKey(
+        "AtendenteSync",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="atendimentos_sync",
+        help_text="Referência ao sync do atendente",
+    )
+
+    # Dados Pré-processados
+    protocolo_formatado: models.CharField = models.CharField(
+        max_length=50, help_text="Protocolo formatado para ser o título no Notion"
+    )
+    status_formatado: models.CharField = models.CharField(
+        max_length=50, help_text="Status formatado para o campo Select do Notion"
+    )
+    prioridade_formatada: models.CharField = models.CharField(
+        max_length=50, help_text="Prioridade formatada para o campo Select do Notion"
+    )
+    tags_formatadas: models.JSONField = models.JSONField(
+        default=list, blank=True, help_text="Tags para o campo Multi-select do Notion"
+    )
+    sla_status: models.CharField = models.CharField(
+        max_length=20, blank=True, help_text="Status calculado do SLA (Ex: OK, Vencido)"
+    )
+
+    # Campos de Controle de Sincronização
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pendente"),
+            ("syncing", "Sincronizando"),
+            ("synced", "Sincronizado"),
+            ("error", "Erro"),
+            ("disabled", "Desabilitado"),
+        ],
+        default="pending",
+        help_text="Status atual da sincronização",
+    )
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True, blank=True, help_text="Data/hora da última sincronização"
+    )
+    sync_error: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Detalhes do último erro de sincronização"
+    )
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0, help_text="Número de tentativas de sincronização"
+    )
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict, help_text="Propriedades completas formatadas para API Notion"
+    )
+    metadados: models.JSONField = models.JSONField(
+        default=dict, blank=True, help_text="Metadados adicionais para sincronização"
+    )
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Atendimento Sync"
+        verbose_name_plural = "Atendimentos Sync"
+        ordering = ["-atendimento__data_inicio"]
+        db_table = "notion_sync_atendimento"
+        indexes = [
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["sync_status"]),
+            models.Index(fields=["atendimento"]),
+            models.Index(fields=["contato_sync"]),
+            models.Index(fields=["departamento_sync"]),
+            models.Index(fields=["atendente_sync"]),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        protocolo = self.atendimento.protocolo or f"#{self.atendimento.id}"
+        external = self.external_id or "No ID"
+        return f"{protocolo} ({external})"
+
+    def prepare_notion_data(self) -> None:
+        """Prepara e formata os dados para sincronização com Notion."""
+        try:
+            from .services.mappers.atendimento_mapper import AtendimentoMapper
+            self.notion_properties = AtendimentoMapper.to_notion_properties(self)
+
+            # Atualiza cache de relacionamentos
+            if self.atendimento.contato:
+                self.contato_sync, _ = ContatoSync.objects.get_or_create(contato=self.atendimento.contato)
+            if self.atendimento.departamento:
+                self.departamento_sync, _ = DepartamentoSync.objects.get_or_create(departamento=self.atendimento.departamento)
+            if self.atendimento.atendente_humano:
+                self.atendente_sync, _ = AtendenteSync.objects.get_or_create(atendente=self.atendimento.atendente_humano)
+
+        except ImportError:
+            # Lidar com o caso de o mapper ainda não existir
+            pass
+
+    def needs_sync(self) -> bool:
+        """Verifica se o atendimento precisa ser sincronizado."""
+        if not self.config.sync_enabled or self.sync_status == "syncing":
+            return False
+        if self.last_sync_at and self.atendimento.data_ultima_mensagem > self.last_sync_at:
+            return True
+        return self.sync_status in ["pending", "error"]
+
+    def mark_as_synced(self, external_id: str | None = None) -> None:
+        if external_id:
+            self.external_id = external_id
+        self.sync_status = "synced"
+        self.last_sync_at = timezone.now()
+        self.sync_error = None
+        self.retry_count = 0
+        self.save()
+
+    def mark_as_failed(self, error_message: str) -> None:
+        self.sync_status = "error"
+        self.sync_error = error_message
+        self.retry_count += 1
+        self.save()
+
+
+class MensagemSync(models.Model):
+    """
+    Espelho do modelo Mensagem para integração com Notion.
+    """
+
+    # Relação com Modelo Original
+    mensagem = models.OneToOneField(
+        "atendimentos.Mensagem",
+        on_delete=models.CASCADE,
+        related_name="notion_sync",
+        help_text="Referência à mensagem original",
+    )
+
+    # ID Externo
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID do bloco (ou página) correspondente no Notion",
+    )
+
+    # Configuração Relacionada
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name="mensagem_syncs",
+        help_text="Configuração Notion para este modelo",
+    )
+
+    # Relacionamento com AtendimentoSync
+    atendimento_sync = models.ForeignKey(
+        AtendimentoSync,
+        on_delete=models.CASCADE,
+        related_name="mensagens_sync",
+        help_text="Referência ao sync do atendimento pai",
+    )
+
+    # Dados Pré-processados
+    conteudo_formatado: models.TextField = models.TextField(
+        help_text="Conteúdo formatado e truncado para o Notion"
+    )
+    remetente_formatado: models.CharField = models.CharField(
+        max_length=100, help_text="Nome formatado do remetente"
+    )
+
+    # Campos de Controle de Sincronização
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pendente"),
+            ("syncing", "Sincronizando"),
+            ("synced", "Sincronizado"),
+            ("error", "Erro"),
+            ("disabled", "Desabilitado"),
+        ],
+        default="pending",
+        help_text="Status atual da sincronização",
+    )
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True, blank=True, help_text="Data/hora da última sincronização"
+    )
+    sync_error: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Detalhes do último erro de sincronização"
+    )
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0, help_text="Número de tentativas de sincronização"
+    )
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict, help_text="Propriedades completas formatadas para API Notion"
+    )
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Mensagem Sync"
+        verbose_name_plural = "Mensagens Sync"
+        ordering = ["mensagem__timestamp"]
+        db_table = "notion_sync_mensagem"
+        indexes = [
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["sync_status"]),
+            models.Index(fields=["mensagem"]),
+            models.Index(fields=["atendimento_sync"]),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return f"Mensagem #{self.mensagem.id} do Atendimento #{self.atendimento_sync.atendimento.id}"
+
+    def prepare_notion_data(self) -> None:
+        """Prepara e formata os dados para sincronização com Notion."""
+        try:
+            from .services.mappers.mensagem_mapper import MensagemMapper
+            self.notion_properties = MensagemMapper.to_notion_properties(self)
+
+            # Garante que o atendimento_sync está linkado
+            if not self.atendimento_sync and self.mensagem.atendimento:
+                self.atendimento_sync, _ = AtendimentoSync.objects.get_or_create(atendimento=self.mensagem.atendimento)
+
+        except ImportError:
+            # Lidar com o caso de o mapper ainda não existir
+            pass
+
+    def needs_sync(self) -> bool:
+        """Verifica se a mensagem precisa ser sincronizada."""
+        # Mensagens são geralmente imutáveis após a criação
+        return self.sync_status in ["pending", "error"]
+
+    def mark_as_synced(self, external_id: str | None = None) -> None:
+        if external_id:
+            self.external_id = external_id
+        self.sync_status = "synced"
+        self.last_sync_at = timezone.now()
+        self.sync_error = None
+        self.retry_count = 0
+        self.save()
+
+    def mark_as_failed(self, error_message: str) -> None:
+        self.sync_status = "error"
+        self.sync_error = error_message
+        self.retry_count += 1
+        self.save()

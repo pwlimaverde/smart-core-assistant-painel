@@ -8,6 +8,8 @@ bidirecionais entre as databases.
 Módulos disponíveis:
 1. Clientes/Contatos - Cria databases para Cliente e Contato com relacionamento
 2. Operacional - Cria databases para Departamento e Atendente com relacionamento
+3. Atendimentos - Cria databases para Atendimento e Mensagem com relacionamento
+4. Full - Executa toda a sequência de construção em ordem correta
 
 Uso:
     # Para construir databases de clientes/contatos
@@ -17,6 +19,22 @@ Uso:
     # Para construir databases operacionais (departamento/atendente)
     from notion_sync.scripts.script_constructor_notion import run
     run("operacional")
+
+    # Para construir databases de atendimentos (após executar operacional)
+    from notion_sync.scripts.script_constructor_notion import run_atendimentos
+    run_atendimentos()
+
+    # Para executar toda a sequência de construção (recomendado)
+    from notion_sync.scripts.script_constructor_notion import run_full
+    run_full()
+
+    # Ou usando a função run com tipo "full"
+    from notion_sync.scripts.script_constructor_notion import run
+    run("full")
+
+    # Para testar apenas a construção de atendimentos (após operacional)
+    from notion_sync.scripts.script_constructor_notion import test_atendimentos_construction
+    test_atendimentos_construction()
 """
 
 import os
@@ -1182,6 +1200,632 @@ class NotionOperacionalDatabaseConstructor:
             raise
 
 
+class NotionAtendimentosDatabaseConstructor:
+    """
+    Construtor de databases no Notion para Atendimento e Mensagem
+    com relacionamentos configurados corretamente.
+    """
+
+    def __init__(self) -> None:
+        """Inicializa o construtor com as configurações necessárias."""
+        self.notion_token = os.getenv("NOTION_TOKEN")
+        self.notion_page_id = os.getenv("NOTION_PAGE_ID")
+
+        if not self.notion_token or not self.notion_page_id:
+            raise ValueError(
+                "NOTION_TOKEN e NOTION_PAGE_ID devem ser definidos no .env"
+            )
+
+        self.client = NotionAsyncClient(auth=self.notion_token)
+
+    async def create_atendimento_database(self) -> Any:
+        """Cria a database de Atendimentos no Notion (sem relacionamentos iniciais)."""
+        logger.info("Criando database de Atendimentos no Notion...")
+
+        # Propriedades básicas para Atendimentos (sem relacionamentos iniciais)
+        properties = {
+            "Protocolo": {"title": {}},
+            "Status": {
+                "select": {
+                    "options": [
+                        {"name": "fila", "color": "gray"},
+                        {"name": "em_atendimento", "color": "blue"},
+                        {"name": "aguardando_retorno", "color": "yellow"},
+                        {"name": "resolvido", "color": "green"},
+                        {"name": "cancelado", "color": "red"},
+                    ]
+                }
+            },
+            "Prioridade": {
+                "select": {
+                    "options": [
+                        {"name": "baixa", "color": "gray"},
+                        {"name": "normal", "color": "blue"},
+                        {"name": "alta", "color": "orange"},
+                        {"name": "urgente", "color": "red"},
+                    ]
+                }
+            },
+            "Assunto": {"rich_text": {}},
+            "Data Início": {"date": {}},
+            "Data Fim": {"date": {}},
+            "Data Última Mensagem": {"date": {}},
+            "Canal": {
+                "select": {
+                    "options": [
+                        {"name": "whatsapp", "color": "green"},
+                        {"name": "email", "color": "blue"},
+                        {"name": "telefone", "color": "orange"},
+                        {"name": "web", "color": "purple"},
+                    ]
+                }
+            },
+            "Tags": {"multi_select": {"options": []}},
+            "Avaliação": {"number": {"format": "number"}},
+            "Feedback": {"rich_text": {}},
+        }
+
+        parameters = {
+            "parent": {"type": "page_id", "page_id": self.notion_page_id},
+            "title": [
+                {"type": "text", "text": {"content": "🎯 Atendimentos CRM"}}
+            ],
+            "icon": {"type": "emoji", "emoji": "🎯"},
+            "initial_data_source": {
+                "name": "Atendimentos",
+                "properties": properties,
+            },
+        }
+
+        try:
+            created = await self.client.databases.create(parameters)
+            logger.info(f"✅ Database de Atendimentos criada: {created.id}")
+            if created.data_sources:
+                logger.info(
+                    f"🔑 Data Source ID Atendimentos: {created.data_sources[0]['id']}"
+                )
+            return created
+        except Exception as e:
+            logger.error(f"❌ Erro ao criar database de Atendimentos: {e}")
+            raise
+
+    async def create_mensagem_database(
+        self, atendimento_db: Any
+    ) -> Any:
+        """
+        Cria a database de Mensagens no Notion COM RELACIONAMENTO para Atendimentos.
+        """
+        logger.info(
+            "Criando database de Mensagens no Notion com relacionamento..."
+        )
+
+        # Obter o data_source_id da database de atendimentos
+        if not atendimento_db.data_sources:
+            raise ValueError(
+                "Database de atendimentos não possui data_source"
+            )
+
+        atendimento_data_source_id = atendimento_db.data_sources[0]["id"]
+
+        # Propriedades para Mensagens COM O RELACIONAMENTO
+        properties = {
+            "Conteúdo": {"title": {}},
+            "Atendimento Relacionado": {
+                "relation": {
+                    "data_source_id": atendimento_data_source_id,
+                    "single_property": {},
+                    "dual_property": {
+                        "synced_property_name": "Mensagens Relacionadas"
+                    },
+                }
+            },
+            "Tipo": {
+                "select": {
+                    "options": [
+                        {"name": "Texto", "color": "blue"},
+                        {"name": "Imagem", "color": "green"},
+                        {"name": "Vídeo", "color": "purple"},
+                        {"name": "Áudio", "color": "orange"},
+                        {"name": "Documento", "color": "gray"},
+                        {"name": "Sticker", "color": "pink"},
+                        {"name": "Localização", "color": "red"},
+                        {"name": "Contato", "color": "blue"},
+                        {"name": "Lista", "color": "yellow"},
+                        {"name": "Botões", "color": "purple"},
+                        {"name": "Enquete", "color": "green"},
+                        {"name": "Reação", "color": "pink"},
+                    ]
+                }
+            },
+            "Remetente": {
+                "select": {
+                    "options": [
+                        {"name": "contato", "color": "blue"},
+                        {"name": "bot", "color": "gray"},
+                        {"name": "atendente_humano", "color": "green"},
+                    ]
+                }
+            },
+            "Timestamp": {"date": {}},
+            "Message ID WhatsApp": {"rich_text": {}},
+            "Respondida": {"checkbox": {}},
+            "Resposta Bot": {"rich_text": {}},
+            "Confiança Resposta": {"number": {"format": "percent"}},
+            "Metadados": {"rich_text": {}},
+        }
+
+        parameters = {
+            "parent": {"type": "page_id", "page_id": self.notion_page_id},
+            "title": [
+                {
+                    "type": "text",
+                    "text": {"content": "💬 Mensagens CRM"},
+                }
+            ],
+            "icon": {"type": "emoji", "emoji": "💬"},
+            "initial_data_source": {
+                "name": "Mensagens",
+                "properties": properties,
+            },
+        }
+
+        try:
+            created = await self.client.databases.create(parameters)
+            logger.info(
+                f"✅ Database de Mensagens criada: {created.id}"
+            )
+            if created.data_sources:
+                logger.info(
+                    f"🔑 Data Source ID Mensagens: {created.data_sources[0]['id']}"
+                )
+            return created
+        except Exception as e:
+            logger.error(
+                f"❌ Erro ao criar database de Mensagens: {e}"
+            )
+            raise
+
+    async def add_all_relations_to_atendimento_database(
+        self, mensagem_db: Any, atendimento_db: Any
+    ) -> None:
+        """Adiciona todos os campos de relacionamento na database de Atendimentos."""
+        logger.info(
+            "Adicionando todos os relacionamentos na database de Atendimentos..."
+        )
+
+        # Obter as databases existentes para configurar relacionamentos
+        try:
+            contato_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_clientes_contato")
+            departamento_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_operacional_departamento")
+            atendente_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_operacional_atendente")
+        except NotionDatabaseConfig.DoesNotExist as e:
+            logger.error(
+                f"❌ Database de configuração não encontrada: {e}"
+            )
+            raise ValueError(
+                "Execute primeiro a construção de clientes/contatos e operacional"
+            )
+
+        # Obter as databases existentes para pegar os data_source_ids
+        contato_db = await self.client.databases.retrieve(str(contato_config.notion_database_id))
+        departamento_db = await self.client.databases.retrieve(str(departamento_config.notion_database_id))
+        atendente_db_existing = await self.client.databases.retrieve(str(atendente_config.notion_database_id))
+
+        # Extrair os data_source_ids
+        contato_data_source_id = contato_db.data_sources[0]["id"] if contato_db.data_sources else None
+        departamento_data_source_id = departamento_db.data_sources[0]["id"] if departamento_db.data_sources else None
+        atendente_data_source_id = atendente_db_existing.data_sources[0]["id"] if atendente_db_existing.data_sources else None
+        mensagem_data_source_id = (
+            mensagem_db.data_sources[0]["id"]
+            if mensagem_db.data_sources
+            else None
+        )
+
+        if not all([contato_data_source_id, departamento_data_source_id, atendente_data_source_id, mensagem_data_source_id]):
+            raise ValueError("Uma ou mais databases não possuem data_source_id")
+
+        # Atualizar a database de atendimentos para incluir todos os relacionamentos
+        properties_schema = atendimento_db.data_sources[0]["schema"]["properties"]
+
+        # Adicionar Contato
+        properties_schema["Contato"] = {
+            "relation": {
+                "data_source_id": contato_data_source_id,
+                "single_property": {"type": "single_property"},
+            }
+        }
+
+        # Adicionar Departamento
+        properties_schema["Departamento"] = {
+            "relation": {
+                "data_source_id": departamento_data_source_id,
+                "single_property": {"type": "single_property"},
+            }
+        }
+
+        # Adicionar Atendente
+        properties_schema["Atendente"] = {
+            "relation": {
+                "data_source_id": atendente_data_source_id,
+                "single_property": {"type": "single_property"},
+            }
+        }
+
+        # Adicionar Mensagens Relacionadas
+        properties_schema["Mensagens Relacionadas"] = {
+            "relation": {
+                "data_source_id": mensagem_data_source_id,
+                "dual_property": {
+                    "synced_property_name": "Atendimento Relacionado"
+                },
+            }
+        }
+
+        try:
+            await self.client.databases.update(
+                database_id=atendimento_db.id,
+                title=[
+                    {
+                        "type": "text",
+                        "text": {"content": "🎯 Atendimentos CRM"},
+                    }
+                ],
+                icon={"type": "emoji", "emoji": "🎯"},
+                properties=properties_schema,
+            )
+            logger.info(
+                "✅ Todos os relacionamentos adicionados na database de Atendimentos"
+            )
+        except Exception as e:
+            logger.error(
+                f"❌ Erro ao adicionar relacionamentos em Atendimentos: {e}"
+            )
+            raise
+
+    async def create_example_pages_and_relation(
+        self, mensagem_db: Any, atendimento_db: Any
+    ) -> None:
+        """Cria páginas de exemplo para testar o relacionamento."""
+        logger.info(
+            "Criando páginas de exemplo para Atendimentos e Mensagens..."
+        )
+
+        try:
+            # Obter data_source_ids
+            atendimento_data_source_id = (
+                atendimento_db.data_sources[0]["id"]
+                if atendimento_db.data_sources
+                else None
+            )
+            mensagem_data_source_id = (
+                mensagem_db.data_sources[0]["id"]
+                if mensagem_db.data_sources
+                else None
+            )
+
+            # 1. Criar uma página de Atendimento exemplo
+            atendimento_page = await self.client.pages.create(
+                parent={"database_id": atendimento_db.id},
+                properties={
+                    "Protocolo": {"title": [{"text": {"content": "ATT-2024-001"}}]},
+                    "Status": {"select": {"name": "em_atendimento"}},
+                    "Prioridade": {"select": {"name": "normal"}},
+                    "Assunto": {"rich_text": [{"text": {"content": "Dúvida sobre produto"}}]},
+                    "Data Início": {"date": {"start": "2024-01-15T09:00:00.000Z"}},
+                    "Canal": {"select": {"name": "whatsapp"}},
+                },
+            )
+            logger.info(
+                f"✅ Página de Atendimento exemplo criada: {atendimento_page.id}"
+            )
+
+            # 2. Criar uma página de Mensagem exemplo relacionada ao atendimento
+            mensagem_page = await self.client.pages.create(
+                parent={"database_id": mensagem_db.id},
+                properties={
+                    "Conteúdo": {"title": [{"text": {"content": "Olá, gostaria de saber mais sobre o produto X"}}]},
+                    "Atendimento Relacionado": {
+                        "relation": [{"id": atendimento_page.id}]
+                    },
+                    "Tipo": {"select": {"name": "Texto"}},
+                    "Remetente": {"select": {"name": "contato"}},
+                    "Timestamp": {"date": {"start": "2024-01-15T09:00:00.000Z"}},
+                    "Respondida": {"checkbox": False},
+                },
+            )
+            logger.info(
+                f"✅ Página de Mensagem exemplo criada: {mensagem_page.id}"
+            )
+
+            # 3. Atualizar o atendimento para incluir a mensagem relacionada
+            await self.client.pages.update(
+                page_id=atendimento_page.id,
+                properties={
+                    "Mensagens Relacionadas": {
+                        "relation": [{"id": mensagem_page.id}]
+                    }
+                },
+            )
+            logger.info("✅ Relacionamento bidirecional criado com sucesso")
+
+        except Exception as e:
+            logger.error(f"❌ Erro ao criar páginas de exemplo: {e}")
+            raise
+
+    async def save_database_configs(
+        self, atendimento_db: Any, mensagem_db: Any
+    ) -> None:
+        """
+        Salva as configurações das databases no modelo NotionDatabaseConfig.
+        """
+        logger.info(
+            "💾 Salvando configurações de atendimentos no modelo NotionDatabaseConfig..."
+        )
+
+        try:
+            # Obter data_source_ids
+            atendimento_data_source_id = (
+                atendimento_db.data_sources[0]["id"]
+                if atendimento_db.data_sources
+                else None
+            )
+            mensagem_data_source_id = (
+                mensagem_db.data_sources[0]["id"]
+                if mensagem_db.data_sources
+                else None
+            )
+
+            # Configuração para Atendimentos
+            atendimento_config = await sync_to_async(NotionDatabaseConfig.objects.update_or_create)(
+                slug="ui_atendimentos_atendimento",
+                defaults={
+                    "name": "🎯 Atendimentos CRM",
+                    "description": "Database para sincronização de atendimentos do sistema",
+                    "notion_database_id": atendimento_db.id,
+                    "data_source_id": atendimento_data_source_id,
+                    "django_model": "ui.atendimentos.Atendimento",
+                    "django_app_label": "ui",
+                    "notion_schema": {
+                        "Protocolo": {"title": {}},
+                        "Contato": {"relation": {}},
+                        "Departamento": {"relation": {}},
+                        "Atendente": {"relation": {}},
+                        "Status": {
+                            "select": {
+                                "options": [
+                                    {"name": "fila", "color": "gray"},
+                                    {"name": "em_atendimento", "color": "blue"},
+                                    {"name": "aguardando_retorno", "color": "yellow"},
+                                    {"name": "resolvido", "color": "green"},
+                                    {"name": "cancelado", "color": "red"},
+                                ]
+                            }
+                        },
+                        "Prioridade": {
+                            "select": {
+                                "options": [
+                                    {"name": "baixa", "color": "gray"},
+                                    {"name": "normal", "color": "blue"},
+                                    {"name": "alta", "color": "orange"},
+                                    {"name": "urgente", "color": "red"},
+                                ]
+                            }
+                        },
+                        "Assunto": {"rich_text": {}},
+                        "Data Início": {"date": {}},
+                        "Data Fim": {"date": {}},
+                        "Data Última Mensagem": {"date": {}},
+                        "Canal": {
+                            "select": {
+                                "options": [
+                                    {"name": "whatsapp", "color": "green"},
+                                    {"name": "email", "color": "blue"},
+                                    {"name": "telefone", "color": "orange"},
+                                    {"name": "web", "color": "purple"},
+                                ]
+                            }
+                        },
+                        "Tags": {"multi_select": {"options": []}},
+                        "Avaliação": {"number": {"format": "number"}},
+                        "Feedback": {"rich_text": {}},
+                        "Mensagens Relacionadas": {"relation": {}},
+                    },
+                    "field_mappings": {
+                        "protocolo": "Protocolo",
+                        "contato": "Contato",
+                        "departamento": "Departamento",
+                        "atendente_humano": "Atendente",
+                        "status": "Status",
+                        "prioridade": "Prioridade",
+                        "assunto": "Assunto",
+                        "data_inicio": "Data Início",
+                        "data_fim": "Data Fim",
+                        "data_ultima_mensagem": "Data Última Mensagem",
+                        "canal": "Canal",
+                        "tags": "Tags",
+                        "avaliacao": "Avaliação",
+                        "feedback": "Feedback",
+                    },
+                    "sync_enabled": True,
+                    "sync_direction": "bidirectional",
+                    "sync_priority": 7,  # Alta prioridade para atendimentos
+                    "auto_sync": True,
+                },
+            )
+
+            # Configuração para Mensagens
+            mensagem_config = await sync_to_async(NotionDatabaseConfig.objects.update_or_create)(
+                slug="ui_atendimentos_mensagem",
+                defaults={
+                    "name": "💬 Mensagens CRM",
+                    "description": "Database para sincronização de mensagens do sistema",
+                    "notion_database_id": mensagem_db.id,
+                    "data_source_id": mensagem_data_source_id,
+                    "django_model": "ui.atendimentos.Mensagem",
+                    "django_app_label": "ui",
+                    "notion_schema": {
+                        "Conteúdo": {"title": {}},
+                        "Atendimento Relacionado": {"relation": {}},
+                        "Tipo": {
+                            "select": {
+                                "options": [
+                                    {"name": "Texto", "color": "blue"},
+                                    {"name": "Imagem", "color": "green"},
+                                    {"name": "Vídeo", "color": "purple"},
+                                    {"name": "Áudio", "color": "orange"},
+                                    {"name": "Documento", "color": "gray"},
+                                    {"name": "Sticker", "color": "pink"},
+                                    {"name": "Localização", "color": "red"},
+                                    {"name": "Contato", "color": "blue"},
+                                    {"name": "Lista", "color": "yellow"},
+                                    {"name": "Botões", "color": "purple"},
+                                    {"name": "Enquete", "color": "green"},
+                                    {"name": "Reação", "color": "pink"},
+                                ]
+                            }
+                        },
+                        "Remetente": {
+                            "select": {
+                                "options": [
+                                    {"name": "contato", "color": "blue"},
+                                    {"name": "bot", "color": "gray"},
+                                    {"name": "atendente_humano", "color": "green"},
+                                ]
+                            }
+                        },
+                        "Timestamp": {"date": {}},
+                        "Message ID WhatsApp": {"rich_text": {}},
+                        "Respondida": {"checkbox": {}},
+                        "Resposta Bot": {"rich_text": {}},
+                        "Confiança Resposta": {"number": {"format": "percent"}},
+                        "Metadados": {"rich_text": {}},
+                    },
+                    "field_mappings": {
+                        "conteudo": "Conteúdo",
+                        "atendimento": "Atendimento Relacionado",
+                        "tipo": "Tipo",
+                        "remetente": "Remetente",
+                        "timestamp": "Timestamp",
+                        "message_id_whatsapp": "Message ID WhatsApp",
+                        "respondida": "Respondida",
+                        "resposta_bot": "Resposta Bot",
+                        "confianca_resposta": "Confiança Resposta",
+                        "metadados": "Metadados",
+                    },
+                    "sync_enabled": True,
+                    "sync_direction": "bidirectional",
+                    "sync_priority": 8,  # Prioridade ainda maior para mensagens
+                    "auto_sync": True,
+                },
+            )
+
+            logger.info("✅ Configurações de atendimentos salvas com sucesso:")
+            logger.info(f"   - Atendimento Config: {atendimento_config[0].id}")
+            logger.info(f"   - Mensagem Config: {mensagem_config[0].id}")
+
+        except Exception as e:
+            logger.error(f"❌ Erro ao salvar configurações: {e}")
+            raise
+
+    async def construct_atendimentos_databases(self) -> None:
+        """Constrói todas as databases de atendimentos necessárias com relacionamentos corretos."""
+        logger.info(
+            "🚀 Iniciando construção de databases de atendimentos no Notion com relacionamentos..."
+        )
+
+        try:
+            # 1. Criar database de Atendimentos primeiro (sem relacionamentos)
+            atendimento_db = await self.create_atendimento_database()
+
+            # 2. Criar database de Mensagens COM RELACIONAMENTO para Atendimentos
+            mensagem_db = await self.create_mensagem_database(
+                atendimento_db
+            )
+
+            # 3. Aguardar um momento para as databases serem processadas
+            await asyncio.sleep(2)
+
+            # 4. Adicionar todos os relacionamentos na database de Atendimentos
+            try:
+                await self.add_all_relations_to_atendimento_database(
+                    mensagem_db, atendimento_db
+                )
+            except Exception as e:
+                logger.warning(f"⚠️ Erro ao adicionar relacionamentos em Atendimentos: {e}")
+                logger.info("💡 As databases foram criadas, mas os relacionamentos precisam ser configurados manualmente")
+
+            # 5. Aguardar um momento antes de criar exemplos
+            await asyncio.sleep(2)
+
+            # 6. Criar páginas de exemplo para testar relacionamento
+            try:
+                await self.create_example_pages_and_relation(
+                    mensagem_db, atendimento_db
+                )
+            except Exception as e:
+                logger.warning(f"⚠️ Erro ao criar páginas de exemplo: {e}")
+                logger.info("💡 Isso não afeta a criação das databases, apenas os testes")
+
+            # Exibir informações importantes das databases criadas
+            logger.info(
+                "🎉 Databases de atendimentos criadas com sucesso no Notion!"
+            )
+            logger.info(
+                f"📋 Atendimentos: https://www.notion.so/{atendimento_db.id.replace('-', '')}"
+            )
+            logger.info(
+                f"📋 Mensagens: https://www.notion.so/{mensagem_db.id.replace('-', '')}"
+            )
+            logger.info(f"🔑 ID Atendimentos: {atendimento_db.id}")
+            logger.info(f"🔑 ID Mensagens: {mensagem_db.id}")
+
+            if atendimento_db.data_sources:
+                logger.info(
+                    f"🔑 Data Source ID Atendimentos: {atendimento_db.data_sources[0]['id']}"
+                )
+            if mensagem_db.data_sources:
+                logger.info(
+                    f"🔑 Data Source ID Mensagens: {mensagem_db.data_sources[0]['id']}"
+                )
+
+            # Salvar configurações no modelo NotionDatabaseConfig
+            await self.save_database_configs(atendimento_db, mensagem_db)
+            logger.info(
+                "✅ Configurações de atendimentos salvas com sucesso no Django!"
+            )
+
+            # Verificar configurações salvas
+            atendimento_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_atendimentos_atendimento")
+            mensagem_config = await sync_to_async(
+                NotionDatabaseConfig.objects.get
+            )(slug="ui_atendimentos_mensagem")
+
+            logger.info("✅ Configurações de atendimentos verificadas no Django:")
+            logger.info(
+                f"   - Atendimento Config ID: {atendimento_config.id}"
+            )
+            logger.info(
+                f"   - Mensagem Config ID: {mensagem_config.id}"
+            )
+            logger.info(
+                f"   - Ambas prontas para sincronização: {atendimento_config.is_ready_for_sync() and mensagem_config.is_ready_for_sync()}"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"❌ Falha na construção das databases de atendimentos: {e}"
+            )
+            raise
+
+
 async def run_construction_clientes() -> None:
     """Função principal que executa a construção das databases de clientes/contatos."""
     try:
@@ -1202,16 +1846,177 @@ async def run_construction_operacional() -> None:
         raise
 
 
+async def run_construction_atendimentos() -> None:
+    """Função principal que executa a construção das databases de atendimentos/mensagens."""
+    try:
+        constructor = NotionAtendimentosDatabaseConstructor()
+        await constructor.construct_atendimentos_databases()
+    except Exception as e:
+        logger.error(f"❌ Erro durante a execução de atendimentos: {e}")
+        raise
+
+
+def run_atendimentos() -> None:
+    """Função de conveniência para executar apenas a construção de atendimentos."""
+    try:
+        asyncio.run(run_construction_atendimentos())
+    except KeyboardInterrupt:
+        logger.info("⏹️ Operação cancelada pelo usuário")
+    except Exception as e:
+        logger.error(f"❌ Erro fatal na construção de atendimentos: {e}")
+        raise
+
+
+async def run_full_construction_sequence() -> None:
+    """
+    Executa a sequência completa de construção:
+    1. Clientes/Contatos
+    2. Operacional (Departamento/Atendente)
+    3. Atendimentos/Mensagens (depende das anteriores)
+    """
+    logger.info("🚀 Iniciando sequência completa de construção de databases no Notion...")
+
+    try:
+        # 1. Construir databases de clientes/contatos
+        logger.info("📋 Etapa 1/3: Construindo databases de clientes/contatos...")
+        await run_construction_clientes()
+        logger.info("✅ Etapa 1/3 concluída com sucesso")
+
+        # Aguardar um momento entre as etapas
+        await asyncio.sleep(3)
+
+        # 2. Construir databases operacionais
+        logger.info("🏛️ Etapa 2/3: Construindo databases operacionais...")
+        await run_construction_operacional()
+        logger.info("✅ Etapa 2/3 concluída com sucesso")
+
+        # Aguardar um momento entre as etapas
+        await asyncio.sleep(3)
+
+        # 3. Construir databases de atendimentos (depende das anteriores)
+        logger.info("🎯 Etapa 3/3: Construindo databases de atendimentos/mensagens...")
+        await run_construction_atendimentos()
+        logger.info("✅ Etapa 3/3 concluída com sucesso")
+
+        logger.info("🎉 Sequência completa de construção finalizada com sucesso!")
+        logger.info("📊 Todas as databases estão prontas para sincronização:")
+        logger.info("   - Clientes e Contatos")
+        logger.info("   - Departamentos e Atendentes")
+        logger.info("   - Atendimentos e Mensagens")
+
+    except Exception as e:
+        logger.error(f"❌ Erro na sequência completa de construção: {e}")
+        raise
+
+
+def run_full() -> None:
+    """Função de conveniência para executar toda a sequência de construção."""
+    try:
+        asyncio.run(run_full_construction_sequence())
+    except KeyboardInterrupt:
+        logger.info("⏹️ Operação cancelada pelo usuário")
+    except Exception as e:
+        logger.error(f"❌ Erro fatal na construção completa: {e}")
+        raise
+
+
+# =============================================================================
+# RESUMO DA IMPLEMENTAÇÃO - INTEGRAÇÃO ATENDIMENTOS/ MENSAGENS
+# =============================================================================
+#
+# Nova classe adicionada: NotionAtendimentosDatabaseConstructor
+#
+# Funcionalidades implementadas:
+# 1. Criação da database de Atendimentos com relacionamentos para:
+#    - Contato (relacionamento existente)
+#    - Departamento (relacionamento existente)
+#    - Atendente (relacionamento existente)
+#    - Mensagens (relacionamento bidirecional)
+#
+# 2. Criação da database de Mensagens com:
+#    - Relacionamento com Atendimento (pai-filho)
+#    - Suporte a todos os tipos de mensagem do sistema
+#    - Metadados para respostas de bot e confiança
+#
+# 3. Configuração automática no Django com:
+#    - NotionDatabaseConfig para Atendimento (slug: ui_atendimentos_atendimento)
+#    - NotionDatabaseConfig para Mensagem (slug: ui_atendimentos_mensagem)
+#    - Prioridade alta para sincronização (7 e 8 respectivamente)
+#
+# 4. Páginas de exemplo criadas para demonstrar o funcionamento
+#
+# Uso recomendado:
+# # Executar após asyncio.run(run_construction_operacional())
+# from notion_sync.scripts.script_constructor_notion import run_atendimentos
+# run_atendimentos()
+#
+# Ou executar sequência completa:
+# from notion_sync.scripts.script_constructor_notion import run_full
+# run_full()
+#
+# A implementação segue exatamente o mesmo padrão das classes existentes,
+# garantindo consistência e manutenibilidade do código.
+# =============================================================================
+
+
+def test_atendimentos_construction() -> None:
+    """
+    Função de teste para validar a construção de atendimentos após a operacional.
+    Esta função deve ser usada apenas em ambiente de desenvolvimento/teste.
+    """
+    logger.info("🧪 Iniciando teste de construção de atendimentos...")
+
+    try:
+        # Verificar se as databases necessárias existem
+        configs_necessarias = [
+            "ui_clientes_contato",
+            "ui_operacional_departamento",
+            "ui_operacional_atendente"
+        ]
+
+        for slug in configs_necessarias:
+            try:
+                NotionDatabaseConfig.objects.get(slug=slug)
+                logger.info(f"✅ Configuração {slug} encontrada")
+            except NotionDatabaseConfig.DoesNotExist:
+                logger.error(f"❌ Configuração {slug} não encontrada")
+                logger.error("Execute primeiro a construção de clientes e operacional")
+                return
+
+        # Executar a construção de atendimentos
+        logger.info("🎯 Executando construção de atendimentos...")
+        asyncio.run(run_construction_atendimentos())
+
+        # Verificar se as novas configs foram criadas
+        novas_configs = ["ui_atendimentos_atendimento", "ui_atendimentos_mensagem"]
+
+        for slug in novas_configs:
+            try:
+                config = NotionDatabaseConfig.objects.get(slug=slug)
+                logger.info(f"✅ Nova configuração {slug} criada com ID: {config.id}")
+                logger.info(f"   Database ID: {config.notion_database_id}")
+                logger.info(f"   Data Source ID: {config.data_source_id}")
+                logger.info(f"   Pronta para sync: {config.is_ready_for_sync()}")
+            except NotionDatabaseConfig.DoesNotExist:
+                logger.error(f"❌ Nova configuração {slug} não foi criada")
+
+        logger.info("🧪 Teste de construção de atendimentos concluído!")
+
+    except Exception as e:
+        logger.error(f"❌ Erro no teste de construção: {e}")
+        raise
+
+
 def run(construction_type: str = "clientes") -> None:
     """
     Entry point para execução do script.
 
     Args:
-        construction_type: Tipo de construção a ser executada ("clientes" ou "operacional")
+        construction_type: Tipo de construção a ser executada ("clientes", "operacional", "atendimentos" ou "full")
     """
     try:
-        asyncio.run(run_construction_clientes())
-        asyncio.run(run_construction_operacional())
+
+        asyncio.run(run_full_construction_sequence())
 
     except KeyboardInterrupt:
         logger.info("⏹️ Operação cancelada pelo usuário")

@@ -8,8 +8,4 @@ Este módulo contém scripts para:
 - Limpar dados de teste
 """
 
-from .setup_notion_databases import setup_notion_databases
-
-__all__ = [
-    "setup_notion_databases",
-]
+__all__ = []

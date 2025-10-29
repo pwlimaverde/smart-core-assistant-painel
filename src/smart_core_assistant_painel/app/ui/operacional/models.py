@@ -380,15 +380,16 @@ class WhatsAppInstance(models.Model):
                 )
 
     @property
-    def atendentes(self) -> models.QuerySet["AtendenteHumano"]:
+    def atendentes(self) -> models.QuerySet["Atendente"]:
         """Retorna QuerySet de atendentes do departamento desta instância.
 
         Caso a instância não esteja vinculada a um departamento, retorna um QuerySet vazio.
         """
-        from .models import AtendenteHumano  # import local para evitar ciclos
+        # Import local para evitar ciclos
+        from .models import Atendente
 
         if not self.departamento:
-            return AtendenteHumano.objects.none()
+            return Atendente.objects.none()
         return self.departamento.atendentes.all()
 
     @property
@@ -411,14 +412,14 @@ class WhatsAppInstance(models.Model):
 
     def rotear_atendimento(
         self, mensagem: dict[str, Any]
-    ) -> Optional["AtendenteHumano"]:
+    ) -> Optional["Atendente"]:
         """Roteia mensagem baseada no tipo de instância.
 
         Args:
             mensagem: Dicionário com dados da mensagem recebida
 
         Returns:
-            AtendenteHumano ou None se não houver atendente disponível
+            Atendente ou None se não houver atendente disponível
         """
         if self.tipo_instancia == "individual":
             # Instância individual: atribui diretamente ao owner
@@ -472,7 +473,7 @@ class WhatsAppInstance(models.Model):
             )
             return None
 
-    def selecionar_proximo_atendente(self) -> Optional["AtendenteHumano"]:
+    def selecionar_proximo_atendente(self) -> Optional["Atendente"]:
         """Seleciona o próximo atendente disponível por round-robin simples.
 
         Critérios:

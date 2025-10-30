@@ -48,8 +48,25 @@ def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
     """
     from .models import ContatoSync, NotionDatabaseConfig
 
-    # Obter configuração do Notion para Contatos
-    config = NotionDatabaseConfig.objects.get(slug="ui_clientes_contato")
+    # Obter ou criar configuração do Notion para Contatos
+    # Comentário: evita NameError quando a config ainda não existe.
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_clientes_contato"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        # Cria configuração padrão desabilitada
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_clientes_contato",
+            name="Contatos",
+            django_model="clientes.Contato",
+            django_app_label="ui",
+            notion_database_id="",  # preenchido posteriormente
+            sync_enabled=False,
+            description=(
+                "Configuração padrão para sincronização de Contatos"
+            ),
+        )
 
     sync, created = ContatoSync.objects.get_or_create(
         contato_id=contato_id,
@@ -77,8 +94,25 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
     """
     from .models import ClienteSync, NotionDatabaseConfig
 
-    # Obter configuração do Notion para Clientes
-    config = NotionDatabaseConfig.objects.get(slug="ui_clientes_cliente")
+    # Obter ou criar configuração do Notion para Clientes
+    # Comentário: evita NameError quando a config ainda não existe.
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_clientes_cliente"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        # Cria configuração padrão desabilitada
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_clientes_cliente",
+            name="Clientes",
+            django_model="clientes.Cliente",
+            django_app_label="ui",
+            notion_database_id="",  # preenchido posteriormente
+            sync_enabled=False,
+            description=(
+                "Configuração padrão para sincronização de Clientes"
+            ),
+        )
 
     sync, created = ClienteSync.objects.get_or_create(
         cliente_id=cliente_id,
@@ -180,7 +214,25 @@ def get_or_create_atendimento_sync(atendimento_id: int) -> AtendimentoSync:
     Obtém ou cria registro AtendimentoSync para um atendimento.
     """
     from .models import AtendimentoSync, NotionDatabaseConfig
-    config = NotionDatabaseConfig.objects.get(slug="ui_atendimentos_atendimento")
+    # Obter ou criar configuração do Notion para Atendimentos
+    # Comentário: evita NameError quando a config ainda não existe.
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_atendimentos_atendimento"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        # Cria configuração padrão desabilitada
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_atendimentos_atendimento",
+            name="Atendimentos",
+            django_model="atendimentos.Atendimento",
+            django_app_label="ui",
+            notion_database_id="",  # preenchido posteriormente
+            sync_enabled=False,
+            description=(
+                "Configuração padrão para sincronização de Atendimentos"
+            ),
+        )
     sync, created = AtendimentoSync.objects.get_or_create(
         atendimento_id=atendimento_id,
         defaults={
@@ -206,7 +258,25 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
         Mensagem as MensagemModel,
     )
 
-    config = NotionDatabaseConfig.objects.get(slug="ui_atendimentos_mensagem")
+    # Obter ou criar configuração do Notion para Mensagens
+    # Comentário: evita NameError quando a config ainda não existe.
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_atendimentos_mensagem"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        # Cria configuração padrão desabilitada
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_atendimentos_mensagem",
+            name="Mensagens",
+            django_model="atendimentos.Mensagem",
+            django_app_label="ui",
+            notion_database_id="",  # preenchido posteriormente
+            sync_enabled=False,
+            description=(
+                "Configuração padrão para sincronização de Mensagens"
+            ),
+        )
 
     mensagem_obj: MensagemModel | None = (
         MensagemModel.objects.filter(id=mensagem_id).select_related("atendimento")
@@ -322,6 +392,61 @@ def schedule_sync_operation(
             f"Executando sincronização: {model_name} #{instance_id} - {operation}"
         )
         logger.debug(f"Sync record: {sync_record}")
+
+        # Validação de prontidão da configuração
+        cfg = getattr(sync_record, "config", None)
+        if not cfg or not cfg.is_ready_for_sync():
+            ready_details = (
+                f"ready={cfg.is_ready_for_sync() if cfg else False} "
+                f"sync_enabled={getattr(cfg, 'sync_enabled', False)} "
+                f"db_id_set={bool(getattr(cfg, 'notion_database_id', None))} "
+                f"ds_id_set={bool(getattr(cfg, 'data_source_id', None))}"
+            )
+            msg = (
+                "Configuração Notion não pronta para sincronização. "
+                f"{ready_details}"
+            )
+            logger.warning(msg)
+            try:
+                sync_record.mark_as_failed(msg)
+            except Exception:
+                # Fallback caso método não exista; atualiza campos básicos
+                sync_record.sync_status = "disabled"
+                sync_record.sync_error = msg
+                sync_record.save()
+            return
+
+        # Validação específica para Mensagem: precisa do atendimento pai
+        if model_name == "Mensagem":
+            try:
+                at_sync = getattr(sync_record, "atendimento_sync", None)
+                parent_id = getattr(at_sync, "external_id", None)
+                if not parent_id:
+                    msg = (
+                        "Mensagem não pode ser sincronizada: atendimento pai "
+                        "sem external_id."
+                    )
+                    logger.warning(msg)
+                    try:
+                        sync_record.mark_as_failed(msg)
+                    except Exception:
+                        sync_record.sync_status = "error"
+                        sync_record.sync_error = msg
+                        sync_record.save()
+                    return
+            except Exception as e:
+                logger.error(
+                    (
+                        "Erro ao validar relacionamento de Mensagem: {}"
+                    ).format(e)
+                )
+                try:
+                    sync_record.mark_as_failed(str(e))
+                except Exception:
+                    sync_record.sync_status = "error"
+                    sync_record.sync_error = str(e)
+                    sync_record.save()
+                return
 
         if operation == "create":
             external_id = service.create_record(

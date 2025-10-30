@@ -171,11 +171,9 @@ class NotionDatabaseConfig(models.Model):
         Returns:
             True se pronto para sincronizar.
         """
-        return (
-            self.sync_enabled
-            and self.notion_database_id
-            and self.data_source_id
-        )
+        # Comentário: permitir sincronização com apenas database_id válido.
+        # O data_source_id é opcional na criação/atualização de páginas.
+        return self.sync_enabled and bool(self.notion_database_id)
 
     @classmethod
     def get_database_id(cls, model_name: str) -> str | None:
@@ -1975,8 +1973,11 @@ class MensagemSync(models.Model):
         """Prepara e formata os dados para sincronização com Notion."""
         try:
             from .services.mappers.mensagem_mapper import MensagemMapper
-            # Para mensagens, o Notion usa bloco; guardamos como properties
-            self.notion_properties = MensagemMapper.to_notion_block(self)
+            # Para mensagens, usamos propriedades de página (database
+            # "Mensagens CRM") com relação ao atendimento.
+            self.notion_properties = (
+                MensagemMapper.to_notion_properties(self)
+            )
 
             # Garante que o atendimento_sync está linkado
             if not self.atendimento_sync and self.mensagem.atendimento:

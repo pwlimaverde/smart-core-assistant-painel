@@ -63,16 +63,16 @@ class NotionSyncService(ExternalSyncServiceInterface):
         self.database_ids: dict[str, str | None] = {}
         self.data_source_ids: dict[str, str | None] = {}
 
-        model_mapping = {
-            "Contato": "ui.clientes.Contato",
-            "Cliente": "ui.clientes.Cliente",
-            "Departamento": "ui.operacional.Departamento",
-            "Atendente": "ui.operacional.Atendente",
-            "Atendimento": "ui.atendimentos.Atendimento",
-            "Mensagem": "ui.atendimentos.Mensagem",
-        }
-
-        for simple_name, full_name in model_mapping.items():
+        # Inicializa cache de IDs com base no mapeamento padronizado
+        for simple_name in (
+            "Contato",
+            "Cliente",
+            "Departamento",
+            "Atendente",
+            "Atendimento",
+            "Mensagem",
+        ):
+            full_name = self._resolve_full_name(simple_name)
             db_id = NotionDatabaseConfig.get_database_id(full_name)
             self.database_ids[simple_name] = db_id
             if db_id:
@@ -89,30 +89,35 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 )
 
             # Carrega data_source_id quando disponível
-            try:
-                config = (
-                    NotionDatabaseConfig.objects.filter(
-                        django_model__icontains=full_name, sync_enabled=True
-                    )
-                    .first()
+            cfg = self._get_config(simple_name, only_enabled=True)
+            ds_id = str(cfg.data_source_id) if cfg and cfg.data_source_id else None
+            self.data_source_ids[simple_name] = ds_id
+            if ds_id:
+                logger.info(
+                    (
+                        "Data Source ID para {} carregado: {}..."
+                    ).format(simple_name, ds_id[:8])
                 )
-                ds_id = str(config.data_source_id) if config and config.data_source_id else None
-                self.data_source_ids[simple_name] = ds_id
-                if ds_id:
-                    logger.info(
-                        (
-                            "Data Source ID para {} carregado: {}..."
-                        ).format(simple_name, ds_id[:8])
+            else:
+                logger.warning(
+                    (
+                        "Data Source ID para {} não encontrado"
+                    ).format(simple_name)
+                )
+            # Loga prontidão de configuração de forma clara
+            if cfg:
+                ready = cfg.is_ready_for_sync()
+                logger.debug(
+                    (
+                        "Prontidão config {}: ready={} sync_enabled={} db_id_set={} ds_id_set={}"
+                    ).format(
+                        simple_name,
+                        ready,
+                        cfg.sync_enabled,
+                        bool(cfg.notion_database_id),
+                        bool(cfg.data_source_id),
                     )
-                else:
-                    logger.warning(
-                        (
-                            "Data Source ID para {} não encontrado"
-                        ).format(simple_name)
-                    )
-            except Exception:
-                # Fallback silencioso se não conseguir carregar config
-                self.data_source_ids[simple_name] = None
+                )
 
         self._mappers = {
             "Contato": ContatoMapper,
@@ -145,22 +150,8 @@ class NotionSyncService(ExternalSyncServiceInterface):
         faz fallback para o schema salvo em NotionDatabaseConfig.
         """
         try:
-            # Localiza configuração pelo nome do modelo
-            model_full_name_map = {
-                "Contato": "ui.clientes.Contato",
-                "Cliente": "ui.clientes.Cliente",
-                "Departamento": "ui.operacional.Departamento",
-                "Atendente": "ui.operacional.Atendente",
-                "Atendimento": "ui.atendimentos.Atendimento",
-                "Mensagem": "ui.atendimentos.Mensagem",
-            }
-            full_name = model_full_name_map.get(model_name, model_name)
-            config = (
-                NotionDatabaseConfig.objects.filter(
-                    django_model__icontains=full_name, sync_enabled=True
-                )
-                .first()
-            )
+            # Localiza configuração pelo nome do modelo usando helper unificado
+            config = self._get_config(model_name, only_enabled=True)
 
             allowed: set[str] = set()
 
@@ -220,23 +211,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         if not mapper:
             raise MappingError(f"Mapper não encontrado para {model_name}")
 
-        # Caso especial para Mensagem: criar como um bloco filho
-        if model_name == "Mensagem":
-            try:
-                block_data = mapper.to_notion_block(data)
-                parent_page_id = data.atendimento_sync.external_id
-                if not parent_page_id:
-                    raise NotionSyncError("Atendimento pai não sincronizado, não é possível adicionar mensagem.")
-
-                response = self._run(
-                    self.client.blocks.children.append(block_id=parent_page_id, children=[block_data])
-                )
-                block_id = response.get("results", [{}])[0].get("id")
-                logger.success(f"✅ Bloco de Mensagem criado no Notion: {block_id}")
-                return block_id
-            except Exception as e:
-                logger.error(f"❌ Erro ao criar bloco de Mensagem no Notion: {e}")
-                raise SyncError(f"Erro ao criar bloco de Mensagem: {e}")
+        # Mensagens passam a ser criadas como páginas na database de mensagens.
 
         # Lógica padrão para criar páginas
         database_id = self.get_database_id(model_name)
@@ -311,10 +286,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         """
         Atualiza um registro (página) existente no Notion.
         """
-        # Mensagens (blocos) são imutáveis neste fluxo
-        if model_name == "Mensagem":
-            logger.info("Atualização de blocos de mensagem não é suportada.")
-            return True
+        # Atualizações de Mensagens como páginas são suportadas.
 
         try:
             mapper = self._mappers.get(model_name)
@@ -376,19 +348,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         Arquiva uma página ou deleta um bloco no Notion.
         """
         try:
-            # Deleta bloco de mensagem
-            if model_name == "Mensagem":
-                response = self._run(
-                    self.client.blocks.delete(block_id=external_id)
-                )
-                logger.success(
-                    (
-                        "✅ Bloco deletado no Notion: {}"
-                    ).format(response.get("id"))
-                )
-                return True
-
-            # Arquiva página para outros modelos
+            # Arquiva página
             page_data = {"archived": True}
             response = self._run(
                 self._request_async(
@@ -454,11 +414,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         if db_id:
             return db_id
 
-        model_full_name_map = {
-            "Atendimento": "ui.atendimentos.Atendimento",
-            "Mensagem": "ui.atendimentos.Mensagem",
-        }
-        full_name = model_full_name_map.get(model_name, model_name)
+        full_name = self._resolve_full_name(model_name)
         db_id = NotionDatabaseConfig.get_database_id(full_name)
 
         if db_id:
@@ -480,23 +436,8 @@ class NotionSyncService(ExternalSyncServiceInterface):
         if ds_id:
             return ds_id
 
-        model_full_name_map = {
-            "Contato": "ui.clientes.Contato",
-            "Cliente": "ui.clientes.Cliente",
-            "Departamento": "ui.operacional.Departamento",
-            "Atendente": "ui.operacional.Atendente",
-            "Atendimento": "ui.atendimentos.Atendimento",
-            "Mensagem": "ui.atendimentos.Mensagem",
-        }
-        full_name = model_full_name_map.get(model_name, model_name)
-
         try:
-            config = (
-                NotionDatabaseConfig.objects.filter(
-                    django_model__icontains=full_name, sync_enabled=True
-                )
-                .first()
-            )
+            config = self._get_config(model_name, only_enabled=True)
             if config and config.data_source_id:
                 ds_id_str = str(config.data_source_id)
                 self.data_source_ids[model_name] = ds_id_str
@@ -509,3 +450,43 @@ class NotionSyncService(ExternalSyncServiceInterface):
     @override
     def health_check(self) -> dict[str, Any]:
         raise NotImplementedError("Health check não implementado.")
+
+    # Helpers internos
+    def _resolve_full_name(self, model_name: str) -> str:
+        """
+        Resolve o nome completo "app.Model" armazenado em NotionDatabaseConfig
+        a partir do nome simples do modelo.
+
+        Comentário: o projeto armazena "clientes.Contato", "operacional.Atendente",
+        etc., sem o prefixo do app principal (ex.: "ui.").
+        """
+        mapping: dict[str, str] = {
+            "Contato": "clientes.Contato",
+            "Cliente": "clientes.Cliente",
+            "Departamento": "operacional.Departamento",
+            "Atendente": "operacional.Atendente",
+            "Atendimento": "atendimentos.Atendimento",
+            "Mensagem": "atendimentos.Mensagem",
+        }
+        return mapping.get(model_name, model_name)
+
+    def _get_config(
+        self, model_name: str, *, only_enabled: bool = True
+    ) -> NotionDatabaseConfig | None:
+        """
+        Localiza a configuração NotionDatabaseConfig para um modelo.
+
+        Args:
+            model_name: Nome simples do modelo (ex.: "Contato").
+            only_enabled: Se True, retorna apenas configurações com sync_enabled.
+
+        Returns:
+            Instância de NotionDatabaseConfig ou None.
+        """
+        full_name = self._resolve_full_name(model_name)
+        qs = NotionDatabaseConfig.objects.filter(
+            django_model__icontains=full_name
+        )
+        if only_enabled:
+            qs = qs.filter(sync_enabled=True)
+        return qs.first()

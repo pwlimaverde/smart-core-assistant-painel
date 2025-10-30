@@ -1904,6 +1904,37 @@ class AtendimentoSync(models.Model):
                     atendente=self.atendimento.atendente_humano
                 )
 
+            # Adicionar mensagens relacionadas
+            mensagens_relacionadas = []
+            try:
+                if hasattr(self, 'mensagens_sync'):
+                    logger.info(f"[MSG_DEBUG] Processando mensagens relacionadas para atendimento #{self.atendimento.id}")
+
+                    for msg_sync in self.mensagens_sync.all():
+                        if msg_sync.external_id:
+                            mensagens_relacionadas.append({"id": msg_sync.external_id})
+                            logger.info(f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} com external_id {msg_sync.external_id} adicionada")
+                        else:
+                            logger.warning(f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} sem external_id")
+
+                    logger.info(f"[MSG_DEBUG] Total de mensagens relacionadas: {len(mensagens_relacionadas)}")
+
+                    # Adicionar às propriedades se houver mensagens
+                    if mensagens_relacionadas:
+                        # Usar o campo padrão se não houver field_mappings
+                        field_mappings = getattr(self.config, 'field_mappings', {}) or {}
+                        mensagens_key = field_mappings.get("mensagens_relacionadas", "Mensagens Relacionadas")
+
+                        self.notion_properties[mensagens_key] = {
+                            "relation": mensagens_relacionadas
+                        }
+                        logger.info(f"[MSG_DEBUG] Campo '{mensagens_key}' adicionado com {len(mensagens_relacionadas)} mensagens")
+                    else:
+                        logger.info(f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar")
+
+            except Exception as e:
+                logger.error(f"[MSG_DEBUG] Erro ao processar mensagens relacionadas: {e}", exc_info=True)
+
         except ImportError as e:
             # Lidar com o caso de o mapper ainda não existir
             logger.error(f"[SYNC_DEBUG] Erro de importação no prepare_notion_data: {e}")

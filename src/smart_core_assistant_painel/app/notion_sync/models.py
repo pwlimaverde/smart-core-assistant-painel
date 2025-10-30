@@ -376,7 +376,10 @@ class ContatoSync(models.Model):
     )
 
     slug_formatado: models.SlugField = models.SlugField(
-        max_length=250, blank=True, default="", help_text="Slug formatado para URL"
+        max_length=250,
+        blank=True,
+        default="",
+        help_text="Slug formatado para URL",
     )
 
     notion_properties: models.JSONField = models.JSONField(
@@ -494,8 +497,8 @@ class ContatoSync(models.Model):
                 self.slug_formatado = self.contato.slug
             elif self.nome_formatado:
                 # Gera slug a partir do nome formatado como fallback
-                self.slug_formatado = (
-                    self.nome_formatado.lower().replace(" ", "-")
+                self.slug_formatado = self.nome_formatado.lower().replace(
+                    " ", "-"
                 )
 
         except ImportError:
@@ -727,7 +730,10 @@ class ClienteSync(models.Model):
     )
 
     slug_formatado: models.SlugField = models.SlugField(
-        max_length=250, blank=True, default="", help_text="Slug formatado para URL"
+        max_length=250,
+        blank=True,
+        default="",
+        help_text="Slug formatado para URL",
     )
 
     sync_status: models.CharField = models.CharField(
@@ -895,7 +901,9 @@ class ClienteSync(models.Model):
             }
 
         # Status Ativo
-        self.notion_properties["Ativo"] = {"checkbox": bool(self.cliente.ativo)}
+        self.notion_properties["Ativo"] = {
+            "checkbox": bool(self.cliente.ativo)
+        }
 
     def _format_phone(self, phone: str) -> str:
         """
@@ -1330,7 +1338,10 @@ class AtendenteSync(models.Model):
 
     # Dados Pré-processados
     slug_formatado: models.SlugField = models.SlugField(
-        max_length=250, blank=True, default="", help_text="Slug formatado para URL"
+        max_length=250,
+        blank=True,
+        default="",
+        help_text="Slug formatado para URL",
     )
 
     nome_formatado: models.CharField = models.CharField(
@@ -1455,9 +1466,7 @@ class AtendenteSync(models.Model):
             )
 
             # Usa mapper para transformar dados
-            self.notion_properties = (
-                AtendenteMapper.to_notion_properties(self)
-            )
+            self.notion_properties = AtendenteMapper.to_notion_properties(self)
 
             # Formata campos específicos
             self.nome_formatado = self.atendente.nome.strip().title()
@@ -1468,8 +1477,8 @@ class AtendenteSync(models.Model):
                 self.slug_formatado = self.atendente.slug
             else:
                 # Gera slug a partir do nome formatado como fallback
-                self.slug_formatado = (
-                    self.nome_formatado.lower().replace(" ", "-")
+                self.slug_formatado = self.nome_formatado.lower().replace(
+                    " ", "-"
                 )
 
             # Cache do departamento
@@ -1766,19 +1775,26 @@ class AtendimentoSync(models.Model):
 
     # Dados Pré-processados
     protocolo_formatado: models.CharField = models.CharField(
-        max_length=50, help_text="Protocolo formatado para ser o título no Notion"
+        max_length=50,
+        help_text="Protocolo formatado para ser o título no Notion",
     )
     status_formatado: models.CharField = models.CharField(
-        max_length=50, help_text="Status formatado para o campo Select do Notion"
+        max_length=50,
+        help_text="Status formatado para o campo Select do Notion",
     )
     prioridade_formatada: models.CharField = models.CharField(
-        max_length=50, help_text="Prioridade formatada para o campo Select do Notion"
+        max_length=50,
+        help_text="Prioridade formatada para o campo Select do Notion",
     )
     tags_formatadas: models.JSONField = models.JSONField(
-        default=list, blank=True, help_text="Tags para o campo Multi-select do Notion"
+        default=list,
+        blank=True,
+        help_text="Tags para o campo Multi-select do Notion",
     )
     sla_status: models.CharField = models.CharField(
-        max_length=20, blank=True, help_text="Status calculado do SLA (Ex: OK, Vencido)"
+        max_length=20,
+        blank=True,
+        help_text="Status calculado do SLA (Ex: OK, Vencido)",
     )
 
     # Campos de Controle de Sincronização
@@ -1798,16 +1814,21 @@ class AtendimentoSync(models.Model):
         null=True, blank=True, help_text="Data/hora da última sincronização"
     )
     sync_error: models.TextField = models.TextField(
-        null=True, blank=True, help_text="Detalhes do último erro de sincronização"
+        null=True,
+        blank=True,
+        help_text="Detalhes do último erro de sincronização",
     )
     retry_count: models.IntegerField = models.IntegerField(
         default=0, help_text="Número de tentativas de sincronização"
     )
     notion_properties: models.JSONField = models.JSONField(
-        default=dict, help_text="Propriedades completas formatadas para API Notion"
+        default=dict,
+        help_text="Propriedades completas formatadas para API Notion",
     )
     metadados: models.JSONField = models.JSONField(
-        default=dict, blank=True, help_text="Metadados adicionais para sincronização"
+        default=dict,
+        blank=True,
+        help_text="Metadados adicionais para sincronização",
     )
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
@@ -1840,25 +1861,65 @@ class AtendimentoSync(models.Model):
         """Prepara e formata os dados para sincronização com Notion."""
         try:
             from .services.mappers.atendimento_mapper import AtendimentoMapper
-            self.notion_properties = AtendimentoMapper.to_notion_properties(self)
+            from loguru import logger
+
+            # Debug: Verificar se o atendimento tem contexto
+            if hasattr(self, 'atendimento') and self.atendimento:
+                logger.info(
+                    f"[SYNC_DEBUG] Preparando dados do atendimento #{self.atendimento.id}"
+                )
+                logger.info(
+                    f"[SYNC_DEBUG] Contexto da conversa: {self.atendimento.contexto_conversa}"
+                )
+                logger.info(
+                    f"[SYNC_DEBUG] Config sync enabled: {getattr(self.config, 'sync_enabled', 'NO_CONFIG')}"
+                )
+            else:
+                logger.error("[SYNC_DEBUG] Atendimento não encontrado no sync")
+
+            self.notion_properties = AtendimentoMapper.to_notion_properties(
+                self
+            )
+
+            # Debug: Verificar se as propriedades foram geradas
+            if self.notion_properties and "Contexto Conversa" in self.notion_properties:
+                contexto_content = self.notion_properties["Contexto Conversa"]["rich_text"][0]["text"]["content"]
+                logger.info(f"[SYNC_DEBUG] Contexto formatado para Notion: {contexto_content[:200]}...")
+            else:
+                logger.error("[SYNC_DEBUG] Campo 'Contexto Conversa' não encontrado nas propriedades")
 
             # Atualiza cache de relacionamentos
             if self.atendimento.contato:
-                self.contato_sync, _ = ContatoSync.objects.get_or_create(contato=self.atendimento.contato)
+                self.contato_sync, _ = ContatoSync.objects.get_or_create(
+                    contato=self.atendimento.contato
+                )
             if self.atendimento.departamento:
-                self.departamento_sync, _ = DepartamentoSync.objects.get_or_create(departamento=self.atendimento.departamento)
+                self.departamento_sync, _ = (
+                    DepartamentoSync.objects.get_or_create(
+                        departamento=self.atendimento.departamento
+                    )
+                )
             if self.atendimento.atendente_humano:
-                self.atendente_sync, _ = AtendenteSync.objects.get_or_create(atendente=self.atendimento.atendente_humano)
+                self.atendente_sync, _ = AtendenteSync.objects.get_or_create(
+                    atendente=self.atendimento.atendente_humano
+                )
 
-        except ImportError:
+        except ImportError as e:
             # Lidar com o caso de o mapper ainda não existir
+            logger.error(f"[SYNC_DEBUG] Erro de importação no prepare_notion_data: {e}")
             pass
+        except Exception as e:
+            logger.error(f"[SYNC_DEBUG] Erro geral no prepare_notion_data: {e}", exc_info=True)
+            raise
 
     def needs_sync(self) -> bool:
         """Verifica se o atendimento precisa ser sincronizado."""
         if not self.config.sync_enabled or self.sync_status == "syncing":
             return False
-        if self.last_sync_at and self.atendimento.data_ultima_mensagem > self.last_sync_at:
+        if (
+            self.last_sync_at
+            and self.atendimento.data_ultima_mensagem > self.last_sync_at
+        ):
             return True
         return self.sync_status in ["pending", "error"]
 
@@ -1942,13 +2003,16 @@ class MensagemSync(models.Model):
         null=True, blank=True, help_text="Data/hora da última sincronização"
     )
     sync_error: models.TextField = models.TextField(
-        null=True, blank=True, help_text="Detalhes do último erro de sincronização"
+        null=True,
+        blank=True,
+        help_text="Detalhes do último erro de sincronização",
     )
     retry_count: models.IntegerField = models.IntegerField(
         default=0, help_text="Número de tentativas de sincronização"
     )
     notion_properties: models.JSONField = models.JSONField(
-        default=dict, help_text="Propriedades completas formatadas para API Notion"
+        default=dict,
+        help_text="Propriedades completas formatadas para API Notion",
     )
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
@@ -1973,29 +2037,35 @@ class MensagemSync(models.Model):
         """Prepara e formata os dados para sincronização com Notion."""
         try:
             from .services.mappers.mensagem_mapper import MensagemMapper
+
             # Para mensagens, usamos propriedades de página (database
             # "Mensagens CRM") com relação ao atendimento.
-            self.notion_properties = (
-                MensagemMapper.to_notion_properties(self)
-            )
+            self.notion_properties = MensagemMapper.to_notion_properties(self)
 
             # Garante que o atendimento_sync está linkado
             if not self.atendimento_sync and self.mensagem.atendimento:
-                self.atendimento_sync, _ = AtendimentoSync.objects.get_or_create(atendimento=self.mensagem.atendimento)
+                self.atendimento_sync, _ = (
+                    AtendimentoSync.objects.get_or_create(
+                        atendimento=self.mensagem.atendimento
+                    )
+                )
 
             # Preenche campos obrigatórios de cache/formatados
             conteudo: str = self.mensagem.conteudo or ""
             remetente_nome: str
-            if self.mensagem.remetente == "cliente" and \
-                    self.mensagem.atendimento and \
-                    self.mensagem.atendimento.contato:
+            if (
+                self.mensagem.remetente == "cliente"
+                and self.mensagem.atendimento
+                and self.mensagem.atendimento.contato
+            ):
                 remetente_nome = (
-                    self.mensagem.atendimento.contato.nome_contato
-                    or "Cliente"
+                    self.mensagem.atendimento.contato.nome_contato or "Cliente"
                 )
-            elif self.mensagem.remetente == "atendente" and \
-                    self.mensagem.atendimento and \
-                    self.mensagem.atendimento.atendente_humano:
+            elif (
+                self.mensagem.remetente == "atendente"
+                and self.mensagem.atendimento
+                and self.mensagem.atendimento.atendente_humano
+            ):
                 remetente_nome = (
                     self.mensagem.atendimento.atendente_humano.nome
                     or "Atendente"

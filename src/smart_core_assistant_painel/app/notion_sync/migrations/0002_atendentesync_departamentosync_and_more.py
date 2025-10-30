@@ -4,79 +4,327 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('notion_sync', '0001_initial'),
+        ("notion_sync", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AtendenteSync',
+            name="AtendenteSync",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('external_id', models.CharField(blank=True, db_index=True, help_text='ID da página correspondente no Notion', max_length=36, null=True, unique=True)),
-                ('slug_formatado', models.SlugField(blank=True, default='', help_text='Slug formatado para URL', max_length=250)),
-                ('nome_formatado', models.CharField(help_text='Nome formatado', max_length=100)),
-                ('cargo_formatado', models.CharField(help_text='Cargo formatado', max_length=100)),
-                ('departamento_nome', models.CharField(blank=True, help_text='Nome do departamento (cache)', max_length=100, null=True)),
-                ('email_formatado', models.EmailField(blank=True, help_text='Email normalizado', max_length=254, null=True)),
-                ('telefone_formatado', models.CharField(blank=True, help_text='Telefone formatado', max_length=20, null=True)),
-                ('status_formatado', models.CharField(default='Ativo', help_text='Status formatado (Ativo/Inativo)', max_length=20)),
-                ('disponibilidade_formatada', models.CharField(default='Disponível', help_text='Disponibilidade formatada', max_length=20)),
-                ('carga_atual', models.IntegerField(default=0, help_text='Carga atual de atendimentos')),
-                ('capacidade_maxima', models.IntegerField(default=5, help_text='Capacidade máxima de atendimentos')),
-                ('especialidades_formatadas', models.JSONField(blank=True, default=list, help_text='Especialidades formatadas para multi-select do Notion')),
-                ('sync_status', models.CharField(choices=[('pending', 'Pendente'), ('syncing', 'Sincronizando'), ('synced', 'Sincronizado'), ('error', 'Erro'), ('disabled', 'Desabilitado')], default='pending', help_text='Status atual da sincronização', max_length=20)),
-                ('last_sync_at', models.DateTimeField(blank=True, help_text='Data/hora da última sincronização', null=True)),
-                ('sync_error', models.TextField(blank=True, help_text='Detalhes do último erro de sincronização', null=True)),
-                ('retry_count', models.IntegerField(default=0, help_text='Número de tentativas de sincronização')),
-                ('notion_properties', models.JSONField(default=dict, help_text='Propriedades completas formatadas para API Notion')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Metadados adicionais para sincronização')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "external_id",
+                    models.CharField(
+                        blank=True,
+                        db_index=True,
+                        help_text="ID da página correspondente no Notion",
+                        max_length=36,
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "slug_formatado",
+                    models.SlugField(
+                        blank=True,
+                        default="",
+                        help_text="Slug formatado para URL",
+                        max_length=250,
+                    ),
+                ),
+                (
+                    "nome_formatado",
+                    models.CharField(
+                        help_text="Nome formatado", max_length=100
+                    ),
+                ),
+                (
+                    "cargo_formatado",
+                    models.CharField(
+                        help_text="Cargo formatado", max_length=100
+                    ),
+                ),
+                (
+                    "departamento_nome",
+                    models.CharField(
+                        blank=True,
+                        help_text="Nome do departamento (cache)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "email_formatado",
+                    models.EmailField(
+                        blank=True,
+                        help_text="Email normalizado",
+                        max_length=254,
+                        null=True,
+                    ),
+                ),
+                (
+                    "telefone_formatado",
+                    models.CharField(
+                        blank=True,
+                        help_text="Telefone formatado",
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "status_formatado",
+                    models.CharField(
+                        default="Ativo",
+                        help_text="Status formatado (Ativo/Inativo)",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "disponibilidade_formatada",
+                    models.CharField(
+                        default="Disponível",
+                        help_text="Disponibilidade formatada",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "carga_atual",
+                    models.IntegerField(
+                        default=0, help_text="Carga atual de atendimentos"
+                    ),
+                ),
+                (
+                    "capacidade_maxima",
+                    models.IntegerField(
+                        default=5,
+                        help_text="Capacidade máxima de atendimentos",
+                    ),
+                ),
+                (
+                    "especialidades_formatadas",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Especialidades formatadas para multi-select do Notion",
+                    ),
+                ),
+                (
+                    "sync_status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pendente"),
+                            ("syncing", "Sincronizando"),
+                            ("synced", "Sincronizado"),
+                            ("error", "Erro"),
+                            ("disabled", "Desabilitado"),
+                        ],
+                        default="pending",
+                        help_text="Status atual da sincronização",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "last_sync_at",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data/hora da última sincronização",
+                        null=True,
+                    ),
+                ),
+                (
+                    "sync_error",
+                    models.TextField(
+                        blank=True,
+                        help_text="Detalhes do último erro de sincronização",
+                        null=True,
+                    ),
+                ),
+                (
+                    "retry_count",
+                    models.IntegerField(
+                        default=0,
+                        help_text="Número de tentativas de sincronização",
+                    ),
+                ),
+                (
+                    "notion_properties",
+                    models.JSONField(
+                        default=dict,
+                        help_text="Propriedades completas formatadas para API Notion",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Metadados adicionais para sincronização",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Atendente Sync',
-                'verbose_name_plural': 'Atendentes Sync',
-                'db_table': 'notion_sync_atendente',
-                'ordering': ['atendente__nome'],
+                "verbose_name": "Atendente Sync",
+                "verbose_name_plural": "Atendentes Sync",
+                "db_table": "notion_sync_atendente",
+                "ordering": ["atendente__nome"],
             },
         ),
         migrations.CreateModel(
-            name='DepartamentoSync',
+            name="DepartamentoSync",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('external_id', models.CharField(blank=True, db_index=True, help_text='ID da página correspondente no Notion', max_length=36, null=True, unique=True)),
-                ('nome_formatado', models.CharField(help_text='Nome formatado', max_length=100)),
-                ('slug_formatado', models.SlugField(help_text='Slug formatado para URL', max_length=120)),
-                ('descricao_formatada', models.TextField(blank=True, help_text='Descrição formatada', null=True)),
-                ('status_formatado', models.CharField(default='Ativo', help_text='Status formatado (Ativo/Inativo)', max_length=20)),
-                ('count_atendentes', models.IntegerField(default=0, help_text='Número de atendentes no departamento')),
-                ('especialidades_formatadas', models.JSONField(blank=True, default=list, help_text='Especialidades formatadas para multi-select do Notion')),
-                ('sync_status', models.CharField(choices=[('pending', 'Pendente'), ('syncing', 'Sincronizando'), ('synced', 'Sincronizado'), ('error', 'Erro'), ('disabled', 'Desabilitado')], default='pending', help_text='Status atual da sincronização', max_length=20)),
-                ('last_sync_at', models.DateTimeField(blank=True, help_text='Data/hora da última sincronização', null=True)),
-                ('sync_error', models.TextField(blank=True, help_text='Detalhes do último erro de sincronização', null=True)),
-                ('retry_count', models.IntegerField(default=0, help_text='Número de tentativas de sincronização')),
-                ('notion_properties', models.JSONField(default=dict, help_text='Propriedades completas formatadas para API Notion')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Metadados adicionais para sincronização')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "external_id",
+                    models.CharField(
+                        blank=True,
+                        db_index=True,
+                        help_text="ID da página correspondente no Notion",
+                        max_length=36,
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "nome_formatado",
+                    models.CharField(
+                        help_text="Nome formatado", max_length=100
+                    ),
+                ),
+                (
+                    "slug_formatado",
+                    models.SlugField(
+                        help_text="Slug formatado para URL", max_length=120
+                    ),
+                ),
+                (
+                    "descricao_formatada",
+                    models.TextField(
+                        blank=True, help_text="Descrição formatada", null=True
+                    ),
+                ),
+                (
+                    "status_formatado",
+                    models.CharField(
+                        default="Ativo",
+                        help_text="Status formatado (Ativo/Inativo)",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "count_atendentes",
+                    models.IntegerField(
+                        default=0,
+                        help_text="Número de atendentes no departamento",
+                    ),
+                ),
+                (
+                    "especialidades_formatadas",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Especialidades formatadas para multi-select do Notion",
+                    ),
+                ),
+                (
+                    "sync_status",
+                    models.CharField(
+                        choices=[
+                            ("pending", "Pendente"),
+                            ("syncing", "Sincronizando"),
+                            ("synced", "Sincronizado"),
+                            ("error", "Erro"),
+                            ("disabled", "Desabilitado"),
+                        ],
+                        default="pending",
+                        help_text="Status atual da sincronização",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "last_sync_at",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data/hora da última sincronização",
+                        null=True,
+                    ),
+                ),
+                (
+                    "sync_error",
+                    models.TextField(
+                        blank=True,
+                        help_text="Detalhes do último erro de sincronização",
+                        null=True,
+                    ),
+                ),
+                (
+                    "retry_count",
+                    models.IntegerField(
+                        default=0,
+                        help_text="Número de tentativas de sincronização",
+                    ),
+                ),
+                (
+                    "notion_properties",
+                    models.JSONField(
+                        default=dict,
+                        help_text="Propriedades completas formatadas para API Notion",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Metadados adicionais para sincronização",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Departamento Sync',
-                'verbose_name_plural': 'Departamentos Sync',
-                'db_table': 'notion_sync_departamento',
-                'ordering': ['departamento__nome'],
+                "verbose_name": "Departamento Sync",
+                "verbose_name_plural": "Departamentos Sync",
+                "db_table": "notion_sync_departamento",
+                "ordering": ["departamento__nome"],
             },
         ),
         migrations.AddField(
-            model_name='clientesync',
-            name='slug_formatado',
-            field=models.SlugField(blank=True, default='', help_text='Slug formatado para URL', max_length=250),
+            model_name="clientesync",
+            name="slug_formatado",
+            field=models.SlugField(
+                blank=True,
+                default="",
+                help_text="Slug formatado para URL",
+                max_length=250,
+            ),
         ),
         migrations.AddField(
-            model_name='contatosync',
-            name='slug_formatado',
-            field=models.SlugField(blank=True, default='', help_text='Slug formatado para URL', max_length=250),
+            model_name="contatosync",
+            name="slug_formatado",
+            field=models.SlugField(
+                blank=True,
+                default="",
+                help_text="Slug formatado para URL",
+                max_length=250,
+            ),
         ),
     ]

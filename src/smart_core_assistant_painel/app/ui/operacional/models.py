@@ -303,15 +303,13 @@ class WhatsAppInstance(models.Model):
         default="evolution",
         help_text="Provedor da API de WhatsApp",
     )
-    owner: models.OneToOneField[Optional["Atendente"]] = (
-        models.OneToOneField(
-            "Atendente",
-            on_delete=models.SET_NULL,
-            blank=True,
-            null=True,
-            related_name="whatsapp_instance",
-            help_text="Atendente dono desta instância (opcional)",
-        )
+    owner: models.OneToOneField[Optional["Atendente"]] = models.OneToOneField(
+        "Atendente",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="whatsapp_instance",
+        help_text="Atendente dono desta instância (opcional)",
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True,

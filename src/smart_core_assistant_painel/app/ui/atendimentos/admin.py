@@ -114,7 +114,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                 "departamento",
                 "data_inicio",
                 "data_fim",
-                "atendente_humano"
+                "atendente_humano",
             )
             .defer(
                 "data_ultima_mensagem",

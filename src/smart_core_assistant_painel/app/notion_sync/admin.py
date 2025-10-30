@@ -86,7 +86,11 @@ class ContatoSyncAdmin(BaseSyncAdmin):
         "retry_count",
     )
     list_filter = ("sync_status", "last_sync_at")
-    search_fields = ("contato__telefone", "contato__nome_contato", "external_id")
+    search_fields = (
+        "contato__telefone",
+        "contato__nome_contato",
+        "external_id",
+    )
     readonly_fields = [f.name for f in ContatoSync._meta.fields]
     ordering = ("-updated_at",)
 
@@ -107,7 +111,11 @@ class ClienteSyncAdmin(BaseSyncAdmin):
         "retry_count",
     )
     list_filter = ("sync_status", "last_sync_at")
-    search_fields = ("cliente__nome_fantasia", "cliente__razao_social", "external_id")
+    search_fields = (
+        "cliente__nome_fantasia",
+        "cliente__razao_social",
+        "external_id",
+    )
     readonly_fields = [f.name for f in ClienteSync._meta.fields]
     ordering = ("-updated_at",)
 
@@ -170,7 +178,11 @@ class AtendimentoSyncAdmin(BaseSyncAdmin):
         "retry_count",
     )
     list_filter = ("sync_status", "last_sync_at")
-    search_fields = ("atendimento__protocolo", "atendimento__contato__nome_contato", "external_id")
+    search_fields = (
+        "atendimento__protocolo",
+        "atendimento__contato__nome_contato",
+        "external_id",
+    )
     readonly_fields = [f.name for f in AtendimentoSync._meta.fields]
     ordering = ("-updated_at",)
 

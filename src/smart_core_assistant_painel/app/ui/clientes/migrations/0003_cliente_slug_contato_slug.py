@@ -4,20 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('clientes', '0002_enable_pgvector_extension'),
+        ("clientes", "0002_enable_pgvector_extension"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='cliente',
-            name='slug',
-            field=models.SlugField(blank=True, default='', max_length=250, null=True, unique=True),
+            model_name="cliente",
+            name="slug",
+            field=models.SlugField(
+                blank=True, default="", max_length=250, null=True, unique=True
+            ),
         ),
         migrations.AddField(
-            model_name='contato',
-            name='slug',
-            field=models.SlugField(blank=True, default='', max_length=250, null=True, unique=True),
+            model_name="contato",
+            name="slug",
+            field=models.SlugField(
+                blank=True, default="", max_length=250, null=True, unique=True
+            ),
         ),
     ]

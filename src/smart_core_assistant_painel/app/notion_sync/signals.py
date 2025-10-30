@@ -51,9 +51,7 @@ def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
     # Obter ou criar configuração do Notion para Contatos
     # Comentário: evita NameError quando a config ainda não existe.
     try:
-        config = NotionDatabaseConfig.objects.get(
-            slug="ui_clientes_contato"
-        )
+        config = NotionDatabaseConfig.objects.get(slug="ui_clientes_contato")
     except NotionDatabaseConfig.DoesNotExist:
         # Cria configuração padrão desabilitada
         config = NotionDatabaseConfig.objects.create(
@@ -63,9 +61,7 @@ def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
             django_app_label="ui",
             notion_database_id="",  # preenchido posteriormente
             sync_enabled=False,
-            description=(
-                "Configuração padrão para sincronização de Contatos"
-            ),
+            description=("Configuração padrão para sincronização de Contatos"),
         )
 
     sync, created = ContatoSync.objects.get_or_create(
@@ -97,9 +93,7 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
     # Obter ou criar configuração do Notion para Clientes
     # Comentário: evita NameError quando a config ainda não existe.
     try:
-        config = NotionDatabaseConfig.objects.get(
-            slug="ui_clientes_cliente"
-        )
+        config = NotionDatabaseConfig.objects.get(slug="ui_clientes_cliente")
     except NotionDatabaseConfig.DoesNotExist:
         # Cria configuração padrão desabilitada
         config = NotionDatabaseConfig.objects.create(
@@ -109,9 +103,7 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
             django_app_label="ui",
             notion_database_id="",  # preenchido posteriormente
             sync_enabled=False,
-            description=(
-                "Configuração padrão para sincronização de Clientes"
-            ),
+            description=("Configuração padrão para sincronização de Clientes"),
         )
 
     sync, created = ClienteSync.objects.get_or_create(
@@ -214,6 +206,7 @@ def get_or_create_atendimento_sync(atendimento_id: int) -> AtendimentoSync:
     Obtém ou cria registro AtendimentoSync para um atendimento.
     """
     from .models import AtendimentoSync, NotionDatabaseConfig
+
     # Obter ou criar configuração do Notion para Atendimentos
     # Comentário: evita NameError quando a config ainda não existe.
     try:
@@ -279,7 +272,8 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
         )
 
     mensagem_obj: MensagemModel | None = (
-        MensagemModel.objects.filter(id=mensagem_id).select_related("atendimento")
+        MensagemModel.objects.filter(id=mensagem_id)
+        .select_related("atendimento")
         .first()
     )
 
@@ -305,13 +299,19 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
 
     # Formatação básica
     conteudo: str = mensagem_obj.conteudo or ""
-    if mensagem_obj.remetente == "cliente" and mensagem_obj.atendimento \
-            and mensagem_obj.atendimento.contato:
+    if (
+        mensagem_obj.remetente == "cliente"
+        and mensagem_obj.atendimento
+        and mensagem_obj.atendimento.contato
+    ):
         remetente_formatado: str = (
             mensagem_obj.atendimento.contato.nome_contato or "Cliente"
         )
-    elif mensagem_obj.remetente == "atendente" and mensagem_obj.atendimento \
-            and mensagem_obj.atendimento.atendente_humano:
+    elif (
+        mensagem_obj.remetente == "atendente"
+        and mensagem_obj.atendimento
+        and mensagem_obj.atendimento.atendente_humano
+    ):
         remetente_formatado = (
             mensagem_obj.atendimento.atendente_humano.nome or "Atendente"
         )
@@ -377,11 +377,11 @@ def schedule_sync_operation(
                 departamento_id=instance_id
             )
         elif model_name == "Atendente":
-            sync_record = AtendenteSync.objects.get(
-                atendente_id=instance_id
-            )
+            sync_record = AtendenteSync.objects.get(atendente_id=instance_id)
         elif model_name == "Atendimento":
-            sync_record = AtendimentoSync.objects.get(atendimento_id=instance_id)
+            sync_record = AtendimentoSync.objects.get(
+                atendimento_id=instance_id
+            )
         elif model_name == "Mensagem":
             sync_record = MensagemSync.objects.get(mensagem_id=instance_id)
         else:
@@ -436,9 +436,9 @@ def schedule_sync_operation(
                     return
             except Exception as e:
                 logger.error(
-                    (
-                        "Erro ao validar relacionamento de Mensagem: {}"
-                    ).format(e)
+                    ("Erro ao validar relacionamento de Mensagem: {}").format(
+                        e
+                    )
                 )
                 try:
                     sync_record.mark_as_failed(str(e))
@@ -486,7 +486,9 @@ def schedule_sync_operation(
             elif model_name == "Cliente":
                 sync_record = ClienteSync.objects.get(cliente_id=instance_id)
             elif model_name == "Atendimento":
-                sync_record = AtendimentoSync.objects.get(atendimento_id=instance_id)
+                sync_record = AtendimentoSync.objects.get(
+                    atendimento_id=instance_id
+                )
             logger.info(
                 f"Marcando sync_record como falha: {model_name} #{instance_id}"
             )
@@ -1125,15 +1127,29 @@ def on_atendimento_saved(
     if kwargs.get("skip_sync", False):
         return
     try:
+        logger.info(f"[SIGNAL_DEBUG] Signal de atendimento disparado para #{instance.id} (created={created})")
+        logger.info(f"[SIGNAL_DEBUG] Contexto da conversa no signal: {instance.contexto_conversa}")
+
         sync_metadata = get_or_create_atendimento_sync(instance.id)
+        logger.info(f"[SIGNAL_DEBUG] Sync metadata criado: {sync_metadata.id}")
+
         operation = "create" if created else "update"
+        logger.info(f"[SIGNAL_DEBUG] Operação: {operation}")
+
         sync_metadata.prepare_notion_data()
+        logger.info(f"[SIGNAL_DEBUG] Dados preparados com sucesso")
+
         sync_metadata.save()
+        logger.info(f"[SIGNAL_DEBUG] Sync metadata salvo")
+
         schedule_sync_operation(
             model_name="Atendimento", instance_id=instance.id, operation=operation
         )
+        logger.info(f"[SIGNAL_DEBUG] Operação de sync agendada")
     except Exception as e:
-        logger.error(f"Erro ao processar signal de Atendimento #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar signal de Atendimento #{instance.id}: {e}", exc_info=True
+        )
 
 
 @receiver(pre_delete, sender=Atendimento)
@@ -1141,12 +1157,16 @@ def on_atendimento_pre_delete(
     sender: Any, instance: "Atendimento", **kwargs: Any
 ) -> None:
     try:
-        sync_record = AtendimentoSync.objects.filter(atendimento_id=instance.id).first()
+        sync_record = AtendimentoSync.objects.filter(
+            atendimento_id=instance.id
+        ).first()
         if sync_record and sync_record.external_id:
             service = NotionSyncService()
             service.delete_record("Atendimento", sync_record.external_id)
     except Exception as e:
-        logger.error(f"Erro ao processar deleção de Atendimento #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar deleção de Atendimento #{instance.id}: {e}"
+        )
 
 
 # Signals para Mensagem
@@ -1164,4 +1184,6 @@ def on_mensagem_saved(
             model_name="Mensagem", instance_id=instance.id, operation="create"
         )
     except Exception as e:
-        logger.error(f"Erro ao processar signal de Mensagem #{instance.id}: {e}")
+        logger.error(
+            f"Erro ao processar signal de Mensagem #{instance.id}: {e}"
+        )

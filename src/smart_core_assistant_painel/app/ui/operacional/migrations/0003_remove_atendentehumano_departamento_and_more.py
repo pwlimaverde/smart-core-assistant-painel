@@ -7,65 +7,212 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operacional', '0002_enable_pgvector_extension'),
+        ("operacional", "0002_enable_pgvector_extension"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='atendentehumano',
-            name='departamento',
+            model_name="atendentehumano",
+            name="departamento",
         ),
         migrations.RemoveField(
-            model_name='atendentehumano',
-            name='usuario',
+            model_name="atendentehumano",
+            name="usuario",
         ),
         migrations.CreateModel(
-            name='Atendente',
+            name="Atendente",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('slug', models.SlugField(blank=True, default='', max_length=250, null=True, unique=True)),
-                ('telefone', models.CharField(blank=True, help_text='Número de telefone do atendente (usado como sessão única)', max_length=20, null=True, unique=True, validators=[smart_core_assistant_painel.app.ui.operacional.models.validate_telefone])),
-                ('nome', models.CharField(help_text='Nome completo do atendente', max_length=100)),
-                ('cargo', models.CharField(help_text='Cargo/função do atendente', max_length=100)),
-                ('email', models.EmailField(blank=True, help_text='E-mail corporativo do atendente', max_length=254, null=True)),
-                ('usuario_sistema', models.CharField(blank=True, help_text='Usuário do sistema para login (se aplicável)', max_length=50, null=True)),
-                ('ativo', models.BooleanField(default=True, help_text='Indica se o atendente está ativo')),
-                ('disponivel', models.BooleanField(default=True, help_text='Se o atendente está aceitando novos atendimentos')),
-                ('max_atendimentos_simultaneos', models.PositiveIntegerField(default=5, help_text='Capacidade máxima de atendimentos simultâneos')),
-                ('data_ultima_atribuicao', models.DateTimeField(blank=True, help_text='Data e hora da última atribuição de um novo atendimento', null=True)),
-                ('horario_trabalho', models.JSONField(blank=True, default=dict, help_text='Horários de trabalho do atendente')),
-                ('especialidades', models.JSONField(blank=True, default=list, help_text='Especialidades do atendente')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informações adicionais do atendente (configurações, preferências, etc.)')),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro no sistema')),
-                ('ultima_atividade', models.DateTimeField(auto_now=True, help_text='Data da última atividade no sistema')),
-                ('departamento', models.ForeignKey(blank=True, help_text='Departamento ao qual o atendente pertence', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendentes', to='operacional.departamento')),
-                ('usuario', models.OneToOneField(blank=True, help_text='Usuário do Django associado ao atendente (opcional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendente_humano', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "slug",
+                    models.SlugField(
+                        blank=True,
+                        default="",
+                        max_length=250,
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Número de telefone do atendente (usado como sessão única)",
+                        max_length=20,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.operacional.models.validate_telefone
+                        ],
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        help_text="Nome completo do atendente", max_length=100
+                    ),
+                ),
+                (
+                    "cargo",
+                    models.CharField(
+                        help_text="Cargo/função do atendente", max_length=100
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        blank=True,
+                        help_text="E-mail corporativo do atendente",
+                        max_length=254,
+                        null=True,
+                    ),
+                ),
+                (
+                    "usuario_sistema",
+                    models.CharField(
+                        blank=True,
+                        help_text="Usuário do sistema para login (se aplicável)",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Indica se o atendente está ativo",
+                    ),
+                ),
+                (
+                    "disponivel",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Se o atendente está aceitando novos atendimentos",
+                    ),
+                ),
+                (
+                    "max_atendimentos_simultaneos",
+                    models.PositiveIntegerField(
+                        default=5,
+                        help_text="Capacidade máxima de atendimentos simultâneos",
+                    ),
+                ),
+                (
+                    "data_ultima_atribuicao",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data e hora da última atribuição de um novo atendimento",
+                        null=True,
+                    ),
+                ),
+                (
+                    "horario_trabalho",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Horários de trabalho do atendente",
+                    ),
+                ),
+                (
+                    "especialidades",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Especialidades do atendente",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de cadastro no sistema",
+                    ),
+                ),
+                (
+                    "ultima_atividade",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Data da última atividade no sistema",
+                    ),
+                ),
+                (
+                    "departamento",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Departamento ao qual o atendente pertence",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="atendentes",
+                        to="operacional.departamento",
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.OneToOneField(
+                        blank=True,
+                        help_text="Usuário do Django associado ao atendente (opcional)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="atendente_humano",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Atendente',
-                'verbose_name_plural': 'Atendentes',
-                'db_table': 'oraculo_atendente',
-                'ordering': ['nome'],
+                "verbose_name": "Atendente",
+                "verbose_name_plural": "Atendentes",
+                "db_table": "oraculo_atendente",
+                "ordering": ["nome"],
             },
         ),
         migrations.AlterField(
-            model_name='whatsappinstance',
-            name='owner',
-            field=models.OneToOneField(blank=True, help_text='Atendente dono desta instância (opcional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='whatsapp_instance', to='operacional.atendente'),
+            model_name="whatsappinstance",
+            name="owner",
+            field=models.OneToOneField(
+                blank=True,
+                help_text="Atendente dono desta instância (opcional)",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="whatsapp_instance",
+                to="operacional.atendente",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendente',
-            index=models.Index(fields=['departamento', 'disponivel'], name='oraculo_ate_departa_aa6cea_idx'),
+            model_name="atendente",
+            index=models.Index(
+                fields=["departamento", "disponivel"],
+                name="oraculo_ate_departa_aa6cea_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendente',
-            index=models.Index(fields=['disponivel', 'max_atendimentos_simultaneos'], name='oraculo_ate_disponi_390372_idx'),
+            model_name="atendente",
+            index=models.Index(
+                fields=["disponivel", "max_atendimentos_simultaneos"],
+                name="oraculo_ate_disponi_390372_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendente',
-            index=models.Index(fields=['data_ultima_atribuicao'], name='oraculo_ate_data_ul_463ea3_idx'),
+            model_name="atendente",
+            index=models.Index(
+                fields=["data_ultima_atribuicao"],
+                name="oraculo_ate_data_ul_463ea3_idx",
+            ),
         ),
     ]

@@ -12,8 +12,6 @@ from django.db import transaction
 from loguru import logger
 
 
-
-
 class Command(BaseCommand):
     """
     Command para inicializar registros de sincronização.

@@ -61,9 +61,7 @@ class Command(BaseCommand):
             )
 
             # Configuração para Atendente
-            self._setup_atendente_database(
-                database_id, data_source_id, update
-            )
+            self._setup_atendente_database(database_id, data_source_id, update)
 
             self.stdout.write(
                 self.style.SUCCESS(

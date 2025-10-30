@@ -157,12 +157,17 @@ class ClienteMapper:
             if getattr(cliente, "uf", None):
                 properties["UF"] = {
                     "rich_text": [
-                        {"type": "text", "text": {"content": cliente.uf.upper()}}
+                        {
+                            "type": "text",
+                            "text": {"content": cliente.uf.upper()},
+                        }
                     ]
                 }
 
             # Ativo (checkbox)
-            properties["Ativo"] = {"checkbox": bool(getattr(cliente, "ativo", True))}
+            properties["Ativo"] = {
+                "checkbox": bool(getattr(cliente, "ativo", True))
+            }
 
             # Observações (se presentes)
             if getattr(cliente, "observacoes", None):
@@ -198,7 +203,9 @@ class ClienteMapper:
             data: Dict[str, Any] = {}
 
             # Nome Fantasia (do título)
-            if "Nome Fantasia" in properties and properties["Nome Fantasia"].get("title"):
+            if "Nome Fantasia" in properties and properties[
+                "Nome Fantasia"
+            ].get("title"):
                 title_list = properties["Nome Fantasia"]["title"]
                 if title_list:
                     nome_fantasia = "".join(
@@ -231,7 +238,9 @@ class ClienteMapper:
                             "Pessoa Jurídica": "juridica",
                             "Pessoa Física": "fisica",
                         }
-                        data["tipo"] = tipo_map_reverse.get(tipo_notion, "juridica")
+                        data["tipo"] = tipo_map_reverse.get(
+                            tipo_notion, "juridica"
+                        )
 
             # Site
             if "Site" in properties:
@@ -310,7 +319,9 @@ class ClienteMapper:
                             data["uf"] = uf.upper()
 
             # Ativo (checkbox)
-            if "Ativo" in properties and isinstance(properties["Ativo"].get("checkbox"), bool):
+            if "Ativo" in properties and isinstance(
+                properties["Ativo"].get("checkbox"), bool
+            ):
                 data["ativo"] = properties["Ativo"]["checkbox"]
 
             # Status (opcional) - mantido para compatibilidade
@@ -318,7 +329,11 @@ class ClienteMapper:
                 status_field = properties["Status"]
                 if status_field.get("select"):
                     status_name = status_field["select"].get("name", "")
-                    data["ativo"] = status_name.lower() in ["ativo", "active", "enabled"]
+                    data["ativo"] = status_name.lower() in [
+                        "ativo",
+                        "active",
+                        "enabled",
+                    ]
 
             # Observações
             if "Observações" in properties:
@@ -337,29 +352,46 @@ class ClienteMapper:
             for campo in datas_campos:
                 if campo in properties:
                     date_field = properties[campo]
-                    if date_field.get("date") and date_field["date"].get("start"):
+                    if date_field.get("date") and date_field["date"].get(
+                        "start"
+                    ):
                         try:
-                            data_iso = date_field["date"]["start"].replace("Z", "+00:00")
+                            data_iso = date_field["date"]["start"].replace(
+                                "Z", "+00:00"
+                            )
                             data_obj = datetime.fromisoformat(data_iso)
 
                             campo_map = {
                                 "Data Cadastro": "data_cadastro",
                                 "Última Atualização": "ultima_atualizacao",
                             }
-                            data[campo_map.get(campo, campo.lower())] = data_obj
+                            data[campo_map.get(campo, campo.lower())] = (
+                                data_obj
+                            )
                         except (ValueError, AttributeError):
                             pass
 
             # Relacionamento com Contatos
-            if "metadados" in data and "contatos_vinculados" in data["metadados"]:
+            if (
+                "metadados" in data
+                and "contatos_vinculados" in data["metadados"]
+            ):
                 contatos_info = data["metadados"]["contatos_vinculados"]
                 if isinstance(contatos_info, list):
-                    data["metadados"]["contatos_vinculados_lista"] = contatos_info
+                    data["metadados"]["contatos_vinculados_lista"] = (
+                        contatos_info
+                    )
                 elif "contatos_vinculados_notion" in data["metadados"]:
-                    contatos_text = data["metadados"]["contatos_vinculados_notion"]
+                    contatos_text = data["metadados"][
+                        "contatos_vinculados_notion"
+                    ]
                     if contatos_text and "|" in contatos_text:
-                        contatos_info = [item.strip() for item in contatos_text.split("|")]
-                        data["metadados"]["contatos_vinculados_lista"] = contatos_info
+                        contatos_info = [
+                            item.strip() for item in contatos_text.split("|")
+                        ]
+                        data["metadados"]["contatos_vinculados_lista"] = (
+                            contatos_info
+                        )
 
             return data
 
@@ -443,7 +475,10 @@ class ClienteMapper:
             "Bairro": {"rich_text": {}, "description": "Bairro do cliente"},
             "Cidade": {"rich_text": {}, "description": "Cidade do cliente"},
             "UF": {"rich_text": {}, "description": "Estado (UF) do cliente"},
-            "Ativo": {"checkbox": {}, "description": "Status de atividade do cliente"},
+            "Ativo": {
+                "checkbox": {},
+                "description": "Status de atividade do cliente",
+            },
             "País": {
                 "rich_text": {},
                 "description": "País (se não for Brasil)",

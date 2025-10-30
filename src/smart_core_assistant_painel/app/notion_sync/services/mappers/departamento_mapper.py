@@ -99,8 +99,6 @@ class DepartamentoMapper:
                     f"departamento: {e}"
                 )
 
-
-
             return properties
 
         except Exception as exc:

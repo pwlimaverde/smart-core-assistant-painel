@@ -77,32 +77,32 @@ class NotionSyncService(ExternalSyncServiceInterface):
             self.database_ids[simple_name] = db_id
             if db_id:
                 logger.info(
-                    (
-                        "Database ID para {} carregado: {}..."
-                    ).format(simple_name, db_id[:8])
+                    ("Database ID para {} carregado: {}...").format(
+                        simple_name, db_id[:8]
+                    )
                 )
             else:
                 logger.warning(
-                    (
-                        "Database ID para {} não encontrado"
-                    ).format(simple_name)
+                    ("Database ID para {} não encontrado").format(simple_name)
                 )
 
             # Carrega data_source_id quando disponível
             cfg = self._get_config(simple_name, only_enabled=True)
-            ds_id = str(cfg.data_source_id) if cfg and cfg.data_source_id else None
+            ds_id = (
+                str(cfg.data_source_id) if cfg and cfg.data_source_id else None
+            )
             self.data_source_ids[simple_name] = ds_id
             if ds_id:
                 logger.info(
-                    (
-                        "Data Source ID para {} carregado: {}..."
-                    ).format(simple_name, ds_id[:8])
+                    ("Data Source ID para {} carregado: {}...").format(
+                        simple_name, ds_id[:8]
+                    )
                 )
             else:
                 logger.warning(
-                    (
-                        "Data Source ID para {} não encontrado"
-                    ).format(simple_name)
+                    ("Data Source ID para {} não encontrado").format(
+                        simple_name
+                    )
                 )
             # Loga prontidão de configuração de forma clara
             if cfg:
@@ -217,9 +217,7 @@ class NotionSyncService(ExternalSyncServiceInterface):
         database_id = self.get_database_id(model_name)
         if not database_id:
             raise NotionSyncError(
-                (
-                    "Database ID não configurado para {}."
-                ).format(model_name)
+                ("Database ID não configurado para {}.").format(model_name)
             )
 
         try:
@@ -245,35 +243,35 @@ class NotionSyncService(ExternalSyncServiceInterface):
             page_data = {"parent": parent, "properties": properties}
 
             response = self._run(
-                self._request_async(method="post", path="pages", body=page_data)
+                self._request_async(
+                    method="post", path="pages", body=page_data
+                )
             )
 
             page_id = response.get("id")
             logger.success(
-                (
-                    "✅ Página criada no Notion: {} para {} #{}"
-                ).format(page_id, model_name, django_id)
+                ("✅ Página criada no Notion: {} para {} #{}").format(
+                    page_id, model_name, django_id
+                )
             )
             return page_id
 
         except APIResponseError as e:
             logger.error(
-                (
-                    "❌ Erro da API do Notion ao criar {} #{}: {} - {}"
-                ).format(model_name, django_id, e.code, e)
+                ("❌ Erro da API do Notion ao criar {} #{}: {} - {}").format(
+                    model_name, django_id, e.code, e
+                )
             )
             raise NotionSyncError(
                 f"Erro ao criar página no Notion: {e}"
             ) from e
         except Exception as e:
             logger.error(
-                (
-                    "❌ Erro inesperado ao criar {} #{}: {}"
-                ).format(model_name, django_id, e)
+                ("❌ Erro inesperado ao criar {} #{}: {}").format(
+                    model_name, django_id, e
+                )
             )
-            raise SyncError(
-                f"Erro inesperado ao criar registro: {e}"
-            ) from e
+            raise SyncError(f"Erro inesperado ao criar registro: {e}") from e
 
     @override
     def update_record(
@@ -313,9 +311,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             )
 
             logger.success(
-                (
-                    "✅ Página atualizada no Notion: {} para {} #{}"
-                ).format(response.get("id"), model_name, django_id)
+                ("✅ Página atualizada no Notion: {} para {} #{}").format(
+                    response.get("id"), model_name, django_id
+                )
             )
             return True
 
@@ -330,9 +328,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             ) from e
         except Exception as e:
             logger.error(
-                (
-                    "❌ Erro inesperado ao atualizar {} #{}: {}"
-                ).format(model_name, django_id, e)
+                ("❌ Erro inesperado ao atualizar {} #{}: {}").format(
+                    model_name, django_id, e
+                )
             )
             raise SyncError(
                 f"Erro inesperado ao atualizar registro: {e}"
@@ -358,18 +356,26 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 )
             )
             logger.success(
-                (
-                    "✅ Página arquivada no Notion: {} para {}"
-                ).format(response.get("id"), model_name)
+                ("✅ Página arquivada no Notion: {} para {}").format(
+                    response.get("id"), model_name
+                )
             )
             return True
 
         except APIResponseError as e:
-            logger.error(f"❌ Erro da API do Notion ao deletar/arquivar {model_name}: {e.code} - {e}")
-            raise NotionSyncError(f"Erro ao deletar/arquivar no Notion: {e}") from e
+            logger.error(
+                f"❌ Erro da API do Notion ao deletar/arquivar {model_name}: {e.code} - {e}"
+            )
+            raise NotionSyncError(
+                f"Erro ao deletar/arquivar no Notion: {e}"
+            ) from e
         except Exception as e:
-            logger.error(f"❌ Erro inesperado ao deletar/arquivar {model_name}: {e}")
-            raise SyncError(f"Erro inesperado ao deletar/arquivar registro: {e}") from e
+            logger.error(
+                f"❌ Erro inesperado ao deletar/arquivar {model_name}: {e}"
+            )
+            raise SyncError(
+                f"Erro inesperado ao deletar/arquivar registro: {e}"
+            ) from e
 
     # ... (restante dos métodos como validate_connection, handle_webhook, etc. permanecem os mesmos)
     @override
@@ -381,16 +387,14 @@ class NotionSyncService(ExternalSyncServiceInterface):
             logger.info("Validando conexão com o Notion...")
             bot_info = self._run(self.client.users.me())
             logger.info(
-                (
-                    "✅ Autenticação OK - Bot: {}"
-                ).format(bot_info.get("name", "N/A"))
+                ("✅ Autenticação OK - Bot: {}").format(
+                    bot_info.get("name", "N/A")
+                )
             )
             return True
         except Exception as e:
-            logger.error(("❌ Erro ao validar conexão: {}" ).format(e))
-            raise SyncError(
-                f"Erro ao validar conexão com Notion: {e}"
-            ) from e
+            logger.error(("❌ Erro ao validar conexão: {}").format(e))
+            raise SyncError(f"Erro ao validar conexão com Notion: {e}") from e
 
     @override
     def handle_webhook(

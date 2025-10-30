@@ -112,8 +112,6 @@ class AtendenteMapper:
                 )
                 properties["Telefone"] = {"phone_number": telefone_formatado}
 
-
-
             # Horário Trabalho (Rich Text)
             if (
                 hasattr(atendente, "horario_trabalho")
@@ -144,8 +142,6 @@ class AtendenteMapper:
             properties["Capacidade Máxima"] = {
                 "number": atendente.max_atendimentos_simultaneos
             }
-
-
 
             # Departamentos Relacionados (Relation -暂时不用关联，按用户要求不包含instance链接)
             # Removido conforme solicitação do usuário - não usar relacionamentos
@@ -205,11 +201,15 @@ class AtendenteMapper:
                 data["telefone"] = properties["Telefone"]["phone_number"]
 
             # Ativo (Checkbox)
-            if "Ativo" in properties and isinstance(properties["Ativo"].get("checkbox"), bool):
+            if "Ativo" in properties and isinstance(
+                properties["Ativo"].get("checkbox"), bool
+            ):
                 data["ativo"] = properties["Ativo"]["checkbox"]
 
             # Disponível (Checkbox)
-            if "Disponível" in properties and isinstance(properties["Disponível"].get("checkbox"), bool):
+            if "Disponível" in properties and isinstance(
+                properties["Disponível"].get("checkbox"), bool
+            ):
                 data["disponivel"] = properties["Disponível"]["checkbox"]
 
             # Capacidade Máxima (Number)
@@ -238,13 +238,15 @@ class AtendenteMapper:
                 )
 
             # Especialidades (se houver no model, são tratadas como JSON em metadados)
-            if hasattr(Atendente, 'especialidades'):
+            if hasattr(Atendente, "especialidades"):
                 if "Especialidades" in properties and properties[
                     "Especialidades"
                 ].get("multi_select"):
                     especialidades = [
                         item["name"]
-                        for item in properties["Especialidades"]["multi_select"]
+                        for item in properties["Especialidades"][
+                            "multi_select"
+                        ]
                     ]
                     data["especialidades"] = especialidades
 

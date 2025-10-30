@@ -235,11 +235,13 @@ class NotionClientesDatabaseConstructor:
                 Comentários em Português conforme padrão do projeto.
                 """
                 # Primeiro tenta dentro de cada data_source
-                for ds in (db_info.get("data_sources") or []):
+                for ds in db_info.get("data_sources") or []:
                     props_ds: Dict[str, Any] = ds.get("properties", {})
                     prop_ds = props_ds.get(name)
                     if prop_ds:
-                        return prop_ds.get("id") or getattr(prop_ds, "id", None)
+                        return prop_ds.get("id") or getattr(
+                            prop_ds, "id", None
+                        )
                 # Fallback para propriedades raiz
                 props_root: Dict[str, Any] = db_info.get("properties", {})
                 prop_root = props_root.get(name)
@@ -687,9 +689,7 @@ class NotionOperacionalDatabaseConstructor:
             logger.error(f"❌ Erro ao criar database de Departamentos: {e}")
             raise
 
-    async def create_atendente_database(
-        self, departamento_db: Any
-    ) -> Any:
+    async def create_atendente_database(self, departamento_db: Any) -> Any:
         """
         Cria a database de Atendentes no Notion COM RELACIONAMENTO para Departamentos.
         """
@@ -743,18 +743,14 @@ class NotionOperacionalDatabaseConstructor:
 
         try:
             created = await self.client.databases.create(parameters)
-            logger.info(
-                f"✅ Database de Atendentes criada: {created.id}"
-            )
+            logger.info(f"✅ Database de Atendentes criada: {created.id}")
             if created.data_sources:
                 logger.info(
                     f"🔑 Data Source ID Atendentes: {created.data_sources[0]['id']}"
                 )
             return created
         except Exception as e:
-            logger.error(
-                f"❌ Erro ao criar database de Atendentes: {e}"
-            )
+            logger.error(f"❌ Erro ao criar database de Atendentes: {e}")
             raise
 
     async def add_relation_to_departamento_database(
@@ -782,11 +778,13 @@ class NotionOperacionalDatabaseConstructor:
 
             def _prop_id(db_info: Dict[str, Any], name: str) -> Optional[str]:
                 """Obtém o ID da propriedade por nome, priorizando data_sources."""
-                for ds in (db_info.get("data_sources") or []):
+                for ds in db_info.get("data_sources") or []:
                     props_ds: Dict[str, Any] = ds.get("properties", {})
                     prop_ds = props_ds.get(name)
                     if prop_ds:
-                        return prop_ds.get("id") or getattr(prop_ds, "id", None)
+                        return prop_ds.get("id") or getattr(
+                            prop_ds, "id", None
+                        )
                 props_root: Dict[str, Any] = db_info.get("properties", {})
                 prop_root = props_root.get(name)
                 if not prop_root:
@@ -1310,9 +1308,7 @@ class NotionAtendimentosDatabaseConstructor:
             logger.error(f"❌ Erro ao criar database de Atendimentos: {e}")
             raise
 
-    async def create_mensagem_database(
-        self, atendimento_db: Any
-    ) -> Any:
+    async def create_mensagem_database(self, atendimento_db: Any) -> Any:
         """
         Cria a database de Mensagens no Notion COM RELACIONAMENTO para Atendimentos.
         """
@@ -1322,9 +1318,7 @@ class NotionAtendimentosDatabaseConstructor:
 
         # Obter o data_source_id da database de atendimentos
         if not atendimento_db.data_sources:
-            raise ValueError(
-                "Database de atendimentos não possui data_source"
-            )
+            raise ValueError("Database de atendimentos não possui data_source")
 
         atendimento_data_source_id = atendimento_db.data_sources[0]["id"]
 
@@ -1395,18 +1389,14 @@ class NotionAtendimentosDatabaseConstructor:
 
         try:
             created = await self.client.databases.create(parameters)
-            logger.info(
-                f"✅ Database de Mensagens criada: {created.id}"
-            )
+            logger.info(f"✅ Database de Mensagens criada: {created.id}")
             if created.data_sources:
                 logger.info(
                     f"🔑 Data Source ID Mensagens: {created.data_sources[0]['id']}"
                 )
             return created
         except Exception as e:
-            logger.error(
-                f"❌ Erro ao criar database de Mensagens: {e}"
-            )
+            logger.error(f"❌ Erro ao criar database de Mensagens: {e}")
             raise
 
     async def add_all_relations_to_atendimento_database(
@@ -1435,9 +1425,7 @@ class NotionAtendimentosDatabaseConstructor:
                 NotionDatabaseConfig.objects.get
             )(slug="ui_operacional_atendente")
         except NotionDatabaseConfig.DoesNotExist as exc:
-            logger.error(
-                f"❌ Configuração não encontrada: {exc}"
-            )
+            logger.error(f"❌ Configuração não encontrada: {exc}")
             raise ValueError(
                 "Execute primeiro clientes/contatos e operacional"
             )
@@ -1495,6 +1483,7 @@ class NotionAtendimentosDatabaseConstructor:
         # Função auxiliar para obter o ID de uma propriedade por nome
         def _prop_id(db_info: Dict[str, Any], name: str) -> Optional[str]:
             """Obtém o ID da propriedade por nome, compatível com dict/obj."""
+
             def _get(obj: Any, key: str) -> Any:
                 try:
                     return getattr(obj, key)
@@ -1519,8 +1508,8 @@ class NotionAtendimentosDatabaseConstructor:
         atendimento_rel_prop_id: Optional[str] = None
         try:
             if mensagem_db.data_sources:
-                props_ds: Dict[str, Any] = (
-                    mensagem_db.data_sources[0].get("properties", {})
+                props_ds: Dict[str, Any] = mensagem_db.data_sources[0].get(
+                    "properties", {}
                 )
                 rel_prop = props_ds.get("Atendimento Relacionado")
                 if rel_prop:
@@ -1545,9 +1534,7 @@ class NotionAtendimentosDatabaseConstructor:
         departamento_prop_id_pre = _prop_id(
             atendimento_db_info_pre, "Departamento"
         )
-        atendente_prop_id_pre = _prop_id(
-            atendimento_db_info_pre, "Atendente"
-        )
+        atendente_prop_id_pre = _prop_id(atendimento_db_info_pre, "Atendente")
         mensagens_rel_prop_id_pre = _prop_id(
             atendimento_db_info_pre, "Mensagens Relacionadas"
         )
@@ -1562,8 +1549,7 @@ class NotionAtendimentosDatabaseConstructor:
                         "data_source_id": contato_ds_id,
                         "single_property": {},
                         "dual_property": {
-                            "synced_property_name":
-                                "Atendimentos Relacionados",
+                            "synced_property_name": "Atendimentos Relacionados",
                         },
                     },
                 },
@@ -1573,8 +1559,7 @@ class NotionAtendimentosDatabaseConstructor:
                         "data_source_id": departamento_ds_id,
                         "single_property": {},
                         "dual_property": {
-                            "synced_property_name":
-                                "Atendimentos Relacionados",
+                            "synced_property_name": "Atendimentos Relacionados",
                         },
                     },
                 },
@@ -1584,8 +1569,7 @@ class NotionAtendimentosDatabaseConstructor:
                         "data_source_id": atendente_ds_id,
                         "single_property": {},
                         "dual_property": {
-                            "synced_property_name":
-                                "Atendimentos Relacionados",
+                            "synced_property_name": "Atendimentos Relacionados",
                         },
                     },
                 },
@@ -1620,9 +1604,7 @@ class NotionAtendimentosDatabaseConstructor:
                 path=f"data_sources/{atendimento_ds_id}",
                 body=update_atendimento,
             )
-            logger.info(
-                "✅ Relações principais adicionadas em Atendimentos"
-            )
+            logger.info("✅ Relações principais adicionadas em Atendimentos")
         except Exception as exc:
             logger.error(
                 f"❌ Erro ao atualizar relações em Atendimentos: {exc}"
@@ -1634,9 +1616,7 @@ class NotionAtendimentosDatabaseConstructor:
             method="get", path=f"databases/{atendimento_db.id}"
         )
         contato_prop_id = _prop_id(atendimento_db_info, "Contato")
-        departamento_prop_id = _prop_id(
-            atendimento_db_info, "Departamento"
-        )
+        departamento_prop_id = _prop_id(atendimento_db_info, "Departamento")
         atendente_prop_id = _prop_id(atendimento_db_info, "Atendente")
 
         # Criar propriedades reversas nas outras databases
@@ -1683,13 +1663,11 @@ class NotionAtendimentosDatabaseConstructor:
                             "single_property": {},
                             "dual_property": (
                                 {
-                                    "synced_property_id":
-                                        departamento_prop_id,
+                                    "synced_property_id": departamento_prop_id,
                                 }
                                 if departamento_prop_id
                                 else {
-                                    "synced_property_name":
-                                        "Departamento",
+                                    "synced_property_name": "Departamento",
                                 }
                             ),
                         },
@@ -1737,9 +1715,7 @@ class NotionAtendimentosDatabaseConstructor:
             )
             logger.info("   Atendentes")
         except Exception as exc:
-            logger.error(
-                f"❌ Erro ao adicionar relações reversas: {exc}"
-            )
+            logger.error(f"❌ Erro ao adicionar relações reversas: {exc}")
             raise
 
         # Após configurar, executar limpeza de duplicatas
@@ -1750,9 +1726,7 @@ class NotionAtendimentosDatabaseConstructor:
             )
             logger.info("🧹 Limpeza de relações duplicadas concluída")
         except Exception as exc:
-            logger.warning(
-                f"⚠️ Falha ao limpar duplicatas de relações: {exc}"
-            )
+            logger.warning(f"⚠️ Falha ao limpar duplicatas de relações: {exc}")
 
     async def repair_atendimento_relations(self) -> None:
         """Repara apenas os relacionamentos da database de Atendimentos.
@@ -1840,7 +1814,9 @@ class NotionAtendimentosDatabaseConstructor:
         await self.add_all_relations_to_atendimento_database(
             mensagem_db=mensagem_db, atendimento_db=atendimento_db
         )
-        logger.info("✅ Reparação de relacionamentos concluída em Atendimentos")
+        logger.info(
+            "✅ Reparação de relacionamentos concluída em Atendimentos"
+        )
 
     async def create_example_pages_and_relation(
         self, mensagem_db: Any, atendimento_db: Any
@@ -1870,11 +1846,25 @@ class NotionAtendimentosDatabaseConstructor:
                     "data_source_id": atendimento_data_source_id,
                 },
                 properties={
-                    "Assunto": {"title": [{"text": {"content": "Dúvida sobre produto"}}]},
+                    "Assunto": {
+                        "title": [
+                            {"text": {"content": "Dúvida sobre produto"}}
+                        ]
+                    },
                     "Status": {"select": {"name": "em_atendimento"}},
                     "Prioridade": {"select": {"name": "normal"}},
-                    "Contexto Conversa": {"rich_text": [{"text": {"content": "Cliente perguntando sobre políticas de troca."}}]},
-                    "Data Início": {"date": {"start": "2024-01-15T09:00:00.000Z"}},
+                    "Contexto Conversa": {
+                        "rich_text": [
+                            {
+                                "text": {
+                                    "content": "Cliente perguntando sobre políticas de troca."
+                                }
+                            }
+                        ]
+                    },
+                    "Data Início": {
+                        "date": {"start": "2024-01-15T09:00:00.000Z"}
+                    },
                     "Canal": {"select": {"name": "whatsapp"}},
                 },
             )
@@ -1889,13 +1879,23 @@ class NotionAtendimentosDatabaseConstructor:
                     "data_source_id": mensagem_data_source_id,
                 },
                 properties={
-                    "Conteúdo": {"title": [{"text": {"content": "Olá, gostaria de saber mais sobre o produto X"}}]},
+                    "Conteúdo": {
+                        "title": [
+                            {
+                                "text": {
+                                    "content": "Olá, gostaria de saber mais sobre o produto X"
+                                }
+                            }
+                        ]
+                    },
                     "Atendimento Relacionado": {
                         "relation": [{"id": atendimento_page.id}]
                     },
                     "Tipo": {"select": {"name": "Texto"}},
                     "Remetente": {"select": {"name": "contato"}},
-                    "Timestamp": {"date": {"start": "2024-01-15T09:00:00.000Z"}},
+                    "Timestamp": {
+                        "date": {"start": "2024-01-15T09:00:00.000Z"}
+                    },
                     "Respondida": {"checkbox": False},
                 },
             )
@@ -1906,7 +1906,9 @@ class NotionAtendimentosDatabaseConstructor:
             # 3. Não forçar o vínculo no atendimento.
             #    Evitamos duplicação criando a relação apenas no lado da Mensagem.
             #    O Notion mantém a relação bidirecional automaticamente via dual_property.
-            logger.info("✅ Relação criada pelo lado da Mensagem; Notion sincroniza o reverso")
+            logger.info(
+                "✅ Relação criada pelo lado da Mensagem; Notion sincroniza o reverso"
+            )
 
         except Exception as e:
             logger.error(f"❌ Erro ao criar páginas de exemplo: {e}")
@@ -1936,7 +1938,9 @@ class NotionAtendimentosDatabaseConstructor:
             )
 
             # Configuração para Atendimentos
-            atendimento_config = await sync_to_async(NotionDatabaseConfig.objects.update_or_create)(
+            atendimento_config = await sync_to_async(
+                NotionDatabaseConfig.objects.update_or_create
+            )(
                 slug="ui_atendimentos_atendimento",
                 defaults={
                     "name": "🎯 Atendimentos CRM",
@@ -1954,8 +1958,14 @@ class NotionAtendimentosDatabaseConstructor:
                             "select": {
                                 "options": [
                                     {"name": "fila", "color": "gray"},
-                                    {"name": "em_atendimento", "color": "blue"},
-                                    {"name": "aguardando_retorno", "color": "yellow"},
+                                    {
+                                        "name": "em_atendimento",
+                                        "color": "blue",
+                                    },
+                                    {
+                                        "name": "aguardando_retorno",
+                                        "color": "yellow",
+                                    },
                                     {"name": "resolvido", "color": "green"},
                                     {"name": "cancelado", "color": "red"},
                                 ]
@@ -2014,7 +2024,9 @@ class NotionAtendimentosDatabaseConstructor:
             )
 
             # Configuração para Mensagens
-            mensagem_config = await sync_to_async(NotionDatabaseConfig.objects.update_or_create)(
+            mensagem_config = await sync_to_async(
+                NotionDatabaseConfig.objects.update_or_create
+            )(
                 slug="ui_atendimentos_mensagem",
                 defaults={
                     "name": "💬 Mensagens CRM",
@@ -2049,7 +2061,10 @@ class NotionAtendimentosDatabaseConstructor:
                                 "options": [
                                     {"name": "contato", "color": "blue"},
                                     {"name": "bot", "color": "gray"},
-                                    {"name": "atendente_humano", "color": "green"},
+                                    {
+                                        "name": "atendente_humano",
+                                        "color": "green",
+                                    },
                                 ]
                             }
                         },
@@ -2057,7 +2072,9 @@ class NotionAtendimentosDatabaseConstructor:
                         "Message ID WhatsApp": {"rich_text": {}},
                         "Respondida": {"checkbox": {}},
                         "Resposta Bot": {"rich_text": {}},
-                        "Confiança Resposta": {"number": {"format": "percent"}},
+                        "Confiança Resposta": {
+                            "number": {"format": "percent"}
+                        },
                         "Metadados": {"rich_text": {}},
                     },
                     "field_mappings": {
@@ -2071,13 +2088,13 @@ class NotionAtendimentosDatabaseConstructor:
                         "resposta_bot": "Resposta Bot",
                         "confianca_resposta": "Confiança Resposta",
                         "metadados": "Metadados",
+                    },
+                    "sync_enabled": True,
+                    "sync_direction": "bidirectional",
+                    "sync_priority": 8,  # Prioridade ainda maior para mensagens
+                    "auto_sync": True,
                 },
-                "sync_enabled": True,
-                "sync_direction": "bidirectional",
-                "sync_priority": 8,  # Prioridade ainda maior para mensagens
-                "auto_sync": True,
-            },
-        )
+            )
             logger.info("✅ Configurações de atendimentos salvas com sucesso:")
             logger.info(f"   - Atendimento Config: {atendimento_config[0].id}")
             logger.info(f"   - Mensagem Config: {mensagem_config[0].id}")
@@ -2135,7 +2152,7 @@ class NotionAtendimentosDatabaseConstructor:
         props_to_delete_at: Dict[str, None] = {}
         for name, prop in (atendimento_info.get("properties") or {}).items():
             if prop.get("type") == "relation":
-                last = (name.split(" ")[-1] if " " in name else "")
+                last = name.split(" ")[-1] if " " in name else ""
                 is_number = last.isdigit()
                 base = name.rsplit(" ", 1)[0] if is_number else name
                 if is_number and base in canonical_at:
@@ -2159,9 +2176,7 @@ class NotionAtendimentosDatabaseConstructor:
                 await self.client.request(
                     method="patch",
                     path=f"data_sources/{ds_id}",
-                    body={
-                        "properties": {name: None for name in canonical_at}
-                    },
+                    body={"properties": {name: None for name in canonical_at}},
                 )
 
         # Nomes canônicos em Mensagens
@@ -2169,7 +2184,7 @@ class NotionAtendimentosDatabaseConstructor:
         props_to_delete_msg: Dict[str, None] = {}
         for name, prop in (mensagem_info.get("properties") or {}).items():
             if prop.get("type") == "relation":
-                last = (name.split(" ")[-1] if " " in name else "")
+                last = name.split(" ")[-1] if " " in name else ""
                 is_number = last.isdigit()
                 base = name.rsplit(" ", 1)[0] if is_number else name
                 if is_number and base in canonical_msg:
@@ -2193,9 +2208,7 @@ class NotionAtendimentosDatabaseConstructor:
                     method="patch",
                     path=f"data_sources/{ds_id}",
                     body={
-                        "properties": {
-                            name: None for name in canonical_msg
-                        }
+                        "properties": {name: None for name in canonical_msg}
                     },
                 )
 
@@ -2228,7 +2241,7 @@ class NotionAtendimentosDatabaseConstructor:
             for name, prop in (info.get("properties") or {}).items():
                 if prop.get("type") != "relation":
                     continue
-                last = (name.split(" ")[-1] if " " in name else "")
+                last = name.split(" ")[-1] if " " in name else ""
                 is_number = last.isdigit()
                 base = name.rsplit(" ", 1)[0] if is_number else name
                 if base == "Atendimentos Relacionados" and is_number:
@@ -2271,7 +2284,7 @@ class NotionAtendimentosDatabaseConstructor:
             for name, prop in (info.get("properties") or {}).items():
                 if prop.get("type") != "relation":
                     continue
-                last = (name.split(" ")[-1] if " " in name else "")
+                last = name.split(" ")[-1] if " " in name else ""
                 is_number = last.isdigit()
                 base = name.rsplit(" ", 1)[0] if is_number else name
                 if base in canonicals and is_number:
@@ -2294,13 +2307,16 @@ class NotionAtendimentosDatabaseConstructor:
                     )
 
         await _clean_extra_ds_canonicals(
-            contato_config, {"Clientes Relacionados", "Atendimentos Relacionados"}
+            contato_config,
+            {"Clientes Relacionados", "Atendimentos Relacionados"},
         )
         await _clean_extra_ds_canonicals(
-            departamento_config, {"Atendentes Relacionados", "Atendimentos Relacionados"}
+            departamento_config,
+            {"Atendentes Relacionados", "Atendimentos Relacionados"},
         )
         await _clean_extra_ds_canonicals(
-            atendente_config, {"Departamentos Relacionados", "Atendimentos Relacionados"}
+            atendente_config,
+            {"Departamentos Relacionados", "Atendimentos Relacionados"},
         )
 
         # Executa limpeza por nome nas três bases
@@ -2355,9 +2371,7 @@ class NotionAtendimentosDatabaseConstructor:
             atendimento_db = await self.create_atendimento_database()
 
             # 2. Criar database de Mensagens COM RELACIONAMENTO para Atendimentos
-            mensagem_db = await self.create_mensagem_database(
-                atendimento_db
-            )
+            mensagem_db = await self.create_mensagem_database(atendimento_db)
 
             # 3. Aguardar um momento para as databases serem processadas
             await asyncio.sleep(2)
@@ -2377,7 +2391,9 @@ class NotionAtendimentosDatabaseConstructor:
                 )
             except Exception as e:
                 logger.warning(f"⚠️ Erro ao criar páginas de exemplo: {e}")
-                logger.info("💡 Isso não afeta a criação das databases, apenas os testes")
+                logger.info(
+                    "💡 Isso não afeta a criação das databases, apenas os testes"
+                )
 
             # Exibir informações importantes das databases criadas
             logger.info(
@@ -2415,13 +2431,11 @@ class NotionAtendimentosDatabaseConstructor:
                 NotionDatabaseConfig.objects.get
             )(slug="ui_atendimentos_mensagem")
 
-            logger.info("✅ Configurações de atendimentos verificadas no Django:")
             logger.info(
-                f"   - Atendimento Config ID: {atendimento_config.id}"
+                "✅ Configurações de atendimentos verificadas no Django:"
             )
-            logger.info(
-                f"   - Mensagem Config ID: {mensagem_config.id}"
-            )
+            logger.info(f"   - Atendimento Config ID: {atendimento_config.id}")
+            logger.info(f"   - Mensagem Config ID: {mensagem_config.id}")
             logger.info(
                 f"   - Ambas prontas para sincronização: {atendimento_config.is_ready_for_sync() and mensagem_config.is_ready_for_sync()}"
             )
@@ -2469,9 +2483,7 @@ async def run_repair_atendimentos_relations() -> None:
         constructor = NotionAtendimentosDatabaseConstructor()
         await constructor.repair_atendimento_relations()
     except Exception as e:
-        logger.error(
-            f"❌ Erro durante a reparação de relacionamentos: {e}"
-        )
+        logger.error(f"❌ Erro durante a reparação de relacionamentos: {e}")
         raise
 
 
@@ -2493,11 +2505,15 @@ async def run_full_construction_sequence() -> None:
     2. Operacional (Departamento/Atendente)
     3. Atendimentos/Mensagens (depende das anteriores)
     """
-    logger.info("🚀 Iniciando sequência completa de construção de databases no Notion...")
+    logger.info(
+        "🚀 Iniciando sequência completa de construção de databases no Notion..."
+    )
 
     try:
         # 1. Construir databases de clientes/contatos
-        logger.info("📋 Etapa 1/3: Construindo databases de clientes/contatos...")
+        logger.info(
+            "📋 Etapa 1/3: Construindo databases de clientes/contatos..."
+        )
         await run_construction_clientes()
         logger.info("✅ Etapa 1/3 concluída com sucesso")
 
@@ -2513,11 +2529,15 @@ async def run_full_construction_sequence() -> None:
         await asyncio.sleep(3)
 
         # 3. Construir databases de atendimentos (depende das anteriores)
-        logger.info("🎯 Etapa 3/3: Construindo databases de atendimentos/mensagens...")
+        logger.info(
+            "🎯 Etapa 3/3: Construindo databases de atendimentos/mensagens..."
+        )
         await run_construction_atendimentos()
         logger.info("✅ Etapa 3/3 concluída com sucesso")
 
-        logger.info("🎉 Sequência completa de construção finalizada com sucesso!")
+        logger.info(
+            "🎉 Sequência completa de construção finalizada com sucesso!"
+        )
         logger.info("📊 Todas as databases estão prontas para sincronização:")
         logger.info("   - Clientes e Contatos")
         logger.info("   - Departamentos e Atendentes")
@@ -2590,7 +2610,7 @@ def test_atendimentos_construction() -> None:
         configs_necessarias = [
             "ui_clientes_contato",
             "ui_operacional_departamento",
-            "ui_operacional_atendente"
+            "ui_operacional_atendente",
         ]
 
         for slug in configs_necessarias:
@@ -2599,7 +2619,9 @@ def test_atendimentos_construction() -> None:
                 logger.info(f"✅ Configuração {slug} encontrada")
             except NotionDatabaseConfig.DoesNotExist:
                 logger.error(f"❌ Configuração {slug} não encontrada")
-                logger.error("Execute primeiro a construção de clientes e operacional")
+                logger.error(
+                    "Execute primeiro a construção de clientes e operacional"
+                )
                 return
 
         # Executar a construção de atendimentos
@@ -2607,15 +2629,22 @@ def test_atendimentos_construction() -> None:
         asyncio.run(run_construction_atendimentos())
 
         # Verificar se as novas configs foram criadas
-        novas_configs = ["ui_atendimentos_atendimento", "ui_atendimentos_mensagem"]
+        novas_configs = [
+            "ui_atendimentos_atendimento",
+            "ui_atendimentos_mensagem",
+        ]
 
         for slug in novas_configs:
             try:
                 config = NotionDatabaseConfig.objects.get(slug=slug)
-                logger.info(f"✅ Nova configuração {slug} criada com ID: {config.id}")
+                logger.info(
+                    f"✅ Nova configuração {slug} criada com ID: {config.id}"
+                )
                 logger.info(f"   Database ID: {config.notion_database_id}")
                 logger.info(f"   Data Source ID: {config.data_source_id}")
-                logger.info(f"   Pronta para sync: {config.is_ready_for_sync()}")
+                logger.info(
+                    f"   Pronta para sync: {config.is_ready_for_sync()}"
+                )
             except NotionDatabaseConfig.DoesNotExist:
                 logger.error(f"❌ Nova configuração {slug} não foi criada")
 
@@ -2640,7 +2669,11 @@ def run(construction_type: str = "clientes") -> None:
             asyncio.run(run_construction_operacional())
         elif construction_type == "atendimentos":
             asyncio.run(run_construction_atendimentos())
-        elif construction_type in ["repair_atendimentos", "repair_atendimentos_relations", "repair"]:
+        elif construction_type in [
+            "repair_atendimentos",
+            "repair_atendimentos_relations",
+            "repair",
+        ]:
             asyncio.run(run_repair_atendimentos_relations())
         elif construction_type == "full":
             asyncio.run(run_full_construction_sequence())

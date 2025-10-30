@@ -139,15 +139,15 @@ class Atendimento(models.Model):
         default="normal",
         help_text="Prioridade do atendimento",
     )
-    atendente_humano: models.ForeignKey[
-        Optional["operacional.Atendente"]
-    ] = models.ForeignKey(
-        "operacional.Atendente",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name="atendimentos",
-        help_text="Atendente humano responsável pelo atendimento (se transferido)",
+    atendente_humano: models.ForeignKey[Optional["operacional.Atendente"]] = (
+        models.ForeignKey(
+            "operacional.Atendente",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text="Atendente humano responsável pelo atendimento (se transferido)",
+        )
     )
     contexto_conversa: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,

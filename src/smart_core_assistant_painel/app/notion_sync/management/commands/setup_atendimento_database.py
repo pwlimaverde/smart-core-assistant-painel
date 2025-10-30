@@ -9,8 +9,12 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from loguru import logger
 
-from smart_core_assistant_painel.app.notion_sync.models import NotionDatabaseConfig
-from smart_core_assistant_painel.app.notion_sync.services.mappers import AtendimentoMapper
+from smart_core_assistant_painel.app.notion_sync.models import (
+    NotionDatabaseConfig,
+)
+from smart_core_assistant_painel.app.notion_sync.services.mappers import (
+    AtendimentoMapper,
+)
 
 
 class Command(BaseCommand):
@@ -23,7 +27,9 @@ class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any) -> None:
         """Executa o comando de setup."""
         self.stdout.write(
-            self.style.SUCCESS("Iniciando setup da database de Atendimentos...")
+            self.style.SUCCESS(
+                "Iniciando setup da database de Atendimentos..."
+            )
         )
 
         try:
@@ -33,7 +39,9 @@ class Command(BaseCommand):
                 self.style.SUCCESS("Setup concluído com sucesso!")
             )
             self.stdout.write(
-                self.style.WARNING("Lembre-se de preencher os IDs das databases no admin do Django.")
+                self.style.WARNING(
+                    "Lembre-se de preencher os IDs das databases no admin do Django."
+                )
             )
 
         except Exception as exc:
@@ -55,7 +63,7 @@ class Command(BaseCommand):
             "notion_database_id": uuid.uuid4(),  # ID Temporário
             "sync_enabled": True,
             "sync_direction": "bidirectional",
-            "sync_priority": 10, # Prioridade alta
+            "sync_priority": 10,  # Prioridade alta
             "auto_sync": True,
         }
 
@@ -65,11 +73,15 @@ class Command(BaseCommand):
 
         if created:
             self.stdout.write(
-                self.style.SUCCESS(f"✓ Configuração de Atendimento criada: {config.name}")
+                self.style.SUCCESS(
+                    f"✓ Configuração de Atendimento criada: {config.name}"
+                )
             )
         else:
             self.stdout.write(
-                self.style.WARNING(f"⚠ Configuração de Atendimento já existe: {config.name}")
+                self.style.WARNING(
+                    f"⚠ Configuração de Atendimento já existe: {config.name}"
+                )
             )
 
     def _setup_mensagem_config(self) -> None:
@@ -82,9 +94,9 @@ class Command(BaseCommand):
             "django_model": "atendimentos.Mensagem",
             "django_app_label": "ui",
             "notion_schema": {},
-            "notion_database_id": uuid.uuid4(), # Não aplicável, mas obrigatório
+            "notion_database_id": uuid.uuid4(),  # Não aplicável, mas obrigatório
             "sync_enabled": True,
-            "sync_direction": "django_to_notion", # Apenas envia
+            "sync_direction": "django_to_notion",  # Apenas envia
             "sync_priority": 7,
             "auto_sync": True,
         }
@@ -95,9 +107,13 @@ class Command(BaseCommand):
 
         if created:
             self.stdout.write(
-                self.style.SUCCESS(f"✓ Configuração de Mensagem criada: {config.name}")
+                self.style.SUCCESS(
+                    f"✓ Configuração de Mensagem criada: {config.name}"
+                )
             )
         else:
             self.stdout.write(
-                self.style.WARNING(f"⚠ Configuração de Mensagem já existe: {config.name}")
+                self.style.WARNING(
+                    f"⚠ Configuração de Mensagem já existe: {config.name}"
+                )
             )

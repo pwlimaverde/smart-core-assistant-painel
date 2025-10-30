@@ -42,7 +42,9 @@ class MensagemMapper:
         if mensagem.remetente == "cliente":
             icon = {"emoji": "👤"}
             color = "gray_background"
-            remetente_nome = sync_instance.atendimento_sync.atendimento.contato.nome_contato
+            remetente_nome = (
+                sync_instance.atendimento_sync.atendimento.contato.nome_contato
+            )
         elif mensagem.remetente == "atendente":
             icon = {"emoji": "👩‍💼"}
             color = "blue_background"
@@ -150,11 +152,7 @@ class MensagemMapper:
         conteudo: str = mensagem.conteudo or ""
         title = conteudo[:2000] if conteudo else "(Mensagem sem texto)"
 
-        props: dict = {
-            "Conteúdo": {
-                "title": [{"text": {"content": title}}]
-            }
-        }
+        props: dict = {"Conteúdo": {"title": [{"text": {"content": title}}]}}
 
         # Relação com atendimento (se página pai já sincronizada)
         try:
@@ -214,9 +212,7 @@ class MensagemMapper:
                 "rich_text": [
                     {
                         "type": "text",
-                        "text": {
-                            "content": str(mensagem.message_id_whatsapp)
-                        },
+                        "text": {"content": str(mensagem.message_id_whatsapp)},
                     }
                 ]
             }
@@ -235,9 +231,7 @@ class MensagemMapper:
                         "rich_text": [
                             {
                                 "type": "text",
-                                "text": {
-                                    "content": "; ".join(intent_parts)
-                                },
+                                "text": {"content": "; ".join(intent_parts)},
                             }
                         ]
                     }
@@ -258,9 +252,7 @@ class MensagemMapper:
                         "rich_text": [
                             {
                                 "type": "text",
-                                "text": {
-                                    "content": "; ".join(ent_parts)
-                                },
+                                "text": {"content": "; ".join(ent_parts)},
                             }
                         ]
                     }

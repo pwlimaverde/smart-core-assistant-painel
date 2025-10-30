@@ -122,6 +122,7 @@ class AtendimentoMapper:
         def _fmt_json(val: object) -> str:
             try:
                 import json
+
                 if isinstance(val, (dict, list)):
                     txt = json.dumps(val, ensure_ascii=False, indent=2)
                 else:
@@ -130,11 +131,78 @@ class AtendimentoMapper:
                 txt = str(val)
             return txt[:2000]
 
+        def _formatar_contexto_conversa(contexto: dict) -> str:
+            """Formata o contexto da conversa de forma legível para o Notion."""
+            if not contexto:
+                return "Sem contexto disponível"
+
+            linhas: list[str] = ["📋 CONTEXTO DA CONVERSA\n"]
+
+            # Ordena as chaves para melhor organização
+            chaves_ordenadas = sorted(contexto.keys())
+
+            for chave in chaves_ordenadas:
+                valor = contexto[chave]
+
+                # Formatação especial para diferentes tipos de dados
+                if chave == "canal":
+                    linhas.append(f"📱 Canal: {str(valor).upper()}")
+                elif chave == "primeira_interacao" and valor:
+                    linhas.append("🆕 Primeira interação: Sim")
+                elif chave == "sessao_iniciada":
+                    linhas.append(f"⏰ Sessão iniciada: {str(valor)}")
+                elif isinstance(valor, bool):
+                    linhas.append(
+                        f"✅ {chave.replace('_', ' ').title()}: {'Sim' if valor else 'Não'}"
+                    )
+                elif isinstance(valor, str):
+                    # Para strings simples, exibe como valor normal
+                    if chave == "cliente_status":
+                        linhas.append(f"👤 Cliente Status: {valor}")
+                    else:
+                        linhas.append(
+                            f"• {chave.replace('_', ' ').title()}: {valor}"
+                        )
+                elif isinstance(valor, list):
+                    if valor:
+                        linhas.append(f"📝 {chave.replace('_', ' ').title()}:")
+                        for item in valor:
+                            linhas.append(f"   • {str(item)}")
+                    else:
+                        linhas.append(
+                            f"📝 {chave.replace('_', ' ').title()}: (vazio)"
+                        )
+                elif isinstance(valor, dict):
+                    if valor:
+                        linhas.append(f"📊 {chave.replace('_', ' ').title()}:")
+                        for sub_chave, sub_valor in valor.items():
+                            linhas.append(
+                                f"   • {sub_chave}: {str(sub_valor)}"
+                            )
+                    else:
+                        linhas.append(
+                            f"📊 {chave.replace('_', ' ').title()}: (vazio)"
+                        )
+                else:
+                    linhas.append(
+                        f"• {chave.replace('_', ' ').title()}: {str(valor)}"
+                    )
+
+            # Adiciona informações adicionais úteis
+            if "mensagens_trocadas" in contexto and isinstance(
+                contexto["mensagens_trocadas"], int
+            ):
+                linhas.append(
+                    f"\n💬 Total de mensagens trocadas: {contexto['mensagens_trocadas']}"
+                )
+
+            return "\n".join(linhas)
+
         properties[contexto_key] = {
             "rich_text": [
                 {
                     "text": {
-                        "content": _fmt_json(
+                        "content": _formatar_contexto_conversa(
                             getattr(atendimento, "contexto_conversa", {})
                         )
                     }
@@ -144,16 +212,20 @@ class AtendimentoMapper:
 
         tags_list = getattr(atendimento, "tags", [])
         formatted_tags = []
-        
+
         for tag in tags_list:
             if isinstance(tag, str):
                 formatted_tags.append({"name": tag})
             elif isinstance(tag, dict):
-                tag_str = str(tag.get("status", "") or tag.get("nome", "") or tag)
+                tag_str = str(
+                    tag.get("status", "") or tag.get("nome", "") or tag
+                )
                 if tag_str:
                     formatted_tags.append({"name": tag_str})
                 else:
-                    formatted_tags.append({"name": json.dumps(tag, ensure_ascii=False)[:100]})
+                    formatted_tags.append(
+                        {"name": json.dumps(tag, ensure_ascii=False)[:100]}
+                    )
             else:
                 formatted_tags.append({"name": str(tag)})
 
@@ -204,7 +276,9 @@ class AtendimentoMapper:
             and sync_instance.departamento_sync.external_id
         ):
             properties[departamento_key] = {
-                "relation": [{"id": sync_instance.departamento_sync.external_id}]
+                "relation": [
+                    {"id": sync_instance.departamento_sync.external_id}
+                ]
             }
 
         if (

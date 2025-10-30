@@ -149,7 +149,7 @@ class AtendimentoMapper:
             if isinstance(tag, str):
                 formatted_tags.append({"name": tag})
             elif isinstance(tag, dict):
-                tag_str = str(tag.get("status", "") or str(tag.get("nome", "") or str(tag))
+                tag_str = str(tag.get("status", "") or tag.get("nome", "") or tag)
                 if tag_str:
                     formatted_tags.append({"name": tag_str})
                 else:

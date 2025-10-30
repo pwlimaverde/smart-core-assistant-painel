@@ -1177,13 +1177,37 @@ def on_mensagem_saved(
     if kwargs.get("skip_sync", False) or not created:
         return  # Sincroniza apenas na criação
     try:
+        logger.info(f"[SIGNAL_DEBUG] Signal de mensagem disparado para #{instance.id} (created={created})")
+
+        # Sincroniza a mensagem
         sync_metadata = get_or_create_mensagem_sync(instance.id)
         sync_metadata.prepare_notion_data()
         sync_metadata.save()
         schedule_sync_operation(
             model_name="Mensagem", instance_id=instance.id, operation="create"
         )
+        logger.info(f"[SIGNAL_DEBUG] Mensagem sincronizada: #{instance.id}")
+
+        # ATUALIZAÇÃO: Também atualiza o atendimento relacionado para refletir a nova mensagem
+        if instance.atendimento:
+            logger.info(f"[SIGNAL_DEBUG] Atualizando atendimento relacionado: #{instance.atendimento.id}")
+
+            # Obtém ou cria o sync do atendimento
+            atendimento_sync = get_or_create_atendimento_sync(instance.atendimento.id)
+
+            # Prepara e salva os dados atualizados do atendimento
+            atendimento_sync.prepare_notion_data()
+            atendimento_sync.save()
+
+            # Agenda a atualização do atendimento
+            schedule_sync_operation(
+                model_name="Atendimento",
+                instance_id=instance.atendimento.id,
+                operation="update"
+            )
+            logger.info(f"[SIGNAL_DEBUG] Atendimento #{instance.atendimento.id} atualizado com nova mensagem")
+
     except Exception as e:
         logger.error(
-            f"Erro ao processar signal de Mensagem #{instance.id}: {e}"
+            f"Erro ao processar signal de Mensagem #{instance.id}: {e}", exc_info=True
         )

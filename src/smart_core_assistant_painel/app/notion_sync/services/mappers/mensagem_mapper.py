@@ -274,8 +274,8 @@ class MensagemMapper:
         # Confiança Resposta – se existir um score
         try:
             confianca = None
-            if hasattr(mensagem, "ia_confianca_resposta"):
-                confianca = getattr(mensagem, "ia_confianca_resposta")
+            if hasattr(mensagem, "confianca_resposta"):
+                confianca = getattr(mensagem, "confianca_resposta")
             if confianca is not None:
                 props["Confiança Resposta"] = {"number": float(confianca)}
         except Exception:

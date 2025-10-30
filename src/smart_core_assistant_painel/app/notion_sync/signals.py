@@ -1174,24 +1174,25 @@ def on_atendimento_pre_delete(
 def on_mensagem_saved(
     sender: Any, instance: "Mensagem", created: bool, **kwargs: Any
 ) -> None:
-    if kwargs.get("skip_sync", False) or not created:
-        return  # Sincroniza apenas na criação
+    if kwargs.get("skip_sync", False):
+        return
     try:
-        logger.info(f"[SIGNAL_DEBUG] Signal de mensagem disparado para #{instance.id} (created={created})")
-
-        # Sincroniza a mensagem
+        # Sincroniza a mensagem (criação ou atualização)
         sync_metadata = get_or_create_mensagem_sync(instance.id)
         sync_metadata.prepare_notion_data()
         sync_metadata.save()
-        schedule_sync_operation(
-            model_name="Mensagem", instance_id=instance.id, operation="create"
-        )
-        logger.info(f"[SIGNAL_DEBUG] Mensagem sincronizada: #{instance.id}")
 
-        # ATUALIZAÇÃO: Também atualiza o atendimento relacionado para refletir a nova mensagem
-        if instance.atendimento:
-            logger.info(f"[SIGNAL_DEBUG] Atualizando atendimento relacionado: #{instance.atendimento.id}")
+        # Verifica se precisa sincronizar (incluindo atualizações de campos importantes)
+        if sync_metadata.needs_sync():
+            # Define a operação com base no status
+            operation = "create" if created else "update"
+            schedule_sync_operation(
+                model_name="Mensagem", instance_id=instance.id, operation=operation
+            )
+            logger.info(f"Mensagem {operation.lower()}izada: #{instance.id}")
 
+        # ATUALIZAÇÃO: Também atualiza o atendimento relacionado se houver resposta do bot
+        if instance.atendimento and (instance.resposta_bot or instance.respondida):
             # Obtém ou cria o sync do atendimento
             atendimento_sync = get_or_create_atendimento_sync(instance.atendimento.id)
 
@@ -1205,7 +1206,7 @@ def on_mensagem_saved(
                 instance_id=instance.atendimento.id,
                 operation="update"
             )
-            logger.info(f"[SIGNAL_DEBUG] Atendimento #{instance.atendimento.id} atualizado com nova mensagem")
+            logger.info(f"Atendimento #{instance.atendimento.id} atualizado com resposta do bot")
 
     except Exception as e:
         logger.error(

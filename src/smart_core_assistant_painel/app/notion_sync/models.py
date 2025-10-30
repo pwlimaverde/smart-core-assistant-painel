@@ -2113,8 +2113,37 @@ class MensagemSync(models.Model):
 
     def needs_sync(self) -> bool:
         """Verifica se a mensagem precisa ser sincronizada."""
-        # Mensagens são geralmente imutáveis após a criação
-        return self.sync_status in ["pending", "error"]
+        # Sempre sincroniza se status for pending ou error
+        if self.sync_status in ["pending", "error"]:
+            return True
+
+        # Verifica se campos importantes mudaram após a última sincronização
+        if self.sync_status == "synced" and self.last_sync_at:
+            mensagem = self.mensagem
+
+            # Campos que precisam de atualização no Notion
+            campos_criticos = {
+                "resposta_bot": mensagem.resposta_bot,
+                "confianca_resposta": mensagem.confianca_resposta,
+                "respondida": mensagem.respondida,
+                "intent_detectado": mensagem.intent_detectado,
+                "entidades_extraidas": mensagem.entidades_extraidas,
+                "metadados": mensagem.metadados,
+            }
+
+            # Como o modelo Mensagem não tem updated_at, verificamos se há valores
+            # importantes que ainda não foram sincronizados (comparando com last_sync_at)
+            # Se há algum valor importante, assume que precisa sincronizar
+            for campo, valor_atual in campos_criticos.items():
+                if valor_atual is not None and valor_atual != "" and valor_atual != []:
+                    # Para campos que não são coleções vazias
+                    if isinstance(valor_atual, (list, dict)) and len(valor_atual) == 0:
+                        continue
+                    # Se tem um valor importante e já foi sincronizado antes,
+                    # precisamos atualizar para garantir que está atualizado
+                    return True
+
+        return False
 
     def mark_as_synced(self, external_id: str | None = None) -> None:
         if external_id:

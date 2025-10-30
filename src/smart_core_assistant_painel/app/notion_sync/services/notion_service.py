@@ -189,6 +189,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
                         "Propriedade '{}' ausente no schema; removida do payload.",
                         key,
                     )
+                    # Log específico para confiança se for o caso
+                    if "Confiança" in key:
+                        logger.error(f"[CONFIANCA_DEBUG] Campo de confiança '{key}' removido! Schema permitido: {allowed}")
 
             return filtered
         except Exception as e:
@@ -292,9 +295,11 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 raise MappingError(f"Mapper não encontrado para {model_name}")
 
             properties = mapper.to_notion_properties(data)
+
             properties = self._filter_properties_by_schema(
                 model_name, properties
             )
+
             logger.debug(
                 "Propriedades finais para {} (update): {}",
                 model_name,

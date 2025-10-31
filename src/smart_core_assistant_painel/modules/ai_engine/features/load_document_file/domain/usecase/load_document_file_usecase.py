@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,

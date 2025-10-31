@@ -11,9 +11,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import AMData
 
 
 class AnaliseMensageDatasource(AMData):
-    def __call__(
-        self, parameters: AnaliseMensageParameters
-    ) -> str:
+    def __call__(self, parameters: AnaliseMensageParameters) -> str:
         try:
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
@@ -32,7 +30,7 @@ class AnaliseMensageDatasource(AMData):
                         'responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."\n'
                         "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
                         "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
-                        "5. **Solicitação de Transferência (Regra Prioritária):** Se o usuário solicitar transferência para um setor específico, para um atendente específico, ou pedir para falar com um humano, responda exatamente: \"Estarei transferindo seu atendimento para o setor responsável.\"\n"
+                        '5. **Solicitação de Transferência (Regra Prioritária):** Se o usuário solicitar transferência para um setor específico, para um atendente específico, ou pedir para falar com um humano, responda exatamente: "Estarei transferindo seu atendimento para o setor responsável."\n'
                     ),
                 ),
                 (
@@ -62,7 +60,7 @@ class AnaliseMensageDatasource(AMData):
                 "context": parameters.llm_parameters.context,
             }
             resposta_bot = chain.invoke(invoke_data)
-            
+
             return resposta_bot
 
         except Exception as e:

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from py_return_success_or_error import ErrorReturn, SuccessReturn
 
 from smart_core_assistant_painel.modules.ai_engine import (
@@ -251,7 +251,7 @@ class TestFeaturesCompose(unittest.TestCase):
         from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
             LlmError,
         )
-        
+
         mock_use_case_instance = mock_use_case.return_value
         error = LlmError("Test LLM error")
         mock_use_case_instance.return_value = ErrorReturn(error)
@@ -299,7 +299,7 @@ class TestFeaturesCompose(unittest.TestCase):
         from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
             LlmError,
         )
-        
+
         mock_use_case_instance = mock_use_case.return_value
         error = LlmError("Test LLM error")
         mock_use_case_instance.return_value = ErrorReturn(error)
@@ -350,7 +350,7 @@ class TestFeaturesCompose(unittest.TestCase):
         from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
             LlmError,
         )
-        
+
         mock_use_case_instance = mock_use_case.return_value
         error = LlmError("Test LLM error")
         mock_use_case_instance.return_value = ErrorReturn(error)
@@ -393,7 +393,7 @@ class TestFeaturesCompose(unittest.TestCase):
         # Para cobrir a exceção real, vamos modificar o método temporariamente
         # Salvamos o método original
         original_method = FeaturesCompose._converter_contexto
-        
+
         def mock_converter_with_exception(metadados):
             try:
                 # Força uma exceção
@@ -405,10 +405,10 @@ class TestFeaturesCompose(unittest.TestCase):
                     mock_logger.error = lambda msg: None
                     mock_logger.error(f"Erro ao converter contexto: {e}")
                 raise e
-        
+
         # Substituímos temporariamente o método
         FeaturesCompose._converter_contexto = staticmethod(mock_converter_with_exception)
-        
+
         try:
             # Act & Assert
             with self.assertRaises(ValueError) as context:
@@ -429,12 +429,12 @@ class TestFeaturesCompose(unittest.TestCase):
         mock_message_data.metadados = {"type": "image"}
         mock_message_data.conteudo = "Texto original"
         mock_instance.return_value = SuccessReturn(mock_message_data)
-        
+
         # Mock do _converter_contexto para retornar exatamente "contexto" (não altera conteúdo)
         with patch.object(FeaturesCompose, '_converter_contexto', return_value="contexto"):
             # Act
             result = FeaturesCompose.load_message_data(data={})
-            
+
             # Assert - conteúdo deve permanecer inalterado
             self.assertEqual(result.conteudo, "Texto original")
             mock_use_case.assert_called_once()
@@ -449,7 +449,7 @@ class TestFeaturesCompose(unittest.TestCase):
         from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
             DataMessageError,
         )
-        
+
         mock_instance = mock_use_case.return_value
         error = DataMessageError("Test message error")
         mock_instance.return_value = ErrorReturn(error)
@@ -476,7 +476,7 @@ class TestFeaturesCompose(unittest.TestCase):
         """Testa mensagem_apresentacao - cobre linha 305."""
         # Act - método vazio, apenas verifica se não gera erro
         result = FeaturesCompose.mensagem_apresentacao()
-        
+
         # Assert
         self.assertIsNone(result)
 
@@ -484,7 +484,7 @@ class TestFeaturesCompose(unittest.TestCase):
         """Testa solicitacao_info_cliene - cobre linha 310."""
         # Act - método vazio, apenas verifica se não gera erro
         result = FeaturesCompose.solicitacao_info_cliene()
-        
+
         # Assert
         self.assertIsNone(result)
 
@@ -492,7 +492,7 @@ class TestFeaturesCompose(unittest.TestCase):
         """Testa resumo_atendimento - cobre linha 315."""
         # Act - método vazio, apenas verifica se não gera erro
         result = FeaturesCompose.resumo_atendimento()
-        
+
         # Assert
         self.assertIsNone(result)
 

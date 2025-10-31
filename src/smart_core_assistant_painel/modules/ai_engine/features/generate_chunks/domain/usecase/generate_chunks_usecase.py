@@ -4,8 +4,8 @@ Este módulo contém a implementação do caso de uso para divisão de texto
 em chunks utilizando o RecursiveCharacterTextSplitter do LangChain.
 """
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_core.documents.base import Document
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.documents import Document
 from py_return_success_or_error import (
     ErrorReturn,
     ReturnSuccessOrError,

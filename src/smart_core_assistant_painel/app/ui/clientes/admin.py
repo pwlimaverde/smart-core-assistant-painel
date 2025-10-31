@@ -29,7 +29,12 @@ class ContatoAdmin(admin.ModelAdmin[Contato]):
         "total_clientes",
     ]
     list_filter = ["ativo", "data_cadastro", "ultima_interacao"]
-    search_fields = ["telefone", "nome_contato", "nome_perfil_whatsapp", "email"]
+    search_fields = [
+        "telefone",
+        "nome_contato",
+        "nome_perfil_whatsapp",
+        "email",
+    ]
     readonly_fields = ["data_cadastro", "ultima_interacao"]
     ordering = ["-ultima_interacao"]
     list_per_page = 25

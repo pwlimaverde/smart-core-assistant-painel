@@ -154,9 +154,7 @@ def send_message_response(phone: str) -> None:
                     confianca=result.confiabilidade,
                 )
                 if result.transferir_atendimento:
-                    logger.warning(
-                        "DEBUG: Bot transferiu atendimento"
-                    )
+                    logger.warning("DEBUG: Bot transferiu atendimento")
             else:
                 logger.warning(
                     "DEBUG: Bot não pode responder - pulando processamento de intents"

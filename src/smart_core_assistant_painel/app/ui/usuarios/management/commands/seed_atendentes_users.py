@@ -11,6 +11,7 @@ Observações:
 - Senha padrão: "123456" (apenas para ambiente de desenvolvimento)
 - O comando só executa em ambiente com ``settings.DEBUG`` = True
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +21,9 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.operacional.models import AtendenteHumano
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    AtendenteHumano,
+)
 
 
 class Command(BaseCommand):
@@ -55,8 +58,7 @@ class Command(BaseCommand):
 
         # Buscar atendentes com usuario_sistema definido (não nulo e não vazio)
         atendentes = (
-            AtendenteHumano.objects
-            .filter(usuario_sistema__isnull=False)
+            AtendenteHumano.objects.filter(usuario_sistema__isnull=False)
             .exclude(usuario_sistema="")
             .all()
         )

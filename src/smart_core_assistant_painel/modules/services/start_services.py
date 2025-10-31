@@ -5,6 +5,7 @@ ambiente, armazenamento de vetores (vector storage) e serviços de WhatsApp,
 sejam iniciados corretamente quando a aplicação é lançada.
 """
 
+import os
 from loguru import logger
 
 from .features.features_compose import FeaturesCompose
@@ -95,6 +96,14 @@ def start_services() -> None:
         return
 
     try:
+        # Bypass controlado: permite rodar scripts sem inicializar serviços.
+        # Defina DISABLE_APP_SERVICES_INIT="1" para pular esta etapa.
+        if os.environ.get("DISABLE_APP_SERVICES_INIT") == "1":
+            logger.info(
+                "Serviços desativados por DISABLE_APP_SERVICES_INIT (modo script)."
+            )
+            return
+
         FeaturesCompose.set_environ_remote()
         FeaturesCompose.whatsapp_service()
 

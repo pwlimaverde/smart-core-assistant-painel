@@ -8,7 +8,7 @@ interação com modelos de linguagem.
 import math
 from typing import Any
 
-from langchain_core.documents.base import Document
+from langchain_core.documents import Document
 from loguru import logger
 from py_return_success_or_error import (
     ErrorReturn,
@@ -550,12 +550,8 @@ class FeaturesCompose:
             # Define flag de transferência quando a resposta indica não ter
             # encontrado informações relacionadas OU solicitação de transferência
             transfer_attendance: bool = False
-            apology_phrase: str = (
-                "Desculpe, não encontrei informações relacionadas à sua pergunta."
-            )
-            transfer_phrase: str = (
-                "Estarei transferindo seu atendimento para o setor responsável."
-            )
+            apology_phrase: str = "Desculpe, não encontrei informações relacionadas à sua pergunta."
+            transfer_phrase: str = "Estarei transferindo seu atendimento para o setor responsável."
             if (
                 apology_phrase in response_text
                 or transfer_phrase in response_text
@@ -570,8 +566,8 @@ class FeaturesCompose:
             # Gera embeddings para pergunta (context), treinamento (se houver)
             # e resposta do bot. Quando não há treinamento, evitamos gerar
             # embedding para string vazia.
-            vector_mensagem: list[float] = (
-                FeaturesCompose.generate_embeddings(context)
+            vector_mensagem: list[float] = FeaturesCompose.generate_embeddings(
+                context
             )
             vector_treinamento: list[float] | None = None
             if dados_treinamento and str(dados_treinamento).strip():
@@ -605,9 +601,7 @@ class FeaturesCompose:
             # Quando a transferência estiver habilitada, acrescenta a mensagem
             # solicitada ao texto de resposta do bot.
             if transfer_attendance:
-                transfer_message: str = (
-                    "/n/n Vou transferir seu atendimento para o setor rersponsável"
-                )
+                transfer_message: str = "/n/n Vou transferir seu atendimento para o setor rersponsável"
                 response_text = f"{response_text} {transfer_message}"
 
             return AMTuple(

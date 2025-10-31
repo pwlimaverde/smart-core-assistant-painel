@@ -54,8 +54,10 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "id",
         "contato_telefone",
         "status",
+        "departamento",
         "data_inicio",
         "data_fim",
+        "atendente_humano",
         "total_mensagens",
         "duracao_formatada",
     ]
@@ -69,8 +71,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "contato__nome_contato",
         "assunto",
     ]
-    readonly_fields = ["data_inicio", "data_fim"]
-    exclude = ("departamento", "atendente_humano")
+    readonly_fields = ["data_inicio"]
     inlines = [MensagemInline]
     date_hierarchy = "data_inicio"
     ordering = ["-data_inicio"]
@@ -106,10 +107,16 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
             .get_queryset(request)
             .select_related("contato")
             .prefetch_related("mensagens")
-            .only("id", "contato", "status", "data_inicio", "data_fim")
-            .defer(
+            .only(
+                "id",
+                "contato",
+                "status",
                 "departamento",
+                "data_inicio",
+                "data_fim",
                 "atendente_humano",
+            )
+            .defer(
                 "data_ultima_mensagem",
                 "assunto",
                 "prioridade",

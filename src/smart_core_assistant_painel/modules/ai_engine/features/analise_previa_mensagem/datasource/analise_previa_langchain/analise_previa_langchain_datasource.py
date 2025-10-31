@@ -79,7 +79,9 @@ class AnalisePreviaLangchainDatasource(APMData):
             llm: BaseChatModel = parameters.llm_parameters.create_llm
 
             # 5) Structured output com preferencia por json_schema
-            structured_llm: Runnable[Any, BaseModel | Dict[str, Any]] | None = None
+            structured_llm: (
+                Runnable[Any, BaseModel | Dict[str, Any]] | None
+            ) = None
             try:
                 structured_llm = cast(
                     Runnable[Any, BaseModel | Dict[str, Any]],
@@ -99,8 +101,7 @@ class AnalisePreviaLangchainDatasource(APMData):
                     )
                 except Exception as e_default:
                     logger.debug(
-                        "with_structured_output padrão falhou: "
-                        f"{e_default}"
+                        f"with_structured_output padrão falhou: {e_default}"
                     )
                     structured_llm = None
 
@@ -114,7 +115,9 @@ class AnalisePreviaLangchainDatasource(APMData):
             if structured_llm is not None:
                 try:
                     # Define o tipo explicitamente para evitar Unknown
-                    chain: Runnable[Dict[str, Any], BaseModel | Dict[str, Any]] = cast(
+                    chain: Runnable[
+                        Dict[str, Any], BaseModel | Dict[str, Any]
+                    ] = cast(
                         Runnable[Dict[str, Any], BaseModel | Dict[str, Any]],
                         messages | structured_llm,
                     )
@@ -142,7 +145,9 @@ class AnalisePreviaLangchainDatasource(APMData):
                         text = json.dumps(content, ensure_ascii=False)
                     except Exception:
                         text = str(content)
-                model_obj: BaseModel = self._parse_json_to_model(text, PydanticModel)
+                model_obj: BaseModel = self._parse_json_to_model(
+                    text, PydanticModel
+                )
             else:
                 # Garante que model_obj seja sempre BaseModel
                 if isinstance(response, BaseModel):
@@ -152,10 +157,13 @@ class AnalisePreviaLangchainDatasource(APMData):
                         model_obj = PydanticModel.model_validate(response)
                     except Exception:
                         model_obj = self._parse_json_to_model(
-                            json.dumps(response, ensure_ascii=False), PydanticModel
+                            json.dumps(response, ensure_ascii=False),
+                            PydanticModel,
                         )
                 else:
-                    model_obj = self._parse_json_to_model(str(response), PydanticModel)
+                    model_obj = self._parse_json_to_model(
+                        str(response), PydanticModel
+                    )
 
             # 6) Pós-processamento: converter em dicts simples {type: value}
             intent_dicts = self._filter_and_convert_items(
@@ -169,7 +177,9 @@ class AnalisePreviaLangchainDatasource(APMData):
                 intent=intent_dicts, entities=entity_dicts
             )
 
-        except Exception as e:  # pragma: no cover (mapeado por testes mais altos)
+        except (
+            Exception
+        ) as e:  # pragma: no cover (mapeado por testes mais altos)
             logger.error(f"Erro ao processar análise prévia: {e}")
             raise
 
@@ -189,9 +199,8 @@ class AnalisePreviaLangchainDatasource(APMData):
             elif isinstance(historico, str):
                 stripped = historico.strip()
                 is_json_like = (
-                    (stripped.startswith("{") and stripped.endswith("}"))
-                    or (stripped.startswith("[") and stripped.endswith("]"))
-                )
+                    stripped.startswith("{") and stripped.endswith("}")
+                ) or (stripped.startswith("[") and stripped.endswith("]"))
                 if is_json_like:
                     try:
                         parsed = json.loads(stripped)
@@ -240,7 +249,9 @@ class AnalisePreviaLangchainDatasource(APMData):
             if isinstance(atendimentos_anteriores, str):
                 atendimentos_anteriores = [atendimentos_anteriores]
             elif isinstance(atendimentos_anteriores, list):
-                atendimentos_anteriores = [str(a) for a in cast(List[Any], atendimentos_anteriores)]
+                atendimentos_anteriores = [
+                    str(a) for a in cast(List[Any], atendimentos_anteriores)
+                ]
             else:
                 atendimentos_anteriores = []
 
@@ -320,46 +331,49 @@ class AnalisePreviaLangchainDatasource(APMData):
                 # {
                 #   "intent_types": { "<grupo>": { "<tag>": "texto..." } }
                 # }
-                if (
-                    "intent_types" in value
-                    and isinstance(value["intent_types"], dict)
+                if "intent_types" in value and isinstance(
+                    value["intent_types"], dict
                 ):
                     flattened: List[Dict[str, Any]] = []
                     typed_intent_types: Dict[str, Any] = cast(
                         Dict[str, Any], value["intent_types"]
                     )
                     for group_map_any in typed_intent_types.values():
-                         if not isinstance(group_map_any, dict):
-                             continue
-                         typed_group_map: Dict[str, Any] = cast(Dict[str, Any], group_map_any)
-                         for tag, raw_text in typed_group_map.items():
-                             intent_item: Dict[str, Any] = {"type": tag}
-                             # Extrai descricao e exemplos de uma string com
-                             # possíveis linhas "Exemplos:" seguidas de "- ..."
-                             if isinstance(raw_text, str) and raw_text.strip():
-                                 desc_lines = [
-                                     ln.strip() for ln in raw_text.splitlines()
-                                 ]
-                                 examples: List[str] = []
-                                 acc_desc: List[str] = []
-                                 in_examples = False
-                                 for ln in desc_lines:
-                                     low = ln.lower()
-                                     if low.startswith("exemplos"):
-                                         in_examples = True
-                                         continue
-                                     if in_examples and ln.startswith("-"):
-                                         ex = ln.lstrip("-").strip()
-                                         if ex:
-                                             examples.append(ex)
-                                     else:
-                                         if ln:
-                                             acc_desc.append(ln)
-                                 if acc_desc:
-                                     intent_item["descricao"] = " ".join(acc_desc)
-                                 if examples:
-                                     intent_item["exemplos"] = examples
-                             flattened.append(intent_item)
+                        if not isinstance(group_map_any, dict):
+                            continue
+                        typed_group_map: Dict[str, Any] = cast(
+                            Dict[str, Any], group_map_any
+                        )
+                        for tag, raw_text in typed_group_map.items():
+                            intent_item: Dict[str, Any] = {"type": tag}
+                            # Extrai descricao e exemplos de uma string com
+                            # possíveis linhas "Exemplos:" seguidas de "- ..."
+                            if isinstance(raw_text, str) and raw_text.strip():
+                                desc_lines = [
+                                    ln.strip() for ln in raw_text.splitlines()
+                                ]
+                                examples: List[str] = []
+                                acc_desc: List[str] = []
+                                in_examples = False
+                                for ln in desc_lines:
+                                    low = ln.lower()
+                                    if low.startswith("exemplos"):
+                                        in_examples = True
+                                        continue
+                                    if in_examples and ln.startswith("-"):
+                                        ex = ln.lstrip("-").strip()
+                                        if ex:
+                                            examples.append(ex)
+                                    else:
+                                        if ln:
+                                            acc_desc.append(ln)
+                                if acc_desc:
+                                    intent_item["descricao"] = " ".join(
+                                        acc_desc
+                                    )
+                                if examples:
+                                    intent_item["exemplos"] = examples
+                            flattened.append(intent_item)
                     return flattened
 
                 # 2.2) Formato de entidades fornecido pelo usuário
@@ -368,28 +382,27 @@ class AnalisePreviaLangchainDatasource(APMData):
                 #       "<categoria>": { "<campo>": "descricao" }
                 #   }
                 # }
-                if (
-                    "entity_types" in value
-                    and isinstance(value["entity_types"], dict)
+                if "entity_types" in value and isinstance(
+                    value["entity_types"], dict
                 ):
                     flattened_e: List[Dict[str, Any]] = []
                     typed_entity_types: Dict[str, Any] = cast(
                         Dict[str, Any], value["entity_types"]
                     )
                     for fields_map_any in typed_entity_types.values():
-                         if not isinstance(fields_map_any, dict):
-                             continue
-                         typed_fields_map: Dict[str, Any] = cast(
-                             Dict[str, Any], fields_map_any
-                         )
-                         for field_name, field_desc in typed_fields_map.items():
-                             item_e: Dict[str, Any] = {"type": field_name}
-                             if (
-                                 isinstance(field_desc, str)
-                                 and field_desc.strip()
-                             ):
-                                 item_e["descricao"] = field_desc.strip()
-                             flattened_e.append(item_e)
+                        if not isinstance(fields_map_any, dict):
+                            continue
+                        typed_fields_map: Dict[str, Any] = cast(
+                            Dict[str, Any], fields_map_any
+                        )
+                        for field_name, field_desc in typed_fields_map.items():
+                            item_e: Dict[str, Any] = {"type": field_name}
+                            if (
+                                isinstance(field_desc, str)
+                                and field_desc.strip()
+                            ):
+                                item_e["descricao"] = field_desc.strip()
+                            flattened_e.append(item_e)
                     return flattened_e
 
                 # 2.3) Dict genérico (mantém compatibilidade anterior)
@@ -422,9 +435,7 @@ class AnalisePreviaLangchainDatasource(APMData):
                 result.append(item)
             return result
         except Exception as exc:  # proteção defensiva
-            logger.debug(
-                "Falha ao normalizar configuração de tipos: {}", exc
-            )
+            logger.debug("Falha ao normalizar configuração de tipos: {}", exc)
             return []
 
     def _filter_and_convert_items(
@@ -529,13 +540,17 @@ class AnalisePreviaLangchainDatasource(APMData):
           permitidos, evitando `literal_error`.
         """
         try:
-            intent_attr: Any = getattr(PydanticModel, "__intent_allowed__", None)
+            intent_attr: Any = getattr(
+                PydanticModel, "__intent_allowed__", None
+            )
             if isinstance(intent_attr, tuple):
                 intents_allowed_tuple = cast(Tuple[str, ...], intent_attr)
             else:
                 intents_allowed_tuple = cast(Tuple[str, ...], ())
 
-            entity_attr: Any = getattr(PydanticModel, "__entity_allowed__", None)
+            entity_attr: Any = getattr(
+                PydanticModel, "__entity_allowed__", None
+            )
             if isinstance(entity_attr, tuple):
                 entities_allowed_tuple = cast(Tuple[str, ...], entity_attr)
             else:
@@ -570,7 +585,9 @@ class AnalisePreviaLangchainDatasource(APMData):
                         continue
                     if intent_value is None:
                         continue
-                    norm_intents.append({"type": mapped, "value": str(intent_value)})
+                    norm_intents.append(
+                        {"type": mapped, "value": str(intent_value)}
+                    )
                 result["intent"] = norm_intents
 
             # Normaliza entidades
@@ -597,7 +614,9 @@ class AnalisePreviaLangchainDatasource(APMData):
                         continue
                     if entity_value is None:
                         continue
-                    norm_entities.append({"type": mapped, "value": str(entity_value)})
+                    norm_entities.append(
+                        {"type": mapped, "value": str(entity_value)}
+                    )
                 result["entities"] = norm_entities
 
             return result
@@ -608,7 +627,9 @@ class AnalisePreviaLangchainDatasource(APMData):
             )
             return data
 
-    def _parse_json_to_model(self, text: str, PydanticModel: type[BaseModel]) -> BaseModel:
+    def _parse_json_to_model(
+        self, text: str, PydanticModel: type[BaseModel]
+    ) -> BaseModel:
         """Normaliza a resposta textual para JSON e valida com Pydantic."""
         cleaned = text.strip()
         if cleaned.startswith("```"):

@@ -129,7 +129,9 @@ def _extract_allowed_values(
     return tuple(allowed), desc
 
 
-def _extract_examples(items_json: Optional[List[Dict[str, Any]]]) -> List[Dict[str, str]]:
+def _extract_examples(
+    items_json: Optional[List[Dict[str, Any]]],
+) -> List[Dict[str, str]]:
     """Gera exemplos de saída baseado no JSON de configuração.
 
     Cada exemplo tem formato: {"type": <tipo>, "value": <exemplo>}
@@ -201,11 +203,7 @@ def _build_docstring(
                 or item.get("name")
                 or "(sem-nome)"
             )
-            desc = (
-                item.get("descricao")
-                or item.get("description")
-                or ""
-            )
+            desc = item.get("descricao") or item.get("description") or ""
             parts.append(f"- {name}: {desc}")
 
     if entity_json:
@@ -218,11 +216,7 @@ def _build_docstring(
                 or item.get("name")
                 or "(sem-nome)"
             )
-            desc = (
-                item.get("descricao")
-                or item.get("description")
-                or ""
-            )
+            desc = item.get("descricao") or item.get("description") or ""
             parts.append(f"- {name}: {desc}")
 
     # Inclui seção de entidades fixas para orientar o LLM
@@ -263,12 +257,16 @@ def build_analise_previa_model(
     entity_examples = _extract_examples(entity_types_json)
 
     # Definição de tipos para campos `type`
-    if intent_allowed and 'Literal' in globals() and Literal is not None:
+    if intent_allowed and "Literal" in globals() and Literal is not None:
         IntentType = Literal[intent_allowed]  # type: ignore
     else:
         IntentType = str  # type: ignore
 
-    if extended_entity_allowed and 'Literal' in globals() and Literal is not None:
+    if (
+        extended_entity_allowed
+        and "Literal" in globals()
+        and Literal is not None
+    ):
         EntityType = Literal[extended_entity_allowed]  # type: ignore
     else:
         EntityType = str  # type: ignore
@@ -281,9 +279,8 @@ def build_analise_previa_model(
             IntentType,  # type: ignore
             Field(
                 description=intent_desc,
-                examples=[e.get("type", "") for e in intent_examples] or [
-                    "intent_exemplo"
-                ],
+                examples=[e.get("type", "") for e in intent_examples]
+                or ["intent_exemplo"],
             ),
         ]
         value: Annotated[
@@ -305,9 +302,8 @@ def build_analise_previa_model(
             EntityType,  # type: ignore
             Field(
                 description=entity_desc,
-                examples=[e.get("type", "") for e in entity_examples] or [
-                    "cpf"
-                ],
+                examples=[e.get("type", "") for e in entity_examples]
+                or ["cpf"],
             ),
         ]
         value: Annotated[
@@ -331,9 +327,9 @@ def build_analise_previa_model(
                 description=(
                     "Lista de intenções detectadas no conteúdo fornecido."
                 ),
-                examples=[intent_examples] if intent_examples else [
-                    [{"type": "saudacao", "value": "olá"}]
-                ],
+                examples=[intent_examples]
+                if intent_examples
+                else [[{"type": "saudacao", "value": "olá"}]],
             ),
         ]
         entities: Annotated[
@@ -343,9 +339,9 @@ def build_analise_previa_model(
                     "Lista de entidades extraídas a partir do conteúdo "
                     "analisado."
                 ),
-                examples=[entity_examples] if entity_examples else [
-                    [{"type": "cpf", "value": "123.456.789-00"}]
-                ],
+                examples=[entity_examples]
+                if entity_examples
+                else [[{"type": "cpf", "value": "123.456.789-00"}]],
             ),
         ]
 

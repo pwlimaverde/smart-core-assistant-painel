@@ -10,8 +10,9 @@ from loguru import logger
 
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
-    AtendenteHumano,
+    Atendente,
 )
+
 if TYPE_CHECKING:
     # Import apenas para type hints, evitando ciclo de import em runtime
     from smart_core_assistant_painel.app.ui.operacional.models import (
@@ -19,7 +20,7 @@ if TYPE_CHECKING:
     )
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
-    AtendenteHumano,
+    Atendente,
 )
 
 
@@ -91,13 +92,15 @@ class Atendimento(models.Model):
         help_text="Contato vinculado ao atendimento",
     )
     # Campo de departamento para suportar fila por departamento na central de atendimento
-    departamento: models.ForeignKey[Optional["operacional.Departamento"]] = models.ForeignKey(
-        "operacional.Departamento",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name="atendimentos",
-        help_text="Departamento atual do atendimento (fila Kanban)",
+    departamento: models.ForeignKey[Optional["operacional.Departamento"]] = (
+        models.ForeignKey(
+            "operacional.Departamento",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text="Departamento atual do atendimento (fila Kanban)",
+        )
     )
     status: models.CharField[str] = models.CharField(
         max_length=20,
@@ -112,10 +115,12 @@ class Atendimento(models.Model):
         blank=True, null=True, help_text="Data de finalização do atendimento"
     )
     # Campo para registrar a última mensagem trocada, usado para SLAs e ordenação
-    data_ultima_mensagem: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data/hora da última mensagem (para ordenação e SLA)",
+    data_ultima_mensagem: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data/hora da última mensagem (para ordenação e SLA)",
+        )
     )
     assunto: models.CharField[str | None] = models.CharField(
         max_length=200,
@@ -134,15 +139,15 @@ class Atendimento(models.Model):
         default="normal",
         help_text="Prioridade do atendimento",
     )
-    atendente_humano: models.ForeignKey[
-        Optional["operacional.AtendenteHumano"]
-    ] = models.ForeignKey(
-        "operacional.AtendenteHumano",
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name="atendimentos",
-        help_text="Atendente humano responsável pelo atendimento (se transferido)",
+    atendente_humano: models.ForeignKey[Optional["operacional.Atendente"]] = (
+        models.ForeignKey(
+            "operacional.Atendente",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text="Atendente humano responsável pelo atendimento (se transferido)",
+        )
     )
     contexto_conversa: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
@@ -170,10 +175,12 @@ class Atendimento(models.Model):
     feedback: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Feedback do contato"
     )
-    data_primeira_resposta: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data e hora da primeira resposta ao contato"
+    data_primeira_resposta: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data e hora da primeira resposta ao contato",
+        )
     )
     canal: models.CharField[str] = models.CharField(
         max_length=20,
@@ -184,7 +191,7 @@ class Atendimento(models.Model):
             ("web", "Website"),
         ],
         default="whatsapp",
-        help_text="Canal de origem do atendimento"
+        help_text="Canal de origem do atendimento",
     )
 
     class Meta:
@@ -207,8 +214,14 @@ class Atendimento(models.Model):
     def cliente(self) -> Optional["clientes.Cliente"]:
         """Retorna o cliente principal vinculado ao contato."""
         if TYPE_CHECKING:
-            from smart_core_assistant_painel.app.ui.clientes.models import Cliente
-        return self.contato.clientes.first() if self.contato.clientes.exists() else None
+            from smart_core_assistant_painel.app.ui.clientes.models import (
+                Cliente,
+            )
+        return (
+            self.contato.clientes.first()
+            if self.contato.clientes.exists()
+            else None
+        )
 
     def finalizar_atendimento(self, novo_status: str = "resolvido") -> None:
         self.status = novo_status
@@ -247,7 +260,7 @@ class Atendimento(models.Model):
         )
 
     def assign_to_agent(
-        self, atendente: AtendenteHumano, observacao: str = ""
+        self, atendente: Atendente, observacao: str = ""
     ) -> None:
         """Atribui o atendimento a um atendente humano, atualiza status e histórico.
 
@@ -313,7 +326,7 @@ class Atendimento(models.Model):
         return self.contexto_conversa.get(chave, padrao)
 
     def transferir_para_humano(
-        self, atendente_humano: AtendenteHumano, observacao: str = ""
+        self, atendente_humano: Atendente, observacao: str = ""
     ) -> None:
         self.atendente_humano = atendente_humano
         self.status = StatusAtendimento.EM_ATENDIMENTO
@@ -554,20 +567,21 @@ def inicializar_atendimento_whatsapp(
             if atualizado:
                 contato.save()
 
+        # Estados considerados "ativos" para reaproveitar atendimento existente
         atendimento_ativo = Atendimento.objects.filter(
             contato=contato,
             status__in=[
-                StatusAtendimento.AGUARDANDO_INICIAL,
-                StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CONTATO,
-                StatusAtendimento.AGUARDANDO_ATENDENTE,
+                StatusAtendimento.FILA,
+                StatusAtendimento.EM_ATENDIMENTO,
+                StatusAtendimento.AGUARDANDO_RETORNO,
             ],
         ).first()
 
         if not atendimento_ativo:
+            # Status inicial agora é FILA, aguardando atendimento
             atendimento = Atendimento.objects.create(
                 contato=contato,
-                status=StatusAtendimento.EM_ANDAMENTO,
+                status=StatusAtendimento.FILA,
                 contexto_conversa={
                     "canal": "whatsapp",
                     "primeira_interacao": True,
@@ -575,8 +589,8 @@ def inicializar_atendimento_whatsapp(
                 },
             )
             atendimento.adicionar_historico_status(
-                StatusAtendimento.EM_ANDAMENTO,
-                "Atendimento iniciado via WhatsApp",
+                StatusAtendimento.FILA.value,
+                "Atendimento iniciado via WhatsApp (fila)",
             )
         else:
             atendimento = atendimento_ativo
@@ -605,10 +619,9 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional[Atendimento]:
         atendimento = Atendimento.objects.filter(
             contato=contato,
             status__in=[
-                StatusAtendimento.AGUARDANDO_INICIAL,
-                StatusAtendimento.EM_ANDAMENTO,
-                StatusAtendimento.AGUARDANDO_CONTATO,
-                StatusAtendimento.AGUARDANDO_ATENDENTE,
+                StatusAtendimento.FILA,
+                StatusAtendimento.EM_ATENDIMENTO,
+                StatusAtendimento.AGUARDANDO_RETORNO,
             ],
         ).first()
 
@@ -668,10 +681,12 @@ def processar_mensagem_whatsapp(
             atendimento.contato.ultima_interacao = timezone.now()
             atendimento.contato.save()
 
-            if atendimento.status in StatusAtendimento.AGUARDANDO_INICIAL:
-                atendimento.status = StatusAtendimento.EM_ANDAMENTO
+            # Se estava em FILA e recebeu a primeira mensagem,
+            # transiciona para EM_ATENDIMENTO
+            if atendimento.status == StatusAtendimento.FILA:
+                atendimento.status = StatusAtendimento.EM_ATENDIMENTO
                 atendimento.adicionar_historico_status(
-                    "em_andamento",
+                    StatusAtendimento.EM_ATENDIMENTO.value,
                     "Primeira mensagem recebida",
                 )
                 atendimento.save()

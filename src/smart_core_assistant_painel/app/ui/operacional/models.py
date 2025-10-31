@@ -48,7 +48,9 @@ class Departamento(models.Model):
 
     id: models.AutoField = models.AutoField(primary_key=True)
     nome: models.CharField[str] = models.CharField(max_length=100, unique=True)
-    slug: models.SlugField[str | None] = models.SlugField(max_length=120, unique=True, blank=True, null=True)
+    slug: models.SlugField[str | None] = models.SlugField(
+        max_length=120, unique=True, blank=True, null=True
+    )
     descricao: models.TextField[str | None] = models.TextField(
         blank=True, null=True
     )
@@ -80,6 +82,7 @@ class Departamento(models.Model):
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
         from django.utils.text import slugify
+
         if not self.slug:
             self.slug = slugify(self.nome)
         super().save(*args, **kwargs)
@@ -89,10 +92,14 @@ class Departamento(models.Model):
         super().clean()
 
 
+class Atendente(models.Model):
+    """Modelo para atendentes humanos da organização."""
 
-class AtendenteHumano(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
+    )
+    slug: models.SlugField[str | None] = models.SlugField(
+        max_length=250, unique=True, blank=True, null=True, default=""
     )
     telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
@@ -149,10 +156,12 @@ class AtendenteHumano(models.Model):
         )
     )
     # Campo para registro da última atribuição, usado para ordenação (round-robin / fairness)
-    data_ultima_atribuicao: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data e hora da última atribuição de um novo atendimento",
+    data_ultima_atribuicao: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data e hora da última atribuição de um novo atendimento",
+        )
     )
     horario_trabalho: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
@@ -175,13 +184,15 @@ class AtendenteHumano(models.Model):
     )
 
     class Meta:
-        verbose_name = "Atendente Humano"
-        verbose_name_plural = "Atendentes Humanos"
+        verbose_name = "Atendente"
+        verbose_name_plural = "Atendentes"
         ordering = ["nome"]
-        db_table = "oraculo_atendentehumano"
+        db_table = "oraculo_atendente"
         indexes = [
             models.Index(fields=["departamento", "disponivel"]),
-            models.Index(fields=["disponivel", "max_atendimentos_simultaneos"]),
+            models.Index(
+                fields=["disponivel", "max_atendimentos_simultaneos"]
+            ),
             models.Index(fields=["data_ultima_atribuicao"]),
         ]
 
@@ -191,6 +202,21 @@ class AtendenteHumano(models.Model):
 
     @override
     def save(self, *args: Any, **kwargs: Any) -> None:
+        from django.utils.text import slugify
+
+        # Gera slug automaticamente se não existir
+        if not self.slug:
+            base_slug = slugify(self.nome)
+            suffix = 1
+            slug = base_slug
+
+            # Garante unicidade do slug
+            while Atendente.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{suffix}"
+                suffix += 1
+
+            self.slug = slug
+
         if self.telefone:
             telefone_limpo = re.sub(r"\D", "", self.telefone)
             if not telefone_limpo.startswith("55"):
@@ -215,11 +241,9 @@ class AtendenteHumano(models.Model):
         )
 
         ativos = [
-            StatusAtendimento.AGUARDANDO_INICIAL,
-            StatusAtendimento.EM_ANDAMENTO,
-            StatusAtendimento.AGUARDANDO_CONTATO,
-            StatusAtendimento.AGUARDANDO_ATENDENTE,
-            StatusAtendimento.TRANSFERIDO,
+            StatusAtendimento.FILA,
+            StatusAtendimento.EM_ATENDIMENTO,
+            StatusAtendimento.AGUARDANDO_RETORNO,
         ]
         return self.atendimentos.filter(status__in=ativos).count()
 
@@ -227,7 +251,9 @@ class AtendenteHumano(models.Model):
         """Verifica se o atendente está disponível considerando capacidade atual."""
         if not self.ativo or not self.disponivel:
             return False
-        return self.get_atendimentos_ativos() < self.max_atendimentos_simultaneos
+        return (
+            self.get_atendimentos_ativos() < self.max_atendimentos_simultaneos
+        )
 
     def current_load(self) -> int:
         """Retorna a carga atual de atendimentos ativos do atendente."""
@@ -277,8 +303,8 @@ class WhatsAppInstance(models.Model):
         default="evolution",
         help_text="Provedor da API de WhatsApp",
     )
-    owner: models.OneToOneField[Optional["AtendenteHumano"]] = models.OneToOneField(
-        "AtendenteHumano",
+    owner: models.OneToOneField[Optional["Atendente"]] = models.OneToOneField(
+        "Atendente",
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
@@ -298,10 +324,12 @@ class WhatsAppInstance(models.Model):
         auto_now_add=True,
         help_text="Data de criação do registro",
     )
-    ultima_validacao: models.DateTimeField[datetime | None] = models.DateTimeField(
-        blank=True,
-        null=True,
-        help_text="Data da última validação de credenciais",
+    ultima_validacao: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            blank=True,
+            null=True,
+            help_text="Data da última validação de credenciais",
+        )
     )
 
     class Meta:
@@ -319,7 +347,9 @@ class WhatsAppInstance(models.Model):
     @override
     def __str__(self) -> str:
         ident = self.instance_id or self.phone_number
-        dep = self.departamento.nome if self.departamento else "sem-departamento"
+        dep = (
+            self.departamento.nome if self.departamento else "sem-departamento"
+        )
         return f"{dep} - {ident}"
 
     @override
@@ -329,6 +359,18 @@ class WhatsAppInstance(models.Model):
             validate_api_key(self.api_key)
         if self.phone_number:
             validate_telefone_instancia(self.phone_number)
+
+        # Validação de exclusividade: OU departamento OU owner, nunca ambos ou nenhum
+        if self.departamento and self.owner:
+            raise ValidationError(
+                "Uma instância deve estar vinculada a UM departamento OU UM atendente, nunca ambos."
+            )
+        if not self.departamento and not self.owner:
+            raise ValidationError(
+                "Uma instância deve estar vinculada a pelo menos UM departamento ou UM atendente."
+            )
+
+        # Validação de consistência se ambos estiverem preenchidos (caso a regra mude no futuro)
         if self.owner and self.owner.departamento and self.departamento:
             if self.owner.departamento_id != self.departamento_id:
                 raise ValidationError(
@@ -336,18 +378,63 @@ class WhatsAppInstance(models.Model):
                 )
 
     @property
-    def atendentes(self):
+    def atendentes(self) -> models.QuerySet["Atendente"]:
         """Retorna QuerySet de atendentes do departamento desta instância.
 
         Caso a instância não esteja vinculada a um departamento, retorna um QuerySet vazio.
         """
-        from .models import AtendenteHumano  # import local para evitar ciclos
+        # Import local para evitar ciclos
+        from .models import Atendente
+
         if not self.departamento:
-            return AtendenteHumano.objects.none()
+            return Atendente.objects.none()
         return self.departamento.atendentes.all()
 
+    @property
+    def tipo_instancia(self) -> str:
+        """Retorna o tipo da instância para lógica de negócio."""
+        if self.departamento:
+            return "departamental"
+        elif self.owner:
+            return "individual"
+        return "desconhecido"
+
+    @property
+    def responsavel_principal(self):
+        """Retorna o responsável principal para roteamento."""
+        if self.owner:
+            return self.owner
+        elif self.departamento:
+            return self.departamento
+        return None
+
+    def rotear_atendimento(
+        self, mensagem: dict[str, Any]
+    ) -> Optional["Atendente"]:
+        """Roteia mensagem baseada no tipo de instância.
+
+        Args:
+            mensagem: Dicionário com dados da mensagem recebida
+
+        Returns:
+            Atendente ou None se não houver atendente disponível
+        """
+        if self.tipo_instancia == "individual":
+            # Instância individual: atribui diretamente ao owner
+            if self.owner and self.owner.is_available():
+                return self.owner
+            return None
+
+        elif self.tipo_instancia == "departamental":
+            # Instância departamental: usa lógica de distribuição existente
+            return self.selecionar_proximo_atendente()
+
+        return None
+
     @classmethod
-    def validar_api_key(cls, data: dict[str, Any]) -> Optional["WhatsAppInstance"]:
+    def validar_api_key(
+        cls, data: dict[str, Any]
+    ) -> Optional["WhatsAppInstance"]:
         """Valida credenciais do webhook e retorna a instância correspondente.
 
         Preferência:
@@ -384,7 +471,7 @@ class WhatsAppInstance(models.Model):
             )
             return None
 
-    def selecionar_proximo_atendente(self) -> Optional["AtendenteHumano"]:
+    def selecionar_proximo_atendente(self) -> Optional["Atendente"]:
         """Seleciona o próximo atendente disponível por round-robin simples.
 
         Critérios:
@@ -403,6 +490,9 @@ class WhatsAppInstance(models.Model):
 
         for atendente in elegiveis:
             # Usa helper do modelo para contar atendimentos ativos
-            if atendente.get_atendimentos_ativos() < atendente.max_atendimentos_simultaneos:
+            if (
+                atendente.get_atendimentos_ativos()
+                < atendente.max_atendimentos_simultaneos
+            ):
                 return atendente
         return None

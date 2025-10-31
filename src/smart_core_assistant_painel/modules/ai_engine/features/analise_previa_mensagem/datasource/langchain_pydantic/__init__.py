@@ -5,6 +5,7 @@ Compatibilidade de import para testes antigos que esperam o pacote
 Este pacote reexporta classes e funções apontando para a nova
 implementação em `analise_previa_langchain`.
 """
+
 from .analise_previa_mensagem_langchain import AnalisePreviaMensagemLangchain
 from .analise_previa_mensagem_langchain_datasource import (
     AnalisePreviaMensagemLangchainDatasource,

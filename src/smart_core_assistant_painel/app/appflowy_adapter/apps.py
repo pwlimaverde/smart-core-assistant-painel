@@ -15,8 +15,8 @@ class AppFlowyAdapterConfig(AppConfig):
     def ready(self) -> None:
         """Executa inicializações do app quando carregado.
 
-        Por ora, nenhuma inicialização específica é necessária.
+        Registra sinais de sincronização do adapter.
         """
 
-        # Inicializações futuras (sinais, caches, etc.) podem ser feitas aqui.
-        _noop: Any = None
+        # Import tardio para evitar ciclos de import durante o startup.
+        from . import signals as _signals  # noqa: F401

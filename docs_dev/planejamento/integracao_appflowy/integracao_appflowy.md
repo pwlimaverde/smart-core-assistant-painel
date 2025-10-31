@@ -7,6 +7,77 @@ servidor Django local, sem depender do AppFlowy Cloud, utilizando um
 adaptador de sincronização customizado no AppFlowy e uma API dedicada no
 servidor Django.
 
+## Status Atual e Ajustes
+
+- App Django `appflowy_adapter` criado com endpoints mínimos e URLs
+  registradas sob `/api/appflowy_adapter/`.
+- Testes de saúde do adapter adicionados e executando com sucesso.
+- Crate Rust `django_sync_provider` iniciado com trait `RemoteSync` e
+  implementação stub de `DjangoSyncProvider`.
+- Integração Notion isolada para não interferir:
+  - App `notion_sync` fora de `INSTALLED_APPS`.
+  - Suíte de testes do Notion ignorada em `pytest.ini`.
+  - Task `init-sync-records` comentada em `pyproject.toml`.
+- Modelos do adapter criados: `Workspace`, `Grid`, `Column`, `Row`,
+  `RowValue` e `SyncState`, com type hints e chaves idempotentes.
+- Sinais `post_save`/`post_delete` de `Atendimento` espelhando linhas
+  no Grid “Atendimentos”, incrementando `version` e normalizando
+  `priority` para `low|medium|high|urgent`.
+- `AppConfig.ready()` importa `signals` para registro automático na
+  inicialização.
+
+## Próximos Passos Imediatos
+
+- Implementar autenticação JWT real no `appflowy_adapter` (login/refresh).
+- Migrar endpoints para DRF com serializers e validação de payloads.
+- Expor CRUD real de linhas e metadados do Grid com checagem de
+  `version` via `If-Match`.
+- Adicionar testes para sinais, modelos e endpoints; cobertura ≥ 80%
+  via `uv run task test-docker`.
+- Atualizar `.env.example` com variáveis do adapter (sem valores).
+
+## Fases de Implementação
+
+### Fase 1 — Modelagem e Sinais (Concluída)
+
+- v Modelos persistentes: `Workspace`, `Grid`, `Column`, `Row`,
+  `RowValue`, `SyncState` com type hints e idempotência por `ticket_id`.
+- v Sinais `post_save`/`post_delete` espelhando `Atendimento` em `Row`
+  e incrementando `version`.
+- v Registro dos sinais via `AppConfig.ready()`.
+
+### Fase 2 — API REST (Em execução)
+
+- Migrar endpoints do adapter para DRF.
+- Implementar serializers e validação de tipos (Row/Column).
+- Entregar `grid_schema` e CRUD de `rows` com `If-Match` (`version`).
+- Adicionar autenticação JWT (login/refresh) e permissões.
+- Cobrir com testes unitários e de integração (≥ 80%).
+
+### Fase 3 — Provider Rust (Planejada)
+
+- Implementar `pull_rows`/`push_rows` em `DjangoSyncProvider` com
+  `reqwest` e JWT.
+- Persistir `sync_state` (último `since`, `version`) no desktop.
+- Backoff e tratamento de falhas de rede.
+
+### Fase 4 — UI de Configurações (Planejada)
+
+- Tela Flutter para `server_url`, credenciais e estado de sincronização.
+- Indicadores de conflito e status de versão.
+
+### Fase 5 — Observabilidade e Testes (Planejada)
+
+- Logs estruturados (`loguru`) e CLI de diagnóstico (`rich`).
+- SSE/WebSocket (opcional) para eventos de mudança.
+- Testes ponta-a-ponta e cobertura ≥ 80%.
+
+## Marcos de Entrega
+
+- MVP Grid Atendimentos com CRUD funcional e sincronização LWW.
+- Autenticação e renovação de tokens estáveis.
+- Observabilidade com logs estruturados e correlação de eventos.
+
 ## Contexto e Viabilidade
 
 - AppFlowy Desktop usa `Rust` no backend e `Flutter` no frontend, com

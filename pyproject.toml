@@ -199,25 +199,12 @@ startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
 # Atalho: migração remota (aplica migrations no PostgreSQL remoto)
 migrate-remoto = "python scripts/migrar_remoto.py"
 
-
-
-# Django management commands (Docker)
-migrate-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py migrate"
-makemigrations-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-collectstatic-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py collectstatic --noinput"
-shell-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py shell"
-startapp-docker = "docker compose exec django-app uv run python src/smart_core_assistant_painel/app/ui/manage.py startapp"
-reset-db-docker = "docker compose down && docker volume rm postgres_django_data || true && docker compose up -d --build"
-
 # Desenvolvimento e testes
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"
 # Executa apenas os testes de apps Django dentro de src/
 test-apps = "pytest src/smart_core_assistant_painel/app/ui -v --cov=src --cov-report=term-missing"
 # Executa todos os testes (raiz + apps), equivalente ao Docker (sem container)
 test-all = "pytest -v --cov=src --cov-report=term-missing"
-# Executa TODOS os testes dentro do ambiente Docker (padrão do projeto)
-test-docker = "docker compose exec django-app uv run task test-all"
-
 
 
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"

@@ -44,4 +44,10 @@ urlpatterns = [
         "treinamento/",
         include("smart_core_assistant_painel.app.ui.treinamento.urls"),
     ),
+    path(
+        "api/appflowy_adapter/",
+        include(
+            "smart_core_assistant_painel.app.appflowy_adapter.urls"
+        ),
+    ),
 ]

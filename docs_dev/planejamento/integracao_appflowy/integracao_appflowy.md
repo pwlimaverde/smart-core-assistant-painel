@@ -163,6 +163,25 @@ Rationale: evita dependência do AppFlowy Cloud, dá controle total do ciclo de 
 3. Construir a tela de configurações (URL/credenciais) no AppFlowy.
   4. Validar ponta-a-ponta com um grid real de Atendimentos.
 
+### Fase 0.1 — Bootstrap do appflowy_adapter (executado)
+
+- Estrutura inicial criada para o app Django `appflowy_adapter` com:
+  - Endpoints mínimos sob `GET /api/appflowy_adapter/health/` (saúde),
+    `GET /api/appflowy_adapter/workspaces/`, `GET /api/appflowy_adapter/grids/{grid_id}/`,
+    e rotas básicas de `rows` (list/create/update/delete) retornando JSON estático.
+  - Tipos/DTOs em `types.py` com `Row`, `RowPatch` e `RowDelta`.
+  - Logs com `loguru` nos endpoints (placeholders).
+  - Registro de URLs em `ui.core.urls` sob o prefixo `/api/appflowy_adapter/`.
+
+- Crate Rust `django_sync_provider` iniciado em `frontend/appflowy_custom/rust-lib/` com:
+  - Trait `RemoteSync` (push/pull/subscribe) e struct `DjangoSyncProvider` com métodos stub.
+  - Dependências base (serde/serde_json) e estrutura pronta para evoluir com `reqwest`.
+
+Próximos incrementos:
+- Implementar autenticação JWT real e validação de payloads nos endpoints.
+- Persistir dados em modelos do Django e sinais para o Grid.
+- Conectar o provider Rust ao AppFlowy (vendor) e construir tela de configurações.
+
 ## Referências
 
 - AppFlowy Desktop — Database (SQLite/Diesel):

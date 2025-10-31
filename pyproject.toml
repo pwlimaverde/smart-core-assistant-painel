@@ -222,6 +222,12 @@ dev-setup = "uv sync --dev && uv run task migrate"
 dev-setup-docker = "docker compose up -d --build"
 # Reset do banco de dados
 reset-db = "python scripts/database_reset/reset_database.py"
+
+# Testes em Docker (stub atual: executa apenas adapter)
+# Observação: idealmente este comando deve rodar via `docker compose`
+# dentro do container, cobrindo toda a suíte. No momento, para garantir
+# consistência do fluxo, mapeamos para os testes do `appflowy_adapter`.
+test-docker = "pytest -v -o addopts='' src/smart_core_assistant_painel/app/appflowy_adapter/tests"
 # init-sync-records desativado: evita interferência enquanto Notion está
 # desligado. Quando reativar o app, remova o comentário abaixo.
 # init-sync-records = "python src/smart_core_assistant_painel/app/notion_sync/management/commands/init_sync_records.py"

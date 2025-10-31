@@ -2,7 +2,9 @@
 
 ## Status Geral
 
-- Fase 1 concluída (modelos e sinais). Fase 2 em execução.
+- Fase 1 concluída (modelos e sinais).
+- Fase 2 concluída (DRF + JWT + CRUD + If-Match).
+- Fase 3 em execução (Provider Rust: login/refresh, pull/push, sync).
 - Demais fases planejadas com escopo e critérios de aceite definidos.
 
 ## Entregas Concluídas (v)
@@ -24,14 +26,31 @@
 - v `AppFlowyAdapterConfig.ready()` importando `signals` para registro
   automático na inicialização do app.
 
+- v DRF + SimpleJWT adicionados ao projeto e configurados em `settings`.
+- v Endpoints de autenticação:
+  - `POST /api/appflowy_adapter/auth/login/`
+  - `POST /api/appflowy_adapter/auth/refresh/`
+- v Endpoints do adapter ativos:
+  - `GET /workspaces/`, `GET /grids/{grid_id}/schema/`
+  - `GET/POST /grids/{grid_id}/rows/`
+  - `PUT/DELETE /grids/{grid_id}/rows/{row_id}/`
+- v Controle de versão com `If-Match` e retorno `412` em conflito.
+- v `.env.example` atualizado com variáveis do adapter e JWT.
+- v `.env` local (ignorado pelo Git) com base URL e credenciais dev.
+- v Provider Rust (`django_sync_provider`):
+  - Dependências: `reqwest`, `directories`, `chrono`, `dotenvy`.
+  - Autenticação JWT: `login_from_env` e `auth_refresh`.
+  - `pull_rows(since)` e `push_rows` com `If-Match`.
+  - Persistência de `sync_state` por `grid_id` em arquivo no SO.
+  - Credenciais lidas via `.env`; tokens mantidos apenas em memória.
+  - README atualizado com seção de Segurança e variáveis esperadas.
+
 ## Em Execução
 
-- Implementar autenticação JWT (login/refresh) no `appflowy_adapter`.
-- Migrar endpoints para DRF com serializers e validação.
-- Expor CRUD real de `rows` e `grid_schema` usando os modelos do adapter.
-- Adicionar checagem de `version` com `If-Match` na atualização.
-- Atualizar `.env.example` com variáveis do adapter (sem valores).
-- Testes para sinais, modelos e endpoints; cobertura ≥ 80%.
+- Testes de integração e cobertura ≥ 80% (adapter e sinais).
+- Robustez do provider Rust (backoff/jitter, tratamento de 4xx/5xx).
+- Resolução automática de `workspace/grid` por nome (ex.: "Atendimentos").
+- Planejamento de SSE/WebSocket para mudanças (pós-MVP).
 
 ## Próximas Etapas Detalhadas
 
@@ -61,7 +80,9 @@
 ### Provider (Rust)
 
 - `DjangoSyncProvider` com `reqwest` + JWT:
-  - `login/refresh` (persistir tokens seguros).
+  - `login/refresh` com tokens apenas em memória (MVP).
+  - Persistência de tokens opcional via armazenamento seguro do SO
+    (ex.: DPAPI no Windows) — futura tarefa.
   - `pull_rows(since)` e `push_rows(batch)` com tratamento de 412 (LWW).
   - Backoff exponencial com jitter; tempo máximo configurável.
 - Estado de sincronização:
@@ -115,6 +136,7 @@
 ## Variáveis de Ambiente (Adapter)
 
 - `APPFLOWY_ADAPTER_BASE_URL`, `APPFLOWY_ADAPTER_WORKSPACE_ID`, `APPFLOWY_ADAPTER_GRID_ID`
+- `APPFLOWY_ADAPTER_USERNAME`, `APPFLOWY_ADAPTER_PASSWORD`
 - `JWT_ACCESS_EXPIRES_MIN`, `JWT_REFRESH_EXPIRES_MIN`
 - Documentar em `.env.example` (sem valores).
 
@@ -125,6 +147,44 @@
 - JWT curto + refresh funcional no Desktop.
 - Logs estruturados com correlação por `ticket_id`.
 - Cobertura ≥ 80% e CI verde.
+
+## Cronograma Detalhado (Próximas Etapas)
+
+- Dia 1–2 (Backend/Tests):
+  - Escrever testes de integração para `auth`, `workspaces`, `grids`,
+    `rows` (CRUD) e conflitos `If-Match`.
+  - Validar cobertura ≥ 80% via `uv run task test-docker`.
+  - Ajustes finos nos serializers e validações de payload.
+
+- Dia 3 (Provider Rust — Robustez):
+  - Implementar backoff exponencial com jitter nas chamadas HTTP.
+  - Tratamento de erros para 401 (refresh) e 412 (re-pull e merge LWW).
+  - Resolver `workspace/grid` automaticamente por nome quando IDs
+    não estiverem definidos no `.env`.
+
+- Dia 4 (Provider Rust — Segurança opcional):
+  - Prototipar módulo de persistência segura de tokens usando DPAPI
+    (Windows) e chave do usuário.
+  - Feature flag para ativar/desativar persistência.
+
+- Dia 5–6 (Flutter UI — Configurações):
+  - Tela de configurações (`server_url`, `email`, `password`).
+  - Botão “Testar Conexão” e indicadores de sincronização básica.
+  - Integração com provider via FFI ou ponte existente.
+
+- Dia 7 (E2E e Observabilidade):
+  - Cenários ponta-a-ponta: criação/edição/remoção e conflitos.
+  - Logs estruturados com correlação por `ticket_id`.
+  - Ajustes finais de desempenho e paginação, se necessário.
+
+- Dia 8–9 (Estabilização/Docs):
+  - Revisar documentação (`README`, `integracao_appflowy.md`).
+  - Scripts de diagnóstico e checklist de release.
+  - Preparar pacote/artefatos para teste interno em Windows.
+
+- Dia 10 (Piloto):
+  - Teste com usuários internos, coleta de feedback.
+  - Correções rápidas e planejamento do próximo ciclo.
 
 ## Observações
 

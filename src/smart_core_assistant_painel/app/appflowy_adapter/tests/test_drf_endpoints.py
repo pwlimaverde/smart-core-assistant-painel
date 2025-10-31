@@ -279,3 +279,83 @@ class AppFlowyAdapterDRFTests(TestCase):
         self.assertEqual(resp_del.status_code, 204)
         exists: bool = AppFlowyRow.objects.filter(row_id=row.row_id).exists()
         self.assertFalse(exists)
+
+    def test_rows_create_missing_required_fields_returns_400(self) -> None:
+        """POST sem campos obrigatórios deve falhar com 400."""
+
+        url: str = reverse(
+            "appflowy_adapter:rows-list-create", args=[self.grid.grid_id]
+        )
+        resp = self.client.post(
+            url,
+            data={"ticket_id": "T-040"},
+            content_type="application/json",
+            **self._auth_headers(),
+        )
+        self.assertEqual(resp.status_code, 400)
+        body: Dict[str, Any] = resp.json()
+        self.assertIn("errors", body)
+
+    def test_rows_create_invalid_channel_status_priority_returns_400(self) -> None:
+        """Valores inválidos de channel/status/priority devem falhar."""
+
+        url: str = reverse(
+            "appflowy_adapter:rows-list-create", args=[self.grid.grid_id]
+        )
+        payload: Dict[str, Any] = {
+            "ticket_id": "T-041",
+            "name": "Teste",
+            "channel": "sms",  # inválido
+            "status": "unknown",  # inválido
+            "priority": "p1",  # inválido
+        }
+        resp = self.client.post(
+            url,
+            data=payload,
+            content_type="application/json",
+            **self._auth_headers(),
+        )
+        self.assertEqual(resp.status_code, 400)
+        body: Dict[str, Any] = resp.json()
+        self.assertIn("errors", body)
+
+    def test_rows_update_temporal_incoherence_returns_400(self) -> None:
+        """`sla_due` anterior a `received_at` deve falhar com 400."""
+
+        row = AppFlowyRow.objects.create(
+            grid=self.grid,
+            ticket_id="T-050",
+            name="Ticket 50",
+            channel="whatsapp",
+            status="open",
+            priority="low",
+        )
+        url: str = reverse(
+            "appflowy_adapter:row-update-delete",
+            args=[self.grid.grid_id, row.row_id],
+        )
+        # `sla_due` antes de `received_at`
+        received_at = (timezone.now()).isoformat()
+        sla_due = (timezone.now() - timedelta(hours=1)).isoformat()
+        resp = self.client.put(
+            url,
+            data={
+                "received_at": received_at,
+                "sla_due": sla_due,
+            },
+            content_type="application/json",
+            HTTP_IF_MATCH=str(row.version),
+            **self._auth_headers(),
+        )
+        self.assertEqual(resp.status_code, 400)
+        body: Dict[str, Any] = resp.json()
+        self.assertIn("errors", body)
+
+    def test_rows_stream_stub_returns_501(self) -> None:
+        """Stub de stream deve retornar 501 (não implementado)."""
+
+        url: str = reverse(
+            "appflowy_adapter:rows-stream", args=[self.grid.grid_id]
+        )
+        resp = self.client.get(url, **self._auth_headers())
+        self.assertEqual(resp.status_code, 501)

@@ -54,6 +54,7 @@ from .serializers import (  # noqa: E402
     AppFlowyColumnSerializer,
     AppFlowyGridSerializer,
     AppFlowyRowSerializer,
+    AppFlowyRowWriteSerializer,
     AppFlowyWorkspaceSerializer,
     validate_if_match_version,
 )
@@ -138,11 +139,11 @@ def rows_list_or_create(request: Request, grid_id: UUID) -> Response:
         data = AppFlowyRowSerializer(qs, many=True).data
         return Response({"items": data}, status=200)
 
-    payload: Dict[str, Any] = dict(request.data)
-    required = ["ticket_id", "name", "channel", "status", "priority"]
-    missing = [k for k in required if k not in payload]
-    if missing:
-        return Response({"detail": f"campos faltando: {missing}"}, status=400)
+    # Validação de payload via serializer de escrita
+    serializer = AppFlowyRowWriteSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response({"errors": serializer.errors}, status=400)
+    payload: Dict[str, Any] = dict(serializer.validated_data)
 
     obj, created = AppFlowyRow.objects.get_or_create(
         grid=grid,
@@ -154,7 +155,11 @@ def rows_list_or_create(request: Request, grid_id: UUID) -> Response:
             "priority": str(payload["priority"]).strip(),
             "assigned_to": str(payload.get("assigned_to", "")).strip(),
             "tags": payload.get("tags", []),
-            "last_message": str(payload.get("last_message", "")).strip(),
+            "last_message": str(
+                payload.get("last_message", "")
+            ).strip(),
+            "received_at": payload.get("received_at"),
+            "sla_due": payload.get("sla_due"),
         },
     )
     if not created:
@@ -166,6 +171,8 @@ def rows_list_or_create(request: Request, grid_id: UUID) -> Response:
             "assigned_to",
             "tags",
             "last_message",
+            "received_at",
+            "sla_due",
         ]:
             if field in payload:
                 setattr(obj, field, payload[field])
@@ -213,7 +220,14 @@ def row_update_or_delete(request: Request, grid_id: UUID, row_id: UUID) -> Respo
             status=status.HTTP_412_PRECONDITION_FAILED,
         )
 
-    payload: Dict[str, Any] = dict(request.data)
+    # Validação parcial do payload via serializer
+    serializer = AppFlowyRowWriteSerializer(
+        data=request.data,
+        partial=True,
+    )
+    if not serializer.is_valid():
+        return Response({"errors": serializer.errors}, status=400)
+    payload: Dict[str, Any] = dict(serializer.validated_data)
     for field in [
         "name",
         "channel",
@@ -245,6 +259,21 @@ def row_update_or_delete(request: Request, grid_id: UUID, row_id: UUID) -> Respo
 
     data = AppFlowyRowSerializer(row).data
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])  # type: ignore[misc]
+@permission_classes([IsAuthenticated])  # type: ignore[misc]
+def rows_stream(request: Request, grid_id: UUID) -> Response:
+    """Stub de streaming de mudanças (SSE/WebSocket) pós-MVP.
+
+    Planejado para fornecer eventos de alterações de linhas. Por ora,
+    retornamos 501 para sinalizar funcionalidade futura.
+    """
+
+    return Response(
+        {"detail": "stream de rows planejado (SSE/WebSocket)"},
+        status=status.HTTP_501_NOT_IMPLEMENTED,
+    )
 
 
 # Removido: stubs antigos sem proteção JWT. Mantemos apenas as views DRF

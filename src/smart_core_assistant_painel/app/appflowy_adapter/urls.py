@@ -28,6 +28,11 @@ urlpatterns = [
         name="rows-list-create",
     ),
     path(
+        "grids/<uuid:grid_id>/rows/stream/",
+        views.rows_stream,
+        name="rows-stream",
+    ),
+    path(
         "grids/<uuid:grid_id>/rows/<uuid:row_id>/",
         views.row_update_or_delete,
         name="row-update-delete",

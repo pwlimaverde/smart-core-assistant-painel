@@ -4,7 +4,7 @@
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-use reqwest::blocking::Client;
+use reqwest::blocking::{Client, Response};
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, IF_MATCH};
 use std::fs;
 use std::env;
@@ -13,6 +13,9 @@ use std::path::{Path, PathBuf};
 use chrono::{DateTime, Utc};
 use directories::ProjectDirs;
 use dotenvy::dotenv;
+use rand::Rng;
+use std::thread;
+use std::time::Duration;
 
 /// Erros de sincronização.
 #[derive(Debug, Error)]
@@ -92,15 +95,15 @@ pub struct SyncState {
 /// Contrato de sincronização remoto.
 pub trait RemoteSync {
     /// Envia patches de linhas para o adapter Django.
-    fn push_rows(&self, grid_id: &str, patches: &[RowPatch])
+    fn push_rows(&mut self, grid_id: &str, patches: &[RowPatch])
         -> Result<(), SyncError>;
 
     /// Obtém deltas de linhas desde um instante `since` (ISO8601).
-    fn pull_rows(&self, grid_id: &str, since: &str)
+    fn pull_rows(&mut self, grid_id: &str, since: &str)
         -> Result<Vec<RowDelta>, SyncError>;
 
     /// Assina mudanças de um grid (stub inicial).
-    fn subscribe(&self, grid_id: &str) -> Result<(), SyncError>;
+    fn subscribe(&mut self, grid_id: &str) -> Result<(), SyncError>;
 }
 
 /// Implementação base do provider para o Django.
@@ -257,10 +260,76 @@ impl DjangoSyncProvider {
             HeaderValue::from_str(&v).ok()
         })
     }
+
+    /// Executa uma requisição com backoff exponencial e jitter.
+    ///
+    /// - Reintenta automaticamente em erros de rede e status 429/5xx.
+    /// - Em 401, tenta `auth_refresh()` e refaz imediatamente.
+    ///
+    /// `build` deve construir um `RequestBuilder` novo a cada chamada.
+    fn execute_with_backoff<F>(&mut self, mut build: F) -> Result<Response, SyncError>
+    where
+        F: FnMut(&Client) -> reqwest::blocking::RequestBuilder,
+    {
+        let mut attempt: usize = 0;
+        let max_attempts: usize = 5;
+        let mut delay_ms: u64 = 150; // base inicial ~150ms
+        let max_delay_ms: u64 = 3000; // cap em 3s
+        let mut rng = rand::thread_rng();
+
+        loop {
+            let resp = build(&self.client).send();
+            match resp {
+                Ok(r) => {
+                    let code = r.status().as_u16();
+                    if code == 401 {
+                        // Tenta refresh e refaz uma vez por tentativa.
+                        if let Err(e) = self.auth_refresh() {
+                            return Err(e);
+                        }
+                        // Pequeno delay para evitar tempestade.
+                        let jitter = rng.gen_range(0..=100);
+                        thread::sleep(Duration::from_millis(50 + jitter));
+                        attempt += 1;
+                        if attempt >= max_attempts {
+                            return Err(SyncError::Unexpected("401 após refresh".into()));
+                        }
+                        continue;
+                    }
+
+                    if code == 429 || (500..=599).contains(&code) {
+                        attempt += 1;
+                        if attempt >= max_attempts {
+                            return Err(SyncError::Unexpected(format!(
+                                "transient status {} após {} tentativas",
+                                r.status(), attempt
+                            )));
+                        }
+                        let jitter = rng.gen_range(0..=delay_ms);
+                        thread::sleep(Duration::from_millis(delay_ms + jitter));
+                        delay_ms = (delay_ms * 2).min(max_delay_ms);
+                        continue;
+                    }
+
+                    // Retorna mesmo em 4xx para tratamento específico do chamador.
+                    return Ok(r);
+                }
+                Err(e) => {
+                    attempt += 1;
+                    if attempt >= max_attempts {
+                        return Err(SyncError::Network(e.to_string()));
+                    }
+                    let jitter = rng.gen_range(0..=delay_ms);
+                    thread::sleep(Duration::from_millis(delay_ms + jitter));
+                    delay_ms = (delay_ms * 2).min(max_delay_ms);
+                }
+            }
+        }
+    }
 }
 
 impl RemoteSync for DjangoSyncProvider {
-    fn push_rows(&self, grid_id: &str, patches: &[RowPatch]) -> Result<(), SyncError> {
+    fn push_rows(&mut self, grid_id: &str, patches: &[RowPatch]) -> Result<(), SyncError> {
         let base = self.base_url_trim();
         let mut headers = HeaderMap::new();
         if let Some(auth) = self.auth_header() { headers.insert(AUTHORIZATION, auth); }
@@ -269,16 +338,46 @@ impl RemoteSync for DjangoSyncProvider {
             if let Some(row_id) = &p.row_id {
                 // Atualização com If-Match.
                 let url = format!("{}/grids/{}/rows/{}/", base, grid_id, row_id);
-                let mut req = self.client.put(&url).headers(headers.clone());
-                if let Some(v) = p.version { req = req.header(IF_MATCH, v.to_string()); }
                 let body = serde_json::to_value(p).map_err(|e| SyncError::Serde(e.to_string()))?;
-                let resp = req.json(&body).send().map_err(|e| SyncError::Network(e.to_string()))?;
-                if resp.status().as_u16() == 412 {
-                    // Conflito: versão divergente (LWW inicial — relatar e seguir).
-                    return Err(SyncError::Unexpected("precondition failed (412)".into()));
-                }
-                if !resp.status().is_success() {
-                    return Err(SyncError::Unexpected(format!("update failed: status {}", resp.status())));
+
+                // Loop LWW: em 412, usa `current_version` do servidor e refaz.
+                let mut attempt_version: Option<i64> = p.version;
+                let max_lww_attempts = 3;
+                for _ in 0..max_lww_attempts {
+                    let build = |client: &Client| {
+                        let mut rb = client.put(&url).headers(headers.clone());
+                        if let Some(v) = attempt_version { rb = rb.header(IF_MATCH, v.to_string()); }
+                        // Clona o body a cada tentativa para não mover
+                        let body_clone = body.clone();
+                        rb.json(&body_clone)
+                    };
+                    let resp = self.execute_with_backoff(build)?;
+                    let code = resp.status().as_u16();
+                    if code == 412 {
+                        // Extrai `current_version` e continua (LWW: cliente vence).
+                        #[derive(Deserialize)]
+                        struct ConflictResp { current_version: i64 }
+                        let data: Result<ConflictResp, _> = resp.json();
+                        match data {
+                            Ok(d) => {
+                                attempt_version = Some(d.current_version);
+                                continue;
+                            }
+                            Err(e) => {
+                                return Err(SyncError::Serde(format!("falha ao ler 412: {}", e)));
+                            }
+                        }
+                    }
+
+                    if !resp.status().is_success() {
+                        return Err(SyncError::Unexpected(format!(
+                            "update failed: status {}",
+                            resp.status()
+                        )));
+                    }
+
+                    // Sucesso
+                    break;
                 }
             } else {
                 // Criação.
@@ -292,15 +391,18 @@ impl RemoteSync for DjangoSyncProvider {
                     tags: p.tags.clone().unwrap_or_default(),
                     last_message: p.last_message.clone().unwrap_or_default(),
                 };
-                let resp = self
-                    .client
-                    .post(&url)
-                    .headers(headers.clone())
-                    .json(&create)
-                    .send()
-                    .map_err(|e| SyncError::Network(e.to_string()))?;
+                let build = |client: &Client| {
+                    client
+                        .post(&url)
+                        .headers(headers.clone())
+                        .json(&create)
+                };
+                let resp = self.execute_with_backoff(build)?;
                 if !resp.status().is_success() {
-                    return Err(SyncError::Unexpected(format!("create failed: status {}", resp.status())));
+                    return Err(SyncError::Unexpected(format!(
+                        "create failed: status {}",
+                        resp.status()
+                    )));
                 }
             }
         }
@@ -308,20 +410,27 @@ impl RemoteSync for DjangoSyncProvider {
         Ok(())
     }
 
-    fn pull_rows(&self, grid_id: &str, since: &str) -> Result<Vec<RowDelta>, SyncError> {
+    fn pull_rows(&mut self, grid_id: &str, since: &str) -> Result<Vec<RowDelta>, SyncError> {
         let base = self.base_url_trim();
-        let mut req = self
-            .client
-            .get(&format!("{}/grids/{}/rows/", base, grid_id))
-            .query(&[("since", since)]);
-        if let Some(auth) = self.auth_header() { req = req.header(AUTHORIZATION, auth); }
-        let resp = req.send().map_err(|e| SyncError::Network(e.to_string()))?;
+        let url = format!("{}/grids/{}/rows/", base, grid_id);
+        let build = |client: &Client| {
+            let mut rb = client.get(&url).query(&[("since", since)]);
+            if let Some(auth) = self.auth_header() { rb = rb.header(AUTHORIZATION, auth); }
+            rb
+        };
+        let resp = self.execute_with_backoff(build)?;
         if !resp.status().is_success() {
-            return Err(SyncError::Unexpected(format!("pull failed: status {}", resp.status())));
+            return Err(SyncError::Unexpected(format!(
+                "pull failed: status {}",
+                resp.status()
+            )));
         }
 
-        // MVP: servidor retorna lista de linhas; convertemos em deltas "updated".
-        let rows: Vec<Row> = resp.json().map_err(|e| SyncError::Serde(e.to_string()))?;
+        // Servidor retorna { items: [...] }; convertemos em deltas "updated".
+        #[derive(Deserialize)]
+        struct RowsList { items: Vec<Row> }
+        let list: RowsList = resp.json().map_err(|e| SyncError::Serde(e.to_string()))?;
+        let rows = list.items;
         let deltas = rows
             .into_iter()
             .map(|row| RowDelta {
@@ -334,8 +443,59 @@ impl RemoteSync for DjangoSyncProvider {
         Ok(deltas)
     }
 
-    fn subscribe(&self, _grid_id: &str) -> Result<(), SyncError> {
+    fn subscribe(&mut self, _grid_id: &str) -> Result<(), SyncError> {
         // MVI: stub inicial sem stream.
         Ok(())
+    }
+}
+
+/// Tipos auxiliares para resolução por nome.
+#[derive(Debug, Clone, Deserialize)]
+pub struct WorkspaceItem { pub workspace_id: String, pub name: String }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GridItem { pub grid_id: String, pub workspace: String, pub name: String, pub description: Option<String> }
+
+#[derive(Debug, Deserialize)]
+struct ListResp<T> { items: Vec<T> }
+
+impl DjangoSyncProvider {
+    /// Resolve o `workspace_id` pelo nome quando não definido no `.env`.
+    pub fn resolve_workspace_id_by_name(&mut self, name: &str) -> Result<String, SyncError> {
+        let base = self.base_url_trim();
+        let url = format!("{}/workspaces/", base);
+        let build = |client: &Client| {
+            let mut rb = client.get(&url);
+            if let Some(auth) = self.auth_header() { rb = rb.header(AUTHORIZATION, auth); }
+            rb
+        };
+        let resp = self.execute_with_backoff(build)?;
+        if !resp.status().is_success() {
+            return Err(SyncError::Unexpected(format!("workspaces failed: {}", resp.status())));
+        }
+        let list: ListResp<WorkspaceItem> = resp.json().map_err(|e| SyncError::Serde(e.to_string()))?;
+        let found = list.items.into_iter().find(|w| w.name == name)
+            .ok_or_else(|| SyncError::Unexpected("workspace não encontrado por nome".into()))?;
+        Ok(found.workspace_id)
+    }
+
+    /// Resolve o `grid_id` pelo nome dentro de um workspace.
+    /// Requer o endpoint Django `GET /workspaces/{workspace_id}/grids/`.
+    pub fn resolve_grid_id_by_name(&mut self, workspace_id: &str, name: &str) -> Result<String, SyncError> {
+        let base = self.base_url_trim();
+        let url = format!("{}/workspaces/{}/grids/", base, workspace_id);
+        let build = |client: &Client| {
+            let mut rb = client.get(&url);
+            if let Some(auth) = self.auth_header() { rb = rb.header(AUTHORIZATION, auth); }
+            rb
+        };
+        let resp = self.execute_with_backoff(build)?;
+        if !resp.status().is_success() {
+            return Err(SyncError::Unexpected(format!("grids list failed: {}", resp.status())));
+        }
+        let list: ListResp<GridItem> = resp.json().map_err(|e| SyncError::Serde(e.to_string()))?;
+        let found = list.items.into_iter().find(|g| g.name == name)
+            .ok_or_else(|| SyncError::Unexpected("grid não encontrado por nome".into()))?;
+        Ok(found.grid_id)
     }
 }

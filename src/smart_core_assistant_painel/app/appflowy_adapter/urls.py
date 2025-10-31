@@ -16,6 +16,11 @@ urlpatterns = [
     path("auth/login/", TokenObtainPairView.as_view(), name="auth-login"),
     path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
     path("workspaces/", views.workspaces, name="workspaces"),
+    path(
+        "workspaces/<uuid:workspace_id>/grids/",
+        views.grids_list,
+        name="grids-list",
+    ),
     path("grids/<uuid:grid_id>/schema/", views.grid_schema, name="grid-schema"),
     path(
         "grids/<uuid:grid_id>/rows/",

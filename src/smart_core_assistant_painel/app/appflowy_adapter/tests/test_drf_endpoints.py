@@ -111,6 +111,19 @@ class AppFlowyAdapterDRFTests(TestCase):
         columns = data.get("columns", [])
         self.assertTrue(len(columns) >= 6)
 
+    def test_grids_list_by_workspace_returns_items(self) -> None:
+        """`GET /workspaces/<id>/grids/` retorna grids do workspace."""
+
+        url: str = reverse(
+            "appflowy_adapter:grids-list", args=[self.workspace.workspace_id]
+        )
+        resp = self.client.get(url, **self._auth_headers())
+        self.assertEqual(resp.status_code, 200)
+        data: Dict[str, Any] = resp.json()
+        items: List[Dict[str, Any]] = data.get("items", [])
+        # Deve conter pelo menos o grid criado no setUp
+        self.assertTrue(any(g.get("grid_id") == str(self.grid.grid_id) for g in items))
+
     def test_rows_list_since_filter_and_invalid_since(self) -> None:
         """Valida filtro `since` e erro para formato inválido."""
 

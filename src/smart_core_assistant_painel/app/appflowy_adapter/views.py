@@ -52,6 +52,7 @@ from .models import (  # noqa: E402
 )
 from .serializers import (  # noqa: E402
     AppFlowyColumnSerializer,
+    AppFlowyGridSerializer,
     AppFlowyRowSerializer,
     AppFlowyWorkspaceSerializer,
     validate_if_match_version,
@@ -66,6 +67,24 @@ def workspaces(request: Request) -> Response:
     qs = AppFlowyWorkspace.objects.all().order_by("name")
     data = AppFlowyWorkspaceSerializer(qs, many=True).data
     return Response({"items": data}, status=status.HTTP_200_OK)
+
+
+@api_view(["GET"])  # type: ignore[misc]
+@permission_classes([IsAuthenticated])  # type: ignore[misc]
+def grids_list(request: Request, workspace_id: UUID) -> Response:
+    """Lista grids de um workspace por `workspace_id`.
+
+    Permite resolução por nome no cliente quando IDs não estão definidos.
+    """
+
+    try:
+        ws = AppFlowyWorkspace.objects.get(workspace_id=workspace_id)
+    except AppFlowyWorkspace.DoesNotExist:
+        return Response({"detail": "workspace não encontrado"}, status=404)
+
+    qs = AppFlowyGrid.objects.filter(workspace=ws).order_by("name")
+    data = AppFlowyGridSerializer(qs, many=True).data
+    return Response({"items": data}, status=200)
 
 
 @api_view(["GET"])  # type: ignore[misc]

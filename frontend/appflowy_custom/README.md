@@ -44,6 +44,20 @@ Notas:
 - Offline-first permanece via `SQLite` local (Diesel), com política LWW
   inicial e evolução futura para CRDT, se necessário.
 
+## Segurança
+
+- Não armazenar `username`/`password` em código. Use `.env`/variáveis de
+  ambiente e arquivos seguros do SO.
+- Tokens (JWT/refresh) são mantidos apenas em memória no
+  `django_sync_provider` neste MVP.
+- Persistência opcional de tokens: se necessário, utilizar armazenamento
+  seguro do sistema operacional (ex.: DPAPI no Windows) para proteger
+  segredos em repouso.
+- Variáveis de ambiente esperadas pelo provider Rust:
+  - `APPFLOWY_ADAPTER_BASE_URL`
+  - `APPFLOWY_ADAPTER_USERNAME`
+  - `APPFLOWY_ADAPTER_PASSWORD`
+
 ## Licença
 
 O AppFlowy é distribuído sob **AGPLv3**. Qualquer modificação e

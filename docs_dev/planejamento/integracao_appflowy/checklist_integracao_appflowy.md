@@ -35,50 +35,99 @@
 
 ## Próximas Etapas Detalhadas
 
-- Backend (Django):
-  - Converter views para DRF e criar serializers de `Row` e `Column`.
-  - Implementar `GET /workspaces`, `GET /grids/{grid_id}` (`grid_schema`).
-  - Implementar `GET/POST /grids/{grid_id}/rows` e
-    `PUT/DELETE /grids/{grid_id}/rows/{row_id}` com `If-Match`.
-  - Autenticação JWT (login/refresh) e permissões mínimas.
+### Backend (Django)
 
-- Provider (Rust):
-  - Implementar `pull_rows`/`push_rows` com `reqwest` e JWT.
-  - Persistir `sync_state` (último `since`, `version`) e backoff.
+- Migrar para DRF e criar serializers mínimos:
+  - `RowSerializer` (id, ticket_id, name, status, priority, assigned_to, tags, version, updated_at, received_at, channel, sla_due, last_message).
+  - `ColumnSerializer` (id, name, type, options).
+- Autenticação JWT:
+  - Endpoints: `POST /auth/login`, `POST /auth/refresh` (usar `djangorestframework-simplejwt`).
+  - Permissões: requer JWT para todas as rotas do adapter.
+- Metadados:
+  - `GET /workspaces` → lista id/nome.
+  - `GET /grids/{grid_id}` → esquema e colunas.
+- Dados do Grid (Atendimentos):
+  - `GET /grids/{grid_id}/rows?since=<ISO8601>` → delta incremental.
+  - `POST /grids/{grid_id}/rows` → criação idempotente por `ticket_id`.
+  - `PUT /grids/{grid_id}/rows/{row_id}` com `If-Match: <version>` → 200 quando ok; 412 em conflito.
+  - `DELETE /grids/{grid_id}/rows/{row_id}` → 204; respeitar integridade dos sinais.
+- Observabilidade:
+  - Logs estruturados com `loguru` (campos: `row_id`, `ticket_id`, `version`).
+  - CLI de manutenção com `rich` (opcional).
+- Testes (≥ 80%):
+  - Unit: serializers, normalização, sinais.
+  - Integração: autenticação, CRUD e controle de versão.
 
-- Frontend (Flutter):
-  - Tela de configurações para `server_url` e credenciais.
-  - Indicadores de status de sincronização e conflitos.
+### Provider (Rust)
 
-- Infra/Observabilidade:
-  - Logs estruturados (`loguru`) e CLI de diagnóstico (`rich`).
-  - SSE/WebSocket (opcional) para eventos de mudança.
-  - Testes ponta-a-ponta e cobertura ≥ 80% via `uv run task test-docker`.
+- `DjangoSyncProvider` com `reqwest` + JWT:
+  - `login/refresh` (persistir tokens seguros).
+  - `pull_rows(since)` e `push_rows(batch)` com tratamento de 412 (LWW).
+  - Backoff exponencial com jitter; tempo máximo configurável.
+- Estado de sincronização:
+  - Persistir `sync_state` por `grid_id` (último `since`, `version`).
+  - Estratégia de reprocessamento em falhas de rede.
+- Testes:
+  - Mocks de HTTP e validação de mapeamento JSON ↔ modelos locais.
+
+### Frontend (Flutter)
+
+- Tela de Configurações:
+  - `server_url`, `email`, `password`, botão “Testar Conexão”.
+  - Armazenar tokens de forma segura (keychain/arquivo protegido).
+- Indicadores de Sync:
+  - Última sincronização, contador de conflitos (412), ação “Sincronizar agora”.
+
+### Infra/Observabilidade
+
+- Logs e diagnóstico:
+  - `loguru` no backend; `tracing`/`env_logger` no provider Rust.
+  - Comandos `uv run task logs-docker` (ambiente Docker) e scripts locais.
+- Real-time (opcional pós-MVP):
+  - SSE/WebSocket para mudanças de `rows` por `grid_id`.
+- Testes ponta-a-ponta:
+  - Preferir `uv run task test-docker` para a suíte completa.
+  - Fallback local quando necessário com filtros de coleta.
+
+## Sequência Recomendada (Execução)
+
+1) Backend DRF + JWT → endpoints `auth`, `workspaces`, `grids`, `rows` com `If-Match`.
+2) Provider Rust → `login/refresh`, `pull_rows/push_rows`, persistir `sync_state`.
+3) Flutter UI → tela de configurações + indicadores de sincronização.
+4) Observabilidade + testes E2E → logs, métricas básicas e cobertura.
+
+## Definition of Done por Etapa
+
+- Backend: todos endpoints ativos com testes de integração; conflito retorna 412; cobertura ≥ 80%.
+- Provider: sincronização pull/push funcionando contra backend; tratamento de erro confiável.
+- Flutter: configuração persistida e conexão testável; feedback claro ao usuário.
+- Observabilidade: logs úteis e comandos de diagnóstico; documentação atualizada.
+
+## Comandos de Validação
+
+- Local (rápido, sem Docker):
+  - `uv run pytest -v -o addopts='' --ignore=tests/app/notion_sync tests src/smart_core_assistant_painel/app/ui`
+- Preferencial (padrão do projeto):
+  - `uv run task test-docker`
+- Migrações:
+  - `uv run task makemigrations` e `uv run task migrate`
+
+## Variáveis de Ambiente (Adapter)
+
+- `APPFLOWY_ADAPTER_BASE_URL`, `APPFLOWY_ADAPTER_WORKSPACE_ID`, `APPFLOWY_ADAPTER_GRID_ID`
+- `JWT_ACCESS_EXPIRES_MIN`, `JWT_REFRESH_EXPIRES_MIN`
+- Documentar em `.env.example` (sem valores).
 
 ## Critérios de Aceite (MVP)
 
-- CRUD funcional do Grid Atendimentos sincronizando com Django.
-- Offline-first com persistência em SQLite e sincronização posterior.
-- JWT curto + refresh funcionando no Desktop.
-- Logs estruturados e correlação por `ticket_id` no backend.
-- Cobertura de testes ≥ 80% e CI verde.
+- CRUD do Grid Atendimentos sincronizando com Django.
+- Offline-first (SQLite) e sincronização posterior sem perda.
+- JWT curto + refresh funcional no Desktop.
+- Logs estruturados com correlação por `ticket_id`.
+- Cobertura ≥ 80% e CI verde.
 
 ## Observações
 
-- Manter escopo focado no Grid de Atendimentos (MVI).
-- Evoluir de LWW para CRDT apenas se necessário.
-- Evitar segredos em código e documentar variáveis em `.env.example`.
-
-## Critérios de Aceite (MVP)
-
-- CRUD funcional do Grid Atendimentos sincronizando com Django.
-- Offline-first com persistência em SQLite e sincronização posterior.
-- JWT curto + refresh funcionando no Desktop.
-- Logs estruturados e correlação por `ticket_id` no backend.
-- Cobertura de testes ≥ 80% e CI verde.
-
-## Observações
-
-- Manter escopo focado no Grid de Atendimentos (MVI).
-- Evoluir de LWW para CRDT apenas se necessário.
-- Evitar segredos em código e documentar variáveis em `.env.example`.
+- Escopo MVI: focar no Grid de Atendimentos.
+- Evolução para CRDT apenas se necessário.
+- Zero segredos em código; `.env.example` atualizado.

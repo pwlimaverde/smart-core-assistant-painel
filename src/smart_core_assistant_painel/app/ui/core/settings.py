@@ -72,6 +72,7 @@ INSTALLED_APPS = [
     "pgvector.django",
     "rolepermissions",
     "django_q",
+    "rest_framework",
     "smart_core_assistant_painel.app.ui.core",
     "smart_core_assistant_painel.app.ui.usuarios",
     "smart_core_assistant_painel.app.ui.operacional",
@@ -240,3 +241,32 @@ EVOLUTION_API_URL = os.getenv(
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL", "http://192.168.3.127:11434"
 ).strip()
+
+# Configurações DRF e JWT
+REST_FRAMEWORK = {
+    # Exige autenticação por JWT para endpoints protegidos do adapter
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+# Durações dos tokens JWT controladas por variáveis de ambiente
+try:
+    _jwt_access_min = int(os.getenv("JWT_ACCESS_EXPIRES_MIN", "15"))
+    _jwt_refresh_min = int(os.getenv("JWT_REFRESH_EXPIRES_MIN", "60"))
+except Exception:
+    _jwt_access_min = 15
+    _jwt_refresh_min = 60
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": __import__("datetime").timedelta(
+        minutes=_jwt_access_min
+    ),
+    "REFRESH_TOKEN_LIFETIME": __import__("datetime").timedelta(
+        minutes=_jwt_refresh_min
+    ),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}

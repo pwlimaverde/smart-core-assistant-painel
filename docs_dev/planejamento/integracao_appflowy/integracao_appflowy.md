@@ -9,11 +9,15 @@ servidor Django.
 
 ## Status Atual e Ajustes
 
-- App Django `appflowy_adapter` criado com endpoints mínimos e URLs
+- App Django `appflowy_adapter` ativo e migrado para DRF, com URLs
   registradas sob `/api/appflowy_adapter/`.
-- Testes de saúde do adapter adicionados e executando com sucesso.
+- Autenticação JWT implementada (`login`/`refresh`) e permissões
+  aplicadas nas rotas do adapter.
+- Endpoints entregues: `workspaces`, `grids/{grid_id}` (schema),
+  `rows` (CRUD) com controle de versão via `If-Match` (retorno `412`).
+- Testes de integração em progresso; executar via `uv run task test-docker`.
 - Crate Rust `django_sync_provider` iniciado com trait `RemoteSync` e
-  implementação stub de `DjangoSyncProvider`.
+  métodos base (login/refresh, pull/push) — robustez em evolução.
 - Integração Notion isolada para não interferir:
   - App `notion_sync` fora de `INSTALLED_APPS`.
   - Suíte de testes do Notion ignorada em `pytest.ini`.
@@ -25,16 +29,27 @@ servidor Django.
   `priority` para `low|medium|high|urgent`.
 - `AppConfig.ready()` importa `signals` para registro automático na
   inicialização.
+- UI Flutter de Configurações (Django Adapter) implementada e
+  internacionalizada (pt-BR/en-US) com `server_url`, `username`,
+  `password` e botão “Testar Conexão”. Pastas `assets/flowy_icons/*`
+  criadas para sanar erros de build.
+- Observação: build web apresenta erro do pacote `win32` no Chrome;
+  executar no alvo Windows desktop. Para web, usar imports
+  condicionais/stubs para isolar APIs de desktop.
 
 ## Próximos Passos Imediatos
 
-- Implementar autenticação JWT real no `appflowy_adapter` (login/refresh).
-- Migrar endpoints para DRF com serializers e validação de payloads.
-- Expor CRUD real de linhas e metadados do Grid com checagem de
-  `version` via `If-Match`.
-- Adicionar testes para sinais, modelos e endpoints; cobertura ≥ 80%
-  via `uv run task test-docker`.
-- Atualizar `.env.example` com variáveis do adapter (sem valores).
+- Provider Rust: implementar backoff/jitter, tratamento de 401/412,
+  resolução automática de `workspace/grid` por nome e persistir
+  `sync_state` por `grid_id`.
+- Flutter: integrar o botão “Testar Conexão” com os endpoints JWT
+  (login/refresh), exibir feedback de sincronização e indicadores
+  básicos (última sync, conflitos `412`).
+- Backend: refinar validações de serializers e payloads, considerar
+  SSE/WebSocket para eventos de mudança (pós-MVP). Elevar cobertura
+  para ≥ 80% com `uv run task test-docker`.
+- Documentação: manter `.env.example` atualizado (sem valores) e
+  instruções de execução/diagnóstico.
 
 ## Fases de Implementação
 
@@ -46,13 +61,12 @@ servidor Django.
   e incrementando `version`.
 - v Registro dos sinais via `AppConfig.ready()`.
 
-### Fase 2 — API REST (Em execução)
+### Fase 2 — API REST (Concluída)
 
-- Migrar endpoints do adapter para DRF.
-- Implementar serializers e validação de tipos (Row/Column).
-- Entregar `grid_schema` e CRUD de `rows` com `If-Match` (`version`).
-- Adicionar autenticação JWT (login/refresh) e permissões.
-- Cobrir com testes unitários e de integração (≥ 80%).
+- Endpoints migrados para DRF com serializers e validação de tipos.
+- `grid_schema` e CRUD de `rows` com `If-Match` (`version`) ativos.
+- Autenticação JWT (login/refresh) e permissões configuradas.
+- Testes de integração em andamento; meta de cobertura ≥ 80%.
 
 ### Fase 3 — Provider Rust (Planejada)
 
@@ -61,10 +75,12 @@ servidor Django.
 - Persistir `sync_state` (último `since`, `version`) no desktop.
 - Backoff e tratamento de falhas de rede.
 
-### Fase 4 — UI de Configurações (Planejada)
+### Fase 4 — UI de Configurações (Concluída — versão inicial)
 
-- Tela Flutter para `server_url`, credenciais e estado de sincronização.
-- Indicadores de conflito e status de versão.
+- Tela Flutter com `server_url`, `username`, `password` e “Testar Conexão”.
+- Internacionalização (`pt-BR`/`en-US`) via `LocaleKeys.tr()` e assets
+  de traduções adicionados.
+- Próximos incrementos: indicadores de sync (última sync, conflitos).
 
 ### Fase 5 — Observabilidade e Testes (Planejada)
 
@@ -210,6 +226,16 @@ Rationale: evita dependência do AppFlowy Cloud, dá controle total do ciclo de 
 - `docker-compose` para Django + Postgres + Redis (se necessário).
 - AppFlowy Desktop configurado para `server_url` local (ex.: `http://localhost:8000`).
 - Opcional: Nginx reverso e certificados.
+
+## Notas de Execução Flutter (Windows Desktop vs Web)
+
+- Alvo recomendado: Windows desktop (`flutter run -d windows`).
+- Pré-requisitos: Visual Studio Build Tools (C++), MSVC, CMake e
+  Windows SDK instalados. Validar com `flutter doctor -v`.
+- Web (Chrome) apresenta erro “Only JS interop members may be 'external'”
+  devido ao pacote `win32` usado por dependências de desktop. Para web,
+  encapsular APIs de desktop atrás de imports condicionais
+  (`if (dart.library.io)`) e stubs, evitando que `win32` seja compilado.
 
 ## Riscos e Mitigações
 

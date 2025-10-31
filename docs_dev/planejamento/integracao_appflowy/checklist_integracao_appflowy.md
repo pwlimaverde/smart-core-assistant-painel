@@ -44,6 +44,16 @@
   - Persistência de `sync_state` por `grid_id` em arquivo no SO.
   - Credenciais lidas via `.env`; tokens mantidos apenas em memória.
   - README atualizado com seção de Segurança e variáveis esperadas.
+\
+## Entregas Concluídas (Frontend Flutter)
+\
+- v Tela de Configurações (Django Adapter): `server_url`, `username`,
+  `password` e botão “Testar Conexão”.
+- v Internacionalização da UI com `LocaleKeys.tr()` e assets de
+  traduções adicionados: `assets/translations/en-US.json` e
+  `assets/translations/pt-BR.json`.
+- v Ajuste de assets: criação dos diretórios `assets/flowy_icons/*`
+  para eliminar erros de build.
 
 ## Em Execução
 
@@ -109,6 +119,27 @@
 - Testes ponta-a-ponta:
   - Preferir `uv run task test-docker` para a suíte completa.
   - Fallback local quando necessário com filtros de coleta.
+\
+## Bloqueios e Mitigações (conhecidos)
+\
+- Build Web (Chrome): erro “Only JS interop members may be 'external'”
+  por dependências que usam `win32`. Mitigação: executar no Windows
+  desktop ou isolar APIs de desktop via imports condicionais/stubs.
+\
+## Validação Flutter
+\
+- Windows desktop:
+  - Pré-requisitos: Visual Studio Build Tools (C++), MSVC, CMake,
+    Windows SDK. Validar `flutter doctor -v`.
+  - Executar: `flutter run -d windows`.
+- Web (opcional): somente após isolar `win32` com stubs; `flutter run -d chrome`.
+\
+## Definition of Done (Flutter UI)
+\
+- Configurações persistem e teste de conexão retorna sucesso/erros
+  com mensagens localizadas.
+- Indicadores básicos de sincronização exibidos.
+- Sem erros de assets; i18n funcional para `pt-BR` e `en-US`.
 
 ## Sequência Recomendada (Execução)
 

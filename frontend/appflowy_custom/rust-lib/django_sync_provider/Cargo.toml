@@ -13,3 +13,14 @@ directories = "5.0"
 chrono = { version = "0.4", features = ["serde"] }
 dotenvy = "0.15"
 rand = "0.8"
+
+[features]
+# Habilita persistência segura de tokens (Windows DPAPI).
+secure_tokens = ["windows"]
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", optional = true, features = [
+    "Win32_Security_Cryptography",
+    "Win32_Foundation",
+    "Win32_System_Memory",
+] }

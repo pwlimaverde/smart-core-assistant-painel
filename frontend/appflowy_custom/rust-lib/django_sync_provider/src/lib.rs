@@ -1,5 +1,12 @@
 //! Provider de sincronização para integração com o Django.
 //!
+//! Recursos principais:
+//! - Backoff exponencial com jitter e retries; auto-refresh em 401.
+//! - Tratamento de 412 com tentativa LWW (cliente vence via `If-Match`).
+//! - Resolução automática de workspace/grid por nome via `.env`.
+//! - Persistência de `sync_state` por `grid_id` em arquivo local.
+//! - Opcional: persistência segura de tokens (DPAPI/Windows) com feature `secure_tokens`.
+//!
 //! Comentários em Português conforme padrão do projeto.
 
 use serde::{Deserialize, Serialize};
@@ -137,6 +144,41 @@ impl DjangoSyncProvider {
         Ok(Self::new(base_url, None))
     }
 
+    /// Resolve automaticamente `workspace_id` e `grid_id` a partir do ambiente.
+    ///
+    /// Estratégia:
+    /// - Tenta `APPFLOWY_ADAPTER_WORKSPACE_ID` e `APPFLOWY_ADAPTER_GRID_ID`.
+    /// - Caso ausentes, usa `APPFLOWY_ADAPTER_WORKSPACE_NAME` e `APPFLOWY_ADAPTER_GRID_NAME`
+    ///   e resolve via endpoints (`/workspaces/` e `/workspaces/{id}/grids/`).
+    pub fn resolve_ids_from_env(&mut self) -> Result<(String, String), SyncError> {
+        dotenv().ok();
+        let ws_id_env = env::var("APPFLOWY_ADAPTER_WORKSPACE_ID").ok();
+        let grid_id_env = env::var("APPFLOWY_ADAPTER_GRID_ID").ok();
+
+        if let (Some(wid), Some(gid)) = (ws_id_env.clone(), grid_id_env.clone()) {
+            return Ok((wid, gid));
+        }
+
+        let ws_name = env::var("APPFLOWY_ADAPTER_WORKSPACE_NAME")
+            .map_err(|_| SyncError::Unexpected("APPFLOWY_ADAPTER_WORKSPACE_NAME ausente".into()))?;
+
+        let workspace_id = match ws_id_env {
+            Some(wid) => wid,
+            None => self.resolve_workspace_id_by_name(&ws_name)?,
+        };
+
+        let grid_id = match grid_id_env {
+            Some(gid) => gid,
+            None => {
+                let grid_name = env::var("APPFLOWY_ADAPTER_GRID_NAME")
+                    .map_err(|_| SyncError::Unexpected("APPFLOWY_ADAPTER_GRID_NAME ausente".into()))?;
+                self.resolve_grid_id_by_name(&workspace_id, &grid_name)?
+            }
+        };
+
+        Ok((workspace_id, grid_id))
+    }
+
     /// Efetua login usando `APPFLOWY_ADAPTER_USERNAME`/`APPFLOWY_ADAPTER_PASSWORD` do ambiente.
     /// Não persiste credenciais; tokens (access/refresh) ficam apenas em memória.
     pub fn login_from_env(&mut self) -> Result<(), SyncError> {
@@ -250,6 +292,18 @@ impl DjangoSyncProvider {
         base.join("django_sync_provider").join("sync_state").join(format!("{}.json", grid_id))
     }
 
+    /// Persiste estado definindo `saved_at` para o instante atual.
+    pub fn save_sync_state_now(
+        &self,
+        grid_id: &str,
+        last_since: Option<String>,
+        last_version: Option<i64>,
+    ) -> Result<(), SyncError> {
+        let now = Utc::now().to_rfc3339();
+        let state = SyncState { last_since, last_version, saved_at: now };
+        self.save_sync_state(grid_id, &state)
+    }
+
     fn base_url_trim(&self) -> String {
         self.base_url.trim_end_matches('/').to_string()
     }
@@ -325,6 +379,87 @@ impl DjangoSyncProvider {
                 }
             }
         }
+    }
+}
+
+// Persistência segura de tokens (Windows DPAPI), habilitada por feature `secure_tokens`.
+#[cfg(all(windows, feature = "secure_tokens"))]
+impl DjangoSyncProvider {
+    /// Caminho do arquivo de tokens protegido por DPAPI.
+    fn token_store_path(&self) -> PathBuf {
+        let dirs = ProjectDirs::from("com", "smartcore", "smart_core_assistant");
+        let base: PathBuf = if let Some(d) = dirs { d.data_dir().to_path_buf() } else { Path::new(".").to_path_buf() };
+        let slug = self.base_url_trim().replace("://", "_").replace('/', "_");
+        base.join("django_sync_provider").join("tokens").join(format!("{}.bin", slug))
+    }
+
+    /// Salva `access`/`refresh` criptografados com DPAPI (escopo de usuário).
+    pub fn save_tokens_secure(&self) -> Result<(), SyncError> {
+        use windows::Win32::Security::Cryptography::{CryptProtectData, DATA_BLOB};
+        use windows::Win32::Foundation::HLOCAL;
+        use windows::Win32::System::Memory::LocalFree;
+        use windows::core::PCWSTR;
+
+        let access = self.jwt.clone().ok_or_else(|| SyncError::Unexpected("missing access token".into()))?;
+        let refresh = self.refresh_token.clone().ok_or_else(|| SyncError::Unexpected("missing refresh token".into()))?;
+        let json = serde_json::to_vec(&AuthTokens { access, refresh }).map_err(|e| SyncError::Serde(e.to_string()))?;
+
+        unsafe {
+            let mut in_blob = DATA_BLOB { cbData: json.len() as u32, pbData: json.as_ptr() as *mut u8 };
+            let mut out_blob = DATA_BLOB { cbData: 0, pbData: std::ptr::null_mut() };
+            let ok = CryptProtectData(&in_blob, PCWSTR::null(), std::ptr::null(), std::ptr::null_mut(), std::ptr::null_mut(), 0, &mut out_blob).as_bool();
+            if !ok { return Err(SyncError::Unexpected("CryptProtectData failed".into())); }
+            let enc = std::slice::from_raw_parts(out_blob.pbData, out_blob.cbData as usize).to_vec();
+            LocalFree(HLOCAL(out_blob.pbData as isize));
+
+            let path = self.token_store_path();
+            if let Some(parent) = path.parent() { fs::create_dir_all(parent).map_err(|e| SyncError::Unexpected(format!("mkdir tokens: {}", e)))?; }
+            let mut f = fs::File::create(&path).map_err(|e| SyncError::Unexpected(format!("create tokens: {}", e)))?;
+            f.write_all(&enc).map_err(|e| SyncError::Unexpected(format!("write tokens: {}", e)))?;
+        }
+
+        Ok(())
+    }
+
+    /// Carrega `access`/`refresh` do arquivo protegido com DPAPI.
+    pub fn load_tokens_secure(&mut self) -> Result<(), SyncError> {
+        use windows::Win32::Security::Cryptography::{CryptUnprotectData, DATA_BLOB};
+        use windows::Win32::Foundation::HLOCAL;
+        use windows::Win32::System::Memory::LocalFree;
+        use windows::core::PWSTR;
+
+        let path = self.token_store_path();
+        if !path.exists() { return Err(SyncError::Unexpected("tokens não encontrados".into())); }
+        let mut f = fs::File::open(&path).map_err(|e| SyncError::Unexpected(format!("open tokens: {}", e)))?;
+        let mut enc = Vec::new();
+        f.read_to_end(&mut enc).map_err(|e| SyncError::Unexpected(format!("read tokens: {}", e)))?;
+
+        unsafe {
+            let mut in_blob = DATA_BLOB { cbData: enc.len() as u32, pbData: enc.as_mut_ptr() };
+            let mut out_blob = DATA_BLOB { cbData: 0, pbData: std::ptr::null_mut() };
+            let mut descr: PWSTR = PWSTR::null();
+            let ok = CryptUnprotectData(&in_blob, &mut descr, std::ptr::null(), std::ptr::null_mut(), std::ptr::null_mut(), 0, &mut out_blob).as_bool();
+            if !ok { return Err(SyncError::Unexpected("CryptUnprotectData failed".into())); }
+            let dec = std::slice::from_raw_parts(out_blob.pbData, out_blob.cbData as usize).to_vec();
+            LocalFree(HLOCAL(out_blob.pbData as isize));
+
+            let tokens: AuthTokens = serde_json::from_slice(&dec).map_err(|e| SyncError::Serde(e.to_string()))?;
+            self.jwt = Some(tokens.access);
+            self.refresh_token = Some(tokens.refresh);
+        }
+
+        Ok(())
+    }
+}
+
+// Stubs quando não-Windows ou sem feature `secure_tokens`.
+#[cfg(not(all(windows, feature = "secure_tokens")))]
+impl DjangoSyncProvider {
+    pub fn save_tokens_secure(&self) -> Result<(), SyncError> {
+        Err(SyncError::Unexpected("secure_tokens desabilitada ou plataforma não suportada".into()))
+    }
+    pub fn load_tokens_secure(&mut self) -> Result<(), SyncError> {
+        Err(SyncError::Unexpected("secure_tokens desabilitada ou plataforma não suportada".into()))
     }
 }
 

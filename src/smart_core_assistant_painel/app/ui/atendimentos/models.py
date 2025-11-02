@@ -106,7 +106,17 @@ class Atendimento(models.Model):
         max_length=20,
         choices=StatusAtendimento.choices,
         default=StatusAtendimento.FILA,
-        help_text="Status atual do atendimento",
+        help_text="Status atual do atendimento (legado - será substituído por fluxo)",
+    )
+    etapa_atual: models.ForeignKey[Optional["operacional.EtapaFluxo"]] = (
+        models.ForeignKey(
+            "operacional.EtapaFluxo",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text="Etapa atual do atendimento no fluxo personalizado",
+        )
     )
     data_inicio: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de início do atendimento"
@@ -204,6 +214,8 @@ class Atendimento(models.Model):
             models.Index(fields=["status", "departamento"]),
             models.Index(fields=["departamento", "data_ultima_mensagem"]),
             models.Index(fields=["atendente_humano", "status"]),
+            models.Index(fields=["etapa_atual", "atendente_humano"]),
+            models.Index(fields=["departamento", "etapa_atual"]),
         ]
 
     @override

@@ -496,3 +496,312 @@ class WhatsAppInstance(models.Model):
             ):
                 return atendente
         return None
+
+
+class TipoEtapa(models.TextChoices):
+    """Tipos de etapas possíveis em um fluxo de atendimento."""
+
+    FILA = "fila", "Fila de Entrada"
+    TRABALHO = "trabalho", "Em Trabalho"
+    ESPERA = "espera", "Aguardando Resposta"
+    FINALIZACAO = "finalizacao", "Finalização"
+
+
+class FluxoAtendimento(models.Model):
+    """
+    Define o fluxo de trabalho personalizado para um departamento.
+    Cada departamento pode ter seu próprio fluxo com etapas específicas.
+    """
+
+    id: models.AutoField = models.AutoField(primary_key=True)
+    departamento: models.OneToOneField["Departamento"] = models.OneToOneField(
+        Departamento,
+        on_delete=models.CASCADE,
+        related_name="fluxo_atendimento",
+        help_text="Departamento ao qual este fluxo pertence"
+    )
+    nome: models.CharField[str] = models.CharField(
+        max_length=100,
+        help_text="Nome descritivo do fluxo"
+    )
+    descricao: models.TextField[str | None] = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Descrição detalhada do fluxo de trabalho"
+    )
+    ativo: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Indica se o fluxo está ativo"
+    )
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Data de criação do fluxo"
+    )
+    data_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now=True,
+        help_text="Data da última atualização do fluxo"
+    )
+
+    class Meta:
+        verbose_name = "Fluxo de Atendimento"
+        verbose_name_plural = "Fluxos de Atendimento"
+        db_table = "oraculo_fluxo_atendimento"
+        ordering = ["departamento__nome"]
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.nome} - {self.departamento.nome}"
+
+    def get_etapa_inicial(self) -> Optional["EtapaFluxo"]:
+        """
+        Retorna a etapa inicial do fluxo (primeira na ordem).
+
+        Returns:
+            EtapaFluxo inicial ou None se não houver etapas
+        """
+        return self.etapas.filter(tipo_etapa=TipoEtapa.FILA).first()
+
+    def get_etapas_por_tipo(self, tipo: str) -> models.QuerySet["EtapaFluxo"]:
+        """
+        Retorna as etapas do fluxo filtradas por tipo.
+
+        Args:
+            tipo: Tipo da etapa (FILA, TRABALHO, ESPERA, FINALIZACAO)
+
+        Returns:
+            QuerySet com as etapas do tipo especificado
+        """
+        return self.etapas.filter(tipo_etapa=tipo).order_by("ordem")
+
+
+class EtapaFluxo(models.Model):
+    """
+    Representa uma etapa/coluna no fluxo kanban de um departamento.
+    Cada etapa define um status possível para um atendimento.
+    """
+
+    id: models.AutoField = models.AutoField(primary_key=True)
+    fluxo: models.ForeignKey[FluxoAtendimento] = models.ForeignKey(
+        FluxoAtendimento,
+        on_delete=models.CASCADE,
+        related_name="etapas",
+        help_text="Fluxo ao qual esta etapa pertence"
+    )
+    nome: models.CharField[str] = models.CharField(
+        max_length=50,
+        help_text="Nome da etapa (ex: 'Solicitação de Orçamento')"
+    )
+    descricao: models.CharField[str | None] = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        help_text="Descrição opcional da etapa"
+    )
+    ordem: models.PositiveIntegerField = models.PositiveIntegerField(
+        help_text="Ordem da etapa no fluxo (menor número primeiro)"
+    )
+    cor: models.CharField[str] = models.CharField(
+        max_length=7,
+        default="#6B7280",
+        help_text="Cor hexadecimal para identificação visual (ex: #FF5733)"
+    )
+    tipo_etapa: models.CharField[str] = models.CharField(
+        max_length=20,
+        choices=TipoEtapa.choices,
+        default=TipoEtapa.TRABALHO,
+        help_text="Tipo da etapa para regras de negócio"
+    )
+    permite_atribuicao: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Indica se atendentes podem ser atribuídos nesta etapa"
+    )
+    automatico: models.BooleanField[bool] = models.BooleanField(
+        default=False,
+        help_text="Indica se o movimento para esta etapa é automático"
+    )
+    regras_transicao: models.JSONField[dict[str, Any]] = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Regras específicas para transição para esta etapa"
+    )
+    Campos obrigatorios para entrar nesta etapa
+    """
+    campos_obrigatorios: models.JSONField[list[str]] = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Lista de campos obrigatórios para entrar nesta etapa"
+    )
+    ativo: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Indica se a etapa está ativa no fluxo"
+    )
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Data de criação da etapa"
+    )
+
+    class Meta:
+        verbose_name = "Etapa do Fluxo"
+        verbose_name_plural = "Etapas do Fluxo"
+        db_table = "oraculo_etapa_fluxo"
+        unique_together = [["fluxo", "ordem"]]
+        ordering = ["fluxo", "ordem"]
+        indexes = [
+            models.Index(fields=["fluxo", "ordem"]),
+            models.Index(fields=["tipo_etapa"]),
+            models.Index(fields=["ativo"]),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.nome} - {self.fluxo.departamento.nome}"
+
+    @override
+    def clean(self) -> None:
+        """Validações específicas do modelo."""
+        super().clean()
+
+        # Validar formato da cor
+        if self.cor and not self.cor.startswith("#"):
+            self.cor = f"#{self.cor}"
+
+        # Garantir que a cor tenha 7 caracteres (#RRGGBB)
+        if self.cor and len(self.cor) == 4:
+            # Converter formato #RGB para #RRGGBB
+            self.cor = f"#{self.cor[1]}{self.cor[1]}{self.cor[2]}{self.cor[2]}{self.cor[3]}{self.cor[3]}"
+
+
+class MovimentoFluxo(models.Model):
+    """
+    Registra a movimentação de um atendimento entre as etapas do fluxo.
+    Mantém histórico completo para auditoria e análise.
+    """
+
+    id: models.AutoField = models.AutoField(primary_key=True)
+    atendimento: models.ForeignKey["atendimentos.Atendimento"] = models.ForeignKey(
+        "atendimentos.Atendimento",
+        on_delete=models.CASCADE,
+        related_name="movimentos_fluxo",
+        help_text="Atendimento que foi movido"
+    )
+    etapa_origem: models.ForeignKey[EtapaFluxo] = models.ForeignKey(
+        EtapaFluxo,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_saida",
+        help_text="Etapa de origem (None para novos atendimentos)"
+    )
+    etapa_destino: models.ForeignKey[EtapaFluxo] = models.ForeignKey(
+        EtapaFluxo,
+        on_delete=models.CASCADE,
+        related_name="movimentos_entrada",
+        help_text="Etapa para a qual o atendimento foi movido"
+    )
+    atendente_origem: models.ForeignKey[Atendente] = models.ForeignKey(
+        Atendente,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_origem",
+        help_text="Atendente que realizou o movimento (se aplicável)"
+    )
+    atendente_destino: models.ForeignKey[Atendente] = models.ForeignKey(
+        Atendente,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_destino",
+        help_text="Atendente que foi atribuído ao atendimento (se aplicável)"
+    )
+    motivo: models.TextField[str | None] = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Motivo da movimentação (opcional)"
+    )
+    dados_complementares: models.JSONField[dict[str, Any]] = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dados complementares sobre a movimentação"
+    )
+    automatico: models.BooleanField[bool] = models.BooleanField(
+        default=False,
+        help_text="Indica se o movimento foi automático"
+    )
+    data_movimento: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True,
+        help_text="Data e hora da movimentação"
+    )
+
+    class Meta:
+        verbose_name = "Movimento do Fluxo"
+        verbose_name_plural = "Movimentos do Fluxo"
+        db_table = "oraculo_movimento_fluxo"
+        ordering = ["-data_movimento"]
+        indexes = [
+            models.Index(fields=["atendimento", "-data_movimento"]),
+            models.Index(fields=["etapa_destino", "-data_movimento"]),
+            models.Index(fields=["data_movimento"]),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        origem = self.etapa_origem.nome if self.etapa_origem else "Novo"
+        destino = self.etapa_destino.nome if self.etapa_destino else "Desconhecido"
+        return f"{self.atendimento.id}: {origem} → {destino}"
+
+    @classmethod
+    def criar_movimento(
+        cls,
+        atendimento: "atendimentos.Atendimento",
+        etapa_destino: EtapaFluxo,
+        atendente_destino: Optional[Atendente] = None,
+        motivo: Optional[str] = None,
+        automatico: bool = False,
+        atendente_origem: Optional[Atendente] = None,
+        etapa_origem: Optional[EtapaFluxo] = None,
+    ) -> "MovimentoFluxo":
+        """
+        Cria um novo movimento de fluxo de forma centralizada.
+
+        Args:
+            atendimento: Atendimento sendo movido
+            etapa_destino: Nova etapa do atendimento
+            atendente_destino: Atendente que será atribuído (opcional)
+            motivo: Motivo da movimentação (opcional)
+            automatico: Se o movimento é automático
+            atendente_origem: Atendente que realizou o movimento (opcional)
+            etapa_origem: Etapa anterior do atendimento (opcional)
+
+        Returns:
+            MovimentoFluxo criado
+        """
+        # Se não informada etapa de origem, buscar a atual do atendimento
+        if not etapa_origem:
+            ultimo_movimento = atendimento.movimentos_fluxo.first()
+            if ultimo_movimento:
+                etapa_origem = ultimo_movimento.etapa_destino
+
+        # Criar o movimento
+        movimento = cls.objects.create(
+            atendimento=atendimento,
+            etapa_origem=etapa_origem,
+            etapa_destino=etapa_destino,
+            atendente_origem=atendente_origem,
+            atendente_destino=atendente_destino,
+            motivo=motivo,
+            automatico=automatico,
+        )
+
+        # Atualizar a etapa atual do atendimento
+        atendimento.etapa_atual = etapa_destino
+
+        # Atualizar atendente se informado
+        if atendente_destino:
+            atendimento.atendente_humano = atendente_destino
+            atendente_destino.data_ultima_atribuicao = timezone.now()
+            atendente_destino.save(update_fields=["data_ultima_atribuicao"])
+
+        atendimento.save(update_fields=["etapa_atual", "atendente_humano"])
+
+        return movimento

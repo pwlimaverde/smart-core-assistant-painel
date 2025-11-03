@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "rolepermissions",
     "django_q",
     "rest_framework",
+    "corsheaders",
     "smart_core_assistant_painel.app.ui.core",
     "smart_core_assistant_painel.app.ui.usuarios",
     "smart_core_assistant_painel.app.ui.operacional",
@@ -93,6 +94,7 @@ ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -270,3 +272,28 @@ SIMPLE_JWT = {
     ),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
+
+# CORS configuration
+def _get_cors_allowed_origins() -> list[str]:
+    """Lista de origens permitidas para CORS.
+
+    Lê da variável de ambiente `CORS_ALLOWED_ORIGINS` separada por vírgulas.
+    Em desenvolvimento, libera localhost:4200 por padrão para o Flutter web.
+    """
+    origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
+    if origins_env:
+        return [o.strip() for o in origins_env.split(",") if o.strip()]
+    # Defaults para ambiente de desenvolvimento
+    return [
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ]
+
+CORS_ALLOWED_ORIGINS = _get_cors_allowed_origins()
+CORS_ALLOW_CREDENTIALS = True
+
+# Para eventuais POST vindos do frontend
+CSRF_TRUSTED_ORIGINS = [
+    o.replace("http://", "https://") if o.startswith("http://") else o
+    for o in CORS_ALLOWED_ORIGINS
+]

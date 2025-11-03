@@ -209,6 +209,10 @@ def kanban_departamento(
         csrf_token = get_token(request)
         csrf_hidden = f'<input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">'  # nosec - token gerado pelo Django
         assunto_value = escape(atendimento.assunto or "")
+        # Valores de exibição para evitar uso de expressões com aspas em f-strings
+        contato_nome_disp = contato_nome if contato_nome else "-"
+        contato_tel_disp = contato_tel if contato_tel else "-"
+        assunto_disp = assunto_value if assunto_value else "-"
         active_departamentos_qs = Departamento.objects.filter(
             ativo=True
         ).order_by("nome")
@@ -632,6 +636,194 @@ def kanban_departamento(
         "statuses": list(StatusAtendimento),
         # Dropdown de departamentos limitado aos que o usuário pode acessar
         "departamentos": allowed_departamentos_qs,
+    }
+
+    return render(request, "atendimentos/kanban.html", context)
+
+
+def kanban_departamento_public(
+    request: HttpRequest, departamento_id: int
+) -> HttpResponse:
+    """Renderiza a versão pública (read-only) do Kanban.
+
+    Comentário: Esta view não exige autenticação e oculta ações, arrastar
+    e edição. É útil para demonstrações ou monitores de acompanhamento.
+    """
+    departamento = get_object_or_404(Departamento, id=departamento_id)
+
+    # Suporte a resposta parcial para modal no modo público (somente leitura)
+    if request.method == "GET" and request.GET.get("partial") == "1":
+        atendimento_id_str: str = request.GET.get("atendimento_id", "0")
+        try:
+            atendimento_id = int(atendimento_id_str)
+        except ValueError:
+            atendimento_id = 0
+        if atendimento_id <= 0:
+            return HttpResponse(
+                "<p>Atendimento inválido.</p>",
+                content_type="text/html",
+                status=400,
+            )
+
+        atendimento = get_object_or_404(
+            Atendimento.objects.select_related(
+                "contato", "atendente_humano", "departamento"
+            ),
+            id=atendimento_id,
+        )
+
+        # Campos sanitizados para evitar XSS
+        contato_nome = escape(
+            getattr(atendimento.contato, "nome_contato", "") or ""
+        )
+        contato_tel = escape(
+            getattr(atendimento.contato, "telefone", "") or ""
+        )
+        agente_nome = escape(
+            getattr(getattr(atendimento, "atendente_humano", None), "nome", "")
+            or "-"
+        )
+        dep_nome = escape(getattr(atendimento.departamento, "nome", "") or "-")
+        status_value = escape(str(atendimento.status))
+        data_inicio = escape(str(getattr(atendimento, "data_inicio", "") or "-"))
+        data_ultima = escape(
+            str(getattr(atendimento, "data_ultima_mensagem", "") or "-")
+        )
+        data_fim = escape(str(getattr(atendimento, "data_fim", "") or "-"))
+        assunto_value = escape(atendimento.assunto or "")
+
+        html = f"""
+        <div class=\"space-y-2\">
+          <div class=\"flex items-center justify-between\">
+            <h3 class=\"text-lg font-semibold\">Atendimento #{atendimento.id}</h3>
+            <span class=\"text-sm text-gray-500\">Departamento: {dep_nome}</span>
+          </div>
+          <div class=\"grid grid-cols-2 gap-4\">
+            <div>
+              <div class=\"text-xs text-gray-500\">Contato</div>
+              <div class=\"text-sm\">{contato_nome_disp}<span class=\"text-gray-400\"> • </span>{contato_tel_disp}</div>
+            </div>
+            <div>
+              <div class=\"text-xs text-gray-500\">Status</div>
+              <div class=\"text-sm\">{status_value}</div>
+            </div>
+            <div>
+              <div class=\"text-xs text-gray-500\">Atendente</div>
+              <div class=\"text-sm\">{agente_nome}</div>
+            </div>
+            <div>
+              <div class=\"text-xs text-gray-500\">Datas</div>
+              <div class=\"text-sm\">Início: {data_inicio}</div>
+              <div class=\"text-sm\">Última: {data_ultima}</div>
+              <div class=\"text-sm\">Fim: {data_fim}</div>
+            </div>
+            <div>
+              <div class=\"text-xs text-gray-500\">Assunto</div>
+              <div class=\"text-sm\">{assunto_disp}</div>
+            </div>
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Mensagens</div>
+            <div class=\"space-y-2 max-h-64 overflow-y-auto\">
+        """
+        for m in atendimento.mensagens.select_related().order_by("timestamp"):
+            remetente_label = escape(
+                dict(TipoRemetente.choices).get(m.remetente, m.remetente)
+            )
+            conteudo_msg = escape(m.conteudo or "")
+            ts = escape(m.timestamp.strftime("%d/%m/%Y %H:%M"))
+            html += (
+                f'<div class="p-2 rounded bg-gray-50"><div class="text-xs '
+                f'text-gray-500">{ts} • {remetente_label}</div><div '
+                f'class="text-sm">{conteudo_msg}</div></div>'
+            )
+        html += """
+            </div>
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Histórico de status</div>
+            <div class=\"space-y-2 max-h-48 overflow-y-auto\">
+        """
+        historico = atendimento.historico_status or []
+        if isinstance(historico, list) and historico:
+            for h in historico:
+                ts = escape(str(h.get("timestamp", "")))
+                st = escape(str(h.get("status", "")))
+                obs = escape(str(h.get("observacao", "")))
+                html += f'<div class="text-xs text-gray-500">{ts} • {st}</div>'
+                if obs:
+                    html += f'<div class="text-sm">{obs}</div>'
+                html += '<div class="h-px bg-gray-100"></div>'
+        else:
+            html += '<div class="text-sm text-gray-500">Sem histórico registrado.</div>'
+        html += """
+            </div>
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Contexto da conversa</div>
+        """
+        ctx = atendimento.contexto_conversa or {}
+        try:
+            ctx_json = json.dumps(ctx, ensure_ascii=False, indent=2)
+        except Exception:
+            ctx_json = escape(str(ctx))
+        html += (
+            f'<pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">'
+            f'{escape(ctx_json)}</pre>'
+        )
+        html += """
+          </div>
+          <div class=\"pt-4 mt-4 border-t\">
+            <div class=\"text-xs text-gray-500 mb-2\">Tags</div>
+            <div class=\"flex flex-wrap gap-2\">
+        """
+        tags_list = atendimento.tags or []
+        if isinstance(tags_list, list) and tags_list:
+            for t in tags_list:
+                tag_str = escape(str(t))
+                html += (
+                    f'<span class="px-2 py-0.5 bg-gray-200 rounded text-xs">'
+                    f'{tag_str}</span>'
+                )
+        else:
+            html += '<span class="text-xs text-gray-500">Sem tags</span>'
+        html += """
+            </div>
+          </div>
+        </div>
+        """
+        return HttpResponse(html, content_type="text/html")
+
+    # Consulta base: todos os atendimentos do departamento (read-only)
+    base_qs = (
+        Atendimento.objects.filter(departamento=departamento)
+        .select_related("contato", "atendente_humano")
+        .order_by("-data_ultima_mensagem", "-data_inicio")
+    )
+
+    context: dict[str, Any] = {
+        "departamento": departamento,
+        "current_agent": None,
+        "is_manager": False,
+        "columns": {
+            "fila": base_qs.filter(
+                status=StatusAtendimento.FILA,
+                atendente_humano__isnull=True,
+            ),
+            "em_atendimento": base_qs.filter(
+                status=StatusAtendimento.EM_ATENDIMENTO
+            ),
+            "aguardando_retorno": base_qs.filter(
+                status=StatusAtendimento.AGUARDANDO_RETORNO
+            ),
+            "resolvidos": base_qs.filter(status=StatusAtendimento.RESOLVIDO),
+            "cancelados": base_qs.filter(status=StatusAtendimento.CANCELADO),
+        },
+        "statuses": list(StatusAtendimento),
+        "departamentos": Departamento.objects.filter(ativo=True).order_by(
+            "nome"
+        ),
+        "public_mode": True,
     }
 
     return render(request, "atendimentos/kanban.html", context)

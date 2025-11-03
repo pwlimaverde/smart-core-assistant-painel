@@ -6,26 +6,27 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.indexes import Index
 from django.contrib.auth.models import User
+from django.utils import timezone
 from loguru import logger
 
 
 def validate_telefone(value: str) -> None:
     """
-    Valida se o número de telefone está no formato correto.
+    Valida se o numero de telefone esta no formato correto.
     """
     telefone_limpo: str = re.sub(r"\D", "", value)
     if len(telefone_limpo) < 10 or len(telefone_limpo) > 15:
         raise ValidationError(
-            "Número de telefone deve ter entre 10 e 15 dígitos."
+            "Numero de telefone deve ter entre 10 e 15 digitos."
         )
     if not telefone_limpo.isdigit():
-        raise ValidationError("Número de telefone deve conter apenas números.")
+        raise ValidationError("Numero de telefone deve conter apenas numeros.")
 
 
 def validate_api_key(value: str) -> None:
     """Valida o formato da chave de API da Evolution API."""
     if not value:
-        raise ValidationError("A chave de API não pode estar vazia.")
+        raise ValidationError("A chave de API nao pode estar vazia.")
     if len(value) < 8:
         raise ValidationError(
             "A chave de API deve ter pelo menos 8 caracteres."
@@ -33,18 +34,18 @@ def validate_api_key(value: str) -> None:
 
 
 def validate_telefone_instancia(value: str) -> None:
-    """Valida o formato do telefone da instância da Evolution API."""
+    """Valida o formato do telefone da instancia da Evolution API."""
     if not value:
-        raise ValidationError("O telefone da instância é obrigatório.")
+        raise ValidationError("O telefone da instancia e obrigatorio.")
     telefone_limpo: str = re.sub(r"\D", "", value)
     if len(telefone_limpo) < 10:
-        raise ValidationError("Telefone da instância inválido.")
+        raise ValidationError("Telefone da instancia invalido.")
     if len(telefone_limpo) > 15:
-        raise ValidationError("O telefone não pode ter mais de 15 dígitos.")
+        raise ValidationError("O telefone nao pode ter mais de 15 digitos.")
 
 
 class Departamento(models.Model):
-    """Modelo para departamentos da organização."""
+    """Modelo para departamentos da organizacao."""
 
     id: models.AutoField = models.AutoField(primary_key=True)
     nome: models.CharField[str] = models.CharField(max_length=100, unique=True)
@@ -93,10 +94,10 @@ class Departamento(models.Model):
 
 
 class Atendente(models.Model):
-    """Modelo para atendentes humanos da organização."""
+    """Modelo para atendentes humanos da organizacao."""
 
     id: models.AutoField = models.AutoField(
-        primary_key=True, help_text="Chave primária do registro"
+        primary_key=True, help_text="Chave primaria do registro"
     )
     slug: models.SlugField[str | None] = models.SlugField(
         max_length=250, unique=True, blank=True, null=True, default=""
@@ -107,13 +108,13 @@ class Atendente(models.Model):
         validators=[validate_telefone],
         null=True,
         blank=True,
-        help_text="Número de telefone do atendente (usado como sessão única)",
+        help_text="Numero de telefone do atendente (usado como sessao unica)",
     )
     nome: models.CharField[str] = models.CharField(
         max_length=100, help_text="Nome completo do atendente"
     )
     cargo: models.CharField[str] = models.CharField(
-        max_length=100, help_text="Cargo/função do atendente"
+        max_length=100, help_text="Cargo/funcao do atendente"
     )
     departamento: models.ForeignKey[Optional["Departamento"]] = (
         models.ForeignKey(
@@ -134,39 +135,39 @@ class Atendente(models.Model):
         blank=True,
         null=True,
         related_name="atendente_humano",
-        help_text="Usuário do Django associado ao atendente (opcional)",
+        help_text="Usuario do Django associado ao atendente (opcional)",
     )
     usuario_sistema: models.CharField[str | None] = models.CharField(
         max_length=50,
         blank=True,
         null=True,
-        help_text="Usuário do sistema para login (se aplicável)",
+        help_text="Usuario do sistema para login (se aplicavel)",
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
-        default=True, help_text="Indica se o atendente está ativo"
+        default=True, help_text="Indica se o atendente esta ativo"
     )
     disponivel: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Se o atendente está aceitando novos atendimentos",
+        help_text="Se o atendente esta aceitando novos atendimentos",
     )
     max_atendimentos_simultaneos: models.PositiveIntegerField[int] = (
         models.PositiveIntegerField(
             default=5,
-            help_text="Capacidade máxima de atendimentos simultâneos",
+            help_text="Capacidade maxima de atendimentos simultaneos",
         )
     )
-    # Campo para registro da última atribuição, usado para ordenação (round-robin / fairness)
+    # Campo para registro da ultima atribuicao, usado para ordenacao (round-robin / fairness)
     data_ultima_atribuicao: models.DateTimeField[datetime | None] = (
         models.DateTimeField(
             blank=True,
             null=True,
-            help_text="Data e hora da última atribuição de um novo atendimento",
+            help_text="Data e hora da ultima atribuicao de um novo atendimento",
         )
     )
     horario_trabalho: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Horários de trabalho do atendente",
+        help_text="Horarios de trabalho do atendente",
     )
     especialidades: models.JSONField[list[str]] = models.JSONField(
         default=list, blank=True, help_text="Especialidades do atendente"
@@ -174,13 +175,13 @@ class Atendente(models.Model):
     metadados: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Informações adicionais do atendente (configurações, preferências, etc.)",
+        help_text="Informacoes adicionais do atendente (configuracoes, preferencias, etc.)",
     )
     data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de cadastro no sistema"
     )
     ultima_atividade: models.DateTimeField[datetime] = models.DateTimeField(
-        auto_now=True, help_text="Data da última atividade no sistema"
+        auto_now=True, help_text="Data da ultima atividade no sistema"
     )
 
     class Meta:
@@ -204,7 +205,7 @@ class Atendente(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         from django.utils.text import slugify
 
-        # Gera slug automaticamente se não existir
+        # Gera slug automaticamente se nao existir
         if not self.slug:
             base_slug = slugify(self.nome)
             suffix = 1
@@ -231,9 +232,9 @@ class Atendente(models.Model):
     def get_atendimentos_ativos(self) -> int:
         """Retorna a quantidade de atendimentos ativos deste atendente.
 
-        "Atendimentos ativos" são considerados aqueles cujo status ainda não
-        é finalizador (ou seja, não "resolvido" nem "cancelado"). Para evitar
-        import circular, a enum de status é importada localmente.
+        "Atendimentos ativos" sao considerados aqueles cujo status ainda nao
+        e finalizador (ou seja, nao "resolvido" nem "cancelado"). Para evitar
+        import circular, a enum de status e importada localmente.
         """
         # Import local para evitar import circular com app de atendimentos.
         from smart_core_assistant_painel.app.ui.atendimentos.models import (
@@ -248,7 +249,7 @@ class Atendente(models.Model):
         return self.atendimentos.filter(status__in=ativos).count()
 
     def is_available(self) -> bool:
-        """Verifica se o atendente está disponível considerando capacidade atual."""
+        """Verifica se o atendente esta disponivel considerando capacidade atual."""
         if not self.ativo or not self.disponivel:
             return False
         return (
@@ -261,10 +262,10 @@ class Atendente(models.Model):
 
 
 class WhatsAppInstance(models.Model):
-    """Modelo para instâncias WhatsApp centralizando credenciais.
+    """Modelo para instancias WhatsApp centralizando credenciais.
 
     - Substitui o uso direto de credenciais em Departamento.
-    - Permite múltiplas instâncias por departamento.
+    - Permite multiplas instancias por departamento.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -274,13 +275,13 @@ class WhatsAppInstance(models.Model):
         related_name="whatsapp_instances",
         null=True,
         blank=True,
-        help_text="Departamento associado a esta instância",
+        help_text="Departamento associado a esta instancia",
     )
     phone_number: models.CharField[str | None] = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone_instancia],
-        help_text="Telefone vinculado à instância",
+        help_text="Telefone vinculado a instancia",
         blank=True,
         null=True,
     )
@@ -289,13 +290,13 @@ class WhatsAppInstance(models.Model):
         blank=True,
         null=True,
         unique=True,
-        help_text="ID único da instância no provedor",
+        help_text="ID unico da instancia no provedor",
     )
     api_key: models.CharField[str] = models.CharField(
         max_length=100,
         unique=True,
         validators=[validate_api_key],
-        help_text="Chave de API para autenticação",
+        help_text="Chave de API para autenticacao",
     )
     provider: models.CharField[str] = models.CharField(
         max_length=30,
@@ -309,32 +310,32 @@ class WhatsAppInstance(models.Model):
         blank=True,
         null=True,
         related_name="whatsapp_instance",
-        help_text="Atendente dono desta instância (opcional)",
+        help_text="Atendente dono desta instancia (opcional)",
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Se a instância está ativa",
+        help_text="Se a instancia esta ativa",
     )
     metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Metadados adicionais da instância",
+        help_text="Metadados adicionais da instancia",
     )
     data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
-        help_text="Data de criação do registro",
+        help_text="Data de criacao do registro",
     )
     ultima_validacao: models.DateTimeField[datetime | None] = (
         models.DateTimeField(
             blank=True,
             null=True,
-            help_text="Data da última validação de credenciais",
+            help_text="Data da ultima validacao de credenciais",
         )
     )
 
     class Meta:
-        verbose_name = "Instância WhatsApp"
-        verbose_name_plural = "Instâncias WhatsApp"
+        verbose_name = "Instancia WhatsApp"
+        verbose_name_plural = "Instancias WhatsApp"
         ordering = ["-data_criacao"]
         db_table = "oraculo_whatsapp_instance"
         indexes = [
@@ -360,28 +361,28 @@ class WhatsAppInstance(models.Model):
         if self.phone_number:
             validate_telefone_instancia(self.phone_number)
 
-        # Validação de exclusividade: OU departamento OU owner, nunca ambos ou nenhum
+        # Validacao de exclusividade: OU departamento OU owner, nunca ambos ou nenhum
         if self.departamento and self.owner:
             raise ValidationError(
-                "Uma instância deve estar vinculada a UM departamento OU UM atendente, nunca ambos."
+                "Uma instancia deve estar vinculada a UM departamento OU UM atendente, nunca ambos."
             )
         if not self.departamento and not self.owner:
             raise ValidationError(
-                "Uma instância deve estar vinculada a pelo menos UM departamento ou UM atendente."
+                "Uma instancia deve estar vinculada a pelo menos UM departamento ou UM atendente."
             )
 
-        # Validação de consistência se ambos estiverem preenchidos (caso a regra mude no futuro)
+        # Validacao de consistencia se ambos estiverem preenchidos (caso a regra mude no futuro)
         if self.owner and self.owner.departamento and self.departamento:
             if self.owner.departamento_id != self.departamento_id:
                 raise ValidationError(
-                    "Atendente dono deve pertencer ao mesmo departamento da instância."
+                    "Atendente dono deve pertencer ao mesmo departamento da instancia."
                 )
 
     @property
     def atendentes(self) -> models.QuerySet["Atendente"]:
-        """Retorna QuerySet de atendentes do departamento desta instância.
+        """Retorna QuerySet de atendentes do departamento desta instancia.
 
-        Caso a instância não esteja vinculada a um departamento, retorna um QuerySet vazio.
+        Caso a instancia nao esteja vinculada a um departamento, retorna um QuerySet vazio.
         """
         # Import local para evitar ciclos
         from .models import Atendente
@@ -392,7 +393,7 @@ class WhatsAppInstance(models.Model):
 
     @property
     def tipo_instancia(self) -> str:
-        """Retorna o tipo da instância para lógica de negócio."""
+        """Retorna o tipo da instancia para logica de negocio."""
         if self.departamento:
             return "departamental"
         elif self.owner:
@@ -401,7 +402,7 @@ class WhatsAppInstance(models.Model):
 
     @property
     def responsavel_principal(self):
-        """Retorna o responsável principal para roteamento."""
+        """Retorna o responsavel principal para roteamento."""
         if self.owner:
             return self.owner
         elif self.departamento:
@@ -411,22 +412,22 @@ class WhatsAppInstance(models.Model):
     def rotear_atendimento(
         self, mensagem: dict[str, Any]
     ) -> Optional["Atendente"]:
-        """Roteia mensagem baseada no tipo de instância.
+        """Roteia mensagem baseada no tipo de instancia.
 
         Args:
-            mensagem: Dicionário com dados da mensagem recebida
+            mensagem: Dicionario com dados da mensagem recebida
 
         Returns:
-            Atendente ou None se não houver atendente disponível
+            Atendente ou None se nao houver atendente disponivel
         """
         if self.tipo_instancia == "individual":
-            # Instância individual: atribui diretamente ao owner
+            # Instancia individual: atribui diretamente ao owner
             if self.owner and self.owner.is_available():
                 return self.owner
             return None
 
         elif self.tipo_instancia == "departamental":
-            # Instância departamental: usa lógica de distribuição existente
+            # Instancia departamental: usa logica de distribuicao existente
             return self.selecionar_proximo_atendente()
 
         return None
@@ -435,17 +436,17 @@ class WhatsAppInstance(models.Model):
     def validar_api_key(
         cls, data: dict[str, Any]
     ) -> Optional["WhatsAppInstance"]:
-        """Valida credenciais do webhook e retorna a instância correspondente.
+        """Valida credenciais do webhook e retorna a instancia correspondente.
 
-        Preferência:
+        Preferencia:
         - Se `instance_id` estiver presente, valida primeiro por ele.
-        - Senão, tenta por `phone_number` a partir de `instance`.
+        - Senao, tenta por `phone_number` a partir de `instance`.
         """
         api_key = data.get("apikey")
         instance_id = data.get("instance_id")
         instancia_ou_telefone = data.get("instance")
         if not api_key:
-            logger.warning("Chave de API não fornecida no webhook.")
+            logger.warning("Chave de API nao fornecida no webhook.")
             return None
         # Tenta por instance_id primeiro
         if instance_id:
@@ -455,11 +456,11 @@ class WhatsAppInstance(models.Model):
                 )
             except cls.DoesNotExist:
                 logger.info(
-                    "Credenciais por instance_id não encontradas; tentando por phone_number."
+                    "Credenciais por instance_id nao encontradas; tentando por phone_number."
                 )
         # Fallback: tenta por phone_number
         if not instancia_ou_telefone:
-            logger.warning("Instância/telefone não fornecido no webhook.")
+            logger.warning("Instancia/telefone nao fornecido no webhook.")
             return None
         try:
             return cls.objects.get(
@@ -467,19 +468,19 @@ class WhatsAppInstance(models.Model):
             )
         except cls.DoesNotExist:
             logger.warning(
-                f"Acesso inválido: API key/instância não encontrada ({instancia_ou_telefone})."
+                f"Acesso invalido: API key/instancia nao encontrada ({instancia_ou_telefone})."
             )
             return None
 
     def selecionar_proximo_atendente(self) -> Optional["Atendente"]:
-        """Seleciona o próximo atendente disponível por round-robin simples.
+        """Seleciona o proximo atendente disponivel por round-robin simples.
 
-        Critérios:
-        - Atendentes ativos e disponíveis no departamento.
-        - Ordenação crescente por `data_ultima_atribuicao` (nulos primeiro), depois por `id`.
-        - Escolhe o primeiro que ainda não atingiu sua capacidade máxima.
+        Criterios:
+        - Atendentes ativos e disponiveis no departamento.
+        - Ordenacao crescente por `data_ultima_atribuicao` (nulos primeiro), depois por `id`.
+        - Escolhe o primeiro que ainda nao atingiu sua capacidade maxima.
         """
-        # Se não houver departamento vinculado, não há atendentes para selecionar
+        # Se nao houver departamento vinculado, nao ha atendentes para selecionar
         if not self.departamento:
             return None
 
@@ -499,18 +500,18 @@ class WhatsAppInstance(models.Model):
 
 
 class TipoEtapa(models.TextChoices):
-    """Tipos de etapas possíveis em um fluxo de atendimento."""
+    """Tipos de etapas possiveis em um fluxo de atendimento."""
 
     FILA = "fila", "Fila de Entrada"
     TRABALHO = "trabalho", "Em Trabalho"
     ESPERA = "espera", "Aguardando Resposta"
-    FINALIZACAO = "finalizacao", "Finalização"
+    FINALIZACAO = "finalizacao", "Finalizacao"
 
 
 class FluxoAtendimento(models.Model):
     """
     Define o fluxo de trabalho personalizado para um departamento.
-    Cada departamento pode ter seu próprio fluxo com etapas específicas.
+    Cada departamento pode ter seu proprio fluxo com etapas especificas.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -527,19 +528,19 @@ class FluxoAtendimento(models.Model):
     descricao: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
-        help_text="Descrição detalhada do fluxo de trabalho"
+        help_text="Descricao detalhada do fluxo de trabalho"
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Indica se o fluxo está ativo"
+        help_text="Indica se o fluxo esta ativo"
     )
     data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
-        help_text="Data de criação do fluxo"
+        help_text="Data de criacao do fluxo"
     )
     data_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now=True,
-        help_text="Data da última atualização do fluxo"
+        help_text="Data da ultima atualizacao do fluxo"
     )
 
     class Meta:
@@ -557,7 +558,7 @@ class FluxoAtendimento(models.Model):
         Retorna a etapa inicial do fluxo (primeira na ordem).
 
         Returns:
-            EtapaFluxo inicial ou None se não houver etapas
+            EtapaFluxo inicial ou None se nao houver etapas
         """
         return self.etapas.filter(tipo_etapa=TipoEtapa.FILA).first()
 
@@ -577,7 +578,7 @@ class FluxoAtendimento(models.Model):
 class EtapaFluxo(models.Model):
     """
     Representa uma etapa/coluna no fluxo kanban de um departamento.
-    Cada etapa define um status possível para um atendimento.
+    Cada etapa define um status possivel para um atendimento.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -589,55 +590,53 @@ class EtapaFluxo(models.Model):
     )
     nome: models.CharField[str] = models.CharField(
         max_length=50,
-        help_text="Nome da etapa (ex: 'Solicitação de Orçamento')"
+        help_text="Nome da etapa (ex: 'Solicitacao de Orcamento')"
     )
     descricao: models.CharField[str | None] = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        help_text="Descrição opcional da etapa"
+        help_text="Descricao opcional da etapa"
     )
     ordem: models.PositiveIntegerField = models.PositiveIntegerField(
-        help_text="Ordem da etapa no fluxo (menor número primeiro)"
+        help_text="Ordem da etapa no fluxo (menor numero primeiro)"
     )
     cor: models.CharField[str] = models.CharField(
         max_length=7,
         default="#6B7280",
-        help_text="Cor hexadecimal para identificação visual (ex: #FF5733)"
+        help_text="Cor hexadecimal para identificacao visual (ex: #FF5733)"
     )
     tipo_etapa: models.CharField[str] = models.CharField(
         max_length=20,
         choices=TipoEtapa.choices,
         default=TipoEtapa.TRABALHO,
-        help_text="Tipo da etapa para regras de negócio"
+        help_text="Tipo da etapa para regras de negocio"
     )
     permite_atribuicao: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Indica se atendentes podem ser atribuídos nesta etapa"
+        help_text="Indica se atendentes podem ser atribuidos nesta etapa"
     )
     automatico: models.BooleanField[bool] = models.BooleanField(
         default=False,
-        help_text="Indica se o movimento para esta etapa é automático"
+        help_text="Indica se o movimento para esta etapa e automatico"
     )
     regras_transicao: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Regras específicas para transição para esta etapa"
+        help_text="Regras especificas para transicao para esta etapa"
     )
-    Campos obrigatorios para entrar nesta etapa
-    """
     campos_obrigatorios: models.JSONField[list[str]] = models.JSONField(
         default=list,
         blank=True,
-        help_text="Lista de campos obrigatórios para entrar nesta etapa"
+        help_text="Lista de campos obrigatorios para entrar nesta etapa"
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Indica se a etapa está ativa no fluxo"
+        help_text="Indica se a etapa esta ativa no fluxo"
     )
     data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
-        help_text="Data de criação da etapa"
+        help_text="Data de criacao da etapa"
     )
 
     class Meta:
@@ -658,7 +657,7 @@ class EtapaFluxo(models.Model):
 
     @override
     def clean(self) -> None:
-        """Validações específicas do modelo."""
+        """Validacoes especificas do modelo."""
         super().clean()
 
         # Validar formato da cor
@@ -673,8 +672,8 @@ class EtapaFluxo(models.Model):
 
 class MovimentoFluxo(models.Model):
     """
-    Registra a movimentação de um atendimento entre as etapas do fluxo.
-    Mantém histórico completo para auditoria e análise.
+    Registra a movimentacao de um atendimento entre as etapas do fluxo.
+    Mantem historico completo para auditoria e analise.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -704,7 +703,7 @@ class MovimentoFluxo(models.Model):
         null=True,
         blank=True,
         related_name="movimentos_origem",
-        help_text="Atendente que realizou o movimento (se aplicável)"
+        help_text="Atendente que realizou o movimento (se aplicavel)"
     )
     atendente_destino: models.ForeignKey[Atendente] = models.ForeignKey(
         Atendente,
@@ -712,25 +711,32 @@ class MovimentoFluxo(models.Model):
         null=True,
         blank=True,
         related_name="movimentos_destino",
-        help_text="Atendente que foi atribuído ao atendimento (se aplicável)"
+        help_text="Atendente que foi atribuido ao atendimento (se aplicavel)"
     )
     motivo: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
-        help_text="Motivo da movimentação (opcional)"
+        help_text="Motivo da movimentacao (opcional)"
     )
     dados_complementares: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Dados complementares sobre a movimentação"
+        help_text="Dados complementares sobre a movimentacao"
     )
     automatico: models.BooleanField[bool] = models.BooleanField(
         default=False,
-        help_text="Indica se o movimento foi automático"
+        help_text="Indica se o movimento foi automatico"
     )
     data_movimento: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True,
-        help_text="Data e hora da movimentação"
+        help_text="Data e hora da movimentacao"
+    )
+    duracao_segundos: models.PositiveIntegerField[int | None] = (
+        models.PositiveIntegerField(
+            blank=True,
+            null=True,
+            help_text="Duracao em segundos da etapa anterior (para calculos de SLA)"
+        )
     )
 
     class Meta:
@@ -767,20 +773,25 @@ class MovimentoFluxo(models.Model):
         Args:
             atendimento: Atendimento sendo movido
             etapa_destino: Nova etapa do atendimento
-            atendente_destino: Atendente que será atribuído (opcional)
-            motivo: Motivo da movimentação (opcional)
-            automatico: Se o movimento é automático
+            atendente_destino: Atendente que sera atribuido (opcional)
+            motivo: Motivo da movimentacao (opcional)
+            automatico: Se o movimento e automatico
             atendente_origem: Atendente que realizou o movimento (opcional)
             etapa_origem: Etapa anterior do atendimento (opcional)
 
         Returns:
             MovimentoFluxo criado
         """
-        # Se não informada etapa de origem, buscar a atual do atendimento
+        # Se nao informada etapa de origem, buscar a atual do atendimento
+        duracao_segundos = None
         if not etapa_origem:
             ultimo_movimento = atendimento.movimentos_fluxo.first()
             if ultimo_movimento:
                 etapa_origem = ultimo_movimento.etapa_destino
+                # Calcular duracao desde o ultimo movimento
+                agora = timezone.now()
+                if ultimo_movimento.data_movimento:
+                    duracao_segundos = int((agora - ultimo_movimento.data_movimento).total_seconds())
 
         # Criar o movimento
         movimento = cls.objects.create(
@@ -791,6 +802,7 @@ class MovimentoFluxo(models.Model):
             atendente_destino=atendente_destino,
             motivo=motivo,
             automatico=automatico,
+            duracao_segundos=duracao_segundos,
         )
 
         # Atualizar a etapa atual do atendimento

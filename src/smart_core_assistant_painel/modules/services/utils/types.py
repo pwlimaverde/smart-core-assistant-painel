@@ -16,7 +16,9 @@ from py_return_success_or_error import (
     UsecaseBaseCallData,
 )
 
-from services.features.unifield_data_services.domain.interface import UnifiedDataService
+from ..features.unifield_data_services.domain.interface import (
+    UnifiedDataService,
+)
 
 from ..features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,

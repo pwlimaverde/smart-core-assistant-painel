@@ -81,13 +81,13 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.ui.atendimentos",
     "smart_core_assistant_painel.app.ui.treinamento",
     "smart_core_assistant_painel.app.appflowy_adapter",
-    # "smart_core_assistant_painel.app.notion_sync",
+    # Reabilitado: sincronização com Notion e plataformas externas
+    "smart_core_assistant_painel.app.notion_sync",
 ]
 
-# Flag global para desativar integrações Notion durante a nova implementação.
-# Esta constante serve apenas como documentação/guia para futuras verificações
-# condicionais, mantendo o app fora de INSTALLED_APPS.
-NOTION_SYNC_ENABLED: bool = False
+# Flag informativa de habilitação do módulo de sincronização Notion.
+# Observação: usada apenas como documentação; verifique configs por app.
+NOTION_SYNC_ENABLED: bool = True
 
 ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
 

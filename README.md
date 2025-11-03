@@ -203,6 +203,37 @@ result = send_whatsapp_message(
 )
 ```
 
+### Integração Notion (notion_sync)
+- Habilitado via `INSTALLED_APPS` em `src/smart_core_assistant_painel/app/ui/core/settings.py`.
+- Configure `NOTION_TOKEN` e `NOTION_PAGE_ID` em `.env` (veja `.env.example`).
+- Aplique migrações e inicialize as configurações das databases.
+
+#### Passos de Configuração
+- Copie e edite seu `.env`:
+  - `NOTION_TOKEN`: token da integração (Notion → My Integrations).
+  - `NOTION_PAGE_ID`: ID da página pai onde criar databases.
+  - Opcional: `NOTION_API_VERSION` e `NOTION_TIMEOUT` (veja `temp/.env.example`).
+- Aplique migrações:
+  - `uv run task migrate`
+- Opcional: use comandos para preparar schemas iniciais:
+  - Departamentos/Atendentes:
+    `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_notion_databases --update`
+  - Atendimentos/Mensagens:
+    `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_atendimento_database`
+- Para criar databases diretamente no Notion com relacionamentos, use o script:
+  - `uv run python src/smart_core_assistant_painel/app/ui/manage.py shell < src/smart_core_assistant_painel/app/notion_sync/scripts/script_constructor_notion.py`
+
+#### Verificação
+- No Django Admin: verifique `NotionDatabaseConfig` e confirme:
+  - `notion_database_id` e `data_source_id` preenchidos.
+  - `sync_enabled` como verdadeiro.
+- Ao salvar modelos (Contato, Cliente, Departamento, Atendente,
+  Atendimento, Mensagem), os signals disparam sincronização.
+
+#### Testes
+- Recomenda-se executar os testes no Docker:
+  - `uv run task test-docker`
+
 ## Licença
 
 MIT License

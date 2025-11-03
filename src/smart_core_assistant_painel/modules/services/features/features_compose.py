@@ -1,3 +1,15 @@
+from py_return_success_or_error import (ErrorReturn, SuccessReturn, ReturnSuccessOrError)
+from ..utils.erros import UnifieldDataServicesError
+from ..utils.types import UDSData, UDSUsecase
+from ..utils.parameters import UnifieldDataServicesParameters
+from .unifield_data_services.datasource.unifield_data_services_datasource import UnifieldDataServicesDatasource
+from .unifield_data_services.domain.usecase.unifield_data_services_usecase import (
+    UnifieldDataServicesUseCase,
+)
+from .unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
+)
+
 from py_return_success_or_error import (
     ErrorReturn,
     NoParams,
@@ -109,3 +121,31 @@ class FeaturesCompose:
             SERVICEHUB.set_whatsapp_service(data.result)
         if isinstance(data, ErrorReturn):
             raise data.result
+
+    @staticmethod
+    def unifield_data_services() -> None:
+        """Inicializa o serviço de dados unificado e registra no SERVICEHUB.
+
+        Levanta erro padronizado em caso de falha na construção/registro.
+        """
+        error = UnifieldDataServicesError(
+            "Erro ao executar unifield_data_services!"
+        )
+        parameters = UnifieldDataServicesParameters(
+            data_source_id="",
+            provider="notion",
+            root_container_name="Unified Data Root",
+            enable_observability=False,
+            error=error,
+        )
+
+        datasource: UDSData = UnifieldDataServicesDatasource()
+        usecase: UDSUsecase = UnifieldDataServicesUseCase(datasource)
+        data: ReturnSuccessOrError[UnifiedDataService] = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            SERVICEHUB.set_unified_data_service(data.result)
+            return None
+        if isinstance(data, ErrorReturn):
+            raise data.result
+        raise ValueError("Unexpected return type from usecase")

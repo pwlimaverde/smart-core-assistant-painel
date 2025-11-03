@@ -30,3 +30,13 @@ class WhatsAppServiceError(AppError):
     def __str__(self) -> str:
         """Retorna uma mensagem de erro formatada."""
         return f"WhatsAppServiceError - {self.message}"
+
+from dataclasses import dataclass
+from py_return_success_or_error import AppError
+
+@dataclass
+class UnifieldDataServicesError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f"UnifieldDataServicesError - {self.message}"

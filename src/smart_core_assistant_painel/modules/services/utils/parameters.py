@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from py_return_success_or_error import ParametersReturnResult
 
-from .erros import SetEnvironRemoteError, WhatsAppServiceError
+from .erros import SetEnvironRemoteError, UnifieldDataServicesError, WhatsAppServiceError
 
 
 @dataclass
@@ -52,3 +52,34 @@ class WhatsAppMensagemParameters(ParametersReturnResult):
     def __str__(self) -> str:
         """Retorna uma representação simplificada em string da instância."""
         return f"WhatsAppServiceParameters(instance={self.instance})"
+
+
+@dataclass
+class UnifieldDataServicesParameters(ParametersReturnResult):
+    """Parâmetros para inicialização do serviço de dados unificado (UDS).
+
+    Attributes:
+        data_source_id (str): Identificador da fonte de dados principal
+            a ser usada pelo serviço (ex.: tabela NotionGuideV2).
+        provider (str): Nome do provedor/adaptador alvo. Mantém o serviço
+            desacoplado e permite escolher o adapter (ex.: "notion").
+        root_container_name (str): Nome padrão do container raiz onde
+            páginas/itens podem ser criados.
+        enable_observability (bool): Ativa logs mínimos para inspeção das
+            operações.
+        error (type[AppError]): Classe de erro para falhas do serviço.
+    """
+
+    data_source_id: str
+    provider: str = "notion"
+    root_container_name: str = "Unified Data Root"
+    enable_observability: bool = False
+    error: UnifieldDataServicesError
+
+    def __str__(self) -> str:
+        """Retorna uma representação simplificada em string dos parâmetros."""
+        return (
+            "UnifieldDataServicesParameters("
+            f"data_source_id={self.data_source_id}, provider={self.provider}"
+            ")"
+        )

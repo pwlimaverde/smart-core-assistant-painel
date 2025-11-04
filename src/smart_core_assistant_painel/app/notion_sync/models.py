@@ -171,9 +171,46 @@ class NotionDatabaseConfig(models.Model):
         Returns:
             True se pronto para sincronizar.
         """
-        # Comentário: permitir sincronização com apenas database_id válido.
-        # O data_source_id é opcional na criação/atualização de páginas.
-        return self.sync_enabled and bool(self.notion_database_id)
+        # Comentário (PT-BR):
+        # Considera pronto apenas quando `sync_enabled` é True e o
+        # `notion_database_id` é um UUID válido diferente do UUID nulo
+        # (00000000-0000-0000-0000-000000000000). O `data_source_id` é
+        # opcional para criação/atualização de páginas.
+        return self.sync_enabled and self.has_valid_database_id()
+
+    def _is_zero_uuid(self, value: Any) -> bool:
+        """Retorna True se o valor representar UUID nulo.
+
+        Comentário: Aceita objetos `uuid.UUID` ou strings.
+        """
+        try:
+            text: str = str(value) if value is not None else ""
+        except Exception:
+            text = f"{value}"
+        return text == "00000000-0000-0000-0000-000000000000"
+
+    def has_valid_database_id(self) -> bool:
+        """Valida se o `notion_database_id` está definido e é válido."""
+        val: Any = getattr(self, "notion_database_id", None)
+        if not val:
+            return False
+        if self._is_zero_uuid(val):
+            return False
+        # Verificação simples de formato UUID (hex com hífens), case-insensitive
+        text: str = str(val)
+        return bool(
+            re.fullmatch(
+                r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+                text,
+            )
+        )
+
+    def has_valid_data_source_id(self) -> bool:
+        """Valida se o `data_source_id` está definido e não é UUID nulo."""
+        val: Any = getattr(self, "data_source_id", None)
+        if not val:
+            return False
+        return not self._is_zero_uuid(val)
 
     @classmethod
     def get_database_id(cls, model_name: str) -> str | None:
@@ -460,10 +497,10 @@ class ContatoSync(models.Model):
         try:
             from .services.mappers.contato_mapper import ContatoMapper
 
-            # Usa mapper para transformar dados
-            self.notion_properties = ContatoMapper.to_notion_properties(self)
-
-            # Formata campos específicos
+            # Formata campos específicos ANTES de gerar propriedades
+            # Comentário: a ordem era incorreta e gerava payloads
+            # sem nome/telefone/email. Aqui garantimos
+            # que os campos formatados existam para o mapper usar.
             self.nome_formatado = self._format_name(self.contato.nome_contato)
 
             if self.contato.email:
@@ -500,6 +537,10 @@ class ContatoSync(models.Model):
                 self.slug_formatado = self.nome_formatado.lower().replace(
                     " ", "-"
                 )
+
+            # Gera as propriedades para a API do Notion após os
+            # campos estarem devidamente formatados
+            self.notion_properties = ContatoMapper.to_notion_properties(self)
 
         except ImportError:
             # Fallback se mapper não estiver disponível
@@ -801,10 +842,9 @@ class ClienteSync(models.Model):
         try:
             from .services.mappers.cliente_mapper import ClienteMapper
 
-            # Usa mapper para transformar dados
-            self.notion_properties = ClienteMapper.to_notion_properties(self)
-
-            # Formata campos específicos
+            # Formata campos específicos ANTES de gerar propriedades
+            # Comentário: a ordem anterior gerava payloads incompletos.
+            # Agora garantimos que os campos estejam prontos para o mapper.
             self.nome_fantasia_formatado = (
                 self.cliente.nome_fantasia.strip().title()
             )
@@ -833,6 +873,10 @@ class ClienteSync(models.Model):
                 self.slug_formatado = (
                     self.nome_fantasia_formatado.lower().replace(" ", "-")
                 )
+
+            # Gera as propriedades para a API do Notion após os
+            # campos estarem devidamente formatados
+            self.notion_properties = ClienteMapper.to_notion_properties(self)
 
         except ImportError:
             # Fallback se mapper não estiver disponível

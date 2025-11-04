@@ -1,0 +1,419 @@
+Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
+Iniciando serviços e configurações iniciais...
+2025-11-04 20:48:05.464 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-04 20:48:07.480 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+Serviços iniciados com sucesso.
+Iniciando a aplicação Django...
+🔍 Caminho relativo fornecido: src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+📁 Raiz do projeto calculada: C:\PROJETOS\PYTHON\APPS
+📂 Caminho absoluto resultante: C:\PROJETOS\PYTHON\APPS\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
+📄 Arquivo existe: False
+🔍 Tentando diretório atual: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
+📄 Arquivo existe no diretório atual: True
+Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
+Iniciando serviços e configurações iniciais...
+2025-11-04 20:48:10.550 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-04 20:48:12.139 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+Serviços iniciados com sucesso.
+Iniciando a aplicação Django...
+Watching for file changes with StatReloader
+INFO:django.utils.autoreload:Watching for file changes with StatReloader
+Performing system checks...
+
+System check identified no issues (0 silenced).
+November 04, 2025 - 20:48:14
+Django version 5.2.7, using settings 'smart_core_assistant_painel.app.ui.core.settings'
+Starting development server at http://127.0.0.1:8010/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+[04/Nov/2025 20:48:37] "POST /admin/clientes/cliente/ HTTP/1.1" 200 20696
+2025-11-04 20:48:38.210 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_cliente_pre_delete:1015 - Cliente #17 não possui external_id para arquivar no Notion
+[04/Nov/2025 20:48:38] "POST /admin/clientes/cliente/ HTTP/1.1" 302 0
+[04/Nov/2025 20:48:38] "GET /admin/clientes/cliente/ HTTP/1.1" 200 24109
+[04/Nov/2025 20:48:38] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[04/Nov/2025 20:48:39] "GET /admin/notion_sync/notiondatabaseconfig/ HTTP/1.1" 200 26237
+[04/Nov/2025 20:48:39] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[04/Nov/2025 20:48:44] "POST /admin/notion_sync/notiondatabaseconfig/ HTTP/1.1" 200 20917
+[04/Nov/2025 20:48:45] "POST /admin/notion_sync/notiondatabaseconfig/ HTTP/1.1" 302 0
+[04/Nov/2025 20:48:45] "GET /admin/notion_sync/notiondatabaseconfig/ HTTP/1.1" 200 23347
+[04/Nov/2025 20:48:45] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[04/Nov/2025 20:48:49] "GET /admin/clientes/cliente/ HTTP/1.1" 200 23953
+[04/Nov/2025 20:48:49] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[04/Nov/2025 20:48:51] "GET /admin/clientes/cliente/add/ HTTP/1.1" 200 41603
+[04/Nov/2025 20:48:51] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO:httpx:HTTP Request: POST https://api.notion.com/v1/databases "HTTP/1.1 200 OK"
+2025-11-04 20:48:58.354 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_create_cliente_database:82 - Database Clientes criada: 9699aff7-de92-43da-a39d-770da384af79
+INFO:httpx:HTTP Request: POST https://api.notion.com/v1/databases "HTTP/1.1 200 OK"
+2025-11-04 20:48:59.923 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_create_contato_database:120 - Database Contatos criada: 945e07b8-e777-4315-b623-3f86ea43a2a6
+INFO:httpx:HTTP Request: PATCH https://api.notion.com/v1/databases/9699aff7-de92-43da-a39d-770da384af79 "HTTP/1.1 200 OK"
+2025-11-04 20:49:00.692 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_add_relation_to_clientes:150 - Relação bidirecional adicionada em Clientes.
+2025-11-04 20:49:00.720 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_save_configs:201 - Configurações persistidas em NotionDatabaseConfig.
+2025-11-04 20:49:00.721 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:construct_minimal:209 - Bootstrap mínimo concluído.
+2025-11-04 20:49:00.721 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:ensure_clientes_configs_ready:1654 - Databases Notion criadas (sem exemplos) e configs salvas.
+2025-11-04 20:49:01.137 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:__init__:66 - NotionUnifiedDataService inicializado
+2025-11-04 20:49:01.137 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:create_container:86 - Container 'Clientes' criado com ID: eb165e0e-ae7c-4238-81d2-9ff943bef369
+2025-11-04 20:49:01.137 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_data_source:103 - Data source a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537 adicionada ao container eb165e0e-ae7c-4238-81d2-9ff943bef369
+2025-11-04 20:49:01.151 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537, versão: faeec761-1594-4c25-950e-6b58d8ceaaf5
+INFO:httpx:HTTP Request: PATCH https://api.notion.com/v1/databases/9699aff7-de92-43da-a39d-770da384af79 "HTTP/1.1 200 OK"
+2025-11-04 20:49:01.499 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Contatos Relacionados' criada com ID: 7d2eb157-f30d-4434-8327-13662ce7d0ba
+2025-11-04 20:49:01.910 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:74 - Cliente do Notion inicializado com sucesso
+2025-11-04 20:49:01.934 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Contato carregado: 945e07b8...
+2025-11-04 20:49:01.941 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Contato carregado: 6492fb31...
+2025-11-04 20:49:01.941 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Contato: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-04 20:49:01.945 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Cliente carregado: 9699aff7...
+2025-11-04 20:49:01.949 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Cliente carregado: a37c8c3b...
+2025-11-04 20:49:01.949 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Cliente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-04 20:49:01.954 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Departamento não encontrado
+2025-11-04 20:49:01.958 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Departamento não encontrado
+2025-11-04 20:49:01.962 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendente não encontrado
+2025-11-04 20:49:01.966 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendente não encontrado
+2025-11-04 20:49:01.969 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendimento não encontrado
+2025-11-04 20:49:01.974 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendimento não encontrado
+2025-11-04 20:49:01.978 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Mensagem não encontrado
+2025-11-04 20:49:01.982 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Mensagem não encontrado
+2025-11-04 20:49:01.987 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:584 - Executando sincronização: Cliente #18 - create
+2025-11-04 20:49:01.990 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:587 - Sync record: Fique Bela (No ID)
+INFO:httpx:HTTP Request: GET https://api.notion.com/v1/databases/9699aff7-de92-43da-a39d-770da384af79 "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 404 Not Found"
+[notionhq-client] WARN  request fail :: {'code': <APIErrorCode.ObjectNotFound: 'object_not_found'>, 'message': 'Could not find database with ID: a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537. Make sure the relevant pages and databases are shared with your integration.', 'requestId': '96c8036a-1375-41d8-a5da-73407b41c959'}
+2025-11-04 20:49:06.017 | WARNING  | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:create_item:281 - Falha ao criar item com data_source_id a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537. Aplicando fallback para database_id.
+INFO:httpx:HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 400 Bad Request"
+[notionhq-client] WARN  request fail :: {'code': <APIErrorCode.ValidationError: 'validation_error'>, 'message': 'Contatos Relacionados is not a property that exists.', 'requestId': 'f682b6b0-dddf-44a6-98ef-d28855ae1ada'}
+2025-11-04 20:49:06.257 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:create_item:336 - Erro da API do Notion ao criar item: Contatos Relacionados is not a property that exists.
+2025-11-04 20:49:06.269 | ERROR    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:777 - Erro na sincronização via UDS para Cliente #18: Contatos Relacionados is not a property that exists.
+INFO:httpx:HTTP Request: GET https://api.notion.com/v1/databases/9699aff7-de92-43da-a39d-770da384af79 "HTTP/1.1 200 OK"
+2025-11-04 20:49:06.686 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:286 - Propriedades finais para Cliente: ['Nome Fantasia', 'Razão Social', 'CNPJ', 'Contatos Relacionados', 'Telefone', 'Site', 'Ramo Atividade', 'CEP', 'Logradouro', 'Número', 'Bairro', 'Cidade', 'UF', 'Ativo']
+INFO:httpx:HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 404 Not Found"
+[notionhq-client] WARN  request fail :: {'code': <APIErrorCode.ObjectNotFound: 'object_not_found'>, 'message': 'Could not find database with ID: a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537. Make sure the relevant pages and databases are shared with your integration.', 'requestId': 'b3a6617e-4ca8-4af2-93b6-f04ad8dfc450'}
+2025-11-04 20:49:06.926 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:324 - Falha ao criar página com data_source_id a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537. Refazendo com database_id como parent.
+INFO:httpx:HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 400 Bad Request"
+[notionhq-client] WARN  request fail :: {'code': <APIErrorCode.ValidationError: 'validation_error'>, 'message': 'Contatos Relacionados is not a property that exists.', 'requestId': '69778e9c-9d13-4fc1-8b41-b2275eafaca4'}
+2025-11-04 20:49:07.150 | ERROR    | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:379 - ❌ Erro da API do Notion ao criar Cliente #18: APIErrorCode.ValidationError - Contatos Relacionados is not a property that exists.
+2025-11-04 20:49:07.150 | ERROR    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:814 - Erro ao executar sincronização: Erro ao criar página no Notion: Contatos Relacionados is not a property that exists.
+2025-11-04 20:49:07.150 | ERROR    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:815 - Stack trace completo do erro:
+Traceback (most recent call last):
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 316, in create_record
+    response = self._run(
+               │    └ <function NotionSyncService._run at 0x0000023220DA0900>
+               └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 156, in _run
+    return self._loop.run_until_complete(coro)
+           │    │     │                  └ <coroutine object NotionSyncService._request_async at 0x0000023223FC2B40>
+           │    │     └ <function BaseEventLoop.run_until_complete at 0x000002327B6DC540>
+           │    └ <_WindowsSelectorEventLoop running=False closed=False debug=False>
+           └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           │      └ <method 'result' of '_asyncio.Task' objects>
+           └ <Task finished name='Task-12' coro=<NotionSyncService._request_async() done, defined at C:\PROJETOS\PYTHON\APPS\smart-core-as...
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 175, in _request_async
+    return await self.client.request(
+                 │    │      └ <function NotionAsyncClient.request at 0x000002327FA8D800>
+                 │    └ <notion_py_client.notion_client.NotionAsyncClient object at 0x0000023223C9F250>
+                 └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\notion_py_client\notion_client.py", line 469, in request
+    raise err
+          └ APIResponseError('Could not find database with ID: a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537. Make sure the relevant pages and dat...
+
+notion_py_client.notion_client.APIResponseError: Could not find database with ID: a37c8c3b-e1c6-45d3-bd9d-69c3bfdd7537. Make sure the relevant pages and databases are shared with your integration.
+
+
+During handling of the above exception, another exception occurred:
+
+
+Traceback (most recent call last):
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 331, in create_record
+    response = self._run(
+               │    └ <function NotionSyncService._run at 0x0000023220DA0900>
+               └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 156, in _run
+    return self._loop.run_until_complete(coro)
+           │    │     │                  └ <coroutine object NotionSyncService._request_async at 0x0000023223A63540>
+           │    │     └ <function BaseEventLoop.run_until_complete at 0x000002327B6DC540>
+           │    └ <_WindowsSelectorEventLoop running=False closed=False debug=False>
+           └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           │      └ <method 'result' of '_asyncio.Task' objects>
+           └ <Task finished name='Task-13' coro=<NotionSyncService._request_async() done, defined at C:\PROJETOS\PYTHON\APPS\smart-core-as...
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 175, in _request_async
+    return await self.client.request(
+                 │    │      └ <function NotionAsyncClient.request at 0x000002327FA8D800>
+                 │    └ <notion_py_client.notion_client.NotionAsyncClient object at 0x0000023223C9F250>
+                 └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\notion_py_client\notion_client.py", line 469, in request
+    raise err
+          └ APIResponseError('Contatos Relacionados is not a property that exists.')
+
+notion_py_client.notion_client.APIResponseError: Contatos Relacionados is not a property that exists.
+
+
+The above exception was the direct cause of the following exception:
+
+
+Traceback (most recent call last):
+
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1014, in _bootstrap
+    self._bootstrap_inner()
+    │    └ <function Thread._bootstrap_inner at 0x000002327AD5B2E0>
+    └ <Thread(Thread-5 (process_request_thread), started daemon 40372)>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 1043, in _bootstrap_inner
+    self.run()
+    │    └ <function Thread.run at 0x000002327AD5B060>
+    └ <Thread(Thread-5 (process_request_thread), started daemon 40372)>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\threading.py", line 994, in run
+    self._target(*self._args, **self._kwargs)
+    │    │        │    │        │    └ {}
+    │    │        │    │        └ <Thread(Thread-5 (process_request_thread), started daemon 40372)>
+    │    │        │    └ (<socket.socket fd=972, family=2, type=1, proto=0, laddr=('127.0.0.1', 8010), raddr=('127.0.0.1', 60781)>, ('127.0.0.1', 60781))
+    │    │        └ <Thread(Thread-5 (process_request_thread), started daemon 40372)>
+    │    └ <bound method ThreadingMixIn.process_request_thread of <django.core.servers.basehttp.WSGIServer object at 0x0000023223562F90>>
+    └ <Thread(Thread-5 (process_request_thread), started daemon 40372)>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+    │    │              │        └ ('127.0.0.1', 60781)
+    │    │              └ <socket.socket fd=972, family=2, type=1, proto=0, laddr=('127.0.0.1', 8010), raddr=('127.0.0.1', 60781)>
+    │    └ <function BaseServer.finish_request at 0x0000023200F47420>
+    └ <django.core.servers.basehttp.WSGIServer object at 0x0000023223562F90>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    │    │                   │        │               └ <django.core.servers.basehttp.WSGIServer object at 0x0000023223562F90>
+    │    │                   │        └ ('127.0.0.1', 60781)
+    │    │                   └ <socket.socket fd=972, family=2, type=1, proto=0, laddr=('127.0.0.1', 8010), raddr=('127.0.0.1', 60781)>
+    │    └ <class 'django.core.servers.basehttp.WSGIRequestHandler'>
+    └ <django.core.servers.basehttp.WSGIServer object at 0x0000023223562F90>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\socketserver.py", line 766, in __init__
+    self.handle()
+    │    └ <function WSGIRequestHandler.handle at 0x0000023220E57880>
+    └ <django.core.servers.basehttp.WSGIRequestHandler object at 0x0000023223A3C3E0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\servers\basehttp.py", line 230, in handle
+    self.handle_one_request()
+    │    └ <function WSGIRequestHandler.handle_one_request at 0x0000023220E57920>
+    └ <django.core.servers.basehttp.WSGIRequestHandler object at 0x0000023223A3C3E0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\servers\basehttp.py", line 253, in handle_one_request
+    handler.run(self.server.get_app())
+    │       │   │    │      └ <function WSGIServer.get_app at 0x0000023220E568E0>
+    │       │   │    └ <django.core.servers.basehttp.WSGIServer object at 0x0000023223562F90>
+    │       │   └ <django.core.servers.basehttp.WSGIRequestHandler object at 0x0000023223A3C3E0>
+    │       └ <function BaseHandler.run at 0x0000023220E551C0>
+    └ <django.core.servers.basehttp.ServerHandler object at 0x0000023223E10BB0>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\wsgiref\handlers.py", line 137, in run
+    self.result = application(self.environ, self.start_response)
+    │    │        │           │    │        │    └ <function BaseHandler.start_response at 0x0000023220E55580>
+    │    │        │           │    │        └ <django.core.servers.basehttp.ServerHandler object at 0x0000023223E10BB0>
+    │    │        │           │    └ {'ACSETUPSVCPORT': '23210', 'ACSVCPORT': '17532', 'AHA_CHROME_CRASHPAD_PIPE_NAME': '\\\\.\\pipe\\crashpad_24708_JOXOIFHDPZCTK...
+    │    │        │           └ <django.core.servers.basehttp.ServerHandler object at 0x0000023223E10BB0>
+    │    │        └ <django.contrib.staticfiles.handlers.StaticFilesHandler object at 0x00000232235630E0>
+    │    └ None
+    └ <django.core.servers.basehttp.ServerHandler object at 0x0000023223E10BB0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\contrib\staticfiles\handlers.py", line 80, in __call__
+    return self.application(environ, start_response)
+           │    │           │        └ <bound method BaseHandler.start_response of <django.core.servers.basehttp.ServerHandler object at 0x0000023223E10BB0>>
+           │    │           └ {'ACSETUPSVCPORT': '23210', 'ACSVCPORT': '17532', 'AHA_CHROME_CRASHPAD_PIPE_NAME': '\\\\.\\pipe\\crashpad_24708_JOXOIFHDPZCTK...
+           │    └ <django.core.handlers.wsgi.WSGIHandler object at 0x0000023200FAAA50>
+           └ <django.contrib.staticfiles.handlers.StaticFilesHandler object at 0x00000232235630E0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\wsgi.py", line 124, in __call__
+    response = self.get_response(request)
+               │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │    └ <function BaseHandler.get_response at 0x0000023220E067A0>
+               └ <django.core.handlers.wsgi.WSGIHandler object at 0x0000023200FAAA50>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\base.py", line 140, in get_response
+    response = self._middleware_chain(request)
+               │    │                 └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │    └ <function convert_exception_to_response.<locals>.inner at 0x00000232236AFF60>
+               └ <django.core.handlers.wsgi.WSGIHandler object at 0x0000023200FAAA50>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <SecurityMiddleware get_response=convert_exception_to_response.<locals>.inner>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108B6A0>
+               │           └ <SecurityMiddleware get_response=convert_exception_to_response.<locals>.inner>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <SessionMiddleware get_response=convert_exception_to_response.<locals>.inner>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108B740>
+               │           └ <SessionMiddleware get_response=convert_exception_to_response.<locals>.inner>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <corsheaders.middleware.CorsMiddleware object at 0x0000023223563CB0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\corsheaders\middleware.py", line 53, in __call__
+    result = self.get_response(request)
+             │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+             │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108B7E0>
+             └ <corsheaders.middleware.CorsMiddleware object at 0x0000023223563CB0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <CommonMiddleware get_response=convert_exception_to_response.<locals>.inner>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108B880>
+               │           └ <CommonMiddleware get_response=convert_exception_to_response.<locals>.inner>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <CsrfViewMiddleware get_response=convert_exception_to_response.<locals>.inner>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108B920>
+               │           └ <CsrfViewMiddleware get_response=convert_exception_to_response.<locals>.inner>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <AuthenticationMiddleware get_response=convert_exception_to_response.<locals>.inner>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108B9C0>
+               │           └ <AuthenticationMiddleware get_response=convert_exception_to_response.<locals>.inner>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <smart_core_assistant_painel.app.ui.core.middleware.AdminStaffRequiredMiddleware object at 0x0000023200FAA900>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\core\middleware.py", line 45, in __call__
+    response = self.get_response(request)
+               │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108BA60>
+               └ <smart_core_assistant_painel.app.ui.core.middleware.AdminStaffRequiredMiddleware object at 0x0000023200FAA900>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <MessageMiddleware get_response=convert_exception_to_response.<locals>.inner>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function convert_exception_to_response.<locals>.inner at 0x000002320108BB00>
+               │           └ <MessageMiddleware get_response=convert_exception_to_response.<locals>.inner>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <XFrameOptionsMiddleware get_response=BaseHandler._get_response>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\deprecation.py", line 120, in __call__
+    response = response or self.get_response(request)
+               │           │    │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               │           │    └ <function BaseHandler._get_response at 0x000002320108B100>
+               │           └ <XFrameOptionsMiddleware get_response=BaseHandler._get_response>
+               └ None
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+               │            └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <bound method BaseHandler._get_response of <django.core.handlers.wsgi.WSGIHandler object at 0x0000023200FAAA50>>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               │                │         │                └ {}
+               │                │         └ ()
+               │                └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <function ModelAdmin.add_view at 0x0000023220E822A0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\contrib\admin\options.py", line 719, in wrapper
+    return self.admin_site.admin_view(view)(*args, **kwargs)
+           │    │          │          │      │       └ {}
+           │    │          │          │      └ (<WSGIRequest: POST '/admin/clientes/cliente/add/'>,)
+           │    │          │          └ <bound method ModelAdmin.add_view of <ClienteAdmin: model=Cliente site=AdminSite(name='admin')>>
+           │    │          └ <function AdminSite.admin_view at 0x00000232010454E0>
+           │    └ AdminSite(name='admin')
+           └ <ClienteAdmin: model=Cliente site=AdminSite(name='admin')>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               │         │         │       └ {}
+               │         │         └ ()
+               │         └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <function AdminSite.admin_view.<locals>.inner at 0x00000232237FEFC0>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\views\decorators\cache.py", line 80, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               │         │         │       └ {}
+               │         │         └ ()
+               │         └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ <function AdminSite.admin_view.<locals>.inner at 0x00000232237FF240>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\contrib\admin\sites.py", line 246, in inner
+    return view(request, *args, **kwargs)
+           │    │         │       └ {}
+           │    │         └ ()
+           │    └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+           └ <bound method ModelAdmin.add_view of <ClienteAdmin: model=Cliente site=AdminSite(name='admin')>>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\contrib\admin\options.py", line 1984, in add_view
+    return self.changeform_view(request, None, form_url, extra_context)
+           │    │               │              │         └ None
+           │    │               │              └ ''
+           │    │               └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+           │    └ <function ModelAdmin.changeform_view at 0x000002320101E200>
+           └ <ClienteAdmin: model=Cliente site=AdminSite(name='admin')>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\decorators.py", line 48, in _wrapper
+    return bound_method(*args, **kwargs)
+           │             │       └ {}
+           │             └ (<WSGIRequest: POST '/admin/clientes/cliente/add/'>, None, '', None)
+           └ <function ModelAdmin.changeform_view at 0x0000023223DF3D80>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\utils\decorators.py", line 190, in _view_wrapper
+    response = view_func(request, *args, **kwargs)
+               │         │         │       └ {}
+               │         │         └ (None, '', None)
+               │         └ <WSGIRequest: POST '/admin/clientes/cliente/add/'>
+               └ functools.partial(<bound method ModelAdmin.changeform_view of <ClienteAdmin: model=Cliente site=AdminSite(name='admin')>>)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\contrib\admin\options.py", line 1842, in changeform_view
+    with transaction.atomic(using=router.db_for_write(self.model)):
+         │           │            │      │            │    └ <class 'smart_core_assistant_painel.app.ui.clientes.models.Cliente'>
+         │           │            │      │            └ <ClienteAdmin: model=Cliente site=AdminSite(name='admin')>
+         │           │            │      └ <function ConnectionRouter._router_func.<locals>._route_db at 0x0000023200847920>
+         │           │            └ <django.db.utils.ConnectionRouter object at 0x00000232004B1550>
+         │           └ <function atomic at 0x0000023200B42C00>
+         └ <module 'django.db.transaction' from 'C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\.venv\\Lib\\site-packages\\dja...
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\transaction.py", line 307, in __exit__
+    connection.set_autocommit(True)
+    │          └ <function BaseDatabaseWrapper.set_autocommit at 0x000002320143EA20>
+    └ <DatabaseWrapper vendor='postgresql' alias='default'>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\backends\base\base.py", line 491, in set_autocommit
+    self.run_and_clear_commit_hooks()
+    │    └ <function BaseDatabaseWrapper.run_and_clear_commit_hooks at 0x000002320143FBA0>
+    └ <DatabaseWrapper vendor='postgresql' alias='default'>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\backends\base\base.py", line 769, in run_and_clear_commit_hooks
+    func()
+    └ <function on_cliente_saved.<locals>._after_commit at 0x00000232238D80E0>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\signals.py", line 942, in _after_commit
+    schedule_sync_operation(
+    └ <function schedule_sync_operation at 0x0000023220DC2020>
+
+> File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\signals.py", line 785, in schedule_sync_operation
+    external_id = service.create_record(
+                  │       └ <function NotionSyncService.create_record at 0x0000023220D8EDE0>
+                  └ <smart_core_assistant_painel.app.notion_sync.services.notion_service.NotionSyncService object at 0x0000023223562E40>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\notion_sync\services\notion_service.py", line 384, in create_record
+    raise NotionSyncError(
+          └ <class 'smart_core_assistant_painel.app.notion_sync.exceptions.NotionSyncError'>
+
+smart_core_assistant_painel.app.notion_sync.exceptions.NotionSyncError: Erro ao criar página no Notion: Contatos Relacionados is not a property that exists.
+2025-11-04 20:49:07.178 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:825 - Marcando sync_record como falha: Cliente #18
+2025-11-04 20:49:07.188 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:947 - Cliente #18 criado - Sincronização agendada
+[04/Nov/2025 20:49:07] "POST /admin/clientes/cliente/add/ HTTP/1.1" 302 0
+[04/Nov/2025 20:49:07] "GET /admin/clientes/cliente/ HTTP/1.1" 200 28058
+[04/Nov/2025 20:49:07] "GET /admin/jsi18n/ HTTP/1.1" 200 3342

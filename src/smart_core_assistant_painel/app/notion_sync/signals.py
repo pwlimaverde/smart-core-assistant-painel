@@ -6,7 +6,8 @@ principais (Cliente, Contato, Departamento, Atendente) e disparam
 o processo de sincronização com plataformas externas (Notion, Airtable, etc).
 """
 
-from typing import Any
+from typing import Any, Optional
+import uuid
 
 from django.db.models.signals import (
     m2m_changed,
@@ -16,7 +17,9 @@ from django.db.models.signals import (
     pre_save,
 )
 from django.dispatch import receiver
+from django.db import transaction
 from loguru import logger
+from asgiref.sync import async_to_sync
 
 from ..ui.atendimentos.models import Atendimento, Mensagem
 from ..ui.clientes.models import Cliente, Contato
@@ -31,6 +34,180 @@ from .models import (
     MensagemSync,
 )
 from .services import NotionSyncService
+from smart_core_assistant_painel.modules.services import (
+    SERVICEHUB,
+    FeaturesCompose,
+)
+from .services.mappers.contato_mapper import ContatoMapper
+from .services.mappers.cliente_mapper import ClienteMapper
+from .models import NotionDatabaseConfig
+
+
+def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
+    """
+    Garante o bootstrap do UDS para o modelo Contato.
+
+    - Atualiza o schema do Data Source de Contato no UDS.
+    - Cria/atualiza a relação "Clientes Relacionados" se disponível.
+
+    Comentários:
+    - Idempotente no UDS in-memory; seguro para múltiplas invocações.
+    - Não modifica configurações de Notion; apenas o schema do UDS.
+    """
+
+    # Garante que o UDS esteja inicializado no SERVICEHUB
+    try:
+        uds = SERVICEHUB.unified_data_service
+    except Exception:
+        FeaturesCompose.unifield_data_services()
+        uds = SERVICEHUB.unified_data_service
+
+    def _ensure_uds_data_source_id(
+        cfg: NotionDatabaseConfig, service: Any
+    ) -> str:
+        """
+        Garante que o `data_source_id` esteja definido para o config.
+
+        - Se não houver, cria um container simples e vincula uma fonte
+          usando o `slug` como ID estável no UDS in-memory.
+        """
+        if cfg.data_source_id:
+            return str(cfg.data_source_id)
+
+        # Comentário: gerar UUID válido para o data_source_id
+        ds_id_local: str = str(uuid.uuid4())
+        container_name: str = cfg.name or "Unified Data Root"
+        container_id: str = service.create_container(container_name)
+        service.add_data_source(container_id, ds_id_local)
+        cfg.data_source_id = ds_id_local
+        cfg.save(update_fields=["data_source_id"])
+        return ds_id_local
+
+    # Schema de Contato pelo mapper e garantia de data_source_id
+    schema: dict[str, Any] = ContatoMapper.get_database_schema()
+    contato_ds_id: str = _ensure_uds_data_source_id(config, uds)
+
+    try:
+        uds.update_schema(contato_ds_id, schema)
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao atualizar schema UDS para Contato: {exc}"
+        )
+
+    # Garante configuração de Clientes e cria a relação
+    try:
+        cliente_cfg: Optional[NotionDatabaseConfig] = (
+            NotionDatabaseConfig.objects.filter(
+                slug="ui_clientes_cliente"
+            ).first()
+        )
+        if not cliente_cfg:
+            cliente_cfg = NotionDatabaseConfig.objects.create(
+                slug="ui_clientes_cliente",
+                name="Clientes",
+                django_model="clientes.Cliente",
+                django_app_label="ui",
+                notion_database_id="00000000-0000-0000-0000-000000000000",
+                sync_enabled=False,
+                description=(
+                    "Configuração padrão para sincronização de Clientes"
+                ),
+            )
+
+        cliente_ds_id: str = _ensure_uds_data_source_id(cliente_cfg, uds)
+        uds.add_relation_property(
+            contato_ds_id,
+            "Clientes Relacionados",
+            cliente_ds_id,
+        )
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao configurar relação de Clientes no UDS: {exc}"
+        )
+
+
+def _bootstrap_uds_for_cliente(config: NotionDatabaseConfig) -> None:
+    """
+    Garante o bootstrap do UDS para o modelo Cliente.
+
+    - Atualiza o schema do Data Source de Cliente no UDS.
+    - Cria/atualiza a relação "Contatos Relacionados" se disponível.
+
+    Comentários:
+    - Idempotente no UDS; seguro para múltiplas invocações.
+    - Não modifica configurações do Notion além do schema espelhado.
+    """
+
+    # Garante que o UDS esteja inicializado no SERVICEHUB
+    try:
+        uds = SERVICEHUB.unified_data_service
+    except Exception:
+        FeaturesCompose.unifield_data_services()
+        uds = SERVICEHUB.unified_data_service
+
+    def _ensure_uds_data_source_id(
+        cfg: NotionDatabaseConfig, service: Any
+    ) -> str:
+        """
+        Garante que o `data_source_id` esteja definido para o config.
+
+        - Se não houver, cria um container simples e vincula uma fonte
+          usando o `slug` como ID estável no UDS.
+        """
+        if cfg.data_source_id:
+            return str(cfg.data_source_id)
+
+        ds_id_local: str = str(uuid.uuid4())
+        container_name: str = cfg.name or "Unified Data Root"
+        container_id: str = service.create_container(container_name)
+        service.add_data_source(container_id, ds_id_local)
+        cfg.data_source_id = ds_id_local
+        cfg.save(update_fields=["data_source_id"])
+        return ds_id_local
+
+    # Schema de Cliente pelo mapper e garantia de data_source_id
+    schema: dict[str, Any] = ClienteMapper.get_database_schema()
+    cliente_ds_id: str = _ensure_uds_data_source_id(config, uds)
+
+    try:
+        uds.update_schema(cliente_ds_id, schema)
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao atualizar schema UDS para Cliente: {exc}"
+        )
+
+    # Garante configuração de Contato e cria a relação inversa
+    try:
+        contato_cfg: Optional[NotionDatabaseConfig] = (
+            NotionDatabaseConfig.objects.filter(
+                slug="ui_clientes_contato"
+            ).first()
+        )
+        if not contato_cfg:
+            contato_cfg = NotionDatabaseConfig.objects.create(
+                slug="ui_clientes_contato",
+                name="Contatos",
+                django_model="clientes.Contato",
+                django_app_label="ui",
+                notion_database_id=(
+                    "00000000-0000-0000-0000-000000000000"
+                ),
+                sync_enabled=False,
+                description=(
+                    "Configuração padrão para sincronização de Contatos"
+                ),
+            )
+
+        contato_ds_id: str = _ensure_uds_data_source_id(contato_cfg, uds)
+        uds.add_relation_property(
+            cliente_ds_id,
+            "Contatos Relacionados",
+            contato_ds_id,
+        )
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao configurar relação de Contatos no UDS: {exc}"
+        )
 
 
 def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
@@ -53,15 +230,19 @@ def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
     try:
         config = NotionDatabaseConfig.objects.get(slug="ui_clientes_contato")
     except NotionDatabaseConfig.DoesNotExist:
-        # Cria configuração padrão desabilitada
+        # Cria configuração padrão desabilitada com UUID placeholder válido
         config = NotionDatabaseConfig.objects.create(
             slug="ui_clientes_contato",
             name="Contatos",
             django_model="clientes.Contato",
-            django_app_label="ui",
-            notion_database_id="",  # preenchido posteriormente
+            django_app_label="clientes",
+            notion_database_id=(
+                "00000000-0000-0000-0000-000000000000"
+            ),
             sync_enabled=False,
-            description=("Configuração padrão para sincronização de Contatos"),
+            description=(
+                "Configuração padrão para sincronização de Contatos"
+            ),
         )
 
     sync, created = ContatoSync.objects.get_or_create(
@@ -95,15 +276,19 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
     try:
         config = NotionDatabaseConfig.objects.get(slug="ui_clientes_cliente")
     except NotionDatabaseConfig.DoesNotExist:
-        # Cria configuração padrão desabilitada
+        # Cria configuração padrão desabilitada com UUID placeholder válido
         config = NotionDatabaseConfig.objects.create(
             slug="ui_clientes_cliente",
             name="Clientes",
             django_model="clientes.Cliente",
-            django_app_label="ui",
-            notion_database_id="",  # preenchido posteriormente
+            django_app_label="clientes",
+            notion_database_id=(
+                "00000000-0000-0000-0000-000000000000"
+            ),
             sync_enabled=False,
-            description=("Configuração padrão para sincronização de Clientes"),
+            description=(
+                "Configuração padrão para sincronização de Clientes"
+            ),
         )
 
     sync, created = ClienteSync.objects.get_or_create(
@@ -137,13 +322,15 @@ def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
             slug="ui_operacional_departamento"
         )
     except NotionDatabaseConfig.DoesNotExist:
-        # Criar configuração padrão se não existir
+        # Criar configuração padrão se não existir (UUID placeholder válido)
         config = NotionDatabaseConfig.objects.create(
             slug="ui_operacional_departamento",
             name="Departamentos",
             django_model="operacional.Departamento",
             django_app_label="ui",
-            notion_database_id="",  # Será preenchido depois
+            notion_database_id=(
+                "00000000-0000-0000-0000-000000000000"
+            ),
             sync_enabled=False,  # Inicia desabilitado
             description="Departamentos da organização",
         )
@@ -179,13 +366,15 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteSync:
             slug="ui_operacional_atendente"
         )
     except NotionDatabaseConfig.DoesNotExist:
-        # Criar configuração padrão se não existir
+        # Criar configuração padrão se não existir (UUID placeholder válido)
         config = NotionDatabaseConfig.objects.create(
             slug="ui_operacional_atendente",
             name="Atendentes",
             django_model="operacional.Atendente",
             django_app_label="ui",
-            notion_database_id="",  # Será preenchido depois
+            notion_database_id=(
+                "00000000-0000-0000-0000-000000000000"
+            ),
             sync_enabled=False,  # Inicia desabilitado
             description="Atendentes da organização",
         )
@@ -214,13 +403,15 @@ def get_or_create_atendimento_sync(atendimento_id: int) -> AtendimentoSync:
             slug="ui_atendimentos_atendimento"
         )
     except NotionDatabaseConfig.DoesNotExist:
-        # Cria configuração padrão desabilitada
+        # Cria configuração padrão desabilitada (UUID placeholder válido)
         config = NotionDatabaseConfig.objects.create(
             slug="ui_atendimentos_atendimento",
             name="Atendimentos",
             django_model="atendimentos.Atendimento",
             django_app_label="ui",
-            notion_database_id="",  # preenchido posteriormente
+            notion_database_id=(
+                "00000000-0000-0000-0000-000000000000"
+            ),
             sync_enabled=False,
             description=(
                 "Configuração padrão para sincronização de Atendimentos"
@@ -258,13 +449,15 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
             slug="ui_atendimentos_mensagem"
         )
     except NotionDatabaseConfig.DoesNotExist:
-        # Cria configuração padrão desabilitada
+        # Cria configuração padrão desabilitada (UUID placeholder válido)
         config = NotionDatabaseConfig.objects.create(
             slug="ui_atendimentos_mensagem",
             name="Mensagens",
             django_model="atendimentos.Mensagem",
             django_app_label="ui",
-            notion_database_id="",  # preenchido posteriormente
+            notion_database_id=(
+                "00000000-0000-0000-0000-000000000000"
+            ),
             sync_enabled=False,
             description=(
                 "Configuração padrão para sincronização de Mensagens"
@@ -396,11 +589,23 @@ def schedule_sync_operation(
         # Validação de prontidão da configuração
         cfg = getattr(sync_record, "config", None)
         if not cfg or not cfg.is_ready_for_sync():
+            # Comentário: informa detalhadamente o estado da configuração,
+            # tratando UUID nulo como "não definido".
+            try:
+                db_id_ok = cfg.has_valid_database_id() if cfg else False
+            except Exception:
+                db_id_ok = bool(getattr(cfg, "notion_database_id", None))
+
+            try:
+                ds_id_ok = cfg.has_valid_data_source_id() if cfg else False
+            except Exception:
+                ds_id_ok = bool(getattr(cfg, "data_source_id", None))
+
             ready_details = (
                 f"ready={cfg.is_ready_for_sync() if cfg else False} "
                 f"sync_enabled={getattr(cfg, 'sync_enabled', False)} "
-                f"db_id_set={bool(getattr(cfg, 'notion_database_id', None))} "
-                f"ds_id_set={bool(getattr(cfg, 'data_source_id', None))}"
+                f"db_id_set={db_id_ok} "
+                f"ds_id_set={ds_id_ok}"
             )
             msg = (
                 "Configuração Notion não pronta para sincronização. "
@@ -448,6 +653,134 @@ def schedule_sync_operation(
                     sync_record.save()
                 return
 
+        # Integração UDS para Contato: criação/atualização via serviço unificado
+        if model_name == "Contato":
+            try:
+                # Garante serviço UDS
+                try:
+                    uds = SERVICEHUB.unified_data_service
+                except Exception:
+                    FeaturesCompose.unifield_data_services()
+                    uds = SERVICEHUB.unified_data_service
+
+                # Prepara payload (propriedades do Notion)
+                payload = getattr(sync_record, "notion_properties", {})
+                if not isinstance(payload, dict) or not payload:
+                    # Comentário: garante que o mapper foi aplicado
+                    sync_record.prepare_notion_data()
+                    payload = getattr(sync_record, "notion_properties", {})
+
+                ds_id = str(getattr(cfg, "data_source_id", "") or "")
+                if not ds_id:
+                    msg = (
+                        "Config Notion para Contato sem data_source_id. "
+                        "Execute bootstrap de Clientes/Contatos."
+                    )
+                    sync_record.mark_as_failed(msg)
+                    logger.warning(msg)
+                    return
+
+                if operation == "create":
+                    page_id = uds.create_item(ds_id, payload)
+                    sync_record.external_id = page_id
+                    sync_record.mark_as_synced(page_id)
+                elif operation == "update":
+                    if sync_record.external_id:
+                        op_id = uds.update_item(
+                            ds_id, sync_record.external_id, payload
+                        )
+                        if op_id:
+                            sync_record.mark_as_synced()
+                        else:
+                            sync_record.mark_as_failed(
+                                "Falha na atualização via UDS"
+                            )
+                    else:
+                        # Sem external_id, cria primeiro
+                        page_id = uds.create_item(ds_id, payload)
+                        sync_record.external_id = page_id
+                        sync_record.mark_as_synced(page_id)
+
+                logger.info(
+                    (
+                        "Sincronização via UDS concluída: Contato #{} - {}"
+                    ).format(instance_id, operation)
+                )
+                return
+            except Exception as uds_err:
+                # Em caso de erro no UDS, marca falha e segue para logging
+                sync_record.mark_as_failed(str(uds_err))
+                logger.error(
+                    (
+                        "Erro na sincronização via UDS para Contato #{}: {}"
+                    ).format(instance_id, uds_err)
+                )
+
+        # Demais modelos seguem fluxo do NotionSyncService
+        # Integração UDS para Cliente: criação/atualização via serviço unificado
+        if model_name == "Cliente":
+            try:
+                # Garante serviço UDS
+                try:
+                    uds = SERVICEHUB.unified_data_service
+                except Exception:
+                    FeaturesCompose.unifield_data_services()
+                    uds = SERVICEHUB.unified_data_service
+
+                # Prepara payload (propriedades do Notion)
+                payload = getattr(sync_record, "notion_properties", {})
+                if not isinstance(payload, dict) or not payload:
+                    # Comentário: garante que o mapper foi aplicado
+                    sync_record.prepare_notion_data()
+                    payload = getattr(sync_record, "notion_properties", {})
+
+                ds_id = str(getattr(cfg, "data_source_id", "") or "")
+                if not ds_id:
+                    msg = (
+                        "Config Notion para Cliente sem data_source_id. "
+                        "Execute bootstrap de Clientes/Contatos."
+                    )
+                    sync_record.mark_as_failed(msg)
+                    logger.warning(msg)
+                    return
+
+                if operation == "create":
+                    page_id = uds.create_item(ds_id, payload)
+                    sync_record.external_id = page_id
+                    sync_record.mark_as_synced(page_id)
+                elif operation == "update":
+                    if sync_record.external_id:
+                        op_id = uds.update_item(
+                            ds_id, sync_record.external_id, payload
+                        )
+                        if op_id:
+                            sync_record.mark_as_synced()
+                        else:
+                            sync_record.mark_as_failed(
+                                "Falha na atualização via UDS"
+                            )
+                    else:
+                        # Sem external_id, cria primeiro
+                        page_id = uds.create_item(ds_id, payload)
+                        sync_record.external_id = page_id
+                        sync_record.mark_as_synced(page_id)
+
+                logger.info(
+                    (
+                        "Sincronização via UDS concluída: Cliente #{} - {}"
+                    ).format(instance_id, operation)
+                )
+                return
+            except Exception as uds_err:
+                # Em caso de erro no UDS, marca falha e segue para logging
+                sync_record.mark_as_failed(str(uds_err))
+                logger.error(
+                    (
+                        "Erro na sincronização via UDS para Cliente #{}: {}"
+                    ).format(instance_id, uds_err)
+                )
+
+        # Demais modelos seguem fluxo do NotionSyncService
         if operation == "create":
             external_id = service.create_record(
                 model_name, instance_id, sync_record
@@ -512,18 +845,52 @@ def on_contato_saved(
     try:
         sync_metadata = get_or_create_contato_sync(instance.id)
         operation = "create" if created else "update"
-        sync_metadata.prepare_notion_data()
-        sync_metadata.save()
-        schedule_sync_operation(
-            model_name="Contato", instance_id=instance.id, operation=operation
-        )
-        logger.info(
-            f"Contato #{instance.id} {'criado' if created else 'atualizado'}"
-            f" - Sincronização agendada"
-        )
+
+        def _after_commit() -> None:
+            """Executa sincronização e bootstrap após o commit da transação.
+
+            Comentário: evita quebrar a transação do admin quando
+            qualquer erro ocorre; toda operação pesada roda pós-commit.
+            """
+            try:
+                # Garantir que a configuração de Notion existe e está pronta
+                ok_ready = ensure_clientes_configs_ready()
+                if not ok_ready:
+                    logger.warning(
+                        "Config Notion para Clientes/Contatos ainda não pronta."
+                    )
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
+                # Bootstrap UDS (schema e relação) de forma resiliente
+                try:
+                    _bootstrap_uds_for_contato(sync_metadata.config)
+                except Exception as exc:
+                    logger.warning(
+                        "Falha no bootstrap UDS para Contato #{}: {}",
+                        instance.id,
+                        str(exc),
+                    )
+                schedule_sync_operation(
+                    model_name="Contato",
+                    instance_id=instance.id,
+                    operation=operation,
+                )
+                logger.info(
+                    "Contato #{} {} - Sincronização agendada",
+                    instance.id,
+                    "criado" if created else "atualizado",
+                )
+            except Exception as err:
+                logger.error(
+                    "Erro pós-commit no signal de Contato #{}: {}",
+                    instance.id,
+                    str(err),
+                )
+
+        transaction.on_commit(_after_commit)
     except Exception as e:
         logger.error(
-            f"Erro ao processar signal de Contato #{instance.id}: {e}"
+            f"Erro ao preparar sync de Contato #{instance.id}: {e}"
         )
 
 
@@ -541,15 +908,55 @@ def on_cliente_saved(
     try:
         sync_metadata = get_or_create_cliente_sync(instance.id)
         operation = "create" if created else "update"
-        sync_metadata.prepare_notion_data()
-        sync_metadata.save()
-        schedule_sync_operation(
-            model_name="Cliente", instance_id=instance.id, operation=operation
-        )
-        logger.info(
-            f"Cliente #{instance.id} {'criado' if created else 'atualizado'}"
-            f" - Sincronização agendada"
-        )
+
+        def _after_commit() -> None:
+            """Executa sincronização e bootstrap após o commit da transação.
+
+            Comentário: mantém simetria com Contato, garantindo que a
+            criação das databases (Clientes/Contatos) no Notion seja
+            disparada caso ainda não existam.
+            """
+            try:
+                # Garantir que a configuração de Notion existe e está pronta
+                ok_ready = ensure_clientes_configs_ready()
+                if not ok_ready:
+                    logger.warning(
+                        "Config Notion para Clientes/Contatos ainda não pronta."
+                    )
+
+                # Preparar e salvar metadados de sync
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
+
+                # Bootstrap UDS (schema e relação) de forma resiliente
+                try:
+                    _bootstrap_uds_for_cliente(sync_metadata.config)
+                except Exception as exc:
+                    logger.warning(
+                        "Falha no bootstrap UDS para Cliente #{}: {}",
+                        instance.id,
+                        str(exc),
+                    )
+
+                # Agendar operação de sincronização
+                schedule_sync_operation(
+                    model_name="Cliente",
+                    instance_id=instance.id,
+                    operation=operation,
+                )
+                logger.info(
+                    "Cliente #{} {} - Sincronização agendada",
+                    instance.id,
+                    "criado" if created else "atualizado",
+                )
+            except Exception as err:
+                logger.error(
+                    "Erro pós-commit no signal de Cliente #{}: {}",
+                    instance.id,
+                    str(err),
+                )
+
+        transaction.on_commit(_after_commit)
     except Exception as e:
         logger.error(
             f"Erro ao processar signal de Cliente #{instance.id}: {e}"
@@ -1212,3 +1619,61 @@ def on_mensagem_saved(
         logger.error(
             f"Erro ao processar signal de Mensagem #{instance.id}: {e}", exc_info=True
         )
+def ensure_clientes_configs_ready() -> bool:
+    """Garante que as configs de Clientes/Contatos no Notion existam.
+
+    Comentário (PT-BR):
+    - Se as configurações já estiverem prontas, retorna True.
+    - Caso contrário, constrói as databases via construtor assíncrono
+      e salva no `NotionDatabaseConfig`.
+    """
+    try:
+        contato_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_clientes_contato"
+        ).first()
+        cliente_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_clientes_cliente"
+        ).first()
+
+        if (
+            contato_cfg
+            and cliente_cfg
+            and contato_cfg.is_ready_for_sync()
+            and cliente_cfg.is_ready_for_sync()
+        ):
+            return True
+
+        # Construir bases Notion e salvar configs
+        try:
+            from .services.bootstrap_clientes import (
+                NotionClientesBootstrapService,
+            )
+
+            bootstrap = NotionClientesBootstrapService()
+            async_to_sync(bootstrap.construct_minimal)()
+            logger.info(
+                "Databases Notion criadas (sem exemplos) e configs salvas."
+            )
+            # Revalidar
+            contato_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_clientes_contato"
+            ).first()
+            cliente_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_clientes_cliente"
+            ).first()
+            return bool(
+                contato_cfg
+                and cliente_cfg
+                and contato_cfg.is_ready_for_sync()
+                and cliente_cfg.is_ready_for_sync()
+            )
+        except Exception as exc:
+            logger.error(
+                f"Erro ao construir bases Notion (Clientes/Contatos): {exc}"
+            )
+            return False
+    except Exception as outer:
+        logger.error(
+            f"Falha ao verificar/garantir configs de Clientes/Contatos: {outer}"
+        )
+        return False

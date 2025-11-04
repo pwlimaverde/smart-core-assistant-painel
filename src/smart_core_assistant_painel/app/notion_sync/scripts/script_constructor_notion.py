@@ -56,6 +56,16 @@ logger = logging.getLogger(__name__)
 # Carregar variáveis de ambiente
 load_dotenv()
 
+# Ajuste de política de loop para Windows (evita 'Event loop is closed')
+try:
+    if sys.platform.startswith("win"):
+        asyncio.set_event_loop_policy(
+            asyncio.WindowsSelectorEventLoopPolicy()
+        )
+except Exception:
+    # Falha segura caso a política não esteja disponível
+    pass
+
 # Adicionar o path do projeto ao sys.path para importar Django
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
@@ -442,8 +452,8 @@ class NotionClientesDatabaseConstructor:
                     "description": "Database para sincronização de clientes do sistema",
                     "notion_database_id": cliente_db.id,
                     "data_source_id": cliente_data_source_id,
-                    "django_model": "ui.clientes.Cliente",
-                    "django_app_label": "ui",
+                    "django_model": "clientes.Cliente",
+                    "django_app_label": "clientes",
                     "notion_schema": {
                         "Nome Fantasia": {"title": {}},
                         "Razão Social": {"rich_text": {}},
@@ -507,8 +517,8 @@ class NotionClientesDatabaseConstructor:
                     "description": "Database para sincronização de contatos do sistema",
                     "notion_database_id": contato_db.id,
                     "data_source_id": contato_data_source_id,
-                    "django_model": "ui.clientes.Contato",
-                    "django_app_label": "ui",
+                    "django_model": "clientes.Contato",
+                    "django_app_label": "clientes",
                     "notion_schema": {
                         "Nome Contato": {"title": {}},
                         "Telefone": {"phone_number": {}},

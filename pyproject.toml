@@ -176,7 +176,7 @@ base = "python scripts/new_feature_script.py --type base"
 call-data = "python scripts/new_feature_script.py --type call_data"
 
 # Servidor Django - Local
-start = "python -m smart_core_assistant_painel.main runserver"
+start = "python -m smart_core_assistant_painel.main runserver 127.0.0.1:8010"
 server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 cluster = "python -m smart_core_assistant_painel.main qcluster"
 start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 split-pane -V -d $proj powershell -NoExit -Command 'uv run task cluster' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster' }\""

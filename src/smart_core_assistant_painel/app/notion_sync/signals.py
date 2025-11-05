@@ -20,6 +20,7 @@ from django.dispatch import receiver
 from django.db import transaction
 from loguru import logger
 from asgiref.sync import async_to_sync
+from django_q.tasks import async_task
 
 from ..ui.atendimentos.models import Atendimento, Mensagem
 from ..ui.clientes.models import Cliente, Contato
@@ -724,10 +725,18 @@ def schedule_sync_operation(
                                 "Falha na atualização via UDS"
                             )
                     else:
-                        # Sem external_id, cria primeiro
-                        page_id = uds.create_item(ds_id, payload)
-                        sync_record.external_id = page_id
-                        sync_record.mark_as_synced(page_id)
+                        # Atualização solicitada sem external_id: evita criação implícita
+                        # Comentário: evitamos duplicidade. O fluxo de criação ocorre no post_save.
+                        msg = (
+                            "Update ignorado: Contato sem external_id. Aguarde fluxo de criação."
+                        )
+                        logger.warning(msg)
+                        try:
+                            sync_record.mark_as_failed(msg)
+                        except Exception:
+                            sync_record.sync_status = "error"
+                            sync_record.sync_error = msg
+                            sync_record.save()
 
                 logger.info(
                     (
@@ -788,10 +797,18 @@ def schedule_sync_operation(
                                 "Falha na atualização via UDS"
                             )
                     else:
-                        # Sem external_id, cria primeiro
-                        page_id = uds.create_item(ds_id, payload)
-                        sync_record.external_id = page_id
-                        sync_record.mark_as_synced(page_id)
+                        # Atualização solicitada sem external_id: evita criação implícita
+                        # Comentário: evitamos duplicidade. O fluxo de criação ocorre no post_save.
+                        msg = (
+                            "Update ignorado: Cliente sem external_id. Aguarde fluxo de criação."
+                        )
+                        logger.warning(msg)
+                        try:
+                            sync_record.mark_as_failed(msg)
+                        except Exception:
+                            sync_record.sync_status = "error"
+                            sync_record.sync_error = msg
+                            sync_record.save()
 
                 logger.info(
                     (
@@ -828,12 +845,18 @@ def schedule_sync_operation(
                 else:
                     sync_record.mark_as_failed("Falha na atualização")
             else:
-                # Se não tem external_id, tenta criar
-                external_id = service.create_record(
-                    model_name, instance_id, sync_record
+                # Sem external_id em update: evita criação implícita para reduzir duplicidade
+                # Comentário: a criação deve ocorrer no fluxo específico de criação (post_save).
+                msg = (
+                    f"Update ignorado: {model_name} #{instance_id} sem external_id."
                 )
-                sync_record.external_id = external_id
-                sync_record.mark_as_synced(external_id)
+                logger.warning(msg)
+                try:
+                    sync_record.mark_as_failed(msg)
+                except Exception:
+                    sync_record.sync_status = "error"
+                    sync_record.sync_error = msg
+                    sync_record.save()
         logger.info(
             f"Sincronização executada com sucesso: {model_name} #{instance_id} - {operation}"
         )
@@ -898,10 +921,12 @@ def on_contato_saved(
                         instance.id,
                         str(exc),
                     )
-                schedule_sync_operation(
-                    model_name="Contato",
-                    instance_id=instance.id,
-                    operation=operation,
+                # Agenda a sincronização via cluster (Django Q)
+                async_task(
+                    schedule_sync_operation,
+                    "Contato",
+                    instance.id,
+                    operation,
                 )
                 logger.info(
                     "Contato #{} {} - Sincronização agendada",
@@ -967,10 +992,12 @@ def on_cliente_saved(
                     )
 
                 # Agendar operação de sincronização
-                schedule_sync_operation(
-                    model_name="Cliente",
-                    instance_id=instance.id,
-                    operation=operation,
+                # Agenda a sincronização via cluster (Django Q)
+                async_task(
+                    schedule_sync_operation,
+                    "Cliente",
+                    instance.id,
+                    operation,
                 )
                 logger.info(
                     "Cliente #{} {} - Sincronização agendada",
@@ -1077,31 +1104,16 @@ def on_contato_clientes_changed(
             )
             return
 
+        # Prepara dados e agenda atualização do contato via cluster
         sync_record.prepare_notion_data()
         sync_record.save()
-
-        service = NotionSyncService()
-        success = service.update_record(
-            "Contato", sync_record.external_id, instance.id, sync_record
+        async_task(
+            schedule_sync_operation, "Contato", instance.id, "update"
         )
-
-        if success:
-            sync_record.mark_as_synced()
-            logger.info(
-                f"Relacionamentos do Contato #{instance.id} atualizados no Notion (action: {action})"
-            )
-        else:
-            sync_record.mark_as_failed(
-                f"Falha na atualização de relacionamentos (action: {action})"
-            )
-            logger.error(
-                f"Falha ao atualizar relacionamentos do Contato #{instance.id} (action: {action})"
-            )
 
         try:
             from .models import ClienteSync
 
-            service = NotionSyncService()
             cliente_ids = list(pk_set or [])
             for cliente_id in cliente_ids:
                 cliente_sync = ClienteSync.objects.filter(
@@ -1112,54 +1124,13 @@ def on_contato_clientes_changed(
 
                 cliente_sync.prepare_notion_data()
                 cliente_sync.save()
-
-                if not cliente_sync.external_id:
-                    try:
-                        created_id = service.create_record(
-                            "Cliente", cliente_id, cliente_sync
-                        )
-                        cliente_sync.external_id = created_id
-                        cliente_sync.mark_as_synced()
-                        cliente_sync.save()
-                        logger.info(
-                            f"Cliente #{cliente_id} criado no Notion "
-                            f"(external_id: {created_id})"
-                        )
-                    except Exception as ce:
-                        cliente_sync.mark_as_failed(str(ce))
-                        logger.error(
-                            f"Erro ao criar Cliente #{cliente_id} "
-                            f"no Notion: {ce}"
-                        )
-                        continue
-
-                try:
-                    ok_cliente = service.update_record(
-                        "Cliente",
-                        cliente_sync.external_id,
-                        cliente_id,
-                        cliente_sync,
-                    )
-                    if ok_cliente:
-                        cliente_sync.mark_as_synced()
-                        logger.info(
-                            f"Relacionamentos do Cliente #{cliente_id} "
-                            f"atualizados (via Contato action: {action})"
-                        )
-                    else:
-                        cliente_sync.mark_as_failed(
-                            "Falha ao atualizar relacionamento (via Contato)"
-                        )
-                        logger.error(
-                            f"Falha ao atualizar Cliente #{cliente_id} "
-                            f"(via Contato)"
-                        )
-                except Exception as ue:
-                    cliente_sync.mark_as_failed(str(ue))
-                    logger.error(
-                        f"Erro ao atualizar Cliente #{cliente_id} "
-                        f"(via Contato): {ue}"
-                    )
+                # Agenda atualização do cliente via cluster (sem criação implícita)
+                async_task(
+                    schedule_sync_operation,
+                    "Cliente",
+                    cliente_id,
+                    "update",
+                )
         except Exception as e_inner:
             logger.error(
                 f"Erro ao sincronizar Clientes impactados "
@@ -1189,8 +1160,6 @@ def on_cliente_contatos_changed(
         return
 
     try:
-        service = NotionSyncService()
-
         if action in ("post_add", "post_remove", "post_clear"):
             try:
                 from .models import ContatoSync
@@ -1210,54 +1179,13 @@ def on_cliente_contatos_changed(
 
                     contato_sync.prepare_notion_data()
                     contato_sync.save()
-
-                    if not contato_sync.external_id:
-                        try:
-                            created_id = service.create_record(
-                                "Contato", contato_obj.id, contato_sync
-                            )
-                            contato_sync.external_id = created_id
-                            contato_sync.mark_as_synced()
-                            contato_sync.save()
-                            logger.info(
-                                f"Contato #{contato_obj.id} criado no Notion "
-                                f"(external_id: {created_id})"
-                            )
-                        except Exception as ce:
-                            contato_sync.mark_as_failed(str(ce))
-                            logger.error(
-                                f"Erro ao criar Contato #{contato_obj.id} "
-                                f"no Notion: {ce}"
-                            )
-                            continue
-
-                    try:
-                        ok = service.update_record(
-                            "Contato",
-                            contato_sync.external_id,
-                            contato_obj.id,
-                            contato_sync,
-                        )
-                        if ok:
-                            contato_sync.mark_as_synced()
-                            logger.info(
-                                f"Relacionamentos do Contato #{contato_obj.id} "
-                                f"atualizados (via Cliente action: {action})"
-                            )
-                        else:
-                            contato_sync.mark_as_failed(
-                                "Falha ao atualizar relacionamento (via Cliente)"
-                            )
-                            logger.error(
-                                f"Falha ao atualizar Contato #{contato_obj.id} "
-                                f"(via Cliente)"
-                            )
-                    except Exception as ue:
-                        contato_sync.mark_as_failed(str(ue))
-                        logger.error(
-                            f"Erro ao atualizar Contato #{contato_obj.id} "
-                            f"(via Cliente): {ue}"
-                        )
+                    # Agenda atualização do contato via cluster (sem criação implícita)
+                    async_task(
+                        schedule_sync_operation,
+                        "Contato",
+                        contato_obj.id,
+                        "update",
+                    )
             except Exception as e_inner:
                 logger.error(
                     f"Erro ao sincronizar contatos impactados "
@@ -1276,49 +1204,13 @@ def on_cliente_contatos_changed(
             cliente_sync.prepare_notion_data()
             cliente_sync.save()
 
-            if not cliente_sync.external_id:
-                try:
-                    created_id = service.create_record(
-                        "Cliente", instance.id, cliente_sync
-                    )
-                    cliente_sync.external_id = created_id
-                    cliente_sync.mark_as_synced()
-                    cliente_sync.save()
-                    logger.info(
-                        f"Cliente #{instance.id} criado no Notion "
-                        f"(external_id: {created_id})"
-                    )
-                except Exception as ce:
-                    cliente_sync.mark_as_failed(str(ce))
-                    logger.error(
-                        f"Erro ao criar Cliente #{instance.id} no Notion: {ce}"
-                    )
-            else:
-                try:
-                    ok_cli = service.update_record(
-                        "Cliente",
-                        cliente_sync.external_id,
-                        instance.id,
-                        cliente_sync,
-                    )
-                    if ok_cli:
-                        cliente_sync.mark_as_synced()
-                        logger.info(
-                            f"Cliente #{instance.id} atualizado "
-                            f"(action: {action})"
-                        )
-                    else:
-                        cliente_sync.mark_as_failed(
-                            "Falha ao atualizar relacionamento (Cliente)"
-                        )
-                        logger.error(
-                            f"Falha ao atualizar Cliente #{instance.id}"
-                        )
-                except Exception as ue:
-                    cliente_sync.mark_as_failed(str(ue))
-                    logger.error(
-                        f"Erro ao atualizar Cliente #{instance.id}: {ue}"
-                    )
+            # Agenda atualização do cliente via cluster (sem criação implícita)
+            async_task(
+                schedule_sync_operation,
+                "Cliente",
+                instance.id,
+                "update",
+            )
         except Exception as e_cliente:
             logger.error(
                 f"Erro ao sincronizar o cliente #{instance.id}: {e_cliente}"

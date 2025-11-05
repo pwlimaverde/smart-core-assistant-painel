@@ -42,6 +42,8 @@ from smart_core_assistant_painel.modules.services import (
 )
 from .services.mappers.contato_mapper import ContatoMapper
 from .services.mappers.cliente_mapper import ClienteMapper
+from .services.mappers.departamento_mapper import DepartamentoMapper
+from .services.mappers.atendente_mapper import AtendenteMapper
 from .models import NotionDatabaseConfig
 
 
@@ -228,17 +230,246 @@ def _bootstrap_uds_for_cliente(config: NotionDatabaseConfig) -> None:
                 ),
             )
 
+        # Cria propriedade de relação apenas quando ambos configs
+        # possuem `database_id` válido (evita chamar Notion com UUID
+        # placeholder). O terceiro parâmetro deve ser o `database_id`
+        # de destino, não o `data_source_id`.
         contato_ds_id: str = _ensure_uds_data_source_id(contato_cfg, uds)
-        uds.add_relation_property(
-            cliente_ds_id,
-            "Contatos Relacionados",
-            contato_ds_id,
-        )
+        def _has_valid_db_id(cfg_obj: NotionDatabaseConfig) -> bool:
+            try:
+                return bool(cfg_obj.has_valid_database_id())
+            except Exception:
+                dbid = getattr(cfg_obj, "notion_database_id", None)
+                return bool(dbid) and str(dbid) != (
+                    "00000000-0000-0000-0000-000000000000"
+                )
+
+        if _has_valid_db_id(contato_cfg) and _has_valid_db_id(config):
+            target_db_id: str = str(contato_cfg.notion_database_id)
+            uds.add_relation_property(
+                cliente_ds_id,
+                "Contatos Relacionados",
+                target_db_id,
+            )
+        else:
+            logger.warning(
+                "Relação Cliente -> Contatos não aplicada: IDs de "
+                "database inválidos. Apenas schema UDS atualizado."
+            )
     except Exception as exc:
         logger.warning(
             f"Falha ao configurar relação de Contatos no UDS: {exc}"
         )
 
+
+def _bootstrap_uds_for_departamento(config: NotionDatabaseConfig) -> None:
+    """
+    Garante o bootstrap do UDS para o modelo Departamento.
+
+    - Atualiza o schema do Data Source de Departamento no UDS.
+    - Cria/atualiza a relação "Atendentes Relacionados" se disponível.
+
+    Comentário:
+    - Idempotente no UDS; seguro para múltiplas invocações.
+    - Não modifica configurações do Notion além do schema espelhado.
+    """
+
+    # Garante que o UDS esteja inicializado no SERVICEHUB
+    try:
+        uds = SERVICEHUB.unified_data_service
+    except Exception:
+        FeaturesCompose.unifield_data_services()
+        uds = SERVICEHUB.unified_data_service
+
+    def _ensure_uds_data_source_id(
+        cfg: NotionDatabaseConfig, service: Any
+    ) -> str:
+        """
+        Garante que o `data_source_id` esteja definido para o config.
+
+        - Cria container e data source quando ausente.
+        """
+        if cfg.data_source_id:
+            if not getattr(cfg, "sync_enabled", False):
+                cfg.sync_enabled = True
+                cfg.save(update_fields=["sync_enabled"])
+            return str(cfg.data_source_id)
+
+        ds_id_local: str = str(uuid.uuid4())
+        container_name: str = cfg.name or "Unified Data Root"
+        container_id: str = service.create_container(container_name)
+        service.add_data_source(container_id, ds_id_local)
+        cfg.data_source_id = ds_id_local
+        cfg.sync_enabled = True
+        cfg.save(update_fields=["data_source_id", "sync_enabled"])
+        return ds_id_local
+
+    # Schema e data source de Departamento
+    schema: dict[str, Any] = DepartamentoMapper.get_notion_schema()
+    departamento_ds_id: str = _ensure_uds_data_source_id(config, uds)
+
+    try:
+        uds.update_schema(departamento_ds_id, schema)
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao atualizar schema UDS para Departamento: {exc}"
+        )
+
+    # Configuração de Atendente e relação
+    try:
+        atendente_cfg: Optional[NotionDatabaseConfig] = (
+            NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_atendente"
+            ).first()
+        )
+        if not atendente_cfg:
+            atendente_cfg = NotionDatabaseConfig.objects.create(
+                slug="ui_operacional_atendente",
+                name="Atendentes",
+                django_model="operacional.Atendente",
+                django_app_label="ui",
+                notion_database_id=(
+                    "00000000-0000-0000-0000-000000000000"
+                ),
+                sync_enabled=False,
+                description=(
+                    "Configuração padrão para sincronização de Atendentes"
+                ),
+            )
+
+        atendente_ds_id: str = _ensure_uds_data_source_id(atendente_cfg, uds)
+
+        def _has_valid_db_id(cfg_obj: NotionDatabaseConfig) -> bool:
+            try:
+                return bool(cfg_obj.has_valid_database_id())
+            except Exception:
+                dbid = getattr(cfg_obj, "notion_database_id", None)
+                return bool(dbid) and str(dbid) != (
+                    "00000000-0000-0000-0000-000000000000"
+                )
+
+        if _has_valid_db_id(config) and _has_valid_db_id(atendente_cfg):
+            target_db_id: str = str(atendente_cfg.notion_database_id)
+            uds.add_relation_property(
+                departamento_ds_id,
+                "Atendentes Relacionados",
+                target_db_id,
+            )
+        else:
+            logger.warning(
+                "Relação Departamento -> Atendentes não aplicada: IDs de "
+                "database inválidos. Apenas schema UDS atualizado."
+            )
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao configurar relação de Atendentes no UDS: {exc}"
+        )
+
+
+def _bootstrap_uds_for_atendente(config: NotionDatabaseConfig) -> None:
+    """
+    Garante o bootstrap do UDS para o modelo Atendente.
+
+    - Atualiza o schema do Data Source de Atendente no UDS.
+    - Cria/atualiza a relação "Departamentos Relacionados" se disponível.
+
+    Comentário:
+    - Idempotente no UDS; seguro para múltiplas invocações.
+    - Não modifica configurações do Notion além do schema espelhado.
+    """
+
+    # Garante que o UDS esteja inicializado no SERVICEHUB
+    try:
+        uds = SERVICEHUB.unified_data_service
+    except Exception:
+        FeaturesCompose.unifield_data_services()
+        uds = SERVICEHUB.unified_data_service
+
+    def _ensure_uds_data_source_id(
+        cfg: NotionDatabaseConfig, service: Any
+    ) -> str:
+        """
+        Garante que o `data_source_id` esteja definido para o config.
+
+        - Cria container e data source quando ausente.
+        """
+        if cfg.data_source_id:
+            if not getattr(cfg, "sync_enabled", False):
+                cfg.sync_enabled = True
+                cfg.save(update_fields=["sync_enabled"])
+            return str(cfg.data_source_id)
+
+        ds_id_local: str = str(uuid.uuid4())
+        container_name: str = cfg.name or "Unified Data Root"
+        container_id: str = service.create_container(container_name)
+        service.add_data_source(container_id, ds_id_local)
+        cfg.data_source_id = ds_id_local
+        cfg.sync_enabled = True
+        cfg.save(update_fields=["data_source_id", "sync_enabled"])
+        return ds_id_local
+
+    # Schema e data source de Atendente
+    schema: dict[str, Any] = AtendenteMapper.get_notion_schema()
+    atendente_ds_id: str = _ensure_uds_data_source_id(config, uds)
+
+    try:
+        uds.update_schema(atendente_ds_id, schema)
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao atualizar schema UDS para Atendente: {exc}"
+        )
+
+    # Configuração de Departamento e relação
+    try:
+        departamento_cfg: Optional[NotionDatabaseConfig] = (
+            NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_departamento"
+            ).first()
+        )
+        if not departamento_cfg:
+            departamento_cfg = NotionDatabaseConfig.objects.create(
+                slug="ui_operacional_departamento",
+                name="Departamentos",
+                django_model="operacional.Departamento",
+                django_app_label="ui",
+                notion_database_id=(
+                    "00000000-0000-0000-0000-000000000000"
+                ),
+                sync_enabled=False,
+                description=(
+                    "Configuração padrão para sincronização de Departamentos"
+                ),
+            )
+
+        departamento_ds_id: str = _ensure_uds_data_source_id(
+            departamento_cfg, uds
+        )
+
+        def _has_valid_db_id(cfg_obj: NotionDatabaseConfig) -> bool:
+            try:
+                return bool(cfg_obj.has_valid_database_id())
+            except Exception:
+                dbid = getattr(cfg_obj, "notion_database_id", None)
+                return bool(dbid) and str(dbid) != (
+                    "00000000-0000-0000-0000-000000000000"
+                )
+
+        if _has_valid_db_id(config) and _has_valid_db_id(departamento_cfg):
+            target_db_id: str = str(departamento_cfg.notion_database_id)
+            uds.add_relation_property(
+                atendente_ds_id,
+                "Departamentos Relacionados",
+                target_db_id,
+            )
+        else:
+            logger.warning(
+                "Relação Atendente -> Departamentos não aplicada: IDs de "
+                "database inválidos. Apenas schema UDS atualizado."
+            )
+    except Exception as exc:
+        logger.warning(
+            f"Falha ao configurar relação de Departamentos no UDS: {exc}"
+        )
 
 def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
     """
@@ -1501,18 +1732,48 @@ def on_departamento_saved(
         sync = get_or_create_departamento_sync(instance.id)
         logger.info(f"Sync criado/atualizado: {sync}")
 
-        sync.prepare_notion_data()
-        sync.save()
+        def _after_commit() -> None:
+            """Executa bootstrap/construct e agenda sync após commit.
 
-        schedule_sync_operation(
-            model_name="Departamento",
-            instance_id=instance.id,
-            operation="create" if created else "update",
-        )
+            Comentário: evita IO pesado e criação de bases dentro
+            da transação; segue padrão usado em Clientes/Contatos.
+            """
+            try:
+                ok_ready = ensure_operacional_configs_ready()
+                if not ok_ready:
+                    logger.warning(
+                        "Config Notion Operacional ainda não pronta."
+                    )
+
+                sync.prepare_notion_data()
+                sync.save()
+
+                try:
+                    _bootstrap_uds_for_departamento(sync.config)
+                except Exception as exc:
+                    logger.warning(
+                        "Falha no bootstrap UDS para Departamento #{}: {}",
+                        instance.id,
+                        str(exc),
+                    )
+
+                schedule_sync_operation(
+                    model_name="Departamento",
+                    instance_id=instance.id,
+                    operation="create" if created else "update",
+                )
+            except Exception as inner:
+                logger.error(
+                    (
+                        "Erro pós-commit ao processar Departamento #{}: {}"
+                    ).format(instance.id, inner)
+                )
+
+        transaction.on_commit(_after_commit)
 
     except Exception as exc:
         logger.error(
-            f"Erro ao processar sync do departamento {instance.id}: {exc}"
+            f"Erro ao preparar sync do departamento {instance.id}: {exc}"
         )
 
 
@@ -1590,53 +1851,83 @@ def on_atendente_saved(
         sync = get_or_create_atendente_sync(instance.id)
         logger.info(f"Sync criado/atualizado: {sync}")
 
-        sync.prepare_notion_data()
-        sync.save()
+        def _after_commit() -> None:
+            """Executa bootstrap/construct e agenda sync após commit."""
+            try:
+                ok_ready = ensure_operacional_configs_ready()
+                if not ok_ready:
+                    logger.warning(
+                        "Config Notion Operacional ainda não pronta."
+                    )
 
-        schedule_sync_operation(
-            model_name="Atendente",
-            instance_id=instance.id,
-            operation="create" if created else "update",
-        )
-        try:
-            prev_id = getattr(instance, "_original_departamento_id", None)
-            curr_id = instance.departamento_id
+                sync.prepare_notion_data()
+                sync.save()
 
-            ids_to_update: list[int] = []
-            if created:
-                if curr_id:
-                    ids_to_update.append(curr_id)
-            else:
-                if prev_id != curr_id:
-                    if prev_id:
-                        ids_to_update.append(prev_id)
-                    if curr_id:
-                        ids_to_update.append(curr_id)
-
-            for dep_id in ids_to_update:
                 try:
-                    dep_sync = get_or_create_departamento_sync(dep_id)
-                    dep_sync.prepare_notion_data()
-                    dep_sync.save()
-                    schedule_sync_operation(
-                        model_name="Departamento",
-                        instance_id=dep_id,
-                        operation="update",
+                    _bootstrap_uds_for_atendente(sync.config)
+                except Exception as exc:
+                    logger.warning(
+                        "Falha no bootstrap UDS para Atendente #{}: {}",
+                        instance.id,
+                        str(exc),
                     )
-                except Exception as e:
+
+                schedule_sync_operation(
+                    model_name="Atendente",
+                    instance_id=instance.id,
+                    operation="create" if created else "update",
+                )
+
+                # Atualização de Departamentos relacionados
+                try:
+                    prev_id = getattr(
+                        instance, "_original_departamento_id", None
+                    )
+                    curr_id = instance.departamento_id
+
+                    ids_to_update: list[int] = []
+                    if created:
+                        if curr_id:
+                            ids_to_update.append(curr_id)
+                    else:
+                        if prev_id != curr_id:
+                            if prev_id:
+                                ids_to_update.append(prev_id)
+                            if curr_id:
+                                ids_to_update.append(curr_id)
+
+                    for dep_id in ids_to_update:
+                        try:
+                            dep_sync = get_or_create_departamento_sync(dep_id)
+                            dep_sync.prepare_notion_data()
+                            dep_sync.save()
+                            schedule_sync_operation(
+                                model_name="Departamento",
+                                instance_id=dep_id,
+                                operation="update",
+                            )
+                        except Exception as e:
+                            logger.error(
+                                "Erro ao atualizar Departamento vinculado "
+                                f"#{dep_id}: {e}"
+                            )
+                except Exception as e_dep:
                     logger.error(
-                        "Erro ao atualizar Departamento vinculado "
-                        f"#{dep_id}: {e}"
+                        "Erro ao processar atualização de departamentos "
+                        f"relacionados para atendente #{instance.id}: {e_dep}"
                     )
-        except Exception as e_dep:
-            logger.error(
-                "Erro ao processar atualização de departamentos relacionados "
-                f"para atendente #{instance.id}: {e_dep}"
-            )
+            except Exception as inner:
+                logger.error(
+                    (
+                        "Erro pós-commit ao processar Atendente #{}: {}"
+                    ).format(instance.id, inner)
+                )
+
+        transaction.on_commit(_after_commit)
 
     except Exception as exc:
         logger.error(
-            f"Erro ao processar sync do atendente {instance.id}: {exc}"
+            f"Erro ao preparar sync do atendente {instance.id}: {exc}"
         )
 
 
@@ -1857,5 +2148,66 @@ def ensure_clientes_configs_ready() -> bool:
     except Exception as outer:
         logger.error(
             f"Falha ao verificar/garantir configs de Clientes/Contatos: {outer}"
+        )
+        return False
+
+
+def ensure_operacional_configs_ready() -> bool:
+    """Garante que as configs Operacionais (Departamentos/Atendentes) existam.
+
+    Comentário (PT-BR):
+    - Retorna True se ambas as configs estão prontas para sync.
+    - Caso contrário, constrói as databases via construtor assíncrono
+      e salva no `NotionDatabaseConfig`.
+    """
+    try:
+        dep_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_operacional_departamento"
+        ).first()
+        at_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_operacional_atendente"
+        ).first()
+
+        if (
+            dep_cfg
+            and at_cfg
+            and dep_cfg.is_ready_for_sync()
+            and at_cfg.is_ready_for_sync()
+        ):
+            return True
+
+        try:
+            # Usa o serviço de bootstrap mínimo (evita efeitos colaterais)
+            from .services.bootstrap_operacional import (
+                NotionOperacionalBootstrapService,
+            )
+
+            bootstrap = NotionOperacionalBootstrapService()
+            async_to_sync(bootstrap.construct_minimal)()
+            logger.info(
+                "Databases operacionais criadas (mínimas) e configs salvas."
+            )
+
+            # Revalidar
+            dep_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_departamento"
+            ).first()
+            at_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_atendente"
+            ).first()
+            return bool(
+                dep_cfg
+                and at_cfg
+                and dep_cfg.is_ready_for_sync()
+                and at_cfg.is_ready_for_sync()
+            )
+        except Exception as exc:
+            logger.error(
+                f"Erro ao construir bases Notion (Operacional): {exc}"
+            )
+            return False
+    except Exception as outer:
+        logger.error(
+            f"Falha ao verificar/garantir configs Operacionais: {outer}"
         )
         return False

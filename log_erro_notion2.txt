@@ -1,5 +1,4 @@
-Log cluster:
-
+Log cluster após clicar em salvar contato pelo admin:
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
 2025-11-05 10:28:53.474 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
@@ -197,9 +196,32 @@ INFO:httpx:HTTP Request: PATCH https://api.notion.com/v1/pages/2a282f9f-7f7c-81a
 2025-11-05 10:29:54.296 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:806 - Sincronização via UDS concluída: Contato #46 - update
 INFO:django-q:Processed 'smart_core_assistant_painel.app.notion_sync.signals.schedule_sync_operation' (texas-burger-autumn-undress)
 INFO:django-q:Processed 'smart_core_assistant_painel.app.notion_sync.signals.schedule_sync_operation' (mars-december-arizona-berlin)
+INFO:django-q:Process-3cc7dc078bb743599e5bbf005f35c329 processing harry-bravo-seventeen-september 'smart_core_assistant_painel.app.notion_sync.signals.schedule_sync_operation'
+2025-11-05 10:33:54.775 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:74 - Cliente do Notion inicializado com sucesso
+2025-11-05 10:33:54.816 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Contato carregado: 397be0c3...
+2025-11-05 10:33:54.822 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Contato carregado: cff0c412...
+2025-11-05 10:33:54.822 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Contato: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 10:33:54.826 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Cliente carregado: 427b7a42...
+2025-11-05 10:33:54.831 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Cliente carregado: fe492dcd...
+2025-11-05 10:33:54.831 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Cliente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 10:33:54.834 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Departamento não encontrado
+2025-11-05 10:33:54.843 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Departamento não encontrado
+2025-11-05 10:33:54.848 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendente não encontrado
+2025-11-05 10:33:54.852 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendente não encontrado
+2025-11-05 10:33:54.855 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendimento não encontrado
+2025-11-05 10:33:54.859 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendimento não encontrado
+2025-11-05 10:33:54.863 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Mensagem não encontrado
+2025-11-05 10:33:54.867 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Mensagem não encontrado
+2025-11-05 10:33:54.873 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:614 - Executando sincronização: Contato #46 - update
+2025-11-05 10:33:54.876 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:617 - Sync record: deborah (2a282f9f-7f7c-81a4-9c8f-fd110b73dd09)
+2025-11-05 10:33:54.895 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:746 - [LINK_SYNC] Execução update Contato #46 com clientes_relacionados=1
+2025-11-05 10:33:54.895 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:753 - [LINK_SYNC] IDs clientes no payload do Contato #46: ['2a282f9f-7f7c-8183-bab8-db465f6eae80']
+INFO:httpx:HTTP Request: PATCH https://api.notion.com/v1/pages/2a282f9f-7f7c-81a4-9c8f-fd110b73dd09 "HTTP/1.1 200 OK"
+2025-11-05 10:33:55.439 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_item:373 - Item 2a282f9f-7f7c-81a4-9c8f-fd110b73dd09 atualizado, operação: b035beb9-675f-4b63-acc3-86f9eb1f66b2
+2025-11-05 10:33:55.477 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:806 - Sincronização via UDS concluída: Contato #46 - update
+INFO:django-q:Processed 'smart_core_assistant_painel.app.notion_sync.signals.schedule_sync_operation' (harry-bravo-seventeen-september)
 
-
-Log servidor:
+log servidor após entrar no contato pelo admin e clicar em salvar:
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
 2025-11-05 10:28:53.474 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
@@ -258,27 +280,16 @@ INFO:django-q:Enqueued [smart_core_cluster] 148
 INFO:django-q:Enqueued [smart_core_cluster] 149
 [05/Nov/2025 10:29:49] "POST /admin/clientes/cliente/add/ HTTP/1.1" 302 0
 [05/Nov/2025 10:29:49] "GET /admin/clientes/cliente/ HTTP/1.1" 200 28846
-[05/Nov/2025 10:29:49] "GET /admin/jsi18n/ HTTP/1.1" 200 33422025-11-05 10:40:24.481 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-05 10:40:26.147 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-05 10:55:02.536 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-05 10:55:04.650 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-05 10:55:04.650 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-05 10:55:08.489 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-05 10:55:10.506 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-05 10:55:54.218 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_contato_clientes_changed:1355 - Contato #35 não possui sync_record para atualizar relacionamentos
-2025-11-05 10:55:54.225 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_contato_clientes_changed:1355 - Contato #35 não possui sync_record para atualizar relacionamentos
-2025-11-05 10:55:54.860 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:__init__:66 - NotionUnifiedDataService inicializado
-2025-11-05 10:55:54.879 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id fe492dcd-218b-434b-b25a-05344ce8ec30, versão: db4bd774-50ff-4a81-ae5d-e63a13ee9958
-2025-11-05 10:55:55.362 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Contatos Relacionados' criada com ID: b0f6b60b-0992-4de3-96ca-e585095c032e
-2025-11-05 10:55:55.451 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1079 - Cliente #35 criado - Sincronização agendada
-2025-11-05 10:55:55.499 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1112 - [LINK_SYNC] post_save(Cliente #35) → agendando update do Contato #46 (clientes_relacionados=1)
-2025-11-05 10:55:55.500 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1121 - [LINK_SYNC] IDs de clientes mapeados para Contato #46: ['2a282f9f-7f7c-8183-bab8-db465f6eae80']
-2025-11-05 10:55:55.552 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1143 - Atualizações de Contatos vinculados ao Cliente #35 agendadas
-2025-11-05 10:56:28.772 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_contato_clientes_changed:1355 - Contato #36 não possui sync_record para atualizar relacionamentos
-2025-11-05 10:56:28.786 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_contato_clientes_changed:1355 - Contato #36 não possui sync_record para atualizar relacionamentos
-2025-11-05 10:56:28.890 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id fe492dcd-218b-434b-b25a-05344ce8ec30, versão: 30d2a355-4346-4f1d-b52d-d17fdc974d62
-2025-11-05 10:56:29.218 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Contatos Relacionados' criada com ID: 369600c9-e8c7-4089-9520-a9114b22c140
-2025-11-05 10:56:29.306 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1079 - Cliente #36 criado - Sincronização agendada
-2025-11-05 10:56:29.348 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1112 - [LINK_SYNC] post_save(Cliente #36) → agendando update do Contato #45 (clientes_relacionados=1)
-2025-11-05 10:56:29.349 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1121 - [LINK_SYNC] IDs de clientes mapeados para Contato #45: ['2a282f9f-7f7c-810a-9d4f-eb04f2b5b642']
-2025-11-05 10:56:29.406 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1143 - Atualizações de Contatos vinculados ao Cliente #36 agendadas
+[05/Nov/2025 10:29:49] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[05/Nov/2025 10:33:48] "GET /admin/clientes/contato/ HTTP/1.1" 200 26765
+[05/Nov/2025 10:33:48] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[05/Nov/2025 10:33:51] "GET /admin/clientes/contato/46/change/ HTTP/1.1" 200 28246
+[05/Nov/2025 10:33:51] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+2025-11-05 10:33:53.719 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id cff0c412-68a1-48e2-818b-eca1b8955368, versão: f62ff13e-d2e4-4612-850b-71fa5c8f9e16
+INFO:httpx:HTTP Request: PATCH https://api.notion.com/v1/databases/397be0c3-dc41-444f-b88f-0d6bc6a5dc4c "HTTP/1.1 200 OK"
+2025-11-05 10:33:54.133 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Clientes Relacionados' criada com ID: 6a43de20-ae0e-4431-9b12-367a7c5adb79
+INFO:django-q:Enqueued [smart_core_cluster] 152
+2025-11-05 10:33:54.192 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:996 - Contato #46 atualizado - Sincronização agendada
+[05/Nov/2025 10:33:54] "POST /admin/clientes/contato/46/change/ HTTP/1.1" 302 0
+[05/Nov/2025 10:33:54] "GET /admin/clientes/contato/ HTTP/1.1" 200 27006
+[05/Nov/2025 10:33:54] "GET /admin/jsi18n/ HTTP/1.1" 200 3342

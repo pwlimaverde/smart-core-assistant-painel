@@ -7,6 +7,7 @@ o processo de sincronização com plataformas externas (Notion, Airtable, etc).
 """
 
 from typing import Any, Optional
+import time
 import uuid
 
 from django.db.models.signals import (
@@ -692,12 +693,88 @@ def schedule_sync_operation(
                     FeaturesCompose.unifield_data_services()
                     uds = SERVICEHUB.unified_data_service
 
+                # Comentário: aguarda external_id de clientes relacionados em updates
+                if operation == "update":
+                    try:
+                        contato_obj = Contato.objects.filter(
+                            pk=instance_id
+                        ).first()
+                        if contato_obj:
+                            attempts = 0
+                            max_attempts = 5
+                            delay_sec = 1
+                            while attempts < max_attempts:
+                                pending = False
+                                for cli in contato_obj.clientes.all():
+                                    from .models import ClienteSync
+
+                                    cli_sync = ClienteSync.objects.filter(
+                                        cliente_id=cli.id
+                                    ).first()
+                                    if not cli_sync or not getattr(
+                                        cli_sync, "external_id", None
+                                    ):
+                                        pending = True
+                                        break
+                                if not pending:
+                                    break
+                                attempts += 1
+                                time.sleep(delay_sec)
+                    except Exception as wait_err:
+                        logger.warning(
+                            (
+                                "Falha ao aguardar external_id de clientes "
+                                "relacionados ao Contato #{}: {}"
+                            ).format(instance_id, wait_err)
+                        )
+
                 # Prepara payload (propriedades do Notion)
+                # Comentário: em updates, sempre recalcula para refletir
+                # relacionamentos atualizados (evita usar cache antigo).
+                if operation == "update":
+                    try:
+                        sync_record.prepare_notion_data()
+                    except Exception as prep_err:
+                        logger.warning(
+                            (
+                                "Falha ao preparar dados do Contato #{}: {}"
+                            ).format(instance_id, prep_err)
+                        )
+
                 payload = getattr(sync_record, "notion_properties", {})
                 if not isinstance(payload, dict) or not payload:
                     # Comentário: garante que o mapper foi aplicado
                     sync_record.prepare_notion_data()
                     payload = getattr(sync_record, "notion_properties", {})
+
+                # LOG: visualizar execução da atualização do Contato com
+                # foco no relacionamento "Clientes Relacionados".
+                try:
+                    rel = (
+                        payload.get("Clientes Relacionados", {})
+                        .get("relation", [])
+                    )
+                    rel_ids = [str(it.get("id")) for it in rel]
+                    logger.info(
+                        (
+                            "[LINK_SYNC] Execução update Contato #{} "
+                            "com clientes_relacionados={}"
+                        ).format(instance_id, len(rel_ids))
+                    )
+                    if rel_ids:
+                        logger.debug(
+                            (
+                                "[LINK_SYNC] IDs clientes no payload do "
+                                "Contato #{}: {}"
+                            ).format(instance_id, rel_ids)
+                        )
+                except Exception as log_err:
+                    logger.warning(
+                        (
+                            "[LINK_SYNC] Falha ao logar payload de Contato "
+                            "#{}: {}"
+                        ).format(instance_id, log_err)
+                    )
 
                 ds_id = str(getattr(cfg, "data_source_id", "") or "")
                 if not ds_id:
@@ -1004,6 +1081,77 @@ def on_cliente_saved(
                     instance.id,
                     "criado" if created else "atualizado",
                 )
+
+                # Além do cliente, agenda atualização dos contatos vinculados
+                try:
+                    from .models import ContatoSync
+
+                    contatos_rel = list(instance.contatos.all())
+                    for contato in contatos_rel:
+                        contato_sync = ContatoSync.objects.filter(
+                            contato_id=contato.id
+                        ).first()
+                        if not contato_sync:
+                            contato_sync = get_or_create_contato_sync(
+                                contato.id
+                            )
+
+                        contato_sync.prepare_notion_data()
+                        contato_sync.save()
+
+                        # Loga claramente o disparo de atualização do contato
+                        # após cadastro/atualização do cliente, incluindo
+                        # quantos clientes relacionados serão enviados.
+                        try:
+                            rel = (
+                                contato_sync.notion_properties.get(
+                                    "Clientes Relacionados", {}
+                                ).get("relation", [])
+                            )
+                            rel_ids = [str(it.get("id")) for it in rel]
+                            logger.info(
+                                (
+                                    "[LINK_SYNC] post_save(Cliente #{}) → "
+                                    "agendando update do Contato #{} "
+                                    "(clientes_relacionados={})"
+                                ).format(
+                                    instance.id, contato.id, len(rel_ids)
+                                )
+                            )
+                            logger.debug(
+                                (
+                                    "[LINK_SYNC] IDs de clientes mapeados "
+                                    "para Contato #{}: {}"
+                                ).format(contato.id, rel_ids)
+                            )
+                        except Exception as log_err:
+                            # Comentário: log falho não deve impedir agendamento
+                            logger.warning(
+                                (
+                                    "[LINK_SYNC] Falha ao logar relação "
+                                    "do Contato #{}: {}"
+                                ).format(contato.id, log_err)
+                            )
+
+                        async_task(
+                            schedule_sync_operation,
+                            "Contato",
+                            contato.id,
+                            "update",
+                        )
+                    if contatos_rel:
+                        logger.info(
+                            (
+                                "Atualizações de Contatos vinculados ao Cliente #{} agendadas"
+                            ).format(instance.id)
+                        )
+                except Exception as e_contato:
+                    logger.error(
+                        (
+                            "Erro ao agendar atualização de contatos vinculados "
+                            "para Cliente #{}: {}"
+                        ).format(instance.id, e_contato)
+                    )
             except Exception as err:
                 logger.error(
                     "Erro pós-commit no signal de Cliente #{}: {}",
@@ -1015,6 +1163,111 @@ def on_cliente_saved(
     except Exception as e:
         logger.error(
             f"Erro ao processar signal de Cliente #{instance.id}: {e}"
+        )
+
+
+@receiver(post_save, sender=ClienteSync)
+def on_cliente_sync_saved(
+    sender: Any, instance: ClienteSync, created: bool, **kwargs: Any
+) -> None:
+    """
+    Dispara atualização dos Contatos vinculados após ClienteSync ser
+    marcado como sincronizado.
+
+    Comentário (PT-BR):
+    - Este receiver garante o refresh dos relacionamentos "Clientes
+      Relacionados" em Contato assim que o `external_id` do Cliente
+      estiver disponível (após `mark_as_synced`).
+    - É complementar ao fluxo em `on_cliente_saved`, evitando corrida
+      quando a criação da página no Notion ainda não forneceu o ID.
+    """
+    try:
+        # Apenas atua quando está efetivamente sincronizado e há external_id
+        if instance.sync_status != "synced" or not instance.external_id:
+            return
+
+        def _after_commit() -> None:
+            """Agenda updates de Contatos vinculados pós-commit.
+
+            Comentário: uso pós-commit para não interferir na transação
+            atual e manter simetria com demais receivers do módulo.
+            """
+            try:
+                cliente_obj = instance.cliente
+                contatos_rel = list(cliente_obj.contatos.all())
+
+                for contato in contatos_rel:
+                    # Garante ContatoSync e payload preparado
+                    contato_sync = ContatoSync.objects.filter(
+                        contato_id=contato.id
+                    ).first()
+                    if not contato_sync:
+                        contato_sync = get_or_create_contato_sync(
+                            contato.id
+                        )
+
+                    # Prepara propriedades com relações atualizadas
+                    contato_sync.prepare_notion_data()
+                    contato_sync.save()
+
+                    # Logging focado no relacionamento clientes → contato
+                    try:
+                        rel = (
+                            contato_sync.notion_properties.get(
+                                "Clientes Relacionados", {}
+                            ).get("relation", [])
+                        )
+                        rel_ids = [str(it.get("id")) for it in rel]
+                        logger.info(
+                            (
+                                "[LINK_SYNC] post_save(ClienteSync -> {}) → "
+                                "agendando update do Contato #{} "
+                                "(clientes_relacionados={})"
+                            ).format(instance.cliente_id, contato.id, len(rel_ids))
+                        )
+                        if rel_ids:
+                            logger.debug(
+                                (
+                                    "[LINK_SYNC] IDs de clientes mapeados "
+                                    "para Contato #{}: {}"
+                                ).format(contato.id, rel_ids)
+                            )
+                    except Exception as log_err:
+                        logger.warning(
+                            (
+                                "[LINK_SYNC] Falha ao logar relação do "
+                                "Contato #{}: {}"
+                            ).format(contato.id, log_err)
+                        )
+
+                    # Agenda atualização via cluster (Django Q)
+                    async_task(
+                        schedule_sync_operation,
+                        "Contato",
+                        contato.id,
+                        "update",
+                    )
+
+                if contatos_rel:
+                    logger.info(
+                        (
+                            "Atualizações de Contatos pós-sync do Cliente "
+                            "#{} agendadas"
+                        ).format(instance.cliente_id)
+                    )
+            except Exception as err:
+                logger.error(
+                    (
+                        "Erro pós-commit no signal de ClienteSync #{}: {}"
+                    ).format(instance.cliente_id, err)
+                )
+
+        transaction.on_commit(_after_commit)
+    except Exception as e:
+        logger.error(
+            (
+                "Erro ao processar signal de ClienteSync #{}: {}"
+            ).format(instance.cliente_id, e)
         )
 
 
@@ -1107,8 +1360,11 @@ def on_contato_clientes_changed(
         # Prepara dados e agenda atualização do contato via cluster
         sync_record.prepare_notion_data()
         sync_record.save()
-        async_task(
-            schedule_sync_operation, "Contato", instance.id, "update"
+        # Agenda após commit para garantir vínculo persistido
+        transaction.on_commit(
+            lambda cid=instance.id: async_task(
+                schedule_sync_operation, "Contato", cid, "update"
+            )
         )
 
         try:
@@ -1124,12 +1380,14 @@ def on_contato_clientes_changed(
 
                 cliente_sync.prepare_notion_data()
                 cliente_sync.save()
-                # Agenda atualização do cliente via cluster (sem criação implícita)
-                async_task(
-                    schedule_sync_operation,
-                    "Cliente",
-                    cliente_id,
-                    "update",
+                # Agenda após commit para garantir vínculo persistido
+                transaction.on_commit(
+                    lambda clid=cliente_id: async_task(
+                        schedule_sync_operation,
+                        "Cliente",
+                        clid,
+                        "update",
+                    )
                 )
         except Exception as e_inner:
             logger.error(
@@ -1161,6 +1419,33 @@ def on_cliente_contatos_changed(
 
     try:
         if action in ("post_add", "post_remove", "post_clear"):
+            # Primeiro agenda atualização do próprio cliente
+            try:
+                from .models import ClienteSync
+
+                cliente_sync = ClienteSync.objects.filter(
+                    cliente_id=instance.id
+                ).first()
+                if not cliente_sync:
+                    cliente_sync = get_or_create_cliente_sync(instance.id)
+
+                cliente_sync.prepare_notion_data()
+                cliente_sync.save()
+
+                transaction.on_commit(
+                    lambda cid=instance.id: async_task(
+                        schedule_sync_operation,
+                        "Cliente",
+                        cid,
+                        "update",
+                    )
+                )
+            except Exception as e_cliente:
+                logger.error(
+                    f"Erro ao sincronizar o cliente #{instance.id}: {e_cliente}"
+                )
+
+            # Depois agenda atualização dos contatos relacionados
             try:
                 from .models import ContatoSync
 
@@ -1179,43 +1464,20 @@ def on_cliente_contatos_changed(
 
                     contato_sync.prepare_notion_data()
                     contato_sync.save()
-                    # Agenda atualização do contato via cluster (sem criação implícita)
-                    async_task(
-                        schedule_sync_operation,
-                        "Contato",
-                        contato_obj.id,
-                        "update",
+
+                    transaction.on_commit(
+                        lambda ctid=contato_obj.id: async_task(
+                            schedule_sync_operation,
+                            "Contato",
+                            ctid,
+                            "update",
+                        )
                     )
             except Exception as e_inner:
                 logger.error(
                     f"Erro ao sincronizar contatos impactados "
                     f"(Cliente #{instance.id}): {e_inner}"
                 )
-
-        try:
-            from .models import ClienteSync
-
-            cliente_sync = ClienteSync.objects.filter(
-                cliente_id=instance.id
-            ).first()
-            if not cliente_sync:
-                cliente_sync = get_or_create_cliente_sync(instance.id)
-
-            cliente_sync.prepare_notion_data()
-            cliente_sync.save()
-
-            # Agenda atualização do cliente via cluster (sem criação implícita)
-            async_task(
-                schedule_sync_operation,
-                "Cliente",
-                instance.id,
-                "update",
-            )
-        except Exception as e_cliente:
-            logger.error(
-                f"Erro ao sincronizar o cliente #{instance.id}: {e_cliente}"
-            )
-
     except Exception as exc:
         logger.error(
             f"Erro ao processar mudança de contatos no cliente {instance.id}: {exc}"

@@ -13,6 +13,7 @@ from smart_core_assistant_painel.modules.initial_loading.start_initial_loading i
 from smart_core_assistant_painel.modules.services.start_services import (
     start_services,
 )
+from smart_core_assistant_painel.utils.logging import configure_logging
 
 
 def _resolve_firebase_credentials_path() -> None:
@@ -71,6 +72,8 @@ def _resolve_firebase_credentials_path() -> None:
 
 def main() -> None:
     """Ponto de entrada principal."""
+    # Configura logger com sink de arquivo para multiprocessos.
+    configure_logging()
     _resolve_firebase_credentials_path()
     print("Iniciando serviços e configurações iniciais...")
     start_initial_loading()

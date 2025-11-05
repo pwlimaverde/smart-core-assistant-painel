@@ -255,6 +255,27 @@ class NotionSyncService(ExternalSyncServiceInterface):
             )
             return properties
 
+    def _limit_cliente_properties(
+        self, properties: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Limita o payload de propriedades do modelo Cliente
+        para apenas "Nome Fantasia" e "Razão Social".
+
+        Comentário: solicitado para isolar possíveis erros de campos
+        e validar criação mínima no Notion.
+        """
+        try:
+            allowed: set[str] = {"Nome Fantasia", "Razão Social"}
+            minimal: dict[str, Any] = {}
+            for key, value in properties.items():
+                if key in allowed:
+                    minimal[key] = value
+            return minimal
+        except Exception:
+            # Em caso de qualquer falha, retorna propriedades originais
+            return properties
+
     @override
     def create_record(
         self,
@@ -280,6 +301,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
         try:
             properties = mapper.to_notion_properties(data)
+            # Simplificação solicitada: para Cliente, enviar apenas
+            # "Nome Fantasia" e "Razão Social".
+            if model_name == "Cliente":
+                properties = self._limit_cliente_properties(properties)
             properties = self._filter_properties_by_schema(
                 model_name, properties
             )
@@ -411,7 +436,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 raise MappingError(f"Mapper não encontrado para {model_name}")
 
             properties = mapper.to_notion_properties(data)
-
+            # Simplificação solicitada: para Cliente, enviar apenas
+            # "Nome Fantasia" e "Razão Social".
+            if model_name == "Cliente":
+                properties = self._limit_cliente_properties(properties)
             properties = self._filter_properties_by_schema(
                 model_name, properties
             )

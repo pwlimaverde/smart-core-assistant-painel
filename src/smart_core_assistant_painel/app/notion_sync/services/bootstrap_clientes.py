@@ -100,8 +100,17 @@ class NotionClientesBootstrapService:
             "Ativo": {"checkbox": {}},
             "Data Cadastro": {"date": {}},
             "Última Interação": {"date": {}},
+            # Propriedade de relação apontando para Clientes.
+            # Replica a configuração do script_constructor para espelhamento
+            # automático via dual_property.
             "Clientes Relacionados": {
-                "relation": {"data_source_id": ds_id, "single_property": {}}
+                "relation": {
+                    "data_source_id": ds_id,
+                    "single_property": {},
+                    "dual_property": {
+                        "synced_property_name": "Contatos Relacionados",
+                    },
+                }
             },
         }
 
@@ -121,33 +130,79 @@ class NotionClientesBootstrapService:
         return created
 
     async def _add_relation_to_clientes(self, contato_db: Any, cliente_db: Any) -> None:
-        """Adiciona propriedade espelhada em Clientes (bidirecional)."""
+        """Adiciona/atualiza relação 'Contatos Relacionados' em Clientes via data_sources.
+
+        Comentários:
+        - Usa PATCH em `data_sources/{cliente_ds}` conforme Guide V2.
+        - Garante dual_property espelhando 'Clientes Relacionados' por ID quando possível.
+        """
         contato_ds: str | None = None
+        cliente_ds: str | None = None
         if getattr(contato_db, "data_sources", None):
             contato_ds = contato_db.data_sources[0]["id"]
-        if not contato_ds:
-            raise ValueError("Database de Contatos não possui data_source")
+        if getattr(cliente_db, "data_sources", None):
+            cliente_ds = cliente_db.data_sources[0]["id"]
+        if not contato_ds or not cliente_ds:
+            raise ValueError("Databases não possuem data_source")
 
-        # A API async `databases.update` aceita um único parâmetro contendo
-        # `database_id` e `properties`. A chamada anterior com dois parâmetros
-        # causava o erro: "_DatabasesAPI.update() takes 2 positional arguments
-        # but 3 were given". Ajustamos para o formato correto.
-        params: dict[str, Any] = {
-            "database_id": cliente_db.id,
+        # Buscar IDs da propriedade 'Clientes Relacionados' no banco de Contatos
+        contato_info = await self._client.request(
+            method="get", path=f"databases/{contato_db.id}"
+        )
+
+        def _prop_id(db_info: dict[str, Any], name: str) -> str | None:
+            """Obtém ID da propriedade por nome, priorizando dentro de data_sources.
+
+            Comentário: prioriza schema por fonte; fallback para raiz.
+            """
+            for ds in db_info.get("data_sources") or []:
+                props_ds: dict[str, Any] = ds.get("properties", {})
+                prop_ds = props_ds.get(name)
+                if prop_ds:
+                    pid = prop_ds.get("id") or getattr(prop_ds, "id", None)
+                    if isinstance(pid, str):
+                        return pid
+            props_root: dict[str, Any] = db_info.get("properties", {})
+            prop_root = props_root.get(name)
+            if not prop_root:
+                return None
+            pid = prop_root.get("id") or getattr(prop_root, "id", None)
+            return pid if isinstance(pid, str) else None
+
+        clientes_rel_id: str | None = _prop_id(
+            contato_info, "Clientes Relacionados"
+        )
+
+        update_params: dict[str, Any] = {
             "properties": {
                 "Contatos Relacionados": {
+                    "type": "relation",
                     "relation": {
                         "data_source_id": contato_ds,
                         "single_property": {},
-                        "dual_property": {
-                            "synced_property_name": "Clientes Relacionados",
-                        },
-                    }
+                        "dual_property": (
+                            {"synced_property_id": clientes_rel_id}
+                            if clientes_rel_id
+                            else {
+                                "synced_property_name": "Clientes Relacionados",
+                            }
+                        ),
+                    },
                 }
-            },
+            }
         }
-        await self._client.databases.update(params)
-        logger.info("Relação bidirecional adicionada em Clientes.")
+
+        # Atualiza via endpoint de data_sources para Cliente
+        # NotionAsyncClient.request não aceita argumento 'json'.
+        # Usamos 'body' para enviar o payload conforme contrato do cliente.
+        await self._client.request(
+            method="patch",
+            path=f"data_sources/{cliente_ds}",
+            body=update_params,
+        )
+        logger.info(
+            "Relação 'Contatos Relacionados' verificada/atualizada em Clientes via data_sources."
+        )
 
     @sync_to_async
     def _save_configs(self, contato_db: Any, cliente_db: Any) -> None:

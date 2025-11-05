@@ -71,7 +71,12 @@ def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
         - Se não houver, cria um container simples e vincula uma fonte
           usando o `slug` como ID estável no UDS in-memory.
         """
+        # Quando já existir `data_source_id`, habilita `sync_enabled`
+        # para permitir operações do UDS (ex.: update_schema).
         if cfg.data_source_id:
+            if not getattr(cfg, "sync_enabled", False):
+                cfg.sync_enabled = True
+                cfg.save(update_fields=["sync_enabled"])
             return str(cfg.data_source_id)
 
         # Comentário: gerar UUID válido para o data_source_id
@@ -79,8 +84,11 @@ def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
         container_name: str = cfg.name or "Unified Data Root"
         container_id: str = service.create_container(container_name)
         service.add_data_source(container_id, ds_id_local)
+        # Habilita sync para que o adapter Notion consiga localizar
+        # a configuração ao atualizar o schema via UDS.
         cfg.data_source_id = ds_id_local
-        cfg.save(update_fields=["data_source_id"])
+        cfg.sync_enabled = True
+        cfg.save(update_fields=["data_source_id", "sync_enabled"])
         return ds_id_local
 
     # Schema de Contato pelo mapper e garantia de data_source_id
@@ -115,11 +123,31 @@ def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
             )
 
         cliente_ds_id: str = _ensure_uds_data_source_id(cliente_cfg, uds)
-        uds.add_relation_property(
-            contato_ds_id,
-            "Clientes Relacionados",
-            cliente_ds_id,
-        )
+        # Cria propriedade de relação apenas quando ambos configs
+        # possuem `database_id` válido (evita chamar Notion com UUID
+        # placeholder). Para UDS in-memory, armazenar o target como
+        # `database_id` também é aceitável.
+        def _has_valid_db_id(cfg_obj: NotionDatabaseConfig) -> bool:
+            try:
+                return bool(cfg_obj.has_valid_database_id())
+            except Exception:
+                dbid = getattr(cfg_obj, "notion_database_id", None)
+                return bool(dbid) and str(dbid) != (
+                    "00000000-0000-0000-0000-000000000000"
+                )
+
+        if _has_valid_db_id(config) and _has_valid_db_id(cliente_cfg):
+            target_db_id: str = str(cliente_cfg.notion_database_id)
+            uds.add_relation_property(
+                contato_ds_id,
+                "Clientes Relacionados",
+                target_db_id,
+            )
+        else:
+            logger.warning(
+                "Relação Contato -> Clientes não aplicada: IDs de "
+                "database inválidos. Apenas schema UDS atualizado."
+            )
     except Exception as exc:
         logger.warning(
             f"Falha ao configurar relação de Clientes no UDS: {exc}"

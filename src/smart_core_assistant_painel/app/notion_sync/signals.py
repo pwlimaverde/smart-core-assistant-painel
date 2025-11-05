@@ -1502,6 +1502,90 @@ def on_cliente_sync_saved(
         )
 
 
+@receiver(post_save, sender=AtendenteSync)
+def on_atendente_sync_saved(
+    sender: Any, instance: AtendenteSync, created: bool, **kwargs: Any
+) -> None:
+    """
+    Dispara atualização do Departamento vinculado após AtendenteSync ser
+    marcado como sincronizado.
+
+    Comentário (PT-BR):
+    - Espelha o padrão de `on_cliente_sync_saved`, garantindo que a
+      propriedade "Atendentes Relacionados" em Departamento seja
+      atualizada somente quando o Atendente possuir `external_id`.
+    - Usa pós-commit e agendamento via cluster para não interferir na
+      transação atual.
+    """
+    try:
+        # Apenas atua quando está efetivamente sincronizado e há external_id
+        if instance.sync_status != "synced" or not instance.external_id:
+            return
+
+        def _after_commit() -> None:
+            """Agenda atualização do Departamento vinculado pós-commit."""
+            try:
+                from ..ui.operacional.models import Atendente
+
+                dep_id: Optional[int] = None
+                try:
+                    # Tenta acessar relação direta, se disponível
+                    atendente_obj = getattr(instance, "atendente", None)
+                    dep_id = (
+                        getattr(atendente_obj, "departamento_id", None)
+                        if atendente_obj
+                        else None
+                    )
+                except Exception:
+                    dep_id = None
+
+                if dep_id is None:
+                    try:
+                        # Fallback seguro via consulta
+                        atendente_obj = Atendente.objects.filter(
+                            id=instance.atendente_id
+                        ).first()
+                        dep_id = (
+                            atendente_obj.departamento_id
+                            if atendente_obj
+                            else None
+                        )
+                    except Exception as err:
+                        logger.warning(
+                            (
+                                "Falha ao carregar Atendente para "
+                                "AtendenteSync #{}: {}"
+                            ).format(instance.atendente_id, err)
+                        )
+
+                if dep_id:
+                    dep_sync = get_or_create_departamento_sync(dep_id)
+                    dep_sync.prepare_notion_data()
+                    dep_sync.save()
+                    # Agenda atualização de Departamento via cluster
+                    async_task(
+                        schedule_sync_operation,
+                        "Departamento",
+                        dep_id,
+                        "update",
+                    )
+            except Exception as err:
+                logger.error(
+                    (
+                        "Erro pós-commit no signal de AtendenteSync -> "
+                        "Departamento: {}"
+                    ).format(err)
+                )
+
+        transaction.on_commit(_after_commit)
+    except Exception as e:
+        logger.error(
+            (
+                "Erro ao processar signal de AtendenteSync #{}: {}"
+            ).format(instance.atendente_id, e)
+        )
+
+
 @receiver(pre_delete, sender=Contato)
 def on_contato_pre_delete(
     sender: Any, instance: "Contato", **kwargs: Any
@@ -1756,11 +1840,13 @@ def on_departamento_saved(
                         instance.id,
                         str(exc),
                     )
-
-                schedule_sync_operation(
-                    model_name="Departamento",
-                    instance_id=instance.id,
-                    operation="create" if created else "update",
+                # Agenda a sincronização via cluster (Django Q),
+                # mantendo simetria com Contato/Cliente
+                async_task(
+                    schedule_sync_operation,
+                    "Departamento",
+                    instance.id,
+                    "create" if created else "update",
                 )
             except Exception as inner:
                 logger.error(
@@ -1871,11 +1957,13 @@ def on_atendente_saved(
                         instance.id,
                         str(exc),
                     )
-
-                schedule_sync_operation(
-                    model_name="Atendente",
-                    instance_id=instance.id,
-                    operation="create" if created else "update",
+                # Agenda a sincronização via cluster (Django Q),
+                # mantendo simetria com Contato/Cliente
+                async_task(
+                    schedule_sync_operation,
+                    "Atendente",
+                    instance.id,
+                    "create" if created else "update",
                 )
 
                 # Atualização de Departamentos relacionados
@@ -1901,10 +1989,12 @@ def on_atendente_saved(
                             dep_sync = get_or_create_departamento_sync(dep_id)
                             dep_sync.prepare_notion_data()
                             dep_sync.save()
-                            schedule_sync_operation(
-                                model_name="Departamento",
-                                instance_id=dep_id,
-                                operation="update",
+                            # Agenda atualização de Departamento via cluster
+                            async_task(
+                                schedule_sync_operation,
+                                "Departamento",
+                                dep_id,
+                                "update",
                             )
                         except Exception as e:
                             logger.error(
@@ -1965,10 +2055,12 @@ def on_atendente_pre_delete(
                 dep_sync = get_or_create_departamento_sync(dep_id)
                 dep_sync.prepare_notion_data()
                 dep_sync.save()
-                schedule_sync_operation(
-                    model_name="Departamento",
-                    instance_id=dep_id,
-                    operation="update",
+                # Agenda atualização de Departamento via cluster (Django Q)
+                async_task(
+                    schedule_sync_operation,
+                    "Departamento",
+                    dep_id,
+                    "update",
                 )
         except Exception as e:
             logger.error(

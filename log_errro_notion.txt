@@ -609,3 +609,97 @@ INFO:django-q:Enqueued [smart_core_cluster] 149
 2025-11-05 14:27:35.112 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:update_record:447 - Propriedades finais para Departamento (update): ['Nome', 'Descrição', 'Ativo', 'Data Criação', 'Atendentes Relacionados']
 2025-11-05 14:27:35.626 | SUCCESS  | smart_core_assistant_painel.app.notion_sync.services.notion_service:update_record:462 - ✅ Página atualizada no Notion: 2a282f9f-7f7c-81c1-aa20-e2a0962cf545 para Departamento #18
 2025-11-05 14:27:35.636 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:1168 - Sincronização executada com sucesso: Departamento #18 - update
+2025-11-05 14:30:29.964 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_create_cliente_database:82 - Database Clientes criada: f44b553a-aa4e-4532-8ca5-06a5e54fb754
+2025-11-05 14:30:31.189 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_create_contato_database:129 - Database Contatos criada: 10282494-0b7c-4d02-890e-8590beba51b1
+2025-11-05 14:30:34.598 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_add_relation_to_clientes:203 - Relação 'Contatos Relacionados' verificada/atualizada em Clientes via data_sources.
+2025-11-05 14:30:34.634 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:_save_configs:256 - Configurações persistidas em NotionDatabaseConfig.
+2025-11-05 14:30:34.635 | INFO     | smart_core_assistant_painel.app.notion_sync.services.bootstrap_clientes:construct_minimal:264 - Bootstrap mínimo concluído.
+2025-11-05 14:30:34.636 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:ensure_clientes_configs_ready:2127 - Databases Notion criadas (sem exemplos) e configs salvas.
+2025-11-05 14:30:34.662 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:create_container:86 - Container 'Contatos' criado com ID: 9b589856-f758-48f8-baae-baa18965aeb0
+2025-11-05 14:30:34.663 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_data_source:103 - Data source 22ebee96-3912-406e-a1df-e6f4d424afc2 adicionada ao container 9b589856-f758-48f8-baae-baa18965aeb0
+2025-11-05 14:30:34.676 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id 22ebee96-3912-406e-a1df-e6f4d424afc2, versão: fc3f2787-63b9-43a1-a0e8-ee7cfa2957d6
+2025-11-05 14:30:34.681 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:_bootstrap_uds_for_contato:151 - Relação Contato -> Clientes não aplicada: IDs de database inválidos. Apenas schema UDS atualizado.
+2025-11-05 14:30:34.732 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1239 - Contato #47 criado - Sincronização agendada
+2025-11-05 14:30:55.467 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_contato_clientes_changed:1586 - Contato #37 não possui sync_record para atualizar relacionamentos
+2025-11-05 14:30:55.475 | WARNING  | smart_core_assistant_painel.app.notion_sync.signals:on_contato_clientes_changed:1586 - Contato #37 não possui sync_record para atualizar relacionamentos
+2025-11-05 14:30:55.563 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id 5d7d3ad1-93ed-4425-8b23-a216d36ce762, versão: 2fc063ea-b3b5-444f-9fd3-2cb126763aa0
+2025-11-05 14:30:57.155 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Contatos Relacionados' criada com ID: c72b3d3a-2b24-4672-b478-1d30dd201cd3
+2025-11-05 14:30:57.204 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1310 - Cliente #37 criado - Sincronização agendada
+2025-11-05 14:30:57.241 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1343 - [LINK_SYNC] post_save(Cliente #37) → agendando update do Contato #47 (clientes_relacionados=0)
+2025-11-05 14:30:57.242 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1352 - [LINK_SYNC] IDs de clientes mapeados para Contato #47: []
+2025-11-05 14:30:57.288 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:_after_commit:1374 - Atualizações de Contatos vinculados ao Cliente #37 agendadas
+2025-11-05 14:32:22.498 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:on_departamento_saved:1729 - Departamento salvo: Atendimento (created=True)
+2025-11-05 14:32:22.523 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:on_departamento_saved:1733 - Sync criado/atualizado: Atendimento (No ID)
+2025-11-05 14:32:22.565 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id ade5c287-96ab-4458-8d2a-c6967764e9e4, versão: 6e61fdbe-4683-4438-8e9b-0256249dafca
+2025-11-05 14:32:23.254 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Atendentes Relacionados' criada com ID: a541ebba-a5fc-4305-8fc0-a14f3f03796a
+2025-11-05 14:32:23.553 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:74 - Cliente do Notion inicializado com sucesso
+2025-11-05 14:32:23.563 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Contato carregado: 10282494...
+2025-11-05 14:32:23.570 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Contato carregado: 22ebee96...
+2025-11-05 14:32:23.570 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Contato: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:23.575 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Cliente carregado: f44b553a...
+2025-11-05 14:32:23.580 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Cliente carregado: 5d7d3ad1...
+2025-11-05 14:32:23.581 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Cliente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:23.586 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Departamento carregado: dd937557...
+2025-11-05 14:32:23.589 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Departamento carregado: ade5c287...
+2025-11-05 14:32:23.590 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Departamento: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:23.594 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Atendente carregado: a031c69b...
+2025-11-05 14:32:23.598 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Atendente carregado: bc281695...
+2025-11-05 14:32:23.598 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Atendente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:23.603 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendimento não encontrado
+2025-11-05 14:32:23.607 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendimento não encontrado
+2025-11-05 14:32:23.611 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Mensagem não encontrado
+2025-11-05 14:32:23.615 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Mensagem não encontrado
+2025-11-05 14:32:23.619 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:845 - Executando sincronização: Departamento #19 - create
+2025-11-05 14:32:23.622 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:848 - Sync record: Atendimento (No ID)
+2025-11-05 14:32:24.411 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:311 - Propriedades finais para Departamento: ['Nome', 'Descrição', 'Ativo', 'Data Criação', 'Atendentes Relacionados']
+2025-11-05 14:32:24.645 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:349 - Falha ao criar página com data_source_id ade5c287-96ab-4458-8d2a-c6967764e9e4. Refazendo com database_id como parent.
+2025-11-05 14:32:25.031 | SUCCESS  | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:396 - ✅ Página criada no Notion: 2a282f9f-7f7c-8172-9839-fff9dfb0df19 para Departamento #19
+2025-11-05 14:32:25.044 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:1168 - Sincronização executada com sucesso: Departamento #19 - create
+2025-11-05 14:32:56.441 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:on_atendente_saved:1848 - Atendente salvo: Paulo Weslley (created=True)
+2025-11-05 14:32:56.461 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:on_atendente_saved:1852 - Sync criado/atualizado: Paulo Weslley (No ID)
+2025-11-05 14:32:56.500 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:update_schema:138 - Schema atualizado para data_source_id bc281695-5b01-4552-b796-48d5b3bf6c03, versão: 26347271-e74b-400f-8ab1-eb1c06852bc3
+2025-11-05 14:32:56.894 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.notion_adapter:add_relation_property:434 - Propriedade de relação 'Departamentos Relacionados' criada com ID: b23fd73c-fa73-4a07-9f8a-d0f368e7b9ed
+2025-11-05 14:32:57.143 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:74 - Cliente do Notion inicializado com sucesso
+2025-11-05 14:32:57.153 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Contato carregado: 10282494...
+2025-11-05 14:32:57.160 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Contato carregado: 22ebee96...
+2025-11-05 14:32:57.160 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Contato: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:57.166 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Cliente carregado: f44b553a...
+2025-11-05 14:32:57.173 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Cliente carregado: 5d7d3ad1...
+2025-11-05 14:32:57.173 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Cliente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:57.179 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Departamento carregado: dd937557...
+2025-11-05 14:32:57.184 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Departamento carregado: ade5c287...
+2025-11-05 14:32:57.185 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Departamento: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:57.191 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Atendente carregado: a031c69b...
+2025-11-05 14:32:57.195 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Atendente carregado: bc281695...
+2025-11-05 14:32:57.195 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Atendente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:57.199 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendimento não encontrado
+2025-11-05 14:32:57.203 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendimento não encontrado
+2025-11-05 14:32:57.207 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Mensagem não encontrado
+2025-11-05 14:32:57.211 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Mensagem não encontrado
+2025-11-05 14:32:57.215 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:845 - Executando sincronização: Atendente #14 - create
+2025-11-05 14:32:57.220 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:848 - Sync record: Paulo Weslley (No ID)
+2025-11-05 14:32:57.545 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:311 - Propriedades finais para Atendente: ['Nome', 'Cargo', 'Departamentos Relacionados', 'Email', 'Telefone', 'Ativo', 'Disponível', 'Capacidade Máxima']
+2025-11-05 14:32:57.886 | SUCCESS  | smart_core_assistant_painel.app.notion_sync.services.notion_service:create_record:396 - ✅ Página criada no Notion: 2a282f9f-7f7c-8108-a2c5-c3b16ebeedb1 para Atendente #14
+2025-11-05 14:32:57.901 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:1168 - Sincronização executada com sucesso: Atendente #14 - create
+2025-11-05 14:32:58.200 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:74 - Cliente do Notion inicializado com sucesso
+2025-11-05 14:32:58.207 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Contato carregado: 10282494...
+2025-11-05 14:32:58.213 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Contato carregado: 22ebee96...
+2025-11-05 14:32:58.213 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Contato: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:58.247 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Cliente carregado: f44b553a...
+2025-11-05 14:32:58.253 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Cliente carregado: 5d7d3ad1...
+2025-11-05 14:32:58.254 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Cliente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:58.257 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Departamento carregado: dd937557...
+2025-11-05 14:32:58.261 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Departamento carregado: ade5c287...
+2025-11-05 14:32:58.262 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Departamento: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:58.265 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:97 - Database ID para Atendente carregado: a031c69b...
+2025-11-05 14:32:58.269 | INFO     | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:114 - Data Source ID para Atendente carregado: bc281695...
+2025-11-05 14:32:58.270 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:128 - Prontidão config Atendente: ready=True sync_enabled=True db_id_set=True ds_id_set=True
+2025-11-05 14:32:58.274 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Atendimento não encontrado
+2025-11-05 14:32:58.277 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Atendimento não encontrado
+2025-11-05 14:32:58.281 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:103 - Database ID para Mensagem não encontrado
+2025-11-05 14:32:58.284 | WARNING  | smart_core_assistant_painel.app.notion_sync.services.notion_service:__init__:120 - Data Source ID para Mensagem não encontrado
+2025-11-05 14:32:58.287 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:845 - Executando sincronização: Departamento #19 - update
+2025-11-05 14:32:58.290 | DEBUG    | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:848 - Sync record: Atendimento (2a282f9f-7f7c-8172-9839-fff9dfb0df19)
+2025-11-05 14:32:58.618 | DEBUG    | smart_core_assistant_painel.app.notion_sync.services.notion_service:update_record:447 - Propriedades finais para Departamento (update): ['Nome', 'Descrição', 'Ativo', 'Data Criação', 'Atendentes Relacionados']
+2025-11-05 14:32:59.203 | SUCCESS  | smart_core_assistant_painel.app.notion_sync.services.notion_service:update_record:462 - ✅ Página atualizada no Notion: 2a282f9f-7f7c-8172-9839-fff9dfb0df19 para Departamento #19
+2025-11-05 14:32:59.218 | INFO     | smart_core_assistant_painel.app.notion_sync.signals:schedule_sync_operation:1168 - Sincronização executada com sucesso: Departamento #19 - update

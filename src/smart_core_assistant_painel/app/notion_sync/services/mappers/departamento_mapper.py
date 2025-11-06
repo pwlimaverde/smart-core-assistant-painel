@@ -99,8 +99,9 @@ class DepartamentoMapper:
                     f"departamento: {e}"
                 )
 
-            # Fluxo de Atendimento (Relation inversa 1:1)
-            # Sempre envia o campo, vazio quando não houver fluxo sincronizado.
+            # Fluxo de Atendimento (Relation inversa 1:N)
+            # Envia TODOS os fluxos sincronizados do departamento (ou vazio),
+            # espelhando a relação 1:N (Departamento → Fluxos).
             try:
                 from django.db.models import Q
                 from smart_core_assistant_painel.app.notion_sync.models import (
@@ -113,19 +114,14 @@ class DepartamentoMapper:
                         fluxo__departamento=departamento_sync.departamento
                     )
                 )
-
-                fluxo_external_id: Optional[str] = None
-                for fs in fluxo_syncs:
-                    if getattr(fs, "external_id", None):
-                        fluxo_external_id = fs.external_id  # type: ignore
-                        break
+                fluxo_external_ids: List[str] = [
+                    fs.external_id
+                    for fs in fluxo_syncs
+                    if getattr(fs, "external_id", None)
+                ]
 
                 properties["Fluxo de Atendimento"] = {
-                    "relation": (
-                        [{"id": fluxo_external_id}]
-                        if fluxo_external_id
-                        else []
-                    )
+                    "relation": [{"id": eid} for eid in fluxo_external_ids]
                 }
             except Exception as e:
                 # Aviso silencioso: não interrompe a sincronização principal

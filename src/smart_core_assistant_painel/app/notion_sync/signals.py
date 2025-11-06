@@ -2314,6 +2314,29 @@ def on_departamento_saved(
                     instance.id,
                     "create" if created else "update",
                 )
+
+                # Agenda atualização dos Fluxos vinculados ao Departamento,
+                # garantindo espelho da relação 1:N (Dep → Fluxos) no Notion.
+                try:
+                    fluxo_ids = list(
+                        FluxoAtendimento.objects.filter(
+                            departamento_id=instance.id
+                        ).values_list("id", flat=True)
+                    )
+                    for fid in fluxo_ids:
+                        async_task(
+                            schedule_sync_operation,
+                            "FluxoAtendimento",
+                            int(fid),
+                            "update",
+                        )
+                except Exception as rel_err:
+                    logger.warning(
+                        (
+                            "Falha ao agendar atualização dos Fluxos do "
+                            "Departamento #{}: {}"
+                        ).format(instance.id, rel_err)
+                    )
             except Exception as inner:
                 logger.error(
                     (

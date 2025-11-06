@@ -1177,6 +1177,51 @@ def schedule_sync_operation(
                 )
 
         # Demais modelos seguem fluxo do NotionSyncService
+        # Departamento: aguarda external_id dos Fluxos relacionados antes de atualizar
+        if model_name == "Departamento" and operation == "update":
+            try:
+                attempts = 0
+                max_attempts = 5
+                delay_sec = 1
+                from django.db.models import Q
+
+                while attempts < max_attempts:
+                    fluxo_syncs = FluxoAtendimentoSync.objects.filter(
+                        Q(departamento_sync=sync_record)
+                        | Q(fluxo__departamento_id=instance_id)
+                    )
+
+                    # Comentário: se não há fluxos, não há o que aguardar
+                    if not fluxo_syncs.exists():
+                        break
+
+                    pending = any(
+                        not getattr(fs, "external_id", None)
+                        for fs in fluxo_syncs
+                    )
+
+                    if not pending:
+                        break
+
+                    attempts += 1
+                    time.sleep(delay_sec)
+            except Exception as wait_err:
+                logger.warning(
+                    (
+                        "Falha ao aguardar external_id de Fluxos relacionados "
+                        "para Departamento #{}: {}"
+                    ).format(instance_id, wait_err)
+                )
+
+            # Comentário: recalcula propriedades após aguardar os relacionamentos
+            try:
+                sync_record.prepare_notion_data()
+            except Exception as prep_err:
+                logger.warning(
+                    (
+                        "Falha ao preparar dados do Departamento #{}: {}"
+                    ).format(instance_id, prep_err)
+                )
         # Integração UDS para Cliente: criação/atualização via serviço unificado
         if model_name == "Cliente":
             try:

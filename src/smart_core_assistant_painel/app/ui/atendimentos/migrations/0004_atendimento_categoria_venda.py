@@ -4,15 +4,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atendimentos', '0003_alter_atendimento_atendente_humano'),
+        ("atendimentos", "0003_alter_atendimento_atendente_humano"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='atendimento',
-            name='categoria_venda',
-            field=models.CharField(blank=True, choices=[('produto', 'Produto'), ('servico', 'Serviço'), ('assinatura', 'Assinatura')], help_text='Categoria da venda (departamento comercial)', max_length=50, null=True),
+            model_name="atendimento",
+            name="categoria_venda",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("produto", "Produto"),
+                    ("servico", "Serviço"),
+                    ("assinatura", "Assinatura"),
+                ],
+                help_text="Categoria da venda (departamento comercial)",
+                max_length=50,
+                null=True,
+            ),
         ),
     ]

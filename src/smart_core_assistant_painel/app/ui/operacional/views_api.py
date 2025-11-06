@@ -36,8 +36,10 @@ def fluxo_departamento_public(_: Any, departamento_slug: str) -> Response:
     departamento = get_object_or_404(
         Departamento, slug=departamento_slug, ativo=True
     )
-    fluxo: FluxoAtendimento | None = getattr(
-        departamento, "fluxo_atendimento", None
+    fluxo: FluxoAtendimento | None = (
+        FluxoAtendimento.objects.filter(departamento=departamento, ativo=True)
+        .order_by("data_criacao")
+        .first()
     )
     if not fluxo:
         return Response(

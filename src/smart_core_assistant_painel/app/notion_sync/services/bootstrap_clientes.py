@@ -79,7 +79,9 @@ class NotionClientesBootstrapService:
             },
         }
         created = await self._client.databases.create(params)
-        logger.info("Database Clientes criada: {}", getattr(created, "id", None))
+        logger.info(
+            "Database Clientes criada: {}", getattr(created, "id", None)
+        )
         return created
 
     async def _create_contato_database(self, cliente_db: Any) -> Any:
@@ -126,10 +128,14 @@ class NotionClientesBootstrapService:
             },
         }
         created = await self._client.databases.create(params)
-        logger.info("Database Contatos criada: {}", getattr(created, "id", None))
+        logger.info(
+            "Database Contatos criada: {}", getattr(created, "id", None)
+        )
         return created
 
-    async def _add_relation_to_clientes(self, contato_db: Any, cliente_db: Any) -> None:
+    async def _add_relation_to_clientes(
+        self, contato_db: Any, cliente_db: Any
+    ) -> None:
         """Adiciona/atualiza relação 'Contatos Relacionados' em Clientes via data_sources.
 
         Comentários:

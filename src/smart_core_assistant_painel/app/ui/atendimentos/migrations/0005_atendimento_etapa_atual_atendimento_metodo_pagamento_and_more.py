@@ -5,92 +5,188 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atendimentos', '0004_atendimento_categoria_venda'),
-        ('clientes', '0003_cliente_slug_contato_slug'),
-        ('operacional', '0005_alter_whatsappinstance_options_alter_atendente_ativo_and_more'),
+        ("atendimentos", "0004_atendimento_categoria_venda"),
+        ("clientes", "0003_cliente_slug_contato_slug"),
+        (
+            "operacional",
+            "0005_alter_whatsappinstance_options_alter_atendente_ativo_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='atendimento',
-            name='etapa_atual',
-            field=models.ForeignKey(blank=True, help_text='Etapa atual do atendimento no fluxo personalizado', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendimentos', to='operacional.etapafluxo'),
+            model_name="atendimento",
+            name="etapa_atual",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Etapa atual do atendimento no fluxo personalizado",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="atendimentos",
+                to="operacional.etapafluxo",
+            ),
         ),
         migrations.AddField(
-            model_name='atendimento',
-            name='metodo_pagamento',
-            field=models.CharField(blank=True, choices=[('cartao', 'Cartão'), ('boleto', 'Boleto'), ('pix', 'Pix'), ('transferencia', 'Transferência')], help_text='Método de pagamento (departamento financeiro)', max_length=20, null=True),
+            model_name="atendimento",
+            name="metodo_pagamento",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("cartao", "Cartão"),
+                    ("boleto", "Boleto"),
+                    ("pix", "Pix"),
+                    ("transferencia", "Transferência"),
+                ],
+                help_text="Método de pagamento (departamento financeiro)",
+                max_length=20,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='atendimento',
-            name='produto_servico',
-            field=models.CharField(blank=True, help_text='Produto ou serviço principal (departamento comercial)', max_length=100, null=True),
+            model_name="atendimento",
+            name="produto_servico",
+            field=models.CharField(
+                blank=True,
+                help_text="Produto ou serviço principal (departamento comercial)",
+                max_length=100,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='atendimento',
-            name='status_financeiro',
-            field=models.CharField(blank=True, choices=[('processado', 'Processado'), ('pendente', 'Pendente'), ('falha', 'Falha')], help_text='Status da transação financeira', max_length=20, null=True),
+            model_name="atendimento",
+            name="status_financeiro",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("processado", "Processado"),
+                    ("pendente", "Pendente"),
+                    ("falha", "Falha"),
+                ],
+                help_text="Status da transação financeira",
+                max_length=20,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='atendimento',
-            name='tipo_transacao',
-            field=models.CharField(blank=True, choices=[('pagamento', 'Pagamento'), ('estorno', 'Estorno'), ('reembolso', 'Reembolso')], help_text='Tipo da transação (departamento financeiro)', max_length=20, null=True),
+            model_name="atendimento",
+            name="tipo_transacao",
+            field=models.CharField(
+                blank=True,
+                choices=[
+                    ("pagamento", "Pagamento"),
+                    ("estorno", "Estorno"),
+                    ("reembolso", "Reembolso"),
+                ],
+                help_text="Tipo da transação (departamento financeiro)",
+                max_length=20,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='atendimento',
-            name='valor_orcamento',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Valor do orçamento (departamento comercial)', max_digits=12, null=True),
+            model_name="atendimento",
+            name="valor_orcamento",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Valor do orçamento (departamento comercial)",
+                max_digits=12,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='atendimento',
-            name='valor_transacao',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Valor da transação (departamento financeiro)', max_digits=12, null=True),
+            model_name="atendimento",
+            name="valor_transacao",
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                help_text="Valor da transação (departamento financeiro)",
+                max_digits=12,
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='atendimento',
-            name='status',
-            field=models.CharField(choices=[('fila', 'Fila'), ('em_atendimento', 'Em Atendimento'), ('aguardando_retorno', 'Aguardando Retorno'), ('resolvido', 'Resolvido'), ('cancelado', 'Cancelado')], default='fila', help_text='Status atual do atendimento (legado - será substituído por fluxo)', max_length=20),
+            model_name="atendimento",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("fila", "Fila"),
+                    ("em_atendimento", "Em Atendimento"),
+                    ("aguardando_retorno", "Aguardando Retorno"),
+                    ("resolvido", "Resolvido"),
+                    ("cancelado", "Cancelado"),
+                ],
+                default="fila",
+                help_text="Status atual do atendimento (legado - será substituído por fluxo)",
+                max_length=20,
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['etapa_atual', 'atendente_humano'], name='oraculo_ate_etapa_a_125143_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["etapa_atual", "atendente_humano"],
+                name="oraculo_ate_etapa_a_125143_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['departamento', 'etapa_atual'], name='oraculo_ate_departa_17b2ea_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["departamento", "etapa_atual"],
+                name="oraculo_ate_departa_17b2ea_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['valor_orcamento'], name='oraculo_ate_valor_o_232ff7_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["valor_orcamento"],
+                name="oraculo_ate_valor_o_232ff7_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['categoria_venda'], name='oraculo_ate_categor_453835_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["categoria_venda"],
+                name="oraculo_ate_categor_453835_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['tipo_transacao'], name='oraculo_ate_tipo_tr_0a0e44_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["tipo_transacao"],
+                name="oraculo_ate_tipo_tr_0a0e44_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['valor_transacao'], name='oraculo_ate_valor_t_b39eaf_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["valor_transacao"],
+                name="oraculo_ate_valor_t_b39eaf_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['metodo_pagamento'], name='oraculo_ate_metodo__bc86d0_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["metodo_pagamento"],
+                name="oraculo_ate_metodo__bc86d0_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['status_financeiro'], name='oraculo_ate_status__9c7118_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["status_financeiro"],
+                name="oraculo_ate_status__9c7118_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['prioridade'], name='oraculo_ate_priorid_775e79_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["prioridade"], name="oraculo_ate_priorid_775e79_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['tags'], name='oraculo_ate_tags_598b46_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["tags"], name="oraculo_ate_tags_598b46_idx"
+            ),
         ),
     ]

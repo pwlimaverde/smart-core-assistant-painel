@@ -5,6 +5,7 @@ do Django e personaliza a forma como eles são exibidos e gerenciados.
 """
 
 from django.contrib import admin
+from django import forms
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
@@ -15,7 +16,7 @@ from .models import (
     FluxoAtendimento,
     EtapaFluxo,
     MovimentoFluxo,
-    TipoEtapa
+    TipoEtapa,
 )
 
 
@@ -335,6 +336,21 @@ class WhatsAppInstanceAdmin(admin.ModelAdmin[WhatsAppInstance]):
 class FluxoAtendimentoAdmin(admin.ModelAdmin[FluxoAtendimento]):
     """Admin para o modelo FluxoAtendimento."""
 
+    class FluxoAtendimentoAdminForm(forms.ModelForm):
+        """Form do admin permitindo múltiplos fluxos por departamento.
+
+        Comentário: remove a validação 1:1; agora é possível
+        criar vários fluxos no mesmo departamento.
+        """
+
+        class Meta:
+            model = FluxoAtendimento
+            fields = "__all__"
+
+        # Sem validação adicional: relação passa a ser 1:N.
+
+    form = FluxoAtendimentoAdminForm
+
     list_display = [
         "id",
         "nome",
@@ -346,7 +362,7 @@ class FluxoAtendimentoAdmin(admin.ModelAdmin[FluxoAtendimento]):
     ]
     search_fields = ["nome", "departamento__nome", "descricao"]
     list_filter = ["ativo", "departamento", "data_criacao"]
-    readonly_fields = ["data_criacao", "data_atualizacao"]
+    readonly_fields = ["data_criacao", "data_atualizacao", "total_etapas"]
     ordering = ["departamento__nome", "nome"]
     list_per_page = 25
     save_on_top = True
@@ -417,7 +433,12 @@ class EtapaFluxoAdmin(admin.ModelAdmin[EtapaFluxo]):
         "ativo",
         "data_criacao",
     ]
-    search_fields = ["nome", "fluxo__nome", "fluxo__departamento__nome", "descricao"]
+    search_fields = [
+        "nome",
+        "fluxo__nome",
+        "fluxo__departamento__nome",
+        "descricao",
+    ]
     list_filter = [
         "tipo_etapa",
         "permite_atribuicao",
@@ -437,7 +458,14 @@ class EtapaFluxoAdmin(admin.ModelAdmin[EtapaFluxo]):
         ),
         (
             "Configurações",
-            {"fields": ("tipo_etapa", "permite_atribuicao", "automatico", "ativo")},
+            {
+                "fields": (
+                    "tipo_etapa",
+                    "permite_atribuicao",
+                    "automatico",
+                    "ativo",
+                )
+            },
         ),
         (
             "Detalhes",
@@ -445,7 +473,10 @@ class EtapaFluxoAdmin(admin.ModelAdmin[EtapaFluxo]):
         ),
         (
             "Regras e Validações",
-            {"fields": ("regras_transicao", "campos_obrigatorios"), "classes": ("collapse",)},
+            {
+                "fields": ("regras_transicao", "campos_obrigatorios"),
+                "classes": ("collapse",),
+            },
         ),
         (
             "Informações do Sistema",
@@ -552,7 +583,9 @@ class MovimentoFluxoAdmin(admin.ModelAdmin[MovimentoFluxo]):
     def get_origem_destino(self, obj: MovimentoFluxo) -> str:
         """Retorna a movimentação de forma amigável."""
         origem = obj.etapa_origem.nome if obj.etapa_origem else "Novo"
-        destino = obj.etapa_destino.nome if obj.etapa_destino else "Desconhecido"
+        destino = (
+            obj.etapa_destino.nome if obj.etapa_destino else "Desconhecido"
+        )
         return f"{origem} → {destino}"
 
     @admin.display(description="Atendentes")

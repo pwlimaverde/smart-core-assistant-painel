@@ -43,7 +43,9 @@ class UnifiedDataService(ABC):
         """
 
     @abstractmethod
-    def update_schema(self, data_source_id: str, schema: Dict[str, Any]) -> str:
+    def update_schema(
+        self, data_source_id: str, schema: Dict[str, Any]
+    ) -> str:
         """Atualiza o schema da data source e retorna um ID de versão/revisão.
 
         Args:
@@ -105,7 +107,9 @@ class UnifiedDataService(ABC):
         """Obtém dados da fonte de dados, retornando dict ou None."""
 
     @abstractmethod
-    def get_item(self, data_source_id: str, item_id: str) -> Optional[Dict[str, Any]]:
+    def get_item(
+        self, data_source_id: str, item_id: str
+    ) -> Optional[Dict[str, Any]]:
         """Obtém dados de um item, retornando dict ou None."""
 
     @abstractmethod

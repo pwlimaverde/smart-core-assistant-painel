@@ -273,6 +273,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
+
 # CORS configuration
 def _get_cors_allowed_origins() -> list[str]:
     """Lista de origens permitidas para CORS.
@@ -288,6 +289,7 @@ def _get_cors_allowed_origins() -> list[str]:
         "http://localhost:4200",
         "http://127.0.0.1:4200",
     ]
+
 
 CORS_ALLOWED_ORIGINS = _get_cors_allowed_origins()
 CORS_ALLOW_CREDENTIALS = True

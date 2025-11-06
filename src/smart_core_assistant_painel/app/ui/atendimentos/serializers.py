@@ -90,9 +90,9 @@ class AtendimentoCardSerializer(serializers.ModelSerializer[Atendimento]):
 
     def get_last_message_preview(self, obj: Atendimento) -> Optional[str]:
         """Retorna um preview da última mensagem para contexto rápido."""
-        mensagem: Optional[Mensagem] = (
-            obj.mensagens.order_by("-timestamp").first()
-        )
+        mensagem: Optional[Mensagem] = obj.mensagens.order_by(
+            "-timestamp"
+        ).first()
         if not mensagem:
             return None
         conteudo: str = mensagem.conteudo or ""
@@ -100,9 +100,9 @@ class AtendimentoCardSerializer(serializers.ModelSerializer[Atendimento]):
 
     def get_last_message_timestamp(self, obj: Atendimento) -> Optional[str]:
         """Retorna ISO timestamp da última mensagem (fallback para `data_ultima_mensagem`)."""
-        mensagem: Optional[Mensagem] = (
-            obj.mensagens.order_by("-timestamp").first()
-        )
+        mensagem: Optional[Mensagem] = obj.mensagens.order_by(
+            "-timestamp"
+        ).first()
         if mensagem:
             return mensagem.timestamp.isoformat()
         if obj.data_ultima_mensagem:

@@ -28,26 +28,26 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
 
 class NotionUnifiedDataService(UnifiedDataService):
     """Implementação do UnifiedDataService para Notion.
-    
+
     Esta classe adapta as operações do UnifiedDataService para a API do Notion,
     gerenciando databases, páginas e propriedades através da interface unificada.
     """
 
     def __init__(self, params: UnifieldDataServicesParameters) -> None:
         """Inicializa o adapter do Notion.
-        
+
         Args:
             params: Parâmetros de configuração do serviço.
         """
         self._params = params
         self._observability = params.enable_observability
         self._default_data_source_id = params.data_source_id
-        
+
         # Inicializa cliente do Notion
         notion_token = config("NOTION_TOKEN", default="")
         if not notion_token:
             raise ValueError("NOTION_TOKEN não configurado")
-            
+
         # Política de event loop para Windows
         try:
             if os.name == "nt":
@@ -61,7 +61,7 @@ class NotionUnifiedDataService(UnifiedDataService):
         self._client = NotionAsyncClient(auth=notion_token)
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
-        
+
         if self._observability:
             logger.info("NotionUnifiedDataService inicializado")
 
@@ -71,46 +71,50 @@ class NotionUnifiedDataService(UnifiedDataService):
 
     def create_container(self, name: str) -> str:
         """Cria um container (página raiz) no Notion.
-        
+
         Args:
             name: Nome do container.
-            
+
         Returns:
             ID do container criado.
         """
         # Para o Notion, um container é uma página raiz
         # Por simplicidade, vamos usar o workspace como container padrão
         container_id = str(uuid4())
-        
+
         if self._observability:
             logger.info(f"Container '{name}' criado com ID: {container_id}")
-            
+
         return container_id
 
     def add_data_source(self, container_id: str, data_source_id: str) -> str:
         """Adiciona uma fonte de dados (database) ao container.
-        
+
         Args:
             container_id: ID do container.
             data_source_id: ID da fonte de dados.
-            
+
         Returns:
             ID do vínculo criado.
         """
         # No Notion, isso seria associar uma database a uma página
         # Por simplicidade, retornamos o próprio data_source_id
         if self._observability:
-            logger.info(f"Data source {data_source_id} adicionada ao container {container_id}")
-            
+            logger.info(
+                f"Data source {data_source_id} adicionada ao container {container_id}"
+            )
+
         return data_source_id
 
-    def update_schema(self, data_source_id: str, schema: Dict[str, Any]) -> str:
+    def update_schema(
+        self, data_source_id: str, schema: Dict[str, Any]
+    ) -> str:
         """Atualiza o schema de uma database no Notion.
-        
+
         Args:
             data_source_id: ID da fonte de dados.
             schema: Schema das propriedades.
-            
+
         Returns:
             ID da versão do schema.
         """
@@ -119,26 +123,30 @@ class NotionUnifiedDataService(UnifiedDataService):
             from smart_core_assistant_painel.app.notion_sync.models import (
                 NotionDatabaseConfig,
             )
+
             # Busca a configuração da database
             config = NotionDatabaseConfig.objects.filter(
-                data_source_id=data_source_id,
-                sync_enabled=True
+                data_source_id=data_source_id, sync_enabled=True
             ).first()
-            
+
             if not config:
-                raise ValueError(f"Configuração não encontrada para data_source_id: {data_source_id}")
-            
+                raise ValueError(
+                    f"Configuração não encontrada para data_source_id: {data_source_id}"
+                )
+
             # Atualiza o schema na configuração
             config.notion_schema = schema
             config.save()
-            
+
             version_id = str(uuid4())
-            
+
             if self._observability:
-                logger.info(f"Schema atualizado para data_source_id {data_source_id}, versão: {version_id}")
-                
+                logger.info(
+                    f"Schema atualizado para data_source_id {data_source_id}, versão: {version_id}"
+                )
+
             return version_id
-            
+
         except Exception as e:
             logger.error(f"Erro ao atualizar schema: {e}")
             raise
@@ -208,11 +216,11 @@ class NotionUnifiedDataService(UnifiedDataService):
 
     def create_item(self, data_source_id: str, payload: Dict[str, Any]) -> str:
         """Cria um item (página) na database do Notion.
-        
+
         Args:
             data_source_id: ID da fonte de dados.
             payload: Dados do item.
-            
+
         Returns:
             ID do item criado.
         """
@@ -221,23 +229,23 @@ class NotionUnifiedDataService(UnifiedDataService):
             from smart_core_assistant_painel.app.notion_sync.models import (
                 NotionDatabaseConfig,
             )
+
             # Busca a configuração da database
             config = NotionDatabaseConfig.objects.filter(
-                data_source_id=data_source_id,
-                sync_enabled=True
+                data_source_id=data_source_id, sync_enabled=True
             ).first()
-            
+
             if not config:
-                raise ValueError(f"Configuração não encontrada para data_source_id: {data_source_id}")
-            
+                raise ValueError(
+                    f"Configuração não encontrada para data_source_id: {data_source_id}"
+                )
+
             # Identifica IDs
             database_id = str(config.notion_database_id)
             data_source_id_str = (
-                str(config.data_source_id)
-                if config.data_source_id
-                else ""
+                str(config.data_source_id) if config.data_source_id else ""
             )
-            
+
             # Filtra propriedades pelo schema da database
             filtered_props = self._filter_properties_by_schema(
                 database_id, config, payload
@@ -262,7 +270,7 @@ class NotionUnifiedDataService(UnifiedDataService):
                 "parent": parent,
                 "properties": filtered_props,
             }
-            
+
             # Cria a página no Notion com fallback: tenta com
             # data_source_id e, se falhar por não encontrar base,
             # refaz com database_id.
@@ -324,14 +332,14 @@ class NotionUnifiedDataService(UnifiedDataService):
                         raise
                 else:
                     raise
-            
+
             page_id = response.get("id", "")
-            
+
             if self._observability:
                 logger.info(f"Item criado no Notion com ID: {page_id}")
-                
+
             return page_id
-            
+
         except APIResponseError as e:
             logger.error(f"Erro da API do Notion ao criar item: {e}")
             raise
@@ -343,21 +351,19 @@ class NotionUnifiedDataService(UnifiedDataService):
         self, data_source_id: str, item_id: str, payload: Dict[str, Any]
     ) -> str:
         """Atualiza um item existente no Notion.
-        
+
         Args:
             data_source_id: ID da fonte de dados.
             item_id: ID do item.
             payload: Dados atualizados.
-            
+
         Returns:
             ID da operação de atualização.
         """
         try:
             # Prepara os dados de atualização
-            update_data = {
-                "properties": payload
-            }
-            
+            update_data = {"properties": payload}
+
             # Atualiza a página no Notion
             response = self._run(
                 self._client.request(
@@ -366,14 +372,16 @@ class NotionUnifiedDataService(UnifiedDataService):
                     body=update_data,
                 )
             )
-            
+
             operation_id = str(uuid4())
-            
+
             if self._observability:
-                logger.info(f"Item {item_id} atualizado, operação: {operation_id}")
-                
+                logger.info(
+                    f"Item {item_id} atualizado, operação: {operation_id}"
+                )
+
             return operation_id
-            
+
         except APIResponseError as e:
             logger.error(f"Erro da API do Notion ao atualizar item: {e}")
             raise
@@ -385,12 +393,12 @@ class NotionUnifiedDataService(UnifiedDataService):
         self, data_source_id: str, property_name: str, target_id: str
     ) -> str:
         """Adiciona uma propriedade de relação à database.
-        
+
         Args:
             data_source_id: ID da fonte de dados.
             property_name: Nome da propriedade.
             target_id: ID da database alvo.
-            
+
         Returns:
             ID da propriedade criada.
         """
@@ -399,26 +407,24 @@ class NotionUnifiedDataService(UnifiedDataService):
             from smart_core_assistant_painel.app.notion_sync.models import (
                 NotionDatabaseConfig,
             )
+
             # Busca a configuração da database
             config = NotionDatabaseConfig.objects.filter(
-                data_source_id=data_source_id,
-                sync_enabled=True
+                data_source_id=data_source_id, sync_enabled=True
             ).first()
-            
+
             if not config:
-                raise ValueError(f"Configuração não encontrada para data_source_id: {data_source_id}")
-            
+                raise ValueError(
+                    f"Configuração não encontrada para data_source_id: {data_source_id}"
+                )
+
             database_id = str(config.notion_database_id)
-            
+
             # Prepara a propriedade de relação
             relation_property = {
-                property_name: {
-                    "relation": {
-                        "database_id": target_id
-                    }
-                }
+                property_name: {"relation": {"database_id": target_id}}
             }
-            
+
             # Atualiza a database com a nova propriedade
             response = self._run(
                 self._client.request(
@@ -427,16 +433,20 @@ class NotionUnifiedDataService(UnifiedDataService):
                     body={"properties": relation_property},
                 )
             )
-            
+
             property_id = str(uuid4())
-            
+
             if self._observability:
-                logger.info(f"Propriedade de relação '{property_name}' criada com ID: {property_id}")
-                
+                logger.info(
+                    f"Propriedade de relação '{property_name}' criada com ID: {property_id}"
+                )
+
             return property_id
-            
+
         except APIResponseError as e:
-            logger.error(f"Erro da API do Notion ao criar propriedade de relação: {e}")
+            logger.error(
+                f"Erro da API do Notion ao criar propriedade de relação: {e}"
+            )
             raise
         except Exception as e:
             logger.error(f"Erro ao criar propriedade de relação: {e}")
@@ -454,21 +464,21 @@ class NotionUnifiedDataService(UnifiedDataService):
             from smart_core_assistant_painel.app.notion_sync.models import (
                 NotionDatabaseConfig,
             )
+
             config = NotionDatabaseConfig.objects.filter(
-                data_source_id=data_source_id,
-                sync_enabled=True
+                data_source_id=data_source_id, sync_enabled=True
             ).first()
-            
+
             if not config:
                 return None
-                
+
             return {
                 "id": data_source_id,
                 "database_id": str(config.notion_database_id),
                 "name": config.name,
-                "schema": config.notion_schema
+                "schema": config.notion_schema,
             }
-            
+
         except Exception as e:
             logger.error(f"Erro ao obter data source: {e}")
             return None
@@ -486,9 +496,9 @@ class NotionUnifiedDataService(UnifiedDataService):
                     body={},
                 )
             )
-            
+
             return response
-            
+
         except APIResponseError as e:
             logger.error(f"Erro da API do Notion ao obter item: {e}")
             return None
@@ -507,14 +517,16 @@ class NotionUnifiedDataService(UnifiedDataService):
                     body={"children": [block]},
                 )
             )
-            
+
             block_id = str(uuid4())
-            
+
             if self._observability:
-                logger.info(f"Bloco adicionado ao container {container_id} com ID: {block_id}")
-                
+                logger.info(
+                    f"Bloco adicionado ao container {container_id} com ID: {block_id}"
+                )
+
             return block_id
-            
+
         except APIResponseError as e:
             logger.error(f"Erro da API do Notion ao adicionar bloco: {e}")
             raise

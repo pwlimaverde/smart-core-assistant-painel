@@ -21,7 +21,9 @@ urlpatterns = [
         views.grids_list,
         name="grids-list",
     ),
-    path("grids/<uuid:grid_id>/schema/", views.grid_schema, name="grid-schema"),
+    path(
+        "grids/<uuid:grid_id>/schema/", views.grid_schema, name="grid-schema"
+    ),
     path(
         "grids/<uuid:grid_id>/rows/",
         views.rows_list_or_create,

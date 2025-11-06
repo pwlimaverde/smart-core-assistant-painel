@@ -99,6 +99,41 @@ class DepartamentoMapper:
                     f"departamento: {e}"
                 )
 
+            # Fluxo de Atendimento (Relation inversa 1:1)
+            # Sempre envia o campo, vazio quando não houver fluxo sincronizado.
+            try:
+                from django.db.models import Q
+                from smart_core_assistant_painel.app.notion_sync.models import (
+                    FluxoAtendimentoSync,
+                )
+
+                fluxo_syncs = FluxoAtendimentoSync.objects.filter(
+                    Q(departamento_sync=departamento_sync)
+                    | Q(
+                        fluxo__departamento=departamento_sync.departamento
+                    )
+                )
+
+                fluxo_external_id: Optional[str] = None
+                for fs in fluxo_syncs:
+                    if getattr(fs, "external_id", None):
+                        fluxo_external_id = fs.external_id  # type: ignore
+                        break
+
+                properties["Fluxo de Atendimento"] = {
+                    "relation": (
+                        [{"id": fluxo_external_id}]
+                        if fluxo_external_id
+                        else []
+                    )
+                }
+            except Exception as e:
+                # Aviso silencioso: não interrompe a sincronização principal
+                print(
+                    "Aviso: erro ao montar relação de fluxo do "
+                    f"departamento: {e}"
+                )
+
             return properties
 
         except Exception as exc:
@@ -225,4 +260,5 @@ class DepartamentoMapper:
             "Ativo": {"checkbox": {}},
             "Data Criação": {"date": {}},
             "Atendentes Relacionados": {"relation": {}},
+            "Fluxo de Atendimento": {"relation": {}},
         }

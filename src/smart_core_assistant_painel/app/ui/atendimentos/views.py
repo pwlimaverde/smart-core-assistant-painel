@@ -685,7 +685,9 @@ def kanban_departamento_public(
         )
         dep_nome = escape(getattr(atendimento.departamento, "nome", "") or "-")
         status_value = escape(str(atendimento.status))
-        data_inicio = escape(str(getattr(atendimento, "data_inicio", "") or "-"))
+        data_inicio = escape(
+            str(getattr(atendimento, "data_inicio", "") or "-")
+        )
         data_ultima = escape(
             str(getattr(atendimento, "data_ultima_mensagem", "") or "-")
         )
@@ -769,7 +771,7 @@ def kanban_departamento_public(
             ctx_json = escape(str(ctx))
         html += (
             f'<pre class="text-xs bg-gray-50 p-2 rounded overflow-x-auto">'
-            f'{escape(ctx_json)}</pre>'
+            f"{escape(ctx_json)}</pre>"
         )
         html += """
           </div>
@@ -783,7 +785,7 @@ def kanban_departamento_public(
                 tag_str = escape(str(t))
                 html += (
                     f'<span class="px-2 py-0.5 bg-gray-200 rounded text-xs">'
-                    f'{tag_str}</span>'
+                    f"{tag_str}</span>"
                 )
         else:
             html += '<span class="text-xs text-gray-500">Sem tags</span>'

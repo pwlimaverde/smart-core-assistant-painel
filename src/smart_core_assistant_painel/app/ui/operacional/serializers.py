@@ -39,7 +39,9 @@ class EtapaFluxoSerializer(serializers.ModelSerializer[EtapaFluxo]):
         ]
 
 
-class FluxoAtendimentoSerializer(serializers.ModelSerializer[FluxoAtendimento]):
+class FluxoAtendimentoSerializer(
+    serializers.ModelSerializer[FluxoAtendimento]
+):
     """Serializa o fluxo com suas etapas."""
 
     etapas = EtapaFluxoSerializer(many=True, read_only=True)

@@ -46,21 +46,15 @@ urlpatterns = [
     ),
     path(
         "api/appflowy_adapter/",
-        include(
-            "smart_core_assistant_painel.app.appflowy_adapter.urls"
-        ),
+        include("smart_core_assistant_painel.app.appflowy_adapter.urls"),
     ),
     # API pública do painel Kanban e entidades
     path(
         "api/operacional/",
-        include(
-            "smart_core_assistant_painel.app.ui.operacional.api_urls"
-        ),
+        include("smart_core_assistant_painel.app.ui.operacional.api_urls"),
     ),
     path(
         "api/atendimentos/",
-        include(
-            "smart_core_assistant_painel.app.ui.atendimentos.api_urls"
-        ),
+        include("smart_core_assistant_painel.app.ui.atendimentos.api_urls"),
     ),
 ]

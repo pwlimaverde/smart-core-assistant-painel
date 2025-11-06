@@ -30,9 +30,7 @@ def configure_logging(log_file: Optional[str] = None) -> None:
 
     """
     # Descobre arquivo alvo via env, com padrão estabelecido.
-    target = (
-        (log_file or os.getenv("LOG_FILE_PATH")) or "log_errro_notion.txt"
-    )
+    target = (log_file or os.getenv("LOG_FILE_PATH")) or "log_errro_notion.txt"
 
     # Resolve caminho absoluto de forma portátil.
     path = Path(target).resolve()
@@ -42,9 +40,7 @@ def configure_logging(log_file: Optional[str] = None) -> None:
     logger.remove()
 
     # Adiciona console padrão.
-    logger.add(
-        sys.stderr, level="INFO", backtrace=True, diagnose=True
-    )
+    logger.add(sys.stderr, level="INFO", backtrace=True, diagnose=True)
 
     # Adiciona sink de arquivo com `enqueue=True` para multiprocessos.
     logger.add(

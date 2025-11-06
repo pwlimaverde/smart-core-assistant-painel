@@ -18,14 +18,20 @@ from django.db.models.signals import (
     pre_save,
 )
 from django.dispatch import receiver
-from django.db import transaction
+from django.db import transaction, connection
 from loguru import logger
 from asgiref.sync import async_to_sync
 from django_q.tasks import async_task
 
 from ..ui.atendimentos.models import Atendimento, Mensagem
 from ..ui.clientes.models import Cliente, Contato
-from ..ui.operacional.models import Atendente, Departamento
+from ..ui.operacional.models import (
+    Atendente,
+    Departamento,
+    FluxoAtendimento,
+    EtapaFluxo,
+    MovimentoFluxo,
+)
 from .exceptions import NotionSyncError, SyncError
 from .models import (
     AtendenteSync,
@@ -34,6 +40,9 @@ from .models import (
     ContatoSync,
     DepartamentoSync,
     MensagemSync,
+    FluxoAtendimentoSync,
+    EtapaFluxoSync,
+    MovimentoFluxoSync,
 )
 from .services import NotionSyncService
 from smart_core_assistant_painel.modules.services import (
@@ -102,9 +111,7 @@ def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
     try:
         uds.update_schema(contato_ds_id, schema)
     except Exception as exc:
-        logger.warning(
-            f"Falha ao atualizar schema UDS para Contato: {exc}"
-        )
+        logger.warning(f"Falha ao atualizar schema UDS para Contato: {exc}")
 
     # Garante configuração de Clientes e cria a relação
     try:
@@ -127,6 +134,7 @@ def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
             )
 
         cliente_ds_id: str = _ensure_uds_data_source_id(cliente_cfg, uds)
+
         # Cria propriedade de relação apenas quando ambos configs
         # possuem `database_id` válido (evita chamar Notion com UUID
         # placeholder). Para UDS in-memory, armazenar o target como
@@ -204,9 +212,7 @@ def _bootstrap_uds_for_cliente(config: NotionDatabaseConfig) -> None:
     try:
         uds.update_schema(cliente_ds_id, schema)
     except Exception as exc:
-        logger.warning(
-            f"Falha ao atualizar schema UDS para Cliente: {exc}"
-        )
+        logger.warning(f"Falha ao atualizar schema UDS para Cliente: {exc}")
 
     # Garante configuração de Contato e cria a relação inversa
     try:
@@ -221,9 +227,7 @@ def _bootstrap_uds_for_cliente(config: NotionDatabaseConfig) -> None:
                 name="Contatos",
                 django_model="clientes.Contato",
                 django_app_label="ui",
-                notion_database_id=(
-                    "00000000-0000-0000-0000-000000000000"
-                ),
+                notion_database_id=("00000000-0000-0000-0000-000000000000"),
                 sync_enabled=False,
                 description=(
                     "Configuração padrão para sincronização de Contatos"
@@ -235,6 +239,7 @@ def _bootstrap_uds_for_cliente(config: NotionDatabaseConfig) -> None:
         # placeholder). O terceiro parâmetro deve ser o `database_id`
         # de destino, não o `data_source_id`.
         contato_ds_id: str = _ensure_uds_data_source_id(contato_cfg, uds)
+
         def _has_valid_db_id(cfg_obj: NotionDatabaseConfig) -> bool:
             try:
                 return bool(cfg_obj.has_valid_database_id())
@@ -328,9 +333,7 @@ def _bootstrap_uds_for_departamento(config: NotionDatabaseConfig) -> None:
                 name="Atendentes",
                 django_model="operacional.Atendente",
                 django_app_label="ui",
-                notion_database_id=(
-                    "00000000-0000-0000-0000-000000000000"
-                ),
+                notion_database_id=("00000000-0000-0000-0000-000000000000"),
                 sync_enabled=False,
                 description=(
                     "Configuração padrão para sincronização de Atendentes"
@@ -415,9 +418,7 @@ def _bootstrap_uds_for_atendente(config: NotionDatabaseConfig) -> None:
     try:
         uds.update_schema(atendente_ds_id, schema)
     except Exception as exc:
-        logger.warning(
-            f"Falha ao atualizar schema UDS para Atendente: {exc}"
-        )
+        logger.warning(f"Falha ao atualizar schema UDS para Atendente: {exc}")
 
     # Configuração de Departamento e relação
     try:
@@ -432,9 +433,7 @@ def _bootstrap_uds_for_atendente(config: NotionDatabaseConfig) -> None:
                 name="Departamentos",
                 django_model="operacional.Departamento",
                 django_app_label="ui",
-                notion_database_id=(
-                    "00000000-0000-0000-0000-000000000000"
-                ),
+                notion_database_id=("00000000-0000-0000-0000-000000000000"),
                 sync_enabled=False,
                 description=(
                     "Configuração padrão para sincronização de Departamentos"
@@ -471,6 +470,7 @@ def _bootstrap_uds_for_atendente(config: NotionDatabaseConfig) -> None:
             f"Falha ao configurar relação de Departamentos no UDS: {exc}"
         )
 
+
 def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
     """
     Obtém ou cria registro ContatoSync para um contato.
@@ -497,13 +497,9 @@ def get_or_create_contato_sync(contato_id: int) -> ContatoSync:
             name="Contatos",
             django_model="clientes.Contato",
             django_app_label="clientes",
-            notion_database_id=(
-                "00000000-0000-0000-0000-000000000000"
-            ),
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
             sync_enabled=False,
-            description=(
-                "Configuração padrão para sincronização de Contatos"
-            ),
+            description=("Configuração padrão para sincronização de Contatos"),
         )
 
     sync, created = ContatoSync.objects.get_or_create(
@@ -543,13 +539,9 @@ def get_or_create_cliente_sync(cliente_id: int) -> ClienteSync:
             name="Clientes",
             django_model="clientes.Cliente",
             django_app_label="clientes",
-            notion_database_id=(
-                "00000000-0000-0000-0000-000000000000"
-            ),
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
             sync_enabled=False,
-            description=(
-                "Configuração padrão para sincronização de Clientes"
-            ),
+            description=("Configuração padrão para sincronização de Clientes"),
         )
 
     sync, created = ClienteSync.objects.get_or_create(
@@ -589,9 +581,7 @@ def get_or_create_departamento_sync(departamento_id: int) -> DepartamentoSync:
             name="Departamentos",
             django_model="operacional.Departamento",
             django_app_label="ui",
-            notion_database_id=(
-                "00000000-0000-0000-0000-000000000000"
-            ),
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
             sync_enabled=False,  # Inicia desabilitado
             description="Departamentos da organização",
         )
@@ -633,9 +623,7 @@ def get_or_create_atendente_sync(atendente_id: int) -> AtendenteSync:
             name="Atendentes",
             django_model="operacional.Atendente",
             django_app_label="ui",
-            notion_database_id=(
-                "00000000-0000-0000-0000-000000000000"
-            ),
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
             sync_enabled=False,  # Inicia desabilitado
             description="Atendentes da organização",
         )
@@ -670,9 +658,7 @@ def get_or_create_atendimento_sync(atendimento_id: int) -> AtendimentoSync:
             name="Atendimentos",
             django_model="atendimentos.Atendimento",
             django_app_label="ui",
-            notion_database_id=(
-                "00000000-0000-0000-0000-000000000000"
-            ),
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
             sync_enabled=False,
             description=(
                 "Configuração padrão para sincronização de Atendimentos"
@@ -716,9 +702,7 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
             name="Mensagens",
             django_model="atendimentos.Mensagem",
             django_app_label="ui",
-            notion_database_id=(
-                "00000000-0000-0000-0000-000000000000"
-            ),
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
             sync_enabled=False,
             description=(
                 "Configuração padrão para sincronização de Mensagens"
@@ -788,6 +772,127 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
     return sync
 
 
+def get_or_create_fluxo_sync(fluxo_id: int) -> FluxoAtendimentoSync:
+    """
+    Obtém ou cria registro FluxoAtendimentoSync para um fluxo.
+
+    Comentário: garante existência de configuração Notion mínima
+    e cria o espelho com status pendente.
+
+    Args:
+        fluxo_id: ID do fluxo de atendimento no Django.
+
+    Returns:
+        Instância do FluxoAtendimentoSync.
+    """
+    from .models import FluxoAtendimentoSync, NotionDatabaseConfig
+
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_operacional_fluxo_atendimento"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_operacional_fluxo_atendimento",
+            name="Fluxos de Atendimento",
+            django_model="operacional.FluxoAtendimento",
+            django_app_label="ui",
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
+            sync_enabled=False,
+            description="Config de Fluxos de Atendimento (placeholder)",
+        )
+
+    sync, _ = FluxoAtendimentoSync.objects.get_or_create(
+        fluxo_id=fluxo_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config,
+        },
+    )
+    return sync
+
+
+def get_or_create_etapa_sync(etapa_id: int) -> EtapaFluxoSync:
+    """
+    Obtém ou cria registro EtapaFluxoSync para uma etapa.
+
+    Comentário: garante configuração Notion mínima e cria espelho.
+
+    Args:
+        etapa_id: ID da etapa no Django.
+
+    Returns:
+        Instância do EtapaFluxoSync.
+    """
+    from .models import EtapaFluxoSync, NotionDatabaseConfig
+
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_operacional_etapa_fluxo"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_operacional_etapa_fluxo",
+            name="Etapas do Fluxo",
+            django_model="operacional.EtapaFluxo",
+            django_app_label="ui",
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
+            sync_enabled=False,
+            description="Config de Etapas do Fluxo (placeholder)",
+        )
+
+    sync, _ = EtapaFluxoSync.objects.get_or_create(
+        etapa_id=etapa_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config,
+        },
+    )
+    return sync
+
+
+def get_or_create_movimento_sync(movimento_id: int) -> MovimentoFluxoSync:
+    """
+    Obtém ou cria registro MovimentoFluxoSync para um movimento do fluxo.
+
+    Comentário: garante configuração Notion mínima e cria espelho.
+
+    Args:
+        movimento_id: ID do movimento no Django.
+
+    Returns:
+        Instância do MovimentoFluxoSync.
+    """
+    from .models import MovimentoFluxoSync, NotionDatabaseConfig
+
+    try:
+        config = NotionDatabaseConfig.objects.get(
+            slug="ui_operacional_movimento_fluxo"
+        )
+    except NotionDatabaseConfig.DoesNotExist:
+        config = NotionDatabaseConfig.objects.create(
+            slug="ui_operacional_movimento_fluxo",
+            name="Movimentos do Fluxo",
+            django_model="operacional.MovimentoFluxo",
+            django_app_label="ui",
+            notion_database_id=("00000000-0000-0000-0000-000000000000"),
+            sync_enabled=False,
+            description="Config de Movimentos do Fluxo (placeholder)",
+        )
+
+    sync, _ = MovimentoFluxoSync.objects.get_or_create(
+        movimento_id=movimento_id,
+        defaults={
+            "external_id": None,
+            "sync_status": "pending",
+            "config": config,
+        },
+    )
+    return sync
+
+
 def schedule_sync_operation(
     model_name: str, instance_id: int, operation: str
 ) -> None:
@@ -810,6 +915,9 @@ def schedule_sync_operation(
         ContatoSync,
         DepartamentoSync,
         MensagemSync,
+        FluxoAtendimentoSync,
+        EtapaFluxoSync,
+        MovimentoFluxoSync,
     )
 
     try:
@@ -838,6 +946,16 @@ def schedule_sync_operation(
             )
         elif model_name == "Mensagem":
             sync_record = MensagemSync.objects.get(mensagem_id=instance_id)
+        elif model_name == "FluxoAtendimento":
+            sync_record = FluxoAtendimentoSync.objects.get(
+                fluxo_id=instance_id
+            )
+        elif model_name == "EtapaFluxo":
+            sync_record = EtapaFluxoSync.objects.get(etapa_id=instance_id)
+        elif model_name == "MovimentoFluxo":
+            sync_record = MovimentoFluxoSync.objects.get(
+                movimento_id=instance_id
+            )
         else:
             logger.warning(f"Modelo não suportado: {model_name}")
             return
@@ -981,9 +1099,8 @@ def schedule_sync_operation(
                 # LOG: visualizar execução da atualização do Contato com
                 # foco no relacionamento "Clientes Relacionados".
                 try:
-                    rel = (
-                        payload.get("Clientes Relacionados", {})
-                        .get("relation", [])
+                    rel = payload.get("Clientes Relacionados", {}).get(
+                        "relation", []
                     )
                     rel_ids = [str(it.get("id")) for it in rel]
                     logger.info(
@@ -1035,9 +1152,7 @@ def schedule_sync_operation(
                     else:
                         # Atualização solicitada sem external_id: evita criação implícita
                         # Comentário: evitamos duplicidade. O fluxo de criação ocorre no post_save.
-                        msg = (
-                            "Update ignorado: Contato sem external_id. Aguarde fluxo de criação."
-                        )
+                        msg = "Update ignorado: Contato sem external_id. Aguarde fluxo de criação."
                         logger.warning(msg)
                         try:
                             sync_record.mark_as_failed(msg)
@@ -1107,9 +1222,7 @@ def schedule_sync_operation(
                     else:
                         # Atualização solicitada sem external_id: evita criação implícita
                         # Comentário: evitamos duplicidade. O fluxo de criação ocorre no post_save.
-                        msg = (
-                            "Update ignorado: Cliente sem external_id. Aguarde fluxo de criação."
-                        )
+                        msg = "Update ignorado: Cliente sem external_id. Aguarde fluxo de criação."
                         logger.warning(msg)
                         try:
                             sync_record.mark_as_failed(msg)
@@ -1155,9 +1268,7 @@ def schedule_sync_operation(
             else:
                 # Sem external_id em update: evita criação implícita para reduzir duplicidade
                 # Comentário: a criação deve ocorrer no fluxo específico de criação (post_save).
-                msg = (
-                    f"Update ignorado: {model_name} #{instance_id} sem external_id."
-                )
+                msg = f"Update ignorado: {model_name} #{instance_id} sem external_id."
                 logger.warning(msg)
                 try:
                     sync_record.mark_as_failed(msg)
@@ -1180,6 +1291,18 @@ def schedule_sync_operation(
             elif model_name == "Atendimento":
                 sync_record = AtendimentoSync.objects.get(
                     atendimento_id=instance_id
+                )
+            elif model_name == "FluxoAtendimento":
+                sync_record = FluxoAtendimentoSync.objects.get(
+                    fluxo_id=instance_id
+                )
+            elif model_name == "EtapaFluxo":
+                sync_record = EtapaFluxoSync.objects.get(
+                    etapa_id=instance_id
+                )
+            elif model_name == "MovimentoFluxo":
+                sync_record = MovimentoFluxoSync.objects.get(
+                    movimento_id=instance_id
                 )
             logger.info(
                 f"Marcando sync_record como falha: {model_name} #{instance_id}"
@@ -1250,9 +1373,7 @@ def on_contato_saved(
 
         transaction.on_commit(_after_commit)
     except Exception as e:
-        logger.error(
-            f"Erro ao preparar sync de Contato #{instance.id}: {e}"
-        )
+        logger.error(f"Erro ao preparar sync de Contato #{instance.id}: {e}")
 
 
 @receiver(post_save, sender=Cliente)
@@ -1334,20 +1455,16 @@ def on_cliente_saved(
                         # após cadastro/atualização do cliente, incluindo
                         # quantos clientes relacionados serão enviados.
                         try:
-                            rel = (
-                                contato_sync.notion_properties.get(
-                                    "Clientes Relacionados", {}
-                                ).get("relation", [])
-                            )
+                            rel = contato_sync.notion_properties.get(
+                                "Clientes Relacionados", {}
+                            ).get("relation", [])
                             rel_ids = [str(it.get("id")) for it in rel]
                             logger.info(
                                 (
                                     "[LINK_SYNC] post_save(Cliente #{}) → "
                                     "agendando update do Contato #{} "
                                     "(clientes_relacionados={})"
-                                ).format(
-                                    instance.id, contato.id, len(rel_ids)
-                                )
+                                ).format(instance.id, contato.id, len(rel_ids))
                             )
                             logger.debug(
                                 (
@@ -1433,9 +1550,7 @@ def on_cliente_sync_saved(
                         contato_id=contato.id
                     ).first()
                     if not contato_sync:
-                        contato_sync = get_or_create_contato_sync(
-                            contato.id
-                        )
+                        contato_sync = get_or_create_contato_sync(contato.id)
 
                     # Prepara propriedades com relações atualizadas
                     contato_sync.prepare_notion_data()
@@ -1443,18 +1558,18 @@ def on_cliente_sync_saved(
 
                     # Logging focado no relacionamento clientes → contato
                     try:
-                        rel = (
-                            contato_sync.notion_properties.get(
-                                "Clientes Relacionados", {}
-                            ).get("relation", [])
-                        )
+                        rel = contato_sync.notion_properties.get(
+                            "Clientes Relacionados", {}
+                        ).get("relation", [])
                         rel_ids = [str(it.get("id")) for it in rel]
                         logger.info(
                             (
                                 "[LINK_SYNC] post_save(ClienteSync -> {}) → "
                                 "agendando update do Contato #{} "
                                 "(clientes_relacionados={})"
-                            ).format(instance.cliente_id, contato.id, len(rel_ids))
+                            ).format(
+                                instance.cliente_id, contato.id, len(rel_ids)
+                            )
                         )
                         if rel_ids:
                             logger.debug(
@@ -1496,9 +1611,9 @@ def on_cliente_sync_saved(
         transaction.on_commit(_after_commit)
     except Exception as e:
         logger.error(
-            (
-                "Erro ao processar signal de ClienteSync #{}: {}"
-            ).format(instance.cliente_id, e)
+            ("Erro ao processar signal de ClienteSync #{}: {}").format(
+                instance.cliente_id, e
+            )
         )
 
 
@@ -1580,11 +1695,362 @@ def on_atendente_sync_saved(
         transaction.on_commit(_after_commit)
     except Exception as e:
         logger.error(
-            (
-                "Erro ao processar signal de AtendenteSync #{}: {}"
-            ).format(instance.atendente_id, e)
+            ("Erro ao processar signal de AtendenteSync #{}: {}").format(
+                instance.atendente_id, e
+            )
         )
 
+
+@receiver(post_save, sender=FluxoAtendimento)
+def on_fluxo_saved(
+    sender: Any, instance: "FluxoAtendimento", created: bool, **kwargs: Any
+) -> None:
+    """Sincroniza Fluxo e relacionamentos após salvar.
+
+    Comentários:
+    - Usa pós-commit para evitar impacto na transação.
+    - Agenda atualização do Departamento vinculado e das Etapas do Fluxo.
+    """
+    if kwargs.get("skip_sync", False):
+        logger.debug(
+            f"Sincronização ignorada para FluxoAtendimento #{instance.id}"
+        )
+        return
+
+    try:
+        def _after_commit() -> None:
+            try:
+                # Evita consultas em tabelas não migradas no ambiente local.
+                if not _table_exists("notion_sync_fluxo_atendimento"):
+                    logger.warning(
+                        (
+                            "Tabela 'notion_sync_fluxo_atendimento' "
+                            "inexistente; ignorando pós-commit para "
+                            "Fluxo #{}"
+                        ).format(instance.id)
+                    )
+                    return
+
+                sync_metadata = safe_get_or_create_fluxo_sync(instance.id)
+                if not sync_metadata:
+                    return
+                operation = "create" if created else "update"
+
+                ok_ops = ensure_operacional_configs_ready()
+                ok_pipeline = ensure_fluxo_etapas_movimentos_configs_ready()
+                if not (ok_ops and ok_pipeline):
+                    logger.warning(
+                        (
+                            "Configs Notion (Operacional/Fluxo Pipeline) "
+                            "não prontas. Prosseguindo com tentativa de "
+                            "sync assim mesmo."
+                        )
+                    )
+
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
+
+                async_task(
+                    schedule_sync_operation,
+                    "FluxoAtendimento",
+                    instance.id,
+                    operation,
+                )
+
+                # Atualiza Departamento relacionado
+                try:
+                    dep_id = getattr(instance, "departamento_id", None)
+                    if dep_id:
+                        dep_sync = safe_get_or_create_departamento_sync(
+                            int(dep_id)
+                        )
+                        if dep_sync:
+                            dep_sync.prepare_notion_data()
+                            dep_sync.save()
+                            async_task(
+                                schedule_sync_operation,
+                                "Departamento",
+                                int(dep_id),
+                                "update",
+                            )
+                except Exception as rel_err:
+                    logger.warning(
+                        (
+                            "Falha ao agendar atualização do Departamento "
+                            "vinculado ao Fluxo #{}: {}"
+                        ).format(instance.id, rel_err)
+                    )
+
+                # Atualiza Etapas pertencentes ao Fluxo
+                try:
+                    if _table_exists("notion_sync_etapa_fluxo"):
+                        etapa_ids = list(
+                            EtapaFluxoSync.objects.filter(
+                                fluxo_sync__fluxo_id=instance.id
+                            ).values_list("etapa_id", flat=True)
+                        )
+                        for eid in etapa_ids:
+                            async_task(
+                                schedule_sync_operation,
+                                "EtapaFluxo",
+                                int(eid),
+                                "update",
+                            )
+                except Exception as rel_err:
+                    logger.warning(
+                        (
+                            "Falha ao agendar atualização das Etapas do "
+                            "Fluxo #{}: {}"
+                        ).format(instance.id, rel_err)
+                    )
+            except Exception as err:
+                logger.error(
+                    "Erro pós-commit no signal de FluxoAtendimento #{}: {}",
+                    instance.id,
+                    str(err),
+                )
+
+        transaction.on_commit(_after_commit)
+    except Exception as e:
+        logger.error(
+            f"Erro ao preparar sync de FluxoAtendimento #{instance.id}: {e}"
+        )
+
+
+@receiver(post_save, sender=EtapaFluxo)
+def on_etapa_fluxo_saved(
+    sender: Any, instance: "EtapaFluxo", created: bool, **kwargs: Any
+) -> None:
+    """Sincroniza Etapa do Fluxo e relacionamentos após salvar.
+
+    Comentários:
+    - Atualiza o Fluxo relacionado e Movimentos que referenciam a etapa.
+    """
+    if kwargs.get("skip_sync", False):
+        logger.debug(
+            f"Sincronização ignorada para EtapaFluxo #{instance.id}"
+        )
+        return
+
+    try:
+        def _after_commit() -> None:
+            try:
+                # Garante criação/obtensão do espelho apenas após o commit
+                # para não impactar a transação caso a tabela ainda não exista.
+                if not _table_exists("notion_sync_etapa_fluxo"):
+                    logger.warning(
+                        (
+                            "Tabela 'notion_sync_etapa_fluxo' "
+                            "inexistente; ignorando pós-commit para "
+                            "Etapa #{}"
+                        ).format(instance.id)
+                    )
+                    return
+
+                sync_metadata = safe_get_or_create_etapa_sync(instance.id)
+                if not sync_metadata:
+                    return
+                operation = "create" if created else "update"
+
+                ok_ops = ensure_operacional_configs_ready()
+                ok_pipeline = ensure_fluxo_etapas_movimentos_configs_ready()
+                if not (ok_ops and ok_pipeline):
+                    logger.warning(
+                        "Configs Notion (Operacional/Pipeline) não prontas."
+                    )
+
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
+
+                async_task(
+                    schedule_sync_operation,
+                    "EtapaFluxo",
+                    instance.id,
+                    operation,
+                )
+
+                # Atualiza Fluxo vinculado
+                try:
+                    fluxo_id = getattr(instance, "fluxo_id", None)
+                    if fluxo_id and _table_exists(
+                        "notion_sync_fluxo_atendimento"
+                    ):
+                        fl_sync = safe_get_or_create_fluxo_sync(
+                            int(fluxo_id)
+                        )
+                        if fl_sync:
+                            fl_sync.prepare_notion_data()
+                            fl_sync.save()
+                            async_task(
+                                schedule_sync_operation,
+                                "FluxoAtendimento",
+                                int(fluxo_id),
+                                "update",
+                            )
+                except Exception as rel_err:
+                    logger.warning(
+                        (
+                            "Falha ao agendar atualização do Fluxo "
+                            "vinculado à Etapa #{}: {}"
+                        ).format(instance.id, rel_err)
+                    )
+
+                # Atualiza Movimentos que referenciam esta Etapa
+                try:
+                    mov_ids = list(
+                        MovimentoFluxo.objects.filter(
+                            etapa_origem_id=instance.id
+                        ).values_list("id", flat=True)
+                    ) + list(
+                        MovimentoFluxo.objects.filter(
+                            etapa_destino_id=instance.id
+                        ).values_list("id", flat=True)
+                    )
+                    for mid in set(mov_ids):
+                        async_task(
+                            schedule_sync_operation,
+                            "MovimentoFluxo",
+                            int(mid),
+                            "update",
+                        )
+                except Exception as rel_err:
+                    logger.warning(
+                        (
+                            "Falha ao agendar atualização de Movimentos "
+                            "ligados à Etapa #{}: {}"
+                        ).format(instance.id, rel_err)
+                    )
+            except Exception as err:
+                logger.error(
+                    "Erro pós-commit no signal de EtapaFluxo #{}: {}",
+                    instance.id,
+                    str(err),
+                )
+
+        transaction.on_commit(_after_commit)
+    except Exception as e:
+        logger.error(
+            f"Erro ao preparar sync de EtapaFluxo #{instance.id}: {e}"
+        )
+
+
+@receiver(post_save, sender=MovimentoFluxo)
+def on_movimento_fluxo_saved(
+    sender: Any, instance: "MovimentoFluxo", created: bool, **kwargs: Any
+) -> None:
+    """Sincroniza Movimento do Fluxo e itens relacionados.
+
+    Comentários:
+    - Agenda atualização de Atendimento, Etapas e Atendentes envolvidos.
+    """
+    if kwargs.get("skip_sync", False):
+        logger.debug(
+            f"Sincronização ignorada para MovimentoFluxo #{instance.id}"
+        )
+        return
+
+    try:
+        def _after_commit() -> None:
+            try:
+                # Adia consultas de criação do espelho para pós-commit, evitando
+                # erros de tabela ausente dentro da transação do admin.
+                if not _table_exists("notion_sync_movimento_fluxo"):
+                    logger.warning(
+                        (
+                            "Tabela 'notion_sync_movimento_fluxo' "
+                            "inexistente; ignorando pós-commit para "
+                            "Movimento #{}"
+                        ).format(instance.id)
+                    )
+                    return
+
+                sync_metadata = safe_get_or_create_movimento_sync(
+                    instance.id
+                )
+                if not sync_metadata:
+                    return
+                operation = "create" if created else "update"
+
+                ok_ops = ensure_operacional_configs_ready()
+                ok_at = ensure_atendimentos_configs_ready()
+                ok_pipeline = ensure_fluxo_etapas_movimentos_configs_ready()
+                if not (ok_ops and ok_at and ok_pipeline):
+                    logger.warning(
+                        "Configs Notion base não totalmente prontas. "
+                        "Prosseguindo com sync."
+                    )
+
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
+
+                async_task(
+                    schedule_sync_operation,
+                    "MovimentoFluxo",
+                    instance.id,
+                    operation,
+                )
+
+                # Atualiza itens relacionados
+                try:
+                    at_id = getattr(instance, "atendimento_id", None)
+                    if at_id:
+                        async_task(
+                            schedule_sync_operation,
+                            "Atendimento",
+                            int(at_id),
+                            "update",
+                        )
+                    eo_id = getattr(instance, "etapa_origem_id", None)
+                    if eo_id:
+                        async_task(
+                            schedule_sync_operation,
+                            "EtapaFluxo",
+                            int(eo_id),
+                            "update",
+                        )
+                    ed_id = getattr(instance, "etapa_destino_id", None)
+                    if ed_id:
+                        async_task(
+                            schedule_sync_operation,
+                            "EtapaFluxo",
+                            int(ed_id),
+                            "update",
+                        )
+                    ao_id = getattr(instance, "atendente_origem_id", None)
+                    if ao_id:
+                        async_task(
+                            schedule_sync_operation,
+                            "Atendente",
+                            int(ao_id),
+                            "update",
+                        )
+                    ad_id = getattr(instance, "atendente_destino_id", None)
+                    if ad_id:
+                        async_task(
+                            schedule_sync_operation,
+                            "Atendente",
+                            int(ad_id),
+                            "update",
+                        )
+                except Exception as rel_err:
+                    logger.warning(
+                        (
+                            "Falha ao agendar atualizações relacionadas "
+                            "ao Movimento #{}: {}"
+                        ).format(instance.id, rel_err)
+                    )
+            except Exception as err:
+                logger.error(
+                    "Erro pós-commit no signal de MovimentoFluxo #{}: {}",
+                    instance.id,
+                    str(err),
+                )
+
+        transaction.on_commit(_after_commit)
+    except Exception as e:
+        logger.error(
+            f"Erro ao preparar sync de MovimentoFluxo #{instance.id}: {e}"
+        )
 
 @receiver(pre_delete, sender=Contato)
 def on_contato_pre_delete(
@@ -2008,9 +2474,9 @@ def on_atendente_saved(
                     )
             except Exception as inner:
                 logger.error(
-                    (
-                        "Erro pós-commit ao processar Atendente #{}: {}"
-                    ).format(instance.id, inner)
+                    ("Erro pós-commit ao processar Atendente #{}: {}").format(
+                        instance.id, inner
+                    )
                 )
 
         transaction.on_commit(_after_commit)
@@ -2099,28 +2565,82 @@ def on_atendimento_saved(
     if kwargs.get("skip_sync", False):
         return
     try:
-        logger.info(f"[SIGNAL_DEBUG] Signal de atendimento disparado para #{instance.id} (created={created})")
-        logger.info(f"[SIGNAL_DEBUG] Contexto da conversa no signal: {instance.contexto_conversa}")
-
-        sync_metadata = get_or_create_atendimento_sync(instance.id)
-        logger.info(f"[SIGNAL_DEBUG] Sync metadata criado: {sync_metadata.id}")
-
-        operation = "create" if created else "update"
-        logger.info(f"[SIGNAL_DEBUG] Operação: {operation}")
-
-        sync_metadata.prepare_notion_data()
-        logger.info(f"[SIGNAL_DEBUG] Dados preparados com sucesso")
-
-        sync_metadata.save()
-        logger.info(f"[SIGNAL_DEBUG] Sync metadata salvo")
-
-        schedule_sync_operation(
-            model_name="Atendimento", instance_id=instance.id, operation=operation
+        logger.info(
+            f"[SIGNAL_DEBUG] Signal de atendimento disparado para #{instance.id} (created={created})"
         )
-        logger.info(f"[SIGNAL_DEBUG] Operação de sync agendada")
+        logger.info(
+            f"[SIGNAL_DEBUG] Contexto da conversa no signal: {instance.contexto_conversa}"
+        )
+
+        # Usa pós-commit para evitar IO pesado dentro da transação
+        def _after_commit() -> None:
+            """Garante configs Notion, prepara dados e agenda sync via cluster."""
+            try:
+                # Garante que todas as configs necessárias existam/prontas
+                ok_ops = ensure_operacional_configs_ready()
+                if not ok_ops:
+                    logger.warning("Config Notion Operacional ainda não pronta.")
+
+                ok_cli = ensure_clientes_configs_ready()
+                if not ok_cli:
+                    logger.warning("Config Notion de Clientes/Contatos ainda não pronta.")
+
+                ok_at = ensure_atendimentos_configs_ready()
+                if not ok_at:
+                    logger.warning("Config Notion de Atendimentos/Mensagens ainda não pronta.")
+
+                # Obtém/Cria metadados de sincronização
+                sync_metadata = get_or_create_atendimento_sync(instance.id)
+                operation = "create" if created else "update"
+
+                # Prepara e salva dados formatados para Notion
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
+
+                # Agenda sincronização via cluster (Django Q)
+                async_task(
+                    schedule_sync_operation,
+                    "Atendimento",
+                    instance.id,
+                    operation,
+                )
+                logger.info(
+                    f"[SIGNAL_DEBUG] Atendimento #{instance.id} {operation} - sync agendada via cluster"
+                )
+
+                # Se já existirem mensagens vinculadas, agenda atualização delas
+                try:
+                    from .models import MensagemSync
+
+                    rel_msgs = MensagemSync.objects.filter(
+                        atendimento_sync__atendimento_id=instance.id
+                    ).values_list("mensagem_id", flat=True)
+                    for msg_id in rel_msgs:
+                        async_task(
+                            schedule_sync_operation,
+                            "Mensagem",
+                            int(msg_id),
+                            "update",
+                        )
+                    if rel_msgs:
+                        logger.info(
+                            f"[SIGNAL_DEBUG] Atualizações de Mensagens relacionadas agendadas ({len(rel_msgs)})"
+                        )
+                except Exception as rel_err:
+                    logger.warning(
+                        f"[SIGNAL_DEBUG] Falha ao agendar atualizações de mensagens relacionadas: {rel_err}"
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Erro pós-commit ao processar Atendimento #{instance.id}: {e}",
+                    exc_info=True,
+                )
+
+        transaction.on_commit(_after_commit)
     except Exception as e:
         logger.error(
-            f"Erro ao processar signal de Atendimento #{instance.id}: {e}", exc_info=True
+            f"Erro ao processar signal de Atendimento #{instance.id}: {e}",
+            exc_info=True,
         )
 
 
@@ -2149,41 +2669,68 @@ def on_mensagem_saved(
     if kwargs.get("skip_sync", False):
         return
     try:
-        # Sincroniza a mensagem (criação ou atualização)
-        sync_metadata = get_or_create_mensagem_sync(instance.id)
-        sync_metadata.prepare_notion_data()
-        sync_metadata.save()
+        # Usa pós-commit para evitar IO pesado dentro da transação
+        def _after_commit() -> None:
+            """Garante configs Notion, agenda Mensagem e espelha relação no Atendimento."""
+            try:
+                # Garantir que bases de Atendimentos/Mensagens existem
+                ok_at = ensure_atendimentos_configs_ready()
+                if not ok_at:
+                    logger.warning("Config Notion de Atendimentos/Mensagens ainda não pronta.")
 
-        # Verifica se precisa sincronizar (incluindo atualizações de campos importantes)
-        if sync_metadata.needs_sync():
-            # Define a operação com base no status
-            operation = "create" if created else "update"
-            schedule_sync_operation(
-                model_name="Mensagem", instance_id=instance.id, operation=operation
-            )
-            logger.info(f"Mensagem {operation.lower()}izada: #{instance.id}")
+                # Sincroniza a mensagem (criação ou atualização)
+                sync_metadata = get_or_create_mensagem_sync(instance.id)
+                sync_metadata.prepare_notion_data()
+                sync_metadata.save()
 
-        # ATUALIZAÇÃO: Também atualiza o atendimento relacionado se houver resposta do bot
-        if instance.atendimento and (instance.resposta_bot or instance.respondida):
-            # Obtém ou cria o sync do atendimento
-            atendimento_sync = get_or_create_atendimento_sync(instance.atendimento.id)
+                # Assegura que o atendimento pai tenha external_id antes de criar a mensagem
+                if instance.atendimento:
+                    at_sync = get_or_create_atendimento_sync(instance.atendimento.id)
+                    at_op = "create" if not at_sync.external_id else "update"
+                    at_sync.prepare_notion_data()
+                    at_sync.save()
+                    async_task(
+                        schedule_sync_operation,
+                        "Atendimento",
+                        instance.atendimento.id,
+                        at_op,
+                    )
 
-            # Prepara e salva os dados atualizados do atendimento
-            atendimento_sync.prepare_notion_data()
-            atendimento_sync.save()
+                # Define operação para a Mensagem e agenda via cluster
+                op = "create" if created else "update"
+                async_task(
+                    schedule_sync_operation,
+                    "Mensagem",
+                    instance.id,
+                    op,
+                )
+                logger.info(f"Mensagem {op.lower()}izada: #{instance.id} (agendada via cluster)")
 
-            # Agenda a atualização do atendimento
-            schedule_sync_operation(
-                model_name="Atendimento",
-                instance_id=instance.atendimento.id,
-                operation="update"
-            )
-            logger.info(f"Atendimento #{instance.atendimento.id} atualizado com resposta do bot")
+                # Sempre atualizar o atendimento após a mensagem para espelhar relação
+                if instance.atendimento:
+                    async_task(
+                        schedule_sync_operation,
+                        "Atendimento",
+                        instance.atendimento.id,
+                        "update",
+                    )
+                    logger.info(
+                        f"Atendimento #{instance.atendimento.id} atualizado para espelhar 'Mensagens Relacionadas'"
+                    )
+            except Exception as e:
+                logger.error(
+                    f"Erro pós-commit ao processar Mensagem #{instance.id}: {e}",
+                    exc_info=True,
+                )
 
+        transaction.on_commit(_after_commit)
     except Exception as e:
         logger.error(
-            f"Erro ao processar signal de Mensagem #{instance.id}: {e}", exc_info=True
+            f"Erro ao processar signal de Mensagem #{instance.id}: {e}",
+            exc_info=True,
         )
+
+
 def ensure_clientes_configs_ready() -> bool:
     """Garante que as configs de Clientes/Contatos no Notion existam.
 
@@ -2208,18 +2755,13 @@ def ensure_clientes_configs_ready() -> bool:
         ):
             return True
 
-        # Construir bases Notion e salvar configs
+        # Construir bases via cluster (Django Q)
         try:
-            from .services.bootstrap_clientes import (
-                NotionClientesBootstrapService,
-            )
-
-            bootstrap = NotionClientesBootstrapService()
-            async_to_sync(bootstrap.construct_minimal)()
+            async_task(cluster_bootstrap_clientes_minimal)
             logger.info(
-                "Databases Notion criadas (sem exemplos) e configs salvas."
+                "Bootstraps de Clientes/Contatos agendados no cluster."
             )
-            # Revalidar
+            # Revalidar (retorna False até concluir)
             contato_cfg = NotionDatabaseConfig.objects.filter(
                 slug="ui_clientes_contato"
             ).first()
@@ -2269,18 +2811,13 @@ def ensure_operacional_configs_ready() -> bool:
             return True
 
         try:
-            # Usa o serviço de bootstrap mínimo (evita efeitos colaterais)
-            from .services.bootstrap_operacional import (
-                NotionOperacionalBootstrapService,
-            )
-
-            bootstrap = NotionOperacionalBootstrapService()
-            async_to_sync(bootstrap.construct_minimal)()
+            # Agenda o bootstrap operacional no cluster
+            async_task(cluster_bootstrap_operacional_minimal)
             logger.info(
-                "Databases operacionais criadas (mínimas) e configs salvas."
+                "Bootstraps Operacionais agendados no cluster."
             )
 
-            # Revalidar
+            # Revalidar (retorna False até concluir)
             dep_cfg = NotionDatabaseConfig.objects.filter(
                 slug="ui_operacional_departamento"
             ).first()
@@ -2303,3 +2840,303 @@ def ensure_operacional_configs_ready() -> bool:
             f"Falha ao verificar/garantir configs Operacionais: {outer}"
         )
         return False
+
+
+def ensure_atendimentos_configs_ready() -> bool:
+    """Garante que configs de Atendimentos/Mensagens existam e estejam prontas.
+
+    Comentário (PT-BR):
+    - Retorna True se ambas as configs estão prontas para sincronização.
+    - Caso contrário, constrói databases mínimas via serviço de bootstrap e
+      salva no `NotionDatabaseConfig`, revalidando ao final.
+    """
+    try:
+        at_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_atendimentos_atendimento"
+        ).first()
+        msg_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_atendimentos_mensagem"
+        ).first()
+
+        if (
+            at_cfg
+            and msg_cfg
+            and at_cfg.is_ready_for_sync()
+            and msg_cfg.is_ready_for_sync()
+        ):
+            logger.info(
+                "Configs de Atendimentos/Mensagens já prontas para sync."
+            )
+            return True
+
+        try:
+            # Agenda o bootstrap de Atendimentos/Mensagens no cluster
+            async_task(cluster_bootstrap_atendimentos_minimal)
+            logger.info(
+                (
+                    "Bootstraps de Atendimentos/Mensagens agendados "
+                    "no cluster."
+                )
+            )
+
+            # Revalidar (retorna False até concluir)
+            at_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_atendimentos_atendimento"
+            ).first()
+            msg_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_atendimentos_mensagem"
+            ).first()
+            ready = bool(
+                at_cfg
+                and msg_cfg
+                and at_cfg.is_ready_for_sync()
+                and msg_cfg.is_ready_for_sync()
+            )
+            logger.info(
+                (
+                    "Prontidão após bootstrap: atendimentos_ready={} "
+                    "mensagens_ready={}"
+                ).format(
+                    bool(at_cfg and at_cfg.is_ready_for_sync()),
+                    bool(msg_cfg and msg_cfg.is_ready_for_sync()),
+                )
+            )
+            return ready
+        except Exception as exc:
+            logger.error(
+                f"Erro ao construir bases Notion (Atendimentos): {exc}"
+            )
+            return False
+    except Exception as outer:
+        logger.error(
+            f"Falha ao verificar/garantir configs Atendimentos: {outer}"
+        )
+        return False
+
+
+def ensure_fluxo_etapas_movimentos_configs_ready() -> bool:
+    """Garante configs para Fluxo/Etapas/Movimentos prontas para sync.
+
+    Comentário (PT-BR):
+    - Depende das bases Operacionais (Departamentos/Atendentes) e
+      de Atendimentos, pois Movimentos relaciona-se com ambas.
+    - Se Etapas/Movimentos não existirem, cria databases mínimas e
+      salva configs via serviço de bootstrap.
+    """
+    try:
+        # Garantir bases necessárias antes
+        ok_ops = ensure_operacional_configs_ready()
+        ok_at = ensure_atendimentos_configs_ready()
+        if not (ok_ops and ok_at):
+            logger.warning(
+                "Operacional/Atendimentos não prontos; tentando bootstrap "
+                "de Fluxo/Etapas/Movimentos mesmo assim."
+            )
+
+        et_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_operacional_etapa_fluxo"
+        ).first()
+        mv_cfg = NotionDatabaseConfig.objects.filter(
+            slug="ui_operacional_movimento_fluxo"
+        ).first()
+
+        if (
+            et_cfg
+            and mv_cfg
+            and et_cfg.is_ready_for_sync()
+            and mv_cfg.is_ready_for_sync()
+        ):
+            return True
+
+        try:
+            # Agenda bootstrap de Fluxo/Etapas/Movimentos no cluster
+            async_task(cluster_bootstrap_fluxo_etapas_movimentos_minimal)
+            logger.info(
+                (
+                    "Bootstraps de Fluxo/Etapas/Movimentos agendados "
+                    "no cluster."
+                )
+            )
+
+            # Revalida após bootstrap
+            et_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_etapa_fluxo"
+            ).first()
+            mv_cfg = NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_movimento_fluxo"
+            ).first()
+            return bool(
+                et_cfg
+                and mv_cfg
+                and et_cfg.is_ready_for_sync()
+                and mv_cfg.is_ready_for_sync()
+            )
+        except Exception as exc:
+            logger.error(
+                (
+                    "Erro ao construir bases Notion (Fluxo/Etapas/" 
+                    "Movimentos): {}"
+                ).format(exc)
+            )
+            return False
+    except Exception as outer:
+        logger.error(
+            (
+                "Falha ao garantir configs Notion (Fluxo/Etapas/Movimentos): "
+                "{}"
+            ).format(outer)
+        )
+        return False
+def _table_exists(table_name: str) -> bool:
+    """Verifica se uma tabela existe no banco atual.
+
+    Comentário:
+    - Usa introspecção do Django para evitar consultas em
+      tabelas inexistentes que abortam a transação.
+    """
+    try:
+        return table_name in connection.introspection.table_names()
+    except Exception as err:
+        logger.warning(
+            "Falha ao verificar existência da tabela '{}': {}",
+            table_name,
+            str(err),
+        )
+        return False
+
+
+def safe_get_or_create_fluxo_sync(
+    fluxo_id: int,
+) -> Optional[FluxoAtendimentoSync]:
+    """Obtém/cria FluxoAtendimentoSync apenas se a tabela existir."""
+    if not _table_exists("notion_sync_fluxo_atendimento"):
+        logger.warning(
+            (
+                "Tabela 'notion_sync_fluxo_atendimento' ausente; "
+                "pulando criação de espelho do Fluxo #{}"
+            ).format(fluxo_id)
+        )
+        return None
+    return get_or_create_fluxo_sync(fluxo_id)
+
+
+def safe_get_or_create_etapa_sync(
+    etapa_id: int,
+) -> Optional[EtapaFluxoSync]:
+    """Obtém/cria EtapaFluxoSync apenas se a tabela existir."""
+    if not _table_exists("notion_sync_etapa_fluxo"):
+        logger.warning(
+            (
+                "Tabela 'notion_sync_etapa_fluxo' ausente; "
+                "pulando criação de espelho da Etapa #{}"
+            ).format(etapa_id)
+        )
+        return None
+    return get_or_create_etapa_sync(etapa_id)
+
+
+def safe_get_or_create_movimento_sync(
+    movimento_id: int,
+) -> Optional[MovimentoFluxoSync]:
+    """Obtém/cria MovimentoFluxoSync apenas se a tabela existir."""
+    if not _table_exists("notion_sync_movimento_fluxo"):
+        logger.warning(
+            (
+                "Tabela 'notion_sync_movimento_fluxo' ausente; "
+                "pulando criação de espelho do Movimento #{}"
+            ).format(movimento_id)
+        )
+        return None
+    return get_or_create_movimento_sync(movimento_id)
+
+
+def safe_get_or_create_departamento_sync(
+    departamento_id: int,
+) -> Optional[DepartamentoSync]:
+    """Obtém/cria DepartamentoSync apenas se a tabela existir."""
+    if not _table_exists("notion_sync_departamento"):
+        logger.warning(
+            (
+                "Tabela 'notion_sync_departamento' ausente; "
+                "pulando criação de espelho do Departamento #{}"
+            ).format(departamento_id)
+        )
+        return None
+    return get_or_create_departamento_sync(departamento_id)
+def cluster_bootstrap_clientes_minimal() -> None:
+    """Executa bootstrap mínimo de Clientes/Contatos no cluster."""
+    try:
+        from .services.bootstrap_clientes import (
+            NotionClientesBootstrapService,
+        )
+        bootstrap = NotionClientesBootstrapService()
+        async_to_sync(bootstrap.construct_minimal)()
+        logger.info(
+            "Bootstraps de Clientes/Contatos concluídos no cluster."
+        )
+    except Exception as err:
+        logger.error(
+            (
+                "Falha no bootstrap de Clientes/Contatos (cluster): {}"
+            ).format(err)
+        )
+
+
+def cluster_bootstrap_operacional_minimal() -> None:
+    """Executa bootstrap mínimo de Operacional no cluster."""
+    try:
+        from .services.bootstrap_operacional import (
+            NotionOperacionalBootstrapService,
+        )
+        bootstrap = NotionOperacionalBootstrapService()
+        async_to_sync(bootstrap.construct_minimal)()
+        logger.info("Bootstraps Operacionais concluídos no cluster.")
+    except Exception as err:
+        logger.error(
+            "Falha no bootstrap Operacional (cluster): {}".format(err)
+        )
+
+
+def cluster_bootstrap_atendimentos_minimal() -> None:
+    """Executa bootstrap mínimo de Atendimentos/Mensagens no cluster."""
+    try:
+        from .services.bootstrap_atendimentos import (
+            NotionAtendimentosBootstrapService,
+        )
+        bootstrap = NotionAtendimentosBootstrapService()
+        async_to_sync(bootstrap.construct_minimal)()
+        logger.info(
+            (
+                "Bootstraps de Atendimentos/Mensagens concluídos no "
+                "cluster."
+            )
+        )
+    except Exception as err:
+        logger.error(
+            (
+                "Falha no bootstrap de Atendimentos/Mensagens (cluster): {}"
+            ).format(err)
+        )
+
+
+def cluster_bootstrap_fluxo_etapas_movimentos_minimal() -> None:
+    """Executa bootstrap mínimo de Fluxo/Etapas/Movimentos no cluster."""
+    try:
+        from .services.bootstrap_fluxo_etapas_movimentos import (
+            NotionFluxoEtapasMovimentosBootstrapService,
+        )
+        bootstrap = NotionFluxoEtapasMovimentosBootstrapService()
+        async_to_sync(bootstrap.construct_minimal)()
+        logger.info(
+            (
+                "Bootstraps de Fluxo/Etapas/Movimentos concluídos no "
+                "cluster."
+            )
+        )
+    except Exception as err:
+        logger.error(
+            (
+                "Falha no bootstrap de Fluxo/Etapas/Movimentos "
+                "(cluster): {}"
+            ).format(err)
+        )

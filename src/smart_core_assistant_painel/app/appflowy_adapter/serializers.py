@@ -161,9 +161,7 @@ class AppFlowyRowWriteSerializer(serializers.ModelSerializer):
 
         s: str = str(value).strip().lower()
         if s not in ALLOWED_CHANNELS:
-            raise serializers.ValidationError(
-                f"channel inválido: {s}"
-            )
+            raise serializers.ValidationError(f"channel inválido: {s}")
         return s
 
     def validate_status(self, value: Any) -> str:
@@ -179,9 +177,7 @@ class AppFlowyRowWriteSerializer(serializers.ModelSerializer):
 
         s: str = str(value).strip().lower()
         if s not in ALLOWED_PRIORITIES:
-            raise serializers.ValidationError(
-                f"priority inválida: {s}"
-            )
+            raise serializers.ValidationError(f"priority inválida: {s}")
         return s
 
     def validate_assigned_to(self, value: Any) -> str:
@@ -189,9 +185,7 @@ class AppFlowyRowWriteSerializer(serializers.ModelSerializer):
 
         s: str = str(value).strip()
         if len(s) > 120:
-            raise serializers.ValidationError(
-                "assigned_to muito longo"
-            )
+            raise serializers.ValidationError("assigned_to muito longo")
         return s
 
     def validate_tags(self, value: Any) -> list[str]:
@@ -216,9 +210,7 @@ class AppFlowyRowWriteSerializer(serializers.ModelSerializer):
 
         s: str = str(value)
         if len(s) > 5000:
-            raise serializers.ValidationError(
-                "last_message muito longo"
-            )
+            raise serializers.ValidationError("last_message muito longo")
         return s
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:

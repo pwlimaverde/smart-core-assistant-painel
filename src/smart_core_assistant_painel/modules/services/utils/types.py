@@ -23,7 +23,10 @@ from ..features.unifield_data_services.domain.interface import (
 from ..features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
-from .parameters import SetEnvironRemoteParameters, UnifieldDataServicesParameters
+from .parameters import (
+    SetEnvironRemoteParameters,
+    UnifieldDataServicesParameters,
+)
 
 SERUsecase: TypeAlias = UsecaseBaseCallData[
     Empty,

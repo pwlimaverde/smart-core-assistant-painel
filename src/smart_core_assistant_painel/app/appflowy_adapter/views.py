@@ -10,6 +10,7 @@ from django.http import HttpRequest, JsonResponse
 try:  # Uso opcional de loguru para logs estruturados
     from loguru import logger
 except Exception:  # pragma: no cover - fallback simples
+
     class _DummyLogger:
         def info(self, msg: str) -> None:  # type: ignore[no-untyped-def]
             pass
@@ -36,6 +37,7 @@ def health(request: HttpRequest) -> JsonResponse:
         "timestamp": datetime.utcnow().isoformat(),
     }
     return JsonResponse(payload, status=200)
+
 
 # --- DRF endpoints protegidos por JWT ---
 from rest_framework import status  # noqa: E402
@@ -155,9 +157,7 @@ def rows_list_or_create(request: Request, grid_id: UUID) -> Response:
             "priority": str(payload["priority"]).strip(),
             "assigned_to": str(payload.get("assigned_to", "")).strip(),
             "tags": payload.get("tags", []),
-            "last_message": str(
-                payload.get("last_message", "")
-            ).strip(),
+            "last_message": str(payload.get("last_message", "")).strip(),
             "received_at": payload.get("received_at"),
             "sla_due": payload.get("sla_due"),
         },
@@ -177,17 +177,19 @@ def rows_list_or_create(request: Request, grid_id: UUID) -> Response:
             if field in payload:
                 setattr(obj, field, payload[field])
         obj.version = (obj.version or 1) + 1
-        obj.save(update_fields=[
-            "name",
-            "channel",
-            "status",
-            "priority",
-            "assigned_to",
-            "tags",
-            "last_message",
-            "version",
-            "updated_at",
-        ])
+        obj.save(
+            update_fields=[
+                "name",
+                "channel",
+                "status",
+                "priority",
+                "assigned_to",
+                "tags",
+                "last_message",
+                "version",
+                "updated_at",
+            ]
+        )
 
     data = AppFlowyRowSerializer(obj).data
     return Response(data, status=status.HTTP_201_CREATED if created else 200)
@@ -195,7 +197,9 @@ def rows_list_or_create(request: Request, grid_id: UUID) -> Response:
 
 @api_view(["PUT", "DELETE"])  # type: ignore[misc]
 @permission_classes([IsAuthenticated])  # type: ignore[misc]
-def row_update_or_delete(request: Request, grid_id: UUID, row_id: UUID) -> Response:
+def row_update_or_delete(
+    request: Request, grid_id: UUID, row_id: UUID
+) -> Response:
     """Atualiza (If-Match) ou remove uma linha."""
 
     try:
@@ -243,19 +247,21 @@ def row_update_or_delete(request: Request, grid_id: UUID, row_id: UUID) -> Respo
             setattr(row, field, payload[field])
 
     row.version = int(row.version) + 1
-    row.save(update_fields=[
-        "name",
-        "channel",
-        "status",
-        "priority",
-        "assigned_to",
-        "tags",
-        "last_message",
-        "sla_due",
-        "received_at",
-        "version",
-        "updated_at",
-    ])
+    row.save(
+        update_fields=[
+            "name",
+            "channel",
+            "status",
+            "priority",
+            "assigned_to",
+            "tags",
+            "last_message",
+            "sla_due",
+            "received_at",
+            "version",
+            "updated_at",
+        ]
+    )
 
     data = AppFlowyRowSerializer(row).data
     return Response(data, status=status.HTTP_200_OK)

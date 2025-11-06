@@ -112,6 +112,56 @@ class NotionOperacionalBootstrapService:
         )
         return created
 
+    async def _create_fluxo_database(self, departamento_db: Any) -> Any:
+        """Cria a database de Fluxos com relação 1:1 para Departamentos.
+
+        Comentários:
+        - Usa dual_property para espelhar em Departamentos como
+          "Fluxo de Atendimento".
+        - Não cria páginas de exemplo; apenas estrutura mínima.
+        """
+        if not getattr(departamento_db, "data_sources", None):
+            raise ValueError("Database de departamentos sem data_source")
+
+        dep_ds_id: str = departamento_db.data_sources[0]["id"]
+
+        properties: dict[str, Any] = {
+            "Nome": {"title": {}},
+            "Descrição": {"rich_text": {}},
+            "Ativo": {"checkbox": {}},
+            "Data Criação": {"date": {}},
+            "Departamento Relacionado": {
+                "relation": {
+                    "data_source_id": dep_ds_id,
+                    "single_property": {},
+                    "dual_property": {
+                        "synced_property_name": "Fluxo de Atendimento",
+                    },
+                }
+            },
+        }
+
+        params: dict[str, Any] = {
+            "parent": {"type": "page_id", "page_id": self._root_page_id},
+            "title": [
+                {
+                    "type": "text",
+                    "text": {"content": "📋 Fluxos de Atendimento CRM"},
+                }
+            ],
+            "icon": {"type": "emoji", "emoji": "📋"},
+            "initial_data_source": {
+                "name": "Fluxos",
+                "properties": properties,
+            },
+        }
+        created = await self._client.databases.create(params)
+        logger.info(
+            "Database Fluxos criada: {}",
+            getattr(created, "id", None),
+        )
+        return created
+
     async def _add_relation_to_departamento(
         self, atendente_db: Any, departamento_db: Any
     ) -> None:
@@ -168,6 +218,69 @@ class NotionOperacionalBootstrapService:
         )
         logger.info("Relação inversa garantida em Departamentos")
 
+    async def _add_fluxo_relation_to_departamento(
+        self, fluxo_db: Any, departamento_db: Any
+    ) -> None:
+        """Garante a propriedade inversa 'Fluxo de Atendimento' em Departamentos.
+
+        Comentários:
+        - Espelha a propriedade 'Departamento Relacionado' criada em Fluxos.
+        - Usa PATCH em `data_sources/{departamento_ds_id}`.
+        """
+        if not getattr(fluxo_db, "data_sources", None):
+            raise ValueError("Fluxos sem data_source")
+        if not getattr(departamento_db, "data_sources", None):
+            raise ValueError("Departamentos sem data_source")
+
+        fluxo_ds_id: str = fluxo_db.data_sources[0]["id"]
+        departamento_ds_id: str = departamento_db.data_sources[0]["id"]
+
+        # Busca ID da propriedade "Departamento Relacionado" em Fluxos
+        info: Any = await self._client.request(
+            method="get", path=f"databases/{fluxo_db.id}"
+        )
+
+        def _prop_id(obj: Any, name: str) -> str | None:
+            try:
+                props = obj.get("properties", {})
+                pid = props.get(name, {}).get("id")
+                return str(pid) if pid else None
+            except Exception:
+                return None
+
+        dept_rel_prop_id: Optional[str] = _prop_id(
+            info, "Departamento Relacionado"
+        )
+
+        update: dict[str, Any] = {
+            "properties": {
+                "Fluxo de Atendimento": {
+                    "type": "relation",
+                    "relation": {
+                        "data_source_id": fluxo_ds_id,
+                        "single_property": {},
+                        "dual_property": (
+                            {"synced_property_id": dept_rel_prop_id}
+                            if dept_rel_prop_id
+                            else {
+                                "synced_property_name":
+                                "Departamento Relacionado",
+                            }
+                        ),
+                    },
+                }
+            }
+        }
+
+        await self._client.request(
+            method="patch",
+            path=f"data_sources/{departamento_ds_id}",
+            body=update,
+        )
+        logger.info(
+            "Relação inversa 'Fluxo de Atendimento' garantida em Departamentos"
+        )
+
     @sync_to_async
     def _save_configs(self, atendente_db: Any, departamento_db: Any) -> None:
         """Persiste configurações em `NotionDatabaseConfig`."""
@@ -219,6 +332,34 @@ class NotionOperacionalBootstrapService:
         )
         logger.info("Configs operacionais persistidas em NotionDatabaseConfig")
 
+    @sync_to_async
+    def _save_fluxo_config(self, fluxo_db: Any) -> None:
+        """Persiste configuração da database de Fluxos em `NotionDatabaseConfig`."""
+        fluxo_ds = (
+            fluxo_db.data_sources[0]["id"]
+            if getattr(fluxo_db, "data_sources", None)
+            else None
+        )
+
+        NotionDatabaseConfig.objects.update_or_create(
+            slug="ui_operacional_fluxo_atendimento",
+            defaults={
+                "name": "📋 Fluxos de Atendimento CRM",
+                "description": (
+                    "Database para fluxo de atendimento por departamento"
+                ),
+                "notion_database_id": fluxo_db.id,
+                "data_source_id": fluxo_ds,
+                "django_model": "ui.operacional.FluxoAtendimento",
+                "django_app_label": "ui",
+                "sync_enabled": True,
+                "sync_direction": "bidirectional",
+                "sync_priority": 7,
+                "auto_sync": True,
+            },
+        )
+        logger.info("Configs operacionais persistidas em NotionDatabaseConfig")
+
     async def construct_minimal(self) -> None:
         """Orquestra a criação e configuração mínima operacional."""
         dep_db = await self._create_departamento_database()
@@ -226,4 +367,10 @@ class NotionOperacionalBootstrapService:
         await asyncio.sleep(1)
         await self._add_relation_to_departamento(at_db, dep_db)
         await self._save_configs(at_db, dep_db)
+
+        # Correção: incluir Fluxos ↔ Departamentos
+        fluxo_db = await self._create_fluxo_database(dep_db)
+        await asyncio.sleep(1)
+        await self._add_fluxo_relation_to_departamento(fluxo_db, dep_db)
+        await self._save_fluxo_config(fluxo_db)
         logger.info("Bootstrap operacional concluído com sucesso")

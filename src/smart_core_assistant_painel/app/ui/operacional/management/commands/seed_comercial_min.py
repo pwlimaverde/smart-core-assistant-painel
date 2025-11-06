@@ -217,19 +217,37 @@ class Command(BaseCommand):
 
         # Distribuição
         a1 = criar_atendimento(
-            contatos[0], etapa_fila, "Solicitação de orçamento", StatusAtendimento.FILA
+            contatos[0],
+            etapa_fila,
+            "Solicitação de orçamento",
+            StatusAtendimento.FILA,
         )
         a2 = criar_atendimento(
-            contatos[1], etapa_fila, "Cotação de serviço", StatusAtendimento.FILA
+            contatos[1],
+            etapa_fila,
+            "Cotação de serviço",
+            StatusAtendimento.FILA,
         )
         a3 = criar_atendimento(
-            contatos[2], etapa_trabalho, "Negociação em andamento", StatusAtendimento.EM_ATENDIMENTO, True
+            contatos[2],
+            etapa_trabalho,
+            "Negociação em andamento",
+            StatusAtendimento.EM_ATENDIMENTO,
+            True,
         )
         a4 = criar_atendimento(
-            contatos[3], etapa_espera, "Aguardando retorno do cliente", StatusAtendimento.AGUARDANDO_RETORNO, True
+            contatos[3],
+            etapa_espera,
+            "Aguardando retorno do cliente",
+            StatusAtendimento.AGUARDANDO_RETORNO,
+            True,
         )
         a5 = criar_atendimento(
-            contatos[4], etapa_final, "Venda concluída", StatusAtendimento.RESOLVIDO, True
+            contatos[4],
+            etapa_final,
+            "Venda concluída",
+            StatusAtendimento.RESOLVIDO,
+            True,
         )
 
         atendimentos: list[Atendimento] = [a1, a2, a3, a4, a5]

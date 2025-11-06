@@ -18,7 +18,10 @@ from .models import (
     ClienteSync,
     ContatoSync,
     DepartamentoSync,
+    EtapaFluxoSync,
+    FluxoAtendimentoSync,
     MensagemSync,
+    MovimentoFluxoSync,
     NotionDatabaseConfig,
 )
 
@@ -212,3 +215,95 @@ class MensagemSyncAdmin(BaseSyncAdmin):
         return f"{obj.mensagem.conteudo[:50]}..."
 
     mensagem_info.short_description = "Mensagem"
+
+
+@admin.register(FluxoAtendimentoSync)
+class FluxoAtendimentoSyncAdmin(BaseSyncAdmin):
+    list_display = (
+        "id",
+        "fluxo_info",
+        "departamento_sync",
+        "external_id_short",
+        "sync_status_colored",
+        "last_sync_at",
+        "retry_count",
+    )
+    list_filter = ("sync_status", "last_sync_at", "departamento_sync")
+    search_fields = (
+        "fluxo__nome",
+        "fluxo__departamento__nome",
+        "external_id",
+    )
+    readonly_fields = [f.name for f in FluxoAtendimentoSync._meta.fields]
+    ordering = ("fluxo__departamento__nome", "fluxo__nome")
+
+    def fluxo_info(self, obj: FluxoAtendimentoSync) -> str:
+        dep_nome = (
+            obj.fluxo.departamento.nome if obj.fluxo and obj.fluxo.departamento else "-"
+        )
+        return f"{obj.fluxo.nome} ({dep_nome})"
+
+    fluxo_info.short_description = "Fluxo"
+
+
+@admin.register(EtapaFluxoSync)
+class EtapaFluxoSyncAdmin(BaseSyncAdmin):
+    list_display = (
+        "id",
+        "etapa_info",
+        "fluxo_sync",
+        "external_id_short",
+        "sync_status_colored",
+        "last_sync_at",
+        "retry_count",
+    )
+    list_filter = ("sync_status", "last_sync_at", "fluxo_sync")
+    search_fields = (
+        "etapa__nome",
+        "etapa__fluxo__nome",
+        "external_id",
+    )
+    readonly_fields = [f.name for f in EtapaFluxoSync._meta.fields]
+    ordering = (
+        "etapa__fluxo__departamento__nome",
+        "etapa__fluxo__nome",
+        "ordem_formatada",
+    )
+
+    def etapa_info(self, obj: EtapaFluxoSync) -> str:
+        nome_fluxo = obj.etapa.fluxo.nome if obj.etapa and obj.etapa.fluxo else "-"
+        return f"{obj.etapa.nome} → {nome_fluxo}"
+
+    etapa_info.short_description = "Etapa"
+
+
+@admin.register(MovimentoFluxoSync)
+class MovimentoFluxoSyncAdmin(BaseSyncAdmin):
+    list_display = (
+        "id",
+        "movimento_info",
+        "atendimento_sync",
+        "etapa_origem_sync",
+        "etapa_destino_sync",
+        "sync_status_colored",
+        "last_sync_at",
+    )
+    list_filter = ("sync_status", "last_sync_at", "movimento__automatico")
+    search_fields = (
+        "movimento__motivo",
+        "movimento__atendimento__id",
+        "external_id",
+    )
+    readonly_fields = [f.name for f in MovimentoFluxoSync._meta.fields]
+    ordering = ("-movimento__data_movimento",)
+
+    def movimento_info(self, obj: MovimentoFluxoSync) -> str:
+        origem = (
+            obj.movimento.etapa_origem.nome if obj.movimento and obj.movimento.etapa_origem else "-"
+        )
+        destino = (
+            obj.movimento.etapa_destino.nome if obj.movimento and obj.movimento.etapa_destino else "-"
+        )
+        return f"{origem} → {destino}"
+
+    movimento_info.short_description = "Movimento"

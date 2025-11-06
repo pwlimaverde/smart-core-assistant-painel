@@ -91,7 +91,9 @@ def _ensure_default_workspace_and_grid() -> AppFlowyGrid:
     return grid
 
 
-def _upsert_row_from_atendimento(grid: AppFlowyGrid, a: Atendimento) -> AppFlowyRow:
+def _upsert_row_from_atendimento(
+    grid: AppFlowyGrid, a: Atendimento
+) -> AppFlowyRow:
     """Cria/atualiza a linha do Grid com base em um `Atendimento`.
 
     A chave idempotente é `ticket_id` derivada do ID do atendimento.
@@ -136,19 +138,21 @@ def _upsert_row_from_atendimento(grid: AppFlowyGrid, a: Atendimento) -> AppFlowy
         row.sla_due = None
         row.version = row.version + 1
         row.updated_at = timezone.now()
-        row.save(update_fields=[
-            "received_at",
-            "name",
-            "channel",
-            "status",
-            "priority",
-            "assigned_to",
-            "tags",
-            "last_message",
-            "sla_due",
-            "version",
-            "updated_at",
-        ])
+        row.save(
+            update_fields=[
+                "received_at",
+                "name",
+                "channel",
+                "status",
+                "priority",
+                "assigned_to",
+                "tags",
+                "last_message",
+                "sla_due",
+                "version",
+                "updated_at",
+            ]
+        )
 
     return row
 

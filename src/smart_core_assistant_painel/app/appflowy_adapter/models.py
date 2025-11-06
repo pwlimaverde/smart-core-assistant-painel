@@ -324,4 +324,6 @@ class AppFlowySyncState(models.Model):
     def __str__(self) -> str:  # noqa: D401
         """Representação textual do estado de sincronização."""
 
-        return f"SyncState(grid={self.grid_id}, since={self.since.isoformat()})"
+        return (
+            f"SyncState(grid={self.grid_id}, since={self.since.isoformat()})"
+        )

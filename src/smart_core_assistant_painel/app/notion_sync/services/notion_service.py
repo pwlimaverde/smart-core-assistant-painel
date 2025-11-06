@@ -28,6 +28,9 @@ from .mappers import (
     ContatoMapper,
     DepartamentoMapper,
     MensagemMapper,
+    FluxoAtendimentoMapper,
+    EtapaFluxoMapper,
+    MovimentoFluxoMapper,
 )
 
 
@@ -89,6 +92,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Atendente",
             "Atendimento",
             "Mensagem",
+            # Operacional
+            "FluxoAtendimento",
+            "EtapaFluxo",
+            "MovimentoFluxo",
         ):
             full_name = self._resolve_full_name(simple_name)
             db_id = NotionDatabaseConfig.get_database_id(full_name)
@@ -144,6 +151,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Atendente": AtendenteMapper,
             "Atendimento": AtendimentoMapper,
             "Mensagem": MensagemMapper,
+            "FluxoAtendimento": FluxoAtendimentoMapper,
+            "EtapaFluxo": EtapaFluxoMapper,
+            "MovimentoFluxo": MovimentoFluxoMapper,
         }
 
     def _run(self, coro: Coroutine[Any, Any, Any]) -> Any:
@@ -246,7 +256,9 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     )
                     # Log específico para confiança se for o caso
                     if "Confiança" in key:
-                        logger.error(f"[CONFIANCA_DEBUG] Campo de confiança '{key}' removido! Schema permitido: {allowed}")
+                        logger.error(
+                            f"[CONFIANCA_DEBUG] Campo de confiança '{key}' removido! Schema permitido: {allowed}"
+                        )
 
             return filtered
         except Exception as e:
@@ -620,6 +632,15 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Atendente": "operacional.Atendente",
             "Atendimento": "atendimentos.Atendimento",
             "Mensagem": "atendimentos.Mensagem",
+            # Operacional: Fluxo de Atendimento
+            "Fluxo": "operacional.FluxoAtendimento",
+            "FluxoAtendimento": "operacional.FluxoAtendimento",
+            # Operacional: Etapas do Fluxo
+            "Etapa": "operacional.EtapaFluxo",
+            "EtapaFluxo": "operacional.EtapaFluxo",
+            # Operacional: Movimentos do Fluxo
+            "Movimento": "operacional.MovimentoFluxo",
+            "MovimentoFluxo": "operacional.MovimentoFluxo",
         }
         return mapping.get(model_name, model_name)
 

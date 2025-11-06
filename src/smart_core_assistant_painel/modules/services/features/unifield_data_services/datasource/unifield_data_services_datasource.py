@@ -65,20 +65,27 @@ class _InMemoryUnifiedDataService(UnifiedDataService):
                 "blocks": [],
             }
             self._containers[container_id] = container
-        container["data_sources"].append({
-            "data_source_id": data_source_id,
-            "link_id": link_id,
-        })
-        self._data_sources.setdefault(data_source_id, {
-            "container_id": container_id,
-        })
+        container["data_sources"].append(
+            {
+                "data_source_id": data_source_id,
+                "link_id": link_id,
+            }
+        )
+        self._data_sources.setdefault(
+            data_source_id,
+            {
+                "container_id": container_id,
+            },
+        )
         self._log(
             "data source vinculada: "
             f"{data_source_id} em {container_id} (link {link_id})"
         )
         return link_id
 
-    def update_schema(self, data_source_id: str, schema: Dict[str, Any]) -> str:
+    def update_schema(
+        self, data_source_id: str, schema: Dict[str, Any]
+    ) -> str:
         version_id = self._gen_id()
         self._schemas[data_source_id] = {
             "schema": schema,
@@ -118,16 +125,21 @@ class _InMemoryUnifiedDataService(UnifiedDataService):
     ) -> str:
         ds_id = data_source_id or self._default_data_source_id
         property_id = self._gen_id()
-        schema = self._schemas.setdefault(ds_id, {
-            "schema": {},
-            "version_id": self._gen_id(),
-            "relations": [],
-        })
-        schema["relations"].append({
-            "id": property_id,
-            "name": property_name,
-            "target": target_id,
-        })
+        schema = self._schemas.setdefault(
+            ds_id,
+            {
+                "schema": {},
+                "version_id": self._gen_id(),
+                "relations": [],
+            },
+        )
+        schema["relations"].append(
+            {
+                "id": property_id,
+                "name": property_name,
+                "target": target_id,
+            }
+        )
         self._log(
             "propriedade de relação criada: "
             f"{property_name} em {ds_id} -> {property_id}"

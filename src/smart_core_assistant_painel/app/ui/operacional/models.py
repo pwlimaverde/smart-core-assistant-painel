@@ -1,13 +1,19 @@
 import re
 from datetime import datetime
-from typing import Any, Optional, override
+from typing import TYPE_CHECKING, Any, Optional, override
 
+from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.indexes import Index
-from django.contrib.auth.models import User
 from django.utils import timezone
 from loguru import logger
+
+if TYPE_CHECKING:
+    # Import apenas para tipagem, evitando dependencias em tempo de execucao
+    from smart_core_assistant_painel.app.ui.atendimentos.models import (
+        Atendimento as AtendimentoModel,
+    )
 
 
 def validate_telefone(value: str) -> None:
@@ -91,6 +97,59 @@ class Departamento(models.Model):
     @override
     def clean(self) -> None:
         super().clean()
+
+    def get_fluxo(self) -> Optional["FluxoAtendimento"]:
+        """
+        Retorna o fluxo de atendimento padrao do departamento.
+
+        Regra atual: primeiro fluxo ativo por ordem de criacao.
+
+        Returns:
+            FluxoAtendimento ou None se nao existir vinculo.
+        """
+        # Busca o primeiro fluxo ativo do departamento, por ordem de criacao
+        return (
+            self.fluxos.filter(ativo=True).order_by("data_criacao").first()
+        )
+
+    def get_fluxo_etapas(self) -> models.QuerySet["EtapaFluxo"]:
+        """
+        Retorna as etapas do fluxo do departamento, se houver.
+
+        Returns:
+            QuerySet de EtapaFluxo ordenado por ordem. Vazio se sem fluxo.
+        """
+        fluxo: Optional["FluxoAtendimento"] = self.get_fluxo()
+        if not fluxo:
+            return EtapaFluxo.objects.none()
+        return fluxo.etapas.order_by("ordem")
+
+    def ensure_fluxo(self, nome: Optional[str] = None) -> "FluxoAtendimento":
+        """
+        Garante que o departamento possua um fluxo associado.
+
+        - Se existir, apenas retorna o fluxo atual.
+        - Caso contrario, cria um novo fluxo com nome padrao.
+
+        Args:
+            nome: Nome opcional para o novo fluxo.
+
+        Returns:
+            FluxoAtendimento criado ou existente.
+        """
+        fluxo_existente: Optional["FluxoAtendimento"] = self.get_fluxo()
+        if fluxo_existente:
+            return fluxo_existente
+
+        fluxo_novo: "FluxoAtendimento" = FluxoAtendimento.objects.create(
+            departamento=self,
+            nome=nome or f"Fluxo {self.nome}",
+            descricao=(
+                "Fluxo criado automaticamente pelo helper ensure_fluxo."
+            ),
+            ativo=True,
+        )
+        return fluxo_novo
 
 
 class Atendente(models.Model):
@@ -510,37 +569,34 @@ class TipoEtapa(models.TextChoices):
 
 class FluxoAtendimento(models.Model):
     """
-    Define o fluxo de trabalho personalizado para um departamento.
-    Cada departamento pode ter seu proprio fluxo com etapas especificas.
+    Define fluxos de trabalho personalizados por departamento.
+    Um departamento pode possuir multiplos fluxos; cada fluxo pertence
+    a um unico departamento.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    departamento: models.OneToOneField["Departamento"] = models.OneToOneField(
+    departamento: models.ForeignKey["Departamento"] = models.ForeignKey(
         Departamento,
         on_delete=models.CASCADE,
-        related_name="fluxo_atendimento",
-        help_text="Departamento ao qual este fluxo pertence"
+        related_name="fluxos",
+        help_text="Departamento ao qual este fluxo pertence",
     )
     nome: models.CharField[str] = models.CharField(
-        max_length=100,
-        help_text="Nome descritivo do fluxo"
+        max_length=100, help_text="Nome descritivo do fluxo"
     )
     descricao: models.TextField[str | None] = models.TextField(
         blank=True,
         null=True,
-        help_text="Descricao detalhada do fluxo de trabalho"
+        help_text="Descricao detalhada do fluxo de trabalho",
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
-        default=True,
-        help_text="Indica se o fluxo esta ativo"
+        default=True, help_text="Indica se o fluxo esta ativo"
     )
     data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
-        auto_now_add=True,
-        help_text="Data de criacao do fluxo"
+        auto_now_add=True, help_text="Data de criacao do fluxo"
     )
     data_atualizacao: models.DateTimeField[datetime] = models.DateTimeField(
-        auto_now=True,
-        help_text="Data da ultima atualizacao do fluxo"
+        auto_now=True, help_text="Data da ultima atualizacao do fluxo"
     )
 
     class Meta:
@@ -586,17 +642,17 @@ class EtapaFluxo(models.Model):
         FluxoAtendimento,
         on_delete=models.CASCADE,
         related_name="etapas",
-        help_text="Fluxo ao qual esta etapa pertence"
+        help_text="Fluxo ao qual esta etapa pertence",
     )
     nome: models.CharField[str] = models.CharField(
         max_length=50,
-        help_text="Nome da etapa (ex: 'Solicitacao de Orcamento')"
+        help_text="Nome da etapa (ex: 'Solicitacao de Orcamento')",
     )
     descricao: models.CharField[str | None] = models.CharField(
         max_length=200,
         blank=True,
         null=True,
-        help_text="Descricao opcional da etapa"
+        help_text="Descricao opcional da etapa",
     )
     ordem: models.PositiveIntegerField = models.PositiveIntegerField(
         help_text="Ordem da etapa no fluxo (menor numero primeiro)"
@@ -604,39 +660,37 @@ class EtapaFluxo(models.Model):
     cor: models.CharField[str] = models.CharField(
         max_length=7,
         default="#6B7280",
-        help_text="Cor hexadecimal para identificacao visual (ex: #FF5733)"
+        help_text="Cor hexadecimal para identificacao visual (ex: #FF5733)",
     )
     tipo_etapa: models.CharField[str] = models.CharField(
         max_length=20,
         choices=TipoEtapa.choices,
         default=TipoEtapa.TRABALHO,
-        help_text="Tipo da etapa para regras de negocio"
+        help_text="Tipo da etapa para regras de negocio",
     )
     permite_atribuicao: models.BooleanField[bool] = models.BooleanField(
         default=True,
-        help_text="Indica se atendentes podem ser atribuidos nesta etapa"
+        help_text="Indica se atendentes podem ser atribuidos nesta etapa",
     )
     automatico: models.BooleanField[bool] = models.BooleanField(
         default=False,
-        help_text="Indica se o movimento para esta etapa e automatico"
+        help_text="Indica se o movimento para esta etapa e automatico",
     )
     regras_transicao: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Regras especificas para transicao para esta etapa"
+        help_text="Regras especificas para transicao para esta etapa",
     )
     campos_obrigatorios: models.JSONField[list[str]] = models.JSONField(
         default=list,
         blank=True,
-        help_text="Lista de campos obrigatorios para entrar nesta etapa"
+        help_text="Lista de campos obrigatorios para entrar nesta etapa",
     )
     ativo: models.BooleanField[bool] = models.BooleanField(
-        default=True,
-        help_text="Indica se a etapa esta ativa no fluxo"
+        default=True, help_text="Indica se a etapa esta ativa no fluxo"
     )
     data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
-        auto_now_add=True,
-        help_text="Data de criacao da etapa"
+        auto_now_add=True, help_text="Data de criacao da etapa"
     )
 
     class Meta:
@@ -677,11 +731,13 @@ class MovimentoFluxo(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    atendimento: models.ForeignKey["atendimentos.Atendimento"] = models.ForeignKey(
-        "atendimentos.Atendimento",
-        on_delete=models.CASCADE,
-        related_name="movimentos_fluxo",
-        help_text="Atendimento que foi movido"
+    atendimento: models.ForeignKey["Atendimento"] = (
+        models.ForeignKey(
+            "atendimentos.Atendimento",
+            on_delete=models.CASCADE,
+            related_name="movimentos_fluxo",
+            help_text="Atendimento que foi movido",
+        )
     )
     etapa_origem: models.ForeignKey[EtapaFluxo] = models.ForeignKey(
         EtapaFluxo,
@@ -689,13 +745,13 @@ class MovimentoFluxo(models.Model):
         null=True,
         blank=True,
         related_name="movimentos_saida",
-        help_text="Etapa de origem (None para novos atendimentos)"
+        help_text="Etapa de origem (None para novos atendimentos)",
     )
     etapa_destino: models.ForeignKey[EtapaFluxo] = models.ForeignKey(
         EtapaFluxo,
         on_delete=models.CASCADE,
         related_name="movimentos_entrada",
-        help_text="Etapa para a qual o atendimento foi movido"
+        help_text="Etapa para a qual o atendimento foi movido",
     )
     atendente_origem: models.ForeignKey[Atendente] = models.ForeignKey(
         Atendente,
@@ -703,7 +759,7 @@ class MovimentoFluxo(models.Model):
         null=True,
         blank=True,
         related_name="movimentos_origem",
-        help_text="Atendente que realizou o movimento (se aplicavel)"
+        help_text="Atendente que realizou o movimento (se aplicavel)",
     )
     atendente_destino: models.ForeignKey[Atendente] = models.ForeignKey(
         Atendente,
@@ -711,31 +767,27 @@ class MovimentoFluxo(models.Model):
         null=True,
         blank=True,
         related_name="movimentos_destino",
-        help_text="Atendente que foi atribuido ao atendimento (se aplicavel)"
+        help_text="Atendente que foi atribuido ao atendimento (se aplicavel)",
     )
     motivo: models.TextField[str | None] = models.TextField(
-        blank=True,
-        null=True,
-        help_text="Motivo da movimentacao (opcional)"
+        blank=True, null=True, help_text="Motivo da movimentacao (opcional)"
     )
     dados_complementares: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Dados complementares sobre a movimentacao"
+        help_text="Dados complementares sobre a movimentacao",
     )
     automatico: models.BooleanField[bool] = models.BooleanField(
-        default=False,
-        help_text="Indica se o movimento foi automatico"
+        default=False, help_text="Indica se o movimento foi automatico"
     )
     data_movimento: models.DateTimeField[datetime] = models.DateTimeField(
-        auto_now_add=True,
-        help_text="Data e hora da movimentacao"
+        auto_now_add=True, help_text="Data e hora da movimentacao"
     )
     duracao_segundos: models.PositiveIntegerField[int | None] = (
         models.PositiveIntegerField(
             blank=True,
             null=True,
-            help_text="Duracao em segundos da etapa anterior (para calculos de SLA)"
+            help_text="Duracao em segundos da etapa anterior (para calculos de SLA)",
         )
     )
 
@@ -753,13 +805,15 @@ class MovimentoFluxo(models.Model):
     @override
     def __str__(self) -> str:
         origem = self.etapa_origem.nome if self.etapa_origem else "Novo"
-        destino = self.etapa_destino.nome if self.etapa_destino else "Desconhecido"
+        destino = (
+            self.etapa_destino.nome if self.etapa_destino else "Desconhecido"
+        )
         return f"{self.atendimento.id}: {origem} → {destino}"
 
     @classmethod
     def criar_movimento(
         cls,
-        atendimento: "atendimentos.Atendimento",
+        atendimento: "AtendimentoModel",
         etapa_destino: EtapaFluxo,
         atendente_destino: Optional[Atendente] = None,
         motivo: Optional[str] = None,
@@ -791,7 +845,11 @@ class MovimentoFluxo(models.Model):
                 # Calcular duracao desde o ultimo movimento
                 agora = timezone.now()
                 if ultimo_movimento.data_movimento:
-                    duracao_segundos = int((agora - ultimo_movimento.data_movimento).total_seconds())
+                    duracao_segundos = int(
+                        (
+                            agora - ultimo_movimento.data_movimento
+                        ).total_seconds()
+                    )
 
         # Criar o movimento
         movimento = cls.objects.create(

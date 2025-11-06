@@ -122,7 +122,9 @@ class AppFlowyAdapterDRFTests(TestCase):
         data: Dict[str, Any] = resp.json()
         items: List[Dict[str, Any]] = data.get("items", [])
         # Deve conter pelo menos o grid criado no setUp
-        self.assertTrue(any(g.get("grid_id") == str(self.grid.grid_id) for g in items))
+        self.assertTrue(
+            any(g.get("grid_id") == str(self.grid.grid_id) for g in items)
+        )
 
     def test_rows_list_since_filter_and_invalid_since(self) -> None:
         """Valida filtro `since` e erro para formato inválido."""
@@ -296,7 +298,9 @@ class AppFlowyAdapterDRFTests(TestCase):
         body: Dict[str, Any] = resp.json()
         self.assertIn("errors", body)
 
-    def test_rows_create_invalid_channel_status_priority_returns_400(self) -> None:
+    def test_rows_create_invalid_channel_status_priority_returns_400(
+        self,
+    ) -> None:
         """Valores inválidos de channel/status/priority devem falhar."""
 
         url: str = reverse(

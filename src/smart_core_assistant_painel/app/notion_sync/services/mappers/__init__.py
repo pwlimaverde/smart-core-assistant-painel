@@ -11,6 +11,9 @@ from .cliente_mapper import ClienteMapper
 from .contato_mapper import ContatoMapper
 from .departamento_mapper import DepartamentoMapper
 from .mensagem_mapper import MensagemMapper
+from .fluxo_atendimento_mapper import FluxoAtendimentoMapper
+from .etapa_fluxo_mapper import EtapaFluxoMapper
+from .movimento_fluxo_mapper import MovimentoFluxoMapper
 
 __all__ = [
     "ContatoMapper",
@@ -19,4 +22,7 @@ __all__ = [
     "AtendenteMapper",
     "AtendimentoMapper",
     "MensagemMapper",
+    "FluxoAtendimentoMapper",
+    "EtapaFluxoMapper",
+    "MovimentoFluxoMapper",
 ]

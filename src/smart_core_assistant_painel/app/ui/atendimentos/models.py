@@ -206,18 +206,20 @@ class Atendimento(models.Model):
     )
 
     # Campos específicos por departamento (Central de Atendimento)
-    valor_orcamento: models.DecimalField[decimal.Decimal | None] = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="Valor do orçamento (departamento comercial)"
+    valor_orcamento: models.DecimalField[decimal.Decimal | None] = (
+        models.DecimalField(
+            max_digits=12,
+            decimal_places=2,
+            blank=True,
+            null=True,
+            help_text="Valor do orçamento (departamento comercial)",
+        )
     )
     produto_servico: models.CharField[str | None] = models.CharField(
         max_length=100,
         blank=True,
         null=True,
-        help_text="Produto ou serviço principal (departamento comercial)"
+        help_text="Produto ou serviço principal (departamento comercial)",
     )
     categoria_venda: models.CharField[str | None] = models.CharField(
         max_length=50,
@@ -228,7 +230,7 @@ class Atendimento(models.Model):
             ("servico", "Serviço"),
             ("assinatura", "Assinatura"),
         ],
-        help_text="Categoria da venda (departamento comercial)"
+        help_text="Categoria da venda (departamento comercial)",
     )
     tipo_transacao: models.CharField[str | None] = models.CharField(
         max_length=20,
@@ -239,14 +241,16 @@ class Atendimento(models.Model):
             ("estorno", "Estorno"),
             ("reembolso", "Reembolso"),
         ],
-        help_text="Tipo da transação (departamento financeiro)"
+        help_text="Tipo da transação (departamento financeiro)",
     )
-    valor_transacao: models.DecimalField[decimal.Decimal | None] = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        blank=True,
-        null=True,
-        help_text="Valor da transação (departamento financeiro)"
+    valor_transacao: models.DecimalField[decimal.Decimal | None] = (
+        models.DecimalField(
+            max_digits=12,
+            decimal_places=2,
+            blank=True,
+            null=True,
+            help_text="Valor da transação (departamento financeiro)",
+        )
     )
     metodo_pagamento: models.CharField[str | None] = models.CharField(
         max_length=20,
@@ -258,7 +262,7 @@ class Atendimento(models.Model):
             ("pix", "Pix"),
             ("transferencia", "Transferência"),
         ],
-        help_text="Método de pagamento (departamento financeiro)"
+        help_text="Método de pagamento (departamento financeiro)",
     )
     status_financeiro: models.CharField[str | None] = models.CharField(
         max_length=20,
@@ -269,7 +273,7 @@ class Atendimento(models.Model):
             ("pendente", "Pendente"),
             ("falha", "Falha"),
         ],
-        help_text="Status da transação financeira"
+        help_text="Status da transação financeira",
     )
 
     class Meta:

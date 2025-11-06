@@ -3142,6 +3142,67 @@ def cluster_bootstrap_atendimentos_minimal() -> None:
         )
 
 
+@receiver(pre_delete, sender=FluxoAtendimento)
+def on_fluxo_pre_delete(
+    sender: type[FluxoAtendimento], instance: FluxoAtendimento, **kwargs: Any
+) -> None:
+    """
+    Signal disparado antes de excluir um Fluxo de Atendimento.
+
+    - Arquiva a página no Notion (se houver `external_id`).
+    - Agenda atualização do Departamento vinculado para remover relação.
+    """
+    logger.info(f"FluxoAtendimento para exclusão: {instance.nome}")
+
+    try:
+        sync_record = FluxoAtendimentoSync.objects.filter(
+            fluxo_id=instance.id
+        ).first()
+
+        if sync_record and sync_record.external_id:
+            service = NotionSyncService()
+            service.delete_record(
+                "FluxoAtendimento", str(sync_record.external_id)
+            )
+            logger.info(
+                (
+                    "FluxoAtendimento #{} arquivado no Notion "
+                    "(external_id: {})"
+                ).format(instance.id, sync_record.external_id)
+            )
+        else:
+            logger.warning(
+                (
+                    "FluxoAtendimento #{} não possui external_id "
+                    "para arquivar no Notion"
+                ).format(instance.id)
+            )
+
+        # Atualiza Departamento relacionado para refletir remoção do Fluxo
+        try:
+            dep_id = getattr(instance, "departamento_id", None)
+            if dep_id:
+                dep_sync = get_or_create_departamento_sync(int(dep_id))
+                dep_sync.prepare_notion_data()
+                dep_sync.save()
+                async_task(
+                    schedule_sync_operation, "Departamento", int(dep_id), "update"
+                )
+        except Exception as e:
+            logger.error(
+                (
+                    "Erro ao atualizar Departamento após exclusão do "
+                    "FluxoAtendimento #{}: {}"
+                ).format(instance.id, e)
+            )
+
+    except Exception as exc:
+        logger.error(
+            (
+                "Erro ao processar exclusão de FluxoAtendimento #{}: {}"
+            ).format(instance.id, exc)
+        )
+
 def cluster_bootstrap_fluxo_etapas_movimentos_minimal() -> None:
     """Executa bootstrap mínimo de Fluxo/Etapas/Movimentos no cluster."""
     try:

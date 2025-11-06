@@ -84,7 +84,12 @@ class NotionFluxoEtapasMovimentosBootstrapService:
             "Tipo de Etapa": {"select": {}},
             "Permite Atribuição": {"checkbox": {}},
             "Fluxo Relacionado": {
-                "relation": {"data_source_id": fluxo_ds_id}
+                # Define relação com Fluxos; `single_property` requerido
+                # pelo Notion na criação via `initial_data_source`.
+                "relation": {
+                    "data_source_id": fluxo_ds_id,
+                    "single_property": {},
+                }
             },
             "Data Criação": {"date": {}},
         }
@@ -133,19 +138,35 @@ class NotionFluxoEtapasMovimentosBootstrapService:
             "Data do Movimento": {"date": {}},
             "Duração (s)": {"number": {"format": "number"}},
             "Atendimento": {
-                "relation": {"data_source_id": atendimento_ds_id}
+                # `single_property` requerido na criação via initial_data_source
+                "relation": {
+                    "data_source_id": atendimento_ds_id,
+                    "single_property": {},
+                }
             },
             "Etapa Origem": {
-                "relation": {"data_source_id": etapa_ds_id}
+                "relation": {
+                    "data_source_id": etapa_ds_id,
+                    "single_property": {},
+                }
             },
             "Etapa Destino": {
-                "relation": {"data_source_id": etapa_ds_id}
+                "relation": {
+                    "data_source_id": etapa_ds_id,
+                    "single_property": {},
+                }
             },
             "Atendente Origem": {
-                "relation": {"data_source_id": atendente_ds_id}
+                "relation": {
+                    "data_source_id": atendente_ds_id,
+                    "single_property": {},
+                }
             },
             "Atendente Destino": {
-                "relation": {"data_source_id": atendente_ds_id}
+                "relation": {
+                    "data_source_id": atendente_ds_id,
+                    "single_property": {},
+                }
             },
         }
 
@@ -284,8 +305,18 @@ class NotionFluxoEtapasMovimentosBootstrapService:
                 )
             )
 
-        # Cria Etapas e salva configuração
-        etapa_db = await self._create_etapas_database(fluxo_ds_id)
+        # Idempotência: se Etapas já existir, recuperar e atualizar config
+        et_cfg = await sync_to_async(
+            NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_etapa_fluxo"
+            ).first
+        )()
+        if et_cfg and et_cfg.has_valid_database_id():
+            etapa_db = await self._client.databases.retrieve(
+                {"database_id": str(et_cfg.notion_database_id)}
+            )
+        else:
+            etapa_db = await self._create_etapas_database(fluxo_ds_id)
         await self._save_etapas_config(etapa_db)
 
         # Cria Movimentos e salva configuração
@@ -293,8 +324,19 @@ class NotionFluxoEtapasMovimentosBootstrapService:
         if not etapa_ds_id:
             raise ValueError("Data source de Etapas não encontrado")
 
-        movimento_db = await self._create_movimentos_database(
-            atendimento_ds_id, etapa_ds_id, atendente_ds_id
-        )
+        # Idempotência: se Movimentos já existir, recuperar e atualizar config
+        mv_cfg = await sync_to_async(
+            NotionDatabaseConfig.objects.filter(
+                slug="ui_operacional_movimento_fluxo"
+            ).first
+        )()
+        if mv_cfg and mv_cfg.has_valid_database_id():
+            movimento_db = await self._client.databases.retrieve(
+                {"database_id": str(mv_cfg.notion_database_id)}
+            )
+        else:
+            movimento_db = await self._create_movimentos_database(
+                atendimento_ds_id, etapa_ds_id, atendente_ds_id
+            )
         await self._save_movimentos_config(movimento_db)
         logger.info("Bootstrap de Etapas/Movimentos concluído com sucesso")

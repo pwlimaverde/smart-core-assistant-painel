@@ -9,6 +9,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
     Departamento,
     WhatsAppInstance,
+    FluxoAtendimento,
 )
 
 
@@ -25,12 +26,19 @@ class WhatsAppInstanceTestCase(TestCase):
                 descricao="Departamento de vendas",
             )
 
+            self.fluxo = FluxoAtendimento.objects.create(
+                nome="Fluxo Vendas",
+                descricao="Fluxo principal do departamento de vendas",
+                departamento=self.departamento,
+            )
+
             self.atendente = AtendenteHumano.objects.create(
                 nome="João Silva",
                 cargo="Vendedor",
                 telefone="+5511999998888",
                 email="joao@empresa.com",
                 departamento=self.departamento,
+                fluxo=self.fluxo,
             )
 
     def test_criar_instancia_departamental(self) -> None:
@@ -134,6 +142,7 @@ class WhatsAppInstanceTestCase(TestCase):
             cargo="Vendedora",
             telefone="+5511999991111",
             departamento=self.departamento,
+            fluxo=self.fluxo,
         )
 
         instancia = WhatsAppInstance.objects.create(

@@ -14,6 +14,8 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
+    Departamento,
+    FluxoAtendimento,
 )
 
 
@@ -55,13 +57,30 @@ class TestAtendimentoForm(TestCase):
         self.contato = Contato.objects.create(
             telefone="11999999999", nome_contato="Cliente Teste"
         )
-
+        self.departamento = Departamento.objects.create(
+            nome="Atendimentos",
+            telefone_instancia="5511999999999",
+            api_key="key-atendimentos-123",
+        )
+        self.fluxo = FluxoAtendimento.objects.create(
+            nome="Fluxo Principal",
+            descricao="Fluxo padrão de atendimentos",
+            departamento=self.departamento,
+        )
         self.atendente_ativo = AtendenteHumano.objects.create(
-            nome="Atendente Ativo", email="ativo@teste.com", ativo=True
+            nome="Atendente Ativo",
+            email="ativo@teste.com",
+            ativo=True,
+            fluxo=self.fluxo,
+            departamento=self.departamento,
         )
 
         self.atendente_inativo = AtendenteHumano.objects.create(
-            nome="Atendente Inativo", email="inativo@teste.com", ativo=False
+            nome="Atendente Inativo",
+            email="inativo@teste.com",
+            ativo=False,
+            fluxo=self.fluxo,
+            departamento=self.departamento,
         )
 
     def test_form_valido_bot(self) -> None:

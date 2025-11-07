@@ -183,6 +183,15 @@ class Atendente(models.Model):
             help_text="Departamento ao qual o atendente pertence",
         )
     )
+    # Fluxo (quadro) obrigatório para convite e controle de acesso no Trello
+    fluxo: models.ForeignKey["FluxoAtendimento"] = models.ForeignKey(
+        "FluxoAtendimento",
+        on_delete=models.PROTECT,
+        related_name="atendentes",
+        help_text=(
+            "Fluxo de atendimento (quadro) ao qual o atendente sera convidado"
+        ),
+    )
     email: models.EmailField[str | None] = models.EmailField(
         blank=True, null=True, help_text="E-mail corporativo do atendente"
     )
@@ -252,6 +261,7 @@ class Atendente(models.Model):
                 fields=["disponivel", "max_atendimentos_simultaneos"]
             ),
             models.Index(fields=["data_ultima_atribuicao"]),
+            models.Index(fields=["fluxo"]),
         ]
 
     @override
@@ -275,6 +285,11 @@ class Atendente(models.Model):
 
             self.slug = slug
 
+        # Valida campos obrigatorios antes de salvar
+        # Comentario: exigimos email e departamento para suportar
+        # convites ao Trello e vinculo a quadro especifico.
+        self.full_clean()
+
         if self.telefone:
             telefone_limpo = re.sub(r"\D", "", self.telefone)
             if not telefone_limpo.startswith("55"):
@@ -285,6 +300,27 @@ class Atendente(models.Model):
     @override
     def clean(self) -> None:
         super().clean()
+        # Regra de negocio: email e fluxo (quadro) sao obrigatorios
+        # para cadastro de atendentes humanos e convite no Trello.
+        if not self.email:
+            raise ValidationError({"email": "E-mail corporativo obrigatorio."})
+        if not self.fluxo:
+            raise ValidationError({"fluxo": "Fluxo de atendimento obrigatorio."})
+
+        # Coerencia: se houver departamento, deve coincidir com o do fluxo
+        if self.departamento is not None and self.fluxo is not None:
+            if self.fluxo.departamento_id != self.departamento_id:
+                raise ValidationError({
+                    "fluxo": "Fluxo deve pertencer ao mesmo departamento informado.",
+                    "departamento": "Departamento deve coincidir com o do fluxo.",
+                })
+
+        # Formato de telefone já validado por validator, normalização ocorre em save()
+
+    # Compatibilidade retroativa com testes/nomes antigos
+    # Comentario: exporta alias para manter referencias existentes em testes.
+    # Em tempo de import, AtendenteHumano apontara para Atendente.
+
 
     def get_atendimentos_ativos(self) -> int:
         """Retorna a quantidade de atendimentos ativos deste atendente.
@@ -727,7 +763,7 @@ class MovimentoFluxo(models.Model):
     Registra a movimentacao de um atendimento entre as etapas do fluxo.
     Mantem historico completo para auditoria e analise.
     """
-
+    
     id: models.AutoField = models.AutoField(primary_key=True)
     atendimento: models.ForeignKey["Atendimento"] = models.ForeignKey(
         "atendimentos.Atendimento",
@@ -871,3 +907,7 @@ class MovimentoFluxo(models.Model):
         atendimento.save(update_fields=["etapa_atual", "atendente_humano"])
 
         return movimento
+
+# Alias de compatibilidade com nomenclatura anterior em testes
+# Mantem AtendenteHumano apontando para o modelo Atendente
+AtendenteHumano = Atendente

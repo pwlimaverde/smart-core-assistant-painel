@@ -29,6 +29,7 @@ class AtendenteAdmin(admin.ModelAdmin[Atendente]):
         "nome",
         "cargo",
         "departamento",
+        "fluxo",
         "telefone",
         "email",
         "ativo",
@@ -44,12 +45,14 @@ class AtendenteAdmin(admin.ModelAdmin[Atendente]):
         "telefone",
         "email",
         "departamento__nome",
+        "fluxo__nome",
     ]
     list_filter = [
         "ativo",
         "disponivel",
         "cargo",
         "departamento",
+        "fluxo",
         "data_cadastro",
     ]
     readonly_fields = [
@@ -62,7 +65,7 @@ class AtendenteAdmin(admin.ModelAdmin[Atendente]):
     fieldsets = (
         (
             "Informações Pessoais",
-            {"fields": ("nome", "cargo", "departamento")},
+            {"fields": ("nome", "cargo", "departamento", "fluxo")},
         ),
         ("Contatos", {"fields": ("telefone", "email")}),
         (
@@ -125,6 +128,10 @@ class AtendenteAdmin(admin.ModelAdmin[Atendente]):
             request,
             f"{queryset.count()} atendentes marcados como indisponíveis.",
         )
+
+# Compatibilidade retroativa com testes/nomes antigos
+# Comentario: exporta alias para manter referencias existentes nos testes.
+AtendenteHumanoAdmin = AtendenteAdmin
 
 
 @admin.register(Departamento)

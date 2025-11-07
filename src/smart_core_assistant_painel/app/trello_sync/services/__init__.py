@@ -8,9 +8,11 @@ existente, expondo operações de sincronização de fluxo e tickets.
 from .flow_sync_service import FlowSyncService
 from .ticket_sync_service import TicketSyncService
 from .webhook_processing_service import WebhookProcessingService
+from .member_sync_service import MemberSyncService
 
 __all__ = [
     "FlowSyncService",
     "TicketSyncService",
     "WebhookProcessingService",
+    "MemberSyncService",
 ]

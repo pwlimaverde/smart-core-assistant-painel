@@ -259,6 +259,61 @@ class TrelloUnifiedDataService(UnifiedDataService):
 
         return version_id
 
+    # -------------------------- Membros (Boards/Cards) --------------------
+    def invite_member_to_board(
+        self, board_id: str, email: str, member_type: str = "normal"
+    ) -> Dict[str, Any]:
+        """Envia convite de membro por e-mail para um board do Trello.
+
+        Comentário: usa PUT /boards/{id}/members com `email`.
+        Alguns workspaces retornam um objeto de organização/board;
+        capturamos o JSON como metadado e retornamos.
+        """
+        params: Dict[str, Any] = {"email": email, "type": member_type}
+        data = self._request("PUT", f"/boards/{board_id}/members", params=params)
+        self._log(
+            "convite enviado: board={board} email={email}",
+            board=board_id,
+            email=email,
+        )
+        return data if isinstance(data, dict) else {"status": "invited"}
+
+    def get_board_members(self, board_id: str) -> List[Dict[str, Any]]:
+        """Lista membros de um board do Trello (id, username, fullName)."""
+        try:
+            data = self._request("GET", f"/boards/{board_id}/members")
+            if isinstance(data, list):
+                return data
+            return []
+        except Exception:
+            return []
+
+    def add_member_to_card(self, card_id: str, member_id: str) -> bool:
+        """Adiciona um membro a um card (POST /cards/{id}/idMembers)."""
+        params: Dict[str, Any] = {"value": member_id}
+        self._request("POST", f"/cards/{card_id}/idMembers", params=params)
+        self._log(
+            "membro adicionado ao card: card={card} member={member}",
+            card=card_id,
+            member=member_id,
+        )
+        return True
+
+    def remove_member_from_board(self, board_id: str, member_id: str) -> bool:
+        """Remove um membro de um board (DELETE /boards/{id}/members/{idMember}).
+
+        Comentário: a API do Trello aceita remoção via path param
+        `members/{idMember}`. Caso o membro não esteja no board, a
+        API pode retornar erro; nesse caso propagamos exceção.
+        """
+        self._request("DELETE", f"/boards/{board_id}/members/{member_id}")
+        self._log(
+            "membro removido do board: board={board} member={member}",
+            board=board_id,
+            member=member_id,
+        )
+        return True
+
     def add_relation_property(
         self, data_source_id: str, property_name: str, target_id: str
     ) -> str:

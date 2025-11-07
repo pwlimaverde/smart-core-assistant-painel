@@ -92,13 +92,18 @@ class TrelloMember(models.Model):
             related_name="trello_member",
         )
     )
-    external_id: models.CharField[str] = models.CharField(
-        max_length=64, unique=True
+    external_id: models.CharField[str | None] = models.CharField(
+        max_length=64, unique=True, blank=True, null=True
     )
-    username: models.CharField[str] = models.CharField(max_length=100)
+    username: models.CharField[str] = models.CharField(max_length=100, blank=True)
     full_name: models.CharField[str] = models.CharField(max_length=200)
+    email: models.EmailField[str | None] = models.EmailField(blank=True, null=True)
     metadata: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict, blank=True
+    )
+    is_invited: models.BooleanField[bool] = models.BooleanField(default=False)
+    invite_sent_at: models.DateTimeField[datetime | None] = models.DateTimeField(
+        blank=True, null=True
     )
 
     class Meta:

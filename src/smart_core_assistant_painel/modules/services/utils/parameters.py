@@ -75,7 +75,7 @@ class UnifieldDataServicesParameters(ParametersReturnResult):
     """
 
     data_source_id: str
-    provider: str = "notion"
+    provider: str = "trello"
     root_container_name: str = "Unified Data Root"
     enable_observability: bool = False
     error: UnifieldDataServicesError

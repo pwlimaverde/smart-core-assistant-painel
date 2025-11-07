@@ -123,3 +123,87 @@ class UnifiedDataService(ABC):
         Returns:
             str: ID do bloco adicionado.
         """
+
+    # ------------------------- Extensões de contrato ----------------------
+    def register_webhook(
+        self, model_id: str, callback_url: str, description: str
+    ) -> str:
+        """Registra webhook no provedor (board/list/item).
+
+        Args:
+            model_id (str): ID do recurso a observar.
+            callback_url (str): URL pública para receber eventos.
+            description (str): Descrição do webhook.
+
+        Returns:
+            str: ID do webhook criado.
+
+        Comentário: implementação opcional por adapter. Por padrão, lança
+        `NotImplementedError`.
+        """
+        raise NotImplementedError("register_webhook não implementado")
+
+    def delete_webhook(self, webhook_id: str) -> bool:
+        """Remove webhook existente no provedor.
+
+        Args:
+            webhook_id (str): ID do webhook.
+
+        Returns:
+            bool: Verdadeiro se removido com sucesso.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("delete_webhook não implementado")
+
+    def search_items(
+        self, board_id: str, query: Dict[str, Any]
+    ) -> list[Dict[str, Any]]:
+        """Busca itens no provedor com filtros.
+
+        Args:
+            board_id (str): ID do container/board para escopo.
+            query (dict[str, Any]): Parâmetros de consulta.
+
+        Returns:
+            list[dict[str, Any]]: Lista de itens encontrados.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("search_items não implementado")
+
+    def ensure_custom_fields(
+        self, board_id: str, fields: Dict[str, str]
+    ) -> Dict[str, str]:
+        """Garante a existência de custom fields e retorna seus IDs.
+
+        Args:
+            board_id (str): ID do container/board.
+            fields (dict[str, str]): Mapa nome->tipo (ex.: "text").
+
+        Returns:
+            dict[str, str]: Mapa nome->id dos custom fields.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("ensure_custom_fields não implementado")
+
+    def list_items(self, data_source_id: str) -> list[Dict[str, Any]]:
+        """Lista itens (cards) de um data source (lista).
+
+        Returns:
+            list[dict[str, Any]]: Lista de cards.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("list_items não implementado")
+
+    def list_data_sources(self, container_id: str) -> list[Dict[str, Any]]:
+        """Lista data sources (listas) de um container (board).
+
+        Returns:
+            list[dict[str, Any]]: Lista de listas do board.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("list_data_sources não implementado")

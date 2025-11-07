@@ -18,6 +18,8 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
     UnifieldDataServicesParameters,
 )
 from smart_core_assistant_painel.modules.services.utils.types import UDSData
+from .trello_adapter import TrelloUnifiedDataService
+from .notion_adapter import NotionUnifiedDataService
 
 
 class _InMemoryUnifiedDataService(UnifiedDataService):
@@ -179,8 +181,25 @@ class UnifieldDataServicesDatasource(UDSData):
     def __call__(
         self, parameters: UnifieldDataServicesParameters
     ) -> UnifiedDataService:
-        # Seleção de adapter (apenas in-memory nesta fase).
-        # Observação: Sem dependência direta de clientes externos.
+        provider = (parameters.provider or "").lower()
+        if provider == "trello":
+            service = TrelloUnifiedDataService(params=parameters)
+            if parameters.enable_observability:
+                logger.info(
+                    "UnifiedDataService Trello inicializado para "
+                    f"provider={parameters.provider}"
+                )
+            return service
+        elif provider == "notion":
+            service = NotionUnifiedDataService(params=parameters)
+            if parameters.enable_observability:
+                logger.info(
+                    "UnifiedDataService Notion inicializado para "
+                    f"provider={parameters.provider}"
+                )
+            return service
+
+        # Fallback para in-memory quando provider desconhecido
         service = _InMemoryUnifiedDataService(params=parameters)
         if parameters.enable_observability:
             logger.info(

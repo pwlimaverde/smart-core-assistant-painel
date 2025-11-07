@@ -10,9 +10,6 @@ from ..utils.parameters import UnifieldDataServicesParameters
 from .unifield_data_services.datasource.unifield_data_services_datasource import (
     UnifieldDataServicesDatasource,
 )
-from .unifield_data_services.datasource.notion_adapter import (
-    NotionUnifiedDataService,
-)
 from .unifield_data_services.domain.usecase.unifield_data_services_usecase import (
     UnifieldDataServicesUseCase,
 )
@@ -138,12 +135,19 @@ class FeaturesCompose:
         )
         parameters = UnifieldDataServicesParameters(
             data_source_id="",
-            provider="notion",
+            provider="trello",
             root_container_name="Unified Data Root",
             enable_observability=True,  # Habilitando observabilidade para debug
             error=error,
         )
-
-        # Usa o adapter do Notion diretamente
-        unified_service = NotionUnifiedDataService(parameters)
-        SERVICEHUB.set_unified_data_service(unified_service)
+        datasource: UDSData = UnifieldDataServicesDatasource()
+        usecase: UDSUsecase = UnifieldDataServicesUseCase(
+            datasource=datasource
+        )
+        result: ReturnSuccessOrError[UnifiedDataService] = usecase(
+            parameters
+        )
+        if isinstance(result, SuccessReturn):
+            SERVICEHUB.set_unified_data_service(result.result)
+        elif isinstance(result, ErrorReturn):
+            raise result.result

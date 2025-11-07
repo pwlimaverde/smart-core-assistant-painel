@@ -1218,9 +1218,9 @@ def schedule_sync_operation(
                 sync_record.prepare_notion_data()
             except Exception as prep_err:
                 logger.warning(
-                    (
-                        "Falha ao preparar dados do Departamento #{}: {}"
-                    ).format(instance_id, prep_err)
+                    ("Falha ao preparar dados do Departamento #{}: {}").format(
+                        instance_id, prep_err
+                    )
                 )
         # Integração UDS para Cliente: criação/atualização via serviço unificado
         if model_name == "Cliente":
@@ -1342,9 +1342,7 @@ def schedule_sync_operation(
                     fluxo_id=instance_id
                 )
             elif model_name == "EtapaFluxo":
-                sync_record = EtapaFluxoSync.objects.get(
-                    etapa_id=instance_id
-                )
+                sync_record = EtapaFluxoSync.objects.get(etapa_id=instance_id)
             elif model_name == "MovimentoFluxo":
                 sync_record = MovimentoFluxoSync.objects.get(
                     movimento_id=instance_id
@@ -1763,6 +1761,7 @@ def on_fluxo_saved(
         return
 
     try:
+
         def _after_commit() -> None:
             try:
                 # Evita consultas em tabelas não migradas no ambiente local.
@@ -1872,12 +1871,11 @@ def on_etapa_fluxo_saved(
     - Atualiza o Fluxo relacionado e Movimentos que referenciam a etapa.
     """
     if kwargs.get("skip_sync", False):
-        logger.debug(
-            f"Sincronização ignorada para EtapaFluxo #{instance.id}"
-        )
+        logger.debug(f"Sincronização ignorada para EtapaFluxo #{instance.id}")
         return
 
     try:
+
         def _after_commit() -> None:
             try:
                 # Garante criação/obtensão do espelho apenas após o commit
@@ -1920,9 +1918,7 @@ def on_etapa_fluxo_saved(
                     if fluxo_id and _table_exists(
                         "notion_sync_fluxo_atendimento"
                     ):
-                        fl_sync = safe_get_or_create_fluxo_sync(
-                            int(fluxo_id)
-                        )
+                        fl_sync = safe_get_or_create_fluxo_sync(int(fluxo_id))
                         if fl_sync:
                             fl_sync.prepare_notion_data()
                             fl_sync.save()
@@ -1995,6 +1991,7 @@ def on_movimento_fluxo_saved(
         return
 
     try:
+
         def _after_commit() -> None:
             try:
                 # Adia consultas de criação do espelho para pós-commit, evitando
@@ -2009,9 +2006,7 @@ def on_movimento_fluxo_saved(
                     )
                     return
 
-                sync_metadata = safe_get_or_create_movimento_sync(
-                    instance.id
-                )
+                sync_metadata = safe_get_or_create_movimento_sync(instance.id)
                 if not sync_metadata:
                     return
                 operation = "create" if created else "update"
@@ -2096,6 +2091,7 @@ def on_movimento_fluxo_saved(
         logger.error(
             f"Erro ao preparar sync de MovimentoFluxo #{instance.id}: {e}"
         )
+
 
 @receiver(pre_delete, sender=Contato)
 def on_contato_pre_delete(
@@ -2647,15 +2643,21 @@ def on_atendimento_saved(
                 # Garante que todas as configs necessárias existam/prontas
                 ok_ops = ensure_operacional_configs_ready()
                 if not ok_ops:
-                    logger.warning("Config Notion Operacional ainda não pronta.")
+                    logger.warning(
+                        "Config Notion Operacional ainda não pronta."
+                    )
 
                 ok_cli = ensure_clientes_configs_ready()
                 if not ok_cli:
-                    logger.warning("Config Notion de Clientes/Contatos ainda não pronta.")
+                    logger.warning(
+                        "Config Notion de Clientes/Contatos ainda não pronta."
+                    )
 
                 ok_at = ensure_atendimentos_configs_ready()
                 if not ok_at:
-                    logger.warning("Config Notion de Atendimentos/Mensagens ainda não pronta.")
+                    logger.warning(
+                        "Config Notion de Atendimentos/Mensagens ainda não pronta."
+                    )
 
                 # Obtém/Cria metadados de sincronização
                 sync_metadata = get_or_create_atendimento_sync(instance.id)
@@ -2744,7 +2746,9 @@ def on_mensagem_saved(
                 # Garantir que bases de Atendimentos/Mensagens existem
                 ok_at = ensure_atendimentos_configs_ready()
                 if not ok_at:
-                    logger.warning("Config Notion de Atendimentos/Mensagens ainda não pronta.")
+                    logger.warning(
+                        "Config Notion de Atendimentos/Mensagens ainda não pronta."
+                    )
 
                 # Sincroniza a mensagem (criação ou atualização)
                 sync_metadata = get_or_create_mensagem_sync(instance.id)
@@ -2753,7 +2757,9 @@ def on_mensagem_saved(
 
                 # Assegura que o atendimento pai tenha external_id antes de criar a mensagem
                 if instance.atendimento:
-                    at_sync = get_or_create_atendimento_sync(instance.atendimento.id)
+                    at_sync = get_or_create_atendimento_sync(
+                        instance.atendimento.id
+                    )
                     at_op = "create" if not at_sync.external_id else "update"
                     at_sync.prepare_notion_data()
                     at_sync.save()
@@ -2772,7 +2778,9 @@ def on_mensagem_saved(
                     instance.id,
                     op,
                 )
-                logger.info(f"Mensagem {op.lower()}izada: #{instance.id} (agendada via cluster)")
+                logger.info(
+                    f"Mensagem {op.lower()}izada: #{instance.id} (agendada via cluster)"
+                )
 
                 # Sempre atualizar o atendimento após a mensagem para espelhar relação
                 if instance.atendimento:
@@ -2881,9 +2889,7 @@ def ensure_operacional_configs_ready() -> bool:
         try:
             # Agenda o bootstrap operacional no cluster
             async_task(cluster_bootstrap_operacional_minimal)
-            logger.info(
-                "Bootstraps Operacionais agendados no cluster."
-            )
+            logger.info("Bootstraps Operacionais agendados no cluster.")
 
             # Revalidar (retorna False até concluir)
             dep_cfg = NotionDatabaseConfig.objects.filter(
@@ -2941,10 +2947,7 @@ def ensure_atendimentos_configs_ready() -> bool:
             # Agenda o bootstrap de Atendimentos/Mensagens no cluster
             async_task(cluster_bootstrap_atendimentos_minimal)
             logger.info(
-                (
-                    "Bootstraps de Atendimentos/Mensagens agendados "
-                    "no cluster."
-                )
+                ("Bootstraps de Atendimentos/Mensagens agendados no cluster.")
             )
 
             # Revalidar (retorna False até concluir)
@@ -3020,10 +3023,7 @@ def ensure_fluxo_etapas_movimentos_configs_ready() -> bool:
             # Agenda bootstrap de Fluxo/Etapas/Movimentos no cluster
             async_task(cluster_bootstrap_fluxo_etapas_movimentos_minimal)
             logger.info(
-                (
-                    "Bootstraps de Fluxo/Etapas/Movimentos agendados "
-                    "no cluster."
-                )
+                ("Bootstraps de Fluxo/Etapas/Movimentos agendados no cluster.")
             )
 
             # Revalida após bootstrap
@@ -3042,7 +3042,7 @@ def ensure_fluxo_etapas_movimentos_configs_ready() -> bool:
         except Exception as exc:
             logger.error(
                 (
-                    "Erro ao construir bases Notion (Fluxo/Etapas/" 
+                    "Erro ao construir bases Notion (Fluxo/Etapas/"
                     "Movimentos): {}"
                 ).format(exc)
             )
@@ -3055,6 +3055,8 @@ def ensure_fluxo_etapas_movimentos_configs_ready() -> bool:
             ).format(outer)
         )
         return False
+
+
 def _table_exists(table_name: str) -> bool:
     """Verifica se uma tabela existe no banco atual.
 
@@ -3131,22 +3133,23 @@ def safe_get_or_create_departamento_sync(
         )
         return None
     return get_or_create_departamento_sync(departamento_id)
+
+
 def cluster_bootstrap_clientes_minimal() -> None:
     """Executa bootstrap mínimo de Clientes/Contatos no cluster."""
     try:
         from .services.bootstrap_clientes import (
             NotionClientesBootstrapService,
         )
+
         bootstrap = NotionClientesBootstrapService()
         async_to_sync(bootstrap.construct_minimal)()
-        logger.info(
-            "Bootstraps de Clientes/Contatos concluídos no cluster."
-        )
+        logger.info("Bootstraps de Clientes/Contatos concluídos no cluster.")
     except Exception as err:
         logger.error(
-            (
-                "Falha no bootstrap de Clientes/Contatos (cluster): {}"
-            ).format(err)
+            ("Falha no bootstrap de Clientes/Contatos (cluster): {}").format(
+                err
+            )
         )
 
 
@@ -3156,6 +3159,7 @@ def cluster_bootstrap_operacional_minimal() -> None:
         from .services.bootstrap_operacional import (
             NotionOperacionalBootstrapService,
         )
+
         bootstrap = NotionOperacionalBootstrapService()
         async_to_sync(bootstrap.construct_minimal)()
         logger.info("Bootstraps Operacionais concluídos no cluster.")
@@ -3171,13 +3175,11 @@ def cluster_bootstrap_atendimentos_minimal() -> None:
         from .services.bootstrap_atendimentos import (
             NotionAtendimentosBootstrapService,
         )
+
         bootstrap = NotionAtendimentosBootstrapService()
         async_to_sync(bootstrap.construct_minimal)()
         logger.info(
-            (
-                "Bootstraps de Atendimentos/Mensagens concluídos no "
-                "cluster."
-            )
+            ("Bootstraps de Atendimentos/Mensagens concluídos no cluster.")
         )
     except Exception as err:
         logger.error(
@@ -3231,7 +3233,10 @@ def on_fluxo_pre_delete(
                 dep_sync.prepare_notion_data()
                 dep_sync.save()
                 async_task(
-                    schedule_sync_operation, "Departamento", int(dep_id), "update"
+                    schedule_sync_operation,
+                    "Departamento",
+                    int(dep_id),
+                    "update",
                 )
         except Exception as e:
             logger.error(
@@ -3243,10 +3248,11 @@ def on_fluxo_pre_delete(
 
     except Exception as exc:
         logger.error(
-            (
-                "Erro ao processar exclusão de FluxoAtendimento #{}: {}"
-            ).format(instance.id, exc)
+            ("Erro ao processar exclusão de FluxoAtendimento #{}: {}").format(
+                instance.id, exc
+            )
         )
+
 
 def cluster_bootstrap_fluxo_etapas_movimentos_minimal() -> None:
     """Executa bootstrap mínimo de Fluxo/Etapas/Movimentos no cluster."""
@@ -3254,18 +3260,15 @@ def cluster_bootstrap_fluxo_etapas_movimentos_minimal() -> None:
         from .services.bootstrap_fluxo_etapas_movimentos import (
             NotionFluxoEtapasMovimentosBootstrapService,
         )
+
         bootstrap = NotionFluxoEtapasMovimentosBootstrapService()
         async_to_sync(bootstrap.construct_minimal)()
         logger.info(
-            (
-                "Bootstraps de Fluxo/Etapas/Movimentos concluídos no "
-                "cluster."
-            )
+            ("Bootstraps de Fluxo/Etapas/Movimentos concluídos no cluster.")
         )
     except Exception as err:
         logger.error(
             (
-                "Falha no bootstrap de Fluxo/Etapas/Movimentos "
-                "(cluster): {}"
+                "Falha no bootstrap de Fluxo/Etapas/Movimentos (cluster): {}"
             ).format(err)
         )

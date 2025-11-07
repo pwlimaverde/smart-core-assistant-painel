@@ -73,9 +73,7 @@ class EtapaFluxoMapper:
             fluxo_rel = []
 
         props: dict[str, Any] = {
-            "Nome": {
-                "title": [{"type": "text", "text": {"content": nome}}]
-            },
+            "Nome": {"title": [{"type": "text", "text": {"content": nome}}]},
             "Descrição": {
                 "rich_text": [
                     {"type": "text", "text": {"content": descricao[:1000]}}

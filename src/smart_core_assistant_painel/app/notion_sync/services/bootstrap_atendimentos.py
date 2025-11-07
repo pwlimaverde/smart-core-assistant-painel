@@ -224,9 +224,7 @@ class NotionAtendimentosBootstrapService:
                 def _has_prop(db_info: dict[str, Any], name: str) -> bool:
                     try:
                         for ds in db_info.get("data_sources") or []:
-                            props_ds: dict[str, Any] = ds.get(
-                                "properties", {}
-                            )
+                            props_ds: dict[str, Any] = ds.get("properties", {})
                             if name in props_ds:
                                 return True
                         props_root: dict[str, Any] = db_info.get(
@@ -263,9 +261,7 @@ class NotionAtendimentosBootstrapService:
                         path=f"data_sources/{mensagem_ds_id}",
                         body=update_msg,
                     )
-                    logger.info(
-                        "Relação adicionada na Mensagens reutilizada"
-                    )
+                    logger.info("Relação adicionada na Mensagens reutilizada")
                 else:
                     logger.info(
                         "Reutilizando database Mensagens: {}",
@@ -437,12 +433,12 @@ class NotionAtendimentosBootstrapService:
             contato_cfg = await sync_to_async(
                 NotionDatabaseConfig.objects.get
             )(slug="ui_clientes_contato")
-            dep_cfg = await sync_to_async(
-                NotionDatabaseConfig.objects.get
-            )(slug="ui_operacional_departamento")
-            at_cfg = await sync_to_async(
-                NotionDatabaseConfig.objects.get
-            )(slug="ui_operacional_atendente")
+            dep_cfg = await sync_to_async(NotionDatabaseConfig.objects.get)(
+                slug="ui_operacional_departamento"
+            )
+            at_cfg = await sync_to_async(NotionDatabaseConfig.objects.get)(
+                slug="ui_operacional_atendente"
+            )
         except NotionDatabaseConfig.DoesNotExist as exc:
             logger.error("Configuração ausente para relação: {}", exc)
             raise ValueError(

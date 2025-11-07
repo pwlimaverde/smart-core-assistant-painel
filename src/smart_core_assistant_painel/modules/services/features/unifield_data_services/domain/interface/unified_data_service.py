@@ -231,3 +231,29 @@ class UnifiedDataService(ABC):
         Comentário: implementação opcional por adapter.
         """
         raise NotImplementedError("set_data_source_position não implementado")
+
+    def archive_container(self, container_id: str) -> bool:
+        """Arquiva o container no provedor externo (ex.: board Trello).
+
+        Args:
+            container_id (str): ID externo do container.
+
+        Returns:
+            bool: Verdadeiro se arquivado com sucesso.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("archive_container não implementado")
+
+    def archive_data_source(self, data_source_id: str) -> bool:
+        """Arquiva a fonte de dados (ex.: lista do Trello).
+
+        Args:
+            data_source_id (str): ID externo da fonte de dados.
+
+        Returns:
+            bool: Verdadeiro se arquivado com sucesso.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("archive_data_source não implementado")

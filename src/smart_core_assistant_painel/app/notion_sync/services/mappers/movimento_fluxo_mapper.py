@@ -86,15 +86,21 @@ class MovimentoFluxoMapper:
             return [{"id": ext_id}] if ext_id else []
 
         try:
-            rel_atendimento = _rel_from_sync(getattr(sync_obj, "atendimento_sync", None))
+            rel_atendimento = _rel_from_sync(
+                getattr(sync_obj, "atendimento_sync", None)
+            )
         except Exception:
             rel_atendimento = []
         try:
-            rel_etapa_origem = _rel_from_sync(getattr(sync_obj, "etapa_origem_sync", None))
+            rel_etapa_origem = _rel_from_sync(
+                getattr(sync_obj, "etapa_origem_sync", None)
+            )
         except Exception:
             rel_etapa_origem = []
         try:
-            rel_etapa_destino = _rel_from_sync(getattr(sync_obj, "etapa_destino_sync", None))
+            rel_etapa_destino = _rel_from_sync(
+                getattr(sync_obj, "etapa_destino_sync", None)
+            )
         except Exception:
             rel_etapa_destino = []
         try:
@@ -122,11 +128,11 @@ class MovimentoFluxoMapper:
                 ]
             },
             "Dados Complementares": {
-                "rich_text": [
-                    {"type": "text", "text": {"content": dados_txt}}
-                ]
+                "rich_text": [{"type": "text", "text": {"content": dados_txt}}]
             },
-            "Automático": {"checkbox": bool(getattr(mov, "automatico", False))},
+            "Automático": {
+                "checkbox": bool(getattr(mov, "automatico", False))
+            },
             "Duração (s)": {
                 "number": int(getattr(mov, "duracao_segundos", 0) or 0)
             },

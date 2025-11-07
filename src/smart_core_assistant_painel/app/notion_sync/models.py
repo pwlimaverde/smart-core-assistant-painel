@@ -2357,8 +2357,8 @@ class FluxoAtendimentoSync(models.Model):
                 )
 
             # Propriedades Notion
-            self.notion_properties = FluxoAtendimentoMapper.to_notion_properties(
-                self
+            self.notion_properties = (
+                FluxoAtendimentoMapper.to_notion_properties(self)
             )
 
             # Campos formatados
@@ -2536,11 +2536,15 @@ class EtapaFluxoSync(models.Model):
             from .services.mappers.etapa_fluxo_mapper import EtapaFluxoMapper
 
             if getattr(self.etapa, "fluxo", None):
-                self.fluxo_sync, _ = FluxoAtendimentoSync.objects.get_or_create(
-                    fluxo=self.etapa.fluxo
+                self.fluxo_sync, _ = (
+                    FluxoAtendimentoSync.objects.get_or_create(
+                        fluxo=self.etapa.fluxo
+                    )
                 )
 
-            self.notion_properties = EtapaFluxoMapper.to_notion_properties(self)
+            self.notion_properties = EtapaFluxoMapper.to_notion_properties(
+                self
+            )
 
             # Campos formatados
             self.nome_formatado = getattr(self.etapa, "nome", "Etapa") or (
@@ -2550,9 +2554,7 @@ class EtapaFluxoSync(models.Model):
                 getattr(self.etapa, "descricao", "") or ""
             )
             self.ordem_formatada = int(getattr(self.etapa, "ordem", 0) or 0)
-            self.tipo_formatado = (
-                getattr(self.etapa, "tipo_etapa", "") or ""
-            )
+            self.tipo_formatado = getattr(self.etapa, "tipo_etapa", "") or ""
             self.permite_atribuicao = bool(
                 getattr(self.etapa, "permite_atribuicao", False)
             )
@@ -2569,7 +2571,11 @@ class EtapaFluxoSync(models.Model):
             updated_ref = getattr(self.etapa, "data_criacao", None)
         if not self.last_sync_at:
             return True
-        if updated_ref and self.last_sync_at and updated_ref > self.last_sync_at:
+        if (
+            updated_ref
+            and self.last_sync_at
+            and updated_ref > self.last_sync_at
+        ):
             return True
         return self.sync_status in ["pending", "error"]
 
@@ -2753,7 +2759,11 @@ class MovimentoFluxoSync(models.Model):
             updated_ref = getattr(self.movimento, "data_movimento", None)
         if not self.last_sync_at:
             return True
-        if updated_ref and self.last_sync_at and updated_ref > self.last_sync_at:
+        if (
+            updated_ref
+            and self.last_sync_at
+            and updated_ref > self.last_sync_at
+        ):
             return True
         return self.sync_status in ["pending", "error"]
 

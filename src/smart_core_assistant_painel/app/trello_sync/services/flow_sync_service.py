@@ -7,10 +7,9 @@ from smart_core_assistant_painel.modules.services import (
     FeaturesCompose,
     SERVICEHUB,
 )
-from smart_core_assistant_painel.modules.services.features.\
-    unifield_data_services.domain.interface.unified_data_service import (
-        UnifiedDataService,
-    )
+from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
+)
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloBoard,
     TrelloList,
@@ -69,9 +68,7 @@ class FlowSyncService:
         """
         Garante board Trello para um FluxoAtendimento e registra webhook.
         """
-        existing: Optional[TrelloBoard] = getattr(
-            fluxo, "trello_board", None
-        )
+        existing: Optional[TrelloBoard] = getattr(fluxo, "trello_board", None)
         if existing:
             return existing
 
@@ -98,9 +95,7 @@ class FlowSyncService:
                     description="Webhook de FluxoAtendimento (board)",
                 )
             except Exception as exc:
-                logger.warning(
-                    "Falha ao registrar webhook do board: {}", exc
-                )
+                logger.warning("Falha ao registrar webhook do board: {}", exc)
         else:
             logger.info(
                 "Webhook Trello não registrado (URL não pública ou flag desativada)."
@@ -151,9 +146,7 @@ class FlowSyncService:
             return
 
         # Busca todas as listas vinculadas ao board deste fluxo.
-        listas = TrelloList.objects.filter(board=board).select_related(
-            "etapa"
-        )
+        listas = TrelloList.objects.filter(board=board).select_related("etapa")
         # Ordena pelas etapas do fluxo
         ordered = sorted(
             listas,
@@ -164,4 +157,52 @@ class FlowSyncService:
             try:
                 self.client.set_data_source_position(tl.external_id, ordem_val)
             except Exception as exc:
-                logger.warning("Falha ao reordenar lista {id}: {}", exc, id=tl.external_id)
+                logger.warning(
+                    "Falha ao reordenar lista {id}: {}", exc, id=tl.external_id
+                )
+
+    def archive_list_for_etapa(self, etapa: Any) -> None:
+        """Arquiva a lista Trello vinculada à `EtapaFluxo`.
+
+        Comentário: chamado em eventos de exclusão da etapa para
+        fechar a lista no Trello, mantendo histórico sem apagar.
+        """
+        lista: Optional[TrelloList] = getattr(etapa, "trello_list", None)
+        if not lista:
+            return
+        try:
+            self.client.archive_data_source(lista.external_id)
+            logger.info(
+                "Lista arquivada no Trello: etapa={etapa} list={list}",
+                etapa=getattr(etapa, "nome", ""),
+                list=lista.external_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Falha ao arquivar lista do Trello para etapa {etapa}: {}",
+                exc,
+                etapa=getattr(etapa, "id", ""),
+            )
+
+    def archive_board_for_fluxo(self, fluxo: Any) -> None:
+        """Arquiva o board Trello vinculado ao `FluxoAtendimento`.
+
+        Comentário: chamado em eventos de exclusão do fluxo para
+        fechar o board no Trello e removê-lo da visualização.
+        """
+        board: Optional[TrelloBoard] = getattr(fluxo, "trello_board", None)
+        if not board:
+            return
+        try:
+            self.client.archive_container(board.external_id)
+            logger.info(
+                "Board arquivado no Trello: fluxo={fluxo} board={board}",
+                fluxo=getattr(fluxo, "nome", ""),
+                board=board.external_id,
+            )
+        except Exception as exc:
+            logger.warning(
+                "Falha ao arquivar board do Trello para fluxo {fluxo}: {}",
+                exc,
+                fluxo=getattr(fluxo, "id", ""),
+            )

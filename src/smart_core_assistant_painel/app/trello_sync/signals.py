@@ -1,6 +1,6 @@
 from typing import Any
 
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from loguru import logger
 
@@ -50,6 +50,35 @@ def etapa_created_sync_trello(
         service.reorder_lists_for_fluxo(instance.fluxo)
     except Exception as exc:
         logger.warning("Falha ao reordenar listas: {}", exc)
+
+
+@receiver(pre_delete, sender=EtapaFluxo)
+def etapa_deleted_archive_trello(
+    sender: Any, instance: Any, **kwargs: Any
+) -> None:
+    """Arquiva a List Trello ao excluir uma EtapaFluxo.
+
+    Comentário: utiliza wrapper de serviço para fechar a lista no Trello
+    antes da remoção em cascade dos registros locais.
+    """
+    try:
+        FlowSyncService().archive_list_for_etapa(instance)
+    except Exception as exc:
+        logger.warning("Falha ao arquivar list Trello: {}", exc)
+
+
+@receiver(pre_delete, sender=FluxoAtendimento)
+def fluxo_deleted_archive_trello(
+    sender: Any, instance: Any, **kwargs: Any
+) -> None:
+    """Arquiva o Board Trello ao excluir um FluxoAtendimento.
+
+    Comentário: fecha o board no Trello para remover da visualização.
+    """
+    try:
+        FlowSyncService().archive_board_for_fluxo(instance)
+    except Exception as exc:
+        logger.warning("Falha ao arquivar board Trello: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)

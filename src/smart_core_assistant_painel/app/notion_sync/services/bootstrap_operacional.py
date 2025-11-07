@@ -263,8 +263,7 @@ class NotionOperacionalBootstrapService:
                             {"synced_property_id": dept_rel_prop_id}
                             if dept_rel_prop_id
                             else {
-                                "synced_property_name":
-                                "Departamento Relacionado",
+                                "synced_property_name": "Departamento Relacionado",
                             }
                         ),
                     },

@@ -7,204 +7,667 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('atendimentos', '0001_initial'),
+        ("atendimentos", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Departamento',
+            name="Departamento",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('nome', models.CharField(max_length=100, unique=True)),
-                ('slug', models.SlugField(blank=True, max_length=120, null=True, unique=True)),
-                ('descricao', models.TextField(blank=True, null=True)),
-                ('ativo', models.BooleanField(default=True)),
-                ('configuracoes', models.JSONField(blank=True, default=dict)),
-                ('data_criacao', models.DateTimeField(auto_now_add=True)),
-                ('metadados', models.JSONField(blank=True, default=dict)),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("nome", models.CharField(max_length=100, unique=True)),
+                (
+                    "slug",
+                    models.SlugField(
+                        blank=True, max_length=120, null=True, unique=True
+                    ),
+                ),
+                ("descricao", models.TextField(blank=True, null=True)),
+                ("ativo", models.BooleanField(default=True)),
+                ("configuracoes", models.JSONField(blank=True, default=dict)),
+                ("data_criacao", models.DateTimeField(auto_now_add=True)),
+                ("metadados", models.JSONField(blank=True, default=dict)),
             ],
             options={
-                'verbose_name': 'Departamento',
-                'verbose_name_plural': 'Departamentos',
-                'db_table': 'oraculo_departamento',
-                'ordering': ['nome'],
-                'indexes': [models.Index(fields=['slug'], name='oraculo_dep_slug_e035bf_idx'), models.Index(fields=['ativo', 'nome'], name='oraculo_dep_ativo_c6d037_idx')],
+                "verbose_name": "Departamento",
+                "verbose_name_plural": "Departamentos",
+                "db_table": "oraculo_departamento",
+                "ordering": ["nome"],
+                "indexes": [
+                    models.Index(
+                        fields=["slug"], name="oraculo_dep_slug_e035bf_idx"
+                    ),
+                    models.Index(
+                        fields=["ativo", "nome"],
+                        name="oraculo_dep_ativo_c6d037_idx",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
-            name='Atendente',
+            name="Atendente",
             fields=[
-                ('id', models.AutoField(help_text='Chave primaria do registro', primary_key=True, serialize=False)),
-                ('slug', models.SlugField(blank=True, default='', max_length=250, null=True, unique=True)),
-                ('telefone', models.CharField(blank=True, help_text='Numero de telefone do atendente (usado como sessao unica)', max_length=20, null=True, unique=True, validators=[smart_core_assistant_painel.app.ui.operacional.models.validate_telefone])),
-                ('nome', models.CharField(help_text='Nome completo do atendente', max_length=100)),
-                ('cargo', models.CharField(help_text='Cargo/funcao do atendente', max_length=100)),
-                ('email', models.EmailField(blank=True, help_text='E-mail corporativo do atendente', max_length=254, null=True)),
-                ('usuario_sistema', models.CharField(blank=True, help_text='Usuario do sistema para login (se aplicavel)', max_length=50, null=True)),
-                ('ativo', models.BooleanField(default=True, help_text='Indica se o atendente esta ativo')),
-                ('disponivel', models.BooleanField(default=True, help_text='Se o atendente esta aceitando novos atendimentos')),
-                ('max_atendimentos_simultaneos', models.PositiveIntegerField(default=5, help_text='Capacidade maxima de atendimentos simultaneos')),
-                ('data_ultima_atribuicao', models.DateTimeField(blank=True, help_text='Data e hora da ultima atribuicao de um novo atendimento', null=True)),
-                ('horario_trabalho', models.JSONField(blank=True, default=dict, help_text='Horarios de trabalho do atendente')),
-                ('especialidades', models.JSONField(blank=True, default=list, help_text='Especialidades do atendente')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Informacoes adicionais do atendente (configuracoes, preferencias, etc.)')),
-                ('data_cadastro', models.DateTimeField(auto_now_add=True, help_text='Data de cadastro no sistema')),
-                ('ultima_atividade', models.DateTimeField(auto_now=True, help_text='Data da ultima atividade no sistema')),
-                ('usuario', models.OneToOneField(blank=True, help_text='Usuario do Django associado ao atendente (opcional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendente_humano', to=settings.AUTH_USER_MODEL)),
-                ('departamento', models.ForeignKey(blank=True, help_text='Departamento ao qual o atendente pertence', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendentes', to='operacional.departamento')),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primaria do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "slug",
+                    models.SlugField(
+                        blank=True,
+                        default="",
+                        max_length=250,
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "telefone",
+                    models.CharField(
+                        blank=True,
+                        help_text="Numero de telefone do atendente (usado como sessao unica)",
+                        max_length=20,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.operacional.models.validate_telefone
+                        ],
+                    ),
+                ),
+                (
+                    "nome",
+                    models.CharField(
+                        help_text="Nome completo do atendente", max_length=100
+                    ),
+                ),
+                (
+                    "cargo",
+                    models.CharField(
+                        help_text="Cargo/funcao do atendente", max_length=100
+                    ),
+                ),
+                (
+                    "email",
+                    models.EmailField(
+                        blank=True,
+                        help_text="E-mail corporativo do atendente",
+                        max_length=254,
+                        null=True,
+                    ),
+                ),
+                (
+                    "usuario_sistema",
+                    models.CharField(
+                        blank=True,
+                        help_text="Usuario do sistema para login (se aplicavel)",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Indica se o atendente esta ativo",
+                    ),
+                ),
+                (
+                    "disponivel",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Se o atendente esta aceitando novos atendimentos",
+                    ),
+                ),
+                (
+                    "max_atendimentos_simultaneos",
+                    models.PositiveIntegerField(
+                        default=5,
+                        help_text="Capacidade maxima de atendimentos simultaneos",
+                    ),
+                ),
+                (
+                    "data_ultima_atribuicao",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data e hora da ultima atribuicao de um novo atendimento",
+                        null=True,
+                    ),
+                ),
+                (
+                    "horario_trabalho",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Horarios de trabalho do atendente",
+                    ),
+                ),
+                (
+                    "especialidades",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Especialidades do atendente",
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Informacoes adicionais do atendente (configuracoes, preferencias, etc.)",
+                    ),
+                ),
+                (
+                    "data_cadastro",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de cadastro no sistema",
+                    ),
+                ),
+                (
+                    "ultima_atividade",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Data da ultima atividade no sistema",
+                    ),
+                ),
+                (
+                    "usuario",
+                    models.OneToOneField(
+                        blank=True,
+                        help_text="Usuario do Django associado ao atendente (opcional)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="atendente_humano",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "departamento",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Departamento ao qual o atendente pertence",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="atendentes",
+                        to="operacional.departamento",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Atendente',
-                'verbose_name_plural': 'Atendentes',
-                'db_table': 'oraculo_atendente',
-                'ordering': ['nome'],
+                "verbose_name": "Atendente",
+                "verbose_name_plural": "Atendentes",
+                "db_table": "oraculo_atendente",
+                "ordering": ["nome"],
             },
         ),
         migrations.CreateModel(
-            name='FluxoAtendimento',
+            name="FluxoAtendimento",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('nome', models.CharField(help_text='Nome descritivo do fluxo', max_length=100)),
-                ('descricao', models.TextField(blank=True, help_text='Descricao detalhada do fluxo de trabalho', null=True)),
-                ('ativo', models.BooleanField(default=True, help_text='Indica se o fluxo esta ativo')),
-                ('data_criacao', models.DateTimeField(auto_now_add=True, help_text='Data de criacao do fluxo')),
-                ('data_atualizacao', models.DateTimeField(auto_now=True, help_text='Data da ultima atualizacao do fluxo')),
-                ('departamento', models.ForeignKey(help_text='Departamento ao qual este fluxo pertence', on_delete=django.db.models.deletion.CASCADE, related_name='fluxos', to='operacional.departamento')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "nome",
+                    models.CharField(
+                        help_text="Nome descritivo do fluxo", max_length=100
+                    ),
+                ),
+                (
+                    "descricao",
+                    models.TextField(
+                        blank=True,
+                        help_text="Descricao detalhada do fluxo de trabalho",
+                        null=True,
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True, help_text="Indica se o fluxo esta ativo"
+                    ),
+                ),
+                (
+                    "data_criacao",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Data de criacao do fluxo"
+                    ),
+                ),
+                (
+                    "data_atualizacao",
+                    models.DateTimeField(
+                        auto_now=True,
+                        help_text="Data da ultima atualizacao do fluxo",
+                    ),
+                ),
+                (
+                    "departamento",
+                    models.ForeignKey(
+                        help_text="Departamento ao qual este fluxo pertence",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="fluxos",
+                        to="operacional.departamento",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Fluxo de Atendimento',
-                'verbose_name_plural': 'Fluxos de Atendimento',
-                'db_table': 'oraculo_fluxo_atendimento',
-                'ordering': ['departamento__nome'],
+                "verbose_name": "Fluxo de Atendimento",
+                "verbose_name_plural": "Fluxos de Atendimento",
+                "db_table": "oraculo_fluxo_atendimento",
+                "ordering": ["departamento__nome"],
             },
         ),
         migrations.CreateModel(
-            name='EtapaFluxo',
+            name="EtapaFluxo",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('nome', models.CharField(help_text="Nome da etapa (ex: 'Solicitacao de Orcamento')", max_length=50)),
-                ('descricao', models.CharField(blank=True, help_text='Descricao opcional da etapa', max_length=200, null=True)),
-                ('ordem', models.PositiveIntegerField(help_text='Ordem da etapa no fluxo (menor numero primeiro)')),
-                ('cor', models.CharField(default='#6B7280', help_text='Cor hexadecimal para identificacao visual (ex: #FF5733)', max_length=7)),
-                ('tipo_etapa', models.CharField(choices=[('fila', 'Fila de Entrada'), ('trabalho', 'Em Trabalho'), ('espera', 'Aguardando Resposta'), ('finalizacao', 'Finalizacao')], default='trabalho', help_text='Tipo da etapa para regras de negocio', max_length=20)),
-                ('permite_atribuicao', models.BooleanField(default=True, help_text='Indica se atendentes podem ser atribuidos nesta etapa')),
-                ('automatico', models.BooleanField(default=False, help_text='Indica se o movimento para esta etapa e automatico')),
-                ('regras_transicao', models.JSONField(blank=True, default=dict, help_text='Regras especificas para transicao para esta etapa')),
-                ('campos_obrigatorios', models.JSONField(blank=True, default=list, help_text='Lista de campos obrigatorios para entrar nesta etapa')),
-                ('ativo', models.BooleanField(default=True, help_text='Indica se a etapa esta ativa no fluxo')),
-                ('data_criacao', models.DateTimeField(auto_now_add=True, help_text='Data de criacao da etapa')),
-                ('fluxo', models.ForeignKey(help_text='Fluxo ao qual esta etapa pertence', on_delete=django.db.models.deletion.CASCADE, related_name='etapas', to='operacional.fluxoatendimento')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "nome",
+                    models.CharField(
+                        help_text="Nome da etapa (ex: 'Solicitacao de Orcamento')",
+                        max_length=50,
+                    ),
+                ),
+                (
+                    "descricao",
+                    models.CharField(
+                        blank=True,
+                        help_text="Descricao opcional da etapa",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "ordem",
+                    models.PositiveIntegerField(
+                        help_text="Ordem da etapa no fluxo (menor numero primeiro)"
+                    ),
+                ),
+                (
+                    "cor",
+                    models.CharField(
+                        default="#6B7280",
+                        help_text="Cor hexadecimal para identificacao visual (ex: #FF5733)",
+                        max_length=7,
+                    ),
+                ),
+                (
+                    "tipo_etapa",
+                    models.CharField(
+                        choices=[
+                            ("fila", "Fila de Entrada"),
+                            ("trabalho", "Em Trabalho"),
+                            ("espera", "Aguardando Resposta"),
+                            ("finalizacao", "Finalizacao"),
+                        ],
+                        default="trabalho",
+                        help_text="Tipo da etapa para regras de negocio",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "permite_atribuicao",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Indica se atendentes podem ser atribuidos nesta etapa",
+                    ),
+                ),
+                (
+                    "automatico",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica se o movimento para esta etapa e automatico",
+                    ),
+                ),
+                (
+                    "regras_transicao",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Regras especificas para transicao para esta etapa",
+                    ),
+                ),
+                (
+                    "campos_obrigatorios",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Lista de campos obrigatorios para entrar nesta etapa",
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Indica se a etapa esta ativa no fluxo",
+                    ),
+                ),
+                (
+                    "data_criacao",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Data de criacao da etapa"
+                    ),
+                ),
+                (
+                    "fluxo",
+                    models.ForeignKey(
+                        help_text="Fluxo ao qual esta etapa pertence",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="etapas",
+                        to="operacional.fluxoatendimento",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Etapa do Fluxo',
-                'verbose_name_plural': 'Etapas do Fluxo',
-                'db_table': 'oraculo_etapa_fluxo',
-                'ordering': ['fluxo', 'ordem'],
+                "verbose_name": "Etapa do Fluxo",
+                "verbose_name_plural": "Etapas do Fluxo",
+                "db_table": "oraculo_etapa_fluxo",
+                "ordering": ["fluxo", "ordem"],
             },
         ),
         migrations.CreateModel(
-            name='MovimentoFluxo',
+            name="MovimentoFluxo",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('motivo', models.TextField(blank=True, help_text='Motivo da movimentacao (opcional)', null=True)),
-                ('dados_complementares', models.JSONField(blank=True, default=dict, help_text='Dados complementares sobre a movimentacao')),
-                ('automatico', models.BooleanField(default=False, help_text='Indica se o movimento foi automatico')),
-                ('data_movimento', models.DateTimeField(auto_now_add=True, help_text='Data e hora da movimentacao')),
-                ('duracao_segundos', models.PositiveIntegerField(blank=True, help_text='Duracao em segundos da etapa anterior (para calculos de SLA)', null=True)),
-                ('atendente_destino', models.ForeignKey(blank=True, help_text='Atendente que foi atribuido ao atendimento (se aplicavel)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='movimentos_destino', to='operacional.atendente')),
-                ('atendente_origem', models.ForeignKey(blank=True, help_text='Atendente que realizou o movimento (se aplicavel)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='movimentos_origem', to='operacional.atendente')),
-                ('atendimento', models.ForeignKey(help_text='Atendimento que foi movido', on_delete=django.db.models.deletion.CASCADE, related_name='movimentos_fluxo', to='atendimentos.atendimento')),
-                ('etapa_destino', models.ForeignKey(help_text='Etapa para a qual o atendimento foi movido', on_delete=django.db.models.deletion.CASCADE, related_name='movimentos_entrada', to='operacional.etapafluxo')),
-                ('etapa_origem', models.ForeignKey(blank=True, help_text='Etapa de origem (None para novos atendimentos)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='movimentos_saida', to='operacional.etapafluxo')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "motivo",
+                    models.TextField(
+                        blank=True,
+                        help_text="Motivo da movimentacao (opcional)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "dados_complementares",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Dados complementares sobre a movimentacao",
+                    ),
+                ),
+                (
+                    "automatico",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica se o movimento foi automatico",
+                    ),
+                ),
+                (
+                    "data_movimento",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data e hora da movimentacao",
+                    ),
+                ),
+                (
+                    "duracao_segundos",
+                    models.PositiveIntegerField(
+                        blank=True,
+                        help_text="Duracao em segundos da etapa anterior (para calculos de SLA)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "atendente_destino",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Atendente que foi atribuido ao atendimento (se aplicavel)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="movimentos_destino",
+                        to="operacional.atendente",
+                    ),
+                ),
+                (
+                    "atendente_origem",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Atendente que realizou o movimento (se aplicavel)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="movimentos_origem",
+                        to="operacional.atendente",
+                    ),
+                ),
+                (
+                    "atendimento",
+                    models.ForeignKey(
+                        help_text="Atendimento que foi movido",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="movimentos_fluxo",
+                        to="atendimentos.atendimento",
+                    ),
+                ),
+                (
+                    "etapa_destino",
+                    models.ForeignKey(
+                        help_text="Etapa para a qual o atendimento foi movido",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="movimentos_entrada",
+                        to="operacional.etapafluxo",
+                    ),
+                ),
+                (
+                    "etapa_origem",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Etapa de origem (None para novos atendimentos)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="movimentos_saida",
+                        to="operacional.etapafluxo",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Movimento do Fluxo',
-                'verbose_name_plural': 'Movimentos do Fluxo',
-                'db_table': 'oraculo_movimento_fluxo',
-                'ordering': ['-data_movimento'],
+                "verbose_name": "Movimento do Fluxo",
+                "verbose_name_plural": "Movimentos do Fluxo",
+                "db_table": "oraculo_movimento_fluxo",
+                "ordering": ["-data_movimento"],
             },
         ),
         migrations.CreateModel(
-            name='WhatsAppInstance',
+            name="WhatsAppInstance",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('phone_number', models.CharField(blank=True, help_text='Telefone vinculado a instancia', max_length=20, null=True, unique=True, validators=[smart_core_assistant_painel.app.ui.operacional.models.validate_telefone_instancia])),
-                ('instance_id', models.CharField(blank=True, help_text='ID unico da instancia no provedor', max_length=100, null=True, unique=True)),
-                ('api_key', models.CharField(help_text='Chave de API para autenticacao', max_length=100, unique=True, validators=[smart_core_assistant_painel.app.ui.operacional.models.validate_api_key])),
-                ('provider', models.CharField(choices=[('evolution', 'Evolution'), ('other', 'Other')], default='evolution', help_text='Provedor da API de WhatsApp', max_length=30)),
-                ('ativo', models.BooleanField(default=True, help_text='Se a instancia esta ativa')),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Metadados adicionais da instancia')),
-                ('data_criacao', models.DateTimeField(auto_now_add=True, help_text='Data de criacao do registro')),
-                ('ultima_validacao', models.DateTimeField(blank=True, help_text='Data da ultima validacao de credenciais', null=True)),
-                ('departamento', models.ForeignKey(blank=True, help_text='Departamento associado a esta instancia', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='whatsapp_instances', to='operacional.departamento')),
-                ('owner', models.OneToOneField(blank=True, help_text='Atendente dono desta instancia (opcional)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='whatsapp_instance', to='operacional.atendente')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "phone_number",
+                    models.CharField(
+                        blank=True,
+                        help_text="Telefone vinculado a instancia",
+                        max_length=20,
+                        null=True,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.operacional.models.validate_telefone_instancia
+                        ],
+                    ),
+                ),
+                (
+                    "instance_id",
+                    models.CharField(
+                        blank=True,
+                        help_text="ID unico da instancia no provedor",
+                        max_length=100,
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "api_key",
+                    models.CharField(
+                        help_text="Chave de API para autenticacao",
+                        max_length=100,
+                        unique=True,
+                        validators=[
+                            smart_core_assistant_painel.app.ui.operacional.models.validate_api_key
+                        ],
+                    ),
+                ),
+                (
+                    "provider",
+                    models.CharField(
+                        choices=[
+                            ("evolution", "Evolution"),
+                            ("other", "Other"),
+                        ],
+                        default="evolution",
+                        help_text="Provedor da API de WhatsApp",
+                        max_length=30,
+                    ),
+                ),
+                (
+                    "ativo",
+                    models.BooleanField(
+                        default=True, help_text="Se a instancia esta ativa"
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Metadados adicionais da instancia",
+                    ),
+                ),
+                (
+                    "data_criacao",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de criacao do registro",
+                    ),
+                ),
+                (
+                    "ultima_validacao",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data da ultima validacao de credenciais",
+                        null=True,
+                    ),
+                ),
+                (
+                    "departamento",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Departamento associado a esta instancia",
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="whatsapp_instances",
+                        to="operacional.departamento",
+                    ),
+                ),
+                (
+                    "owner",
+                    models.OneToOneField(
+                        blank=True,
+                        help_text="Atendente dono desta instancia (opcional)",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="whatsapp_instance",
+                        to="operacional.atendente",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Instancia WhatsApp',
-                'verbose_name_plural': 'Instancias WhatsApp',
-                'db_table': 'oraculo_whatsapp_instance',
-                'ordering': ['-data_criacao'],
+                "verbose_name": "Instancia WhatsApp",
+                "verbose_name_plural": "Instancias WhatsApp",
+                "db_table": "oraculo_whatsapp_instance",
+                "ordering": ["-data_criacao"],
             },
         ),
         migrations.AddIndex(
-            model_name='atendente',
-            index=models.Index(fields=['departamento', 'disponivel'], name='oraculo_ate_departa_aa6cea_idx'),
+            model_name="atendente",
+            index=models.Index(
+                fields=["departamento", "disponivel"],
+                name="oraculo_ate_departa_aa6cea_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendente',
-            index=models.Index(fields=['disponivel', 'max_atendimentos_simultaneos'], name='oraculo_ate_disponi_390372_idx'),
+            model_name="atendente",
+            index=models.Index(
+                fields=["disponivel", "max_atendimentos_simultaneos"],
+                name="oraculo_ate_disponi_390372_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendente',
-            index=models.Index(fields=['data_ultima_atribuicao'], name='oraculo_ate_data_ul_463ea3_idx'),
+            model_name="atendente",
+            index=models.Index(
+                fields=["data_ultima_atribuicao"],
+                name="oraculo_ate_data_ul_463ea3_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='etapafluxo',
-            index=models.Index(fields=['fluxo', 'ordem'], name='oraculo_eta_fluxo_i_2c1450_idx'),
+            model_name="etapafluxo",
+            index=models.Index(
+                fields=["fluxo", "ordem"],
+                name="oraculo_eta_fluxo_i_2c1450_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='etapafluxo',
-            index=models.Index(fields=['tipo_etapa'], name='oraculo_eta_tipo_et_08009f_idx'),
+            model_name="etapafluxo",
+            index=models.Index(
+                fields=["tipo_etapa"], name="oraculo_eta_tipo_et_08009f_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='etapafluxo',
-            index=models.Index(fields=['ativo'], name='oraculo_eta_ativo_e02fda_idx'),
+            model_name="etapafluxo",
+            index=models.Index(
+                fields=["ativo"], name="oraculo_eta_ativo_e02fda_idx"
+            ),
         ),
         migrations.AlterUniqueTogether(
-            name='etapafluxo',
-            unique_together={('fluxo', 'ordem')},
+            name="etapafluxo",
+            unique_together={("fluxo", "ordem")},
         ),
         migrations.AddIndex(
-            model_name='movimentofluxo',
-            index=models.Index(fields=['atendimento', '-data_movimento'], name='oraculo_mov_atendim_adae47_idx'),
+            model_name="movimentofluxo",
+            index=models.Index(
+                fields=["atendimento", "-data_movimento"],
+                name="oraculo_mov_atendim_adae47_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='movimentofluxo',
-            index=models.Index(fields=['etapa_destino', '-data_movimento'], name='oraculo_mov_etapa_d_440de9_idx'),
+            model_name="movimentofluxo",
+            index=models.Index(
+                fields=["etapa_destino", "-data_movimento"],
+                name="oraculo_mov_etapa_d_440de9_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='movimentofluxo',
-            index=models.Index(fields=['data_movimento'], name='oraculo_mov_data_mo_7e26c0_idx'),
+            model_name="movimentofluxo",
+            index=models.Index(
+                fields=["data_movimento"],
+                name="oraculo_mov_data_mo_7e26c0_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='whatsappinstance',
-            index=models.Index(fields=['api_key'], name='oraculo_wha_api_key_16965c_idx'),
+            model_name="whatsappinstance",
+            index=models.Index(
+                fields=["api_key"], name="oraculo_wha_api_key_16965c_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='whatsappinstance',
-            index=models.Index(fields=['phone_number'], name='oraculo_wha_phone_n_66e102_idx'),
+            model_name="whatsappinstance",
+            index=models.Index(
+                fields=["phone_number"], name="oraculo_wha_phone_n_66e102_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='whatsappinstance',
-            index=models.Index(fields=['instance_id'], name='oraculo_wha_instanc_abe166_idx'),
+            model_name="whatsappinstance",
+            index=models.Index(
+                fields=["instance_id"], name="oraculo_wha_instanc_abe166_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='whatsappinstance',
-            index=models.Index(fields=['provider'], name='oraculo_wha_provide_08d24e_idx'),
+            model_name="whatsappinstance",
+            index=models.Index(
+                fields=["provider"], name="oraculo_wha_provide_08d24e_idx"
+            ),
         ),
     ]

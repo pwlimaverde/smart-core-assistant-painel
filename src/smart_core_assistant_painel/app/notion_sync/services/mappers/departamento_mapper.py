@@ -110,9 +110,7 @@ class DepartamentoMapper:
 
                 fluxo_syncs = FluxoAtendimentoSync.objects.filter(
                     Q(departamento_sync=departamento_sync)
-                    | Q(
-                        fluxo__departamento=departamento_sync.departamento
-                    )
+                    | Q(fluxo__departamento=departamento_sync.departamento)
                 )
                 fluxo_external_ids: List[str] = [
                     fs.external_id

@@ -16,8 +16,9 @@ class WebhookApiTests(TestCase):
 
     def test_post_invalid_json_returns_400(self) -> None:
         url: str = reverse("trello_sync_api:webhook")
-        response = self.client.post(url, data=b"not-json",
-                                     content_type="application/json")
+        response = self.client.post(
+            url, data=b"not-json", content_type="application/json"
+        )
         self.assertEqual(response.status_code, 400)
 
     def test_post_valid_payload_returns_200(self) -> None:

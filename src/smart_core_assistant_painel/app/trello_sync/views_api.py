@@ -23,10 +23,9 @@ def webhook(request: HttpRequest) -> HttpResponse:
 
     # Comentário: Django não possui request.json; usar request.body
     import json
+
     try:
-        payload: dict[str, Any] = json.loads(
-            request.body.decode("utf-8")
-        )
+        payload: dict[str, Any] = json.loads(request.body.decode("utf-8"))
     except Exception:
         return JsonResponse({"error": "invalid json"}, status=400)
 

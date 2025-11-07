@@ -239,7 +239,9 @@ class FluxoAtendimentoSyncAdmin(BaseSyncAdmin):
 
     def fluxo_info(self, obj: FluxoAtendimentoSync) -> str:
         dep_nome = (
-            obj.fluxo.departamento.nome if obj.fluxo and obj.fluxo.departamento else "-"
+            obj.fluxo.departamento.nome
+            if obj.fluxo and obj.fluxo.departamento
+            else "-"
         )
         return f"{obj.fluxo.nome} ({dep_nome})"
 
@@ -271,7 +273,9 @@ class EtapaFluxoSyncAdmin(BaseSyncAdmin):
     )
 
     def etapa_info(self, obj: EtapaFluxoSync) -> str:
-        nome_fluxo = obj.etapa.fluxo.nome if obj.etapa and obj.etapa.fluxo else "-"
+        nome_fluxo = (
+            obj.etapa.fluxo.nome if obj.etapa and obj.etapa.fluxo else "-"
+        )
         return f"{obj.etapa.nome} → {nome_fluxo}"
 
     etapa_info.short_description = "Etapa"
@@ -299,10 +303,14 @@ class MovimentoFluxoSyncAdmin(BaseSyncAdmin):
 
     def movimento_info(self, obj: MovimentoFluxoSync) -> str:
         origem = (
-            obj.movimento.etapa_origem.nome if obj.movimento and obj.movimento.etapa_origem else "-"
+            obj.movimento.etapa_origem.nome
+            if obj.movimento and obj.movimento.etapa_origem
+            else "-"
         )
         destino = (
-            obj.movimento.etapa_destino.nome if obj.movimento and obj.movimento.etapa_destino else "-"
+            obj.movimento.etapa_destino.nome
+            if obj.movimento and obj.movimento.etapa_destino
+            else "-"
         )
         return f"{origem} → {destino}"
 

@@ -144,9 +144,7 @@ class FeaturesCompose:
         usecase: UDSUsecase = UnifieldDataServicesUseCase(
             datasource=datasource
         )
-        result: ReturnSuccessOrError[UnifiedDataService] = usecase(
-            parameters
-        )
+        result: ReturnSuccessOrError[UnifiedDataService] = usecase(parameters)
         if isinstance(result, SuccessReturn):
             SERVICEHUB.set_unified_data_service(result.result)
         elif isinstance(result, ErrorReturn):

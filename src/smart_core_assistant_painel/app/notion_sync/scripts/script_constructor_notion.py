@@ -1260,11 +1260,7 @@ class NotionAtendimentosDatabaseConstructor:
             )(slug="ui_atendimentos_atendimento")
             if atendimento_config.notion_database_id:
                 existing = await self.client.databases.retrieve(
-                    {
-                        "database_id": str(
-                            atendimento_config.notion_database_id
-                        )
-                    }
+                    {"database_id": str(atendimento_config.notion_database_id)}
                 )
                 logger.info(
                     f"♻️ Reutilizando database existente: {existing.id}"
@@ -1276,8 +1272,7 @@ class NotionAtendimentosDatabaseConstructor:
         except Exception as exc:
             # Falha ao recuperar, cria nova para reparar estado
             logger.warning(
-                "⚠️ Falha ao recuperar database existente, criando nova: "
-                f"{exc}"
+                f"⚠️ Falha ao recuperar database existente, criando nova: {exc}"
             )
 
         # Propriedades básicas para Atendimentos (sem relacionamentos iniciais)
@@ -1356,9 +1351,7 @@ class NotionAtendimentosDatabaseConstructor:
         para Atendimentos, de forma idempotente. Quando existir
         configuração, reutiliza a database ao invés de criar outra.
         """
-        logger.info(
-            "Criando/verificando database de Mensagens no Notion..."
-        )
+        logger.info("Criando/verificando database de Mensagens no Notion...")
 
         # Tentar reutilizar configuração existente para evitar duplicatas
         try:
@@ -1367,11 +1360,7 @@ class NotionAtendimentosDatabaseConstructor:
             )(slug="ui_atendimentos_mensagem")
             if mensagem_config.notion_database_id:
                 existing = await self.client.databases.retrieve(
-                    {
-                        "database_id": str(
-                            mensagem_config.notion_database_id
-                        )
-                    }
+                    {"database_id": str(mensagem_config.notion_database_id)}
                 )
                 logger.info(
                     f"♻️ Reutilizando database existente: {existing.id}"
@@ -1383,8 +1372,7 @@ class NotionAtendimentosDatabaseConstructor:
         except Exception as exc:
             # Falha ao recuperar, cria nova para reparar estado
             logger.warning(
-                "⚠️ Falha ao recuperar database existente, criando nova: "
-                f"{exc}"
+                f"⚠️ Falha ao recuperar database existente, criando nova: {exc}"
             )
 
         # Obter o data_source_id da database de atendimentos

@@ -4,66 +4,392 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Atendimento',
+            name="Atendimento",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('status', models.CharField(choices=[('fila', 'Fila'), ('em_atendimento', 'Em Atendimento'), ('aguardando_retorno', 'Aguardando Retorno'), ('resolvido', 'Resolvido'), ('cancelado', 'Cancelado')], default='fila', help_text='Status atual do atendimento (legado - será substituído por fluxo)', max_length=20)),
-                ('data_inicio', models.DateTimeField(auto_now_add=True, help_text='Data de início do atendimento')),
-                ('data_fim', models.DateTimeField(blank=True, help_text='Data de finalização do atendimento', null=True)),
-                ('data_ultima_mensagem', models.DateTimeField(blank=True, help_text='Data/hora da última mensagem (para ordenação e SLA)', null=True)),
-                ('assunto', models.CharField(blank=True, help_text='Assunto/resumo do atendimento', max_length=200, null=True)),
-                ('prioridade', models.CharField(choices=[('baixa', 'Baixa'), ('normal', 'Normal'), ('alta', 'Alta'), ('urgente', 'Urgente')], default='normal', help_text='Prioridade do atendimento', max_length=10)),
-                ('contexto_conversa', models.JSONField(blank=True, default=dict, help_text='Contexto atual da conversa (variáveis, estado, etc.)')),
-                ('historico_status', models.JSONField(blank=True, default=list, help_text='Histórico de mudanças de status')),
-                ('tags', models.JSONField(blank=True, default=list, help_text='Tags para categorização do atendimento')),
-                ('avaliacao', models.IntegerField(blank=True, choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4'), (5, '5')], help_text='Avaliação do atendimento (1-5)', null=True)),
-                ('feedback', models.TextField(blank=True, help_text='Feedback do contato', null=True)),
-                ('data_primeira_resposta', models.DateTimeField(blank=True, help_text='Data e hora da primeira resposta ao contato', null=True)),
-                ('canal', models.CharField(choices=[('whatsapp', 'WhatsApp'), ('email', 'E-mail'), ('telefone', 'Telefone'), ('web', 'Website')], default='whatsapp', help_text='Canal de origem do atendimento', max_length=20)),
-                ('valor_orcamento', models.DecimalField(blank=True, decimal_places=2, help_text='Valor do orçamento (departamento comercial)', max_digits=12, null=True)),
-                ('produto_servico', models.CharField(blank=True, help_text='Produto ou serviço principal (departamento comercial)', max_length=100, null=True)),
-                ('categoria_venda', models.CharField(blank=True, choices=[('produto', 'Produto'), ('servico', 'Serviço'), ('assinatura', 'Assinatura')], help_text='Categoria da venda (departamento comercial)', max_length=50, null=True)),
-                ('tipo_transacao', models.CharField(blank=True, choices=[('pagamento', 'Pagamento'), ('estorno', 'Estorno'), ('reembolso', 'Reembolso')], help_text='Tipo da transação (departamento financeiro)', max_length=20, null=True)),
-                ('valor_transacao', models.DecimalField(blank=True, decimal_places=2, help_text='Valor da transação (departamento financeiro)', max_digits=12, null=True)),
-                ('metodo_pagamento', models.CharField(blank=True, choices=[('cartao', 'Cartão'), ('boleto', 'Boleto'), ('pix', 'Pix'), ('transferencia', 'Transferência')], help_text='Método de pagamento (departamento financeiro)', max_length=20, null=True)),
-                ('status_financeiro', models.CharField(blank=True, choices=[('processado', 'Processado'), ('pendente', 'Pendente'), ('falha', 'Falha')], help_text='Status da transação financeira', max_length=20, null=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("fila", "Fila"),
+                            ("em_atendimento", "Em Atendimento"),
+                            ("aguardando_retorno", "Aguardando Retorno"),
+                            ("resolvido", "Resolvido"),
+                            ("cancelado", "Cancelado"),
+                        ],
+                        default="fila",
+                        help_text="Status atual do atendimento (legado - será substituído por fluxo)",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "data_inicio",
+                    models.DateTimeField(
+                        auto_now_add=True,
+                        help_text="Data de início do atendimento",
+                    ),
+                ),
+                (
+                    "data_fim",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data de finalização do atendimento",
+                        null=True,
+                    ),
+                ),
+                (
+                    "data_ultima_mensagem",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data/hora da última mensagem (para ordenação e SLA)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "assunto",
+                    models.CharField(
+                        blank=True,
+                        help_text="Assunto/resumo do atendimento",
+                        max_length=200,
+                        null=True,
+                    ),
+                ),
+                (
+                    "prioridade",
+                    models.CharField(
+                        choices=[
+                            ("baixa", "Baixa"),
+                            ("normal", "Normal"),
+                            ("alta", "Alta"),
+                            ("urgente", "Urgente"),
+                        ],
+                        default="normal",
+                        help_text="Prioridade do atendimento",
+                        max_length=10,
+                    ),
+                ),
+                (
+                    "contexto_conversa",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Contexto atual da conversa (variáveis, estado, etc.)",
+                    ),
+                ),
+                (
+                    "historico_status",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Histórico de mudanças de status",
+                    ),
+                ),
+                (
+                    "tags",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Tags para categorização do atendimento",
+                    ),
+                ),
+                (
+                    "avaliacao",
+                    models.IntegerField(
+                        blank=True,
+                        choices=[
+                            (1, "1"),
+                            (2, "2"),
+                            (3, "3"),
+                            (4, "4"),
+                            (5, "5"),
+                        ],
+                        help_text="Avaliação do atendimento (1-5)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "feedback",
+                    models.TextField(
+                        blank=True, help_text="Feedback do contato", null=True
+                    ),
+                ),
+                (
+                    "data_primeira_resposta",
+                    models.DateTimeField(
+                        blank=True,
+                        help_text="Data e hora da primeira resposta ao contato",
+                        null=True,
+                    ),
+                ),
+                (
+                    "canal",
+                    models.CharField(
+                        choices=[
+                            ("whatsapp", "WhatsApp"),
+                            ("email", "E-mail"),
+                            ("telefone", "Telefone"),
+                            ("web", "Website"),
+                        ],
+                        default="whatsapp",
+                        help_text="Canal de origem do atendimento",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "valor_orcamento",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        help_text="Valor do orçamento (departamento comercial)",
+                        max_digits=12,
+                        null=True,
+                    ),
+                ),
+                (
+                    "produto_servico",
+                    models.CharField(
+                        blank=True,
+                        help_text="Produto ou serviço principal (departamento comercial)",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "categoria_venda",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("produto", "Produto"),
+                            ("servico", "Serviço"),
+                            ("assinatura", "Assinatura"),
+                        ],
+                        help_text="Categoria da venda (departamento comercial)",
+                        max_length=50,
+                        null=True,
+                    ),
+                ),
+                (
+                    "tipo_transacao",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("pagamento", "Pagamento"),
+                            ("estorno", "Estorno"),
+                            ("reembolso", "Reembolso"),
+                        ],
+                        help_text="Tipo da transação (departamento financeiro)",
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "valor_transacao",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        help_text="Valor da transação (departamento financeiro)",
+                        max_digits=12,
+                        null=True,
+                    ),
+                ),
+                (
+                    "metodo_pagamento",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("cartao", "Cartão"),
+                            ("boleto", "Boleto"),
+                            ("pix", "Pix"),
+                            ("transferencia", "Transferência"),
+                        ],
+                        help_text="Método de pagamento (departamento financeiro)",
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "status_financeiro",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("processado", "Processado"),
+                            ("pendente", "Pendente"),
+                            ("falha", "Falha"),
+                        ],
+                        help_text="Status da transação financeira",
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Atendimento',
-                'verbose_name_plural': 'Atendimentos',
-                'db_table': 'oraculo_atendimento',
-                'ordering': ['-data_inicio'],
+                "verbose_name": "Atendimento",
+                "verbose_name_plural": "Atendimentos",
+                "db_table": "oraculo_atendimento",
+                "ordering": ["-data_inicio"],
             },
         ),
         migrations.CreateModel(
-            name='Mensagem',
+            name="Mensagem",
             fields=[
-                ('id', models.AutoField(help_text='Chave primária do registro', primary_key=True, serialize=False)),
-                ('tipo', models.CharField(choices=[('extendedTextMessage', 'Texto com formatação, citações, fontes, etc.'), ('imageMessage', 'Imagem recebida, JPG/PNG, com caption possível'), ('videoMessage', 'Vídeo recebido, com legenda possível'), ('audioMessage', 'Áudio recebido (.mp4, .mp3), com duração/ptt'), ('documentMessage', 'Arquivo genérico (PDF, DOCX etc.)'), ('stickerMessage', 'Sticker no formato WebP'), ('locationMessage', 'Coordinates de localização (lat/long)'), ('contactMessage', 'vCard com dados de contato'), ('listMessage', 'Mensagem interativa com opções em lista'), ('buttonsMessage', 'Botões clicáveis dentro da mensagem'), ('pollMessage', 'Opções de enquete dentro da mensagem'), ('reactMessage', 'Reação (emoji) a uma mensagem existente')], default='extendedTextMessage', help_text='Tipo da mensagem', max_length=25)),
-                ('conteudo', models.TextField(help_text='Conteúdo da mensagem')),
-                ('remetente', models.CharField(choices=[('contato', 'Contato'), ('bot', 'Bot/Sistema'), ('atendente_humano', 'Atendente Humano')], default='contato', help_text='Tipo do remetente da mensagem', max_length=20)),
-                ('timestamp', models.DateTimeField(auto_now_add=True, help_text='Timestamp da mensagem')),
-                ('message_id_whatsapp', models.CharField(blank=True, help_text='ID da mensagem no WhatsApp', max_length=100, null=True)),
-                ('metadados', models.JSONField(blank=True, default=dict, help_text='Metadados adicionais da mensagem (mídia, localização, etc.)')),
-                ('respondida', models.BooleanField(default=False, help_text='Indica se a mensagem foi respondida')),
-                ('resposta_bot', models.TextField(blank=True, help_text='Resposta gerada pelo bot', null=True)),
-                ('intent_detectado', models.JSONField(blank=True, default=list, help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})")),
-                ('entidades_extraidas', models.JSONField(blank=True, default=list, help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})")),
-                ('confianca_resposta', models.FloatField(blank=True, help_text='Nível de confiança da resposta do bot (0-1)', null=True)),
+                (
+                    "id",
+                    models.AutoField(
+                        help_text="Chave primária do registro",
+                        primary_key=True,
+                        serialize=False,
+                    ),
+                ),
+                (
+                    "tipo",
+                    models.CharField(
+                        choices=[
+                            (
+                                "extendedTextMessage",
+                                "Texto com formatação, citações, fontes, etc.",
+                            ),
+                            (
+                                "imageMessage",
+                                "Imagem recebida, JPG/PNG, com caption possível",
+                            ),
+                            (
+                                "videoMessage",
+                                "Vídeo recebido, com legenda possível",
+                            ),
+                            (
+                                "audioMessage",
+                                "Áudio recebido (.mp4, .mp3), com duração/ptt",
+                            ),
+                            (
+                                "documentMessage",
+                                "Arquivo genérico (PDF, DOCX etc.)",
+                            ),
+                            ("stickerMessage", "Sticker no formato WebP"),
+                            (
+                                "locationMessage",
+                                "Coordinates de localização (lat/long)",
+                            ),
+                            ("contactMessage", "vCard com dados de contato"),
+                            (
+                                "listMessage",
+                                "Mensagem interativa com opções em lista",
+                            ),
+                            (
+                                "buttonsMessage",
+                                "Botões clicáveis dentro da mensagem",
+                            ),
+                            (
+                                "pollMessage",
+                                "Opções de enquete dentro da mensagem",
+                            ),
+                            (
+                                "reactMessage",
+                                "Reação (emoji) a uma mensagem existente",
+                            ),
+                        ],
+                        default="extendedTextMessage",
+                        help_text="Tipo da mensagem",
+                        max_length=25,
+                    ),
+                ),
+                (
+                    "conteudo",
+                    models.TextField(help_text="Conteúdo da mensagem"),
+                ),
+                (
+                    "remetente",
+                    models.CharField(
+                        choices=[
+                            ("contato", "Contato"),
+                            ("bot", "Bot/Sistema"),
+                            ("atendente_humano", "Atendente Humano"),
+                        ],
+                        default="contato",
+                        help_text="Tipo do remetente da mensagem",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "timestamp",
+                    models.DateTimeField(
+                        auto_now_add=True, help_text="Timestamp da mensagem"
+                    ),
+                ),
+                (
+                    "message_id_whatsapp",
+                    models.CharField(
+                        blank=True,
+                        help_text="ID da mensagem no WhatsApp",
+                        max_length=100,
+                        null=True,
+                    ),
+                ),
+                (
+                    "metadados",
+                    models.JSONField(
+                        blank=True,
+                        default=dict,
+                        help_text="Metadados adicionais da mensagem (mídia, localização, etc.)",
+                    ),
+                ),
+                (
+                    "respondida",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Indica se a mensagem foi respondida",
+                    ),
+                ),
+                (
+                    "resposta_bot",
+                    models.TextField(
+                        blank=True,
+                        help_text="Resposta gerada pelo bot",
+                        null=True,
+                    ),
+                ),
+                (
+                    "intent_detectado",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Intents detectados pelo processamento de NLP (formato: lista de dicionários como {'saudacao': 'Olá', 'pergunta': 'tudo bem?'})",
+                    ),
+                ),
+                (
+                    "entidades_extraidas",
+                    models.JSONField(
+                        blank=True,
+                        default=list,
+                        help_text="Entidades extraídas da mensagem (formato: lista de dicionários como {'pessoa': 'João Silva'})",
+                    ),
+                ),
+                (
+                    "confianca_resposta",
+                    models.FloatField(
+                        blank=True,
+                        help_text="Nível de confiança da resposta do bot (0-1)",
+                        null=True,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Mensagem',
-                'verbose_name_plural': 'Mensagens',
-                'db_table': 'oraculo_mensagem',
-                'ordering': ['timestamp'],
+                "verbose_name": "Mensagem",
+                "verbose_name_plural": "Mensagens",
+                "db_table": "oraculo_mensagem",
+                "ordering": ["timestamp"],
             },
         ),
     ]

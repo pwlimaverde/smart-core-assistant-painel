@@ -16,6 +16,4 @@ class TrelloSyncConfig(AppConfig):
             # Evita falha de inicialização caso models ainda não migrados
             from loguru import logger
 
-            logger.warning(
-                "Falha ao carregar sinais do trello_sync: {}", exc
-            )
+            logger.warning("Falha ao carregar sinais do trello_sync: {}", exc)

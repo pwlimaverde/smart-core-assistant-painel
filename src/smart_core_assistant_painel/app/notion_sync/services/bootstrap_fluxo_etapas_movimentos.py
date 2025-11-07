@@ -61,9 +61,9 @@ class NotionFluxoEtapasMovimentosBootstrapService:
             return ds_id
         except Exception as e:
             logger.warning(
-                (
-                    "Falha ao obter data_source_id para database {}: {}"
-                ).format(database_id, e)
+                ("Falha ao obter data_source_id para database {}: {}").format(
+                    database_id, e
+                )
             )
             return None
 
@@ -109,9 +109,7 @@ class NotionFluxoEtapasMovimentosBootstrapService:
             },
         }
         created = await self._client.databases.create(params)
-        logger.info(
-            "Database Etapas criada: {}", getattr(created, "id", None)
-        )
+        logger.info("Database Etapas criada: {}", getattr(created, "id", None))
         return created
 
     async def _create_movimentos_database(

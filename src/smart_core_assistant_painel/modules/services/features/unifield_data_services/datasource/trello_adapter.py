@@ -59,7 +59,9 @@ class TrelloUnifiedDataService(UnifiedDataService):
         """Retorna parâmetros de autenticação padrão para a API."""
         return {"key": self._api_key, "token": self._token}
 
-    def _normalize_query_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_query_params(
+        self, params: Dict[str, Any]
+    ) -> Dict[str, Any]:
         """Normaliza valores para envio em query string.
 
         Comentário (PT-BR): A API do Trello espera booleanos como
@@ -196,9 +198,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
         )
         return version_id
 
-    def create_item(
-        self, data_source_id: str, payload: Dict[str, Any]
-    ) -> str:
+    def create_item(self, data_source_id: str, payload: Dict[str, Any]) -> str:
         """Cria um card na lista e retorna o ID do card."""
         params: Dict[str, Any] = {
             "idList": data_source_id or self._default_data_source_id,
@@ -354,6 +354,30 @@ class TrelloUnifiedDataService(UnifiedDataService):
             return []
         except Exception:
             return []
+
+    def archive_container(self, container_id: str) -> bool:
+        """Arquiva um board no Trello (fecha o quadro)."""
+        params: Dict[str, Any] = {"value": True}
+        data = self._request(
+            "PUT", f"/boards/{container_id}/closed", params=params
+        )
+        self._log(
+            "board arquivado: {board}",
+            board=data.get("id", container_id),
+        )
+        return True
+
+    def archive_data_source(self, data_source_id: str) -> bool:
+        """Arquiva uma lista no Trello (fecha a lista)."""
+        params: Dict[str, Any] = {"value": True}
+        data = self._request(
+            "PUT", f"/lists/{data_source_id}/closed", params=params
+        )
+        self._log(
+            "lista arquivada: {list}",
+            list=data.get("id", data_source_id),
+        )
+        return True
 
     # -------------------------- Métodos auxiliares ------------------------
     def _set_custom_field(self, card_id: str, cf_id: str, value: Any) -> None:

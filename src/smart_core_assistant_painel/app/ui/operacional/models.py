@@ -108,9 +108,7 @@ class Departamento(models.Model):
             FluxoAtendimento ou None se nao existir vinculo.
         """
         # Busca o primeiro fluxo ativo do departamento, por ordem de criacao
-        return (
-            self.fluxos.filter(ativo=True).order_by("data_criacao").first()
-        )
+        return self.fluxos.filter(ativo=True).order_by("data_criacao").first()
 
     def get_fluxo_etapas(self) -> models.QuerySet["EtapaFluxo"]:
         """
@@ -731,13 +729,11 @@ class MovimentoFluxo(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    atendimento: models.ForeignKey["Atendimento"] = (
-        models.ForeignKey(
-            "atendimentos.Atendimento",
-            on_delete=models.CASCADE,
-            related_name="movimentos_fluxo",
-            help_text="Atendimento que foi movido",
-        )
+    atendimento: models.ForeignKey["Atendimento"] = models.ForeignKey(
+        "atendimentos.Atendimento",
+        on_delete=models.CASCADE,
+        related_name="movimentos_fluxo",
+        help_text="Atendimento que foi movido",
     )
     etapa_origem: models.ForeignKey[EtapaFluxo] = models.ForeignKey(
         EtapaFluxo,

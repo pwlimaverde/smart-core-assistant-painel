@@ -6,10 +6,9 @@ from smart_core_assistant_painel.modules.services import (
     FeaturesCompose,
     SERVICEHUB,
 )
-from smart_core_assistant_painel.modules.services.features.\
-    unifield_data_services.domain.interface.unified_data_service import (
-        UnifiedDataService,
-    )
+from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
+)
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloCard,
     TrelloList,

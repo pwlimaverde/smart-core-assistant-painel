@@ -50,8 +50,9 @@ class WebhookProcessingService:
                     external_id=dest_list_id
                 )
             except TrelloList.DoesNotExist:
-                logger.warning("Lista Trello destino não mapeada: {}",
-                               dest_list_id)
+                logger.warning(
+                    "Lista Trello destino não mapeada: {}", dest_list_id
+                )
                 return
 
             # Atualiza o mapeamento do card

@@ -12,12 +12,12 @@ class TrelloBoard(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    fluxo: models.OneToOneField[
-        "ui.operacional.FluxoAtendimento"
-    ] = models.OneToOneField(
-        "operacional.FluxoAtendimento",
-        on_delete=models.CASCADE,
-        related_name="trello_board",
+    fluxo: models.OneToOneField["ui.operacional.FluxoAtendimento"] = (
+        models.OneToOneField(
+            "operacional.FluxoAtendimento",
+            on_delete=models.CASCADE,
+            related_name="trello_board",
+        )
     )
     external_id: models.CharField[str] = models.CharField(
         max_length=64, unique=True
@@ -49,12 +49,12 @@ class TrelloList(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    etapa: models.OneToOneField[
-        "ui.operacional.EtapaFluxo"
-    ] = models.OneToOneField(
-        "operacional.EtapaFluxo",
-        on_delete=models.CASCADE,
-        related_name="trello_list",
+    etapa: models.OneToOneField["ui.operacional.EtapaFluxo"] = (
+        models.OneToOneField(
+            "operacional.EtapaFluxo",
+            on_delete=models.CASCADE,
+            related_name="trello_list",
+        )
     )
     board: models.ForeignKey[TrelloBoard] = models.ForeignKey(
         TrelloBoard,
@@ -85,12 +85,12 @@ class TrelloMember(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    atendente: models.OneToOneField[
-        "ui.operacional.Atendente"
-    ] = models.OneToOneField(
-        "operacional.Atendente",
-        on_delete=models.CASCADE,
-        related_name="trello_member",
+    atendente: models.OneToOneField["ui.operacional.Atendente"] = (
+        models.OneToOneField(
+            "operacional.Atendente",
+            on_delete=models.CASCADE,
+            related_name="trello_member",
+        )
     )
     external_id: models.CharField[str] = models.CharField(
         max_length=64, unique=True
@@ -116,12 +116,12 @@ class TrelloCard(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    atendimento: models.OneToOneField[
-        "ui.atendimentos.Atendimento"
-    ] = models.OneToOneField(
-        "atendimentos.Atendimento",
-        on_delete=models.CASCADE,
-        related_name="trello_card",
+    atendimento: models.OneToOneField["ui.atendimentos.Atendimento"] = (
+        models.OneToOneField(
+            "atendimentos.Atendimento",
+            on_delete=models.CASCADE,
+            related_name="trello_card",
+        )
     )
     list_sync: models.ForeignKey[TrelloList] = models.ForeignKey(
         TrelloList,

@@ -19,7 +19,9 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
 )
 from smart_core_assistant_painel.modules.services.utils.types import UDSData
 from .trello_adapter import TrelloUnifiedDataService
-from .notion_adapter import NotionUnifiedDataService
+# Desabilitado temporariamente: adapter Notion.
+# Comentado para evitar conflitos com o app `notion_sync` desativado.
+# from .notion_adapter import NotionUnifiedDataService
 
 
 class _InMemoryUnifiedDataService(UnifiedDataService):
@@ -190,14 +192,17 @@ class UnifieldDataServicesDatasource(UDSData):
                     f"provider={parameters.provider}"
                 )
             return service
-        elif provider == "notion":
-            service = NotionUnifiedDataService(params=parameters)
-            if parameters.enable_observability:
-                logger.info(
-                    "UnifiedDataService Notion inicializado para "
-                    f"provider={parameters.provider}"
-                )
-            return service
+        # Desabilitado temporariamente: branch Notion.
+        # Comentado para evitar import/uso do adapter enquanto o app
+        # `notion_sync` está fora de `INSTALLED_APPS`.
+        # elif provider == "notion":
+        #     service = NotionUnifiedDataService(params=parameters)
+        #     if parameters.enable_observability:
+        #         logger.info(
+        #             "UnifiedDataService Notion inicializado para "
+        #             f"provider={parameters.provider}"
+        #         )
+        #     return service
 
         # Fallback para in-memory quando provider desconhecido
         service = _InMemoryUnifiedDataService(params=parameters)

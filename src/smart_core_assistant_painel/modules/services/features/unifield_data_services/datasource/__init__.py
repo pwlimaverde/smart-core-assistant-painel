@@ -8,12 +8,15 @@ serviço de dados unificado, permitindo selecionar o adapter adequado
 
 from .unifield_data_services_datasource import UnifieldDataServicesDatasource
 from .trello_adapter import TrelloUnifiedDataService
-from .notion_adapter import NotionUnifiedDataService
+# Desabilitado temporariamente: import do adapter Notion.
+# Isso evita carregar modelos do app `notion_sync` enquanto
+# a integração está desativada.
+# from .notion_adapter import NotionUnifiedDataService
 
 __all__ = [
     # Datasource principal
     "UnifieldDataServicesDatasource",
     # Adapters
     "TrelloUnifiedDataService",
-    "NotionUnifiedDataService",
+    # "NotionUnifiedDataService",
 ]

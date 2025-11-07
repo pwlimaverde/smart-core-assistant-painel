@@ -14,6 +14,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
+    StatusAtendimento,
 )
 
 
@@ -216,3 +217,30 @@ def atendimento_updated_assign_member_trello(
         )
     except Exception as exc:
         logger.warning("Falha ao agendar atualização de card Trello: {}", exc)
+
+
+@receiver(post_save, sender=Atendimento)
+def atendimento_resolvido_archive_card(
+    sender: Any, instance: Any, created: bool, **kwargs: Any
+) -> None:
+    """Arquiva o card quando o atendimento é marcado como resolvido.
+
+    Comentário: detecta transição de status para RESOLVIDO e agenda a
+    task de arquivamento do card associado.
+    """
+    if created:
+        return
+    try:
+        if instance.status == StatusAtendimento.RESOLVIDO:
+            Schedule.objects.create(
+                name=f"trello_at_archive_{instance.id}",
+                func=(
+                    "smart_core_assistant_painel.app.trello_sync.tasks"
+                    ".task_atendimento_archive_card"
+                ),
+                args=str(instance.id),
+                schedule_type=Schedule.ONCE,
+                next_run=timezone.now() + timedelta(seconds=1),
+            )
+    except Exception as exc:
+        logger.warning("Falha ao agendar arquivamento de card Trello: {}", exc)

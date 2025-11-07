@@ -114,7 +114,13 @@ def task_atendimento_ensure_card(atendimento_id: int) -> None:
     """
     try:
         atendimento = Atendimento.objects.get(id=atendimento_id)
-        TicketSyncService().ensure_card_for_atendimento(atendimento)
+        service = TicketSyncService()
+        card = service.ensure_card_for_atendimento(atendimento)
+        # Comentário: após criar o card, enriquecer com descrição/membros/custom fields
+        try:
+            service.update_card_rich_content(card, atendimento)
+        except Exception as exc:
+            logger.warning("Falha ao enriquecer card após criação: {}", exc)
     except Atendimento.DoesNotExist:
         logger.warning(
             "Atendimento não encontrado para garantir card: {}",
@@ -238,53 +244,11 @@ def task_atendimento_assign_member_and_update(atendimento_id: int) -> None:
                     "Falha ao adicionar membro ao card: {}",
                     exc,
                 )
-
-        from smart_core_assistant_painel.app.ui.atendimentos.models import (
-            Atendimento as AtModelo,
-        )
-
-        qs = AtModelo.objects.filter(atendente_humano=atendente).order_by(
-            "-data_inicio"
-        )
-        nome_agente: str = getattr(atendente, "nome", "")
-        email_agente: str = getattr(atendente, "email", "")
-        dep_nome: str = (
-            atendente.departamento.nome
-            if getattr(atendente, "departamento", None)
-            else ""
-        )
-        especialidades: list[str] = getattr(atendente, "especialidades", [])
-        espec_str: str = (
-            ", ".join(especialidades) if especialidades else "(não informado)"
-        )
-        servico_atual: str = (
-            getattr(atendimento, "produto_servico", "") or "(não informado)"
-        )
-
-        lines = [
-            f"Agente: {nome_agente} ({email_agente})",
-            (
-                f"Departamento: {dep_nome}"
-                if dep_nome
-                else "Departamento: (não informado)"
-            ),
-            f"Especialidades: {espec_str}",
-            f"Serviço atual: {servico_atual}",
-            "Atendimentos vinculados:",
-        ]
-        for a in qs[:10]:
-            assunto = getattr(a, "assunto", "") or "(sem assunto)"
-            lines.append(f"- #{a.pk} - {assunto}")
-        desc = "\n".join(lines)
-
+        # Comentário: Atualiza conteúdo rico (descrição, membros e custom fields)
         try:
-            trello_client.update_item(
-                data_source_id=card.list_sync.external_id,
-                item_id=card.external_id,
-                payload={"desc": desc},
-            )
+            service.update_card_rich_content(card, atendimento)
         except Exception as exc:
-            logger.warning("Falha ao atualizar descrição do card: {}", exc)
+            logger.warning("Falha ao atualizar conteúdo rico do card: {}", exc)
     except Atendimento.DoesNotExist:
         logger.warning(
             "Atendimento não encontrado para atribuir membro/atualizar: {}",
@@ -295,3 +259,42 @@ def task_atendimento_assign_member_and_update(atendimento_id: int) -> None:
             "Atualização de membro/descrição no Trello falhou: {}",
             exc,
         )
+
+
+def task_atendimento_archive_card(atendimento_id: int) -> None:
+    """Arquiva o card Trello quando o atendimento é resolvido.
+
+    Args:
+        atendimento_id: ID do ``Atendimento``.
+    """
+    try:
+        atendimento = Atendimento.objects.get(id=atendimento_id)
+        card = getattr(atendimento, "trello_card", None)
+        if card is None:
+            logger.warning(
+                "Atendimento sem card Trello para arquivar: {}",
+                atendimento_id,
+            )
+            return
+
+        client = SERVICEHUB.unified_data_service
+        try:
+            from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
+                TrelloUnifiedDataService,
+            )
+
+            trello_client = cast(TrelloUnifiedDataService, client)
+        except Exception:
+            trello_client = client  # type: ignore[assignment]
+
+        try:
+            trello_client.archive_item(card.external_id)
+        except Exception as exc:
+            logger.warning("Falha ao arquivar card Trello: {}", exc)
+    except Atendimento.DoesNotExist:
+        logger.warning(
+            "Atendimento não encontrado para arquivar card: {}",
+            atendimento_id,
+        )
+    except Exception as exc:
+        logger.warning("Arquivamento de card Trello falhou: {}", exc)

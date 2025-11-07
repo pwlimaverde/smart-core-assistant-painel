@@ -434,6 +434,18 @@ class TrelloUnifiedDataService(UnifiedDataService):
         )
         return True
 
+    def archive_item(self, item_id: str) -> bool:
+        """Arquiva um card no Trello (fecha o card).
+
+        Comentário: utiliza endpoint específico de fechamento do card
+        `PUT /cards/{id}/closed?value=true`. Retorna verdadeiro em caso
+        de sucesso.
+        """
+        params: Dict[str, Any] = {"value": True}
+        data = self._request("PUT", f"/cards/{item_id}/closed", params=params)
+        self._log("card arquivado: {card}", card=data.get("id", item_id))
+        return True
+
     # -------------------------- Métodos auxiliares ------------------------
     def _set_custom_field(self, card_id: str, cf_id: str, value: Any) -> None:
         """Define valor de custom field em um card.

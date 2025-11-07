@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.ui.atendimentos",
     "smart_core_assistant_painel.app.ui.treinamento",
     "smart_core_assistant_painel.app.appflowy_adapter",
+    "smart_core_assistant_painel.app.trello_sync",
     # Desabilitado temporariamente: sincronização com Notion e plataformas
     # externas. Removido para evitar conflitos durante nova integração.
     # "smart_core_assistant_painel.app.notion_sync",

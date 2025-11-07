@@ -58,7 +58,12 @@ class _InMemoryUnifiedDataService(UnifiedDataService):
         self._log(f"container criado: {name} -> {container_id}")
         return container_id
 
-    def add_data_source(self, container_id: str, data_source_id: str) -> str:
+    def add_data_source(
+        self,
+        container_id: str,
+        data_source_id: str,
+        position: Optional[float] = None,
+    ) -> str:
         link_id = self._gen_id()
         container = self._containers.get(container_id)
         if container is None:
@@ -73,12 +78,16 @@ class _InMemoryUnifiedDataService(UnifiedDataService):
             {
                 "data_source_id": data_source_id,
                 "link_id": link_id,
+                # Comentário: `position` armazenado somente para fins
+                # de compatibilidade; não altera ordem real no in-memory.
+                "position": position,
             }
         )
         self._data_sources.setdefault(
             data_source_id,
             {
                 "container_id": container_id,
+                "pos": position,
             },
         )
         self._log(

@@ -57,4 +57,8 @@ urlpatterns = [
         "api/atendimentos/",
         include("smart_core_assistant_painel.app.ui.atendimentos.api_urls"),
     ),
+    path(
+        "api/trello_sync/",
+        include("smart_core_assistant_painel.app.trello_sync.api_urls"),
+    ),
 ]

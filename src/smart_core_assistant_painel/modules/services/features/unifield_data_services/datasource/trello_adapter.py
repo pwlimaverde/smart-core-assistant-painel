@@ -59,6 +59,25 @@ class TrelloUnifiedDataService(UnifiedDataService):
         """Retorna parâmetros de autenticação padrão para a API."""
         return {"key": self._api_key, "token": self._token}
 
+    def _normalize_query_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """Normaliza valores para envio em query string.
+
+        Comentário (PT-BR): A API do Trello espera booleanos como
+        strings minúsculas ("true"/"false") e ignora parâmetros
+        com valor `None`. Esta função converte booleanos e remove
+        chaves com valores `None` antes de enviar.
+        """
+        normalized: Dict[str, Any] = {}
+        for key, value in params.items():
+            if isinstance(value, bool):
+                normalized[key] = "true" if value else "false"
+            elif value is None:
+                # Não incluir parâmetros nulos na query
+                continue
+            else:
+                normalized[key] = value
+        return normalized
+
     def _request(
         self,
         method: str,
@@ -75,6 +94,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
         all_params: Dict[str, Any] = self._auth_params()
         if params:
             all_params.update(params)
+            all_params = self._normalize_query_params(all_params)
 
         method_map: Dict[str, Any] = {
             "GET": requests.get,
@@ -97,20 +117,31 @@ class TrelloUnifiedDataService(UnifiedDataService):
             resp.raise_for_status()
         return resp.json()
 
-    def _log(self, message: str) -> None:
+    def _log(self, message: str, **kwargs: Any) -> None:
+        """Emite log informativo quando a observabilidade está ativa.
+
+        Comentário: aceita placeholders nomeados no `message` e valores
+        via `kwargs`, compatível com o formato do `loguru`.
+        """
         if self._observability:
-            logger.info(message)
+            logger.info(message, **kwargs)
 
     # -------------------------- Mapeamento UDS ----------------------------
     def create_container(self, name: str) -> str:
         """Cria um board e retorna seu ID."""
+        # Comentário: Trello espera boolean em minúsculo na query
         body: Dict[str, Any] = {"name": name, "defaultLists": False}
         data = self._request("POST", "/boards/", params=body)
         board_id = data.get("id", "")
         self._log(f"board criado: {name} -> {board_id}")
         return board_id
 
-    def add_data_source(self, container_id: str, data_source_id: str) -> str:
+    def add_data_source(
+        self,
+        container_id: str,
+        data_source_id: str,
+        position: Optional[float] = None,
+    ) -> str:
         """Cria uma lista no board e retorna seu ID.
 
         Observação: `data_source_id` aqui é utilizado como nome da lista.
@@ -118,6 +149,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
         params: Dict[str, Any] = {
             "name": data_source_id,
             "idBoard": container_id,
+            "pos": position,
         }
         data = self._request("POST", "/lists", params=params)
         list_id = data.get("id", "")
@@ -128,6 +160,22 @@ class TrelloUnifiedDataService(UnifiedDataService):
             list=list_id,
         )
         return list_id
+
+    def set_data_source_position(
+        self, data_source_id: str, position: float | str
+    ) -> bool:
+        """Atualiza a posição de uma lista no board (Trello).
+
+        Comentário: usa PUT /lists/{id} com parâmetro `pos`.
+        """
+        params: Dict[str, Any] = {"pos": position}
+        data = self._request("PUT", f"/lists/{data_source_id}", params=params)
+        self._log(
+            "pos atualizado: lista={list} -> {pos}",
+            list=data.get("id", data_source_id),
+            pos=data.get("pos", position),
+        )
+        return True
 
     def update_schema(
         self, data_source_id: str, schema: Dict[str, Any]

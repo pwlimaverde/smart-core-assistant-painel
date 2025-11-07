@@ -31,12 +31,19 @@ class UnifiedDataService(ABC):
         """
 
     @abstractmethod
-    def add_data_source(self, container_id: str, data_source_id: str) -> str:
+    def add_data_source(
+        self,
+        container_id: str,
+        data_source_id: str,
+        position: Optional[float] = None,
+    ) -> str:
         """Adiciona uma fonte de dados ao container e retorna o ID do vínculo.
 
         Args:
             container_id (str): ID do container.
             data_source_id (str): Identificador da fonte (ex.: `data_source_id`).
+            position (float | None): Posição opcional da fonte no container.
+                No Trello, corresponde ao `pos` da lista.
 
         Returns:
             str: ID de referência do vínculo com a fonte de dados.
@@ -207,3 +214,20 @@ class UnifiedDataService(ABC):
         Comentário: implementação opcional por adapter.
         """
         raise NotImplementedError("list_data_sources não implementado")
+
+    def set_data_source_position(
+        self, data_source_id: str, position: float | str
+    ) -> bool:
+        """Atualiza a posição de uma fonte de dados.
+
+        Args:
+            data_source_id (str): ID da fonte (ex.: lista Trello).
+            position (float | str): Posição desejada (ex.: número, "top" ou
+                "bottom" em provedores que suportem).
+
+        Returns:
+            bool: Verdadeiro se atualizado com sucesso.
+
+        Comentário: implementação opcional por adapter.
+        """
+        raise NotImplementedError("set_data_source_position não implementado")

@@ -3,6 +3,7 @@ from typing import Any
 from unittest.mock import patch
 
 from django.test import TestCase
+from django_q.models import Schedule
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
@@ -11,24 +12,37 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     EtapaFluxo,
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import Atendimento
-from smart_core_assistant_painel.app.trello_sync.models import TrelloBoard, TrelloList, TrelloCard
+from smart_core_assistant_painel.app.trello_sync.models import (
+    TrelloBoard,
+    TrelloList,
+    TrelloCard,
+)
+from smart_core_assistant_painel.app.trello_sync.tasks import (
+    task_atendimento_assign_member_and_update,
+    task_atendente_remove_member,
+)
 
 
 class SignalCreationTests(TestCase):
-    @patch(
-        "smart_core_assistant_painel.app.trello_sync.services.flow_sync_service.FlowSyncService.ensure_board_for_fluxo"
-    )
-    def test_fluxo_post_save_triggers_board_creation(
-        self, mock_ensure: Any
-    ) -> None:
+    def test_fluxo_post_save_schedules_board_creation(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Suporte")
-        FluxoAtendimento.objects.create(departamento=dep, nome="Fluxo X")
-        self.assertTrue(mock_ensure.called)
+        fluxo = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo X"
+        )
+        schedule_name = f"trello_flow_board_{fluxo.id}"
+        schedules = Schedule.objects.filter(name=schedule_name)
+        self.assertEqual(schedules.count(), 1)
+        sched = schedules.first()
+        self.assertEqual(
+            sched.func,
+            (
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_fluxo_ensure_board"
+            ),
+        )
+        self.assertEqual(sched.args, str(fluxo.id))
 
-    @patch(
-        "smart_core_assistant_painel.app.trello_sync.services.member_sync_service.MemberSyncService.invite_for_atendente"
-    )
-    def test_atendente_post_save_triggers_invite(self, mock_invite: Any) -> None:
+    def test_atendente_post_save_schedules_invite(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Suporte")
         fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
             departamento=dep, nome="Fluxo Y"
@@ -37,17 +51,28 @@ class SignalCreationTests(TestCase):
         TrelloBoard.objects.create(
             fluxo=fluxo, external_id="b1", name="Board Y"
         )
-        Atendente.objects.create(
+        atendente = Atendente.objects.create(
             nome="Maria", cargo="Agente", departamento=dep, fluxo=fluxo,
             email="maria@example.com"
         )
-        self.assertTrue(mock_invite.called)
+        schedule_name = f"trello_member_invite_{atendente.id}"
+        schedules = Schedule.objects.filter(name=schedule_name)
+        self.assertEqual(schedules.count(), 1)
+        sched = schedules.first()
+        self.assertEqual(
+            sched.func,
+            (
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_atendente_invite"
+            ),
+        )
+        self.assertEqual(sched.args, str(atendente.id))
 
     @patch(
         "smart_core_assistant_painel.app.trello_sync.services.member_sync_service.MemberSyncService.resolve_member_external_id",
         return_value="mem1",
     )
-    def test_atendimento_update_adds_member_and_updates_desc(self, _mock_resolve: Any) -> None:
+    def test_task_assign_member_and_update_executes(self, _mock_resolve: Any) -> None:
         dep: Departamento = Departamento.objects.create(nome="Atendimento")
         fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
             departamento=dep, nome="Fluxo Z"
@@ -100,9 +125,8 @@ class SignalCreationTests(TestCase):
             "smart_core_assistant_painel.app.trello_sync.signals.SERVICEHUB"
         ) as mock_hub:
             mock_hub.unified_data_service = StubClient()
-            # Dispara post_save updated
-            at.assunto = "Ticket Atualizado"
-            at.save()
+            # Executa a task diretamente
+            task_atendimento_assign_member_and_update(at.id)
             self.assertTrue(mock_hub.unified_data_service.add_called)
             self.assertTrue(mock_hub.unified_data_service.update_called)
 
@@ -110,7 +134,7 @@ class SignalCreationTests(TestCase):
         "smart_core_assistant_painel.app.trello_sync.services.member_sync_service.MemberSyncService.resolve_member_external_id",
         return_value="memX",
     )
-    def test_atendente_delete_removes_member_from_board(self, _mock_resolve: Any) -> None:
+    def test_atendente_delete_schedules_remove(self, _mock_resolve: Any) -> None:
         dep: Departamento = Departamento.objects.create(nome="Operações")
         fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
             departamento=dep, nome="Fluxo Remoção"
@@ -118,9 +142,40 @@ class SignalCreationTests(TestCase):
         board = TrelloBoard.objects.create(
             fluxo=fluxo, external_id="bX", name="Board Remoção"
         )
-        agente: Atendente = Atendente.objects.create(
+        atendente: Atendente = Atendente.objects.create(
             nome="Ana", cargo="Agente", departamento=dep, fluxo=fluxo,
             email="ana@example.com"
+        )
+        atendente_id = atendente.id
+        atendente.delete()
+        schedule_name = f"trello_member_remove_{atendente_id}"
+        schedules = Schedule.objects.filter(name=schedule_name)
+        self.assertEqual(schedules.count(), 1)
+        sched = schedules.first()
+        self.assertEqual(
+            sched.func,
+            (
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_atendente_remove_member"
+            ),
+        )
+        self.assertEqual(sched.args, str(atendente_id))
+
+    @patch(
+        "smart_core_assistant_painel.app.trello_sync.services.member_sync_service.MemberSyncService.resolve_member_external_id",
+        return_value="memY",
+    )
+    def test_task_remove_member_executes(self, _mock_resolve: Any) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Operações2")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Remoção2"
+        )
+        TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bY", name="Board Remoção2"
+        )
+        atendente: Atendente = Atendente.objects.create(
+            nome="Leo", cargo="Agente", departamento=dep, fluxo=fluxo,
+            email="leo@example.com"
         )
 
         class StubClientRemove:
@@ -128,13 +183,12 @@ class SignalCreationTests(TestCase):
                 self.remove_called: bool = False
 
             def remove_member_from_board(self, board_id: str, member_id: str) -> bool:
-                self.remove_called = (board_id == "bX" and member_id == "memX")
+                self.remove_called = (board_id == "bY" and member_id == "memY")
                 return True
 
         with patch(
             "smart_core_assistant_painel.app.trello_sync.signals.SERVICEHUB"
         ) as mock_hub:
             mock_hub.unified_data_service = StubClientRemove()
-            # Dispara pre_delete
-            agente.delete()
+            task_atendente_remove_member(atendente.id)
             self.assertTrue(mock_hub.unified_data_service.remove_called)

@@ -236,7 +236,15 @@ class TrelloUnifiedDataService(UnifiedDataService):
         """Atualiza um card existente e retorna o ID da operação."""
         params: Dict[str, Any] = {}
         # Mapeia campos padrão
-        for key in ("name", "desc", "due", "start", "pos", "idList"):
+        for key in (
+            "name",
+            "desc",
+            "due",
+            "start",
+            "pos",
+            "idList",
+            "dueComplete",
+        ):
             if key in payload:
                 params[key] = payload[key]
 
@@ -582,6 +590,51 @@ class TrelloUnifiedDataService(UnifiedDataService):
                 )
 
         return mapping
+
+    def set_card_cover_color(
+        self,
+        card_id: str,
+        color: str,
+        brightness: Optional[str] = None,
+        size: Optional[str] = None,
+    ) -> bool:
+        """Define a capa (cover) do card com uma cor sólida.
+
+        Comentário: Trello aceita atualização de `cover` via
+        ``PUT /cards/{id}`` passando um objeto `cover` no corpo JSON
+        (documentado pela Atlassian). As cores válidas incluem
+        'red', 'orange', 'yellow', 'green', 'blue', 'purple',
+        'pink', 'sky', 'lime', 'black' e 'null'.
+
+        Args:
+            card_id: ID do card no Trello.
+            color: Cor suportada pelo Trello.
+            brightness: Opcional, 'light' ou 'dark'.
+            size: Opcional, 'normal' ou 'full'.
+
+        Returns:
+            bool: ``True`` em caso de sucesso.
+        """
+        # Comentário: alguns workspaces não aplicam alterações via
+        # endpoint ``/cards/{id}/cover``. Para máxima compatibilidade
+        # usamos ``PUT /cards/{id}`` com objeto `cover`.
+        cover_body: Dict[str, Any] = {"color": color}
+        # Define padrões sensatos para visibilidade da capa
+        cover_body["brightness"] = brightness or "light"
+        if size is not None:
+            cover_body["size"] = size
+
+        data = self._request(
+            "PUT",
+            f"/cards/{card_id}",
+            json={"cover": cover_body},
+        )
+        self._log(
+            "capa do card atualizada: card={card} color={color}",
+            card=data.get("id", card_id),
+            color=color,
+        )
+        return True
 
     def register_webhook(
         self, model_id: str, callback_url: str, description: str

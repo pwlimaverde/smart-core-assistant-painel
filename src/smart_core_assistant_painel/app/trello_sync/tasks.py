@@ -11,7 +11,7 @@ As tarefas são agendadas pelos sinais em
 from __future__ import annotations
 
 from typing import Any, cast
-from typing import Optional
+from typing import Optional, Dict, List
 
 from loguru import logger
 
@@ -25,6 +25,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     EtapaFluxo,
     FluxoAtendimento,
     Atendente,
+    TipoEtapa,
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
@@ -533,19 +534,20 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
         lista_dest = FlowSyncService().ensure_list_for_etapa(etapa)
 
         try:
-            # Se já estiver na lista destino, não faz nada.
+            # Se já estiver na lista destino, ainda aplicamos cor/label.
             current_list_id = getattr(card.list_sync, "external_id", None)
-            if current_list_id == lista_dest.external_id:
-                return
-
-            # Move card no Trello via atualização de `idList`.
-            service.client.update_item(
-                data_source_id=lista_dest.external_id,
-                item_id=card.external_id,
-                payload={"idList": lista_dest.external_id},
-            )
+            if current_list_id != lista_dest.external_id:
+                # Move card no Trello via atualização de `idList`.
+                service.client.update_item(
+                    data_source_id=lista_dest.external_id,
+                    item_id=card.external_id,
+                    payload={"idList": lista_dest.external_id},
+                )
         except Exception as exc:
-            logger.warning("Falha ao mover card de lista no Trello: {}", exc)
+            logger.warning(
+                "Falha ao mover card de lista no Trello: {}",
+                exc,
+            )
             return
 
         # Atualiza o vínculo local do card com a lista destino.
@@ -563,6 +565,34 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
         except Exception:
             # Não bloquear em caso de falha de enriquecimento.
             pass
+
+        # Comentário: aplica a cor da etapa como capa (cover) do card.
+        try:
+            etapa_cor: str = getattr(etapa, "cor", "#6B7280")
+            cover_color: str = _map_hex_to_trello_color(etapa_cor)
+            service.client.set_card_cover_color(
+                card.external_id, cover_color
+            )
+        except Exception as exc:
+            # Comentário: falhas ao definir capa não devem bloquear fluxo.
+            logger.warning(
+                "Falha ao aplicar cor de capa da etapa ao card: {}",
+                exc,
+            )
+
+        # Comentário: se etapa for de finalização, marcar card como concluído.
+        try:
+            if getattr(etapa, "tipo_etapa", "") == TipoEtapa.FINALIZACAO:
+                service.client.update_item(
+                    data_source_id=lista_dest.external_id,
+                    item_id=card.external_id,
+                    payload={"dueComplete": True},
+                )
+        except Exception as exc:
+            logger.warning(
+                "Falha ao marcar card como concluído (dueComplete): {}",
+                exc,
+            )
     except Atendimento.DoesNotExist:
         logger.warning(
             "Atendimento não encontrado para mover card: {}",
@@ -570,3 +600,55 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
         )
     except Exception as exc:
         logger.warning("Movimento de card Trello falhou: {}", exc)
+
+
+def _map_hex_to_trello_color(hex_color: str) -> str:
+    """Mapeia uma cor hex (#RRGGBB) para cor de label Trello.
+
+    Observação:
+    - Trello aceita cores: 'red', 'orange', 'yellow', 'green', 'blue',
+      'purple', 'pink', 'sky', 'lime', 'black' e 'null'.
+    - Escolhemos a mais próxima via distância RGB.
+
+    Args:
+        hex_color: Cor em formato "#RRGGBB".
+
+    Returns:
+        Nome da cor Trello mais próxima.
+    """
+    try:
+        hc = hex_color.lstrip("#")
+        r = int(hc[0:2], 16)
+        g = int(hc[2:4], 16)
+        b = int(hc[4:6], 16)
+    except Exception:
+        # Default neutro: azul
+        return "blue"
+
+    palette: Dict[str, tuple[int, int, int]] = {
+        "green": (0x61, 0xBD, 0x4F),
+        "yellow": (0xF2, 0xD6, 0x00),
+        "orange": (0xFF, 0x9F, 0x1A),
+        "red": (0xEB, 0x5A, 0x46),
+        "purple": (0xC3, 0x77, 0xE0),
+        "blue": (0x00, 0x79, 0xBF),
+        "sky": (0x00, 0xC2, 0xE0),
+        "lime": (0x51, 0xE8, 0x98),
+        "pink": (0xFF, 0x78, 0xCB),
+        "black": (0x4D, 0x4D, 0x4D),
+    }
+
+    def dist(c: tuple[int, int, int]) -> int:
+        dr = r - c[0]
+        dg = g - c[1]
+        db = b - c[2]
+        return dr * dr + dg * dg + db * db
+
+    best: str = "blue"
+    best_d: int = 1 << 30
+    for name, rgb in palette.items():
+        d = dist(rgb)
+        if d < best_d:
+            best_d = d
+            best = name
+    return best

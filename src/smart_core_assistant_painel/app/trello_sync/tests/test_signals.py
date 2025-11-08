@@ -10,6 +10,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     FluxoAtendimento,
     Atendente,
     EtapaFluxo,
+    TipoEtapa,
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
@@ -508,6 +509,205 @@ class SignalCreationTests(TestCase):
         # Recarrega o card e valida que a lista foi atualizada
         card.refresh_from_db()
         self.assertEqual(card.list_sync_id, lista2.id)
+
+    def test_task_move_to_finalizacao_marks_due_complete(self) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Ops F")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Final"
+        )
+        etapa1: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa 1", ordem=1
+        )
+        etapa_final: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo,
+            nome="Resolvido",
+            ordem=2,
+            tipo_etapa=TipoEtapa.FINALIZACAO,
+        )
+        board = TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bF", name="Board Final"
+        )
+        lista1 = TrelloList.objects.create(
+            etapa=etapa1, board=board, external_id="lF1", name="Etapa 1"
+        )
+        lista2 = TrelloList.objects.create(
+            etapa=etapa_final,
+            board=board,
+            external_id="lF2",
+            name="Resolvido",
+        )
+
+        contato: Contato = Contato.objects.create(
+            telefone="5511900001111", nome_contato="Cliente F"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato,
+            departamento=dep,
+            etapa_atual=etapa1,
+            assunto="Final",
+        )
+        card = TrelloCard.objects.create(
+            atendimento=at, list_sync=lista1, external_id="cF", name="Final"
+        )
+
+        class StubClientFinal:
+            def __init__(self) -> None:
+                self.saw_due_complete: bool = False
+                self.move_called: bool = False
+
+            def update_item(
+                self,
+                data_source_id: str,
+                item_id: str,
+                payload: dict[str, Any],
+            ) -> str:
+                if payload.get("idList") == "lF2":
+                    self.move_called = True
+                if payload.get("dueComplete") is True:
+                    self.saw_due_complete = True
+                return item_id
+
+            def get_item(self, data_source_id: str, item_id: str) -> dict[str, Any]:
+                # Comentário: retorna sem labels para forçar adição
+                return {"idLabels": []}
+
+            def ensure_labels(self, board_id: str, labels: dict[str, str]) -> dict[str, str]:
+                # Comentário: finge criação de label e retorna um id estável
+                return {list(labels.keys())[0]: "lblF"}
+
+        class HubStubFinal:
+            def __init__(self, client: Any) -> None:
+                self.unified_data_service = client
+
+        class TicketServiceStub:
+            def __init__(self) -> None:
+                self.client = stub_final
+
+            def ensure_card_for_atendimento(self, atendimento: Any) -> TrelloCard:
+                return card
+
+            def update_card_rich_content(
+                self, card_obj: TrelloCard, atendimento_obj: Atendimento
+            ) -> None:
+                return None
+
+        # Muda etapa para finalização
+        at.etapa_atual = etapa_final
+        at.save()
+
+        stub_final = StubClientFinal()
+        hub_stub_final = HubStubFinal(stub_final)
+        with patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.SERVICEHUB",
+            new=hub_stub_final,
+        ), patch(
+            "smart_core_assistant_painel.modules.services.SERVICEHUB",
+            new=hub_stub_final,
+        ), patch(
+            "smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service.SERVICEHUB",
+            new=hub_stub_final,
+        ), patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.TicketSyncService",
+            new=TicketServiceStub,
+        ):
+            task_atendimento_move_to_etapa_list(at.id)
+            self.assertTrue(stub_final.move_called)
+            self.assertTrue(stub_final.saw_due_complete)
+
+    def test_task_move_sets_cover_color_from_stage(self) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Ops C")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Cover"
+        )
+        etapa1: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa 1", ordem=1
+        )
+        etapa2: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa 2", ordem=2, cor="#FF0000"
+        )
+        board = TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bC", name="Board Cover"
+        )
+        lista1 = TrelloList.objects.create(
+            etapa=etapa1, board=board, external_id="lC1", name="Etapa 1"
+        )
+        lista2 = TrelloList.objects.create(
+            etapa=etapa2, board=board, external_id="lC2", name="Etapa 2"
+        )
+
+        contato: Contato = Contato.objects.create(
+            telefone="5511900002222", nome_contato="Cliente C"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato,
+            departamento=dep,
+            etapa_atual=etapa1,
+            assunto="Cover",
+        )
+        card = TrelloCard.objects.create(
+            atendimento=at, list_sync=lista1, external_id="cC", name="Cover"
+        )
+
+        class StubClientCover:
+            def __init__(self) -> None:
+                self.move_called: bool = False
+                self.cover_color: str = ""
+
+            def update_item(
+                self,
+                data_source_id: str,
+                item_id: str,
+                payload: dict[str, Any],
+            ) -> str:
+                id_list = payload.get("idList")
+                self.move_called = (
+                    data_source_id == "lC2" and item_id == "cC" and id_list == "lC2"
+                )
+                return item_id
+
+            def set_card_cover_color(self, card_id: str, color: str) -> bool:
+                if card_id == "cC":
+                    self.cover_color = color
+                return True
+
+        class HubStubCover:
+            def __init__(self, client: Any) -> None:
+                self.unified_data_service = client
+
+        class TicketServiceStub:
+            def __init__(self) -> None:
+                self.client = stub_cover
+
+            def ensure_card_for_atendimento(self, atendimento: Any) -> TrelloCard:
+                return card
+
+            def update_card_rich_content(
+                self, card_obj: TrelloCard, atendimento_obj: Atendimento
+            ) -> None:
+                return None
+
+        # Move para etapa 2 (com cor definida)
+        at.etapa_atual = etapa2
+        at.save()
+
+        stub_cover = StubClientCover()
+        hub_stub_cover = HubStubCover(stub_cover)
+        with patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.SERVICEHUB",
+            new=hub_stub_cover,
+        ), patch(
+            "smart_core_assistant_painel.modules.services.SERVICEHUB",
+            new=hub_stub_cover,
+        ), patch(
+            "smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service.SERVICEHUB",
+            new=hub_stub_cover,
+        ), patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.TicketSyncService",
+            new=TicketServiceStub,
+        ):
+            task_atendimento_move_to_etapa_list(at.id)
+            self.assertTrue(stub_cover.move_called)
+            self.assertEqual(stub_cover.cover_color, "red")
 
     def test_atendimento_delete_schedules_archive_by_external_id(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Ops")

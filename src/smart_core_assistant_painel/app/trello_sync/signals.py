@@ -1,7 +1,7 @@
 from typing import Any
 
 from django_q.tasks import async_task
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from loguru import logger
 
@@ -163,15 +163,40 @@ def atendimento_updated_assign_member_trello(
     if created:
         return
     try:
+        old_id = getattr(instance, "_old_atendente_id", None)
         async_task(
             (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_assign_member_and_update"
+                ".task_atendimento_sync_card_members"
             ),
             instance.id,
+            old_id,
         )
     except Exception as exc:
         logger.warning("Falha ao atualizar card Trello: {}", exc)
+
+
+@receiver(pre_save, sender=Atendimento)
+def atendimento_capture_old_atendente(
+    sender: Any, instance: Any, **kwargs: Any
+) -> None:
+    """Captura o atendente anterior antes de salvar o Atendimento.
+
+    Comentário: guarda o ID anterior no ``instance`` para uso
+    no ``post_save`` e sincronização dos membros do card.
+    """
+    try:
+        if getattr(instance, "pk", None):
+            prev = Atendimento.objects.filter(pk=instance.pk).first()
+            if prev is not None:
+                instance._old_atendente_id = getattr(  # type: ignore[attr-defined]
+                    prev, "atendente_humano_id", None
+                )
+            else:
+                instance._old_atendente_id = None  # type: ignore[attr-defined]
+    except Exception:
+        # Comentário: falhas de captura não devem bloquear o fluxo
+        pass
 
 
 @receiver(post_save, sender=Atendimento)

@@ -11,6 +11,7 @@ As tarefas são agendadas pelos sinais em
 from __future__ import annotations
 
 from typing import Any, cast
+from typing import Optional
 
 from loguru import logger
 
@@ -285,6 +286,117 @@ def task_atendimento_assign_member_and_update(atendimento_id: int) -> None:
             exc,
         )
 
+
+def task_atendimento_sync_card_members(
+    atendimento_id: int, old_atendente_id: Optional[int] = None
+) -> None:
+    """Sincroniza membros do card ao atualizar o Atendimento.
+
+    - Remove o atendente anterior do card, se existir.
+    - Adiciona o novo atendente ao card, se definido.
+    - Atualiza a descrição e custom fields do card.
+    """
+    try:
+        atendimento = Atendimento.objects.get(id=atendimento_id)
+        service = TicketSyncService()
+
+        try:
+            card = getattr(atendimento, "trello_card", None)
+            if card is None:
+                card = service.ensure_card_for_atendimento(atendimento)
+        except Exception:
+            card = getattr(atendimento, "trello_card", None)
+
+        if not card:
+            return
+
+        client = SERVICEHUB.unified_data_service
+        try:
+            from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
+                TrelloUnifiedDataService,
+            )
+
+            trello_client = cast(TrelloUnifiedDataService, client)
+        except Exception:
+            trello_client = client  # type: ignore[assignment]
+
+        ms = MemberSyncService()
+
+        # Remove membro anterior, se estiver presente e diferente do novo
+        try:
+            card_data = trello_client.get_item(
+                data_source_id=card.list_sync.external_id,
+                item_id=card.external_id,
+            )
+            existing_ids: list[str] = []
+            if isinstance(card_data, dict):
+                existing_ids = [
+                    str(mid) for mid in card_data.get("idMembers", [])
+                ]
+        except Exception:
+            existing_ids = []
+
+        new_atendente = getattr(atendimento, "atendente_humano", None)
+        new_member_id: Optional[str] = None
+        if new_atendente is not None:
+            try:
+                new_member_id = ms.resolve_member_external_id(new_atendente)
+            except Exception:
+                new_member_id = None
+
+        old_member_id: Optional[str] = None
+        if old_atendente_id is not None:
+            try:
+                from smart_core_assistant_painel.app.ui.operacional.models import (
+                    Atendente,
+                )
+                old_at = Atendente.objects.filter(id=old_atendente_id).first()
+                if old_at is not None:
+                    old_member_id = ms.resolve_member_external_id(old_at)
+            except Exception:
+                old_member_id = None
+
+        # Remoção segura do membro anterior
+        if old_member_id and old_member_id != new_member_id:
+            try:
+                if old_member_id in existing_ids:
+                    trello_client.remove_member_from_card(
+                        card.external_id, old_member_id
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao remover membro do card: {}",
+                    exc,
+                )
+
+        # Adição segura do novo membro
+        if new_member_id:
+            try:
+                if new_member_id not in existing_ids:
+                    trello_client.add_member_to_card(
+                        card.external_id, new_member_id
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao adicionar membro ao card: {}",
+                    exc,
+                )
+
+        # Atualiza conteúdo rico do card
+        try:
+            service.update_card_rich_content(card, atendimento)
+        except Exception as exc:
+            logger.warning(
+                "Falha ao atualizar conteúdo rico do card: {}",
+                exc,
+            )
+    except Atendimento.DoesNotExist:
+        logger.warning(
+            "Atendimento não encontrado para sync de membros: {}",
+            atendimento_id,
+        )
+    except Exception as exc:
+        logger.warning("Sincronização de membros do card falhou: {}", exc)
 
 def task_atendimento_update_card_rich_content(atendimento_id: int) -> None:
     """Atualiza descrição e campos do card após nova mensagem.

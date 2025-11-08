@@ -299,6 +299,21 @@ class TrelloUnifiedDataService(UnifiedDataService):
         )
         return True
 
+    def remove_member_from_card(self, card_id: str, member_id: str) -> bool:
+        """Remove um membro de um card (DELETE /cards/{id}/idMembers/{mid}).
+
+        Comentário: usa endpoint específico de remoção de membros do card.
+        """
+        self._request(
+            "DELETE", f"/cards/{card_id}/idMembers/{member_id}"
+        )
+        self._log(
+            "membro removido do card: card={card} member={member}",
+            card=card_id,
+            member=member_id,
+        )
+        return True
+
     def remove_member_from_board(self, board_id: str, member_id: str) -> bool:
         """Remove um membro de um board (DELETE /boards/{id}/members/{idMember}).
 

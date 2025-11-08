@@ -28,7 +28,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 class StatusAtendimento(models.TextChoices):
     FILA = "fila", "Fila"
     EM_ATENDIMENTO = "em_atendimento", "Em Atendimento"
-    AGUARDANDO_RETORNO = "aguardando_retorno", "Aguardando Retorno"
+    PENDENCIA = "pendencia", "Pendência"
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
 
@@ -589,7 +589,7 @@ def inicializar_atendimento_whatsapp(
             status__in=[
                 StatusAtendimento.FILA,
                 StatusAtendimento.EM_ATENDIMENTO,
-                StatusAtendimento.AGUARDANDO_RETORNO,
+                StatusAtendimento.PENDENCIA,
             ],
         ).first()
 
@@ -637,7 +637,7 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional[Atendimento]:
             status__in=[
                 StatusAtendimento.FILA,
                 StatusAtendimento.EM_ATENDIMENTO,
-                StatusAtendimento.AGUARDANDO_RETORNO,
+                StatusAtendimento.PENDENCIA,
             ],
         ).first()
 

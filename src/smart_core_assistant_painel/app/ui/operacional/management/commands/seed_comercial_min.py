@@ -238,8 +238,8 @@ class Command(BaseCommand):
         a4 = criar_atendimento(
             contatos[3],
             etapa_espera,
-            "Aguardando retorno do cliente",
-            StatusAtendimento.AGUARDANDO_RETORNO,
+            "Pendência do cliente",
+            StatusAtendimento.PENDENCIA,
             True,
         )
         a5 = criar_atendimento(

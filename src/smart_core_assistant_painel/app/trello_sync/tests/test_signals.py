@@ -164,13 +164,18 @@ class SignalCreationTests(TestCase):
             self.assertTrue(stub_client.add_called)
             self.assertTrue(stub_client.update_called)
 
-    def test_atendimento_resolvido_schedules_archive(self) -> None:
+    def test_atendimento_resolvido_move_to_resolvido_list_is_scheduled(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Suporte")
         fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
             departamento=dep, nome="Fluxo Arch"
         )
-        etapa: EtapaFluxo = EtapaFluxo.objects.create(
+        # Etapa inicial qualquer
+        etapa_inicial: EtapaFluxo = EtapaFluxo.objects.create(
             fluxo=fluxo, nome="Etapa", ordem=1
+        )
+        # Etapa padrão Resolvido
+        etapa_res: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Resolvido", ordem=1000, tipo_etapa="finalizacao"
         )
         TrelloBoard.objects.create(
             fluxo=fluxo, external_id="bArch", name="Board Arch"
@@ -181,24 +186,109 @@ class SignalCreationTests(TestCase):
         at: Atendimento = Atendimento.objects.create(
             contato=contato,
             departamento=dep,
-            etapa_atual=etapa,
+            etapa_atual=etapa_inicial,
             assunto="Teste",
         )
         at.status = StatusAtendimento.RESOLVIDO
         at.save()
-        schedule_name = f"trello_at_archive_{at.id}"
-        schedules = Schedule.objects.filter(name=schedule_name)
-        self.assertEqual(schedules.count(), 1)
-        sched = schedules.first()
-        self.assertEqual(
-            sched.func,
-            (
+
+        # Deve ter atualizado a etapa para "Resolvido"
+        at.refresh_from_db()
+        self.assertEqual(at.etapa_atual_id, etapa_res.id)
+
+        # Agenda deve apontar para a task de movimento por etapa
+        schedules = Schedule.objects.filter(
+            func=(
                 "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_archive_card"
+                ".task_atendimento_move_to_etapa_list"
             ),
+            args=repr((at.id,)),
         )
-        # Espera serialização em tupla para Django-Q
-        self.assertEqual(sched.args, repr((at.id,)))
+        self.assertEqual(schedules.count(), 1)
+
+    def test_atendimento_pendencia_move_to_pendencia_list_is_scheduled(self) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Suporte P")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Pend"
+        )
+        # Etapa inicial qualquer
+        etapa_inicial: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa", ordem=1
+        )
+        # Etapa padrão Pendência
+        etapa_pend: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Pendência", ordem=999, tipo_etapa="espera"
+        )
+        TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bPend", name="Board Pend"
+        )
+        contato: Contato = Contato.objects.create(
+            telefone="5511988888888", nome_contato="Cliente P"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato,
+            departamento=dep,
+            etapa_atual=etapa_inicial,
+            assunto="Teste Pend",
+        )
+        at.status = StatusAtendimento.PENDENCIA
+        at.save()
+
+        # Deve ter atualizado a etapa para "Pendência"
+        at.refresh_from_db()
+        self.assertEqual(at.etapa_atual_id, etapa_pend.id)
+
+        # Agenda deve apontar para a task de movimento por etapa
+        schedules = Schedule.objects.filter(
+            func=(
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_atendimento_move_to_etapa_list"
+            ),
+            args=repr((at.id,)),
+        )
+        self.assertEqual(schedules.count(), 1)
+
+    def test_atendimento_cancelado_move_to_cancelado_list_is_scheduled(self) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Suporte2")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Cancel"
+        )
+        # Etapa inicial qualquer
+        etapa_inicial: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa", ordem=1
+        )
+        # Etapa padrão Cancelado
+        etapa_cancel: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Cancelado", ordem=1001, tipo_etapa="finalizacao"
+        )
+        TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bCancel", name="Board Cancel"
+        )
+        contato: Contato = Contato.objects.create(
+            telefone="5511900000000", nome_contato="Cliente Cancel"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato,
+            departamento=dep,
+            etapa_atual=etapa_inicial,
+            assunto="Teste Cancel",
+        )
+        at.status = StatusAtendimento.CANCELADO
+        at.save()
+
+        # Deve ter atualizado a etapa para "Cancelado"
+        at.refresh_from_db()
+        self.assertEqual(at.etapa_atual_id, etapa_cancel.id)
+
+        # Agenda deve apontar para a task de movimento por etapa
+        schedules = Schedule.objects.filter(
+            func=(
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_atendimento_move_to_etapa_list"
+            ),
+            args=repr((at.id,)),
+        )
+        self.assertEqual(schedules.count(), 1)
 
     def test_task_atendimento_archive_executes(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Ops")

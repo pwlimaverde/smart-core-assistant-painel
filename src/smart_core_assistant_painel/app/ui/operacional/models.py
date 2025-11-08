@@ -337,7 +337,7 @@ class Atendente(models.Model):
         ativos = [
             StatusAtendimento.FILA,
             StatusAtendimento.EM_ATENDIMENTO,
-            StatusAtendimento.AGUARDANDO_RETORNO,
+            StatusAtendimento.PENDENCIA,
         ]
         return self.atendimentos.filter(status__in=ativos).count()
 
@@ -688,7 +688,7 @@ class EtapaFluxo(models.Model):
         null=True,
         help_text="Descricao opcional da etapa",
     )
-    ordem: models.PositiveIntegerField = models.PositiveIntegerField(
+    ordem: models.IntegerField = models.IntegerField(
         help_text="Ordem da etapa no fluxo (menor numero primeiro)"
     )
     cor: models.CharField[str] = models.CharField(

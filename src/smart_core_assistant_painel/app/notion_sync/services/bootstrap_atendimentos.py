@@ -122,7 +122,7 @@ class NotionAtendimentosBootstrapService:
                         {"name": "fila", "color": "gray"},
                         {"name": "em_atendimento", "color": "blue"},
                         {
-                            "name": "aguardando_retorno",
+                            "name": "pendencia",
                             "color": "yellow",
                         },
                         {"name": "resolvido", "color": "green"},

@@ -9,6 +9,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     EtapaFluxo,
     FluxoAtendimento,
     Atendente,
+    TipoEtapa,
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
@@ -199,6 +200,29 @@ def atendimento_capture_old_atendente(
         pass
 
 
+@receiver(pre_save, sender=Atendimento)
+def atendimento_capture_old_etapa(
+    sender: Any, instance: Any, **kwargs: Any
+) -> None:
+    """Captura a etapa anterior antes de salvar o Atendimento.
+
+    Comentário: guarda o ID anterior no ``instance`` para uso
+    no ``post_save`` e evitar agendamentos quando não há mudança.
+    """
+    try:
+        if getattr(instance, "pk", None):
+            prev = Atendimento.objects.filter(pk=instance.pk).first()
+            if prev is not None:
+                instance._old_etapa_id = getattr(  # type: ignore[attr-defined]
+                    prev, "etapa_atual_id", None
+                )
+            else:
+                instance._old_etapa_id = None  # type: ignore[attr-defined]
+    except Exception:
+        # Comentário: falhas de captura não devem bloquear o fluxo
+        pass
+
+
 @receiver(post_save, sender=Atendimento)
 def atendimento_etapa_updated_move_card(
     sender: Any, instance: Any, created: bool, **kwargs: Any
@@ -211,6 +235,10 @@ def atendimento_etapa_updated_move_card(
     if created:
         return
     try:
+        old_etapa_id = getattr(instance, "_old_etapa_id", None)
+        if old_etapa_id == getattr(instance, "etapa_atual_id", None):
+            # Comentário: sem alteração efetiva de etapa, evita agendar.
+            return
         async_task(
             (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
@@ -223,27 +251,252 @@ def atendimento_etapa_updated_move_card(
 
 
 @receiver(post_save, sender=Atendimento)
-def atendimento_resolvido_archive_card(
+def atendimento_resolvido_move_to_resolvido(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Arquiva o card quando o atendimento é marcado como resolvido.
+    """Move o card para a lista padrão "Resolvido" ao marcar como resolvido.
 
-    Comentário: detecta transição de status para RESOLVIDO e agenda a
-    task de arquivamento do card associado.
+    Comentário:
+    - Em vez de arquivar o card, ajusta a `etapa_atual` do atendimento
+      para a etapa "Resolvido" do fluxo associado e salva.
+    - O receiver `atendimento_etapa_updated_move_card` cuidará de agendar
+      a task que move o card para a lista da etapa.
     """
     if created:
         return
     try:
-        if instance.status == StatusAtendimento.RESOLVIDO:
-            async_task(
-                (
-                    "smart_core_assistant_painel.app.trello_sync.tasks"
-                    ".task_atendimento_archive_card"
-                ),
+        if instance.status != StatusAtendimento.RESOLVIDO:
+            return
+
+        # Resolve o fluxo de contexto: preferir o da etapa atual; se ausente,
+        # usar o primeiro fluxo ativo do departamento (se houver).
+        fluxo: FluxoAtendimento | None = None
+        try:
+            fluxo = getattr(getattr(instance, "etapa_atual", None), "fluxo", None)
+        except Exception:
+            fluxo = None
+        if fluxo is None:
+            try:
+                dep = getattr(instance, "departamento", None)
+                fluxo = getattr(dep, "get_fluxo", lambda: None)()
+            except Exception:
+                fluxo = None
+
+        if fluxo is None:
+            logger.warning(
+                "Não foi possível determinar fluxo para mover resolvido: {}",
                 instance.id,
             )
+            return
+
+        # Busca etapa "Resolvido" (prioriza nome exato; senão pega a primeira
+        # etapa de finalização como fallback, ordenada por `ordem`).
+        etapa_res: EtapaFluxo | None = None
+        try:
+            etapa_res = fluxo.etapas.filter(nome__iexact="Resolvido").first()
+            if etapa_res is None:
+                etapa_res = (
+                    fluxo.etapas.filter(tipo_etapa=TipoEtapa.FINALIZACAO)
+                    .order_by("ordem")
+                    .first()
+                )
+        except Exception:
+            etapa_res = None
+
+        if etapa_res is None:
+            logger.warning(
+                "Etapa 'Resolvido' não encontrada no fluxo #{}, atendimento #{},"
+                " mantendo comportamento padrão sem arquivar.",
+                fluxo.id,
+                instance.id,
+            )
+            return
+
+        # Atualiza a etapa somente se diferente para evitar loops e re-agendamentos.
+        try:
+            needs_update: bool = getattr(instance, "etapa_atual_id", None) != getattr(
+                etapa_res, "id", None
+            )
+        except Exception as exc:
+            logger.warning("Falha ao verificar etapa 'Resolvido': {}", exc)
+            needs_update = False
+
+        if needs_update:
+            try:
+                instance.etapa_atual = etapa_res
+                # Comentário: salvar com `update_fields` para minimizar side-effects.
+                instance.save(update_fields=["etapa_atual"])  # type: ignore[arg-type]
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao ajustar etapa 'Resolvido' no atendimento: {}",
+                    exc,
+                )
     except Exception as exc:
-        logger.warning("Falha ao arquivar card Trello: {}", exc)
+        logger.warning(
+            "Falha no processamento de movimentação para 'Resolvido': {}",
+            exc,
+        )
+
+
+@receiver(post_save, sender=Atendimento)
+def atendimento_pendencia_move_to_pendencia(
+    sender: Any, instance: Any, created: bool, **kwargs: Any
+) -> None:
+    """Move o card para a lista padrão "Pendência" ao marcar como pendência.
+
+    Comentário:
+    - Ajusta a `etapa_atual` do atendimento para a etapa "Pendência"
+      do fluxo associado e salva.
+    - O receiver `atendimento_etapa_updated_move_card` cuidará de agendar
+      a task que move o card para a lista da etapa.
+    """
+    if created:
+        return
+    try:
+        if instance.status != StatusAtendimento.PENDENCIA:
+            return
+
+        # Resolve o fluxo de contexto: preferir o da etapa atual; se ausente,
+        # usar o primeiro fluxo ativo do departamento (se houver).
+        fluxo: FluxoAtendimento | None = None
+        try:
+            fluxo = getattr(
+                getattr(instance, "etapa_atual", None), "fluxo", None
+            )
+        except Exception:
+            fluxo = None
+        if fluxo is None:
+            try:
+                dep = getattr(instance, "departamento", None)
+                fluxo = getattr(dep, "get_fluxo", lambda: None)()
+            except Exception:
+                fluxo = None
+
+        if fluxo is None:
+            logger.warning(
+                "Não foi possível determinar fluxo para mover pendência: {}",
+                instance.id,
+            )
+            return
+
+        # Busca etapa "Pendência" (prioriza nome exato; senão pega a primeira
+        # etapa de espera como fallback, ordenada por `ordem`).
+        etapa_pend: EtapaFluxo | None = None
+        try:
+            etapa_pend = fluxo.etapas.filter(nome__iexact="Pendência").first()
+            if etapa_pend is None:
+                etapa_pend = (
+                    fluxo.etapas.filter(tipo_etapa=TipoEtapa.ESPERA)
+                    .order_by("ordem")
+                    .first()
+                )
+        except Exception:
+            etapa_pend = None
+
+        if etapa_pend is None:
+            logger.warning(
+                "Etapa 'Pendência' não encontrada no fluxo #{}, atendimento #{},"
+                " mantendo comportamento padrão.",
+                fluxo.id,
+                instance.id,
+            )
+            return
+
+        # Atualiza a etapa somente se diferente para evitar loops e re-agendamentos.
+        try:
+            if getattr(instance, "etapa_atual_id", None) != getattr(
+                etapa_pend, "id", None
+            ):
+                instance.etapa_atual = etapa_pend
+                # Comentário: salvar com `update_fields` para minimizar side-effects.
+                instance.save(update_fields=["etapa_atual"])  # type: ignore[arg-type]
+        except Exception as exc:
+            logger.warning(
+                "Falha ao ajustar etapa 'Pendência' no atendimento: {}",
+                exc,
+            )
+    except Exception as exc:
+        logger.warning(
+            "Falha no processamento de movimentação para 'Pendência': {}",
+            exc,
+        )
+    
+
+@receiver(post_save, sender=Atendimento)
+def atendimento_cancelado_move_to_cancelado(
+    sender: Any, instance: Any, created: bool, **kwargs: Any
+) -> None:
+    """Move o card para a lista padrão "Cancelado" ao marcar como cancelado.
+
+    Comentário:
+    - Em vez de arquivar o card, ajusta a `etapa_atual` do atendimento
+      para a etapa "Cancelado" do fluxo associado e salva.
+    - O receiver `atendimento_etapa_updated_move_card` cuidará de agendar
+      a task que move o card para a lista da etapa.
+    """
+    if created:
+        return
+    try:
+        if instance.status != StatusAtendimento.CANCELADO:
+            return
+
+        # Resolve o fluxo de contexto: preferir o da etapa atual; se ausente,
+        # usar o primeiro fluxo ativo do departamento (se houver).
+        fluxo: FluxoAtendimento | None = None
+        try:
+            fluxo = getattr(getattr(instance, "etapa_atual", None), "fluxo", None)
+        except Exception:
+            fluxo = None
+        if fluxo is None:
+            try:
+                dep = getattr(instance, "departamento", None)
+                fluxo = getattr(dep, "get_fluxo", lambda: None)()
+            except Exception:
+                fluxo = None
+
+        if fluxo is None:
+            logger.warning(
+                "Não foi possível determinar fluxo para mover cancelado: {}",
+                instance.id,
+            )
+            return
+
+        # Busca etapa "Cancelado" (prioriza nome exato; senão pega a primeira
+        # etapa de finalização como fallback, ordenada por `ordem`).
+        etapa_cancel: EtapaFluxo | None = None
+        try:
+            etapa_cancel = fluxo.etapas.filter(nome__iexact="Cancelado").first()
+            if etapa_cancel is None:
+                etapa_cancel = (
+                    fluxo.etapas.filter(tipo_etapa=TipoEtapa.FINALIZACAO)
+                    .order_by("ordem")
+                    .first()
+                )
+        except Exception:
+            etapa_cancel = None
+
+        if etapa_cancel is None:
+            logger.warning(
+                "Etapa 'Cancelado' não encontrada no fluxo #{}, atendimento #{},"
+                " mantendo comportamento padrão sem arquivar.",
+                fluxo.id,
+                instance.id,
+            )
+            return
+
+        # Atualiza a etapa somente se diferente para evitar loops e re-agendamentos.
+        try:
+            if getattr(instance, "etapa_atual_id", None) != getattr(etapa_cancel, "id", None):
+                instance.etapa_atual = etapa_cancel
+                # Comentário: salvar com `update_fields` para minimizar side-effects.
+                instance.save(update_fields=["etapa_atual"])  # type: ignore[arg-type]
+        except Exception as exc:
+            logger.warning("Falha ao ajustar etapa 'Cancelado' no atendimento: {}", exc)
+    except Exception as exc:
+        logger.warning(
+            "Falha no processamento de movimentação para 'Cancelado': {}",
+            exc,
+        )
 
 
 @receiver(pre_delete, sender=Atendimento)

@@ -100,6 +100,36 @@ class FlowSyncService:
             logger.info(
                 "Webhook Trello não registrado (URL não pública ou flag desativada)."
             )
+        # Comentário: após criar o board, garantir listas para etapas já existentes
+        try:
+            from smart_core_assistant_painel.app.ui.operacional.models import (
+                EtapaFluxo,
+            )
+
+            etapas = getattr(fluxo, "etapas", None)
+            if etapas is not None:
+                for etapa in etapas.all():
+                    try:
+                        self.ensure_list_for_etapa(etapa)
+                    except Exception as exc:
+                        logger.warning(
+                            "Falha ao garantir lista para etapa {id}: {}",
+                            exc,
+                            id=getattr(etapa, "id", None),
+                        )
+                # Após garantir listas, tenta reordenar
+                try:
+                    self.reorder_lists_for_fluxo(fluxo)
+                except Exception as exc:
+                    logger.warning(
+                        "Falha ao reordenar listas após criação do board: {}",
+                        exc,
+                    )
+        except Exception as exc:
+            logger.warning(
+                "Falha ao pós-processar criação do board (listas/reordenação): {}",
+                exc,
+            )
 
         return board
 
@@ -109,17 +139,29 @@ class FlowSyncService:
             etapa.fluxo, "trello_board", None
         )
         if not board:
-            board = self.ensure_board_for_fluxo(etapa.fluxo)
+            # Comentário: não cria board aqui para evitar corrida com fluxo criado.
+            # O board é criado pelo signal do Fluxo; aguardar e tentar novamente.
+            raise RuntimeError(
+                "Board do fluxo ainda não criado para a etapa"
+            )
 
         existing: Optional[TrelloList] = getattr(etapa, "trello_list", None)
         if existing:
             return existing
 
         # Comentário: add_data_source cria a lista e retorna seu ID.
+        # Trello não aceita posições negativas; mapeia valores < 0 para 0 (topo).
+        try:
+            ordem_raw = getattr(etapa, "ordem", 0)
+            ordem_val: float = float(ordem_raw if ordem_raw is not None else 0)
+        except Exception:
+            ordem_val = 0.0
+        if ordem_val < 0:
+            ordem_val = 0.0
         list_id: str = self.client.add_data_source(
             container_id=board.external_id,
             data_source_id=etapa.nome,
-            position=float(getattr(etapa, "ordem", 0) or 0),
+            position=ordem_val,
         )
         # Buscar dados completos da lista para metadados.
         data: Optional[dict[str, Any]] = self.client.get_data_source(list_id)
@@ -153,7 +195,14 @@ class FlowSyncService:
             key=lambda tl: int(getattr(tl.etapa, "ordem", 0) or 0),
         )
         for tl in ordered:
-            ordem_val: float = float(getattr(tl.etapa, "ordem", 0) or 0)
+            try:
+                raw = getattr(tl.etapa, "ordem", 0)
+                ordem_val: float = float(raw if raw is not None else 0)
+            except Exception:
+                ordem_val = 0.0
+            # Comentário: Trello não aceita posições negativas; normaliza para 0.
+            if ordem_val < 0:
+                ordem_val = 0.0
             try:
                 self.client.set_data_source_position(tl.external_id, ordem_val)
             except Exception as exc:

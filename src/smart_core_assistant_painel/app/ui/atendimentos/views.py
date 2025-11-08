@@ -114,7 +114,7 @@ def kanban_departamento(
 ) -> HttpResponse:
     """Renderiza o Kanban por status e processa ações.
 
-    - Colunas: Fila, Em Atendimento, Aguardando Retorno, Resolvidos, Cancelados.
+    - Colunas: Fila, Em Atendimento, Pendência, Resolvidos, Cancelados.
     - Para usuários não gerentes: exibe a fila geral do departamento atual e
       apenas os atendimentos atribuídos ao próprio usuário nas demais colunas.
     - Ações via POST: assign_next, assign_to_me, unassign, transfer, change_status.
@@ -593,9 +593,7 @@ def kanban_departamento(
         em_atendimento_qs = base_qs.filter(
             status=StatusAtendimento.EM_ATENDIMENTO
         )
-        aguardando_retorno_qs = base_qs.filter(
-            status=StatusAtendimento.AGUARDANDO_RETORNO
-        )
+        pendencia_qs = base_qs.filter(status=StatusAtendimento.PENDENCIA)
         resolvidos_qs = base_qs.filter(status=StatusAtendimento.RESOLVIDO)
         cancelados_qs = base_qs.filter(status=StatusAtendimento.CANCELADO)
     else:
@@ -604,8 +602,8 @@ def kanban_departamento(
                 status=StatusAtendimento.EM_ATENDIMENTO,
                 atendente_humano=current_agent,
             )
-            aguardando_retorno_qs = base_qs.filter(
-                status=StatusAtendimento.AGUARDANDO_RETORNO,
+            pendencia_qs = base_qs.filter(
+                status=StatusAtendimento.PENDENCIA,
                 atendente_humano=current_agent,
             )
             resolvidos_qs = base_qs.filter(
@@ -618,7 +616,7 @@ def kanban_departamento(
             )
         else:
             em_atendimento_qs = base_qs.none()
-            aguardando_retorno_qs = base_qs.none()
+            pendencia_qs = base_qs.none()
             resolvidos_qs = base_qs.none()
             cancelados_qs = base_qs.none()
 
@@ -629,7 +627,7 @@ def kanban_departamento(
         "columns": {
             "fila": fila_qs,
             "em_atendimento": em_atendimento_qs,
-            "aguardando_retorno": aguardando_retorno_qs,
+            "pendencia": pendencia_qs,
             "resolvidos": resolvidos_qs,
             "cancelados": cancelados_qs,
         },
@@ -815,8 +813,8 @@ def kanban_departamento_public(
             "em_atendimento": base_qs.filter(
                 status=StatusAtendimento.EM_ATENDIMENTO
             ),
-            "aguardando_retorno": base_qs.filter(
-                status=StatusAtendimento.AGUARDANDO_RETORNO
+            "pendencia": base_qs.filter(
+                status=StatusAtendimento.PENDENCIA
             ),
             "resolvidos": base_qs.filter(status=StatusAtendimento.RESOLVIDO),
             "cancelados": base_qs.filter(status=StatusAtendimento.CANCELADO),

@@ -1284,7 +1284,7 @@ class NotionAtendimentosDatabaseConstructor:
                     "options": [
                         {"name": "fila", "color": "gray"},
                         {"name": "em_atendimento", "color": "blue"},
-                        {"name": "aguardando_retorno", "color": "yellow"},
+                        {"name": "pendencia", "color": "yellow"},
                         {"name": "resolvido", "color": "green"},
                         {"name": "cancelado", "color": "red"},
                     ]
@@ -2022,7 +2022,7 @@ class NotionAtendimentosDatabaseConstructor:
                                         "color": "blue",
                                     },
                                     {
-                                        "name": "aguardando_retorno",
+                                        "name": "pendencia",
                                         "color": "yellow",
                                     },
                                     {"name": "resolvido", "color": "green"},

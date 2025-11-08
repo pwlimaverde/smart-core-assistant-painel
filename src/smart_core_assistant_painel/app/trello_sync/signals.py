@@ -1,8 +1,6 @@
 from typing import Any
 
-from datetime import timedelta
-from django.utils import timezone
-from django_q.models import Schedule
+from django_q.tasks import async_task
 from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from loguru import logger
@@ -23,145 +21,97 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
 def fluxo_created_sync_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Cria Board Trello ao criar FluxoAtendimento (se novo)."""
+    """Cria Board Trello ao criar FluxoAtendimento (execução imediata)."""
     if not created:
         return
     try:
-        schedule_name = f"trello_flow_board_{instance.id}"
-        # Evita duplicidade de schedules com o mesmo nome
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_fluxo_ensure_board"
             ),
-            # Comentário: serializamos args como tupla literal para
-            # o Django-Q interpretar via ast.literal_eval sem erro.
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.error("Falha ao agendar criação de board Trello: {}", exc)
+        logger.error("Falha ao criar board Trello: {}", exc)
 
 
 @receiver(post_save, sender=EtapaFluxo)
 def etapa_created_sync_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Cria List Trello quando nova etapa e reordena listas do board.
-
-    Comentário: em criação, garantimos a lista; sempre após, reordenamos
-    o board conforme `etapa.ordem`.
-    """
+    """Cria List Trello quando nova etapa e reordena listas (imediato)."""
     try:
         if created:
-            Schedule.objects.filter(
-                name=f"trello_etapa_list_{instance.id}"
-            ).delete()
-            Schedule.objects.create(
-                name=f"trello_etapa_list_{instance.id}",
-                func=(
+            async_task(
+                (
                     "smart_core_assistant_painel.app.trello_sync.tasks"
                     ".task_etapa_ensure_list"
                 ),
-                args=repr((instance.id,)),
-                schedule_type=Schedule.ONCE,
-                next_run=timezone.now() + timedelta(seconds=1),
+                instance.id,
             )
-        Schedule.objects.filter(
-            name=f"trello_flow_reorder_{instance.fluxo_id}"
-        ).delete()
-        Schedule.objects.create(
-            name=f"trello_flow_reorder_{instance.fluxo_id}",
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_reorder_lists_for_fluxo"
             ),
-            args=repr((instance.fluxo_id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=2),
+            instance.fluxo_id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar operações de listas: {}", exc)
+        logger.warning("Falha ao operar listas: {}", exc)
 
 
 @receiver(pre_delete, sender=EtapaFluxo)
 def etapa_deleted_archive_trello(
     sender: Any, instance: Any, **kwargs: Any
 ) -> None:
-    """Arquiva a List Trello ao excluir uma EtapaFluxo.
-
-    Comentário: utiliza wrapper de serviço para fechar a lista no Trello
-    antes da remoção em cascade dos registros locais.
-    """
+    """Arquiva a List Trello ao excluir uma EtapaFluxo (imediato)."""
     try:
-        Schedule.objects.filter(
-            name=f"trello_etapa_archive_{instance.id}"
-        ).delete()
-        Schedule.objects.create(
-            name=f"trello_etapa_archive_{instance.id}",
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_etapa_archive_list"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar arquivamento de lista: {}", exc)
+        logger.warning("Falha ao arquivar lista: {}", exc)
 
 
 @receiver(pre_delete, sender=FluxoAtendimento)
 def fluxo_deleted_archive_trello(
     sender: Any, instance: Any, **kwargs: Any
 ) -> None:
-    """Arquiva o Board Trello ao excluir um FluxoAtendimento.
-
-    Comentário: fecha o board no Trello para remover da visualização.
-    """
+    """Arquiva o Board Trello ao excluir um FluxoAtendimento (imediato)."""
     try:
-        Schedule.objects.filter(
-            name=f"trello_flow_archive_{instance.id}"
-        ).delete()
-        Schedule.objects.create(
-            name=f"trello_flow_archive_{instance.id}",
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_fluxo_archive_board"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar arquivamento de board: {}", exc)
+        logger.warning("Falha ao arquivar board: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)
 def atendimento_created_sync_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Cria Card Trello ao criar Atendimento (se houver etapa atual)."""
+    """Cria Card Trello ao criar Atendimento (execução imediata)."""
     if not created:
         return
     try:
-        schedule_name = f"trello_at_card_{instance.id}"
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_ensure_card"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar criação de card: {}", exc)
+        logger.warning("Falha ao criar card: {}", exc)
 
 
 @receiver(post_save, sender=Atendente)
@@ -172,47 +122,32 @@ def atendente_created_invite_trello(
     if not created:
         return
     try:
-        schedule_name = f"trello_member_invite_{instance.id}"
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendente_invite"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar convite de atendente: {}", exc)
+        logger.warning("Falha ao convidar atendente: {}", exc)
 
 
 @receiver(pre_delete, sender=Atendente)
 def atendente_deleted_remove_member_trello(
     sender: Any, instance: Any, **kwargs: Any
 ) -> None:
-    """Remove o atendente do board Trello ao excluir o registro.
-
-    Comentário: resolve o `member_id` no contexto do board do fluxo
-    e executa a remoção via adapter Trello. Caso o membro não exista
-    ou ainda não tenha aceitado o convite, registra aviso.
-    """
+    """Remove o atendente do board Trello ao excluir o registro."""
     try:
-        schedule_name = f"trello_member_remove_{instance.id}"
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendente_remove_member"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar remoção de atendente: {}", exc)
+        logger.warning("Falha ao remover atendente: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)
@@ -228,20 +163,15 @@ def atendimento_updated_assign_member_trello(
     if created:
         return
     try:
-        schedule_name = f"trello_at_assign_{instance.id}"
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_assign_member_and_update"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar atualização de card Trello: {}", exc)
+        logger.warning("Falha ao atualizar card Trello: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)
@@ -256,20 +186,15 @@ def atendimento_etapa_updated_move_card(
     if created:
         return
     try:
-        schedule_name = f"trello_at_move_{instance.id}"
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_move_to_etapa_list"
             ),
-            args=repr((instance.id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao agendar movimento de card Trello: {}", exc)
+        logger.warning("Falha ao mover card Trello: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)
@@ -285,21 +210,15 @@ def atendimento_resolvido_archive_card(
         return
     try:
         if instance.status == StatusAtendimento.RESOLVIDO:
-            Schedule.objects.filter(
-                name=f"trello_at_archive_{instance.id}"
-            ).delete()
-            Schedule.objects.create(
-                name=f"trello_at_archive_{instance.id}",
-                func=(
+            async_task(
+                (
                     "smart_core_assistant_painel.app.trello_sync.tasks"
                     ".task_atendimento_archive_card"
                 ),
-                args=repr((instance.id,)),
-                schedule_type=Schedule.ONCE,
-                next_run=timezone.now() + timedelta(seconds=1),
+                instance.id,
             )
     except Exception as exc:
-        logger.warning("Falha ao agendar arquivamento de card Trello: {}", exc)
+        logger.warning("Falha ao arquivar card Trello: {}", exc)
 
 
 @receiver(pre_delete, sender=Atendimento)
@@ -315,19 +234,12 @@ def atendimento_deleted_archive_card(
         card = getattr(instance, "trello_card", None)
         external_id: str = getattr(card, "external_id", "") if card else ""
         if external_id:
-            schedule_name = f"trello_at_archive_del_{instance.id}"
-            Schedule.objects.filter(name=schedule_name).delete()
-            Schedule.objects.create(
-                name=schedule_name,
-                func=(
+            async_task(
+                (
                     "smart_core_assistant_painel.app.trello_sync.tasks"
                     ".task_trello_archive_card_by_external_id"
                 ),
-                # Comentário: serializamos como tupla para o Django-Q
-                # interpretar corretamente via ast.literal_eval
-                args=repr((external_id,)),
-                schedule_type=Schedule.ONCE,
-                next_run=timezone.now() + timedelta(seconds=1),
+                external_id,
             )
         else:
             logger.warning(
@@ -335,7 +247,7 @@ def atendimento_deleted_archive_card(
                 instance.id,
             )
     except Exception as exc:
-        logger.warning("Falha ao agendar arquivamento por deleção: {}", exc)
+        logger.warning("Falha ao arquivar por deleção: {}", exc)
 
 
 @receiver(post_save, sender=Mensagem)
@@ -351,21 +263,15 @@ def mensagem_created_update_trello_card(
         return
     try:
         at_id: int = instance.atendimento_id  # type: ignore[assignment]
-        schedule_name = f"trello_at_msg_update_{at_id}"
-        # Evita duplicidade de schedules com o mesmo nome
-        Schedule.objects.filter(name=schedule_name).delete()
-        Schedule.objects.create(
-            name=schedule_name,
-            func=(
+        async_task(
+            (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_update_card_rich_content"
             ),
-            args=repr((at_id,)),
-            schedule_type=Schedule.ONCE,
-            next_run=timezone.now() + timedelta(seconds=1),
+            at_id,
         )
     except Exception as exc:
         logger.warning(
-            "Falha ao agendar atualização de card por nova mensagem: {}",
+            "Falha ao atualizar card por nova mensagem: {}",
             exc,
         )

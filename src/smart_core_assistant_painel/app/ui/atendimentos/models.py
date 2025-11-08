@@ -205,76 +205,6 @@ class Atendimento(models.Model):
         help_text="Canal de origem do atendimento",
     )
 
-    # Campos específicos por departamento (Central de Atendimento)
-    valor_orcamento: models.DecimalField[decimal.Decimal | None] = (
-        models.DecimalField(
-            max_digits=12,
-            decimal_places=2,
-            blank=True,
-            null=True,
-            help_text="Valor do orçamento (departamento comercial)",
-        )
-    )
-    produto_servico: models.CharField[str | None] = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        help_text="Produto ou serviço principal (departamento comercial)",
-    )
-    categoria_venda: models.CharField[str | None] = models.CharField(
-        max_length=50,
-        blank=True,
-        null=True,
-        choices=[
-            ("produto", "Produto"),
-            ("servico", "Serviço"),
-            ("assinatura", "Assinatura"),
-        ],
-        help_text="Categoria da venda (departamento comercial)",
-    )
-    tipo_transacao: models.CharField[str | None] = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        choices=[
-            ("pagamento", "Pagamento"),
-            ("estorno", "Estorno"),
-            ("reembolso", "Reembolso"),
-        ],
-        help_text="Tipo da transação (departamento financeiro)",
-    )
-    valor_transacao: models.DecimalField[decimal.Decimal | None] = (
-        models.DecimalField(
-            max_digits=12,
-            decimal_places=2,
-            blank=True,
-            null=True,
-            help_text="Valor da transação (departamento financeiro)",
-        )
-    )
-    metodo_pagamento: models.CharField[str | None] = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        choices=[
-            ("cartao", "Cartão"),
-            ("boleto", "Boleto"),
-            ("pix", "Pix"),
-            ("transferencia", "Transferência"),
-        ],
-        help_text="Método de pagamento (departamento financeiro)",
-    )
-    status_financeiro: models.CharField[str | None] = models.CharField(
-        max_length=20,
-        blank=True,
-        null=True,
-        choices=[
-            ("processado", "Processado"),
-            ("pendente", "Pendente"),
-            ("falha", "Falha"),
-        ],
-        help_text="Status da transação financeira",
-    )
 
     class Meta:
         verbose_name = "Atendimento"
@@ -288,13 +218,6 @@ class Atendimento(models.Model):
             models.Index(fields=["atendente_humano", "status"]),
             models.Index(fields=["etapa_atual", "atendente_humano"]),
             models.Index(fields=["departamento", "etapa_atual"]),
-            # Índices para campos específicos por departamento
-            models.Index(fields=["valor_orcamento"]),
-            models.Index(fields=["categoria_venda"]),
-            models.Index(fields=["tipo_transacao"]),
-            models.Index(fields=["valor_transacao"]),
-            models.Index(fields=["metodo_pagamento"]),
-            models.Index(fields=["status_financeiro"]),
             models.Index(fields=["prioridade"]),
             models.Index(fields=["tags"]),
         ]

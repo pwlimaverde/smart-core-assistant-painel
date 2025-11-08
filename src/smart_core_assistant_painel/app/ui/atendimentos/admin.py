@@ -62,7 +62,6 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "atendente_humano",
         "total_mensagens",
         "duracao_formatada",
-        "valor_orcamento_display",
         "prioridade",
     ]
     list_filter = [
@@ -70,17 +69,12 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "etapa_atual",
         "departamento",
         "prioridade",
-        "categoria_venda",
-        "tipo_transacao",
-        "metodo_pagamento",
-        "status_financeiro",
         "data_inicio",
     ]
     search_fields = [
         "contato__telefone",
         "contato__nome_contato",
         "assunto",
-        "produto_servico",
         "tags",
     ]
     readonly_fields = [
@@ -116,24 +110,11 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
             },
         ),
         (
-            "Departamento Comercial",
+            "Informações Complementares",
             {
                 "fields": (
-                    "valor_orcamento",
-                    "produto_servico",
-                    "categoria_venda",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "Departamento Financeiro",
-            {
-                "fields": (
-                    "tipo_transacao",
-                    "valor_transacao",
-                    "metodo_pagamento",
-                    "status_financeiro",
+                    "avaliacao",
+                    "feedback",
                 ),
                 "classes": ("collapse",),
             },
@@ -162,16 +143,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                 "classes": ("collapse",),
             },
         ),
-        (
-            "Avaliação",
-            {
-                "fields": (
-                    "avaliacao",
-                    "feedback",
-                ),
-                "classes": ("collapse",),
-            },
-        ),
+        # Seções comerciais/financeiras removidas do modelo foram excluídas
     )
 
     @admin.display(description="Telefone")
@@ -185,13 +157,6 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
     def total_mensagens(self, obj: Atendimento) -> int:
         """Retorna o número total de mensagens no atendimento."""
         return cast(int, getattr(obj, "mensagens").count())
-
-    @admin.display(description="Valor Orçamento")
-    def valor_orcamento_display(self, obj: Atendimento) -> str:
-        """Retorna o valor do orçamento formatado."""
-        if obj.valor_orcamento:
-            return f"R$ {obj.valor_orcamento:,.2f}"
-        return "-"
 
     @admin.display(description="Duração Calculada")
     def duracao_calculada(self, obj: Atendimento) -> str:
@@ -238,20 +203,11 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                 "atendente_humano",
                 "avaliacao",
                 "feedback",
-                "valor_orcamento",
-                "produto_servico",
-                "categoria_venda",
-                "tipo_transacao",
-                "valor_transacao",
-                "metodo_pagamento",
-                "status_financeiro",
             )
             .defer(
                 "contexto_conversa",
                 "historico_status",
                 "tags",
-                "avaliacao",
-                "feedback",
             )
         )
 

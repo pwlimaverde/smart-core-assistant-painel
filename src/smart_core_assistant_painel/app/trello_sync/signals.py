@@ -15,6 +15,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     StatusAtendimento,
+    Mensagem,
 )
 
 
@@ -27,6 +28,8 @@ def fluxo_created_sync_trello(
         return
     try:
         schedule_name = f"trello_flow_board_{instance.id}"
+        # Evita duplicidade de schedules com o mesmo nome
+        Schedule.objects.filter(name=schedule_name).delete()
         Schedule.objects.create(
             name=schedule_name,
             func=(
@@ -54,6 +57,9 @@ def etapa_created_sync_trello(
     """
     try:
         if created:
+            Schedule.objects.filter(
+                name=f"trello_etapa_list_{instance.id}"
+            ).delete()
             Schedule.objects.create(
                 name=f"trello_etapa_list_{instance.id}",
                 func=(
@@ -64,6 +70,9 @@ def etapa_created_sync_trello(
                 schedule_type=Schedule.ONCE,
                 next_run=timezone.now() + timedelta(seconds=1),
             )
+        Schedule.objects.filter(
+            name=f"trello_flow_reorder_{instance.fluxo_id}"
+        ).delete()
         Schedule.objects.create(
             name=f"trello_flow_reorder_{instance.fluxo_id}",
             func=(
@@ -88,6 +97,9 @@ def etapa_deleted_archive_trello(
     antes da remoção em cascade dos registros locais.
     """
     try:
+        Schedule.objects.filter(
+            name=f"trello_etapa_archive_{instance.id}"
+        ).delete()
         Schedule.objects.create(
             name=f"trello_etapa_archive_{instance.id}",
             func=(
@@ -111,6 +123,9 @@ def fluxo_deleted_archive_trello(
     Comentário: fecha o board no Trello para remover da visualização.
     """
     try:
+        Schedule.objects.filter(
+            name=f"trello_flow_archive_{instance.id}"
+        ).delete()
         Schedule.objects.create(
             name=f"trello_flow_archive_{instance.id}",
             func=(
@@ -133,8 +148,10 @@ def atendimento_created_sync_trello(
     if not created:
         return
     try:
+        schedule_name = f"trello_at_card_{instance.id}"
+        Schedule.objects.filter(name=schedule_name).delete()
         Schedule.objects.create(
-            name=f"trello_at_card_{instance.id}",
+            name=schedule_name,
             func=(
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_ensure_card"
@@ -155,8 +172,10 @@ def atendente_created_invite_trello(
     if not created:
         return
     try:
+        schedule_name = f"trello_member_invite_{instance.id}"
+        Schedule.objects.filter(name=schedule_name).delete()
         Schedule.objects.create(
-            name=f"trello_member_invite_{instance.id}",
+            name=schedule_name,
             func=(
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendente_invite"
@@ -180,8 +199,10 @@ def atendente_deleted_remove_member_trello(
     ou ainda não tenha aceitado o convite, registra aviso.
     """
     try:
+        schedule_name = f"trello_member_remove_{instance.id}"
+        Schedule.objects.filter(name=schedule_name).delete()
         Schedule.objects.create(
-            name=f"trello_member_remove_{instance.id}",
+            name=schedule_name,
             func=(
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendente_remove_member"
@@ -207,8 +228,10 @@ def atendimento_updated_assign_member_trello(
     if created:
         return
     try:
+        schedule_name = f"trello_at_assign_{instance.id}"
+        Schedule.objects.filter(name=schedule_name).delete()
         Schedule.objects.create(
-            name=f"trello_at_assign_{instance.id}",
+            name=schedule_name,
             func=(
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_assign_member_and_update"
@@ -233,8 +256,10 @@ def atendimento_etapa_updated_move_card(
     if created:
         return
     try:
+        schedule_name = f"trello_at_move_{instance.id}"
+        Schedule.objects.filter(name=schedule_name).delete()
         Schedule.objects.create(
-            name=f"trello_at_move_{instance.id}",
+            name=schedule_name,
             func=(
                 "smart_core_assistant_painel.app.trello_sync.tasks"
                 ".task_atendimento_move_to_etapa_list"
@@ -260,6 +285,9 @@ def atendimento_resolvido_archive_card(
         return
     try:
         if instance.status == StatusAtendimento.RESOLVIDO:
+            Schedule.objects.filter(
+                name=f"trello_at_archive_{instance.id}"
+            ).delete()
             Schedule.objects.create(
                 name=f"trello_at_archive_{instance.id}",
                 func=(
@@ -287,8 +315,10 @@ def atendimento_deleted_archive_card(
         card = getattr(instance, "trello_card", None)
         external_id: str = getattr(card, "external_id", "") if card else ""
         if external_id:
+            schedule_name = f"trello_at_archive_del_{instance.id}"
+            Schedule.objects.filter(name=schedule_name).delete()
             Schedule.objects.create(
-                name=f"trello_at_archive_del_{instance.id}",
+                name=schedule_name,
                 func=(
                     "smart_core_assistant_painel.app.trello_sync.tasks"
                     ".task_trello_archive_card_by_external_id"
@@ -306,3 +336,36 @@ def atendimento_deleted_archive_card(
             )
     except Exception as exc:
         logger.warning("Falha ao agendar arquivamento por deleção: {}", exc)
+
+
+@receiver(post_save, sender=Mensagem)
+def mensagem_created_update_trello_card(
+    sender: Any, instance: Mensagem, created: bool, **kwargs: Any
+) -> None:
+    """Atualiza card Trello ao criar uma nova ``Mensagem``.
+
+    Comentário: agenda atualização de descrição/custom fields do card
+    associado ao ``Atendimento`` para refletir mensagens recentes.
+    """
+    if not created:
+        return
+    try:
+        at_id: int = instance.atendimento_id  # type: ignore[assignment]
+        schedule_name = f"trello_at_msg_update_{at_id}"
+        # Evita duplicidade de schedules com o mesmo nome
+        Schedule.objects.filter(name=schedule_name).delete()
+        Schedule.objects.create(
+            name=schedule_name,
+            func=(
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_atendimento_update_card_rich_content"
+            ),
+            args=repr((at_id,)),
+            schedule_type=Schedule.ONCE,
+            next_run=timezone.now() + timedelta(seconds=1),
+        )
+    except Exception as exc:
+        logger.warning(
+            "Falha ao agendar atualização de card por nova mensagem: {}",
+            exc,
+        )

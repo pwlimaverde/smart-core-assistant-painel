@@ -265,6 +265,47 @@ def task_atendimento_assign_member_and_update(atendimento_id: int) -> None:
         )
 
 
+def task_atendimento_update_card_rich_content(atendimento_id: int) -> None:
+    """Atualiza descrição e campos do card após nova mensagem.
+
+    Args:
+        atendimento_id: ID do ``Atendimento``.
+    """
+    try:
+        atendimento = Atendimento.objects.get(id=atendimento_id)
+        service = TicketSyncService()
+
+        # Comentário: garante que existe um card para este atendimento.
+        try:
+            card = getattr(atendimento, "trello_card", None)
+            if card is None:
+                card = service.ensure_card_for_atendimento(atendimento)
+        except Exception:
+            card = getattr(atendimento, "trello_card", None)
+
+        if not card:
+            return
+
+        # Comentário: atualiza conteúdo rico (descrição e custom fields).
+        try:
+            service.update_card_rich_content(card, atendimento)
+        except Exception as exc:
+            logger.warning(
+                "Falha ao atualizar conteúdo rico do card: {}",
+                exc,
+            )
+    except Atendimento.DoesNotExist:
+        logger.warning(
+            "Atendimento não encontrado para atualizar conteúdo: {}",
+            atendimento_id,
+        )
+    except Exception as exc:
+        logger.warning(
+            "Atualização de conteúdo do card Trello falhou: {}",
+            exc,
+        )
+
+
 def task_atendimento_archive_card(atendimento_id: int) -> None:
     """Arquiva o card Trello quando o atendimento é resolvido.
 

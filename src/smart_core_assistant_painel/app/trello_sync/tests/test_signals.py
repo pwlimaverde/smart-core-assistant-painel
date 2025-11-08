@@ -14,6 +14,9 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     StatusAtendimento,
+    Mensagem,
+    TipoMensagem,
+    TipoRemetente,
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.trello_sync.models import (
@@ -485,3 +488,34 @@ class SignalCreationTests(TestCase):
         ):
             task_trello_archive_card_by_external_id("cDel")
             self.assertTrue(stub_archive.archive_called)
+
+    def test_mensagem_post_save_schedules_card_update(self) -> None:
+        """Ao criar Mensagem, deve agendar atualização de card Trello."""
+        contato: Contato = Contato.objects.create(
+            telefone="5511900000000", nome_contato="Cliente S"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato, status=StatusAtendimento.EM_ANDAMENTO
+        )
+
+        Mensagem.objects.create(
+            atendimento=at,
+            tipo=TipoMensagem.TEXTO_FORMATADO,
+            remetente=TipoRemetente.CONTATO,
+            conteudo="Nova mensagem",
+            message_id_whatsapp="MSG001",
+        )
+
+        schedule_name = f"trello_at_msg_update_{at.id}"
+        schedules = Schedule.objects.filter(name=schedule_name)
+        self.assertEqual(schedules.count(), 1)
+        sched = schedules.first()
+        self.assertEqual(
+            sched.func,
+            (
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_atendimento_update_card_rich_content"
+            ),
+        )
+        # Espera serialização em tupla para Django-Q
+        self.assertEqual(sched.args, repr((at.id,)))

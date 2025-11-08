@@ -241,13 +241,34 @@ def task_atendimento_assign_member_and_update(atendimento_id: int) -> None:
             trello_client = client  # type: ignore[assignment]
 
         if member_id:
+            # Comentário: evita erro 400 se o membro já estiver no card
             try:
-                trello_client.add_member_to_card(card.external_id, member_id)
-            except Exception as exc:
-                logger.warning(
-                    "Falha ao adicionar membro ao card: {}",
-                    exc,
+                card_data = trello_client.get_item(
+                    data_source_id=card.list_sync.external_id,
+                    item_id=card.external_id,
                 )
+                existing_ids: list[str] = []
+                if isinstance(card_data, dict):
+                    existing_ids = [
+                        str(mid) for mid in card_data.get("idMembers", [])
+                    ]
+                if member_id in existing_ids:
+                    add_needed: bool = False
+                else:
+                    add_needed = True
+            except Exception:
+                add_needed = True
+
+            if add_needed:
+                try:
+                    trello_client.add_member_to_card(
+                        card.external_id, member_id
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Falha ao adicionar membro ao card: {}",
+                        exc,
+                    )
         # Comentário: Atualiza conteúdo rico (descrição, membros e custom fields)
         try:
             service.update_card_rich_content(card, atendimento)

@@ -302,11 +302,6 @@ class TicketSyncService:
         payload: dict[str, Any] = {"desc": desc}
 
         atendente = getattr(atendimento, "atendente_humano", None)
-        member_id: Optional[str] = None
-        if atendente is not None:
-            member_id = MemberSyncService().resolve_member_external_id(
-                atendente
-            )
 
         try:
             board_id: str = cast(str, card.list_sync.board.external_id)
@@ -388,17 +383,6 @@ class TicketSyncService:
             )
         except Exception as exc:
             logger.warning("Falha ao atualizar conteúdo do card: {}", exc)
-
-        # Comentário: adiciona membro ao card pela API dedicada (mais confiável)
-        try:
-            if member_id:
-                from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
-                    TrelloUnifiedDataService,
-                )
-                trello_client = cast(TrelloUnifiedDataService, self.client)
-                trello_client.add_member_to_card(card.external_id, member_id)
-        except Exception as exc:
-            logger.warning("Falha ao adicionar membro ao card (update): {}", exc)
 
         # Comentário: adiciona comentário com resumo das últimas mensagens
         try:

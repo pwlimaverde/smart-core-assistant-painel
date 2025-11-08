@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any, Optional, cast
+import unicodedata
 
 from loguru import logger
 from django.utils import timezone
@@ -38,6 +39,19 @@ class MemberSyncService:
     def _trello(self) -> TrelloUnifiedDataService:
         """Retorna o adapter Trello com métodos de membros."""
         return cast(TrelloUnifiedDataService, self.client)
+
+    def _normalize_text(self, value: Optional[str]) -> str:
+        """Normaliza texto para comparação robusta (sem acentos, minúsculo).
+
+        Comentário: ajuda a casar nomes com/sem acento e variação de caso.
+        """
+        if not value:
+            return ""
+        norm = unicodedata.normalize("NFKD", value)
+        without_accents = "".join(
+            ch for ch in norm if not unicodedata.combining(ch)
+        )
+        return without_accents.casefold().strip()
 
     def invite_for_atendente(self, atendente: Any) -> TrelloMember:
         """Envia convite para o board do fluxo e cria/atualiza TrelloMember.
@@ -122,21 +136,55 @@ class MemberSyncService:
             logger.warning("Não foi possível listar membros do board: {}", exc)
             members = []
 
-        # Critérios de matching
+        # Critérios de matching (tolerante a acentos e caso)
         full_name = getattr(atendente, "nome", None)
-        username = getattr(getattr(atendente, "usuario", None), "username", None)
+        username = getattr(
+            getattr(atendente, "usuario", None), "username", None
+        )
+        target_name = self._normalize_text(full_name)
+        target_user = self._normalize_text(username)
+
         found_id: Optional[str] = None
         for m in members:
-            if full_name and str(m.get("fullName", "")) == str(full_name):
+            m_name = self._normalize_text(str(m.get("fullName", "")))
+            m_user = self._normalize_text(str(m.get("username", "")))
+            # Igualdade direta
+            if target_name and m_name == target_name:
                 found_id = str(m.get("id", ""))
                 break
-            if username and str(m.get("username", "")) == str(username):
+            if target_user and m_user == target_user:
+                found_id = str(m.get("id", ""))
+                break
+            # Fallback: início do nome (evita falsos positivos muito amplos)
+            if target_name and (m_name.startswith(target_name) or target_name.startswith(m_name)):
                 found_id = str(m.get("id", ""))
                 break
 
         if found_id and tm:
             tm.external_id = found_id
-            tm.username = tm.username or str(next((m.get("username") for m in members if m.get("id") == found_id), ""))
+            tm.username = tm.username or str(
+                next(
+                    (
+                        m.get("username")
+                        for m in members
+                        if m.get("id") == found_id
+                    ),
+                    "",
+                )
+            )
             tm.save(update_fields=["external_id", "username"])
+
+        if not found_id:
+            # Comentário: ajuda diagnosticar casos de não-resolução
+            try:
+                sample = [str(m.get("fullName", "")) for m in members][:5]
+                logger.warning(
+                    "Membro Trello não resolvido por nome/username. Alvo: {} / {}. Candidates: {}",
+                    full_name,
+                    username,
+                    sample,
+                )
+            except Exception:
+                pass
 
         return found_id

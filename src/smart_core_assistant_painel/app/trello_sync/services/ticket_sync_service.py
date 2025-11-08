@@ -15,6 +15,7 @@ from smart_core_assistant_painel.app.trello_sync.models import (
 )
 
 from decimal import Decimal
+from datetime import timedelta
 from django.utils import timezone
 
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
@@ -154,16 +155,37 @@ class TicketSyncService:
         # Comentário: define datas (start/due) e labels de prioridade
         data_inicio = getattr(atendimento, "data_inicio", None)
         data_ultima = getattr(atendimento, "data_ultima_mensagem", None)
+        # Comentário: due deve ser no próximo dia em relação ao start;
+        # fallback para próxima dia da última mensagem.
         start_str: Optional[str] = (
             timezone.localtime(data_inicio).isoformat()
             if data_inicio is not None
             else None
         )
-        due_str: Optional[str] = (
-            timezone.localtime(data_ultima).isoformat()
-            if data_ultima is not None
-            else None
-        )
+        if data_inicio is not None:
+            try:
+                due_str = (
+                    timezone.localtime(
+                        data_inicio + timedelta(days=1)
+                    ).isoformat()
+                )
+            except Exception:
+                due_str = (
+                    (data_inicio + timedelta(days=1)).isoformat()
+                )
+        elif data_ultima is not None:
+            try:
+                due_str = (
+                    timezone.localtime(
+                        data_ultima + timedelta(days=1)
+                    ).isoformat()
+                )
+            except Exception:
+                due_str = (
+                    (data_ultima + timedelta(days=1)).isoformat()
+                )
+        else:
+            due_str = None
 
         id_labels: list[str] = []
         try:
@@ -222,21 +244,85 @@ class TicketSyncService:
         """
         Constrói o nome do card com assunto e contato.
 
-        Comentário: remove o prefixo de prioridade para usar labels.
-        Limita o tamanho do nome do contato para evitar excesso.
+        Comentário: sequência desejada pelo produto:
+        "nome contato - nome fantasia (cliente) - assunto - intents".
+        - Usa o primeiro cliente relacionado ao contato (se existir).
+        - Limita o tamanho do nome do contato para evitar excesso.
+        - Intents são resumidas (até 3) para manter título legível.
         """
+        # Assunto com fallback para identificação básica do atendimento
         assunto: str = (
-            getattr(atendimento, "assunto", None) or f"Atendimento {getattr(atendimento, 'pk', '')}"
+            getattr(atendimento, "assunto", None)
+            or f"Atendimento {getattr(atendimento, 'pk', '')}"
         )
+
+        # Nome do contato com fallback (perfil WhatsApp ou telefone)
         contato = getattr(atendimento, "contato", None)
-        nome_contato: str = (
-            getattr(contato, "nome_contato", "") if contato else ""
-        )
-        # Comentário: truncar contato para não exceder visualização
+        nome_contato: str = ""
+        if contato is not None:
+            nome_contato = (
+                getattr(contato, "nome_contato", None)
+                or getattr(contato, "nome_perfil_whatsapp", None)
+                or getattr(contato, "telefone", "")
+            ) or ""
+
+        # Limitar tamanho do nome do contato para melhor leitura
         if len(nome_contato) > 40:
             nome_contato = nome_contato[:40] + "..."
-        contato_hint: str = f" — {nome_contato}" if nome_contato else ""
-        return f"{assunto}{contato_hint}"
+
+        # Nome fantasia do primeiro cliente relacionado ao contato
+        nome_fantasia: str = ""
+        try:
+            cliente_rel = getattr(atendimento, "cliente", None)
+            if cliente_rel is not None:
+                nome_fantasia = getattr(cliente_rel, "nome_fantasia", "")
+        except Exception:
+            # Comentário: em casos de erro de relacionamento, ignora nome fantasia
+            nome_fantasia = ""
+
+        # Intents detectadas (resumo curto: até 3 itens)
+        intents_resumo: str = ""
+        try:
+            if hasattr(atendimento, "carregar_historico_mensagens"):
+                hist = atendimento.carregar_historico_mensagens()
+                intents_raw = hist.get("intents_detectados", [])
+                nomes: list[str] = []
+                for it in intents_raw:
+                    # Suporta itens como dict ou string
+                    if isinstance(it, dict):
+                        nome = (
+                            str(it.get("type", ""))
+                            or str(it.get("nome", ""))
+                            or str(it.get("name", ""))
+                        )
+                        if nome:
+                            nomes.append(nome)
+                    elif isinstance(it, str):
+                        if it:
+                            nomes.append(it)
+                    else:
+                        # Fallback genérico
+                        nomes.append(str(it))
+                    if len(nomes) >= 3:
+                        break
+                if nomes:
+                    intents_resumo = " | ".join(nomes)
+        except Exception:
+            intents_resumo = ""
+
+        # Monta sequência conforme especificação, omitindo partes vazias
+        partes: list[str] = []
+        if nome_contato:
+            partes.append(nome_contato)
+        if nome_fantasia:
+            partes.append(nome_fantasia)
+        if assunto:
+            partes.append(assunto)
+        if intents_resumo:
+            partes.append(intents_resumo)
+
+        titulo: str = " - ".join(partes) if partes else assunto
+        return titulo
 
     def _build_rich_description(self, atendimento: Any) -> str:
         """
@@ -388,14 +474,37 @@ class TicketSyncService:
             )
         except Exception:
             payload["start"] = None
+        # Comentário: due deve ser no próximo dia em relação ao start;
+        # fallback para próxima dia da última mensagem.
         try:
-            payload["due"] = (
-                timezone.localtime(data_ultima).isoformat()
-                if data_ultima is not None
-                else None
-            )
+            if data_inicio is not None:
+                payload["due"] = (
+                    timezone.localtime(
+                        data_inicio + timedelta(days=1)
+                    ).isoformat()
+                )
+            elif data_ultima is not None:
+                payload["due"] = (
+                    timezone.localtime(
+                        data_ultima + timedelta(days=1)
+                    ).isoformat()
+                )
+            else:
+                payload["due"] = None
         except Exception:
-            payload["due"] = None
+            try:
+                if data_inicio is not None:
+                    payload["due"] = (
+                        (data_inicio + timedelta(days=1)).isoformat()
+                    )
+                elif data_ultima is not None:
+                    payload["due"] = (
+                        (data_ultima + timedelta(days=1)).isoformat()
+                    )
+                else:
+                    payload["due"] = None
+            except Exception:
+                payload["due"] = None
 
         try:
             prioridade: str = getattr(atendimento, "prioridade", "normal")

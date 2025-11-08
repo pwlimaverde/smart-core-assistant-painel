@@ -25,6 +25,8 @@ from smart_core_assistant_painel.app.trello_sync.tasks import (
     task_atendimento_assign_member_and_update,
     task_atendente_remove_member,
     task_atendimento_archive_card,
+    task_atendimento_move_to_etapa_list,
+    task_trello_archive_card_by_external_id,
 )
 
 
@@ -45,7 +47,8 @@ class SignalCreationTests(TestCase):
                 ".task_fluxo_ensure_board"
             ),
         )
-        self.assertEqual(sched.args, str(fluxo.id))
+        # Espera serialização em tupla para Django-Q
+        self.assertEqual(sched.args, repr((fluxo.id,)))
 
     def test_atendente_post_save_schedules_invite(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Suporte")
@@ -71,7 +74,8 @@ class SignalCreationTests(TestCase):
                 ".task_atendente_invite"
             ),
         )
-        self.assertEqual(sched.args, str(atendente.id))
+        # Espera serialização em tupla para Django-Q
+        self.assertEqual(sched.args, repr((atendente.id,)))
 
     @patch(
         "smart_core_assistant_painel.app.trello_sync.services.member_sync_service.MemberSyncService.resolve_member_external_id",
@@ -190,7 +194,8 @@ class SignalCreationTests(TestCase):
                 ".task_atendimento_archive_card"
             ),
         )
-        self.assertEqual(sched.args, str(at.id))
+        # Espera serialização em tupla para Django-Q
+        self.assertEqual(sched.args, repr((at.id,)))
 
     def test_task_atendimento_archive_executes(self) -> None:
         dep: Departamento = Departamento.objects.create(nome="Ops")
@@ -272,7 +277,8 @@ class SignalCreationTests(TestCase):
                 ".task_atendente_remove_member"
             ),
         )
-        self.assertEqual(sched.args, str(atendente_id))
+        # Espera serialização em tupla para Django-Q
+        self.assertEqual(sched.args, repr((atendente_id,)))
 
     @patch(
         "smart_core_assistant_painel.app.trello_sync.services.member_sync_service.MemberSyncService.resolve_member_external_id",
@@ -314,3 +320,168 @@ class SignalCreationTests(TestCase):
         ):
             task_atendente_remove_member(atendente.id)
             self.assertTrue(stub_remove.remove_called)
+
+    def test_task_atendimento_move_to_etapa_list_executes(self) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Ops")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Move"
+        )
+        etapa1: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa 1", ordem=1
+        )
+        etapa2: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa 2", ordem=2
+        )
+        board = TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bMove", name="Board Move"
+        )
+        lista1 = TrelloList.objects.create(
+            etapa=etapa1, board=board, external_id="l1", name="Etapa 1"
+        )
+        lista2 = TrelloList.objects.create(
+            etapa=etapa2, board=board, external_id="l2", name="Etapa 2"
+        )
+
+        contato: Contato = Contato.objects.create(
+            telefone="5511911111111", nome_contato="Cliente Move"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato,
+            departamento=dep,
+            etapa_atual=etapa1,
+            assunto="Mover",
+        )
+        card = TrelloCard.objects.create(
+            atendimento=at, list_sync=lista1, external_id="c1", name="Mover"
+        )
+
+        class StubClientMove:
+            def __init__(self) -> None:
+                self.move_called: bool = False
+
+            def update_item(
+                self,
+                data_source_id: str,
+                item_id: str,
+                payload: dict[str, Any],
+            ) -> str:
+                # Comentário: valida mudança de lista via idList.
+                id_list = payload.get("idList")
+                self.move_called = (
+                    data_source_id == "l2" and item_id == "c1" and id_list == "l2"
+                )
+                return item_id
+
+        class HubStubMove:
+            def __init__(self, client: Any) -> None:
+                self.unified_data_service = client
+
+        class TicketServiceStub:
+            def __init__(self) -> None:
+                self.client = stub_move
+
+            def ensure_card_for_atendimento(self, atendimento: Any) -> TrelloCard:
+                # Comentário: retorna o card já existente
+                return card
+
+            def update_card_rich_content(
+                self, card_obj: TrelloCard, atendimento_obj: Atendimento
+            ) -> None:
+                # Comentário: noop para evitar I/O externo
+                return None
+
+        # Atualiza a etapa do atendimento para a etapa 2
+        at.etapa_atual = etapa2
+        at.save()
+
+        stub_move = StubClientMove()
+        hub_stub_move = HubStubMove(stub_move)
+        with patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.SERVICEHUB",
+            new=hub_stub_move,
+        ), patch(
+            "smart_core_assistant_painel.modules.services.SERVICEHUB",
+            new=hub_stub_move,
+        ), patch(
+            "smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service.SERVICEHUB",
+            new=hub_stub_move,
+        ), patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.TicketSyncService",
+            new=TicketServiceStub,
+        ):
+            task_atendimento_move_to_etapa_list(at.id)
+            self.assertTrue(stub_move.move_called)
+
+        # Recarrega o card e valida que a lista foi atualizada
+        card.refresh_from_db()
+        self.assertEqual(card.list_sync_id, lista2.id)
+
+    def test_atendimento_delete_schedules_archive_by_external_id(self) -> None:
+        dep: Departamento = Departamento.objects.create(nome="Ops")
+        fluxo: FluxoAtendimento = FluxoAtendimento.objects.create(
+            departamento=dep, nome="Fluxo Del"
+        )
+        etapa: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo, nome="Etapa", ordem=1
+        )
+        board = TrelloBoard.objects.create(
+            fluxo=fluxo, external_id="bDel", name="Board Del"
+        )
+        lista = TrelloList.objects.create(
+            etapa=etapa, board=board, external_id="lDel", name="Etapa"
+        )
+        contato: Contato = Contato.objects.create(
+            telefone="5511922222222", nome_contato="Cliente Del"
+        )
+        at: Atendimento = Atendimento.objects.create(
+            contato=contato,
+            departamento=dep,
+            etapa_atual=etapa,
+            assunto="Deletar",
+        )
+        TrelloCard.objects.create(
+            atendimento=at, list_sync=lista, external_id="cDel", name="Del"
+        )
+
+        # Dispara diretamente o receiver para evitar efeitos colaterais
+        from smart_core_assistant_painel.app.trello_sync.signals import (
+            atendimento_deleted_archive_card,
+        )
+        atendimento_deleted_archive_card(Atendimento, at)
+        schedule = Schedule.objects.get(
+            name=f"trello_at_archive_del_{at.id}"
+        )
+        self.assertEqual(
+            schedule.func,
+            (
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_trello_archive_card_by_external_id"
+            ),
+        )
+        # Espera serialização em tupla para Django-Q
+        self.assertEqual(schedule.args, repr(("cDel",)))
+
+    def test_task_trello_archive_by_external_id_executes(self) -> None:
+        class StubClientArchive:
+            def __init__(self) -> None:
+                self.archive_called: bool = False
+
+            def archive_item(self, item_id: str) -> bool:
+                self.archive_called = (item_id == "cDel")
+                return True
+
+        class HubStubArchive:
+            def __init__(self, client: Any) -> None:
+                self.unified_data_service = client
+
+        stub_archive = StubClientArchive()
+        hub_stub_archive = HubStubArchive(stub_archive)
+        with patch(
+            "smart_core_assistant_painel.app.trello_sync.tasks.SERVICEHUB",
+            new=hub_stub_archive,
+        ), patch(
+            "smart_core_assistant_painel.modules.services.SERVICEHUB",
+            new=hub_stub_archive,
+        ):
+            task_trello_archive_card_by_external_id("cDel")
+            self.assertTrue(stub_archive.archive_called)

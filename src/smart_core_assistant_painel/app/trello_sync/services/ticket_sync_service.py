@@ -234,16 +234,21 @@ class TicketSyncService:
                 return str(val)
 
         linhas: list[str] = [
-            f"Atendimento #{getattr(atendimento, 'pk', '')} — {assunto}",
-            "",
-            f"Contato: {nome_contato or '(não informado)'}",
-            f"Telefone: {telefone}",
-            f"E-mail: {email or '(não informado)'}",
-            f"Departamento: {departamento_nome}",
-            f"Etapa atual: {etapa_nome}",
-            f"Prioridade: {prioridade}",
-            f"Canal: {canal}",
-            f"Atendente: {atendente_nome or '(não atribuído)'}",
+            (
+                f"### Atendimento #{getattr(atendimento, 'pk', '')} — "
+                f"{assunto}"
+            ),
+            "---",
+            "Resumo:",
+            f"- Contato: {nome_contato or '(não informado)'}",
+            f"- Telefone: {telefone}",
+            f"- E-mail: {email or '(não informado)'}",
+            f"- Departamento: {departamento_nome}",
+            f"- Etapa atual: {etapa_nome}",
+            f"- Prioridade: {prioridade}",
+            f"- Canal: {canal}",
+            # Mantém 'Atendente:' para compatibilidade com testes e leitura
+            f"- Atendente: {atendente_nome or '(não atribuído)'}",
         ]
         if produto_servico:
             linhas.append(f"Produto/Serviço: {produto_servico}")
@@ -256,10 +261,13 @@ class TicketSyncService:
         if ultima_msg_dt:
             try:
                 linhas.append(
-                    f"Última mensagem: {timezone.localtime(ultima_msg_dt).strftime('%d/%m/%Y %H:%M')}"
+                    (
+                        "- Última mensagem: "
+                        f"{timezone.localtime(ultima_msg_dt).strftime('%d/%m/%Y %H:%M')}"
+                    )
                 )
             except Exception:
-                linhas.append("Última mensagem: (indisponível)")
+                linhas.append("- Última mensagem: (indisponível)")
 
         # Comentário: blocos de mensagens recentes
         linhas.append("")

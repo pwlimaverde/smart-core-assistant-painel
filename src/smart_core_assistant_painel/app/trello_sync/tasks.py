@@ -71,7 +71,9 @@ def task_reorder_lists_for_fluxo(fluxo_id: int) -> None:
         fluxo = FluxoAtendimento.objects.get(id=fluxo_id)
         FlowSyncService().reorder_lists_for_fluxo(fluxo)
     except FluxoAtendimento.DoesNotExist:
-        logger.warning("Fluxo não encontrado para reordenar listas: {}", fluxo_id)
+        logger.warning(
+            "Fluxo não encontrado para reordenar listas: {}", fluxo_id
+        )
     except Exception as exc:
         logger.warning("Falha ao reordenar listas do fluxo: {}", exc)
 
@@ -86,7 +88,9 @@ def task_etapa_archive_list(etapa_id: int) -> None:
         etapa = EtapaFluxo.objects.get(id=etapa_id)
         FlowSyncService().archive_list_for_etapa(etapa)
     except EtapaFluxo.DoesNotExist:
-        logger.warning("Etapa não encontrada para arquivar lista: {}", etapa_id)
+        logger.warning(
+            "Etapa não encontrada para arquivar lista: {}", etapa_id
+        )
     except Exception as exc:
         logger.warning("Falha ao arquivar lista Trello: {}", exc)
 
@@ -101,7 +105,9 @@ def task_fluxo_archive_board(fluxo_id: int) -> None:
         fluxo = FluxoAtendimento.objects.get(id=fluxo_id)
         FlowSyncService().archive_board_for_fluxo(fluxo)
     except FluxoAtendimento.DoesNotExist:
-        logger.warning("Fluxo não encontrado para arquivar board: {}", fluxo_id)
+        logger.warning(
+            "Fluxo não encontrado para arquivar board: {}", fluxo_id
+        )
     except Exception as exc:
         logger.warning("Falha ao arquivar board Trello: {}", exc)
 
@@ -236,9 +242,7 @@ def task_atendimento_assign_member_and_update(atendimento_id: int) -> None:
 
         if member_id:
             try:
-                trello_client.add_member_to_card(
-                    card.external_id, member_id
-                )
+                trello_client.add_member_to_card(card.external_id, member_id)
             except Exception as exc:
                 logger.warning(
                     "Falha ao adicionar membro ao card: {}",
@@ -298,3 +302,97 @@ def task_atendimento_archive_card(atendimento_id: int) -> None:
         )
     except Exception as exc:
         logger.warning("Arquivamento de card Trello falhou: {}", exc)
+
+
+def task_trello_archive_card_by_external_id(card_external_id: str) -> None:
+    """Arquiva um card no Trello usando apenas o ``external_id``.
+
+    Comentário: pensado para eventos de deleção de ``Atendimento`` onde
+    o registro pode não estar mais disponível. Evita dependência do
+    banco de dados e atua diretamente via adapter Trello.
+
+    Args:
+        card_external_id: ID externo do card no Trello.
+    """
+    try:
+        client = SERVICEHUB.unified_data_service
+        try:
+            from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
+                TrelloUnifiedDataService,
+            )
+
+            trello_client = cast(TrelloUnifiedDataService, client)
+        except Exception:
+            trello_client = client  # type: ignore[assignment]
+
+        try:
+            trello_client.archive_item(card_external_id)
+        except Exception as exc:
+            logger.warning("Falha ao arquivar card Trello por id: {}", exc)
+    except Exception as exc:
+        logger.warning("Arquivamento direto de card falhou: {}", exc)
+
+
+def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
+    """Move o card Trello para a lista da etapa atual do atendimento.
+
+    Args:
+        atendimento_id: ID do ``Atendimento``.
+    """
+    try:
+        atendimento = Atendimento.objects.get(id=atendimento_id)
+
+        # Comentário: garante que existe um card para este atendimento.
+        service = TicketSyncService()
+        try:
+            card = getattr(atendimento, "trello_card", None)
+            if card is None:
+                card = service.ensure_card_for_atendimento(atendimento)
+        except Exception:
+            card = getattr(atendimento, "trello_card", None)
+
+        etapa = getattr(atendimento, "etapa_atual", None)
+        if not card or not etapa:
+            return
+
+        # Comentário: garante a lista destino da etapa e move o card.
+        lista_dest = FlowSyncService().ensure_list_for_etapa(etapa)
+
+        try:
+            # Se já estiver na lista destino, não faz nada.
+            current_list_id = getattr(card.list_sync, "external_id", None)
+            if current_list_id == lista_dest.external_id:
+                return
+
+            # Move card no Trello via atualização de `idList`.
+            service.client.update_item(
+                data_source_id=lista_dest.external_id,
+                item_id=card.external_id,
+                payload={"idList": lista_dest.external_id},
+            )
+        except Exception as exc:
+            logger.warning("Falha ao mover card de lista no Trello: {}", exc)
+            return
+
+        # Atualiza o vínculo local do card com a lista destino.
+        try:
+            card.list_sync = lista_dest
+            card.save(update_fields=["list_sync"])
+        except Exception as exc:
+            logger.warning(
+                "Falha ao atualizar vínculo de lista do card: {}", exc
+            )
+
+        # Comentário: opcionalmente atualiza descrição/custom fields após mover.
+        try:
+            service.update_card_rich_content(card, atendimento)
+        except Exception:
+            # Não bloquear em caso de falha de enriquecimento.
+            pass
+    except Atendimento.DoesNotExist:
+        logger.warning(
+            "Atendimento não encontrado para mover card: {}",
+            atendimento_id,
+        )
+    except Exception as exc:
+        logger.warning("Movimento de card Trello falhou: {}", exc)

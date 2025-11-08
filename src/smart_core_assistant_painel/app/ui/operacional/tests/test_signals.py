@@ -16,8 +16,8 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 
 
 class FluxoSignalsTest(TestCase):
-    def test_cria_quatro_etapas_padrao_em_novo_fluxo(self) -> None:
-        """Cria fluxo e valida 4 etapas padrão com dados especificados."""
+    def test_cria_cinco_etapas_padrao_em_novo_fluxo(self) -> None:
+        """Cria fluxo e valida 5 etapas padrão com dados especificados."""
 
         # Cria departamento simples
         dep: Departamento = Departamento.objects.create(nome="Operacional")
@@ -30,7 +30,7 @@ class FluxoSignalsTest(TestCase):
 
         # Consulta etapas criadas
         etapas = FluxoAtendimento.objects.get(id=fluxo.id).etapas.all()
-        self.assertEqual(etapas.count(), 4)
+        self.assertEqual(etapas.count(), 5)
 
         # Valida a etapa inicial (ordem 0)
         etapa_inicial: Optional[EtapaFluxo] = fluxo.etapas.filter(
@@ -41,6 +41,16 @@ class FluxoSignalsTest(TestCase):
         self.assertEqual(etapa_inicial.nome, "Fila de Atendimento")
         self.assertEqual(etapa_inicial.tipo_etapa, TipoEtapa.FILA)
         self.assertEqual(etapa_inicial.cor, "#B0C4DE")
+
+        # Valida etapa Em Atendimento (ordem 998)
+        etapa_em_atend: Optional[EtapaFluxo] = fluxo.etapas.filter(
+            ordem=998
+        ).first()
+        self.assertIsNotNone(etapa_em_atend)
+        assert etapa_em_atend is not None
+        self.assertEqual(etapa_em_atend.nome, "Em Atendimento")
+        self.assertEqual(etapa_em_atend.tipo_etapa, TipoEtapa.TRABALHO)
+        self.assertEqual(etapa_em_atend.cor, "#ADD8E6")
 
         # Valida etapa Resolvido (ordem 1000)
         etapa_resolvido: Optional[EtapaFluxo] = fluxo.etapas.filter(

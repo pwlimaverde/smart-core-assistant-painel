@@ -205,7 +205,6 @@ class Atendimento(models.Model):
         help_text="Canal de origem do atendimento",
     )
 
-
     class Meta:
         verbose_name = "Atendimento"
         verbose_name_plural = "Atendimentos"
@@ -696,16 +695,6 @@ def processar_mensagem_whatsapp(
         if remetente == TipoRemetente.CONTATO:
             atendimento.contato.ultima_interacao = timezone.now()
             atendimento.contato.save()
-
-            # Se estava em FILA e recebeu a primeira mensagem,
-            # transiciona para EM_ATENDIMENTO
-            if atendimento.status == StatusAtendimento.FILA:
-                atendimento.status = StatusAtendimento.EM_ATENDIMENTO
-                atendimento.adicionar_historico_status(
-                    StatusAtendimento.EM_ATENDIMENTO.value,
-                    "Primeira mensagem recebida",
-                )
-                atendimento.save()
 
         return mensagem.id
 

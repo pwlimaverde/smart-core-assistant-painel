@@ -151,10 +151,47 @@ class TicketSyncService:
             custom_fields = {}
 
         # Comentário: create_item retorna o ID do card; montar payload.
+        # Comentário: define datas (start/due) e labels de prioridade
+        data_inicio = getattr(atendimento, "data_inicio", None)
+        data_ultima = getattr(atendimento, "data_ultima_mensagem", None)
+        start_str: Optional[str] = (
+            timezone.localtime(data_inicio).isoformat()
+            if data_inicio is not None
+            else None
+        )
+        due_str: Optional[str] = (
+            timezone.localtime(data_ultima).isoformat()
+            if data_ultima is not None
+            else None
+        )
+
+        id_labels: list[str] = []
+        try:
+            board_id: str = cast(str, lista.board.external_id)
+            prioridade: str = getattr(atendimento, "prioridade", "normal")
+            labels_map = self.client.ensure_labels(
+                board_id,
+                {
+                    "baixa": "green",
+                    "normal": "blue",
+                    "alta": "orange",
+                    "urgente": "red",
+                },
+            )
+            lb_id = labels_map.get(prioridade)
+            if lb_id:
+                id_labels = [lb_id]
+        except Exception:
+            # Comentário: se adapter não suportar labels, segue sem elas
+            id_labels = []
+
         payload: dict[str, Any] = {
             "name": name,
             "desc": desc,
             "idMembers": id_members or [],
+            "idLabels": id_labels or [],
+            "start": start_str,
+            "due": due_str,
             "custom_fields": custom_fields or {},
         }
         card_id: str = self.client.create_item(
@@ -183,18 +220,23 @@ class TicketSyncService:
 
     def _build_card_name(self, atendimento: Any) -> str:
         """
-        Constrói o nome do card com assunto, prioridade e contato.
+        Constrói o nome do card com assunto e contato.
 
-        Comentário: foca numa visualização rápida na lista.
+        Comentário: remove o prefixo de prioridade para usar labels.
+        Limita o tamanho do nome do contato para evitar excesso.
         """
         assunto: str = (
             getattr(atendimento, "assunto", None) or f"Atendimento {getattr(atendimento, 'pk', '')}"
         )
-        prioridade: str = getattr(atendimento, "prioridade", "normal")
         contato = getattr(atendimento, "contato", None)
-        nome_contato: str = getattr(contato, "nome_contato", "") if contato else ""
+        nome_contato: str = (
+            getattr(contato, "nome_contato", "") if contato else ""
+        )
+        # Comentário: truncar contato para não exceder visualização
+        if len(nome_contato) > 40:
+            nome_contato = nome_contato[:40] + "..."
         contato_hint: str = f" — {nome_contato}" if nome_contato else ""
-        return f"[{prioridade}] {assunto}{contato_hint}"
+        return f"{assunto}{contato_hint}"
 
     def _build_rich_description(self, atendimento: Any) -> str:
         """
@@ -269,6 +311,40 @@ class TicketSyncService:
             except Exception:
                 linhas.append("- Última mensagem: (indisponível)")
 
+        # Comentário: bloco de análise automática (intents/entidades)
+        try:
+            historico = atendimento.carregar_historico_mensagens()
+            intents = cast(
+                list[dict[str, str]], historico.get("intents_detectados", [])
+            )
+            entidades = cast(
+                list[dict[str, str]], historico.get("entidades_extraidas", [])
+            )
+            if intents or entidades:
+                linhas.append("")
+                linhas.append("Análise de IA:")
+            if intents:
+                linhas.append("- Intenções detectadas:")
+                for item in intents[:5]:
+                    try:
+                        k: str = list(item.keys())[0]
+                        v: str = str(item.get(k, ""))
+                        linhas.append(f"  - {k}: {v}")
+                    except Exception:
+                        linhas.append(f"  - {str(item)}")
+            if entidades:
+                linhas.append("- Entidades extraídas:")
+                for item in entidades[:5]:
+                    try:
+                        k: str = list(item.keys())[0]
+                        v: str = str(item.get(k, ""))
+                        linhas.append(f"  - {k}: {v}")
+                    except Exception:
+                        linhas.append(f"  - {str(item)}")
+        except Exception:
+            linhas.append("")
+            linhas.append("(Análise automática indisponível)")
+
         # Comentário: blocos de mensagens recentes
         linhas.append("")
         linhas.append("Mensagens recentes:")
@@ -300,6 +376,44 @@ class TicketSyncService:
         """
         desc: str = self._build_rich_description(atendimento)
         payload: dict[str, Any] = {"desc": desc}
+
+        # Comentário: sincroniza datas e label de prioridade
+        data_inicio = getattr(atendimento, "data_inicio", None)
+        data_ultima = getattr(atendimento, "data_ultima_mensagem", None)
+        try:
+            payload["start"] = (
+                timezone.localtime(data_inicio).isoformat()
+                if data_inicio is not None
+                else None
+            )
+        except Exception:
+            payload["start"] = None
+        try:
+            payload["due"] = (
+                timezone.localtime(data_ultima).isoformat()
+                if data_ultima is not None
+                else None
+            )
+        except Exception:
+            payload["due"] = None
+
+        try:
+            prioridade: str = getattr(atendimento, "prioridade", "normal")
+            labels_map = self.client.ensure_labels(
+                cast(str, card.list_sync.board.external_id),
+                {
+                    "baixa": "green",
+                    "normal": "blue",
+                    "alta": "orange",
+                    "urgente": "red",
+                },
+            )
+            lb_id = labels_map.get(prioridade)
+            if lb_id:
+                payload["idLabels"] = [lb_id]
+        except Exception:
+            # Comentário: se labels não suportadas, ignora
+            pass
 
         atendente = getattr(atendimento, "atendente_humano", None)
 

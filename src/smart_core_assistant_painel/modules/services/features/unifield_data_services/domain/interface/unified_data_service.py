@@ -195,6 +195,22 @@ class UnifiedDataService(ABC):
         """
         raise NotImplementedError("ensure_custom_fields não implementado")
 
+    def ensure_labels(self, board_id: str, labels: Dict[str, str]) -> Dict[str, str]:
+        """Garante a existência de labels no board e retorna seus IDs.
+
+        Args:
+            board_id (str): ID do board/container no provedor.
+            labels (dict[str, str]): Mapa nome->cor (ex.: "alta": "red").
+
+        Returns:
+            dict[str, str]: Mapa nome->id das labels existentes/criadas.
+
+        Comentário: implementação opcional por adapter. Alguns provedores
+        podem não suportar criação de labels via API; nesse caso, o método
+        deve apenas retornar labels existentes por nome.
+        """
+        raise NotImplementedError("ensure_labels não implementado")
+
     def list_items(self, data_source_id: str) -> list[Dict[str, Any]]:
         """Lista itens (cards) de um data source (lista).
 

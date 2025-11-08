@@ -205,6 +205,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
             "name": payload.get("name", ""),
             "desc": payload.get("desc", ""),
             "due": payload.get("due", None),
+            "start": payload.get("start", None),
             "pos": payload.get("pos", None),
         }
         # Campos opcionais reconhecidos pela API
@@ -235,7 +236,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
         """Atualiza um card existente e retorna o ID da operação."""
         params: Dict[str, Any] = {}
         # Mapeia campos padrão
-        for key in ("name", "desc", "due", "pos", "idList"):
+        for key in ("name", "desc", "due", "start", "pos", "idList"):
             if key in payload:
                 params[key] = payload[key]
 
@@ -520,6 +521,66 @@ class TrelloUnifiedDataService(UnifiedDataService):
                     board=board_id,
                     name=name,
                 )
+        return mapping
+
+    def ensure_labels(self, board_id: str, labels: Dict[str, str]) -> Dict[str, str]:
+        """Garante que labels existam no board e retorna seus IDs.
+
+        Comentário: tenta criar labels ausentes com cor informada.
+        Trello suporta cores como 'red', 'orange', 'yellow', 'green',
+        'blue', 'purple', 'pink', 'sky', 'lime', 'black' e 'null'.
+        """
+        mapping: Dict[str, str] = {}
+        try:
+            existing: List[Dict[str, Any]] = self._request(
+                "GET", f"/boards/{board_id}/labels"
+            )
+        except Exception as exc:
+            logger.warning(
+                "Não foi possível listar labels do board {board}: {err}",
+                board=board_id,
+                err=str(exc),
+            )
+            existing = []
+
+        by_name: Dict[str, str] = {
+            str(lb.get("name", "")): str(lb.get("id", ""))
+            for lb in existing
+        }
+
+        for name, color in labels.items():
+            lb_id = by_name.get(name)
+            if lb_id:
+                mapping[name] = lb_id
+                continue
+
+            try:
+                created = self._request(
+                    "POST",
+                    "/labels",
+                    params={
+                        "name": name,
+                        "color": color,
+                        "idBoard": board_id,
+                    },
+                )
+                mapping[name] = str(created.get("id", ""))
+                self._log(
+                    "label criada: {name} ({color}) -> {id}",
+                    name=name,
+                    color=color,
+                    id=mapping[name],
+                )
+            except Exception as exc:
+                logger.info(
+                    "Label ausente e não criada no board {board}: {name} "
+                    "({color}) erro: {err}",
+                    board=board_id,
+                    name=name,
+                    color=color,
+                    err=str(exc),
+                )
+
         return mapping
 
     def register_webhook(

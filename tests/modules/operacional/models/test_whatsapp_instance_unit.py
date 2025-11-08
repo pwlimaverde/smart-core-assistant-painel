@@ -22,7 +22,8 @@ class WhatsAppInstanceUnitTestCase(TestCase):
         from smart_core_assistant_painel.app.ui.operacional.models import (
             Departamento,
             AtendenteHumano,
-            WhatsAppInstance
+            WhatsAppInstance,
+            FluxoAtendimento,
         )
 
         self.Departamento = Departamento
@@ -44,11 +45,19 @@ class WhatsAppInstanceUnitTestCase(TestCase):
         )
         dept.save_base()
 
+        fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=dept,
+        )
+        fluxo.save_base()
+
         atendente = self.AtendenteHumano(
             nome="João Silva",
             cargo="Vendedor",
             telefone="+5511999998888",
             departamento=dept,
+            fluxo=fluxo,
         )
         atendente.save_base()
 
@@ -91,6 +100,13 @@ class WhatsAppInstanceUnitTestCase(TestCase):
         )
         dept.save_base()
 
+        fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=dept,
+        )
+        fluxo.save_base()
+
         instancia = self.WhatsAppInstance(
             departamento=dept,
             phone_number="+5511999997777",
@@ -116,6 +132,7 @@ class WhatsAppInstanceUnitTestCase(TestCase):
             cargo="Vendedor",
             telefone="+5511999998888",
             departamento=dept,
+            fluxo=fluxo,
         )
         atendente.save_base()
 
@@ -149,11 +166,19 @@ class WhatsAppInstanceUnitTestCase(TestCase):
         )
         dept.save_base()
 
+        fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=dept,
+        )
+        fluxo.save_base()
+
         atendente = self.AtendenteHumano(
             nome="João Silva",
             cargo="Vendedor",
             telefone="+5511999998888",
             departamento=dept,
+            fluxo=fluxo,
             disponivel=True,
         )
         atendente.save_base()
@@ -177,11 +202,19 @@ class WhatsAppInstanceUnitTestCase(TestCase):
         )
         dept.save_base()
 
+        fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=dept,
+        )
+        fluxo.save_base()
+
         atendente = self.AtendenteHumano(
             nome="João Silva",
             cargo="Vendedor",
             telefone="+5511999998888",
             departamento=dept,
+            fluxo=fluxo,
             disponivel=False,
         )
         atendente.save_base()
@@ -216,11 +249,19 @@ class WhatsAppInstanceUnitTestCase(TestCase):
         )
         dept.save_base()
 
+        fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=dept,
+        )
+        fluxo.save_base()
+
         atendente = self.AtendenteHumano(
             nome="João Silva",
             cargo="Vendedor",
             telefone="+5511999998888",
             departamento=dept,
+            fluxo=fluxo,
         )
         atendente.save_base()
 

@@ -15,9 +15,9 @@ Este guia explica como utilizar o Notion para organizar sua central de atendimen
 - Mensagens: Resumo (título), Conteúdo (rich text), Tipo, Remetente, Recebida em, relação com Atendimento.
 
 ## Visões sugeridas (Notion)
-- Atendimentos por Status: Group by `Status` para visualizar como Kanban (Fila, Em Atendimento, Aguardando Retorno, Resolvido, Cancelado).
+- Atendimentos por Status: Group by `Status` para visualizar como Kanban (Fila, Em Atendimento, Pendência, Resolvido, Cancelado).
 - Meus Atendimentos: Filtro `Agente` = você.
-- Pendências: Filtro `Status` ∈ {Em Atendimento, Aguardando Retorno} e `Última mensagem` > 24h.
+- Pendências: Filtro `Status` ∈ {Em Atendimento, Pendência} e `Última mensagem` > 24h.
 - SLA/Envelhecimento: Ordenar por `Última mensagem` ascendente.
 
 > Observação: o Notion API não cria Views programaticamente. Crie-as manualmente dentro do banco de `Atendimentos` conforme as sugestões acima.

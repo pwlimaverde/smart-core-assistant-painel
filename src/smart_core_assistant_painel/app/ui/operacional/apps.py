@@ -12,6 +12,9 @@ class OperacionalConfig(AppConfig):
         Ordem: initial_loading depois services. Idempotente e robusto.
         """
         try:
+            # Carrega sinais do app (post_save FluxoAtendimento, etc.)
+            from . import signals  # noqa: F401
+
             from smart_core_assistant_painel.modules.initial_loading import (
                 start_initial_loading,
             )

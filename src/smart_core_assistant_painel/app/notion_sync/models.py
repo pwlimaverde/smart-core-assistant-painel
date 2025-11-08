@@ -171,9 +171,46 @@ class NotionDatabaseConfig(models.Model):
         Returns:
             True se pronto para sincronizar.
         """
-        # Comentário: permitir sincronização com apenas database_id válido.
-        # O data_source_id é opcional na criação/atualização de páginas.
-        return self.sync_enabled and bool(self.notion_database_id)
+        # Comentário (PT-BR):
+        # Considera pronto apenas quando `sync_enabled` é True e o
+        # `notion_database_id` é um UUID válido diferente do UUID nulo
+        # (00000000-0000-0000-0000-000000000000). O `data_source_id` é
+        # opcional para criação/atualização de páginas.
+        return self.sync_enabled and self.has_valid_database_id()
+
+    def _is_zero_uuid(self, value: Any) -> bool:
+        """Retorna True se o valor representar UUID nulo.
+
+        Comentário: Aceita objetos `uuid.UUID` ou strings.
+        """
+        try:
+            text: str = str(value) if value is not None else ""
+        except Exception:
+            text = f"{value}"
+        return text == "00000000-0000-0000-0000-000000000000"
+
+    def has_valid_database_id(self) -> bool:
+        """Valida se o `notion_database_id` está definido e é válido."""
+        val: Any = getattr(self, "notion_database_id", None)
+        if not val:
+            return False
+        if self._is_zero_uuid(val):
+            return False
+        # Verificação simples de formato UUID (hex com hífens), case-insensitive
+        text: str = str(val)
+        return bool(
+            re.fullmatch(
+                r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+                text,
+            )
+        )
+
+    def has_valid_data_source_id(self) -> bool:
+        """Valida se o `data_source_id` está definido e não é UUID nulo."""
+        val: Any = getattr(self, "data_source_id", None)
+        if not val:
+            return False
+        return not self._is_zero_uuid(val)
 
     @classmethod
     def get_database_id(cls, model_name: str) -> str | None:
@@ -460,10 +497,10 @@ class ContatoSync(models.Model):
         try:
             from .services.mappers.contato_mapper import ContatoMapper
 
-            # Usa mapper para transformar dados
-            self.notion_properties = ContatoMapper.to_notion_properties(self)
-
-            # Formata campos específicos
+            # Formata campos específicos ANTES de gerar propriedades
+            # Comentário: a ordem era incorreta e gerava payloads
+            # sem nome/telefone/email. Aqui garantimos
+            # que os campos formatados existam para o mapper usar.
             self.nome_formatado = self._format_name(self.contato.nome_contato)
 
             if self.contato.email:
@@ -500,6 +537,10 @@ class ContatoSync(models.Model):
                 self.slug_formatado = self.nome_formatado.lower().replace(
                     " ", "-"
                 )
+
+            # Gera as propriedades para a API do Notion após os
+            # campos estarem devidamente formatados
+            self.notion_properties = ContatoMapper.to_notion_properties(self)
 
         except ImportError:
             # Fallback se mapper não estiver disponível
@@ -801,10 +842,9 @@ class ClienteSync(models.Model):
         try:
             from .services.mappers.cliente_mapper import ClienteMapper
 
-            # Usa mapper para transformar dados
-            self.notion_properties = ClienteMapper.to_notion_properties(self)
-
-            # Formata campos específicos
+            # Formata campos específicos ANTES de gerar propriedades
+            # Comentário: a ordem anterior gerava payloads incompletos.
+            # Agora garantimos que os campos estejam prontos para o mapper.
             self.nome_fantasia_formatado = (
                 self.cliente.nome_fantasia.strip().title()
             )
@@ -833,6 +873,10 @@ class ClienteSync(models.Model):
                 self.slug_formatado = (
                     self.nome_fantasia_formatado.lower().replace(" ", "-")
                 )
+
+            # Gera as propriedades para a API do Notion após os
+            # campos estarem devidamente formatados
+            self.notion_properties = ClienteMapper.to_notion_properties(self)
 
         except ImportError:
             # Fallback se mapper não estiver disponível
@@ -1864,7 +1908,7 @@ class AtendimentoSync(models.Model):
             from loguru import logger
 
             # Debug: Verificar se o atendimento tem contexto
-            if hasattr(self, 'atendimento') and self.atendimento:
+            if hasattr(self, "atendimento") and self.atendimento:
                 logger.info(
                     f"[SYNC_DEBUG] Preparando dados do atendimento #{self.atendimento.id}"
                 )
@@ -1882,11 +1926,20 @@ class AtendimentoSync(models.Model):
             )
 
             # Debug: Verificar se as propriedades foram geradas
-            if self.notion_properties and "Contexto Conversa" in self.notion_properties:
-                contexto_content = self.notion_properties["Contexto Conversa"]["rich_text"][0]["text"]["content"]
-                logger.info(f"[SYNC_DEBUG] Contexto formatado para Notion: {contexto_content[:200]}...")
+            if (
+                self.notion_properties
+                and "Contexto Conversa" in self.notion_properties
+            ):
+                contexto_content = self.notion_properties["Contexto Conversa"][
+                    "rich_text"
+                ][0]["text"]["content"]
+                logger.info(
+                    f"[SYNC_DEBUG] Contexto formatado para Notion: {contexto_content[:200]}..."
+                )
             else:
-                logger.error("[SYNC_DEBUG] Campo 'Contexto Conversa' não encontrado nas propriedades")
+                logger.error(
+                    "[SYNC_DEBUG] Campo 'Contexto Conversa' não encontrado nas propriedades"
+                )
 
             # Atualiza cache de relacionamentos
             if self.atendimento.contato:
@@ -1907,40 +1960,66 @@ class AtendimentoSync(models.Model):
             # Adicionar mensagens relacionadas
             mensagens_relacionadas = []
             try:
-                if hasattr(self, 'mensagens_sync'):
-                    logger.info(f"[MSG_DEBUG] Processando mensagens relacionadas para atendimento #{self.atendimento.id}")
+                if hasattr(self, "mensagens_sync"):
+                    logger.info(
+                        f"[MSG_DEBUG] Processando mensagens relacionadas para atendimento #{self.atendimento.id}"
+                    )
 
                     for msg_sync in self.mensagens_sync.all():
                         if msg_sync.external_id:
-                            mensagens_relacionadas.append({"id": msg_sync.external_id})
-                            logger.info(f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} com external_id {msg_sync.external_id} adicionada")
+                            mensagens_relacionadas.append(
+                                {"id": msg_sync.external_id}
+                            )
+                            logger.info(
+                                f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} com external_id {msg_sync.external_id} adicionada"
+                            )
                         else:
-                            logger.warning(f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} sem external_id")
+                            logger.warning(
+                                f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} sem external_id"
+                            )
 
-                    logger.info(f"[MSG_DEBUG] Total de mensagens relacionadas: {len(mensagens_relacionadas)}")
+                    logger.info(
+                        f"[MSG_DEBUG] Total de mensagens relacionadas: {len(mensagens_relacionadas)}"
+                    )
 
                     # Adicionar às propriedades se houver mensagens
                     if mensagens_relacionadas:
                         # Usar o campo padrão se não houver field_mappings
-                        field_mappings = getattr(self.config, 'field_mappings', {}) or {}
-                        mensagens_key = field_mappings.get("mensagens_relacionadas", "Mensagens Relacionadas")
+                        field_mappings = (
+                            getattr(self.config, "field_mappings", {}) or {}
+                        )
+                        mensagens_key = field_mappings.get(
+                            "mensagens_relacionadas", "Mensagens Relacionadas"
+                        )
 
                         self.notion_properties[mensagens_key] = {
                             "relation": mensagens_relacionadas
                         }
-                        logger.info(f"[MSG_DEBUG] Campo '{mensagens_key}' adicionado com {len(mensagens_relacionadas)} mensagens")
+                        logger.info(
+                            f"[MSG_DEBUG] Campo '{mensagens_key}' adicionado com {len(mensagens_relacionadas)} mensagens"
+                        )
                     else:
-                        logger.info(f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar")
+                        logger.info(
+                            f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar"
+                        )
 
             except Exception as e:
-                logger.error(f"[MSG_DEBUG] Erro ao processar mensagens relacionadas: {e}", exc_info=True)
+                logger.error(
+                    f"[MSG_DEBUG] Erro ao processar mensagens relacionadas: {e}",
+                    exc_info=True,
+                )
 
         except ImportError as e:
             # Lidar com o caso de o mapper ainda não existir
-            logger.error(f"[SYNC_DEBUG] Erro de importação no prepare_notion_data: {e}")
+            logger.error(
+                f"[SYNC_DEBUG] Erro de importação no prepare_notion_data: {e}"
+            )
             pass
         except Exception as e:
-            logger.error(f"[SYNC_DEBUG] Erro geral no prepare_notion_data: {e}", exc_info=True)
+            logger.error(
+                f"[SYNC_DEBUG] Erro geral no prepare_notion_data: {e}",
+                exc_info=True,
+            )
             raise
 
     def needs_sync(self) -> bool:
@@ -2135,15 +2214,558 @@ class MensagemSync(models.Model):
             # importantes que ainda não foram sincronizados (comparando com last_sync_at)
             # Se há algum valor importante, assume que precisa sincronizar
             for campo, valor_atual in campos_criticos.items():
-                if valor_atual is not None and valor_atual != "" and valor_atual != []:
+                if (
+                    valor_atual is not None
+                    and valor_atual != ""
+                    and valor_atual != []
+                ):
                     # Para campos que não são coleções vazias
-                    if isinstance(valor_atual, (list, dict)) and len(valor_atual) == 0:
+                    if (
+                        isinstance(valor_atual, (list, dict))
+                        and len(valor_atual) == 0
+                    ):
                         continue
                     # Se tem um valor importante e já foi sincronizado antes,
                     # precisamos atualizar para garantir que está atualizado
                     return True
 
         return False
+
+
+class FluxoAtendimentoSync(models.Model):
+    """
+    Espelho do modelo FluxoAtendimento para integração com Notion.
+
+    Contém dados pré-processados e relacionamentos com Departamento
+    para facilitar os mappers e consultas.
+    """
+
+    # Relação com Modelo Original
+    fluxo = models.OneToOneField(
+        "operacional.FluxoAtendimento",
+        on_delete=models.CASCADE,
+        related_name="notion_sync",
+        help_text="Referência ao fluxo original",
+    )
+
+    # ID Externo
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID da página correspondente no Notion",
+    )
+
+    # Configuração Relacionada
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name="fluxo_atendimento_syncs",
+        help_text="Configuração Notion para Fluxo",
+    )
+
+    # Relacionamento com DepartamentoSync (cache)
+    departamento_sync = models.ForeignKey(
+        DepartamentoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="fluxos_sync",
+        help_text="Referência ao sync do departamento",
+    )
+
+    # Dados Pré-processados
+    nome_formatado: models.CharField = models.CharField(
+        max_length=200, help_text="Nome do fluxo formatado"
+    )
+    descricao_formatada: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Descrição formatada"
+    )
+
+    # Campos de Controle de Sincronização
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pendente"),
+            ("syncing", "Sincronizando"),
+            ("synced", "Sincronizado"),
+            ("error", "Erro"),
+        ],
+        default="pending",
+        help_text="Status da sincronização",
+    )
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora da última sincronização",
+    )
+    sync_error: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Mensagem de erro de sync"
+    )
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0, help_text="Número de tentativas de sync"
+    )
+
+    # Propriedades e dados extras para enviar ao Notion
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict, help_text="Propriedades preparadas para Notion"
+    )
+    metadados: models.JSONField = models.JSONField(
+        default=dict, help_text="Metadados adicionais"
+    )
+
+    # Auditoria
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="Criado em"
+    )
+    updated_at: models.DateTimeField = models.DateTimeField(
+        auto_now=True, help_text="Atualizado em"
+    )
+
+    class Meta:
+        verbose_name = "Fluxo Atendimento Sync"
+        verbose_name_plural = "Fluxos Atendimento Sync"
+        ordering = ["fluxo__nome"]
+        db_table = "notion_sync_fluxo_atendimento"
+        indexes = [
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["sync_status"]),
+            models.Index(fields=["fluxo"]),
+            models.Index(fields=["last_sync_at"]),
+            models.Index(fields=["sync_status", "config"]),
+        ]
+
+    @override
+    def __str__(self) -> str:  # type: ignore[override]
+        return f"Fluxo {self.fluxo.nome}"
+
+    def prepare_notion_data(self) -> None:
+        """Prepara dados do fluxo para sincronização com Notion."""
+        try:
+            from .services.mappers.fluxo_atendimento_mapper import (
+                FluxoAtendimentoMapper,
+            )
+
+            # Atualiza caches de relacionamento
+            if getattr(self.fluxo, "departamento", None):
+                self.departamento_sync, _ = (
+                    DepartamentoSync.objects.get_or_create(
+                        departamento=self.fluxo.departamento
+                    )
+                )
+
+            # Propriedades Notion
+            self.notion_properties = (
+                FluxoAtendimentoMapper.to_notion_properties(self)
+            )
+
+            # Campos formatados
+            self.nome_formatado = getattr(self.fluxo, "nome", "Fluxo") or (
+                "Fluxo"
+            )
+            self.descricao_formatada = (
+                getattr(self.fluxo, "descricao", "") or ""
+            )
+        except Exception as e:
+            self.sync_status = "error"
+            self.sync_error = str(e)
+
+    def needs_sync(self) -> bool:
+        """Verifica se o fluxo precisa ser sincronizado."""
+        if not self.config.sync_enabled or self.sync_status == "syncing":
+            return False
+        # Usa data_atualizacao do modelo original
+        updated_ref = getattr(self.fluxo, "data_atualizacao", None)
+        if not updated_ref:
+            updated_ref = getattr(self.fluxo, "data_criacao", None)
+        if not self.last_sync_at:
+            return True
+        if (
+            updated_ref
+            and self.last_sync_at
+            and updated_ref > self.last_sync_at
+        ):
+            return True
+        return self.sync_status in ["pending", "error"]
+
+    def mark_as_synced(
+        self,
+        external_id: str | None = None,
+        properties: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Marca o fluxo como sincronizado com sucesso.
+
+        Args:
+            external_id: ID da página criada/atualizada no Notion.
+            properties: Propriedades enviadas/recebidas do Notion.
+        """
+        if external_id:
+            self.external_id = external_id
+        if properties is not None:
+            self.notion_properties = properties
+        self.sync_status = "synced"
+        self.last_sync_at = timezone.now()
+        self.sync_error = None
+        self.retry_count = 0
+        self.save()
+
+    def mark_as_failed(self, error_message: str) -> None:
+        """Marca o fluxo como falha na sincronização."""
+        self.sync_status = "error"
+        self.sync_error = error_message
+        self.retry_count += 1
+        self.last_sync_at = timezone.now()
+        self.save()
+
+
+class EtapaFluxoSync(models.Model):
+    """
+    Espelho do modelo EtapaFluxo para integração com Notion.
+
+    Inclui relação com FluxoAtendimentoSync para mapeamento de relação
+    no Notion.
+    """
+
+    etapa = models.OneToOneField(
+        "operacional.EtapaFluxo",
+        on_delete=models.CASCADE,
+        related_name="notion_sync",
+        help_text="Referência à etapa original",
+    )
+
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID da página correspondente no Notion",
+    )
+
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name="etapa_fluxo_syncs",
+        help_text="Configuração Notion para Etapas",
+    )
+
+    fluxo_sync = models.ForeignKey(
+        FluxoAtendimentoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="etapas_sync",
+        help_text="Referência ao sync do fluxo",
+    )
+
+    # Dados pré-processados
+    nome_formatado: models.CharField = models.CharField(
+        max_length=200, help_text="Nome da etapa formatado"
+    )
+    descricao_formatada: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Descrição formatada"
+    )
+    ordem_formatada: models.IntegerField = models.IntegerField(
+        default=0, help_text="Ordem da etapa"
+    )
+    tipo_formatado: models.CharField = models.CharField(
+        max_length=50, null=True, blank=True, help_text="Tipo da etapa"
+    )
+    permite_atribuicao: models.BooleanField = models.BooleanField(
+        default=False, help_text="Permite atribuição de atendente"
+    )
+
+    # Controle de sync
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pendente"),
+            ("syncing", "Sincronizando"),
+            ("synced", "Sincronizado"),
+            ("error", "Erro"),
+        ],
+        default="pending",
+        help_text="Status da sincronização",
+    )
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True, blank=True, help_text="Data/hora da última sincronização"
+    )
+    sync_error: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Mensagem de erro de sync"
+    )
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0, help_text="Número de tentativas de sync"
+    )
+
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict, help_text="Propriedades preparadas para Notion"
+    )
+    metadados: models.JSONField = models.JSONField(
+        default=dict, help_text="Metadados adicionais"
+    )
+
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="Criado em"
+    )
+    updated_at: models.DateTimeField = models.DateTimeField(
+        auto_now=True, help_text="Atualizado em"
+    )
+
+    class Meta:
+        verbose_name = "Etapa Fluxo Sync"
+        verbose_name_plural = "Etapas Fluxo Sync"
+        ordering = ["ordem_formatada", "etapa__nome"]
+        db_table = "notion_sync_etapa_fluxo"
+        indexes = [
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["sync_status"]),
+            models.Index(fields=["etapa"]),
+            models.Index(fields=["fluxo_sync"]),
+        ]
+
+    @override
+    def __str__(self) -> str:  # type: ignore[override]
+        return f"Etapa {self.etapa.nome}"
+
+    def prepare_notion_data(self) -> None:
+        """Prepara dados da etapa para sincronização com Notion."""
+        try:
+            from .services.mappers.etapa_fluxo_mapper import EtapaFluxoMapper
+
+            if getattr(self.etapa, "fluxo", None):
+                self.fluxo_sync, _ = (
+                    FluxoAtendimentoSync.objects.get_or_create(
+                        fluxo=self.etapa.fluxo
+                    )
+                )
+
+            self.notion_properties = EtapaFluxoMapper.to_notion_properties(
+                self
+            )
+
+            # Campos formatados
+            self.nome_formatado = getattr(self.etapa, "nome", "Etapa") or (
+                "Etapa"
+            )
+            self.descricao_formatada = (
+                getattr(self.etapa, "descricao", "") or ""
+            )
+            self.ordem_formatada = int(getattr(self.etapa, "ordem", 0) or 0)
+            self.tipo_formatado = getattr(self.etapa, "tipo_etapa", "") or ""
+            self.permite_atribuicao = bool(
+                getattr(self.etapa, "permite_atribuicao", False)
+            )
+        except Exception as e:
+            self.sync_status = "error"
+            self.sync_error = str(e)
+
+    def needs_sync(self) -> bool:
+        """Verifica se a etapa precisa ser sincronizada."""
+        if not self.config.sync_enabled or self.sync_status == "syncing":
+            return False
+        updated_ref = getattr(self.etapa, "updated_at", None)
+        if not updated_ref:
+            updated_ref = getattr(self.etapa, "data_criacao", None)
+        if not self.last_sync_at:
+            return True
+        if (
+            updated_ref
+            and self.last_sync_at
+            and updated_ref > self.last_sync_at
+        ):
+            return True
+        return self.sync_status in ["pending", "error"]
+
+
+class MovimentoFluxoSync(models.Model):
+    """
+    Espelho do modelo MovimentoFluxo para integração com Notion.
+
+    Inclui relações com atendimento, etapas e atendentes para
+    compor propriedades e relações no Notion.
+    """
+
+    movimento = models.OneToOneField(
+        "operacional.MovimentoFluxo",
+        on_delete=models.CASCADE,
+        related_name="notion_sync",
+        help_text="Referência ao movimento original",
+    )
+
+    external_id: models.CharField = models.CharField(
+        max_length=36,
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True,
+        help_text="ID da página correspondente no Notion",
+    )
+
+    config = models.ForeignKey(
+        NotionDatabaseConfig,
+        on_delete=models.CASCADE,
+        related_name="movimento_fluxo_syncs",
+        help_text="Configuração Notion para Movimentos",
+    )
+
+    atendimento_sync = models.ForeignKey(
+        AtendimentoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_sync",
+        help_text="Referência ao sync do atendimento",
+    )
+    etapa_origem_sync = models.ForeignKey(
+        EtapaFluxoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_origem_sync",
+        help_text="Referência ao sync da etapa de origem",
+    )
+    etapa_destino_sync = models.ForeignKey(
+        EtapaFluxoSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_destino_sync",
+        help_text="Referência ao sync da etapa de destino",
+    )
+    atendente_origem_sync = models.ForeignKey(
+        AtendenteSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_atendente_origem_sync",
+        help_text="Referência ao sync do atendente de origem",
+    )
+    atendente_destino_sync = models.ForeignKey(
+        AtendenteSync,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_atendente_destino_sync",
+        help_text="Referência ao sync do atendente de destino",
+    )
+
+    # Controle de sync
+    sync_status: models.CharField = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pendente"),
+            ("syncing", "Sincronizando"),
+            ("synced", "Sincronizado"),
+            ("error", "Erro"),
+        ],
+        default="pending",
+        help_text="Status da sincronização",
+    )
+    last_sync_at: models.DateTimeField = models.DateTimeField(
+        null=True, blank=True, help_text="Data/hora da última sincronização"
+    )
+    sync_error: models.TextField = models.TextField(
+        null=True, blank=True, help_text="Mensagem de erro de sync"
+    )
+    retry_count: models.IntegerField = models.IntegerField(
+        default=0, help_text="Número de tentativas de sync"
+    )
+
+    notion_properties: models.JSONField = models.JSONField(
+        default=dict, help_text="Propriedades preparadas para Notion"
+    )
+    metadados: models.JSONField = models.JSONField(
+        default=dict, help_text="Metadados adicionais"
+    )
+
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="Criado em"
+    )
+    updated_at: models.DateTimeField = models.DateTimeField(
+        auto_now=True, help_text="Atualizado em"
+    )
+
+    class Meta:
+        verbose_name = "Movimento Fluxo Sync"
+        verbose_name_plural = "Movimentos Fluxo Sync"
+        ordering = ["movimento__data_movimento"]
+        db_table = "notion_sync_movimento_fluxo"
+        indexes = [
+            models.Index(fields=["external_id"]),
+            models.Index(fields=["sync_status"]),
+            models.Index(fields=["movimento"]),
+            models.Index(fields=["atendimento_sync"]),
+        ]
+
+    @override
+    def __str__(self) -> str:  # type: ignore[override]
+        return f"Movimento #{self.movimento.id}"
+
+    def prepare_notion_data(self) -> None:
+        """Prepara dados do movimento para sincronização com Notion."""
+        try:
+            from .services.mappers.movimento_fluxo_mapper import (
+                MovimentoFluxoMapper,
+            )
+
+            # Garante relacionamentos essenciais
+            if getattr(self.movimento, "atendimento", None):
+                self.atendimento_sync, _ = (
+                    AtendimentoSync.objects.get_or_create(
+                        atendimento=self.movimento.atendimento
+                    )
+                )
+            if getattr(self.movimento, "etapa_origem", None):
+                self.etapa_origem_sync, _ = (
+                    EtapaFluxoSync.objects.get_or_create(
+                        etapa=self.movimento.etapa_origem
+                    )
+                )
+            if getattr(self.movimento, "etapa_destino", None):
+                self.etapa_destino_sync, _ = (
+                    EtapaFluxoSync.objects.get_or_create(
+                        etapa=self.movimento.etapa_destino
+                    )
+                )
+            if getattr(self.movimento, "atendente_origem", None):
+                self.atendente_origem_sync, _ = (
+                    AtendenteSync.objects.get_or_create(
+                        atendente=self.movimento.atendente_origem
+                    )
+                )
+            if getattr(self.movimento, "atendente_destino", None):
+                self.atendente_destino_sync, _ = (
+                    AtendenteSync.objects.get_or_create(
+                        atendente=self.movimento.atendente_destino
+                    )
+                )
+
+            self.notion_properties = MovimentoFluxoMapper.to_notion_properties(
+                self
+            )
+        except Exception as e:
+            self.sync_status = "error"
+            self.sync_error = str(e)
+
+    def needs_sync(self) -> bool:
+        """Verifica se o movimento precisa ser sincronizado."""
+        if not self.config.sync_enabled or self.sync_status == "syncing":
+            return False
+        updated_ref = getattr(self.movimento, "updated_at", None)
+        if not updated_ref:
+            updated_ref = getattr(self.movimento, "data_movimento", None)
+        if not self.last_sync_at:
+            return True
+        if (
+            updated_ref
+            and self.last_sync_at
+            and updated_ref > self.last_sync_at
+        ):
+            return True
+        return self.sync_status in ["pending", "error"]
 
     def mark_as_synced(self, external_id: str | None = None) -> None:
         if external_id:

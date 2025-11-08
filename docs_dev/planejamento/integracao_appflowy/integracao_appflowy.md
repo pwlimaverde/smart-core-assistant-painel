@@ -7,6 +7,93 @@ servidor Django local, sem depender do AppFlowy Cloud, utilizando um
 adaptador de sincronização customizado no AppFlowy e uma API dedicada no
 servidor Django.
 
+## Status Atual e Ajustes
+
+- App Django `appflowy_adapter` ativo e migrado para DRF, com URLs
+  registradas sob `/api/appflowy_adapter/`.
+- Autenticação JWT implementada (`login`/`refresh`) e permissões
+  aplicadas nas rotas do adapter.
+- Endpoints entregues: `workspaces`, `grids/{grid_id}` (schema),
+  `rows` (CRUD) com controle de versão via `If-Match` (retorno `412`).
+- Testes de integração em progresso; executar via `uv run task test-docker`.
+- Crate Rust `django_sync_provider` iniciado com trait `RemoteSync` e
+  métodos base (login/refresh, pull/push) — robustez em evolução.
+- Integração Notion isolada para não interferir:
+  - App `notion_sync` fora de `INSTALLED_APPS`.
+  - Suíte de testes do Notion ignorada em `pytest.ini`.
+  - Task `init-sync-records` comentada em `pyproject.toml`.
+- Modelos do adapter criados: `Workspace`, `Grid`, `Column`, `Row`,
+  `RowValue` e `SyncState`, com type hints e chaves idempotentes.
+- Sinais `post_save`/`post_delete` de `Atendimento` espelhando linhas
+  no Grid “Atendimentos”, incrementando `version` e normalizando
+  `priority` para `low|medium|high|urgent`.
+- `AppConfig.ready()` importa `signals` para registro automático na
+  inicialização.
+- UI Flutter de Configurações (Django Adapter) implementada e
+  internacionalizada (pt-BR/en-US) com `server_url`, `username`,
+  `password` e botão “Testar Conexão”. Pastas `assets/flowy_icons/*`
+  criadas para sanar erros de build.
+- Observação: build web apresenta erro do pacote `win32` no Chrome;
+  executar no alvo Windows desktop. Para web, usar imports
+  condicionais/stubs para isolar APIs de desktop.
+
+## Próximos Passos Imediatos
+
+- Provider Rust: implementar backoff/jitter, tratamento de 401/412,
+  resolução automática de `workspace/grid` por nome e persistir
+  `sync_state` por `grid_id`.
+- Flutter: integrar o botão “Testar Conexão” com os endpoints JWT
+  (login/refresh), exibir feedback de sincronização e indicadores
+  básicos (última sync, conflitos `412`).
+- Backend: refinar validações de serializers e payloads, considerar
+  SSE/WebSocket para eventos de mudança (pós-MVP). Elevar cobertura
+  para ≥ 80% com `uv run task test-docker`.
+- Documentação: manter `.env.example` atualizado (sem valores) e
+  instruções de execução/diagnóstico.
+
+## Fases de Implementação
+
+### Fase 1 — Modelagem e Sinais (Concluída)
+
+- v Modelos persistentes: `Workspace`, `Grid`, `Column`, `Row`,
+  `RowValue`, `SyncState` com type hints e idempotência por `ticket_id`.
+- v Sinais `post_save`/`post_delete` espelhando `Atendimento` em `Row`
+  e incrementando `version`.
+- v Registro dos sinais via `AppConfig.ready()`.
+
+### Fase 2 — API REST (Concluída)
+
+- Endpoints migrados para DRF com serializers e validação de tipos.
+- `grid_schema` e CRUD de `rows` com `If-Match` (`version`) ativos.
+- Autenticação JWT (login/refresh) e permissões configuradas.
+- Testes de integração em andamento; meta de cobertura ≥ 80%.
+
+### Fase 3 — Provider Rust (Planejada)
+
+- Implementar `pull_rows`/`push_rows` em `DjangoSyncProvider` com
+  `reqwest` e JWT.
+- Persistir `sync_state` (último `since`, `version`) no desktop.
+- Backoff e tratamento de falhas de rede.
+
+### Fase 4 — UI de Configurações (Concluída — versão inicial)
+
+- Tela Flutter com `server_url`, `username`, `password` e “Testar Conexão”.
+- Internacionalização (`pt-BR`/`en-US`) via `LocaleKeys.tr()` e assets
+  de traduções adicionados.
+- Próximos incrementos: indicadores de sync (última sync, conflitos).
+
+### Fase 5 — Observabilidade e Testes (Planejada)
+
+- Logs estruturados (`loguru`) e CLI de diagnóstico (`rich`).
+- SSE/WebSocket (opcional) para eventos de mudança.
+- Testes ponta-a-ponta e cobertura ≥ 80%.
+
+## Marcos de Entrega
+
+- MVP Grid Atendimentos com CRUD funcional e sincronização LWW.
+- Autenticação e renovação de tokens estáveis.
+- Observabilidade com logs estruturados e correlação de eventos.
+
 ## Contexto e Viabilidade
 
 - AppFlowy Desktop usa `Rust` no backend e `Flutter` no frontend, com
@@ -140,6 +227,16 @@ Rationale: evita dependência do AppFlowy Cloud, dá controle total do ciclo de 
 - AppFlowy Desktop configurado para `server_url` local (ex.: `http://localhost:8000`).
 - Opcional: Nginx reverso e certificados.
 
+## Notas de Execução Flutter (Windows Desktop vs Web)
+
+- Alvo recomendado: Windows desktop (`flutter run -d windows`).
+- Pré-requisitos: Visual Studio Build Tools (C++), MSVC, CMake e
+  Windows SDK instalados. Validar com `flutter doctor -v`.
+- Web (Chrome) apresenta erro “Only JS interop members may be 'external'”
+  devido ao pacote `win32` usado por dependências de desktop. Para web,
+  encapsular APIs de desktop atrás de imports condicionais
+  (`if (dart.library.io)`) e stubs, evitando que `win32` seja compilado.
+
 ## Riscos e Mitigações
 
 - Manutenção do fork do AppFlowy: acompanhar upstream e isolar mudanças
@@ -162,6 +259,25 @@ Rationale: evita dependência do AppFlowy Cloud, dá controle total do ciclo de 
 2. Forcar o AppFlowy Desktop e adicionar o `DjangoSyncProvider`.
 3. Construir a tela de configurações (URL/credenciais) no AppFlowy.
   4. Validar ponta-a-ponta com um grid real de Atendimentos.
+
+### Fase 0.1 — Bootstrap do appflowy_adapter (executado)
+
+- Estrutura inicial criada para o app Django `appflowy_adapter` com:
+  - Endpoints mínimos sob `GET /api/appflowy_adapter/health/` (saúde),
+    `GET /api/appflowy_adapter/workspaces/`, `GET /api/appflowy_adapter/grids/{grid_id}/`,
+    e rotas básicas de `rows` (list/create/update/delete) retornando JSON estático.
+  - Tipos/DTOs em `types.py` com `Row`, `RowPatch` e `RowDelta`.
+  - Logs com `loguru` nos endpoints (placeholders).
+  - Registro de URLs em `ui.core.urls` sob o prefixo `/api/appflowy_adapter/`.
+
+- Crate Rust `django_sync_provider` iniciado em `frontend/appflowy_custom/rust-lib/` com:
+  - Trait `RemoteSync` (push/pull/subscribe) e struct `DjangoSyncProvider` com métodos stub.
+  - Dependências base (serde/serde_json) e estrutura pronta para evoluir com `reqwest`.
+
+Próximos incrementos:
+- Implementar autenticação JWT real e validação de payloads nos endpoints.
+- Persistir dados em modelos do Django e sinais para o Grid.
+- Conectar o provider Rust ao AppFlowy (vendor) e construir tela de configurações.
 
 ## Referências
 

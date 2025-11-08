@@ -27,7 +27,7 @@ class AtendimentoMapper:
                     "options": [
                         {"name": "fila", "color": "gray"},
                         {"name": "em_atendimento", "color": "blue"},
-                        {"name": "aguardando_retorno", "color": "yellow"},
+    {"name": "pendencia", "color": "yellow"},
                         {"name": "resolvido", "color": "green"},
                         {"name": "cancelado", "color": "red"},
                     ]
@@ -123,6 +123,7 @@ class AtendimentoMapper:
         def _fmt_json(val: object) -> str:
             try:
                 import json
+
                 if isinstance(val, (dict, list)):
                     txt = json.dumps(val, ensure_ascii=False, indent=2)
                 else:
@@ -152,33 +153,49 @@ class AtendimentoMapper:
                 elif chave == "sessao_iniciada":
                     linhas.append(f"⏰ Sessão iniciada: {str(valor)}")
                 elif isinstance(valor, bool):
-                    linhas.append(f"✅ {chave.replace('_', ' ').title()}: {'Sim' if valor else 'Não'}")
+                    linhas.append(
+                        f"✅ {chave.replace('_', ' ').title()}: {'Sim' if valor else 'Não'}"
+                    )
                 elif isinstance(valor, str):
                     # Para strings simples, exibe como valor normal
                     if chave == "cliente_status":
                         linhas.append(f"👤 Cliente Status: {valor}")
                     else:
-                        linhas.append(f"• {chave.replace('_', ' ').title()}: {valor}")
+                        linhas.append(
+                            f"• {chave.replace('_', ' ').title()}: {valor}"
+                        )
                 elif isinstance(valor, list):
                     if valor:
                         linhas.append(f"📝 {chave.replace('_', ' ').title()}:")
                         for item in valor:
                             linhas.append(f"   • {str(item)}")
                     else:
-                        linhas.append(f"📝 {chave.replace('_', ' ').title()}: (vazio)")
+                        linhas.append(
+                            f"📝 {chave.replace('_', ' ').title()}: (vazio)"
+                        )
                 elif isinstance(valor, dict):
                     if valor:
                         linhas.append(f"📊 {chave.replace('_', ' ').title()}:")
                         for sub_chave, sub_valor in valor.items():
-                            linhas.append(f"   • {sub_chave}: {str(sub_valor)}")
+                            linhas.append(
+                                f"   • {sub_chave}: {str(sub_valor)}"
+                            )
                     else:
-                        linhas.append(f"📊 {chave.replace('_', ' ').title()}: (vazio)")
+                        linhas.append(
+                            f"📊 {chave.replace('_', ' ').title()}: (vazio)"
+                        )
                 else:
-                    linhas.append(f"• {chave.replace('_', ' ').title()}: {str(valor)}")
+                    linhas.append(
+                        f"• {chave.replace('_', ' ').title()}: {str(valor)}"
+                    )
 
             # Adiciona informações adicionais úteis
-            if "mensagens_trocadas" in contexto and isinstance(contexto["mensagens_trocadas"], int):
-                linhas.append(f"\n💬 Total de mensagens trocadas: {contexto['mensagens_trocadas']}")
+            if "mensagens_trocadas" in contexto and isinstance(
+                contexto["mensagens_trocadas"], int
+            ):
+                linhas.append(
+                    f"\n💬 Total de mensagens trocadas: {contexto['mensagens_trocadas']}"
+                )
 
             return "\n".join(linhas)
 
@@ -201,11 +218,15 @@ class AtendimentoMapper:
             if isinstance(tag, str):
                 formatted_tags.append({"name": tag})
             elif isinstance(tag, dict):
-                tag_str = str(tag.get("status", "") or tag.get("nome", "") or tag)
+                tag_str = str(
+                    tag.get("status", "") or tag.get("nome", "") or tag
+                )
                 if tag_str:
                     formatted_tags.append({"name": tag_str})
                 else:
-                    formatted_tags.append({"name": json.dumps(tag, ensure_ascii=False)[:100]})
+                    formatted_tags.append(
+                        {"name": json.dumps(tag, ensure_ascii=False)[:100]}
+                    )
             else:
                 formatted_tags.append({"name": str(tag)})
 
@@ -271,30 +292,48 @@ class AtendimentoMapper:
 
         # Adicionar mensagens relacionadas
         mensagens_relacionadas = []
-        if hasattr(sync_instance, 'mensagens_sync'):
+        if hasattr(sync_instance, "mensagens_sync"):
             try:
                 from loguru import logger
-                logger.info(f"[MSG_DEBUG] Processando mensagens relacionadas para atendimento #{sync_instance.atendimento.id}")
+
+                logger.info(
+                    f"[MSG_DEBUG] Processando mensagens relacionadas para atendimento #{sync_instance.atendimento.id}"
+                )
 
                 for msg_sync in sync_instance.mensagens_sync.all():
                     if msg_sync.external_id:
-                        mensagens_relacionadas.append({"id": msg_sync.external_id})
-                        logger.info(f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} com external_id {msg_sync.external_id} adicionada")
+                        mensagens_relacionadas.append(
+                            {"id": msg_sync.external_id}
+                        )
+                        logger.info(
+                            f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} com external_id {msg_sync.external_id} adicionada"
+                        )
                     else:
-                        logger.warning(f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} sem external_id")
+                        logger.warning(
+                            f"[MSG_DEBUG] Mensagem #{msg_sync.mensagem.id} sem external_id"
+                        )
 
-                logger.info(f"[MSG_DEBUG] Total de mensagens relacionadas: {len(mensagens_relacionadas)}")
+                logger.info(
+                    f"[MSG_DEBUG] Total de mensagens relacionadas: {len(mensagens_relacionadas)}"
+                )
 
                 if mensagens_relacionadas:
                     properties[mensagens_key] = {
                         "relation": mensagens_relacionadas
                     }
-                    logger.info(f"[MSG_DEBUG] Campo '{mensagens_key}' adicionado com {len(mensagens_relacionadas)} mensagens")
+                    logger.info(
+                        f"[MSG_DEBUG] Campo '{mensagens_key}' adicionado com {len(mensagens_relacionadas)} mensagens"
+                    )
                 else:
-                    logger.info(f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar")
+                    logger.info(
+                        f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar"
+                    )
 
             except Exception as e:
-                logger.error(f"[MSG_DEBUG] Erro ao processar mensagens relacionadas: {e}", exc_info=True)
+                logger.error(
+                    f"[MSG_DEBUG] Erro ao processar mensagens relacionadas: {e}",
+                    exc_info=True,
+                )
 
         return properties
 

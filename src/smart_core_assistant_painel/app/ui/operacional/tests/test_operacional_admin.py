@@ -11,6 +11,8 @@ from smart_core_assistant_painel.app.ui.operacional.admin import (
 )
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
+    Departamento,
+    FluxoAtendimento,
 )
 
 
@@ -28,12 +30,23 @@ class TestOperacionalAtendenteHumanoAdmin(TestCase):
         """Configuração inicial para os testes."""
         self.site = AdminSite()
         self.admin = AtendenteHumanoAdmin(AtendenteHumano, self.site)
-
+        self.departamento = Departamento.objects.create(
+            nome="Suporte",
+            telefone_instancia="11999999999",
+            api_key="chave_suporte_12345",
+        )
+        self.fluxo = FluxoAtendimento.objects.create(
+            nome="Fluxo Suporte",
+            descricao="Fluxo de atendimento de suporte",
+            departamento=self.departamento,
+        )
         self.atendente = AtendenteHumano.objects.create(
             telefone="5511888888888",
             nome="Atendente Teste",
             cargo="Analista",
             email="atendente@teste.com",
+            fluxo=self.fluxo,
+            departamento=self.departamento,
         )
 
     def test_list_display(self) -> None:

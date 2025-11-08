@@ -9,6 +9,8 @@ from django.test import TestCase
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
+    Departamento,
+    FluxoAtendimento,
 )
 
 
@@ -19,7 +21,14 @@ class OperacionalAtendenteHumanoForm(ModelForm):
 
     class Meta:
         model = AtendenteHumano
-        fields = ["nome", "cargo", "email", "ativo", "especialidades"]
+        fields = [
+            "nome",
+            "cargo",
+            "email",
+            "ativo",
+            "especialidades",
+            "fluxo",
+        ]
 
     def clean_especialidades(self) -> list[str]:
         """Normaliza o campo especialidades para lista de strings."""
@@ -60,11 +69,19 @@ class TestOperacionalAtendenteHumanoForm(TestCase):
 
     def setUp(self) -> None:
         """Configuração inicial."""
+        self.departamento = Departamento.objects.create(nome="Suporte")
+        self.fluxo = FluxoAtendimento.objects.create(
+            nome="Fluxo Suporte",
+            descricao="Fluxo de atendimento de suporte",
+            departamento=self.departamento,
+        )
         self.atendente_existente = AtendenteHumano.objects.create(
             nome="Atendente Existente",
             cargo="Analista",
             email="existente@teste.com",
             ativo=True,
+            fluxo=self.fluxo,
+            departamento=self.departamento,
         )
 
     def test_form_valido(self) -> None:
@@ -75,6 +92,7 @@ class TestOperacionalAtendenteHumanoForm(TestCase):
             "email": "novo@teste.com",
             "ativo": True,
             "especialidades": "Vendas, Suporte",
+            "fluxo": self.fluxo.pk,
         }
         form = OperacionalAtendenteHumanoForm(data=form_data)
         self.assertTrue(form.is_valid())
@@ -88,6 +106,7 @@ class TestOperacionalAtendenteHumanoForm(TestCase):
             "cargo": "Supervisor",
             "email": "existente@teste.com",
             "ativo": True,
+            "fluxo": self.fluxo.pk,
         }
         form = OperacionalAtendenteHumanoForm(data=form_data)
         self.assertFalse(form.is_valid())

@@ -8,6 +8,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     AtendenteHumano,
     Departamento,
     WhatsAppInstance,
+    FluxoAtendimento,
 )
 
 
@@ -24,6 +25,13 @@ class WhatsAppInstanceValidationTestCase(TestCase):
         )
         self.departamento.save_base()
 
+        self.fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=self.departamento,
+        )
+        self.fluxo.save_base()
+
         # Criar atendente sem disparar signals
         self.atendente = AtendenteHumano(
             nome="João Silva",
@@ -31,6 +39,7 @@ class WhatsAppInstanceValidationTestCase(TestCase):
             telefone="+5511999998888",
             email="joao@empresa.com",
             departamento=self.departamento,
+            fluxo=self.fluxo,
         )
         self.atendente.save_base()
 

@@ -1,3 +1,4 @@
+import decimal
 import re
 from datetime import datetime
 from typing import Any, Optional, cast, override, TYPE_CHECKING
@@ -27,7 +28,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 class StatusAtendimento(models.TextChoices):
     FILA = "fila", "Fila"
     EM_ATENDIMENTO = "em_atendimento", "Em Atendimento"
-    AGUARDANDO_RETORNO = "aguardando_retorno", "Aguardando Retorno"
+    PENDENCIA = "pendencia", "Pendência"
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
 
@@ -106,7 +107,17 @@ class Atendimento(models.Model):
         max_length=20,
         choices=StatusAtendimento.choices,
         default=StatusAtendimento.FILA,
-        help_text="Status atual do atendimento",
+        help_text="Status atual do atendimento (legado - será substituído por fluxo)",
+    )
+    etapa_atual: models.ForeignKey[Optional["operacional.EtapaFluxo"]] = (
+        models.ForeignKey(
+            "operacional.EtapaFluxo",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text="Etapa atual do atendimento no fluxo personalizado",
+        )
     )
     data_inicio: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True, help_text="Data de início do atendimento"
@@ -194,6 +205,7 @@ class Atendimento(models.Model):
         help_text="Canal de origem do atendimento",
     )
 
+
     class Meta:
         verbose_name = "Atendimento"
         verbose_name_plural = "Atendimentos"
@@ -204,6 +216,10 @@ class Atendimento(models.Model):
             models.Index(fields=["status", "departamento"]),
             models.Index(fields=["departamento", "data_ultima_mensagem"]),
             models.Index(fields=["atendente_humano", "status"]),
+            models.Index(fields=["etapa_atual", "atendente_humano"]),
+            models.Index(fields=["departamento", "etapa_atual"]),
+            models.Index(fields=["prioridade"]),
+            models.Index(fields=["tags"]),
         ]
 
     @override
@@ -573,7 +589,7 @@ def inicializar_atendimento_whatsapp(
             status__in=[
                 StatusAtendimento.FILA,
                 StatusAtendimento.EM_ATENDIMENTO,
-                StatusAtendimento.AGUARDANDO_RETORNO,
+                StatusAtendimento.PENDENCIA,
             ],
         ).first()
 
@@ -621,7 +637,7 @@ def buscar_atendimento_ativo(numero_telefone: str) -> Optional[Atendimento]:
             status__in=[
                 StatusAtendimento.FILA,
                 StatusAtendimento.EM_ATENDIMENTO,
-                StatusAtendimento.AGUARDANDO_RETORNO,
+                StatusAtendimento.PENDENCIA,
             ],
         ).first()
 

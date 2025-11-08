@@ -17,6 +17,9 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from .whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
+from .unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
+)
 
 
 class ServiceHub:
@@ -50,6 +53,7 @@ class ServiceHub:
             # Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
             self._whatsapp_service: Optional[WhatsAppService] = None
+            self._unified_data_service: Optional[UnifiedDataService] = None
             # Api_Keys
             self._huggingface_api_key: Optional[str] = None
             # LLM
@@ -127,6 +131,14 @@ class ServiceHub:
                 implementa a interface WhatsAppService.
         """
         self._whatsapp_service = whatsapp_service
+
+    def set_unified_data_service(self, uds: UnifiedDataService) -> None:
+        """Define a implementação de UnifiedDataService a ser utilizada.
+
+        Args:
+            uds (UnifiedDataService): Instância de serviço de dados unificado.
+        """
+        self._unified_data_service = uds
 
     # Api_Keys
     @property
@@ -360,6 +372,20 @@ class ServiceHub:
                 "Use set_whatsapp_service() para definir a instância manualmente."
             )
         return self._whatsapp_service
+
+    @property
+    def unified_data_service(self) -> UnifiedDataService:
+        """Retorna a instância configurada do UnifiedDataService.
+
+        Raises:
+            RuntimeError: Se o serviço não tiver sido configurado.
+        """
+        if self._unified_data_service is None:
+            raise RuntimeError(
+                "UnifiedDataService não configurado. "
+                "Use set_unified_data_service() para definir a instância."
+            )
+        return self._unified_data_service
 
     # Utilitarios
     @property

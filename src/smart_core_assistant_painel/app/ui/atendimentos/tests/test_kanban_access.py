@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
     AtendenteHumano,
+    FluxoAtendimento,
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
@@ -27,12 +28,19 @@ def test_non_member_cannot_access_other_department(client):
         api_key="key-b",
         telefone_instancia="5511999999002",
     )
+    fluxo_d1 = FluxoAtendimento.objects.create(
+        nome="Fluxo Depto A",
+        descricao="Fluxo do departamento A",
+        departamento=d1,
+    )
 
     user = User.objects.create_user(username="userA", password="pass")
     AtendenteHumano.objects.create(
         nome="Agente A",
         usuario_sistema="userA",
         departamento=d1,
+        email="agente.a@empresa.com",
+        fluxo=fluxo_d1,
         ativo=True,
         disponivel=True,
     )
@@ -68,6 +76,11 @@ def test_manager_can_access_all_departments(client):
         ativo=True,
         api_key="key-b",
         telefone_instancia="5511999999002",
+    )
+    fluxo_d1 = FluxoAtendimento.objects.create(
+        nome="Fluxo Depto A",
+        descricao="Fluxo do departamento A",
+        departamento=d1,
     )
 
     user = User.objects.create_user(username="manager", password="pass")
@@ -109,6 +122,8 @@ def test_transfer_blocked_for_non_member(client):
         nome="Agente A",
         usuario_sistema="userA",
         departamento=d1,
+        email="agente.a@empresa.com",
+        fluxo=fluxo_d1,
         ativo=True,
         disponivel=True,
     )
@@ -155,11 +170,18 @@ def test_partial_modal_lists_only_allowed_departments(client):
         api_key="key-b",
         telefone_instancia="5511999999002",
     )
+    fluxo_d1 = FluxoAtendimento.objects.create(
+        nome="Fluxo Depto A",
+        descricao="Fluxo do departamento A",
+        departamento=d1,
+    )
     user = User.objects.create_user(username="userA", password="pass")
     AtendenteHumano.objects.create(
         nome="Agente A",
         usuario_sistema="userA",
         departamento=d1,
+        email="agente.a@empresa.com",
+        fluxo=fluxo_d1,
         ativo=True,
         disponivel=True,
     )

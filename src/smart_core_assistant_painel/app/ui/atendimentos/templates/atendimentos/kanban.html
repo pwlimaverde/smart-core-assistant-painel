@@ -9,7 +9,9 @@
       <p class="text-sm text-gray-500 mt-1">Gerencie seus atendimentos de forma prática e visual.</p>
     </div>
     <div class="space-x-3">
-      <a href="/admin/" class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">Admin</a>
+      {% if not public_mode %}
+        <a href="/admin/" class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-800">Admin</a>
+      {% endif %}
       <a href="/" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Home</a>
     </div>
   </div>
@@ -30,17 +32,19 @@
     <div class="md:col-span-2 flex items-center gap-4">
       <label for="kanban-search" class="text-sm text-gray-600">Buscar</label>
       <input id="kanban-search" type="search" placeholder="Filtrar por nome ou telefone" class="ui-input flex-1" oninput="filterCards(this.value)">
-      <label class="flex items-center gap-2 text-sm text-gray-600">
-        <input type="checkbox" id="only-mine" onchange="toggleMineFilter(this.checked)">
-        Somente Meus
-      </label>
+      {% if not public_mode %}
+        <label class="flex items-center gap-2 text-sm text-gray-600">
+          <input type="checkbox" id="only-mine" onchange="toggleMineFilter(this.checked)">
+          Somente Meus
+        </label>
+      {% endif %}
     </div>
   </div>
 
   <!-- Board -->
   <div id="kanban-board" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
     <!-- Fila -->
-    <section class="kanban-column p-0" data-column="fila" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'fila')">
+    <section class="kanban-column p-0" data-column="fila" {% if not public_mode %}ondragover="event.preventDefault()" ondrop="handleDrop(event, 'fila')"{% endif %}>
       <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 font-semibold">F</span>
@@ -50,7 +54,7 @@
       </div>
       <div class="kanban-column__body space-y-3 p-4" id="col-fila">
         {% for a in columns.fila %}
-          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-blue-300 hover:bg-blue-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="fila" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-blue-300 hover:bg-blue-50 transition {% if public_mode %}cursor-default{% else %}cursor-move{% endif %}" draggable="{% if public_mode %}false{% else %}true{% endif %}" {% if not public_mode %}ondragstart="handleDragStart(event)"{% endif %} data-id="{{ a.id }}" data-current="fila" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
                 <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
@@ -67,7 +71,7 @@
     </section>
 
     <!-- Em Atendimento -->
-    <section class="kanban-column p-0" data-column="em_atendimento" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'em_atendimento')">
+    <section class="kanban-column p-0" data-column="em_atendimento" {% if not public_mode %}ondragover="event.preventDefault()" ondrop="handleDrop(event, 'em_atendimento')"{% endif %}>
       <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-50 text-amber-600 font-semibold">H</span>
@@ -77,7 +81,7 @@
       </div>
       <div class="kanban-column__body space-y-3 p-4" id="col-em_atendimento">
         {% for a in columns.em_atendimento %}
-          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-amber-300 hover:bg-amber-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="em_atendimento" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-amber-300 hover:bg-amber-50 transition {% if public_mode %}cursor-default{% else %}cursor-move{% endif %}" draggable="{% if public_mode %}false{% else %}true{% endif %}" {% if not public_mode %}ondragstart="handleDragStart(event)"{% endif %} data-id="{{ a.id }}" data-current="em_atendimento" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
                 <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
@@ -93,18 +97,18 @@
       </div>
     </section>
 
-    <!-- Aguardando Retorno -->
-    <section class="kanban-column p-0" data-column="aguardando_retorno" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'aguardando_retorno')">
+    <!-- Pendência -->
+    <section class="kanban-column p-0" data-column="pendencia" {% if not public_mode %}ondragover="event.preventDefault()" ondrop="handleDrop(event, 'pendencia')"{% endif %}>
       <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-50 text-sky-600 font-semibold">C</span>
-          <h2 class="text-lg font-semibold text-gray-800">Aguardando Retorno</h2>
+          <h2 class="text-lg font-semibold text-gray-800">Pendência</h2>
         </div>
-        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" id="count-aguardando_retorno"></span>
+        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full" id="count-pendencia"></span>
       </div>
-      <div class="kanban-column__body space-y-3 p-4" id="col-aguardando_retorno">
-        {% for a in columns.aguardando_retorno %}
-          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-sky-300 hover:bg-sky-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="aguardando_retorno" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
+      <div class="kanban-column__body space-y-3 p-4" id="col-pendencia">
+        {% for a in columns.pendencia %}
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-sky-300 hover:bg-sky-50 transition {% if public_mode %}cursor-default{% else %}cursor-move{% endif %}" draggable="{% if public_mode %}false{% else %}true{% endif %}" {% if not public_mode %}ondragstart="handleDragStart(event)"{% endif %} data-id="{{ a.id }}" data-current="pendencia" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
                 <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
@@ -115,13 +119,13 @@
             </div>
           </article>
         {% empty %}
-          <p class="text-sm text-gray-500">Nenhum atendimento aguardando retorno.</p>
+          <p class="text-sm text-gray-500">Nenhum atendimento em pendência.</p>
         {% endfor %}
       </div>
     </section>
 
     <!-- Resolvidos -->
-    <section class="kanban-column p-0" data-column="resolvidos" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'resolvidos')">
+    <section class="kanban-column p-0" data-column="resolvidos" {% if not public_mode %}ondragover="event.preventDefault()" ondrop="handleDrop(event, 'resolvidos')"{% endif %}>
       <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 font-semibold">R</span>
@@ -131,7 +135,7 @@
       </div>
       <div class="kanban-column__body space-y-3 p-4" id="col-resolvidos">
         {% for a in columns.resolvidos %}
-          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-emerald-300 hover:bg-emerald-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="resolvidos" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-emerald-300 hover:bg-emerald-50 transition {% if public_mode %}cursor-default{% else %}cursor-move{% endif %}" draggable="{% if public_mode %}false{% else %}true{% endif %}" {% if not public_mode %}ondragstart="handleDragStart(event)"{% endif %} data-id="{{ a.id }}" data-current="resolvidos" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
                 <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
@@ -148,7 +152,7 @@
     </section>
 
     <!-- Cancelados -->
-    <section class="kanban-column p-0" data-column="cancelados" ondragover="event.preventDefault()" ondrop="handleDrop(event, 'cancelados')">
+    <section class="kanban-column p-0" data-column="cancelados" {% if not public_mode %}ondragover="event.preventDefault()" ondrop="handleDrop(event, 'cancelados')"{% endif %}>
       <div class="kanban-column__header flex items-center justify-between px-4 py-3 rounded-t-2xl">
         <div class="flex items-center gap-2">
           <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-50 text-red-600 font-semibold">X</span>
@@ -158,7 +162,7 @@
       </div>
       <div class="kanban-column__body space-y-3 p-4" id="col-cancelados">
         {% for a in columns.cancelados %}
-          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-red-300 hover:bg-red-50 transition cursor-move" draggable="true" ondragstart="handleDragStart(event)" data-id="{{ a.id }}" data-current="cancelados" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
+          <article class="kanban-card group border border-gray-200 rounded-xl p-3 bg-white hover:border-red-300 hover:bg-red-50 transition {% if public_mode %}cursor-default{% else %}cursor-move{% endif %}" draggable="{% if public_mode %}false{% else %}true{% endif %}" {% if not public_mode %}ondragstart="handleDragStart(event)"{% endif %} data-id="{{ a.id }}" data-current="cancelados" data-atendente-id="{{ a.atendente_humano_id|default:'' }}">
             <div class="flex items-start justify-between" onclick="openDetails({{ a.id }})">
               <div>
                 <div class="text-sm font-medium text-gray-900">#{{ a.id }} • {{ a.contato.telefone|default:"-" }} • {{ a.assunto|default:"-" }}</div>
@@ -190,9 +194,11 @@
 </div>
 
 <script>
+  // Flag de modo público
+  window.__publicMode = {{ public_mode|default:False|yesno:"true,false" }};
   // Contadores por coluna
   function updateCounts() {
-    const cols = ['fila','em_atendimento','aguardando_retorno','resolvidos','cancelados'];
+    const cols = ['fila','em_atendimento','pendencia','resolvidos','cancelados'];
     cols.forEach(c => {
       const el = document.getElementById('col-' + c);
       const count = el ? el.querySelectorAll('article:not(.hidden)').length : 0;
@@ -216,10 +222,12 @@
   // Drag and Drop simples
   let draggedId = null;
   function handleDragStart(ev) {
+    if (window.__publicMode) return;
     draggedId = ev.currentTarget.getAttribute('data-id');
     ev.dataTransfer.setData('text/plain', draggedId);
   }
   async function handleDrop(ev, targetColumn) {
+    if (window.__publicMode) return;
     ev.preventDefault();
     const id = ev.dataTransfer.getData('text/plain') || draggedId;
     if (!id) return;
@@ -234,9 +242,9 @@
       formData.append('action', 'assign_to_me');
     } else if (targetColumn === 'fila') {
       formData.append('action', 'unassign');
-    } else if (targetColumn === 'aguardando_retorno') {
+    } else if (targetColumn === 'pendencia') {
       formData.append('action', 'change_status');
-      formData.append('status', 'aguardando_retorno');
+      formData.append('status', 'pendencia');
     } else if (targetColumn === 'resolvidos') {
       formData.append('action', 'change_status');
       formData.append('status', 'resolvido');
@@ -273,7 +281,7 @@
         // Mostrar/ocultar área de ações conforme coluna de destino
         const actions = card.querySelector('.card-actions');
         if (actions) {
-          const showActions = (targetColumn === 'em_atendimento' || targetColumn === 'aguardando_retorno');
+          const showActions = (targetColumn === 'em_atendimento' || targetColumn === 'pendencia');
           actions.classList.toggle('hidden', !showActions);
         }
       }

@@ -16,10 +16,17 @@ from py_return_success_or_error import (
     UsecaseBaseCallData,
 )
 
+from ..features.unifield_data_services.domain.interface import (
+    UnifiedDataService,
+)
+
 from ..features.whatsapp_services.domain.interface.whatsapp_service import (
     WhatsAppService,
 )
-from .parameters import SetEnvironRemoteParameters
+from .parameters import (
+    SetEnvironRemoteParameters,
+    UnifieldDataServicesParameters,
+)
 
 SERUsecase: TypeAlias = UsecaseBaseCallData[
     Empty,
@@ -35,3 +42,14 @@ WSUsecase: TypeAlias = UsecaseBaseCallData[
     NoParams,
 ]
 WSData: TypeAlias = Datasource[WhatsAppService, NoParams]
+
+# Tipos para o serviço de dados unificado (UDS)
+UDSData: TypeAlias = Datasource[
+    UnifiedDataService,
+    UnifieldDataServicesParameters,
+]
+UDSUsecase: TypeAlias = UsecaseBaseCallData[
+    UnifiedDataService,
+    UnifiedDataService,
+    UnifieldDataServicesParameters,
+]

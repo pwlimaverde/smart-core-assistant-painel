@@ -7,7 +7,7 @@ com o Notion, implementando a interface ExternalSyncServiceInterface.
 
 import os
 from datetime import datetime
-from typing import Any, override
+from typing import Any, Coroutine, override
 
 from decouple import config
 from loguru import logger
@@ -28,6 +28,9 @@ from .mappers import (
     ContatoMapper,
     DepartamentoMapper,
     MensagemMapper,
+    FluxoAtendimentoMapper,
+    EtapaFluxoMapper,
+    MovimentoFluxoMapper,
 )
 
 
@@ -40,6 +43,24 @@ class NotionSyncService(ExternalSyncServiceInterface):
         """
         Inicializa o serviço de sincronização com o Notion.
         """
+        # Política de loop em Windows para evitar erro "Event loop is closed"
+        try:
+            if os.name == "nt":
+                asyncio.set_event_loop_policy(
+                    asyncio.WindowsSelectorEventLoopPolicy()
+                )
+        except Exception:
+            # Silencia caso a política não esteja disponível
+            pass
+
+        # Cria e mantém um event loop persistente para o cliente Notion
+        # Evita erro "Event loop is closed" ao usar corrotinas síncronas.
+        self._loop = asyncio.new_event_loop()
+        try:
+            asyncio.set_event_loop(self._loop)
+        except Exception:
+            # Em alguns contextos, o set_event_loop pode falhar; seguimos sem ele.
+            pass
         self.token = config("NOTION_TOKEN", default=None)
         if not self.token:
             raise SyncError(
@@ -71,6 +92,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Atendente",
             "Atendimento",
             "Mensagem",
+            # Operacional
+            "FluxoAtendimento",
+            "EtapaFluxo",
+            "MovimentoFluxo",
         ):
             full_name = self._resolve_full_name(simple_name)
             db_id = NotionDatabaseConfig.get_database_id(full_name)
@@ -126,10 +151,29 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Atendente": AtendenteMapper,
             "Atendimento": AtendimentoMapper,
             "Mensagem": MensagemMapper,
+            "FluxoAtendimento": FluxoAtendimentoMapper,
+            "EtapaFluxo": EtapaFluxoMapper,
+            "MovimentoFluxo": MovimentoFluxoMapper,
         }
 
-    def _run(self, coro):
-        return asyncio.run(coro)
+    def _run(self, coro: Coroutine[Any, Any, Any]) -> Any:
+        """Executa corrotinas no loop persistente do serviço.
+
+        Mantém um único event loop durante o ciclo de vida do serviço para
+        evitar o fechamento do loop entre chamadas assíncronas.
+        """
+        try:
+            return self._loop.run_until_complete(coro)
+        except RuntimeError as exc:
+            # Recupera se o loop estiver fechado e tenta novamente
+            if "closed" in str(exc).lower():
+                self._loop = asyncio.new_event_loop()
+                try:
+                    asyncio.set_event_loop(self._loop)
+                except Exception:
+                    pass
+                return self._loop.run_until_complete(coro)
+            raise
 
     async def _request_async(
         self, method: str, path: str, body: dict[str, Any]
@@ -137,7 +181,18 @@ class NotionSyncService(ExternalSyncServiceInterface):
         """
         Executa requisições com o cliente atual mantendo a versão da API.
         """
-        return await self.client.request(method=method, path=path, body=body)
+        try:
+            return await self.client.request(
+                method=method, path=path, body=body
+            )
+        except RuntimeError as exc:
+            # Recupera do erro de loop fechado recriando o cliente
+            if "Event loop is closed" in str(exc):
+                self.client = NotionAsyncClient(auth=self.token)
+                return await self.client.request(
+                    method=method, path=path, body=body
+                )
+            raise
 
     def _filter_properties_by_schema(
         self, model_name: str, properties: dict[str, Any]
@@ -159,11 +214,21 @@ class NotionSyncService(ExternalSyncServiceInterface):
             if config and config.notion_database_id:
                 try:
                     db_info = self._run(
-                        self.client.databases.retrieve(
-                            str(config.notion_database_id)
+                        self._request_async(
+                            method="get",
+                            path=f"databases/{str(config.notion_database_id)}",
+                            body={},
                         )
                     )
+                    # Primeiro tenta propriedades no nível da database
                     live_props = db_info.get("properties", {}) or {}
+                    # Caso esteja usando data sources, tenta propriedades
+                    # do primeiro data source (API recente 2025-09-03)
+                    if not live_props:
+                        data_sources = db_info.get("data_sources") or []
+                        if data_sources and isinstance(data_sources, list):
+                            schema = data_sources[0].get("schema") or {}
+                            live_props = schema.get("properties", {}) or {}
                     allowed = set(live_props.keys())
                 except Exception as e:
                     logger.warning(
@@ -191,13 +256,36 @@ class NotionSyncService(ExternalSyncServiceInterface):
                     )
                     # Log específico para confiança se for o caso
                     if "Confiança" in key:
-                        logger.error(f"[CONFIANCA_DEBUG] Campo de confiança '{key}' removido! Schema permitido: {allowed}")
+                        logger.error(
+                            f"[CONFIANCA_DEBUG] Campo de confiança '{key}' removido! Schema permitido: {allowed}"
+                        )
 
             return filtered
         except Exception as e:
             logger.warning(
                 "Falha ao validar propriedades contra schema: {}", str(e)
             )
+            return properties
+
+    def _limit_cliente_properties(
+        self, properties: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Limita o payload de propriedades do modelo Cliente
+        para apenas "Nome Fantasia" e "Razão Social".
+
+        Comentário: solicitado para isolar possíveis erros de campos
+        e validar criação mínima no Notion.
+        """
+        try:
+            allowed: set[str] = {"Nome Fantasia", "Razão Social"}
+            minimal: dict[str, Any] = {}
+            for key, value in properties.items():
+                if key in allowed:
+                    minimal[key] = value
+            return minimal
+        except Exception:
+            # Em caso de qualquer falha, retorna propriedades originais
             return properties
 
     @override
@@ -225,6 +313,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
 
         try:
             properties = mapper.to_notion_properties(data)
+            # Simplificação solicitada: para Cliente, enviar apenas
+            # "Nome Fantasia" e "Razão Social".
+            if model_name == "Cliente":
+                properties = self._limit_cliente_properties(properties)
             properties = self._filter_properties_by_schema(
                 model_name, properties
             )
@@ -233,10 +325,21 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 model_name,
                 list(properties.keys()),
             )
-            # Usa data_source_id como parent quando disponível (API 2025-09-03)
+            # Preferir usar `data_source_id` como parent para que o Notion
+            # reconheça propriedades definidas no schema da data source
+            # (especialmente relações). Caso não esteja disponível,
+            # fazer fallback para `database_id`.
             ds_id = self.get_data_source_id(model_name)
+            parent: dict[str, Any]
+            # Notion API (Upgrade 2025-09-03): ao criar página em
+            # bases com Data Sources, informe explicitamente o tipo
+            # do parent para evitar que o ID seja interpretado como
+            # database_id. Assim, usamos:
+            #   parent = {"type": "data_source_id", "data_source_id": <id>}
+            # No fallback sem data source, mantemos o formato clássico
+            # apenas com `database_id`.
             if ds_id:
-                parent: dict[str, Any] = {
+                parent = {
                     "type": "data_source_id",
                     "data_source_id": ds_id,
                 }
@@ -244,12 +347,62 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 parent = {"database_id": database_id}
 
             page_data = {"parent": parent, "properties": properties}
-
-            response = self._run(
-                self._request_async(
-                    method="post", path="pages", body=page_data
+            # Tenta criar com data_source_id; se a API não suportar,
+            # detecta erro e refaz com database_id como fallback.
+            try:
+                response = self._run(
+                    self._request_async(
+                        method="post", path="pages", body=page_data
+                    )
                 )
-            )
+            except APIResponseError as first_err:
+                msg = str(first_err)
+                if ds_id and ds_id in msg:
+                    logger.warning(
+                        (
+                            "Falha ao criar página com data_source_id {}. "
+                            "Refazendo com database_id como parent."
+                        ).format(ds_id)
+                    )
+                    page_data["parent"] = {"database_id": database_id}
+                    response = self._run(
+                        self._request_async(
+                            method="post", path="pages", body=page_data
+                        )
+                    )
+                elif "is not a property that exists" in msg:
+                    # Fallback: remove a propriedade ausente e re-tenta.
+                    # Comentário: o Notion pode demorar a propagar schemas;
+                    # removemos a propriedade para não bloquear a criação.
+                    try:
+                        missing_prop: str = msg.split(" is not a property")[0]
+                    except Exception:
+                        missing_prop = ""
+                    if missing_prop and missing_prop in properties:
+                        logger.warning(
+                            (
+                                "Propriedade '{}' ausente no Notion; "
+                                "removida do payload e reenvio."
+                            ).format(missing_prop)
+                        )
+                        # Remove e refaz o envio
+                        properties.pop(missing_prop, None)
+                        logger.debug(
+                            "Propriedades após remoção: {}",
+                            list(properties.keys()),
+                        )
+                        page_data["properties"] = properties
+                        response = self._run(
+                            self._request_async(
+                                method="post",
+                                path="pages",
+                                body=page_data,
+                            )
+                        )
+                    else:
+                        raise
+                else:
+                    raise
 
             page_id = response.get("id")
             logger.success(
@@ -295,7 +448,10 @@ class NotionSyncService(ExternalSyncServiceInterface):
                 raise MappingError(f"Mapper não encontrado para {model_name}")
 
             properties = mapper.to_notion_properties(data)
-
+            # Simplificação solicitada: para Cliente, enviar apenas
+            # "Nome Fantasia" e "Razão Social".
+            if model_name == "Cliente":
+                properties = self._limit_cliente_properties(properties)
             properties = self._filter_properties_by_schema(
                 model_name, properties
             )
@@ -476,6 +632,15 @@ class NotionSyncService(ExternalSyncServiceInterface):
             "Atendente": "operacional.Atendente",
             "Atendimento": "atendimentos.Atendimento",
             "Mensagem": "atendimentos.Mensagem",
+            # Operacional: Fluxo de Atendimento
+            "Fluxo": "operacional.FluxoAtendimento",
+            "FluxoAtendimento": "operacional.FluxoAtendimento",
+            # Operacional: Etapas do Fluxo
+            "Etapa": "operacional.EtapaFluxo",
+            "EtapaFluxo": "operacional.EtapaFluxo",
+            # Operacional: Movimentos do Fluxo
+            "Movimento": "operacional.MovimentoFluxo",
+            "MovimentoFluxo": "operacional.MovimentoFluxo",
         }
         return mapping.get(model_name, model_name)
 

@@ -437,18 +437,34 @@ class TicketSyncService:
         try:
             from smart_core_assistant_painel.app.ui.atendimentos.models import (
                 Mensagem,
+                TipoMensagem,
+                TipoRemetente,
             )
 
-            msgs_qs = Mensagem.objects.filter(atendimento=atendimento).order_by(
-                "-timestamp"
-            )[:5]
-            for m in msgs_qs:
-                conteudo = (m.conteudo or "").replace("\n", " ")
-                preview = conteudo[:240] + ("..." if len(conteudo) > 240 else "")
-                ts_str = timezone.localtime(m.timestamp).strftime("%d/%m %H:%M")
-                linhas.append(
-                    f"- [{ts_str}] {m.remetente}: {preview}"
+            msgs_qs = (
+                Mensagem.objects.filter(
+                    atendimento=atendimento,
+                    tipo=TipoMensagem.TEXTO_FORMATADO,
+                    remetente=TipoRemetente.CONTATO,
                 )
+                .order_by("-timestamp")[:5]
+            )
+            for m in msgs_qs:
+                conteudo: str = (m.conteudo or "").replace("\n", " ")
+                preview: str = (
+                    conteudo[:240] + ("..." if len(conteudo) > 240 else "")
+                )
+                ts_str: str = timezone.localtime(m.timestamp).strftime(
+                    "%d/%m %H:%M"
+                )
+                linhas.append(f"- [{ts_str}] {m.remetente}: {preview}")
+                # Comentário (PT-BR): exibe a resposta do bot abaixo da mensagem
+                if getattr(m, "resposta_bot", None):
+                    resp: str = str(m.resposta_bot).replace("\n", " ")
+                    resp_prev: str = (
+                        resp[:240] + ("..." if len(resp) > 240 else "")
+                    )
+                    linhas.append(f"  Resposta: {resp_prev}")
         except Exception:
             linhas.append("(Não foi possível carregar mensagens)")
 
@@ -607,25 +623,6 @@ class TicketSyncService:
         except Exception as exc:
             logger.warning("Falha ao atualizar conteúdo do card: {}", exc)
 
-        # Comentário: adiciona comentário com resumo das últimas mensagens
-        try:
-            from smart_core_assistant_painel.app.ui.atendimentos.models import (
-                Mensagem,
-            )
-            msgs_qs = Mensagem.objects.filter(atendimento=atendimento).order_by(
-                "-timestamp"
-            )[:3]
-            for m in msgs_qs:
-                conteudo = (m.conteudo or "").replace("\n", " ")
-                preview = conteudo[:500] + ("..." if len(conteudo) > 500 else "")
-                ts_str = timezone.localtime(m.timestamp).strftime("%d/%m/%Y %H:%M")
-                comment_text = f"[{ts_str}] {m.remetente}: {preview}"
-                # Comentário: reutiliza API de comentário do adapter
-                self.client.add_relation_property(
-                    data_source_id=card.external_id,
-                    property_name="Mensagem",
-                    target_id=comment_text,
-                )
-        except Exception:
-            # Comentário: ignoramos falhas ao adicionar comentários
-            pass
+        # Comentário (PT-BR): removido o envio de comentários ao Trello para
+        # evitar duplicação de conteúdo; as mensagens recentes já constam na
+        # descrição rica do card.

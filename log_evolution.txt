@@ -1,0 +1,120 @@
+2025-11-08 17:54:07.548 | [Evolution API]    v2.2.3  213   -  Sat Nov 08 2025 17:54:07     ERROR   [WebhookController]  [object]   
+2025-11-08 17:54:07.552 | {
+2025-11-08 17:54:07.552 |   local: 'p.sendData-Webhook',
+2025-11-08 17:54:07.552 |   message: 'Tentativa 1/10 falhou: connect ECONNREFUSED 192.168.3.90:8000',
+2025-11-08 17:54:07.552 |   hostName: undefined,
+2025-11-08 17:54:07.552 |   syscall: 'connect',
+2025-11-08 17:54:07.552 |   code: 'ECONNREFUSED',
+2025-11-08 17:54:07.552 |   error: -111,
+2025-11-08 17:54:07.552 |   stack: 'Error: connect ECONNREFUSED 192.168.3.90:8000\n' +
+2025-11-08 17:54:07.552 |     '    at AxiosError.from (/evolution/node_modules/axios/dist/node/axios.cjs:877:14)\n' +
+2025-11-08 17:54:07.552 |     '    at RedirectableRequest.handleRequestError (/evolution/node_modules/axios/dist/node/axios.cjs:3163:25)\n' +
+2025-11-08 17:54:07.552 |     '    at RedirectableRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:07.552 |     '    at eventHandlers.<computed> (/evolution/node_modules/follow-redirects/index.js:49:24)\n' +
+2025-11-08 17:54:07.552 |     '    at ClientRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:07.552 |     '    at emitErrorEvent (node:_http_client:101:11)\n' +
+2025-11-08 17:54:07.552 |     '    at Socket.socketErrorListener (node:_http_client:504:5)\n' +
+2025-11-08 17:54:07.552 |     '    at Socket.emit (node:events:518:28)\n' +
+2025-11-08 17:54:07.552 |     '    at emitErrorNT (node:internal/streams/destroy:169:8)\n' +
+2025-11-08 17:54:07.552 |     '    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n' +
+2025-11-08 17:54:07.552 |     '    at Axios.request (/evolution/node_modules/axios/dist/node/axios.cjs:4252:41)\n' +
+2025-11-08 17:54:07.552 |     '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+2025-11-08 17:54:07.552 |     '    at async Gs.retryWebhookRequest (/evolution/dist/main.js:286:45803)\n' +
+2025-11-08 17:54:07.552 |     '    at async Gs.emit (/evolution/dist/main.js:286:44889)\n' +
+2025-11-08 17:54:07.552 |     '    at async Ks.emit (/evolution/dist/main.js:286:48610)\n' +
+2025-11-08 17:54:07.552 |     '    at async Rs.sendDataWebhook (/evolution/dist/main.js:161:16058)',
+2025-11-08 17:54:07.552 |   name: 'Error',
+2025-11-08 17:54:07.552 |   url: 'http://192.168.3.90:8000/atendimentos/webhook_whatsapp/',
+2025-11-08 17:54:07.552 |   server_url: 'http://localhost:8080'
+2025-11-08 17:54:07.552 | } 
+2025-11-08 17:54:07.552 | 
+2025-11-08 17:54:07.910 | [Evolution API]    v2.2.3  213   -  Sat Nov 08 2025 17:54:07     ERROR   [WebhookController]  [object]   
+2025-11-08 17:54:07.910 | {
+2025-11-08 17:54:07.910 |   local: 'p.sendData-Webhook',
+2025-11-08 17:54:07.910 |   message: 'Tentativa 1/10 falhou: connect ECONNREFUSED 192.168.3.90:8000',
+2025-11-08 17:54:07.910 |   hostName: undefined,
+2025-11-08 17:54:07.910 |   syscall: 'connect',
+2025-11-08 17:54:07.910 |   code: 'ECONNREFUSED',
+2025-11-08 17:54:07.910 |   error: -111,
+2025-11-08 17:54:07.910 |   stack: 'Error: connect ECONNREFUSED 192.168.3.90:8000\n' +
+2025-11-08 17:54:07.910 |     '    at AxiosError.from (/evolution/node_modules/axios/dist/node/axios.cjs:877:14)\n' +
+2025-11-08 17:54:07.910 |     '    at RedirectableRequest.handleRequestError (/evolution/node_modules/axios/dist/node/axios.cjs:3163:25)\n' +
+2025-11-08 17:54:07.910 |     '    at RedirectableRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:07.910 |     '    at eventHandlers.<computed> (/evolution/node_modules/follow-redirects/index.js:49:24)\n' +
+2025-11-08 17:54:07.910 |     '    at ClientRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:07.910 |     '    at emitErrorEvent (node:_http_client:101:11)\n' +
+2025-11-08 17:54:07.910 |     '    at Socket.socketErrorListener (node:_http_client:504:5)\n' +
+2025-11-08 17:54:07.911 |     '    at Socket.emit (node:events:518:28)\n' +
+2025-11-08 17:54:07.911 |     '    at emitErrorNT (node:internal/streams/destroy:169:8)\n' +
+2025-11-08 17:54:07.911 |     '    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n' +
+2025-11-08 17:54:07.911 |     '    at Axios.request (/evolution/node_modules/axios/dist/node/axios.cjs:4252:41)\n' +
+2025-11-08 17:54:07.911 |     '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+2025-11-08 17:54:07.911 |     '    at async Gs.retryWebhookRequest (/evolution/dist/main.js:286:45803)\n' +
+2025-11-08 17:54:07.911 |     '    at async Gs.emit (/evolution/dist/main.js:286:44889)\n' +
+2025-11-08 17:54:07.911 |     '    at async Ks.emit (/evolution/dist/main.js:286:48610)\n' +
+2025-11-08 17:54:07.911 |     '    at async Rs.sendDataWebhook (/evolution/dist/main.js:161:16058)',
+2025-11-08 17:54:07.911 |   name: 'Error',
+2025-11-08 17:54:07.911 |   url: 'http://192.168.3.90:8000/atendimentos/webhook_whatsapp/',
+2025-11-08 17:54:07.911 |   server_url: 'http://localhost:8080'
+2025-11-08 17:54:07.911 | } 
+2025-11-08 17:54:07.911 | 
+2025-11-08 17:54:58.588 | [Evolution API]    v2.2.3  213   -  Sat Nov 08 2025 17:54:58     ERROR   [WebhookController]  [object]   
+2025-11-08 17:54:58.588 | {
+2025-11-08 17:54:58.588 |   local: 'p.sendData-Webhook',
+2025-11-08 17:54:58.588 |   message: 'Tentativa 2/10 falhou: connect ECONNREFUSED 192.168.3.90:8000',
+2025-11-08 17:54:58.588 |   hostName: undefined,
+2025-11-08 17:54:58.588 |   syscall: 'connect',
+2025-11-08 17:54:58.588 |   code: 'ECONNREFUSED',
+2025-11-08 17:54:58.588 |   error: -111,
+2025-11-08 17:54:58.588 |   stack: 'Error: connect ECONNREFUSED 192.168.3.90:8000\n' +
+2025-11-08 17:54:58.588 |     '    at AxiosError.from (/evolution/node_modules/axios/dist/node/axios.cjs:877:14)\n' +
+2025-11-08 17:54:58.588 |     '    at RedirectableRequest.handleRequestError (/evolution/node_modules/axios/dist/node/axios.cjs:3163:25)\n' +
+2025-11-08 17:54:58.588 |     '    at RedirectableRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:58.588 |     '    at eventHandlers.<computed> (/evolution/node_modules/follow-redirects/index.js:49:24)\n' +
+2025-11-08 17:54:58.588 |     '    at ClientRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:58.588 |     '    at emitErrorEvent (node:_http_client:101:11)\n' +
+2025-11-08 17:54:58.588 |     '    at Socket.socketErrorListener (node:_http_client:504:5)\n' +
+2025-11-08 17:54:58.588 |     '    at Socket.emit (node:events:518:28)\n' +
+2025-11-08 17:54:58.588 |     '    at emitErrorNT (node:internal/streams/destroy:169:8)\n' +
+2025-11-08 17:54:58.588 |     '    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n' +
+2025-11-08 17:54:58.588 |     '    at Axios.request (/evolution/node_modules/axios/dist/node/axios.cjs:4252:41)\n' +
+2025-11-08 17:54:58.588 |     '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+2025-11-08 17:54:58.588 |     '    at async Gs.retryWebhookRequest (/evolution/dist/main.js:286:45803)\n' +
+2025-11-08 17:54:58.588 |     '    at async Gs.emit (/evolution/dist/main.js:286:44889)\n' +
+2025-11-08 17:54:58.588 |     '    at async Ks.emit (/evolution/dist/main.js:286:48610)\n' +
+2025-11-08 17:54:58.588 |     '    at async Rs.sendDataWebhook (/evolution/dist/main.js:161:16058)',
+2025-11-08 17:54:58.588 |   name: 'Error',
+2025-11-08 17:54:58.588 |   url: 'http://192.168.3.90:8000/atendimentos/webhook_whatsapp/',
+2025-11-08 17:54:58.588 |   server_url: 'http://localhost:8080'
+2025-11-08 17:54:58.588 | } 
+2025-11-08 17:54:58.588 | 
+2025-11-08 17:54:58.941 | [Evolution API]    v2.2.3  213   -  Sat Nov 08 2025 17:54:58     ERROR   [WebhookController]  [object]   
+2025-11-08 17:54:58.942 | {
+2025-11-08 17:54:58.942 |   local: 'p.sendData-Webhook',
+2025-11-08 17:54:58.942 |   message: 'Tentativa 2/10 falhou: connect ECONNREFUSED 192.168.3.90:8000',
+2025-11-08 17:54:58.942 |   hostName: undefined,
+2025-11-08 17:54:58.942 |   syscall: 'connect',
+2025-11-08 17:54:58.942 |   code: 'ECONNREFUSED',
+2025-11-08 17:54:58.942 |   error: -111,
+2025-11-08 17:54:58.942 |   stack: 'Error: connect ECONNREFUSED 192.168.3.90:8000\n' +
+2025-11-08 17:54:58.942 |     '    at AxiosError.from (/evolution/node_modules/axios/dist/node/axios.cjs:877:14)\n' +
+2025-11-08 17:54:58.942 |     '    at RedirectableRequest.handleRequestError (/evolution/node_modules/axios/dist/node/axios.cjs:3163:25)\n' +
+2025-11-08 17:54:58.942 |     '    at RedirectableRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:58.942 |     '    at eventHandlers.<computed> (/evolution/node_modules/follow-redirects/index.js:49:24)\n' +
+2025-11-08 17:54:58.942 |     '    at ClientRequest.emit (node:events:518:28)\n' +
+2025-11-08 17:54:58.942 |     '    at emitErrorEvent (node:_http_client:101:11)\n' +
+2025-11-08 17:54:58.942 |     '    at Socket.socketErrorListener (node:_http_client:504:5)\n' +
+2025-11-08 17:54:58.942 |     '    at Socket.emit (node:events:518:28)\n' +
+2025-11-08 17:54:58.942 |     '    at emitErrorNT (node:internal/streams/destroy:169:8)\n' +
+2025-11-08 17:54:58.942 |     '    at emitErrorCloseNT (node:internal/streams/destroy:128:3)\n' +
+2025-11-08 17:54:58.942 |     '    at Axios.request (/evolution/node_modules/axios/dist/node/axios.cjs:4252:41)\n' +
+2025-11-08 17:54:58.942 |     '    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)\n' +
+2025-11-08 17:54:58.942 |     '    at async Gs.retryWebhookRequest (/evolution/dist/main.js:286:45803)\n' +
+2025-11-08 17:54:58.942 |     '    at async Gs.emit (/evolution/dist/main.js:286:44889)\n' +
+2025-11-08 17:54:58.942 |     '    at async Ks.emit (/evolution/dist/main.js:286:48610)\n' +
+2025-11-08 17:54:58.942 |     '    at async Rs.sendDataWebhook (/evolution/dist/main.js:161:16058)',
+2025-11-08 17:54:58.942 |   name: 'Error',
+2025-11-08 17:54:58.942 |   url: 'http://192.168.3.90:8000/atendimentos/webhook_whatsapp/',
+2025-11-08 17:54:58.942 |   server_url: 'http://localhost:8080'
+2025-11-08 17:54:58.942 | } 
+2025-11-08 17:54:58.942 | 

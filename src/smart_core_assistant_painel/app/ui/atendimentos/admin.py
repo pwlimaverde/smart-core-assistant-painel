@@ -1,17 +1,19 @@
-"""Configuração do painel de administração do Django para o aplicativo Atendimentos.
+"""Configuração do painel de administração do app Atendimentos.
 
-Este módulo registra os modelos do aplicativo Atendimentos no painel de administração
-do Django e personaliza a forma como eles são exibidos e gerenciados.
+Este módulo registra os modelos do aplicativo Atendimentos no painel de
+administração do Django e personaliza como são exibidos e gerenciados.
 """
 
-from typing import cast
+from typing import Any, Optional, cast
 
 from django.contrib import admin
 from django.db.models import QuerySet, F
 from django.http import HttpRequest
 from django.utils import timezone
+from django import forms
 
 from .models import Atendimento, Mensagem
+from smart_core_assistant_painel.app.ui.operacional.models import EtapaFluxo
 
 
 class MensagemInline(admin.TabularInline[Mensagem, Atendimento]):
@@ -210,6 +212,59 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                 "tags",
             )
         )
+
+    def get_form(
+        self,
+        request: HttpRequest,
+        obj: Optional[Atendimento] = None,
+        **kwargs: Any,
+    ) -> type[forms.ModelForm]:
+        """Filtra `etapa_atual` pelo departamento selecionado.
+
+        - Em criação: usa `departamento` vindo de GET/POST.
+        - Em edição: usa `obj.departamento`.
+        """
+        form_cls: type[forms.ModelForm] = super().get_form(
+            request, obj, **kwargs
+        )
+
+        dept_id_raw: Optional[str] = None
+        if obj and obj.departamento_id:
+            dept_id_raw = str(obj.departamento_id)
+        else:
+            # QueryDict aceita .get; mocks podem usar dict simples
+            dept_id_raw = (
+                getattr(request, "POST", {}).get("departamento")
+                or getattr(request, "GET", {}).get("departamento")
+            )
+
+        if "etapa_atual" in form_cls.base_fields:
+            if dept_id_raw:
+                try:
+                    dept_id: int = int(dept_id_raw)
+                    qs: QuerySet[EtapaFluxo] = EtapaFluxo.objects.filter(
+                        fluxo__departamento_id=dept_id
+                    ).order_by("fluxo__nome", "ordem")
+                    form_cls.base_fields["etapa_atual"].queryset = qs
+                    form_cls.base_fields["etapa_atual"].help_text = (
+                        "Mostrando apenas etapas do departamento selecionado."
+                    )
+                except ValueError:
+                    form_cls.base_fields["etapa_atual"].queryset = (
+                        EtapaFluxo.objects.none()
+                    )
+                    form_cls.base_fields["etapa_atual"].help_text = (
+                        "Selecione um departamento para carregar etapas."
+                    )
+            else:
+                form_cls.base_fields["etapa_atual"].queryset = (
+                    EtapaFluxo.objects.none()
+                )
+                form_cls.base_fields["etapa_atual"].help_text = (
+                    "Selecione um departamento para carregar etapas."
+                )
+
+        return form_cls
 
 
 @admin.register(Mensagem)

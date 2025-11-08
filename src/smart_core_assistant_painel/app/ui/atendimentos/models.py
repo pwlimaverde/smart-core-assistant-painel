@@ -222,6 +222,69 @@ class Atendimento(models.Model):
         ]
 
     @override
+    def clean(self) -> None:
+        """Validações de consistência do Atendimento.
+
+        - Garante que `etapa_atual` pertença ao mesmo departamento
+          selecionado no atendimento.
+        """
+        super().clean()
+
+        # Validação: etapa_atual deve pertencer ao departamento escolhido
+        if self.etapa_atual_id:
+            if not self.departamento_id:
+                raise ValidationError(
+                    {
+                        "etapa_atual": (
+                            "Selecione um departamento antes de definir a "
+                            "etapa."
+                        )
+                    }
+                )
+
+            fluxo_dep_id: Optional[int] = None
+            try:
+                # Tenta usar o objeto já carregado, se disponível
+                if hasattr(self, "etapa_atual") and self.etapa_atual:
+                    fluxo_dep_id = cast(
+                        Optional[int],
+                        getattr(
+                            self.etapa_atual.fluxo, "departamento_id", None
+                        ),
+                    )
+
+                # Busca no banco se necessário para garantir o vínculo
+                if fluxo_dep_id is None:
+                    from smart_core_assistant_painel.app.ui.operacional.models import (
+                        EtapaFluxo,
+                    )
+
+                    etapa = (
+                        EtapaFluxo.objects.select_related("fluxo")
+                        .filter(id=self.etapa_atual_id)
+                        .first()
+                    )
+                    fluxo_dep_id = (
+                        etapa.fluxo.departamento_id
+                        if etapa and etapa.fluxo
+                        else None
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao validar etapa_atual por departamento: {}", exc
+                )
+
+            if fluxo_dep_id != self.departamento_id:
+                raise ValidationError(
+                    {
+                        "etapa_atual": (
+                            "A etapa selecionada não pertence ao "
+                            "departamento escolhido."
+                        )
+                    }
+                )
+
+    @override
     def __str__(self) -> str:
         return f"Atendimento {self.id} - {self.contato.telefone}"
 

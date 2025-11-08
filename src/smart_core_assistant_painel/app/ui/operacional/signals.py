@@ -52,10 +52,8 @@ def create_default_etapas_fluxo(
             "nome": "Em Atendimento",
             "ordem": 998,
             "tipo_etapa": TipoEtapa.TRABALHO,
-            "cor": "#ADD8E6",
-            "descricao": (
-                "Lista padrão para atendimentos em trabalho"
-            ),
+            "cor": "#F0F8FF",
+            "descricao": ("Lista padrão para atendimentos em trabalho"),
         },
         {
             "nome": "Resolvido",

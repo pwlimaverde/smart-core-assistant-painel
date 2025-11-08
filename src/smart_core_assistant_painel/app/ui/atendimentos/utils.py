@@ -7,7 +7,15 @@ from django.core.cache import cache
 from django.utils import timezone
 from loguru import logger
 
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    StatusAtendimento,
+)
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Departamento,
+    FluxoAtendimento,
+    TipoEtapa,
+)
 from smart_core_assistant_painel.app.ui.treinamento.models import (
     Documento,
     QueryCompose,
@@ -78,6 +86,7 @@ def send_message_response(phone: str) -> None:
             if pode_responder:
                 # Monta um prompt de sistema claro e objetivo para orientar a LLM
                 # sobre como responder de acordo com as intenções detectadas.
+
                 prompt_lines: list[str] = [
                     (
                         "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
@@ -153,6 +162,10 @@ def send_message_response(phone: str) -> None:
                     resposta=result.resposta_bot,
                     confianca=result.confiabilidade,
                 )
+
+                # Atualiza status do atendimento para "Em Atendimento"
+                _atualizar_status_atendimento_em_andamento(atendimento_obj)
+
                 if result.transferir_atendimento:
                     logger.warning("DEBUG: Bot transferiu atendimento")
             else:
@@ -286,13 +299,161 @@ def _analisar_conteudo_mensagem(mensagem_id: int) -> None:
         )
 
 
+def _garantir_estrutura_atendimento_padrao() -> tuple[
+    Departamento, FluxoAtendimento
+]:
+    """
+    Garante que exista a estrutura padrão de atendimento.
+
+    Cria o departamento 'Atendimento' e o fluxo 'Atendimento Inicial' se não existirem.
+
+    Returns:
+        Tupla com (departamento, fluxo) criados ou existentes.
+    """
+    try:
+        # Verifica/cria departamento Atendimento
+        departamento, created_departamento = (
+            Departamento.objects.get_or_create(
+                nome="Atendimento",
+                defaults={
+                    "descricao": (
+                        "Departamento usado para centralizar o atendimento via mensagens "
+                        "e fazer seu processamento antes de seguir para os outros departamentos."
+                    ),
+                    "ativo": True,
+                },
+            )
+        )
+
+        if created_departamento:
+            logger.info(
+                f"Departamento 'Atendimento' criado com ID {departamento.id}"
+            )
+        else:
+            logger.debug(
+                f"Departamento 'Atendimento' já existe (ID {departamento.id})"
+            )
+
+        # Verifica/cria fluxo Atendimento Inicial
+        fluxo, created_fluxo = FluxoAtendimento.objects.get_or_create(
+            departamento=departamento,
+            nome="Atendimento Inicial",
+            defaults={
+                "descricao": "Fluxo responsável pelo processamento inicial dos atendimentos",
+                "ativo": True,
+            },
+        )
+
+        if created_fluxo:
+            logger.info(
+                f"Fluxo 'Atendimento Inicial' criado com ID {fluxo.id}"
+            )
+        else:
+            logger.debug(
+                f"Fluxo 'Atendimento Inicial' já existe (ID {fluxo.id})"
+            )
+
+        return departamento, fluxo
+
+    except Exception as e:
+        logger.error(f"Erro ao garantir estrutura de atendimento padrão: {e}")
+        raise
+
+
+def _atualizar_status_atendimento_em_andamento(
+    atendimento: "Atendimento",
+) -> None:
+    """
+    Atualiza o status e etapa do atendimento para "Em Atendimento".
+
+    Args:
+        atendimento: Objeto Atendimento a ser atualizado.
+    """
+    try:
+        # Garante que a estrutura padrão exista
+        _, fluxo = _garantir_estrutura_atendimento_padrao()
+
+        # Atualiza o status do atendimento
+        atendimento.status = StatusAtendimento.EM_ATENDIMENTO
+
+        # Busca a etapa "Em Atendimento" do fluxo
+        etapa_em_atendimento = fluxo.etapas.filter(
+            nome="Em Atendimento", tipo_etapa=TipoEtapa.TRABALHO
+        ).first()
+
+        if etapa_em_atendimento:
+            atendimento.etapa_atual = etapa_em_atendimento
+            logger.debug(
+                f"Atendimento {atendimento.id} movido para etapa '{etapa_em_atendimento.nome}'"
+            )
+        else:
+            logger.warning(
+                f"Etapa 'Em Atendimento' não encontrada no fluxo {fluxo.id}"
+            )
+
+        # Salva as alterações apenas nos campos modificados
+        atendimento.save(update_fields=["status", "etapa_atual"])
+
+        logger.info(
+            f"Atendimento {atendimento.id} atualizado para status 'Em Atendimento'"
+        )
+
+    except Exception as e:
+        logger.error(
+            f"Erro ao atualizar status do atendimento {atendimento.id}: {e}"
+        )
+        raise
+
+
+def _configurar_atendimento_padrao(atendimento: "Atendimento") -> None:
+    """
+    Configura um atendimento para usar a estrutura padrão.
+
+    Args:
+        atendimento: Objeto Atendimento a ser configurado.
+    """
+    try:
+        departamento, fluxo = _garantir_estrutura_atendimento_padrao()
+
+        # Atualiza o departamento do atendimento
+        atendimento.departamento = departamento
+
+        # Busca a etapa "Fila de Atendimento" do fluxo
+        etapa_fila = fluxo.etapas.filter(
+            nome="Fila de Atendimento", tipo_etapa=TipoEtapa.FILA
+        ).first()
+
+        if etapa_fila:
+            atendimento.etapa_atual = etapa_fila
+            logger.debug(
+                f"Atendimento {atendimento.id} configurado para etapa '{etapa_fila.nome}'"
+            )
+        else:
+            logger.warning(
+                f"Etapa 'Fila de Atendimento' não encontrada no fluxo {fluxo.id}"
+            )
+
+        # Salva as alterações apenas nos campos modificados
+        atendimento.save(update_fields=["departamento", "etapa_atual"])
+
+    except Exception as e:
+        logger.error(
+            f"Erro ao configurar atendimento padrão {atendimento.id}: {e}"
+        )
+        raise
+
+
 def _pode_bot_responder_atendimento(
     atendimento: Optional["Atendimento"],
 ) -> bool:
     """Verifica se o bot pode responder automaticamente a um atendimento."""
     if atendimento is None:
         return False
+
     try:
+        # Garante que o atendimento tenha a estrutura padrão configurada
+        _configurar_atendimento_padrao(atendimento)
+
         mensagens_manager = getattr(atendimento, "mensagens", None)
         has_human_messages = False
         if mensagens_manager is not None:

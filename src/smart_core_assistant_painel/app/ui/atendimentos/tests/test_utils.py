@@ -9,7 +9,10 @@ from django.core.cache import cache
 from django.test import TestCase
 
 from smart_core_assistant_painel.app.ui.atendimentos.utils import (
+    _atualizar_status_atendimento_em_andamento,
     _compile_message_data_list,
+    _configurar_atendimento_padrao,
+    _garantir_estrutura_atendimento_padrao,
     _obter_entidades_metadados_validas,
     _pode_bot_responder_atendimento,
     _processar_entidades_contato,
@@ -542,3 +545,188 @@ class TestAtendimentosUtilsSendMessage(TestCase):
             "Erro ao processar mensagens para",
             mock_logger.error.call_args[0][0],
         )
+
+
+class TestAtendimentosUtilsEstruturaPadrao(TestCase):
+    """Testes para as funções de estrutura padrão de atendimento."""
+
+    def setUp(self) -> None:
+        """Configura o ambiente de testes."""
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            Atendimento,
+        )
+        from smart_core_assistant_painel.app.ui.clientes.models import Contato
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+            FluxoAtendimento,
+        )
+
+        # Limpa dados existentes
+        Departamento.objects.filter(nome="Atendimento").delete()
+        FluxoAtendimento.objects.filter(nome="Atendimento Inicial").delete()
+
+        # Cria um contato para testes
+        self.contato = Contato.objects.create(
+            telefone="5511999999999", nome_contato="Test User"
+        )
+
+        # Cria um atendimento para testes
+        self.atendimento = Atendimento.objects.create(contato=self.contato)
+
+    def test_garantir_estrutura_atendimento_padrao_cria_novo_departamento(
+        self,
+    ) -> None:
+        """Testa criação de novo departamento quando não existe."""
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+            FluxoAtendimento,
+        )
+
+        # Act
+        departamento, fluxo = _garantir_estrutura_atendimento_padrao()
+
+        # Assert
+        self.assertIsInstance(departamento, Departamento)
+        self.assertEqual(departamento.nome, "Atendimento")
+        self.assertTrue(departamento.ativo)
+        self.assertIn(
+            "Departamento usado para centralizar o atendimento",
+            departamento.descricao,
+        )
+
+        self.assertIsInstance(fluxo, FluxoAtendimento)
+        self.assertEqual(fluxo.nome, "Atendimento Inicial")
+        self.assertEqual(fluxo.departamento, departamento)
+        self.assertTrue(fluxo.ativo)
+        self.assertIn(
+            "Fluxo responsável pelo processamento inicial", fluxo.descricao
+        )
+
+    def test_garantir_estrutura_atendimento_padrao_retorna_existente(
+        self,
+    ) -> None:
+        """Testa que retorna departamento e fluxo existentes."""
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+            FluxoAtendimento,
+        )
+
+        # Arrange - cria manualmente
+        dept_existente = Departamento.objects.create(
+            nome="Atendimento", descricao="Descrição existente", ativo=True
+        )
+        fluxo_existente = FluxoAtendimento.objects.create(
+            departamento=dept_existente,
+            nome="Atendimento Inicial",
+            descricao="Descrição existente",
+            ativo=True,
+        )
+
+        # Act
+        departamento, fluxo = _garantir_estrutura_atendimento_padrao()
+
+        # Assert
+        self.assertEqual(departamento.id, dept_existente.id)
+        self.assertEqual(departamento.descricao, "Descrição existente")
+        self.assertEqual(fluxo.id, fluxo_existente.id)
+        self.assertEqual(fluxo.descricao, "Descrição existente")
+
+    def test_configurar_atendimento_padrao_sucesso(self) -> None:
+        """Testa configuração bem-sucedida do atendimento padrão."""
+
+        # Act
+        _configurar_atendimento_padrao(self.atendimento)
+
+        # Assert - recarrega do banco
+        self.atendimento.refresh_from_db()
+
+        # Verifica departamento
+        self.assertIsNotNone(self.atendimento.departamento)
+        self.assertEqual(self.atendimento.departamento.nome, "Atendimento")
+
+        # Verifica etapa
+        self.assertIsNotNone(self.atendimento.etapa_atual)
+        self.assertEqual(
+            self.atendimento.etapa_atual.nome, "Fila de Atendimento"
+        )
+        self.assertEqual(self.atendimento.etapa_atual.tipo_etapa, "fila")
+
+    def test_pode_bot_responder_atendimento_com_estrutura_padrao(
+        self,
+    ) -> None:
+        """Testa que _pode_bot_responder_atendimento configura estrutura padrão."""
+        # Act
+        resultado = _pode_bot_responder_atendimento(self.atendimento)
+
+        # Assert
+        self.assertTrue(
+            resultado
+        )  # Deve poder responder (sem interação humana)
+
+        # Verifica que a estrutura foi configurada
+        self.atendimento.refresh_from_db()
+        self.assertIsNotNone(self.atendimento.departamento)
+        self.assertEqual(self.atendimento.departamento.nome, "Atendimento")
+        self.assertIsNotNone(self.atendimento.etapa_atual)
+        self.assertEqual(
+            self.atendimento.etapa_atual.nome, "Fila de Atendimento"
+        )
+
+    def test_pode_bot_responder_atendimento_none_retorna_false(
+        self,
+    ) -> None:
+        """Testa que retorna False quando atendimento é None."""
+        resultado = _pode_bot_responder_atendimento(None)
+        self.assertFalse(resultado)
+
+    def test_atualizar_status_atendimento_em_andamento_sucesso(
+        self,
+    ) -> None:
+        """Testa atualização bem-sucedida do status para 'Em Atendimento'."""
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            StatusAtendimento,
+        )
+
+        # Act
+        _atualizar_status_atendimento_em_andamento(self.atendimento)
+
+        # Assert - recarrega do banco
+        self.atendimento.refresh_from_db()
+
+        # Verifica status
+        self.assertEqual(
+            self.atendimento.status, StatusAtendimento.EM_ATENDIMENTO
+        )
+
+        # Verifica etapa
+        self.assertIsNotNone(self.atendimento.etapa_atual)
+        self.assertEqual(self.atendimento.etapa_atual.nome, "Em Atendimento")
+        self.assertEqual(self.atendimento.etapa_atual.tipo_etapa, "trabalho")
+
+    def test_atualizar_status_atendimento_em_andamento_sem_etapa(
+        self,
+    ) -> None:
+        """Testa comportamento quando etapa 'Em Atendimento' não existe."""
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            StatusAtendimento,
+        )
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            EtapaFluxo,
+        )
+
+        # Arrange - remove a etapa "Em Atendimento"
+        EtapaFluxo.objects.filter(nome="Em Atendimento").delete()
+
+        # Act
+        _atualizar_status_atendimento_em_andamento(self.atendimento)
+
+        # Assert - recarrega do banco
+        self.atendimento.refresh_from_db()
+
+        # Status deve ser atualizado mesmo sem a etapa
+        self.assertEqual(
+            self.atendimento.status, StatusAtendimento.EM_ATENDIMENTO
+        )
+
+        # Etapa deve continuar None ou ser a anterior
+        # (não falha se etapa não existir)

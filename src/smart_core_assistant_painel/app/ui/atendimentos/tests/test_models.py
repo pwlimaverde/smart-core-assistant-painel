@@ -2,6 +2,7 @@
 
 from django.test import TestCase
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
@@ -11,6 +12,12 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoRemetente,
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Departamento,
+    FluxoAtendimento,
+    EtapaFluxo,
+    TipoEtapa,
+)
 
 
 class TestAtendimento(TestCase):
@@ -43,6 +50,45 @@ class TestAtendimento(TestCase):
 
         self.assertEqual(self.atendimento.status, StatusAtendimento.RESOLVIDO)
         self.assertIsNotNone(self.atendimento.data_fim)
+
+    def test_clean_valida_etapa_do_departamento(self) -> None:
+        """Valida que a etapa pertence ao departamento do atendimento."""
+        dep_a: Departamento = Departamento.objects.create(nome="Suporte")
+        dep_b: Departamento = Departamento.objects.create(nome="Comercial")
+
+        fluxo_a: FluxoAtendimento = dep_a.ensure_fluxo("Fluxo A")
+        fluxo_b: FluxoAtendimento = dep_b.ensure_fluxo("Fluxo B")
+
+        etapa_a: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo_a,
+            nome="Etapa A",
+            descricao="Teste A",
+            ordem=10,
+            cor="#123456",
+            tipo_etapa=TipoEtapa.TRABALHO,
+        )
+        etapa_b: EtapaFluxo = EtapaFluxo.objects.create(
+            fluxo=fluxo_b,
+            nome="Etapa B",
+            descricao="Teste B",
+            ordem=10,
+            cor="#654321",
+            tipo_etapa=TipoEtapa.TRABALHO,
+        )
+
+        atendimento = Atendimento(
+            contato=self.contato,
+            status=StatusAtendimento.EM_ANDAMENTO,
+            departamento=dep_a,
+            etapa_atual=etapa_b,
+        )
+
+        with self.assertRaises(ValidationError):
+            atendimento.clean()
+
+        # Agora com etapa do mesmo departamento não deve lançar
+        atendimento.etapa_atual = etapa_a
+        atendimento.clean()
 
 
 class TestMensagem(TestCase):

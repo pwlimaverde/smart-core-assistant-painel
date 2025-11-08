@@ -18,6 +18,12 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoRemetente,
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Departamento,
+    FluxoAtendimento,
+    EtapaFluxo,
+    TipoEtapa,
+)
 
 
 class MockRequest:
@@ -100,6 +106,72 @@ class TestAtendimentoAdmin(TestCase):
 
         duracao = self.admin.duracao_formatada(self.atendimento)
         self.assertIn("1:30", duracao)
+
+    def test_filtra_etapa_atual_por_departamento_novo(self) -> None:
+        """Form de criação deve filtrar etapas pelo departamento selecionado."""
+        dep_a = Departamento.objects.create(nome="Suporte")
+        dep_b = Departamento.objects.create(nome="Comercial")
+
+        fluxo_a: FluxoAtendimento = dep_a.ensure_fluxo("Fluxo A")
+        fluxo_b: FluxoAtendimento = dep_b.ensure_fluxo("Fluxo B")
+
+        # Cria etapas específicas para garantir distinção
+        etapa_a = EtapaFluxo.objects.create(
+            fluxo=fluxo_a,
+            nome="Etapa A",
+            descricao="Teste A",
+            ordem=10,
+            cor="#123456",
+            tipo_etapa=TipoEtapa.TRABALHO,
+        )
+        etapa_b = EtapaFluxo.objects.create(
+            fluxo=fluxo_b,
+            nome="Etapa B",
+            descricao="Teste B",
+            ordem=10,
+            cor="#654321",
+            tipo_etapa=TipoEtapa.TRABALHO,
+        )
+
+        request = MockRequest()
+        # Simula seleção do departamento via GET
+        request.GET = {"departamento": str(dep_a.id)}
+
+        form_cls = self.admin.get_form(request)
+        qs = form_cls.base_fields["etapa_atual"].queryset
+
+        # Todas as etapas devem pertencer ao dep_a
+        self.assertEqual(
+            qs.filter(fluxo__departamento=dep_a).count(), qs.count()
+        )
+        # Etapa de outro departamento não deve aparecer
+        self.assertFalse(qs.filter(id=etapa_b.id).exists())
+
+    def test_filtra_etapa_atual_por_departamento_edicao(self) -> None:
+        """Form de edição deve filtrar etapas pelo departamento do objeto."""
+        dep = Departamento.objects.create(nome="Financeiro")
+        fluxo: FluxoAtendimento = dep.ensure_fluxo("Fluxo Fin")
+        etapa = EtapaFluxo.objects.create(
+            fluxo=fluxo,
+            nome="Etapa Fin",
+            descricao="Teste",
+            ordem=5,
+            cor="#ABCDEF",
+            tipo_etapa=TipoEtapa.TRABALHO,
+        )
+
+        atendimento = Atendimento.objects.create(
+            contato=self.contato,
+            status=StatusAtendimento.EM_ATENDIMENTO,
+            departamento=dep,
+        )
+
+        request = MockRequest()
+        form_cls = self.admin.get_form(request, obj=atendimento)
+        qs = form_cls.base_fields["etapa_atual"].queryset
+
+        # Deve conter a etapa do próprio departamento
+        self.assertTrue(qs.filter(id=etapa.id).exists())
 
 
 class TestMensagemAdmin(TestCase):

@@ -44,10 +44,7 @@ urlpatterns = [
         "treinamento/",
         include("smart_core_assistant_painel.app.ui.treinamento.urls"),
     ),
-    path(
-        "api/appflowy_adapter/",
-        include("smart_core_assistant_painel.app.appflowy_adapter.urls"),
-    ),
+    # Endpoint desativado: appflowy_adapter não está instalado
     # API pública do painel Kanban e entidades
     path(
         "api/operacional/",

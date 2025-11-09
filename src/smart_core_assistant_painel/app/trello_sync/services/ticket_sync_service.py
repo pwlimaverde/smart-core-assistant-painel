@@ -1,4 +1,5 @@
 from typing import Any, Optional, cast
+from decimal import Decimal
 
 from loguru import logger
 
@@ -14,7 +15,6 @@ from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloList,
 )
 
-from decimal import Decimal
 from datetime import timedelta
 from django.utils import timezone
 
@@ -78,78 +78,7 @@ class TicketSyncService:
             if member_id:
                 id_members = [member_id]
 
-        # Comentário: Define custom fields se existirem no board
-        custom_fields: dict[str, str] = {}
-        try:
-            board_id: str = cast(str, lista.board.external_id)
-            cf_map = self.client.ensure_custom_fields(
-                board_id,
-                {
-                    "Contato": "text",
-                    "Telefone": "text",
-                    "Departamento": "text",
-                    "Canal": "text",
-                    "Prioridade": "text",
-                    "Produto/Serviço": "text",
-                    "Valor Orçamento": "text",
-                    "Categoria Venda": "text",
-                    "Atendente": "text",
-                },
-            )
-            # Comentário: Mapeia valores dos campos para IDs resolvidos
-            contato = getattr(atendimento, "contato", None)
-            nome_contato: str = (
-                getattr(contato, "nome_contato", None) or "(não informado)"
-            )
-            telefone: str = getattr(contato, "telefone", "")
-            departamento_nome: str = (
-                getattr(getattr(atendimento, "departamento", None), "nome", "")
-                or "(não informado)"
-            )
-            canal: str = getattr(atendimento, "canal", "")
-            prioridade: str = getattr(atendimento, "prioridade", "")
-            produto_servico: str = getattr(atendimento, "produto_servico", "")
-            valor_orc: Optional[Decimal] = getattr(
-                atendimento, "valor_orcamento", None
-            )
-            categoria_venda: str = getattr(
-                atendimento, "categoria_venda", ""
-            )
-            atendente_nome: str = (
-                getattr(atendente, "nome", "") if atendente is not None else ""
-            )
-
-            def fmt_currency(val: Optional[Decimal]) -> str:
-                # Comentário: formata valor monetário com fallback
-                if val is None:
-                    return ""
-                try:
-                    return f"R$ {val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                except Exception:
-                    return str(val)
-
-            if cf_map.get("Contato"):
-                custom_fields[cf_map["Contato"]] = nome_contato
-            if cf_map.get("Telefone"):
-                custom_fields[cf_map["Telefone"]] = telefone
-            if cf_map.get("Departamento"):
-                custom_fields[cf_map["Departamento"]] = departamento_nome
-            if cf_map.get("Canal"):
-                custom_fields[cf_map["Canal"]] = canal
-            if cf_map.get("Prioridade"):
-                custom_fields[cf_map["Prioridade"]] = prioridade
-            if cf_map.get("Produto/Serviço"):
-                custom_fields[cf_map["Produto/Serviço"]] = produto_servico
-            if cf_map.get("Valor Orçamento"):
-                custom_fields[cf_map["Valor Orçamento"]] = fmt_currency(
-                    valor_orc
-                )
-            if cf_map.get("Categoria Venda"):
-                custom_fields[cf_map["Categoria Venda"]] = categoria_venda
-            if cf_map.get("Atendente"):
-                custom_fields[cf_map["Atendente"]] = atendente_nome
-        except Exception:
-            custom_fields = {}
+        # Comentário: Trello (plano gratuito) — sem uso de Custom Fields
 
         # Comentário: create_item retorna o ID do card; montar payload.
         # Comentário: define datas (start/due) e labels de prioridade
@@ -214,7 +143,7 @@ class TicketSyncService:
             "idLabels": id_labels or [],
             "start": start_str,
             "due": due_str,
-            "custom_fields": custom_fields or {},
+            # Comentário: sem "custom_fields" no payload
         }
         card_id: str = self.client.create_item(
             data_source_id=lista.external_id, payload=payload
@@ -357,7 +286,12 @@ class TicketSyncService:
             if val is None:
                 return ""
             try:
-                return f"R$ {val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                cur: str = f"R$ {val:,.2f}"
+                return (
+                    cur.replace(",", "X")
+                    .replace(".", ",")
+                    .replace("X", ".")
+                )
             except Exception:
                 return str(val)
 
@@ -542,77 +476,7 @@ class TicketSyncService:
 
         atendente = getattr(atendimento, "atendente_humano", None)
 
-        try:
-            board_id: str = cast(str, card.list_sync.board.external_id)
-            cf_map = self.client.ensure_custom_fields(
-                board_id,
-                {
-                    "Contato": "text",
-                    "Telefone": "text",
-                    "Departamento": "text",
-                    "Canal": "text",
-                    "Prioridade": "text",
-                    "Produto/Serviço": "text",
-                    "Valor Orçamento": "text",
-                    "Categoria Venda": "text",
-                    "Atendente": "text",
-                },
-            )
-            contato = getattr(atendimento, "contato", None)
-            nome_contato: str = (
-                getattr(contato, "nome_contato", None) or "(não informado)"
-            )
-            telefone: str = getattr(contato, "telefone", "")
-            departamento_nome: str = (
-                getattr(getattr(atendimento, "departamento", None), "nome", "")
-                or "(não informado)"
-            )
-            canal: str = getattr(atendimento, "canal", "")
-            prioridade: str = getattr(atendimento, "prioridade", "")
-            produto_servico: str = getattr(atendimento, "produto_servico", "")
-            valor_orc: Optional[Decimal] = getattr(
-                atendimento, "valor_orcamento", None
-            )
-            categoria_venda: str = getattr(
-                atendimento, "categoria_venda", ""
-            )
-            atendente_nome: str = (
-                getattr(atendente, "nome", "") if atendente is not None else ""
-            )
-
-            def fmt_currency(val: Optional[Decimal]) -> str:
-                if val is None:
-                    return ""
-                try:
-                    return f"R$ {val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-                except Exception:
-                    return str(val)
-
-            cf_values: dict[str, str] = {}
-            if cf_map.get("Contato"):
-                cf_values[cf_map["Contato"]] = nome_contato
-            if cf_map.get("Telefone"):
-                cf_values[cf_map["Telefone"]] = telefone
-            if cf_map.get("Departamento"):
-                cf_values[cf_map["Departamento"]] = departamento_nome
-            if cf_map.get("Canal"):
-                cf_values[cf_map["Canal"]] = canal
-            if cf_map.get("Prioridade"):
-                cf_values[cf_map["Prioridade"]] = prioridade
-            if cf_map.get("Produto/Serviço"):
-                cf_values[cf_map["Produto/Serviço"]] = produto_servico
-            if cf_map.get("Valor Orçamento"):
-                cf_values[cf_map["Valor Orçamento"]] = fmt_currency(valor_orc)
-            if cf_map.get("Categoria Venda"):
-                cf_values[cf_map["Categoria Venda"]] = categoria_venda
-            if cf_map.get("Atendente"):
-                cf_values[cf_map["Atendente"]] = atendente_nome
-
-            if cf_values:
-                payload["custom_fields"] = cf_values
-        except Exception:
-            # Comentário: se não houver Power-Up ou IDs, segue sem custom fields
-            pass
+        # Comentário: Trello (plano gratuito) — não atualiza Custom Fields
 
         try:
             self.client.update_item(

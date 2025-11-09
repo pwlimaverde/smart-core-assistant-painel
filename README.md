@@ -234,6 +234,15 @@ result = send_whatsapp_message(
 - Recomenda-se executar os testes no Docker:
   - `uv run task test-docker`
 
+### Integração Trello (trello_sync)
+- Adapter focado no Trello gratuito, sem Custom Fields.
+- Atualiza apenas campos nativos: `name`, `desc`, `start`, `due`,
+  `idLabels` e `idMembers`.
+- Para uso futuro de Custom Fields, crie um novo adapter específico
+  (consulte a API: https://developer.atlassian.com/cloud/trello/).
+- Recomenda-se executar os testes:
+  - `uv run task test-docker`
+
 ## Licença
 
 MIT License

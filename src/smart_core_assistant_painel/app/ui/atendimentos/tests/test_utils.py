@@ -17,6 +17,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.utils import (
     _pode_bot_responder_atendimento,
     _processar_entidades_contato,
     clear_wa_buffer,
+    gerar_dict_fluxos_disponiveis,
     sched_message_response,
     send_message_response,
     set_wa_buffer,
@@ -730,3 +731,122 @@ class TestAtendimentosUtilsEstruturaPadrao(TestCase):
 
         # Etapa deve continuar None ou ser a anterior
         # (não falha se etapa não existir)
+
+    def test_gerar_dict_fluxos_disponiveis_sucesso(
+        self,
+    ) -> None:
+        """Testa geração bem-sucedida do dicionário de fluxos disponíveis."""
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+            FluxoAtendimento,
+        )
+
+        # Arrange - cria alguns fluxos de teste
+        dept1 = Departamento.objects.create(
+            nome="Vendas", descricao="Departamento de vendas", ativo=True
+        )
+        dept2 = Departamento.objects.create(
+            nome="Suporte", descricao="Departamento de suporte", ativo=True
+        )
+
+        FluxoAtendimento.objects.create(
+            departamento=dept1,
+            nome="Atendimento Comercial",
+            descricao="Fluxo para atendimento comercial",
+            ativo=True,
+        )
+        FluxoAtendimento.objects.create(
+            departamento=dept2,
+            nome="Suporte Técnico",
+            descricao="Fluxo para suporte técnico",
+            ativo=True,
+        )
+        FluxoAtendimento.objects.create(
+            departamento=dept1,
+            nome="Pós-venda",
+            descricao="",
+            ativo=True,
+        )
+        FluxoAtendimento.objects.create(
+            departamento=dept2,
+            nome="Suporte Inativo",
+            descricao="Fluxo inativo",
+            ativo=False,  # Não deve aparecer no resultado
+        )
+
+        # Act
+        fluxos_dict = gerar_dict_fluxos_disponiveis()
+
+        # Assert
+        self.assertIsInstance(fluxos_dict, dict)
+        self.assertEqual(len(fluxos_dict), 3)  # Apenas os fluxos ativos
+
+        # Verifica formatação das chaves e valores
+        expected_fluxos = {
+            "Atendimento Comercial - Vendas": "Fluxo para atendimento comercial",
+            "Suporte Técnico - Suporte": "Fluxo para suporte técnico",
+            "Pós-venda - Vendas": "Fluxo de Pós-venda para Vendas",  # Descrição gerada automaticamente
+        }
+
+        self.assertEqual(fluxos_dict, expected_fluxos)
+
+    def test_gerar_dict_fluxos_disponiveis_exclui_padrao(
+        self,
+    ) -> None:
+        """Testa que fluxo padrão 'Atendimento Inicial - Atendimento' é excluído."""
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+            FluxoAtendimento,
+        )
+
+        # Arrange - cria departamento e fluxo padrão
+        dept_atendimento = Departamento.objects.create(
+            nome="Atendimento",
+            descricao="Departamento padrão de atendimento",
+            ativo=True,
+        )
+
+        # Cria o fluxo padrão (deve ser excluído)
+        FluxoAtendimento.objects.create(
+            departamento=dept_atendimento,
+            nome="Atendimento Inicial",
+            descricao="Fluxo padrão de atendimento inicial",
+            ativo=True,
+        )
+
+        # Cria outros fluxos (devem ser incluídos)
+        FluxoAtendimento.objects.create(
+            departamento=dept_atendimento,
+            nome="Fluxo Secundário",
+            descricao="Outro fluxo do mesmo departamento",
+            ativo=True,
+        )
+
+        # Act
+        fluxos_dict = gerar_dict_fluxos_disponiveis()
+
+        # Assert
+        self.assertIsInstance(fluxos_dict, dict)
+        self.assertEqual(len(fluxos_dict), 1)  # Apenas o fluxo secundário
+
+        # Verifica que o fluxo padrão foi excluído
+        self.assertNotIn("Atendimento Inicial - Atendimento", fluxos_dict)
+
+        # Verifica que o fluxo secundário foi incluído
+        self.assertIn("Fluxo Secundário - Atendimento", fluxos_dict)
+        self.assertEqual(
+            fluxos_dict["Fluxo Secundário - Atendimento"],
+            "Outro fluxo do mesmo departamento",
+        )
+
+    def test_gerar_dict_fluxos_disponiveis_vazio(
+        self,
+    ) -> None:
+        """Testa comportamento quando não há fluxos disponíveis."""
+        # Act
+        fluxos_dict = gerar_dict_fluxos_disponiveis()
+
+        # Assert
+        self.assertIsInstance(fluxos_dict, dict)
+        self.assertEqual(len(fluxos_dict), 0)
+        self.assertEqual(fluxos_dict, {})

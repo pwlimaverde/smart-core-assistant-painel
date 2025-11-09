@@ -1,6 +1,7 @@
 """Funções utilitárias para o aplicativo Atendimentos."""
 
 import json
+from math import log
 from typing import Any, Optional
 
 from django.core.cache import cache
@@ -146,7 +147,12 @@ def send_message_response(phone: str) -> None:
                 dados_treinamento = Documento.buscar_documentos_similares(
                     query_vec=vector_conteudo
                 )
+
+                fluxos_disponiveis: dict[str, str] = (
+                    _gerar_dict_fluxos_disponiveis()
+                )
                 result = FeaturesCompose.analise_mensage(
+                    fluxos_disponiveis=fluxos_disponiveis,
                     historico_atendimento=historico_atendimento,
                     prompt_human=prompt_intent,
                     context=mensagem.conteudo,
@@ -403,6 +409,52 @@ def _atualizar_status_atendimento_em_andamento(
             f"Erro ao atualizar status do atendimento {atendimento.id}: {e}"
         )
         raise
+
+
+def _gerar_dict_fluxos_disponiveis() -> dict[str, str]:
+    """
+    Gera um dicionário com todos os fluxos de atendimento disponíveis.
+
+    A chave do dicionário é formatada como "nome_fluxo - nome_departamento"
+    e o valor é a descrição do fluxo.
+
+    Returns:
+        Dicionário com os fluxos disponíveis no formato:
+        {"Atendimento Comercial - Comercial": "Descrição do fluxo"}
+    """
+    try:
+        fluxos_disponiveis: dict[str, str] = {}
+
+        # Busca todos os fluxos ativos (exceto o padrão) ordenados por departamento e nome
+        fluxos_queryset = (
+            FluxoAtendimento.objects.filter(ativo=True)
+            .exclude(
+                nome="Atendimento Inicial", departamento__nome="Atendimento"
+            )
+            .select_related("departamento")
+            .order_by("departamento__nome", "nome")
+        )
+
+        for fluxo in fluxos_queryset:
+            # Formata a chave como "nome_fluxo - nome_departamento"
+            chave = f"{fluxo.nome} - {fluxo.departamento.nome}"
+
+            # Usa a descrição do fluxo como valor, ou texto padrão se estiver vazia
+            valor = (
+                fluxo.descricao
+                or f"Fluxo de {fluxo.nome} para {fluxo.departamento.nome}"
+            )
+
+            fluxos_disponiveis[chave] = valor
+
+        logger.info(
+            f"Gerado dicionário com {len(fluxos_disponiveis)} fluxos disponíveis - {fluxos_disponiveis}"
+        )
+        return fluxos_disponiveis
+
+    except Exception as e:
+        logger.error(f"Erro ao gerar dicionário de fluxos disponíveis: {e}")
+        return {}
 
 
 def _configurar_atendimento_padrao(atendimento: "Atendimento") -> None:

@@ -248,6 +248,7 @@ class GenerateChunksParameters(ParametersReturnResult):
 
 @dataclass
 class AnaliseMensageParameters(ParametersReturnResult):
+    fluxos_disponiveis: dict[str, str]
     historico_atendimento: dict[str, Any]
     dados_treinamento: str
     llm_parameters: LlmParameters

@@ -519,6 +519,7 @@ class FeaturesCompose:
 
     @staticmethod
     def analise_mensage(
+        fluxos_disponiveis: dict[str, str],
         context: str,
         historico_atendimento: dict[str, Any],
         prompt_human: str,
@@ -534,7 +535,9 @@ class FeaturesCompose:
             context=context,
             error=LlmError,
         )
+
         parameters = AnaliseMensageParameters(
+            fluxos_disponiveis=fluxos_disponiveis,
             historico_atendimento=historico_atendimento,
             dados_treinamento=dados_treinamento,
             llm_parameters=llm_parameters,

@@ -115,6 +115,7 @@ class AMTuple(NamedTuple):
     resposta_bot: str
     confiabilidade: float
     transferir_atendimento: bool
+    fluxo_transferencia: str
 
 
 AMData: TypeAlias = Datasource[str, AnaliseMensageParameters]

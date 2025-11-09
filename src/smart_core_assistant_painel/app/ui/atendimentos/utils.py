@@ -1,7 +1,6 @@
 """Funções utilitárias para o aplicativo Atendimentos."""
 
 import json
-from math import log
 from typing import Any, Optional
 
 from django.core.cache import cache
@@ -173,7 +172,11 @@ def send_message_response(phone: str) -> None:
                 _atualizar_status_atendimento_em_andamento(atendimento_obj)
 
                 if result.transferir_atendimento:
-                    logger.warning("DEBUG: Bot transferiu atendimento")
+                    if result.fluxo_transferencia:
+                        atendimento_obj.fluxo_transferencia = (
+                            result.fluxo_transferencia
+                        )
+                        atendimento_obj.save()
             else:
                 logger.warning(
                     "DEBUG: Bot não pode responder - pulando processamento de intents"

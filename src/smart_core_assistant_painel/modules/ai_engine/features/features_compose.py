@@ -518,6 +518,58 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
+    def _extrair_fluxo_transferencia(
+        response_text: str, fluxos_disponiveis: dict[str, str]
+    ) -> str:
+        """
+        Extrai a chave do fluxo de transferência adequado da resposta do bot.
+
+        Args:
+            response_text: Resposta do bot que contém a menção de transferência
+            fluxos_disponiveis: Dicionário com os fluxos disponíveis
+
+        Returns:
+            str: Chave do fluxo correspondente ou string vazia se não encontrar
+        """
+        import re
+
+        # Padrão para extrair o nome do setor após "Estarei transferindo seu atendimento para"
+        pattern = r"Estarei transferindo seu atendimento para ([^.]+)"
+        match = re.search(pattern, response_text, re.IGNORECASE)
+
+        if not match:
+            return ""
+
+        setor_mentionado = match.group(1).strip()
+
+        # Percorre todos os fluxos disponíveis para encontrar correspondência
+        for fluxo_key in fluxos_disponiveis.keys():
+            # Extrai apenas o nome do setor (antes do "-")
+            nome_setor = fluxo_key.split(" - ")[0].strip()
+
+            # Verifica correspondência exata ou parcial
+            if (
+                setor_mentionado.lower() == nome_setor.lower()
+                or setor_mentionado.lower() in nome_setor.lower()
+                or nome_setor.lower() in setor_mentionado.lower()
+            ):
+                logger.info(
+                    f"Fluxo de transferência identificado: {fluxo_key} "
+                    f"(setor mencionado: {setor_mentionado})"
+                )
+                return fluxo_key
+
+        logger.warning(
+            f"Nenhum fluxo correspondente encontrado para: {setor_mentionado}. "
+            "Usando primeiro fluxo disponível como padrão."
+        )
+        # Retorna a primeira key como padrão se houver fluxos disponíveis
+        if fluxos_disponiveis:
+            primeira_key = next(iter(fluxos_disponiveis.keys()))
+            logger.info(f"Usando fluxo padrão: {primeira_key}")
+            return primeira_key
+        return ""
+
     def analise_mensage(
         fluxos_disponiveis: dict[str, str],
         context: str,
@@ -553,6 +605,7 @@ class FeaturesCompose:
             # Define flag de transferência quando a resposta indica não ter
             # encontrado informações relacionadas OU solicitação de transferência
             transfer_attendance: bool = False
+            fluxo_transferencia: str = ""
             apology_phrase: str = "Desculpe, não encontrei informações relacionadas à sua pergunta."
             transfer_phrase: str = "Estarei transferindo seu atendimento para o setor responsável."
             if (
@@ -560,10 +613,18 @@ class FeaturesCompose:
                 or transfer_phrase in response_text
             ):
                 transfer_attendance = True
+                # verificação do fluxo de transferência de atendimento adequado
+                fluxo_transferencia = (
+                    FeaturesCompose._extrair_fluxo_transferencia(
+                        response_text, fluxos_disponiveis
+                    )
+                )
+
                 # Log para depuração do fluxo de transferência de atendimento
                 logger.info(
                     "Regra de transferência acionada. "
-                    "transferir_atendimento=True."
+                    f"transferir_atendimento=True. "
+                    f"fluxo_transferencia={fluxo_transferencia}"
                 )
 
             # Gera embeddings para pergunta (context), treinamento (se houver)
@@ -596,21 +657,34 @@ class FeaturesCompose:
             # Se o score ficar abaixo do limiar, transfere atendimento
             if final_score < 0.6:
                 transfer_attendance = True
+                # Se a transferência for ativada por score baixo, tenta extrair o fluxo
+                if fluxo_transferencia == "":
+                    fluxo_transferencia = (
+                        FeaturesCompose._extrair_fluxo_transferencia(
+                            response_text, fluxos_disponiveis
+                        )
+                    )
                 logger.info(
                     "Score abaixo do limiar (0.6). "
-                    "transferir_atendimento=True."
+                    f"transferir_atendimento=True. "
+                    f"fluxo_transferencia={fluxo_transferencia}"
                 )
 
             # Quando a transferência estiver habilitada, acrescenta a mensagem
             # solicitada ao texto de resposta do bot.
             if transfer_attendance:
-                transfer_message: str = "/n/n Vou transferir seu atendimento para o setor rersponsável"
-                response_text = f"{response_text} {transfer_message}"
+                transfer_message: str = "\n\nVou transferir seu atendimento para o setor responsável"
+                response_text = f"{response_text}{transfer_message}"
+
+            # Se não houver fluxo de transferência identificado, usa string vazia
+            if not transfer_attendance:
+                fluxo_transferencia = ""
 
             return AMTuple(
                 resposta_bot=response_text,
                 confiabilidade=final_score,
                 transferir_atendimento=transfer_attendance,
+                fluxo_transferencia=fluxo_transferencia,
             )
         elif isinstance(data, ErrorReturn):
             raise data.result

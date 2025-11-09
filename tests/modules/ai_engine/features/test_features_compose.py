@@ -51,9 +51,7 @@ class TestFeaturesCompose(unittest.TestCase):
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.LoadDocumentFileDatasource"
     )
-    def test_load_document_file_success(
-        self, mock_datasource, mock_use_case
-    ):
+    def test_load_document_file_success(self, mock_datasource, mock_use_case):
         # Arrange
         mock_use_case_instance = mock_use_case.return_value
         expected_docs = [Document(page_content="Test file content")]
@@ -88,7 +86,6 @@ class TestFeaturesCompose(unittest.TestCase):
                 id="1", path="/fake/path", tag="test", grupo="test"
             )
 
-
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseConteudoLangchainDatasource"
     )
@@ -106,7 +103,9 @@ class TestFeaturesCompose(unittest.TestCase):
         mock_use_case_instance.return_value = SuccessReturn("Analise")
 
         # Act
-        result = FeaturesCompose.pre_analise_ia_treinamento(context="Test context")
+        result = FeaturesCompose.pre_analise_ia_treinamento(
+            context="Test context"
+        )
 
         # Assert
         self.assertEqual(result, "Analise")
@@ -131,14 +130,15 @@ class TestFeaturesCompose(unittest.TestCase):
         mock_use_case_instance.return_value = SuccessReturn("Melhoria")
 
         # Act
-        result = FeaturesCompose.melhoria_ia_treinamento(context="Test context")
+        result = FeaturesCompose.melhoria_ia_treinamento(
+            context="Test context"
+        )
 
         # Assert
         self.assertEqual(result, "Melhoria")
         mock_datasource.assert_called_once()
         mock_use_case.assert_called_once()
         mock_use_case_instance.assert_called_once()
-
 
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnalisePreviaMensagemLangchainDatasource"
@@ -159,7 +159,9 @@ class TestFeaturesCompose(unittest.TestCase):
 
         # Act
         result = FeaturesCompose.analise_previa_mensagem(
-            historico_atendimento={}, context="Test context", valid_intent_types="{}"
+            historico_atendimento={},
+            context="Test context",
+            valid_intent_types="{}",
         )
 
         # Assert
@@ -196,22 +198,27 @@ class TestFeaturesCompose(unittest.TestCase):
         mock_use_case.assert_called_once()
         mock_instance.assert_called_once()
 
-
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.LoadDocumentConteudoUseCase"
     )
-    def test_load_document_conteudo_unexpected_return_type(self, mock_use_case):
+    def test_load_document_conteudo_unexpected_return_type(
+        self, mock_use_case
+    ):
         """Testa ValueError quando usecase retorna tipo inesperado - cobre linha 106."""
         # Arrange
         mock_instance = mock_use_case.return_value
-        mock_instance.return_value = "unexpected_type"  # Não é SuccessReturn nem ErrorReturn
+        mock_instance.return_value = (
+            "unexpected_type"  # Não é SuccessReturn nem ErrorReturn
+        )
 
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.load_document_conteudo(
                 id="1", conteudo="Test", tag="test", grupo="test"
             )
-        self.assertIn("Unexpected return type from usecase", str(context.exception))
+        self.assertIn(
+            "Unexpected return type from usecase", str(context.exception)
+        )
 
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.LoadDocumentFileUseCase"
@@ -225,14 +232,18 @@ class TestFeaturesCompose(unittest.TestCase):
         """Testa ValueError quando usecase retorna tipo inesperado - cobre linha 138."""
         # Arrange
         mock_use_case_instance = mock_use_case.return_value
-        mock_use_case_instance.return_value = "unexpected_type"  # Não é SuccessReturn nem ErrorReturn
+        mock_use_case_instance.return_value = (
+            "unexpected_type"  # Não é SuccessReturn nem ErrorReturn
+        )
 
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.load_document_file(
                 id="1", path="/fake/path", tag="test", grupo="test"
             )
-        self.assertIn("Unexpected return type from usecase", str(context.exception))
+        self.assertIn(
+            "Unexpected return type from usecase", str(context.exception)
+        )
 
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseConteudoLangchainDatasource"
@@ -280,7 +291,9 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.pre_analise_ia_treinamento(context="Test context")
-        self.assertIn("Unexpected return type from usecase", str(context.exception))
+        self.assertIn(
+            "Unexpected return type from usecase", str(context.exception)
+        )
 
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseConteudoLangchainDatasource"
@@ -328,7 +341,9 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.melhoria_ia_treinamento(context="Test context")
-        self.assertIn("Unexpected return type from usecase", str(context.exception))
+        self.assertIn(
+            "Unexpected return type from usecase", str(context.exception)
+        )
 
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnalisePreviaMensagemLangchainDatasource"
@@ -358,7 +373,9 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(LlmError):
             FeaturesCompose.analise_previa_mensagem(
-                historico_atendimento={}, context="Test context", valid_intent_types="{}"
+                historico_atendimento={},
+                context="Test context",
+                valid_intent_types="{}",
             )
         # A função deve apenas propagar a exceção, não logar.
         # O log é responsabilidade de quem chama a função.
@@ -384,9 +401,13 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.analise_previa_mensagem(
-                historico_atendimento={}, context="Test context", valid_intent_types="{}"
+                historico_atendimento={},
+                context="Test context",
+                valid_intent_types="{}",
             )
-        self.assertIn("Unexpected return type from usecase", str(context.exception))
+        self.assertIn(
+            "Unexpected return type from usecase", str(context.exception)
+        )
 
     def test_converter_contexto_exception(self):
         """Testa exception em _converter_contexto - cobre linhas 265-267."""
@@ -401,19 +422,26 @@ class TestFeaturesCompose(unittest.TestCase):
             except Exception as e:
                 # Simula o logger.error que está nas linhas 265-267
                 from unittest.mock import patch
-                with patch('smart_core_assistant_painel.modules.ai_engine.features.features_compose.logger') as mock_logger:
+
+                with patch(
+                    "smart_core_assistant_painel.modules.ai_engine.features.features_compose.logger"
+                ) as mock_logger:
                     mock_logger.error = lambda msg: None
                     mock_logger.error(f"Erro ao converter contexto: {e}")
                 raise e
 
         # Substituímos temporariamente o método
-        FeaturesCompose._converter_contexto = staticmethod(mock_converter_with_exception)
+        FeaturesCompose._converter_contexto = staticmethod(
+            mock_converter_with_exception
+        )
 
         try:
             # Act & Assert
             with self.assertRaises(ValueError) as context:
                 FeaturesCompose._converter_contexto({"type": "test"})
-            self.assertIn("Test exception in converter", str(context.exception))
+            self.assertIn(
+                "Test exception in converter", str(context.exception)
+            )
         finally:
             # Restauramos o método original
             FeaturesCompose._converter_contexto = original_method
@@ -421,7 +449,9 @@ class TestFeaturesCompose(unittest.TestCase):
     @patch(
         "smart_core_assistant_painel.modules.ai_engine.features.features_compose.LoadMensageDataUseCase"
     )
-    def test_load_message_data_with_metadados_but_contexto_unchanged(self, mock_use_case):
+    def test_load_message_data_with_metadados_but_contexto_unchanged(
+        self, mock_use_case
+    ):
         """Testa load_message_data com metadados que retornam 'contexto' (linha 294->296 else branch)."""
         # Arrange
         mock_instance = mock_use_case.return_value
@@ -431,7 +461,9 @@ class TestFeaturesCompose(unittest.TestCase):
         mock_instance.return_value = SuccessReturn(mock_message_data)
 
         # Mock do _converter_contexto para retornar exatamente "contexto" (não altera conteúdo)
-        with patch.object(FeaturesCompose, '_converter_contexto', return_value="contexto"):
+        with patch.object(
+            FeaturesCompose, "_converter_contexto", return_value="contexto"
+        ):
             # Act
             result = FeaturesCompose.load_message_data(data={})
 
@@ -470,7 +502,9 @@ class TestFeaturesCompose(unittest.TestCase):
         # Act & Assert
         with self.assertRaises(ValueError) as context:
             FeaturesCompose.load_message_data(data={})
-        self.assertIn("Unexpected return type from usecase", str(context.exception))
+        self.assertIn(
+            "Unexpected return type from usecase", str(context.exception)
+        )
 
     def test_mensagem_apresentacao(self):
         """Testa mensagem_apresentacao - cobre linha 305."""
@@ -495,6 +529,353 @@ class TestFeaturesCompose(unittest.TestCase):
 
         # Assert
         self.assertIsNone(result)
+
+    def test_extrair_fluxo_transferencia_success(self):
+        """Testa extração bem-sucedida de fluxo de transferência."""
+        # Arrange
+        response_text = (
+            "Estarei transferindo seu atendimento para Atendimento Comercial"
+        )
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert
+        self.assertEqual(result, "Atendimento Comercial - Comercial")
+
+    def test_extrair_fluxo_transferencia_case_insensitive(self):
+        """Testa extração com case insensitive."""
+        # Arrange
+        response_text = (
+            "Estarei transferindo seu atendimento para atendimento comercial"
+        )
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert
+        self.assertEqual(result, "Atendimento Comercial - Comercial")
+
+    def test_extrair_fluxo_transferencia_partial_match(self):
+        """Testa extração com correspondência parcial."""
+        # Arrange
+        response_text = "Estarei transferindo seu atendimento para Comercial"
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert
+        self.assertEqual(result, "Atendimento Comercial - Comercial")
+
+    def test_extrair_fluxo_transferencia_not_found(self):
+        """Testa quando não encontra fluxo correspondente."""
+        # Arrange
+        response_text = (
+            "Estarei transferindo seu atendimento para Setor Inexistente"
+        )
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert - Com fallback, agora retorna primeira key
+        self.assertEqual(result, "Atendimento Comercial - Comercial")
+
+    def test_extrair_fluxo_transferencia_no_transfer_phrase(self):
+        """Testa quando não há frase de transferência na resposta."""
+        # Arrange
+        response_text = (
+            "Desculpe, não encontrei informações relacionadas à sua pergunta."
+        )
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert - Sem frase de transferência, retorna string vazia
+        self.assertEqual(result, "")
+
+    def test_extrair_fluxo_transferencia_empty_fluxos(self):
+        """Testa com dicionário de fluxos vazio."""
+        # Arrange
+        response_text = (
+            "Estarei transferindo seu atendimento para Atendimento Comercial"
+        )
+        fluxos_disponiveis = {}
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert
+        self.assertEqual(result, "")
+
+    def test_extrair_fluxo_transferencia_fallback_primeira_key(self):
+        """Testa fallback para primeira key quando não encontra fluxo correspondente."""
+        # Arrange
+        response_text = (
+            "Estarei transferindo seu atendimento para Setor Inexistente"
+        )
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+            "Atendimento Financeiro - Financeiro": "Descrição do fluxo financeiro",
+        }
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert - Deve retornar a primeira key como padrão
+        self.assertEqual(result, "Atendimento Comercial - Comercial")
+
+    def test_extrair_fluxo_transferencia_sem_fluxos_disponiveis(self):
+        """Testa quando não há fluxos disponíveis para fallback."""
+        # Arrange
+        response_text = (
+            "Estarei transferindo seu atendimento para Setor Inexistente"
+        )
+        fluxos_disponiveis = {}
+
+        # Act
+        result = FeaturesCompose._extrair_fluxo_transferencia(
+            response_text, fluxos_disponiveis
+        )
+
+        # Assert - Deve retornar string vazia quando não há fluxos
+        self.assertEqual(result, "")
+
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseMensageUseCase"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseMensageDatasource"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.SERVICEHUB"
+    )
+    def test_analise_mensage_com_fluxo_transferencia(
+        self, mock_servicehub, mock_datasource, mock_usecase
+    ):
+        """Testa analise_mensage com extração de fluxo de transferência."""
+        # Arrange
+        mock_servicehub.LLM_CLASS = "mock_llm"
+        mock_servicehub.MODEL = "mock_model"
+        mock_servicehub.LLM_TEMPERATURE = 0.7
+        mock_servicehub.PROMPT_SYSTEM_ANALISE_MENSAGEM = "System prompt"
+
+        # Mock do datasource
+        mock_datasource_instance = mock_datasource.return_value
+        response_text_bot = (
+            "Estarei transferindo seu atendimento para o setor responsável."
+        )
+        mock_datasource_instance.return_value = response_text_bot
+
+        # Mock do usecase
+        mock_usecase_instance = mock_usecase.return_value
+        from py_return_success_or_error import SuccessReturn
+
+        mock_usecase_instance.return_value = SuccessReturn(response_text_bot)
+
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Mock do generate_embeddings
+        with patch.object(
+            FeaturesCompose,
+            "generate_embeddings",
+            return_value=[0.1, 0.2, 0.3],
+        ):
+            # Mock do _evaluate_triple_similarity
+            with patch.object(
+                FeaturesCompose,
+                "_evaluate_triple_similarity",
+                return_value=0.8,
+            ):
+                # Act
+                result = FeaturesCompose.analise_mensage(
+                    fluxos_disponiveis=fluxos_disponiveis,
+                    context="Preciso de ajuda comercial",
+                    historico_atendimento={},
+                    prompt_human="Prompt human",
+                    dados_treinamento="Dados treinamento",
+                )
+
+        # Assert
+        self.assertEqual(
+            result.resposta_bot,
+            f"{response_text_bot}\n\nVou transferir seu atendimento para o setor responsável",
+        )
+        self.assertEqual(result.confiabilidade, 0.8)
+        self.assertTrue(result.transferir_atendimento)
+        self.assertEqual(
+            result.fluxo_transferencia, "Atendimento Comercial - Comercial"
+        )  # Usa primeira key como padrão (fallback)
+
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseMensageUseCase"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseMensageDatasource"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.SERVICEHUB"
+    )
+    def test_analise_mensage_fluxo_especifico_identificado(
+        self, mock_servicehub, mock_datasource, mock_usecase
+    ):
+        """Testa analise_mensage quando fluxo específico é identificado corretamente."""
+        # Arrange
+        mock_servicehub.LLM_CLASS = "mock_llm"
+        mock_servicehub.MODEL = "mock_model"
+        mock_servicehub.LLM_TEMPERATURE = 0.7
+        mock_servicehub.PROMPT_SYSTEM_ANALISE_MENSAGEM = "System prompt"
+
+        # Mock do datasource com resposta contendo nome específico do setor
+        mock_datasource_instance = mock_datasource.return_value
+        response_text_bot = (
+            "Estarei transferindo seu atendimento para Atendimento Comercial."
+        )
+        mock_datasource_instance.return_value = response_text_bot
+
+        # Mock do usecase
+        mock_usecase_instance = mock_usecase.return_value
+        from py_return_success_or_error import SuccessReturn
+
+        mock_usecase_instance.return_value = SuccessReturn(response_text_bot)
+
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+        }
+
+        # Mock do generate_embeddings
+        with patch.object(
+            FeaturesCompose,
+            "generate_embeddings",
+            return_value=[0.1, 0.2, 0.3],
+        ):
+            # Mock do _evaluate_triple_similarity com score baixo para forçar transferência
+            with patch.object(
+                FeaturesCompose,
+                "_evaluate_triple_similarity",
+                return_value=0.5,  # Score abaixo de 0.6 para forçar transferência
+            ):
+                # Act
+                result = FeaturesCompose.analise_mensage(
+                    fluxos_disponiveis=fluxos_disponiveis,
+                    context="Preciso de ajuda com vendas",
+                    historico_atendimento={},
+                    prompt_human="Prompt human",
+                    dados_treinamento="Dados treinamento",
+                )
+
+        # Assert
+        # Quando o score é baixo, a transferência é ativada e busca identificar o fluxo
+        self.assertEqual(result.confiabilidade, 0.5)
+        self.assertTrue(result.transferir_atendimento)
+        self.assertEqual(
+            result.fluxo_transferencia, "Atendimento Comercial - Comercial"
+        )  # Encontra fluxo específico na resposta
+
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseMensageUseCase"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.AnaliseMensageDatasource"
+    )
+    @patch(
+        "smart_core_assistant_painel.modules.ai_engine.features.features_compose.SERVICEHUB"
+    )
+    def test_analise_mensage_fallback_primeira_key(
+        self, mock_servicehub, mock_datasource, mock_usecase
+    ):
+        """Testa analise_mensage quando usa fallback para primeira key."""
+        # Arrange
+        mock_servicehub.LLM_CLASS = "mock_llm"
+        mock_servicehub.MODEL = "mock_model"
+        mock_servicehub.LLM_TEMPERATURE = 0.7
+        mock_servicehub.PROMPT_SYSTEM_ANALISE_MENSAGEM = "System prompt"
+
+        # Mock do datasource com resposta contendo setor inexistente
+        mock_datasource_instance = mock_datasource.return_value
+        response_text_bot = (
+            "Estarei transferindo seu atendimento para Setor Inexistente."
+        )
+        mock_datasource_instance.return_value = response_text_bot
+
+        # Mock do usecase
+        mock_usecase_instance = mock_usecase.return_value
+        from py_return_success_or_error import SuccessReturn
+
+        mock_usecase_instance.return_value = SuccessReturn(response_text_bot)
+
+        fluxos_disponiveis = {
+            "Atendimento Comercial - Comercial": "Descrição do fluxo comercial",
+            "Suporte Técnico - Suporte": "Descrição do fluxo de suporte",
+            "Atendimento Financeiro - Financeiro": "Descrição do fluxo financeiro",
+        }
+
+        # Mock do generate_embeddings
+        with patch.object(
+            FeaturesCompose,
+            "generate_embeddings",
+            return_value=[0.1, 0.2, 0.3],
+        ):
+            # Mock do _evaluate_triple_similarity com score baixo para forçar transferência
+            with patch.object(
+                FeaturesCompose,
+                "_evaluate_triple_similarity",
+                return_value=0.5,  # Score abaixo de 0.6 para forçar transferência
+            ):
+                # Act
+                result = FeaturesCompose.analise_mensage(
+                    fluxos_disponiveis=fluxos_disponiveis,
+                    context="Preciso de ajuda com algo não mapeado",
+                    historico_atendimento={},
+                    prompt_human="Prompt human",
+                    dados_treinamento="Dados treinamento",
+                )
+
+        # Assert
+        # Quando não encontra fluxo específico, usa primeira key como padrão
+        self.assertEqual(result.confiabilidade, 0.5)
+        self.assertTrue(result.transferir_atendimento)
+        self.assertEqual(
+            result.fluxo_transferencia, "Atendimento Comercial - Comercial"
+        )  # Usa primeira key como padrão
 
 
 if __name__ == "__main__":

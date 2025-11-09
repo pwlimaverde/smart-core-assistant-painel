@@ -506,13 +506,39 @@ def _configurar_atendimento_padrao(atendimento: "Atendimento") -> None:
 def _pode_bot_responder_atendimento(
     atendimento: Optional["Atendimento"],
 ) -> bool:
-    """Verifica se o bot pode responder automaticamente a um atendimento."""
+    """Verifica se o bot pode responder automaticamente a um atendimento.
+
+    Regras:
+    - Somente responde quando o atendimento está no departamento
+      "Atendimento". Caso esteja em outro departamento, o bot não deve
+      responder.
+    - Mantém a lógica de não responder se há interação humana (mensagens
+      de atendente ou atendente humano atribuído).
+    """
     if atendimento is None:
         return False
 
     try:
-        # Garante que o atendimento tenha a estrutura padrão configurada
-        _configurar_atendimento_padrao(atendimento)
+        # Comentário (PT-BR): verifica o departamento atual do atendimento.
+        # Se estiver em outro departamento que não "Atendimento",
+        # o bot não pode responder.
+        dep_atual = getattr(atendimento, "departamento", None)
+
+        # Comentário: só bloqueia se for de fato um Departamento diferente
+        # de "Atendimento". Objetos mockados ou ausência são tratados como
+        # não configurados.
+        if isinstance(dep_atual, Departamento) and (
+            getattr(dep_atual, "nome", None) != "Atendimento"
+        ):
+            return False
+
+        # Comentário (PT-BR): se não houver departamento definido,
+        # trata-se da primeira interação. Configura a estrutura padrão
+        # (Departamento "Atendimento" e etapa inicial) e retorna True
+        # pois o bot pode responder.
+        if dep_atual is None or not isinstance(dep_atual, Departamento):
+            _configurar_atendimento_padrao(atendimento)
+            return True
 
         mensagens_manager = getattr(atendimento, "mensagens", None)
         has_human_messages = False

@@ -363,6 +363,13 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         """Test that bot cannot respond when there's a human attendant."""
         # Arrange
         atendimento = MagicMock()
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+        )
+        dept_atd = Departamento.objects.create(
+            nome="Atendimento", descricao="Depto padrão", ativo=True
+        )
+        atendimento.departamento = dept_atd
         atendimento.atendente_humano = MagicMock()
 
         # Act
@@ -375,6 +382,13 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         """Test that bot cannot respond when there are human messages."""
         # Arrange
         atendimento = MagicMock()
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+        )
+        dept_atd = Departamento.objects.create(
+            nome="Atendimento", descricao="Depto padrão", ativo=True
+        )
+        atendimento.departamento = dept_atd
         atendimento.atendente_humano = None
         atendimento.mensagens.filter.return_value.exists.return_value = True
 
@@ -391,6 +405,14 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         """Test exception handling in _pode_bot_responder_atendimento."""
         # Arrange
         atendimento = MagicMock()
+        # Garante que não seja interação inicial (depto definido)
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+        )
+        dept_atd = Departamento.objects.create(
+            nome="Atendimento", descricao="Depto padrão", ativo=True
+        )
+        atendimento.departamento = dept_atd
         # Force an exception by making the filter method raise an error
         atendimento.mensagens.filter.side_effect = Exception("Test exception")
 

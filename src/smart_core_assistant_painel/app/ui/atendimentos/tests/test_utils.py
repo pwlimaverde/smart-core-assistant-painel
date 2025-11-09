@@ -382,6 +382,13 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         """Test that bot cannot respond when there's a human attendant."""
         # Arrange
         atendimento = MagicMock()
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+        )
+        dept_atd = Departamento.objects.create(
+            nome="Atendimento", descricao="Depto padrão", ativo=True
+        )
+        atendimento.departamento = dept_atd
         atendimento.atendente_humano = MagicMock()
 
         # Act
@@ -394,6 +401,13 @@ class TestAtendimentosUtilsBotResponse(TestCase):
         """Test that bot cannot respond when there are human messages."""
         # Arrange
         atendimento = MagicMock()
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+        )
+        dept_atd = Departamento.objects.create(
+            nome="Atendimento", descricao="Depto padrão", ativo=True
+        )
+        atendimento.departamento = dept_atd
         atendimento.atendente_humano = None
         atendimento.mensagens.filter.return_value.exists.return_value = True
 
@@ -631,6 +645,27 @@ class TestAtendimentosUtilsEstruturaPadrao(TestCase):
         self.assertEqual(departamento.descricao, "Descrição existente")
         self.assertEqual(fluxo.id, fluxo_existente.id)
         self.assertEqual(fluxo.descricao, "Descrição existente")
+
+    def test_pode_bot_responder_fora_departamento_atendimento(self) -> None:
+        """Garante que o bot não responde fora do depto 'Atendimento'."""
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            Departamento,
+        )
+
+        # Arrange: cria e atribui um departamento distinto
+        dept_comercial = Departamento.objects.create(
+            nome="Comercial", descricao="Depto Comercial", ativo=True
+        )
+        self.atendimento.departamento = dept_comercial
+        self.atendimento.save(update_fields=["departamento"])
+
+        # Act
+        resultado = _pode_bot_responder_atendimento(self.atendimento)
+
+        # Assert
+        self.assertFalse(resultado)
+        self.atendimento.refresh_from_db()
+        self.assertEqual(self.atendimento.departamento.nome, "Comercial")
 
     def test_configurar_atendimento_padrao_sucesso(self) -> None:
         """Testa configuração bem-sucedida do atendimento padrão."""

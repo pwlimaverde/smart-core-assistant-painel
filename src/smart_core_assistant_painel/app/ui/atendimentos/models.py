@@ -387,6 +387,95 @@ class Atendimento(models.Model):
         )
         self.save()
 
+    def apply_flow_by_description(self, flow_description: str) -> None:
+        """Atualiza departamento e etapa inicial a partir de uma descrição.
+
+        A descrição deve seguir o formato
+        "<nome_do_fluxo> - <nome_do_departamento>", por exemplo:
+        "Atendimento Comercial - Comercial".
+
+        Ao localizar o fluxo, o atendimento é atribuído ao departamento
+        correspondente e sua etapa atual é definida para a etapa inicial
+        do fluxo (preferencialmente a etapa do tipo FILA, caso exista).
+
+        Args:
+            flow_description: Texto no formato "Fluxo - Departamento".
+
+        Raises:
+            ValidationError: Quando o formato estiver inválido, o fluxo não
+                existir ou não houver etapa configurada.
+        """
+        if flow_description is None or not isinstance(flow_description, str):
+            raise ValidationError(
+                "A descrição do fluxo deve ser uma string válida."
+            )
+
+        descricao = flow_description.strip()
+        if not descricao:
+            raise ValidationError(
+                "A descrição do fluxo não pode ser vazia."
+            )
+
+        partes = re.split(r"\s*-\s*", descricao, maxsplit=1)
+        if len(partes) != 2:
+            raise ValidationError(
+                "Formato inválido. Use 'Fluxo - Departamento'."
+            )
+
+        fluxo_nome, departamento_nome = partes[0], partes[1]
+
+        # Import em runtime para evitar ciclos de import
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            FluxoAtendimento,
+            TipoEtapa,
+        )
+
+        fluxo = (
+            FluxoAtendimento.objects.select_related("departamento")
+            .filter(nome=fluxo_nome, departamento__nome=departamento_nome)
+            .first()
+        )
+        if not fluxo:
+            raise ValidationError(
+                (
+                    "Fluxo '{0}' no departamento '{1}' não encontrado."
+                ).format(fluxo_nome, departamento_nome)
+            )
+
+        # Prioriza a etapa do tipo FILA; caso não exista, usa a primeira
+        etapa_inicial = fluxo.get_etapa_inicial() or fluxo.etapas.order_by(
+            "ordem"
+        ).first()
+        if not etapa_inicial:
+            raise ValidationError(
+                "Fluxo selecionado não possui etapas configuradas."
+            )
+
+        # Atualiza departamento e etapa do atendimento
+        self.departamento = fluxo.departamento
+        self.etapa_atual = etapa_inicial
+
+        # Se a etapa inicial for FILA, alinhar status de atendimento
+        status_alterado = False
+        if getattr(etapa_inicial, "tipo_etapa", None) == TipoEtapa.FILA:
+            if self.status != StatusAtendimento.FILA:
+                self.status = StatusAtendimento.FILA
+                status_alterado = True
+
+        campos = ["departamento", "etapa_atual"]
+        if status_alterado:
+            campos.append("status")
+        self.save(update_fields=campos)
+
+        if status_alterado:
+            self.adicionar_historico_status(
+                StatusAtendimento.FILA.value,
+                (
+                    "Posicionado na etapa inicial do fluxo '{0}' "
+                    "({1})."
+                ).format(fluxo.nome, fluxo.departamento.nome),
+            )
+
     def touch_last_message(self, quando: Optional[datetime] = None) -> None:
         """Atualiza `data_ultima_mensagem` para ordenação/SLA."""
         self.data_ultima_mensagem = quando or timezone.now()

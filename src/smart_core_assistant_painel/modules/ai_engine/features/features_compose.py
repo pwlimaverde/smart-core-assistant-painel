@@ -570,6 +570,7 @@ class FeaturesCompose:
             return primeira_key
         return ""
 
+    @staticmethod
     def analise_mensage(
         fluxos_disponiveis: dict[str, str],
         context: str,
@@ -606,8 +607,8 @@ class FeaturesCompose:
             # encontrado informações relacionadas OU solicitação de transferência
             transfer_attendance: bool = False
             fluxo_transferencia: str = ""
-            apology_phrase: str = "Desculpe, não encontrei informações relacionadas à sua pergunta."
-            transfer_phrase: str = "Estarei transferindo seu atendimento para o setor responsável."
+            apology_phrase: str = "Desculpe, não encontrei informações relacionadas à sua pergunta"
+            transfer_phrase: str = "Estarei transferindo seu atendimento"
             if (
                 apology_phrase in response_text
                 or transfer_phrase in response_text

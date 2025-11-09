@@ -6,14 +6,17 @@ administração do Django e personaliza como são exibidos e gerenciados.
 
 from typing import Any, Optional, cast
 
-from django.contrib import admin
-from django.db.models import QuerySet, F
-from django.http import HttpRequest
-from django.utils import timezone
 from django import forms
+from django.contrib import admin
+from django.db.models import F, QuerySet
+from django.http import HttpRequest, JsonResponse
+from django.urls import path
+from django.utils import timezone
+from loguru import logger
+
+from smart_core_assistant_painel.app.ui.operacional.models import EtapaFluxo
 
 from .models import Atendimento, Mensagem
-from smart_core_assistant_painel.app.ui.operacional.models import EtapaFluxo
 
 
 class MensagemInline(admin.TabularInline[Mensagem, Atendimento]):
@@ -219,52 +222,164 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         obj: Optional[Atendimento] = None,
         **kwargs: Any,
     ) -> type[forms.ModelForm]:
-        """Filtra `etapa_atual` pelo departamento selecionado.
+        """Retorna o formulário padrão.
 
-        - Em criação: usa `departamento` vindo de GET/POST.
-        - Em edição: usa `obj.departamento`.
+        Comentário: a filtragem de `etapa_atual` é feita em
+        `formfield_for_foreignkey` para evitar inconsistências
+        na validação do POST.
         """
-        form_cls: type[forms.ModelForm] = super().get_form(
-            request, obj, **kwargs
+        return super().get_form(request, obj, **kwargs)
+
+    def formfield_for_foreignkey(
+        self,
+        db_field: Any,
+        request: HttpRequest,
+        **kwargs: Any,
+    ) -> forms.Field:
+        """Filtra o queryset de `etapa_atual` pelo departamento.
+
+        Também injeta `data-initial` no widget para que o JS
+        selecione a etapa previamente salva ao carregar opções.
+        """
+        field: forms.Field = super().formfield_for_foreignkey(
+            db_field, request, **kwargs
         )
 
-        dept_id_raw: Optional[str] = None
-        if obj and obj.departamento_id:
-            dept_id_raw = str(obj.departamento_id)
-        else:
-            # QueryDict aceita .get; mocks podem usar dict simples
-            dept_id_raw = (
-                getattr(request, "POST", {}).get("departamento")
-                or getattr(request, "GET", {}).get("departamento")
-            )
+        if getattr(db_field, "name", None) != "etapa_atual":
+            return field
 
-        if "etapa_atual" in form_cls.base_fields:
-            if dept_id_raw:
+        dept_id_raw: Optional[str] = (
+            getattr(request, "POST", {}).get("departamento")
+            or getattr(request, "GET", {}).get("departamento")
+        )
+
+        initial_etapa_id: Optional[str] = (
+            getattr(request, "POST", {}).get("etapa_atual")
+        )
+
+        if not dept_id_raw or not initial_etapa_id:
+            # Tenta obter objeto em edição para recuperar
+            # departamento e etapa atual salvos
+            try:
+                object_id = request.resolver_match.kwargs.get("object_id")
+            except Exception:
+                object_id = None
+            if object_id:
                 try:
-                    dept_id: int = int(dept_id_raw)
-                    qs: QuerySet[EtapaFluxo] = EtapaFluxo.objects.filter(
+                    obj = (
+                        Atendimento.objects.only(
+                            "departamento_id", "etapa_atual_id"
+                        ).get(pk=object_id)
+                    )
+                    if not dept_id_raw and obj.departamento_id:
+                        dept_id_raw = str(obj.departamento_id)
+                    if not initial_etapa_id and obj.etapa_atual_id:
+                        initial_etapa_id = str(obj.etapa_atual_id)
+                except Atendimento.DoesNotExist:
+                    pass
+
+        # Aplica o queryset de acordo com o departamento
+        if dept_id_raw:
+            try:
+                dept_id: int = int(dept_id_raw)
+                qs: QuerySet[EtapaFluxo] = (
+                    EtapaFluxo.objects.filter(
                         fluxo__departamento_id=dept_id
-                    ).order_by("fluxo__nome", "ordem")
-                    form_cls.base_fields["etapa_atual"].queryset = qs
-                    form_cls.base_fields["etapa_atual"].help_text = (
-                        "Mostrando apenas etapas do departamento selecionado."
                     )
-                except ValueError:
-                    form_cls.base_fields["etapa_atual"].queryset = (
-                        EtapaFluxo.objects.none()
-                    )
-                    form_cls.base_fields["etapa_atual"].help_text = (
-                        "Selecione um departamento para carregar etapas."
-                    )
-            else:
-                form_cls.base_fields["etapa_atual"].queryset = (
+                    .select_related("fluxo")
+                    .order_by("fluxo__nome", "ordem")
+                )
+                cast(forms.ModelChoiceField, field).queryset = qs
+                field.help_text = (
+                    "Mostrando apenas etapas do departamento selecionado."
+                )
+            except ValueError:
+                cast(forms.ModelChoiceField, field).queryset = (
                     EtapaFluxo.objects.none()
                 )
-                form_cls.base_fields["etapa_atual"].help_text = (
+                field.help_text = (
                     "Selecione um departamento para carregar etapas."
                 )
+        else:
+            cast(forms.ModelChoiceField, field).queryset = (
+                EtapaFluxo.objects.none()
+            )
+            field.help_text = (
+                "Selecione um departamento para carregar etapas."
+            )
 
-        return form_cls
+        # Injeta valor inicial no widget para o JS selecionar após carregar
+        try:
+            field.widget.attrs["data-initial"] = (
+                initial_etapa_id or ""
+            )
+        except Exception:
+            # Silencia falhas em atributos de widget
+            pass
+
+        return field
+
+    # Comentário: adiciona endpoint no admin para carregar etapas via AJAX
+    # quando um departamento é selecionado no formulário de criação.
+    def get_urls(self) -> list[Any]:
+        """Registra URLs adicionais para o admin de Atendimento."""
+        urls = super().get_urls()
+        custom = [
+            path(
+                "fetch-etapas/",
+                self.admin_site.admin_view(
+                    self.admin_etapas_by_departamento
+                ),
+                name="atendimento_fetch_etapas",
+            ),
+            # Suporta também chamadas vindas da página de edição
+            # no formato: /<obj_id>/fetch-etapas/
+            path(
+                "<path:object_id>/fetch-etapas/",
+                self.admin_site.admin_view(
+                    self.admin_etapas_by_departamento
+                ),
+                name="atendimento_fetch_etapas_obj",
+            ),
+        ]
+        return custom + urls
+
+    def admin_etapas_by_departamento(self, request: HttpRequest) -> JsonResponse:
+        """Retorna etapas de fluxo filtradas por departamento.
+
+        Espera o parâmetro `departamento_id` em GET.
+        """
+        dept_id_raw: Optional[str] = request.GET.get("departamento_id")
+        data: list[dict[str, Any]] = []
+        if dept_id_raw:
+            try:
+                dept_id: int = int(dept_id_raw)
+                qs: QuerySet[EtapaFluxo] = (
+                    EtapaFluxo.objects.filter(
+                        fluxo__departamento_id=dept_id
+                    )
+                    .select_related("fluxo")
+                    .order_by("fluxo__nome", "ordem")
+                )
+                # Loga informações para diagnóstico no admin.
+                logger.info(
+                    "Admin etapas: dept_id={} count={}",
+                    dept_id,
+                    qs.count(),
+                )
+                for ef in qs:
+                    label: str = (
+                        f"{ef.fluxo.nome} • {ef.nome} (#{ef.ordem})"
+                    )
+                    data.append({"id": ef.id, "label": label})
+            except ValueError:
+                data = []
+        return JsonResponse({"results": data})
+
+    class Media:
+        """Inclui JS para dependência dinâmica de etapas por departamento."""
+
+        js = ("atendimentos/admin_etapas.js",)
 
 
 @admin.register(Mensagem)

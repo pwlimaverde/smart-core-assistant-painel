@@ -10,27 +10,26 @@ As tarefas são agendadas pelos sinais em
 
 from __future__ import annotations
 
-from typing import Any, cast
-from typing import Optional, Dict, List
+from typing import Any, Dict, Optional, cast
 
 from loguru import logger
 
+from smart_core_assistant_painel.app.trello_sync.models import TrelloBoard
 from smart_core_assistant_painel.app.trello_sync.services import (
     FlowSyncService,
     MemberSyncService,
     TicketSyncService,
 )
-from smart_core_assistant_painel.modules.services import SERVICEHUB
-from smart_core_assistant_painel.app.ui.operacional.models import (
-    EtapaFluxo,
-    FluxoAtendimento,
-    Atendente,
-    TipoEtapa,
-)
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
 )
-from smart_core_assistant_painel.app.trello_sync.models import TrelloBoard
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Atendente,
+    EtapaFluxo,
+    FluxoAtendimento,
+    TipoEtapa,
+)
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 def task_fluxo_ensure_board(fluxo_id: int) -> None:
@@ -538,10 +537,31 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
             current_list_id = getattr(card.list_sync, "external_id", None)
             if current_list_id != lista_dest.external_id:
                 # Move card no Trello via atualização de `idList`.
+                # Quando a lista destino pertence a outro quadro, a API
+                # do Trello exige enviar também `idBoard` junto ao `idList`.
+                payload: Dict[str, Any] = {
+                    "idList": lista_dest.external_id
+                }
+                try:
+                    current_board_id = getattr(
+                        getattr(card.list_sync, "board", None),
+                        "external_id",
+                        None,
+                    )
+                except Exception:
+                    current_board_id = None  # type: ignore[assignment]
+                dest_board_id = getattr(
+                    getattr(lista_dest, "board", None),
+                    "external_id",
+                    None,
+                )
+                if dest_board_id and current_board_id != dest_board_id:
+                    payload["idBoard"] = dest_board_id
+
                 service.client.update_item(
                     data_source_id=lista_dest.external_id,
                     item_id=card.external_id,
-                    payload={"idList": lista_dest.external_id},
+                    payload=payload,
                 )
         except Exception as exc:
             logger.warning(

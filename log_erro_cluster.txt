@@ -1,156 +1,203 @@
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-08 11:13:16.912 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-08 11:13:18.363 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-09 14:27:51.936 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-09 14:27:53.447 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster green-hotel-orange-alaska starting.
-2025-11-08 11:13:21.112 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-08 11:13:22.527 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-287ae6cf8b5a4de9bc523a0b17dc2ccb guarding cluster green-hotel-orange-alaska [smart_core_cluster]
-INFO:django-q:Q Cluster green-hotel-orange-alaska [smart_core_cluster] running.
-2025-11-08 11:13:24.438 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-08 11:13:24.440 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-08 11:13:24.440 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-08 11:13:24.440 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-08 11:13:25.981 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-08 11:13:25.998 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-08 11:13:26.046 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-08 11:13:26.056 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-b87ce81f97a646e2a57270cc8e3a039f ready for work at 36988
-INFO:django-q:Process-55388f48fcac42c7be580c45874b0c27 ready for work at 9732
-INFO:django-q:Process-d65c651d81bf479789a271eb4e6bc2cd monitoring at 28224
-INFO:django-q:Process-30b0392bd2684b459453e87549600c58 pushing tasks at 33976
-INFO:django-q:Process-b87ce81f97a646e2a57270cc8e3a039f processing oregon-william-lake-neptune 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card'
-2025-11-08 11:14:05.368 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:55 - TrelloUnifiedDataService inicializado
-2025-11-08 11:14:05.369 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:199 - UnifiedDataService Trello inicializado para provider=trello
-2025-11-08 11:14:06.111 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:14:06.112 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:14:06.113 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:14:07.556 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card criado: lista=690f416028037edf6cde49ba -> 690f502dc34dc50705159c53
-2025-11-08 11:14:09.268 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:14:09.268 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:14:09.269 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:14:09.959 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f416028037edf6cde49ba -> 690f502dc34dc50705159c53
-2025-11-08 11:14:11.097 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:14:11.097 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:14:11.097 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:14:11.097 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:14:11.097 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:14:11.098 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:14:11.098 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:14:11.098 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:14:11.098 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:14:11.916 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f416028037edf6cde49ba -> 690f502dc34dc50705159c53
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card' (oregon-william-lake-neptune)
-INFO:django-q:Process-55388f48fcac42c7be580c45874b0c27 processing asparagus-magazine-avocado-sixteen 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
-2025-11-08 11:14:29.139 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:55 - TrelloUnifiedDataService inicializado
-2025-11-08 11:14:29.139 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:199 - UnifiedDataService Trello inicializado para provider=trello
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:14:30.290 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:14:30.291 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:14:31.006 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f416028037edf6cde49ba -> 690f502dc34dc50705159c53
-2025-11-08 11:14:31.689 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f5045098d1422a7c6b9e9
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (asparagus-magazine-avocado-sixteen)
-INFO:django-q:Process-b87ce81f97a646e2a57270cc8e3a039f processing muppet-four-autumn-sixteen 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Process-55388f48fcac42c7be580c45874b0c27 processing maine-speaker-oscar-four 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
-2025-11-08 11:14:48.448 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f4207da6340309ec2a8a7 -> 690f502dc34dc50705159c53
-2025-11-08 11:14:49.357 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:14:49.357 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:14:49.357 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:14:49.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:14:49.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:14:49.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:14:49.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:14:49.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:14:49.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:14:49.701 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:14:49.701 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:14:49.701 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:14:49.701 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:14:49.702 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:14:49.702 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:14:49.702 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:14:49.702 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:14:49.703 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:14:50.119 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f416028037edf6cde49ba -> 690f502dc34dc50705159c53
-2025-11-08 11:14:50.768 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f5059ba2823a92316968f
-2025-11-08 11:14:50.830 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f4207da6340309ec2a8a7 -> 690f502dc34dc50705159c53
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (muppet-four-autumn-sixteen)
-2025-11-08 11:14:51.545 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f5059afa0ad96475be0d1
-2025-11-08 11:14:52.115 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - capa do card atualizada: card=690f502dc34dc50705159c53 color=black
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (maine-speaker-oscar-four)
-INFO:django-q:Process-b87ce81f97a646e2a57270cc8e3a039f processing california-nevada-bulldog-montana 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Process-55388f48fcac42c7be580c45874b0c27 processing gee-india-video-maryland 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
-2025-11-08 11:15:13.179 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f423d2723889acf8508a5 -> 690f502dc34dc50705159c53
-2025-11-08 11:15:14.333 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:15:14.333 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:15:14.333 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:15:14.333 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:15:14.333 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:15:14.333 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:15:14.334 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:15:14.334 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:15:14.334 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:15:14.918 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:15:14.918 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:15:14.919 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:15:15.172 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f423d2723889acf8508a5 -> 690f502dc34dc50705159c53
-2025-11-08 11:15:15.597 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f4207da6340309ec2a8a7 -> 690f502dc34dc50705159c53
-2025-11-08 11:15:15.816 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f50721d82ba769b4a8983
-2025-11-08 11:15:16.224 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f5072a87776d1747ceb2d
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (california-nevada-bulldog-montana)
-2025-11-08 11:15:16.453 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - capa do card atualizada: card=690f502dc34dc50705159c53 color=black
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (gee-india-video-maryland)
-INFO:django-q:Process-b87ce81f97a646e2a57270cc8e3a039f processing network-hamper-kitten-lactose 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Process-55388f48fcac42c7be580c45874b0c27 processing coffee-wisconsin-delta-summer 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
-2025-11-08 11:15:54.031 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f4161d22f6b7287320968 -> 690f502dc34dc50705159c53
-2025-11-08 11:15:55.093 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:15:55.093 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:15:55.094 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:15:55.715 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Contato
-2025-11-08 11:15:55.715 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Telefone
-2025-11-08 11:15:55.715 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Departamento
-2025-11-08 11:15:55.715 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Canal
-2025-11-08 11:15:55.716 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Prioridade
-2025-11-08 11:15:55.716 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Produto/Serviço
-2025-11-08 11:15:55.716 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Valor Orçamento
-2025-11-08 11:15:55.716 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Categoria Venda
-2025-11-08 11:15:55.716 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:ensure_custom_fields:527 - Custom field ausente no board 690f415e00a1f247f3b0bcb2: Atendente
-2025-11-08 11:15:55.868 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f423d2723889acf8508a5 -> 690f502dc34dc50705159c53
-2025-11-08 11:15:56.411 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=690f4161d22f6b7287320968 -> 690f502dc34dc50705159c53
-2025-11-08 11:15:56.541 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f509af43aaed60a118b7f
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (network-hamper-kitten-lactose)
-2025-11-08 11:15:57.105 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - comentário de relação criado: card=690f502dc34dc50705159c53 -> 690f509b7529bd838b1ed215
-2025-11-08 11:15:57.725 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - capa do card atualizada: card=690f502dc34dc50705159c53 color=pink
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (coffee-wisconsin-delta-summer)
+INFO:django-q:Q Cluster chicken-texas-august-sixteen starting.
+2025-11-09 14:27:58.237 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-09 14:27:59.818 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-7c450e79c72d4d1b82b3aa7d988db4d9 guarding cluster chicken-texas-august-sixteen [smart_core_cluster]
+INFO:django-q:Q Cluster chicken-texas-august-sixteen [smart_core_cluster] running.
+2025-11-09 14:28:01.780 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-09 14:28:01.784 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-09 14:28:01.784 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-09 14:28:01.785 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-09 14:28:03.358 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-09 14:28:03.364 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-09 14:28:03.383 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-09 14:28:03.423 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-8517f8fae7da4b3ab390faded676e187 ready for work at 39412
+INFO:django-q:Process-ca3311832201421888922a9189474d7e ready for work at 7776
+INFO:django-q:Process-90b7943c531f4e25a3a498bbf3aa219c monitoring at 22764
+INFO:django-q:Process-82753eb515c94c5fac77e91f828d2bb5 pushing tasks at 40052
+INFO:django-q:Enqueued [smart_core_cluster] 1247
+INFO:django-q:Process-7c450e79c72d4d1b82b3aa7d988db4d9 created task pizza-butter-nebraska-tango from schedule [process_msg_558897141275]
+INFO:django-q:Process-8517f8fae7da4b3ab390faded676e187 processing pizza-butter-nebraska-tango 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response' [process_msg_558897141275]
+INFO:django-q:Enqueued [smart_core_cluster] 1248
+INFO:django-q:Process-ca3311832201421888922a9189474d7e processing india-georgia-fifteen-whiskey 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
+2025-11-09 14:28:31.401 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:55 - TrelloUnifiedDataService inicializado
+2025-11-09 14:28:31.402 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:199 - UnifiedDataService Trello inicializado para provider=trello
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-09 14:28:32.764 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:347 - Departamento 'Atendimento' já existe (ID 32)
+2025-11-09 14:28:32.798 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:366 - Fluxo 'Atendimento Inicial' já existe (ID 61)
+2025-11-09 14:28:32.804 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_configurar_atendimento_padrao:488 - Atendimento 23 configurado para etapa 'Fila de Atendimento'
+INFO:django-q:Enqueued [smart_core_cluster] 1249
+INFO:django-q:Enqueued [smart_core_cluster] 1250
+2025-11-09 14:28:33.827 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=6910b4fab7f4e41ffc229174 -> 6910b5051f6295ff8d5f1f91
+INFO:django-q:Process-ca3311832201421888922a9189474d7e processing alpha-mockingbird-jersey-cola 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-09 14:28:33.861 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3468 (limiar 0.4000): **[Título da Seção 6: Serviços Oferecidos]**
+- **Consultoria de beleza individualizada**
+  Avaliação de tipo de pele, cor de base, rotina de skincare e sugestões de cronograma capilar.
+- **Teste e demonstração de produtos**
+  Espaço Glow Lab com espelhos de luz natural; bar de fragrâncias e testadores de texturas (gel, creme e óleo).
+- **Venda de cosméticos para pele, cabelo e unhas**
+  Marcas nacionais (Natura, O Boticário) e importadas (Fenty Beauty, The Ordinary), além de linhas veganas.
+- **Workshops e cursos**
+  Aulas presenciais mensais de automaquiagem, bioestética facial e técnicas de contorno; turmas de até 12 pessoas.
+- **Programa de Fidelidade Fique Bela**
+  - **Bronze:** 1 ponto a cada R$ 1,00 gasto.
+  - **Prata (acima de 500 pontos):** 5 % de desconto.
+  - **Ouro (acima de 1 200 pontos):** 10 % de desconto + brinde mensal.
+----------------------------------------------------
+2025-11-09 14:28:33.864 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3488 (limiar 0.4000): **[Título da Seção 4: Informações Corporativas]**
+- **Nome Fantasia:** Fique Bela Cosméticos
+- **Razão Social:** Fique Bela Cosméticos Ltda.
+- **Capital Social:** R$ 250 000,00
+- **CNPJ:** 00.000.000/0001‑00 (fictício)
+- **Inscrição Estadual:** 12.345.678.901
+- **Endereço:** Rua das Rosas, 123 – Centro, Crato – CE – CEP 63100‑000
+- **Telefone:** (88) 3000‑0000
+- **E‑mail:** contato@fiquebela.com.br
+- **Instagram:** @fiquebela.cosmeticos (12,5 k seguidores)
+- **Site:** www.fiquebela.com.br (fictício)
+----------------------------------------------------
+
+**[Título da Seção 5: Horário de Funcionamento]**
+| Dia da Semana | Horário          |
+|---------------|------------------|
+| Segunda a Sexta | 09:00 – 18:30 |
+| Sábado          | 09:00 – 14:00 |
+| Domingo         | Fechado       |
+----------------------------------------------------
+2025-11-09 14:28:33.867 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3623 (limiar 0.4000): ----------------------------------------------------
+**[Título da Seção 1: Apresentação da Empresa]**
+A Fique Bela é uma boutique de cosméticos fundada em março de 2025 por Camila Araújo, esteticista com 12 anos de experiência. Localizada no coração de Crato, a loja ocupa 120 m² e apresenta uma decoração inspirada nos trópicos. Nossa equipe, composta por 8 consultoras e 2 maquiadores, atende, em média, 200 clientes por mês, combinando inovação e cuidado personalizado para realçar a beleza de cada pessoa.
+----------------------------------------------------
+2025-11-09 14:28:33.870 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3940 (limiar 0.4000): **[Título da Seção 7: Diferenciais Competitivos]**
+- Espaço VIP com poltronas reclináveis e serviço de chá gelado aromatizado.
+- Test drive em cabine privativa, garantindo conforto e privacidade.
+- Entrega expressa em até 24 h para Crato e Juazeiro do Norte.
+- Parceria com ONG local para reaproveitamento de embalagens e incentivo à coleta seletiva.
+- Treinamentos trimestrais para a equipe sobre novas texturas, ativos e regulamentações ANVISA.
+----------------------------------------------------
+2025-11-09 14:28:33.873 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3952 (limiar 0.4000): **[Título da Seção 2: História e Panorama]**
+- **Março/2025:** Inauguração oficial com coquetel para 150 convidados.
+- **Dezembro/2025:** 1.000 clientes atendidos e faturamento de R$ 120 000,00 no primeiro ano.
+- **Julho/2026:** Lançamento da loja virtual, com entrega expressa em Crato e cidades-satélite.
+- **Outubro/2026:** Primeira edição do Beauty Day, evento com demonstrações de produtos e descontos de até 30 %.
+- **Meta 2027:** Expandir para Juazeiro do Norte e aumentar o portfólio em 30 % com marcas internacionais.
+----------------------------------------------------
+2025-11-09 14:28:33.877 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:458 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento Comercial - Comercial': 'O setor comercial é o coração de uma empresa, responsável por gerar receita através de um relacionamento estratégico com os clientes que se estende por todas as etapas da jornada de compra, desde a prospecção de novas oportunidades até o suporte pós-venda. Suas principais funções envolvem a definição de metas e estratégias de vendas, o profundo conhecimento sobre as necessidades do consumidor para garantir sua satisfação, e a gestão da equipe e dos canais de venda. Mais do que simplesmente vender, a área comercial conecta as soluções da empresa às necessidades do mercado, sendo essencial para impulsionar o crescimento e a fidelização de clientes.', 'Atendimento Financeiro - Financeiro': 'O departamento financeiro é o responsável pela gestão e otimização dos recursos monetários de uma empresa, garantindo sua saúde financeira e sustentabilidade a longo prazo. Suas atividades centrais incluem o planejamento financeiro, o controle rigoroso do fluxo de caixa, a gestão de contas a pagar e a receber, a análise de investimentos e a elaboração de relatórios que fornecem uma visão clara do desempenho econômico da organização. Em essência, o setor financeiro assegura que a empresa tenha capital para operar, cumprir suas obrigações e financiar seu crescimento de forma estratégica e controlada.'}
+2025-11-09 14:28:33.877 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
+PROMPT COMPLETO ENVIADO PARA LLM
+================================================================================
+
+============================================================
+MESSAGE 1 - ROLE: SYSTEM
+============================================================
+Data e Hora Atual: 09/11/2025 14:28:33 - Sunday
+
+Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
+
+**Seu comportamento deve ser guiado pelos seguintes princípios:**
+
+*   **Profissionalismo:** Mantenha um tom formal, mas acessível. Utilize uma linguagem que demonstre expertise e seriedade, sem ser excessivamente robótica.
+*   **Clareza e Concisão:** Vá direto ao ponto. Evite frases de preenchimento ou informações desnecessárias. A eficiência na comunicação é essencial.
+*   **Tom Prestativo:** Demonstre sempre uma postura solícita e focada em resolver a dúvida do usuário. Sua prioridade é ser útil.
+*   **Neutralidade Factual:** Não expresse opiniões, sentimentos ou faça suposições. Limite-se estritamente aos fatos disponíveis.
+
+INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA
+Siga estritamente as orientações abaixo, em português claro e objetivo.
+Adapte a resposta ao contexto do atendimento atual.
+Intenções detectadas e orientações:
+1. [transferir_humano] Verifique se a transferência é necessária e encaminhe com contexto. Explique prazos e canal de contato.
+Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa.
+
+### Regras de Resposta (siga rigorosamente):
+1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.
+2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."
+3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.
+4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.
+5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.
+6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.
+
+
+### SETORES DISPONÍVEIS PARA TRANSFERÊNCIA:
+- **Atendimento Comercial - Comercial**: O setor comercial é o coração de uma empresa, responsável por gerar receita através de um relacionamento estratégico com os clientes que se estende por todas as etapas da jornada de compra, desde a prospecção de novas oportunidades até o suporte pós-venda. Suas principais funções envolvem a definição de metas e estratégias de vendas, o profundo conhecimento sobre as necessidades do consumidor para garantir sua satisfação, e a gestão da equipe e dos canais de venda. Mais do que simplesmente vender, a área comercial conecta as soluções da empresa às necessidades do mercado, sendo essencial para impulsionar o crescimento e a fidelização de clientes.
+- **Atendimento Financeiro - Financeiro**: O departamento financeiro é o responsável pela gestão e otimização dos recursos monetários de uma empresa, garantindo sua saúde financeira e sustentabilidade a longo prazo. Suas atividades centrais incluem o planejamento financeiro, o controle rigoroso do fluxo de caixa, a gestão de contas a pagar e a receber, a análise de investimentos e a elaboração de relatórios que fornecem uma visão clara do desempenho econômico da organização. Em essência, o setor financeiro assegura que a empresa tenha capital para operar, cumprir suas obrigações e financiar seu crescimento de forma estratégica e controlada.
+
+### REGRAS DE TRANSFERÊNCIA:
+1. Analise a intenção do usuário e verifique se há um setor específico adequado
+2. Se houver um setor correspondente exato na lista acima, use-o
+3. Se não houver correspondência exata, escolha o setor mais próximo
+4. Use sempre o nome exato do setor conforme listado acima
+5. A transferência deve ser mencionada apenas se for realmente necessária
+
+
+============================================================
+MESSAGE 2 - ROLE: USER
+============================================================
+<historico_conversa>
+(Apenas para referência de contexto, não como fonte factual)
+{historico_context}
+</historico_conversa>
+
+<contexto_rag>
+{dados_treinamento}
+</contexto_rag>
+
+<pergunta_usuario>
+{context}
+</pergunta_usuario>
+
+Com base apenas nas regras acima, elabore a resposta final ao usuário.
+
+================================================================================
+FIM DO PROMPT
+================================================================================
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (india-georgia-fifteen-whiskey)
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-09 14:28:35.258 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:_extrair_fluxo_transferencia:556 - Fluxo de transferência identificado: Atendimento Comercial - Comercial (setor mencionado: Atendimento Comercial - Comercial)
+2025-11-09 14:28:35.259 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:625 - Regra de transferência acionada. transferir_atendimento=True. fluxo_transferencia=Atendimento Comercial - Comercial
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-09 14:28:36.373 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=6910b4fab7f4e41ffc229174 -> 6910b5051f6295ff8d5f1f91
+INFO:django-q:Process-ca3311832201421888922a9189474d7e processing iowa-ohio-salami-colorado 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (alpha-mockingbird-jersey-cola)
+2025-11-09 14:28:37.126 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=6910b4f8b35e30d4b4d15267 -> 6910b5051f6295ff8d5f1f91
+2025-11-09 14:28:38.358 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=6910b4f8b35e30d4b4d15267 -> 6910b5051f6295ff8d5f1f91
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-09 14:28:39.128 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - capa do card atualizada: card=6910b5051f6295ff8d5f1f91 color=purple
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (iowa-ohio-salami-colorado)
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-09 14:28:40.015 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:654 - Score de confiabilidade (triádico): 0.6714
+2025-11-09 14:28:42.851 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:687 - Resposta do bot registrada na mensagem 46 (atendimento 23) com confianca=0.671
+2025-11-09 14:28:42.855 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:347 - Departamento 'Atendimento' já existe (ID 32)
+2025-11-09 14:28:42.858 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:366 - Fluxo 'Atendimento Inicial' já existe (ID 61)
+2025-11-09 14:28:42.863 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:400 - Atendimento 23 movido para etapa 'Em Atendimento'
+INFO:django-q:Enqueued [smart_core_cluster] 1251
+INFO:django-q:Enqueued [smart_core_cluster] 1252
+2025-11-09 14:28:42.978 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:411 - Atendimento 23 atualizado para status 'Em Atendimento'
+2025-11-09 14:28:42.978 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response:176 - result: AMTuple(resposta_bot='Estarei transferindo seu atendimento para Atendimento Comercial - Comercial\n\nVou transferir seu atendimento para o setor responsável', confiabilidade=0.6713612463493955, transferir_atendimento=True, fluxo_transferencia='Atendimento Comercial - Comercial')
+2025-11-09 14:28:42.979 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response:179 - Transferência para fluxo: Atendimento Comercial - Comercial
+INFO:django-q:Enqueued [smart_core_cluster] 1253
+INFO:django-q:Process-ca3311832201421888922a9189474d7e processing muppet-south-alabama-ack 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Enqueued [smart_core_cluster] 1254
+INFO:django-q:Process-8517f8fae7da4b3ab390faded676e187 processing quebec-jig-washington-purple 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+2025-11-09 14:28:43.132 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:55 - TrelloUnifiedDataService inicializado
+2025-11-09 14:28:43.132 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:199 - UnifiedDataService Trello inicializado para provider=trello
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response' (pizza-butter-nebraska-tango)
+2025-11-09 14:28:44.179 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_request:114 - Falha Trello API: 404 List 6910b3b2753b275b758bdee0 does not exist on board 6910b4f766f69c0b7d75a86a
+2025-11-09 14:28:44.180 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_atendimento_move_to_etapa_list:547 - Falha ao mover card de lista no Trello: 404 Client Error: Not Found for url: https://api.trello.com/1/cards/6910b5051f6295ff8d5f1f91?key=9cc88ac47192943139133443cfd6c153&token=ATTAda0f07c4a584667a3fe4fdf7275167b5b6d52cd35f7d8eedad75710854719bd57FD0B15A&idList=6910b3b2753b275b758bdee0
+INFO:django-q:Process-8517f8fae7da4b3ab390faded676e187 processing black-arizona-leopard-fix 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (quebec-jig-washington-purple)
+2025-11-09 14:28:44.988 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=6910b4f8b35e30d4b4d15267 -> 6910b5051f6295ff8d5f1f91
+INFO:django-q:Process-ca3311832201421888922a9189474d7e processing zulu-montana-uranus-ceiling 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (muppet-south-alabama-ack)
+2025-11-09 14:28:46.050 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_request:114 - Falha Trello API: 404 List 6910b3b2753b275b758bdee0 does not exist on board 6910b4f766f69c0b7d75a86a
+2025-11-09 14:28:46.051 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_atendimento_move_to_etapa_list:547 - Falha ao mover card de lista no Trello: 404 Client Error: Not Found for url: https://api.trello.com/1/cards/6910b5051f6295ff8d5f1f91?key=9cc88ac47192943139133443cfd6c153&token=ATTAda0f07c4a584667a3fe4fdf7275167b5b6d52cd35f7d8eedad75710854719bd57FD0B15A&idList=6910b3b2753b275b758bdee0
+2025-11-09 14:28:46.153 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:129 - card atualizado: lista=6910b4f8b35e30d4b4d15267 -> 6910b5051f6295ff8d5f1f91
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (zulu-montana-uranus-ceiling)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (black-arizona-leopard-fix)
+

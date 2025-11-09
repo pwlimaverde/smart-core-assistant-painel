@@ -21,6 +21,7 @@ from smart_core_assistant_painel.app.ui.treinamento.models import (
     QueryCompose,
 )
 from smart_core_assistant_painel.modules.ai_engine import (
+    AMTuple,
     FeaturesCompose,
     MessageData,
 )
@@ -150,13 +151,15 @@ def send_message_response(phone: str) -> None:
                 fluxos_disponiveis: dict[str, str] = (
                     _gerar_dict_fluxos_disponiveis()
                 )
-                result = FeaturesCompose.analise_mensage(
+                # Anotação explícita da tupla para garantir inferência tipada
+                result: AMTuple = FeaturesCompose.analise_mensage(
                     fluxos_disponiveis=fluxos_disponiveis,
                     historico_atendimento=historico_atendimento,
                     prompt_human=prompt_intent,
                     context=mensagem.conteudo,
                     dados_treinamento=dados_treinamento,
                 )
+
                 SERVICEHUB.whatsapp_service.send_message(
                     instance=message_data.instance,
                     api_key=message_data.api_key,
@@ -170,13 +173,15 @@ def send_message_response(phone: str) -> None:
 
                 # Atualiza status do atendimento para "Em Atendimento"
                 _atualizar_status_atendimento_em_andamento(atendimento_obj)
-
+                logger.info(f"result: {result}")
                 if result.transferir_atendimento:
                     if result.fluxo_transferencia:
-                        atendimento_obj.fluxo_transferencia = (
+                        logger.info(
+                            f"Transferência para fluxo: {result.fluxo_transferencia}"
+                        )
+                        atendimento_obj.apply_flow_by_description(
                             result.fluxo_transferencia
                         )
-                        atendimento_obj.save()
             else:
                 logger.warning(
                     "DEBUG: Bot não pode responder - pulando processamento de intents"

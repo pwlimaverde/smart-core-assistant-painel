@@ -7,7 +7,6 @@ de boards, listas e cards através da interface unificada.
 
 from __future__ import annotations
 
-import os
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -243,6 +242,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
             "start",
             "pos",
             "idList",
+            "idBoard",
             "dueComplete",
         ):
             if key in payload:

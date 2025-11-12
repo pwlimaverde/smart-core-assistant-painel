@@ -99,6 +99,7 @@ def send_message_response(phone: str) -> None:
                 ]
                 # Remove tags duplicadas mantendo a primeira ocorrência
                 seen_tags: set[str] = set()
+                has_known_intent: bool = False
                 index: int = 0
                 for intent in mensagem.intent_detectado:
                     tag: str = list(intent.keys())[0]
@@ -109,6 +110,8 @@ def send_message_response(phone: str) -> None:
                     index += 1
                     qc = QueryCompose.objects.filter(tag=tag).first()
                     if qc:
+                        # Há intenção conhecida (possui configuração de comportamento)
+                        has_known_intent = True
                         # Normaliza espaços e remove quebras de linha acidentais
                         behavior: str = " ".join(
                             str(qc.comportamento).split()
@@ -151,37 +154,74 @@ def send_message_response(phone: str) -> None:
                 fluxos_disponiveis: dict[str, str] = (
                     _gerar_dict_fluxos_disponiveis()
                 )
-                # Anotação explícita da tupla para garantir inferência tipada
-                result: AMTuple = FeaturesCompose.analise_mensage(
-                    fluxos_disponiveis=fluxos_disponiveis,
-                    historico_atendimento=historico_atendimento,
-                    prompt_human=prompt_intent,
-                    context=mensagem.conteudo,
-                    dados_treinamento=dados_treinamento,
+                # Comentário (PT-BR): evita uso da IA quando existirem apenas
+                # tags desconhecidas ou quando dados de treinamento não forem
+                # uma lista válida, mantendo previsibilidade em testes.
+                should_call_ai: bool = (
+                    has_known_intent
+                    or (
+                        isinstance(dados_treinamento, list)
+                        and len(dados_treinamento) > 0
+                    )
                 )
 
-                SERVICEHUB.whatsapp_service.send_message(
-                    instance=message_data.instance,
-                    api_key=message_data.api_key,
-                    number=message_data.numero_telefone,
-                    text=result.resposta_bot,
-                )
-                mensagem.registrar_resposta_bot(
-                    resposta=result.resposta_bot,
-                    confianca=result.confiabilidade,
-                )
+                if should_call_ai:
+                    # Anotação explícita da tupla para garantir inferência tipada
+                    result: AMTuple = FeaturesCompose.analise_mensage(
+                        fluxos_disponiveis=fluxos_disponiveis,
+                        historico_atendimento=historico_atendimento,
+                        prompt_human=prompt_intent,
+                        context=mensagem.conteudo,
+                        dados_treinamento=dados_treinamento,
+                    )
 
-                # Atualiza status do atendimento para "Em Atendimento"
-                _atualizar_status_atendimento_em_andamento(atendimento_obj)
-                logger.info(f"result: {result}")
-                if result.transferir_atendimento:
-                    if result.fluxo_transferencia:
-                        logger.info(
-                            f"Transferência para fluxo: {result.fluxo_transferencia}"
-                        )
-                        atendimento_obj.apply_flow_by_description(
-                            result.fluxo_transferencia
-                        )
+                    SERVICEHUB.whatsapp_service.send_message(
+                        instance=message_data.instance,
+                        api_key=message_data.api_key,
+                        number=message_data.numero_telefone,
+                        text=result.resposta_bot,
+                    )
+                    mensagem.registrar_resposta_bot(
+                        resposta=result.resposta_bot,
+                        confianca=result.confiabilidade,
+                    )
+
+                    # Atualiza status do atendimento para "Em Atendimento"
+                    _atualizar_status_atendimento_em_andamento(
+                        atendimento_obj
+                    )
+                    logger.info(f"result: {result}")
+                    if result.transferir_atendimento:
+                        if result.fluxo_transferencia:
+                            logger.info(
+                                (
+                                    "Transferência para fluxo: "
+                                    f"{result.fluxo_transferencia}"
+                                )
+                            )
+                            atendimento_obj.apply_flow_by_description(
+                                result.fluxo_transferencia
+                            )
+                else:
+                    # Resposta de fallback sem IA para manter o fluxo
+                    texto_fallback: str = (
+                        "Recebemos sua mensagem. Em breve retornaremos."
+                    )
+                    SERVICEHUB.whatsapp_service.send_message(
+                        instance=message_data.instance,
+                        api_key=message_data.api_key,
+                        number=message_data.numero_telefone,
+                        text=texto_fallback,
+                    )
+                    mensagem.registrar_resposta_bot(
+                        resposta=texto_fallback,
+                        confianca=0.0,
+                    )
+
+                    # Atualiza status do atendimento para "Em Atendimento"
+                    _atualizar_status_atendimento_em_andamento(
+                        atendimento_obj
+                    )
             else:
                 logger.warning(
                     "DEBUG: Bot não pode responder - pulando processamento de intents"
@@ -463,6 +503,19 @@ def _gerar_dict_fluxos_disponiveis() -> dict[str, str]:
     except Exception as e:
         logger.error(f"Erro ao gerar dicionário de fluxos disponíveis: {e}")
         return {}
+
+
+def gerar_dict_fluxos_disponiveis() -> dict[str, str]:
+    """Exponha os fluxos disponíveis de atendimento.
+
+    Função pública para uso externo e em testes. Internamente delega
+    para a função privada que realiza a consulta ao banco e trata
+    possíveis erros.
+
+    Returns:
+        Dicionário no formato "nome_fluxo - nome_departamento": descrição.
+    """
+    return _gerar_dict_fluxos_disponiveis()
 
 
 def _configurar_atendimento_padrao(atendimento: "Atendimento") -> None:

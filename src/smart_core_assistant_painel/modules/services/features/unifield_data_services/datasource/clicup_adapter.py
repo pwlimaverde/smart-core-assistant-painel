@@ -2,8 +2,8 @@
 
 Este módulo implementa um adapter que conecta o UnifiedDataService
 com a API do ClickUp (v2), permitindo operações de criação e
-manipulação de espaços, listas e tarefas através da interface
-unificada.
+manipulação de espaços, pastas (folders), listas e tarefas através
+da interface unificada.
 """
 
 from __future__ import annotations
@@ -27,7 +27,8 @@ class ClicupUnifiedDataService(UnifiedDataService):
 
     Comentários em Português: esta classe mapeia operações genéricas
     para recursos do ClickUp. Um `container` corresponde a um `space`,
-    uma `data source` a uma `list` e um `item` a uma `task`.
+    uma `folder` corresponde ao agrupador por departamento, uma
+    `data source` a uma `list` e um `item` a uma `task`.
     """
 
     def __init__(self, params: UnifieldDataServicesParameters) -> None:
@@ -163,20 +164,96 @@ class ClicupUnifiedDataService(UnifiedDataService):
         )
         return list_id
 
+    def add_list_to_folder(self, folder_id: str, name: str) -> str:
+        """Cria uma lista dentro de um folder e retorna seu ID.
+
+        Comentário: usa `POST /folder/{folder_id}/list`.
+        """
+        body: Dict[str, Any] = {"name": name}
+        data = self._request("POST", f"/folder/{folder_id}/list", json=body)
+        list_id = str(data.get("id", ""))
+        self._log(
+            "lista criada: {name} em folder {folder} -> {list}",
+            name=name,
+            folder=folder_id,
+            list=list_id,
+        )
+        return list_id
+
+    # -------------------------- Espaços e Folders -------------------------
+    def list_spaces(self) -> List[Dict[str, Any]]:
+        """Lista spaces disponíveis no workspace (team atual).
+
+        Comentário: usa `GET /team/{team_id}/space`.
+        """
+        team_id = self._get_team_id()
+        data = self._request("GET", f"/team/{team_id}/space")
+        spaces: List[Dict[str, Any]] = data.get("spaces", [])
+        if isinstance(spaces, list):
+            return spaces
+        return []
+
+    def ensure_space_by_name(self, name: str) -> str:
+        """Garante a existência de um Space com determinado nome.
+
+        Retorna o `space_id`. Se não existir, cria.
+        """
+        spaces = self.list_spaces()
+        for sp in spaces:
+            if str(sp.get("name", "")) == name:
+                sid: str = str(sp.get("id", ""))
+                self._log("space existente: {name} -> {id}", name=name, id=sid)
+                return sid
+        return self.create_container(name)
+
+    def list_folders(self, space_id: str) -> List[Dict[str, Any]]:
+        """Lista folders de um Space.
+
+        Comentário: `GET /space/{space_id}/folder`.
+        """
+        data = self._request("GET", f"/space/{space_id}/folder")
+        folders: List[Dict[str, Any]] = data.get("folders", [])
+        if isinstance(folders, list):
+            return folders
+        return []
+
+    def find_folder_by_name(
+        self, space_id: str, name: str
+    ) -> Optional[Dict[str, Any]]:
+        """Busca folder por nome dentro de um Space."""
+        folders = self.list_folders(space_id)
+        for f in folders:
+            if str(f.get("name", "")) == name:
+                return f
+        return None
+
+    def create_folder(self, space_id: str, name: str) -> str:
+        """Cria um Folder dentro de um Space e retorna seu ID."""
+        body: Dict[str, Any] = {"name": name}
+        data = self._request("POST", f"/space/{space_id}/folder", json=body)
+        folder_id = str(data.get("id", ""))
+        self._log(
+            "folder criado: {name} em {space} -> {folder}",
+            name=name,
+            space=space_id,
+            folder=folder_id,
+        )
+        return folder_id
+
     def update_schema(
         self, data_source_id: str, schema: Dict[str, Any]
     ) -> str:
-        """Atualiza o schema lógico associado à lista.
+        """Atualiza a List com campos do schema (inclui statuses/archived).
 
-        Comentário: ClickUp não possui schema nativo de lista; aqui
-        registramos o schema como metadado lógico, retornando um ID
-        simbólico baseado na lista.
+        Comentário: envia o `schema` diretamente via `PUT /list/{id}`.
+        Retorna um ID simbólico de versão baseado na lista.
         """
-        version_id = f"schema-{data_source_id}"
+        _ = self._request("PUT", f"/list/{data_source_id}", json=schema)
+        version_id: str = f"schema-{data_source_id}"
         self._log(
-            "schema lógico atualizado para lista {list}: {fields}",
+            "list atualizada: {list} campos={keys}",
             list=data_source_id,
-            fields=list(schema.keys()),
+            keys=list(schema.keys()),
         )
         return version_id
 
@@ -234,6 +311,8 @@ class ClicupUnifiedDataService(UnifiedDataService):
         self._log("task atualizada: lista={list} -> {task}",
                   list=data_source_id, task=item_id)
         return version_id
+
+    
 
     def add_relation_property(
         self, data_source_id: str, property_name: str, target_id: str

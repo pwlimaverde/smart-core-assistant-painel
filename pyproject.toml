@@ -179,7 +179,7 @@ call-data = "python scripts/new_feature_script.py --type call_data"
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 cluster = "python -m smart_core_assistant_painel.main qcluster"
-start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 split-pane -V -d $proj powershell -NoExit -Command 'uv run task cluster' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster' }\""
+start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task cluster'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-clickup' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-clickup' }\""
 
 # Docker commands
 
@@ -228,7 +228,7 @@ reset-db = "python scripts/database_reset/reset_database.py"
 # Observação: idealmente este comando deve rodar via `docker compose`
 # dentro do container, cobrindo toda a suíte. No momento, para garantir
 # consistência do fluxo, mapeamos para os testes do `appflowy_adapter`.
-test-docker = "pytest -v -o addopts='' src/smart_core_assistant_painel/app/appflowy_adapter/tests"
+test-docker = "pytest -v --cov=src --cov-report=term-missing"
 # init-sync-records desativado: evita interferência enquanto Notion está
 # desligado. Quando reativar o app, remova o comentário abaixo.
 # init-sync-records = "python src/smart_core_assistant_painel/app/notion_sync/management/commands/init_sync_records.py"

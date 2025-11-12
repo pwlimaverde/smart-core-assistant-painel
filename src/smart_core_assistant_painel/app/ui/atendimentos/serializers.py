@@ -42,6 +42,9 @@ class AtendimentoCardSerializer(serializers.ModelSerializer[Atendimento]):
     atendente_nome = serializers.SerializerMethodField()
     last_message_preview = serializers.SerializerMethodField()
     last_message_timestamp = serializers.SerializerMethodField()
+    produto_servico = serializers.SerializerMethodField()
+    valor_orcamento = serializers.SerializerMethodField()
+    categoria_venda = serializers.SerializerMethodField()
 
     class Meta:
         model = Atendimento
@@ -109,6 +112,28 @@ class AtendimentoCardSerializer(serializers.ModelSerializer[Atendimento]):
             return obj.data_ultima_mensagem.isoformat()
         return timezone.now().isoformat()
 
+    def get_produto_servico(self, obj: Atendimento) -> Optional[str]:
+        """Retorna produto/serviço se existir; compatível com remoção de campo."""
+        valor: Any = getattr(obj, "produto_servico", None)
+        return valor if isinstance(valor, str) else None
+
+    def get_valor_orcamento(self, obj: Atendimento) -> Optional[float]:
+        """Retorna valor do orçamento se existir; converte para float com segurança."""
+        valor: Any = getattr(obj, "valor_orcamento", None)
+        if valor is None:
+            return None
+        if isinstance(valor, (int, float)):
+            return float(valor)
+        try:
+            return float(valor)  # type: ignore[arg-type]
+        except Exception:
+            return None
+
+    def get_categoria_venda(self, obj: Atendimento) -> Optional[str]:
+        """Retorna categoria de venda se existir; compatível com remoção de campo."""
+        valor: Any = getattr(obj, "categoria_venda", None)
+        return valor if isinstance(valor, str) else None
+
 
 class AtendimentoDetailSerializer(serializers.ModelSerializer[Atendimento]):
     """Serializa detalhes completos de um atendimento para modal/detalhe."""
@@ -118,6 +143,9 @@ class AtendimentoDetailSerializer(serializers.ModelSerializer[Atendimento]):
     atendente_nome = serializers.SerializerMethodField()
     etapa_atual_nome = serializers.SerializerMethodField()
     departamento_nome = serializers.SerializerMethodField()
+    produto_servico = serializers.SerializerMethodField()
+    valor_orcamento = serializers.SerializerMethodField()
+    categoria_venda = serializers.SerializerMethodField()
 
     class Meta:
         model = Atendimento
@@ -161,3 +189,25 @@ class AtendimentoDetailSerializer(serializers.ModelSerializer[Atendimento]):
 
     def get_departamento_nome(self, obj: Atendimento) -> Optional[str]:
         return obj.departamento.nome if obj.departamento else None
+
+    def get_produto_servico(self, obj: Atendimento) -> Optional[str]:
+        """Retorna produto/serviço se existir; compatível com remoção de campo."""
+        valor: Any = getattr(obj, "produto_servico", None)
+        return valor if isinstance(valor, str) else None
+
+    def get_valor_orcamento(self, obj: Atendimento) -> Optional[float]:
+        """Retorna valor do orçamento se existir; converte para float com segurança."""
+        valor: Any = getattr(obj, "valor_orcamento", None)
+        if valor is None:
+            return None
+        if isinstance(valor, (int, float)):
+            return float(valor)
+        try:
+            return float(valor)  # type: ignore[arg-type]
+        except Exception:
+            return None
+
+    def get_categoria_venda(self, obj: Atendimento) -> Optional[str]:
+        """Retorna categoria de venda se existir; compatível com remoção de campo."""
+        valor: Any = getattr(obj, "categoria_venda", None)
+        return valor if isinstance(valor, str) else None

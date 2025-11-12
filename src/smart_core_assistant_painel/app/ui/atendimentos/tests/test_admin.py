@@ -107,15 +107,34 @@ class TestAtendimentoAdmin(TestCase):
         duracao = self.admin.duracao_formatada(self.atendimento)
         self.assertIn("1:30", duracao)
 
-    def test_filtra_etapa_atual_por_departamento_novo(self) -> None:
-        """Form de criação deve filtrar etapas pelo departamento selecionado."""
+    def test_filtra_fluxo_por_departamento_novo(self) -> None:
+        """Criação: filtra fluxos pelo departamento selecionado."""
+        dep_a = Departamento.objects.create(nome="Suporte")
+        dep_b = Departamento.objects.create(nome="Comercial")
+
+        fluxo_a: FluxoAtendimento = dep_a.ensure_fluxo("Fluxo A")
+        dep_b.ensure_fluxo("Fluxo B")
+
+        request = MockRequest()
+        request.GET = {"departamento": str(dep_a.id)}
+
+        form_cls = self.admin.get_form(request)
+        qs_fluxos = form_cls.base_fields["fluxo_atendimento"].queryset
+
+        # Deve conter apenas fluxos do departamento selecionado
+        self.assertEqual(
+            qs_fluxos.filter(departamento=dep_a).count(), qs_fluxos.count()
+        )
+        self.assertFalse(qs_fluxos.filter(departamento=dep_b).exists())
+
+    def test_filtra_etapa_atual_por_fluxo_novo(self) -> None:
+        """Criação: filtra etapas pelo fluxo selecionado."""
         dep_a = Departamento.objects.create(nome="Suporte")
         dep_b = Departamento.objects.create(nome="Comercial")
 
         fluxo_a: FluxoAtendimento = dep_a.ensure_fluxo("Fluxo A")
         fluxo_b: FluxoAtendimento = dep_b.ensure_fluxo("Fluxo B")
 
-        # Cria etapas específicas para garantir distinção
         etapa_a = EtapaFluxo.objects.create(
             fluxo=fluxo_a,
             nome="Etapa A",
@@ -124,7 +143,7 @@ class TestAtendimentoAdmin(TestCase):
             cor="#123456",
             tipo_etapa=TipoEtapa.TRABALHO,
         )
-        etapa_b = EtapaFluxo.objects.create(
+        EtapaFluxo.objects.create(
             fluxo=fluxo_b,
             nome="Etapa B",
             descricao="Teste B",
@@ -134,21 +153,43 @@ class TestAtendimentoAdmin(TestCase):
         )
 
         request = MockRequest()
-        # Simula seleção do departamento via GET
-        request.GET = {"departamento": str(dep_a.id)}
+        # Simula seleção do fluxo via GET
+        request.GET = {"fluxo_atendimento": str(fluxo_a.id)}
 
         form_cls = self.admin.get_form(request)
-        qs = form_cls.base_fields["etapa_atual"].queryset
+        qs_etapas = form_cls.base_fields["etapa_atual"].queryset
 
-        # Todas as etapas devem pertencer ao dep_a
+        # Todas as etapas devem pertencer ao fluxo selecionado
         self.assertEqual(
-            qs.filter(fluxo__departamento=dep_a).count(), qs.count()
+            qs_etapas.filter(fluxo=fluxo_a).count(), qs_etapas.count()
         )
-        # Etapa de outro departamento não deve aparecer
-        self.assertFalse(qs.filter(id=etapa_b.id).exists())
+        # Etapa de outro fluxo não deve aparecer
+        self.assertTrue(qs_etapas.filter(id=etapa_a.id).exists())
 
-    def test_filtra_etapa_atual_por_departamento_edicao(self) -> None:
-        """Form de edição deve filtrar etapas pelo departamento do objeto."""
+    def test_filtra_fluxo_por_departamento_edicao(self) -> None:
+        """Edição: filtra fluxos pelo departamento do objeto."""
+        dep = Departamento.objects.create(nome="Financeiro")
+        fluxo: FluxoAtendimento = dep.ensure_fluxo("Fluxo Fin")
+
+        atendimento = Atendimento.objects.create(
+            contato=self.contato,
+            status=StatusAtendimento.EM_ATENDIMENTO,
+            departamento=dep,
+            fluxo_atendimento=fluxo,
+        )
+
+        request = MockRequest()
+        form_cls = self.admin.get_form(request, obj=atendimento)
+        qs_fluxos = form_cls.base_fields["fluxo_atendimento"].queryset
+
+        # Deve conter apenas fluxos do departamento do objeto
+        self.assertTrue(qs_fluxos.filter(id=fluxo.id).exists())
+        self.assertEqual(
+            qs_fluxos.filter(departamento=dep).count(), qs_fluxos.count()
+        )
+
+    def test_filtra_etapa_atual_por_fluxo_edicao(self) -> None:
+        """Edição: filtra etapas pelo fluxo do objeto."""
         dep = Departamento.objects.create(nome="Financeiro")
         fluxo: FluxoAtendimento = dep.ensure_fluxo("Fluxo Fin")
         etapa = EtapaFluxo.objects.create(
@@ -164,14 +205,15 @@ class TestAtendimentoAdmin(TestCase):
             contato=self.contato,
             status=StatusAtendimento.EM_ATENDIMENTO,
             departamento=dep,
+            fluxo_atendimento=fluxo,
         )
 
         request = MockRequest()
         form_cls = self.admin.get_form(request, obj=atendimento)
-        qs = form_cls.base_fields["etapa_atual"].queryset
+        qs_etapas = form_cls.base_fields["etapa_atual"].queryset
 
-        # Deve conter a etapa do próprio departamento
-        self.assertTrue(qs.filter(id=etapa.id).exists())
+        # Deve conter a etapa do fluxo do objeto
+        self.assertTrue(qs_etapas.filter(id=etapa.id).exists())
 
 
 class TestMensagemAdmin(TestCase):

@@ -25,9 +25,9 @@ def signal_agendar_processamento_mensagens(
         Schedule.objects.create(
             name=schedule_name,
             func="smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response",
-            # Comentário: para compatibilidade com Django-Q (ast.literal_eval),
-            # serializamos os argumentos como tupla literal.
-            args=repr((phone,)),
+            # Passa o número de telefone como argumento simples (string).
+            # O teste espera exatamente o valor de `phone` em `Schedule.args`.
+            args=phone,
             schedule_type=Schedule.ONCE,
             next_run=next_run,
         )

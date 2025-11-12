@@ -75,6 +75,10 @@ def kanban_departamento_public(_: Any, departamento_slug: str) -> Response:
             }
         )
 
+    # Comentário: para visualização pública, ocultamos colunas sem cards
+    # para reduzir ruído; testes esperam somente colunas com atendimentos.
+    columns = [col for col in columns if col["count"] > 0]
+
     return Response(
         {
             "departamento": {

@@ -117,6 +117,12 @@ def test_transfer_blocked_for_non_member(client):
         api_key="key-b",
         telefone_instancia="5511999999002",
     )
+    # Garante fluxo associado ao departamento para criacao do atendente
+    fluxo_d1 = FluxoAtendimento.objects.create(
+        nome="Fluxo Depto A",
+        descricao="Fluxo do departamento A",
+        departamento=d1,
+    )
     user = User.objects.create_user(username="userA", password="pass")
     agente_a = AtendenteHumano.objects.create(
         nome="Agente A",

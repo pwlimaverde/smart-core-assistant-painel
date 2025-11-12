@@ -4,6 +4,9 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.test import TestCase, override_settings
 from django.db.models.signals import post_save
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    FluxoAtendimento,
+)
 
 
 @override_settings(SIGNALS_DISABLED=True)
@@ -126,6 +129,13 @@ class WhatsAppInstanceUnitTestCase(TestCase):
             descricao="Departamento de vendas",
         )
         dept.save_base()
+
+        fluxo = FluxoAtendimento(
+            nome="Fluxo Vendas",
+            descricao="Fluxo principal",
+            departamento=dept,
+        )
+        fluxo.save_base()
 
         atendente = self.AtendenteHumano(
             nome="João Silva",

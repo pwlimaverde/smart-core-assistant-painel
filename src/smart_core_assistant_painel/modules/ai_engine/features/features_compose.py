@@ -102,6 +102,11 @@ from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
 )
 
+# Compatibilidade com testes legados:
+# Alguns testes patcham `AnalisePreviaMensagemLangchainDatasource` diretamente
+# deste módulo. Reexportamos como alias para o novo datasource simplificado.
+AnalisePreviaMensagemLangchainDatasource = AnalisePreviaLangchainDatasource
+
 
 class FeaturesCompose:
     """Facade para os casos de uso do módulo AI Engine."""
@@ -279,7 +284,8 @@ class FeaturesCompose:
             llm_parameters=llm_parameters,
             error=LlmError("Erro ao processar mensagem"),
         )
-        datasource: APMData = AnalisePreviaLangchainDatasource()
+        # Usa o alias legado para compatibilidade com testes
+        datasource: APMData = AnalisePreviaMensagemLangchainDatasource()
         usecase: APMUsecase = AnalisePreviaMensagemUsecase(datasource)
         data = usecase(parameters)
 

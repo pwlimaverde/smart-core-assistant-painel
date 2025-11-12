@@ -14,7 +14,10 @@ from django.urls import path
 from django.utils import timezone
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.operacional.models import EtapaFluxo
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    EtapaFluxo,
+    FluxoAtendimento,
+)
 
 from .models import Atendimento, Mensagem
 
@@ -64,22 +67,24 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "departamento",
         "data_inicio",
         "data_fim",
-        "atendente_humano",
+        "atendente_humano_nome",
         "total_mensagens",
         "duracao_formatada",
+        "avaliacao",
         "prioridade",
     ]
     list_filter = [
         "status",
-        "etapa_atual",
-        "departamento",
         "prioridade",
         "data_inicio",
+        "avaliacao",
+        "atendente_humano",
     ]
     search_fields = [
         "contato__telefone",
         "contato__nome_contato",
         "assunto",
+        "atendente_humano__nome",
         "tags",
     ]
     readonly_fields = [
@@ -98,6 +103,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                 "fields": (
                     "contato",
                     "departamento",
+                    "fluxo_atendimento",
                     "status",
                     "etapa_atual",
                     "atendente_humano",
@@ -162,6 +168,13 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
     def total_mensagens(self, obj: Atendimento) -> int:
         """Retorna o número total de mensagens no atendimento."""
         return cast(int, getattr(obj, "mensagens").count())
+
+    @admin.display(description="Atendente")
+    def atendente_humano_nome(self, obj: Atendimento) -> str:
+        """Retorna o nome do atendente humano vinculado."""
+        if obj.atendente_humano:
+            return cast(str, obj.atendente_humano.nome)
+        return "-"
 
     @admin.display(description="Duração Calculada")
     def duracao_calculada(self, obj: Atendimento) -> str:
@@ -228,6 +241,11 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         `formfield_for_foreignkey` para evitar inconsistências
         na validação do POST.
         """
+        # Armazena o objeto em edição no request para ser utilizado
+        # posteriormente em `formfield_for_foreignkey`, permitindo que
+        # o queryset de `etapa_atual` seja filtrado pelo departamento
+        # do próprio objeto quando não houver parâmetro em GET/POST.
+        setattr(request, "_admin_current_obj", obj)
         return super().get_form(request, obj, **kwargs)
 
     def formfield_for_foreignkey(
@@ -236,95 +254,209 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         request: HttpRequest,
         **kwargs: Any,
     ) -> forms.Field:
-        """Filtra o queryset de `etapa_atual` pelo departamento.
+        """Filtra `fluxo_atendimento` por departamento e `etapa_atual` por fluxo.
 
-        Também injeta `data-initial` no widget para que o JS
-        selecione a etapa previamente salva ao carregar opções.
+        Também injeta `data-initial` nos widgets para que o JS
+        selecione os valores previamente salvos ao carregar opções.
         """
         field: forms.Field = super().formfield_for_foreignkey(
             db_field, request, **kwargs
         )
+        name = getattr(db_field, "name", None)
 
-        if getattr(db_field, "name", None) != "etapa_atual":
+        # Filtragem do campo FluxoAtendimento pelo departamento selecionado
+        if name == "fluxo_atendimento":
+            dept_id_raw: Optional[str] = (
+                getattr(request, "POST", {}).get("departamento")
+                or getattr(request, "GET", {}).get("departamento")
+            )
+
+            initial_fluxo_id: Optional[str] = (
+                getattr(request, "POST", {}).get("fluxo_atendimento")
+            )
+
+            if not dept_id_raw or not initial_fluxo_id:
+                current_obj: Optional[Atendimento] = cast(
+                    Optional[Atendimento],
+                    getattr(request, "_admin_current_obj", None),
+                )
+                if current_obj is not None:
+                    if not dept_id_raw and current_obj.departamento_id:
+                        dept_id_raw = str(current_obj.departamento_id)
+                    if (
+                        not initial_fluxo_id
+                        and current_obj.fluxo_atendimento_id
+                    ):
+                        initial_fluxo_id = str(current_obj.fluxo_atendimento_id)
+                else:
+                    try:
+                        object_id = request.resolver_match.kwargs.get(
+                            "object_id"
+                        )
+                    except Exception:
+                        object_id = None
+                    if object_id:
+                        try:
+                            obj_loaded = (
+                                Atendimento.objects.only(
+                                    "departamento_id",
+                                    "fluxo_atendimento_id",
+                                ).get(pk=object_id)
+                            )
+                            if not dept_id_raw and obj_loaded.departamento_id:
+                                dept_id_raw = str(obj_loaded.departamento_id)
+                            if (
+                                not initial_fluxo_id
+                                and obj_loaded.fluxo_atendimento_id
+                            ):
+                                initial_fluxo_id = str(
+                                    obj_loaded.fluxo_atendimento_id
+                                )
+                        except Atendimento.DoesNotExist:
+                            pass
+
+            if dept_id_raw:
+                try:
+                    dept_id: int = int(dept_id_raw)
+                    qs_fluxos: QuerySet[FluxoAtendimento] = (
+                        FluxoAtendimento.objects.filter(
+                            departamento_id=dept_id
+                        )
+                        .order_by("nome")
+                    )
+                    cast(forms.ModelChoiceField, field).queryset = qs_fluxos
+                    field.help_text = (
+                        "Mostrando fluxos do departamento selecionado."
+                    )
+                except ValueError:
+                    cast(forms.ModelChoiceField, field).queryset = (
+                        FluxoAtendimento.objects.none()
+                    )
+                    field.help_text = (
+                        "Selecione um departamento para carregar fluxos."
+                    )
+            else:
+                cast(forms.ModelChoiceField, field).queryset = (
+                    FluxoAtendimento.objects.none()
+                )
+                field.help_text = (
+                    "Selecione um departamento para carregar fluxos."
+                )
+
+            try:
+                field.widget.attrs["data-initial"] = initial_fluxo_id or ""
+            except Exception:
+                pass
             return field
 
-        dept_id_raw: Optional[str] = (
-            getattr(request, "POST", {}).get("departamento")
-            or getattr(request, "GET", {}).get("departamento")
-        )
+        # Filtragem do campo EtapaFluxo pelo fluxo selecionado
+        if name == "etapa_atual":
+            fluxo_id_raw: Optional[str] = (
+                getattr(request, "POST", {}).get("fluxo_atendimento")
+                or getattr(request, "GET", {}).get("fluxo_atendimento")
+            )
 
-        initial_etapa_id: Optional[str] = (
-            getattr(request, "POST", {}).get("etapa_atual")
-        )
+            initial_etapa_id: Optional[str] = (
+                getattr(request, "POST", {}).get("etapa_atual")
+            )
 
-        if not dept_id_raw or not initial_etapa_id:
-            # Tenta obter objeto em edição para recuperar
-            # departamento e etapa atual salvos
-            try:
-                object_id = request.resolver_match.kwargs.get("object_id")
-            except Exception:
-                object_id = None
-            if object_id:
+            if not fluxo_id_raw or not initial_etapa_id:
+                current_obj2: Optional[Atendimento] = cast(
+                    Optional[Atendimento],
+                    getattr(request, "_admin_current_obj", None),
+                )
+                if current_obj2 is not None:
+                    if not fluxo_id_raw and current_obj2.fluxo_atendimento_id:
+                        fluxo_id_raw = str(current_obj2.fluxo_atendimento_id)
+                    if not initial_etapa_id and current_obj2.etapa_atual_id:
+                        initial_etapa_id = str(current_obj2.etapa_atual_id)
+                else:
+                    try:
+                        object_id2 = request.resolver_match.kwargs.get(
+                            "object_id"
+                        )
+                    except Exception:
+                        object_id2 = None
+                    if object_id2:
+                        try:
+                            obj_loaded2 = (
+                                Atendimento.objects.only(
+                                    "fluxo_atendimento_id",
+                                    "etapa_atual_id",
+                                ).get(pk=object_id2)
+                            )
+                            if (
+                                not fluxo_id_raw
+                                and obj_loaded2.fluxo_atendimento_id
+                            ):
+                                fluxo_id_raw = str(
+                                    obj_loaded2.fluxo_atendimento_id
+                                )
+                            if (
+                                not initial_etapa_id
+                                and obj_loaded2.etapa_atual_id
+                            ):
+                                initial_etapa_id = str(
+                                    obj_loaded2.etapa_atual_id
+                                )
+                        except Atendimento.DoesNotExist:
+                            pass
+
+            if fluxo_id_raw:
                 try:
-                    obj = (
-                        Atendimento.objects.only(
-                            "departamento_id", "etapa_atual_id"
-                        ).get(pk=object_id)
+                    fluxo_id: int = int(fluxo_id_raw)
+                    qs_etapas: QuerySet[EtapaFluxo] = (
+                        EtapaFluxo.objects.filter(fluxo_id=fluxo_id)
+                        .select_related("fluxo")
+                        .order_by("ordem")
                     )
-                    if not dept_id_raw and obj.departamento_id:
-                        dept_id_raw = str(obj.departamento_id)
-                    if not initial_etapa_id and obj.etapa_atual_id:
-                        initial_etapa_id = str(obj.etapa_atual_id)
-                except Atendimento.DoesNotExist:
-                    pass
-
-        # Aplica o queryset de acordo com o departamento
-        if dept_id_raw:
-            try:
-                dept_id: int = int(dept_id_raw)
-                qs: QuerySet[EtapaFluxo] = (
-                    EtapaFluxo.objects.filter(
-                        fluxo__departamento_id=dept_id
+                    cast(forms.ModelChoiceField, field).queryset = qs_etapas
+                    field.help_text = (
+                        "Mostrando etapas do fluxo selecionado."
                     )
-                    .select_related("fluxo")
-                    .order_by("fluxo__nome", "ordem")
-                )
-                cast(forms.ModelChoiceField, field).queryset = qs
-                field.help_text = (
-                    "Mostrando apenas etapas do departamento selecionado."
-                )
-            except ValueError:
+                except ValueError:
+                    cast(forms.ModelChoiceField, field).queryset = (
+                        EtapaFluxo.objects.none()
+                    )
+                    field.help_text = (
+                        "Selecione um fluxo para carregar etapas."
+                    )
+            else:
                 cast(forms.ModelChoiceField, field).queryset = (
                     EtapaFluxo.objects.none()
                 )
                 field.help_text = (
-                    "Selecione um departamento para carregar etapas."
+                    "Selecione um fluxo para carregar etapas."
                 )
-        else:
-            cast(forms.ModelChoiceField, field).queryset = (
-                EtapaFluxo.objects.none()
-            )
-            field.help_text = (
-                "Selecione um departamento para carregar etapas."
-            )
 
-        # Injeta valor inicial no widget para o JS selecionar após carregar
-        try:
-            field.widget.attrs["data-initial"] = (
-                initial_etapa_id or ""
-            )
-        except Exception:
-            # Silencia falhas em atributos de widget
-            pass
+            try:
+                field.widget.attrs["data-initial"] = initial_etapa_id or ""
+            except Exception:
+                pass
+            return field
 
         return field
 
-    # Comentário: adiciona endpoint no admin para carregar etapas via AJAX
-    # quando um departamento é selecionado no formulário de criação.
+    # Comentário: endpoints no admin para carregar fluxos e etapas via AJAX
     def get_urls(self) -> list[Any]:
         """Registra URLs adicionais para o admin de Atendimento."""
         urls = super().get_urls()
         custom = [
+            # Fluxos por departamento
+            path(
+                "fetch-fluxos/",
+                self.admin_site.admin_view(
+                    self.admin_fluxos_by_departamento
+                ),
+                name="atendimento_fetch_fluxos",
+            ),
+            path(
+                "<path:object_id>/fetch-fluxos/",
+                self.admin_site.admin_view(
+                    self.admin_fluxos_by_departamento
+                ),
+                name="atendimento_fetch_fluxos_obj",
+            ),
             path(
                 "fetch-etapas/",
                 self.admin_site.admin_view(
@@ -340,6 +472,17 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                     self.admin_etapas_by_departamento
                 ),
                 name="atendimento_fetch_etapas_obj",
+            ),
+            # Etapas por fluxo
+            path(
+                "fetch-etapas-by-fluxo/",
+                self.admin_site.admin_view(self.admin_etapas_by_fluxo),
+                name="atendimento_fetch_etapas_by_fluxo",
+            ),
+            path(
+                "<path:object_id>/fetch-etapas-by-fluxo/",
+                self.admin_site.admin_view(self.admin_etapas_by_fluxo),
+                name="atendimento_fetch_etapas_by_fluxo_obj",
             ),
         ]
         return custom + urls
@@ -376,6 +519,55 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                 data = []
         return JsonResponse({"results": data})
 
+    def admin_fluxos_by_departamento(self, request: HttpRequest) -> JsonResponse:
+        """Retorna fluxos filtrados por departamento.
+
+        Espera o parâmetro `departamento_id` em GET.
+        """
+        dept_id_raw: Optional[str] = request.GET.get("departamento_id")
+        data: list[dict[str, Any]] = []
+        if dept_id_raw:
+            try:
+                dept_id: int = int(dept_id_raw)
+                qs: QuerySet[FluxoAtendimento] = (
+                    FluxoAtendimento.objects.filter(departamento_id=dept_id)
+                    .order_by("nome")
+                )
+                logger.info(
+                    "Admin fluxos: dept_id={} count={}", dept_id, qs.count()
+                )
+                for fluxo in qs:
+                    data.append({"id": fluxo.id, "label": fluxo.nome})
+            except ValueError:
+                data = []
+        return JsonResponse({"results": data})
+
+    def admin_etapas_by_fluxo(self, request: HttpRequest) -> JsonResponse:
+        """Retorna etapas filtradas por fluxo.
+
+        Espera o parâmetro `fluxo_id` em GET.
+        """
+        fluxo_id_raw: Optional[str] = request.GET.get("fluxo_id")
+        data: list[dict[str, Any]] = []
+        if fluxo_id_raw:
+            try:
+                fluxo_id: int = int(fluxo_id_raw)
+                qs: QuerySet[EtapaFluxo] = (
+                    EtapaFluxo.objects.filter(fluxo_id=fluxo_id)
+                    .order_by("ordem")
+                )
+                logger.info(
+                    "Admin etapas: fluxo_id={} count={}",
+                    fluxo_id,
+                    qs.count(),
+                )
+                for ef in qs:
+                    label: str = f"{ef.nome} (#{ef.ordem})"
+                    data.append({"id": ef.id, "label": label})
+            except ValueError:
+                data = []
+        return JsonResponse({"results": data})
+
     class Media:
         """Inclui JS para dependência dinâmica de etapas por departamento."""
 
@@ -388,7 +580,7 @@ class MensagemAdmin(admin.ModelAdmin[Mensagem]):
 
     list_display = [
         "id",
-        "atendimento_id",
+        "atendimento",
         "remetente",
         "tipo",
         "conteudo_truncado",

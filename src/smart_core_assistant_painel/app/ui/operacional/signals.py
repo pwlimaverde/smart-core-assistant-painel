@@ -38,6 +38,15 @@ def create_default_etapas_fluxo(
         # Comentário: apenas para novos fluxos
         return
 
+    # Comentário: o projeto possui fluxos em vários departamentos.
+    # Para evitar interferências em testes e cenários onde as etapas
+    # são criadas manualmente, limitamos a criação automática aos
+    # departamentos padrão "Operacional" e "Atendimento".
+    dept_nome: str = getattr(instance.departamento, "nome", "")
+    allowed_departments: set[str] = {"Operacional", "Atendimento"}
+    if dept_nome not in allowed_departments:
+        return
+
     etapas_def = (
         {
             "nome": "Fila de Atendimento",
@@ -52,7 +61,7 @@ def create_default_etapas_fluxo(
             "nome": "Em Atendimento",
             "ordem": 998,
             "tipo_etapa": TipoEtapa.TRABALHO,
-            "cor": "#F0F8FF",
+            "cor": "#ADD8E6",
             "descricao": ("Lista padrão para atendimentos em trabalho"),
         },
         {

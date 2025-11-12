@@ -1,0 +1,1 @@
+# Pacote de migrações do app clickup_sync

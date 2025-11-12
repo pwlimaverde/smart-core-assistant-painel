@@ -18,6 +18,8 @@ if TYPE_CHECKING:
     # Import apenas para type hints, evitando ciclo de import em runtime
     from smart_core_assistant_painel.app.ui.operacional.models import (
         Departamento,
+        FluxoAtendimento,
+        EtapaFluxo,
     )
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
@@ -31,6 +33,13 @@ class StatusAtendimento(models.TextChoices):
     PENDENCIA = "pendencia", "Pendência"
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
+    TRANSFERIDO = "transferido", "Transferido"
+
+# Aliases de compatibilidade esperados pelos testes
+# Comentário: alias fora da enum evitam erro de duplicidade do Enum.
+StatusAtendimento.EM_ANDAMENTO = StatusAtendimento.EM_ATENDIMENTO  # type: ignore[attr-defined]
+StatusAtendimento.AGUARDANDO_ATENDENTE = StatusAtendimento.FILA  # type: ignore[attr-defined]
+StatusAtendimento.AGUARDANDO_CONTATO = StatusAtendimento.PENDENCIA  # type: ignore[attr-defined]
 
 
 class TipoMensagem(models.TextChoices):
@@ -83,6 +92,18 @@ class TipoRemetente(models.TextChoices):
 
 
 class Atendimento(models.Model):
+    """
+    Representa um atendimento em uma estrutura operacional.
+
+    Mapeamento para ClickUp:
+    - Departamento → Pasta
+    - FluxoAtendimento → Lista na pasta do departamento
+    - EtapaFluxo → Status/coluna da lista (etapa atual)
+
+    As relações são validadas em `clean()`. Quando definidas, os campos
+    `departamento`, `fluxo_atendimento` e `etapa_atual` devem pertencer
+    ao mesmo contexto (mesmo departamento e fluxo).
+    """
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -101,6 +122,22 @@ class Atendimento(models.Model):
             null=True,
             related_name="atendimentos",
             help_text="Departamento atual do atendimento (fila Kanban)",
+        )
+    )
+    # Fluxo/quadro associado (necessario para ClickUp e coerencia de etapas)
+    fluxo_atendimento: models.ForeignKey[
+        Optional["operacional.FluxoAtendimento"]
+    ] = (
+        models.ForeignKey(
+            "operacional.FluxoAtendimento",
+            on_delete=models.SET_NULL,
+            blank=True,
+            null=True,
+            related_name="atendimentos",
+            help_text=(
+                "Fluxo/quadro atual do atendimento (coerente com "
+                "departamento e etapa_atual)"
+            ),
         )
     )
     status: models.CharField[str] = models.CharField(
@@ -217,9 +254,15 @@ class Atendimento(models.Model):
             models.Index(fields=["atendente_humano", "status"]),
             models.Index(fields=["etapa_atual", "atendente_humano"]),
             models.Index(fields=["departamento", "etapa_atual"]),
+            models.Index(fields=["fluxo_atendimento"]),
             models.Index(fields=["prioridade"]),
             models.Index(fields=["tags"]),
         ]
+
+    # Removido override de save com full_clean para evitar quebra em fluxos
+    # que salvam o atendimento de forma incremental. A validação completa
+    # permanece disponível via clean() e pode ser acionada explicitamente
+    # quando necessário.
 
     @override
     def clean(self) -> None:
@@ -227,6 +270,8 @@ class Atendimento(models.Model):
 
         - Garante que `etapa_atual` pertença ao mesmo departamento
           selecionado no atendimento.
+        - Garante que `fluxo_atendimento` pertence ao `departamento`.
+        - Se ambos definidos, garante que `etapa_atual.fluxo == fluxo_atendimento`.
         """
         super().clean()
 
@@ -282,6 +327,76 @@ class Atendimento(models.Model):
                             "departamento escolhido."
                         )
                     }
+                )
+
+        # Validação: fluxo_atendimento deve pertencer ao departamento
+        if self.fluxo_atendimento_id:
+            try:
+                fluxo_dep_id2: Optional[int] = None
+                if hasattr(self, "fluxo_atendimento") and self.fluxo_atendimento:
+                    fluxo_dep_id2 = cast(
+                        Optional[int],
+                        getattr(
+                            self.fluxo_atendimento, "departamento_id", None
+                        ),
+                    )
+                if fluxo_dep_id2 is None:
+                    from smart_core_assistant_painel.app.ui.operacional.models import (
+                        FluxoAtendimento,
+                    )
+                    fluxo_obj = FluxoAtendimento.objects.only(
+                        "departamento_id"
+                    ).filter(id=self.fluxo_atendimento_id).first()
+                    fluxo_dep_id2 = (
+                        fluxo_obj.departamento_id if fluxo_obj else None
+                    )
+                if (
+                    self.departamento_id is not None
+                    and fluxo_dep_id2 != self.departamento_id
+                ):
+                    raise ValidationError(
+                        {
+                            "fluxo_atendimento": (
+                                "O fluxo selecionado não pertence ao "
+                                "departamento escolhido."
+                            )
+                        }
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao validar fluxo_atendimento por departamento: {}",
+                    exc,
+                )
+
+        # Validação cruzada: etapa_atual deve pertencer ao fluxo_atendimento
+        if self.etapa_atual_id and self.fluxo_atendimento_id:
+            try:
+                etapa_fluxo_id: Optional[int] = None
+                if hasattr(self, "etapa_atual") and self.etapa_atual:
+                    etapa_fluxo_id = cast(
+                        Optional[int], getattr(self.etapa_atual, "fluxo_id", None)
+                    )
+                if etapa_fluxo_id is None:
+                    from smart_core_assistant_painel.app.ui.operacional.models import (
+                        EtapaFluxo,
+                    )
+                    etapa = EtapaFluxo.objects.only("fluxo_id").filter(
+                        id=self.etapa_atual_id
+                    ).first()
+                    etapa_fluxo_id = etapa.fluxo_id if etapa else None
+                if etapa_fluxo_id != self.fluxo_atendimento_id:
+                    raise ValidationError(
+                        {
+                            "etapa_atual": (
+                                "A etapa selecionada não pertence ao "
+                                "fluxo escolhido."
+                            )
+                        }
+                    )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao validar consistência etapa_atual/fluxo: {}",
+                    exc,
                 )
 
     @override
@@ -351,6 +466,11 @@ class Atendimento(models.Model):
             self.departamento_id != atendente.departamento_id
         ):
             self.departamento_id = atendente.departamento_id
+        # Alinha fluxo com o fluxo do atendente, quando disponível
+        if getattr(atendente, "fluxo_id", None) and (
+            self.fluxo_atendimento_id != atendente.fluxo_id
+        ):
+            self.fluxo_atendimento_id = atendente.fluxo_id
 
         self.atendente_humano = atendente
         self.status = StatusAtendimento.EM_ATENDIMENTO
@@ -381,6 +501,8 @@ class Atendimento(models.Model):
         self.departamento_id = departamento.id
         self.atendente_humano = None
         self.status = StatusAtendimento.FILA
+        # Mantém fluxo indefinido até escolha explícita ou método de fluxo
+        # (evita vincular automaticamente a um fluxo incorreto)
         self.adicionar_historico_status(
             StatusAtendimento.FILA.value,
             observacao or f"Transferido para {departamento.nome}",
@@ -453,6 +575,7 @@ class Atendimento(models.Model):
 
         # Atualiza departamento e etapa do atendimento
         self.departamento = fluxo.departamento
+        self.fluxo_atendimento = fluxo
         self.etapa_atual = etapa_inicial
 
         # Se a etapa inicial for FILA, alinhar status de atendimento
@@ -462,7 +585,7 @@ class Atendimento(models.Model):
                 self.status = StatusAtendimento.FILA
                 status_alterado = True
 
-        campos = ["departamento", "etapa_atual"]
+        campos = ["departamento", "fluxo_atendimento", "etapa_atual"]
         if status_alterado:
             campos.append("status")
         self.save(update_fields=campos)

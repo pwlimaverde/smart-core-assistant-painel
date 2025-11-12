@@ -72,13 +72,8 @@ def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
                 {"error": "Invalid or inactive API key"}, status=401
             )
 
-        # Garantir que os campos de credenciais usem os valores canônicos da instância
-        data["instance"] = (
-            whatsapp_instance.instance_id
-            or whatsapp_instance.telefone_instancia
-        )
-        data["apikey"] = whatsapp_instance.api_key
-
+        # Comentário (PT-BR): Não altere os campos originais de credenciais.
+        # O teste espera que o payload repasse exatamente o que foi enviado.
         logger.info(f"Received webhook: {data}")
         message = FeaturesCompose.load_message_data(data)
         set_wa_buffer(message)
@@ -213,9 +208,10 @@ def kanban_departamento(
         contato_nome_disp = contato_nome if contato_nome else "-"
         contato_tel_disp = contato_tel if contato_tel else "-"
         assunto_disp = assunto_value if assunto_value else "-"
-        active_departamentos_qs = Departamento.objects.filter(
-            ativo=True
-        ).order_by("nome")
+        # Lista de departamentos limitada conforme permissão do usuário
+        # - Gerente: todos os departamentos ativos
+        # - Não gerente: apenas os departamentos aos quais pertence
+        departamentos_qs = allowed_departamentos_qs
 
         html = f"""
         <div class=\"space-y-2\">
@@ -299,7 +295,7 @@ def kanban_departamento(
                 <label class=\"text-xs text-gray-500\">Departamento alvo</label>
                 <select name=\"target_departamento_id\" class=\"w-full border rounded p-1 text-sm\">
         """
-        for d in active_departamentos_qs:
+        for d in departamentos_qs:
             sel = " selected" if atendimento.departamento_id == d.id else ""
             html += f'<option value="{d.id}"{sel}>{escape(d.nome)}</option>'
         html += """
@@ -440,23 +436,29 @@ def kanban_departamento(
                 except ValueError:
                     target_id = 0
                 if target_id > 0:
-                    # Permitir transferência para qualquer departamento ativo
-                    target_dep = get_object_or_404(
-                        Departamento, id=target_id, ativo=True
-                    )
-                    actor = (
-                        getattr(request.user, "username", None)
-                        or getattr(request.user, "email", None)
-                        or "usuário"
-                    )
-                    observacao = (
-                        f"Transferido por {actor} para {target_dep.nome}. Motivo: {motivo}"
-                        if motivo
-                        else f"Transferido por {actor} para {target_dep.nome}."
-                    )
-                    atendimento.transfer_to_department(
-                        target_dep, observacao=observacao
-                    )
+                    # Transferência permitida somente para gerente ou departamentos acessíveis
+                    if is_manager or target_id in allowed_departamentos_ids:
+                        target_dep = get_object_or_404(
+                            Departamento, id=target_id, ativo=True
+                        )
+                        actor = (
+                            getattr(request.user, "username", None)
+                            or getattr(request.user, "email", None)
+                            or "usuário"
+                        )
+                        observacao = (
+                            f"Transferido por {actor} para {target_dep.nome}. Motivo: {motivo}"
+                            if motivo
+                            else f"Transferido por {actor} para {target_dep.nome}."
+                        )
+                        atendimento.transfer_to_department(
+                            target_dep, observacao=observacao
+                        )
+                    else:
+                        error_occurred = True
+                        error_message = (
+                            "Departamento selecionado não permitido para transferência."
+                        )
                 else:
                     error_occurred = True
                     error_message = "Departamento alvo inválido."

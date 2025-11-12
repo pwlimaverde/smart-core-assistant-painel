@@ -232,3 +232,6 @@ test-docker = "pytest -v -o addopts='' src/smart_core_assistant_painel/app/appfl
 # init-sync-records desativado: evita interferência enquanto Notion está
 # desligado. Quando reativar o app, remova o comentário abaixo.
 # init-sync-records = "python src/smart_core_assistant_painel/app/notion_sync/management/commands/init_sync_records.py"
+
+# Callback do ClickUp via túnel ngrok
+ngrok-clickup = "python scripts/clickup_setup/ngrok_clickup.py"

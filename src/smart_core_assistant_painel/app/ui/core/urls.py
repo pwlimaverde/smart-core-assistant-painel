@@ -24,6 +24,12 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("health/", views.health_check, name="health_check"),
     path("admin/", admin.site.urls),
+    # Integrações
+    path(
+        "integrations/clickup/callback/",
+        views.clickup_callback,
+        name="clickup_callback",
+    ),
     path(
         "usuarios/",
         include("smart_core_assistant_painel.app.ui.usuarios.urls"),

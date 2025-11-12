@@ -19,6 +19,7 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
 )
 from smart_core_assistant_painel.modules.services.utils.types import UDSData
 from .trello_adapter import TrelloUnifiedDataService
+from .clicup_adapter import ClicupUnifiedDataService
 # Desabilitado temporariamente: adapter Notion.
 # Comentado para evitar conflitos com o app `notion_sync` desativado.
 # from .notion_adapter import NotionUnifiedDataService
@@ -198,6 +199,14 @@ class UnifieldDataServicesDatasource(UDSData):
             if parameters.enable_observability:
                 logger.info(
                     "UnifiedDataService Trello inicializado para "
+                    f"provider={parameters.provider}"
+                )
+            return service
+        if provider in {"clickup", "clicup"}:
+            service = ClicupUnifiedDataService(params=parameters)
+            if parameters.enable_observability:
+                logger.info(
+                    "UnifiedDataService ClickUp inicializado para "
                     f"provider={parameters.provider}"
                 )
             return service

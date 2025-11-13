@@ -30,8 +30,14 @@
 - List (FluxoAtendimento):
   - `POST /api/v2/folder/{folder_id}/list` → criar List dentro do Folder.
   - `GET /api/v2/folder/{folder_id}/list` → listar Lists do Folder.
+  - Observação: é recomendado enviar `statuses` já na criação da List
+    para garantir personalização imediata por fluxo e evitar herança
+    dos statuses padrão do Folder/Space.
 - Status (EtapaFluxo) por List:
-  - `PUT /api/v2/list/{list_id}` → atualizar propriedades da List (inclui configuração de statuses personalizados).
+  - `PUT /api/v2/list/{list_id}` → atualizar propriedades da List (inclui
+    configuração de statuses personalizados via campo `statuses`). O formato
+    esperado é uma lista de objetos com `{ status, type, color }`, onde
+    `type` deve ser `open` ou `closed`.
   - Task muda de etapa via `status` no update da Task.
 - Task (Atendimento):
   - `POST /api/v2/list/{list_id}/task` → criar Task.
@@ -61,6 +67,8 @@ Observação: endpoints podem variar conforme plano/organização, mas a documen
   - Criar Folders por Departamento via `POST /space/{space_id}/folder`.
   - Criar Lists por FluxoAtendimento via `POST /folder/{folder_id}/list`.
   - Configurar Status por List via `PUT /list/{list_id}`.
+  - Confirmar `statuses` via `GET /list/{list_id}` e persistir o
+    mapeamento `EtapaFluxo` ↔ `status_name` em `ClickupStatus`.
 - Campos Personalizados:
   - Definir CF no Workspace/List (nome, tipo: Text, Rich Text, Number, Date, Dropdown).
   - Anexar CF às Lists e validar via `GET /list/{list_id}/field`.

@@ -10,6 +10,8 @@ from typing import Any
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from loguru import logger
+from django.conf import settings
 
 from .models import EtapaFluxo, FluxoAtendimento, TipoEtapa
 
@@ -18,6 +20,7 @@ from .models import EtapaFluxo, FluxoAtendimento, TipoEtapa
     post_save,
     sender=FluxoAtendimento,
     dispatch_uid="operacional.create_default_etapas_fluxo",
+    weak=False,
 )
 def create_default_etapas_fluxo(
     sender: Any, instance: FluxoAtendimento, created: bool, **kwargs: Any
@@ -33,6 +36,21 @@ def create_default_etapas_fluxo(
     Os demais campos permanecem com valores padrões definidos no model.
     Idempotente por usar `get_or_create` com chave (fluxo, ordem).
     """
+    # Log de diagnóstico para acompanhar disparo do signal
+    try:
+        dep_nome_log: str = getattr(instance.departamento, "nome", "")
+        logger.debug(
+            (
+                "Signal create_default_etapas_fluxo: fluxo={} criado={} "
+                "dep={}"
+            ),
+            instance.id,
+            created,
+            dep_nome_log,
+        )
+    except Exception:
+        # Comentário: evita falha de log em ambientes iniciais
+        pass
 
     if not created:
         # Comentário: apenas para novos fluxos
@@ -42,9 +60,28 @@ def create_default_etapas_fluxo(
     # Para evitar interferências em testes e cenários onde as etapas
     # são criadas manualmente, limitamos a criação automática aos
     # departamentos padrão "Operacional" e "Atendimento".
-    dept_nome: str = getattr(instance.departamento, "nome", "")
-    allowed_departments: set[str] = {"Operacional", "Atendimento"}
-    if dept_nome not in allowed_departments:
+    # Comentário: normaliza nome do departamento para evitar divergências
+    # (singular/plural, caixa) e restringe aos padrões do projeto.
+    dept_nome_raw: str = getattr(instance.departamento, "nome", "")
+    dept_nome: str = str(dept_nome_raw).strip().casefold()
+    # Comentário: filtro configurável (lista em settings). Se vazio,
+    # não restringe criação por departamento.
+    cfg_list_raw = getattr(
+        settings,
+        "OPERACIONAL_AUTO_ETAPAS_ALLOWED_DEPARTAMENTOS",
+        [],
+    )
+    cfg_set: set[str] = {
+        str(x).strip().casefold() for x in cfg_list_raw if isinstance(x, str)
+    }
+    if cfg_set and dept_nome not in cfg_set:
+        logger.debug(
+            (
+                "Departamento não permitido para criação automática de "
+                "etapas: {}"
+            ),
+            dept_nome,
+        )
         return
 
     etapas_def = (
@@ -106,3 +143,7 @@ def create_default_etapas_fluxo(
                 "cor": ed["cor"],
             },
         )
+
+    logger.info(
+        "Etapas padrão garantidas para FluxoAtendimento #{}", instance.id
+    )

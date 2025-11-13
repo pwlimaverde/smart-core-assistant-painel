@@ -10,8 +10,18 @@
   - `POST /api/v2/space/{space_id}/folder` para cada Departamento.
 - Criação de Fluxos (Lists):
   - `POST /api/v2/folder/{folder_id}/list` por FluxoAtendimento.
+    Preferir enviar `statuses` já na criação para garantir que a List
+    não herde os statuses padrão do Folder/Space e que a personalização
+    seja aplicada imediatamente.
 - Configuração de Etapas (Statuses):
   - `PUT /api/v2/list/{list_id}` incluindo `statuses` personalizados.
+    Usar como fallback/idempotente caso a criação não tenha fixado os
+    statuses (alguns workspaces exigem definir na criação).
+  - Após confirmar os `statuses` via `GET /api/v2/list/{id}`, persistir
+    a correlação `EtapaFluxo` ↔ `status_name` em `ClickupStatus`.
+  - Remoção: ao excluir uma `EtapaFluxo`, apagar mapeamentos
+    `ClickupStatus` e reconfigurar `statuses` da List para refletir
+    a exclusão no ClickUp.
 - Campos Personalizados (CF):
   - Workspace: `GET /api/v2/team/{team_id}/field` (listar) e reutilizar quando possível.
   - List: `GET/POST /api/v2/list/{list_id}/field` para anexar CF ao fluxo.
@@ -40,7 +50,12 @@ POST https://api.clickup.com/api/v2/folder/{folder_id}/list
 Content-Type: application/json
 Authorization: Bearer <token>
 {
-  "name": "Fluxo Atendimento WhatsApp"
+  "name": "Fluxo Atendimento WhatsApp",
+  "statuses": [
+    {"status": "Novo", "type": "open", "color": "#6B7280"},
+    {"status": "Em atendimento", "type": "open", "color": "#0EA5E9"},
+    {"status": "Resolvido", "type": "closed", "color": "#22C55E"}
+  ]
 }
 ```
 

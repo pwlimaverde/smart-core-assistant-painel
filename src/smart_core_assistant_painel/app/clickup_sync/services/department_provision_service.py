@@ -25,7 +25,7 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
     UnifieldDataServicesParameters,
 )
 
-from ..models import ClickupSpace
+from ..models import ClickupSpace, ClickupFolder
 
 
 class DepartmentProvisionService:
@@ -75,9 +75,7 @@ class DepartmentProvisionService:
             )
             logger.info("Space salvo em ClickupSpace: {}", space_id)
         else:
-            logger.info(
-                "Space já registrado em ClickupSpace: {}", space_id
-            )
+            logger.info("Space já registrado em ClickupSpace: {}", space_id)
 
         # Garante Folder com nome do Departamento
         folder_name: str = str(getattr(departamento, "nome", "")).strip()
@@ -89,8 +87,90 @@ class DepartmentProvisionService:
         if existing:
             fid: str = str(existing.get("id", ""))
             logger.info("Folder existente: {} -> {}", folder_name, fid)
+            ClickupFolder.objects.update_or_create(
+                external_id=fid,
+                defaults={
+                    "departamento_id": int(departamento.id),
+                    "name": folder_name,
+                    "space_external_id": space_id,
+                },
+            )
+            logger.info("Folder registrado localmente: {}", fid)
             return None
 
         folder_id: str = self.udservice.create_folder(space_id, folder_name)
         logger.info("Folder criado: {} -> {}", folder_name, folder_id)
+        ClickupFolder.objects.update_or_create(
+            external_id=folder_id,
+            defaults={
+                "departamento_id": int(departamento.id),
+                "name": folder_name,
+                "space_external_id": space_id,
+            },
+        )
+        logger.info("Folder registrado localmente: {}", folder_id)
         return None
+
+    def delete_on_department_delete(self, departamento: Any) -> None:
+        """Remove recursos do ClickUp ao excluir um Departamento.
+
+        Passos:
+        1) Busca e remove o registro ClickupSpace.
+        2) Busca e exclui o Folder do departamento.
+        """
+        space_name: str = config(
+            "CLICKUP_APP_ESPACO", default="smart-core-assistant"
+        )
+
+        # Remove o registro local do Space
+        space_obj = ClickupSpace.objects.filter(
+            departamento_id=departamento.id
+        ).first()
+
+        if space_obj:
+            space_id = space_obj.external_id
+            space_obj.delete()
+            logger.info("Space removido localmente: {}", space_id)
+
+            # Busca e exclui o Folder
+            folder_name: str = str(getattr(departamento, "nome", "")).strip()
+            if folder_name:
+                # Primeiro tenta registro local
+                local_folder = ClickupFolder.objects.filter(
+                    departamento_id=departamento.id,
+                    name=folder_name,
+                    space_external_id=space_id,
+                ).first()
+                folder_id = (
+                    str(local_folder.external_id)
+                    if local_folder
+                    else ""
+                )
+                if not folder_id:
+                    existing = self.udservice.find_folder_by_name(
+                        space_id, folder_name
+                    )
+                    if existing:
+                        folder_id = str(existing.get("id", ""))
+
+                if folder_id:
+                    success = self.udservice.delete_folder(folder_id)
+                    if success:
+                        logger.info(
+                            "Folder excluído do ClickUp: {} -> {}",
+                            folder_name,
+                            folder_id,
+                        )
+                    else:
+                        logger.error("Falha ao excluir folder: {}", folder_id)
+
+                # Remove registro local, se existir
+                if local_folder:
+                    local_folder.delete()
+                    logger.info(
+                        "Registro local de Folder removido: {}", folder_name
+                    )
+        else:
+            logger.warning(
+                "Space não encontrado para departamento {}", departamento.id
+            )

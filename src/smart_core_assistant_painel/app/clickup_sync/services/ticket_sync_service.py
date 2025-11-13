@@ -12,7 +12,7 @@ from smart_core_assistant_painel.modules.services.utils.erros import (
     UnifieldDataServicesError,
 )
 
-from ..models import ClickupList, ClickupTask
+from ..models import ClickupList, ClickupTask, ClickupStatus
 
 
 class TicketSyncService:
@@ -47,13 +47,21 @@ class TicketSyncService:
         ).first()
 
         if not list_map:
-            raise RuntimeError("List não encontrada para o Fluxo do Atendimento")
+            raise RuntimeError(
+                "List não encontrada para o Fluxo do Atendimento"
+            )
 
-        body = self._build_task_body(atendimento, etapa_nome)
+        body = self._build_task_body(
+            atendimento, etapa_nome, list_map.external_id
+        )
 
         if existing:
-            self.udservice.update_item(list_map.external_id, existing.external_id, body)
-            logger.info("Atualizada Task ClickUp para atendimento {}", atendimento.id)
+            self.udservice.update_item(
+                list_map.external_id, existing.external_id, body
+            )
+            logger.info(
+                "Atualizada Task ClickUp para atendimento {}", atendimento.id
+            )
             return existing.external_id
 
         task_id: str = self.udservice.create_item(list_map.external_id, body)
@@ -63,22 +71,37 @@ class TicketSyncService:
             name=str(body.get("name", ""))[:256],
             list_external_id=list_map.external_id,
         )
-        logger.info("Criada Task ClickUp {} para atendimento {}", task_id, atendimento.id)
+        logger.info(
+            "Criada Task ClickUp {} para atendimento {}",
+            task_id,
+            atendimento.id,
+        )
         return task_id
 
     def update_rich_content(self, atendimento: Any, etapa_nome: str) -> None:
         """Atualiza descrição, datas e prioridade da Task."""
-        task = ClickupTask.objects.filter(atendimento_id=atendimento.id).first()
+        task = ClickupTask.objects.filter(
+            atendimento_id=atendimento.id
+        ).first()
         if not task:
             return
 
-        body = self._build_task_body(atendimento, etapa_nome)
-        self.udservice.update_item(task.list_external_id, task.external_id, body)
+        body = self._build_task_body(
+            atendimento, etapa_nome, task.list_external_id
+        )
+        self.udservice.update_item(
+            task.list_external_id, task.external_id, body
+        )
         logger.info(
             "Atualizado conteúdo enriquecido da Task {}", task.external_id
         )
 
-    def _build_task_body(self, atendimento: Any, etapa_nome: str) -> dict[str, Any]:
+    def _build_task_body(
+        self,
+        atendimento: Any,
+        etapa_nome: str,
+        list_external_id: str | None = None,
+    ) -> dict[str, Any]:
         """Monta o corpo para criação/atualização de task no ClickUp."""
         name = self._build_task_name(atendimento)
         desc = self._build_rich_description(atendimento)
@@ -86,17 +109,35 @@ class TicketSyncService:
         priority_map = {"alta": 3, "media": 2, "baixa": 1}
         prio_val = priority_map.get(str(atendimento.prioridade).lower(), 2)
 
+        # Comentário: escolhe o status baseado no mapeamento persistido
+        status_val = etapa_nome
+        try:
+            etapa = getattr(atendimento, "etapa_atual", None)
+            etapa_id = int(getattr(etapa, "id", 0))
+            if list_external_id and etapa_id:
+                st = ClickupStatus.objects.filter(
+                    etapa_fluxo_id=etapa_id,
+                    list_external_id=list_external_id,
+                ).first()
+                if st:
+                    status_val = st.status_name
+        except Exception:
+            # Comentário: fallback para nome da etapa recebida
+            status_val = etapa_nome
+
         body: dict[str, Any] = {
             "name": name,
             "description": desc,
-            "status": etapa_nome,
+            "status": status_val,
             "priority": prio_val,
         }
 
         # Opcional: datas se existirem
         try:
             if atendimento.data_inicio:
-                body["start_date"] = int(atendimento.data_inicio.timestamp() * 1000)
+                body["start_date"] = int(
+                    atendimento.data_inicio.timestamp() * 1000
+                )
             if getattr(atendimento, "data_prevista_conclusao", None):
                 dt = atendimento.data_prevista_conclusao
                 body["due_date"] = int(dt.timestamp() * 1000)
@@ -145,3 +186,37 @@ class TicketSyncService:
             pass
 
         return "\n".join(parts)
+
+    def delete_task(self, atendimento_id: int) -> bool:
+        """Exclui permanentemente a Task do ClickUp correspondente ao Atendimento."""
+        task = ClickupTask.objects.filter(
+            atendimento_id=atendimento_id
+        ).first()
+        if not task:
+            logger.warning(
+                "Task não encontrada para atendimento {}", atendimento_id
+            )
+            return False
+
+        try:
+            # Primeiro remove o registro local
+            task.delete()
+
+            # Depois exclui a Task do ClickUp
+            success = self.udservice.delete_item(task.external_id)
+
+            if success:
+                logger.info(
+                    "Task excluída permanentemente para atendimento {} -> {}",
+                    atendimento_id,
+                    task.external_id,
+                )
+                return True
+            else:
+                logger.error(
+                    "Falha ao excluir task do ClickUp: {}", task.external_id
+                )
+                return False
+        except Exception as exc:
+            logger.error("Falha ao excluir task {}: {}", task.external_id, exc)
+            return False

@@ -164,12 +164,25 @@ class ClicupUnifiedDataService(UnifiedDataService):
         )
         return list_id
 
-    def add_list_to_folder(self, folder_id: str, name: str) -> str:
+    def add_list_to_folder(
+        self,
+        folder_id: str,
+        name: str,
+        statuses: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
         """Cria uma lista dentro de um folder e retorna seu ID.
 
         Comentário: usa `POST /folder/{folder_id}/list`.
+        Quando `statuses` é fornecido, tenta criar a List já com
+        statuses personalizados (tipo `open`/`closed`). Alguns workspaces
+        exigem que os statuses sejam definidos na criação para efetivar
+        a personalização por List.
         """
         body: Dict[str, Any] = {"name": name}
+        if statuses:
+            # Comentário: aplica statuses customizados na criação da List
+            body["statuses"] = statuses
+
         data = self._request("POST", f"/folder/{folder_id}/list", json=body)
         list_id = str(data.get("id", ""))
         self._log(
@@ -240,6 +253,27 @@ class ClicupUnifiedDataService(UnifiedDataService):
         )
         return folder_id
 
+    def list_folder_lists(self, folder_id: str) -> List[Dict[str, Any]]:
+        """Lista listas de um folder do ClickUp.
+
+        Comentário: usa `GET /folder/{folder_id}/list`.
+        """
+        data = self._request("GET", f"/folder/{folder_id}/list")
+        lists: List[Dict[str, Any]] = data.get("lists", [])
+        if isinstance(lists, list):
+            return lists
+        return []
+
+    def find_list_in_folder_by_name(
+        self, folder_id: str, name: str
+    ) -> Optional[Dict[str, Any]]:
+        """Busca uma lista por nome dentro de um Folder."""
+        lists = self.list_folder_lists(folder_id)
+        for lst in lists:
+            if str(lst.get("name", "")) == name:
+                return lst
+        return None
+
     def update_schema(
         self, data_source_id: str, schema: Dict[str, Any]
     ) -> str:
@@ -297,8 +331,9 @@ class ClicupUnifiedDataService(UnifiedDataService):
         body = self._normalize_task_body(payload)
         data = self._request("POST", f"/list/{list_id}/task", json=body)
         task_id = str(data.get("id", ""))
-        self._log("task criada: lista={list} -> {task}", list=list_id,
-                  task=task_id)
+        self._log(
+            "task criada: lista={list} -> {task}", list=list_id, task=task_id
+        )
         return task_id
 
     def update_item(
@@ -308,11 +343,97 @@ class ClicupUnifiedDataService(UnifiedDataService):
         body = self._normalize_task_body(payload)
         data = self._request("PUT", f"/task/{item_id}", json=body)
         version_id = str(data.get("id", item_id))
-        self._log("task atualizada: lista={list} -> {task}",
-                  list=data_source_id, task=item_id)
+        self._log(
+            "task atualizada: lista={list} -> {task}",
+            list=data_source_id,
+            task=item_id,
+        )
         return version_id
 
-    
+    def delete_item(self, item_id: str) -> bool:
+        """Exclui uma task do ClickUp.
+
+        Args:
+            item_id: ID da task a ser excluída
+
+        Returns:
+            True se a exclusão foi bem sucedida
+        """
+        try:
+            self._request("DELETE", f"/task/{item_id}")
+            self._log("task excluída: {task}", task=item_id)
+            return True
+        except Exception as exc:
+            self._log(
+                "falha ao excluir task {task}: {error}",
+                task=item_id,
+                error=str(exc),
+            )
+            return False
+
+    def delete_list(self, list_id: str) -> bool:
+        """Exclui uma lista do ClickUp.
+
+        Args:
+            list_id: ID da lista a ser excluída
+
+        Returns:
+            True se a exclusão foi bem sucedida
+        """
+        try:
+            self._request("DELETE", f"/list/{list_id}")
+            self._log("lista excluída: {list}", list=list_id)
+            return True
+        except Exception as exc:
+            self._log(
+                "falha ao excluir lista {list}: {error}",
+                list=list_id,
+                error=str(exc),
+            )
+            return False
+
+    def delete_folder(self, folder_id: str) -> bool:
+        """Exclui uma pasta do ClickUp.
+
+        Args:
+            folder_id: ID da pasta a ser excluída
+
+        Returns:
+            True se a exclusão foi bem sucedida
+        """
+        try:
+            self._request("DELETE", f"/folder/{folder_id}")
+            self._log("pasta excluída: {folder}", folder=folder_id)
+            return True
+        except Exception as exc:
+            self._log(
+                "falha ao excluir pasta {folder}: {error}",
+                folder=folder_id,
+                error=str(exc),
+            )
+            return False
+
+    def remove_member(self, member_id: str) -> bool:
+        """Remove um membro do workspace/time.
+
+        Args:
+            member_id: ID do membro a ser removido
+
+        Returns:
+            True se a remoção foi bem sucedida
+        """
+        try:
+            team_id = self._get_team_id()
+            self._request("DELETE", f"/team/{team_id}/member/{member_id}")
+            self._log("membro removido: {member}", member=member_id)
+            return True
+        except Exception as exc:
+            self._log(
+                "falha ao remover membro {member}: {error}",
+                member=member_id,
+                error=str(exc),
+            )
+            return False
 
     def add_relation_property(
         self, data_source_id: str, property_name: str, target_id: str
@@ -371,9 +492,7 @@ class ClicupUnifiedDataService(UnifiedDataService):
         """
         lists_data = self._request("GET", f"/space/{container_id}/list")
         lists: List[Dict[str, Any]] = lists_data.get("lists", [])
-        list_id: Optional[str] = (
-            str(lists[0].get("id")) if lists else None
-        )
+        list_id: Optional[str] = str(lists[0].get("id")) if lists else None
 
         if list_id is None:
             list_id = self.add_data_source(container_id, "Notes")

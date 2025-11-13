@@ -14,8 +14,10 @@ from .models import (
     ClickupList,
     ClickupMember,
     ClickupSpace,
+    ClickupFolder,
     ClickupTask,
     ClickupWebhookEvent,
+    ClickupStatus,
 )
 
 
@@ -33,9 +35,22 @@ class ClickupListAdmin(admin.ModelAdmin[ClickupList]):
         "external_id",
         "space_external_id",
         "fluxo_atendimento_id",
+        "statuses_count",
     )
     search_fields = ("name", "external_id", "space_external_id")
     ordering = ("name",)
+
+    def statuses_count(self, obj: ClickupList) -> int:  # type: ignore[override]
+        """Quantidade de statuses mapeados para esta List.
+
+        Comentário: ajuda a visualizar se o fluxo está com os
+        `statuses` persistidos no mapeamento.
+        """
+        return (
+            ClickupStatus.objects.filter(
+                list_external_id=obj.external_id
+            ).count()
+        )
 
 
 @admin.register(ClickupMember)
@@ -63,3 +78,35 @@ class ClickupWebhookEventAdmin(admin.ModelAdmin[ClickupWebhookEvent]):
     search_fields = ("event_type", "resource_id")
     ordering = ("-created_at",)
     date_hierarchy = "created_at"
+
+
+@admin.register(ClickupStatus)
+class ClickupStatusAdmin(admin.ModelAdmin[ClickupStatus]):
+    """Admin para o mapeamento de EtapaFluxo ↔ Status da List."""
+
+    list_display = (
+        "status_name",
+        "status_type",
+        "color",
+        "order_index",
+        "etapa_fluxo_id",
+        "list_external_id",
+        "created_at",
+    )
+    search_fields = ("status_name", "list_external_id")
+    list_filter = ("status_type", "list_external_id")
+    ordering = ("list_external_id", "order_index")
+    date_hierarchy = "created_at"
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(ClickupFolder)
+class ClickupFolderAdmin(admin.ModelAdmin[ClickupFolder]):
+    list_display = (
+        "name",
+        "external_id",
+        "space_external_id",
+        "departamento_id",
+    )
+    search_fields = ("name", "external_id", "space_external_id")
+    ordering = ("name",)

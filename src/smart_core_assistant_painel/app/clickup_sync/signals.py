@@ -3,6 +3,7 @@ from typing import Any
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from loguru import logger
+from django_q.tasks import async_task
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
     FluxoAtendimento,
@@ -12,8 +13,8 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import Atendimento
 
-from .tasks import enqueue_task
 from .services.department_provision_service import DepartmentProvisionService
+from .models import ClickupStatus
 
 
 @receiver(post_save, sender=FluxoAtendimento)
@@ -23,7 +24,13 @@ def fluxo_created_sync_clickup(
     """Cria/garante List ClickUp ao criar FluxoAtendimento (assíncrono)."""
     try:
         if created:
-            enqueue_task("task_fluxo_ensure_list", instance.id)
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_fluxo_ensure_list"
+                ),
+                instance.id,
+            )
     except Exception as exc:
         logger.error("Falha ao garantir list ClickUp: {}", exc)
 
@@ -35,7 +42,13 @@ def etapa_created_sync_clickup(
     """Reconfigura statuses da List quando nova etapa e reordena (assíncrono)."""
     try:
         # Sempre reconfigura após criação/atualização
-        enqueue_task("task_etapa_reconfigure_statuses", instance.fluxo_id)
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_etapa_reconfigure_statuses"
+            ),
+            instance.fluxo_id,
+        )
     except Exception as exc:
         logger.warning("Falha ao reconfigurar statuses: {}", exc)
 
@@ -46,20 +59,35 @@ def etapa_deleted_reconfigure_clickup(
 ) -> None:
     """Reconfigura statuses da List ao excluir uma EtapaFluxo (assíncrono)."""
     try:
-        enqueue_task("task_etapa_reconfigure_statuses", instance.fluxo_id)
+        # Comentário: remove mapeamentos locais da etapa apagada
+        ClickupStatus.objects.filter(etapa_fluxo_id=instance.id).delete()
+
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_etapa_reconfigure_statuses"
+            ),
+            instance.fluxo_id,
+        )
     except Exception as exc:
         logger.warning("Falha ao reconfigurar após exclusão: {}", exc)
 
 
 @receiver(pre_delete, sender=FluxoAtendimento)
-def fluxo_deleted_archive_clickup(
+def fluxo_deleted_delete_clickup(
     sender: Any, instance: FluxoAtendimento, **kwargs: Any
 ) -> None:
-    """Arquiva a List ClickUp ao excluir um FluxoAtendimento (assíncrono)."""
+    """Exclui permanentemente a List ClickUp ao excluir um FluxoAtendimento (assíncrono)."""
     try:
-        enqueue_task("task_fluxo_archive_list", instance.id)
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_fluxo_delete_list"
+            ),
+            instance.id,
+        )
     except Exception as exc:
-        logger.warning("Falha ao arquivar list: {}", exc)
+        logger.warning("Falha ao excluir list: {}", exc)
 
 
 @receiver(pre_save, sender=Atendimento)
@@ -74,7 +102,9 @@ def atendimento_capture_old_fields(
         if getattr(instance, "pk", None):
             prev = Atendimento.objects.filter(pk=instance.pk).first()
             if prev is not None:
-                instance._old_atendente_id = getattr(prev, "atendente_humano_id", None)  # type: ignore[attr-defined]
+                instance._old_atendente_id = getattr(
+                    prev, "atendente_humano_id", None
+                )  # type: ignore[attr-defined]
                 instance._old_etapa_id = getattr(prev, "etapa_atual_id", None)  # type: ignore[attr-defined]
             else:
                 instance._old_atendente_id = None  # type: ignore[attr-defined]
@@ -91,17 +121,36 @@ def atendimento_post_save(
     """Sincroniza Task ClickUp para Atendimento (assíncrono)."""
     try:
         if created:
-            enqueue_task("task_atendimento_ensure_task", instance.id)
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendimento_ensure_task"
+                ),
+                instance.id,
+            )
             return
 
         # Atualiza membros e conteúdo rico do card
         old_id = getattr(instance, "_old_atendente_id", None)
-        enqueue_task("task_atendimento_sync_task_members", instance.id, old_id)
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_atendimento_sync_task_members"
+            ),
+            instance.id,
+            old_id,
+        )
 
         # Atualiza apenas se etapa mudou
         old_etapa_id = getattr(instance, "_old_etapa_id", None)
         if old_etapa_id != getattr(instance, "etapa_atual_id", None):
-            enqueue_task("task_atendimento_update_task_rich_content", instance.id)
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendimento_update_task_rich_content"
+                ),
+                instance.id,
+            )
     except Exception as exc:
         logger.warning("Falha ao sincronizar Task ClickUp: {}", exc)
 
@@ -114,18 +163,64 @@ def atendente_created_invite_clickup(
     if not created:
         return
     try:
-        enqueue_task("task_atendente_invite", instance.id)
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_atendente_invite"
+            ),
+            instance.id,
+        )
     except Exception as exc:
         logger.warning("Falha ao convidar atendente: {}", exc)
+
+
+@receiver(pre_delete, sender=Atendimento)
+def atendimento_deleted_delete_task_clickup(
+    sender: Any, instance: Atendimento, **kwargs: Any
+) -> None:
+    """Exclui permanentemente a Task ClickUp ao excluir um Atendimento (assíncrono)."""
+    try:
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_atendimento_delete_task"
+            ),
+            instance.id,
+        )
+    except Exception as exc:
+        logger.warning("Falha ao excluir task: {}", exc)
+
+
+@receiver(pre_delete, sender=Departamento)
+def departamento_deleted_delete_folder_clickup(
+    sender: Any, instance: Departamento, **kwargs: Any
+) -> None:
+    """Exclui permanentemente o Folder ClickUp ao excluir um Departamento (assíncrono)."""
+    try:
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_departamento_delete_folder"
+            ),
+            instance.id,
+        )
+    except Exception as exc:
+        logger.warning("Falha ao excluir folder: {}", exc)
 
 
 @receiver(pre_delete, sender=Atendente)
 def atendente_deleted_remove_member_clickup(
     sender: Any, instance: Atendente, **kwargs: Any
 ) -> None:
-    """Remove membro ao excluir Atendente (assíncrono, no-op)."""
+    """Remove membro do ClickUp ao excluir Atendente (assíncrono)."""
     try:
-        enqueue_task("task_atendente_remove_member", instance.id)
+        async_task(
+            (
+                "smart_core_assistant_painel.app.clickup_sync.tasks"
+                ".task_atendente_remove_member"
+            ),
+            instance.id,
+        )
     except Exception as exc:
         logger.warning("Falha ao remover atendente: {}", exc)
 
@@ -143,7 +238,14 @@ def departamento_post_save(
     svc = DepartmentProvisionService()
     try:
         svc.provision_on_department_create(instance)
-        logger.info("Provisionamento ClickUp concluído para Departamento {}", instance.id)
+        logger.info(
+            "Provisionamento ClickUp concluído para Departamento {}",
+            instance.id,
+        )
     except Exception as exc:
-        logger.error("Falha no provisionamento ClickUp para Departamento {}: {}", instance.id, str(exc))
+        logger.error(
+            "Falha no provisionamento ClickUp para Departamento {}: {}",
+            instance.id,
+            str(exc),
+        )
     return None

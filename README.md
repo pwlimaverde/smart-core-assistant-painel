@@ -218,6 +218,30 @@ result = send_whatsapp_message(
 - Opcional: use comandos para preparar schemas iniciais:
   - Departamentos/Atendentes:
     `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_notion_databases --update`
+
+### Integração ClickUp (clickup_sync)
+- Aplicação já inclui `clickup_sync` em `INSTALLED_APPS`.
+- A sincronização segue o padrão de signals (sem gates adicionais),
+  espelhando a implementação do Trello.
+
+#### Variáveis de Ambiente
+- `CLICKUP_APP_ESPACO`: nome do Space alvo onde serão criados
+  `Folders` (por `Departamento`) e `Lists` (por `FluxoAtendimento`).
+
+Exemplo no `.env`:
+```env
+# Space de trabalho ClickUp para a aplicação
+CLICKUP_APP_ESPACO=smart-core-assistant
+```
+
+#### Como funciona
+- Ao criar um `Departamento`, o service garante o `Space` (por nome) e
+  o `Folder` correspondente ao departamento.
+- Ao criar/alterar um `FluxoAtendimento` ou suas `Etapas`, são
+  enfileiradas tarefas para garantir/atualizar a `List` e seus
+  `statuses` dentro do `Folder` do `Departamento`.
+– O disparo é exclusivamente via signals do Django, como no Trello;
+  não há controle adicional por variável de ambiente.
   - Atendimentos/Mensagens:
     `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_atendimento_database`
 - Para criar databases diretamente no Notion com relacionamentos, use o script:

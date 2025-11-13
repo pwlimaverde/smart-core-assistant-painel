@@ -76,7 +76,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "smart_core_assistant_painel.app.ui.core",
     "smart_core_assistant_painel.app.ui.usuarios",
-    "smart_core_assistant_painel.app.ui.operacional",
+    # Usa AppConfig explícito para garantir execução do ready() e sinais
+    "smart_core_assistant_painel.app.ui.operacional.apps.OperacionalConfig",
     "smart_core_assistant_painel.app.ui.clientes",
     "smart_core_assistant_painel.app.ui.atendimentos",
     "smart_core_assistant_painel.app.ui.treinamento",
@@ -91,6 +92,11 @@ INSTALLED_APPS = [
 # Flag informativa de habilitação do módulo de sincronização Notion.
 # Observação: usada apenas como documentação; verifique configs por app.
 NOTION_SYNC_ENABLED: bool = False
+
+# Controle do filtro do signal de criação de etapas padrão.
+# Lista de nomes de departamentos permitidos (case-insensitive).
+# Se vazio, aplica a todos os departamentos.
+OPERACIONAL_AUTO_ETAPAS_ALLOWED_DEPARTAMENTOS: list[str] = []
 
 ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
 

@@ -17,6 +17,11 @@ def task_fluxo_archive_list(fluxo_id: int) -> None:
     FlowSyncService().archive_list_for_fluxo(fluxo_id)
 
 
+def task_fluxo_delete_list(fluxo_id: int) -> None:
+    """Exclui permanentemente a List relativa ao Fluxo."""
+    FlowSyncService().delete_list_for_fluxo(fluxo_id)
+
+
 def task_etapa_reconfigure_statuses(fluxo_id: int) -> None:
     """Reconfigura statuses da List do Fluxo."""
     FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
@@ -42,7 +47,9 @@ def task_atendimento_update_task_rich_content(atendimento_id: int) -> None:
     TicketSyncService().update_rich_content(at, etapa_nome)
 
 
-def task_atendimento_sync_task_members(atendimento_id: int, old_atendente_id: int | None) -> None:
+def task_atendimento_sync_task_members(
+    atendimento_id: int, old_atendente_id: int | None
+) -> None:
     """Sincroniza membros (assignees) da Task para o Atendimento."""
     at = Atendimento.objects.filter(id=atendimento_id).first()
     if not at:
@@ -51,7 +58,9 @@ def task_atendimento_sync_task_members(atendimento_id: int, old_atendente_id: in
     # Implementação mínima: atualiza rich content para refletir atendente
     etapa_nome = getattr(at.etapa_atual, "nome", "")
     TicketSyncService().update_rich_content(at, etapa_nome)
-    logger.info("Sincronização de membros agendada para atendimento {}", atendimento_id)
+    logger.info(
+        "Sincronização de membros agendada para atendimento {}", atendimento_id
+    )
 
 
 def task_atendente_invite(atendente_id: int) -> None:
@@ -66,13 +75,40 @@ def task_atendente_invite(atendente_id: int) -> None:
     MemberSyncService().invite_for_atendente(atendente, username)
 
 
+def task_atendimento_delete_task(atendimento_id: int) -> None:
+    """Exclui permanentemente a Task relativa ao Atendimento."""
+    TicketSyncService().delete_task(atendimento_id)
+
+
 def task_atendente_remove_member(atendente_id: int) -> None:
-    """Remove membro localmente (no-op para ClickUp nesta versão)."""
-    logger.info("Remoção de membro para atendente {} (no-op)", atendente_id)
+    """Remove membro do ClickUp e do banco local."""
+    MemberSyncService().remove_member(atendente_id)
+
+
+def task_departamento_delete_folder(departamento_id: int) -> None:
+    """Exclui permanentemente o Folder do ClickUp correspondente ao Departamento."""
+    from smart_core_assistant_painel.app.ui.operacional.models import (
+        Departamento,
+    )
+    from .services.department_provision_service import (
+        DepartmentProvisionService,
+    )
+
+    departamento = Departamento.objects.filter(id=departamento_id).first()
+    if not departamento:
+        logger.warning("Departamento não encontrado: {}", departamento_id)
+        return
+
+    svc = DepartmentProvisionService()
+    svc.delete_on_department_delete(departamento)
 
 
 def enqueue_task(func_name: str, *args: Any, **kwargs: Any) -> None:
-    """Enfileira uma tarefa no Django Q."""
+    """Enfileira uma tarefa no Django Q sem gates adicionais.
+
+    Comentário: segue o padrão do Trello, usando apenas signals para
+    disparo e enfileiramento das tarefas de sincronização.
+    """
     async_task(
         f"smart_core_assistant_painel.app.clickup_sync.tasks.{func_name}",
         *args,

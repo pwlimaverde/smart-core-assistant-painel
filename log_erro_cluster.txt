@@ -1,167 +1,201 @@
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-12 21:11:01.378 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:11:02.788 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-12 21:35:31.778 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 21:35:33.118 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster eighteen-avocado-cold-coffee starting.
-2025-11-12 21:11:05.558 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:11:06.974 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-25337086b81d4cf9a389b05d9954053b guarding cluster eighteen-avocado-cold-coffee [smart_core_cluster]
-INFO:django-q:Q Cluster eighteen-avocado-cold-coffee [smart_core_cluster] running.
-2025-11-12 21:11:09.819 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:11:09.823 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:11:09.825 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:11:09.852 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:11:11.460 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-12 21:11:11.488 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-12 21:11:11.498 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-12 21:11:11.525 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-4bee2313c06e4318b54dbfa2f5a6771a ready for work at 32088
-INFO:django-q:Process-ba10bf3e3bb742548a37c002ed15e550 ready for work at 40436
-INFO:django-q:Process-76c3063bfa404cfabbd975dd6cfe6680 pushing tasks at 27468
-INFO:django-q:Process-9162c26eaa654f6587b6dbda0f0cc9ff monitoring at 14188
-INFO:django-q:Process-4bee2313c06e4318b54dbfa2f5a6771a processing freddie-mexico-fifteen-table 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
-2025-11-12 21:12:48.400 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-INFO:django-q:Process-ba10bf3e3bb742548a37c002ed15e550 processing juliet-xray-hawaii-georgia 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
-2025-11-12 21:12:48.448 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-12 21:12:49.376 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - team selecionado: 90132738463
-2025-11-12 21:12:49.424 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - team selecionado: 90132738463
-2025-11-12 21:12:50.268 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - space existente: smart-core-assistant -> 901311816120
-2025-11-12 21:12:50.268 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_workspace:57 - Workspace ClickUp garantido: smart-core-assistant -> 901311816120
-2025-11-12 21:12:50.297 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - space existente: smart-core-assistant -> 901311816120
-2025-11-12 21:12:50.297 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_workspace:57 - Workspace ClickUp garantido: smart-core-assistant -> 901311816120
-2025-11-12 21:12:51.217 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_department_folder:69 - Folder existente para Departamento Comercial -> 901314974270
-2025-11-12 21:12:51.776 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_department_folder:69 - Folder existente para Departamento Comercial -> 901314974270
-2025-11-12 21:12:52.249 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - lista criada: Atendimento em folder 901314974270 -> 901322378526
-2025-11-12 21:12:52.271 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:171 - Criada List ClickUp em Folder: Atendimento -> 901322378526
-2025-11-12 21:12:52.490 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"List name taken","ECODE":"SUBCAT_016"}
-2025-11-12 21:12:52.490 | WARNING  | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:142 - Falha ao criar List 'Atendimento' em Folder 901314974270: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/folder/901314974270/list. Tentando localizar existente por nome.
-2025-11-12 21:12:53.075 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:187 - Statuses retornados na criação para List 901322378526: to do, complete
-2025-11-12 21:12:53.174 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:259 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
-2025-11-12 21:12:53.347 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:156 - List existente localizada por nome: Atendimento -> 901322378526
-2025-11-12 21:12:53.365 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:171 - Criada List ClickUp em Folder: Atendimento -> 901322378526
-2025-11-12 21:12:54.064 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Closed is a required status type and there can only be one","ECODE":"STATUS_003"}
-2025-11-12 21:12:54.064 | ERROR    | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:308 - Falha ao atualizar statuses da List 901322378526: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/list/901322378526
-INFO:django-q:Process-4bee2313c06e4318b54dbfa2f5a6771a processing ten-kansas-hot-cat 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
-2025-11-12 21:12:54.128 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-12 21:12:54.163 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:259 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (freddie-mexico-fifteen-table)
-2025-11-12 21:12:54.444 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:187 - Statuses retornados na criação para List 901322378526: to do, complete
-2025-11-12 21:12:54.524 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:259 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
-2025-11-12 21:12:55.016 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Closed is a required status type and there can only be one","ECODE":"STATUS_003"}
-2025-11-12 21:12:55.017 | ERROR    | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:308 - Falha ao atualizar statuses da List 901322378526: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/list/901322378526
-INFO:django-q:Process-4bee2313c06e4318b54dbfa2f5a6771a processing salami-sixteen-magazine-stream 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
-2025-11-12 21:12:55.087 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-12 21:12:55.127 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:259 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (ten-kansas-hot-cat)
-2025-11-12 21:12:55.794 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Closed is a required status type and there can only be one","ECODE":"STATUS_003"}
-2025-11-12 21:12:55.794 | ERROR    | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:308 - Falha ao atualizar statuses da List 901322378526: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/list/901322378526
-INFO:django-q:Process-ba10bf3e3bb742548a37c002ed15e550 processing hot-twenty-ohio-six 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
-2025-11-12 21:12:55.905 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-12 21:12:55.926 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Closed is a required status type and there can only be one","ECODE":"STATUS_003"}
-2025-11-12 21:12:55.926 | ERROR    | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:308 - Falha ao atualizar statuses da List 901322378526: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/list/901322378526
-2025-11-12 21:12:55.942 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:259 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (juliet-xray-hawaii-georgia)
-INFO:django-q:Process-4bee2313c06e4318b54dbfa2f5a6771a processing glucose-fifteen-carbon-steak 'smart_core_assistant_painel.app.clickup_sync.tasks.task_fluxo_ensure_list'
-2025-11-12 21:12:55.988 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-12 21:12:56.042 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:259 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (salami-sixteen-magazine-stream)
-2025-11-12 21:12:56.873 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Closed is a required status type and there can only be one","ECODE":"STATUS_003"}
-2025-11-12 21:12:56.873 | ERROR    | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:308 - Falha ao atualizar statuses da List 901322378526: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/list/901322378526
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (hot-twenty-ohio-six)
-2025-11-12 21:12:57.240 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Closed is a required status type and there can only be one","ECODE":"STATUS_003"}
-2025-11-12 21:12:57.240 | ERROR    | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:308 - Falha ao atualizar statuses da List 901322378526: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/list/901322378526
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_fluxo_ensure_list' (glucose-fifteen-carbon-steak)
-Process Process-76c3063bfa404cfabbd975dd6cfe6680:
-Process Process-9162c26eaa654f6587b6dbda0f0cc9ff:
-Process Process-4bee2313c06e4318b54dbfa2f5a6771a:
-Process Process-ba10bf3e3bb742548a37c002ed15e550:
-Traceback (most recent call last):
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 313, in _bootstrap
-    self.run()
-    ~~~~~~~~^^
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\pusher.py", line 45, in pusher
-    task_set = broker.dequeue()
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\brokers\orm.py", line 84, in dequeue
-    sleep(Conf.POLL)
-    ~~~~~^^^^^^^^^^^
-KeyboardInterrupt
-Traceback (most recent call last):
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 313, in _bootstrap
-    self.run()
-    ~~~~~~~~^^
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 59, in worker
-    for task in iter(task_queue.get, "STOP"):
-                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^
-Traceback (most recent call last):
-Traceback (most recent call last):
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\queues.py", line 73, in get
-    x = super(Queue, self).get(*args, **kwargs)
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\queues.py", line 100, in get
-    with self._rlock:
-         ^^^^^^^^^^^
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\synchronize.py", line 95, in __enter__
-    return self._semlock.__enter__()
-           ~~~~~~~~~~~~~~~~~~~~~~~^^
-KeyboardInterrupt
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 313, in _bootstrap
-    self.run()
-    ~~~~~~~~^^
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 313, in _bootstrap
-    self.run()
-    ~~~~~~~~^^
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-    ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\monitor.py", line 44, in monitor
-    for task in iter(result_queue.get, "STOP"):
-                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 59, in worker
-    for task in iter(task_queue.get, "STOP"):
-                ~~~~^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\queues.py", line 73, in get
-    x = super(Queue, self).get(*args, **kwargs)
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\queues.py", line 73, in get
-    x = super(Queue, self).get(*args, **kwargs)
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\queues.py", line 101, in get
-    res = self._recv_bytes()
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\queues.py", line 101, in get
-    res = self._recv_bytes()
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\connection.py", line 216, in recv_bytes
-    buf = self._recv_bytes(maxlength)
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\connection.py", line 321, in _recv_bytes
-    waitres = _winapi.WaitForMultipleObjects(
-        [ov.event], False, INFINITE)
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\connection.py", line 321, in _recv_bytes
-    waitres = _winapi.WaitForMultipleObjects(
-        [ov.event], False, INFINITE)
-KeyboardInterrupt
-KeyboardInterrupt
-CRITICAL:django-q:reincarnated worker Process-ba10bf3e3bb742548a37c002ed15e550 after death
-CRITICAL:django-q:reincarnated monitor Process-9162c26eaa654f6587b6dbda0f0cc9ff after sudden death
-CRITICAL:django-q:reincarnated pusher Process-76c3063bfa404cfabbd975dd6cfe6680 after sudden death
-CRITICAL:django-q:reincarnated worker Process-4bee2313c06e4318b54dbfa2f5a6771a after death
-2025-11-12 21:13:28.880 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:13:28.881 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:13:28.881 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:13:28.892 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-12 21:13:30.413 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-12 21:13:30.417 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-12 21:13:30.432 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-12 21:13:30.463 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-b6904e4f7b084207afb401a3582a3397 ready for work at 21120
-INFO:django-q:Process-0bc536dd730a481e9067164dc5cb42c3 ready for work at 34452
-INFO:django-q:Process-b5494ea1df1e4d7a9837ab48b477e208 pushing tasks at 18916
-INFO:django-q:Process-686fa034f75e46898995d7a7847aff0c monitoring at 51092
+INFO:django-q:Q Cluster delaware-wolfram-massachusetts-florida starting.
+2025-11-12 21:35:35.735 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 21:35:37.073 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-1f2bf07219524b16b0ef05289f73aee6 guarding cluster delaware-wolfram-massachusetts-florida [smart_core_cluster]
+INFO:django-q:Q Cluster delaware-wolfram-massachusetts-florida [smart_core_cluster] running.
+2025-11-12 21:35:39.135 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 21:35:39.140 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 21:35:39.148 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 21:35:39.148 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 21:35:41.010 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-12 21:35:41.049 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-12 21:35:41.079 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c ready for work at 51392
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c ready for work at 11552
+2025-11-12 21:35:41.302 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-fcc75819cb314f2c9ffb0329c613e9d7 monitoring at 45484
+INFO:django-q:Process-7156a8b138644a20bb78a1fd81ac34d9 pushing tasks at 34616
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c processing lactose-purple-romeo-hamper 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:09.476 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing edward-violet-ten-oregon 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:09.530 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (lactose-purple-romeo-hamper) - FluxoAtendimento não encontrado: 10 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 10
+
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c processing vermont-angel-twelve-angel 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:09.578 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (edward-violet-ten-oregon) - FluxoAtendimento não encontrado: 10 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 10
+
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing crazy-east-tennessee-ohio 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:09.627 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (vermont-angel-twelve-angel) - FluxoAtendimento não encontrado: 10 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 10
+
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c processing indigo-zulu-oranges-muppet 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:09.678 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (crazy-east-tennessee-ohio) - FluxoAtendimento não encontrado: 10 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 10
+
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (indigo-zulu-oranges-muppet) - FluxoAtendimento não encontrado: 10 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 10
+
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing shade-queen-sweet-jupiter 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:35.475 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c processing romeo-jig-gee-steak 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:35.531 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-12 21:36:36.528 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - team selecionado: 90132738463
+2025-11-12 21:36:36.544 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - team selecionado: 90132738463
+2025-11-12 21:36:37.436 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - space existente: smart-core-assistant -> 901311816120
+2025-11-12 21:36:37.436 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_workspace:57 - Workspace ClickUp garantido: smart-core-assistant -> 901311816120
+2025-11-12 21:36:37.447 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - space existente: smart-core-assistant -> 901311816120
+2025-11-12 21:36:37.447 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_workspace:57 - Workspace ClickUp garantido: smart-core-assistant -> 901311816120
+2025-11-12 21:36:38.451 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_department_folder:69 - Folder existente para Departamento Financeiro -> 901314974975
+2025-11-12 21:36:39.028 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_ensure_department_folder:69 - Folder existente para Departamento Financeiro -> 901314974975
+2025-11-12 21:36:40.355 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - lista criada: Atendimento em folder 901314974975 -> 901322379144
+2025-11-12 21:36:40.384 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:196 - Criada List ClickUp em Folder: Atendimento -> 901322379144
+2025-11-12 21:36:40.630 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"List name taken","ECODE":"SUBCAT_016"}
+2025-11-12 21:36:40.630 | WARNING  | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:167 - Falha ao criar List 'Atendimento' em Folder 901314974975: 400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/folder/901314974975/list. Tentando localizar existente por nome.
+2025-11-12 21:36:41.330 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:212 - Statuses retornados na criação para List 901322379144: to do, complete
+2025-11-12 21:36:41.417 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:258 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
+2025-11-12 21:36:41.521 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:181 - List existente localizada por nome: Atendimento -> 901322379144
+2025-11-12 21:36:41.557 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:196 - Criada List ClickUp em Folder: Atendimento -> 901322379144
+2025-11-12 21:36:42.475 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:ensure_list_for_fluxo_from_db:212 - Statuses retornados na criação para List 901322379144: fila de atendimento, em atendimento, pendência, resolvido, cancelado
+2025-11-12 21:36:42.545 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:258 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
+2025-11-12 21:36:42.688 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - list atualizada: 901322379144 campos=['override_statuses', 'statuses']
+2025-11-12 21:36:42.688 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:263 - Atualizados statuses da List 901322379144 (5 itens)
+2025-11-12 21:36:43.597 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - list atualizada: 901322379144 campos=['override_statuses', 'statuses']
+2025-11-12 21:36:43.598 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:263 - Atualizados statuses da List 901322379144 (5 itens)
+2025-11-12 21:36:43.687 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:287 - Statuses no servidor para List 901322379144 (5 itens): fila de atendimento, em atendimento, pendência, resolvido, cancelado
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing finch-colorado-eighteen-fish 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:43.688 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-12 21:36:43.723 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:258 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (shade-queen-sweet-jupiter)
+2025-11-12 21:36:44.339 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:287 - Statuses no servidor para List 901322379144 (5 itens): fila de atendimento, em atendimento, pendência, resolvido, cancelado
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c processing solar-washington-georgia-arizona 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:44.340 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-12 21:36:44.375 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:258 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (romeo-jig-gee-steak)
+2025-11-12 21:36:44.612 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - list atualizada: 901322379144 campos=['override_statuses', 'statuses']
+2025-11-12 21:36:44.612 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:263 - Atualizados statuses da List 901322379144 (5 itens)
+2025-11-12 21:36:45.242 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - list atualizada: 901322379144 campos=['override_statuses', 'statuses']
+2025-11-12 21:36:45.242 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:263 - Atualizados statuses da List 901322379144 (5 itens)
+2025-11-12 21:36:45.346 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:287 - Statuses no servidor para List 901322379144 (5 itens): fila de atendimento, em atendimento, pendência, resolvido, cancelado
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing massachusetts-iowa-victor-skylark 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:45.347 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-12 21:36:45.379 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:258 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (finch-colorado-eighteen-fish)
+2025-11-12 21:36:46.029 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:287 - Statuses no servidor para List 901322379144 (5 itens): fila de atendimento, em atendimento, pendência, resolvido, cancelado
+INFO:django-q:Process-f9f87d20af074a1fbfdbc9c943231d8c processing fanta-oranges-snake-spring 'smart_core_assistant_painel.app.clickup_sync.tasks.task_fluxo_ensure_list'
+2025-11-12 21:36:46.030 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-12 21:36:46.063 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:258 - Ordem de statuses configurada: Fila de Atendimento, Em Atendimento, Pendência, Resolvido, Cancelado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (solar-washington-georgia-arizona)
+2025-11-12 21:36:46.596 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - list atualizada: 901322379144 campos=['override_statuses', 'statuses']
+2025-11-12 21:36:46.596 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:263 - Atualizados statuses da List 901322379144 (5 itens)
+2025-11-12 21:36:46.946 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - list atualizada: 901322379144 campos=['override_statuses', 'statuses']
+2025-11-12 21:36:46.947 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:263 - Atualizados statuses da List 901322379144 (5 itens)
+2025-11-12 21:36:47.379 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:287 - Statuses no servidor para List 901322379144 (5 itens): fila de atendimento, em atendimento, pendência, resolvido, cancelado
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing orange-florida-alaska-vermont 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:47.390 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing beryllium-one-michigan-texas 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:47.434 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (massachusetts-iowa-victor-skylark)
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing kilo-shade-oxygen-failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:47.477 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (orange-florida-alaska-vermont) - FluxoAtendimento não encontrado: 11 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 11
+
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (beryllium-one-michigan-texas) - FluxoAtendimento não encontrado: 11 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 11
+
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing gee-earth-hawaii-massachusetts 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:47.525 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (kilo-shade-oxygen-failed) - FluxoAtendimento não encontrado: 11 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 11
+
+INFO:django-q:Process-fee331b9692548c98a557e9cffc2741c processing maine-london-virginia-potato 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses'
+2025-11-12 21:36:47.574 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (gee-earth-hawaii-massachusetts) - FluxoAtendimento não encontrado: 11 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 11
+
+ERROR:django-q:Failed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_etapa_reconfigure_statuses' (maine-london-virginia-potato) - FluxoAtendimento não encontrado: 11 : Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\tasks.py", line 27, in task_etapa_reconfigure_statuses
+    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\clickup_sync\services\flow_sync_service.py", line 90, in ensure_list_for_fluxo_from_db
+    raise RuntimeError(f"FluxoAtendimento não encontrado: {fluxo_id}")
+RuntimeError: FluxoAtendimento não encontrado: 11
+
+2025-11-12 21:36:47.740 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.flow_sync_service:_update_list_statuses:287 - Statuses no servidor para List 901322379144 (5 itens): fila de atendimento, em atendimento, pendência, resolvido, cancelado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_fluxo_ensure_list' (fanta-oranges-snake-spring)

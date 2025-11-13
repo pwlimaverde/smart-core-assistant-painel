@@ -11,7 +11,10 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
     Atendente,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import Atendimento
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    Atendimento,
+    Mensagem,
+)
 
 from .services.department_provision_service import DepartmentProvisionService
 from .models import ClickupStatus
@@ -249,3 +252,29 @@ def departamento_post_save(
             str(exc),
         )
     return None
+
+
+@receiver(post_save, sender=Mensagem)
+def mensagem_post_save_append_comment(
+    sender: Any, instance: Mensagem, created: bool, **kwargs: Any
+) -> None:
+    """Cria comentário em Markdown na Task ao salvar nova Mensagem.
+
+    Comentário (PT-BR): apenas mensagens novas disparam o comentário; o
+    enfileiramento é assíncrono para não bloquear transações.
+    """
+    try:
+        if created:
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_mensagem_append_comment"
+                ),
+                instance.id,
+            )
+    except Exception as exc:
+        logger.warning(
+            "Falha ao enfileirar comentário para mensagem {}: {}",
+            instance.id,
+            exc,
+        )

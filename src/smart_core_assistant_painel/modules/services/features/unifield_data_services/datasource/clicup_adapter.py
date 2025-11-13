@@ -129,6 +129,38 @@ class ClicupUnifiedDataService(UnifiedDataService):
         self._log("team selecionado: {team}", team=team_id)
         return team_id
 
+    # -------------------------- Multipart/Uploads ---------------------------
+    def _post_multipart(
+        self,
+        path: str,
+        files: Dict[str, Any],
+        data: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Executa POST multipart para upload de arquivos.
+
+        Comentário: ClickUp requer `multipart/form-data` para anexos.
+        Esta função isola o fluxo de upload, mantendo headers de
+        autorização e tratamento de erro consistente.
+        """
+        url = f"{self._base_url}{path}"
+        # Comentário: não definir Content-Type manualmente; requests faz isso
+        headers = {"Authorization": self._headers.get("Authorization", "")}
+        resp = requests.post(
+            url,
+            headers=headers,
+            files=files,
+            data=data or {},
+            timeout=30,
+        )
+        if not resp.ok:
+            logger.error(
+                "Falha ClickUp upload: {status} {text}",
+                status=resp.status_code,
+                text=resp.text,
+            )
+            resp.raise_for_status()
+        return resp.json() if resp.content else {}
+
     # -------------------------- Mapeamento UDS ----------------------------
     def create_container(self, name: str) -> str:
         """Cria um space e retorna seu ID."""
@@ -457,6 +489,85 @@ class ClicupUnifiedDataService(UnifiedDataService):
             comment=comment_id,
         )
         return comment_id
+
+    # ------------------------------ Comentários -----------------------------
+    def add_comment(
+        self, task_id: str, markdown_text: str, notify_all: bool = False
+    ) -> str:
+        """Adiciona um comentário em Markdown na Task.
+
+        Args:
+            task_id: ID externo da Task no ClickUp.
+            markdown_text: Conteúdo em Markdown do comentário.
+            notify_all: Se verdadeiro, notifica todos os membros.
+
+        Returns:
+            ID do comentário criado.
+
+        Comentário (PT-BR): o ClickUp aceita formatação básica (markdown
+        simplificado). Mantemos o texto como recebido para preservar o
+        visual e a sequência das mensagens.
+        """
+        data = self._request(
+            "POST",
+            f"/task/{task_id}/comment",
+            json={
+                "comment_text": markdown_text,
+                "notify_all": notify_all,
+            },
+        )
+        comment_id = str(data.get("id", ""))
+        self._log(
+            "comentário criado: task={task} -> {comment}",
+            task=task_id,
+            comment=comment_id,
+        )
+        return comment_id
+
+    # ------------------------------ Anexos ---------------------------------
+    def upload_attachment(
+        self,
+        task_id: str,
+        filename: str,
+        content: bytes,
+        content_type: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> str:
+        """Faz upload de um anexo para a Task.
+
+        Args:
+            task_id: ID da Task no ClickUp.
+            filename: Nome do arquivo a ser exibido.
+            content: Conteúdo binário do arquivo.
+            content_type: MIME type (padrão: application/octet-stream).
+            description: Descrição opcional do anexo.
+
+        Returns:
+            ID do anexo criado.
+
+        Comentário (PT-BR): usado para mensagens de mídia (imagem,
+        documento, áudio). Para texto, preferimos comentários em
+        Markdown; anexos complementam a experiência sem poluir o card.
+        """
+        mime = content_type or "application/octet-stream"
+        files = {
+            "attachment": (filename, content, mime),
+        }
+        extra = {"filename": filename}
+        if description:
+            extra["description"] = description
+        data = self._post_multipart(
+            f"/task/{task_id}/attachment",
+            files=files,
+            data=extra,
+        )
+        attach_id = str(data.get("id", ""))
+        self._log(
+            "anexo criado: task={task} -> {attach}",
+            task=task_id,
+            attach=attach_id,
+        )
+        return attach_id
 
     def get_container(self, container_id: str) -> Optional[Dict[str, Any]]:
         """Obtém dados do space."""

@@ -96,6 +96,105 @@ class TicketSyncService:
             "Atualizado conteúdo enriquecido da Task {}", task.external_id
         )
 
+    def append_message_comment(self, mensagem: Any) -> bool:
+        """Adiciona a mensagem como comentário Markdown na Task.
+
+        Comentário (PT-BR): mantém a sequência cronológica e evita
+        poluição do card usando comentários ricos em markdown.
+        """
+        try:
+            at_id = int(getattr(mensagem, "atendimento_id", 0))
+        except Exception:
+            at_id = 0
+        if not at_id:
+            logger.warning("Mensagem sem atendimento id: {}", mensagem)
+            return False
+
+        task = ClickupTask.objects.filter(atendimento_id=at_id).first()
+        if not task:
+            logger.warning(
+                "Task não encontrada para atendimento {}", at_id
+            )
+            return False
+
+        md: str = self._build_message_markdown(mensagem)
+        try:
+            self.udservice.add_comment(task.external_id, md, notify_all=False)
+            logger.info(
+                "Comentário de mensagem anexado na Task {}", task.external_id
+            )
+            return True
+        except Exception as exc:
+            logger.error(
+                "Falha ao anexar comentário na Task {}: {}",
+                task.external_id,
+                exc,
+            )
+            return False
+
+    def _build_message_markdown(self, mensagem: Any) -> str:
+        """Gera Markdown rico para a mensagem do atendimento.
+
+        Estrutura:
+        - Cabeçalho com remetente e timestamp
+        - Tipo de mensagem (texto/mídia)
+        - Bloco com conteúdo preservando quebras
+        - Opcional: resposta do bot
+        """
+        from django.utils import timezone
+        try:
+            ts = timezone.localtime(getattr(mensagem, "timestamp"))
+        except Exception:
+            ts = timezone.now()
+        ts_str: str = ts.strftime("%d/%m/%Y %H:%M")
+
+        remetente_raw = str(getattr(mensagem, "remetente", "")).lower()
+        if remetente_raw == "bot":
+            remetente_lbl = "Bot"
+        elif remetente_raw == "atendente_humano":
+            remetente_lbl = "Atendente"
+        else:
+            remetente_lbl = "Contato"
+
+        tipo_raw = str(getattr(mensagem, "tipo", "")).strip()
+        tipo_lbl = {
+            "extendedTextMessage": "Texto",
+            "imageMessage": "Imagem",
+            "videoMessage": "Vídeo",
+            "audioMessage": "Áudio",
+            "documentMessage": "Documento",
+            "stickerMessage": "Sticker",
+            "locationMessage": "Localização",
+            "contactMessage": "Contato",
+            "listMessage": "Lista",
+            "buttonsMessage": "Botões",
+            "pollMessage": "Enquete",
+            "reactMessage": "Reação",
+        }.get(tipo_raw, "Mensagem")
+
+        conteudo: str = str(getattr(mensagem, "conteudo", ""))
+        # Comentário: usar bloco de citação para preservar visual
+        quoted: str = "\n".join([f"> {line}" for line in conteudo.splitlines()])
+
+        linhas: list[str] = []
+        linhas.append(f"**{remetente_lbl}** — {ts_str}")
+        linhas.append(f"Tipo: _{tipo_lbl}_")
+        if quoted:
+            linhas.append("")
+            linhas.append(quoted)
+
+        # Opcional: resposta do bot
+        resp = getattr(mensagem, "resposta_bot", None)
+        if resp:
+            resp_txt = str(resp)
+            resp_block = "\n".join(
+                [f"> Resposta: {line}" for line in resp_txt.splitlines()]
+            )
+            linhas.append("")
+            linhas.append(resp_block)
+
+        return "\n".join(linhas)
+
     def _build_task_body(
         self,
         atendimento: Any,

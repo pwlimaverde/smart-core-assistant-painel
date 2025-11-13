@@ -4,12 +4,22 @@ from loguru import logger
 from django_q.tasks import async_task
 
 from .services import FlowSyncService, TicketSyncService, MemberSyncService
-from smart_core_assistant_painel.app.ui.atendimentos.models import Atendimento
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    Atendimento,
+    Mensagem,
+)
 
 
 def task_fluxo_ensure_list(fluxo_id: int) -> None:
     """Garante a List para o Fluxo e configura statuses a partir do banco."""
-    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    # Comentário: evita falha no cluster quando Fluxo não existe
+    try:
+        FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    except RuntimeError as exc:
+        logger.warning("FluxoAtendimento não encontrado: {}", fluxo_id)
+        logger.warning("Detalhe: {}", exc)
+    except Exception as exc:
+        logger.error("Falha ao garantir list do fluxo {}: {}", fluxo_id, exc)
 
 
 def task_fluxo_archive_list(fluxo_id: int) -> None:
@@ -24,7 +34,18 @@ def task_fluxo_delete_list(fluxo_id: int) -> None:
 
 def task_etapa_reconfigure_statuses(fluxo_id: int) -> None:
     """Reconfigura statuses da List do Fluxo."""
-    FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    # Comentário: evita falha no cluster quando Fluxo não existe
+    try:
+        FlowSyncService().ensure_list_for_fluxo_from_db(fluxo_id)
+    except RuntimeError as exc:
+        logger.warning("FluxoAtendimento não encontrado: {}", fluxo_id)
+        logger.warning("Detalhe: {}", exc)
+    except Exception as exc:
+        logger.error(
+            "Falha ao reconfigurar statuses do fluxo {}: {}",
+            fluxo_id,
+            exc,
+        )
 
 
 def task_atendimento_ensure_task(atendimento_id: int) -> None:
@@ -34,7 +55,21 @@ def task_atendimento_ensure_task(atendimento_id: int) -> None:
         logger.warning("Atendimento não encontrado: {}", atendimento_id)
         return
     etapa_nome = getattr(at.etapa_atual, "nome", "")
-    TicketSyncService().ensure_task(at, etapa_nome)
+    # Comentário: trata ausência de List mapeada e falhas de API
+    try:
+        TicketSyncService().ensure_task(at, etapa_nome)
+    except RuntimeError as exc:
+        logger.warning(
+            "List não encontrada para fluxo do atendimento {}",
+            atendimento_id,
+        )
+        logger.warning("Detalhe: {}", exc)
+    except Exception as exc:
+        logger.error(
+            "Falha ao garantir task do atendimento {}: {}",
+            atendimento_id,
+            exc,
+        )
 
 
 def task_atendimento_update_task_rich_content(atendimento_id: int) -> None:
@@ -44,7 +79,14 @@ def task_atendimento_update_task_rich_content(atendimento_id: int) -> None:
         logger.warning("Atendimento não encontrado: {}", atendimento_id)
         return
     etapa_nome = getattr(at.etapa_atual, "nome", "")
-    TicketSyncService().update_rich_content(at, etapa_nome)
+    try:
+        TicketSyncService().update_rich_content(at, etapa_nome)
+    except Exception as exc:
+        logger.warning(
+            "Falha ao atualizar rich content do atendimento {}: {}",
+            atendimento_id,
+            exc,
+        )
 
 
 def task_atendimento_sync_task_members(
@@ -57,7 +99,14 @@ def task_atendimento_sync_task_members(
         return
     # Implementação mínima: atualiza rich content para refletir atendente
     etapa_nome = getattr(at.etapa_atual, "nome", "")
-    TicketSyncService().update_rich_content(at, etapa_nome)
+    try:
+        TicketSyncService().update_rich_content(at, etapa_nome)
+    except Exception as exc:
+        logger.warning(
+            "Falha ao sincronizar membros do atendimento {}: {}",
+            atendimento_id,
+            exc,
+        )
     logger.info(
         "Sincronização de membros agendada para atendimento {}", atendimento_id
     )
@@ -83,6 +132,26 @@ def task_atendimento_delete_task(atendimento_id: int) -> None:
 def task_atendente_remove_member(atendente_id: int) -> None:
     """Remove membro do ClickUp e do banco local."""
     MemberSyncService().remove_member(atendente_id)
+
+
+def task_mensagem_append_comment(mensagem_id: int) -> None:
+    """Adiciona comentário em Markdown na Task do Atendimento da mensagem.
+
+    Comentário (PT-BR): preserva sequência e visual sem poluir o card,
+    usando comentários do ClickUp por mensagem criada.
+    """
+    msg = Mensagem.objects.filter(id=mensagem_id).first()
+    if not msg:
+        logger.warning("Mensagem não encontrada: {}", mensagem_id)
+        return
+    try:
+        TicketSyncService().append_message_comment(msg)
+    except Exception as exc:
+        logger.error(
+            "Falha ao anexar comentário para mensagem {}: {}",
+            mensagem_id,
+            exc,
+        )
 
 
 def task_departamento_delete_folder(departamento_id: int) -> None:

@@ -769,3 +769,33 @@
 2025-11-12 21:36:20.613 | INFO     | smart_core_assistant_painel.app.clickup_sync.signals:departamento_post_save:241 - Provisionamento ClickUp concluído para Departamento 14
 2025-11-12 21:36:35.224 | DEBUG    | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:42 - Signal create_default_etapas_fluxo: fluxo=13 criado=True dep=Financeiro
 2025-11-12 21:36:35.304 | INFO     | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:147 - Etapas padrão garantidas para FluxoAtendimento #13
+2025-11-12 21:45:04.924 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=13 count=1
+2025-11-12 21:45:06.460 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=12 count=5
+2025-11-12 21:47:35.236 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=13 count=1
+2025-11-12 21:47:35.286 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=12 count=5
+2025-11-12 21:55:57.458 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=13 count=1
+2025-11-12 21:55:57.509 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=12 count=5
+2025-11-12 22:20:47.670 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=13 count=1
+2025-11-12 22:20:49.228 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=12 count=5
+2025-11-12 22:24:49.467 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 22:24:51.866 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-12 22:25:13.201 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 22:25:14.953 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-12 22:25:35.797 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-12 22:25:37.603 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:24:01.867 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-13 08:24:03.376 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:24:05.708 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-13 08:24:07.142 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:24:32.617 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-13 08:24:34.060 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:57:11.480 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-13 08:57:13.046 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:57:13.765 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-13 08:57:15.267 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:57:15.364 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-13 08:57:16.886 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-13 08:57:35.184 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=13 count=1
+2025-11-13 08:57:38.112 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=12 count=5
+2025-11-13 09:01:47.320 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=13 count=1
+2025-11-13 09:01:47.367 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=12 count=5

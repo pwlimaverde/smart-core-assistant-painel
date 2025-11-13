@@ -122,6 +122,40 @@ class FlowSyncService:
 
         space_id = self._ensure_workspace()
         folder_id = self._ensure_department_folder(space_id, departamento_nome)
+        # Pré-checagem idempotente: reaproveitar List existente por nome
+        try:
+            existing = self.udservice.find_list_in_folder_by_name(
+                folder_id, fluxo_nome
+            )
+            if existing:
+                list_id = str(existing.get("id", ""))
+                logger.info(
+                    "List existente reaproveitada por nome: {} -> {}",
+                    fluxo_nome,
+                    list_id,
+                )
+                ClickupList.objects.update_or_create(
+                    external_id=list_id,
+                    defaults={
+                        "fluxo_atendimento_id": fluxo_id,
+                        "name": fluxo_nome,
+                        "space_external_id": space_id,
+                    },
+                )
+                # Atualiza statuses de forma idempotente
+                self._update_list_statuses(list_id, etapas)
+                return list_id
+        except Exception as exc:
+            logger.warning(
+                (
+                    "Falha ao buscar List por nome '{}' em Folder {}: {}. "
+                    "Prosseguindo com criação."
+                ),
+                fluxo_nome,
+                folder_id,
+                exc,
+            )
+
         # Criação da List com fallback para nome já existente no Folder
         try:
             # Comentário: cria a List já com statuses customizados para

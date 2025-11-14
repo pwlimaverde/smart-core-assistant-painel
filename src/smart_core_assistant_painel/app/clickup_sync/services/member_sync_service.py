@@ -12,7 +12,7 @@ from smart_core_assistant_painel.modules.services.utils.erros import (
     UnifieldDataServicesError,
 )
 
-from ..models import ClickupMember
+from ..models import ClickupMember, ClickupList
 
 
 class MemberSyncService:
@@ -94,3 +94,95 @@ class MemberSyncService:
                 "Falha ao remover membro {}: {}", member.external_id, exc
             )
             return False
+
+    def find_and_register_by_email(self, atendente: Any) -> ClickupMember | None:
+        """Busca membro no ClickUp por e-mail e registra no modelo local.
+
+        Comentário (PT-BR): normaliza o e-mail do atendente, consulta os
+        membros do time no ClickUp e persiste o vínculo em `ClickupMember`
+        com `external_id` real do usuário do ClickUp. Se já existir um
+        registro "local-<id>", atualiza para o ID real e username.
+
+        Retorna o objeto `ClickupMember` criado/atualizado ou `None`.
+        """
+        try:
+            email_raw: str | None = getattr(atendente, "email", None)
+            email_norm: str = (email_raw or "").strip().lower()
+            if not email_norm:
+                logger.warning(
+                    "Atendente #{} sem e-mail; não é possível mapear membro ClickUp",
+                    atendente.id,
+                )
+                return None
+
+            # Preferir escopo de List para membros conforme API ClickUp
+            list_external_id: str | None = None
+            try:
+                fluxo_id = getattr(atendente, "fluxo_id", None)
+                if fluxo_id:
+                    mapping = ClickupList.objects.filter(
+                        fluxo_atendimento_id=fluxo_id
+                    ).first()
+                    if mapping:
+                        list_external_id = str(mapping.external_id)
+                        logger.info(
+                            "Usando List ClickUp {} para busca de membros do atendente #{}",
+                            list_external_id,
+                            atendente.id,
+                        )
+            except Exception:
+                list_external_id = None
+
+            found = self.udservice.find_member_by_email(
+                email_norm, list_id=list_external_id
+            )
+            if not found:
+                logger.info(
+                    "Nenhum membro ClickUp encontrado para e-mail {}",
+                    email_norm,
+                )
+                return None
+
+            user = found.get("user") if isinstance(found.get("user"), dict) else found
+            external_id: str = str(user.get("id", ""))
+            username: str = str(user.get("username", ""))
+            if not external_id:
+                logger.warning(
+                    "Membro ClickUp sem ID válido para e-mail {}",
+                    email_norm,
+                )
+                return None
+
+            existing = ClickupMember.objects.filter(
+                atendente_id=atendente.id
+            ).first()
+            if existing:
+                existing.external_id = external_id
+                if username:
+                    existing.username = username
+                existing.save(update_fields=["external_id", "username"])
+                logger.info(
+                    "Atualizado ClickupMember do atendente #{} -> {}",
+                    atendente.id,
+                    external_id,
+                )
+                return existing
+
+            obj = ClickupMember.objects.create(
+                atendente_id=atendente.id,
+                external_id=external_id,
+                username=username or getattr(atendente, "nome", ""),
+            )
+            logger.info(
+                "Criado ClickupMember para atendente #{} -> {}",
+                atendente.id,
+                external_id,
+            )
+            return obj
+        except Exception as exc:
+            logger.error(
+                "Falha ao registrar membro ClickUp por e-mail do atendente #{}: {}",
+                getattr(atendente, "id", "?"),
+                str(exc),
+            )
+            return None

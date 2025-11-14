@@ -1,4 +1,5 @@
-from typing import Any
+from typing import Any, Dict, List, Optional
+from datetime import datetime
 
 from loguru import logger
 
@@ -12,7 +13,14 @@ from smart_core_assistant_painel.modules.services.utils.erros import (
     UnifieldDataServicesError,
 )
 
-from ..models import ClickupList, ClickupTask, ClickupStatus
+from ..models import (
+    ClickupList,
+    ClickupTask,
+    ClickupStatus,
+    ClickupCustomField,
+    ClickupMember,
+)
+from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
 
 
 class TicketSyncService:
@@ -62,6 +70,14 @@ class TicketSyncService:
             logger.info(
                 "Atualizada Task ClickUp para atendimento {}", atendimento.id
             )
+            # Comentário: após atualizar a Task, sincroniza Custom Fields
+            try:
+                self.update_custom_fields(atendimento)
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao sincronizar Custom Fields após update: {}",
+                    exc,
+                )
             return existing.external_id
 
         task_id: str = self.udservice.create_item(list_map.external_id, body)
@@ -76,6 +92,14 @@ class TicketSyncService:
             task_id,
             atendimento.id,
         )
+        # Comentário: sincroniza Custom Fields após criação da Task
+        try:
+            self.update_custom_fields(atendimento)
+        except Exception as exc:
+            logger.warning(
+                "Falha ao sincronizar Custom Fields após criação: {}",
+                exc,
+            )
         return task_id
 
     def update_rich_content(self, atendimento: Any, etapa_nome: str) -> None:
@@ -95,6 +119,245 @@ class TicketSyncService:
         logger.info(
             "Atualizado conteúdo enriquecido da Task {}", task.external_id
         )
+        # Comentário: sincroniza Custom Fields junto com conteúdo rico
+        try:
+            self.update_custom_fields(atendimento)
+        except Exception as exc:
+            logger.warning(
+                "Falha ao sincronizar Custom Fields após rich update: {}",
+                exc,
+            )
+
+    # ---------------------- Custom Fields Sync ----------------------
+    def update_custom_fields(self, atendimento: Any) -> None:
+        """Atualiza valores de Custom Fields na Task do Atendimento.
+
+        Comentário (PT-BR): Garante que os campos personalizados definidos
+        na List do ClickUp estejam mapeados localmente e aplica os valores
+        derivados do Atendimento (assunto, departamento, etapa, prioridade,
+        contato, canal, telefone e data da última mensagem).
+        """
+        task: Optional[ClickupTask] = ClickupTask.objects.filter(
+            atendimento_id=atendimento.id
+        ).first()
+        if not task:
+            return
+
+        # Comentário: sincroniza catálogo de Custom Fields da List
+        self._sync_list_custom_fields(task.list_external_id)
+
+        values: Dict[str, Any] = self._map_cf_values(atendimento)
+
+        # Comentário: aplica valores apenas para campos existentes na List
+        for name, value in values.items():
+            cf: Optional[ClickupCustomField] = (
+                ClickupCustomField.objects.filter(
+                    name=name,
+                    scope_type="list",
+                    scope_external_id=task.list_external_id,
+                ).first()
+            )
+            if cf is None:
+                continue
+
+            payload_value: Any = value
+            # Comentário: normaliza tipos conforme ClickUp
+            try:
+                if cf.type == "date":
+                    if isinstance(value, datetime):
+                        payload_value = int(value.timestamp() * 1000)
+                    elif value is None:
+                        payload_value = None
+                elif cf.type in {"number"}:
+                    # Garante número quando possível
+                    payload_value = (
+                        float(value) if value is not None else None
+                    )
+                else:
+                    # Fallback para texto
+                    payload_value = (
+                        str(value) if value is not None else None
+                    )
+            except Exception:
+                payload_value = (
+                    str(value) if value is not None else None
+                )
+
+            try:
+                self.udservice.set_task_custom_field(
+                    task.external_id, cf.field_id, payload_value
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao aplicar CF '{}' na task {}: {}",
+                    name,
+                    task.external_id,
+                    exc,
+                )
+
+    def sync_assignees(self, atendimento: Any, old_atendente_id: Optional[int]) -> None:
+        """Sincroniza assignees da Task com base no atendente do Atendimento.
+
+        Comentário (PT-BR): resolve o mapeamento `ClickupMember` para o
+        atendente; quando ausente ou local, tenta registrar via e-mail.
+        Atualiza a Task no ClickUp com a lista de assignees correspondente.
+        """
+        task: Optional[ClickupTask] = ClickupTask.objects.filter(
+            atendimento_id=atendimento.id
+        ).first()
+        if not task:
+            return
+
+        try:
+            atual_id: Optional[int] = getattr(
+                atendimento, "atendente_humano_id", None
+            )
+
+            # Remoção de assignee quando não há atendente
+            if atual_id is None:
+                self.udservice.set_task_assignees(task.external_id, [])
+                logger.info(
+                    "Removidos assignees da task {} (sem atendente)",
+                    task.external_id,
+                )
+                return
+
+            member: Optional[ClickupMember] = (
+                ClickupMember.objects.filter(atendente_id=atual_id).first()
+            )
+
+            # Se não houver mapeamento ou for local, tenta resolver por e-mail
+            if member is None or str(member.external_id).startswith("local-"):
+                try:
+                    from .member_sync_service import MemberSyncService
+
+                    atendente = getattr(atendimento, "atendente_humano", None)
+                    if atendente is not None:
+                        MemberSyncService().find_and_register_by_email(atendente)
+                        member = ClickupMember.objects.filter(
+                            atendente_id=atual_id
+                        ).first()
+                except Exception as exc:
+                    logger.warning(
+                        "Falha ao resolver membro do ClickUp por e-mail: {}",
+                        exc,
+                    )
+
+            if member is None or str(member.external_id).startswith("local-"):
+                logger.info(
+                    "Sem membro ClickUp resolvido para atendente {} na task {}",
+                    atual_id,
+                    task.external_id,
+                )
+                return
+
+            self.udservice.set_task_assignees(
+                task.external_id, [str(member.external_id)]
+            )
+            logger.info(
+                "Assignees sincronizados para task {} -> [{}]",
+                task.external_id,
+                str(member.external_id),
+            )
+        except Exception as exc:
+            logger.warning(
+                "Falha ao sincronizar assignees na task {}: {}",
+                getattr(task, "external_id", "?"),
+                exc,
+            )
+
+    def _sync_list_custom_fields(self, list_external_id: str) -> None:
+        """Sincroniza o catálogo de Custom Fields da List no banco local."""
+        fields: List[Dict[str, Any]] = self.udservice.get_list_custom_fields(
+            list_external_id
+        )
+        if not fields:
+            # Comentário: nenhum CF acessível; orientar configuração no ClickUp
+            logger.info(
+                "List {} sem Custom Fields acessíveis; nada para sincronizar",
+                list_external_id,
+            )
+            return
+        for f in fields:
+            field_id: str = str(f.get("id", ""))
+            name: str = str(f.get("name", ""))
+            ftype: str = str(f.get("type", ""))
+            if not field_id or not name:
+                continue
+            obj, _ = ClickupCustomField.objects.update_or_create(
+                field_id=field_id,
+                defaults={
+                    "name": name,
+                    "type": ftype,
+                    "scope_type": "list",
+                    "scope_external_id": list_external_id,
+                },
+            )
+            # Comentário: update_or_create garante persistência do catálogo
+
+    def _map_cf_values(self, atendimento: Any) -> Dict[str, Any]:
+        """Monta o dicionário de valores para Custom Fields a partir do Atendimento."""
+        contato = getattr(atendimento, "contato", None)
+        departamento = getattr(atendimento, "departamento", None)
+        etapa = getattr(atendimento, "etapa_atual", None)
+
+        # Comentário: resolve nome do contato com fallback
+        contato_nome: str = (
+            str(getattr(contato, "nome_contato", ""))
+            or str(getattr(contato, "nome_perfil_whatsapp", ""))
+            or str(getattr(contato, "nome", ""))
+        )
+        telefone: Optional[str] = getattr(contato, "telefone", None)
+        canal: Optional[str] = getattr(atendimento, "canal", None)
+        assunto: Optional[str] = getattr(atendimento, "assunto", None)
+        prioridade: str = getattr(atendimento, "prioridade", "normal")
+
+        # Comentário: calcula data da última mensagem
+        last_msg: Optional[Mensagem] = (
+            Mensagem.objects.filter(atendimento_id=atendimento.id)
+            .order_by("-timestamp")
+            .first()
+        )
+        last_dt: Optional[datetime] = (
+            getattr(last_msg, "timestamp", None)
+            if last_msg is not None
+            else getattr(atendimento, "data_ultima_mensagem", None)
+        )
+
+        # Comentário: suportar nomes em PT-BR e EN conforme documentação
+        values: Dict[str, Any] = {
+            # Resumo/Assunto
+            "Assunto": assunto,
+            "Subject (Summary)": assunto,
+            # Departamento
+            "Departamento": str(getattr(departamento, "nome", "")),
+            "Department": str(getattr(departamento, "nome", "")),
+            # Fluxo/List contexto
+            "Etapa": str(getattr(etapa, "nome", "")),
+            "Flow": str(getattr(getattr(atendimento, "fluxo_atendimento", None), "nome", "")),
+            # Prioridade
+            "Prioridade": prioridade,
+            "Priority (Local)": prioridade,
+            # Contato (dados derivados)
+            "Contato": contato_nome,
+            "Contact Name": contato_nome,
+            "Telefone": telefone,
+            "Contact Phone": telefone,
+            "Contact Email": getattr(contato, "email", None),
+            "Contact ID": getattr(contato, "id", None),
+            # Canal
+            "Canal": canal,
+            "Channel": canal,
+            # Datas
+            "Last Message At": last_dt,
+            "First Response At": getattr(atendimento, "data_primeira_resposta", None),
+            "Service Start": getattr(atendimento, "data_inicio", None),
+            "Service End": getattr(atendimento, "data_fim", None),
+            # Feedback/Avaliação
+            "Customer Rating (1–5)": getattr(atendimento, "avaliacao", None),
+            "Customer Feedback": getattr(atendimento, "feedback", None),
+        }
+        return values
 
     def append_message_comment(self, mensagem: Any) -> bool:
         """Adiciona a mensagem como comentário Markdown na Task.

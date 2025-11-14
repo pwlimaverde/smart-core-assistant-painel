@@ -18,6 +18,7 @@ from .models import (
     ClickupTask,
     ClickupWebhookEvent,
     ClickupStatus,
+    ClickupCustomField,
 )
 
 
@@ -110,3 +111,27 @@ class ClickupFolderAdmin(admin.ModelAdmin[ClickupFolder]):
     )
     search_fields = ("name", "external_id", "space_external_id")
     ordering = ("name",)
+
+
+@admin.register(ClickupCustomField)
+class ClickupCustomFieldAdmin(admin.ModelAdmin[ClickupCustomField]):
+    """Admin para visualizar e gerenciar Custom Fields mapeados.
+
+    Comentário (PT-BR): exibe identificação do campo, tipo e escopo
+    (Workspace/List), permitindo auditoria das configurações usadas na
+    sincronização de cards.
+    """
+
+    list_display = (
+        "name",
+        "field_id",
+        "type",
+        "scope_type",
+        "scope_external_id",
+        "created_at",
+    )
+    search_fields = ("name", "field_id", "scope_external_id")
+    list_filter = ("scope_type", "type")
+    ordering = ("name",)
+    date_hierarchy = "created_at"
+    readonly_fields = ("created_at", "updated_at")

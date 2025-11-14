@@ -97,9 +97,11 @@ def fluxo_deleted_delete_clickup(
 def atendimento_capture_old_fields(
     sender: Any, instance: Atendimento, **kwargs: Any
 ) -> None:
-    """Captura atendente e etapa anteriores antes de salvar o Atendimento.
+    """Captura valores anteriores antes de salvar o Atendimento.
 
-    Comentário: guarda IDs antigos para uso no pós-save.
+    Comentário (PT-BR): guardamos campos relevantes para decidir se
+    precisamos atualizar o conteúdo rico do card. Inclui atendente,
+    etapa, departamento, prioridade, assunto, canal e datas de SLA.
     """
     try:
         if getattr(instance, "pk", None):
@@ -109,9 +111,31 @@ def atendimento_capture_old_fields(
                     prev, "atendente_humano_id", None
                 )  # type: ignore[attr-defined]
                 instance._old_etapa_id = getattr(prev, "etapa_atual_id", None)  # type: ignore[attr-defined]
+                instance._old_departamento_id = getattr(prev, "departamento_id", None)  # type: ignore[attr-defined]
+                instance._old_assunto = getattr(prev, "assunto", None)  # type: ignore[attr-defined]
+                instance._old_prioridade = getattr(prev, "prioridade", None)  # type: ignore[attr-defined]
+                instance._old_canal = getattr(prev, "canal", None)  # type: ignore[attr-defined]
+                instance._old_data_inicio = getattr(prev, "data_inicio", None)  # type: ignore[attr-defined]
+                instance._old_data_fim = getattr(prev, "data_fim", None)  # type: ignore[attr-defined]
+                instance._old_data_primeira_resposta = getattr(prev, "data_primeira_resposta", None)  # type: ignore[attr-defined]
+                instance._old_data_ultima_mensagem = getattr(prev, "data_ultima_mensagem", None)  # type: ignore[attr-defined]
+                instance._old_avaliacao = getattr(prev, "avaliacao", None)  # type: ignore[attr-defined]
+                instance._old_fluxo_id = getattr(prev, "fluxo_atendimento_id", None)  # type: ignore[attr-defined]
+                instance._old_contexto_conversa = getattr(prev, "contexto_conversa", None)  # type: ignore[attr-defined]
             else:
                 instance._old_atendente_id = None  # type: ignore[attr-defined]
                 instance._old_etapa_id = None  # type: ignore[attr-defined]
+                instance._old_departamento_id = None  # type: ignore[attr-defined]
+                instance._old_assunto = None  # type: ignore[attr-defined]
+                instance._old_prioridade = None  # type: ignore[attr-defined]
+                instance._old_canal = None  # type: ignore[attr-defined]
+                instance._old_data_inicio = None  # type: ignore[attr-defined]
+                instance._old_data_fim = None  # type: ignore[attr-defined]
+                instance._old_data_primeira_resposta = None  # type: ignore[attr-defined]
+                instance._old_data_ultima_mensagem = None  # type: ignore[attr-defined]
+                instance._old_avaliacao = None  # type: ignore[attr-defined]
+                instance._old_fluxo_id = None  # type: ignore[attr-defined]
+                instance._old_contexto_conversa = None  # type: ignore[attr-defined]
     except Exception:
         # Comentário: falhas de captura não devem bloquear o fluxo
         pass
@@ -144,9 +168,47 @@ def atendimento_post_save(
             old_id,
         )
 
-        # Atualiza apenas se etapa mudou
+        # Atualiza rich content se qualquer campo relevante mudou
         old_etapa_id = getattr(instance, "_old_etapa_id", None)
-        if old_etapa_id != getattr(instance, "etapa_atual_id", None):
+        old_departamento_id = getattr(instance, "_old_departamento_id", None)
+        old_assunto = getattr(instance, "_old_assunto", None)
+        old_prioridade = getattr(instance, "_old_prioridade", None)
+        old_canal = getattr(instance, "_old_canal", None)
+        old_data_inicio = getattr(instance, "_old_data_inicio", None)
+        old_data_fim = getattr(instance, "_old_data_fim", None)
+        old_data_primeira_resposta = getattr(
+            instance, "_old_data_primeira_resposta", None
+        )
+        old_data_ultima_mensagem = getattr(
+            instance, "_old_data_ultima_mensagem", None
+        )
+        old_avaliacao = getattr(instance, "_old_avaliacao", None)
+        old_fluxo_id = getattr(instance, "_old_fluxo_id", None)
+        old_contexto_conversa = getattr(
+            instance, "_old_contexto_conversa", None
+        )
+
+        changed = (
+            old_etapa_id != getattr(instance, "etapa_atual_id", None)
+            or old_departamento_id
+            != getattr(instance, "departamento_id", None)
+            or old_assunto != getattr(instance, "assunto", None)
+            or old_prioridade != getattr(instance, "prioridade", None)
+            or old_canal != getattr(instance, "canal", None)
+            or old_data_inicio != getattr(instance, "data_inicio", None)
+            or old_data_fim != getattr(instance, "data_fim", None)
+            or old_data_primeira_resposta
+            != getattr(instance, "data_primeira_resposta", None)
+            or old_data_ultima_mensagem
+            != getattr(instance, "data_ultima_mensagem", None)
+            or old_avaliacao != getattr(instance, "avaliacao", None)
+            or old_fluxo_id
+            != getattr(instance, "fluxo_atendimento_id", None)
+            or old_contexto_conversa
+            != getattr(instance, "contexto_conversa", None)
+        )
+
+        if changed:
             async_task(
                 (
                     "smart_core_assistant_painel.app.clickup_sync.tasks"
@@ -162,19 +224,19 @@ def atendimento_post_save(
 def atendente_created_invite_clickup(
     sender: Any, instance: Atendente, created: bool, **kwargs: Any
 ) -> None:
-    """Invita/Registra membro ao criar Atendente (assíncrono)."""
+    """Sincroniza membro ClickUp por e-mail ao criar Atendente (assíncrono)."""
     if not created:
         return
     try:
         async_task(
             (
                 "smart_core_assistant_painel.app.clickup_sync.tasks"
-                ".task_atendente_invite"
+                ".task_atendente_sync_member_by_email"
             ),
             instance.id,
         )
     except Exception as exc:
-        logger.warning("Falha ao convidar atendente: {}", exc)
+        logger.warning("Falha ao sincronizar atendente por e-mail: {}", exc)
 
 
 @receiver(pre_delete, sender=Atendimento)
@@ -271,6 +333,15 @@ def mensagem_post_save_append_comment(
                     ".task_mensagem_append_comment"
                 ),
                 instance.id,
+            )
+            # Comentário: também atualiza conteúdo rico para refletir
+            # "Last Message At" e KPIs derivados no card.
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendimento_update_task_rich_content"
+                ),
+                instance.atendimento_id,
             )
     except Exception as exc:
         logger.warning(

@@ -97,10 +97,9 @@ def task_atendimento_sync_task_members(
     if not at:
         logger.warning("Atendimento não encontrado: {}", atendimento_id)
         return
-    # Implementação mínima: atualiza rich content para refletir atendente
-    etapa_nome = getattr(at.etapa_atual, "nome", "")
+    # Atualiza assignees conforme atendente vinculado
     try:
-        TicketSyncService().update_rich_content(at, etapa_nome)
+        TicketSyncService().sync_assignees(at, old_atendente_id)
     except Exception as exc:
         logger.warning(
             "Falha ao sincronizar membros do atendimento {}: {}",
@@ -122,6 +121,24 @@ def task_atendente_invite(atendente_id: int) -> None:
         return
     username = getattr(atendente, "nome", f"user-{atendente_id}")
     MemberSyncService().invite_for_atendente(atendente, username)
+
+
+def task_atendente_sync_member_by_email(atendente_id: int) -> None:
+    """Sincroniza vínculo de membro ClickUp por e-mail do Atendente."""
+    from smart_core_assistant_painel.app.ui.operacional.models import Atendente
+
+    atendente = Atendente.objects.filter(id=atendente_id).first()
+    if not atendente:
+        logger.warning("Atendente não encontrado: {}", atendente_id)
+        return
+    try:
+        MemberSyncService().find_and_register_by_email(atendente)
+    except Exception as exc:
+        logger.warning(
+            "Falha ao sincronizar membro por e-mail para atendente {}: {}",
+            atendente_id,
+            exc,
+        )
 
 
 def task_atendimento_delete_task(atendimento_id: int) -> None:

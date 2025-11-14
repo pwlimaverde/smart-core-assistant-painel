@@ -125,3 +125,47 @@ class ClickupStatus(models.Model):
     def __str__(self) -> str:  # type: ignore[override]
         """Representação legível do status mapeado."""
         return f"{self.status_name} ({self.list_external_id})"
+
+
+class ClickupCustomField(models.Model):
+    """Mapeia Custom Fields do ClickUp por escopo.
+
+    Comentário (PT-BR): persistimos os IDs de campos personalizados
+    disponíveis no Workspace (time) e anexados/visíveis em uma List,
+    permitindo setar valores corretamente via API v2.
+
+    Attributes:
+        name: Nome do campo conforme configurado no ClickUp.
+        field_id: ID único do Custom Field no ClickUp.
+        type: Tipo do campo (text, number, date, email, phone, url,
+            dropdown, textarea, etc.).
+        scope_type: Escopo do campo ("workspace" ou "list").
+        scope_external_id: ID externo do escopo (team_id ou list_id).
+        created_at: Data de criação do registro.
+        updated_at: Data da última atualização do registro.
+    """
+
+    SCOPE_WORKSPACE: str = "workspace"
+    SCOPE_LIST: str = "list"
+
+    name = models.CharField(max_length=128)
+    field_id = models.CharField(max_length=128, unique=True)
+    type = models.CharField(max_length=32)
+    scope_type = models.CharField(max_length=16)
+    scope_external_id = models.CharField(max_length=128)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "ClickUp Custom Field"
+        verbose_name_plural = "ClickUp Custom Fields"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["scope_type", "scope_external_id", "name"],
+                name="uniq_scope_name_custom_field",
+            )
+        ]
+
+    def __str__(self) -> str:  # type: ignore[override]
+        """Representação legível do Custom Field mapeado."""
+        return f"{self.name} ({self.scope_type}:{self.scope_external_id})"

@@ -424,6 +424,64 @@ class ClicupUnifiedDataService(UnifiedDataService):
             )
             return False
 
+    # ----------------------- Custom Fields (API v2) -----------------------
+    def get_list_custom_fields(self, list_id: str) -> List[Dict[str, Any]]:
+        """Retorna os Custom Fields acessíveis para uma List.
+
+        Comentário (PT-BR): usa `GET /list/{list_id}/field` para obter
+        os campos anexados/visíveis na List. Útil para mapear `field_id`
+        localmente e permitir atualizações posteriores.
+
+        Args:
+            list_id: ID da List no ClickUp.
+
+        Returns:
+            Lista de dicionários com pelo menos `id`, `name` e `type`.
+        """
+        try:
+            data = self._request("GET", f"/list/{list_id}/field")
+            fields: List[Dict[str, Any]] = data.get("fields", [])
+            return fields if isinstance(fields, list) else []
+        except Exception:
+            return []
+
+    def set_task_custom_field(
+        self, task_id: str, field_id: str, value: Any
+    ) -> bool:
+        """Atualiza o valor de um Custom Field em uma Task.
+
+        Comentário (PT-BR): usa `POST /task/{task_id}/field/{field_id}`
+        com corpo `{ "value": ... }`. O tipo de `value` deve seguir as
+        regras do ClickUp (texto, epoch ms para `date`, `option_id` para
+        `drop_down`, objetos para `labels`/`users`, etc.).
+
+        Args:
+            task_id: ID da task alvo.
+            field_id: ID do custom field a ser atualizado.
+            value: Valor no formato esperado pelo tipo do campo.
+
+        Returns:
+            True se a atualização ocorreu sem erro.
+        """
+        try:
+            self._request(
+                "POST", f"/task/{task_id}/field/{field_id}", json={"value": value}
+            )
+            self._log(
+                "custom field atualizado: task={task} field={field}",
+                task=task_id,
+                field=field_id,
+            )
+            return True
+        except Exception as exc:
+            self._log(
+                "falha ao atualizar custom field: task={task} field={field} err={err}",
+                task=task_id,
+                field=field_id,
+                err=str(exc),
+            )
+            return False
+
     def delete_folder(self, folder_id: str) -> bool:
         """Exclui uma pasta do ClickUp.
 
@@ -464,6 +522,91 @@ class ClicupUnifiedDataService(UnifiedDataService):
                 "falha ao remover membro {member}: {error}",
                 member=member_id,
                 error=str(exc),
+            )
+            return False
+
+    def list_team_members(self) -> List[Dict[str, Any]]:
+        """Lista membros do time atual no ClickUp.
+
+        Comentário (PT-BR): usa `GET /team/{team_id}/member` para obter
+        os membros do workspace. Retorna uma lista de dicionários com
+        pelo menos `user.id`, `user.username`, `user.email`.
+        """
+        try:
+            # Observação: endpoint `team/{team_id}/member` não é público.
+            # Como fallback, alguns ambientes retornam membros via `GET /team`.
+            # Mantemos compatibilidade retornando lista vazia quando não suportado.
+            team_id = self._get_team_id()
+            try:
+                data = self._request("GET", f"/team/{team_id}")
+                members: List[Dict[str, Any]] = data.get("members", [])
+                if isinstance(members, list):
+                    return members
+            except Exception:
+                pass
+            # Fallback final
+            return []
+        except Exception:
+            return []
+
+    def list_list_members(self, list_id: str) -> List[Dict[str, Any]]:
+        """Lista membros com acesso à List específica.
+
+        Comentário (PT-BR): usa `GET /list/{list_id}/member` conforme FAQ
+        oficial para obter membros que têm acesso à List. Retorna uma
+        lista de dicionários com `user.id`, `user.username`, `user.email`.
+        """
+        try:
+            data = self._request("GET", f"/list/{list_id}/member")
+            members: List[Dict[str, Any]] = data.get("members", [])
+            return members if isinstance(members, list) else []
+        except Exception:
+            return []
+
+    def find_member_by_email(self, email: str, list_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Busca um membro do ClickUp pelo e-mail (case-insensitive).
+
+        Comentário (PT-BR): normaliza o e-mail e tenta localizar o
+        usuário retornado por `list_team_members`. Alguns workspaces
+        retornam `email` diretamente no objeto `user`; outros podem
+        expor `username` como e-mail corporativo. Fazemos tentativas
+        seguras de leitura.
+        """
+        email_norm: str = email.strip().lower()
+        # Preferir buscar em escopo de List quando informado
+        members = (
+            self.list_list_members(list_id) if list_id else self.list_team_members()
+        )
+        for m in members:
+            user: Dict[str, Any] = (
+                m.get("user") if isinstance(m.get("user"), dict) else m
+            )
+            u_email: str = str(user.get("email", "")).strip().lower()
+            u_username: str = str(user.get("username", "")).strip().lower()
+            if email_norm and (email_norm == u_email or email_norm == u_username):
+                return m
+        return None
+
+    def set_task_assignees(self, task_id: str, assignee_ids: List[str]) -> bool:
+        """Define a lista de responsáveis (assignees) de uma Task.
+
+        Comentário (PT-BR): usa `PUT /task/{task_id}` com corpo contendo
+        `assignees: [<id>, ...]`. Substitui a lista atual de responsáveis
+        pela lista informada.
+        """
+        try:
+            self._request("PUT", f"/task/{task_id}", json={"assignees": assignee_ids})
+            self._log(
+                "assignees atualizados: task={task} ids={ids}",
+                task=task_id,
+                ids=assignee_ids,
+            )
+            return True
+        except Exception as exc:
+            self._log(
+                "falha ao atualizar assignees: task={task} err={err}",
+                task=task_id,
+                err=str(exc),
             )
             return False
 

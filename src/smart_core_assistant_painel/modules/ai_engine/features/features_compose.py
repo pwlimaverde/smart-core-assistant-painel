@@ -297,7 +297,7 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def _converter_contexto(metadados: dict[str, Any]) -> str:
+    def converter_contexto(metadados: dict[str, Any]) -> str:
         """Converte metadados de mensagens multimídia para texto.
 
         Args:
@@ -334,7 +334,7 @@ class FeaturesCompose:
         if isinstance(message_data, SuccessReturn):
             result: MessageData = message_data.result
             if result.metadados:
-                conteudo_media: str = FeaturesCompose._converter_contexto(
+                conteudo_media: str = FeaturesCompose.converter_contexto(
                     result.metadados
                 )
                 if conteudo_media and conteudo_media != "contexto":

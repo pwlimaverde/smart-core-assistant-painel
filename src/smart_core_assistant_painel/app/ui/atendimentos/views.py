@@ -3,16 +3,16 @@
 import json
 from typing import Any, Optional
 
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
-from django.utils.html import escape
-from django.middleware.csrf import get_token
-from django.utils import timezone
-from django.contrib.auth.decorators import login_required
-
 from rolepermissions.checkers import has_permission
+
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Atendente,
     Departamento,
@@ -22,10 +22,10 @@ from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
 from .models import (
     Atendimento,
-    StatusAtendimento,
     Mensagem,
-    TipoRemetente,
+    StatusAtendimento,
     TipoMensagem,
+    TipoRemetente,
 )
 from .utils import sched_message_response, set_wa_buffer
 
@@ -50,21 +50,60 @@ def _get_user_departamentos(request: HttpRequest):
     )
 
 
+def _validate_and_extract_webhook_data(
+    request: HttpRequest,
+) -> dict[str, Any] | JsonResponse:
+    """Valida a requisição do webhook e extrai o payload como dict.
+
+    Retorna `JsonResponse` em caso de erro de validação; caso contrário,
+    retorna o dict `data` quando todas as verificações passam.
+    """
+    if request.method != "POST":
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+    if not request.body:
+        return JsonResponse({"error": "Empty request body"}, status=400)
+    try:
+        body_str = request.body.decode("utf-8")
+    except UnicodeDecodeError:
+        body_str = request.body.decode("utf-8", errors="ignore")
+        logger.warning("Decoding with errors='ignore' applied")
+    try:
+        data: dict[str, Any] = json.loads(body_str)
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON body"}, status=400)
+
+    key_data: dict[str, Any] | None = data.get("data")
+    if key_data is None:
+        return JsonResponse({"error": "Empty key data"}, status=400)
+    key_section: dict[str, Any] | None = key_data.get("key")
+    if key_section is None:
+        return JsonResponse({"error": "Empty key section"}, status=400)
+
+    remote_jid = key_section.get("remoteJid")
+    if not remote_jid:
+        return JsonResponse({"error": "Empty remoteJid"}, status=400)
+
+    parts = remote_jid.split("@")
+    if len(parts) < 2:
+        return JsonResponse({"error": "Invalid remoteJid"}, status=400)
+
+    is_group: bool = parts[1] == "g.us"
+    if is_group:
+        return JsonResponse(
+            {"error": "Group messages not supported"}, status=400
+        )
+
+    return data
+
 @csrf_exempt
 def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
     """Endpoint to receive WhatsApp message notifications."""
     try:
-        if request.method != "POST":
-            return JsonResponse({"error": "Method not allowed"}, status=405)
-        if not request.body:
-            return JsonResponse({"error": "Empty request body"}, status=400)
-        try:
-            body_str = request.body.decode("utf-8")
-        except UnicodeDecodeError:
-            body_str = request.body.decode("utf-8", errors="ignore")
-            logger.warning("Decoding with errors='ignore' applied")
+        validation = _validate_and_extract_webhook_data(request)
+        if isinstance(validation, JsonResponse):
+            return validation
+        data: dict[str, Any] = validation
 
-        data: dict[str, Any] = json.loads(body_str)
         # Validar credenciais via WhatsAppInstance (substitui Departamento.validar_api_key)
         whatsapp_instance = WhatsAppInstance.validar_api_key(data)
         if not whatsapp_instance:
@@ -456,9 +495,7 @@ def kanban_departamento(
                         )
                     else:
                         error_occurred = True
-                        error_message = (
-                            "Departamento selecionado não permitido para transferência."
-                        )
+                        error_message = "Departamento selecionado não permitido para transferência."
                 else:
                     error_occurred = True
                     error_message = "Departamento alvo inválido."
@@ -815,9 +852,7 @@ def kanban_departamento_public(
             "em_atendimento": base_qs.filter(
                 status=StatusAtendimento.EM_ATENDIMENTO
             ),
-            "pendencia": base_qs.filter(
-                status=StatusAtendimento.PENDENCIA
-            ),
+            "pendencia": base_qs.filter(status=StatusAtendimento.PENDENCIA),
             "resolvidos": base_qs.filter(status=StatusAtendimento.RESOLVIDO),
             "cancelados": base_qs.filter(status=StatusAtendimento.CANCELADO),
         },

@@ -61,8 +61,9 @@ def send_message_response(phone: str) -> None:
         logger.warning(f"Buffer vazio para {phone}")
         return
     try:
+        logger.info(f"Mensagem bruta {message_data_list}")
         message_data = _compile_message_data_list(message_data_list)
-
+        logger.info(f"Mensagem compilada {message_data}")
         mensagem_id = processar_mensagem_whatsapp(
             numero_telefone=message_data.numero_telefone,
             conteudo=message_data.conteudo,
@@ -83,7 +84,8 @@ def send_message_response(phone: str) -> None:
             except Exception:
                 mensagem.refresh_from_db()
             atendimento_obj: Atendimento = mensagem.atendimento
-            pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
+            # pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
+            pode_responder = False
             if pode_responder:
                 # Monta um prompt de sistema claro e objetivo para orientar a LLM
                 # sobre como responder de acordo com as intenções detectadas.
@@ -157,12 +159,9 @@ def send_message_response(phone: str) -> None:
                 # Comentário (PT-BR): evita uso da IA quando existirem apenas
                 # tags desconhecidas ou quando dados de treinamento não forem
                 # uma lista válida, mantendo previsibilidade em testes.
-                should_call_ai: bool = (
-                    has_known_intent
-                    or (
-                        isinstance(dados_treinamento, list)
-                        and len(dados_treinamento) > 0
-                    )
+                should_call_ai: bool = has_known_intent or (
+                    isinstance(dados_treinamento, list)
+                    and len(dados_treinamento) > 0
                 )
 
                 if should_call_ai:
@@ -187,9 +186,7 @@ def send_message_response(phone: str) -> None:
                     )
 
                     # Atualiza status do atendimento para "Em Atendimento"
-                    _atualizar_status_atendimento_em_andamento(
-                        atendimento_obj
-                    )
+                    _atualizar_status_atendimento_em_andamento(atendimento_obj)
                     logger.info(f"result: {result}")
                     if result.transferir_atendimento:
                         if result.fluxo_transferencia:
@@ -219,9 +216,7 @@ def send_message_response(phone: str) -> None:
                     )
 
                     # Atualiza status do atendimento para "Em Atendimento"
-                    _atualizar_status_atendimento_em_andamento(
-                        atendimento_obj
-                    )
+                    _atualizar_status_atendimento_em_andamento(atendimento_obj)
             else:
                 logger.warning(
                     "DEBUG: Bot não pode responder - pulando processamento de intents"

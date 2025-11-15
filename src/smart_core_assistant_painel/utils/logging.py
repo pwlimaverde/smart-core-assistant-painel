@@ -17,7 +17,9 @@ import sys
 from loguru import logger
 
 
-def configure_logging(log_file: Optional[str] = None) -> None:
+def configure_logging(
+    log_file: Optional[str] = None, console_level: Optional[str] = None
+) -> None:
     """Configura o *file sink* do Loguru.
 
     Args:
@@ -39,8 +41,9 @@ def configure_logging(log_file: Optional[str] = None) -> None:
     # Remove sinks antigos para evitar duplicidade em re-imports.
     logger.remove()
 
-    # Adiciona console padrão.
-    logger.add(sys.stderr, level="INFO", backtrace=True, diagnose=True)
+    # Define nível do console (permite sobrescrever via parâmetro ou env).
+    console_lvl = console_level or os.getenv("LOG_CONSOLE_LEVEL") or "DEBUG"
+    logger.add(sys.stderr, level=console_lvl, backtrace=True, diagnose=True)
 
     # Adiciona sink de arquivo com `enqueue=True` para multiprocessos.
     logger.add(

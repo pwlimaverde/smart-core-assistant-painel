@@ -368,24 +368,25 @@ class Atendente(models.Model):
         # Em edicao (self.pk existe), manteremos o fluxo atual caso
         # nao seja reenviado pelo formulario.
         if self.fluxo_id is None and not self.pk:
-            raise ValidationError({
-                "fluxo": "Fluxo de atendimento obrigatorio."
-            })
+            raise ValidationError(
+                {"fluxo": "Fluxo de atendimento obrigatorio."}
+            )
 
         # Coerencia: se houver departamento, deve coincidir com o do fluxo
         if self.departamento_id is not None and self.fluxo_id is not None:
             if self.fluxo.departamento_id != self.departamento_id:
-                raise ValidationError({
-                    "fluxo": "Fluxo deve pertencer ao mesmo departamento informado.",
-                    "departamento": "Departamento deve coincidir com o do fluxo.",
-                })
+                raise ValidationError(
+                    {
+                        "fluxo": "Fluxo deve pertencer ao mesmo departamento informado.",
+                        "departamento": "Departamento deve coincidir com o do fluxo.",
+                    }
+                )
 
         # Formato de telefone já validado por validator, normalização ocorre em save()
 
     # Compatibilidade retroativa com testes/nomes antigos
     # Comentario: exporta alias para manter referencias existentes em testes.
     # Em tempo de import, AtendenteHumano apontara para Atendente.
-
 
     def get_atendimentos_ativos(self) -> int:
         """Retorna a quantidade de atendimentos ativos deste atendente.
@@ -601,8 +602,7 @@ class WhatsAppInstance(models.Model):
         - Senao, tenta por `phone_number` a partir de `instance`.
         """
         api_key = data.get("apikey")
-        instance_id = data.get("instance_id")
-        instancia_ou_telefone = data.get("instance")
+        instance_id = data.get("instance")
         if not api_key:
             logger.warning("Chave de API nao fornecida no webhook.")
             return None
@@ -613,22 +613,7 @@ class WhatsAppInstance(models.Model):
                     api_key=api_key, instance_id=instance_id, ativo=True
                 )
             except cls.DoesNotExist:
-                logger.info(
-                    "Credenciais por instance_id nao encontradas; tentando por phone_number."
-                )
-        # Fallback: tenta por phone_number
-        if not instancia_ou_telefone:
-            logger.warning("Instancia/telefone nao fornecido no webhook.")
-            return None
-        try:
-            return cls.objects.get(
-                api_key=api_key, phone_number=instancia_ou_telefone, ativo=True
-            )
-        except cls.DoesNotExist:
-            logger.warning(
-                f"Acesso invalido: API key/instancia nao encontrada ({instancia_ou_telefone})."
-            )
-            return None
+                logger.info("Credenciais por instance_id nao encontradas.")
 
     def selecionar_proximo_atendente(self) -> Optional["Atendente"]:
         """Seleciona o proximo atendente disponivel por round-robin simples.
@@ -828,7 +813,7 @@ class MovimentoFluxo(models.Model):
     Registra a movimentacao de um atendimento entre as etapas do fluxo.
     Mantem historico completo para auditoria e analise.
     """
-    
+
     id: models.AutoField = models.AutoField(primary_key=True)
     atendimento: models.ForeignKey["Atendimento"] = models.ForeignKey(
         "atendimentos.Atendimento",
@@ -972,6 +957,7 @@ class MovimentoFluxo(models.Model):
         atendimento.save(update_fields=["etapa_atual", "atendente_humano"])
 
         return movimento
+
 
 # Alias de compatibilidade com nomenclatura anterior em testes
 # Mantem AtendenteHumano apontando para o modelo Atendente

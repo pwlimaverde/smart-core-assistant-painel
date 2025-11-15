@@ -1,9 +1,5 @@
-import os
-from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-import requests
-from decouple import AutoConfig
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
@@ -22,166 +18,6 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 
 from .models import ClickupStatus
 from .services.department_provision_service import DepartmentProvisionService
-
-API_BASE: str = "https://api.clickup.com/api/v2"
-
-
-def _get_env_token() -> str:
-    token: str = ""
-    try:
-        project_root: Path = Path(__file__).resolve().parents[2]
-        config = AutoConfig(search_path=str(project_root))
-        token = config("CLICKUP_API_TOKEN", default="")
-        if not token:
-            token = config("CLICKUP_OAUTH_ACCESS_TOKEN", default="")
-        if not token:
-            token = config("CLICKUP_PERSONAL_TOKEN", default="")
-    except Exception:
-        token = os.getenv("CLICKUP_API_TOKEN", "")
-        if not token:
-            token = os.getenv("CLICKUP_OAUTH_ACCESS_TOKEN", "")
-        if not token:
-            token = os.getenv("CLICKUP_PERSONAL_TOKEN", "")
-    return token
-
-
-def _normalize_auth(token: str) -> str:
-    if not token:
-        return ""
-    if token.lower().startswith("bearer "):
-        return token
-    return f"Bearer {token}"
-
-
-def _get_task_details(token: str, task_id: str) -> Dict[str, Any]:
-    headers: Dict[str, str] = {
-        "Authorization": _normalize_auth(token),
-        "Content-Type": "application/json",
-    }
-    resp = requests.get(f"{API_BASE}/task/{task_id}", headers=headers, timeout=30)
-    return resp.json() if 200 <= resp.status_code < 300 else {}
-
-
-def _get_list_members(token: str, list_id: str) -> List[str]:
-    headers: Dict[str, str] = {
-        "Authorization": _normalize_auth(token),
-        "Content-Type": "application/json",
-    }
-    resp = requests.get(
-        f"{API_BASE}/list/{list_id}/member", headers=headers, timeout=30
-    )
-    if not (200 <= resp.status_code < 300):
-        return []
-    data: Dict[str, Any] = {}
-    try:
-        data = resp.json()
-    except Exception:
-        data = {}
-    members: List[str] = []
-    raw = data.get("members", [])
-    for m in raw or []:
-        u = m.get("user") if isinstance(m.get("user"), dict) else m
-        uid = u.get("id") if isinstance(u, dict) else None
-        if isinstance(uid, int):
-            members.append(str(uid))
-        elif isinstance(uid, str):
-            members.append(uid)
-    return members
-
-
-def _put_assignees_add(token: str, task_id: str, assignees: List[str]) -> bool:
-    headers: Dict[str, str] = {
-        "Authorization": _normalize_auth(token),
-        "Content-Type": "application/json",
-    }
-    body: Dict[str, Any] = {"assignees": {"add": assignees}}
-    resp = requests.put(f"{API_BASE}/task/{task_id}", json=body, headers=headers, timeout=30)
-    ok: bool = 200 <= resp.status_code < 300
-    if not ok:
-        logger.warning("Falha ao adicionar assignees: {} - {}", resp.status_code, resp.text)
-    return ok
-
-
-def _put_assignees_remove(token: str, task_id: str, assignees: List[str]) -> bool:
-    headers: Dict[str, str] = {
-        "Authorization": _normalize_auth(token),
-        "Content-Type": "application/json",
-    }
-    body: Dict[str, Any] = {"assignees": {"rem": assignees}}
-    resp = requests.put(f"{API_BASE}/task/{task_id}", json=body, headers=headers, timeout=30)
-    ok: bool = 200 <= resp.status_code < 300
-    if not ok:
-        logger.warning("Falha ao remover assignees: {} - {}", resp.status_code, resp.text)
-    return ok
-
-
-def _put_assignees_replace(token: str, task_id: str, assignees: List[str]) -> bool:
-    headers: Dict[str, str] = {
-        "Authorization": _normalize_auth(token),
-        "Content-Type": "application/json",
-    }
-    body: Dict[str, Any] = {"assignees": assignees}
-    resp = requests.put(f"{API_BASE}/task/{task_id}", json=body, headers=headers, timeout=30)
-    ok: bool = 200 <= resp.status_code < 300
-    if not ok:
-        logger.warning("Falha ao substituir assignees: {} - {}", resp.status_code, resp.text)
-    return ok
-
-
-def _sync_assignees_by_attendant_change(instance: Atendimento, old_id: Optional[int]) -> None:
-    from .models import ClickupMember, ClickupTask
-
-    task = ClickupTask.objects.filter(atendimento_id=instance.id).first()
-    if not task:
-        return
-
-    token: str = _get_env_token()
-    if not token:
-        logger.warning("Token ClickUp não configurado")
-        return
-
-    new_id: Optional[int] = getattr(instance, "atendente_humano_id", None)
-    if old_id == new_id:
-        return
-
-    mode: str
-    if old_id is not None and new_id is not None:
-        mode = "replace"
-    elif new_id is not None:
-        mode = "add"
-    else:
-        mode = "remove"
-
-    target_ids: List[str] = []
-    if mode in {"replace", "add"} and new_id is not None:
-        member = ClickupMember.objects.filter(atendente_id=new_id).first()
-        if not member:
-            logger.warning("ClickupMember ausente para atendente {}", new_id)
-            return
-        target_ids = [str(member.external_id)]
-    elif mode == "remove" and old_id is not None:
-        member = ClickupMember.objects.filter(atendente_id=old_id).first()
-        if not member:
-            logger.warning("ClickupMember ausente para atendente {}", old_id)
-            return
-        target_ids = [str(member.external_id)]
-
-    if mode == "add":
-        _put_assignees_add(token, task.external_id, target_ids)
-    elif mode == "remove":
-        _put_assignees_remove(token, task.external_id, target_ids)
-    else:
-        _put_assignees_replace(token, task.external_id, target_ids)
-
-    details: Dict[str, Any] = _get_task_details(token, task.external_id)
-    applied: List[str] = []
-    for a in details.get("assignees", []) or []:
-        if isinstance(a, dict):
-            uid = a.get("id")
-            applied.append(str(uid))
-    logger.info(
-        "Sync assignees modo={} alvo={} aplicado={}", mode, target_ids, applied
-    )
 
 
 @receiver(post_save, sender=FluxoAtendimento)
@@ -369,10 +205,14 @@ def atendimento_post_save(
         old_id = getattr(instance, "_old_atendente_id", None)
         new_id = getattr(instance, "atendente_humano_id", None)
         if old_id != new_id:
-            try:
-                _sync_assignees_by_attendant_change(instance, old_id)
-            except Exception as exc:
-                logger.warning("Falha ao sincronizar assignees: {}", exc)
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendimento_sync_task_members"
+                ),
+                instance.id,
+                old_id,
+            )
 
         # Atualiza rich content se qualquer campo relevante mudou
         old_etapa_id = getattr(instance, "_old_etapa_id", None)

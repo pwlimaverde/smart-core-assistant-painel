@@ -50,7 +50,7 @@ Princípios:
 
 | Campo (Model)             | CF no ClickUp (nome)         | Tipo CF no ClickUp       | Nível        | Por que é importante |
 |---------------------------|-------------------------------|--------------------------|--------------|----------------------|
-| `departamento`            | `Department`                  | Lista suspensa           | Workspace    | Filtro e agregação cross-list; visível mesmo fora da pasta. |
+| `departamento`            | `Department`                  | Texto                    | Workspace    | Filtro e agregação cross-list; visível mesmo fora da pasta. |
 | `fluxo_atendimento`       | `Flow`                        | Texto                    | List         | Ajuda a identificar o fluxo quando há múltiplos por pasta. |
 | `etapa_atual` → Status    | — (usar Status da List)       | —                        | List         | Alinha com Kanban nativo; evita duplicação de status. |
 | `status` (legado)         | —                             | —                        | —            | Não criar CF; manter compatibilidade interna apenas. |
@@ -58,7 +58,7 @@ Princípios:
 | `data_inicio`             | `Service Start`               | Data                     | Workspace    | Ponto inicial para SLA e métricas operacionais. |
 | `data_fim`                | `Service End`                 | Data                     | Workspace    | Cálculo de tempo total de atendimento. |
 | `data_ultima_mensagem`    | `Last Message At`             | Data                     | Workspace    | Ajuda no ordenamento e triagem por recência. |
-| `prioridade`              | `Priority (Local)`            | Lista suspensa           | List         | Alternativa ao nativo; útil se granularidade difere do padrão. |
+| `prioridade`              | `Priority (Local)`            | Rótulos                  | List         | Alternativa mais flexível ao dropdown; permite múltiplos níveis e cores diferentes. |
 | `atendente_humano`        | `Atendente`                   | Pessoas                  | Workspace    | Destaca o responsável pelo caso como campo dedicado. |
 | `historico_status`        | —                             | —                        | —            | Removido do card (não exibir). |
 | `tags`                    | — (usar `tags` nativo)        | —                        | —            | Tags nativas do ClickUp para categorização. |
@@ -297,9 +297,9 @@ Lists/Spaces conforme o mapeamento acima.
 Campos recomendados para o fluxo de Atendimento (nomes em português).
 
 - Assunto: Texto — nível List
-- Departamento: Lista suspensa — nível Workspace (opções: nomes dos departamentos)
+- Departamento: Texto — nível Workspace (ver seção sobre campos dinâmicos)
 - Etapa: Texto — nível List
-- Prioridade: Lista suspensa — nível List (opções: Baixa, Normal, Alta, Urgente)
+- Prioridade: Rótulos (Labels) — nível List (ver seção sobre campo de prioridade)
 - Canal: Lista suspensa — nível Workspace (opções: WhatsApp, Email, Telefone, Web)
 - Contato: Texto — nível Workspace
 - Telefone: Telefone — nível Workspace
@@ -310,10 +310,280 @@ Campos recomendados para o fluxo de Atendimento (nomes em português).
 - Nome Perfil WhatsApp: Texto — nível Workspace
 - Metadados do Contato: Área de texto — nível Workspace
 - Nome Fantasia: Texto — nível Workspace
-- Ramo de Atividade: Lista suspensa — nível Workspace
+- Ramo de Atividade: Texto — nível Workspace (ver seção sobre campos dinâmicos)
 - Observações: Área de texto — nível Workspace
 - Metadados do Cliente: Área de texto — nível Workspace
 - Atendente: Pessoas — nível Workspace
+
+## Campos Dinâmicos: Alternativas e Implementação
+
+### Análise da API do ClickUp para Campos Dinâmicos
+
+Após análise da documentação da API do ClickUp, identifiquei que:
+
+1. **É possível criar campos dropdown com opções predefinidas** via API usando o parâmetro `type_config` com a propriedade `options`
+2. **Não existe um endpoint específico para atualizar opções de um campo dropdown existente** após sua criação
+
+### Campos Requerendo Tratamento Especial
+
+Alguns campos necessitam de atualização dinâmica das opções:
+
+| Campo | Desafio | Solução Recomendada |
+|-------|----------|----------------------|
+| Departamento | Nomes de departamentos podem ser adicionados/removidos | Usar campo de texto simples ou implementar sincronização periódica |
+| Ramo de Atividade | Novos ramos podem surgir com novos clientes | Usar campo de texto simples ou implementar sincronização periódica |
+
+### Alternativas de Implementação
+
+#### Opção 1: Campo de Texto (Recomendado)
+
+Transformar campos dinâmicos em campos de texto simples:
+
+```python
+# Exemplo de criação via API
+data = {
+    "name": "Departamento",
+    "type": "text"  # Campo de texto em vez de dropdown
+}
+```
+
+Vantagens:
+- Simples de implementar
+- Não requer manutenção adicional
+- Flexível para qualquer valor
+
+Desvantagens:
+- Sem validação de valores predefinidos
+- Possibilidade de erros de digitação
+
+#### Opção 2: Sincronização Periódica
+
+Manter campos dropdown com sincronização regular:
+
+```python
+# Script de sincronização para atualizar opções
+def sincronizar_opcoes_dropdown(workspace_id, field_id, novas_opcoes):
+    # 1. Obter configuração atual do campo
+    campo_atual = obter_campo(workspace_id, field_id)
+    
+    # 2. Recrear o campo com novas opções
+    deletar_campo(workspace_id, field_id)
+    criar_campo_com_opcoes(workspace_id, campo_atual["name"], novas_opcoes)
+```
+
+Vantagens:
+- Mantém validação de valores
+- Interface mais amigável no ClickUp
+
+Desvantagens:
+- Requer implementação complexa
+- Risco de perda de dados durante recriação
+- Necessita agendamento de sincronização
+
+#### Opção 3: Workflow de Gerenciamento Manual
+
+Implementar um processo para gestão manual de opções:
+
+1. Documentar procedimento para adicionar novas opções
+2. Designar responsáveis pela manutenção
+3. Estabelecer frequency de revisão
+
+### Implementação Sugerida
+
+Recomendo a **Opção 1 (Campo de Texto)** para os seguintes campos:
+
+- Departamento (em vez de Lista suspensa)
+- Ramo de Atividade (em vez de Lista suspensa)
+
+Os demais campos com opções estáticas (Canal) podem permanecer como Lista suspensa.
+
+### Implementação Avançada: Sincronização Periódica
+
+Caso haja necessidade crítica de manter campos dropdown com opções dinâmicas, segue um exemplo de implementação mais robusta:
+
+```python
+import requests
+import json
+import logging
+from typing import List, Dict, Any
+
+class ClickUpFieldSync:
+    def __init__(self, api_token: str, workspace_id: str):
+        self.api_token = api_token
+        self.workspace_id = workspace_id
+        self.headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json"
+        }
+        self.base_url = "https://api.clickup.com/api/v2"
+        
+        # Mapeamento de campos dinâmicos
+        self.dynamic_fields = {
+            "Department": "departamento",
+            "Ramo de Atividade": "ramo_atividade"
+        }
+    
+    def get_field_id(self, field_name: str) -> str:
+        """Obtém o ID de um campo pelo nome."""
+        try:
+            response = requests.get(
+                f"{self.base_url}/workspace/{self.workspace_id}/field",
+                headers=self.headers
+            )
+            fields = response.json().get("fields", [])
+            
+            for field in fields:
+                if field["name"] == field_name:
+                    return field["id"]
+            
+            return None
+        except Exception as e:
+            logging.error(f"Erro ao obter campo {field_name}: {str(e)}")
+            return None
+    
+    def get_dynamic_options(self, field_type: str) -> List[str]:
+        """Obtém opções dinâmicas do sistema."""
+        if field_type == "departamento":
+            # Obter departamentos do sistema
+            return self.get_departamentos_sistema()
+        elif field_type == "ramo_atividade":
+            # Obter ramos de atividade do sistema
+            return self.get_ramos_atividade_sistema()
+        else:
+            return []
+    
+    def get_departamentos_sistema(self) -> List[str]:
+        """Implementação para obter departamentos do sistema."""
+        # Conectar ao banco de dados ou API interna
+        # Exemplo mock:
+        return ["Suporte Técnico", "Vendas", "Financeiro", "Marketing", "RH"]
+    
+    def get_ramos_atividade_sistema(self) -> List[str]:
+        """Implementação para obter ramos de atividade do sistema."""
+        # Conectar ao banco de dados ou API interna
+        # Exemplo mock:
+        return ["Tecnologia", "Varejo", "Saúde", "Educação", "Finanças", "Manufatura"]
+    
+    def create_dropdown_field(self, field_name: str, options: List[str]) -> Dict[str, Any]:
+        """Cria um campo dropdown com as opções especificadas."""
+        data = {
+            "name": field_name,
+            "type": "drop_down",
+            "type_config": {
+                "options": [
+                    {"name": option, "orderindex": idx} 
+                    for idx, option in enumerate(options)
+                ]
+            }
+        }
+        
+        try:
+            response = requests.post(
+                f"{self.base_url}/workspace/{self.workspace_id}/field",
+                json=data,
+                headers=self.headers
+            )
+            return response.json()
+        except Exception as e:
+            logging.error(f"Erro ao criar campo {field_name}: {str(e)}")
+            return {}
+    
+    def delete_field(self, field_id: str) -> bool:
+        """Exclui um campo pelo ID."""
+        try:
+            response = requests.delete(
+                f"{self.base_url}/field/{field_id}",
+                headers=self.headers
+            )
+            return response.status_code == 200
+        except Exception as e:
+            logging.error(f"Erro ao excluir campo {field_id}: {str(e)}")
+            return False
+    
+    def sync_field(self, field_name: str) -> bool:
+        """Sincroniza as opções de um campo dropdown."""
+        field_id = self.get_field_id(field_name)
+        field_type = self.dynamic_fields.get(field_name)
+        
+        if not field_type:
+            logging.error(f"Campo não configurado para sincronização: {field_name}")
+            return False
+        
+        # Obter opções atuais e novas
+        new_options = self.get_dynamic_options(field_type)
+        
+        # Se o campo não existe, criar
+        if not field_id:
+            self.create_dropdown_field(field_name, new_options)
+            logging.info(f"Campo {field_name} criado com {len(new_options)} opções")
+            return True
+        
+        # Para uma implementação completa, poderíamos verificar se as opções mudaram
+        # antes de recriar o campo para evitar operações desnecessárias
+        
+        # Excluir e recriar o campo
+        if self.delete_field(field_id):
+            self.create_dropdown_field(field_name, new_options)
+            logging.info(f"Campo {field_name} sincronizado com {len(new_options)} opções")
+            return True
+        
+        return False
+    
+    def sync_all_fields(self) -> Dict[str, bool]:
+        """Sincroniza todos os campos configurados."""
+        results = {}
+        for field_name in self.dynamic_fields.keys():
+            results[field_name] = self.sync_field(field_name)
+        return results
+
+
+# Exemplo de uso em um agendador (como cron job)
+def scheduled_sync():
+    """Função para ser executada periodicamente."""
+    sync = ClickUpFieldSync(
+        api_token="seu_token_aqui",
+        workspace_id="id_do_workspace"
+    )
+    
+    results = sync.sync_all_fields()
+    
+    # Enviar notificação se algum campo falhar
+    if not all(results.values()):
+        logging.error("Falha na sincronização de alguns campos")
+        # Implementar notificação aqui
+
+# Para executar a sincronização manualmente:
+if __name__ == "__main__":
+    scheduled_sync()
+```
+
+### Considerações sobre Implementação de Sincronização
+
+1. **Performance**: A recriação de campos pode afetar temporariamente o acesso aos dados
+2. **Consistência**: Durante a recriação, pode haver um breve período em que o campo fica indisponível
+3. **Backup**: Considere exportar dados dos campos antes da recriação
+4. **Frequência**: Ajuste a frequência de sincronização conforme a dinamicidade dos dados
+5. **Notificações**: Implemente alertas para falhas na sincronização
+
+Esta abordagem é mais complexa, mas oferece a experiência de usuário mais consistente no ClickUp, mantendo a validação de valores em campos dropdown.
+
+### Tabela Comparativa das Abordagens
+
+| Abordagem | Implementação | Manutenção | Experiência do Usuário | Complexidade |
+|------------|---------------|------------|------------------------|--------------|
+| Campo de Texto | Simples | Baixa | Menos estruturada | Baixa |
+| Sincronização Periódica | Complexa | Alta | Estruturada e validada | Alta |
+| Gerenciamento Manual | Média | Média | Estruturada | Média |
+
+### Recomendação Final
+
+Com base na análise, recomendo:
+
+1. **Para implementação inicial**: Use campos de texto para Departamento e Ramo de Atividade
+2. **Para maturação da solução**: Considere implementar sincronização periódica se a validação for crítica
+3. **Para equipes pequenas**: Gerenciamento manual pode ser suficiente
+
+Esta abordagem escalonada permite começar com uma implementação simples e evoluir conforme as necessidades da organização.
 
 Observações:
 
@@ -341,7 +611,7 @@ Observações:
 | cliente.metadados | Metadados do Cliente | Área de texto (texto longo) |
 | cliente.nome_fantasia | Nome Fantasia | Texto |
 | cliente.observacoes | Observações | Área de texto (texto longo) |
-| cliente.ramo_atividade | Ramo de Atividade | Lista suspensa |
+| cliente.ramo_atividade | Ramo de Atividade | Texto |
 | contato.email | Email | E-mail |
 | contato.metadados | Metadados do Contato | Área de texto (texto longo) |
 | contato.nome | Contato | Texto |
@@ -350,10 +620,12 @@ Observações:
 | data_fim | Fim do Atendimento | Data |
 | data_inicio | Início do Atendimento | Data |
 | data_ultima_mensagem | Última Mensagem | Data |
-| departamento | Department | Lista suspensa |
+| departamento | Department | Texto |
 | fluxo_atendimento | Flow | Texto |
-| prioridade | Priority (Local) | Lista suspensa |
+| prioridade | Priority (Local) | Rótulos (Labels) |
 | tags | Tags | Rótulos |
+
+> **Nota**: Campos "Departamento" e "Ramo de Atividade" foram alterados de "Lista suspensa" para "Texto" devido à necessidade de valores dinâmicos. O campo "Prioridade" foi alterado de "Lista suspensa" para "Rótulos" para permitir maior flexibilidade e visualização. Ver seção "Campos Dinâmicos" e "Campo de Prioridade com Rótulos" para mais detalhes.
 
 ## Guia de Criação Manual dos Campos no ClickUp
 
@@ -470,7 +742,7 @@ campo_contato = criar_campo_texto(WORKSPACE_ID, "Contato")
 print(f"Campo criado: {campo_contato}")
 ```
 
-### Exemplo: Criar Campo de Lista Suspensa
+### Exemplo: Criar Campo de Lista Suspensa (para opções estáticas)
 
 ```python
 def criar_campo_lista_suspensa(workspace_id, field_name, options, list_id=None):
@@ -495,10 +767,241 @@ def criar_campo_lista_suspensa(workspace_id, field_name, options, list_id=None):
     response = requests.post(url, json=data, headers=headers)
     return response.json()
 
-# Exemplo de uso
+# Exemplo de uso para opções estáticas
 opcoes_canal = ["WhatsApp", "Email", "Telefone", "Web"]
 campo_canal = criar_campo_lista_suspensa(WORKSPACE_ID, "Canal", opcoes_canal)
 print(f"Campo criado: {campo_canal}")
+```
+
+### Campo de Prioridade com Rótulos
+
+Para o campo de prioridade, recomendo usar Rótulos (Labels) em vez de Lista suspensa, pois oferece:
+
+- **Visual mais intuitivo**: Cada prioridade pode ter uma cor diferente
+- **Múltiplas seleções**: Útil para casos especiais que precisam de múltiplas marcações
+- **Flexibilidade**: Adicionar/remover prioridades é mais simples
+
+```python
+def criar_campo_rotulos_prioridade(workspace_id, list_id=None):
+    """Cria um campo de rótulos para prioridades."""
+    url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
+    
+    if list_id:
+        # Para campos de nível de lista
+        url = f"https://api.clickup.com/api/v2/list/{list_id}/field"
+    
+    # Prioridades com cores correspondentes
+    data = {
+        "name": "Priority (Local)",
+        "type": "labels",
+        "type_config": {
+            "sorting": "manual",
+            "options": [
+                {"name": "Baixa", "color": "#00A0E3", "orderindex": 0},  # Azul
+                {"name": "Normal", "color": "#B7B7B7", "orderindex": 1},  # Cinza
+                {"name": "Alta", "color": "#FFA500", "orderindex": 2},    # Laranja
+                {"name": "Urgente", "color": "#FF3333", "orderindex": 3}    # Vermelho
+            ]
+        }
+    }
+    
+    response = requests.post(url, json=data, headers=headers)
+    return response.json()
+
+# Exemplo de uso
+campo_prioridade = criar_campo_rotulos_prioridade(WORKSPACE_ID)
+print(f"Campo de prioridade criado: {campo_prioridade}")
+```
+
+## Campo de Prioridade com Rótulos: Vantagens e Implementação
+
+### Por Que Usar Rótulos (Labels) para Prioridade?
+
+O campo de prioridade se beneficia especialmente do uso de rótulos (labels) em vez de lista suspensa (dropdown) por várias razões:
+
+1. **Visualização Intuitiva**: Cada nível de prioridade pode ter uma cor distinta, permitindo identificação imediata na interface
+2. **Flexibilidade de Seleção**: Permite marcar múltiplos níveis em situações especiais (ex: "Urgente" + "Baixa" para indicar urgência no contexto de baixo impacto)
+3. **Escalabilidade**: Adicionar novos níveis de prioridade é mais simples e não requer alteração de código
+4. **Filtros Avançados**: Rótulos podem ser combinados em filtros complexos
+
+### Implementação na Prática
+
+#### Cores Recomendadas para Prioridades
+
+| Prioridade | Cor (Hex) | Cor (Nome) | Justificativa |
+|------------|---------------|--------------|----------------|
+| Baixa      | #00A0E3       | Azul Claro   | Indica baixa criticidade |
+| Normal     | #B7B7B7       | Cinza        | Prioridade padrão |
+| Alta       | #FFA500       | Laranja      | Chama atenção sem ser crítico |
+| Urgente    | #FF3333       | Vermelho     | Máxima prioridade |
+
+#### Exemplo de Aplicação
+
+```python
+# Atribuir prioridade alta a uma task
+def atribuir_prioridade(task_id, prioridade):
+    """
+    Atribui uma prioridade a uma task usando o ID do rótulo.
+    """
+    # Mapeamento de prioridades para cores
+    prioridades = {
+        "Baixa": "#00A0E3",
+        "Normal": "#B7B7B7",
+        "Alta": "#FFA500",
+        "Urgente": "#FF3333"
+    }
+    
+    if prioridade not in prioridades:
+        raise ValueError(f"Prioridade inválida: {prioridade}")
+    
+    # Obter o campo de prioridade
+    campo_prioridade = obter_campo_por_nome("Priority (Local)")
+    
+    # Encontrar o ID do rótulo correspondente
+    for opcao in campo_prioridade["type_config"]["options"]:
+        if opcao["name"] == prioridade:
+            label_id = opcao["id"]
+            break
+    
+    # Atribuir o rótulo à task
+    url = f"https://api.clickup.com/api/v2/task/{task_id}/field/{campo_prioridade['id']}"
+    data = {"value": [label_id]}
+    
+    response = requests.post(url, json=data, headers=headers)
+    return response.json()
+
+# Exemplo de uso
+atribuir_prioridade("task_id_exemplo", "Urgente")
+```
+
+#### Filtrando por Prioridade
+
+```python
+# Filtrar tasks por prioridade
+def filtrar_por_prioridade(workspace_id, prioridade):
+    """
+    Filtra tasks por uma prioridade específica.
+    """
+    url = f"https://api.clickup.com/api/v2/team/{workspace_id}/task"
+    
+    # Obter ID do rótulo
+    campo_prioridade = obter_campo_por_nome("Priority (Local)")
+    label_id = None
+    
+    for opcao in campo_prioridade["type_config"]["options"]:
+        if opcao["name"] == prioridade:
+            label_id = opcao["id"]
+            break
+    
+    if not label_id:
+        return []
+    
+    # Parâmetros de filtro
+    params = {
+        "custom_fields": json.dumps([
+            {
+                "field": campo_prioridade["id"],
+                "operator": "CONTAINS",  # Contém o rótulo
+                "value": label_id
+            }
+        ])
+    }
+    
+    response = requests.get(url, params=params, headers=headers)
+    return response.json().get("tasks", [])
+
+# Exemplo de uso
+tasks_urgentes = filtrar_por_prioridade(WORKSPACE_ID, "Urgente")
+```
+
+### Casos de Uso Avançados
+
+#### Prioridades Múltiplas
+
+Para casos especiais onde uma task precisa ter múltiplas marcações:
+
+```python
+# Atribuir múltiplas prioridades
+def atribuir_multiplas_prioridades(task_id, prioridades):
+    campo_prioridade = obter_campo_por_nome("Priority (Local)")
+    
+    # Obter IDs dos rótulos
+    label_ids = []
+    for opcao in campo_prioridade["type_config"]["options"]:
+        if opcao["name"] in prioridades:
+            label_ids.append(opcao["id"])
+    
+    # Atribuir múltiplos rótulos
+    url = f"https://api.clickup.com/api/v2/task/{task_id}/field/{campo_prioridade['id']}"
+    data = {"value": label_ids}
+    
+    response = requests.post(url, json=data, headers=headers)
+    return response.json()
+
+# Exemplo: Marcar como "Urgente" e "Baixa" (urgência com baixo impacto)
+atribuir_multiplas_prioridades("task_id_exemplo", ["Urgente", "Baixa"])
+```
+
+#### Integração com Sistema Interno
+
+Para integrar com seu sistema interno:
+
+```python
+# Sincronizar prioridades do sistema com ClickUp
+def sincronizar_prioridades():
+    """
+    Sincroniza as prioridades definidas no sistema interno
+    com os rótulos no ClickUp.
+    """
+    # Obter prioridades do sistema
+    prioridades_sistema = obter_prioridades_do_sistema()
+    
+    # Converter para formato do ClickUp
+    opcoes_clickup = []
+    for idx, prioridade in enumerate(prioridades_sistema):
+        opcoes_clickup.append({
+            "name": prioridade["nome"],
+            "color": prioridade["cor"],
+            "orderindex": idx
+        })
+    
+    # Atualizar campo no ClickUp
+    campo_prioridade = obter_campo_por_nome("Priority (Local)")
+    
+    if campo_prioridade:
+        # Excluir campo existente
+        deletar_campo(campo_prioridade["id"])
+    
+    # Criar novo campo com opções atualizadas
+    criar_campo_rotulos_prioridade_com_opcoes(WORKSPACE_ID, opcoes_clickup)
+```
+
+Esta abordagem com rótulos oferece uma experiência visual superior e maior flexibilidade para gerenciamento de prioridades no fluxo de atendimento.
+
+### Exemplo: Criar Campo de Área de Texto
+### Exemplo: Criar Campo de Texto (para valores dinâmicos)
+
+```python
+def criar_campo_texto(workspace_id, field_name, list_id=None):
+    """Cria um campo de texto no ClickUp."""
+    url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
+    
+    if list_id:
+        # Para campos de nível de lista
+        url = f"https://api.clickup.com/api/v2/list/{list_id}/field"
+    
+    data = {
+        "name": field_name,
+        "type": "text"
+    }
+    
+    response = requests.post(url, json=data, headers=headers)
+    return response.json()
+
+# Exemplo de uso para campos dinâmicos
+campo_departamento = criar_campo_texto(WORKSPACE_ID, "Departamento")
+campo_ramo_atividade = criar_campo_texto(WORKSPACE_ID, "Ramo de Atividade")
+print(f"Campos criados: {campo_departamento}, {campo_ramo_atividade}")
 ```
 
 ### Exemplo: Criar Campo de Área de Texto

@@ -38,3 +38,38 @@ statuses personalizados em Lists do ClickUp usando a API v2.
 - Estas limitações foram verificadas na prática e podem variar com
   mudanças de API. Revise periodicamente a documentação oficial do
   ClickUp.
+
+## Sincronização de Responsáveis (Assignees)
+
+- Preferir o endpoint dedicado de assignees:
+  - `POST /task/{task_id}/assignee` com corpo
+    `{ "assignee": <user_id>, "unassign": <bool> }`.
+- Em alguns ambientes, pode ocorrer `404 (Cannot POST ...)` ao
+  chamar o endpoint acima, apesar de documentado. Nestes casos,
+  aplicar fallback via:
+  - `PUT /task/{task_id}` com corpo `{ "assignees": [<user_id>, ...] }`,
+    que substitui a lista inteira de responsáveis.
+- Tipagem: para `PUT`, alguns ambientes exigem IDs inteiros (não strings).
+  Utilize sempre `user_id` como inteiro quando possível.
+- Requisitos: o usuário deve ser membro da List onde a task reside.
+  Membro apenas do Workspace pode não ser suficiente para receber
+  atribuição.
+- Boas práticas no projeto:
+  - Após aplicar a alteração, consultar `GET /task/{task_id}` e
+    comparar os IDs de `assignees` com o alvo desejado.
+  - Padronizar um único `user_id`/e-mail por atendente nas automações
+    para evitar ambiguidade de mapeamento.
+
+### Comportamento implementado
+
+- O adapter tenta primeiro `POST /task/{task_id}/assignee` para
+  adicionar/remover individualmente.
+- Se ocorrer `404`, aplica fallback único com `PUT /task/{task_id}`
+  definindo a lista final.
+- O método só é considerado bem-sucedido quando o `GET /task/{task_id}`
+  retorna a lista aplicada igual ao alvo.
+
+### Referência
+
+- Endpoint de assignee (requer cabeçalho `Authorization`):
+  - https://api.clickup.com/api/v2/task/86ad86g4a/assignee

@@ -215,11 +215,20 @@ class TicketSyncService:
 
             # Remoção de assignee quando não há atendente
             if atual_id is None:
-                self.udservice.set_task_assignees(task.external_id, [])
-                logger.info(
-                    "Removidos assignees da task {} (sem atendente)",
-                    task.external_id,
+                # Comentário (PT-BR): remove todos os responsáveis
+                ok_remove: bool = self.udservice.set_task_assignees(
+                    task.external_id, []
                 )
+                if ok_remove:
+                    logger.info(
+                        "Removidos assignees da task {} (sem atendente)",
+                        task.external_id,
+                    )
+                else:
+                    logger.warning(
+                        "Falha ao remover assignees na task {}",
+                        task.external_id,
+                    )
                 return
 
             member: Optional[ClickupMember] = (
@@ -251,14 +260,21 @@ class TicketSyncService:
                 )
                 return
 
-            self.udservice.set_task_assignees(
+            ok_apply: bool = self.udservice.set_task_assignees(
                 task.external_id, [str(member.external_id)]
             )
-            logger.info(
-                "Assignees sincronizados para task {} -> [{}]",
-                task.external_id,
-                str(member.external_id),
-            )
+            if ok_apply:
+                logger.info(
+                    "Assignees sincronizados para task {} -> [{}]",
+                    task.external_id,
+                    str(member.external_id),
+                )
+            else:
+                logger.warning(
+                    "Falha ao aplicar assignees na task {} -> [{}]",
+                    task.external_id,
+                    str(member.external_id),
+                )
         except Exception as exc:
             logger.warning(
                 "Falha ao sincronizar assignees na task {}: {}",

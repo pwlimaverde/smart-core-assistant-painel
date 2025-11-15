@@ -590,25 +590,156 @@ class ClicupUnifiedDataService(UnifiedDataService):
     def set_task_assignees(self, task_id: str, assignee_ids: List[str]) -> bool:
         """Define a lista de responsáveis (assignees) de uma Task.
 
-        Comentário (PT-BR): usa `PUT /task/{task_id}` com corpo contendo
-        `assignees: [<id>, ...]`. Substitui a lista atual de responsáveis
-        pela lista informada.
+        Comentário (PT-BR): Tenta usar o endpoint oficial
+        `POST /task/{task_id}/assignee` (add/remove individual). Em
+        ambientes onde esse endpoint retorna 404, aplica fallback via
+        `PUT /task/{task_id}` com `assignees: [...]`.
         """
         try:
-            self._request("PUT", f"/task/{task_id}", json={"assignees": assignee_ids})
-            self._log(
-                "assignees atualizados: task={task} ids={ids}",
-                task=task_id,
-                ids=assignee_ids,
-            )
-            return True
+            # Consulta assignees atuais
+            details: Dict[str, Any] = self.get_task_details(task_id)
+            current: List[str] = []
+            for a in details.get("assignees", []) or []:
+                if isinstance(a, dict):
+                    current.append(str(a.get("id", "")))
+
+            # Tenta identificar List da task para diagnóstico de membresia
+            list_id: Optional[str] = None
+            try:
+                lst = details.get("list")
+                if isinstance(lst, dict):
+                    lid = lst.get("id")
+                    if lid is not None:
+                        list_id = str(lid)
+            except Exception:
+                list_id = None
+
+            target: List[str] = [str(i) for i in assignee_ids]
+
+            # Calcula diferenças
+            to_add = [x for x in target if x and x not in current]
+            to_remove = [x for x in current if x and x not in target]
+
+            post_supported: bool = True
+            # Aplica adições/remover via POST /assignee (se suportado)
+            if to_add or to_remove:
+                for aid in to_add:
+                    try:
+                        self._request(
+                            "POST",
+                            f"/task/{task_id}/assignee",
+                            json={
+                                "assignee": int(aid) if aid.isdigit() else aid,
+                                "unassign": False,
+                            },
+                        )
+                    except Exception as exc:
+                        self._log(
+                            "falha ao adicionar assignee: task={task} id={id} err={err}",
+                            task=task_id,
+                            id=aid,
+                            err=str(exc),
+                        )
+                        post_supported = False
+                        break
+
+                if post_supported:
+                    for rid in to_remove:
+                        try:
+                            self._request(
+                                "POST",
+                                f"/task/{task_id}/assignee",
+                                json={
+                                    "assignee": int(rid) if rid.isdigit() else rid,
+                                    "unassign": True,
+                                },
+                            )
+                        except Exception as exc:
+                            self._log(
+                                "falha ao remover assignee: task={task} id={id} err={err}",
+                                task=task_id,
+                                id=rid,
+                                err=str(exc),
+                            )
+                            post_supported = False
+
+            # Fallback: PUT /task/{task_id} com lista completa
+            if not post_supported:
+                try:
+                    # Converter IDs para inteiros quando possível
+                    target_ints: List[Any] = [
+                        int(x) if isinstance(x, str) and x.isdigit() else x
+                        for x in target
+                    ]
+                    self._request(
+                        "PUT",
+                        f"/task/{task_id}",
+                        json={"assignees": target_ints},
+                    )
+                    self._log(
+                        "fallback PUT aplicado para assignees: task={task} alvo={alvo}",
+                        task=task_id,
+                        alvo=target_ints,
+                    )
+                except Exception as exc:
+                    self._log(
+                        "falha no fallback PUT assignees: task={task} err={err}",
+                        task=task_id,
+                        err=str(exc),
+                    )
+
+            # Verificação pós-update
+            try:
+                check: Dict[str, Any] = self.get_task_details(task_id)
+                applied: List[str] = []
+                for a in check.get("assignees", []) or []:
+                    if isinstance(a, dict):
+                        applied.append(str(a.get("id", "")))
+                self._log(
+                    "assignees atualizados: task={task} alvo={alvo} atual={cur}",
+                    task=task_id,
+                    alvo=target,
+                    cur=applied,
+                )
+                # Diagnóstico: loga membros da List quando disponível
+                if list_id:
+                    try:
+                        list_members = self.list_list_members(list_id)
+                        member_ids = []
+                        for m in list_members:
+                            u = m.get("user") if isinstance(m.get("user"), dict) else m
+                            member_ids.append(str(u.get("id", "")))
+                        self._log(
+                            "list membros: list={list} users={users}",
+                            list=list_id,
+                            users=member_ids,
+                        )
+                    except Exception:
+                        pass
+                # Considera sucesso apenas quando aplicado == alvo
+                return sorted(applied) == sorted(target)
+            except Exception as exc:
+                self._log(
+                    "falha na verificação de assignees: task={task} err={err}",
+                    task=task_id,
+                    err=str(exc),
+                )
+            return False
         except Exception as exc:
             self._log(
-                "falha ao atualizar assignees: task={task} err={err}",
+                "falha geral ao atualizar assignees: task={task} err={err}",
                 task=task_id,
                 err=str(exc),
             )
             return False
+
+    def get_task_details(self, task_id: str) -> Dict[str, Any]:
+        """Retorna detalhes da Task (inclui `assignees`).
+
+        Comentário (PT-BR): usa `GET /task/{task_id}` para inspecionar
+        a aplicação de updates e coletar dados de diagnóstico.
+        """
+        return self._request("GET", f"/task/{task_id}")
 
     def add_relation_property(
         self, data_source_id: str, property_name: str, target_id: str

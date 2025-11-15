@@ -1,23 +1,187 @@
-from typing import Any
+import os
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
+import requests
+from decouple import AutoConfig
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from loguru import logger
 from django_q.tasks import async_task
+from loguru import logger
 
-from smart_core_assistant_painel.app.ui.operacional.models import (
-    FluxoAtendimento,
-    EtapaFluxo,
-    Departamento,
-    Atendente,
-)
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
 )
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Atendente,
+    Departamento,
+    EtapaFluxo,
+    FluxoAtendimento,
+)
 
-from .services.department_provision_service import DepartmentProvisionService
 from .models import ClickupStatus
+from .services.department_provision_service import DepartmentProvisionService
+
+API_BASE: str = "https://api.clickup.com/api/v2"
+
+
+def _get_env_token() -> str:
+    token: str = ""
+    try:
+        project_root: Path = Path(__file__).resolve().parents[2]
+        config = AutoConfig(search_path=str(project_root))
+        token = config("CLICKUP_API_TOKEN", default="")
+        if not token:
+            token = config("CLICKUP_OAUTH_ACCESS_TOKEN", default="")
+        if not token:
+            token = config("CLICKUP_PERSONAL_TOKEN", default="")
+    except Exception:
+        token = os.getenv("CLICKUP_API_TOKEN", "")
+        if not token:
+            token = os.getenv("CLICKUP_OAUTH_ACCESS_TOKEN", "")
+        if not token:
+            token = os.getenv("CLICKUP_PERSONAL_TOKEN", "")
+    return token
+
+
+def _normalize_auth(token: str) -> str:
+    if not token:
+        return ""
+    if token.lower().startswith("bearer "):
+        return token
+    return f"Bearer {token}"
+
+
+def _get_task_details(token: str, task_id: str) -> Dict[str, Any]:
+    headers: Dict[str, str] = {
+        "Authorization": _normalize_auth(token),
+        "Content-Type": "application/json",
+    }
+    resp = requests.get(f"{API_BASE}/task/{task_id}", headers=headers, timeout=30)
+    return resp.json() if 200 <= resp.status_code < 300 else {}
+
+
+def _get_list_members(token: str, list_id: str) -> List[str]:
+    headers: Dict[str, str] = {
+        "Authorization": _normalize_auth(token),
+        "Content-Type": "application/json",
+    }
+    resp = requests.get(
+        f"{API_BASE}/list/{list_id}/member", headers=headers, timeout=30
+    )
+    if not (200 <= resp.status_code < 300):
+        return []
+    data: Dict[str, Any] = {}
+    try:
+        data = resp.json()
+    except Exception:
+        data = {}
+    members: List[str] = []
+    raw = data.get("members", [])
+    for m in raw or []:
+        u = m.get("user") if isinstance(m.get("user"), dict) else m
+        uid = u.get("id") if isinstance(u, dict) else None
+        if isinstance(uid, int):
+            members.append(str(uid))
+        elif isinstance(uid, str):
+            members.append(uid)
+    return members
+
+
+def _put_assignees_add(token: str, task_id: str, assignees: List[str]) -> bool:
+    headers: Dict[str, str] = {
+        "Authorization": _normalize_auth(token),
+        "Content-Type": "application/json",
+    }
+    body: Dict[str, Any] = {"assignees": {"add": assignees}}
+    resp = requests.put(f"{API_BASE}/task/{task_id}", json=body, headers=headers, timeout=30)
+    ok: bool = 200 <= resp.status_code < 300
+    if not ok:
+        logger.warning("Falha ao adicionar assignees: {} - {}", resp.status_code, resp.text)
+    return ok
+
+
+def _put_assignees_remove(token: str, task_id: str, assignees: List[str]) -> bool:
+    headers: Dict[str, str] = {
+        "Authorization": _normalize_auth(token),
+        "Content-Type": "application/json",
+    }
+    body: Dict[str, Any] = {"assignees": {"rem": assignees}}
+    resp = requests.put(f"{API_BASE}/task/{task_id}", json=body, headers=headers, timeout=30)
+    ok: bool = 200 <= resp.status_code < 300
+    if not ok:
+        logger.warning("Falha ao remover assignees: {} - {}", resp.status_code, resp.text)
+    return ok
+
+
+def _put_assignees_replace(token: str, task_id: str, assignees: List[str]) -> bool:
+    headers: Dict[str, str] = {
+        "Authorization": _normalize_auth(token),
+        "Content-Type": "application/json",
+    }
+    body: Dict[str, Any] = {"assignees": assignees}
+    resp = requests.put(f"{API_BASE}/task/{task_id}", json=body, headers=headers, timeout=30)
+    ok: bool = 200 <= resp.status_code < 300
+    if not ok:
+        logger.warning("Falha ao substituir assignees: {} - {}", resp.status_code, resp.text)
+    return ok
+
+
+def _sync_assignees_by_attendant_change(instance: Atendimento, old_id: Optional[int]) -> None:
+    from .models import ClickupMember, ClickupTask
+
+    task = ClickupTask.objects.filter(atendimento_id=instance.id).first()
+    if not task:
+        return
+
+    token: str = _get_env_token()
+    if not token:
+        logger.warning("Token ClickUp não configurado")
+        return
+
+    new_id: Optional[int] = getattr(instance, "atendente_humano_id", None)
+    if old_id == new_id:
+        return
+
+    mode: str
+    if old_id is not None and new_id is not None:
+        mode = "replace"
+    elif new_id is not None:
+        mode = "add"
+    else:
+        mode = "remove"
+
+    target_ids: List[str] = []
+    if mode in {"replace", "add"} and new_id is not None:
+        member = ClickupMember.objects.filter(atendente_id=new_id).first()
+        if not member:
+            logger.warning("ClickupMember ausente para atendente {}", new_id)
+            return
+        target_ids = [str(member.external_id)]
+    elif mode == "remove" and old_id is not None:
+        member = ClickupMember.objects.filter(atendente_id=old_id).first()
+        if not member:
+            logger.warning("ClickupMember ausente para atendente {}", old_id)
+            return
+        target_ids = [str(member.external_id)]
+
+    if mode == "add":
+        _put_assignees_add(token, task.external_id, target_ids)
+    elif mode == "remove":
+        _put_assignees_remove(token, task.external_id, target_ids)
+    else:
+        _put_assignees_replace(token, task.external_id, target_ids)
+
+    details: Dict[str, Any] = _get_task_details(token, task.external_id)
+    applied: List[str] = []
+    for a in details.get("assignees", []) or []:
+        if isinstance(a, dict):
+            uid = a.get("id")
+            applied.append(str(uid))
+    logger.info(
+        "Sync assignees modo={} alvo={} aplicado={}", mode, target_ids, applied
+    )
 
 
 @receiver(post_save, sender=FluxoAtendimento)
@@ -111,17 +275,31 @@ def atendimento_capture_old_fields(
                     prev, "atendente_humano_id", None
                 )  # type: ignore[attr-defined]
                 instance._old_etapa_id = getattr(prev, "etapa_atual_id", None)  # type: ignore[attr-defined]
-                instance._old_departamento_id = getattr(prev, "departamento_id", None)  # type: ignore[attr-defined]
+                instance._old_departamento_id = getattr(
+                    prev, "departamento_id", None
+                )  # type: ignore[attr-defined]
                 instance._old_assunto = getattr(prev, "assunto", None)  # type: ignore[attr-defined]
                 instance._old_prioridade = getattr(prev, "prioridade", None)  # type: ignore[attr-defined]
                 instance._old_canal = getattr(prev, "canal", None)  # type: ignore[attr-defined]
+                # Capturar ID da tarefa do ClickUp para sincronização de prioridade
+                instance._old_clickup_task_id = getattr(
+                    prev, "clickup_task_id", None
+                )  # type: ignore[attr-defined]
                 instance._old_data_inicio = getattr(prev, "data_inicio", None)  # type: ignore[attr-defined]
                 instance._old_data_fim = getattr(prev, "data_fim", None)  # type: ignore[attr-defined]
-                instance._old_data_primeira_resposta = getattr(prev, "data_primeira_resposta", None)  # type: ignore[attr-defined]
-                instance._old_data_ultima_mensagem = getattr(prev, "data_ultima_mensagem", None)  # type: ignore[attr-defined]
+                instance._old_data_primeira_resposta = getattr(
+                    prev, "data_primeira_resposta", None
+                )  # type: ignore[attr-defined]
+                instance._old_data_ultima_mensagem = getattr(
+                    prev, "data_ultima_mensagem", None
+                )  # type: ignore[attr-defined]
                 instance._old_avaliacao = getattr(prev, "avaliacao", None)  # type: ignore[attr-defined]
-                instance._old_fluxo_id = getattr(prev, "fluxo_atendimento_id", None)  # type: ignore[attr-defined]
-                instance._old_contexto_conversa = getattr(prev, "contexto_conversa", None)  # type: ignore[attr-defined]
+                instance._old_fluxo_id = getattr(
+                    prev, "fluxo_atendimento_id", None
+                )  # type: ignore[attr-defined]
+                instance._old_contexto_conversa = getattr(
+                    prev, "contexto_conversa", None
+                )  # type: ignore[attr-defined]
             else:
                 instance._old_atendente_id = None  # type: ignore[attr-defined]
                 instance._old_etapa_id = None  # type: ignore[attr-defined]
@@ -129,6 +307,7 @@ def atendimento_capture_old_fields(
                 instance._old_assunto = None  # type: ignore[attr-defined]
                 instance._old_prioridade = None  # type: ignore[attr-defined]
                 instance._old_canal = None  # type: ignore[attr-defined]
+                instance._old_clickup_task_id = None  # type: ignore[attr-defined]
                 instance._old_data_inicio = None  # type: ignore[attr-defined]
                 instance._old_data_fim = None  # type: ignore[attr-defined]
                 instance._old_data_primeira_resposta = None  # type: ignore[attr-defined]
@@ -140,12 +319,42 @@ def atendimento_capture_old_fields(
         # Comentário: falhas de captura não devem bloquear o fluxo
         pass
 
+@receiver(pre_save, sender=Atendente)
+def atendente_capture_old_fields(
+    sender: Any, instance: Atendente, **kwargs: Any
+) -> None:
+    """Captura valores anteriores antes de salvar o Atendente.
+
+    Comentário (PT-BR): guardamos `email` e `fluxo_id` para decidir se
+    precisamos re-sincronizar membro e atualizar assignees de Tasks.
+    """
+    try:
+        if getattr(instance, "pk", None):
+            prev = Atendente.objects.filter(pk=instance.pk).first()
+            if prev is not None:
+                instance._old_email = getattr(prev, "email", None)  # type: ignore[attr-defined]
+                instance._old_fluxo_id = getattr(prev, "fluxo_id", None)  # type: ignore[attr-defined]
+            else:
+                instance._old_email = None  # type: ignore[attr-defined]
+                instance._old_fluxo_id = None  # type: ignore[attr-defined]
+    except Exception:
+        # Comentário: falhas de captura não devem bloquear o fluxo
+        pass
+
 
 @receiver(post_save, sender=Atendimento)
 def atendimento_post_save(
     sender: Any, instance: Atendimento, created: bool, **kwargs: Any
 ) -> None:
-    """Sincroniza Task ClickUp para Atendimento (assíncrono)."""
+    """Sincroniza Task ClickUp para Atendimento (assíncrono).
+
+    Comentário (PT-BR):
+    - Na criação, garante a Task e, se já houver atendente, reflete
+      imediatamente os responsáveis (assignees) no ClickUp.
+    - Na atualização, só sincroniza assignees quando o atendente foi
+      alterado (atribuição ou desatribuição), evitando chamadas
+      desnecessárias à API.
+    """
     try:
         if created:
             async_task(
@@ -157,16 +366,13 @@ def atendimento_post_save(
             )
             return
 
-        # Atualiza membros e conteúdo rico do card
         old_id = getattr(instance, "_old_atendente_id", None)
-        async_task(
-            (
-                "smart_core_assistant_painel.app.clickup_sync.tasks"
-                ".task_atendimento_sync_task_members"
-            ),
-            instance.id,
-            old_id,
-        )
+        new_id = getattr(instance, "atendente_humano_id", None)
+        if old_id != new_id:
+            try:
+                _sync_assignees_by_attendant_change(instance, old_id)
+            except Exception as exc:
+                logger.warning("Falha ao sincronizar assignees: {}", exc)
 
         # Atualiza rich content se qualquer campo relevante mudou
         old_etapa_id = getattr(instance, "_old_etapa_id", None)
@@ -174,6 +380,7 @@ def atendimento_post_save(
         old_assunto = getattr(instance, "_old_assunto", None)
         old_prioridade = getattr(instance, "_old_prioridade", None)
         old_canal = getattr(instance, "_old_canal", None)
+        old_clickup_task_id = getattr(instance, "_old_clickup_task_id", None)
         old_data_inicio = getattr(instance, "_old_data_inicio", None)
         old_data_fim = getattr(instance, "_old_data_fim", None)
         old_data_primeira_resposta = getattr(
@@ -202,10 +409,11 @@ def atendimento_post_save(
             or old_data_ultima_mensagem
             != getattr(instance, "data_ultima_mensagem", None)
             or old_avaliacao != getattr(instance, "avaliacao", None)
-            or old_fluxo_id
-            != getattr(instance, "fluxo_atendimento_id", None)
+            or old_fluxo_id != getattr(instance, "fluxo_atendimento_id", None)
             or old_contexto_conversa
             != getattr(instance, "contexto_conversa", None)
+            or old_clickup_task_id
+            != getattr(instance, "clickup_task_id", None)
         )
 
         if changed:
@@ -224,17 +432,41 @@ def atendimento_post_save(
 def atendente_created_invite_clickup(
     sender: Any, instance: Atendente, created: bool, **kwargs: Any
 ) -> None:
-    """Sincroniza membro ClickUp por e-mail ao criar Atendente (assíncrono)."""
-    if not created:
-        return
+    """Sincroniza membro ClickUp por e-mail ao criar/atualizar Atendente.
+
+    Comentário (PT-BR):
+    - Ao criar: agenda sincronização por e-mail para mapear `ClickupMember`.
+    - Ao atualizar: quando `email` ou `fluxo` mudarem, re-sincroniza o
+      vínculo do membro e atualiza assignees de todos os Atendimentos
+      que apontam para este atendente.
+    """
     try:
-        async_task(
-            (
-                "smart_core_assistant_painel.app.clickup_sync.tasks"
-                ".task_atendente_sync_member_by_email"
-            ),
-            instance.id,
+        if created:
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendente_sync_member_by_email"
+                ),
+                instance.id,
+            )
+            return
+
+        # Atualização: detectar mudanças relevantes
+        old_email = getattr(instance, "_old_email", None)
+        old_fluxo_id = getattr(instance, "_old_fluxo_id", None)
+        changed = (
+            old_email != getattr(instance, "email", None)
+            or old_fluxo_id != getattr(instance, "fluxo_id", None)
         )
+
+        if changed:
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendente_sync_member_by_email"
+                ),
+                instance.id,
+            )
     except Exception as exc:
         logger.warning("Falha ao sincronizar atendente por e-mail: {}", exc)
 
@@ -314,6 +546,43 @@ def departamento_post_save(
             str(exc),
         )
     return None
+
+
+@receiver(post_save, sender=Atendimento)
+def prioridade_change_sync_clickup(
+    sender: Any, instance: Atendimento, created: bool, **kwargs: Any
+) -> None:
+    """Sincroniza prioridade com rótulos no ClickUp quando alterada.
+
+    Comentário: Este signal específico para prioridade garante que mudanças
+    no campo sejam refletidas imediatamente nos rótulos da task no ClickUp.
+    """
+    if created:
+        return None
+
+    try:
+        # Verificar se a prioridade foi alterada
+        old_prioridade = getattr(instance, "_old_prioridade", None)
+        new_prioridade = getattr(instance, "prioridade", None)
+
+        if old_prioridade != new_prioridade:
+            # Disparar tarefa assíncrona para atualizar rótulos
+            async_task(
+                (
+                    "smart_core_assistant_painel.app.clickup_sync.tasks"
+                    ".task_atendimento_sync_priority_labels"
+                ),
+                instance.id,
+                old_prioridade,
+                new_prioridade,
+            )
+            logger.info(
+                "Sincronização de prioridade enfileirada: {} -> {}",
+                old_prioridade,
+                new_prioridade,
+            )
+    except Exception as exc:
+        logger.warning("Falha ao sincronizar prioridade com rótulos: {}", exc)
 
 
 @receiver(post_save, sender=Mensagem)

@@ -83,6 +83,12 @@ def webhook(request: HttpRequest) -> JsonResponse:
         evo_contact.save(update_fields=["contact"])
 
     if evo_contact.contact_id:
+        phone_env = (envelope.get("contact") or {}).get("phone")
+        if phone_env:
+            contato = evo_contact.contact
+            if contato and not getattr(contato, "telefone", None):
+                contato.telefone = str(phone_env)
+                contato.save(update_fields=["telefone"])
         logger.info(
             f"Contact %s scheduled to response {evo_contact.contact_id}-{envelope}"
         )

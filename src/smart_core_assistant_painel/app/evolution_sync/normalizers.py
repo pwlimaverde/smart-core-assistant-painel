@@ -29,11 +29,11 @@ def normalize_evolution_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
     else:
         text = ""
 
-    phone: str = (
-        remote_jid.split("@")[0]
-        if remote_jid and (addressing_mode == "pn" or addressing_mode is None)
-        else ""
-    )
+    phone: str = ""
+    if remote_jid_alt and "@s.whatsapp.net" in remote_jid_alt:
+        phone = remote_jid_alt.split("@")[0]
+    elif remote_jid and (addressing_mode == "pn" or "@s.whatsapp.net" in remote_jid):
+        phone = remote_jid.split("@")[0]
 
     envelope: Dict[str, Any] = {
         "source": "EvolutionAPI",

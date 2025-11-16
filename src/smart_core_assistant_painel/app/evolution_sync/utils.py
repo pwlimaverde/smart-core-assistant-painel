@@ -22,7 +22,8 @@ def clear_buffer_contact(contact_id: int) -> None:
     cache.delete(timer_key)
 
 
-def sched_response_contact(contact_id: int) -> None:
+def sched_response_contact(params: Dict[str, Any]) -> None:
+    contact_id = int(params.get("contact_id"))
     timer_key = f"evo_timer_{contact_id}"
     if cache.get(timer_key):
         return
@@ -35,7 +36,7 @@ def sched_response_contact(contact_id: int) -> None:
         func=(
             "smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact"
         ),
-        args=str(contact_id),
+        args=json.dumps(params),
         schedule_type=Schedule.ONCE,
         next_run=next_run,
     )

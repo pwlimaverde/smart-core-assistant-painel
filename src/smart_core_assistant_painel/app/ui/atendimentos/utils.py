@@ -1,6 +1,7 @@
 """Funções utilitárias para o aplicativo Atendimentos."""
 
 import json
+from dataclasses import dataclass
 from typing import Any, Optional
 
 from django.core.cache import cache
@@ -12,10 +13,10 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
+    AppInstance,
     Departamento,
     FluxoAtendimento,
     TipoEtapa,
-    AppInstance,
 )
 from smart_core_assistant_painel.app.ui.treinamento.models import (
     Documento,
@@ -33,7 +34,6 @@ from .models import (
     Mensagem,
     TipoRemetente,
     processar_mensagem_por_contato,
-    processar_mensagem_whatsapp,
 )
 
 
@@ -428,51 +428,50 @@ def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
     )
 
 
-def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
+@dataclass
+class ProcessingParams:
+    contact_id: int
+    api_key: Optional[str]
+    message: dict[str, Any]
+
+
+def _send_message_response_by_contact(params: ProcessingParams) -> None:
     try:
-        api_key: Optional[str] = None
-        if isinstance(arg, int):
-            contact_id = arg
-        elif isinstance(arg, str):
-            parsed: Any
-            try:
-                parsed = json.loads(arg)
-            except Exception:
-                parsed = arg
-            if isinstance(parsed, dict):
-                contact_id = int(parsed.get("contact_id"))
-                api_key = parsed.get("api_key")
-            else:
-                contact_id = int(parsed)
-        else:
-            contact_id = int(arg.get("contact_id"))
-            api_key = arg.get("api_key")
+        contact_id = int(params.contact_id)
+        api_key: Optional[str] = params.api_key
         cache_key = f"evo_buffer_{contact_id}"
         env_list: list[dict[str, Any]] = cache.get(cache_key, [])
         if not env_list:
             logger.warning(f"Buffer vazio para contato {contact_id}")
             return
         last_env = env_list[-1]
-        texts = []
+        texts: list[str] = []
         metadados: dict[str, Any] = {}
         for env in env_list:
-            msg = env.get("message", {})
-            t = str(msg.get("text", "")).strip()
+            msg_env = env.get("message", {})
+            t = str(msg_env.get("text", "")).strip()
             if t:
                 texts.append(t)
-            md = msg.get("metadata") or {}
-            if isinstance(md, dict):
-                metadados.update(md)
+            md_env = msg_env.get("metadata") or {}
+            if isinstance(md_env, dict):
+                metadados.update(md_env)
         conteudo = "\n".join(texts)
-        msg_last = last_env.get("message", {})
-        message_type = str(msg_last.get("type", "extendedTextMessage") or "extendedTextMessage")
-        message_id = str(msg_last.get("id", "") or "")
         profile = last_env.get("profile", {})
         nome_perfil = profile.get("push_name")
 
+        msg = params.message or {}
+        message_type = str(msg.get("type") or "extendedTextMessage")
+        message_id = str(msg.get("id") or "")
+        if msg.get("text"):
+            conteudo = str(msg.get("text"))
+        if isinstance(msg.get("metadata"), dict):
+            metadados.update(msg.get("metadata") or {})
+
         # Comentário (PT-BR): utiliza api_key do agendamento ou do envelope
         if not api_key:
-            api_key = str(last_env.get("apikey")) if last_env.get("apikey") else None
+            api_key = (
+                str(last_env.get("apikey")) if last_env.get("apikey") else None
+            )
 
         mensagem_id = processar_mensagem_por_contato(
             contato_id=contact_id,
@@ -520,6 +519,7 @@ def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
                             from smart_core_assistant_painel.app.ui.operacional.models import (
                                 FluxoAtendimento,
                             )
+
                             fluxo = (
                                 FluxoAtendimento.objects.filter(
                                     departamento_id=atendimento_obj.departamento_id,
@@ -564,7 +564,8 @@ def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
                                 "atendente_humano",
                             ]
                         )
-            pode_responder = False
+            # pode_responder = False
+            pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
             if pode_responder:
                 prompt_lines: list[str] = [
                     (
@@ -587,34 +588,49 @@ def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
                     qc = QueryCompose.objects.filter(tag=tag).first()
                     if qc:
                         has_known_intent = True
-                        behavior: str = " ".join(str(qc.comportamento).split()).strip()
+                        behavior: str = " ".join(
+                            str(qc.comportamento).split()
+                        ).strip()
                         prompt_lines.append(f"{index}. [{tag}] {behavior}")
                     else:
                         intent_vector: list[float] = (
-                            FeaturesCompose.generate_embeddings(f"{tag}: {intent[tag]}")
+                            FeaturesCompose.generate_embeddings(
+                                f"{tag}: {intent[tag]}"
+                            )
                         )
                         comportamento: str | None = (
-                            QueryCompose.buscar_comportamento_similar(intent_vector)
+                            QueryCompose.buscar_comportamento_similar(
+                                intent_vector
+                            )
                         )
                         if comportamento:
-                            prompt_lines.append(f"{index}. [{tag}] {comportamento}")
+                            prompt_lines.append(
+                                f"{index}. [{tag}] {comportamento}"
+                            )
                 prompt_lines.append(
                     (
                         "Se houver múltiplas intenções, priorize a ordem "
                         "listada e mantenha a resposta concisa."
                     )
                 )
-                historico_atendimento = atendimento_obj.carregar_historico_mensagens(
-                    excluir_mensagem_id=mensagem_id
+                historico_atendimento = (
+                    atendimento_obj.carregar_historico_mensagens(
+                        excluir_mensagem_id=mensagem_id
+                    )
                 )
                 prompt_intent: str = "\n".join(prompt_lines)
-                vector_conteudo = FeaturesCompose.generate_embeddings(mensagem.conteudo)
+                vector_conteudo = FeaturesCompose.generate_embeddings(
+                    mensagem.conteudo
+                )
                 dados_treinamento = Documento.buscar_documentos_similares(
                     query_vec=vector_conteudo
                 )
-                fluxos_disponiveis: dict[str, str] = _gerar_dict_fluxos_disponiveis()
+                fluxos_disponiveis: dict[str, str] = (
+                    _gerar_dict_fluxos_disponiveis()
+                )
                 should_call_ai: bool = has_known_intent or (
-                    isinstance(dados_treinamento, list) and len(dados_treinamento) > 0
+                    isinstance(dados_treinamento, list)
+                    and len(dados_treinamento) > 0
                 )
                 if should_call_ai:
                     result: AMTuple = FeaturesCompose.analise_mensage(
@@ -627,6 +643,7 @@ def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
                     from smart_core_assistant_painel.app.evolution_sync.services import (
                         send_message_by_contact_id,
                     )
+
                     send_message_by_contact_id(contact_id, result.resposta_bot)
                     mensagem.registrar_resposta_bot(
                         resposta=result.resposta_bot,
@@ -645,6 +662,7 @@ def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
                     from smart_core_assistant_painel.app.evolution_sync.services import (
                         send_message_by_contact_id,
                     )
+
                     send_message_by_contact_id(contact_id, texto_fallback)
                     mensagem.registrar_resposta_bot(
                         resposta=texto_fallback,
@@ -656,14 +674,61 @@ def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
                     "DEBUG: Bot não pode responder - pulando processamento de intents"
                 )
         except Mensagem.DoesNotExist:
-            logger.error(f"Mensagem criada (ID: {mensagem_id}) não encontrada.")
+            logger.error(
+                f"Mensagem criada (ID: {mensagem_id}) não encontrada."
+            )
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {mensagem_id}: {e}")
     except Exception as e:
-        logger.error(f"Erro ao processar mensagens para contato {contact_id}: {e}")
+        logger.error(
+            f"Erro ao processar mensagens para contato {contact_id}: {e}"
+        )
     finally:
         try:
             cache.delete(cache_key)
             cache.delete(f"evo_timer_{contact_id}")
         except Exception:
             ...
+
+
+def send_message_response_by_contact(
+    args: ProcessingParams | str | int | dict[str, Any],
+) -> None:
+    if isinstance(args, ProcessingParams):
+        _send_message_response_by_contact(args)
+        return
+    data: Any = args
+    try:
+        if isinstance(args, str):
+            data = json.loads(args)
+    except Exception:
+        data = args
+    if isinstance(data, int):
+        contact_id = int(data)
+        cache_key = f"evo_buffer_{contact_id}"
+        env_list: list[dict[str, Any]] = cache.get(cache_key, [])
+        last_env = env_list[-1] if env_list else {}
+        msg_last = last_env.get("message", {})
+        params = ProcessingParams(
+            contact_id=contact_id,
+            api_key=(
+                str(last_env.get("apikey")) if last_env.get("apikey") else None
+            ),
+            message={
+                "id": msg_last.get("id"),
+                "type": msg_last.get("type"),
+                "text": msg_last.get("text"),
+                "metadata": msg_last.get("metadata"),
+            },
+        )
+        _send_message_response_by_contact(params)
+        return
+    if isinstance(data, dict):
+        params = ProcessingParams(
+            contact_id=int(data.get("contact_id")),
+            api_key=(
+                str(data.get("api_key")) if data.get("api_key") else None
+            ),
+            message=dict(data.get("message") or {}),
+        )
+        _send_message_response_by_contact(params)

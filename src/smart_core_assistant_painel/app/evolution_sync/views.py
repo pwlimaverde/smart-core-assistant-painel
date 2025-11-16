@@ -93,7 +93,12 @@ def webhook(request: HttpRequest) -> JsonResponse:
             f"Contact %s scheduled to response {evo_contact.contact_id}-{envelope}"
         )
         set_buffer_contact(evo_contact.contact_id, envelope)
-        sched_response_contact(evo_contact.contact_id)
+        sched_payload: Dict[str, Any] = {
+            "contact_id": evo_contact.contact_id,
+            "api_key": envelope.get("apikey"),
+            "message": envelope.get("message"),
+        }
+        sched_response_contact(sched_payload)
         return JsonResponse({"status": "ok"}, status=200)
 
     return JsonResponse({"status": "accepted"}, status=202)

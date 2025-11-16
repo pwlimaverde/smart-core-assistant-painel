@@ -66,10 +66,12 @@ class Contato(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
-    telefone: models.CharField[str] = models.CharField(
+    telefone: models.CharField[str | None] = models.CharField(
         max_length=20,
         unique=True,
         validators=[validate_telefone],
+        blank=True,
+        null=True,
         help_text="Número de telefone do contato (formato: 5511999999999)",
     )
     nome_contato: models.CharField[str | None] = models.CharField(
@@ -132,9 +134,9 @@ class Contato(models.Model):
 
         if self.telefone:
             telefone_limpo = re.sub(r"\D", "", self.telefone)
-            if not telefone_limpo.startswith("55"):
+            if telefone_limpo and not telefone_limpo.startswith("55"):
                 telefone_limpo = "55" + telefone_limpo
-            self.telefone = telefone_limpo
+            self.telefone = telefone_limpo or self.telefone
         super().save(*args, **kwargs)
 
 

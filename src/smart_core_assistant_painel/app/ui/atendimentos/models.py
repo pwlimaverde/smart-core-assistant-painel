@@ -976,3 +976,203 @@ def processar_mensagem_whatsapp(
     except Exception as e:
         logger.error(f"Erro ao processar mensagem WhatsApp: {e}")
         raise
+
+
+def buscar_atendimento_ativo_por_contato(
+    contato_id: int,
+) -> Optional[Atendimento]:
+    try:
+        contato = Contato.objects.filter(id=contato_id).first()
+        if not contato:
+            return None
+        return Atendimento.objects.filter(
+            contato=contato,
+            status__in=[
+                StatusAtendimento.FILA,
+                StatusAtendimento.EM_ATENDIMENTO,
+                StatusAtendimento.PENDENCIA,
+            ],
+        ).first()
+    except Exception as e:
+        logger.error(f"Erro ao buscar atendimento por contato: {e}")
+        return None
+
+
+def inicializar_atendimento_por_contato(
+    contato: Contato,
+    primeira_mensagem: str = "",
+    metadata_contato: Optional[dict[str, Any]] = None,
+    nome_perfil_whatsapp: Optional[str] = None,
+    api_key: Optional[str] = None,
+) -> Atendimento:
+    try:
+        atualizado = False
+        if nome_perfil_whatsapp and (
+            nome_perfil_whatsapp != getattr(contato, "nome_perfil_whatsapp", None)
+        ):
+            contato.nome_perfil_whatsapp = nome_perfil_whatsapp
+            atualizado = True
+        if metadata_contato:
+            if contato.metadados is None:
+                contato.metadados = {}
+            contato.metadados.update(metadata_contato)
+            atualizado = True
+        if atualizado:
+            contato.save()
+
+        atendimento_ativo = Atendimento.objects.filter(
+            contato=contato,
+            status__in=[
+                StatusAtendimento.FILA,
+                StatusAtendimento.EM_ATENDIMENTO,
+                StatusAtendimento.PENDENCIA,
+            ],
+        ).first()
+
+        if not atendimento_ativo:
+            atendimento = Atendimento.objects.create(
+                contato=contato,
+                status=StatusAtendimento.FILA,
+                contexto_conversa={
+                    "canal": "whatsapp",
+                    "primeira_interacao": True,
+                    "sessao_iniciada": timezone.now().isoformat(),
+                },
+            )
+            try:
+                if api_key:
+                    from smart_core_assistant_painel.app.ui.operacional.models import (
+                        AppInstance,
+                    )
+                    app_inst = AppInstance.objects.filter(
+                        api_key=api_key, active=True
+                    ).first()
+                    if app_inst:
+                        if getattr(app_inst, "owner", None):
+                            atendente = app_inst.owner
+                            atendimento.atendente_humano = atendente
+                            if getattr(atendente, "departamento", None):
+                                atendimento.departamento = atendente.departamento
+                        elif getattr(app_inst, "departamento", None):
+                            atendimento.departamento = app_inst.departamento
+                        # Comentário (PT-BR): ao definir o departamento,
+                        # vincula também o fluxo e a etapa inicial.
+                        try:
+                            if atendimento.departamento_id and (
+                                not atendimento.fluxo_atendimento_id
+                            ):
+                                from smart_core_assistant_painel.app.ui.operacional.models import (
+                                    FluxoAtendimento,
+                                )
+                                fluxo = (
+                                    FluxoAtendimento.objects.filter(
+                                        departamento_id=atendimento.departamento_id,
+                                    )
+                                    .order_by("id")
+                                    .first()
+                                )
+                                if fluxo:
+                                    etapa_ini = (
+                                        fluxo.get_etapa_inicial()
+                                        or fluxo.etapas.order_by("ordem").first()
+                                        or fluxo.etapas.order_by("id").first()
+                                    )
+                                    atendimento.fluxo_atendimento = fluxo
+                                    atendimento.etapa_atual = etapa_ini
+                                    atendimento.save(
+                                        update_fields=[
+                                            "atendente_humano",
+                                            "departamento",
+                                            "fluxo_atendimento",
+                                            "etapa_atual",
+                                        ]
+                                    )
+                                else:
+                                    atendimento.save(
+                                        update_fields=[
+                                            "atendente_humano",
+                                            "departamento",
+                                        ]
+                                    )
+                            else:
+                                atendimento.save(
+                                    update_fields=[
+                                        "atendente_humano",
+                                        "departamento",
+                                    ]
+                                )
+                        except Exception:
+                            atendimento.save(
+                                update_fields=[
+                                    "atendente_humano",
+                                    "departamento",
+                                ]
+                            )
+            except Exception:
+                ...
+            atendimento.adicionar_historico_status(
+                StatusAtendimento.FILA.value,
+                "Atendimento iniciado via WhatsApp (fila)",
+            )
+        else:
+            atendimento = atendimento_ativo
+
+        return atendimento
+    except Exception as e:
+        logger.error(f"Erro ao inicializar atendimento por contato: {e}")
+        raise
+
+
+def processar_mensagem_por_contato(
+    contato_id: int,
+    conteudo: str,
+    message_type: str,
+    message_id: str,
+    metadados: Optional[dict[str, Any]] = None,
+    nome_perfil_whatsapp: Optional[str] = None,
+    from_me: bool = False,
+    api_key: Optional[str] = None,
+) -> int:
+    try:
+        remetente = (
+            TipoRemetente.ATENDENTE_HUMANO if from_me else TipoRemetente.CONTATO
+        )
+        contato = Contato.objects.filter(id=contato_id).first()
+        if not contato:
+            raise ValidationError("Contato não encontrado")
+
+        atendimento = buscar_atendimento_ativo_por_contato(contato_id)
+        if not atendimento:
+            atendimento = inicializar_atendimento_por_contato(
+            contato,
+            primeira_mensagem=conteudo,
+            metadata_contato=metadados,
+            nome_perfil_whatsapp=nome_perfil_whatsapp,
+            api_key=api_key,
+        )
+
+        if message_id:
+            existente = Mensagem.objects.filter(
+                message_id_whatsapp=message_id, atendimento=atendimento
+            ).first()
+            if existente:
+                return existente.id
+
+        tipo_mensagem = TipoMensagem.obter_por_chave_json(message_type)
+        mensagem = Mensagem.objects.create(
+            atendimento=atendimento,
+            tipo=tipo_mensagem,
+            conteudo=conteudo,
+            remetente=remetente,
+            message_id_whatsapp=message_id,
+            metadados=metadados or {},
+        )
+
+        if remetente == TipoRemetente.CONTATO:
+            contato.ultima_interacao = timezone.now()
+            contato.save()
+
+        return mensagem.id
+    except Exception as e:
+        logger.error(f"Erro ao processar mensagem por contato: {e}")
+        raise

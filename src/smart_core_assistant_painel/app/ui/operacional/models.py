@@ -420,226 +420,49 @@ class Atendente(models.Model):
         return self.get_atendimentos_ativos()
 
 
-class WhatsAppInstance(models.Model):
-    """Modelo para instancias WhatsApp centralizando credenciais.
 
-    - Substitui o uso direto de credenciais em Departamento.
-    - Permite multiplas instancias por departamento.
-    """
 
+class AppInstance(models.Model):
     id: models.AutoField = models.AutoField(primary_key=True)
+    api_key: models.CharField[str] = models.CharField(max_length=128, unique=True)
+    channel: models.CharField[str] = models.CharField(max_length=32)
+    display_name: models.CharField[str | None] = models.CharField(
+        max_length=100, blank=True, null=True
+    )
     departamento: models.ForeignKey[Departamento | None] = models.ForeignKey(
         "Departamento",
-        on_delete=models.CASCADE,
-        related_name="whatsapp_instances",
-        null=True,
-        blank=True,
-        help_text="Departamento associado a esta instancia",
-    )
-    phone_number: models.CharField[str | None] = models.CharField(
-        max_length=20,
-        unique=True,
-        validators=[validate_telefone_instancia],
-        help_text="Telefone vinculado a instancia",
+        on_delete=models.SET_NULL,
+        related_name="app_instances",
         blank=True,
         null=True,
-    )
-    instance_id: models.CharField[str | None] = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True,
-        unique=True,
-        help_text="ID unico da instancia no provedor",
-    )
-    api_key: models.CharField[str] = models.CharField(
-        max_length=100,
-        unique=True,
-        validators=[validate_api_key],
-        help_text="Chave de API para autenticacao",
-    )
-    provider: models.CharField[str] = models.CharField(
-        max_length=30,
-        choices=[("evolution", "Evolution"), ("other", "Other")],
-        default="evolution",
-        help_text="Provedor da API de WhatsApp",
     )
     owner: models.OneToOneField[Optional["Atendente"]] = models.OneToOneField(
         "Atendente",
         on_delete=models.SET_NULL,
+        related_name="app_instance",
         blank=True,
         null=True,
-        related_name="whatsapp_instance",
-        help_text="Atendente dono desta instancia (opcional)",
     )
-    ativo: models.BooleanField[bool] = models.BooleanField(
-        default=True,
-        help_text="Se a instancia esta ativa",
+    active: models.BooleanField[bool] = models.BooleanField(default=True)
+    metadata: models.JSONField[dict[str, Any]] = models.JSONField(
+        default=dict, blank=True
     )
-    metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text="Metadados adicionais da instancia",
-    )
-    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
-        auto_now_add=True,
-        help_text="Data de criacao do registro",
-    )
-    ultima_validacao: models.DateTimeField[datetime | None] = (
-        models.DateTimeField(
-            blank=True,
-            null=True,
-            help_text="Data da ultima validacao de credenciais",
-        )
+    created_at: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
     )
 
     class Meta:
-        verbose_name = "Instancia WhatsApp"
-        verbose_name_plural = "Instancias WhatsApp"
-        ordering = ["-data_criacao"]
-        db_table = "oraculo_whatsapp_instance"
+        db_table = "oraculo_app_instance"
+        ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["api_key"]),
-            models.Index(fields=["phone_number"]),
-            models.Index(fields=["instance_id"]),
-            models.Index(fields=["provider"]),
+            models.Index(fields=["channel"]),
+            models.Index(fields=["departamento"]),
         ]
 
-    @override
-    def __str__(self) -> str:
-        ident = self.instance_id or self.phone_number
-        dep = (
-            self.departamento.nome if self.departamento else "sem-departamento"
-        )
-        return f"{dep} - {ident}"
-
-    @override
-    def clean(self) -> None:
-        super().clean()
-        if self.api_key:
-            validate_api_key(self.api_key)
-        if self.phone_number:
-            validate_telefone_instancia(self.phone_number)
-
-        # Validacao de exclusividade: OU departamento OU owner, nunca ambos ou nenhum
-        if self.departamento and self.owner:
-            raise ValidationError(
-                "Uma instância deve estar vinculada a UM departamento OU UM atendente, nunca ambos."
-            )
-        if not self.departamento and not self.owner:
-            raise ValidationError(
-                "Uma instância deve estar vinculada a pelo menos UM departamento ou UM atendente."
-            )
-
-        # Validacao de consistencia se ambos estiverem preenchidos (caso a regra mude no futuro)
-        if self.owner and self.owner.departamento and self.departamento:
-            if self.owner.departamento_id != self.departamento_id:
-                raise ValidationError(
-                    "Atendente dono deve pertencer ao mesmo departamento da instancia."
-                )
-
-    @property
-    def atendentes(self) -> models.QuerySet["Atendente"]:
-        """Retorna QuerySet de atendentes do departamento desta instancia.
-
-        Caso a instancia nao esteja vinculada a um departamento, retorna um QuerySet vazio.
-        """
-        # Import local para evitar ciclos
-        from .models import Atendente
-
-        if not self.departamento:
-            return Atendente.objects.none()
-        return self.departamento.atendentes.all()
-
-    @property
-    def tipo_instancia(self) -> str:
-        """Retorna o tipo da instancia para logica de negocio."""
-        if self.departamento:
-            return "departamental"
-        elif self.owner:
-            return "individual"
-        return "desconhecido"
-
-    @property
-    def responsavel_principal(self):
-        """Retorna o responsavel principal para roteamento."""
-        if self.owner:
-            return self.owner
-        elif self.departamento:
-            return self.departamento
-        return None
-
-    def rotear_atendimento(
-        self, mensagem: dict[str, Any]
-    ) -> Optional["Atendente"]:
-        """Roteia mensagem baseada no tipo de instancia.
-
-        Args:
-            mensagem: Dicionario com dados da mensagem recebida
-
-        Returns:
-            Atendente ou None se nao houver atendente disponivel
-        """
-        if self.tipo_instancia == "individual":
-            # Instancia individual: atribui diretamente ao owner
-            if self.owner and self.owner.is_available():
-                return self.owner
-            return None
-
-        elif self.tipo_instancia == "departamental":
-            # Instancia departamental: usa logica de distribuicao existente
-            return self.selecionar_proximo_atendente()
-
-        return None
-
-    @classmethod
-    def validar_api_key(
-        cls, data: dict[str, Any]
-    ) -> Optional["WhatsAppInstance"]:
-        """Valida credenciais do webhook e retorna a instancia correspondente.
-
-        Preferencia:
-        - Se `instance_id` estiver presente, valida primeiro por ele.
-        - Senao, tenta por `phone_number` a partir de `instance`.
-        """
-        api_key = data.get("apikey")
-        instance_id = data.get("instance")
-        if not api_key:
-            logger.warning("Chave de API nao fornecida no webhook.")
-            return None
-        # Tenta por instance_id primeiro
-        if instance_id:
-            try:
-                return cls.objects.get(
-                    api_key=api_key, instance_id=instance_id, ativo=True
-                )
-            except cls.DoesNotExist:
-                logger.info("Credenciais por instance_id nao encontradas.")
-
-    def selecionar_proximo_atendente(self) -> Optional["Atendente"]:
-        """Seleciona o proximo atendente disponivel por round-robin simples.
-
-        Criterios:
-        - Atendentes ativos e disponiveis no departamento.
-        - Ordenacao crescente por `data_ultima_atribuicao` (nulos primeiro), depois por `id`.
-        - Escolhe o primeiro que ainda nao atingiu sua capacidade maxima.
-        """
-        # Se nao houver departamento vinculado, nao ha atendentes para selecionar
-        if not self.departamento:
-            return None
-
-        elegiveis = self.atendentes.filter(
-            ativo=True,
-            disponivel=True,
-        ).order_by("data_ultima_atribuicao", "id")
-
-        for atendente in elegiveis:
-            # Usa helper do modelo para contar atendimentos ativos
-            if (
-                atendente.get_atendimentos_ativos()
-                < atendente.max_atendimentos_simultaneos
-            ):
-                return atendente
-        return None
+    def __str__(self) -> str:  # type: ignore[override]
+        name = self.display_name or self.api_key
+        return f"{self.channel} - {name}"
 
 
 class TipoEtapa(models.TextChoices):

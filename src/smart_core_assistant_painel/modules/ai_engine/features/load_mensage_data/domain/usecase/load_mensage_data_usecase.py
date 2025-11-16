@@ -108,16 +108,19 @@ class LoadMensageDataUseCase(LMDUsecase):
                 return ErrorReturn(error)
 
             remote_jid = key_section.get("remoteJid")
-            if not remote_jid:
+            remote_jid_alt = key_section.get("remoteJidAlt")
+            addressing_mode = key_section.get("addressingMode")
+            if not remote_jid and not remote_jid_alt:
                 error = parameters.error
                 error.message = (
-                    "Campo 'remoteJid' não encontrado no payload do webhook"
+                    "Identificador de contato não encontrado (remoteJid/Alt)"
                 )
                 return ErrorReturn(error)
 
-            # Extrair e normalizar telefone do remoteJid
-            phone_raw = remote_jid.split("@")[0]
-            phone = self.normalize_phone(phone_raw)
+            phone = ""
+            if remote_jid and (addressing_mode == "pn" or addressing_mode is None):
+                phone_raw = remote_jid.split("@")[0]
+                phone = self.normalize_phone(phone_raw)
             message_id = key_section.get("id")
 
             # Extrair pushName (nome do perfil do WhatsApp)
@@ -147,11 +150,15 @@ class LoadMensageDataUseCase(LMDUsecase):
             conteudo = ""
             metadados: dict[str, Any] = {}
 
-            # Adicionar timestamp da mensagem nos metadados se disponível
             if "messageTimestamp" in data_section:
-                metadados["messageTimestamp"] = data_section[
-                    "messageTimestamp"
-                ]
+                metadados["messageTimestamp"] = data_section["messageTimestamp"]
+            if "instanceId" in data_section:
+                metadados["instanceId"] = data_section["instanceId"]
+            if "source" in data_section:
+                metadados["source"] = data_section["source"]
+            sender_jid = parameters.data.get("sender")
+            if sender_jid:
+                metadados["sender"] = sender_jid
 
             if messageType:
                 message_data = message_section.get(messageType, {})
@@ -256,6 +263,11 @@ class LoadMensageDataUseCase(LMDUsecase):
                     message_id=message_id,
                     metadados=metadados,
                     nome_perfil_whatsapp=push_name,
+                    remote_jid=remote_jid,
+                    remote_jid_alt=remote_jid_alt,
+                    addressing_mode=addressing_mode,
+                    instance_id=data_section.get("instanceId"),
+                    sender_jid=sender_jid,
                 )
             )
         except Exception as e:

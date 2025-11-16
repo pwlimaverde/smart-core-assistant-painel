@@ -15,6 +15,7 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
     FluxoAtendimento,
     TipoEtapa,
+    AppInstance,
 )
 from smart_core_assistant_painel.app.ui.treinamento.models import (
     Documento,
@@ -31,216 +32,9 @@ from .models import (
     Atendimento,
     Mensagem,
     TipoRemetente,
+    processar_mensagem_por_contato,
     processar_mensagem_whatsapp,
 )
-from .signals import mensagem_bufferizada
-
-
-def set_wa_buffer(message: MessageData) -> None:
-    """Adiciona uma mensagem ao buffer do WhatsApp no cache."""
-    cache_key = f"wa_buffer_{message.numero_telefone}"
-    buffer = cache.get(cache_key, [])
-    buffer.append(message)
-    timeout = SERVICEHUB.TIME_CACHE + 60
-    cache.set(cache_key, buffer, timeout=timeout)
-
-
-def clear_wa_buffer(phone: str) -> None:
-    """Remove o buffer de mensagens do WhatsApp para um telefone."""
-    cache_key = f"wa_buffer_{phone}"
-    timer_key = f"wa_timer_{phone}"
-    cache.delete(cache_key)
-    cache.delete(timer_key)
-
-
-def send_message_response(phone: str) -> None:
-    """Envia uma resposta para uma mensagem do WhatsApp."""
-    cache_key = f"wa_buffer_{phone}"
-    message_data_list: list[MessageData] = cache.get(cache_key, [])
-    if not message_data_list:
-        logger.warning(f"Buffer vazio para {phone}")
-        return
-    try:
-        logger.info(f"Mensagem bruta {message_data_list}")
-        message_data = _compile_message_data_list(message_data_list)
-        logger.info(f"Mensagem compilada {message_data}")
-        mensagem_id = processar_mensagem_whatsapp(
-            numero_telefone=message_data.numero_telefone,
-            conteudo=message_data.conteudo,
-            message_type=message_data.message_type,
-            message_id=message_data.message_id,
-            metadados=message_data.metadados,
-            nome_perfil_whatsapp=message_data.nome_perfil_whatsapp,
-            from_me=message_data.from_me,
-        )
-        try:
-            mensagem = Mensagem.objects.get(id=mensagem_id)
-            _analisar_conteudo_mensagem(mensagem_id)
-            # Garante que os campos atualizados pela análise sejam refletidos neste objeto
-            try:
-                mensagem.refresh_from_db(
-                    fields=["intent_detectado", "entidades_extraidas"]
-                )
-            except Exception:
-                mensagem.refresh_from_db()
-            atendimento_obj: Atendimento = mensagem.atendimento
-            # pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
-            pode_responder = False
-            if pode_responder:
-                # Monta um prompt de sistema claro e objetivo para orientar a LLM
-                # sobre como responder de acordo com as intenções detectadas.
-
-                prompt_lines: list[str] = [
-                    (
-                        "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
-                        "Siga estritamente as orientações abaixo, em "
-                        "português claro e objetivo.\n"
-                        "Adapte a resposta ao contexto do atendimento atual."
-                    ),
-                    "Intenções detectadas e orientações:",
-                ]
-                # Remove tags duplicadas mantendo a primeira ocorrência
-                seen_tags: set[str] = set()
-                has_known_intent: bool = False
-                index: int = 0
-                for intent in mensagem.intent_detectado:
-                    tag: str = list(intent.keys())[0]
-                    # Pula intents com tag já utilizada para evitar instruções repetidas
-                    if tag in seen_tags:
-                        continue
-                    seen_tags.add(tag)
-                    index += 1
-                    qc = QueryCompose.objects.filter(tag=tag).first()
-                    if qc:
-                        # Há intenção conhecida (possui configuração de comportamento)
-                        has_known_intent = True
-                        # Normaliza espaços e remove quebras de linha acidentais
-                        behavior: str = " ".join(
-                            str(qc.comportamento).split()
-                        ).strip()
-                        prompt_lines.append(f"{index}. [{tag}] {behavior}")
-                    else:
-                        intent_vector: list[float] = (
-                            FeaturesCompose.generate_embeddings(
-                                f"{tag}: {intent[tag]}"
-                            )
-                        )
-                        comportamento: str | None = (
-                            QueryCompose.buscar_comportamento_similar(
-                                intent_vector
-                            )
-                        )
-                        if comportamento:
-                            prompt_lines.append(
-                                f"{index}. [{tag}] {comportamento}"
-                            )
-                prompt_lines.append(
-                    (
-                        "Se houver múltiplas intenções, priorize a ordem "
-                        "listada e mantenha a resposta concisa."
-                    )
-                )
-                historico_atendimento = (
-                    atendimento_obj.carregar_historico_mensagens(
-                        excluir_mensagem_id=mensagem_id
-                    )
-                )
-                prompt_intent: str = "\n".join(prompt_lines)
-                vector_conteudo = FeaturesCompose.generate_embeddings(
-                    mensagem.conteudo
-                )
-                dados_treinamento = Documento.buscar_documentos_similares(
-                    query_vec=vector_conteudo
-                )
-
-                fluxos_disponiveis: dict[str, str] = (
-                    _gerar_dict_fluxos_disponiveis()
-                )
-                # Comentário (PT-BR): evita uso da IA quando existirem apenas
-                # tags desconhecidas ou quando dados de treinamento não forem
-                # uma lista válida, mantendo previsibilidade em testes.
-                should_call_ai: bool = has_known_intent or (
-                    isinstance(dados_treinamento, list)
-                    and len(dados_treinamento) > 0
-                )
-
-                if should_call_ai:
-                    # Anotação explícita da tupla para garantir inferência tipada
-                    result: AMTuple = FeaturesCompose.analise_mensage(
-                        fluxos_disponiveis=fluxos_disponiveis,
-                        historico_atendimento=historico_atendimento,
-                        prompt_human=prompt_intent,
-                        context=mensagem.conteudo,
-                        dados_treinamento=dados_treinamento,
-                    )
-
-                    SERVICEHUB.whatsapp_service.send_message(
-                        instance=message_data.instance,
-                        api_key=message_data.api_key,
-                        number=message_data.numero_telefone,
-                        text=result.resposta_bot,
-                    )
-                    mensagem.registrar_resposta_bot(
-                        resposta=result.resposta_bot,
-                        confianca=result.confiabilidade,
-                    )
-
-                    # Atualiza status do atendimento para "Em Atendimento"
-                    _atualizar_status_atendimento_em_andamento(atendimento_obj)
-                    logger.info(f"result: {result}")
-                    if result.transferir_atendimento:
-                        if result.fluxo_transferencia:
-                            logger.info(
-                                (
-                                    "Transferência para fluxo: "
-                                    f"{result.fluxo_transferencia}"
-                                )
-                            )
-                            atendimento_obj.apply_flow_by_description(
-                                result.fluxo_transferencia
-                            )
-                else:
-                    # Resposta de fallback sem IA para manter o fluxo
-                    texto_fallback: str = (
-                        "Recebemos sua mensagem. Em breve retornaremos."
-                    )
-                    SERVICEHUB.whatsapp_service.send_message(
-                        instance=message_data.instance,
-                        api_key=message_data.api_key,
-                        number=message_data.numero_telefone,
-                        text=texto_fallback,
-                    )
-                    mensagem.registrar_resposta_bot(
-                        resposta=texto_fallback,
-                        confianca=0.0,
-                    )
-
-                    # Atualiza status do atendimento para "Em Atendimento"
-                    _atualizar_status_atendimento_em_andamento(atendimento_obj)
-            else:
-                logger.warning(
-                    "DEBUG: Bot não pode responder - pulando processamento de intents"
-                )
-
-        except Mensagem.DoesNotExist:
-            logger.error(
-                f"Mensagem criada (ID: {mensagem_id}) não encontrada."
-            )
-        except Exception as e:
-            logger.error(f"Erro ao processar mensagem {mensagem_id}: {e}")
-    except Exception as e:
-        logger.error(f"Erro ao processar mensagens para {phone}: {e}")
-    finally:
-        clear_wa_buffer(phone)
-
-
-def sched_message_response(phone: str) -> None:
-    """Agenda o processamento da resposta via signal."""
-    timer_key = f"wa_timer_{phone}"
-    if not cache.get(timer_key):
-        timeout_value = SERVICEHUB.TIME_CACHE + 60
-        cache.set(timer_key, True, timeout=timeout_value)
-        mensagem_bufferizada.send(sender="atendimentos", phone=phone)
 
 
 def _obter_entidades_metadados_validas() -> set[str]:
@@ -632,3 +426,244 @@ def _compile_message_data_list(messages: list[MessageData]) -> MessageData:
         metadados=metadados_compilados or None,
         nome_perfil_whatsapp=ultima_mensagem.nome_perfil_whatsapp,
     )
+
+
+def send_message_response_by_contact(arg: int | str | dict[str, Any]) -> None:
+    try:
+        api_key: Optional[str] = None
+        if isinstance(arg, int):
+            contact_id = arg
+        elif isinstance(arg, str):
+            parsed: Any
+            try:
+                parsed = json.loads(arg)
+            except Exception:
+                parsed = arg
+            if isinstance(parsed, dict):
+                contact_id = int(parsed.get("contact_id"))
+                api_key = parsed.get("api_key")
+            else:
+                contact_id = int(parsed)
+        else:
+            contact_id = int(arg.get("contact_id"))
+            api_key = arg.get("api_key")
+        cache_key = f"evo_buffer_{contact_id}"
+        env_list: list[dict[str, Any]] = cache.get(cache_key, [])
+        if not env_list:
+            logger.warning(f"Buffer vazio para contato {contact_id}")
+            return
+        last_env = env_list[-1]
+        texts = []
+        metadados: dict[str, Any] = {}
+        for env in env_list:
+            msg = env.get("message", {})
+            t = str(msg.get("text", "")).strip()
+            if t:
+                texts.append(t)
+            md = msg.get("metadata") or {}
+            if isinstance(md, dict):
+                metadados.update(md)
+        conteudo = "\n".join(texts)
+        msg_last = last_env.get("message", {})
+        message_type = str(msg_last.get("type", "extendedTextMessage") or "extendedTextMessage")
+        message_id = str(msg_last.get("id", "") or "")
+        profile = last_env.get("profile", {})
+        nome_perfil = profile.get("push_name")
+
+        # Comentário (PT-BR): utiliza api_key do agendamento ou do envelope
+        if not api_key:
+            api_key = str(last_env.get("apikey")) if last_env.get("apikey") else None
+
+        mensagem_id = processar_mensagem_por_contato(
+            contato_id=contact_id,
+            conteudo=conteudo,
+            message_type=message_type,
+            message_id=message_id,
+            metadados=metadados or None,
+            nome_perfil_whatsapp=(str(nome_perfil) if nome_perfil else None),
+            from_me=False,
+            api_key=api_key,
+        )
+
+        try:
+            mensagem = Mensagem.objects.get(id=mensagem_id)
+            _analisar_conteudo_mensagem(mensagem_id)
+            try:
+                mensagem.refresh_from_db(
+                    fields=["intent_detectado", "entidades_extraidas"]
+                )
+            except Exception:
+                mensagem.refresh_from_db()
+            atendimento_obj: Atendimento = mensagem.atendimento
+            if (
+                getattr(atendimento_obj, "departamento", None) is None
+                and api_key
+            ):
+                app_inst = AppInstance.objects.filter(
+                    api_key=api_key, active=True
+                ).first()
+                if app_inst:
+                    if getattr(app_inst, "departamento", None):
+                        atendimento_obj.departamento = app_inst.departamento
+                    elif getattr(app_inst, "owner", None):
+                        atendimento_obj.atendente_humano = app_inst.owner
+                        if getattr(app_inst.owner, "departamento", None):
+                            atendimento_obj.departamento = (
+                                app_inst.owner.departamento
+                            )
+                    try:
+                        if getattr(
+                            atendimento_obj, "departamento_id", None
+                        ) and not getattr(
+                            atendimento_obj, "fluxo_atendimento_id", None
+                        ):
+                            from smart_core_assistant_painel.app.ui.operacional.models import (
+                                FluxoAtendimento,
+                            )
+                            fluxo = (
+                                FluxoAtendimento.objects.filter(
+                                    departamento_id=atendimento_obj.departamento_id,
+                                )
+                                .order_by("id")
+                                .first()
+                            )
+                            if fluxo:
+                                etapa_ini = (
+                                    fluxo.get_etapa_inicial()
+                                    or fluxo.etapas.order_by("ordem").first()
+                                    or fluxo.etapas.order_by("id").first()
+                                )
+                                atendimento_obj.fluxo_atendimento = fluxo
+                                atendimento_obj.etapa_atual = etapa_ini
+                                atendimento_obj.save(
+                                    update_fields=[
+                                        "departamento",
+                                        "atendente_humano",
+                                        "fluxo_atendimento",
+                                        "etapa_atual",
+                                    ]
+                                )
+                            else:
+                                atendimento_obj.save(
+                                    update_fields=[
+                                        "departamento",
+                                        "atendente_humano",
+                                    ]
+                                )
+                        else:
+                            atendimento_obj.save(
+                                update_fields=[
+                                    "departamento",
+                                    "atendente_humano",
+                                ]
+                            )
+                    except Exception:
+                        atendimento_obj.save(
+                            update_fields=[
+                                "departamento",
+                                "atendente_humano",
+                            ]
+                        )
+            pode_responder = False
+            if pode_responder:
+                prompt_lines: list[str] = [
+                    (
+                        "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
+                        "Siga estritamente as orientações abaixo, em "
+                        "português claro e objetivo.\n"
+                        "Adapte a resposta ao contexto do atendimento atual."
+                    ),
+                    "Intenções detectadas e orientações:",
+                ]
+                seen_tags: set[str] = set()
+                has_known_intent: bool = False
+                index: int = 0
+                for intent in mensagem.intent_detectado:
+                    tag: str = list(intent.keys())[0]
+                    if tag in seen_tags:
+                        continue
+                    seen_tags.add(tag)
+                    index += 1
+                    qc = QueryCompose.objects.filter(tag=tag).first()
+                    if qc:
+                        has_known_intent = True
+                        behavior: str = " ".join(str(qc.comportamento).split()).strip()
+                        prompt_lines.append(f"{index}. [{tag}] {behavior}")
+                    else:
+                        intent_vector: list[float] = (
+                            FeaturesCompose.generate_embeddings(f"{tag}: {intent[tag]}")
+                        )
+                        comportamento: str | None = (
+                            QueryCompose.buscar_comportamento_similar(intent_vector)
+                        )
+                        if comportamento:
+                            prompt_lines.append(f"{index}. [{tag}] {comportamento}")
+                prompt_lines.append(
+                    (
+                        "Se houver múltiplas intenções, priorize a ordem "
+                        "listada e mantenha a resposta concisa."
+                    )
+                )
+                historico_atendimento = atendimento_obj.carregar_historico_mensagens(
+                    excluir_mensagem_id=mensagem_id
+                )
+                prompt_intent: str = "\n".join(prompt_lines)
+                vector_conteudo = FeaturesCompose.generate_embeddings(mensagem.conteudo)
+                dados_treinamento = Documento.buscar_documentos_similares(
+                    query_vec=vector_conteudo
+                )
+                fluxos_disponiveis: dict[str, str] = _gerar_dict_fluxos_disponiveis()
+                should_call_ai: bool = has_known_intent or (
+                    isinstance(dados_treinamento, list) and len(dados_treinamento) > 0
+                )
+                if should_call_ai:
+                    result: AMTuple = FeaturesCompose.analise_mensage(
+                        fluxos_disponiveis=fluxos_disponiveis,
+                        historico_atendimento=historico_atendimento,
+                        prompt_human=prompt_intent,
+                        context=mensagem.conteudo,
+                        dados_treinamento=dados_treinamento,
+                    )
+                    from smart_core_assistant_painel.app.evolution_sync.services import (
+                        send_message_by_contact_id,
+                    )
+                    send_message_by_contact_id(contact_id, result.resposta_bot)
+                    mensagem.registrar_resposta_bot(
+                        resposta=result.resposta_bot,
+                        confianca=result.confiabilidade,
+                    )
+                    _atualizar_status_atendimento_em_andamento(atendimento_obj)
+                    if result.transferir_atendimento:
+                        if result.fluxo_transferencia:
+                            atendimento_obj.apply_flow_by_description(
+                                result.fluxo_transferencia
+                            )
+                else:
+                    texto_fallback: str = (
+                        "Recebemos sua mensagem. Em breve retornaremos."
+                    )
+                    from smart_core_assistant_painel.app.evolution_sync.services import (
+                        send_message_by_contact_id,
+                    )
+                    send_message_by_contact_id(contact_id, texto_fallback)
+                    mensagem.registrar_resposta_bot(
+                        resposta=texto_fallback,
+                        confianca=0.0,
+                    )
+                    _atualizar_status_atendimento_em_andamento(atendimento_obj)
+            else:
+                logger.warning(
+                    "DEBUG: Bot não pode responder - pulando processamento de intents"
+                )
+        except Mensagem.DoesNotExist:
+            logger.error(f"Mensagem criada (ID: {mensagem_id}) não encontrada.")
+        except Exception as e:
+            logger.error(f"Erro ao processar mensagem {mensagem_id}: {e}")
+    except Exception as e:
+        logger.error(f"Erro ao processar mensagens para contato {contact_id}: {e}")
+    finally:
+        try:
+            cache.delete(cache_key)
+            cache.delete(f"evo_timer_{contact_id}")
+        except Exception:
+            ...

@@ -67,4 +67,8 @@ urlpatterns = [
         "api/clickup_sync/",
         include("smart_core_assistant_painel.app.clickup_sync.api_urls"),
     ),
+    path(
+        "",
+        include("smart_core_assistant_painel.app.evolution_sync.urls"),
+    ),
 ]

@@ -16,7 +16,6 @@ from rolepermissions.checkers import has_permission
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Atendente,
     Departamento,
-    WhatsAppInstance,
 )
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
@@ -27,7 +26,6 @@ from .models import (
     TipoMensagem,
     TipoRemetente,
 )
-from .utils import sched_message_response, set_wa_buffer
 
 
 def _get_user_departamentos(request: HttpRequest):
@@ -50,78 +48,7 @@ def _get_user_departamentos(request: HttpRequest):
     )
 
 
-def _validate_and_extract_webhook_data(
-    request: HttpRequest,
-) -> dict[str, Any] | JsonResponse:
-    """Valida a requisição do webhook e extrai o payload como dict.
 
-    Retorna `JsonResponse` em caso de erro de validação; caso contrário,
-    retorna o dict `data` quando todas as verificações passam.
-    """
-    if request.method != "POST":
-        return JsonResponse({"error": "Method not allowed"}, status=405)
-    if not request.body:
-        return JsonResponse({"error": "Empty request body"}, status=400)
-    try:
-        body_str = request.body.decode("utf-8")
-    except UnicodeDecodeError:
-        body_str = request.body.decode("utf-8", errors="ignore")
-        logger.warning("Decoding with errors='ignore' applied")
-    try:
-        data: dict[str, Any] = json.loads(body_str)
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON body"}, status=400)
-
-    key_data: dict[str, Any] | None = data.get("data")
-    if key_data is None:
-        return JsonResponse({"error": "Empty key data"}, status=400)
-    key_section: dict[str, Any] | None = key_data.get("key")
-    if key_section is None:
-        return JsonResponse({"error": "Empty key section"}, status=400)
-
-    remote_jid = key_section.get("remoteJid")
-    if not remote_jid:
-        return JsonResponse({"error": "Empty remoteJid"}, status=400)
-
-    parts = remote_jid.split("@")
-    if len(parts) < 2:
-        return JsonResponse({"error": "Invalid remoteJid"}, status=400)
-
-    is_group: bool = parts[1] == "g.us"
-    if is_group:
-        return JsonResponse(
-            {"error": "Group messages not supported"}, status=400
-        )
-
-    return data
-
-@csrf_exempt
-def webhook_whatsapp(request: HttpRequest) -> JsonResponse:
-    """Endpoint to receive WhatsApp message notifications."""
-    try:
-        validation = _validate_and_extract_webhook_data(request)
-        if isinstance(validation, JsonResponse):
-            return validation
-        data: dict[str, Any] = validation
-
-        # Validar credenciais via WhatsAppInstance (substitui Departamento.validar_api_key)
-        whatsapp_instance = WhatsAppInstance.validar_api_key(data)
-        if not whatsapp_instance:
-            return JsonResponse(
-                {"error": "Invalid or inactive API key"}, status=401
-            )
-
-        # Comentário (PT-BR): Não altere os campos originais de credenciais.
-        # O teste espera que o payload repasse exatamente o que foi enviado.
-        logger.info(f"Received webhook: {data}")
-        message = FeaturesCompose.load_message_data(data)
-        set_wa_buffer(message)
-        sched_message_response(message.numero_telefone)
-
-        return JsonResponse({"status": "success"}, status=200)
-    except Exception as e:
-        logger.error(f"Critical error in WhatsApp webhook: {e}", exc_info=True)
-        return JsonResponse({"error": "Internal server error"}, status=500)
 
 
 def _get_current_agent(request: HttpRequest) -> Optional[Atendente]:

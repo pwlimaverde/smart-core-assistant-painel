@@ -1,88 +1,60 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-17 21:18:23.623 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:25.017 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 18:55:00.551 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 18:55:01.927 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster oxygen-maryland-river-jig starting.
-2025-11-17 21:18:27.431 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:28.831 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-7d50f6824fd24428aa23bc563a725650 guarding cluster oxygen-maryland-river-jig [smart_core_cluster]
-INFO:django-q:Q Cluster oxygen-maryland-river-jig [smart_core_cluster] running.
-2025-11-17 21:18:30.460 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:30.460 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:30.469 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:30.469 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:31.964 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-17 21:18:32.015 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-17 21:18:32.022 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-17 21:18:32.025 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-ee17dd4c6cda45fe933e9e9a20260d40 ready for work at 15068
-INFO:django-q:Process-05b70d552d2e41f4a53d9b7cc6b4baac ready for work at 5748
-INFO:django-q:Process-11f09244c2de4397a235e5a5f6d0f7af pushing tasks at 46788
-INFO:django-q:Process-fff6b4ce4e37498fbd4fba4098351a12 monitoring at 4988
-INFO:django-q:Enqueued [smart_core_cluster] 546
-INFO:django-q:Process-7d50f6824fd24428aa23bc563a725650 created task two-muppet-delaware-robert from schedule [process_contact_32]
-INFO:django-q:Process-ee17dd4c6cda45fe933e9e9a20260d40 processing two-muppet-delaware-robert 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' [process_contact_32]
-2025-11-17 21:19:00.135 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:444 - atd_process_start contact_id=%s env_count=%s
-2025-11-17 21:19:00.135 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:475 - atd_process_compiled contact_id=%s text_len=%s msg_id=%s
-2025-11-17 21:19:00.233 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
-2025-11-17 21:19:00.234 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:django-q:Q Cluster video-muppet-quebec-victor starting.
+2025-11-18 18:55:04.057 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 18:55:05.460 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-a7531ed58b2849019336d5e5c499c9a2 guarding cluster video-muppet-quebec-victor [smart_core_cluster]
+INFO:django-q:Q Cluster video-muppet-quebec-victor [smart_core_cluster] running.
+2025-11-18 18:55:07.037 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 18:55:07.038 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 18:55:07.038 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 18:55:07.038 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 18:55:08.544 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 18:55:08.544 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 18:55:08.545 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 18:55:08.599 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-3e5980db529c459983fcd5dcf6c12485 ready for work at 37300
+INFO:django-q:Process-54d94bc7fb7c43338aec1f9073cb1fd1 ready for work at 2420
+INFO:django-q:Process-fea3bf42c3354263b12466ce44875049 monitoring at 23964
+INFO:django-q:Process-9f3066558aa2465eb99b5eda87310b4a pushing tasks at 39544
+INFO:django-q:Enqueued [smart_core_cluster] 605
+INFO:django-q:Process-a7531ed58b2849019336d5e5c499c9a2 created task five-three-alanine-uniform from schedule [process_contact_48]
+INFO:django-q:Process-3e5980db529c459983fcd5dcf6c12485 processing five-three-alanine-uniform 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' [process_contact_48]
+2025-11-18 18:55:36.752 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:759 - DEBUG: send_message_response_by_contact called with args type=<class 'int'> value=48
+2025-11-18 18:55:36.752 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:772 - DEBUG: data after processing type=<class 'int'> value=48
+2025-11-18 18:55:36.752 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:780 - DEBUG: Processing as int (contact_id)
+2025-11-18 18:55:36.803 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:784 - DEBUG: Cache get key=evo_buffer_48 result_len=14
+2025-11-18 18:55:36.808 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:444 - atd_process_start contact_id=%s env_count=%s
+2025-11-18 18:55:36.808 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:475 - atd_process_compiled contact_id=%s text_len=%s msg_id=%s
+2025-11-18 18:55:37.027 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:55:37.028 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-2025-11-17 21:19:02.096 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
-2025-11-17 21:19:02.096 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
-2025-11-17 21:19:02.119 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:592 - atd_process_can_respond contact_id=%s pode_responder=%s
-2025-11-17 21:19:02.128 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
-2025-11-17 21:19:02.128 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+2025-11-18 18:55:39.442 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:55:39.443 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+2025-11-18 18:55:39.471 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:594 - atd_process_can_respond contact_id=%s pode_responder=%s
+2025-11-18 18:55:39.480 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:55:39.480 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-11-17 21:19:07.007 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3592 (limiar 0.4000): **[Título da Seção 7: Diferenciais Competitivos]**  
-- Espaço VIP com poltronas reclináveis e serviço de chá gelado aromatizado.  
-- Test drive em cabine privativa, garantindo conforto e privacidade.  
-- Entrega expressa em até 24 h para Crato e Juazeiro do Norte.  
-- Parceria com ONG local para reaproveitamento de embalagens e incentivo à coleta seletiva.  
-- Treinamentos trimestrais para a equipe sobre novas texturas, ativos e regulamentações ANVISA.  
-----------------------------------------------------
-2025-11-17 21:19:07.010 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3647 (limiar 0.4000): **[Título da Seção 4: Informações Corporativas]**  
-- Nome Fantasia: Fique Bela Cosméticos  
-- Razão Social: Fique Bela Cosméticos Ltda.  
-- Capital Social: R$ 250 000,00  
-- CNPJ: 00.000.000/0001‑00 (fictício)  
-- Inscrição Estadual: 12.345.678.901  
-- Endereço: Rua das Rosas, 123 – Centro, Crato – CE – CEP 63100‑000  
-- Telefone: (88) 3000‑0000  
-- E‑mail: contato@fiquebela.com.br  
-- Instagram: @fiquebela.cosmeticos (12,5 k seguidores)  
-- Site: www.fiquebela.com.br (fictício)  
-----------------------------------------------------
-
-**[Título da Seção 5: Horário de Funcionamento]**  
-| Dia da Semana | Horário          |  
-|---------------|------------------|  
-| Segunda a Sexta | 09:00 – 18:30 |  
-| Sábado          | 09:00 – 14:00 |  
-| Domingo         | Fechado       |  
-----------------------------------------------------
-2025-11-17 21:19:07.013 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3748 (limiar 0.4000): **[Título da Seção 6: Serviços Oferecidos]**  
-- **Consultoria de beleza individualizada** – Avaliação de tipo de pele, cor de base, rotina de skincare e sugestões de cronograma capilar.  
-- **Teste e demonstração de produtos** – Espaço Glow Lab com espelhos de luz natural; bar de fragrâncias e testadores de texturas (gel, creme e óleo).  
-- **Venda de cosméticos** – Marcas nacionais (Natura, O Boticário) e importadas (Fenty Beauty, The Ordinary), além de linhas veganas.  
-- **Workshops e cursos** – Aulas presenciais mensais de automaquiagem, bioestética facial e técnicas de contorno; turmas de até 12 pessoas.  
-- **Programa de Fidelidade Fique Bela**  
-  - *Bronze*: 1 ponto a cada R$ 1,00 gasto.  
-  - *Prata* (acima de 500 pontos): 5 % de desconto.  
-  - *Ouro* (acima de 1 200 pontos): 10 % de desconto + brinde mensal.  
-----------------------------------------------------
-2025-11-17 21:19:07.017 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:287 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento - Comercial': 'teste atendimento', 'Atendimento - Financeiro': 'teste atendimento'}
-2025-11-17 21:19:07.018 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:676 - atd_process_ai_call contact_id=%s
-2025-11-17 21:19:07.018 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
+2025-11-18 18:55:50.398 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3164 (limiar 0.4000)
+2025-11-18 18:55:50.401 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3652 (limiar 0.4000)
+2025-11-18 18:55:50.404 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3763 (limiar 0.4000)
+2025-11-18 18:55:50.407 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3792 (limiar 0.4000)
+2025-11-18 18:55:50.410 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3802 (limiar 0.4000)
+2025-11-18 18:55:50.413 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:287 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento - Comercial': 'teste atendimento', 'Atendimento - Financeiro': 'teste atendimento'}
+2025-11-18 18:55:50.413 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:678 - atd_process_ai_call contact_id=%s
+2025-11-18 18:55:50.413 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
 PROMPT COMPLETO ENVIADO PARA LLM
 ================================================================================
 
 ============================================================
 MESSAGE 1 - ROLE: SYSTEM
 ============================================================
-Data e Hora Atual: 17/11/2025 21:19:07 - Monday
+Data e Hora Atual: 18/11/2025 18:55:50 - Tuesday
 
 Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
 
@@ -97,7 +69,7 @@ INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA
 Siga estritamente as orientações abaixo, em português claro e objetivo.
 Adapte a resposta ao contexto do atendimento atual.
 Intenções detectadas e orientações:
-1. [pergunta] Forneça informações claras e verificáveis. Se o pedido for amplo, solicite até 2 esclarecimentos objetivos. Evite jargões e respostas longas.
+1. [cotacao] Colete requisitos (quantidade, prazo, escopo, localidade). Se possível, apresente faixa de valores/condições e ressalte que é uma estimativa.
 Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa.
 
 ### Regras de Resposta (siga rigorosamente):
@@ -143,102 +115,177 @@ Com base apenas nas regras acima, elabore a resposta final ao usuário.
 FIM DO PROMPT
 ================================================================================
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
-INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 4.000000 seconds
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 3.000000 seconds
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-18 18:55:54.729 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:631 - Regra de transferência acionada. transferir_atendimento=True. fluxo_transferencia=
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-11-17 21:19:16.927 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:660 - Score de confiabilidade (triádico): 0.7386
-2025-11-17 21:19:16.934 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
-2025-11-17 21:19:16.940 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
-2025-11-17 21:19:16.940 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
-2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:86 - signal_send_check instance=%s base_url=%s api_key_set=%s
-2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:101 - signal_send_start msg_id=%s number=%s text_len=%s
-2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
-2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
-2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
-2025-11-17 21:19:16.963 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
-2025-11-17 21:19:16.964 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
-2025-11-17 21:19:16.964 | ERROR    | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_exception msg_id=%s err=%s
-Traceback (most recent call last):
-
-  File "<string>", line 1, in <module>
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\spawn.py", line 122, in spawn_main
-    exitcode = _main(fd, parent_sentinel)
-               │     │   └ 384
-               │     └ 3
-               └ <function _main at 0x0000021ED5390CC0>
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\spawn.py", line 135, in _main
-    return self._bootstrap(parent_sentinel)
-           │    │          └ 384
-           │    └ <function BaseProcess._bootstrap at 0x0000021ED50A0900>
-           └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 313, in _bootstrap
-    self.run()
-    │    └ <function BaseProcess.run at 0x0000021ED5093E20>
-    └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
-  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 108, in run
-    self._target(*self._args, **self._kwargs)
-    │    │        │    │        │    └ {}
-    │    │        │    │        └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
-    │    │        │    └ (<django_q.queues.Queue object at 0x0000021EF9E91D10>, <django_q.queues.Queue object at 0x0000021EF9E93610>, <Synchronized wr...
-    │    │        └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
-    │    └ <function worker at 0x0000021EF9F440E0>
-    └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
-    res = f(*task["args"], **task["kwargs"])
-          │  │               └ {'id': '2eca0d0db52b444f9b43fb125fb1c692', 'name': 'two-muppet-delaware-robert', 'func': 'smart_core_assistant_painel.app.ui....
-          │  └ {'id': '2eca0d0db52b444f9b43fb125fb1c692', 'name': 'two-muppet-delaware-robert', 'func': 'smart_core_assistant_painel.app.ui....
-          └ <function send_message_response_by_contact at 0x0000021EFBE59F80>
-
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\utils.py", line 784, in send_message_response_by_contact
-    _send_message_response_by_contact(params)
-    │                                 └ ProcessingParams(contact_id=32, api_key='50675099048D-44D0-A0C6-FAE0F020EC3E', message={'id': 'AC982420D3DE182626B754B98F3864...
-    └ <function _send_message_response_by_contact at 0x0000021EFBE59BC0>
-
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\utils.py", line 688, in _send_message_response_by_contact
-    mensagem.registrar_resposta_bot(
-    │        └ <function Mensagem.registrar_resposta_bot at 0x0000021EF967FCE0>
-    └ <Mensagem: contato: Qual o horário de funcionamento de vocês?>
-
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\models.py", line 806, in registrar_resposta_bot
-    self.save(
-    │    └ <function Model.save at 0x0000021EDAAD5580>
-    └ <Mensagem: contato: Qual o horário de funcionamento de vocês?>
-
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\base.py", line 902, in save
-    self.save_base(
-    │    └ <function Model.save_base at 0x0000021EDAAD5760>
-    └ <Mensagem: contato: Qual o horário de funcionamento de vocês?>
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\base.py", line 1023, in save_base
-    post_save.send(
-    │         └ <function Signal.send at 0x0000021EDA4F13A0>
-    └ <django.db.models.signals.ModelSignal object at 0x0000021ED947ED70>
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\dispatch\dispatcher.py", line 189, in send
-    response = receiver(signal=self, sender=sender, **named)
-               │               │            │         └ {'instance': <Mensagem: contato: Qual o horário de funcionamento de vocês?>, 'created': False, 'update_fields': frozenset({'r...
-               │               │            └ <class 'smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem'>
-               │               └ <django.db.models.signals.ModelSignal object at 0x0000021ED947ED70>
-               └ <function _on_message_saved at 0x0000021EF9F2D4E0>
-
-> File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\signals.py", line 107, in _on_message_saved
-    EvolutionWhatsAppService().send_message(
-    └ <class 'smart_core_assistant_painel.app.evolution_sync.services.EvolutionWhatsAppService'>
-
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services.py", line 145, in send_message
-    self._typing(
-    │    └ <function EvolutionWhatsAppService._typing at 0x0000021EF9F2CA40>
-    └ <smart_core_assistant_painel.app.evolution_sync.services.EvolutionWhatsAppService object at 0x0000021EFBF13B60>
-
-  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services.py", line 233, in _typing
-    raise Exception(
-
-Exception: Erro ao definir status de digitação: 404 - {"status":404,"error":"Not Found","response":{"message":["The \"99910a55-8bbd-440a-9e14-9d5833a63c5e\" instance does not exist"]}}
-2025-11-17 21:19:16.973 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 69 (atendimento 30) com confianca=0.739
-2025-11-17 21:19:16.974 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:692 - atd_process_registered_bot_response msg_id=%s len=%s
-2025-11-17 21:19:16.977 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:176 - Departamento 'Atendimento' já existe (ID 15)
-2025-11-17 21:19:16.980 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:195 - Fluxo 'Atendimento Inicial' já existe (ID 14)
-2025-11-17 21:19:16.984 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:229 - Atendimento 30 movido para etapa 'Em Atendimento'
-2025-11-17 21:19:16.988 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:240 - Atendimento 30 atualizado para status 'Em Atendimento'
-2025-11-17 21:19:16.994 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:736 - atd_process_done contact_id=%s cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' (two-muppet-delaware-robert)
+2025-11-18 18:55:59.159 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:660 - Score de confiabilidade (triádico): 0.7389
+2025-11-18 18:55:59.167 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:55:59.182 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-18 18:55:59.183 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-18 18:55:59.183 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:88 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-18 18:55:59.183 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:103 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-18 18:55:59.183 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-18 18:55:59.183 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:55:59.183 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:56:00.496 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:56:00.496 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:56:00.496 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:56:01.190 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:56:01.190 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:56:01.190 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:56:02.412 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:56:02.412 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:56:02.412 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:173 - evolution_send_message_done status=%s ok=%s
+2025-11-18 18:56:02.413 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_send_success msg_id=%s
+2025-11-18 18:56:02.413 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 87 (atendimento 41) com confianca=0.739
+2025-11-18 18:56:02.413 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:694 - atd_process_registered_bot_response msg_id=%s len=%s
+2025-11-18 18:56:02.417 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:176 - Departamento 'Atendimento' já existe (ID 15)
+2025-11-18 18:56:02.421 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:195 - Fluxo 'Atendimento Inicial' já existe (ID 14)
+2025-11-18 18:56:02.426 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:229 - Atendimento 41 movido para etapa 'Em Atendimento'
+2025-11-18 18:56:02.431 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:240 - Atendimento 41 atualizado para status 'Em Atendimento'
+2025-11-18 18:56:02.436 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:738 - atd_process_done contact_id=%s cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' (five-three-alanine-uniform)
+INFO:django-q:Enqueued [smart_core_cluster] 606
+INFO:django-q:Process-a7531ed58b2849019336d5e5c499c9a2 created task ceiling-fanta-robin-hydrogen from schedule [process_contact_48]
+INFO:django-q:Process-54d94bc7fb7c43338aec1f9073cb1fd1 processing ceiling-fanta-robin-hydrogen 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' [process_contact_48]
+2025-11-18 18:56:38.896 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:759 - DEBUG: send_message_response_by_contact called with args type=<class 'int'> value=48
+2025-11-18 18:56:38.897 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:772 - DEBUG: data after processing type=<class 'int'> value=48
+2025-11-18 18:56:38.897 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:780 - DEBUG: Processing as int (contact_id)
+2025-11-18 18:56:38.938 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:784 - DEBUG: Cache get key=evo_buffer_48 result_len=2
+2025-11-18 18:56:38.941 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:444 - atd_process_start contact_id=%s env_count=%s
+2025-11-18 18:56:38.941 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:475 - atd_process_compiled contact_id=%s text_len=%s msg_id=%s
+2025-11-18 18:56:38.994 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:56:38.994 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 12.000000 seconds
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-18 18:56:52.723 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:56:52.724 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+2025-11-18 18:56:52.741 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:594 - atd_process_can_respond contact_id=%s pode_responder=%s
+2025-11-18 18:56:52.746 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:56:52.746 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-18 18:56:53.562 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:287 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento - Comercial': 'teste atendimento', 'Atendimento - Financeiro': 'teste atendimento'}
+2025-11-18 18:56:53.568 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:56:53.573 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-18 18:56:53.574 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-18 18:56:53.574 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:88 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-18 18:56:53.574 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:103 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-18 18:56:53.574 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-18 18:56:53.574 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:56:53.574 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:56:54.823 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:56:54.824 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:56:54.824 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:56:55.339 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:56:55.339 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:56:55.339 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:56:56.561 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:56:56.561 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:56:56.562 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:173 - evolution_send_message_done status=%s ok=%s
+2025-11-18 18:56:56.562 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_send_success msg_id=%s
+2025-11-18 18:56:56.562 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 88 (atendimento 41) com confianca=0.000
+2025-11-18 18:56:56.562 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:714 - atd_process_registered_bot_response msg_id=%s len=%s
+2025-11-18 18:56:56.567 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:176 - Departamento 'Atendimento' já existe (ID 15)
+2025-11-18 18:56:56.571 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:195 - Fluxo 'Atendimento Inicial' já existe (ID 14)
+2025-11-18 18:56:56.576 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:229 - Atendimento 41 movido para etapa 'Em Atendimento'
+2025-11-18 18:56:56.583 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:240 - Atendimento 41 atualizado para status 'Em Atendimento'
+2025-11-18 18:56:56.589 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:738 - atd_process_done contact_id=%s cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' (ceiling-fanta-robin-hydrogen)
+INFO:django-q:Enqueued [smart_core_cluster] 607
+INFO:django-q:Process-a7531ed58b2849019336d5e5c499c9a2 created task steak-nuts-angel-arizona from schedule [process_contact_48]
+INFO:django-q:Process-3e5980db529c459983fcd5dcf6c12485 processing steak-nuts-angel-arizona 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' [process_contact_48]
+2025-11-18 18:57:09.434 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:759 - DEBUG: send_message_response_by_contact called with args type=<class 'int'> value=48
+2025-11-18 18:57:09.434 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:772 - DEBUG: data after processing type=<class 'int'> value=48
+2025-11-18 18:57:09.434 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:780 - DEBUG: Processing as int (contact_id)
+2025-11-18 18:57:09.436 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:784 - DEBUG: Cache get key=evo_buffer_48 result_len=2
+2025-11-18 18:57:09.439 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:444 - atd_process_start contact_id=%s env_count=%s
+2025-11-18 18:57:09.440 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:475 - atd_process_compiled contact_id=%s text_len=%s msg_id=%s
+2025-11-18 18:57:09.489 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:57:09.489 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 39.000000 seconds
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-18 18:57:50.379 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:57:50.380 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+2025-11-18 18:57:50.393 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:594 - atd_process_can_respond contact_id=%s pode_responder=%s
+2025-11-18 18:57:50.397 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:57:50.397 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-18 18:57:51.200 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:287 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento - Comercial': 'teste atendimento', 'Atendimento - Financeiro': 'teste atendimento'}
+2025-11-18 18:57:51.204 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:57:51.209 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-18 18:57:51.210 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-18 18:57:51.210 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:88 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-18 18:57:51.210 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:103 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-18 18:57:51.210 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-18 18:57:51.210 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:57:51.210 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:57:52.435 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:57:52.436 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:57:52.436 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:57:53.090 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:57:53.090 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:57:53.090 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:57:54.313 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:57:54.314 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:57:54.314 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:173 - evolution_send_message_done status=%s ok=%s
+2025-11-18 18:57:54.314 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_send_success msg_id=%s
+2025-11-18 18:57:54.314 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 89 (atendimento 41) com confianca=0.000
+2025-11-18 18:57:54.314 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:714 - atd_process_registered_bot_response msg_id=%s len=%s
+2025-11-18 18:57:54.318 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:176 - Departamento 'Atendimento' já existe (ID 15)
+2025-11-18 18:57:54.321 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:195 - Fluxo 'Atendimento Inicial' já existe (ID 14)
+2025-11-18 18:57:54.325 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:229 - Atendimento 41 movido para etapa 'Em Atendimento'
+2025-11-18 18:57:54.331 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:240 - Atendimento 41 atualizado para status 'Em Atendimento'
+2025-11-18 18:57:54.335 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:738 - atd_process_done contact_id=%s cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' (steak-nuts-angel-arizona)
+INFO:django-q:Enqueued [smart_core_cluster] 608
+INFO:django-q:Process-a7531ed58b2849019336d5e5c499c9a2 created task comet-grey-bluebird-nine from schedule [process_contact_48]
+INFO:django-q:Process-54d94bc7fb7c43338aec1f9073cb1fd1 processing comet-grey-bluebird-nine 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' [process_contact_48]
+2025-11-18 18:58:11.185 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:759 - DEBUG: send_message_response_by_contact called with args type=<class 'int'> value=48
+2025-11-18 18:58:11.186 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:772 - DEBUG: data after processing type=<class 'int'> value=48
+2025-11-18 18:58:11.186 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:780 - DEBUG: Processing as int (contact_id)
+2025-11-18 18:58:11.191 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:send_message_response_by_contact:784 - DEBUG: Cache get key=evo_buffer_48 result_len=2
+2025-11-18 18:58:11.193 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:444 - atd_process_start contact_id=%s env_count=%s
+2025-11-18 18:58:11.193 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:475 - atd_process_compiled contact_id=%s text_len=%s msg_id=%s
+2025-11-18 18:58:11.233 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:58:11.234 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 35.000000 seconds
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-18 18:58:48.313 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:58:48.314 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+2025-11-18 18:58:48.327 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:594 - atd_process_can_respond contact_id=%s pode_responder=%s
+2025-11-18 18:58:48.332 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:58:48.332 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-18 18:58:49.143 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:287 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento - Comercial': 'teste atendimento', 'Atendimento - Financeiro': 'teste atendimento'}
+2025-11-18 18:58:49.148 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 18:58:49.155 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-18 18:58:49.155 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-18 18:58:49.156 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:88 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-18 18:58:49.156 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:103 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-18 18:58:49.156 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-18 18:58:49.156 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:58:49.156 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:58:50.382 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:58:50.383 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:58:50.383 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:58:51.069 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:58:51.070 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 18:58:51.070 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 18:58:52.305 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 18:58:52.305 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 18:58:52.305 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:173 - evolution_send_message_done status=%s ok=%s
+2025-11-18 18:58:52.305 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_send_success msg_id=%s
+2025-11-18 18:58:52.306 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 90 (atendimento 41) com confianca=0.000
+2025-11-18 18:58:52.306 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:714 - atd_process_registered_bot_response msg_id=%s len=%s
+2025-11-18 18:58:52.310 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:176 - Departamento 'Atendimento' já existe (ID 15)
+2025-11-18 18:58:52.314 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:195 - Fluxo 'Atendimento Inicial' já existe (ID 14)
+2025-11-18 18:58:52.319 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:229 - Atendimento 41 movido para etapa 'Em Atendimento'
+2025-11-18 18:58:52.331 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:240 - Atendimento 41 atualizado para status 'Em Atendimento'
+2025-11-18 18:58:52.360 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:738 - atd_process_done contact_id=%s cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' (comet-grey-bluebird-nine)

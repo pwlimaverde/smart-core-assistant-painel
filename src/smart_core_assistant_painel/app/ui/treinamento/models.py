@@ -177,8 +177,8 @@ class Documento(models.Model):
                             "---",
                         ]
                     )
-                logger.warning(
-                    f"Documento encontrado com distância {doc.distance:.4f} (limiar {distance_threshold:.4f}): {doc.conteudo}"
+                logger.info(
+                    f"Documento encontrado com distância {doc.distance:.4f} (limiar {distance_threshold:.4f})"
                 )
             return "\n".join(contexto_lines)
         except Exception as e:

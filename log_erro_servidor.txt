@@ -1,20 +1,3 @@
-task start
-Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
-Iniciando serviços e configurações iniciais...
-2025-11-17 21:18:18.372 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:19.737 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-Serviços iniciados com sucesso.
-Iniciando a aplicação Django...
-🔍 Caminho relativo fornecido: src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
-📁 Raiz do projeto calculada: C:\PROJETOS\PYTHON\APPS
-📂 Caminho absoluto resultante: C:\PROJETOS\PYTHON\APPS\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
-📄 Arquivo existe: False
-🔍 Tentando diretório atual: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
-📄 Arquivo existe no diretório atual: True
-Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
-Iniciando serviços e configurações iniciais...
-2025-11-17 21:18:21.453 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-17 21:18:22.864 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
 Watching for file changes with StatReloader
@@ -22,55 +5,146 @@ INFO:django.utils.autoreload:Watching for file changes with StatReloader
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 17, 2025 - 21:18:24
+November 18, 2025 - 18:54:19
 Django version 5.2.7, using settings 'smart_core_assistant_painel.app.ui.core.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CTRL-BREAK.
 
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Not Found: /atendimentos/webhook_whatsapp/contacts-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
-[17/Nov/2025 21:18:25] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
-Not Found: /atendimentos/webhook_whatsapp/connection-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/connection-update
-[17/Nov/2025 21:18:27] "POST /atendimentos/webhook_whatsapp/connection-update HTTP/1.1" 404 4725
-Not Found: /atendimentos/webhook_whatsapp/chats-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/chats-update
-[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/chats-update HTTP/1.1" 404 4710
-2025-11-17 21:18:45.755 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:120 - evo_schedule_response contact_id=%s env_keys=%s
-2025-11-17 21:18:45.755 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:128 - evo_schedule_response_meta contact_id=%s instance_db_id=%s
-[17/Nov/2025 21:18:45] "POST /sync/evolution/webhook/ HTTP/1.1" 200 16
-Not Found: /atendimentos/webhook_whatsapp/contacts-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
-[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
-Not Found: /atendimentos/webhook_whatsapp/messages-upsert
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/messages-upsert
-[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/messages-upsert HTTP/1.1" 404 4719
-Not Found: /atendimentos/webhook_whatsapp/contacts-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
-[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
-Not Found: /atendimentos/webhook_whatsapp/connection-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/connection-update
-[17/Nov/2025 21:19:33] "POST /atendimentos/webhook_whatsapp/connection-update HTTP/1.1" 404 4725
-[17/Nov/2025 21:19:35] "GET /admin/django_q/success/ HTTP/1.1" 200 22754
-[17/Nov/2025 21:19:35] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:37] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
-[17/Nov/2025 21:19:37] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:38] "GET /admin/django_q/success/ HTTP/1.1" 200 22754
-[17/Nov/2025 21:19:38] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:39] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
-[17/Nov/2025 21:19:39] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:40] "GET /admin/django_q/failure/ HTTP/1.1" 200 19661
-[17/Nov/2025 21:19:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:42] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26051
-[17/Nov/2025 21:19:42] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:43] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 25766
-[17/Nov/2025 21:19:43] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:44] "GET /admin/atendimentos/mensagem/69/change/ HTTP/1.1" 200 33295
-[17/Nov/2025 21:19:44] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[17/Nov/2025 21:19:49] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26051
-[17/Nov/2025 21:19:49] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-Not Found: /atendimentos/webhook_whatsapp/contacts-update
-WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
-[17/Nov/2025 21:20:41] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
+2025-11-18 18:55:15.476 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:15.486 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:15.493 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:55:15.496 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:55:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:15.594 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:15.603 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:15.779 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:15.786 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:15.824 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:15.828 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:19.929 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:19.934 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:19] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:19.944 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:19.949 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:19] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.043 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.052 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.094 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.100 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.318 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.326 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:55:20.326 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.334 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.349 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.354 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.401 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.408 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.447 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.454 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:55:20.701 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:55:20.710 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:55:20] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:01.233 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:01.241 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:01.850 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:01.860 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:01.874 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:01.879 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:01.881 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:01.886 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:01.895 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:01.902 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:09.077 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:09.082 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:56:09.085 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:09.090 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:09] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:56:09] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:55.384 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:55.389 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:55.845 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:55.855 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:55.877 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:55.878 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:55.883 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:56:55.884 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:56:55.885 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:56:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:56:55.898 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:56:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:57:00.414 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:00.423 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:57:00.424 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:00.434 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:57:00] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:57:00] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:57:08] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26050
+[18/Nov/2025 18:57:08] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[18/Nov/2025 18:57:11] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 27350
+[18/Nov/2025 18:57:11] "GET /static/admin/img/icon-no.svg HTTP/1.1" 304 0
+[18/Nov/2025 18:57:11] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[18/Nov/2025 18:57:17] "GET /admin/atendimentos/mensagem/87/change/ HTTP/1.1" 200 33646
+[18/Nov/2025 18:57:18] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[18/Nov/2025 18:57:36] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26050
+[18/Nov/2025 18:57:36] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[18/Nov/2025 18:57:41] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 27350
+[18/Nov/2025 18:57:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[18/Nov/2025 18:57:44] "GET /admin/atendimentos/mensagem/88/change/ HTTP/1.1" 200 32546
+[18/Nov/2025 18:57:44] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+2025-11-18 18:57:53.138 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:53.144 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:57:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:57:53.625 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:53.631 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:57:53.634 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+[18/Nov/2025 18:57:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:57:53.642 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:57:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:57:53.679 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:53.687 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:57:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:57:53.691 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:53.697 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:57:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:57:58.672 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:58.676 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:57:58.678 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:57:58.681 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:57:58] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:57:58] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:58:51.162 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:58:51.170 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:58:51] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:58:51.615 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:58:51.621 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:58:51] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:58:51.630 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:58:51.638 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:58:51.640 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 18:58:51.641 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:130 - evo_schedule_response contact_id=48 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'contact', 'message', 'profile', 'apikey', 'raw']
+[18/Nov/2025 18:58:51] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-18 18:58:51.651 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+2025-11-18 18:58:51.652 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:139 - evo_schedule_response_meta contact_id=48 instance_db_id=1
+[18/Nov/2025 18:58:51] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[18/Nov/2025 18:58:51] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32

@@ -1,75 +1,60 @@
+Resumo
 
+- Os erros no arquivo indicam que o Evolution está conseguindo enviar requisições para o seu endpoint, mas o servidor remoto responde com 500, gerando múltiplas retentativas e muitos logs.
+- A configuração do webhook global já foi corrigida para a nova URL com barra final. O fluxo de envio está ativo e funcional do lado do Evolution.
+Erros Observados
 
-Containers
-evolution-api-chat
+- Status 500 no endpoint http://192.168.3.90:8000/sync/evolution/webhook/ durante o envio global:
+  - “Tentativa x/10 falhou: Request failed with status code 500”
+  - Repetição causada pelo mecanismo de retentativa do Evolution.
+- Antes da correção de URL, houve falhas 404 por uso de byEvents=true (URLs do tipo .../chats-update que não existiam no seu backend).
+Como o Evolution envia webhooks
 
-evolution-api-chat
-4ab6dbe38819
-evolution-api:2.3.6-local
-8080:8080⁠
-STATUS
-Running (1 day ago)
+- Envio Global:
+  - Respeita WEBHOOK_GLOBAL_URL , WEBHOOK_GLOBAL_ENABLED , WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS lidos do ambiente em evolution-api/src/config/env.config.ts:749–751, 754–783 .
+  - Com WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS=false , envia sempre para o endpoint base, sem sufixo por evento (confirmado nos logs).
+  - Implementação do envio em evolution-api/src/api/integrations/event/webhook/webhook.controller.ts:150–181 .
+- Retentativas:
+  - Controladas em webhook.controller.ts:201–283 .
+  - Por padrão, erros 500 são considerados recuperáveis e continuam tentando (non-retryable: 400, 401, 403, 404, 422).
+Causas Prováveis (lado do seu endpoint)
 
+- O servidor 192.168.3.90:8000 está recebendo POST e respondendo 500 (erro interno). As causas mais comuns:
+  - Corpo JSON inesperado (Evolution envia { event, instance, data, destination, date_time, sender, server_url, apikey } ).
+  - Necessidade de autenticação via cabeçalho (Bearer/Basic) não suprida. O envio global não adiciona headers; se o seu endpoint exigir, considere webhook por instância (que suporta headers).
+  - Validação rígida de rota, método ou conteúdo que não está tratando todos os eventos.
+  - Erro interno na aplicação (ver logs do seu backend para rastrear stack).
+Ações recomendadas
 
-[Evolution API]    v2.3.6  205   -  Mon Nov 17 2025 21:18:42     ERROR   [WebhookController]  [object]   
+- Validar o contrato do endpoint:
+  - Garanta suporte a POST com Content-Type: application/json .
+  - Adapte seu handler para aceitar o payload do Evolution (campos citados acima).
+  - Se precisar de autenticação via cabeçalho, prefira configurar webhook por instância (ver abaixo).
+- Reduzir ruído de retentativas enquanto ajusta o backend:
+  - Opcional: definir WEBHOOK_RETRY_NON_RETRYABLE_STATUS_CODES=500 no .env para interromper retentativas em erro 500.
+- Ativar somente eventos úteis neste momento:
+  - Defina variáveis como WEBHOOK_EVENTS_CONNECTION_UPDATE=true e outras necessárias; deixe o restante false para reduzir tráfego e logs.
+Alternativa: Webhook por Instância com headers
 
-{
+- O envio por instância suporta headers e jwt_key que gera Authorization: Bearer <jwt> automaticamente:
+  - Implementação em webhook.controller.ts:77–85 e uso em set em webhook.controller.ts:33–55 .
+- Isso permite atender requisitos de segurança do seu endpoint. Exemplo de payload de configuração via API (ajuste a rota conforme seu mapeamento):
+  - Rota de configuração: exposta pelo WebhookRouter (ver evolution-api/src/api/integrations/event/webhook/webhook.router.ts:17–26 ).
+  - Use o Manager em http://localhost:8080/manager ou a rota de API de “webhook set” vinculada à instância para definir:
+    - enabled: true
+    - url: http://192.168.3.90:8000/sync/evolution/webhook/
+    - byEvents: false
+    - headers: { jwt_key: '<segredo>' } ou outro cabeçalho que seu servidor exija.
+    - events: [...] com os eventos desejados.
+Verificações rápidas
 
-  local: 'p.sendData-Webhook-Global',
+- Conectividade a partir do container: POST ao endpoint responde (atualmente 500 ), confirmando que não é bloqueio de rede.
+- Logs do Evolution mostram o envio global “p.sendData-Webhook-Global” com a URL correta, o que indica que a configuração já está aplicada.
+Próximos passos sugeridos
 
-  message: 'Erro não recuperável (404): Request failed with status code 404. Cancelando retentativas.',
+- Ajustar seu endpoint para aceitar o payload do Evolution e retornar 2xx :
+  - Se o endpoint precisa de autenticação por header, migrar para webhook por instância com headers .
+  - Se prefere manter o global, considerar token via querystring (ex.: ...?token=... ) como alternativa ao cabeçalho.
+- Opcional: configurar um conjunto mínimo de eventos com WEBHOOK_EVENTS_* para testar fluxo e evitar excesso de logs até estabilizar.
+Se quiser, eu configuro agora o webhook por instância com headers (incluindo jwt_key ) e habilito um conjunto mínimo de eventos, além de ajustar WEBHOOK_RETRY_NON_RETRYABLE_STATUS_CODES=500 para reduzir o volume de logs enquanto o seu endpoint é corrigido.
 
-  statusCode: 404,
-
-  url: 'http://192.168.3.90:8000/atendimentos/webhook_whatsapp/chats-update',
-
-  server_url: 'http://localhost:8080'
-
-} 
-
-
-[Evolution API]    v2.3.6  205   -  Mon Nov 17 2025 21:18:42     ERROR   [WebhookController]  [object]   
-
-{
-
-  local: 'p.sendData-Webhook-Global',
-
-  message: 'Todas as tentativas falharam: Request failed with status code 404',
-
-  hostName: undefined,
-
-  syscall: undefined,
-
-  code: 'ERR_BAD_REQUEST',
-
-  error: undefined,
-
-  stack: 'AxiosError: Request failed with status code 404\n' +
-
-    '    at settle (/evolution/node_modules/axios/dist/node/axios.cjs:2097:12)\n' +
-
-    '    at IncomingMessage.handleStreamEnd (/evolution/node_modules/axios/dist/node/axios.cjs:3305:11)\n' +
-
-    '    at IncomingMessage.emit (node:events:520:35)\n' +
-
-    '    at endReadableNT (node:internal/streams/readable:1701:12)\n' +
-
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)\n' +
-
-    '    at Axios.request (/evolution/node_modules/axios/dist/node/axios.cjs:4483:41)\n' +
-
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n' +
-
-    '    at async Io.retryWebhookRequest (/evolution/dist/main.js:315:65415)\n' +
-
-    '    at async Io.emit (/evolution/dist/main.js:315:64790)\n' +
-
-    '    at async Mo.emit (/evolution/dist/main.js:315:70097)\n' +
-
-    '    at async eo.sendDataWebhook (/evolution/dist/main.js:173:17316)',
-
-  name: 'AxiosError',
-
-  url: 'http://192.168.3.90:8000/atendimentos/webhook_whatsapp/chats-update',
-
-http://192.168.3.90:8000/sync/evolution/webhook/

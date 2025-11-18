@@ -2,8 +2,8 @@ import json
 from typing import Any, Dict, List
 
 from django.core.cache import cache
-from django_q.models import Schedule
 from django.utils import timezone
+from django_q.models import Schedule
 
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
@@ -29,14 +29,16 @@ def sched_response_contact(params: Dict[str, Any]) -> None:
         return
     cache.set(timer_key, True, timeout=(SERVICEHUB.TIME_CACHE or 60) + 60)
     name = f"process_contact_{contact_id}"
-    next_run = timezone.now() + timezone.timedelta(seconds=SERVICEHUB.TIME_CACHE)
+    next_run = timezone.now() + timezone.timedelta(
+        seconds=SERVICEHUB.TIME_CACHE
+    )
     Schedule.objects.filter(name=name).delete()
     Schedule.objects.create(
         name=name,
         func=(
             "smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact"
         ),
-        args=json.dumps(params),
+        args=repr((contact_id,)),
         schedule_type=Schedule.ONCE,
         next_run=next_run,
     )

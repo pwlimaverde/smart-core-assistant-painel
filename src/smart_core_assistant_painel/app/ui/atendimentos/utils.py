@@ -436,22 +436,35 @@ class ProcessingParams:
 
 
 def _send_message_response_by_contact(params: ProcessingParams) -> None:
+    contact_id = int(params.contact_id)
+    cache_key = f"evo_buffer_{contact_id}"
     try:
-        contact_id = int(params.contact_id)
         api_key: Optional[str] = params.api_key
-        cache_key = f"evo_buffer_{contact_id}"
         env_list: list[dict[str, Any]] = cache.get(cache_key, [])
         logger.info(
             "atd_process_start contact_id=%s env_count=%s",
             contact_id,
             len(env_list),
         )
+
+        # Se o buffer estiver vazio, tenta usar a mensagem dos parâmetros (fallback)
         if not env_list:
-            logger.warning(f"Buffer vazio para contato {contact_id}")
-            return
+            logger.warning(
+                f"Buffer vazio para contato {contact_id}. Verificando params."
+            )
+            if params.message and params.message.get("text"):
+                # Cria um envelope fictício com os dados do params para processamento
+                env_list = [{"message": params.message, "profile": {}}]
+            else:
+                logger.warning(
+                    f"Sem mensagens para processar para contato {contact_id}"
+                )
+                return
+
         last_env = env_list[-1]
         texts: list[str] = []
         metadados: dict[str, Any] = {}
+
         for env in env_list:
             msg_env = env.get("message", {})
             t = str(msg_env.get("text", "")).strip()
@@ -460,6 +473,7 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
             md_env = msg_env.get("metadata") or {}
             if isinstance(md_env, dict):
                 metadados.update(md_env)
+
         conteudo = "\n".join(texts)
         profile = last_env.get("profile", {})
         nome_perfil = profile.get("push_name")
@@ -467,10 +481,20 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
         msg = params.message or {}
         message_type = str(msg.get("type") or "extendedTextMessage")
         message_id = str(msg.get("id") or "")
-        if msg.get("text"):
+
+        # Fallback final para texto
+        if not conteudo and msg.get("text"):
             conteudo = str(msg.get("text"))
+
+        if not conteudo:
+            logger.warning(
+                f"Conteúdo vazio para contato {contact_id}. Ignorando processamento."
+            )
+            return
+
         if isinstance(msg.get("metadata"), dict):
             metadados.update(msg.get("metadata") or {})
+
         try:
             logger.info(
                 "atd_process_compiled contact_id=%s text_len=%s msg_id=%s",
@@ -514,7 +538,9 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
                     if ctx.get("api_key") != api_key:
                         ctx["api_key"] = api_key
                         atendimento_obj.contexto_conversa = ctx
-                        atendimento_obj.save(update_fields=["contexto_conversa"])
+                        atendimento_obj.save(
+                            update_fields=["contexto_conversa"]
+                        )
                 except Exception:
                     ...
             if (
@@ -744,6 +770,19 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
 def send_message_response_by_contact(
     args: ProcessingParams | str | int | dict[str, Any],
 ) -> None:
+    """
+    Processa a resposta de mensagem para um contato.
+
+    Args:
+        args: Pode ser:
+            - ProcessingParams: Objeto com os parâmetros já processados.
+            - int: ID do contato (contact_id). O método buscará o buffer no cache.
+            - str: JSON string contendo os parâmetros ou contact_id.
+            - dict: Dicionário com os parâmetros.
+    """
+    logger.info(
+        f"DEBUG: send_message_response_by_contact called with args type={type(args)} value={args}"
+    )
     if isinstance(args, ProcessingParams):
         _send_message_response_by_contact(args)
         return
@@ -753,10 +792,22 @@ def send_message_response_by_contact(
             data = json.loads(args)
     except Exception:
         data = args
+
+    logger.info(f"DEBUG: data after processing type={type(data)} value={data}")
+
+    if isinstance(data, list):
+        if len(data) > 0:
+            data = data[0]
+            logger.info(f"DEBUG: Extracted from list, new data: {data}")
+
     if isinstance(data, int):
+        logger.info("DEBUG: Processing as int (contact_id)")
         contact_id = int(data)
         cache_key = f"evo_buffer_{contact_id}"
         env_list: list[dict[str, Any]] = cache.get(cache_key, [])
+        logger.info(
+            f"DEBUG: Cache get key={cache_key} result_len={len(env_list)}"
+        )
         last_env = env_list[-1] if env_list else {}
         msg_last = last_env.get("message", {})
         params = ProcessingParams(

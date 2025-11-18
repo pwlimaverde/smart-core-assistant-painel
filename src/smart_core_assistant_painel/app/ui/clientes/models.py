@@ -132,6 +132,9 @@ class Contato(models.Model):
 
             self.slug = slug
 
+        if self.slug == "":
+            self.slug = None
+
         if self.telefone:
             telefone_limpo = re.sub(r"\D", "", self.telefone)
             if telefone_limpo and not telefone_limpo.startswith("55"):

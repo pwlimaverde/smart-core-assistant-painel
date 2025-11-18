@@ -15,6 +15,7 @@ Exemplos:
         2. Adicione uma URL a urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
@@ -60,13 +61,20 @@ urlpatterns = [
         "api/atendimentos/",
         include("smart_core_assistant_painel.app.ui.atendimentos.api_urls"),
     ),
-    path(
-        # Integração Trello desativada; rotas movidas para ClickUp
-        # "api/trello_sync/",
-        # include("smart_core_assistant_painel.app.trello_sync.api_urls"),
-        "api/clickup_sync/",
-        include("smart_core_assistant_painel.app.clickup_sync.api_urls"),
-    ),
+    # API ClickUp (condicional): só inclui se o app estiver instalado
+]
+
+if "smart_core_assistant_painel.app.clickup_sync" in settings.INSTALLED_APPS:
+    urlpatterns += [
+        path(
+            "api/clickup_sync/",
+            include(
+                "smart_core_assistant_painel.app.clickup_sync.api_urls"
+            ),
+        ),
+    ]
+
+urlpatterns += [
     path(
         "",
         include("smart_core_assistant_painel.app.evolution_sync.urls"),

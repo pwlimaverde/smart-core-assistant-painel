@@ -23,7 +23,6 @@ from ..utils.parameters import SetEnvironRemoteParameters
 from ..utils.types import (
     SERData,
     SERUsecase,
-    WSData,
 )
 from .service_hub import SERVICEHUB
 from .set_environ_remote.datasource.set_environ_remote_firebase_datasource import (
@@ -32,20 +31,13 @@ from .set_environ_remote.datasource.set_environ_remote_firebase_datasource impor
 from .set_environ_remote.domain.usecase.set_environ_remote_usecase import (
     SetEnvironRemoteUseCase,
 )
-from .whatsapp_services.datasource.evolution.evolution_api_datasource import (
-    EvolutionAPIDatasource,
-)
-from .whatsapp_services.domain.usecase.whatsapp_service_usecase import (
-    WhatsAppServiceUsecase,
-)
 
 
 class FeaturesCompose:
     """Facade para os casos de uso do módulo de Serviços.
 
     Esta classe inicializa e configura os principais serviços da aplicação,
-    como variáveis de ambiente, o banco de dados vetorial (vector storage)
-    e o serviço de mensagens do WhatsApp.
+    como variáveis de ambiente e o banco de dados vetorial (vector storage).
     """
 
     @staticmethod
@@ -79,11 +71,6 @@ class FeaturesCompose:
             "chunk_size": "CHUNK_SIZE",
             "embeddings_model": "EMBEDDINGS_MODEL",
             "embeddings_class": "EMBEDDINGS_CLASS",
-            # Whatsapp
-            "whatsapp_api_base_url": "WHATSAPP_API_BASE_URL",
-            "whatsapp_api_send_text_url": "WHATSAPP_API_SEND_TEXT_URL",
-            "whatsapp_api_start_typing_url": "WHATSAPP_API_START_TYPING_URL",
-            "whatsapp_api_stop_typing_url": "WHATSAPP_API_STOP_TYPING_URL",
             # Utilitarios
             "valid_entity_types": "VALID_ENTITY_TYPES",
             "time_cache": "TIME_CACHE",
@@ -105,24 +92,6 @@ class FeaturesCompose:
         # Recarrega as configurações do SERVICEHUB após carregar as variáveis do Firebase
         SERVICEHUB.reload_config()
 
-    @staticmethod
-    def whatsapp_service() -> None:
-        """Inicializa o serviço de cliente de API do WhatsApp (Evolution API)
-        e o disponibiliza no `SERVICEHUB`.
-
-        Raises:
-            WhatsappServiceError: Se ocorrer um erro ao inicializar o serviço.
-        """
-        # Cria os parâmetros
-        parameters: NoParams = NoParams()
-        datasource: WSData = EvolutionAPIDatasource()
-        usecase = WhatsAppServiceUsecase(datasource=datasource)
-
-        data = usecase(parameters)
-        if isinstance(data, SuccessReturn):
-            SERVICEHUB.set_whatsapp_service(data.result)
-        if isinstance(data, ErrorReturn):
-            raise data.result
 
     @staticmethod
     def unifield_data_services() -> None:

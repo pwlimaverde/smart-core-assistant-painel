@@ -1,48 +1,244 @@
+task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-13 20:14:35.967 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-13 20:14:37.369 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-17 21:18:23.623 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:25.017 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster october-mars-shade-aspen starting.
-2025-11-13 20:14:40.064 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-13 20:14:41.465 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-af028d0a06184024aa0ebaca4a972d7d guarding cluster october-mars-shade-aspen [smart_core_cluster]
-INFO:django-q:Q Cluster october-mars-shade-aspen [smart_core_cluster] running.
-2025-11-13 20:14:43.104 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-13 20:14:43.104 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-13 20:14:43.106 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-13 20:14:43.106 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-13 20:14:44.685 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-13 20:14:44.699 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-13 20:14:44.716 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-13 20:14:44.744 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-62eca79df4a34ecdbb3c7a2850b32544 ready for work at 29516
-INFO:django-q:Process-b10efccffe504fcc9dca858cde7c546e ready for work at 17760
-INFO:django-q:Process-df71a1956fa34c97b1b812b13c06e6cf monitoring at 25388
-INFO:django-q:Process-7fa67ae5593046bcb35beb9365308f56 pushing tasks at 4384
-INFO:django-q:Process-62eca79df4a34ecdbb3c7a2850b32544 processing sixteen-alaska-helium-four 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_ensure_task'
-2025-11-13 20:15:49.544 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-13 20:15:51.226 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task criada: lista=901322379010 -> 86ad86g4a
-2025-11-13 20:15:51.234 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:ensure_task:84 - Criada Task ClickUp 86ad86g4a para atendimento 5
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_ensure_task' (sixteen-alaska-helium-four)
-INFO:django-q:Process-b10efccffe504fcc9dca858cde7c546e processing bakerloo-berlin-burger-triple 'smart_core_assistant_painel.app.clickup_sync.tasks.task_mensagem_append_comment'
-2025-11-13 20:18:26.533 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-INFO:django-q:Process-62eca79df4a34ecdbb3c7a2850b32544 processing butter-north-nevada-chicken 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content'
-2025-11-13 20:18:26.571 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-13 20:18:27.672 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - comentário criado: task=86ad86g4a -> 90130190456245
-2025-11-13 20:18:27.673 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:append_message_comment:281 - Comentário de mensagem anexado na Task 86ad86g4a
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_mensagem_append_comment' (bakerloo-berlin-burger-triple)
-2025-11-13 20:18:28.011 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task atualizada: lista=901322379010 -> 86ad86g4a
-2025-11-13 20:18:28.012 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:update_rich_content:113 - Atualizado conteúdo enriquecido da Task 86ad86g4a
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content' (butter-north-nevada-chicken)
-INFO:django-q:Process-b10efccffe504fcc9dca858cde7c546e processing sodium-cardinal-winter-oklahoma 'smart_core_assistant_painel.app.clickup_sync.tasks.task_mensagem_append_comment'
-2025-11-13 20:18:58.019 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-INFO:django-q:Process-62eca79df4a34ecdbb3c7a2850b32544 processing whiskey-yankee-jersey-mango 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content'
-2025-11-13 20:18:58.081 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
-2025-11-13 20:18:59.036 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - comentário criado: task=86ad86g4a -> 90130190456375
-2025-11-13 20:18:59.036 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:append_message_comment:281 - Comentário de mensagem anexado na Task 86ad86g4a
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_mensagem_append_comment' (sodium-cardinal-winter-oklahoma)
-2025-11-13 20:18:59.492 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task atualizada: lista=901322379010 -> 86ad86g4a
-2025-11-13 20:18:59.493 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:update_rich_content:113 - Atualizado conteúdo enriquecido da Task 86ad86g4a
-INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content' (whiskey-yankee-jersey-mango)
+INFO:django-q:Q Cluster oxygen-maryland-river-jig starting.
+2025-11-17 21:18:27.431 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:28.831 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-7d50f6824fd24428aa23bc563a725650 guarding cluster oxygen-maryland-river-jig [smart_core_cluster]
+INFO:django-q:Q Cluster oxygen-maryland-river-jig [smart_core_cluster] running.
+2025-11-17 21:18:30.460 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:30.460 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:30.469 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:30.469 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:31.964 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-17 21:18:32.015 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-17 21:18:32.022 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-17 21:18:32.025 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-ee17dd4c6cda45fe933e9e9a20260d40 ready for work at 15068
+INFO:django-q:Process-05b70d552d2e41f4a53d9b7cc6b4baac ready for work at 5748
+INFO:django-q:Process-11f09244c2de4397a235e5a5f6d0f7af pushing tasks at 46788
+INFO:django-q:Process-fff6b4ce4e37498fbd4fba4098351a12 monitoring at 4988
+INFO:django-q:Enqueued [smart_core_cluster] 546
+INFO:django-q:Process-7d50f6824fd24428aa23bc563a725650 created task two-muppet-delaware-robert from schedule [process_contact_32]
+INFO:django-q:Process-ee17dd4c6cda45fe933e9e9a20260d40 processing two-muppet-delaware-robert 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' [process_contact_32]
+2025-11-17 21:19:00.135 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:444 - atd_process_start contact_id=%s env_count=%s
+2025-11-17 21:19:00.135 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:475 - atd_process_compiled contact_id=%s text_len=%s msg_id=%s
+2025-11-17 21:19:00.233 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-17 21:19:00.234 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-17 21:19:02.096 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-17 21:19:02.096 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+2025-11-17 21:19:02.119 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:592 - atd_process_can_respond contact_id=%s pode_responder=%s
+2025-11-17 21:19:02.128 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-17 21:19:02.128 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:24 - signal_skip_not_responded id=%s
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-17 21:19:07.007 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3592 (limiar 0.4000): **[Título da Seção 7: Diferenciais Competitivos]**  
+- Espaço VIP com poltronas reclináveis e serviço de chá gelado aromatizado.  
+- Test drive em cabine privativa, garantindo conforto e privacidade.  
+- Entrega expressa em até 24 h para Crato e Juazeiro do Norte.  
+- Parceria com ONG local para reaproveitamento de embalagens e incentivo à coleta seletiva.  
+- Treinamentos trimestrais para a equipe sobre novas texturas, ativos e regulamentações ANVISA.  
+----------------------------------------------------
+2025-11-17 21:19:07.010 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3647 (limiar 0.4000): **[Título da Seção 4: Informações Corporativas]**  
+- Nome Fantasia: Fique Bela Cosméticos  
+- Razão Social: Fique Bela Cosméticos Ltda.  
+- Capital Social: R$ 250 000,00  
+- CNPJ: 00.000.000/0001‑00 (fictício)  
+- Inscrição Estadual: 12.345.678.901  
+- Endereço: Rua das Rosas, 123 – Centro, Crato – CE – CEP 63100‑000  
+- Telefone: (88) 3000‑0000  
+- E‑mail: contato@fiquebela.com.br  
+- Instagram: @fiquebela.cosmeticos (12,5 k seguidores)  
+- Site: www.fiquebela.com.br (fictício)  
+----------------------------------------------------
+
+**[Título da Seção 5: Horário de Funcionamento]**  
+| Dia da Semana | Horário          |  
+|---------------|------------------|  
+| Segunda a Sexta | 09:00 – 18:30 |  
+| Sábado          | 09:00 – 14:00 |  
+| Domingo         | Fechado       |  
+----------------------------------------------------
+2025-11-17 21:19:07.013 | WARNING  | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3748 (limiar 0.4000): **[Título da Seção 6: Serviços Oferecidos]**  
+- **Consultoria de beleza individualizada** – Avaliação de tipo de pele, cor de base, rotina de skincare e sugestões de cronograma capilar.  
+- **Teste e demonstração de produtos** – Espaço Glow Lab com espelhos de luz natural; bar de fragrâncias e testadores de texturas (gel, creme e óleo).  
+- **Venda de cosméticos** – Marcas nacionais (Natura, O Boticário) e importadas (Fenty Beauty, The Ordinary), além de linhas veganas.  
+- **Workshops e cursos** – Aulas presenciais mensais de automaquiagem, bioestética facial e técnicas de contorno; turmas de até 12 pessoas.  
+- **Programa de Fidelidade Fique Bela**  
+  - *Bronze*: 1 ponto a cada R$ 1,00 gasto.  
+  - *Prata* (acima de 500 pontos): 5 % de desconto.  
+  - *Ouro* (acima de 1 200 pontos): 10 % de desconto + brinde mensal.  
+----------------------------------------------------
+2025-11-17 21:19:07.017 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_gerar_dict_fluxos_disponiveis:287 - Gerado dicionário com 2 fluxos disponíveis - {'Atendimento - Comercial': 'teste atendimento', 'Atendimento - Financeiro': 'teste atendimento'}
+2025-11-17 21:19:07.018 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:676 - atd_process_ai_call contact_id=%s
+2025-11-17 21:19:07.018 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
+PROMPT COMPLETO ENVIADO PARA LLM
+================================================================================
+
+============================================================
+MESSAGE 1 - ROLE: SYSTEM
+============================================================
+Data e Hora Atual: 17/11/2025 21:19:07 - Monday
+
+Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
+
+**Seu comportamento deve ser guiado pelos seguintes princípios:**
+
+*   **Profissionalismo:** Mantenha um tom formal, mas acessível. Utilize uma linguagem que demonstre expertise e seriedade, sem ser excessivamente robótica.
+*   **Clareza e Concisão:** Vá direto ao ponto. Evite frases de preenchimento ou informações desnecessárias. A eficiência na comunicação é essencial.
+*   **Tom Prestativo:** Demonstre sempre uma postura solícita e focada em resolver a dúvida do usuário. Sua prioridade é ser útil.
+*   **Neutralidade Factual:** Não expresse opiniões, sentimentos ou faça suposições. Limite-se estritamente aos fatos disponíveis.
+
+INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA
+Siga estritamente as orientações abaixo, em português claro e objetivo.
+Adapte a resposta ao contexto do atendimento atual.
+Intenções detectadas e orientações:
+1. [pergunta] Forneça informações claras e verificáveis. Se o pedido for amplo, solicite até 2 esclarecimentos objetivos. Evite jargões e respostas longas.
+Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa.
+
+### Regras de Resposta (siga rigorosamente):
+1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.
+2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."
+3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.
+4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.
+5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.
+6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.
+
+
+### SETORES DISPONÍVEIS PARA TRANSFERÊNCIA:
+- **Atendimento - Comercial**: teste atendimento
+- **Atendimento - Financeiro**: teste atendimento
+
+### REGRAS DE TRANSFERÊNCIA:
+1. Analise a intenção do usuário e verifique se há um setor específico adequado
+2. Se houver um setor correspondente exato na lista acima, use-o
+3. Se não houver correspondência exata, escolha o setor mais próximo
+4. Use sempre o nome exato do setor conforme listado acima
+5. A transferência deve ser mencionada apenas se for realmente necessária
+
+
+============================================================
+MESSAGE 2 - ROLE: USER
+============================================================
+<historico_conversa>
+(Apenas para referência de contexto, não como fonte factual)
+{historico_context}
+</historico_conversa>
+
+<contexto_rag>
+{dados_treinamento}
+</contexto_rag>
+
+<pergunta_usuario>
+{context}
+</pergunta_usuario>
+
+Com base apenas nas regras acima, elabore a resposta final ao usuário.
+
+================================================================================
+FIM DO PROMPT
+================================================================================
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 4.000000 seconds
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-17 21:19:16.927 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:660 - Score de confiabilidade (triádico): 0.7386
+2025-11-17 21:19:16.934 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-17 21:19:16.940 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-17 21:19:16.940 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:86 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:101 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-17 21:19:16.941 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-17 21:19:16.963 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-17 21:19:16.964 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-17 21:19:16.964 | ERROR    | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_exception msg_id=%s err=%s
+Traceback (most recent call last):
+
+  File "<string>", line 1, in <module>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\spawn.py", line 122, in spawn_main
+    exitcode = _main(fd, parent_sentinel)
+               │     │   └ 384
+               │     └ 3
+               └ <function _main at 0x0000021ED5390CC0>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\spawn.py", line 135, in _main
+    return self._bootstrap(parent_sentinel)
+           │    │          └ 384
+           │    └ <function BaseProcess._bootstrap at 0x0000021ED50A0900>
+           └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 313, in _bootstrap
+    self.run()
+    │    └ <function BaseProcess.run at 0x0000021ED5093E20>
+    └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
+  File "C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\multiprocessing\process.py", line 108, in run
+    self._target(*self._args, **self._kwargs)
+    │    │        │    │        │    └ {}
+    │    │        │    │        └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
+    │    │        │    └ (<django_q.queues.Queue object at 0x0000021EF9E91D10>, <django_q.queues.Queue object at 0x0000021EF9E93610>, <Synchronized wr...
+    │    │        └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
+    │    └ <function worker at 0x0000021EF9F440E0>
+    └ <Process name='Process-ee17dd4c6cda45fe933e9e9a20260d40' parent=37704 started daemon>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django_q\worker.py", line 103, in worker
+    res = f(*task["args"], **task["kwargs"])
+          │  │               └ {'id': '2eca0d0db52b444f9b43fb125fb1c692', 'name': 'two-muppet-delaware-robert', 'func': 'smart_core_assistant_painel.app.ui....
+          │  └ {'id': '2eca0d0db52b444f9b43fb125fb1c692', 'name': 'two-muppet-delaware-robert', 'func': 'smart_core_assistant_painel.app.ui....
+          └ <function send_message_response_by_contact at 0x0000021EFBE59F80>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\utils.py", line 784, in send_message_response_by_contact
+    _send_message_response_by_contact(params)
+    │                                 └ ProcessingParams(contact_id=32, api_key='50675099048D-44D0-A0C6-FAE0F020EC3E', message={'id': 'AC982420D3DE182626B754B98F3864...
+    └ <function _send_message_response_by_contact at 0x0000021EFBE59BC0>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\utils.py", line 688, in _send_message_response_by_contact
+    mensagem.registrar_resposta_bot(
+    │        └ <function Mensagem.registrar_resposta_bot at 0x0000021EF967FCE0>
+    └ <Mensagem: contato: Qual o horário de funcionamento de vocês?>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\ui\atendimentos\models.py", line 806, in registrar_resposta_bot
+    self.save(
+    │    └ <function Model.save at 0x0000021EDAAD5580>
+    └ <Mensagem: contato: Qual o horário de funcionamento de vocês?>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\base.py", line 902, in save
+    self.save_base(
+    │    └ <function Model.save_base at 0x0000021EDAAD5760>
+    └ <Mensagem: contato: Qual o horário de funcionamento de vocês?>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\base.py", line 1023, in save_base
+    post_save.send(
+    │         └ <function Signal.send at 0x0000021EDA4F13A0>
+    └ <django.db.models.signals.ModelSignal object at 0x0000021ED947ED70>
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\dispatch\dispatcher.py", line 189, in send
+    response = receiver(signal=self, sender=sender, **named)
+               │               │            │         └ {'instance': <Mensagem: contato: Qual o horário de funcionamento de vocês?>, 'created': False, 'update_fields': frozenset({'r...
+               │               │            └ <class 'smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem'>
+               │               └ <django.db.models.signals.ModelSignal object at 0x0000021ED947ED70>
+               └ <function _on_message_saved at 0x0000021EF9F2D4E0>
+
+> File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\signals.py", line 107, in _on_message_saved
+    EvolutionWhatsAppService().send_message(
+    └ <class 'smart_core_assistant_painel.app.evolution_sync.services.EvolutionWhatsAppService'>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services.py", line 145, in send_message
+    self._typing(
+    │    └ <function EvolutionWhatsAppService._typing at 0x0000021EF9F2CA40>
+    └ <smart_core_assistant_painel.app.evolution_sync.services.EvolutionWhatsAppService object at 0x0000021EFBF13B60>
+
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services.py", line 233, in _typing
+    raise Exception(
+
+Exception: Erro ao definir status de digitação: 404 - {"status":404,"error":"Not Found","response":{"message":["The \"99910a55-8bbd-440a-9e14-9d5833a63c5e\" instance does not exist"]}}
+2025-11-17 21:19:16.973 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 69 (atendimento 30) com confianca=0.739
+2025-11-17 21:19:16.974 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:692 - atd_process_registered_bot_response msg_id=%s len=%s
+2025-11-17 21:19:16.977 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:176 - Departamento 'Atendimento' já existe (ID 15)
+2025-11-17 21:19:16.980 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_garantir_estrutura_atendimento_padrao:195 - Fluxo 'Atendimento Inicial' já existe (ID 14)
+2025-11-17 21:19:16.984 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:229 - Atendimento 30 movido para etapa 'Em Atendimento'
+2025-11-17 21:19:16.988 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_atualizar_status_atendimento_em_andamento:240 - Atendimento 30 atualizado para status 'Em Atendimento'
+2025-11-17 21:19:16.994 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.utils:_send_message_response_by_contact:736 - atd_process_done contact_id=%s cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact' (two-muppet-delaware-robert)

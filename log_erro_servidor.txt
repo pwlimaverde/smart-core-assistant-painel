@@ -1,0 +1,76 @@
+task start
+Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
+Iniciando serviços e configurações iniciais...
+2025-11-17 21:18:18.372 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:19.737 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+Serviços iniciados com sucesso.
+Iniciando a aplicação Django...
+🔍 Caminho relativo fornecido: src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
+📁 Raiz do projeto calculada: C:\PROJETOS\PYTHON\APPS
+📂 Caminho absoluto resultante: C:\PROJETOS\PYTHON\APPS\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
+📄 Arquivo existe: False
+🔍 Tentando diretório atual: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
+📄 Arquivo existe no diretório atual: True
+Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
+Iniciando serviços e configurações iniciais...
+2025-11-17 21:18:21.453 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-17 21:18:22.864 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+Serviços iniciados com sucesso.
+Iniciando a aplicação Django...
+Watching for file changes with StatReloader
+INFO:django.utils.autoreload:Watching for file changes with StatReloader
+Performing system checks...
+
+System check identified no issues (0 silenced).
+November 17, 2025 - 21:18:24
+Django version 5.2.7, using settings 'smart_core_assistant_painel.app.ui.core.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CTRL-BREAK.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Not Found: /atendimentos/webhook_whatsapp/contacts-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
+[17/Nov/2025 21:18:25] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
+Not Found: /atendimentos/webhook_whatsapp/connection-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/connection-update
+[17/Nov/2025 21:18:27] "POST /atendimentos/webhook_whatsapp/connection-update HTTP/1.1" 404 4725
+Not Found: /atendimentos/webhook_whatsapp/chats-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/chats-update
+[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/chats-update HTTP/1.1" 404 4710
+2025-11-17 21:18:45.755 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:120 - evo_schedule_response contact_id=%s env_keys=%s
+2025-11-17 21:18:45.755 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:128 - evo_schedule_response_meta contact_id=%s instance_db_id=%s
+[17/Nov/2025 21:18:45] "POST /sync/evolution/webhook/ HTTP/1.1" 200 16
+Not Found: /atendimentos/webhook_whatsapp/contacts-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
+[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
+Not Found: /atendimentos/webhook_whatsapp/messages-upsert
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/messages-upsert
+[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/messages-upsert HTTP/1.1" 404 4719
+Not Found: /atendimentos/webhook_whatsapp/contacts-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
+[17/Nov/2025 21:18:45] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719
+Not Found: /atendimentos/webhook_whatsapp/connection-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/connection-update
+[17/Nov/2025 21:19:33] "POST /atendimentos/webhook_whatsapp/connection-update HTTP/1.1" 404 4725
+[17/Nov/2025 21:19:35] "GET /admin/django_q/success/ HTTP/1.1" 200 22754
+[17/Nov/2025 21:19:35] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:37] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
+[17/Nov/2025 21:19:37] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:38] "GET /admin/django_q/success/ HTTP/1.1" 200 22754
+[17/Nov/2025 21:19:38] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:39] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
+[17/Nov/2025 21:19:39] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:40] "GET /admin/django_q/failure/ HTTP/1.1" 200 19661
+[17/Nov/2025 21:19:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:42] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26051
+[17/Nov/2025 21:19:42] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:43] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 25766
+[17/Nov/2025 21:19:43] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:44] "GET /admin/atendimentos/mensagem/69/change/ HTTP/1.1" 200 33295
+[17/Nov/2025 21:19:44] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[17/Nov/2025 21:19:49] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26051
+[17/Nov/2025 21:19:49] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+Not Found: /atendimentos/webhook_whatsapp/contacts-update
+WARNING:django.request:Not Found: /atendimentos/webhook_whatsapp/contacts-update
+[17/Nov/2025 21:20:41] "POST /atendimentos/webhook_whatsapp/contacts-update HTTP/1.1" 404 4719

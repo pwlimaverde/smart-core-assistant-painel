@@ -29,11 +29,23 @@ def normalize_evolution_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
     else:
         text = ""
 
+    # Determinar os identificadores preferenciais
+    jid_val: str | None = None
+    lid_val: str | None = None
+
+    if isinstance(remote_jid, str) and remote_jid.endswith("@s.whatsapp.net"):
+        jid_val = remote_jid
+    elif isinstance(remote_jid_alt, str) and remote_jid_alt.endswith("@s.whatsapp.net"):
+        jid_val = remote_jid_alt
+
+    if isinstance(remote_jid, str) and remote_jid.endswith("@lid"):
+        lid_val = remote_jid
+    elif isinstance(remote_jid_alt, str) and remote_jid_alt.endswith("@lid"):
+        lid_val = remote_jid_alt
+
     phone: str = ""
-    if remote_jid_alt and "@s.whatsapp.net" in remote_jid_alt:
-        phone = remote_jid_alt.split("@")[0]
-    elif remote_jid and (addressing_mode == "pn" or "@s.whatsapp.net" in remote_jid):
-        phone = remote_jid.split("@")[0]
+    if isinstance(jid_val, str) and jid_val.endswith("@s.whatsapp.net"):
+        phone = jid_val.split("@")[0]
 
     envelope: Dict[str, Any] = {
         "source": "EvolutionAPI",
@@ -41,8 +53,8 @@ def normalize_evolution_webhook(payload: Dict[str, Any]) -> Dict[str, Any]:
         "instance_id": data.get("instanceId"),
         "sender_jid": payload.get("sender"),
         "contact": {
-            "jid": remote_jid,
-            "lid": remote_jid_alt,
+            "jid": jid_val,
+            "lid": lid_val,
             "addressing_mode": addressing_mode,
             "phone": phone,
         },

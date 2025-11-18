@@ -105,7 +105,6 @@ def start_services() -> None:
             return
 
         FeaturesCompose.set_environ_remote()
-        FeaturesCompose.whatsapp_service()
 
         _services_initialized = True
 

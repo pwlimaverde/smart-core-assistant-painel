@@ -441,6 +441,11 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
         api_key: Optional[str] = params.api_key
         cache_key = f"evo_buffer_{contact_id}"
         env_list: list[dict[str, Any]] = cache.get(cache_key, [])
+        logger.info(
+            "atd_process_start contact_id=%s env_count=%s",
+            contact_id,
+            len(env_list),
+        )
         if not env_list:
             logger.warning(f"Buffer vazio para contato {contact_id}")
             return
@@ -466,6 +471,15 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
             conteudo = str(msg.get("text"))
         if isinstance(msg.get("metadata"), dict):
             metadados.update(msg.get("metadata") or {})
+        try:
+            logger.info(
+                "atd_process_compiled contact_id=%s text_len=%s msg_id=%s",
+                contact_id,
+                len(conteudo or ""),
+                message_id,
+            )
+        except Exception:
+            ...
 
         # Comentário (PT-BR): utiliza api_key do agendamento ou do envelope
         if not api_key:
@@ -494,6 +508,15 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
             except Exception:
                 mensagem.refresh_from_db()
             atendimento_obj: Atendimento = mensagem.atendimento
+            if api_key:
+                try:
+                    ctx = dict(atendimento_obj.contexto_conversa or {})
+                    if ctx.get("api_key") != api_key:
+                        ctx["api_key"] = api_key
+                        atendimento_obj.contexto_conversa = ctx
+                        atendimento_obj.save(update_fields=["contexto_conversa"])
+                except Exception:
+                    ...
             if (
                 getattr(atendimento_obj, "departamento", None) is None
                 and api_key
@@ -566,7 +589,24 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
                         )
             # pode_responder = False
             pode_responder = _pode_bot_responder_atendimento(atendimento_obj)
+            logger.info(
+                "atd_process_can_respond contact_id=%s pode_responder=%s",
+                contact_id,
+                pode_responder,
+            )
             if pode_responder:
+                try:
+                    inst_name: str = str(last_env.get("instance") or "")
+                    inst_id: str = str(last_env.get("instance_id") or "")
+                    meta = dict(mensagem.metadados or {})
+                    meta["evolution"] = {
+                        "instance_id": inst_id or None,
+                        "instance_name": inst_name or None,
+                    }
+                    mensagem.metadados = meta
+                    mensagem.save(update_fields=["metadados"])
+                except Exception:
+                    ...
                 prompt_lines: list[str] = [
                     (
                         "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
@@ -633,6 +673,10 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
                     and len(dados_treinamento) > 0
                 )
                 if should_call_ai:
+                    logger.info(
+                        "atd_process_ai_call contact_id=%s",
+                        contact_id,
+                    )
                     result: AMTuple = FeaturesCompose.analise_mensage(
                         fluxos_disponiveis=fluxos_disponiveis,
                         historico_atendimento=historico_atendimento,
@@ -640,14 +684,15 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
                         context=mensagem.conteudo,
                         dados_treinamento=dados_treinamento,
                     )
-                    from smart_core_assistant_painel.app.evolution_sync.services import (
-                        send_message_by_contact_id,
-                    )
-
-                    send_message_by_contact_id(contact_id, result.resposta_bot)
+                    # envio será disparado por signal após registrar resposta_bot
                     mensagem.registrar_resposta_bot(
                         resposta=result.resposta_bot,
                         confianca=result.confiabilidade,
+                    )
+                    logger.info(
+                        "atd_process_registered_bot_response msg_id=%s len=%s",
+                        mensagem.id,
+                        len(result.resposta_bot or ""),
                     )
                     _atualizar_status_atendimento_em_andamento(atendimento_obj)
                     if result.transferir_atendimento:
@@ -659,14 +704,15 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
                     texto_fallback: str = (
                         "Recebemos sua mensagem. Em breve retornaremos."
                     )
-                    from smart_core_assistant_painel.app.evolution_sync.services import (
-                        send_message_by_contact_id,
-                    )
-
-                    send_message_by_contact_id(contact_id, texto_fallback)
+                    # envio será disparado por signal após registrar resposta_bot
                     mensagem.registrar_resposta_bot(
                         resposta=texto_fallback,
                         confianca=0.0,
+                    )
+                    logger.info(
+                        "atd_process_registered_bot_response msg_id=%s len=%s",
+                        mensagem.id,
+                        len(texto_fallback),
                     )
                     _atualizar_status_atendimento_em_andamento(atendimento_obj)
             else:
@@ -687,6 +733,10 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
         try:
             cache.delete(cache_key)
             cache.delete(f"evo_timer_{contact_id}")
+            logger.info(
+                "atd_process_done contact_id=%s cache_cleared=1",
+                contact_id,
+            )
         except Exception:
             ...
 

@@ -1,1 +1,0 @@
-"""Implementações de datasource para Evolution API."""

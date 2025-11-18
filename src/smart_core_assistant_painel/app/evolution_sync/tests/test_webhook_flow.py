@@ -11,6 +11,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
+    EvolutionInstance,
 )
 from smart_core_assistant_painel.app.ui.atendimentos.utils import (
     send_message_response_by_contact,
@@ -72,3 +73,157 @@ class TestEvolutionWebhookFlow(TestCase):
 
         mensagem: Mensagem | None = Mensagem.objects.filter(atendimento=atendimento).first()
         self.assertIsNotNone(mensagem)
+
+    def test_phone_saved_when_pn_available(self) -> None:
+        payload: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "inst-name",
+            "apikey": "TEST_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "5511999999999@s.whatsapp.net",
+                    "remoteJidAlt": "1234567890@lid",
+                    "fromMe": False,
+                    "id": "MSG1",
+                    "participant": "",
+                    "addressingMode": "pn",
+                },
+                "pushName": "Cliente PN",
+                "status": "DELIVERY_ACK",
+                "message": {"conversation": "Olá"},
+                "messageType": "conversation",
+                "messageTimestamp": 1763301593,
+                "instanceId": "inst-id",
+                "source": "android",
+            },
+            "sender": "5511999999999@s.whatsapp.net",
+        }
+        resp = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+        evo_contact: EvolutionContact | None = EvolutionContact.objects.first()
+        assert evo_contact is not None
+        contato: Contato | None = Contato.objects.filter(id=evo_contact.contact_id).first()
+        assert contato is not None
+        self.assertEqual(contato.telefone, "5511999999999")
+
+    def test_phone_updated_when_only_lid_then_pn(self) -> None:
+        payload_lid_only: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "inst-name",
+            "apikey": "TEST_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "1234567890@lid",
+                    "fromMe": False,
+                    "id": "MSG2",
+                    "participant": "",
+                    "addressingMode": "lid",
+                },
+                "pushName": "Cliente LID",
+                "status": "DELIVERY_ACK",
+                "message": {"conversation": "Oi"},
+                "messageType": "conversation",
+                "messageTimestamp": 1763301593,
+                "instanceId": "inst-id",
+                "source": "android",
+            },
+            "sender": "558800000000@s.whatsapp.net",
+        }
+        resp1 = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload_lid_only),
+            content_type="application/json",
+        )
+        self.assertEqual(resp1.status_code, 200)
+        evo_contact1: EvolutionContact | None = EvolutionContact.objects.first()
+        assert evo_contact1 is not None
+        contato1: Contato | None = Contato.objects.filter(id=evo_contact1.contact_id).first()
+        assert contato1 is not None
+        self.assertIsNone(contato1.telefone)
+
+        payload_with_pn_alt: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "inst-name",
+            "apikey": "TEST_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "1234567890@lid",
+                    "remoteJidAlt": "5511888888888@s.whatsapp.net",
+                    "fromMe": False,
+                    "id": "MSG3",
+                    "participant": "",
+                    "addressingMode": "lid",
+                },
+                "pushName": "Cliente LID/PN",
+                "status": "DELIVERY_ACK",
+                "message": {"conversation": "Olá novamente"},
+                "messageType": "conversation",
+                "messageTimestamp": 1763301594,
+                "instanceId": "inst-id",
+                "source": "android",
+            },
+            "sender": "558800000000@s.whatsapp.net",
+        }
+        resp2 = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload_with_pn_alt),
+            content_type="application/json",
+        )
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(EvolutionContact.objects.count(), 1)
+        evo_contact: EvolutionContact | None = EvolutionContact.objects.first()
+        assert evo_contact is not None
+        contato: Contato | None = Contato.objects.filter(id=evo_contact.contact_id).first()
+        assert contato is not None
+        self.assertEqual(contato.telefone, "5511888888888")
+
+    def test_signal_dispatches_on_bot_response(self) -> None:
+        instance = EvolutionInstance.objects.create(
+            name="inst-name",
+            instance_id="inst-id",
+            api_key="TEST_API_KEY",
+            server_url="http://localhost:3000/",
+        )
+        contato = Contato.objects.create(
+            nome_contato="Cliente",
+            telefone="5511999999999",
+            ativo=True,
+            metadados={},
+        )
+        evo_contact = EvolutionContact.objects.create(
+            instance=instance,
+            contact=contato,
+            jid="5511999999999@s.whatsapp.net",
+            addressing_mode="pn",
+            active=True,
+        )
+        assert evo_contact is not None
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            Atendimento,
+            Mensagem,
+        )
+        atendimento = Atendimento.objects.create(contato=contato)
+        ctx = dict(atendimento.contexto_conversa or {})
+        ctx["api_key"] = instance.api_key
+        atendimento.contexto_conversa = ctx
+        atendimento.save(update_fields=["contexto_conversa"])
+        mensagem = Mensagem.objects.create(
+            atendimento=atendimento,
+            conteudo="Oi",
+        )
+        mensagem.metadados = {"evolution": {"instance_id": instance.instance_id}}
+        mensagem.save(update_fields=["metadados"])
+        from unittest.mock import patch
+        with patch(
+            "smart_core_assistant_painel.app.evolution_sync.signals.async_task"
+        ) as mocked_async:
+            mensagem.registrar_resposta_bot("Olá! Como posso ajudar?", 0.9)
+            assert mocked_async.call_count == 1
+            args, _kwargs = mocked_async.call_args
+            assert isinstance(args[0], str)
+            assert args[0].endswith("services.send_response_from_message_metadata")
+            assert int(args[1]) == int(mensagem.id)

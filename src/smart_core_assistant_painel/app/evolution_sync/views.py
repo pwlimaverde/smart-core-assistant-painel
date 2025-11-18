@@ -26,9 +26,10 @@ def webhook(request: HttpRequest) -> JsonResponse:
     inst_name: str | None = envelope.get("instance")
     inst_id: str | None = envelope.get("instance_id")
     api_key: str = str(envelope.get("apikey") or "")
-    server_url: str | None = payload.get("server_url")
+    from django.conf import settings
+    server_url: str | None = payload.get("server_url") or getattr(settings, "EVOLUTION_API_URL", None)
 
-    instance, _ = EvolutionInstance.objects.get_or_create(
+    instance, created = EvolutionInstance.objects.get_or_create(
         instance_id=inst_id or "",
         defaults={
             "name": str(inst_name or inst_id or ""),
@@ -36,6 +37,20 @@ def webhook(request: HttpRequest) -> JsonResponse:
             "server_url": server_url,
         },
     )
+    if not created:
+        update_fields: list[str] = []
+        name_val = str(inst_name or inst_id or "")
+        if name_val and instance.name != name_val:
+            instance.name = name_val
+            update_fields.append("name")
+        if api_key and instance.api_key != api_key:
+            instance.api_key = api_key
+            update_fields.append("api_key")
+        if server_url and instance.server_url != server_url:
+            instance.server_url = server_url
+            update_fields.append("server_url")
+        if update_fields:
+            instance.save(update_fields=update_fields)
 
     contact_info: Dict[str, Any] = envelope.get("contact") or {}
     jid: str | None = contact_info.get("jid")
@@ -56,6 +71,19 @@ def webhook(request: HttpRequest) -> JsonResponse:
             lid=lid,
             addressing_mode=addressing_mode,
         )
+    else:
+        update_fields: list[str] = []
+        if jid and evo_contact.jid != jid:
+            evo_contact.jid = jid
+            update_fields.append("jid")
+        if lid and evo_contact.lid != lid:
+            evo_contact.lid = lid
+            update_fields.append("lid")
+        if addressing_mode and evo_contact.addressing_mode != addressing_mode:
+            evo_contact.addressing_mode = addressing_mode
+            update_fields.append("addressing_mode")
+        if update_fields:
+            evo_contact.save(update_fields=update_fields)
 
     if not evo_contact.contact_id:
         profile = envelope.get("profile") or {}
@@ -90,7 +118,17 @@ def webhook(request: HttpRequest) -> JsonResponse:
                 contato.telefone = str(phone_env)
                 contato.save(update_fields=["telefone"])
         logger.info(
-            f"Contact %s scheduled to response {evo_contact.contact_id}-{envelope}"
+            "evo_schedule_response contact_id=%s env_keys=%s",
+            evo_contact.contact_id,
+            list(envelope.keys()),
+        )
+        evo_meta = envelope.get("evolution") or {}
+        evo_meta["instance_db_id"] = int(instance.id)
+        envelope["evolution"] = evo_meta
+        logger.info(
+            "evo_schedule_response_meta contact_id=%s instance_db_id=%s",
+            evo_contact.contact_id,
+            evo_meta.get("instance_db_id"),
         )
         set_buffer_contact(evo_contact.contact_id, envelope)
         sched_payload: Dict[str, Any] = {

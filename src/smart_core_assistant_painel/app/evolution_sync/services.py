@@ -1,29 +1,236 @@
-from typing import Optional
+from typing import Any, Callable, Dict, Optional
+from urllib.parse import urlencode, urljoin
 
-from .models import EvolutionContact
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.datasource.evolution.evolution_whatsapp_service import (
-    EvolutionWhatsAppService,
-)
+import requests
+from loguru import logger
 
 
-def send_message_by_contact_id(contact_id: int, text: str) -> None:
-    evo_contact: Optional[EvolutionContact] = (
-        EvolutionContact.objects.select_related("instance")
-        .filter(contact_id=contact_id, active=True)
-        .first()
-    )
-    if not evo_contact:
-        raise ValueError("contact mapping not found")
-    inst = evo_contact.instance
-    svc = EvolutionWhatsAppService()
-    number = ""
-    if evo_contact.addressing_mode == "pn" and evo_contact.jid:
-        number = evo_contact.jid.split("@")[0]
-    elif inst.phone_number:
-        number = inst.phone_number
-    svc.send_message(
-        instance=str(inst.name or inst.instance_id or ""),
-        api_key=inst.api_key,
-        number=number,
-        text=text,
-    )
+class EvolutionWhatsAppService:
+    """Serviço para interagir com a API Evolution."""
+
+    def _send_request(
+        self,
+        base_url: str,
+        path: str,
+        api_key: str,
+        method: str = "GET",
+        body: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        params_url: Optional[Dict[str, Any]] = None,
+    ) -> requests.Response:
+        """Envia uma requisição HTTP para a API do Evolution.
+
+        Args:
+            path (str): O caminho do endpoint da API (ex: '/messages/send').
+            api_key (str): A chave de API para autenticação.
+            method (str): O método HTTP a ser utilizado (GET, POST, etc.).
+            body (Optional[Dict[str, Any]]): O corpo da requisição para
+                                             métodos como POST.
+            headers (Optional[Dict[str, str]]): Cabeçalhos HTTP adicionais.
+            params_url (Optional[Dict[str, Any]]): Parâmetros para serem
+                                                   adicionados à URL.
+
+        Returns:
+            requests.Response: O objeto de resposta da requisição HTTP.
+
+        Raises:
+            ValueError: Se um método HTTP não suportado for fornecido.
+        """
+        method = method.upper()
+        url = self._mount_url(base_url, path, params_url or {})
+
+        if headers is None:
+            headers = {}
+
+        headers.setdefault("Content-Type", "application/json")
+        headers["apikey"] = api_key
+        try:
+            logger.info(
+                "evolution_http_request method=%s url=%s apikey_set=%s",
+                method,
+                url,
+                bool(headers.get("apikey")),
+            )
+        except Exception:
+            ...
+
+        # Tipar explicitamente os métodos para evitar Any
+        request_methods: dict[str, Callable[..., requests.Response]] = {
+            "GET": requests.get,
+            "POST": requests.post,
+            "PUT": requests.put,
+            "DELETE": requests.delete,
+        }
+        request_method = request_methods.get(method)
+
+        if request_method is None:
+            raise ValueError(f"Método HTTP não suportado: {method}")
+        try:
+            response = request_method(url, headers=headers, json=body)
+            try:
+                logger.info(
+                    "evolution_http_response status=%s ok=%s url=%s",
+                    response.status_code,
+                    response.ok,
+                    url,
+                )
+            except Exception:
+                ...
+            return response
+        except Exception as exc:
+            try:
+                logger.error(
+                    "evolution_http_error method=%s url=%s err=%s",
+                    method,
+                    url,
+                    str(exc),
+                )
+            except Exception:
+                ...
+            raise
+
+    def _mount_url(
+        self, base_url: str, path: str, params_url: Dict[str, Any]
+    ) -> str:
+        """Monta a URL completa com base, caminho e parâmetros.
+
+        Args:
+            path (str): O caminho do endpoint da API.
+            params_url (Dict[str, Any]): Um dicionário de parâmetros a serem
+                                         codificados na URL.
+
+        Returns:
+            str: A URL final, pronta para a requisição.
+        """
+        parameters = ""
+        if isinstance(params_url, dict):
+            parameters = urlencode(params_url)
+
+        url = urljoin(base_url, path)
+        if parameters:
+            url = url + "?" + parameters
+
+        return url
+
+    def send_message(
+        self,
+        instance: str,
+        api_key: str,
+        number: str,
+        text: str,
+        base_url: str,
+    ) -> None:
+        """Envia uma mensagem de texto via WhatsApp.
+
+        Simula o status 'digitando' antes de enviar a mensagem para uma
+        experiência de usuário mais natural.
+
+        Args:
+            instance (str): O nome da instância na API Evolution.
+            api_key (str): A chave de API para autenticação.
+            number (str): O número de telefone do destinatário.
+            text (str): O conteúdo da mensagem de texto.
+
+        Raises:
+            Exception: Se ocorrer um erro durante o envio da mensagem,
+                       seja ao definir o status 'digitando' ou ao enviar
+                       a mensagem em si.
+        """
+        logger.info(
+            "evolution_send_message_start instance=%s number=%s text_len=%s",
+            instance,
+            number,
+            len(text or ""),
+        )
+        self._typing(
+            typing=True,
+            instance=instance,
+            number=number,
+            api_key=api_key,
+            base_url=base_url,
+        )
+        # Ajuste do endpoint conforme esperado nos testes
+        path = f"/message/sendText/{instance}"
+        body = {
+            "number": number,
+            "text": text,
+        }
+        response = self._send_request(
+            base_url,
+            path,
+            api_key=api_key,
+            method="POST",
+            body=body,
+        )
+        self._typing(
+            typing=False,
+            instance=instance,
+            number=number,
+            api_key=api_key,
+            base_url=base_url,
+        )
+
+        logger.info(
+            "evolution_send_message_done status=%s ok=%s",
+            response.status_code,
+            response.ok,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao enviar mensagem: {response.status_code} - {response.text}"
+            )
+
+    def _typing(
+        self,
+        typing: bool,
+        instance: str,
+        number: str,
+        api_key: str,
+        base_url: str,
+    ) -> None:
+        """Define o status 'digitando' no WhatsApp.
+
+        Args:
+            typing (bool): Se True, define o status como 'digitando'.
+                           Se False, define como 'pausado'.
+            instance (str): O nome da instância na API Evolution.
+            number (str): O número de telefone do chat.
+            api_key (str): A chave de API para autenticação.
+
+        Raises:
+            Exception: Se a API retornar um erro ao tentar definir o status.
+        """
+        # Ajuste do endpoint conforme esperado nos testes
+        path = f"/chat/sendPresence/{instance}"
+
+        # Formato conforme alguns exemplos da Evolution API: campos no nível raiz
+        body = {
+            "number": number,
+            "presence": "composing" if typing else "paused",
+            "delay": 1200,
+        }
+
+        logger.info(
+            "evolution_typing_start instance=%s number=%s typing=%s",
+            instance,
+            number,
+            typing,
+        )
+        response = self._send_request(
+            base_url,
+            path,
+            api_key=api_key,
+            method="POST",
+            body=body,
+        )
+
+        logger.info(
+            "evolution_typing_done status=%s ok=%s",
+            response.status_code,
+            response.ok,
+        )
+        if not response.ok:
+            raise Exception(
+                "Erro ao definir status de digitação: "
+                f"{response.status_code} - {response.text}"
+            )

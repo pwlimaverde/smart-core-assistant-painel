@@ -45,15 +45,6 @@ class EvolutionWhatsAppService:
 
         headers.setdefault("Content-Type", "application/json")
         headers["apikey"] = api_key
-        try:
-            logger.info(
-                "evolution_http_request method=%s url=%s apikey_set=%s",
-                method,
-                url,
-                bool(headers.get("apikey")),
-            )
-        except Exception:
-            ...
 
         # Tipar explicitamente os métodos para evitar Any
         request_methods: dict[str, Callable[..., requests.Response]] = {
@@ -68,26 +59,9 @@ class EvolutionWhatsAppService:
             raise ValueError(f"Método HTTP não suportado: {method}")
         try:
             response = request_method(url, headers=headers, json=body)
-            try:
-                logger.info(
-                    "evolution_http_response status=%s ok=%s url=%s",
-                    response.status_code,
-                    response.ok,
-                    url,
-                )
-            except Exception:
-                ...
+
             return response
         except Exception as exc:
-            try:
-                logger.error(
-                    "evolution_http_error method=%s url=%s err=%s",
-                    method,
-                    url,
-                    str(exc),
-                )
-            except Exception:
-                ...
             raise
 
     def _mount_url(
@@ -139,12 +113,6 @@ class EvolutionWhatsAppService:
                        seja ao definir o status 'digitando' ou ao enviar
                        a mensagem em si.
         """
-        logger.info(
-            "evolution_send_message_start instance=%s number=%s text_len=%s",
-            instance,
-            number,
-            len(text or ""),
-        )
         self._typing(
             typing=True,
             instance=instance,
@@ -173,11 +141,6 @@ class EvolutionWhatsAppService:
             base_url=base_url,
         )
 
-        logger.info(
-            "evolution_send_message_done status=%s ok=%s",
-            response.status_code,
-            response.ok,
-        )
         if not response.ok:
             raise Exception(
                 f"Erro ao enviar mensagem: {response.status_code} - {response.text}"
@@ -214,12 +177,6 @@ class EvolutionWhatsAppService:
             "delay": 1200,
         }
 
-        logger.info(
-            "evolution_typing_start instance=%s number=%s typing=%s",
-            instance,
-            number,
-            typing,
-        )
         response = self._send_request(
             base_url,
             path,
@@ -228,11 +185,6 @@ class EvolutionWhatsAppService:
             body=body,
         )
 
-        logger.info(
-            "evolution_typing_done status=%s ok=%s",
-            response.status_code,
-            response.ok,
-        )
         if not response.ok:
             raise Exception(
                 "Erro ao definir status de digitação: "

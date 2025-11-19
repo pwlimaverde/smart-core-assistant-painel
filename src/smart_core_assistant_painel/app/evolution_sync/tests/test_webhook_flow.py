@@ -63,15 +63,24 @@ class TestEvolutionWebhookFlow(TestCase):
 
         send_message_response_by_contact(int(evo_contact.contact_id))
 
-        contato: Contato | None = Contato.objects.filter(id=evo_contact.contact_id).first()
+        contato: Contato | None = Contato.objects.filter(
+            id=evo_contact.contact_id
+        ).first()
+        print(f"DEBUG: contato={contato}")
         self.assertIsNotNone(contato)
         assert contato is not None
 
-        atendimento: Atendimento | None = Atendimento.objects.filter(contato=contato).first()
+        atendimento: Atendimento | None = Atendimento.objects.filter(
+            contato=contato
+        ).first()
+        print(f"DEBUG: atendimento={atendimento}")
         self.assertIsNotNone(atendimento)
         assert atendimento is not None
 
-        mensagem: Mensagem | None = Mensagem.objects.filter(atendimento=atendimento).first()
+        mensagem: Mensagem | None = Mensagem.objects.filter(
+            atendimento=atendimento
+        ).first()
+        print(f"DEBUG: mensagem={mensagem}")
         self.assertIsNotNone(mensagem)
 
     def test_phone_saved_when_pn_available(self) -> None:
@@ -106,7 +115,9 @@ class TestEvolutionWebhookFlow(TestCase):
         self.assertEqual(resp.status_code, 200)
         evo_contact: EvolutionContact | None = EvolutionContact.objects.first()
         assert evo_contact is not None
-        contato: Contato | None = Contato.objects.filter(id=evo_contact.contact_id).first()
+        contato: Contato | None = Contato.objects.filter(
+            id=evo_contact.contact_id
+        ).first()
         assert contato is not None
         self.assertEqual(contato.telefone, "5511999999999")
 
@@ -139,9 +150,13 @@ class TestEvolutionWebhookFlow(TestCase):
             content_type="application/json",
         )
         self.assertEqual(resp1.status_code, 200)
-        evo_contact1: EvolutionContact | None = EvolutionContact.objects.first()
+        evo_contact1: EvolutionContact | None = (
+            EvolutionContact.objects.first()
+        )
         assert evo_contact1 is not None
-        contato1: Contato | None = Contato.objects.filter(id=evo_contact1.contact_id).first()
+        contato1: Contato | None = Contato.objects.filter(
+            id=evo_contact1.contact_id
+        ).first()
         assert contato1 is not None
         self.assertIsNone(contato1.telefone)
 
@@ -177,7 +192,9 @@ class TestEvolutionWebhookFlow(TestCase):
         self.assertEqual(EvolutionContact.objects.count(), 1)
         evo_contact: EvolutionContact | None = EvolutionContact.objects.first()
         assert evo_contact is not None
-        contato: Contato | None = Contato.objects.filter(id=evo_contact.contact_id).first()
+        contato: Contato | None = Contato.objects.filter(
+            id=evo_contact.contact_id
+        ).first()
         assert contato is not None
         self.assertEqual(contato.telefone, "5511888888888")
 
@@ -206,6 +223,7 @@ class TestEvolutionWebhookFlow(TestCase):
             Atendimento,
             Mensagem,
         )
+
         atendimento = Atendimento.objects.create(contato=contato)
         ctx = dict(atendimento.contexto_conversa or {})
         ctx["api_key"] = instance.api_key
@@ -215,9 +233,12 @@ class TestEvolutionWebhookFlow(TestCase):
             atendimento=atendimento,
             conteudo="Oi",
         )
-        mensagem.metadados = {"evolution": {"instance_id": instance.instance_id}}
+        mensagem.metadados = {
+            "evolution": {"instance_id": instance.instance_id}
+        }
         mensagem.save(update_fields=["metadados"])
         from unittest.mock import patch
+
         with patch(
             "smart_core_assistant_painel.app.evolution_sync.signals.async_task"
         ) as mocked_async:
@@ -225,5 +246,7 @@ class TestEvolutionWebhookFlow(TestCase):
             assert mocked_async.call_count == 1
             args, _kwargs = mocked_async.call_args
             assert isinstance(args[0], str)
-            assert args[0].endswith("services.send_response_from_message_metadata")
+            assert args[0].endswith(
+                "services.send_response_from_message_metadata"
+            )
             assert int(args[1]) == int(mensagem.id)

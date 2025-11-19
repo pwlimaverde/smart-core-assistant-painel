@@ -1,0 +1,143 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.2.7, settings: smart_core_assistant_painel.app.ui.core.settings_test (from env)
+rootdir: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel
+configfile: pytest.ini
+plugins: anyio-4.9.0, langsmith-0.3.45, cov-7.0.0, django-4.11.1, env-1.2.0
+collecting ... collected 4 items
+
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_end_to_end_contact_attendance_message Operations to perform:
+  Synchronize unmigrated apps: core, corsheaders, django, messages, postgres, rest_framework, rolepermissions, staticfiles
+  Apply all migrations: admin, atendimentos, auth, clientes, contenttypes, django_q, evolution_sync, operacional, sessions, treinamento
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK
+  Applying auth.0001_initial... OK
+  Applying admin.0001_initial... OK
+  Applying admin.0002_logentry_remove_auto_add... OK
+  Applying admin.0003_logentry_add_action_flag_choices... OK
+  Applying atendimentos.0001_initial... OK
+  Applying operacional.0001_initial... OK
+  Applying operacional.0002_atendente_fluxo_field... OK
+  Applying operacional.0003_rename_oraculo_ate_fluxo_76c2fe_idx_oraculo_ate_fluxo_i_e99ecc_idx_and_more... OK
+  Applying operacional.0004_alter_atendente_fluxo... OK
+  Applying operacional.0005_alter_atendente_fluxo_not_null... OK
+  Applying operacional.0002_alter_etapafluxo_ordem... OK
+  Applying operacional.0006_merge_20251108_0942... OK
+  Applying clientes.0001_initial... OK
+  Applying atendimentos.0002_initial... OK
+  Applying atendimentos.0003_remove_atendimento_oraculo_ate_valor_o_232ff7_idx_and_more... OK
+  Applying atendimentos.0004_alter_atendimento_status... OK
+  Applying atendimentos.0005_atendimento_fluxo_atendimento_and_more... OK
+  Applying atendimentos.0006_alter_atendimento_status... OK
+  Applying contenttypes.0002_remove_content_type_name... OK
+  Applying auth.0002_alter_permission_name_max_length... OK
+  Applying auth.0003_alter_user_email_max_length... OK
+  Applying auth.0004_alter_user_username_opts... OK
+  Applying auth.0005_alter_user_last_login_null... OK
+  Applying auth.0006_require_contenttypes_0002... OK
+  Applying auth.0007_alter_validators_add_error_messages... OK
+  Applying auth.0008_alter_user_username_max_length... OK
+  Applying auth.0009_alter_user_last_name_max_length... OK
+  Applying auth.0010_alter_group_name_max_length... OK
+  Applying auth.0011_update_proxy_permissions... OK
+  Applying auth.0012_alter_user_first_name_max_length... OK
+  Applying clientes.0002_contato_wa_addressing_mode_contato_wa_jid_and_more... OK
+  Applying clientes.0003_remove_contato_wa_addressing_mode_and_more... OK
+  Applying django_q.0001_initial... OK
+  Applying django_q.0002_auto_20150630_1624... OK
+  Applying django_q.0003_auto_20150708_1326... OK
+  Applying django_q.0004_auto_20150710_1043... OK
+  Applying django_q.0005_auto_20150718_1506... OK
+  Applying django_q.0006_auto_20150805_1817... OK
+  Applying django_q.0007_ormq... OK
+  Applying django_q.0008_auto_20160224_1026... OK
+  Applying django_q.0009_auto_20171009_0915... OK
+  Applying django_q.0010_auto_20200610_0856... OK
+  Applying django_q.0011_auto_20200628_1055... OK
+  Applying django_q.0012_auto_20200702_1608... OK
+  Applying django_q.0013_task_attempt_count... OK
+  Applying django_q.0014_schedule_cluster... OK
+  Applying django_q.0015_alter_schedule_schedule_type... OK
+  Applying django_q.0016_schedule_intended_date_kwarg... OK
+  Applying django_q.0017_task_cluster_alter... OK
+  Applying django_q.0018_task_success_index... OK
+  Applying evolution_sync.0001_initial... OK
+  Applying operacional.0007_departamento_api_key_departamento_telefone_instancia_and_more... OK
+  Applying operacional.0008_appinstance... OK
+  Applying operacional.0009_delete_whatsappinstance... OK
+  Applying sessions.0001_initial... OK
+  Applying treinamento.0001_enable_pgvector_extension... OK
+  Applying treinamento.0002_initial... OK
+DEBUG: contato=Paulo Weslley Limaverde (558897141275)
+DEBUG: atendimento=None
+FAILED
+
+================================== FAILURES ===================================
+_____ TestEvolutionWebhookFlow.test_end_to_end_contact_attendance_message _____
+
+self = <src.smart_core_assistant_painel.app.evolution_sync.tests.test_webhook_flow.TestEvolutionWebhookFlow testMethod=test_end_to_end_contact_attendance_message>
+
+    def test_end_to_end_contact_attendance_message(self) -> None:
+        payload: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "99910a55-8bbd-440a-9e14-9d5833a63c5e",
+            "apikey": "TEST_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "558897141275@s.whatsapp.net",
+                    "remoteJidAlt": "62921321222334@lid",
+                    "fromMe": False,
+                    "id": "ACE67E7835EF52C7FF28C63C5616F4A4",
+                    "participant": "",
+                    "addressingMode": "pn",
+                },
+                "pushName": "Paulo Weslley Limaverde",
+                "status": "DELIVERY_ACK",
+                "message": {
+                    "conversation": "Teste recebimento de mensagens",
+                },
+                "messageType": "conversation",
+                "messageTimestamp": 1763301593,
+                "instanceId": "99910a55-8bbd-440a-9e14-9d5833a63c5e",
+                "source": "android",
+            },
+            "sender": "5588921729550@s.whatsapp.net",
+        }
+    
+        resp = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+    
+        evo_contact: EvolutionContact | None = EvolutionContact.objects.first()
+        self.assertIsNotNone(evo_contact)
+        assert evo_contact is not None
+        self.assertIsNotNone(evo_contact.contact_id)
+    
+        send_message_response_by_contact(int(evo_contact.contact_id))
+    
+        contato: Contato | None = Contato.objects.filter(
+            id=evo_contact.contact_id
+        ).first()
+        print(f"DEBUG: contato={contato}")
+        self.assertIsNotNone(contato)
+        assert contato is not None
+    
+        atendimento: Atendimento | None = Atendimento.objects.filter(
+            contato=contato
+        ).first()
+        print(f"DEBUG: atendimento={atendimento}")
+>       self.assertIsNotNone(atendimento)
+E       AssertionError: unexpectedly None
+
+src\smart_core_assistant_painel\app\evolution_sync\tests\test_webhook_flow.py:77: AssertionError
+=========================== short test summary info ===========================
+FAILED src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_end_to_end_contact_attendance_message - AssertionError: unexpectedly None
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed in 5.45s ==============================

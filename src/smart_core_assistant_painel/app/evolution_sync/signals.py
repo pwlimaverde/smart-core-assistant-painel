@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from django.conf import settings
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from loguru import logger
 
@@ -13,6 +13,20 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
 from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
     EvolutionWhatsAppService,
 )
+
+
+@receiver(pre_save, sender=Mensagem)
+def _on_message_pre_save(
+    sender: type[Mensagem], instance: Mensagem, **kwargs: Any
+) -> None:
+    """Verifica se o campo resposta_bot foi alterado."""
+    if instance.pk:
+        try:
+            old_instance = sender.objects.get(pk=instance.pk)
+            if old_instance.resposta_bot != instance.resposta_bot:
+                instance._resposta_bot_changed = True
+        except sender.DoesNotExist:
+            pass
 
 
 @receiver(post_save, sender=Mensagem)
@@ -31,27 +45,25 @@ def _on_message_saved(
         **kwargs: Argumentos adicionais.
     """
     try:
-        logger.info(
-            "signal_message_saved id=%s created=%s responded=%s",
-            instance.id,
-            created,
-            instance.respondida,
-        )
-        if not instance.respondida:
-            logger.info("signal_skip_not_responded id=%s", instance.id)
+        # Se foi criado agora e tem resposta, envia.
+        # Se foi atualizado, só envia se a resposta mudou.
+        should_send = False
+        if created and instance.resposta_bot:
+            should_send = True
+        elif (
+            getattr(instance, "_resposta_bot_changed", False)
+            and instance.resposta_bot
+        ):
+            should_send = True
+
+        if not should_send:
             return
-        if not instance.resposta_bot:
-            logger.info("signal_skip_empty_bot_response id=%s", instance.id)
+
+        if not instance.respondida:
             return
         if not getattr(instance, "atendimento", None):
-            logger.error("signal_skip_no_atendimento id=%s", instance.id)
             return
         if instance.atendimento.canal != "whatsapp":
-            logger.info(
-                "signal_skip_non_whatsapp id=%s canal=%s",
-                instance.id,
-                instance.atendimento.canal,
-            )
             return
 
         text: str = str(instance.resposta_bot).strip()
@@ -66,12 +78,7 @@ def _on_message_saved(
             .order_by("-updated_at")
             .first()
         )
-        logger.info(
-            "signal_contact number=%s contact_id=%s evo_contact=%s",
-            number,
-            getattr(contato, "id", None),
-            bool(evo_contact),
-        )
+
         if (
             not number
             and evo_contact
@@ -80,9 +87,6 @@ def _on_message_saved(
         ):
             number = evo_contact.jid.split("@")[0]
         if not number:
-            logger.error(
-                "signal_fail_number_unavailable msg_id=%s", instance.id
-            )
             return
 
         inst: Optional[EvolutionInstance] = getattr(
@@ -96,16 +100,8 @@ def _on_message_saved(
                 inst = EvolutionInstance.objects.filter(
                     id=int(inst_db_id), active=True
                 ).first()
-        logger.info(
-            "signal_instance_resolved inst=%s meta_id=%s",
-            getattr(inst, "id", None),
-            evo.get("instance_db_id") if "evo" in locals() else None,
-        )
+
         if not inst:
-            logger.error(
-                "signal_fail_instance_unavailable contact_id=%s",
-                getattr(contato, "id", None),
-            )
             return
 
         instance_name: str = str(
@@ -113,27 +109,10 @@ def _on_message_saved(
         )
         api_key: str = str(inst.api_key or "")
         base_url: str = str(getattr(settings, "EVOLUTION_API_URL", "") or "")
-        logger.info(
-            "signal_send_check instance=%s base_url=%s api_key_set=%s",
-            instance_name,
-            base_url,
-            bool(api_key),
-        )
+
         if not instance_name or not api_key or not base_url:
-            logger.error(
-                "signal_fail_missing_data instance=%s base_url=%s api_key_set=%s",
-                instance_name,
-                base_url,
-                bool(api_key),
-            )
             return
 
-        logger.info(
-            "signal_send_start msg_id=%s number=%s text_len=%s",
-            instance.id,
-            number,
-            len(text),
-        )
         EvolutionWhatsAppService().send_message(
             instance=instance_name,
             api_key=api_key,
@@ -141,6 +120,6 @@ def _on_message_saved(
             text=text,
             base_url=base_url,
         )
-        logger.info("signal_send_success msg_id=%s", instance.id)
-    except Exception as e:
-        logger.exception("signal_exception msg_id=%s err=%s", instance.id, e)
+
+    except Exception:
+        ...

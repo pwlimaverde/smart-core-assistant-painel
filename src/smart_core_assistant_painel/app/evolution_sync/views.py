@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
     EvolutionWebhookEnvelope,
@@ -32,6 +33,8 @@ def webhook(request: HttpRequest) -> JsonResponse:
         payload: Dict[str, Any] = json.loads(request.body.decode("utf-8"))
     except Exception:
         return JsonResponse({"detail": "invalid json"}, status=400)
+
+    logger.info(f"Webhook received: {json.dumps(payload)}")
 
     data_obj = payload.get("data")
     envelopes: List[EvolutionWebhookEnvelope]

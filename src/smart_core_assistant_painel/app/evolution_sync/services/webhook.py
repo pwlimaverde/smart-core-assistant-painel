@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 from django.conf import settings
+from django.core.cache import cache
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
     EvolutionWebhookEnvelope,
 )
@@ -15,6 +15,7 @@ from smart_core_assistant_painel.app.evolution_sync.utils import (
     sched_response_contact,
     set_buffer_contact,
 )
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
 
 class WebhookProcessor:
@@ -39,34 +40,43 @@ class WebhookProcessor:
             Dict[str, Any]: Resultado do processamento.
         """
         # Filtrar mensagens enviadas pelo próprio bot ou sem JID válido
-        valid_envelopes = [
-            e for e in envelopes if not e.from_me and e.contact.jid
-        ]
+        valid_envelopes = []
+        for e in envelopes:
+            if e.from_me or (not e.contact.jid and not e.contact.lid):
+                continue
+
+            # Verificação de duplicidade de mensagem
+            msg_id = e.message.id
+            if msg_id:
+                # Cache key única para cada mensagem
+                cache_key = f"evo_msg_proc_{msg_id}"
+                if cache.get(cache_key):
+                    logger.info(f"Ignoring duplicate message {msg_id}")
+                    continue
+                # Marca mensagem como processada por 5 minutos
+                cache.set(cache_key, "1", timeout=300)
+
+            valid_envelopes.append(e)
 
         if not valid_envelopes:
-            logger.debug(
-                "Webhook ignored: all messages are from_me or invalid"
-            )
             return {"status": "ignored_from_me"}
 
+        # Processar o primeiro envelope para obter instância e contato (assumindo mesmo contexto)
         first_env = valid_envelopes[0]
-        logger.debug(
-            f"Processing webhook. First env instance: {first_env.instance}"
-        )
-
         instance = self._get_or_create_instance(first_env, payload)
         evo_contact = self._resolve_contact(instance, first_env)
 
+        # Garantir que o contato principal existe e está vinculado
         if not evo_contact.contact_id:
             self._link_contact(evo_contact, first_env)
+            evo_contact.refresh_from_db()
 
-        if evo_contact.contact_id:
-            self._schedule_response(
-                instance, evo_contact, valid_envelopes, first_env
-            )
-            return {"status": "ok", "processed": len(valid_envelopes)}
+        # Agendar resposta (buffer)
+        self._schedule_response(
+            instance, evo_contact, valid_envelopes, first_env
+        )
 
-        return {"status": "accepted"}
+        return {"status": "ok", "processed": len(valid_envelopes)}
 
     def _get_or_create_instance(
         self, envelope: EvolutionWebhookEnvelope, payload: Dict[str, Any]
@@ -113,10 +123,6 @@ class WebhookProcessor:
         lid = envelope.contact.lid
         addressing_mode = envelope.contact.addressing_mode
 
-        logger.debug(
-            f"Contact info extracted: jid={jid}, lid={lid}, mode={addressing_mode}"
-        )
-
         qs = EvolutionContact.objects.filter(instance=instance)
         if jid:
             qs = qs.filter(jid=jid)
@@ -125,7 +131,6 @@ class WebhookProcessor:
 
         evo_contact = qs.first()
         if evo_contact is None:
-            logger.debug("Creating new EvolutionContact")
             evo_contact = EvolutionContact.objects.create(
                 instance=instance,
                 jid=jid,
@@ -151,19 +156,20 @@ class WebhookProcessor:
 
         return evo_contact
 
+        return evo_contact
+
     def _link_contact(
         self, evo_contact: EvolutionContact, envelope: EvolutionWebhookEnvelope
     ) -> None:
         """Vincula ou cria um Contato do sistema principal."""
-        logger.debug(
-            "EvolutionContact has no linked Contact. Attempting to link/create."
-        )
+
         push_name = envelope.profile.push_name
         phone = envelope.contact.phone
 
-        logger.debug(f"Profile info: push_name={push_name}, phone={phone}")
-
         contato: Contato | None = None
+        logger.info(
+            f"DEBUG: _link_contact phone={phone} push_name={push_name}"
+        )
         if phone:
             contato, created_contact = Contato.objects.get_or_create(
                 telefone=str(phone),
@@ -174,34 +180,27 @@ class WebhookProcessor:
                     "metadados": {},
                 },
             )
-            logger.debug(
-                f"Contact with phone {phone} retrieved/created. Created={created_contact}, ID={contato.id}"
+        else:
+            # Create contact without phone if it doesn't exist
+            # We create a new one because we can't match by phone
+            contato = Contato.objects.create(
+                nome_contato=str(push_name or "Desconhecido"),
+                telefone=None,
+                ativo=True,
+                metadados={},
             )
+            created_contact = True
 
+        if contato:
             # Update push_name if it exists and contact was not created (existing contact)
             if not created_contact and push_name:
                 if not contato.nome_perfil_whatsapp:
                     contato.nome_perfil_whatsapp = str(push_name)
                     contato.save(update_fields=["nome_perfil_whatsapp"])
-                    logger.debug(
-                        f"Updated nome_perfil_whatsapp for existing contact {contato.id}"
-                    )
 
-        else:
-            logger.debug("No phone found. Creating new Contact without phone.")
-            contato = Contato.objects.create(
-                nome_contato=str(push_name or ""),
-                nome_perfil_whatsapp=str(push_name or ""),
-                ativo=True,
-                metadados={},
-            )
-            logger.debug(f"New Contact created without phone. ID={contato.id}")
-
-        evo_contact.contact = contato
-        evo_contact.save(update_fields=["contact"])
-        logger.debug(
-            f"Linked Contact {contato.id} to EvolutionContact {evo_contact.id}"
-        )
+            if evo_contact.contact != contato:
+                evo_contact.contact = contato
+                evo_contact.save(update_fields=["contact"])
 
     def _schedule_response(
         self,
@@ -211,9 +210,6 @@ class WebhookProcessor:
         first_env: EvolutionWebhookEnvelope,
     ) -> None:
         """Agenda a resposta para o contato."""
-        logger.debug(
-            f"Proceeding to schedule response for contact_id={evo_contact.contact_id}"
-        )
 
         # Ensure phone is updated in main contact if missing
         if first_env.contact.phone:
@@ -222,21 +218,17 @@ class WebhookProcessor:
                 contato.telefone = str(first_env.contact.phone)
                 contato.save(update_fields=["telefone"])
 
-        for envelope in envelopes:
-            # Convert back to dict for buffer compatibility
-            env_dict = envelope.to_dict()
-            logger.info(
-                "evo_schedule_response contact_id={} env_keys={}",
-                evo_contact.contact_id,
-                list(env_dict.keys()),
-            )
-            set_buffer_contact(evo_contact.contact_id, env_dict)
+        # Buffer messages for processing
+        if evo_contact.contact_id:
+            for env in envelopes:
+                # Inject instance_db_id into metadata if needed for signal
+                env_dict = env.to_dict()
+                if instance.id:
+                    if "evolution" not in env_dict:
+                        env_dict["evolution"] = {}
+                    env_dict["evolution"]["instance_db_id"] = instance.id
 
-        # Prepare metadata for scheduling
-        # We need to inject instance_db_id into the 'evolution' metadata of the first envelope
-        # But since we are using dataclasses, we might need to handle this carefully.
-        # The original code modified the 'evolution' key in the raw payload or metadata.
-        # Let's look at how it was done:
+                set_buffer_contact(int(evo_contact.contact_id), env_dict)
         # evo_meta = first_env.get("evolution") or {}
         # evo_meta["instance_db_id"] = int(instance.id)
         # first_env["evolution"] = evo_meta
@@ -300,7 +292,10 @@ class WebhookProcessor:
             if first_env.message
             else {},  # message is obj
         }
-        # Note: original passed first_env.get("message") which is a dict.
-        # My schema has message as object.
+
+        logger.warning(
+            f"Scheduling response for contact_id={evo_contact.contact_id}. "
+            f"Payload: {sched_payload}"
+        )
 
         sched_response_contact(sched_payload)

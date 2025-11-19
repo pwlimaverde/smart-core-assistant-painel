@@ -12,7 +12,6 @@ class EvolutionInstanceAdmin(admin.ModelAdmin[EvolutionInstance]):
         "name",
         "instance_id",
         "phone_number",
-        "server_url",
         "active",
         "created_at",
     )

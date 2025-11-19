@@ -24,9 +24,7 @@ class EvolutionInstance(models.Model):
         max_length=100, unique=True, blank=True, null=True
     )
     api_key: models.CharField[str] = models.CharField(max_length=100)
-    server_url: models.URLField[str | None] = models.URLField(
-        max_length=200, blank=True, null=True
-    )
+
     phone_number: models.CharField[str | None] = models.CharField(
         max_length=20, blank=True, null=True
     )

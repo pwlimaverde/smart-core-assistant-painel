@@ -34,8 +34,6 @@ def webhook(request: HttpRequest) -> JsonResponse:
     except Exception:
         return JsonResponse({"detail": "invalid json"}, status=400)
 
-    logger.info(f"Webhook received: {json.dumps(payload)}")
-
     data_obj = payload.get("data")
     envelopes: List[EvolutionWebhookEnvelope]
     if isinstance(data_obj, list):

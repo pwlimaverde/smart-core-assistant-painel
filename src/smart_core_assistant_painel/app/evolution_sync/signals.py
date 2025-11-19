@@ -5,7 +5,6 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
@@ -13,6 +12,7 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
 from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
     EvolutionWhatsAppService,
 )
+from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
 
 
 @receiver(pre_save, sender=Mensagem)

@@ -21,6 +21,7 @@ class EvolutionWhatsAppService:
         """Envia uma requisição HTTP para a API do Evolution.
 
         Args:
+            base_url (str): A URL base da API.
             path (str): O caminho do endpoint da API (ex: '/messages/send').
             api_key (str): A chave de API para autenticação.
             method (str): O método HTTP a ser utilizado (GET, POST, etc.).
@@ -95,6 +96,7 @@ class EvolutionWhatsAppService:
         """Monta a URL completa com base, caminho e parâmetros.
 
         Args:
+            base_url (str): A URL base.
             path (str): O caminho do endpoint da API.
             params_url (Dict[str, Any]): Um dicionário de parâmetros a serem
                                          codificados na URL.
@@ -130,6 +132,7 @@ class EvolutionWhatsAppService:
             api_key (str): A chave de API para autenticação.
             number (str): O número de telefone do destinatário.
             text (str): O conteúdo da mensagem de texto.
+            base_url (str): A URL base da API.
 
         Raises:
             Exception: Se ocorrer um erro durante o envio da mensagem,
@@ -196,6 +199,7 @@ class EvolutionWhatsAppService:
             instance (str): O nome da instância na API Evolution.
             number (str): O número de telefone do chat.
             api_key (str): A chave de API para autenticação.
+            base_url (str): A URL base da API.
 
         Raises:
             Exception: Se a API retornar um erro ao tentar definir o status.

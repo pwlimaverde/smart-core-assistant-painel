@@ -3759,3 +3759,138 @@
 2025-11-18 21:08:24.977 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
 2025-11-18 21:08:24.983 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
 2025-11-18 21:09:19.484 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-19 09:23:58.666 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:24:00.186 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:24:01.933 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:24:03.452 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:25:11.401 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=15 count=1
+2025-11-19 09:25:11.448 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=14 count=5
+2025-11-19 09:25:18.318 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:34 - signal_message_saved id=%s created=%s responded=%s
+2025-11-19 09:25:18.326 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:69 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-19 09:25:18.326 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:99 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-19 09:25:18.326 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-19 09:25:18.327 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:131 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-19 09:25:18.327 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:send_message:142 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-19 09:25:18.327 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_typing:217 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-19 09:25:18.327 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_send_request:49 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-19 09:25:19.571 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_send_request:72 - evolution_http_response status=%s ok=%s url=%s
+2025-11-19 09:25:19.572 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_typing:231 - evolution_typing_done status=%s ok=%s
+2025-11-19 09:25:19.573 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_send_request:49 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-19 09:25:19.806 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_send_request:72 - evolution_http_response status=%s ok=%s url=%s
+2025-11-19 09:25:19.806 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_typing:217 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-19 09:25:19.807 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_send_request:49 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-19 09:25:19.815 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:25:20.128 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:25:20.132 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:25:21.029 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_send_request:72 - evolution_http_response status=%s ok=%s url=%s
+2025-11-19 09:25:21.029 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:_typing:231 - evolution_typing_done status=%s ok=%s
+2025-11-19 09:25:21.030 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.evolution_api:send_message:176 - evolution_send_message_done status=%s ok=%s
+2025-11-19 09:25:21.030 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:144 - signal_send_success msg_id=%s
+2025-11-19 09:25:31.241 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=15 count=1
+2025-11-19 09:25:31.288 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=14 count=5
+2025-11-19 09:25:50.600 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:25:52.018 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:27:04.372 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:27:04.402 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:04.435 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:04.444 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:04.449 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:04.503 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:27:04.547 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:27:09.598 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:09.627 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:09.634 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:09.638 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:11.524 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:27:11.547 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:11.573 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:11.580 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:11.584 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:11.654 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:27:11.692 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:27:16.649 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:16.681 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:16.690 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:16.695 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:21.310 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:21.337 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:21.345 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:21.348 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:25.526 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:25.552 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:25.560 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:25.565 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:41.674 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:41.700 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:41.709 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:41.713 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:27:49.272 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:27:49.298 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:27:49.307 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:27:49.312 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:28:17.297 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:28:17.323 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:28:17.331 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:28:17.335 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:28:25.594 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:28:25.620 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:28:25.630 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:28:25.635 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:30:58.649 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:31:00.103 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:31:01.817 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:31:03.251 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:45:55.498 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:45:56.916 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:45:58.294 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:45:59.755 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:46:06.655 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-19 09:46:08.093 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-19 09:46:45.876 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:46:45.904 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:46:45.934 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:46:45.943 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:46:45.947 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:46:46.004 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:46:46.028 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:46:46.040 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:46:46.047 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:46:46.061 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:46:46.079 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:46:46.088 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:46:46.090 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:46:46.092 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:46:46.099 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:46:46.104 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:46:46.154 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:46:46.164 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:46:46.193 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:46:46.197 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:46:46.201 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:46:46.205 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:47:35.591 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:47:35.906 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:47:35.919 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:47:51.191 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:47:51.193 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:48:36.876 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:48:36.910 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:48:36.920 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:48:36.924 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:48:37.001 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:48:37.028 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:48:37.037 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:48:37.041 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:48:51.908 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:48:51.938 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:48:51.946 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:48:51.950 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:48:52.043 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:53 - Processing webhook. First env instance: 5588921729550
+2025-11-19 09:48:52.069 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_resolve_contact:116 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-19 09:48:52.079 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:214 - Proceeding to schedule response for contact_id=67
+2025-11-19 09:48:52.084 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:228 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-19 09:50:10.324 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:50:10.730 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:50:10.742 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:50:20.698 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid
+2025-11-19 09:50:20.706 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:47 - Webhook ignored: all messages are from_me or invalid

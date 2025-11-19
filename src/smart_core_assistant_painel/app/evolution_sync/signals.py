@@ -6,13 +6,30 @@ from django.dispatch import receiver
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
-
-from .models import EvolutionContact, EvolutionInstance
-from .services import EvolutionWhatsAppService
+from smart_core_assistant_painel.app.evolution_sync.models import (
+    EvolutionContact,
+    EvolutionInstance,
+)
+from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
+    EvolutionWhatsAppService,
+)
 
 
 @receiver(post_save, sender=Mensagem)
-def _on_message_saved(sender: type[Mensagem], instance: Mensagem, created: bool, **kwargs: Any) -> None:
+def _on_message_saved(
+    sender: type[Mensagem], instance: Mensagem, created: bool, **kwargs: Any
+) -> None:
+    """Signal handler disparado quando uma Mensagem é salva.
+
+    Verifica se a mensagem é uma resposta do bot que precisa ser enviada
+    via WhatsApp e, se for, dispara o envio.
+
+    Args:
+        sender: A classe do modelo que enviou o sinal.
+        instance: A instância da mensagem salva.
+        created: Booleano indicando se foi criado (True) ou atualizado (False).
+        **kwargs: Argumentos adicionais.
+    """
     try:
         logger.info(
             "signal_message_saved id=%s created=%s responded=%s",
@@ -55,23 +72,34 @@ def _on_message_saved(sender: type[Mensagem], instance: Mensagem, created: bool,
             getattr(contato, "id", None),
             bool(evo_contact),
         )
-        if not number and evo_contact and evo_contact.jid and evo_contact.jid.endswith("@s.whatsapp.net"):
+        if (
+            not number
+            and evo_contact
+            and evo_contact.jid
+            and evo_contact.jid.endswith("@s.whatsapp.net")
+        ):
             number = evo_contact.jid.split("@")[0]
         if not number:
-            logger.error("signal_fail_number_unavailable msg_id=%s", instance.id)
+            logger.error(
+                "signal_fail_number_unavailable msg_id=%s", instance.id
+            )
             return
 
-        inst: Optional[EvolutionInstance] = getattr(evo_contact, "instance", None)
+        inst: Optional[EvolutionInstance] = getattr(
+            evo_contact, "instance", None
+        )
         if not inst:
             meta = dict(getattr(instance, "metadados", {}) or {})
             evo = dict(meta.get("evolution", {}) or {})
             inst_db_id = evo.get("instance_db_id")
             if inst_db_id:
-                inst = EvolutionInstance.objects.filter(id=int(inst_db_id), active=True).first()
+                inst = EvolutionInstance.objects.filter(
+                    id=int(inst_db_id), active=True
+                ).first()
         logger.info(
             "signal_instance_resolved inst=%s meta_id=%s",
             getattr(inst, "id", None),
-            evo.get("instance_db_id") if 'evo' in locals() else None,
+            evo.get("instance_db_id") if "evo" in locals() else None,
         )
         if not inst:
             logger.error(

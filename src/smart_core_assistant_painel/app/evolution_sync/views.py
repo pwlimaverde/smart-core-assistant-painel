@@ -32,8 +32,12 @@ def webhook(request: HttpRequest) -> JsonResponse:
     else:
         envelopes = [normalize_evolution_webhook(payload)]
 
-    # Filter out messages sent by the bot itself
-    envelopes = [e for e in envelopes if not e.get("from_me")]
+    # Filter out messages sent by the bot itself and messages without valid JID (e.g. status updates)
+    envelopes = [
+        e
+        for e in envelopes
+        if not e.get("from_me") and e.get("contact", {}).get("jid")
+    ]
     if not envelopes:
         logger.debug("Webhook ignored: all messages are from_me")
         return JsonResponse({"status": "ignored_from_me"}, status=200)

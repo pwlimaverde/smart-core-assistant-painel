@@ -3373,3 +3373,389 @@
 2025-11-18 19:30:11.070 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
 2025-11-18 19:30:11.073 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
 2025-11-18 19:30:11.079 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:30:43.677 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:38 - Webhook ignored: all messages are from_me
+2025-11-18 19:30:44.069 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.080 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.095 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:30:44.104 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:30:44.105 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.106 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:30:44.113 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:30:44.114 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:30:44.114 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.115 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.123 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:30:44.125 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.143 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:30:44.151 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:30:44.151 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.152 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:30:44.157 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:30:44.159 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:30:44.159 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:30:44.166 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:31:05.166 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:31:05.172 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:31:05.191 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:31:05.196 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:31:05.198 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:31:05.198 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:31:05.202 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:31:05.203 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:31:05.203 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:31:05.208 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:34:43.422 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:34:43.453 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:34:43.464 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:114 - EvolutionContact has no linked Contact. Attempting to link/create.
+2025-11-18 19:34:43.465 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:121 - Profile info: push_name=None, phone=None
+2025-11-18 19:34:43.465 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:148 - No phone found. Creating new Contact without phone.
+2025-11-18 19:34:43.471 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:155 - New Contact created without phone. ID=54
+2025-11-18 19:34:43.477 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:159 - Linked Contact 54 to EvolutionContact 4
+2025-11-18 19:34:43.478 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=54
+2025-11-18 19:34:43.478 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=54 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:34:43.483 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=54 instance_db_id=3
+2025-11-18 19:34:44.233 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:34:44.263 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:34:44.271 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=54
+2025-11-18 19:34:44.272 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=54 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:34:44.278 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=54 instance_db_id=3
+2025-11-18 19:35:06.921 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:35:06.948 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:35:06.957 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:35:06.957 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:35:06.963 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:35:25.935 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:35:25.961 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:35:25.970 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:35:25.970 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:35:25.976 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:35:49.186 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:35:49.212 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:35:49.219 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=53
+2025-11-18 19:35:49.220 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=53 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:35:49.225 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=53 instance_db_id=1
+2025-11-18 19:38:05.560 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:38:07.074 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:38:28.044 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:38:29.787 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:39:25.395 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:39:27.032 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:40:02.345 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:40:04.427 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:40:13.362 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:40:14.934 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:51:43.438 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:51:44.744 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:51:45.982 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:51:47.377 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:53:54.130 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:53:55.849 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:54:06.202 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:54:07.809 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:54:15.501 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:54:17.117 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:55:29.584 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:55:29.619 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:55:29.627 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=54
+2025-11-18 19:55:29.627 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=54 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:55:29.644 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=54 instance_db_id=3
+2025-11-18 19:55:30.387 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:55:30.414 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:55:30.422 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=54
+2025-11-18 19:55:30.422 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=54 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:55:30.431 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=54 instance_db_id=3
+2025-11-18 19:57:27.761 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=15 count=1
+2025-11-18 19:57:27.819 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=14 count=5
+2025-11-18 19:57:33.539 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:17 - signal_message_saved id=%s created=%s responded=%s
+2025-11-18 19:57:33.551 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:52 - signal_contact number=%s contact_id=%s evo_contact=%s
+2025-11-18 19:57:33.551 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:71 - signal_instance_resolved inst=%s meta_id=%s
+2025-11-18 19:57:33.551 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:88 - signal_send_check instance=%s base_url=%s api_key_set=%s
+2025-11-18 19:57:33.552 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:103 - signal_send_start msg_id=%s number=%s text_len=%s
+2025-11-18 19:57:33.552 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:139 - evolution_send_message_start instance=%s number=%s text_len=%s
+2025-11-18 19:57:33.552 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 19:57:33.552 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 19:57:34.804 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 19:57:34.804 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 19:57:34.805 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 19:57:35.035 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 19:57:35.036 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:213 - evolution_typing_start instance=%s number=%s typing=%s
+2025-11-18 19:57:35.036 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:48 - evolution_http_request method=%s url=%s apikey_set=%s
+2025-11-18 19:57:35.043 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:38 - Webhook ignored: all messages are from_me
+2025-11-18 19:57:36.257 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_send_request:71 - evolution_http_response status=%s ok=%s url=%s
+2025-11-18 19:57:36.258 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:_typing:227 - evolution_typing_done status=%s ok=%s
+2025-11-18 19:57:36.258 | INFO     | smart_core_assistant_painel.app.evolution_sync.services:send_message:173 - evolution_send_message_done status=%s ok=%s
+2025-11-18 19:57:36.258 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:116 - signal_send_success msg_id=%s
+2025-11-18 19:57:36.418 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:36.436 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:36.447 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:57:36.454 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=55
+2025-11-18 19:57:36.454 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=55 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:36.460 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=55 instance_db_id=1
+2025-11-18 19:57:36.463 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:57:36.470 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=55
+2025-11-18 19:57:36.470 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=55 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:36.476 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=55 instance_db_id=1
+2025-11-18 19:57:42.510 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:42.521 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:42.537 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:57:42.548 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=55
+2025-11-18 19:57:42.548 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=55 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:42.549 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:57:42.552 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=55 instance_db_id=1
+2025-11-18 19:57:42.557 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=55
+2025-11-18 19:57:42.557 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=55 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:57:42.563 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=55 instance_db_id=1
+2025-11-18 19:59:05.104 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:59:06.486 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:59:08.102 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:59:09.461 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:59:10.187 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 19:59:11.598 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 19:59:38.834 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.859 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.863 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:38.872 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:114 - EvolutionContact has no linked Contact. Attempting to link/create.
+2025-11-18 19:59:38.872 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:121 - Profile info: push_name=None, phone=None
+2025-11-18 19:59:38.873 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:148 - No phone found. Creating new Contact without phone.
+2025-11-18 19:59:38.879 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:155 - New Contact created without phone. ID=56
+2025-11-18 19:59:38.911 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:159 - Linked Contact 56 to EvolutionContact 5
+2025-11-18 19:59:38.911 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 19:59:38.911 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:38.912 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.923 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:114 - EvolutionContact has no linked Contact. Attempting to link/create.
+2025-11-18 19:59:38.924 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:121 - Profile info: push_name=Paulo Weslley Limaverde, phone=558897141275
+2025-11-18 19:59:38.966 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:38.967 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.983 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:134 - Contact with phone 558897141275 retrieved/created. Created=True, ID=57
+2025-11-18 19:59:38.989 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:159 - Linked Contact 57 to EvolutionContact 2
+2025-11-18 19:59:38.989 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=57
+2025-11-18 19:59:38.990 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=57 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.992 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.996 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:38.998 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=57 instance_db_id=1
+2025-11-18 19:59:39.003 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:39.012 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:39.012 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.018 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:39.019 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:39.022 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.028 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:39.028 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.029 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:39.033 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:39.037 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:39.037 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.044 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:39.051 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 19:59:39.058 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=57
+2025-11-18 19:59:39.062 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=57 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.066 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=57 instance_db_id=1
+2025-11-18 19:59:39.078 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.092 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.103 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 19:59:39.109 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=57
+2025-11-18 19:59:39.113 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=57 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.117 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:39.118 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=57 instance_db_id=1
+2025-11-18 19:59:39.124 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.126 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:39.127 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.131 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:39.132 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.149 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 19:59:39.159 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=57
+2025-11-18 19:59:39.160 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:39.163 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=57 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.167 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:39.168 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:39.169 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=57 instance_db_id=1
+2025-11-18 19:59:39.178 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:52.485 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.517 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:52.525 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.527 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:52.527 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.534 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:52.550 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 19:59:52.559 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=57
+2025-11-18 19:59:52.562 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=57 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.568 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=57 instance_db_id=1
+2025-11-18 19:59:52.586 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.613 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:52.622 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:52.622 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.628 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:52.630 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.634 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.656 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 19:59:52.659 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 19:59:52.664 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 19:59:52.664 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.666 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=57
+2025-11-18 19:59:52.670 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=57 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 19:59:52.670 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 19:59:52.679 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=57 instance_db_id=1
+2025-11-18 20:00:08.128 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:38 - Webhook ignored: all messages are from_me
+2025-11-18 20:00:08.575 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:08.587 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:08.603 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 20:00:08.610 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 20:00:08.611 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:08.612 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 20:00:08.618 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 20:00:08.621 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 20:00:08.622 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:08.628 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 20:00:24.460 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:24.466 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:24.486 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 20:00:24.490 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 20:00:24.493 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 20:00:24.494 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:24.497 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=56
+2025-11-18 20:00:24.498 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=56 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:00:24.498 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 20:00:24.502 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=56 instance_db_id=1
+2025-11-18 20:04:00.228 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:04:00.259 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 20:04:00.268 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:114 - EvolutionContact has no linked Contact. Attempting to link/create.
+2025-11-18 20:04:00.268 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:121 - Profile info: push_name=None, phone=None
+2025-11-18 20:04:00.269 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:148 - No phone found. Creating new Contact without phone.
+2025-11-18 20:04:00.275 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:155 - New Contact created without phone. ID=58
+2025-11-18 20:04:00.281 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:159 - Linked Contact 58 to EvolutionContact 4
+2025-11-18 20:04:00.282 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=58
+2025-11-18 20:04:00.282 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=58 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:04:00.287 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=58 instance_db_id=3
+2025-11-18 20:04:02.418 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:04:02.450 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:80 - Contact info extracted: jid=None, lid=None, mode=None
+2025-11-18 20:04:02.457 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:164 - Proceeding to schedule response for contact_id=58
+2025-11-18 20:04:02.458 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:174 - evo_schedule_response contact_id=58 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:04:02.463 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:183 - evo_schedule_response_meta contact_id=58 instance_db_id=3
+2025-11-18 20:19:46.328 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 20:19:47.701 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 20:19:49.355 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 20:19:50.714 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 20:19:51.938 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 20:19:53.395 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 20:19:56.859 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:20:06.484 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:20:11.211 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:20:27.058 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:20:38.604 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:20:40.376 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:20:48.184 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 20:20:49.563 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 20:20:51.120 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 20:20:52.051 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 20:20:52.502 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 20:20:53.424 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 20:21:08.253 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:08.282 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.310 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 20:21:08.320 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:96 - Creating new EvolutionContact
+2025-11-18 20:21:08.326 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:118 - EvolutionContact has no linked Contact. Attempting to link/create.
+2025-11-18 20:21:08.327 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:125 - Profile info: push_name=Paulo Weslley Limaverde, phone=558897141275
+2025-11-18 20:21:08.345 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:138 - Contact with phone 558897141275 retrieved/created. Created=True, ID=66
+2025-11-18 20:21:08.350 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:163 - Linked Contact 66 to EvolutionContact 13
+2025-11-18 20:21:08.350 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=66
+2025-11-18 20:21:08.350 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=66 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.369 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=66 instance_db_id=1
+2025-11-18 20:21:08.381 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:08.447 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.476 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 20:21:08.484 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=66
+2025-11-18 20:21:08.488 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=66 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.494 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=66 instance_db_id=1
+2025-11-18 20:21:08.542 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:08.640 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:08.762 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:08.794 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.821 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 20:21:08.824 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:08.830 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=66
+2025-11-18 20:21:08.835 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=66 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.844 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=66 instance_db_id=1
+2025-11-18 20:21:08.904 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.931 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 20:21:08.939 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=66
+2025-11-18 20:21:08.943 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=66 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:08.948 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=66 instance_db_id=1
+2025-11-18 20:21:08.950 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:09.223 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:09.243 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:09.268 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 20:21:09.275 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=66
+2025-11-18 20:21:09.279 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=66 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:09.283 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=66 instance_db_id=1
+2025-11-18 20:21:09.348 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:09.377 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 20:21:09.384 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=66
+2025-11-18 20:21:09.387 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=66 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 20:21:09.392 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=66 instance_db_id=1
+2025-11-18 20:21:09.696 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:37.718 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:40.319 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:41.055 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:41.074 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:50.879 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:21:50.885 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 20:22:13.674 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_fluxos_by_departamento:536 - Admin fluxos: dept_id=15 count=1
+2025-11-18 20:22:13.718 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.admin:admin_etapas_by_fluxo:559 - Admin etapas: fluxo_id=14 count=5
+2025-11-18 21:06:13.373 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 21:06:14.766 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 21:06:16.403 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 21:06:17.235 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-18 21:06:17.804 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 21:06:18.617 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-18 21:06:58.379 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.261 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.309 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.345 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 21:07:49.356 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:118 - EvolutionContact has no linked Contact. Attempting to link/create.
+2025-11-18 21:07:49.357 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:125 - Profile info: push_name=Paulo Weslley Limaverde, phone=558897141275
+2025-11-18 21:07:49.375 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:138 - Contact with phone 558897141275 retrieved/created. Created=True, ID=67
+2025-11-18 21:07:49.378 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.380 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:163 - Linked Contact 67 to EvolutionContact 13
+2025-11-18 21:07:49.381 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=67
+2025-11-18 21:07:49.381 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.399 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=67 instance_db_id=1
+2025-11-18 21:07:49.484 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.508 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 21:07:49.516 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=67
+2025-11-18 21:07:49.521 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.524 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=67 instance_db_id=1
+2025-11-18 21:07:49.527 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.651 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.730 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.745 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.775 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 21:07:49.785 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=67
+2025-11-18 21:07:49.789 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.795 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=67 instance_db_id=1
+2025-11-18 21:07:49.824 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:49.851 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.876 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 21:07:49.884 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=67
+2025-11-18 21:07:49.888 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:49.890 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=67 instance_db_id=1
+2025-11-18 21:07:49.925 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:50.197 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:07:50.211 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:50.234 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 21:07:50.242 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=67
+2025-11-18 21:07:50.246 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:50.252 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=67 instance_db_id=1
+2025-11-18 21:07:50.307 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:46 - Processing webhook. First env keys: ['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:50.332 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:84 - Contact info extracted: jid=558897141275@s.whatsapp.net, lid=62921321222334@lid, mode=pn
+2025-11-18 21:07:50.341 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:168 - Proceeding to schedule response for contact_id=67
+2025-11-18 21:07:50.345 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:178 - evo_schedule_response contact_id=67 env_keys=['source', 'instance', 'instance_id', 'sender_jid', 'from_me', 'contact', 'message', 'profile', 'apikey', 'raw']
+2025-11-18 21:07:50.347 | INFO     | smart_core_assistant_painel.app.evolution_sync.views:webhook:187 - evo_schedule_response_meta contact_id=67 instance_db_id=1
+2025-11-18 21:07:50.626 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:17.802 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:18.511 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:18.522 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:18.745 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:18.754 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:24.977 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:08:24.983 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me
+2025-11-18 21:09:19.484 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:42 - Webhook ignored: all messages are from_me

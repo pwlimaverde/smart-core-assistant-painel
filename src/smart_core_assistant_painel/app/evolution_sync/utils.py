@@ -1,4 +1,3 @@
-import json
 from typing import Any, Dict, List
 
 from django.core.cache import cache
@@ -11,6 +10,14 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:
     key = f"evo_buffer_{contact_id}"
     buf: List[Dict[str, Any]] = cache.get(key, [])
+
+    # Check for duplicates
+    new_msg_id = envelope.get("message", {}).get("id")
+    if new_msg_id:
+        for existing_env in buf:
+            if existing_env.get("message", {}).get("id") == new_msg_id:
+                return
+
     buf.append(envelope)
     cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 60) + 60)
 
@@ -23,7 +30,10 @@ def clear_buffer_contact(contact_id: int) -> None:
 
 
 def sched_response_contact(params: Dict[str, Any]) -> None:
-    contact_id = int(params.get("contact_id"))
+    cid_val = params.get("contact_id")
+    if cid_val is None:
+        return
+    contact_id = int(cid_val)
     timer_key = f"evo_timer_{contact_id}"
     if cache.get(timer_key):
         return

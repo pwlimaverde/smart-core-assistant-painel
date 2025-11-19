@@ -1,0 +1,500 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.2.7, settings: smart_core_assistant_painel.app.ui.core.settings_test (from env)
+rootdir: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel
+configfile: pytest.ini
+plugins: anyio-4.9.0, langsmith-0.3.45, cov-7.0.0, django-4.11.1, env-1.2.0
+collecting ... collected 4 items
+
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_end_to_end_contact_attendance_message FAILED [ 25%]
+
+================================== FAILURES ===================================
+_____ TestEvolutionWebhookFlow.test_end_to_end_contact_attendance_message _____
+
+self = <QuerySet []>
+defaults = {'api_key': 'TEST_API_KEY', 'name': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'server_url': 'http://192.168.3.127:8080'}
+kwargs = {'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}
+
+    def get_or_create(self, defaults=None, **kwargs):
+        """
+        Look up an object with the given kwargs, creating one if necessary.
+        Return a tuple of (object, created), where created is a boolean
+        specifying whether an object was created.
+        """
+        # The get() needs to be targeted at the write database in order
+        # to avoid potential transaction consistency problems.
+        self._for_write = True
+        try:
+>           return self.get(**kwargs), False
+                   ^^^^^^^^^^^^^^^^^^
+
+.venv\Lib\site-packages\django\db\models\query.py:946: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <QuerySet []>, args = ()
+kwargs = {'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}
+clone = <QuerySet []>, limit = 21, num = 0
+
+    def get(self, *args, **kwargs):
+        """
+        Perform the query and return a single object matching the given
+        keyword arguments.
+        """
+        if self.query.combinator and (args or kwargs):
+            raise NotSupportedError(
+                "Calling QuerySet.get(...) with filters after %s() is not "
+                "supported." % self.query.combinator
+            )
+        clone = self._chain() if self.query.combinator else self.filter(*args, **kwargs)
+        if self.query.can_filter() and not self.query.distinct_fields:
+            clone = clone.order_by()
+        limit = None
+        if (
+            not clone.query.select_for_update
+            or connections[clone.db].features.supports_select_for_update_with_limit
+        ):
+            limit = MAX_GET_RESULTS
+            clone.query.set_limits(high=limit)
+        num = len(clone)
+        if num == 1:
+            return clone._result_cache[0]
+        if not num:
+>           raise self.model.DoesNotExist(
+                "%s matching query does not exist." % self.model._meta.object_name
+            )
+E           smart_core_assistant_painel.app.evolution_sync.models.EvolutionInstance.DoesNotExist: EvolutionInstance matching query does not exist.
+
+.venv\Lib\site-packages\django\db\models\query.py:633: DoesNotExist
+
+During handling of the above exception, another exception occurred:
+
+self = <src.smart_core_assistant_painel.app.evolution_sync.tests.test_webhook_flow.TestEvolutionWebhookFlow testMethod=test_end_to_end_contact_attendance_message>
+
+    def test_end_to_end_contact_attendance_message(self) -> None:
+        payload: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "99910a55-8bbd-440a-9e14-9d5833a63c5e",
+            "apikey": "TEST_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "558897141275@s.whatsapp.net",
+                    "remoteJidAlt": "62921321222334@lid",
+                    "fromMe": False,
+                    "id": "ACE67E7835EF52C7FF28C63C5616F4A4",
+                    "participant": "",
+                    "addressingMode": "pn",
+                },
+                "pushName": "Paulo Weslley Limaverde",
+                "status": "DELIVERY_ACK",
+                "message": {
+                    "conversation": "Teste recebimento de mensagens",
+                },
+                "messageType": "conversation",
+                "messageTimestamp": 1763301593,
+                "instanceId": "99910a55-8bbd-440a-9e14-9d5833a63c5e",
+                "source": "android",
+            },
+            "sender": "5588921729550@s.whatsapp.net",
+        }
+    
+>       resp = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+
+src\smart_core_assistant_painel\app\evolution_sync\tests\test_webhook_flow.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+.venv\Lib\site-packages\django\test\client.py:1153: in post
+    response = super().post(
+.venv\Lib\site-packages\django\test\client.py:499: in post
+    return self.generic(
+.venv\Lib\site-packages\django\test\client.py:671: in generic
+    return self.request(**r)
+           ^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\django\test\client.py:1087: in request
+    self.check_exception(response)
+.venv\Lib\site-packages\django\test\client.py:802: in check_exception
+    raise exc_value
+.venv\Lib\site-packages\django\core\handlers\exception.py:55: in inner
+    response = get_response(request)
+               ^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\django\core\handlers\base.py:197: in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\django\views\decorators\csrf.py:65: in _view_wrapper
+    return view_func(request, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\smart_core_assistant_painel\app\evolution_sync\views.py:45: in webhook
+    result = processor.process_webhook(payload, envelopes)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py:66: in process_webhook
+    instance = self._get_or_create_instance(first_env, payload)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py:92: in _get_or_create_instance
+    instance, created = EvolutionInstance.objects.get_or_create(
+.venv\Lib\site-packages\django\db\models\manager.py:87: in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\django\db\models\query.py:948: in get_or_create
+    params = self._extract_model_params(defaults, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <QuerySet []>
+defaults = {'api_key': 'TEST_API_KEY', 'name': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'server_url': 'http://192.168.3.127:8080'}
+kwargs = {'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}
+params = {'api_key': 'TEST_API_KEY', 'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'name': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'server_url': 'http://192.168.3.127:8080'}
+property_names = frozenset({'pk'}), invalid_params = ['server_url']
+param = 'server_url'
+
+    def _extract_model_params(self, defaults, **kwargs):
+        """
+        Prepare `params` for creating a model instance based on the given
+        kwargs; for use by get_or_create().
+        """
+        defaults = defaults or {}
+        params = {k: v for k, v in kwargs.items() if LOOKUP_SEP not in k}
+        params.update(defaults)
+        property_names = self.model._meta._property_names
+        invalid_params = []
+        for param in params:
+            try:
+                self.model._meta.get_field(param)
+            except exceptions.FieldDoesNotExist:
+                # It's okay to use a model's property if it has a setter.
+                if not (param in property_names and getattr(self.model, param).fset):
+                    invalid_params.append(param)
+        if invalid_params:
+>           raise exceptions.FieldError(
+                "Invalid field name(s) for model %s: '%s'."
+                % (
+                    self.model._meta.object_name,
+                    "', '".join(sorted(invalid_params)),
+                )
+            )
+E           django.core.exceptions.FieldError: Invalid field name(s) for model EvolutionInstance: 'server_url'.
+
+.venv\Lib\site-packages\django\db\models\query.py:1046: FieldError
+---------------------------- Captured stdout setup ----------------------------
+Operations to perform:
+  Synchronize unmigrated apps: core, corsheaders, django, messages, postgres, rest_framework, rolepermissions, staticfiles
+  Apply all migrations: admin, atendimentos, auth, clientes, contenttypes, django_q, evolution_sync, operacional, sessions, treinamento
+Running pre-migrate handlers for application admin
+Running pre-migrate handlers for application auth
+Running pre-migrate handlers for application contenttypes
+Running pre-migrate handlers for application sessions
+Running pre-migrate handlers for application rolepermissions
+Running pre-migrate handlers for application django_q
+Running pre-migrate handlers for application usuarios
+Running pre-migrate handlers for application operacional
+Running pre-migrate handlers for application clientes
+Running pre-migrate handlers for application atendimentos
+Running pre-migrate handlers for application treinamento
+Running pre-migrate handlers for application evolution_sync
+Synchronizing apps without migrations:
+  Creating tables...
+    Running deferred SQL...
+Running migrations:
+  Applying contenttypes.0001_initial... OK (0.032s)
+  Applying auth.0001_initial... OK (0.206s)
+  Applying admin.0001_initial... OK (0.049s)
+  Applying admin.0002_logentry_remove_auto_add... OK (0.014s)
+  Applying admin.0003_logentry_add_action_flag_choices... OK (0.014s)
+  Applying atendimentos.0001_initial... OK (0.041s)
+  Applying operacional.0001_initial... OK (0.543s)
+  Applying operacional.0002_atendente_fluxo_field... OK (0.068s)
+  Applying operacional.0003_rename_oraculo_ate_fluxo_76c2fe_idx_oraculo_ate_fluxo_i_e99ecc_idx_and_more... OK (0.087s)
+  Applying operacional.0004_alter_atendente_fluxo... OK (0.045s)
+  Applying operacional.0005_alter_atendente_fluxo_not_null... OK (0.045s)
+  Applying operacional.0002_alter_etapafluxo_ordem... OK (0.028s)
+  Applying operacional.0006_merge_20251108_0942... OK (0.010s)
+  Applying clientes.0001_initial... OK (0.116s)
+  Applying atendimentos.0002_initial... OK (0.528s)
+  Applying atendimentos.0003_remove_atendimento_oraculo_ate_valor_o_232ff7_idx_and_more... OK (0.269s)
+  Applying atendimentos.0004_alter_atendimento_status... OK (0.029s)
+  Applying atendimentos.0005_atendimento_fluxo_atendimento_and_more... OK (0.090s)
+  Applying atendimentos.0006_alter_atendimento_status... OK (0.029s)
+  Applying contenttypes.0002_remove_content_type_name... OK (0.044s)
+  Applying auth.0002_alter_permission_name_max_length... OK (0.038s)
+  Applying auth.0003_alter_user_email_max_length... OK (0.019s)
+  Applying auth.0004_alter_user_username_opts... OK (0.016s)
+  Applying auth.0005_alter_user_last_login_null... OK (0.018s)
+  Applying auth.0006_require_contenttypes_0002... OK (0.009s)
+  Applying auth.0007_alter_validators_add_error_messages... OK (0.021s)
+  Applying auth.0008_alter_user_username_max_length... OK (0.030s)
+  Applying auth.0009_alter_user_last_name_max_length... OK (0.021s)
+  Applying auth.0010_alter_group_name_max_length... OK (0.033s)
+  Applying auth.0011_update_proxy_permissions... OK (0.029s)
+  Applying auth.0012_alter_user_first_name_max_length... OK (0.019s)
+  Applying clientes.0002_contato_wa_addressing_mode_contato_wa_jid_and_more... OK (0.060s)
+  Applying clientes.0003_remove_contato_wa_addressing_mode_and_more... OK (0.053s)
+  Applying django_q.0001_initial... OK (0.040s)
+  Applying django_q.0002_auto_20150630_1624... OK (0.020s)
+  Applying django_q.0003_auto_20150708_1326... OK (0.030s)
+  Applying django_q.0004_auto_20150710_1043... OK (0.013s)
+  Applying django_q.0005_auto_20150718_1506... OK (0.019s)
+  Applying django_q.0006_auto_20150805_1817... OK (0.024s)
+  Applying django_q.0007_ormq... OK (0.025s)
+  Applying django_q.0008_auto_20160224_1026... OK (0.011s)
+  Applying django_q.0009_auto_20171009_0915... OK (0.031s)
+  Applying django_q.0010_auto_20200610_0856... OK (0.015s)
+  Applying django_q.0011_auto_20200628_1055... OK (0.014s)
+  Applying django_q.0012_auto_20200702_1608... OK (0.014s)
+  Applying django_q.0013_task_attempt_count... OK (0.019s)
+  Applying django_q.0014_schedule_cluster... OK (0.013s)
+  Applying django_q.0015_alter_schedule_schedule_type... OK (0.013s)
+  Applying django_q.0016_schedule_intended_date_kwarg... OK (0.015s)
+  Applying django_q.0017_task_cluster_alter... OK (0.020s)
+  Applying django_q.0018_task_success_index... OK (0.020s)
+  Applying evolution_sync.0001_initial... OK (0.123s)
+  Applying evolution_sync.0002_remove_evolutioninstance_server_url... OK (0.015s)
+  Applying operacional.0007_departamento_api_key_departamento_telefone_instancia_and_more... OK (0.077s)
+  Applying operacional.0008_appinstance... OK (0.094s)
+  Applying operacional.0009_delete_whatsappinstance... OK (0.014s)
+  Applying sessions.0001_initial... OK (0.033s)
+  Applying treinamento.0001_enable_pgvector_extension... OK (0.047s)
+  Applying treinamento.0002_initial... OK (0.124s)
+Running post-migrate handlers for application admin
+Adding content type 'admin | logentry'
+Adding permission 'Permission object (1)'
+Adding permission 'Permission object (2)'
+Adding permission 'Permission object (3)'
+Adding permission 'Permission object (4)'
+Running post-migrate handlers for application auth
+Adding content type 'auth | permission'
+Adding content type 'auth | group'
+Adding content type 'auth | user'
+Adding permission 'Permission object (5)'
+Adding permission 'Permission object (6)'
+Adding permission 'Permission object (7)'
+Adding permission 'Permission object (8)'
+Adding permission 'Permission object (9)'
+Adding permission 'Permission object (10)'
+Adding permission 'Permission object (11)'
+Adding permission 'Permission object (12)'
+Adding permission 'Permission object (13)'
+Adding permission 'Permission object (14)'
+Adding permission 'Permission object (15)'
+Adding permission 'Permission object (16)'
+Running post-migrate handlers for application contenttypes
+Adding content type 'contenttypes | contenttype'
+Adding permission 'Permission object (17)'
+Adding permission 'Permission object (18)'
+Adding permission 'Permission object (19)'
+Adding permission 'Permission object (20)'
+Running post-migrate handlers for application sessions
+Adding content type 'sessions | session'
+Adding permission 'Permission object (21)'
+Adding permission 'Permission object (22)'
+Adding permission 'Permission object (23)'
+Adding permission 'Permission object (24)'
+Running post-migrate handlers for application rolepermissions
+Running post-migrate handlers for application django_q
+Adding content type 'django_q | schedule'
+Adding content type 'django_q | task'
+Adding content type 'django_q | failure'
+Adding content type 'django_q | success'
+Adding content type 'django_q | ormq'
+Adding permission 'Permission object (25)'
+Adding permission 'Permission object (26)'
+Adding permission 'Permission object (27)'
+Adding permission 'Permission object (28)'
+Adding permission 'Permission object (29)'
+Adding permission 'Permission object (30)'
+Adding permission 'Permission object (31)'
+Adding permission 'Permission object (32)'
+Adding permission 'Permission object (33)'
+Adding permission 'Permission object (34)'
+Adding permission 'Permission object (35)'
+Adding permission 'Permission object (36)'
+Adding permission 'Permission object (37)'
+Adding permission 'Permission object (38)'
+Adding permission 'Permission object (39)'
+Adding permission 'Permission object (40)'
+Adding permission 'Permission object (41)'
+Adding permission 'Permission object (42)'
+Adding permission 'Permission object (43)'
+Adding permission 'Permission object (44)'
+Running post-migrate handlers for application usuarios
+Running post-migrate handlers for application operacional
+Adding content type 'operacional | departamento'
+Adding content type 'operacional | atendente'
+Adding content type 'operacional | fluxoatendimento'
+Adding content type 'operacional | etapafluxo'
+Adding content type 'operacional | movimentofluxo'
+Adding content type 'operacional | appinstance'
+Adding permission 'Permission object (45)'
+Adding permission 'Permission object (46)'
+Adding permission 'Permission object (47)'
+Adding permission 'Permission object (48)'
+Adding permission 'Permission object (49)'
+Adding permission 'Permission object (50)'
+Adding permission 'Permission object (51)'
+Adding permission 'Permission object (52)'
+Adding permission 'Permission object (53)'
+Adding permission 'Permission object (54)'
+Adding permission 'Permission object (55)'
+Adding permission 'Permission object (56)'
+Adding permission 'Permission object (57)'
+Adding permission 'Permission object (58)'
+Adding permission 'Permission object (59)'
+Adding permission 'Permission object (60)'
+Adding permission 'Permission object (61)'
+Adding permission 'Permission object (62)'
+Adding permission 'Permission object (63)'
+Adding permission 'Permission object (64)'
+Adding permission 'Permission object (65)'
+Adding permission 'Permission object (66)'
+Adding permission 'Permission object (67)'
+Adding permission 'Permission object (68)'
+Running post-migrate handlers for application clientes
+Adding content type 'clientes | contato'
+Adding content type 'clientes | cliente'
+Adding permission 'Permission object (69)'
+Adding permission 'Permission object (70)'
+Adding permission 'Permission object (71)'
+Adding permission 'Permission object (72)'
+Adding permission 'Permission object (73)'
+Adding permission 'Permission object (74)'
+Adding permission 'Permission object (75)'
+Adding permission 'Permission object (76)'
+Running post-migrate handlers for application atendimentos
+Adding content type 'atendimentos | atendimento'
+Adding content type 'atendimentos | mensagem'
+Adding permission 'Permission object (77)'
+Adding permission 'Permission object (78)'
+Adding permission 'Permission object (79)'
+Adding permission 'Permission object (80)'
+Adding permission 'Permission object (81)'
+Adding permission 'Permission object (82)'
+Adding permission 'Permission object (83)'
+Adding permission 'Permission object (84)'
+Running post-migrate handlers for application treinamento
+Adding content type 'treinamento | querycompose'
+Adding content type 'treinamento | treinamento'
+Adding content type 'treinamento | documento'
+Adding permission 'Permission object (85)'
+Adding permission 'Permission object (86)'
+Adding permission 'Permission object (87)'
+Adding permission 'Permission object (88)'
+Adding permission 'Permission object (89)'
+Adding permission 'Permission object (90)'
+Adding permission 'Permission object (91)'
+Adding permission 'Permission object (92)'
+Adding permission 'Permission object (93)'
+Adding permission 'Permission object (94)'
+Adding permission 'Permission object (95)'
+Adding permission 'Permission object (96)'
+Running post-migrate handlers for application evolution_sync
+Adding content type 'evolution_sync | evolutioninstance'
+Adding content type 'evolution_sync | evolutioncontact'
+Adding permission 'Permission object (97)'
+Adding permission 'Permission object (98)'
+Adding permission 'Permission object (99)'
+Adding permission 'Permission object (100)'
+Adding permission 'Permission object (101)'
+Adding permission 'Permission object (102)'
+Adding permission 'Permission object (103)'
+Adding permission 'Permission object (104)'
+---------------------------- Captured stderr setup ----------------------------
+Creating test database for alias 'default' ('test_smart_core_db')...
+
+---------------------------- Captured stderr call -----------------------------
+ERROR:django.request:Internal Server Error: /sync/evolution/webhook/
+Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 946, in get_or_create
+    return self.get(**kwargs), False
+           ~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+smart_core_assistant_painel.app.evolution_sync.models.EvolutionInstance.DoesNotExist: EvolutionInstance matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\views.py", line 45, in webhook
+    result = processor.process_webhook(payload, envelopes)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py", line 66, in process_webhook
+    instance = self._get_or_create_instance(first_env, payload)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py", line 92, in _get_or_create_instance
+    instance, created = EvolutionInstance.objects.get_or_create(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        instance_id=inst_id or "",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 948, in get_or_create
+    params = self._extract_model_params(defaults, **kwargs)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 1046, in _extract_model_params
+    raise exceptions.FieldError(
+    ...<5 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) for model EvolutionInstance: 'server_url'.
+------------------------------ Captured log call ------------------------------
+ERROR    django.request:log.py:253 Internal Server Error: /sync/evolution/webhook/
+Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 946, in get_or_create
+    return self.get(**kwargs), False
+           ~~~~~~~~^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+smart_core_assistant_painel.app.evolution_sync.models.EvolutionInstance.DoesNotExist: EvolutionInstance matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\views\decorators\csrf.py", line 65, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\views.py", line 45, in webhook
+    result = processor.process_webhook(payload, envelopes)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py", line 66, in process_webhook
+    instance = self._get_or_create_instance(first_env, payload)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py", line 92, in _get_or_create_instance
+    instance, created = EvolutionInstance.objects.get_or_create(
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        instance_id=inst_id or "",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+        },
+        ^^
+    )
+    ^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 948, in get_or_create
+    params = self._extract_model_params(defaults, **kwargs)
+  File "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Lib\site-packages\django\db\models\query.py", line 1046, in _extract_model_params
+    raise exceptions.FieldError(
+    ...<5 lines>...
+    )
+django.core.exceptions.FieldError: Invalid field name(s) for model EvolutionInstance: 'server_url'.
+-------------------------- Captured stderr teardown ---------------------------
+Destroying test database for alias 'default' ('test_smart_core_db')...
+
+=========================== short test summary info ===========================
+FAILED src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_end_to_end_contact_attendance_message - django.core.exceptions.FieldError: Invalid field name(s) for model EvolutionInstance: 'server_url'.
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed in 6.49s ==============================

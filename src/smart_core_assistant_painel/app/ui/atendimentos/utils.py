@@ -27,6 +27,9 @@ from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
     MessageData,
 )
+from smart_core_assistant_painel.app.evolution_sync.services import (
+    clear_buffer_contact,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .models import (
@@ -757,8 +760,7 @@ def _send_message_response_by_contact(params: ProcessingParams) -> None:
         )
     finally:
         try:
-            cache.delete(cache_key)
-            cache.delete(f"evo_timer_{contact_id}")
+            clear_buffer_contact(contact_id)
             logger.info(
                 "atd_process_done contact_id=%s cache_cleared=1",
                 contact_id,

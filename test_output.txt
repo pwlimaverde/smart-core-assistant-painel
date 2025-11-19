@@ -1,0 +1,23 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.2.7, settings: smart_core_assistant_painel.app.ui.core.settings_test (from env)
+rootdir: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel
+configfile: pytest.ini
+testpaths: tests, src/smart_core_assistant_painel/app/ui
+plugins: anyio-4.9.0, langsmith-0.3.45, cov-7.0.0, django-4.11.1, env-1.2.0
+collecting ... collected 98 items / 1 error
+
+=================================== ERRORS ====================================
+____ ERROR collecting tests/modules/app/clickup_sync/test_deletion_sync.py ____
+tests\modules\app\clickup_sync\test_deletion_sync.py:10: in <module>
+    from smart_core_assistant_painel.app.clickup_sync.models import (
+src\smart_core_assistant_painel\app\clickup_sync\models.py:6: in <module>
+    class ClickupSpace(models.Model):
+.venv\Lib\site-packages\django\db\models\base.py:136: in __new__
+    raise RuntimeError(
+E   RuntimeError: Model class smart_core_assistant_painel.app.clickup_sync.models.ClickupSpace doesn't declare an explicit app_label and isn't in an application in INSTALLED_APPS.
+=========================== short test summary info ===========================
+ERROR tests/modules/app/clickup_sync/test_deletion_sync.py - RuntimeError: Model class smart_core_assistant_painel.app.clickup_sync.models.ClickupSpace doesn't declare an explicit app_label and isn't in an application in INSTALLED_APPS.
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 1.18s ===============================

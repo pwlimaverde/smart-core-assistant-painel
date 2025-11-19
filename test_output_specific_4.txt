@@ -1,0 +1,103 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.2.7, settings: smart_core_assistant_painel.app.ui.core.settings_test (from env)
+rootdir: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel
+configfile: pytest.ini
+plugins: anyio-4.9.0, langsmith-0.3.45, cov-7.0.0, django-4.11.1, env-1.2.0
+collecting ... collected 4 items
+
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_end_to_end_contact_attendance_message PASSED [ 25%]
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_phone_saved_when_pn_available PASSED [ 50%]
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_phone_updated_when_only_lid_then_pn PASSED [ 75%]
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_signal_dispatches_on_bot_response FAILED [100%]
+
+================================== FAILURES ===================================
+_______ TestEvolutionWebhookFlow.test_signal_dispatches_on_bot_response _______
+
+self = <src.smart_core_assistant_painel.app.evolution_sync.tests.test_webhook_flow.TestEvolutionWebhookFlow testMethod=test_signal_dispatches_on_bot_response>
+
+    def test_signal_dispatches_on_bot_response(self) -> None:
+        instance = EvolutionInstance.objects.create(
+            name="inst-name",
+            instance_id="inst-id",
+            api_key="TEST_API_KEY",
+        )
+        contato = Contato.objects.create(
+            nome_contato="Cliente",
+            telefone="5511999999999",
+            ativo=True,
+            metadados={},
+        )
+        evo_contact = EvolutionContact.objects.create(
+            instance=instance,
+            contact=contato,
+            jid="5511999999999@s.whatsapp.net",
+            addressing_mode="pn",
+            active=True,
+        )
+        assert evo_contact is not None
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            Atendimento,
+            Mensagem,
+        )
+    
+        atendimento = Atendimento.objects.create(contato=contato)
+        ctx = dict(atendimento.contexto_conversa or {})
+        ctx["api_key"] = instance.api_key
+        atendimento.contexto_conversa = ctx
+        atendimento.save(update_fields=["contexto_conversa"])
+        mensagem = Mensagem.objects.create(
+            atendimento=atendimento,
+            conteudo="Oi",
+        )
+        mensagem.metadados = {
+            "evolution": {"instance_id": instance.instance_id}
+        }
+        mensagem.save(update_fields=["metadados"])
+        from unittest.mock import patch
+    
+>       with patch(
+            "smart_core_assistant_painel.app.evolution_sync.signals.async_task"
+        ) as mocked_async:
+
+src\smart_core_assistant_painel\app\evolution_sync\tests\test_webhook_flow.py:241: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py:1497: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <unittest.mock._patch object at 0x0000024A0F215F90>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'smart_core_assistant_painel.app.evolution_sync.signals' from 'C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\evolution_sync\\signals.py'> does not have the attribute 'async_task'
+
+C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py:1467: AttributeError
+-------------------------- Captured stderr teardown ---------------------------
+Destroying test database for alias 'default' ('test_smart_core_db')...
+
+=========================== short test summary info ===========================
+FAILED src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_signal_dispatches_on_bot_response - AttributeError: <module 'smart_core_assistant_painel.app.evolution_sync.signals' from 'C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\evolution_sync\\signals.py'> does not have the attribute 'async_task'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 3 passed in 9.79s =========================

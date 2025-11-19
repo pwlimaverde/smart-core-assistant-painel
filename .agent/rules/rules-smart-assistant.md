@@ -158,4 +158,4 @@ Estas regras são específicas para otimizar o seu desempenho como assistente de
 2.  **Consistência de Testes**: Ao depurar ou verificar código, dê preferência ao comando `uv run task test-docker`. Se precisar rodar um teste específico, use `uv run task test-docker -- -k "nome_do_teste"`.
 3.  **Análise de Tipos**: Se encontrar erros de tipo, lembre-se que o projeto usa `pyright` em modo estrito. Não tente suprimir erros cegamente; corrija a causa raiz ou use `# type: ignore` apenas como último recurso e com justificativa.
 4.  **Contexto**: Ao criar novos arquivos, sempre verifique onde eles se encaixam na arquitetura existente (Django App vs. Módulo de Lógica de Negócio) e siga a estrutura de pastas correspondente.
-5.  **Linguagem**: Mantenha toda a comunicação, docstrings e comentários em **Português**, mas o código (nomes de variáveis, funções, classes) em **Inglês**.
+5.  **Linguagem**: Mantenha toda a comunicação, **planos de implementação**, docstrings e comentários em **Português**, mas o código (nomes de variáveis, funções, classes) em **Inglês**.

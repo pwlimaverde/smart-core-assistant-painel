@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict
 
-from django.test import Client, TestCase
+from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
@@ -198,12 +198,12 @@ class TestEvolutionWebhookFlow(TestCase):
         assert contato is not None
         self.assertEqual(contato.telefone, "5511888888888")
 
+    @override_settings(EVOLUTION_API_URL="http://test-url.com")
     def test_signal_dispatches_on_bot_response(self) -> None:
         instance = EvolutionInstance.objects.create(
             name="inst-name",
             instance_id="inst-id",
             api_key="TEST_API_KEY",
-            server_url="http://localhost:3000/",
         )
         contato = Contato.objects.create(
             nome_contato="Cliente",
@@ -240,13 +240,14 @@ class TestEvolutionWebhookFlow(TestCase):
         from unittest.mock import patch
 
         with patch(
-            "smart_core_assistant_painel.app.evolution_sync.signals.async_task"
-        ) as mocked_async:
-            mensagem.registrar_resposta_bot("Olá! Como posso ajudar?", 0.9)
-            assert mocked_async.call_count == 1
-            args, _kwargs = mocked_async.call_args
-            assert isinstance(args[0], str)
-            assert args[0].endswith(
-                "services.send_response_from_message_metadata"
-            )
-            assert int(args[1]) == int(mensagem.id)
+            "smart_core_assistant_painel.app.evolution_sync.services.evolution_api.EvolutionWhatsAppService.send_message"
+        ) as mocked_send:
+            atendimento.refresh_from_db()
+            mensagem.refresh_from_db()
+
+            # Trigger signal
+            mensagem.resposta_bot = "Resposta do bot"
+            mensagem.respondida = True
+            mensagem.save()
+
+            mocked_send.assert_called_once()

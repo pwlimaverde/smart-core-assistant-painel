@@ -1,0 +1,35 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.2.7, settings: smart_core_assistant_painel.app.ui.core.settings_test (from env)
+rootdir: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel
+configfile: pytest.ini
+plugins: anyio-4.9.0, langsmith-0.3.45, cov-7.0.0, django-4.11.1, env-1.2.0
+collecting ... collected 0 items / 1 error
+
+=================================== ERRORS ====================================
+_ ERROR collecting src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py _
+ImportError while importing test module 'C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\tests\test_webhook_flow.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+.venv\Lib\site-packages\_pytest\python.py:498: in importtestmodule
+    mod = import_path(
+.venv\Lib\site-packages\_pytest\pathlib.py:561: in import_path
+    mod = _import_module_using_spec(
+.venv\Lib\site-packages\_pytest\pathlib.py:725: in _import_module_using_spec
+    spec.loader.exec_module(mod)  # type: ignore[union-attr]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv\Lib\site-packages\_pytest\assertion\rewrite.py:186: in exec_module
+    exec(co, module.__dict__)
+src\smart_core_assistant_painel\app\evolution_sync\tests\test_webhook_flow.py:16: in <module>
+    from smart_core_assistant_painel.app.ui.atendimentos.utils import (
+src\smart_core_assistant_painel\app\ui\atendimentos\utils.py:30: in <module>
+    from smart_core_assistant_painel.app.evolution_sync.services import (
+E   ImportError: cannot import name 'SERVICEHUB' from 'smart_core_assistant_painel.app.evolution_sync.services' (C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\app\evolution_sync\services\__init__.py)
+------------------------------- Captured stderr -------------------------------
+2025-11-19 20:16:51.100 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - \U0001f680 Iniciando SetEnvironRemoteFirebaseDatasource...\n2025-11-19 20:16:52.516 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - \u2705 SetEnvironRemoteFirebaseDatasource conclu\xeddo com sucesso!
+=========================== short test summary info ===========================
+ERROR src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+============================== 1 error in 2.54s ===============================

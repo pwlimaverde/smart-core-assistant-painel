@@ -11,7 +11,7 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
 )
-from smart_core_assistant_painel.app.evolution_sync.utils import (
+from smart_core_assistant_painel.app.evolution_sync.services import (
     sched_response_contact,
     set_buffer_contact,
 )
@@ -85,16 +85,11 @@ class WebhookProcessor:
         inst_name = envelope.instance
         inst_id = envelope.instance_id
         api_key = str(envelope.apikey or "")
-        server_url = payload.get("server_url") or getattr(
-            settings, "EVOLUTION_API_URL", None
-        )
-
         instance, created = EvolutionInstance.objects.get_or_create(
             instance_id=inst_id or "",
             defaults={
                 "name": str(inst_name or inst_id or ""),
                 "api_key": api_key,
-                "server_url": server_url,
             },
         )
 
@@ -107,9 +102,6 @@ class WebhookProcessor:
             if api_key and instance.api_key != api_key:
                 instance.api_key = api_key
                 update_fields.append("api_key")
-            if server_url and instance.server_url != server_url:
-                instance.server_url = server_url
-                update_fields.append("server_url")
             if update_fields:
                 instance.save(update_fields=update_fields)
 

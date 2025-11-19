@@ -1,0 +1,95 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.9, pytest-8.4.2, pluggy-1.6.0 -- C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+django: version: 5.2.7, settings: smart_core_assistant_painel.app.ui.core.settings_test (from env)
+rootdir: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel
+configfile: pytest.ini
+plugins: anyio-4.9.0, langsmith-0.3.45, cov-7.0.0, django-4.11.1, env-1.2.0
+collecting ... collected 4 items
+
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_end_to_end_contact_attendance_message PASSED [ 25%]
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_phone_saved_when_pn_available PASSED [ 50%]
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_phone_updated_when_only_lid_then_pn PASSED [ 75%]
+src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_signal_dispatches_on_bot_response FAILED [100%]
+
+================================== FAILURES ===================================
+_______ TestEvolutionWebhookFlow.test_signal_dispatches_on_bot_response _______
+
+self = <src.smart_core_assistant_painel.app.evolution_sync.tests.test_webhook_flow.TestEvolutionWebhookFlow testMethod=test_signal_dispatches_on_bot_response>
+
+    def test_signal_dispatches_on_bot_response(self) -> None:
+        instance = EvolutionInstance.objects.create(
+            name="inst-name",
+            instance_id="inst-id",
+            api_key="TEST_API_KEY",
+        )
+        contato = Contato.objects.create(
+            nome_contato="Cliente",
+            telefone="5511999999999",
+            ativo=True,
+            metadados={},
+        )
+        evo_contact = EvolutionContact.objects.create(
+            instance=instance,
+            contact=contato,
+            jid="5511999999999@s.whatsapp.net",
+            addressing_mode="pn",
+            active=True,
+        )
+        assert evo_contact is not None
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            Atendimento,
+            Mensagem,
+        )
+    
+        atendimento = Atendimento.objects.create(contato=contato)
+        ctx = dict(atendimento.contexto_conversa or {})
+        ctx["api_key"] = instance.api_key
+        atendimento.contexto_conversa = ctx
+        atendimento.save(update_fields=["contexto_conversa"])
+        mensagem = Mensagem.objects.create(
+            atendimento=atendimento,
+            conteudo="Oi",
+        )
+        mensagem.metadados = {
+            "evolution": {"instance_id": instance.instance_id}
+        }
+        mensagem.save(update_fields=["metadados"])
+        from unittest.mock import patch
+    
+        with patch(
+            "smart_core_assistant_painel.app.evolution_sync.services.evolution_api.EvolutionWhatsAppService.send_message"
+        ) as mocked_send:
+            atendimento.refresh_from_db()
+            mensagem.refresh_from_db()
+    
+            # Trigger signal
+            mensagem.resposta_bot = "Resposta do bot"
+            mensagem.save()
+    
+>           mocked_send.assert_called_once()
+
+src\smart_core_assistant_painel\app\evolution_sync\tests\test_webhook_flow.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <MagicMock name='send_message' id='2664514732448'>
+
+    def assert_called_once(self):
+        """assert that the mock was called only once.
+        """
+        if not self.call_count == 1:
+            msg = ("Expected '%s' to have been called once. Called %s times.%s"
+                   % (self._mock_name or 'mock',
+                      self.call_count,
+                      self._calls_repr()))
+>           raise AssertionError(msg)
+E           AssertionError: Expected 'send_message' to have been called once. Called 0 times.
+
+C:\Users\pwlim\AppData\Local\Programs\Python\Python313\Lib\unittest\mock.py:958: AssertionError
+-------------------------- Captured stderr teardown ---------------------------
+Destroying test database for alias 'default' ('test_smart_core_db')...
+
+=========================== short test summary info ===========================
+FAILED src/smart_core_assistant_painel/app/evolution_sync/tests/test_webhook_flow.py::TestEvolutionWebhookFlow::test_signal_dispatches_on_bot_response - AssertionError: Expected 'send_message' to have been called once. Called 0 times.
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!
+======================== 1 failed, 3 passed in 10.68s =========================

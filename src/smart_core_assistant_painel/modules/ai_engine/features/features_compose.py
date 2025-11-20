@@ -612,6 +612,7 @@ class FeaturesCompose:
             # Define flag de transferência quando a resposta indica não ter
             # encontrado informações relacionadas OU solicitação de transferência
             transfer_attendance: bool = False
+            transferencia_explicita: bool = False  # Flag para indicar se o bot já mencionou a transferência
             fluxo_transferencia: str = ""
             apology_phrase: str = "Desculpe, não encontrei informações relacionadas à sua pergunta"
             transfer_phrase: str = "Estarei transferindo seu atendimento"
@@ -620,6 +621,9 @@ class FeaturesCompose:
                 or transfer_phrase in response_text
             ):
                 transfer_attendance = True
+                transferencia_explicita = (
+                    True  # Bot mencionou explicitamente a transferência
+                )
                 # verificação do fluxo de transferência de atendimento adequado
                 fluxo_transferencia = (
                     FeaturesCompose._extrair_fluxo_transferencia(
@@ -629,7 +633,7 @@ class FeaturesCompose:
 
                 # Log para depuração do fluxo de transferência de atendimento
                 logger.info(
-                    "Regra de transferência acionada. "
+                    "Regra de transferência acionada (explícita). "
                     f"transferir_atendimento=True. "
                     f"fluxo_transferencia={fluxo_transferencia}"
                 )
@@ -664,27 +668,37 @@ class FeaturesCompose:
             # Se o score ficar abaixo do limiar, transfere atendimento
             if final_score < 0.6:
                 transfer_attendance = True
-                # Se a transferência for ativada por score baixo, tenta extrair o fluxo
+                logger.info(
+                    "Score abaixo do limiar (0.6). "
+                    "transferir_atendimento=True."
+                )
+
+            # Adiciona mensagem de transferência apenas se:
+            # 1. A transferência estiver habilitada E
+            # 2. O bot NÃO mencionou explicitamente a transferência na resposta
+            # (evita duplicação quando o bot já disse que estava transferindo)
+            if transfer_attendance and not transferencia_explicita:
+                transfer_message: str = "\n\nVou transferir seu atendimento para o setor responsável"
+                response_text = f"{response_text}{transfer_message}"
+                logger.info(
+                    "Mensagem de transferência genérica adicionada "
+                    "(transferência por baixa confiabilidade)"
+                )
+
+            # Garante que o fluxo de transferência seja extraído quando necessário
+            if transfer_attendance:
+                # Se precisar transferir e o fluxo ainda estiver vazio, tenta extrair
                 if fluxo_transferencia == "":
                     fluxo_transferencia = (
                         FeaturesCompose._extrair_fluxo_transferencia(
                             response_text, fluxos_disponiveis
                         )
                     )
-                logger.info(
-                    "Score abaixo do limiar (0.6). "
-                    f"transferir_atendimento=True. "
-                    f"fluxo_transferencia={fluxo_transferencia}"
-                )
-
-            # Quando a transferência estiver habilitada, acrescenta a mensagem
-            # solicitada ao texto de resposta do bot.
-            if transfer_attendance:
-                transfer_message: str = "\n\nVou transferir seu atendimento para o setor responsável"
-                response_text = f"{response_text}{transfer_message}"
-
-            # Se não houver fluxo de transferência identificado, usa string vazia
-            if not transfer_attendance:
+                    logger.info(
+                        f"Fluxo de transferência extraído: {fluxo_transferencia}"
+                    )
+            else:
+                # Se não houver transferência, garante que o fluxo fique vazio
                 fluxo_transferencia = ""
 
             return AMTuple(

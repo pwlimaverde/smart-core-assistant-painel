@@ -13,8 +13,8 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.utils import (
-    send_message_response_by_contact,
+from smart_core_assistant_painel.app.ui.atendimentos.services import (
+    create_orchestrator,
 )
 
 

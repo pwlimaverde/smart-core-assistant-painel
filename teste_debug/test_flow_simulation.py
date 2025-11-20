@@ -36,8 +36,8 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Mensagem,
     Atendimento,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.utils import (
-    send_message_response_by_contact,
+from smart_core_assistant_painel.app.ui.atendimentos.services import (
+    process_contact_response_task,
 )
 from django_q.models import Schedule
 from django.core.cache import cache
@@ -255,14 +255,14 @@ def run_test():
     mock_ai_result.transferir_atendimento = False
 
     with patch(
-        "smart_core_assistant_painel.app.ui.atendimentos.utils.FeaturesCompose.analise_mensage",
+        "smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.analise_mensage",
         return_value=mock_ai_result,
     ) as mock_ai:
         # Execute the function directly with the args from the schedule
         # The args are stored as a string representation of a tuple in the DB, e.g. "(123,)"
         # We need to parse it or just pass the contact_id directly as the function supports it
         try:
-            send_message_response_by_contact(contact_id)
+            process_contact_response_task(contact_id)
             print("SUCCESS: Processing function executed without error")
         except Exception as e:
             print(f"FAILED: Processing function raised exception: {e}")

@@ -46,7 +46,7 @@ def sched_response_contact(params: Dict[str, Any]) -> None:
     Schedule.objects.create(
         name=name,
         func=(
-            "smart_core_assistant_painel.app.ui.atendimentos.utils.send_message_response_by_contact"
+            "smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task"
         ),
         args=repr((contact_id,)),
         schedule_type=Schedule.ONCE,

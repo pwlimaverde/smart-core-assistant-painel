@@ -44,10 +44,6 @@ urlpatterns = [
         include("smart_core_assistant_painel.app.ui.clientes.urls"),
     ),
     path(
-        "atendimentos/",
-        include("smart_core_assistant_painel.app.ui.atendimentos.urls"),
-    ),
-    path(
         "treinamento/",
         include("smart_core_assistant_painel.app.ui.treinamento.urls"),
     ),
@@ -57,10 +53,6 @@ urlpatterns = [
         "api/operacional/",
         include("smart_core_assistant_painel.app.ui.operacional.api_urls"),
     ),
-    path(
-        "api/atendimentos/",
-        include("smart_core_assistant_painel.app.ui.atendimentos.api_urls"),
-    ),
     # API ClickUp (condicional): só inclui se o app estiver instalado
 ]
 
@@ -68,9 +60,7 @@ if "smart_core_assistant_painel.app.clickup_sync" in settings.INSTALLED_APPS:
     urlpatterns += [
         path(
             "api/clickup_sync/",
-            include(
-                "smart_core_assistant_painel.app.clickup_sync.api_urls"
-            ),
+            include("smart_core_assistant_painel.app.clickup_sync.api_urls"),
         ),
     ]
 

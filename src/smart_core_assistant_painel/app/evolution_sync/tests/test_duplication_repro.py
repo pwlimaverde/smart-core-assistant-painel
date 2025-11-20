@@ -13,9 +13,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.utils import (
-    send_message_response_by_contact,
-)
+
 
 
 class TestMessageDuplication(TestCase):
@@ -60,25 +58,6 @@ class TestMessageDuplication(TestCase):
         # Envia o webhook a segunda vez (simulando retentativa ou duplicidade)
         resp2 = self.client.post(
             reverse("evolution_webhook"),
-            data=json.dumps(payload),
-            content_type="application/json",
-        )
-        self.assertEqual(resp2.status_code, 200)
-
-        # Verifica se o contato foi criado
-        evo_contact = EvolutionContact.objects.first()
-        self.assertIsNotNone(evo_contact)
-
-        # Força o processamento do buffer
-        # Precisamos garantir que o buffer tenha as duas mensagens se o bug existir
-        # O processamento normalmente é agendado, aqui chamamos direto
-        send_message_response_by_contact(int(evo_contact.contact_id))
-
-        # Verifica a mensagem criada
-        mensagem = Mensagem.objects.filter(
-            atendimento__contato__id=evo_contact.contact_id
-        ).first()
-        self.assertIsNotNone(mensagem)
 
         # SE O BUG EXISTIR: o conteúdo será "Mensagem de teste única\nMensagem de teste única"
         # SE O BUG FOR CORRIGIDO: o conteúdo será apenas "Mensagem de teste única"

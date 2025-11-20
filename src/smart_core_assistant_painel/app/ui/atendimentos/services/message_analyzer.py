@@ -5,7 +5,7 @@ e processar informações de contato a partir de mensagens.
 """
 
 import json
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.utils import timezone
 from loguru import logger

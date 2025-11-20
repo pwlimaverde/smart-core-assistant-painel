@@ -285,7 +285,7 @@ class WebhookProcessor:
             else {},  # message is obj
         }
 
-        logger.warning(
+        logger.debug(
             f"Scheduling response for contact_id={evo_contact.contact_id}. "
             f"Payload: {sched_payload}"
         )

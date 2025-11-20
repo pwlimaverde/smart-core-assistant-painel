@@ -4,7 +4,7 @@ Este módulo contém a lógica principal para processar mensagens agendadas,
 coordenar serviços e gerar respostas do bot.
 """
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 from django.core.cache import cache
 from loguru import logger
@@ -89,7 +89,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # 3. Determina API key
             final_api_key = api_key or content_data.get("api_key")
-
+            logger.debug(
+                f"Processando mensagem para contato {contact_id} - {content_data['content']}"
+            )
             # 4. Cria mensagem no sistema
             message_id = self._create_message(
                 contact_id=contact_id,

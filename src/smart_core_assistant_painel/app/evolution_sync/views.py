@@ -47,7 +47,7 @@ def webhook(request: HttpRequest) -> JsonResponse:
     status_code = 200 if result.get("status") == "ok" else 200
     # Mantendo 200 para ignored_from_me conforme original,
     # mas accepted geralmente é 202. O original retornava 200 para ignored e 202 para accepted no final.
-
+    logger.debug("Webhook received: {}", payload)
     if result.get("status") == "accepted":
         return JsonResponse(result, status=202)
 

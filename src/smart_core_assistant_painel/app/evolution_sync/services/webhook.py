@@ -10,10 +10,14 @@ from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
+    WhiteList,
 )
 from smart_core_assistant_painel.app.evolution_sync.services import (
     sched_response_contact,
     set_buffer_contact,
+)
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    processar_mensagem_por_contato,
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
@@ -42,7 +46,36 @@ class WebhookProcessor:
         # Filtrar mensagens enviadas pelo próprio bot ou sem JID válido
         valid_envelopes = []
         for e in envelopes:
-            if e.from_me or (not e.contact.jid and not e.contact.lid):
+            if not e.contact.jid and not e.contact.lid:
+                continue
+
+            # Filtrar comunicação entre instâncias e WhiteList
+            other_phone = e.contact.phone
+            if other_phone:
+                # Verifica se é uma instância registrada
+                if EvolutionInstance.objects.filter(
+                    phone_number=other_phone
+                ).exists():
+                    logger.info(
+                        f"Ignoring interaction with instance {other_phone}"
+                    )
+                    continue
+                # Verifica se está na WhiteList
+                if WhiteList.objects.filter(
+                    phone_number=other_phone, active=True
+                ).exists():
+                    logger.info(
+                        f"Ignoring interaction with whitelist {other_phone}"
+                    )
+                    continue
+
+            if e.from_me:
+                # Processa mensagens enviadas pela própria instância (atendente)
+                # mas não adiciona aos envelopes válidos para o bot
+                try:
+                    self._handle_from_me_message(e, payload)
+                except Exception as exc:
+                    logger.error(f"Error handling from_me message: {exc}")
                 continue
 
             # Verificação de duplicidade de mensagem
@@ -299,3 +332,36 @@ class WebhookProcessor:
         )
 
         sched_response_contact(sched_payload)
+
+    def _handle_from_me_message(
+        self, envelope: EvolutionWebhookEnvelope, payload: Dict[str, Any]
+    ) -> None:
+        """Processa mensagens enviadas pela própria instância."""
+        instance = self._get_or_create_instance(envelope, payload)
+
+        # Atualiza telefone da instância se disponível no sender_jid
+        if envelope.sender_jid:
+            phone = envelope.sender_jid.split("@")[0]
+            # Garante que é apenas números e tem tamanho razoável
+            if phone.isdigit() and len(phone) <= 20:
+                if instance.phone_number != phone:
+                    instance.phone_number = phone
+                    instance.save(update_fields=["phone_number"])
+
+        evo_contact = self._resolve_contact(instance, envelope)
+
+        if not evo_contact.contact_id:
+            self._link_contact(evo_contact, envelope)
+            evo_contact.refresh_from_db()
+
+        if evo_contact.contact_id:
+            processar_mensagem_por_contato(
+                contato_id=int(evo_contact.contact_id),
+                conteudo=envelope.message.text,
+                message_type=envelope.message.type or "conversation",
+                message_id=envelope.message.id or "",
+                metadados=envelope.message.metadata,
+                nome_perfil_whatsapp=envelope.profile.push_name,
+                from_me=True,
+                api_key=envelope.apikey,
+            )

@@ -103,3 +103,32 @@ class EvolutionContact(models.Model):
     def __str__(self) -> str:  # type: ignore[override]
         ident = self.jid or self.lid or "unknown"
         return f"{self.instance.name} - {ident}"
+
+
+class WhiteList(models.Model):
+    """Lista de números que não devem gerar interações no sistema.
+
+    Attributes:
+        id: Identificador único.
+        name: Nome da pessoa ou entidade.
+        phone_number: Número de telefone (normalizado).
+        active: Indica se o registro está ativo.
+        created_at: Data e hora de criação.
+    """
+
+    id: models.AutoField = models.AutoField(primary_key=True)
+    name: models.CharField[str] = models.CharField(max_length=100)
+    phone_number: models.CharField[str] = models.CharField(
+        max_length=20, unique=True
+    )
+    active: models.BooleanField[bool] = models.BooleanField(default=True)
+    created_at: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        db_table = "evolution_sync_whitelist"
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.phone_number})"

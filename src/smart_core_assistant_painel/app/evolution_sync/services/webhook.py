@@ -85,23 +85,31 @@ class WebhookProcessor:
         inst_name = envelope.instance
         inst_id = envelope.instance_id
         api_key = str(envelope.apikey or "")
+        name_val = str(inst_name or inst_id or "")
+        # phone_number tem limite de 20 caracteres no banco
+        phone_number_val = name_val[:20] if name_val else ""
+
         instance, created = EvolutionInstance.objects.get_or_create(
             instance_id=inst_id or "",
             defaults={
-                "name": str(inst_name or inst_id or ""),
+                "name": name_val,
                 "api_key": api_key,
+                "phone_number": phone_number_val,
             },
         )
 
         if not created:
             update_fields: list[str] = []
-            name_val = str(inst_name or inst_id or "")
             if name_val and instance.name != name_val:
                 instance.name = name_val
                 update_fields.append("name")
             if api_key and instance.api_key != api_key:
                 instance.api_key = api_key
                 update_fields.append("api_key")
+            # Sincronizar phone_number com name (limitado a 20 caracteres)
+            if phone_number_val and instance.phone_number != phone_number_val:
+                instance.phone_number = phone_number_val
+                update_fields.append("phone_number")
             if update_fields:
                 instance.save(update_fields=update_fields)
 

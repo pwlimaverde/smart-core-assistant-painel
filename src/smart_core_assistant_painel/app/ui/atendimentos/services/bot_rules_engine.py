@@ -63,6 +63,8 @@ class BotRulesEngine(BotRulesEngineInterface):
             logger.error(f"Erro ao verificar se o bot pode responder: {e}")
             return False
 
+        # return False
+
     def _is_in_bot_department(self, attendance: "Atendimento") -> bool:
         """Verifica se atendimento está no departamento do bot.
 

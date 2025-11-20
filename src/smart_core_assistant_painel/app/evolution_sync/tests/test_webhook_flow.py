@@ -251,3 +251,98 @@ class TestEvolutionWebhookFlow(TestCase):
             mensagem.save()
 
             mocked_send.assert_called_once()
+
+    def test_instance_phone_number_filled(self) -> None:
+        """Testa que o phone_number é preenchido com o name da instância."""
+        payload: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "5588123456789",
+            "apikey": "TEST_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "5511999999999@s.whatsapp.net",
+                    "fromMe": False,
+                    "id": "MSG_TEST_PHONE",
+                    "participant": "",
+                    "addressingMode": "pn",
+                },
+                "pushName": "Cliente Teste",
+                "status": "DELIVERY_ACK",
+                "message": {"conversation": "Olá"},
+                "messageType": "conversation",
+                "messageTimestamp": 1763301593,
+                "instanceId": "inst-id-123",
+                "source": "android",
+            },
+            "sender": "5511999999999@s.whatsapp.net",
+        }
+
+        # Envia webhook
+        resp = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        # Verifica que a instância foi criada
+        instance: EvolutionInstance | None = EvolutionInstance.objects.filter(
+            instance_id="inst-id-123"
+        ).first()
+        self.assertIsNotNone(instance)
+        assert instance is not None
+
+        # Verifica que phone_number está preenchido e igual ao name
+        self.assertEqual(instance.name, "5588123456789")
+        self.assertEqual(instance.phone_number, "5588123456789")
+        self.assertEqual(instance.phone_number, instance.name)
+
+    def test_instance_phone_number_updated(self) -> None:
+        """Testa que o phone_number é atualizado quando o name muda."""
+        # Cria uma instância com phone_number vazio
+        instance = EvolutionInstance.objects.create(
+            name="5588999999999",
+            instance_id="inst-update-test",
+            api_key="OLD_KEY",
+            phone_number="",  # Vazio inicialmente
+        )
+        self.assertEqual(instance.phone_number, "")
+
+        # Envia webhook com novo nome
+        payload: Dict[str, Any] = {
+            "event": "messages.upsert",
+            "instance": "5588111111111",  # Nome diferente
+            "apikey": "NEW_API_KEY",
+            "data": {
+                "key": {
+                    "remoteJid": "5511888888888@s.whatsapp.net",
+                    "fromMe": False,
+                    "id": "MSG_UPDATE_TEST",
+                    "participant": "",
+                    "addressingMode": "pn",
+                },
+                "pushName": "Cliente Update",
+                "status": "DELIVERY_ACK",
+                "message": {"conversation": "Update teste"},
+                "messageType": "conversation",
+                "messageTimestamp": 1763301594,
+                "instanceId": "inst-update-test",
+                "source": "android",
+            },
+            "sender": "5511888888888@s.whatsapp.net",
+        }
+
+        resp = self.client.post(
+            reverse("evolution_webhook"),
+            data=json.dumps(payload),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        # Recarrega a instância do banco
+        instance.refresh_from_db()
+
+        # Verifica que name e phone_number foram atualizados
+        self.assertEqual(instance.name, "5588111111111")
+        self.assertEqual(instance.phone_number, "5588111111111")
+        self.assertEqual(instance.phone_number, instance.name)

@@ -53,7 +53,7 @@ class TestCommunicationRules:
 
             # Verify log message
             mock_logger.info.assert_any_call(
-                "Ignoring interaction with instance 5511999999999"
+                "Ignoring interaction with instance 5511999999999 (from_me=False)"
             )
 
     def test_filter_whitelist_communication(self):
@@ -107,3 +107,62 @@ class TestCommunicationRules:
         assert call_kwargs["from_me"] is True
         assert call_kwargs["conteudo"] == "Hello"
         assert call_kwargs["nome_perfil_whatsapp"] == "Test User"
+
+    def test_filter_instance_by_name(self):
+        """Test filtering when phone_number is missing but name matches."""
+        EvolutionInstance.objects.create(
+            name="5511999999999",  # Name is the phone number
+            instance_id="inst_c",
+            api_key="key",
+            phone_number="",  # Empty phone number
+        )
+
+        envelopes = [EvolutionWebhookEnvelope.from_dict_single(self.payload)]
+
+        with patch(
+            "smart_core_assistant_painel.app.evolution_sync.services.webhook.logger"
+        ) as mock_logger:
+            result = self.processor.process_webhook(self.payload, envelopes)
+
+            assert result["status"] == "ignored_from_me"
+            # Should match by name
+            mock_logger.info.assert_any_call(
+                "Ignoring interaction with instance 5511999999999 (from_me=False)"
+            )
+
+    def test_filter_inter_instance_from_me(self):
+        """Test filtering when one instance sends a message to another instance (from_me=True)."""
+        # Sender Instance (A)
+        EvolutionInstance.objects.create(
+            name="Instance A",
+            instance_id="inst_a",
+            api_key="key_a",
+            phone_number="5511888888888",
+        )
+        # Receiver Instance (B) - The destination of the message
+        EvolutionInstance.objects.create(
+            name="Instance B",
+            instance_id="inst_b",
+            api_key="key_b",
+            phone_number="5511999999999",
+        )
+
+        # Payload: A sends to B (fromMe=True)
+        self.payload["data"]["key"]["fromMe"] = True
+        self.payload["data"]["key"]["remoteJid"] = (
+            "5511999999999@s.whatsapp.net"  # To B
+        )
+        self.payload["sender"] = "5511888888888@s.whatsapp.net"  # From A
+
+        envelopes = [EvolutionWebhookEnvelope.from_dict_single(self.payload)]
+
+        with patch(
+            "smart_core_assistant_painel.app.evolution_sync.services.webhook.logger"
+        ) as mock_logger:
+            result = self.processor.process_webhook(self.payload, envelopes)
+
+            assert result["status"] == "ignored_from_me"
+            # Should be ignored because destination (B) is an instance
+            mock_logger.info.assert_any_call(
+                "Ignoring interaction with instance 5511999999999 (from_me=True)"
+            )

@@ -1,35 +1,43 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-20 16:56:07.320 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-20 16:56:08.709 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-20 21:27:10.379 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-20 21:27:12.033 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster alabama-item-fix-king starting.
-2025-11-20 16:56:11.059 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-20 16:56:12.431 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-515ee561d83343f4a7de21614420dd63 guarding cluster alabama-item-fix-king [smart_core_cluster]
-INFO:django-q:Q Cluster alabama-item-fix-king [smart_core_cluster] running.
-2025-11-20 16:56:14.055 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-20 16:56:14.058 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-20 16:56:14.060 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-20 16:56:14.062 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-20 16:56:15.558 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-20 16:56:15.558 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-20 16:56:15.567 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-20 16:56:15.575 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-b70adc36359a4956b5f0093512d07957 ready for work at 37364
-INFO:django-q:Process-f85b3b222cff49e3b891d402e63535d7 ready for work at 24588
-INFO:django-q:Process-29b7b73aafd04257a5a400cd5bada7a0 pushing tasks at 37208
-INFO:django-q:Process-731142f9859446c781ba75f9f8ea8a31 monitoring at 31864
-INFO:django-q:Enqueued [smart_core_cluster] 641
-INFO:django-q:Process-515ee561d83343f4a7de21614420dd63 created task mango-queen-william-ack from schedule [process_contact_67]
-INFO:django-q:Process-b70adc36359a4956b5f0093512d07957 processing mango-queen-william-ack 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_67]
-2025-11-20 16:56:43.566 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 67
-2025-11-20 16:56:43.611 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:141 - atd_process_start contact_id=67 env_count=2
-2025-11-20 16:56:43.733 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:236 - atd_process_compiled contact_id=67 text_len=80 msg_id=112
+INFO:django-q:Q Cluster orange-winner-chicken-lactose starting.
+2025-11-20 21:27:15.827 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-20 21:27:17.242 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-f98d38db45a04a87a1bec8b7d407e0d7 guarding cluster orange-winner-chicken-lactose [smart_core_cluster]
+INFO:django-q:Q Cluster orange-winner-chicken-lactose [smart_core_cluster] running.
+2025-11-20 21:27:19.035 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-20 21:27:19.035 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-20 21:27:19.036 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-20 21:27:19.036 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-20 21:27:20.611 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-20 21:27:20.618 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-20 21:27:20.628 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-20 21:27:20.636 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-a3739fad6205479081464f86c619eed0 ready for work at 7364
+INFO:django-q:Process-b7e7d00c2da544c0be432bcc165b9cf7 ready for work at 39260
+INFO:django-q:Process-ec8f739ddd194a039ac296eac77127b3 pushing tasks at 21748
+INFO:django-q:Process-af18ba46eb7b4bcf81b0c30d0ddffed8 monitoring at 4368
+INFO:django-q:Enqueued [smart_core_cluster] 656
+INFO:django-q:Process-f98d38db45a04a87a1bec8b7d407e0d7 created task mars-double-carpet-saturn from schedule [process_contact_76]
+INFO:django-q:Process-a3739fad6205479081464f86c619eed0 processing mars-double-carpet-saturn 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_76]
+2025-11-20 21:27:48.610 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 76
+2025-11-20 21:27:48.655 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=76 env_count=1
+2025-11-20 21:27:48.655 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 76 - Teste envio mensagem interna
+2025-11-20 21:27:48.759 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=76 text_len=28 msg_id=127
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-2025-11-20 16:56:45.696 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:285 - atd_process_can_respond contact_id=67 pode_responder=True
-2025-11-20 16:56:45.711 | ERROR    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_generate_and_register_response:508 - Erro ao gerar resposta: type object 'FeaturesCompose' has no attribute 'generate_embeddings'
-2025-11-20 16:56:45.715 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:123 - atd_process_done contact_id=67 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (mango-queen-william-ack)
+2025-11-20 21:27:50.582 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:287 - atd_process_can_respond contact_id=76 pode_responder=True
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-20 21:27:52.371 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:get_available_flows:137 - Gerado dicionário com 2 fluxos disponíveis
+2025-11-20 21:27:55.104 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:810 - Resposta do bot registrada na mensagem 127 (atendimento 67) com confianca=0.000
+2025-11-20 21:27:55.104 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_register_fallback_response:636 - atd_process_registered_bot_response msg_id=127 len=46
+2025-11-20 21:27:55.109 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:ensure_default_structure:70 - Departamento 'Atendimento' já existe (ID 15)
+2025-11-20 21:27:55.113 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:ensure_default_structure:89 - Fluxo 'Atendimento Inicial' já existe (ID 14)
+2025-11-20 21:27:55.117 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:218 - Atendimento 67 movido para etapa 'Em Atendimento'
+2025-11-20 21:27:55.122 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:229 - Atendimento 67 atualizado para status 'Em Atendimento'
+2025-11-20 21:27:55.128 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=76 cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (mars-double-carpet-saturn)

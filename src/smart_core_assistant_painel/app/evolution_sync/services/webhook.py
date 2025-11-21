@@ -46,37 +46,96 @@ class WebhookProcessor:
         # Filtrar mensagens enviadas pelo próprio bot ou sem JID válido
         valid_envelopes = []
         for e in envelopes:
-            if not e.contact.jid and not e.contact.lid:
-                continue
-
-            # Filtrar comunicação entre instâncias e WhiteList
-            other_phone = e.contact.phone
-            if other_phone:
-                # Verifica se é uma instância registrada
-                if EvolutionInstance.objects.filter(
-                    phone_number=other_phone
-                ).exists():
-                    logger.info(
-                        f"Ignoring interaction with instance {other_phone}"
-                    )
-                    continue
-                # Verifica se está na WhiteList
-                if WhiteList.objects.filter(
-                    phone_number=other_phone, active=True
-                ).exists():
-                    logger.info(
-                        f"Ignoring interaction with whitelist {other_phone}"
-                    )
-                    continue
-
             if e.from_me:
+                # Para mensagens from_me, verificar se o destinatário é uma instância
+                # Se for, ignorar (comunicação entre instâncias)
+                other_phone = e.contact.phone
+                if other_phone:
+                    # Normalização para números brasileiros
+                    phone_variations = [other_phone]
+                    if other_phone.startswith("55") and len(other_phone) in [
+                        12,
+                        13,
+                    ]:
+                        if len(other_phone) == 13 and other_phone[4] == "9":
+                            phone_variations.append(
+                                other_phone[:4] + other_phone[5:]
+                            )
+                        elif len(other_phone) == 12:
+                            phone_variations.append(
+                                other_phone[:4] + "9" + other_phone[4:]
+                            )
+
+                    from django.db.models import Q
+
+                    instance_query = Q()
+                    for phone_var in phone_variations:
+                        instance_query |= Q(phone_number=phone_var) | Q(
+                            name=phone_var
+                        )
+
+                    if EvolutionInstance.objects.filter(
+                        instance_query
+                    ).exists():
+                        logger.info(
+                            f"Ignoring interaction with instance {other_phone} (from_me={e.from_me})"
+                        )
+                        continue
+
                 # Processa mensagens enviadas pela própria instância (atendente)
                 # mas não adiciona aos envelopes válidos para o bot
                 try:
                     self._handle_from_me_message(e, payload)
                 except Exception as exc:
-                    logger.error(f"Error handling from_me message: {exc}")
+                    logger.error(f"Error handling from_me message: {exc})")
                 continue
+
+            # Filtrar comunicação entre instâncias e WhiteList
+            other_phone = e.contact.phone
+            if other_phone:
+                # Normalização para números brasileiros (tratamento do 9º dígito)
+                phone_variations = [other_phone]
+                if other_phone.startswith("55") and len(other_phone) in [
+                    12,
+                    13,
+                ]:
+                    if len(other_phone) == 13 and other_phone[4] == "9":
+                        # Remove 9th digit: 55 88 9 9714 1275 -> 55 88 9714 1275
+                        phone_variations.append(
+                            other_phone[:4] + other_phone[5:]
+                        )
+                    elif len(other_phone) == 12:
+                        # Add 9th digit: 55 88 9714 1275 -> 55 88 9 9714 1275
+                        phone_variations.append(
+                            other_phone[:4] + "9" + other_phone[4:]
+                        )
+                from django.db.models import Q
+
+                # Check if ANY variation matches an instance
+                instance_query = Q()
+                for phone_var in phone_variations:
+                    instance_query |= Q(phone_number=phone_var) | Q(
+                        name=phone_var
+                    )
+
+                if EvolutionInstance.objects.filter(instance_query).exists():
+                    logger.info(
+                        f"Ignoring interaction with instance {other_phone} (from_me={e.from_me})"
+                    )
+                    continue
+
+                # Verifica se está na WhiteList
+                whitelist_query = Q()
+                for phone_var in phone_variations:
+                    whitelist_query |= Q(phone_number=phone_var)
+
+                if WhiteList.objects.filter(
+                    whitelist_query, active=True
+                ).exists():
+                    logger.info(
+                        f"Ignoring interaction with whitelist {other_phone}"
+                    )
+                    continue
 
             # Verificação de duplicidade de mensagem
             msg_id = e.message.id
@@ -186,8 +245,6 @@ class WebhookProcessor:
                 update_fields_contact.append("addressing_mode")
             if update_fields_contact:
                 evo_contact.save(update_fields=update_fields_contact)
-
-        return evo_contact
 
         return evo_contact
 

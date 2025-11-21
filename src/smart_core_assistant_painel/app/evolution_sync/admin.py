@@ -3,7 +3,16 @@ from typing import Any, cast
 from django.contrib import admin
 from django.db.models import QuerySet
 
-from .models import EvolutionContact, EvolutionInstance
+from .models import EvolutionContact, EvolutionInstance, WhiteList
+
+
+@admin.register(WhiteList)
+class WhiteListAdmin(admin.ModelAdmin[WhiteList]):
+    list_display = ("name", "phone_number", "active", "created_at")
+    search_fields = ("name", "phone_number")
+    list_filter = ("active",)
+    ordering = ("name",)
+    readonly_fields = ("created_at",)
 
 
 @admin.register(EvolutionInstance)

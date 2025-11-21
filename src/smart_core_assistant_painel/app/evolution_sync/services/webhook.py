@@ -46,6 +46,13 @@ class WebhookProcessor:
         # Filtrar mensagens enviadas pelo próprio bot ou sem JID válido
         valid_envelopes = []
         for e in envelopes:
+            # Safety Check: Ensure contact has JID
+            if not e.contact.jid:
+                logger.warning(
+                    f"Ignoring envelope - missing contact JID. Event: {e.event}"
+                )
+                continue
+
             # PRIMEIRA VALIDAÇÃO: Filtrar mensagens de grupos (mais importante)
             # Ignorar imediatamente antes de qualquer processamento
             if e.contact.is_group():
@@ -275,6 +282,14 @@ class WebhookProcessor:
         addressing_mode = envelope.contact.addressing_mode
 
         qs = EvolutionContact.objects.filter(instance=instance)
+        qs = EvolutionContact.objects.filter(instance=instance)
+        if not jid:
+            # Safety check: if JID is missing, we cannot resolve or create a contact.
+            # This might happen if normalization failed or payload is malformed.
+            # We should return None, but type hint says EvolutionContact.
+            # Raising an error is safer to stop processing.
+            raise ValueError("Cannot resolve contact without JID")
+
         if jid:
             qs = qs.filter(jid=jid)
 

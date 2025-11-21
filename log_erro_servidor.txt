@@ -1,8 +1,8 @@
 task start
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-21 18:17:58.376 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:17:59.839 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 18:37:43.739 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:37:45.206 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
 🔍 Caminho relativo fornecido: src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
@@ -13,8 +13,8 @@ Iniciando a aplicação Django...
 📄 Arquivo existe no diretório atual: True
 Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
 Iniciando serviços e configurações iniciais...
-2025-11-21 18:18:01.162 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:02.603 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 18:37:47.412 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:37:48.947 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
 Watching for file changes with StatReloader
@@ -22,67 +22,129 @@ INFO:django.utils.autoreload:Watching for file changes with StatReloader
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 21, 2025 - 18:18:03
+November 21, 2025 - 18:37:50
 Django version 5.2.7, using settings 'smart_core_assistant_painel.app.ui.core.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CTRL-BREAK.
 
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-[21/Nov/2025 18:18:42] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 22202
-[21/Nov/2025 18:18:42] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
-[21/Nov/2025 18:18:42] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:43] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 22034
-[21/Nov/2025 18:18:43] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:45] "GET /admin/django_q/failure/ HTTP/1.1" 200 19661
-[21/Nov/2025 18:18:45] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:45] "GET /admin/django_q/ormq/ HTTP/1.1" 200 19156
-[21/Nov/2025 18:18:46] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:46] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
-[21/Nov/2025 18:18:46] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:47] "GET /admin/django_q/success/ HTTP/1.1" 200 19677
-[21/Nov/2025 18:18:47] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:49] "GET /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 20335
-[21/Nov/2025 18:18:49] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[21/Nov/2025 18:18:52] "GET /admin/evolution_sync/evolutioninstance/ HTTP/1.1" 200 22968
-[21/Nov/2025 18:18:52] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-2025-11-21 18:19:11.032 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:517 - Skipping contact creation: no phone and no valid push_name
-2025-11-21 18:19:11.035 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:517 - Skipping contact creation: no phone and no valid push_name
-2025-11-21 18:19:11.038 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:186 - Skipping scheduling - no valid contact_id for jid=None
-2025-11-21 18:19:11.038 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'chats.update', 'instance': '5588921729550', 'data': [{'remoteJid': '558897141275@s.whatsapp.net', 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.247Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
-2025-11-21 18:19:11.038 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:95 - Ignoring interaction with instance 5588921729550 (from_me=True)
-2025-11-21 18:19:11.038 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588997141275', 'data': {'key': {'remoteJid': '5588921729550@s.whatsapp.net', 'remoteJidAlt': '18013730422859@lid', 'fromMe': True, 'id': 'ACCF4B8151BB61557B85B0EC01CA8FFA', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'SERVER_ACK', 'message': {'conversation': 'Teste mensagem interna'}, 'messageType': 'conversation', 'messageTimestamp': 1763759948, 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.265Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
-2025-11-21 18:19:11.039 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:186 - Skipping scheduling - no valid contact_id for jid=None
-2025-11-21 18:19:11.039 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'chats.update', 'instance': '5588997141275', 'data': [{'remoteJid': '5588921729550@s.whatsapp.net', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7'}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.248Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
-2025-11-21 18:19:11.043 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:137 - Ignoring interaction with instance 558897141275 (from_me=False)
-2025-11-21 18:19:11.043 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558897141275@s.whatsapp.net', 'remoteJidAlt': '62921321222334@lid', 'fromMe': False, 'id': 'ACCF4B8151BB61557B85B0EC01CA8FFA', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'conversation': 'Teste mensagem interna', 'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 54, '1': 48, '2': 82, '3': 110, '4': 21, '5': 18, '6': 184, '7': 91, '8': 69, '9': 139}, 'senderTimestamp': {'low': 1763673405, 'high': 0, 'unsigned': True}, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 243, '1': 231, '2': 12, '3': 24, '4': 101, '5': 214, '6': 44, '7': 9, '8': 153, '9': 169, '10': 200, '11': 211, '12': 85, '13': 6, '14': 145, '15': 66, '16': 72, '17': 100, '18': 144, '19': 176, '20': 136, '21': 47, '22': 49, '23': 149, '24': 247, '25': 195, '26': 124, '27': 169, '28': 125, '29': 162, '30': 157, '31': 135}}}, 'messageType': 'conversation', 'messageTimestamp': 1763759948, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.269Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
-2025-11-21 18:19:11.118 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:95 - Ignoring interaction with instance 5588921729550 (from_me=True)
-2025-11-21 18:19:11.118 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588997141275', 'data': {'key': {'remoteJid': '5588921729550@s.whatsapp.net', 'remoteJidAlt': '18013730422859@lid', 'fromMe': True, 'id': 'ACCF4B8151BB61557B85B0EC01CA8FFA', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'SERVER_ACK', 'message': {'conversation': 'Teste mensagem interna'}, 'messageType': 'conversation', 'messageTimestamp': 1763759948, 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.265Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
-2025-11-21 18:19:11.128 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:137 - Ignoring interaction with instance 558897141275 (from_me=False)
-2025-11-21 18:19:11.128 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558897141275@s.whatsapp.net', 'remoteJidAlt': '62921321222334@lid', 'fromMe': False, 'id': 'ACCF4B8151BB61557B85B0EC01CA8FFA', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'conversation': 'Teste mensagem interna', 'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 54, '1': 48, '2': 82, '3': 110, '4': 21, '5': 18, '6': 184, '7': 91, '8': 69, '9': 139}, 'senderTimestamp': {'low': 1763673405, 'high': 0, 'unsigned': True}, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 243, '1': 231, '2': 12, '3': 24, '4': 101, '5': 214, '6': 44, '7': 9, '8': 153, '9': 169, '10': 200, '11': 211, '12': 85, '13': 6, '14': 145, '15': 66, '16': 72, '17': 100, '18': 144, '19': 176, '20': 136, '21': 47, '22': 49, '23': 149, '24': 247, '25': 195, '26': 124, '27': 169, '28': 125, '29': 162, '30': 157, '31': 135}}}, 'messageType': 'conversation', 'messageTimestamp': 1763759948, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.269Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
-2025-11-21 18:19:11.144 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:517 - Skipping contact creation: no phone and no valid push_name
-2025-11-21 18:19:11.148 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:517 - Skipping contact creation: no phone and no valid push_name
-2025-11-21 18:19:11.148 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:186 - Skipping scheduling - no valid contact_id for jid=None
-2025-11-21 18:19:11.148 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'contacts.update', 'instance': '5588921729550', 'data': [{'remoteJid': '558897141275@s.whatsapp.net', 'profilePicUrl': 'https://pps.whatsapp.net/v/t61.24694-24/468744879_1268545234465922_7919516704278405488_n.jpg?ccb=11-4&oh=01_Q5Aa3AGYfoIA0Cr7lf4rk8kye9cA_P2TrC346jMN2fA3uiZxFA&oe=692DED8A&_nc_sid=5e03e0&_nc_cat=109', 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.376Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
-2025-11-21 18:19:11.151 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:186 - Skipping scheduling - no valid contact_id for jid=None
-2025-11-21 18:19:11.152 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'contacts.update', 'instance': '5588997141275', 'data': {'remoteJid': '5588921729550@s.whatsapp.net', 'pushName': '', 'profilePicUrl': 'https://pps.whatsapp.net/v/t61.24694-24/491868201_1347019103870857_8767055495651464093_n.jpg?ccb=11-4&oh=01_Q5Aa3AGzjqvBApN3paU39mTnLscs3GycLuhJm9nwDsjw4ybJYw&oe=692DD10B&_nc_sid=5e03e0&_nc_cat=102', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.381Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
-2025-11-21 18:19:11.179 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:528 - _link_contact phone= push_name=Paulo Weslley Limaverde from_me=False use_push_name=Paulo Weslley Limaverde
-2025-11-21 18:19:11.212 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:664 - Scheduling response for contact_id=114. Payload: {'contact_id': 114, 'api_key': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'message': {'id': None, 'type': None, 'text': '', 'metadata': {'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}}}
-2025-11-21 18:19:11.231 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'contacts.update', 'instance': '5588921729550', 'data': {'remoteJid': '558897141275@s.whatsapp.net', 'pushName': 'Paulo Weslley Limaverde', 'profilePicUrl': 'https://pps.whatsapp.net/v/t61.24694-24/468744879_1268545234465922_7919516704278405488_n.jpg?ccb=11-4&oh=01_Q5Aa3AGYfoIA0Cr7lf4rk8kye9cA_P2TrC346jMN2fA3uiZxFA&oe=692DED8A&_nc_sid=5e03e0&_nc_cat=109', 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:08.406Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
-[21/Nov/2025 18:19:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
-2025-11-21 18:19:12.273 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:517 - Skipping contact creation: no phone and no valid push_name
-2025-11-21 18:19:12.277 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:186 - Skipping scheduling - no valid contact_id for jid=None
-2025-11-21 18:19:12.278 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.update', 'instance': '5588997141275', 'data': {'keyId': 'ACCF4B8151BB61557B85B0EC01CA8FFA', 'remoteJid': '5588921729550@s.whatsapp.net', 'fromMe': True, 'status': 'DELIVERY_ACK', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'messageId': 'cmi9d4tzx00eso55pndbfcni0'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:09.475Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
-[21/Nov/2025 18:19:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
-2025-11-21 18:19:12.285 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:517 - Skipping contact creation: no phone and no valid push_name
-2025-11-21 18:19:12.289 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:186 - Skipping scheduling - no valid contact_id for jid=None
-2025-11-21 18:19:12.289 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'chats.upsert', 'instance': '5588997141275', 'data': [{'remoteJid': '5588921729550@s.whatsapp.net', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'unreadMessages': 0}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:19:09.482Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
-[21/Nov/2025 18:19:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+[21/Nov/2025 18:38:17] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 22202
+[21/Nov/2025 18:38:18] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[21/Nov/2025 18:38:18] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:19] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 22034
+[21/Nov/2025 18:38:19] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:21] "GET /admin/clientes/cliente/ HTTP/1.1" 200 22191
+[21/Nov/2025 18:38:21] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:22] "GET /admin/clientes/contato/ HTTP/1.1" 200 26888
+[21/Nov/2025 18:38:22] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:26] "POST /admin/clientes/contato/ HTTP/1.1" 200 19475
+[21/Nov/2025 18:38:27] "POST /admin/clientes/contato/ HTTP/1.1" 302 0
+[21/Nov/2025 18:38:27] "GET /admin/clientes/contato/ HTTP/1.1" 200 21496
+[21/Nov/2025 18:38:27] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:28] "GET /admin/django_q/failure/ HTTP/1.1" 200 19661
+[21/Nov/2025 18:38:28] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:29] "GET /admin/django_q/ormq/ HTTP/1.1" 200 19156
+[21/Nov/2025 18:38:29] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:30] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
+[21/Nov/2025 18:38:30] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:31] "GET /admin/django_q/success/ HTTP/1.1" 200 26564
+[21/Nov/2025 18:38:31] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:35] "POST /admin/django_q/success/ HTTP/1.1" 200 20052
+[21/Nov/2025 18:38:36] "POST /admin/django_q/success/ HTTP/1.1" 302 0
+[21/Nov/2025 18:38:36] "GET /admin/django_q/success/ HTTP/1.1" 200 19842
+[21/Nov/2025 18:38:36] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:37] "GET /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 27755
+[21/Nov/2025 18:38:37] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:42] "POST /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 20045
+[21/Nov/2025 18:38:43] "POST /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 302 0
+[21/Nov/2025 18:38:43] "GET /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 20648
+[21/Nov/2025 18:38:43] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:44] "GET /admin/evolution_sync/evolutioninstance/ HTTP/1.1" 200 24028
+[21/Nov/2025 18:38:44] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:49] "POST /admin/evolution_sync/evolutioninstance/ HTTP/1.1" 200 19067
+[21/Nov/2025 18:38:50] "POST /admin/evolution_sync/evolutioninstance/ HTTP/1.1" 302 0
+[21/Nov/2025 18:38:50] "GET /admin/evolution_sync/evolutioninstance/ HTTP/1.1" 200 23136
+[21/Nov/2025 18:38:50] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:52] "GET /admin/operacional/appinstance/ HTTP/1.1" 200 24853
+[21/Nov/2025 18:38:52] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:54] "GET /admin/clientes/contato/ HTTP/1.1" 200 21339
+[21/Nov/2025 18:38:54] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:55] "GET /admin/clientes/cliente/ HTTP/1.1" 200 22191
+[21/Nov/2025 18:38:55] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:56] "GET /admin/auth/user/ HTTP/1.1" 200 22587
+[21/Nov/2025 18:38:56] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:57] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 22202
+[21/Nov/2025 18:38:57] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[21/Nov/2025 18:38:57] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:38:58] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 22034
+[21/Nov/2025 18:38:58] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+2025-11-21 18:39:13.105 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:95 - Ignoring interaction with instance 5588921729550 (from_me=True)
+2025-11-21 18:39:13.106 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588997141275', 'data': {'key': {'remoteJid': '5588921729550@s.whatsapp.net', 'remoteJidAlt': '18013730422859@lid', 'fromMe': True, 'id': 'ACEEBC63F98B7BE93D554C3CD9760413', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'SERVER_ACK', 'message': {'conversation': 'Teste mensagem interna'}, 'messageType': 'conversation', 'messageTimestamp': 1763761150, 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.240Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
+2025-11-21 18:39:13.121 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=None)
+2025-11-21 18:39:13.124 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=None)
+2025-11-21 18:39:13.126 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+2025-11-21 18:39:13.126 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'chats.update', 'instance': '5588997141275', 'data': [{'remoteJid': '5588921729550@s.whatsapp.net', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7'}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.215Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
+2025-11-21 18:39:13.127 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:139 - Ignoring interaction with instance 558897141275 (from_me=False)
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+2025-11-21 18:39:13.128 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558897141275@s.whatsapp.net', 'remoteJidAlt': '62921321222334@lid', 'fromMe': False, 'id': 'ACEEBC63F98B7BE93D554C3CD9760413', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'conversation': 'Teste mensagem interna', 'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 54, '1': 48, '2': 82, '3': 110, '4': 21, '5': 18, '6': 184, '7': 91, '8': 69, '9': 139}, 'senderTimestamp': {'low': 1763673405, 'high': 0, 'unsigned': True}, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 163, '1': 35, '2': 143, '3': 91, '4': 185, '5': 180, '6': 117, '7': 247, '8': 206, '9': 87, '10': 127, '11': 25, '12': 169, '13': 109, '14': 215, '15': 192, '16': 45, '17': 70, '18': 98, '19': 84, '20': 113, '21': 234, '22': 5, '23': 128, '24': 241, '25': 74, '26': 69, '27': 104, '28': 100, '29': 92, '30': 72, '31': 75}}}, 'messageType': 'conversation', 'messageTimestamp': 1763761150, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.255Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
+2025-11-21 18:39:13.128 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
+2025-11-21 18:39:13.129 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'chats.update', 'instance': '5588921729550', 'data': [{'remoteJid': '558897141275@s.whatsapp.net', 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.217Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+2025-11-21 18:39:13.213 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:95 - Ignoring interaction with instance 5588921729550 (from_me=True)
+2025-11-21 18:39:13.213 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588997141275', 'data': {'key': {'remoteJid': '5588921729550@s.whatsapp.net', 'remoteJidAlt': '18013730422859@lid', 'fromMe': True, 'id': 'ACEEBC63F98B7BE93D554C3CD9760413', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'SERVER_ACK', 'message': {'conversation': 'Teste mensagem interna'}, 'messageType': 'conversation', 'messageTimestamp': 1763761150, 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.240Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
+2025-11-21 18:39:13.223 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:139 - Ignoring interaction with instance 558897141275 (from_me=False)
+2025-11-21 18:39:13.224 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558897141275@s.whatsapp.net', 'remoteJidAlt': '62921321222334@lid', 'fromMe': False, 'id': 'ACEEBC63F98B7BE93D554C3CD9760413', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'conversation': 'Teste mensagem interna', 'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 54, '1': 48, '2': 82, '3': 110, '4': 21, '5': 18, '6': 184, '7': 91, '8': 69, '9': 139}, 'senderTimestamp': {'low': 1763673405, 'high': 0, 'unsigned': True}, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 163, '1': 35, '2': 143, '3': 91, '4': 185, '5': 180, '6': 117, '7': 247, '8': 206, '9': 87, '10': 127, '11': 25, '12': 169, '13': 109, '14': 215, '15': 192, '16': 45, '17': 70, '18': 98, '19': 84, '20': 113, '21': 234, '22': 5, '23': 128, '24': 241, '25': 74, '26': 69, '27': 104, '28': 100, '29': 92, '30': 72, '31': 75}}}, 'messageType': 'conversation', 'messageTimestamp': 1763761150, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'android'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.255Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 29
+2025-11-21 18:39:13.231 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=None)
+2025-11-21 18:39:13.236 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+2025-11-21 18:39:13.236 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'contacts.update', 'instance': '5588921729550', 'data': [{'remoteJid': '558897141275@s.whatsapp.net', 'profilePicUrl': 'https://pps.whatsapp.net/v/t61.24694-24/468744879_1268545234465922_7919516704278405488_n.jpg?ccb=11-4&oh=01_Q5Aa3AGYfoIA0Cr7lf4rk8kye9cA_P2TrC346jMN2fA3uiZxFA&oe=692DED8A&_nc_sid=5e03e0&_nc_cat=109', 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.348Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+2025-11-21 18:39:13.239 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=)
+2025-11-21 18:39:13.244 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+2025-11-21 18:39:13.245 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'contacts.update', 'instance': '5588997141275', 'data': {'remoteJid': '5588921729550@s.whatsapp.net', 'pushName': '', 'profilePicUrl': 'https://pps.whatsapp.net/v/t61.24694-24/491868201_1347019103870857_8767055495651464093_n.jpg?ccb=11-4&oh=01_Q5Aa3AE7bQBfQJKCbJcJTe-LbBxw78UUFB_1qhFZ5TJFYFgnWw&oe=692E094B&_nc_sid=5e03e0&_nc_cat=102', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.362Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+2025-11-21 18:39:13.257 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=Paulo Weslley Limaverde)
+2025-11-21 18:39:13.263 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+2025-11-21 18:39:13.263 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'contacts.update', 'instance': '5588921729550', 'data': {'remoteJid': '558897141275@s.whatsapp.net', 'pushName': 'Paulo Weslley Limaverde', 'profilePicUrl': 'https://pps.whatsapp.net/v/t61.24694-24/468744879_1268545234465922_7919516704278405488_n.jpg?ccb=11-4&oh=01_Q5Aa3AGYfoIA0Cr7lf4rk8kye9cA_P2TrC346jMN2fA3uiZxFA&oe=692DED8A&_nc_sid=5e03e0&_nc_cat=109', 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:10.392Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}
+[21/Nov/2025 18:39:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+2025-11-21 18:39:14.373 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=None)
+2025-11-21 18:39:14.378 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+2025-11-21 18:39:14.379 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'messages.update', 'instance': '5588997141275', 'data': {'keyId': 'ACEEBC63F98B7BE93D554C3CD9760413', 'remoteJid': '5588921729550@s.whatsapp.net', 'fromMe': True, 'status': 'DELIVERY_ACK', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'messageId': 'cmi9dulfz00f6o55p1o01ppv9'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:11.516Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
+[21/Nov/2025 18:39:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+2025-11-21 18:39:14.381 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_link_contact:557 - Skipping contact creation: no phone available (push_name=None)
+2025-11-21 18:39:14.385 | WARNING  | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:202 - Skipping scheduling - no valid contact_id for jid=None
+2025-11-21 18:39:14.385 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.views:webhook:50 - Webhook received: {'event': 'chats.upsert', 'instance': '5588997141275', 'data': [{'remoteJid': '5588921729550@s.whatsapp.net', 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'unreadMessages': 0}], 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-21T18:39:11.526Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}
+[21/Nov/2025 18:39:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 48
+[21/Nov/2025 18:39:35] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 22202
+[21/Nov/2025 18:39:35] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[21/Nov/2025 18:39:35] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:36] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 22034
+[21/Nov/2025 18:39:36] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:38] "GET /admin/clientes/cliente/ HTTP/1.1" 200 22191
+[21/Nov/2025 18:39:38] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:39] "GET /admin/clientes/contato/ HTTP/1.1" 200 21339
+[21/Nov/2025 18:39:39] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:40] "GET /admin/django_q/failure/ HTTP/1.1" 200 19661
+[21/Nov/2025 18:39:40] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:41] "GET /admin/django_q/ormq/ HTTP/1.1" 200 19156
+[21/Nov/2025 18:39:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:41] "GET /admin/django_q/schedule/ HTTP/1.1" 200 21434
+[21/Nov/2025 18:39:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:42] "GET /admin/django_q/success/ HTTP/1.1" 200 19677
+[21/Nov/2025 18:39:42] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:43] "GET /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 24176
+[21/Nov/2025 18:39:43] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:46] "GET /admin/evolution_sync/evolutioninstance/ HTTP/1.1" 200 22968
+[21/Nov/2025 18:39:46] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:48] "GET /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 24176
+[21/Nov/2025 18:39:48] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:50] "GET /admin/clientes/contato/ HTTP/1.1" 200 21339
+[21/Nov/2025 18:39:50] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:51] "GET /admin/clientes/cliente/ HTTP/1.1" 200 22191
+[21/Nov/2025 18:39:51] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[21/Nov/2025 18:39:53] "GET /admin/evolution_sync/evolutioncontact/ HTTP/1.1" 200 24176
+[21/Nov/2025 18:39:53] "GET /admin/jsi18n/ HTTP/1.1" 200 3342

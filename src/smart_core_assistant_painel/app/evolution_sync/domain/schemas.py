@@ -90,18 +90,29 @@ class EvolutionContactData:
     phone: str = ""
 
     @classmethod
-    def from_dict(cls, key: Dict[str, Any]) -> "EvolutionContactData":
+    def from_dict(cls, data: Dict[str, Any]) -> "EvolutionContactData":
         """Cria uma instância a partir do payload JSON do webhook.
 
         Args:
-            key: O objeto 'key' do payload que contém dados do contato.
+            data: O objeto 'data' do payload (pode conter 'key' ou ter campos diretos).
 
         Returns:
             EvolutionContactData: Instância populada com os dados do contato.
         """
+        key: Dict[str, Any] = data.get("key", {})
+
+        # Tenta pegar do key primeiro (padrão messages.upsert)
         remote_jid: str | None = key.get("remoteJid")
         remote_jid_alt: str | None = key.get("remoteJidAlt")
         addressing_mode: str | None = key.get("addressingMode")
+
+        # Se não achou no key, tenta direto no data (padrão contacts.update)
+        if not remote_jid:
+            remote_jid = data.get("remoteJid")
+        if not remote_jid_alt:
+            remote_jid_alt = data.get("remoteJidAlt")
+        if not addressing_mode:
+            addressing_mode = data.get("addressingMode")
 
         jid_val: str | None = None
         lid_val: str | None = None
@@ -243,7 +254,8 @@ class EvolutionWebhookEnvelope:
         from_me: bool = key.get("fromMe", False)
 
         # Criar os sub-objetos usando seus próprios factory methods
-        contact_data = EvolutionContactData.from_dict(key)
+        # Criar os sub-objetos usando seus próprios factory methods
+        contact_data = EvolutionContactData.from_dict(data)
         message_data = EvolutionMessageData.from_dict(data, key)
         profile_data = EvolutionProfileData.from_dict(data)
 

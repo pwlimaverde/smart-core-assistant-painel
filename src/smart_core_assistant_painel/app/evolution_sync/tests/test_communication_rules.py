@@ -166,3 +166,29 @@ class TestCommunicationRules:
             mock_logger.info.assert_any_call(
                 "Ignoring interaction with instance 5511999999999 (from_me=True)"
             )
+
+    def test_filter_whitelist_communication_normalization(self):
+        """Test filtering when Whitelist number format differs from payload (12 vs 13 digits)."""
+        # Whitelist entry has 13 digits (with 9)
+        WhiteList.objects.create(
+            name="Director", phone_number="5511999999999", active=True
+        )
+
+        # Payload has 12 digits (without 9)
+        self.payload["sender"] = "551199999999@s.whatsapp.net"
+        self.payload["data"]["key"]["remoteJid"] = (
+            "551199999999@s.whatsapp.net"
+        )
+
+        envelopes = [EvolutionWebhookEnvelope.from_dict_single(self.payload)]
+
+        with patch(
+            "smart_core_assistant_painel.app.evolution_sync.services.webhook.logger"
+        ) as mock_logger:
+            result = self.processor.process_webhook(self.payload, envelopes)
+
+            assert result["status"] == "ignored_from_me"
+            # Should match despite formatting difference
+            mock_logger.info.assert_any_call(
+                "Ignoring interaction with whitelist 551199999999"
+            )

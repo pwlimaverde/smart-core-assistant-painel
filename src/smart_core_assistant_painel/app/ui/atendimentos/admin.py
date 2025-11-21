@@ -72,6 +72,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         "duracao_formatada",
         "avaliacao",
         "prioridade",
+        "bot_pode_atender",
     ]
     list_filter = [
         "status",
@@ -117,6 +118,7 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
                     "assunto",
                     "prioridade",
                     "tags",
+                    "bot_pode_atender",
                 )
             },
         ),
@@ -134,7 +136,6 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
             "Informações de Sistema",
             {
                 "fields": (
-                    "canal",
                     "data_inicio",
                     "data_fim",
                     "duracao_calculada",

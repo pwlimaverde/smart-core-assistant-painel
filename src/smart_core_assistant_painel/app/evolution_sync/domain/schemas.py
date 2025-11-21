@@ -199,6 +199,7 @@ class EvolutionWebhookEnvelope:
 
     Attributes:
         source: Fonte dos dados (sempre 'EvolutionAPI').
+        event: Tipo de evento (messages.upsert, contacts.update, etc.).
         instance: Nome da instância.
         instance_id: ID da instância.
         sender_jid: JID do remetente.
@@ -211,6 +212,7 @@ class EvolutionWebhookEnvelope:
     """
 
     source: str = "EvolutionAPI"
+    event: Optional[str] = None
     instance: Optional[str] = None
     instance_id: Optional[str] = None
     sender_jid: Optional[str] = None
@@ -247,6 +249,7 @@ class EvolutionWebhookEnvelope:
 
         return cls(
             source="EvolutionAPI",
+            event=payload.get("event"),
             instance=payload.get("instance"),
             instance_id=data.get("instanceId"),
             sender_jid=payload.get("sender"),
@@ -310,6 +313,7 @@ class EvolutionWebhookEnvelope:
         """
         return {
             "source": self.source,
+            "event": self.event,
             "instance": self.instance,
             "instance_id": self.instance_id,
             "sender_jid": self.sender_jid,

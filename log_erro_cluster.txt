@@ -1,60 +1,33 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-21 11:25:37.847 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 11:25:39.247 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 18:18:13.399 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:18:14.828 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster jupiter-triple-friend-mars starting.
-2025-11-21 11:25:44.684 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 11:25:46.551 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-296e25285e77412395d9c227d7e2ec27 guarding cluster jupiter-triple-friend-mars [smart_core_cluster]
-INFO:django-q:Q Cluster jupiter-triple-friend-mars [smart_core_cluster] running.
-2025-11-21 11:25:49.166 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 11:25:49.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 11:25:49.181 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 11:25:49.194 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 11:25:51.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-21 11:25:51.274 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-21 11:25:51.275 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-21 11:25:51.276 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-e808b685e25941f8a706d6faae77dd6b ready for work at 8688
-INFO:django-q:Process-0e5492be85624abc9e002263dee92dea ready for work at 2404
-INFO:django-q:Process-24486d87b5ca4cc2953b0b5f3746fe79 monitoring at 6696
-INFO:django-q:Process-3fcd1516e0604b688e5d528e45b0b0ff pushing tasks at 44816
-INFO:django-q:Enqueued [smart_core_cluster] 687
-INFO:django-q:Process-296e25285e77412395d9c227d7e2ec27 created task mississippi-pasta-mockingbird-hydrogen from schedule [process_contact_92]
-INFO:django-q:Enqueued [smart_core_cluster] 688
-INFO:django-q:Process-296e25285e77412395d9c227d7e2ec27 created task tango-diet-music-winner from schedule [process_contact_94]
-INFO:django-q:Process-e808b685e25941f8a706d6faae77dd6b processing mississippi-pasta-mockingbird-hydrogen 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_92]
-INFO:django-q:Process-0e5492be85624abc9e002263dee92dea processing tango-diet-music-winner 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_94]
-2025-11-21 11:26:48.887 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 92
-2025-11-21 11:26:48.926 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 94
-2025-11-21 11:26:48.928 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=92 env_count=2
-2025-11-21 11:26:48.929 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 92 - 
-2025-11-21 11:26:48.929 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 92. Ignorando processamento.
-2025-11-21 11:26:48.934 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=92 cache_cleared=1
-2025-11-21 11:26:48.965 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=94 env_count=3
-2025-11-21 11:26:48.965 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 94 - 
-2025-11-21 11:26:48.965 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 94. Ignorando processamento.
-2025-11-21 11:26:48.970 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=94 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (mississippi-pasta-mockingbird-hydrogen)
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (tango-diet-music-winner)
-INFO:django-q:Enqueued [smart_core_cluster] 689
-INFO:django-q:Process-296e25285e77412395d9c227d7e2ec27 created task music-louisiana-mike-river from schedule [process_contact_94]
-INFO:django-q:Enqueued [smart_core_cluster] 690
-INFO:django-q:Process-296e25285e77412395d9c227d7e2ec27 created task fourteen-massachusetts-avocado-ack from schedule [process_contact_92]
-INFO:django-q:Process-e808b685e25941f8a706d6faae77dd6b processing music-louisiana-mike-river 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_94]
-2025-11-21 11:27:19.123 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 94
-2025-11-21 11:27:19.127 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=94 env_count=3
-2025-11-21 11:27:19.128 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 94 - 
-2025-11-21 11:27:19.129 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 94. Ignorando processamento.
-2025-11-21 11:27:19.134 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=94 cache_cleared=1
-INFO:django-q:Process-0e5492be85624abc9e002263dee92dea processing fourteen-massachusetts-avocado-ack 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_92]
-2025-11-21 11:27:19.182 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 92
-2025-11-21 11:27:19.186 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=92 env_count=3
-2025-11-21 11:27:19.186 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 92 - 
-2025-11-21 11:27:19.186 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 92. Ignorando processamento.
-2025-11-21 11:27:19.191 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=92 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (music-louisiana-mike-river)
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (fourteen-massachusetts-avocado-ack)
+INFO:django-q:Q Cluster mobile-uncle-don-dakota starting.
+2025-11-21 18:18:17.178 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:18:18.616 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-57c7c352de094582900a74c4a9376ae1 guarding cluster mobile-uncle-don-dakota [smart_core_cluster]
+INFO:django-q:Q Cluster mobile-uncle-don-dakota [smart_core_cluster] running.
+2025-11-21 18:18:20.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:18:20.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:18:20.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:18:20.259 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 18:18:21.808 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 18:18:21.815 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 18:18:21.838 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 18:18:21.846 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-2a1e1955bc044a1c97d2ad0410262a32 ready for work at 4224
+INFO:django-q:Process-cb5e476f7b594a399b45bbbbacd80174 ready for work at 42620
+INFO:django-q:Process-50be5be6ff18468d896050a526533030 monitoring at 38488
+INFO:django-q:Process-76d8d5f2dc3241f1bfd95c4f5e2f7369 pushing tasks at 32116
+INFO:django-q:Enqueued [smart_core_cluster] 782
+INFO:django-q:Process-57c7c352de094582900a74c4a9376ae1 created task island-fourteen-timing-cardinal from schedule [process_contact_114]
+INFO:django-q:Process-2a1e1955bc044a1c97d2ad0410262a32 processing island-fourteen-timing-cardinal 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_114]
+2025-11-21 18:19:20.611 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 114
+2025-11-21 18:19:20.656 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=114 env_count=1
+2025-11-21 18:19:20.656 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 114 - 
+2025-11-21 18:19:20.656 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 114. Ignorando processamento.
+2025-11-21 18:19:20.661 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=114 cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (island-fourteen-timing-cardinal)

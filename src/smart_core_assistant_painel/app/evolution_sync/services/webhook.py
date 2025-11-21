@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
-from django.conf import settings
+
 from django.core.cache import cache
 from loguru import logger
 
@@ -46,6 +46,12 @@ class WebhookProcessor:
         # Filtrar mensagens enviadas pelo próprio bot ou sem JID válido
         valid_envelopes = []
         for e in envelopes:
+            # PRIMEIRA VALIDAÇÃO: Filtrar mensagens de grupos (mais importante)
+            # Ignorar imediatamente antes de qualquer processamento
+            if e.contact.is_group():
+                logger.info(f"Ignoring group message from {e.contact.jid}")
+                continue
+
             if e.from_me:
                 # Para mensagens from_me, verificar se o destinatário é uma instância
                 # Se for, ignorar (comunicação entre instâncias)

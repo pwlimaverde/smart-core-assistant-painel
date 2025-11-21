@@ -106,7 +106,9 @@ def task_atendimento_sync_task_members(
 
     task = ClickupTask.objects.filter(atendimento_id=atendimento_id).first()
     if not task:
-        logger.warning("Task não encontrada para atendimento {}", atendimento_id)
+        logger.warning(
+            "Task não encontrada para atendimento {}", atendimento_id
+        )
         return
 
     def _get_env_token() -> str:
@@ -130,7 +132,9 @@ def task_atendimento_sync_task_members(
     def _normalize_auth(token: str) -> str:
         if not token:
             return ""
-        return token if token.lower().startswith("bearer ") else f"Bearer {token}"
+        return (
+            token if token.lower().startswith("bearer ") else f"Bearer {token}"
+        )
 
     API_BASE: str = "https://api.clickup.com/api/v2"
     token: str = _get_env_token()
@@ -163,7 +167,9 @@ def task_atendimento_sync_task_members(
             return
         target_ids = [str(member.external_id)]
     elif mode == "remove" and old_atendente_id is not None:
-        member = ClickupMember.objects.filter(atendente_id=old_atendente_id).first()
+        member = ClickupMember.objects.filter(
+            atendente_id=old_atendente_id
+        ).first()
         if not member:
             logger.warning(
                 "ClickupMember ausente para atendente {} na task {}",
@@ -208,7 +214,10 @@ def task_atendimento_sync_task_members(
                 if isinstance(a, dict):
                     applied.append(str(a.get("id", "")))
         logger.info(
-            "Assignees sync modo={} alvo={} aplicado={}", mode, target_ids, applied
+            "Assignees sync modo={} alvo={} aplicado={}",
+            mode,
+            target_ids,
+            applied,
         )
     except Exception as exc:
         logger.warning(

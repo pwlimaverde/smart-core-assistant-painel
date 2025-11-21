@@ -141,9 +141,7 @@ class FlowSyncService:
         if not board:
             # Comentário: não cria board aqui para evitar corrida com fluxo criado.
             # O board é criado pelo signal do Fluxo; aguardar e tentar novamente.
-            raise RuntimeError(
-                "Board do fluxo ainda não criado para a etapa"
-            )
+            raise RuntimeError("Board do fluxo ainda não criado para a etapa")
 
         existing: Optional[TrelloList] = getattr(etapa, "trello_list", None)
         if existing:

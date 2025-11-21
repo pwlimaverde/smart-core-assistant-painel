@@ -216,3 +216,24 @@ def test_evolution_webhook_envelope_to_dict() -> None:
     assert d["message"]["text"] == "hello"
     assert d["profile"]["push_name"] == "user"
     assert d["source"] == "EvolutionAPI"
+
+
+def test_evolution_contact_data_is_group() -> None:
+    """Test is_group() method identifies group JIDs correctly."""
+    # Caso 1: JID de grupo (@g.us) deve retornar True
+    group_contact = EvolutionContactData(jid="120363304634306915@g.us")
+    assert group_contact.is_group() is True
+
+    # Caso 2: JID individual (@s.whatsapp.net) deve retornar False
+    individual_contact = EvolutionContactData(
+        jid="5511999999999@s.whatsapp.net"
+    )
+    assert individual_contact.is_group() is False
+
+    # Caso 3: LID (@lid) sem JID deve retornar False
+    lid_contact = EvolutionContactData(lid="123456789@lid")
+    assert lid_contact.is_group() is False
+
+    # Caso 4: JID None/vazio deve retornar False
+    empty_contact = EvolutionContactData()
+    assert empty_contact.is_group() is False

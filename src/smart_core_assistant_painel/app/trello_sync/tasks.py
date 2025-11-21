@@ -350,6 +350,7 @@ def task_atendimento_sync_card_members(
                 from smart_core_assistant_painel.app.ui.operacional.models import (
                     Atendente,
                 )
+
                 old_at = Atendente.objects.filter(id=old_atendente_id).first()
                 if old_at is not None:
                     old_member_id = ms.resolve_member_external_id(old_at)
@@ -397,6 +398,7 @@ def task_atendimento_sync_card_members(
         )
     except Exception as exc:
         logger.warning("Sincronização de membros do card falhou: {}", exc)
+
 
 def task_atendimento_update_card_rich_content(atendimento_id: int) -> None:
     """Atualiza descrição e campos do card após nova mensagem.
@@ -539,9 +541,7 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
                 # Move card no Trello via atualização de `idList`.
                 # Quando a lista destino pertence a outro quadro, a API
                 # do Trello exige enviar também `idBoard` junto ao `idList`.
-                payload: Dict[str, Any] = {
-                    "idList": lista_dest.external_id
-                }
+                payload: Dict[str, Any] = {"idList": lista_dest.external_id}
                 try:
                     current_board_id = getattr(
                         getattr(card.list_sync, "board", None),
@@ -590,9 +590,7 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
         try:
             etapa_cor: str = getattr(etapa, "cor", "#6B7280")
             cover_color: str = _map_hex_to_trello_color(etapa_cor)
-            service.client.set_card_cover_color(
-                card.external_id, cover_color
-            )
+            service.client.set_card_cover_color(card.external_id, cover_color)
         except Exception as exc:
             # Comentário: falhas ao definir capa não devem bloquear fluxo.
             logger.warning(

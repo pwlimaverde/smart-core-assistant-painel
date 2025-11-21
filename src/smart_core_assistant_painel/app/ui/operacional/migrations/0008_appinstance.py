@@ -5,29 +5,65 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operacional', '0007_departamento_api_key_departamento_telefone_instancia_and_more'),
+        (
+            "operacional",
+            "0007_departamento_api_key_departamento_telefone_instancia_and_more",
+        ),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='AppInstance',
+            name="AppInstance",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('api_key', models.CharField(max_length=128, unique=True)),
-                ('channel', models.CharField(max_length=32)),
-                ('display_name', models.CharField(blank=True, max_length=100, null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('departamento', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='app_instances', to='operacional.departamento')),
-                ('owner', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='app_instance', to='operacional.atendente')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("api_key", models.CharField(max_length=128, unique=True)),
+                ("channel", models.CharField(max_length=32)),
+                (
+                    "display_name",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                ("active", models.BooleanField(default=True)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "departamento",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="app_instances",
+                        to="operacional.departamento",
+                    ),
+                ),
+                (
+                    "owner",
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="app_instance",
+                        to="operacional.atendente",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'oraculo_app_instance',
-                'ordering': ['-created_at'],
-                'indexes': [models.Index(fields=['api_key'], name='oraculo_app_api_key_8073df_idx'), models.Index(fields=['channel'], name='oraculo_app_channel_efb030_idx'), models.Index(fields=['departamento'], name='oraculo_app_departa_bcb933_idx')],
+                "db_table": "oraculo_app_instance",
+                "ordering": ["-created_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["api_key"],
+                        name="oraculo_app_api_key_8073df_idx",
+                    ),
+                    models.Index(
+                        fields=["channel"],
+                        name="oraculo_app_channel_efb030_idx",
+                    ),
+                    models.Index(
+                        fields=["departamento"],
+                        name="oraculo_app_departa_bcb933_idx",
+                    ),
+                ],
             },
         ),
     ]

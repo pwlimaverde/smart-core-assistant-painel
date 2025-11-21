@@ -10,4 +10,5 @@ class ClickupSyncConfig(AppConfig):
     def ready(self) -> None:  # type: ignore[override]
         # Comentário: registra sinais ao iniciar o app
         from . import signals  # noqa: F401
+
         return None

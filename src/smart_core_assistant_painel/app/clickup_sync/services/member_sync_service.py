@@ -95,7 +95,9 @@ class MemberSyncService:
             )
             return False
 
-    def find_and_register_by_email(self, atendente: Any) -> ClickupMember | None:
+    def find_and_register_by_email(
+        self, atendente: Any
+    ) -> ClickupMember | None:
         """Busca membro no ClickUp por e-mail e registra no modelo local.
 
         Comentário (PT-BR): normaliza o e-mail do atendente, consulta os
@@ -143,7 +145,11 @@ class MemberSyncService:
                 )
                 return None
 
-            user = found.get("user") if isinstance(found.get("user"), dict) else found
+            user = (
+                found.get("user")
+                if isinstance(found.get("user"), dict)
+                else found
+            )
             external_id: str = str(user.get("id", ""))
             username: str = str(user.get("username", ""))
             if not external_id:

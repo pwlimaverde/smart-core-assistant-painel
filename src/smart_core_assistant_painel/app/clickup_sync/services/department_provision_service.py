@@ -142,9 +142,7 @@ class DepartmentProvisionService:
                     space_external_id=space_id,
                 ).first()
                 folder_id = (
-                    str(local_folder.external_id)
-                    if local_folder
-                    else ""
+                    str(local_folder.external_id) if local_folder else ""
                 )
                 if not folder_id:
                     existing = self.udservice.find_folder_by_name(

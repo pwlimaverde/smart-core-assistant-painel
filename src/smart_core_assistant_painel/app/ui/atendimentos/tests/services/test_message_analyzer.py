@@ -41,13 +41,13 @@ def mock_message():
 
 
 @patch(
-    "smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer.Mensagem.objects.get"
+    "smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem.objects.get"
 )
 @patch(
-    "smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer.Atendimento.objects.filter"
+    "smart_core_assistant_painel.app.ui.atendimentos.models.Atendimento.objects.filter"
 )
 @patch(
-    "smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer.QueryCompose.build_intent_types_config"
+    "smart_core_assistant_painel.app.ui.treinamento.models.QueryCompose.build_intent_types_config"
 )
 @patch(
     "smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer.FeaturesCompose"
@@ -117,9 +117,7 @@ class TestMessageAnalyzer:
     ):
         """Tests the flow for the very first message from a contact."""
         mock_mensagem_get.return_value = mock_message
-        mock_atendimento_filter.return_value.exists.return_value = (
-            False  # First atendimento
-        )
+        mock_atendimento_filter.return_value.exclude.return_value.exists.return_value = False  # First atendimento
         mock_message.atendimento.carregar_historico_mensagens.return_value = {
             "conteudo_mensagens": []
         }  # No history
@@ -169,12 +167,16 @@ class TestMessageAnalyzer:
     ):
         """Tests that info is requested if contact name is missing after processing."""
         analyzer = MessageAnalyzer()
-        analyzer._get_valid_metadata_entities = MagicMock(return_value=set())
+        analyzer._get_valid_metadata_entities = MagicMock(
+            return_value={"cidade"}
+        )
 
         # Ensure contact name is empty
         mock_message.atendimento.contato.nome_contato = ""
 
-        analyzer.process_contact_entities(mock_message, [])
+        analyzer.process_contact_entities(
+            mock_message, [{"cidade": "São Paulo"}]
+        )
 
         mock_features_compose.solicitacao_info_cliene.assert_called_once()
 

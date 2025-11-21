@@ -129,6 +129,7 @@ class AtendenteAdmin(admin.ModelAdmin[Atendente]):
             f"{queryset.count()} atendentes marcados como indisponíveis.",
         )
 
+
 # Compatibilidade retroativa com testes/nomes antigos
 # Comentario: exporta alias para manter referencias existentes nos testes.
 AtendenteHumanoAdmin = AtendenteAdmin

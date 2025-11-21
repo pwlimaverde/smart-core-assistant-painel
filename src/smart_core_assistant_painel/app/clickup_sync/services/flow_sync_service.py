@@ -203,9 +203,7 @@ class FlowSyncService:
                 data.get("statuses", []) if isinstance(data, dict) else []
             )
             names = (
-                ", ".join(
-                    [str(s.get("status", "")) for s in server_statuses]
-                )
+                ", ".join([str(s.get("status", "")) for s in server_statuses])
                 if isinstance(server_statuses, list)
                 else ""
             )
@@ -218,9 +216,7 @@ class FlowSyncService:
             # retorne apenas os padrões (to do/complete). Isso garante
             # que os registros de ClickupStatus existam no banco.
             try:
-                self._persist_status_mapping(
-                    list_id, etapas, server_statuses
-                )
+                self._persist_status_mapping(list_id, etapas, server_statuses)
             except Exception as persist_err:
                 logger.warning(
                     (
@@ -280,7 +276,9 @@ class FlowSyncService:
                     else 0
                 )
                 names = (
-                    ", ".join([str(s.get("status", "")) for s in server_statuses])
+                    ", ".join(
+                        [str(s.get("status", "")) for s in server_statuses]
+                    )
                     if isinstance(server_statuses, list)
                     else ""
                 )
@@ -439,6 +437,7 @@ class FlowSyncService:
             logger.error(
                 "Falha ao excluir list {}: {}", list_obj.external_id, exc
             )
+
     def _persist_status_mapping(
         self,
         list_id: str,
@@ -486,16 +485,12 @@ class FlowSyncService:
 
             # Comentário: remove mapeamentos órfãos (etapas apagadas)
             if etapa_ids:
-                qs = ClickupStatus.objects.filter(
-                    list_external_id=list_id
-                )
+                qs = ClickupStatus.objects.filter(list_external_id=list_id)
                 qs = qs.exclude(etapa_fluxo_id__in=etapa_ids)
                 qs.delete()
             else:
                 # Se não há etapas, remove todos os mapeamentos da List
-                ClickupStatus.objects.filter(
-                    list_external_id=list_id
-                ).delete()
+                ClickupStatus.objects.filter(list_external_id=list_id).delete()
         except Exception as err:
             logger.warning(
                 "Falha ao persistir mapeamento de statuses para List {}: {}",

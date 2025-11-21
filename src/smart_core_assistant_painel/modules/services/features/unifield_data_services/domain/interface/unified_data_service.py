@@ -195,7 +195,9 @@ class UnifiedDataService(ABC):
         """
         raise NotImplementedError("ensure_custom_fields não implementado")
 
-    def ensure_labels(self, board_id: str, labels: Dict[str, str]) -> Dict[str, str]:
+    def ensure_labels(
+        self, board_id: str, labels: Dict[str, str]
+    ) -> Dict[str, str]:
         """Garante a existência de labels no board e retorna seus IDs.
 
         Args:

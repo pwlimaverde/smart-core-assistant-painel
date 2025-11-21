@@ -4,13 +4,12 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operacional', '0008_appinstance'),
+        ("operacional", "0008_appinstance"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='WhatsAppInstance',
+            name="WhatsAppInstance",
         ),
     ]

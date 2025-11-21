@@ -36,8 +36,8 @@ class BotRulesEngine(BotRulesEngineInterface):
 
         Regras:
         - Somente responde quando o atendimento está no departamento "Atendimento"
-        - Não responde se há interação humana (mensagens de atendente ou
-          atendente humano atribuído)
+        - Não responde se a flag `bot_pode_atender` for False
+        - Não responde se há interação humana (legado/redundante, mas mantido por segurança)
 
         Args:
             attendance: Atendimento a ser verificado.
@@ -45,25 +45,31 @@ class BotRulesEngine(BotRulesEngineInterface):
         Returns:
             True se o bot pode responder, False caso contrário.
         """
-        if attendance is None:
+        if not attendance:
             return False
 
-        try:
-            # Verifica departamento atual
-            if not self._is_in_bot_department(attendance):
-                return False
-
-            # Verifica se há interação humana
-            if self._has_human_interaction(attendance):
-                return False
-
-            return True
-
-        except Exception as e:
-            logger.error(f"Erro ao verificar se o bot pode responder: {e}")
+        # Nova regra principal: flag explícita no atendimento
+        if not attendance.bot_pode_atender:
+            logger.info(
+                f"Bot não pode responder atendimento {attendance.id}: bot_pode_atender=False"
+            )
             return False
 
-        # return False
+        if not self._is_in_bot_department(attendance):
+            logger.info(
+                f"Bot não pode responder atendimento {attendance.id}: departamento inválido"
+            )
+            return False
+
+        # Mantém verificação de interação humana como fallback/segurança,
+        # embora a flag deva cobrir isso (assign_to_agent seta flag=False).
+        if self._has_human_interaction(attendance):
+            logger.info(
+                f"Bot não pode responder atendimento {attendance.id}: interação humana detectada"
+            )
+            return False
+
+        return True
 
     def _is_in_bot_department(self, attendance: "Atendimento") -> bool:
         """Verifica se atendimento está no departamento do bot.

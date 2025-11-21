@@ -4,24 +4,23 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('evolution_sync', '0002_remove_evolutioninstance_server_url'),
+        ("evolution_sync", "0002_remove_evolutioninstance_server_url"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='WhiteList',
+            name="WhiteList",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100)),
-                ('phone_number', models.CharField(max_length=20, unique=True)),
-                ('active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=100)),
+                ("phone_number", models.CharField(max_length=20, unique=True)),
+                ("active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'db_table': 'evolution_sync_whitelist',
-                'ordering': ['name'],
+                "db_table": "evolution_sync_whitelist",
+                "ordering": ["name"],
             },
         ),
     ]

@@ -5,21 +5,30 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atendimentos', '0004_alter_atendimento_status'),
-        ('clientes', '0001_initial'),
-        ('operacional', '0006_merge_20251108_0942'),
+        ("atendimentos", "0004_alter_atendimento_status"),
+        ("clientes", "0001_initial"),
+        ("operacional", "0006_merge_20251108_0942"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='atendimento',
-            name='fluxo_atendimento',
-            field=models.ForeignKey(blank=True, help_text='Fluxo/quadro atual do atendimento (coerente com departamento e etapa_atual)', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='atendimentos', to='operacional.fluxoatendimento'),
+            model_name="atendimento",
+            name="fluxo_atendimento",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Fluxo/quadro atual do atendimento (coerente com departamento e etapa_atual)",
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="atendimentos",
+                to="operacional.fluxoatendimento",
+            ),
         ),
         migrations.AddIndex(
-            model_name='atendimento',
-            index=models.Index(fields=['fluxo_atendimento'], name='oraculo_ate_fluxo_a_a1f08f_idx'),
+            model_name="atendimento",
+            index=models.Index(
+                fields=["fluxo_atendimento"],
+                name="oraculo_ate_fluxo_a_a1f08f_idx",
+            ),
         ),
     ]

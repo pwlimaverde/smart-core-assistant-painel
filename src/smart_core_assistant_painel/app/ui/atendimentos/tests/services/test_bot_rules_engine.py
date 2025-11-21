@@ -81,7 +81,7 @@ class TestBotRulesEngine:
         assert engine.can_bot_respond(None) is False
 
     @patch(
-        "smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine.AttendanceStructureManager"
+        "smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager.AttendanceStructureManager"
     )
     def test_is_in_bot_department_no_department(
         self, mock_structure_manager, mock_atendimento

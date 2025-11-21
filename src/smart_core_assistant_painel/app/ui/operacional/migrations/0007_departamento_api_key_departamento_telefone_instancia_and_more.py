@@ -6,30 +6,56 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operacional', '0006_merge_20251108_0942'),
+        ("operacional", "0006_merge_20251108_0942"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='departamento',
-            name='api_key',
-            field=models.CharField(blank=True, help_text='Chave de API (Evolution API) deste departamento', max_length=100, null=True, validators=[smart_core_assistant_painel.app.ui.operacional.models.validate_api_key]),
+            model_name="departamento",
+            name="api_key",
+            field=models.CharField(
+                blank=True,
+                help_text="Chave de API (Evolution API) deste departamento",
+                max_length=100,
+                null=True,
+                validators=[
+                    smart_core_assistant_painel.app.ui.operacional.models.validate_api_key
+                ],
+            ),
         ),
         migrations.AddField(
-            model_name='departamento',
-            name='telefone_instancia',
-            field=models.CharField(blank=True, help_text='Telefone (instancia Evolution API) deste departamento', max_length=20, null=True, validators=[smart_core_assistant_painel.app.ui.operacional.models.validate_telefone_instancia]),
+            model_name="departamento",
+            name="telefone_instancia",
+            field=models.CharField(
+                blank=True,
+                help_text="Telefone (instancia Evolution API) deste departamento",
+                max_length=20,
+                null=True,
+                validators=[
+                    smart_core_assistant_painel.app.ui.operacional.models.validate_telefone_instancia
+                ],
+            ),
         ),
         migrations.AlterField(
-            model_name='atendente',
-            name='cargo',
-            field=models.CharField(default='', help_text='Cargo/funcao do atendente', max_length=100),
+            model_name="atendente",
+            name="cargo",
+            field=models.CharField(
+                default="",
+                help_text="Cargo/funcao do atendente",
+                max_length=100,
+            ),
         ),
         migrations.AlterField(
-            model_name='atendente',
-            name='fluxo',
-            field=models.ForeignKey(blank=True, help_text='Fluxo de atendimento (quadro) ao qual o atendente sera convidado', null=True, on_delete=django.db.models.deletion.PROTECT, related_name='atendentes', to='operacional.fluxoatendimento'),
+            model_name="atendente",
+            name="fluxo",
+            field=models.ForeignKey(
+                blank=True,
+                help_text="Fluxo de atendimento (quadro) ao qual o atendente sera convidado",
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="atendentes",
+                to="operacional.fluxoatendimento",
+            ),
         ),
     ]

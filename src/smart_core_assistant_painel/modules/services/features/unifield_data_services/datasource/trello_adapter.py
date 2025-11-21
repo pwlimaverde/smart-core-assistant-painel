@@ -279,7 +279,9 @@ class TrelloUnifiedDataService(UnifiedDataService):
         capturamos o JSON como metadado e retornamos.
         """
         params: Dict[str, Any] = {"email": email, "type": member_type}
-        data = self._request("PUT", f"/boards/{board_id}/members", params=params)
+        data = self._request(
+            "PUT", f"/boards/{board_id}/members", params=params
+        )
         self._log(
             "convite enviado: board={board} email={email}",
             board=board_id,
@@ -313,9 +315,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
 
         Comentário: usa endpoint específico de remoção de membros do card.
         """
-        self._request(
-            "DELETE", f"/cards/{card_id}/idMembers/{member_id}"
-        )
+        self._request("DELETE", f"/cards/{card_id}/idMembers/{member_id}")
         self._log(
             "membro removido do card: card={card} member={member}",
             card=card_id,
@@ -531,7 +531,9 @@ class TrelloUnifiedDataService(UnifiedDataService):
                 )
         return mapping
 
-    def ensure_labels(self, board_id: str, labels: Dict[str, str]) -> Dict[str, str]:
+    def ensure_labels(
+        self, board_id: str, labels: Dict[str, str]
+    ) -> Dict[str, str]:
         """Garante que labels existam no board e retorna seus IDs.
 
         Comentário: tenta criar labels ausentes com cor informada.
@@ -552,8 +554,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
             existing = []
 
         by_name: Dict[str, str] = {
-            str(lb.get("name", "")): str(lb.get("id", ""))
-            for lb in existing
+            str(lb.get("name", "")): str(lb.get("id", "")) for lb in existing
         }
 
         for name, color in labels.items():

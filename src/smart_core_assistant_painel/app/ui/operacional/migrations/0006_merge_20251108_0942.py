@@ -4,11 +4,9 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operacional', '0002_alter_etapafluxo_ordem'),
-        ('operacional', '0005_alter_atendente_fluxo_not_null'),
+        ("operacional", "0002_alter_etapafluxo_ordem"),
+        ("operacional", "0005_alter_atendente_fluxo_not_null"),
     ]
 
-    operations = [
-    ]
+    operations = []

@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('evolution_sync', '0001_initial'),
+        ("evolution_sync", "0001_initial"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='evolutioninstance',
-            name='server_url',
+            model_name="evolutioninstance",
+            name="server_url",
         ),
     ]

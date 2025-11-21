@@ -170,18 +170,12 @@ class TicketSyncService:
                         payload_value = None
                 elif cf.type in {"number"}:
                     # Garante número quando possível
-                    payload_value = (
-                        float(value) if value is not None else None
-                    )
+                    payload_value = float(value) if value is not None else None
                 else:
                     # Fallback para texto
-                    payload_value = (
-                        str(value) if value is not None else None
-                    )
+                    payload_value = str(value) if value is not None else None
             except Exception:
-                payload_value = (
-                    str(value) if value is not None else None
-                )
+                payload_value = str(value) if value is not None else None
 
             try:
                 self.udservice.set_task_custom_field(
@@ -195,7 +189,9 @@ class TicketSyncService:
                     exc,
                 )
 
-    def sync_assignees(self, atendimento: Any, old_atendente_id: Optional[int]) -> None:
+    def sync_assignees(
+        self, atendimento: Any, old_atendente_id: Optional[int]
+    ) -> None:
         """Sincroniza assignees da Task com base no atendente do Atendimento.
 
         Comentário (PT-BR): resolve o mapeamento `ClickupMember` para o
@@ -231,9 +227,9 @@ class TicketSyncService:
                     )
                 return
 
-            member: Optional[ClickupMember] = (
-                ClickupMember.objects.filter(atendente_id=atual_id).first()
-            )
+            member: Optional[ClickupMember] = ClickupMember.objects.filter(
+                atendente_id=atual_id
+            ).first()
 
             # Se não houver mapeamento ou for local, tenta resolver por e-mail
             if member is None or str(member.external_id).startswith("local-"):
@@ -242,7 +238,9 @@ class TicketSyncService:
 
                     atendente = getattr(atendimento, "atendente_humano", None)
                     if atendente is not None:
-                        MemberSyncService().find_and_register_by_email(atendente)
+                        MemberSyncService().find_and_register_by_email(
+                            atendente
+                        )
                         member = ClickupMember.objects.filter(
                             atendente_id=atual_id
                         ).first()
@@ -350,7 +348,11 @@ class TicketSyncService:
             "Department": str(getattr(departamento, "nome", "")),
             # Fluxo/List contexto
             "Etapa": str(getattr(etapa, "nome", "")),
-            "Flow": str(getattr(getattr(atendimento, "fluxo_atendimento", None), "nome", "")),
+            "Flow": str(
+                getattr(
+                    getattr(atendimento, "fluxo_atendimento", None), "nome", ""
+                )
+            ),
             # Prioridade
             "Prioridade": prioridade,
             "Priority (Local)": prioridade,
@@ -366,7 +368,9 @@ class TicketSyncService:
             "Channel": canal,
             # Datas
             "Last Message At": last_dt,
-            "First Response At": getattr(atendimento, "data_primeira_resposta", None),
+            "First Response At": getattr(
+                atendimento, "data_primeira_resposta", None
+            ),
             "Service Start": getattr(atendimento, "data_inicio", None),
             "Service End": getattr(atendimento, "data_fim", None),
             # Feedback/Avaliação
@@ -391,9 +395,7 @@ class TicketSyncService:
 
         task = ClickupTask.objects.filter(atendimento_id=at_id).first()
         if not task:
-            logger.warning(
-                "Task não encontrada para atendimento {}", at_id
-            )
+            logger.warning("Task não encontrada para atendimento {}", at_id)
             return False
 
         md: str = self._build_message_markdown(mensagem)
@@ -421,6 +423,7 @@ class TicketSyncService:
         - Opcional: resposta do bot
         """
         from django.utils import timezone
+
         try:
             ts = timezone.localtime(getattr(mensagem, "timestamp"))
         except Exception:
@@ -453,7 +456,9 @@ class TicketSyncService:
 
         conteudo: str = str(getattr(mensagem, "conteudo", ""))
         # Comentário: usar bloco de citação para preservar visual
-        quoted: str = "\n".join([f"> {line}" for line in conteudo.splitlines()])
+        quoted: str = "\n".join(
+            [f"> {line}" for line in conteudo.splitlines()]
+        )
 
         linhas: list[str] = []
         linhas.append(f"**{remetente_lbl}** — {ts_str}")

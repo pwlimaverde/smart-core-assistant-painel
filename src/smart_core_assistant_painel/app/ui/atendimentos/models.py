@@ -1,7 +1,7 @@
 import decimal
 import re
 from datetime import datetime
-from typing import Any, Optional, cast, override, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional, cast, override
 
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -34,6 +34,7 @@ class StatusAtendimento(models.TextChoices):
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
     TRANSFERIDO = "transferido", "Transferido"
+
 
 # Aliases de compatibilidade esperados pelos testes
 # Comentário: alias fora da enum evitam erro de duplicidade do Enum.
@@ -104,6 +105,7 @@ class Atendimento(models.Model):
     `departamento`, `fluxo_atendimento` e `etapa_atual` devem pertencer
     ao mesmo contexto (mesmo departamento e fluxo).
     """
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -127,18 +129,16 @@ class Atendimento(models.Model):
     # Fluxo/quadro associado (necessario para ClickUp e coerencia de etapas)
     fluxo_atendimento: models.ForeignKey[
         Optional["operacional.FluxoAtendimento"]
-    ] = (
-        models.ForeignKey(
-            "operacional.FluxoAtendimento",
-            on_delete=models.SET_NULL,
-            blank=True,
-            null=True,
-            related_name="atendimentos",
-            help_text=(
-                "Fluxo/quadro atual do atendimento (coerente com "
-                "departamento e etapa_atual)"
-            ),
-        )
+    ] = models.ForeignKey(
+        "operacional.FluxoAtendimento",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="atendimentos",
+        help_text=(
+            "Fluxo/quadro atual do atendimento (coerente com "
+            "departamento e etapa_atual)"
+        ),
     )
     status: models.CharField[str] = models.CharField(
         max_length=20,
@@ -230,16 +230,9 @@ class Atendimento(models.Model):
             help_text="Data e hora da primeira resposta ao contato",
         )
     )
-    canal: models.CharField[str] = models.CharField(
-        max_length=20,
-        choices=[
-            ("whatsapp", "WhatsApp"),
-            ("email", "E-mail"),
-            ("telefone", "Telefone"),
-            ("web", "Website"),
-        ],
-        default="whatsapp",
-        help_text="Canal de origem do atendimento",
+    bot_pode_atender: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Indica se o bot pode responder a este atendimento",
     )
 
     class Meta:
@@ -257,6 +250,7 @@ class Atendimento(models.Model):
             models.Index(fields=["fluxo_atendimento"]),
             models.Index(fields=["prioridade"]),
             models.Index(fields=["tags"]),
+            models.Index(fields=["bot_pode_atender"]),
         ]
 
     # Removido override de save com full_clean para evitar quebra em fluxos
@@ -333,7 +327,10 @@ class Atendimento(models.Model):
         if self.fluxo_atendimento_id:
             try:
                 fluxo_dep_id2: Optional[int] = None
-                if hasattr(self, "fluxo_atendimento") and self.fluxo_atendimento:
+                if (
+                    hasattr(self, "fluxo_atendimento")
+                    and self.fluxo_atendimento
+                ):
                     fluxo_dep_id2 = cast(
                         Optional[int],
                         getattr(
@@ -344,9 +341,12 @@ class Atendimento(models.Model):
                     from smart_core_assistant_painel.app.ui.operacional.models import (
                         FluxoAtendimento,
                     )
-                    fluxo_obj = FluxoAtendimento.objects.only(
-                        "departamento_id"
-                    ).filter(id=self.fluxo_atendimento_id).first()
+
+                    fluxo_obj = (
+                        FluxoAtendimento.objects.only("departamento_id")
+                        .filter(id=self.fluxo_atendimento_id)
+                        .first()
+                    )
                     fluxo_dep_id2 = (
                         fluxo_obj.departamento_id if fluxo_obj else None
                     )
@@ -374,15 +374,19 @@ class Atendimento(models.Model):
                 etapa_fluxo_id: Optional[int] = None
                 if hasattr(self, "etapa_atual") and self.etapa_atual:
                     etapa_fluxo_id = cast(
-                        Optional[int], getattr(self.etapa_atual, "fluxo_id", None)
+                        Optional[int],
+                        getattr(self.etapa_atual, "fluxo_id", None),
                     )
                 if etapa_fluxo_id is None:
                     from smart_core_assistant_painel.app.ui.operacional.models import (
                         EtapaFluxo,
                     )
-                    etapa = EtapaFluxo.objects.only("fluxo_id").filter(
-                        id=self.etapa_atual_id
-                    ).first()
+
+                    etapa = (
+                        EtapaFluxo.objects.only("fluxo_id")
+                        .filter(id=self.etapa_atual_id)
+                        .first()
+                    )
                     etapa_fluxo_id = etapa.fluxo_id if etapa else None
                 if etapa_fluxo_id != self.fluxo_atendimento_id:
                     raise ValidationError(
@@ -452,6 +456,22 @@ class Atendimento(models.Model):
             }
         )
 
+    def assumir_atendimento(self, atendente_id: int) -> None:
+        """Atendente assume o atendimento e desabilita o bot.
+
+        Args:
+            atendente_id: ID do atendente que assumirá o atendimento.
+        """
+        try:
+            atendente = Atendente.objects.get(id=atendente_id)
+            self.assign_to_agent(
+                atendente,
+                observacao="Atendente assumiu o atendimento (Bot desativado)",
+            )
+        except Atendente.DoesNotExist:
+            logger.error(f"Atendente com ID {atendente_id} não encontrado.")
+            raise
+
     def assign_to_agent(
         self, atendente: Atendente, observacao: str = ""
     ) -> None:
@@ -460,6 +480,7 @@ class Atendimento(models.Model):
         - Atualiza `departamento` para o do atendente, se existir.
         - Define `status=EM_ATENDIMENTO`.
         - Registra `data_ultima_atribuicao` do atendente para fairness.
+        - Desabilita o bot para este atendimento.
         """
         # Atualiza departamento de acordo com o atendente (se definido)
         if atendente.departamento and (
@@ -474,6 +495,7 @@ class Atendimento(models.Model):
 
         self.atendente_humano = atendente
         self.status = StatusAtendimento.EM_ATENDIMENTO
+        self.bot_pode_atender = False  # Bot não pode atender se há humano
         self.adicionar_historico_status(
             StatusAtendimento.EM_ATENDIMENTO.value,
             observacao or f"Atribuído a {atendente.nome}",
@@ -488,6 +510,21 @@ class Atendimento(models.Model):
         """Remove a atribuição do atendente e retorna o atendimento à fila."""
         self.atendente_humano = None
         self.status = StatusAtendimento.FILA
+        # Se desatribuído, o bot pode voltar a atender?
+        # O usuário não especificou, mas geralmente sim, se voltar pra fila.
+        # Porem, a regra diz "a menos que essa flag esteja marcada como false... e isso só ocorrerá... se o atendente tomar...".
+        # Se o atendente soltar, talvez devesse voltar a ser True?
+        # Por segurança e seguindo a lógica de "bot atende novos", se voltar pra fila, talvez o bot deva pegar.
+        # Mas vou manter False por enquanto para ser conservador, ou True?
+        # O usuário disse: "os novos atendimentos... será atendida pelo bot, a menos que essa flag esteja marcada como false".
+        # Se eu devolvo pra fila, ele não é "novo".
+        # Mas se ninguém tá atendendo, o bot deveria?
+        # Vou deixar como está (não altera a flag) ou setar True?
+        # Se o atendente "unassign", ele está devolvendo.
+        # Vou assumir que se volta pra fila, o bot pode tentar de novo se configurado.
+        # Mas a instrução foi estrita sobre quando vira False. Não disse quando vira True.
+        # Vou manter a flag como está no unassign por enquanto.
+
         self.adicionar_historico_status(
             StatusAtendimento.FILA.value,
             observacao or "Desatribuído e retornado à fila",
@@ -501,6 +538,7 @@ class Atendimento(models.Model):
         self.departamento_id = departamento.id
         self.atendente_humano = None
         self.status = StatusAtendimento.FILA
+        self.bot_pode_atender = False  # Bot não atende após transferência
         # Mantém fluxo indefinido até escolha explícita ou método de fluxo
         # (evita vincular automaticamente a um fluxo incorreto)
         self.adicionar_historico_status(
@@ -534,9 +572,7 @@ class Atendimento(models.Model):
 
         descricao = flow_description.strip()
         if not descricao:
-            raise ValidationError(
-                "A descrição do fluxo não pode ser vazia."
-            )
+            raise ValidationError("A descrição do fluxo não pode ser vazia.")
 
         partes = re.split(r"\s*-\s*", descricao, maxsplit=1)
         if len(partes) != 2:
@@ -559,15 +595,15 @@ class Atendimento(models.Model):
         )
         if not fluxo:
             raise ValidationError(
-                (
-                    "Fluxo '{0}' no departamento '{1}' não encontrado."
-                ).format(fluxo_nome, departamento_nome)
+                ("Fluxo '{0}' no departamento '{1}' não encontrado.").format(
+                    fluxo_nome, departamento_nome
+                )
             )
 
         # Prioriza a etapa do tipo FILA; caso não exista, usa a primeira
-        etapa_inicial = fluxo.get_etapa_inicial() or fluxo.etapas.order_by(
-            "ordem"
-        ).first()
+        etapa_inicial = (
+            fluxo.get_etapa_inicial() or fluxo.etapas.order_by("ordem").first()
+        )
         if not etapa_inicial:
             raise ValidationError(
                 "Fluxo selecionado não possui etapas configuradas."
@@ -593,10 +629,9 @@ class Atendimento(models.Model):
         if status_alterado:
             self.adicionar_historico_status(
                 StatusAtendimento.FILA.value,
-                (
-                    "Posicionado na etapa inicial do fluxo '{0}' "
-                    "({1})."
-                ).format(fluxo.nome, fluxo.departamento.nome),
+                ("Posicionado na etapa inicial do fluxo '{0}' ({1}).").format(
+                    fluxo.nome, fluxo.departamento.nome
+                ),
             )
 
     def touch_last_message(self, quando: Optional[datetime] = None) -> None:
@@ -1008,7 +1043,8 @@ def inicializar_atendimento_por_contato(
     try:
         atualizado = False
         if nome_perfil_whatsapp and (
-            nome_perfil_whatsapp != getattr(contato, "nome_perfil_whatsapp", None)
+            nome_perfil_whatsapp
+            != getattr(contato, "nome_perfil_whatsapp", None)
         ):
             contato.nome_perfil_whatsapp = nome_perfil_whatsapp
             atualizado = True
@@ -1044,6 +1080,7 @@ def inicializar_atendimento_por_contato(
                     from smart_core_assistant_painel.app.ui.operacional.models import (
                         AppInstance,
                     )
+
                     app_inst = AppInstance.objects.filter(
                         api_key=api_key, active=True
                     ).first()
@@ -1052,7 +1089,9 @@ def inicializar_atendimento_por_contato(
                             atendente = app_inst.owner
                             atendimento.atendente_humano = atendente
                             if getattr(atendente, "departamento", None):
-                                atendimento.departamento = atendente.departamento
+                                atendimento.departamento = (
+                                    atendente.departamento
+                                )
                         elif getattr(app_inst, "departamento", None):
                             atendimento.departamento = app_inst.departamento
                         # Comentário (PT-BR): ao definir o departamento,
@@ -1064,6 +1103,7 @@ def inicializar_atendimento_por_contato(
                                 from smart_core_assistant_painel.app.ui.operacional.models import (
                                     FluxoAtendimento,
                                 )
+
                                 fluxo = (
                                     FluxoAtendimento.objects.filter(
                                         departamento_id=atendimento.departamento_id,
@@ -1074,7 +1114,9 @@ def inicializar_atendimento_por_contato(
                                 if fluxo:
                                     etapa_ini = (
                                         fluxo.get_etapa_inicial()
-                                        or fluxo.etapas.order_by("ordem").first()
+                                        or fluxo.etapas.order_by(
+                                            "ordem"
+                                        ).first()
                                         or fluxo.etapas.order_by("id").first()
                                     )
                                     atendimento.fluxo_atendimento = fluxo
@@ -1135,7 +1177,9 @@ def processar_mensagem_por_contato(
 ) -> int:
     try:
         remetente = (
-            TipoRemetente.ATENDENTE_HUMANO if from_me else TipoRemetente.CONTATO
+            TipoRemetente.ATENDENTE_HUMANO
+            if from_me
+            else TipoRemetente.CONTATO
         )
         contato = Contato.objects.filter(id=contato_id).first()
         if not contato:
@@ -1144,12 +1188,12 @@ def processar_mensagem_por_contato(
         atendimento = buscar_atendimento_ativo_por_contato(contato_id)
         if not atendimento:
             atendimento = inicializar_atendimento_por_contato(
-            contato,
-            primeira_mensagem=conteudo,
-            metadata_contato=metadados,
-            nome_perfil_whatsapp=nome_perfil_whatsapp,
-            api_key=api_key,
-        )
+                contato,
+                primeira_mensagem=conteudo,
+                metadata_contato=metadados,
+                nome_perfil_whatsapp=nome_perfil_whatsapp,
+                api_key=api_key,
+            )
 
         if message_id:
             existente = Mensagem.objects.filter(

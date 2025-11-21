@@ -465,7 +465,9 @@ class ClicupUnifiedDataService(UnifiedDataService):
         """
         try:
             self._request(
-                "POST", f"/task/{task_id}/field/{field_id}", json={"value": value}
+                "POST",
+                f"/task/{task_id}/field/{field_id}",
+                json={"value": value},
             )
             self._log(
                 "custom field atualizado: task={task} field={field}",
@@ -563,7 +565,9 @@ class ClicupUnifiedDataService(UnifiedDataService):
         except Exception:
             return []
 
-    def find_member_by_email(self, email: str, list_id: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    def find_member_by_email(
+        self, email: str, list_id: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
         """Busca um membro do ClickUp pelo e-mail (case-insensitive).
 
         Comentário (PT-BR): normaliza o e-mail e tenta localizar o
@@ -575,7 +579,9 @@ class ClicupUnifiedDataService(UnifiedDataService):
         email_norm: str = email.strip().lower()
         # Preferir buscar em escopo de List quando informado
         members = (
-            self.list_list_members(list_id) if list_id else self.list_team_members()
+            self.list_list_members(list_id)
+            if list_id
+            else self.list_team_members()
         )
         for m in members:
             user: Dict[str, Any] = (
@@ -583,11 +589,15 @@ class ClicupUnifiedDataService(UnifiedDataService):
             )
             u_email: str = str(user.get("email", "")).strip().lower()
             u_username: str = str(user.get("username", "")).strip().lower()
-            if email_norm and (email_norm == u_email or email_norm == u_username):
+            if email_norm and (
+                email_norm == u_email or email_norm == u_username
+            ):
                 return m
         return None
 
-    def set_task_assignees(self, task_id: str, assignee_ids: List[str]) -> bool:
+    def set_task_assignees(
+        self, task_id: str, assignee_ids: List[str]
+    ) -> bool:
         """Define a lista de responsáveis (assignees) de uma Task.
 
         Comentário (PT-BR): Tenta usar o endpoint oficial
@@ -650,7 +660,9 @@ class ClicupUnifiedDataService(UnifiedDataService):
                                 "POST",
                                 f"/task/{task_id}/assignee",
                                 json={
-                                    "assignee": int(rid) if rid.isdigit() else rid,
+                                    "assignee": int(rid)
+                                    if rid.isdigit()
+                                    else rid,
                                     "unassign": True,
                                 },
                             )
@@ -707,7 +719,11 @@ class ClicupUnifiedDataService(UnifiedDataService):
                         list_members = self.list_list_members(list_id)
                         member_ids = []
                         for m in list_members:
-                            u = m.get("user") if isinstance(m.get("user"), dict) else m
+                            u = (
+                                m.get("user")
+                                if isinstance(m.get("user"), dict)
+                                else m
+                            )
                             member_ids.append(str(u.get("id", "")))
                         self._log(
                             "list membros: list={list} users={users}",

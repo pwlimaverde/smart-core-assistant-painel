@@ -93,26 +93,18 @@ class TicketSyncService:
         )
         if data_inicio is not None:
             try:
-                due_str = (
-                    timezone.localtime(
-                        data_inicio + timedelta(days=1)
-                    ).isoformat()
-                )
+                due_str = timezone.localtime(
+                    data_inicio + timedelta(days=1)
+                ).isoformat()
             except Exception:
-                due_str = (
-                    (data_inicio + timedelta(days=1)).isoformat()
-                )
+                due_str = (data_inicio + timedelta(days=1)).isoformat()
         elif data_ultima is not None:
             try:
-                due_str = (
-                    timezone.localtime(
-                        data_ultima + timedelta(days=1)
-                    ).isoformat()
-                )
+                due_str = timezone.localtime(
+                    data_ultima + timedelta(days=1)
+                ).isoformat()
             except Exception:
-                due_str = (
-                    (data_ultima + timedelta(days=1)).isoformat()
-                )
+                due_str = (data_ultima + timedelta(days=1)).isoformat()
         else:
             due_str = None
 
@@ -260,7 +252,9 @@ class TicketSyncService:
         Comentário: texto multi-linha para leitura rápida ao abrir o card.
         """
         contato = getattr(atendimento, "contato", None)
-        nome_contato: str = getattr(contato, "nome_contato", "") if contato else ""
+        nome_contato: str = (
+            getattr(contato, "nome_contato", "") if contato else ""
+        )
         telefone: str = getattr(contato, "telefone", "") if contato else ""
         email: str = getattr(contato, "email", "") if contato else ""
         departamento_nome: str = (
@@ -274,11 +268,15 @@ class TicketSyncService:
         prioridade: str = getattr(atendimento, "prioridade", "")
         canal: str = getattr(atendimento, "canal", "")
         produto_servico: str = getattr(atendimento, "produto_servico", "")
-        valor_orc: Optional[Decimal] = getattr(atendimento, "valor_orcamento", None)
+        valor_orc: Optional[Decimal] = getattr(
+            atendimento, "valor_orcamento", None
+        )
         categoria_venda: str = getattr(atendimento, "categoria_venda", "")
         tags: list[str] = cast(list[str], getattr(atendimento, "tags", []))
         atendente = getattr(atendimento, "atendente_humano", None)
-        atendente_nome: str = getattr(atendente, "nome", "") if atendente else ""
+        atendente_nome: str = (
+            getattr(atendente, "nome", "") if atendente else ""
+        )
         assunto: str = getattr(atendimento, "assunto", "") or "(sem assunto)"
         ultima_msg_dt = getattr(atendimento, "data_ultima_mensagem", None)
 
@@ -288,18 +286,13 @@ class TicketSyncService:
             try:
                 cur: str = f"R$ {val:,.2f}"
                 return (
-                    cur.replace(",", "X")
-                    .replace(".", ",")
-                    .replace("X", ".")
+                    cur.replace(",", "X").replace(".", ",").replace("X", ".")
                 )
             except Exception:
                 return str(val)
 
         linhas: list[str] = [
-            (
-                f"### Atendimento #{getattr(atendimento, 'pk', '')} — "
-                f"{assunto}"
-            ),
+            (f"### Atendimento #{getattr(atendimento, 'pk', '')} — {assunto}"),
             "---",
             "Resumo:",
             f"- Contato: {nome_contato or '(não informado)'}",
@@ -375,18 +368,15 @@ class TicketSyncService:
                 TipoRemetente,
             )
 
-            msgs_qs = (
-                Mensagem.objects.filter(
-                    atendimento=atendimento,
-                    tipo=TipoMensagem.TEXTO_FORMATADO,
-                    remetente=TipoRemetente.CONTATO,
-                )
-                .order_by("-timestamp")[:5]
-            )
+            msgs_qs = Mensagem.objects.filter(
+                atendimento=atendimento,
+                tipo=TipoMensagem.TEXTO_FORMATADO,
+                remetente=TipoRemetente.CONTATO,
+            ).order_by("-timestamp")[:5]
             for m in msgs_qs:
                 conteudo: str = (m.conteudo or "").replace("\n", " ")
-                preview: str = (
-                    conteudo[:240] + ("..." if len(conteudo) > 240 else "")
+                preview: str = conteudo[:240] + (
+                    "..." if len(conteudo) > 240 else ""
                 )
                 ts_str: str = timezone.localtime(m.timestamp).strftime(
                     "%d/%m %H:%M"
@@ -395,8 +385,8 @@ class TicketSyncService:
                 # Comentário (PT-BR): exibe a resposta do bot abaixo da mensagem
                 if getattr(m, "resposta_bot", None):
                     resp: str = str(m.resposta_bot).replace("\n", " ")
-                    resp_prev: str = (
-                        resp[:240] + ("..." if len(resp) > 240 else "")
+                    resp_prev: str = resp[:240] + (
+                        "..." if len(resp) > 240 else ""
                     )
                     linhas.append(f"  Resposta: {resp_prev}")
         except Exception:
@@ -404,7 +394,9 @@ class TicketSyncService:
 
         return "\n".join(linhas)
 
-    def update_card_rich_content(self, card: TrelloCard, atendimento: Atendimento) -> None:
+    def update_card_rich_content(
+        self, card: TrelloCard, atendimento: Atendimento
+    ) -> None:
         """
         Atualiza conteúdo rico do card: descrição, membros e custom fields.
 
@@ -428,29 +420,25 @@ class TicketSyncService:
         # fallback para próxima dia da última mensagem.
         try:
             if data_inicio is not None:
-                payload["due"] = (
-                    timezone.localtime(
-                        data_inicio + timedelta(days=1)
-                    ).isoformat()
-                )
+                payload["due"] = timezone.localtime(
+                    data_inicio + timedelta(days=1)
+                ).isoformat()
             elif data_ultima is not None:
-                payload["due"] = (
-                    timezone.localtime(
-                        data_ultima + timedelta(days=1)
-                    ).isoformat()
-                )
+                payload["due"] = timezone.localtime(
+                    data_ultima + timedelta(days=1)
+                ).isoformat()
             else:
                 payload["due"] = None
         except Exception:
             try:
                 if data_inicio is not None:
                     payload["due"] = (
-                        (data_inicio + timedelta(days=1)).isoformat()
-                    )
+                        data_inicio + timedelta(days=1)
+                    ).isoformat()
                 elif data_ultima is not None:
                     payload["due"] = (
-                        (data_ultima + timedelta(days=1)).isoformat()
-                    )
+                        data_ultima + timedelta(days=1)
+                    ).isoformat()
                 else:
                     payload["due"] = None
             except Exception:

@@ -420,11 +420,11 @@ class Atendente(models.Model):
         return self.get_atendimentos_ativos()
 
 
-
-
 class AppInstance(models.Model):
     id: models.AutoField = models.AutoField(primary_key=True)
-    api_key: models.CharField[str] = models.CharField(max_length=128, unique=True)
+    api_key: models.CharField[str] = models.CharField(
+        max_length=128, unique=True
+    )
     channel: models.CharField[str] = models.CharField(max_length=32)
     display_name: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True

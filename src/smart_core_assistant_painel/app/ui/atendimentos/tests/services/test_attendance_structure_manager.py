@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, ANY
 
 # Assuming the models and services are in the correct path.
 from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager import (
@@ -30,10 +30,10 @@ def mock_atendimento_instance():
 
 
 @patch(
-    "smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager.Departamento.objects.get_or_create"
+    "smart_core_assistant_painel.app.ui.operacional.models.Departamento.objects.get_or_create"
 )
 @patch(
-    "smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager.FluxoAtendimento.objects.get_or_create"
+    "smart_core_assistant_painel.app.ui.operacional.models.FluxoAtendimento.objects.get_or_create"
 )
 class TestAttendanceStructureManager:
     def test_ensure_default_structure_creates_new(
@@ -49,12 +49,12 @@ class TestAttendanceStructureManager:
         departamento, fluxo = manager.ensure_default_structure()
 
         mock_dept_get_or_create.assert_called_once_with(
-            nome="Atendimento", defaults=pytest.ANY
+            nome="Atendimento", defaults=ANY
         )
         mock_fluxo_get_or_create.assert_called_once_with(
             departamento=mock_dept,
             nome="Atendimento Inicial",
-            defaults=pytest.ANY,
+            defaults=ANY,
         )
         assert departamento == mock_dept
         assert fluxo == mock_fluxo
@@ -77,7 +77,9 @@ class TestAttendanceStructureManager:
     @patch(
         "smart_core_assistant_painel.app.ui.operacional.models.FluxoAtendimento.objects.filter"
     )
-    def test_get_available_flows(self, mock_filter):
+    def test_get_available_flows(
+        self, mock_filter, mock_fluxo_get_or_create, mock_dept_get_or_create
+    ):
         """Tests the retrieval of available flows."""
         # Mocking the queryset result
         mock_dept_vendas = MagicMock(spec=Departamento, nome="Vendas")

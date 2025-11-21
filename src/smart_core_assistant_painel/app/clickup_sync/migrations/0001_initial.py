@@ -4,79 +4,117 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='ClickupList',
+            name="ClickupList",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('fluxo_atendimento_id', models.BigIntegerField()),
-                ('external_id', models.CharField(max_length=128, unique=True)),
-                ('name', models.CharField(max_length=128)),
-                ('space_external_id', models.CharField(max_length=128)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("fluxo_atendimento_id", models.BigIntegerField()),
+                ("external_id", models.CharField(max_length=128, unique=True)),
+                ("name", models.CharField(max_length=128)),
+                ("space_external_id", models.CharField(max_length=128)),
             ],
             options={
-                'verbose_name': 'ClickUp List',
-                'verbose_name_plural': 'ClickUp Lists',
+                "verbose_name": "ClickUp List",
+                "verbose_name_plural": "ClickUp Lists",
             },
         ),
         migrations.CreateModel(
-            name='ClickupMember',
+            name="ClickupMember",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('atendente_id', models.BigIntegerField()),
-                ('external_id', models.CharField(max_length=128, unique=True)),
-                ('username', models.CharField(max_length=128)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("atendente_id", models.BigIntegerField()),
+                ("external_id", models.CharField(max_length=128, unique=True)),
+                ("username", models.CharField(max_length=128)),
             ],
             options={
-                'verbose_name': 'ClickUp Member',
-                'verbose_name_plural': 'ClickUp Members',
+                "verbose_name": "ClickUp Member",
+                "verbose_name_plural": "ClickUp Members",
             },
         ),
         migrations.CreateModel(
-            name='ClickupSpace',
+            name="ClickupSpace",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('departamento_id', models.BigIntegerField()),
-                ('external_id', models.CharField(max_length=128, unique=True)),
-                ('name', models.CharField(max_length=128)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("departamento_id", models.BigIntegerField()),
+                ("external_id", models.CharField(max_length=128, unique=True)),
+                ("name", models.CharField(max_length=128)),
             ],
             options={
-                'verbose_name': 'ClickUp Space',
-                'verbose_name_plural': 'ClickUp Spaces',
+                "verbose_name": "ClickUp Space",
+                "verbose_name_plural": "ClickUp Spaces",
             },
         ),
         migrations.CreateModel(
-            name='ClickupTask',
+            name="ClickupTask",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('atendimento_id', models.BigIntegerField(unique=True)),
-                ('external_id', models.CharField(max_length=128, unique=True)),
-                ('name', models.CharField(max_length=256)),
-                ('list_external_id', models.CharField(max_length=128)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("atendimento_id", models.BigIntegerField(unique=True)),
+                ("external_id", models.CharField(max_length=128, unique=True)),
+                ("name", models.CharField(max_length=256)),
+                ("list_external_id", models.CharField(max_length=128)),
             ],
             options={
-                'verbose_name': 'ClickUp Task',
-                'verbose_name_plural': 'ClickUp Tasks',
+                "verbose_name": "ClickUp Task",
+                "verbose_name_plural": "ClickUp Tasks",
             },
         ),
         migrations.CreateModel(
-            name='ClickupWebhookEvent',
+            name="ClickupWebhookEvent",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('event_type', models.CharField(max_length=64)),
-                ('resource_id', models.CharField(max_length=128)),
-                ('payload', models.JSONField(default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("event_type", models.CharField(max_length=64)),
+                ("resource_id", models.CharField(max_length=128)),
+                ("payload", models.JSONField(default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'verbose_name': 'ClickUp Webhook Event',
-                'verbose_name_plural': 'ClickUp Webhook Events',
+                "verbose_name": "ClickUp Webhook Event",
+                "verbose_name_plural": "ClickUp Webhook Events",
             },
         ),
     ]

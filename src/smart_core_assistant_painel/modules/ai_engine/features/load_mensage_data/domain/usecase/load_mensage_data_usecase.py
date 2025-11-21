@@ -118,7 +118,9 @@ class LoadMensageDataUseCase(LMDUsecase):
                 return ErrorReturn(error)
 
             phone = ""
-            if remote_jid and (addressing_mode == "pn" or addressing_mode is None):
+            if remote_jid and (
+                addressing_mode == "pn" or addressing_mode is None
+            ):
                 phone_raw = remote_jid.split("@")[0]
                 phone = self.normalize_phone(phone_raw)
             message_id = key_section.get("id")
@@ -151,7 +153,9 @@ class LoadMensageDataUseCase(LMDUsecase):
             metadados: dict[str, Any] = {}
 
             if "messageTimestamp" in data_section:
-                metadados["messageTimestamp"] = data_section["messageTimestamp"]
+                metadados["messageTimestamp"] = data_section[
+                    "messageTimestamp"
+                ]
             if "instanceId" in data_section:
                 metadados["instanceId"] = data_section["instanceId"]
             if "source" in data_section:

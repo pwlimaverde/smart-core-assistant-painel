@@ -5,27 +5,38 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('clientes', '0002_contato_wa_addressing_mode_contato_wa_jid_and_more'),
+        (
+            "clientes",
+            "0002_contato_wa_addressing_mode_contato_wa_jid_and_more",
+        ),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='contato',
-            name='wa_addressing_mode',
+            model_name="contato",
+            name="wa_addressing_mode",
         ),
         migrations.RemoveField(
-            model_name='contato',
-            name='wa_jid',
+            model_name="contato",
+            name="wa_jid",
         ),
         migrations.RemoveField(
-            model_name='contato',
-            name='wa_lid',
+            model_name="contato",
+            name="wa_lid",
         ),
         migrations.AlterField(
-            model_name='contato',
-            name='telefone',
-            field=models.CharField(blank=True, help_text='Número de telefone do contato (formato: 5511999999999)', max_length=20, null=True, unique=True, validators=[smart_core_assistant_painel.app.ui.clientes.models.validate_telefone]),
+            model_name="contato",
+            name="telefone",
+            field=models.CharField(
+                blank=True,
+                help_text="Número de telefone do contato (formato: 5511999999999)",
+                max_length=20,
+                null=True,
+                unique=True,
+                validators=[
+                    smart_core_assistant_painel.app.ui.clientes.models.validate_telefone
+                ],
+            ),
         ),
     ]

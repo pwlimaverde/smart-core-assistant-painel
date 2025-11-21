@@ -47,11 +47,9 @@ class ClickupListAdmin(admin.ModelAdmin[ClickupList]):
         Comentário: ajuda a visualizar se o fluxo está com os
         `statuses` persistidos no mapeamento.
         """
-        return (
-            ClickupStatus.objects.filter(
-                list_external_id=obj.external_id
-            ).count()
-        )
+        return ClickupStatus.objects.filter(
+            list_external_id=obj.external_id
+        ).count()
 
 
 @admin.register(ClickupMember)

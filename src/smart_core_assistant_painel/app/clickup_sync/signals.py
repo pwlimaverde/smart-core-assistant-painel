@@ -155,6 +155,7 @@ def atendimento_capture_old_fields(
         # Comentário: falhas de captura não devem bloquear o fluxo
         pass
 
+
 @receiver(pre_save, sender=Atendente)
 def atendente_capture_old_fields(
     sender: Any, instance: Atendente, **kwargs: Any
@@ -294,10 +295,9 @@ def atendente_created_invite_clickup(
         # Atualização: detectar mudanças relevantes
         old_email = getattr(instance, "_old_email", None)
         old_fluxo_id = getattr(instance, "_old_fluxo_id", None)
-        changed = (
-            old_email != getattr(instance, "email", None)
-            or old_fluxo_id != getattr(instance, "fluxo_id", None)
-        )
+        changed = old_email != getattr(
+            instance, "email", None
+        ) or old_fluxo_id != getattr(instance, "fluxo_id", None)
 
         if changed:
             async_task(

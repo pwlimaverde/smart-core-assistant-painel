@@ -92,7 +92,6 @@ class FeaturesCompose:
         # Recarrega as configurações do SERVICEHUB após carregar as variáveis do Firebase
         SERVICEHUB.reload_config()
 
-
     @staticmethod
     def unifield_data_services() -> None:
         """Inicializa o serviço de dados unificado e registra no SERVICEHUB.

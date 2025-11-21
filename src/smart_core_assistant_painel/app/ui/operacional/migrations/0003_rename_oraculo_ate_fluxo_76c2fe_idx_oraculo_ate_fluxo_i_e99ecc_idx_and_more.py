@@ -5,20 +5,24 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('operacional', '0002_atendente_fluxo_field'),
+        ("operacional", "0002_atendente_fluxo_field"),
     ]
 
     operations = [
         migrations.RenameIndex(
-            model_name='atendente',
-            new_name='oraculo_ate_fluxo_i_e99ecc_idx',
-            old_name='oraculo_ate_fluxo_76c2fe_idx',
+            model_name="atendente",
+            new_name="oraculo_ate_fluxo_i_e99ecc_idx",
+            old_name="oraculo_ate_fluxo_76c2fe_idx",
         ),
         migrations.AlterField(
-            model_name='atendente',
-            name='fluxo',
-            field=models.ForeignKey(help_text='Fluxo de atendimento (quadro) ao qual o atendente sera convidado', on_delete=django.db.models.deletion.PROTECT, related_name='atendentes', to='operacional.fluxoatendimento'),
+            model_name="atendente",
+            name="fluxo",
+            field=models.ForeignKey(
+                help_text="Fluxo de atendimento (quadro) ao qual o atendente sera convidado",
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="atendentes",
+                to="operacional.fluxoatendimento",
+            ),
         ),
     ]

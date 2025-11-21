@@ -106,13 +106,15 @@ class EvolutionContactData:
         jid_val: str | None = None
         lid_val: str | None = None
 
-        # Extrair JID
-        if isinstance(remote_jid, str) and remote_jid.endswith(
-            "@s.whatsapp.net"
+        # Extrair JID (individual ou grupo)
+        if isinstance(remote_jid, str) and (
+            remote_jid.endswith("@s.whatsapp.net")
+            or remote_jid.endswith("@g.us")
         ):
             jid_val = remote_jid
-        elif isinstance(remote_jid_alt, str) and remote_jid_alt.endswith(
-            "@s.whatsapp.net"
+        elif isinstance(remote_jid_alt, str) and (
+            remote_jid_alt.endswith("@s.whatsapp.net")
+            or remote_jid_alt.endswith("@g.us")
         ):
             jid_val = remote_jid_alt
 
@@ -135,6 +137,16 @@ class EvolutionContactData:
             addressing_mode=addressing_mode,
             phone=phone,
         )
+
+    def is_group(self) -> bool:
+        """Verifica se o contato é um grupo do WhatsApp.
+
+        Returns:
+            bool: True se o JID termina com @g.us (grupo), False caso contrário.
+        """
+        if self.jid:
+            return self.jid.endswith("@g.us")
+        return False
 
     def to_dict(self) -> Dict[str, Any]:
         """Converte os dados do contato para dicionário.

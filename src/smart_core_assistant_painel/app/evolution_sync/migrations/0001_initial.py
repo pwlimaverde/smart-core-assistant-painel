@@ -5,49 +5,96 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('clientes', '0003_remove_contato_wa_addressing_mode_and_more'),
+        ("clientes", "0003_remove_contato_wa_addressing_mode_and_more"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='EvolutionInstance',
+            name="EvolutionInstance",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('name', models.CharField(max_length=100)),
-                ('instance_id', models.CharField(blank=True, max_length=100, null=True, unique=True)),
-                ('api_key', models.CharField(max_length=100)),
-                ('server_url', models.URLField(blank=True, null=True)),
-                ('phone_number', models.CharField(blank=True, max_length=20, null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("name", models.CharField(max_length=100)),
+                (
+                    "instance_id",
+                    models.CharField(
+                        blank=True, max_length=100, null=True, unique=True
+                    ),
+                ),
+                ("api_key", models.CharField(max_length=100)),
+                ("server_url", models.URLField(blank=True, null=True)),
+                (
+                    "phone_number",
+                    models.CharField(blank=True, max_length=20, null=True),
+                ),
+                ("active", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'db_table': 'evolution_sync_instance',
-                'ordering': ['-created_at'],
+                "db_table": "evolution_sync_instance",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='EvolutionContact',
+            name="EvolutionContact",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('jid', models.CharField(blank=True, max_length=100, null=True)),
-                ('lid', models.CharField(blank=True, max_length=100, null=True)),
-                ('addressing_mode', models.CharField(blank=True, max_length=8, null=True)),
-                ('active', models.BooleanField(default=True)),
-                ('metadados', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('contact', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='evolution_links', to='clientes.contato')),
-                ('instance', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='contacts', to='evolution_sync.evolutioninstance')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "jid",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "lid",
+                    models.CharField(blank=True, max_length=100, null=True),
+                ),
+                (
+                    "addressing_mode",
+                    models.CharField(blank=True, max_length=8, null=True),
+                ),
+                ("active", models.BooleanField(default=True)),
+                ("metadados", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "contact",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="evolution_links",
+                        to="clientes.contato",
+                    ),
+                ),
+                (
+                    "instance",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="contacts",
+                        to="evolution_sync.evolutioninstance",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'evolution_sync_contact',
-                'ordering': ['-updated_at'],
-                'indexes': [models.Index(fields=['jid'], name='evolution_s_jid_e15c53_idx'), models.Index(fields=['lid'], name='evolution_s_lid_35f9ee_idx'), models.Index(fields=['contact'], name='evolution_s_contact_94d093_idx'), models.Index(fields=['instance'], name='evolution_s_instanc_fc44c1_idx')],
+                "db_table": "evolution_sync_contact",
+                "ordering": ["-updated_at"],
+                "indexes": [
+                    models.Index(
+                        fields=["jid"], name="evolution_s_jid_e15c53_idx"
+                    ),
+                    models.Index(
+                        fields=["lid"], name="evolution_s_lid_35f9ee_idx"
+                    ),
+                    models.Index(
+                        fields=["contact"],
+                        name="evolution_s_contact_94d093_idx",
+                    ),
+                    models.Index(
+                        fields=["instance"],
+                        name="evolution_s_instanc_fc44c1_idx",
+                    ),
+                ],
             },
         ),
     ]

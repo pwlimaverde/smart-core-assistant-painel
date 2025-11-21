@@ -16,7 +16,10 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
     TrelloUnifiedDataService,
 )
-from smart_core_assistant_painel.app.trello_sync.models import TrelloBoard, TrelloMember
+from smart_core_assistant_painel.app.trello_sync.models import (
+    TrelloBoard,
+    TrelloMember,
+)
 
 
 class MemberSyncService:
@@ -63,7 +66,9 @@ class MemberSyncService:
         email: Optional[str] = getattr(atendente, "email", None)
         fluxo = getattr(atendente, "fluxo", None)
         if not fluxo or not email:
-            raise ValueError("Atendente sem fluxo ou email para convite Trello")
+            raise ValueError(
+                "Atendente sem fluxo ou email para convite Trello"
+            )
 
         board: Optional[TrelloBoard] = getattr(fluxo, "trello_board", None)
         if board is None:
@@ -89,7 +94,10 @@ class MemberSyncService:
                 username="",
                 full_name=getattr(atendente, "nome", ""),
                 email=email,
-                metadata={"invite": data, "invited_at": timezone.now().isoformat()},
+                metadata={
+                    "invite": data,
+                    "invited_at": timezone.now().isoformat(),
+                },
                 is_invited=True,
                 invite_sent_at=timezone.now(),
             )
@@ -99,13 +107,15 @@ class MemberSyncService:
             tm.metadata = {**(tm.metadata or {}), "invite": data}
             tm.is_invited = True
             tm.invite_sent_at = timezone.now()
-            tm.save(update_fields=[
-                "email",
-                "full_name",
-                "metadata",
-                "is_invited",
-                "invite_sent_at",
-            ])
+            tm.save(
+                update_fields=[
+                    "email",
+                    "full_name",
+                    "metadata",
+                    "is_invited",
+                    "invite_sent_at",
+                ]
+            )
 
         return tm
 
@@ -156,7 +166,10 @@ class MemberSyncService:
                 found_id = str(m.get("id", ""))
                 break
             # Fallback: início do nome (evita falsos positivos muito amplos)
-            if target_name and (m_name.startswith(target_name) or target_name.startswith(m_name)):
+            if target_name and (
+                m_name.startswith(target_name)
+                or target_name.startswith(m_name)
+            ):
                 found_id = str(m.get("id", ""))
                 break
 

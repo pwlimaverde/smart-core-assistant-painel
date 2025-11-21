@@ -13,9 +13,7 @@ class Migration(migrations.Migration):
             model_name="etapafluxo",
             name="ordem",
             field=models.IntegerField(
-                help_text=(
-                    "Ordem da etapa no fluxo (menor numero primeiro)"
-                )
+                help_text=("Ordem da etapa no fluxo (menor numero primeiro)")
             ),
         ),
     ]

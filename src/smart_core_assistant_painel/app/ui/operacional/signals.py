@@ -40,10 +40,7 @@ def create_default_etapas_fluxo(
     try:
         dep_nome_log: str = getattr(instance.departamento, "nome", "")
         logger.debug(
-            (
-                "Signal create_default_etapas_fluxo: fluxo={} criado={} "
-                "dep={}"
-            ),
+            ("Signal create_default_etapas_fluxo: fluxo={} criado={} dep={}"),
             instance.id,
             created,
             dep_nome_log,

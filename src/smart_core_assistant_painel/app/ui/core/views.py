@@ -82,7 +82,6 @@ def _exchange_code_for_token(code: str, redirect_uri: str) -> Dict[str, Any]:
         return {"error": f"URLError: {e.reason}"}
 
 
-
 def health_check(request: HttpRequest) -> HttpResponse:
     """View simples para health check do Docker.
 

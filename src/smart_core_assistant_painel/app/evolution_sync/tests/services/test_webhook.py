@@ -101,3 +101,38 @@ def test_process_webhook_ignored_from_me(processor: WebhookProcessor) -> None:
 
     assert result["status"] == "ignored_from_me"
     assert result["processed_count"] == 0
+
+
+@patch(
+    "smart_core_assistant_painel.app.evolution_sync.services.webhook.logger"
+)
+def test_process_webhook_filters_group_messages(
+    mock_logger: Mock, processor: WebhookProcessor
+) -> None:
+    """Test that messages from WhatsApp groups are ignored."""
+    # Create envelope with group JID
+    group_envelope = EvolutionWebhookEnvelope(
+        instance="test-instance",
+        instance_id="inst-123",
+        apikey="secret",
+        contact=EvolutionContactData(
+            jid="120363304634306915@g.us"  # Group JID
+        ),
+        message=EvolutionMessageData(
+            id="msg-123", type="conversation", text="Group message"
+        ),
+        profile=EvolutionProfileData(push_name="Test User"),
+        from_me=False,
+    )
+
+    result = processor.process_webhook(
+        payload={"data": {}}, envelopes=[group_envelope]
+    )
+
+    # Verify message was ignored
+    assert result["status"] == "ignored_from_me"
+
+    # Verify log was generated
+    mock_logger.info.assert_any_call(
+        "Ignoring group message from 120363304634306915@g.us"
+    )

@@ -101,7 +101,6 @@ class ServiceHub:
         # Limpa o cache da classe LLM para forçar recarregamento
         self._llm_class = None
 
-
     def set_unified_data_service(self, uds: UnifiedDataService) -> None:
         """Define a implementação de UnifiedDataService a ser utilizada.
 
@@ -280,7 +279,6 @@ class ServiceHub:
         )
 
     @property
-
     @property
     def unified_data_service(self) -> UnifiedDataService:
         """Retorna a instância configurada do UnifiedDataService.

@@ -272,7 +272,9 @@ def atendimento_resolvido_move_to_resolvido(
         # usar o primeiro fluxo ativo do departamento (se houver).
         fluxo: FluxoAtendimento | None = None
         try:
-            fluxo = getattr(getattr(instance, "etapa_atual", None), "fluxo", None)
+            fluxo = getattr(
+                getattr(instance, "etapa_atual", None), "fluxo", None
+            )
         except Exception:
             fluxo = None
         if fluxo is None:
@@ -314,9 +316,9 @@ def atendimento_resolvido_move_to_resolvido(
 
         # Atualiza a etapa somente se diferente para evitar loops e re-agendamentos.
         try:
-            needs_update: bool = getattr(instance, "etapa_atual_id", None) != getattr(
-                etapa_res, "id", None
-            )
+            needs_update: bool = getattr(
+                instance, "etapa_atual_id", None
+            ) != getattr(etapa_res, "id", None)
         except Exception as exc:
             logger.warning("Falha ao verificar etapa 'Resolvido': {}", exc)
             needs_update = False
@@ -420,7 +422,7 @@ def atendimento_pendencia_move_to_pendencia(
             "Falha no processamento de movimentação para 'Pendência': {}",
             exc,
         )
-    
+
 
 @receiver(post_save, sender=Atendimento)
 def atendimento_cancelado_move_to_cancelado(
@@ -444,7 +446,9 @@ def atendimento_cancelado_move_to_cancelado(
         # usar o primeiro fluxo ativo do departamento (se houver).
         fluxo: FluxoAtendimento | None = None
         try:
-            fluxo = getattr(getattr(instance, "etapa_atual", None), "fluxo", None)
+            fluxo = getattr(
+                getattr(instance, "etapa_atual", None), "fluxo", None
+            )
         except Exception:
             fluxo = None
         if fluxo is None:
@@ -465,7 +469,9 @@ def atendimento_cancelado_move_to_cancelado(
         # etapa de finalização como fallback, ordenada por `ordem`).
         etapa_cancel: EtapaFluxo | None = None
         try:
-            etapa_cancel = fluxo.etapas.filter(nome__iexact="Cancelado").first()
+            etapa_cancel = fluxo.etapas.filter(
+                nome__iexact="Cancelado"
+            ).first()
             if etapa_cancel is None:
                 etapa_cancel = (
                     fluxo.etapas.filter(tipo_etapa=TipoEtapa.FINALIZACAO)
@@ -486,12 +492,16 @@ def atendimento_cancelado_move_to_cancelado(
 
         # Atualiza a etapa somente se diferente para evitar loops e re-agendamentos.
         try:
-            if getattr(instance, "etapa_atual_id", None) != getattr(etapa_cancel, "id", None):
+            if getattr(instance, "etapa_atual_id", None) != getattr(
+                etapa_cancel, "id", None
+            ):
                 instance.etapa_atual = etapa_cancel
                 # Comentário: salvar com `update_fields` para minimizar side-effects.
                 instance.save(update_fields=["etapa_atual"])  # type: ignore[arg-type]
         except Exception as exc:
-            logger.warning("Falha ao ajustar etapa 'Cancelado' no atendimento: {}", exc)
+            logger.warning(
+                "Falha ao ajustar etapa 'Cancelado' no atendimento: {}", exc
+            )
     except Exception as exc:
         logger.warning(
             "Falha no processamento de movimentação para 'Cancelado': {}",

@@ -44,7 +44,7 @@ class TestAttendanceOrchestrator:
 
         orchestrator_instance.process_contact_response(contact_id=1)
 
-        mock_cache.get.assert_called_once_with("evo_buffer_1")
+        mock_cache.get.assert_called_once_with("evo_buffer_1", [])
         # _create_message is an internal method, we check that it is not called implicitly
         # by checking a follow up method call
         orchestrator_instance._message_analyzer.analyze_message_content.assert_not_called()
@@ -139,7 +139,7 @@ class TestAttendanceOrchestrator:
         assert result["api_key"] == "key2"
 
     @patch(
-        "smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator.processar_mensagem_por_contato"
+        "smart_core_assistant_painel.app.ui.atendimentos.models.processar_mensagem_por_contato"
     )
     def test_create_message(
         self,
@@ -177,7 +177,7 @@ class TestAttendanceOrchestrator:
         assert empty_msg_id is None
 
     @patch(
-        "smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator.Mensagem.objects.get"
+        "smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem.objects.get"
     )
     def test_process_message_and_respond_bot_can_respond(
         self,
@@ -205,7 +205,7 @@ class TestAttendanceOrchestrator:
         orchestrator_instance._generate_and_register_response.assert_called_once()
 
     @patch(
-        "smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator.Mensagem.objects.get"
+        "smart_core_assistant_painel.app.ui.atendimentos.models.Mensagem.objects.get"
     )
     def test_process_message_and_respond_bot_cannot_respond(
         self,

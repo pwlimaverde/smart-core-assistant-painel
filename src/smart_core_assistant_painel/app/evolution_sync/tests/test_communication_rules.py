@@ -1,14 +1,16 @@
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-from smart_core_assistant_painel.app.evolution_sync.services.webhook import (
-    WebhookProcessor,
+
+from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
+    EvolutionWebhookEnvelope,
 )
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionInstance,
     WhiteList,
 )
-from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
-    EvolutionWebhookEnvelope,
+from smart_core_assistant_painel.app.evolution_sync.services.webhook import (
+    WebhookProcessor,
 )
 
 

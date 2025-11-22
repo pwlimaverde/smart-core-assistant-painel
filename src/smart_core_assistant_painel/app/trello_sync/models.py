@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Optional, override
+from typing import Any, override
 
 from django.db import models
 

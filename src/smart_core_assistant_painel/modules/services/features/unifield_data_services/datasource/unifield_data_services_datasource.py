@@ -18,8 +18,10 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
     UnifieldDataServicesParameters,
 )
 from smart_core_assistant_painel.modules.services.utils.types import UDSData
-from .trello_adapter import TrelloUnifiedDataService
+
 from .clicup_adapter import ClicupUnifiedDataService
+from .trello_adapter import TrelloUnifiedDataService
+
 # Desabilitado temporariamente: adapter Notion.
 # Comentado para evitar conflitos com o app `notion_sync` desativado.
 # from .notion_adapter import NotionUnifiedDataService

@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from langchain_core.documents import Document
 from langchain_community.document_loaders import (
     Docx2txtLoader,
     PyPDFLoader,
     TextLoader,
     UnstructuredExcelLoader,
 )
+from langchain_core.documents import Document
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentFileParameters,

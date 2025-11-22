@@ -12,7 +12,7 @@ from django.utils import timezone
 from loguru import logger
 
 from ...models import NotionDatabaseConfig
-from ...services.mappers import DepartamentoMapper, AtendenteMapper
+from ...services.mappers import AtendenteMapper, DepartamentoMapper
 
 
 class Command(BaseCommand):

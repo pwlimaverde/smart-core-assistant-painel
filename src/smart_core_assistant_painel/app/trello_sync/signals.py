@@ -1,20 +1,20 @@
 from typing import Any
 
-from django_q.tasks import async_task
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
+from django_q.tasks import async_task
 from loguru import logger
 
-from smart_core_assistant_painel.app.ui.operacional.models import (
-    EtapaFluxo,
-    FluxoAtendimento,
-    Atendente,
-    TipoEtapa,
-)
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
-    StatusAtendimento,
     Mensagem,
+    StatusAtendimento,
+)
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Atendente,
+    EtapaFluxo,
+    FluxoAtendimento,
+    TipoEtapa,
 )
 
 

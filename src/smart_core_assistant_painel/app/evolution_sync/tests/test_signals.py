@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock, Mock, patch
 
-import pytest
-
 from smart_core_assistant_painel.app.evolution_sync.signals import (
     _on_message_saved,
 )

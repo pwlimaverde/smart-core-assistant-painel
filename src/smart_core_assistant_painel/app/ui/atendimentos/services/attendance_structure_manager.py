@@ -13,12 +13,10 @@ from .interfaces import AttendanceStructureManagerInterface
 if TYPE_CHECKING:
     from smart_core_assistant_painel.app.ui.atendimentos.models import (
         Atendimento,
-        StatusAtendimento,
     )
     from smart_core_assistant_painel.app.ui.operacional.models import (
         Departamento,
         FluxoAtendimento,
-        TipoEtapa,
     )
 
 

@@ -1,24 +1,24 @@
 from typing import Any
 
-from loguru import logger
 from decouple import config
+from loguru import logger
 
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    Departamento,
+    EtapaFluxo,
+    FluxoAtendimento,
+)
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter import (
     ClicupUnifiedDataService,
-)
-from smart_core_assistant_painel.modules.services.utils.parameters import (
-    UnifieldDataServicesParameters,
 )
 from smart_core_assistant_painel.modules.services.utils.erros import (
     UnifieldDataServicesError,
 )
+from smart_core_assistant_painel.modules.services.utils.parameters import (
+    UnifieldDataServicesParameters,
+)
 
 from ..models import ClickupList, ClickupStatus
-from smart_core_assistant_painel.app.ui.operacional.models import (
-    FluxoAtendimento,
-    EtapaFluxo,
-    Departamento,
-)
 
 
 class FlowSyncService:

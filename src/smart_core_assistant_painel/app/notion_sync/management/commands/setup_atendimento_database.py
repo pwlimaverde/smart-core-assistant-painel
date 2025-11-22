@@ -2,11 +2,10 @@
 Management command para configurar a database de Atendimentos do Notion.
 """
 
-from typing import Any
 import uuid
+from typing import Any
 
 from django.core.management.base import BaseCommand, CommandError
-from django.utils import timezone
 from loguru import logger
 
 from smart_core_assistant_painel.app.notion_sync.models import (

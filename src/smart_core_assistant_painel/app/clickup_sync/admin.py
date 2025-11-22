@@ -4,21 +4,18 @@ Este módulo registra os models de integração com ClickUp no Django Admin,
 permitindo visualização e gerenciamento via interface administrativa.
 """
 
-from typing import Any
 
 from django.contrib import admin
-from django.db.models import QuerySet
-from django.http import HttpRequest
 
 from .models import (
+    ClickupCustomField,
+    ClickupFolder,
     ClickupList,
     ClickupMember,
     ClickupSpace,
-    ClickupFolder,
+    ClickupStatus,
     ClickupTask,
     ClickupWebhookEvent,
-    ClickupStatus,
-    ClickupCustomField,
 )
 
 

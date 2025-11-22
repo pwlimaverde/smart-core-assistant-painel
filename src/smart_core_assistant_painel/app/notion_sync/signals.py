@@ -6,10 +6,12 @@ principais (Cliente, Contato, Departamento, Atendente) e disparam
 o processo de sincronização com plataformas externas (Notion, Airtable, etc).
 """
 
-from typing import Any, Optional
 import time
 import uuid
+from typing import Any, Optional
 
+from asgiref.sync import async_to_sync
+from django.db import connection, transaction
 from django.db.models.signals import (
     m2m_changed,
     post_delete,
@@ -18,42 +20,40 @@ from django.db.models.signals import (
     pre_save,
 )
 from django.dispatch import receiver
-from django.db import transaction, connection
-from loguru import logger
-from asgiref.sync import async_to_sync
 from django_q.tasks import async_task
+from loguru import logger
+
+from smart_core_assistant_painel.modules.services import (
+    SERVICEHUB,
+    FeaturesCompose,
+)
 
 from ..ui.atendimentos.models import Atendimento, Mensagem
 from ..ui.clientes.models import Cliente, Contato
 from ..ui.operacional.models import (
     Atendente,
     Departamento,
-    FluxoAtendimento,
     EtapaFluxo,
+    FluxoAtendimento,
     MovimentoFluxo,
 )
-from .exceptions import NotionSyncError, SyncError
 from .models import (
     AtendenteSync,
     AtendimentoSync,
     ClienteSync,
     ContatoSync,
     DepartamentoSync,
-    MensagemSync,
-    FluxoAtendimentoSync,
     EtapaFluxoSync,
+    FluxoAtendimentoSync,
+    MensagemSync,
     MovimentoFluxoSync,
+    NotionDatabaseConfig,
 )
 from .services import NotionSyncService
-from smart_core_assistant_painel.modules.services import (
-    SERVICEHUB,
-    FeaturesCompose,
-)
-from .services.mappers.contato_mapper import ContatoMapper
-from .services.mappers.cliente_mapper import ClienteMapper
-from .services.mappers.departamento_mapper import DepartamentoMapper
 from .services.mappers.atendente_mapper import AtendenteMapper
-from .models import NotionDatabaseConfig
+from .services.mappers.cliente_mapper import ClienteMapper
+from .services.mappers.contato_mapper import ContatoMapper
+from .services.mappers.departamento_mapper import DepartamentoMapper
 
 
 def _bootstrap_uds_for_contato(config: NotionDatabaseConfig) -> None:
@@ -684,10 +684,12 @@ def get_or_create_mensagem_sync(mensagem_id: int) -> MensagemSync:
     sejam preenchidos na criação, evitando violações de NOT NULL.
     """
     from typing import Any
-    from .models import MensagemSync, NotionDatabaseConfig
+
     from smart_core_assistant_painel.app.ui.atendimentos.models import (
         Mensagem as MensagemModel,
     )
+
+    from .models import MensagemSync, NotionDatabaseConfig
 
     # Obter ou criar configuração do Notion para Mensagens
     # Comentário: evita NameError quando a config ainda não existe.
@@ -907,18 +909,18 @@ def schedule_sync_operation(
         instance_id: ID da instância.
         operation: Tipo de operação ("create", "update", "delete").
     """
-    from .services import NotionSyncService
     from .models import (
         AtendenteSync,
         AtendimentoSync,
         ClienteSync,
         ContatoSync,
         DepartamentoSync,
-        MensagemSync,
-        FluxoAtendimentoSync,
         EtapaFluxoSync,
+        FluxoAtendimentoSync,
+        MensagemSync,
         MovimentoFluxoSync,
     )
+    from .services import NotionSyncService
 
     try:
         service = NotionSyncService()

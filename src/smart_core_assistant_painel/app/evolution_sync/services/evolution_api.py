@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
-from loguru import logger
 
 
 class EvolutionWhatsAppService:
@@ -61,7 +60,7 @@ class EvolutionWhatsAppService:
             response = request_method(url, headers=headers, json=body)
 
             return response
-        except Exception as exc:
+        except Exception:
             raise
 
     def _mount_url(

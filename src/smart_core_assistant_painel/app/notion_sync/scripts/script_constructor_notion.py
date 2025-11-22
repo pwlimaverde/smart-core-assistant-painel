@@ -37,13 +37,13 @@ Uso:
     test_atendimentos_construction()
 """
 
-import os
-import sys
 import asyncio
 import logging
+import os
+import sys
 from typing import Any, Dict, Optional
-from asgiref.sync import sync_to_async
 
+from asgiref.sync import sync_to_async
 from dotenv import load_dotenv
 from notion_py_client import NotionAsyncClient
 

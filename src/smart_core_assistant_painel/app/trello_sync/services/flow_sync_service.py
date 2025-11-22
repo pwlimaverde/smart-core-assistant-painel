@@ -3,16 +3,16 @@ from typing import Any, Optional
 from decouple import config
 from loguru import logger
 
-from smart_core_assistant_painel.modules.services import (
-    FeaturesCompose,
-    SERVICEHUB,
-)
-from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
-    UnifiedDataService,
-)
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloBoard,
     TrelloList,
+)
+from smart_core_assistant_painel.modules.services import (
+    SERVICEHUB,
+    FeaturesCompose,
+)
+from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
 )
 
 
@@ -102,9 +102,6 @@ class FlowSyncService:
             )
         # Comentário: após criar o board, garantir listas para etapas já existentes
         try:
-            from smart_core_assistant_painel.app.ui.operacional.models import (
-                EtapaFluxo,
-            )
 
             etapas = getattr(fluxo, "etapas", None)
             if etapas is not None:

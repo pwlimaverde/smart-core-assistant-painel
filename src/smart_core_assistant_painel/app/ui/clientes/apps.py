@@ -14,13 +14,14 @@ class ClientesConfig(AppConfig):
         - Idempotente e tolerante a falhas.
         """
         try:
-            from . import signals  # noqa: F401
             from smart_core_assistant_painel.modules.initial_loading import (
                 start_initial_loading,
             )
             from smart_core_assistant_painel.modules.services import (
                 start_services,
             )
+
+            from . import signals  # noqa: F401
 
             start_initial_loading()
             start_services()

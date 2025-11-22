@@ -18,7 +18,6 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import slugify
 
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
@@ -26,13 +25,14 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoMensagem,
     TipoRemetente,
 )
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
+    Atendente,
     Departamento,
-    FluxoAtendimento,
     EtapaFluxo,
+    FluxoAtendimento,
     MovimentoFluxo,
     TipoEtapa,
-    Atendente,
 )
 
 

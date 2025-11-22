@@ -14,7 +14,6 @@ from typing import Any
 
 from asgiref.sync import sync_to_async
 from loguru import logger
-
 from notion_py_client.notion_client import NotionAsyncClient
 
 from smart_core_assistant_painel.app.notion_sync.models import (

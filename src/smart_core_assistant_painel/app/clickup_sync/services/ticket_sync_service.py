@@ -1,26 +1,26 @@
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter import (
     ClicupUnifiedDataService,
-)
-from smart_core_assistant_painel.modules.services.utils.parameters import (
-    UnifieldDataServicesParameters,
 )
 from smart_core_assistant_painel.modules.services.utils.erros import (
     UnifieldDataServicesError,
 )
+from smart_core_assistant_painel.modules.services.utils.parameters import (
+    UnifieldDataServicesParameters,
+)
 
 from ..models import (
-    ClickupList,
-    ClickupTask,
-    ClickupStatus,
     ClickupCustomField,
+    ClickupList,
     ClickupMember,
+    ClickupStatus,
+    ClickupTask,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
 
 
 class TicketSyncService:

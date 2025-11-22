@@ -5,11 +5,8 @@ Este módulo contém testes unitários para validar o funcionamento
 dos models, signals e funcionalidades do sistema de sincronização.
 """
 
-from datetime import datetime
-from typing import Any
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.test import TestCase, TransactionTestCase
 

@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 from django.core.cache import cache
 from django.utils import timezone
 from django_q.models import Schedule
+from loguru import logger
 
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
@@ -19,6 +20,7 @@ def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:
                 return
 
     buf.append(envelope)
+    logger.debug("envelope: {}", envelope)
     cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 60) + 60)
 
 

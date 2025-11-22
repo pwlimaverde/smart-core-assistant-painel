@@ -1,28 +1,26 @@
-from typing import Any, Optional, cast
+from datetime import timedelta
 from decimal import Decimal
+from typing import Any, Optional, cast
 
+from django.utils import timezone
 from loguru import logger
 
-from smart_core_assistant_painel.modules.services import (
-    FeaturesCompose,
-    SERVICEHUB,
-)
-from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
-    UnifiedDataService,
-)
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloCard,
     TrelloList,
 )
-
-from datetime import timedelta
-from django.utils import timezone
-
+from smart_core_assistant_painel.app.trello_sync.services.member_sync_service import (
+    MemberSyncService,
+)
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
 )
-from smart_core_assistant_painel.app.trello_sync.services.member_sync_service import (
-    MemberSyncService,
+from smart_core_assistant_painel.modules.services import (
+    SERVICEHUB,
+    FeaturesCompose,
+)
+from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
 )
 
 

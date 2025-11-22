@@ -13,7 +13,7 @@ from uuid import uuid4
 
 from decouple import config
 from loguru import logger
-from notion_py_client.notion_client import NotionAsyncClient, APIResponseError
+from notion_py_client.notion_client import APIResponseError, NotionAsyncClient
 
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
     UnifiedDataService,
@@ -21,6 +21,7 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 from smart_core_assistant_painel.modules.services.utils.parameters import (
     UnifieldDataServicesParameters,
 )
+
 # Importação de modelos Django será realizada de forma lazy
 # dentro dos métodos para evitar erros quando o Django ainda
 # não está configurado (INSTALLED_APPS indisponível).

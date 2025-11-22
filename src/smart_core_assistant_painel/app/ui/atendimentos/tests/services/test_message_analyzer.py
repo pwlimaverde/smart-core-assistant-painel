@@ -1,16 +1,17 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
+
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    Atendimento,
+    Mensagem,
+)
 
 # Assuming the models and services are in the correct path.
 from smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer import (
     MessageAnalyzer,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
-    Mensagem,
-    Atendimento,
-)
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
-
 
 pytestmark = pytest.mark.django_db
 

@@ -7,7 +7,7 @@ seguindo o planejamento de integração definido.
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ...exceptions import MappingError
 
@@ -76,6 +76,7 @@ class DepartamentoMapper:
             # e garantir visualização no banco de Departamentos.
             try:
                 from django.db.models import Q
+
                 from smart_core_assistant_painel.app.notion_sync.models import (
                     AtendenteSync,
                 )
@@ -104,6 +105,7 @@ class DepartamentoMapper:
             # espelhando a relação 1:N (Departamento → Fluxos).
             try:
                 from django.db.models import Q
+
                 from smart_core_assistant_painel.app.notion_sync.models import (
                     FluxoAtendimentoSync,
                 )

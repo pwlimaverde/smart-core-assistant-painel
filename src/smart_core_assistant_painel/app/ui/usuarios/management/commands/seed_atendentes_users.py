@@ -14,11 +14,9 @@ Observações:
 
 from __future__ import annotations
 
-from typing import Any
-
 from django.conf import settings
-from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
+from django.core.management.base import BaseCommand
 from loguru import logger
 
 from smart_core_assistant_painel.app.ui.operacional.models import (

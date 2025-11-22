@@ -1,9 +1,9 @@
+from datetime import datetime
 from typing import Any
 
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from loguru import logger
-from datetime import datetime
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnaliseMensageParameters,

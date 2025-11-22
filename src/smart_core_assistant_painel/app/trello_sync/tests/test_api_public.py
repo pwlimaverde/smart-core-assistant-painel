@@ -1,6 +1,6 @@
+import json
 from typing import Any
 
-import json
 from django.test import Client, TestCase
 from django.urls import reverse
 

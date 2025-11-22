@@ -1,7 +1,7 @@
 import os
 import uuid
+
 import django
-from django.conf import settings
 
 # Setup Django environment
 os.environ.setdefault(
@@ -10,16 +10,17 @@ os.environ.setdefault(
 )
 django.setup()
 
-from smart_core_assistant_painel.app.evolution_sync.services.webhook import (
-    WebhookProcessor,
-)
+from unittest.mock import patch
+
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
     EvolutionWebhookEnvelope,
 )
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionInstance,
 )
-from unittest.mock import MagicMock, patch
+from smart_core_assistant_painel.app.evolution_sync.services.webhook import (
+    WebhookProcessor,
+)
 
 # Create instances with mismatched digit counts
 # Instance A: Registered with 13 digits (with 9)
@@ -67,7 +68,7 @@ payload = {
 processor = WebhookProcessor()
 envelopes = [EvolutionWebhookEnvelope.from_dict_single(payload)]
 
-print(f"Processing webhook...")
+print("Processing webhook...")
 print(f"Sender (RemoteJid): {envelopes[0].contact.phone}")
 
 # We expect this to be IGNORED (return status 'ignored_from_me' or similar, or valid_envelopes empty)

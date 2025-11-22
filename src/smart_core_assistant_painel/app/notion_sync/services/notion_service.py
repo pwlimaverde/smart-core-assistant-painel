@@ -5,14 +5,13 @@ Este módulo contém a implementação concreta do serviço de sincronização
 com o Notion, implementando a interface ExternalSyncServiceInterface.
 """
 
+import asyncio
 import os
-from datetime import datetime
 from typing import Any, Coroutine, override
 
 from decouple import config
 from loguru import logger
-import asyncio
-from notion_py_client.notion_client import NotionAsyncClient, APIResponseError
+from notion_py_client.notion_client import APIResponseError, NotionAsyncClient
 
 from ..exceptions import (
     MappingError,
@@ -27,9 +26,9 @@ from .mappers import (
     ClienteMapper,
     ContatoMapper,
     DepartamentoMapper,
-    MensagemMapper,
-    FluxoAtendimentoMapper,
     EtapaFluxoMapper,
+    FluxoAtendimentoMapper,
+    MensagemMapper,
     MovimentoFluxoMapper,
 )
 

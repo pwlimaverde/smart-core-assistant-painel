@@ -5,9 +5,6 @@ if TYPE_CHECKING:
     from smart_core_assistant_painel.app.notion_sync.models import (
         AtendimentoSync,
     )
-    from smart_core_assistant_painel.app.ui.atendimentos.models import (
-        Atendimento,
-    )
 
 
 class AtendimentoMapper:
@@ -326,7 +323,7 @@ class AtendimentoMapper:
                     )
                 else:
                     logger.info(
-                        f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar"
+                        "[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar"
                     )
 
             except Exception as e:

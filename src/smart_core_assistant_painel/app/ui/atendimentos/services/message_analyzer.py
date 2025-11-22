@@ -17,10 +17,8 @@ from .interfaces import MessageAnalyzerInterface
 
 if TYPE_CHECKING:
     from smart_core_assistant_painel.app.ui.atendimentos.models import (
-        Atendimento,
         Mensagem,
     )
-    from smart_core_assistant_painel.app.ui.clientes.models import Contato
 
 
 class MessageAnalyzer(MessageAnalyzerInterface):

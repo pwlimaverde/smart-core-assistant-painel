@@ -6,9 +6,10 @@ serviço de dados unificado, permitindo selecionar o adapter adequado
 (ex.: Trello, Notion) sem acoplamento no restante da aplicação.
 """
 
-from .unifield_data_services_datasource import UnifieldDataServicesDatasource
-from .trello_adapter import TrelloUnifiedDataService
 from .clicup_adapter import ClicupUnifiedDataService
+from .trello_adapter import TrelloUnifiedDataService
+from .unifield_data_services_datasource import UnifieldDataServicesDatasource
+
 # Desabilitado temporariamente: import do adapter Notion.
 # Isso evita carregar modelos do app `notion_sync` enquanto
 # a integração está desativada.

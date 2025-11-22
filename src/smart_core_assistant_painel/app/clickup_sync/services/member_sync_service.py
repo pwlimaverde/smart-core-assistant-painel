@@ -5,14 +5,14 @@ from loguru import logger
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter import (
     ClicupUnifiedDataService,
 )
-from smart_core_assistant_painel.modules.services.utils.parameters import (
-    UnifieldDataServicesParameters,
-)
 from smart_core_assistant_painel.modules.services.utils.erros import (
     UnifieldDataServicesError,
 )
+from smart_core_assistant_painel.modules.services.utils.parameters import (
+    UnifieldDataServicesParameters,
+)
 
-from ..models import ClickupMember, ClickupList
+from ..models import ClickupList, ClickupMember
 
 
 class MemberSyncService:

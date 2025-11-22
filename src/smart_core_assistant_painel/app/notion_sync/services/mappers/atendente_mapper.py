@@ -8,7 +8,7 @@ seguindo o planejamento de integração definido.
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ...exceptions import MappingError
 

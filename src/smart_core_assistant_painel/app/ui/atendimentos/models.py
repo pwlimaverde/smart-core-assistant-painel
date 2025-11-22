@@ -1,4 +1,3 @@
-import decimal
 import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, cast, override
@@ -18,13 +17,8 @@ if TYPE_CHECKING:
     # Import apenas para type hints, evitando ciclo de import em runtime
     from smart_core_assistant_painel.app.ui.operacional.models import (
         Departamento,
-        FluxoAtendimento,
-        EtapaFluxo,
     )
 
-from smart_core_assistant_painel.app.ui.operacional.models import (
-    Atendente,
-)
 
 
 class StatusAtendimento(models.TextChoices):
@@ -411,9 +405,7 @@ class Atendimento(models.Model):
     def cliente(self) -> Optional["clientes.Cliente"]:
         """Retorna o cliente principal vinculado ao contato."""
         if TYPE_CHECKING:
-            from smart_core_assistant_painel.app.ui.clientes.models import (
-                Cliente,
-            )
+            pass
         return (
             self.contato.clientes.first()
             if self.contato.clientes.exists()
@@ -812,6 +804,9 @@ class Mensagem(models.Model):
         """
         Registra a resposta gerada pelo bot nesta mensagem, persistindo o conteúdo e o nível de confiança.
 
+        IMPORTANTE: A flag 'respondida' será marcada como True automaticamente
+        pelo signal após o envio bem-sucedido via Evolution API.
+
         Parâmetros:
             resposta: Texto da resposta do bot.
             confianca: Nível de confiança entre 0.0 e 1.0.
@@ -840,13 +835,14 @@ class Mensagem(models.Model):
 
         self.resposta_bot = resposta.strip()
         self.confianca_resposta = conf
-        self.respondida = True
-        self.save(
-            update_fields=["resposta_bot", "confianca_resposta", "respondida"]
-        )
+        # REMOVIDO: self.respondida = True
+        # A mensagem só será marcada como respondida após envio bem-sucedido
+        self.save(update_fields=["resposta_bot", "confianca_resposta"])
 
         logger.info(
-            f"Resposta do bot registrada na mensagem {self.id} (atendimento {self.atendimento_id}) com confianca={conf:.3f}"
+            f"Resposta do bot registrada na mensagem {self.id} "
+            f"(atendimento {self.atendimento_id}) com confianca={conf:.3f}. "
+            f"Aguardando envio via Evolution API."
         )
 
 

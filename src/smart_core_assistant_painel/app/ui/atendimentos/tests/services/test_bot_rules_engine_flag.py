@@ -1,11 +1,13 @@
-import pytest
 from unittest.mock import MagicMock, patch
-from smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine import (
-    BotRulesEngine,
-)
+
+import pytest
+
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     StatusAtendimento,
+)
+from smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine import (
+    BotRulesEngine,
 )
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Atendente,

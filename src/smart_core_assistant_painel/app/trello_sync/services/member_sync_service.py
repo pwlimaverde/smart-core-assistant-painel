@@ -1,24 +1,24 @@
 from __future__ import annotations
 
-from typing import Any, Optional, cast
 import unicodedata
+from typing import Any, Optional, cast
 
-from loguru import logger
 from django.utils import timezone
+from loguru import logger
 
-from smart_core_assistant_painel.modules.services import (
-    FeaturesCompose,
-    SERVICEHUB,
+from smart_core_assistant_painel.app.trello_sync.models import (
+    TrelloBoard,
+    TrelloMember,
 )
-from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
-    UnifiedDataService,
+from smart_core_assistant_painel.modules.services import (
+    SERVICEHUB,
+    FeaturesCompose,
 )
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
     TrelloUnifiedDataService,
 )
-from smart_core_assistant_painel.app.trello_sync.models import (
-    TrelloBoard,
-    TrelloMember,
+from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
 )
 
 

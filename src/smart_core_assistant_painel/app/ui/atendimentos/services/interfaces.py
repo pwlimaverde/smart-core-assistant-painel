@@ -6,14 +6,13 @@ dependências.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
     from smart_core_assistant_painel.app.ui.atendimentos.models import (
         Atendimento,
         Mensagem,
     )
-    from smart_core_assistant_painel.app.ui.clientes.models import Contato
     from smart_core_assistant_painel.app.ui.operacional.models import (
         Departamento,
         FluxoAtendimento,

@@ -4,16 +4,14 @@ Este módulo contém views básicas do sistema, incluindo health check
 e páginas de status.
 """
 
-from django.http import HttpRequest, HttpResponse
-from typing import Any, Dict
-
 import json
 from pathlib import Path
+from typing import Any, Dict
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from decouple import config
-
+from django.http import HttpRequest, HttpResponse
 
 API_TOKEN_URL: str = "https://api.clickup.com/api/v2/oauth/token"
 

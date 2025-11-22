@@ -14,8 +14,8 @@ from django.utils.text import slugify
 
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
-    FluxoAtendimento,
     EtapaFluxo,
+    FluxoAtendimento,
     TipoEtapa,
 )
 

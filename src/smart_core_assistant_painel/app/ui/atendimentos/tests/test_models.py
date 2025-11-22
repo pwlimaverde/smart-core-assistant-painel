@@ -1,7 +1,7 @@
-import pytest
 from unittest.mock import MagicMock, patch
+
+import pytest
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 # Assuming the models are in the correct path.
 # Adjust the import path according to your project structure.
@@ -12,16 +12,15 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoMensagem,
     TipoRemetente,
     inicializar_atendimento_whatsapp,
-    processar_mensagem_whatsapp,
     processar_mensagem_por_contato,
+    processar_mensagem_whatsapp,
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Atendente,
     Departamento,
-    FluxoAtendimento,
     EtapaFluxo,
-    TipoEtapa,
+    FluxoAtendimento,
 )
 
 pytestmark = pytest.mark.django_db

@@ -4,19 +4,18 @@ Este módulo registra os modelos do aplicativo Operacional no painel de administ
 do Django e personaliza a forma como eles são exibidos e gerenciados.
 """
 
-from django.contrib import admin
 from django import forms
+from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
 from .models import (
+    AppInstance,
     Atendente,
     Departamento,
-    AppInstance,
-    FluxoAtendimento,
     EtapaFluxo,
+    FluxoAtendimento,
     MovimentoFluxo,
-    TipoEtapa,
 )
 
 

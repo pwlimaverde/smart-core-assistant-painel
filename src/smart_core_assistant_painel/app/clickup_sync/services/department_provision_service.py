@@ -25,7 +25,7 @@ from smart_core_assistant_painel.modules.services.utils.parameters import (
     UnifieldDataServicesParameters,
 )
 
-from ..models import ClickupSpace, ClickupFolder
+from ..models import ClickupFolder, ClickupSpace
 
 
 class DepartmentProvisionService:

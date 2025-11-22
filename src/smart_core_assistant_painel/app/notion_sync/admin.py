@@ -8,7 +8,6 @@ permitindo visualização e gerenciamento via interface web.
 from typing import Any
 
 from django.contrib import admin
-from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.html import format_html
 

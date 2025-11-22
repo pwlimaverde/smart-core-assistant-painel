@@ -36,7 +36,7 @@ def _on_message_saved(
     """Signal handler disparado quando uma Mensagem é salva.
 
     Verifica se a mensagem é uma resposta do bot que precisa ser enviada
-    via WhatsApp e, se for, dispara o envio.
+    via WhatsApp. Após envio bem-sucedido, marca a mensagem como respondida.
 
     Args:
         sender: A classe do modelo que enviou o sinal.
@@ -45,8 +45,7 @@ def _on_message_saved(
         **kwargs: Argumentos adicionais.
     """
     try:
-        # Se foi criado agora e tem resposta, envia.
-        # Se foi atualizado, só envia se a resposta mudou.
+        # Verifica se deve enviar a mensagem
         should_send = False
         if created and instance.resposta_bot:
             should_send = True
@@ -59,11 +58,18 @@ def _on_message_saved(
         if not should_send:
             return
 
-        if not instance.respondida:
+        # Se já foi respondida (enviada), não enviar novamente
+        # Isso evita loop quando salvamos respondida=True
+        if instance.respondida:
             return
+
         if not getattr(instance, "atendimento", None):
             return
-        if instance.atendimento.canal != "whatsapp":
+
+        # Canal está armazenado em contexto_conversa (JSONField)
+        contexto = getattr(instance.atendimento, "contexto_conversa", {}) or {}
+        canal = contexto.get("canal", "")
+        if canal != "whatsapp":
             return
 
         text: str = str(instance.resposta_bot).strip()
@@ -113,13 +119,41 @@ def _on_message_saved(
         if not instance_name or not api_key or not base_url:
             return
 
-        EvolutionWhatsAppService().send_message(
-            instance=instance_name,
-            api_key=api_key,
-            number=number,
-            text=text,
-            base_url=base_url,
+        logger.info(
+            f"Enviando resposta da mensagem {instance.id} via Evolution API "
+            f"para {number}"
         )
 
-    except Exception:
+        # Tenta enviar a mensagem
+        try:
+            EvolutionWhatsAppService().send_message(
+                instance=instance_name,
+                api_key=api_key,
+                number=number,
+                text=text,
+                base_url=base_url,
+            )
+
+            # Marca como respondida APENAS após sucesso do envio
+            instance.respondida = True
+            instance.save(update_fields=["respondida"])
+
+            logger.info(
+                f"Mensagem {instance.id} enviada com sucesso e marcada como "
+                f"respondida"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Erro ao enviar mensagem {instance.id} via Evolution API: {e}"
+            )
+            # NÃO marca como respondida em caso de erro
+            raise
+
+    except Exception as e:
+        logger.error(
+            f"Erro no signal _on_message_saved para mensagem {instance.id}: "
+            f"{e}"
+        )
+        # Em caso de erro, não propaga para não bloquear o save
         ...

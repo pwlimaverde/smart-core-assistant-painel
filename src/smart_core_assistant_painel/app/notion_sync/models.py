@@ -7,7 +7,6 @@ a arquitetura de shadow models e mapeamento de dados.
 """
 
 import re
-from datetime import datetime
 from typing import Any, Type, override
 
 from django.apps import apps
@@ -1904,8 +1903,9 @@ class AtendimentoSync(models.Model):
     def prepare_notion_data(self) -> None:
         """Prepara e formata os dados para sincronização com Notion."""
         try:
-            from .services.mappers.atendimento_mapper import AtendimentoMapper
             from loguru import logger
+
+            from .services.mappers.atendimento_mapper import AtendimentoMapper
 
             # Debug: Verificar se o atendimento tem contexto
             if hasattr(self, "atendimento") and self.atendimento:
@@ -2000,7 +2000,7 @@ class AtendimentoSync(models.Model):
                         )
                     else:
                         logger.info(
-                            f"[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar"
+                            "[MSG_DEBUG] Nenhuma mensagem relacionada para adicionar"
                         )
 
             except Exception as e:

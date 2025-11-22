@@ -148,7 +148,7 @@ class Command(BaseCommand):
                 )
 
         # Resumo
-        self.stdout.write(f"\nResumo Departamentos:")
+        self.stdout.write("\nResumo Departamentos:")
         self.stdout.write(f"  Criados: {created_count}")
         self.stdout.write(f"  Ignorados: {skipped_count}")
         self.stdout.write(f"  Erros: {error_count}\n")
@@ -259,7 +259,7 @@ class Command(BaseCommand):
                 )
 
         # Resumo
-        self.stdout.write(f"\nResumo Atendentes:")
+        self.stdout.write("\nResumo Atendentes:")
         self.stdout.write(f"  Criados: {created_count}")
         self.stdout.write(f"  Ignorados: {skipped_count}")
         self.stdout.write(f"  Erros: {error_count}\n")
@@ -279,7 +279,7 @@ class Command(BaseCommand):
             sync_status="pending"
         ).count()
 
-        self.stdout.write(f"\nDEPARTAMENTOS:")
+        self.stdout.write("\nDEPARTAMENTOS:")
         self.stdout.write(f"  Total no Django: {dept_total}")
         self.stdout.write(f"  Com sync: {dept_sync}")
         self.stdout.write(f"  Pendentes: {dept_pending}")
@@ -291,7 +291,7 @@ class Command(BaseCommand):
             sync_status="pending"
         ).count()
 
-        self.stdout.write(f"\nATENDENTES HUMANOS:")
+        self.stdout.write("\nATENDENTES HUMANOS:")
         self.stdout.write(f"  Total no Django: {aten_total}")
         self.stdout.write(f"  Com sync: {aten_sync}")
         self.stdout.write(f"  Pendentes: {aten_pending}")

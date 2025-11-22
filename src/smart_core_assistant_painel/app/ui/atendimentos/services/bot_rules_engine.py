@@ -4,7 +4,7 @@ Este módulo contém a lógica para avaliar se o bot pode responder
 automaticamente a um atendimento com base em regras de negócio.
 """
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from loguru import logger
 
@@ -13,10 +13,6 @@ from .interfaces import BotRulesEngineInterface
 if TYPE_CHECKING:
     from smart_core_assistant_painel.app.ui.atendimentos.models import (
         Atendimento,
-        TipoRemetente,
-    )
-    from smart_core_assistant_painel.app.ui.operacional.models import (
-        Departamento,
     )
 
 
@@ -35,7 +31,6 @@ class BotRulesEngine(BotRulesEngineInterface):
         """Verifica se o bot pode responder automaticamente a um atendimento.
 
         Regras:
-        - Somente responde quando o atendimento está no departamento "Atendimento"
         - Não responde se a flag `bot_pode_atender` for False
         - Não responde se há interação humana (legado/redundante, mas mantido por segurança)
 
@@ -69,37 +64,6 @@ class BotRulesEngine(BotRulesEngineInterface):
 
         return True
 
-    def _is_in_bot_department(self, attendance: "Atendimento") -> bool:
-        """Verifica se atendimento está no departamento do bot.
-
-        Se não houver departamento definido, configura estrutura padrão
-        e retorna True (permite bot responder).
-
-        Args:
-            attendance: Atendimento a verificar.
-
-        Returns:
-            True se está no departamento "Atendimento" ou sem departamento.
-        """
-        from smart_core_assistant_painel.app.ui.operacional.models import (
-            Departamento,
-        )
-
-        dep_atual = getattr(attendance, "departamento", None)
-
-        # Se for um departamento diferente de "Atendimento", bloqueia
-        if isinstance(dep_atual, Departamento) and (
-            getattr(dep_atual, "nome", None) != "Atendimento"
-        ):
-            return False
-
-        # Se não houver departamento, configura estrutura padrão
-        if dep_atual is None or not isinstance(dep_atual, Departamento):
-            self._configure_default_attendance(attendance)
-            return True
-
-        return True
-
     def _has_human_interaction(self, attendance: "Atendimento") -> bool:
         """Verifica se há interação humana no atendimento.
 
@@ -122,12 +86,7 @@ class BotRulesEngine(BotRulesEngineInterface):
                 remetente=TipoRemetente.ATENDENTE_HUMANO
             ).exists()
 
-        # Verifica se há atendente atribuído
-        has_human_attendant = (
-            getattr(attendance, "atendente_humano", None) is not None
-        )
-
-        return has_human_messages or has_human_attendant
+        return has_human_messages
 
     def _configure_default_attendance(self, attendance: "Atendimento") -> None:
         """Configura atendimento com estrutura padrão.

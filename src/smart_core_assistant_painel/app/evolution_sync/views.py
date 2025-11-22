@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from loguru import logger
+
 
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
     EvolutionWebhookEnvelope,
@@ -34,6 +34,12 @@ def webhook(request: HttpRequest) -> JsonResponse:
     except Exception:
         return JsonResponse({"detail": "invalid json"}, status=400)
 
+    # 1. Filtro Global: Processar APENAS 'messages.upsert'
+    event = payload.get("event")
+    if event != "messages.upsert":
+        # Retorna 200 para confirmar recebimento, mas ignora processamento
+        return JsonResponse({"status": "ignored_event"}, status=200)
+
     data_obj = payload.get("data")
     envelopes: List[EvolutionWebhookEnvelope]
     if isinstance(data_obj, list):
@@ -47,7 +53,7 @@ def webhook(request: HttpRequest) -> JsonResponse:
     status_code = 200 if result.get("status") == "ok" else 200
     # Mantendo 200 para ignored_from_me conforme original,
     # mas accepted geralmente é 202. O original retornava 200 para ignored e 202 para accepted no final.
-    logger.debug("Webhook received: {}", payload)
+
     if result.get("status") == "accepted":
         return JsonResponse(result, status=202)
 

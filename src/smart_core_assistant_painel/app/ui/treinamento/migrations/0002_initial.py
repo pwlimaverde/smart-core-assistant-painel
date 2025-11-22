@@ -2,8 +2,9 @@
 
 import django.db.models.deletion
 import pgvector.django.vector
-import smart_core_assistant_painel.app.ui.treinamento.models
 from django.db import migrations, models
+
+import smart_core_assistant_painel.app.ui.treinamento.models
 
 
 class Migration(migrations.Migration):

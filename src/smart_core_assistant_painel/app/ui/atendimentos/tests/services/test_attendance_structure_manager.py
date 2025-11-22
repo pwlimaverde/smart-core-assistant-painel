@@ -1,21 +1,21 @@
+from unittest.mock import ANY, MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock, ANY
+
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    Atendimento,
+    StatusAtendimento,
+)
 
 # Assuming the models and services are in the correct path.
 from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager import (
     AttendanceStructureManager,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
-    Atendimento,
-    StatusAtendimento,
-)
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
-    FluxoAtendimento,
     EtapaFluxo,
-    TipoEtapa,
+    FluxoAtendimento,
 )
-
 
 pytestmark = pytest.mark.django_db
 

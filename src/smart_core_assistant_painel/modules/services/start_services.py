@@ -6,6 +6,7 @@ sejam iniciados corretamente quando a aplicação é lançada.
 """
 
 import os
+
 from loguru import logger
 
 from .features.features_compose import FeaturesCompose

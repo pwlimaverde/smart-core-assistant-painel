@@ -6,11 +6,9 @@ do Kanban. Comentários em Português e type hints completos.
 
 from __future__ import annotations
 
-from typing import Any
-
 from rest_framework import serializers
 
-from .models import Departamento, FluxoAtendimento, EtapaFluxo
+from .models import Departamento, EtapaFluxo, FluxoAtendimento
 
 
 class DepartamentoSerializer(serializers.ModelSerializer[Departamento]):

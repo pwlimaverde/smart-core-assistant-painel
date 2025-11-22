@@ -319,7 +319,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             if api_key:
                 self._save_api_key_to_context(attendance, api_key)
 
-            # Configura departamento baseado em AppInstance
+            # Verifica e atualiza contexto da instância (mudança de departamento/fluxo)
+            if api_key:
+                self._check_and_update_instance_context(attendance, api_key)
+
+            # Configura departamento inicial se ainda não definido (fallback)
             if getattr(attendance, "departamento", None) is None and api_key:
                 self._configure_department_from_app_instance(
                     attendance, api_key
@@ -349,6 +353,113 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         except Exception:
             pass
 
+    def _check_and_update_instance_context(
+        self, attendance: "Atendimento", api_key: str
+    ) -> None:
+        """Verifica e atualiza o contexto se a instância mudou.
+
+        Se a mensagem veio de uma instância diferente da atual do atendimento,
+        atualiza departamento, fluxo, etapa e atendente.
+
+        Args:
+            attendance: Atendimento atual.
+            api_key: API Key da instância que recebeu a mensagem.
+        """
+        try:
+            from smart_core_assistant_painel.app.ui.operacional.models import (
+                AppInstance,
+            )
+
+            # Busca instância atual da mensagem
+            app_inst: Optional[AppInstance] = AppInstance.objects.filter(
+                api_key=api_key, active=True
+            ).first()
+
+            if not app_inst:
+                return
+
+            # Determina o novo departamento e atendente baseados na instância
+            novo_departamento = None
+            novo_atendente = None
+
+            if getattr(app_inst, "departamento", None):
+                novo_departamento = app_inst.departamento
+            elif getattr(app_inst, "owner", None):
+                novo_atendente = app_inst.owner
+                if getattr(app_inst.owner, "departamento", None):
+                    novo_departamento = app_inst.owner.departamento
+
+            # Se não detectou departamento, não há o que alterar
+            if not novo_departamento:
+                return
+
+            # Verifica se houve mudança de departamento
+            # (ou se o atendimento não tinha departamento)
+            dept_atual = getattr(attendance, "departamento", None)
+
+            # Se o departamento é o mesmo, verifica se precisa ajustar atendente
+            # Caso a instância seja de um atendente específico
+            if dept_atual and dept_atual.id == novo_departamento.id:
+                if (
+                    novo_atendente
+                    and attendance.atendente_humano != novo_atendente
+                ):
+                    attendance.atendente_humano = novo_atendente
+                    attendance.save(update_fields=["atendente_humano"])
+                return
+
+            # Se chegou aqui, houve mudança de departamento (ou definição inicial)
+            logger.info(
+                f"Detectada mudança de instância/departamento para atendimento {attendance.id}. "
+                f"Antigo: {dept_atual}. Novo: {novo_departamento}."
+            )
+
+            attendance.departamento = novo_departamento
+            attendance.atendente_humano = novo_atendente
+
+            # Busca novo fluxo do departamento
+            fluxo = novo_departamento.get_fluxo()
+
+            if fluxo:
+                etapa_ini = (
+                    fluxo.get_etapa_inicial()
+                    or fluxo.etapas.order_by("ordem").first()
+                    or fluxo.etapas.order_by("id").first()
+                )
+
+                if etapa_ini:
+                    attendance.fluxo_atendimento = fluxo
+                    attendance.etapa_atual = etapa_ini
+                    logger.info(
+                        f"Fluxo/Etapa atualizados para atendimento {attendance.id}: "
+                        f"Fluxo={fluxo.nome}, Etapa={etapa_ini.nome}"
+                    )
+                else:
+                    logger.warning(
+                        f"Fluxo {fluxo.nome} (ID {fluxo.id}) não possui etapas."
+                    )
+            else:
+                logger.warning(
+                    f"Departamento {novo_departamento.nome} (ID {novo_departamento.id}) "
+                    "não possui fluxo ativo."
+                )
+
+            # Garante que o bot pode responder
+            attendance.bot_pode_atender = True
+
+            attendance.save(
+                update_fields=[
+                    "departamento",
+                    "atendente_humano",
+                    "fluxo_atendimento",
+                    "etapa_atual",
+                    "bot_pode_atender",
+                ]
+            )
+
+        except Exception as e:
+            logger.error(f"Erro ao atualizar contexto da instância: {e}")
+
     def _configure_department_from_app_instance(
         self, attendance: "Atendimento", api_key: str
     ) -> None:
@@ -359,7 +470,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             api_key: Chave de API.
         """
         try:
-            from smart_core_assistant_painel.app.evolution_sync.models import (
+            from smart_core_assistant_painel.app.ui.operacional.models import (
                 AppInstance,
             )
             from smart_core_assistant_painel.app.ui.operacional.models import (

@@ -17,17 +17,22 @@ O sistema atua como um hub de comunicação centralizado. Para garantir a integr
 
 Antes de qualquer processamento, o sistema avalia se a mensagem deve ser ignorada. Se qualquer uma das condições abaixo for verdadeira, a mensagem é descartada silenciosamente (logada apenas como ignorada).
 
-### 3.1. Comunicação entre Instâncias
+### 3.1. Tipo de Evento (Filtro Técnico)
+*   **Regra:** O sistema processa **EXCLUSIVAMENTE** eventos do tipo `messages.upsert`.
+*   **Objetivo:** Garantir que apenas novas mensagens (ou atualizações de conteúdo) sejam tratadas, ignorando atualizações de status (`messages.update`), mudanças de presença (`presence.update`) ou eventos de contatos/chats que não envolvem mensagens diretas.
+*   **Mecanismo:** O endpoint do webhook verifica o campo `event` do payload. Se for diferente de `messages.upsert`, a requisição é respondida com sucesso (200 OK) mas descartada imediatamente.
+
+### 3.2. Comunicação entre Instâncias
 *   **Regra:** Mensagens trocadas entre dois números que são ambos registrados como `EvolutionInstance` no sistema.
 *   **Objetivo:** Evitar que um Bot "converse" com outro Bot, gerando loops infinitos ou atendimentos fantasmas.
 *   **Mecanismo:** O sistema verifica se o `sender_jid` (remetente) corresponde ao `phone_number` de qualquer instância ativa.
 
-### 3.2. Whitelist (Lista Branca)
+### 3.3. Whitelist (Lista Branca)
 *   **Regra:** Mensagens enviadas por números cadastrados na `WhiteList`.
 *   **Objetivo:** Permitir que diretores e supervisores testem ou interajam com as instâncias sem poluir o painel de atendimentos e sem receber respostas automáticas.
 *   **Mecanismo:** O sistema verifica se o `sender_jid` (remetente) está presente na tabela `WhiteList` com status `active=True`.
 
-### 3.3. Mensagens de Sistema/Status
+### 3.4. Mensagens de Sistema/Status
 *   **Regra:** Mensagens sem JID válido ou atualizações de status (presença).
 *   **Objetivo:** Processar apenas conteúdo relevante (texto, mídia).
 
@@ -55,8 +60,10 @@ Se a mensagem passar pelos filtros acima, ela é categorizada e processada confo
 
 ```mermaid
 flowchart TD
-    A[Webhook Recebido] --> B{Tem JID Válido?}
-    B -- Não --> Z[Ignorar]
+    A[Webhook Recebido] --> A1{É messages.upsert?}
+    A1 -- Não --> Z[Ignorar]
+    A1 -- Sim --> B{Tem JID Válido?}
+    B -- Não --> Z
     B -- Sim --> C{Remetente é Instância?}
     C -- Sim --> Z
     C -- Não --> D{Remetente na Whitelist?}

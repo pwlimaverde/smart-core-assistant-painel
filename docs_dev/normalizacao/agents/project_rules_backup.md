@@ -1,116 +1,52 @@
-# The Master Guide for Software Development
+---
+trigger: always_on
+---
 
-# User Rules and Standards
+# Regras e Padrões do Projeto
 
-### 1. Core Profile & Mission
+Este documento define as convenções, ferramentas e melhores práticas a serem seguidas no desenvolvimento deste projeto. A adesão a estas regras é obrigatória para manter a qualidade, consistência e manutenibilidade do código.
 
-You will act as a **Senior Software Architect**. Your mission is to design and build digital solutions that are **robust, secure, scalable, and highly maintainable**. The code you generate must exemplify elegance, efficiency, and clarity.
+## 1. Ambiente de Desenvolvimento
 
-### 2. Non-Negotiable Principles (Actions & Behaviors)
+- **Tecnologia Central**: O projeto é desenvolvido em Python utilizando o framework Django.
+- **Ambiente Containerizado**: O desenvolvimento e os testes são realizados em um ambiente **Docker**. É essencial que todas as operações, especialmente os testes, sejam realizadas dentro deste ambiente para garantir a consistência.
+- **Gerenciamento de Dependências**: Utilizamos o `uv` para gerenciar dependências.
+  - Para instalar dependências de produção: `uv sync`
+  - Para instalar dependências de desenvolvimento: `uv sync --dev`
+  - Para realizar as migrações do django utilise os comandos: `uv run task makemigrations` e `uv run task migrate-remoto`
+- **Ambiente Windows**: O ambiente de desenvolvimento primário é Windows. Soluções e scripts devem ser compatíveis.
 
-*   **Clarity & Simplicity:** Prefer direct and straightforward solutions. Eliminate code duplication (DRY principle) and keep logic simple.
-*   **Code Quality:**
-    *   **Modularity:** Divide large files (>300 lines) into cohesive modules and short, focused functions.
-    *   **Naming Conventions:** Variables and functions must be in **English** (using `snake_case` or `camelCase` as per the language's convention). Class names must use `PascalCase`.
-    *   **Comments:** Write comments in **Portuguese** to explain complex logic, architectural decisions, and critical flows.
-*   **Security First:**
-    *   **Zero Secrets in Code:** Passwords, tokens, or API keys must **never** be hardcoded.
-    *   **Environment Management:** Use `.env` files exclusively for sensitive data. Always provide a `.env.example` file documenting the required variables without their values.
-    *   **Input Validation:** Rigorously validate all input from users or external systems.
-*   **Technical Discipline:**
-    *   **Scope Focus:** Do not implement features beyond the requested scope without explicit approval.
-    *   **Technological Consistency:** Prioritize using the project's existing tools and technology stack.
-    *   **Cross-Environment Awareness:** Your solutions must be compatible with development, testing, and production environments.
+## 2. Estrutura e Padrões de Código
 
-### 3. Strategic Workflows
-
-Follow these processes to ensure predictability and quality in your work.
-
-#### A. For New Features (The Execution Roadmap):
-1.  **Diagnosis:** Analyze the request and the existing codebase to understand the full impact.
-2.  **Clarification:** Before planning, formulate 4-6 precise questions to eliminate ambiguities.
-3.  **Action Plan:** Develop a detailed implementation plan and await validation before starting.
-4.  **Execution & Reporting:** Code according to the plan and continuously report your progress.
-
-#### B. For Problem Solving (The Debugging Protocol):
-1.  **Hypothesis Generation:** List 5-7 likely causes for the error.
-2.  **Focus:** Narrow the list down to the top 1-2 most probable hypotheses.
-3.  **Log-based Investigation:** Insert temporary logs at strategic points to trace the execution flow and data states.
-4.  **Evidence Analysis:** Collect and examine the logs to confirm or refute your hypotheses.
-5.  **Implement the Fix:** Apply the solution and, if necessary, use additional logs to validate the result.
-6.  **Cleanup:** Remove all temporary logs after confirming the fix is successful.
-
-### 4. Quality and Delivery Standards
-
-*   **Automated Testing:**
-    *   **Minimum Coverage:** Ensure a test coverage of at least 80%.
-    *   **Structure:** Organize tests in a separate, root-level `tests/` directory that mirrors the source code (`src/`) structure.
-*   **Delivery Process:**
-    *   **Local Validation:** Always run the full test suite before every `commit`.
-    *   **PR Requirements:** Every Pull Request must be correctly formatted, pass all linter checks, and include the necessary automated tests for the new changes.
-*   **Version Control Conventions (Git):**
-    *   Our workflow is based on GitFlow. It is crucial that all new branches strictly follow the naming conventions below to maintain repository consistency.
-    *   **Features:** For new functionalities, the branch name **MUST** start with `feature/`.
-        *   Example: `feature/add-oauth-authentication`
-    *   **Bugfixes:** For fixing bugs in the development environment, the branch name **MUST** start with `bugfix/`.
-        *   Example: `bugfix/fix-login-error`
-    *   **Hotfixes:** For urgent fixes in production, the branch name **MUST** start with `hotfix/`.
-        *   Example: `hotfix/resolve-xss-vulnerability`
-    *   **Releases:** For preparing a new production version, the branch name **MUST** start with `release/`.
-        *   Example: `release/v1.2.0`
-*   **Documentation:**
-    *   **Maintenance:** Update the documentation (especially the `README.md`) whenever significant changes are made.
-    *   **Clarity:** Documentation should be practical and include clear usage examples.
-
-### 5. Essential Context
-
-*   **Interaction Language:** All of your responses and communications must be in **Portuguese**.
-*   **Development Environment:** All solutions, commands, and instructions must be compatible with the **Windows** operating system.
-
-# Project Rules and Standards
-
-This document defines the conventions, tools, and best practices to be followed in this project's development. Adherence to these rules is mandatory to maintain code quality, consistency, and maintainability.
-
-## 1. Development Environment
-
-- **Core Technology**: The project is developed in Python using the Django framework.
-- **Containerized Environment**: Development and testing are performed in a **Docker** environment. It is essential that all operations, especially tests, are carried out within this environment to ensure consistency.
-- **Dependency Management**: We use `uv` to manage dependencies.
-  - To install production dependencies: `uv sync`
-  - To install development dependencies: `uv sync --dev`
-- **Windows Environment**: The primary development environment is Windows. Solutions and scripts must be compatible.
-
-## 2. Code Structure and Standards
-
-- **Main Directory**: All application source code is located in `src/smart_core_assistant_painel/`.
-- **Style Guide**: Strictly follow **PEP8**.
-- **Line Length**: The maximum limit is **79 characters** per line.
-- **Naming Conventions**:
-  - **Variables and Functions**: `snake_case` (e.g., `my_function`).
-  - **Classes**: `PascalCase` (e.g., `MyClass`).
-  - All names must be in **English**.
-- **Comments**: Comments should be in **Portuguese** and used to explain complex logic or important design decisions.
-- **Type Annotations (Type Hints)**:
-  - **MANDATORY**: All functions and methods (including tests and private ones) must have complete type annotations.
-  - **Functions with no return**: Use `-> None`.
-  - **Django Signals**: Use `sender: Any`, `instance: ModelClass`, `created: bool`, `**kwargs: Any` as applicable.
-  - **`Union` Types**: Always check the object's type with `isinstance()` before accessing its members.
+- **Diretório Principal**: Todo o código-fonte da aplicação está localizado em `src/smart_core_assistant_painel/`.
+- **Guia de Estilo**: Seguir estritamente a **PEP8**.
+- **Comprimento da Linha**: O limite máximo é de **79 caracteres** por linha.
+- **Convenções de Nomenclatura**:
+  - **Variáveis e Funções**: `snake_case` (ex: `minha_funcao`).
+  - **Classes**: `PascalCase` (ex: `MinhaClasse`).
+  - Todos os nomes devem estar em **Inglês**.
+- **Comentários**: Os comentários devem ser em **Português** e usados para explicar lógicas complexas ou decisões de design importantes.
+- **Anotações de Tipo (Type Hints)**:
+  - **OBRIGATÓRIO**: Todas as funções e métodos (incluindo testes e privados) devem ter anotações de tipo completas.
+  - **Funções sem retorno**: Use `-> None`.
+  - **Sinais do Django (Signals)**: Use `sender: Any`, `instance: ModelClass`, `created: bool`, `**kwargs: Any` conforme aplicável.
+  - **Tipos `Union`**: Sempre verifique o tipo do objeto com `isinstance()` antes de acessar seus membros.
     ```python
-    # Example of Union type checking
+    # Exemplo de verificação de tipo Union
     if isinstance(response, dict):
         value = response.get("key", default)
-    else: # Assuming the other type is a Pydantic/Django object
+    else: # Assumindo que o outro tipo é um objeto Pydantic/Django
         value = response.attribute
     ```
-- **Import Pattern in `__init__.py`**:
-  - To facilitate access to a module's components, `__init__.py` files should be used as a "facade," centralizing and exposing the module's public API.
-  - **Centralization**: Import the main objects from the module into the `__init__.py`.
-  - **Exposure**: Use the `__all__` variable to explicitly define which objects are part of the public API.
-  - **Documentation**: Include a `docstring` at the beginning of the file explaining the module's purpose.
-  - **Example**:
+- **Padrão de Importação em `__init__.py`**:
+  - Para facilitar o acesso aos componentes de um módulo, arquivos `__init__.py` devem ser usados como uma "fachada" (facade), centralizando e expondo a API pública do módulo.
+  - **Centralização**: Importe os objetos principais do módulo para o `__init__.py`.
+  - **Exposição**: Use a variável `__all__` para definir explicitamente quais objetos fazem parte da API pública.
+  - **Documentação**: Inclua uma `docstring` no início do arquivo explicando o propósito do módulo.
+  - **Exemplo**:
     ```python
     """
-    This module centralizes and exposes the application's main services.
+    Este módulo centraliza e expõe os principais serviços da aplicação.
     """
     from .features.service_hub import SERVICEHUB, ServiceHub
     from .utils.errors import VectorStorageError, WhatsAppServiceError
@@ -129,85 +65,92 @@ This document defines the conventions, tools, and best practices to be followed 
     ]
     ```
 
-## 3. Quality and Automation Tools
+## 3. Ferramentas de Qualidade e Automação
 
-### 3.1. Code Quality
-Code quality is ensured by a set of tools that automate formatting, linting, and type checking.
+### 3.1. Qualidade de Código
+A qualidade do código é garantida por um conjunto de ferramentas que automatizam a formatação, linting e verificação de tipos.
 
-- **Formatting and Linting**: `ruff` is the primary tool for formatting (`ruff format`), linting (`ruff check`), and import sorting.
-- **Type Checking**: `mypy` is used for static type checking. The `ignore_missing_imports = true` setting is active.
+- **Formatação e Linting**: `ruff` é a ferramenta principal para formatação (`ruff format`), linting (`ruff check`) e ordenação de importações.
+- **Verificação de Tipos**: `pyright` é usado para verificação estática de tipos em modo estrito (`strict`). Certifique-se de que não há erros de tipo antes de submeter código.
 
-### 3.2. Logging and Terminal Output
-- **Structured Logs**: Use `loguru` to generate structured and more detailed logs where applicable.
-- **Terminal Outputs**: Use `rich` to create richer and more readable console outputs, especially in scripts and management commands.
+### 3.2. Logging e Saída de Terminal
+- **Logs Estruturados**: Use `loguru` para gerar logs estruturados e mais detalhados onde aplicável.
+- **Saídas de Terminal**: Use `rich` para criar saídas de console mais ricas e legíveis, especialmente em scripts e comandos de gerenciamento.
 
-### 3.3. Commands and Tasks (Taskipy)
-Use the scripts defined in `pyproject.toml` for common tasks. Run them with `uv run task <task_name>`.
+### 3.3. Comandos e Tarefas (Taskipy)
+Use os scripts definidos no [pyproject.toml](cci:7://file:///c:/PROJETOS/PYTHON/APPS/smart-core-assistant-painel/pyproject.toml:0:0-0:0) para tarefas comuns. Execute-os SEMPRE com `uv run task <nome_da_tarefa>`.
 
-| Category      | Command          | Description                                                    |
+| Categoria     | Comando          | Descrição                                                      |
 |---------------|------------------|----------------------------------------------------------------|
-| **Server**    | `dev`, `start`   | Starts the development server.                                 |
-| **Testing**   | `test-docker`    | **(PREFERRED)** Runs all tests in the Docker environment.      |
-|               | `test-all`       | Runs all tests locally (business logic + apps).                |
-|               | `test`           | Runs only business logic tests (`tests/` folder).              |
-|               | `test-apps`      | Runs only Django application tests (`src/` folders).           |
-| **Quality**   | `format`         | Formats the code with `ruff format`.                           |
-|               | `lint`           | Runs the linter with `ruff check`.                             |
-|               | `type-check`     | Runs the type checker with `mypy`.                             |
-| **Django**    | `migrate`        | Applies database migrations.                                   |
-|               | `makemigrations` | Creates new migration files.                                   |
-|               | `createsuperuser`| Creates a superuser.                                           |
-|               | `shell`          | Starts the Django shell.                                       |
+| **Servidor**  | `dev`, `start`   | Inicia o servidor de desenvolvimento local.                    |
+|               | `cluster`        | Inicia o cluster Django Q.                                     |
+|               | `start-all`      | Inicia servidor, cluster e ngrok em abas separadas (Windows).  |
+| **Docker**    | `start-docker`   | Sobe os containers (`docker compose up -d`).                   |
+|               | `restart-docker` | Reinicia os containers com build.                              |
+|               | `logs-docker`    | Visualiza logs do container `django-app`.                      |
+| **Testes**    | `test-docker`    | **(PREFERIDO)** Roda todos os testes no ambiente Docker.       |
+|               | `test-all`       | Roda todos os testes localmente (lógica de negócio + apps).    |
+|               | `test`           | Roda apenas testes de lógica de negócio (pasta `tests/`).      |
+|               | `test-apps`      | Roda apenas testes de aplicações Django (pastas `src/`).       |
+| **Qualidade** | `format`         | Formata o código com `ruff format`.                            |
+|               | `lint`           | Roda o linter com `ruff check`.                                |
+|               | `type-check`     | Roda o verificador de tipos com `pyright`.                     |
+| **Django**    | `migrate`        | Aplica migrações de banco de dados (local).                    |
+|               | `migrate-remoto` | Aplica migrações no banco de dados remoto (PostgreSQL).        |
+|               | `makemigrations` | Cria novos arquivos de migração.                               |
+|               | `createsuperuser`| Cria um superusuário.                                          |
+|               | `shell`          | Inicia o shell do Django.                                      |
+| **Setup**     | `dev-setup`      | Instala deps dev e roda migrações locais.                      |
+|               | `reset-db`       | Reseta o banco de dados (Cuidado!).                            |
 
-## 4. Testing
+## 4. Testes
 
-- **Framework**: Tests are written with `pytest`, and coverage is analyzed with `pytest-cov`.
-- **Main Command**: **ALWAYS** run tests with the `uv run task test-docker` command.
-- **Test Structure**:
-  - **Django Application Tests**: (Models, Views, etc.) should be placed in the `tests/` folder of the respective application.
-    - *Example*: `src/smart_core_assistant_painel/app/user_management/tests/test_models.py`
-  - **Business Logic Tests**: (Services, Use Cases) should be placed in the root `tests/` directory, mirroring the `src/` structure.
-    - *Example*: `tests/modules/ai_engine/test_usecase.py`
-- **Minimum Coverage**: Test coverage must be at least **80%**.
-- **Test Quality**: All test functions and methods must have complete type annotations.
+- **Responsabilidade**: A criação e manutenção de testes automatizados para cobertura de código é responsabilidade exclusiva de um agente dedicado a testes. **Você NÃO deve criar, modificar ou se preocupar com a cobertura de testes automatizados.**
+- **Scripts de Debug**: Caso seja estritamente necessário criar um script para testar uma funcionalidade específica ou reproduzir um erro, esses scripts devem ser criados **exclusivamente** no diretório `teste_debug/`.
+- **Execução**: Você pode executar os testes existentes para validar suas alterações, mas não deve alterá-los a menos que seja para corrigir um bug no próprio teste que foi exposto por sua alteração correta.
 
-## 5. Review and Versioning Process
+## 5. Processo de Revisão e Versionamento
 
-- **Commits**: Commit messages must follow the **Conventional Commits** standard.
-  - `feat`: A new feature.
-  - `fix`: A bug fix.
-  - `docs`: Documentation only changes.
-  - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc).
-  - `refactor`: A code change that neither fixes a bug nor adds a feature.
-  - `test`: Adding missing tests or correcting existing tests.
-  - `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation.
+- **Commits**: As mensagens de commit devem seguir o padrão **Conventional Commits**.
+  - `feat`: Uma nova funcionalidade.
+  - `fix`: Uma correção de bug.
+  - `docs`: Alterações apenas na documentação.
+  - `style`: Alterações que não afetam o significado do código (espaços em branco, formatação, ponto e vírgula faltando, etc).
+  - `refactor`: Uma alteração de código que nem corrige um bug nem adiciona uma funcionalidade.
+  - `test`: Adição de testes ausentes ou correção de testes existentes.
+  - `chore`: Alterações no processo de build ou ferramentas auxiliares e bibliotecas, como geração de documentação.
 - **Pull Requests (PRs)**:
-  - Must pass all CI checks (linting, type checking, tests).
-  - Test coverage must meet the minimum requirement.
-  - New features must be accompanied by tests and, if necessary, documentation.
-- **Pre-Commit Hooks**: The project uses `pre-commit hooks` to ensure code quality before the commit.
+  - Devem passar em todas as verificações de CI (linting, verificação de tipos, testes).
+  - A cobertura de testes deve atender ao requisito mínimo.
+  - Novas funcionalidades devem ser acompanhadas de testes e, se necessário, documentação.
+- **Pre-Commit Hooks**: O projeto utiliza `pre-commit hooks` para garantir a qualidade do código antes do commit.
 
-## 6. Security and Performance
+## 6. Segurança e Desempenho
 
-### 6.1. Security
-- **Secrets**: Never commit secrets, API keys, or sensitive configurations. Use environment variables with `python-decouple`.
-- **Dependencies**: Keep dependencies updated to patch vulnerabilities.
-- **Best Practices**: Follow Django's security best practices.
+### 6.1. Segurança
+- **Segredos**: Nunca faça commit de segredos, chaves de API ou configurações sensíveis. Use variáveis de ambiente com `python-decouple`.
+- **Dependências**: Mantenha as dependências atualizadas para corrigir vulnerabilidades.
+- **Melhores Práticas**: Siga as melhores práticas de segurança do Django.
 
-### 6.2. Performance
-- **Database Queries**: Optimize ORM queries, using `select_related` and `prefetch_related` where appropriate.
-- **Caching**: Implement caching strategies for frequently accessed data.
-- **Asynchronous Code**: Use `async/await` for I/O-bound operations where beneficial.
+### 6.2. Desempenho
+- **Consultas ao Banco de Dados**: Otimize consultas ORM, usando `select_related` e `prefetch_related` onde apropriado.
+- **Cache**: Implemente estratégias de cache para dados acessados frequentemente.
+- **Código Assíncrono**: Use `async/await` para operações limitadas por I/O (I/O-bound) onde for benéfico.
 
-## 7. Documentation
+## 7. Documentação
 
-- **Tool**: Documentation is generated with `mkdocs` and the `material` theme.
-- **Docstrings**: Must follow the **Google** style. The API documentation is automatically generated from docstrings via `mkdocstrings`.
-- **Maintenance**: Documentation must be kept up-to-date.
+- **Ferramenta**: A documentação é gerada com `mkdocs` e o tema `material`.
+- **Docstrings**: Devem seguir o estilo **Google**. A documentação da API é gerada automaticamente a partir das docstrings via `mkdocstrings`.
+- **Manutenção**: A documentação deve ser mantida atualizada.
 
-## 8. Guidelines for AI Interaction (Jules)
+## 8. Diretrizes para o Agente (IA)
 
-- **Communication**: Always interact in **Portuguese**.
-- **Commit Suggestion**: When completing a task, always provide a commit message suggestion in the Conventional Commits format.
-- **Project Context**: Always consider the tools and standards in this document when providing solutions.
-- **Test Command**: When discussing tests, always recommend using `uv run task test-docker`.
+Estas regras são específicas para otimizar o seu desempenho como assistente de codificação neste projeto:
+
+1.  **Verificação de Comandos**: Antes de sugerir ou executar qualquer comando, verifique o arquivo [pyproject.toml](cci:7://file:///c:/PROJETOS/PYTHON/APPS/smart-core-assistant-painel/pyproject.toml:0:0-0:0) para ver se existe uma tarefa (`task`) configurada para isso.
+    -   **Sempre** use `uv run task <nome_da_tarefa>` em vez de chamar `python` ou `pytest` diretamente.
+2.  **Consistência de Testes**: Ao depurar ou verificar código, dê preferência ao comando `uv run task test-docker`. Se precisar rodar um teste específico, use `uv run task test-docker -- -k "nome_do_teste"`.
+3.  **Análise de Tipos**: Se encontrar erros de tipo, lembre-se que o projeto usa `pyright` em modo estrito. Não tente suprimir erros cegamente; corrija a causa raiz ou use `# type: ignore` apenas como último recurso e com justificativa.
+4.  **Contexto**: Ao criar novos arquivos, sempre verifique onde eles se encaixam na arquitetura existente (Django App vs. Módulo de Lógica de Negócio) e siga a estrutura de pastas correspondente.
+5.  **Linguagem**: Toda a comunicação, **planos de implementação, definição de tasks, feedbacks e explicações** devem ser feitos **exclusivamente em Português**. O código (nomes de variáveis, funções, classes) deve permanecer em **Inglês**.
+6.  **Proibição de Testes de Cobertura**: Nunca gere testes unitários ou de integração visando cobertura. Se precisar validar algo pontual, use scripts descartáveis em `teste_debug/`.

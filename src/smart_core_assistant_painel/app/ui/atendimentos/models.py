@@ -468,6 +468,8 @@ class Atendimento(models.Model):
                 atendente,
                 observacao="Atendente assumiu o atendimento (Bot desativado)",
             )
+            self.bot_pode_atender = False
+            self.save(update_fields=["bot_pode_atender"])
         except Atendente.DoesNotExist:
             logger.error(f"Atendente com ID {atendente_id} não encontrado.")
             raise
@@ -495,7 +497,7 @@ class Atendimento(models.Model):
 
         self.atendente_humano = atendente
         self.status = StatusAtendimento.EM_ATENDIMENTO
-        self.bot_pode_atender = False  # Bot não pode atender se há humano
+        # self.bot_pode_atender = False  # Removido: assign_to_agent não desabilita bot automaticamente
         self.adicionar_historico_status(
             StatusAtendimento.EM_ATENDIMENTO.value,
             observacao or f"Atribuído a {atendente.nome}",
@@ -655,6 +657,7 @@ class Atendimento(models.Model):
     ) -> None:
         self.atendente_humano = atendente_humano
         self.status = StatusAtendimento.EM_ATENDIMENTO
+        self.bot_pode_atender = False
         self.adicionar_historico_status(
             StatusAtendimento.EM_ATENDIMENTO.value,
             observacao or f"Transferido para {atendente_humano.nome}",
@@ -1215,6 +1218,10 @@ def processar_mensagem_por_contato(
         if remetente == TipoRemetente.CONTATO:
             contato.ultima_interacao = timezone.now()
             contato.save()
+
+        if remetente == TipoRemetente.ATENDENTE_HUMANO:
+            atendimento.bot_pode_atender = False
+            atendimento.save(update_fields=["bot_pode_atender"])
 
         return mensagem.id
     except Exception as e:

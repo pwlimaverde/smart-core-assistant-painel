@@ -48,24 +48,22 @@ class BotRulesEngine(BotRulesEngineInterface):
         if not attendance:
             return False
 
-        # Nova regra principal: flag explícita no atendimento
-        if not attendance.bot_pode_atender:
-            logger.info(
-                f"Bot não pode responder atendimento {attendance.id}: bot_pode_atender=False"
-            )
-            return False
-
-        if not self._is_in_bot_department(attendance):
-            logger.info(
-                f"Bot não pode responder atendimento {attendance.id}: departamento inválido"
-            )
-            return False
-
-        # Mantém verificação de interação humana como fallback/segurança,
-        # embora a flag deva cobrir isso (assign_to_agent seta flag=False).
+        # 1. Prioridade máxima: Se houve interação humana, o bot NÃO responde.
+        # Isso bloqueia permanentemente o bot após intervenção humana.
         if self._has_human_interaction(attendance):
             logger.info(
                 f"Bot não pode responder atendimento {attendance.id}: interação humana detectada"
+            )
+            return False
+
+        # 2. Flag explícita: Se True, permite resposta (ignorando departamento).
+        if attendance.bot_pode_atender:
+            return True
+
+        # 3. Se a flag for False, bloqueia.
+        if not attendance.bot_pode_atender:
+            logger.info(
+                f"Bot não pode responder atendimento {attendance.id}: bot_pode_atender=False"
             )
             return False
 

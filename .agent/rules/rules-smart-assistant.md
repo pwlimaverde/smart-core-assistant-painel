@@ -2,6 +2,10 @@
 trigger: always_on
 ---
 
+---
+trigger: always_on
+---
+
 # Regras e Padrões do Projeto
 
 Este documento define as convenções, ferramentas e melhores práticas a serem seguidas no desenvolvimento deste projeto. A adesão a estas regras é obrigatória para manter a qualidade, consistência e manutenibilidade do código.
@@ -78,7 +82,7 @@ A qualidade do código é garantida por um conjunto de ferramentas que automatiz
 - **Saídas de Terminal**: Use `rich` para criar saídas de console mais ricas e legíveis, especialmente em scripts e comandos de gerenciamento.
 
 ### 3.3. Comandos e Tarefas (Taskipy)
-Use os scripts definidos no `pyproject.toml` para tarefas comuns. Execute-os SEMPRE com `uv run task <nome_da_tarefa>`.
+Use os scripts definidos no [pyproject.toml](cci:7://file:///c:/PROJETOS/PYTHON/APPS/smart-core-assistant-painel/pyproject.toml:0:0-0:0) para tarefas comuns. Execute-os SEMPRE com `uv run task <nome_da_tarefa>`.
 
 | Categoria     | Comando          | Descrição                                                      |
 |---------------|------------------|----------------------------------------------------------------|
@@ -105,15 +109,9 @@ Use os scripts definidos no `pyproject.toml` para tarefas comuns. Execute-os SEM
 
 ## 4. Testes
 
-- **Framework**: Os testes são escritos com `pytest`, e a cobertura é analisada com `pytest-cov`.
-- **Comando Principal**: **SEMPRE** execute os testes com o comando `uv run task test-docker` para garantir que o ambiente seja idêntico ao de produção/CI.
-- **Estrutura de Testes**:
-  - **Testes de Aplicação Django**: (Models, Views, etc.) devem ser colocados na pasta `tests/` da respectiva aplicação.
-    - *Exemplo*: `src/smart_core_assistant_painel/app/user_management/tests/test_models.py`
-  - **Testes de Lógica de Negócio**: (Services, Use Cases) devem ser colocados no diretório `tests/` raiz, espelhando a estrutura de `src/`.
-    - *Exemplo*: `tests/modules/ai_engine/test_usecase.py`
-- **Cobertura Mínima**: A cobertura de testes deve ser de pelo menos **80%**.
-- **Qualidade dos Testes**: Todas as funções e métodos de teste devem ter anotações de tipo completas.
+- **Responsabilidade**: A criação e manutenção de testes automatizados para cobertura de código é responsabilidade exclusiva de um agente dedicado a testes. **Você NÃO deve criar, modificar ou se preocupar com a cobertura de testes automatizados.**
+- **Scripts de Debug**: Caso seja estritamente necessário criar um script para testar uma funcionalidade específica ou reproduzir um erro, esses scripts devem ser criados **exclusivamente** no diretório `teste_debug/`.
+- **Execução**: Você nunca deve executar os testes, não é sua responsabilidade.
 
 ## 5. Processo de Revisão e Versionamento
 
@@ -153,9 +151,10 @@ Use os scripts definidos no `pyproject.toml` para tarefas comuns. Execute-os SEM
 
 Estas regras são específicas para otimizar o seu desempenho como assistente de codificação neste projeto:
 
-1.  **Verificação de Comandos**: Antes de sugerir ou executar qualquer comando, verifique o arquivo `pyproject.toml` para ver se existe uma tarefa (`task`) configurada para isso.
+1.  **Verificação de Comandos**: Antes de sugerir ou executar qualquer comando, verifique o arquivo [pyproject.toml](cci:7://file:///c:/PROJETOS/PYTHON/APPS/smart-core-assistant-painel/pyproject.toml:0:0-0:0) para ver se existe uma tarefa (`task`) configurada para isso.
     -   **Sempre** use `uv run task <nome_da_tarefa>` em vez de chamar `python` ou `pytest` diretamente.
 2.  **Consistência de Testes**: Ao depurar ou verificar código, dê preferência ao comando `uv run task test-docker`. Se precisar rodar um teste específico, use `uv run task test-docker -- -k "nome_do_teste"`.
 3.  **Análise de Tipos**: Se encontrar erros de tipo, lembre-se que o projeto usa `pyright` em modo estrito. Não tente suprimir erros cegamente; corrija a causa raiz ou use `# type: ignore` apenas como último recurso e com justificativa.
 4.  **Contexto**: Ao criar novos arquivos, sempre verifique onde eles se encaixam na arquitetura existente (Django App vs. Módulo de Lógica de Negócio) e siga a estrutura de pastas correspondente.
-5.  **Linguagem**: Mantenha toda a comunicação, **planos de implementação**, docstrings e comentários em **Português**, mas o código (nomes de variáveis, funções, classes) em **Inglês**.
+5.  **Linguagem**: Toda a comunicação, **planos de implementação, definição de tasks, feedbacks e explicações** devem ser feitos **exclusivamente em Português**. O código (nomes de variáveis, funções, classes) deve permanecer em **Inglês**.
+6.  **Proibição de Testes de Cobertura**: Nunca gere testes unitários ou de integração visando cobertura. Se precisar validar algo pontual, use scripts descartáveis em `teste_debug/`.

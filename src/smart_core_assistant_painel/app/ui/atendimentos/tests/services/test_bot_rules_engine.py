@@ -75,6 +75,30 @@ class TestBotRulesEngine:
             assert engine.can_bot_respond(mock_atendimento) is False
             mock_has_human.assert_called_once_with(mock_atendimento)
 
+    def test_can_bot_respond_human_interaction_priority(
+        self, mock_atendimento
+    ):
+        """Tests that human interaction blocks bot even if bot_pode_atender is True."""
+        mock_atendimento.bot_pode_atender = True
+        engine = BotRulesEngine()
+
+        with patch.object(
+            engine, "_has_human_interaction", return_value=True
+        ) as mock_has_human:
+            assert engine.can_bot_respond(mock_atendimento) is False
+            mock_has_human.assert_called_once_with(mock_atendimento)
+
+    def test_can_bot_respond_true_override(self, mock_atendimento):
+        """Tests that bot_pode_atender=True allows response even if department is wrong."""
+        mock_atendimento.bot_pode_atender = True
+        engine = BotRulesEngine()
+
+        with (
+            patch.object(engine, "_has_human_interaction", return_value=False),
+            patch.object(engine, "_is_in_bot_department", return_value=False),
+        ):
+            assert engine.can_bot_respond(mock_atendimento) is True
+
     def test_can_bot_respond_false_for_none_attendance(self):
         """Tests that bot cannot respond if attendance is None."""
         engine = BotRulesEngine()

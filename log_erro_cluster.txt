@@ -1,33 +1,52 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-21 18:18:13.399 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:14.828 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 19:08:48.353 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 19:08:49.726 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster mobile-uncle-don-dakota starting.
-2025-11-21 18:18:17.178 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:18.616 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-57c7c352de094582900a74c4a9376ae1 guarding cluster mobile-uncle-don-dakota [smart_core_cluster]
-INFO:django-q:Q Cluster mobile-uncle-don-dakota [smart_core_cluster] running.
-2025-11-21 18:18:20.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:20.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:20.233 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:20.259 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-21 18:18:21.808 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-21 18:18:21.815 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-21 18:18:21.838 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-21 18:18:21.846 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-2a1e1955bc044a1c97d2ad0410262a32 ready for work at 4224
-INFO:django-q:Process-cb5e476f7b594a399b45bbbbacd80174 ready for work at 42620
-INFO:django-q:Process-50be5be6ff18468d896050a526533030 monitoring at 38488
-INFO:django-q:Process-76d8d5f2dc3241f1bfd95c4f5e2f7369 pushing tasks at 32116
-INFO:django-q:Enqueued [smart_core_cluster] 782
-INFO:django-q:Process-57c7c352de094582900a74c4a9376ae1 created task island-fourteen-timing-cardinal from schedule [process_contact_114]
-INFO:django-q:Process-2a1e1955bc044a1c97d2ad0410262a32 processing island-fourteen-timing-cardinal 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_114]
-2025-11-21 18:19:20.611 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 114
-2025-11-21 18:19:20.656 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=114 env_count=1
-2025-11-21 18:19:20.656 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 114 - 
-2025-11-21 18:19:20.656 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 114. Ignorando processamento.
-2025-11-21 18:19:20.661 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=114 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (island-fourteen-timing-cardinal)
+INFO:django-q:Q Cluster nine-earth-fourteen-mike starting.
+2025-11-21 19:08:52.393 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 19:08:53.797 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-046ed84f6f3b41a49e6df1234e027a8d guarding cluster nine-earth-fourteen-mike [smart_core_cluster]
+INFO:django-q:Q Cluster nine-earth-fourteen-mike [smart_core_cluster] running.
+2025-11-21 19:08:55.779 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 19:08:55.779 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 19:08:55.779 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 19:08:55.783 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-21 19:08:57.425 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 19:08:57.427 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 19:08:57.428 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-21 19:08:57.447 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-769eb777535a43f39bffee336bf930c5 ready for work at 4864
+INFO:django-q:Process-aa36e04ac240423397ff3a3ad17e4909 ready for work at 19848
+INFO:django-q:Process-2b3c490611ea489e951a33bb10b6eef7 pushing tasks at 28344
+INFO:django-q:Process-0e6eead0a0be44cfb6119fe54e3a1f0d monitoring at 22160
+INFO:django-q:Enqueued [smart_core_cluster] 794
+INFO:django-q:Process-046ed84f6f3b41a49e6df1234e027a8d created task princess-queen-berlin-pluto from schedule [process_contact_120]
+INFO:django-q:Process-769eb777535a43f39bffee336bf930c5 processing princess-queen-berlin-pluto 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_120]
+2025-11-21 19:25:57.547 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 120
+2025-11-21 19:25:57.618 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=120 env_count=1
+2025-11-21 19:25:57.618 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 120 - Boa noite, tudo bem?
+2025-11-21 19:25:57.795 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=120 text_len=20 msg_id=175
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-21 19:25:59.907 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine:can_bot_respond:59 - Bot não pode responder atendimento 81: departamento inválido
+2025-11-21 19:25:59.908 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:287 - atd_process_can_respond contact_id=120 pode_responder=False
+2025-11-21 19:25:59.908 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:297 - Bot não pode responder - pulando processamento de intents
+2025-11-21 19:25:59.916 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=120 cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (princess-queen-berlin-pluto)
+INFO:django-q:Enqueued [smart_core_cluster] 795
+INFO:django-q:Process-046ed84f6f3b41a49e6df1234e027a8d created task aspen-double-ten-november from schedule [process_contact_120]
+INFO:django-q:Process-aa36e04ac240423397ff3a3ad17e4909 processing aspen-double-ten-november 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_120]
+2025-11-21 19:26:28.266 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 120
+2025-11-21 19:26:28.320 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=120 env_count=1
+2025-11-21 19:26:28.320 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 120 - Qual o horário de atendimento de vocês?
+2025-11-21 19:26:28.410 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=120 text_len=39 msg_id=176
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 23.000000 seconds
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-21 19:26:53.601 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine:can_bot_respond:59 - Bot não pode responder atendimento 81: departamento inválido
+2025-11-21 19:26:53.601 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:287 - atd_process_can_respond contact_id=120 pode_responder=False
+2025-11-21 19:26:53.602 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:297 - Bot não pode responder - pulando processamento de intents
+2025-11-21 19:26:53.610 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=120 cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (aspen-double-ten-november)

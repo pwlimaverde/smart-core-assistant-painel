@@ -200,29 +200,73 @@ class AttendanceStructureManager(AttendanceStructureManagerInterface):
                 TipoEtapa,
             )
 
-            # Garante que a estrutura padrão exista
-            _, fluxo = self.ensure_default_structure()
-
             # Atualiza o status do atendimento
             attendance.status = StatusAtendimento.EM_ATENDIMENTO
 
-            # Busca a etapa "Em Atendimento" do fluxo
-            etapa_em_atendimento = fluxo.etapas.filter(
-                nome="Em Atendimento", tipo_etapa=TipoEtapa.TRABALHO
-            ).first()
+            # Verifica se já existe um fluxo definido
+            fluxo = attendance.fluxo_atendimento
+            etapa_destino = None
 
-            if etapa_em_atendimento:
-                attendance.etapa_atual = etapa_em_atendimento
+            if fluxo:
+                # Tenta encontrar uma etapa de trabalho no fluxo atual
+                # Prioriza etapa com nome "Em Atendimento" ou pega a primeira de trabalho
+                etapa_destino = fluxo.etapas.filter(
+                    nome="Em Atendimento", tipo_etapa=TipoEtapa.TRABALHO
+                ).first()
+
+                if not etapa_destino:
+                    etapa_destino = fluxo.etapas.filter(
+                        tipo_etapa=TipoEtapa.TRABALHO
+                    ).first()
+
+            # Se não achou etapa no fluxo atual (ou não tem fluxo), usa o padrão
+            if not etapa_destino:
+                # Garante que a estrutura padrão exista
+                _, fluxo_padrao = self.ensure_default_structure()
+
+                # Se o atendimento não tinha fluxo, ou o fluxo não tinha etapa válida,
+                # e vamos usar o padrão, devemos atualizar o fluxo do atendimento?
+                # Se o atendimento já tinha um fluxo (ex: Comercial), mas não tinha etapa de trabalho,
+                # jogar para o fluxo padrão (Atendimento Inicial) pode ser perigoso se mudar o departamento.
+                # Mas o comportamento original era SEMPRE jogar para o padrão.
+                # Então, se não achou no fluxo atual, fallback para o padrão é o comportamento "seguro" (ou legado).
+
+                etapa_destino = fluxo_padrao.etapas.filter(
+                    nome="Em Atendimento", tipo_etapa=TipoEtapa.TRABALHO
+                ).first()
+
+                # Se for usar a etapa do fluxo padrão, precisamos atualizar o fluxo do atendimento?
+                # O código original não atualizava explicitamente o fluxo aqui, mas setava a etapa.
+                # O save do Atendimento valida se a etapa pertence ao fluxo/departamento.
+                # Se mudarmos a etapa para uma do fluxo padrão, TEMOS que mudar o fluxo/departamento também
+                # senão o clean() vai falhar.
+
+                if etapa_destino and (
+                    not fluxo or fluxo.id != fluxo_padrao.id
+                ):
+                    attendance.fluxo_atendimento = fluxo_padrao
+                    attendance.departamento = fluxo_padrao.departamento
+
+            if etapa_destino:
+                attendance.etapa_atual = etapa_destino
                 logger.debug(
-                    f"Atendimento {attendance.id} movido para etapa '{etapa_em_atendimento.nome}'"
+                    f"Atendimento {attendance.id} movido para etapa '{etapa_destino.nome}' "
+                    f"do fluxo '{etapa_destino.fluxo.nome}'"
                 )
             else:
                 logger.warning(
-                    f"Etapa 'Em Atendimento' não encontrada no fluxo {fluxo.id}"
+                    f"Não foi possível encontrar etapa 'Em Atendimento' para o atendimento {attendance.id}"
                 )
 
-            # Salva as alterações apenas nos campos modificados
-            attendance.save(update_fields=["status", "etapa_atual"])
+            # Salva as alterações
+            attendance.save(
+                update_fields=[
+                    "status",
+                    "etapa_atual",
+                    "fluxo_atendimento",
+                    "departamento",
+                ]
+            )
 
             logger.info(
                 f"Atendimento {attendance.id} atualizado para status 'Em Atendimento'"

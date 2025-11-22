@@ -95,17 +95,22 @@ def _on_message_saved(
         if not number:
             return
 
-        inst: Optional[EvolutionInstance] = getattr(
-            evo_contact, "instance", None
-        )
+        # Tenta obter instância dos metadados da mensagem PRIMEIRO
+        # Isso garante que respondemos pela mesma instância que recebeu a mensagem
+        inst: Optional[EvolutionInstance] = None
+
+        meta = dict(getattr(instance, "metadados", {}) or {})
+        evo = dict(meta.get("evolution", {}) or {})
+        inst_db_id = evo.get("instance_db_id")
+
+        if inst_db_id:
+            inst = EvolutionInstance.objects.filter(
+                id=int(inst_db_id), active=True
+            ).first()
+
+        # Se não encontrou nos metadados, usa a do contato (fallback)
         if not inst:
-            meta = dict(getattr(instance, "metadados", {}) or {})
-            evo = dict(meta.get("evolution", {}) or {})
-            inst_db_id = evo.get("instance_db_id")
-            if inst_db_id:
-                inst = EvolutionInstance.objects.filter(
-                    id=int(inst_db_id), active=True
-                ).first()
+            inst = getattr(evo_contact, "instance", None)
 
         if not inst:
             return

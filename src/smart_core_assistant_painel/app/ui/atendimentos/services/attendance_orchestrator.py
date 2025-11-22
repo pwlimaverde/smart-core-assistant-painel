@@ -279,7 +279,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # Configura atendimento
             atendimento = mensagem.atendimento
-            self._configure_attendance(atendimento, api_key, env_list)
+            self._configure_attendance(
+                atendimento, api_key, env_list, message=mensagem
+            )
 
             # Verifica se bot pode responder
             pode_responder = self._rules_engine.can_bot_respond(atendimento)
@@ -306,6 +308,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         attendance: "Atendimento",
         api_key: Optional[str],
         env_list: list[dict[str, Any]],
+        message: Optional["Mensagem"] = None,
     ) -> None:
         """Configura atendimento com API key e departamento.
 
@@ -330,7 +333,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 )
 
             # Salva metadados do Evolution
-            self._save_evolution_metadata(attendance, env_list)
+            self._save_evolution_metadata(
+                attendance, env_list, message=message
+            )
 
         except Exception as e:
             logger.error(f"Erro ao configurar atendimento: {e}")
@@ -527,7 +532,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             pass
 
     def _save_evolution_metadata(
-        self, attendance: "Atendimento", env_list: list[dict[str, Any]]
+        self,
+        attendance: "Atendimento",
+        env_list: list[dict[str, Any]],
+        message: Optional["Mensagem"] = None,
     ) -> None:
         """Salva metadados do Evolution na mensagem.
 
@@ -537,8 +545,12 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         """
         try:
             last_env = env_list[-1]
-            mensagens_qs = attendance.mensagens.order_by("-id")
-            mensagem = mensagens_qs.first()
+
+            # Se mensagem foi passada, usa ela. Senão, busca a última do atendimento.
+            mensagem = message
+            if not mensagem:
+                mensagens_qs = attendance.mensagens.order_by("-id")
+                mensagem = mensagens_qs.first()
 
             if mensagem:
                 inst_name = str(last_env.get("instance") or "")

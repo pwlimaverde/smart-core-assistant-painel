@@ -57,13 +57,8 @@ class EvolutionMessageData:
         elif message_type == "extendedTextMessage":
             text = message.get("extendedTextMessage", {}).get("text", "")
 
+        # Metadados vazios - removidos campos não utilizados
         md: Dict[str, Any] = {}
-        if "messageTimestamp" in data:
-            md["messageTimestamp"] = data["messageTimestamp"]
-        if "instanceId" in data:
-            md["instanceId"] = data["instanceId"]
-        if "source" in data:
-            md["source"] = data["source"]
 
         return cls(
             id=key.get("id"),

@@ -14,17 +14,10 @@ from loguru import logger
 
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
-    Mensagem,
-    TipoMensagem,
-    TipoRemetente,
 )
-
 
 # Armazena o estado anterior do atendente_humano antes do save
 _previous_atendente_humano: dict[int, Optional[int]] = {}
-
-# Flag para evitar recursão quando criamos mensagem dentro do signal
-_creating_greeting_message: set[int] = set()
 
 
 @receiver(pre_save, sender=Atendimento)
@@ -80,10 +73,6 @@ def auto_create_greeting_on_agent_assignment(
         _previous_atendente_humano.pop(instance.pk, None)
         return
 
-    # Evita recursão se já estamos criando mensagem para este atendimento
-    if instance.pk in _creating_greeting_message:
-        return
-
     # Recupera o valor anterior
     previous_id = _previous_atendente_humano.pop(instance.pk, None)
     # Usa getattr para acessar o campo _id de forma type-safe
@@ -91,84 +80,34 @@ def auto_create_greeting_on_agent_assignment(
 
     # Verifica se houve mudança real no atendente_humano
     if previous_id == current_id:
-        logger.debug(
-            f"Signal: Atendimento {instance.id} - "
-            f"Sem mudança no atendente_humano"
-        )
         return
 
     # Verifica se o novo valor é um atendente (não None)
     if current_id is None:
-        logger.debug(
-            f"Signal: Atendimento {instance.id} - "
-            f"Atendente removido (de {previous_id} para None)"
-        )
         return
 
     # Detectou mudança para um atendente humano - criar mensagem de saudação
     if instance.atendente_humano is None:
-        logger.warning(
-            f"Signal: Atendimento {instance.id} tem current_id={current_id} "
-            "mas atendente_humano é None"
-        )
         return
 
-    atendente_nome = instance.atendente_humano.nome
-    logger.info(
-        f"Signal: Detectada atribuição de atendente {atendente_nome} "
-        f"(ID: {current_id}) ao atendimento {instance.id}. "
-        f"Criando mensagem de saudação..."
-    )
+    # Chama o método do modelo que já possui a lógica correta de instância
+    # Usamos transaction.on_commit para garantir que o save atual termine
+    def trigger_greeting() -> None:
+        try:
+            # Recarrega a instância para garantir dados frescos
+            atendimento = Atendimento.objects.get(pk=instance.pk)
 
-    try:
-        # Marca que estamos criando mensagem para este atendimento
-        _creating_greeting_message.add(instance.pk)
+            # Chama o método passando o ID do atendente
+            atendimento.transferir_para_humano_com_saudacao(
+                atendente_id=current_id,
+                observacao="Saudação automática disparada por signal",
+            )
 
-        # Prepara mensagem de saudação
-        mensagem_saudacao = (
-            f"Olá, meu nome é {atendente_nome}, irei continuar seu "
-            "atendimento."
-        )
+        except Exception as e:
+            logger.error(
+                f"Erro ao executar trigger_greeting para atendimento "
+                f"{instance.id}: {e}"
+            )
 
-        # Copia metadados da última mensagem (se existir)
-        metadados: dict[str, Any] = {}
-        ultima_mensagem = instance.mensagens.order_by("-timestamp").first()
-        if ultima_mensagem and ultima_mensagem.metadados:
-            # Copia os metadados para manter estrutura de evolution
-            metadados = dict(ultima_mensagem.metadados)
-
-        # Cria mensagem com saudação usando transaction.on_commit
-        # para garantir que só execute após o commit do atendimento
-        def create_greeting() -> None:
-            try:
-                mensagem = Mensagem.objects.create(
-                    atendimento=instance,
-                    tipo=TipoMensagem.TEXTO_FORMATADO,
-                    conteudo="",  # Conteúdo vazio, pois é mensagem de saída
-                    remetente=TipoRemetente.ATENDENTE_HUMANO,
-                    resposta_bot=mensagem_saudacao,
-                    metadados=metadados,
-                    respondida=False,  # Será marcado True após envio
-                )
-
-                logger.info(
-                    f"Signal: Mensagem de saudação criada (ID: {mensagem.id}) "
-                    f"para atendimento {instance.id}"
-                )
-            except Exception as e:
-                logger.error(
-                    f"Erro ao criar mensagem de saudação no signal "
-                    f"para atendimento {instance.id}: {e}"
-                )
-            finally:
-                # Remove da lista de criação
-                _creating_greeting_message.discard(instance.pk)
-
-        # Agenda a criação da mensagem após o commit
-        transaction.on_commit(create_greeting)
-
-    except Exception as e:
-        logger.error(
-            f"Erro no signal ao processar atendimento {instance.id}: {e}"
-        )
-        _creating_greeting_message.discard(instance.pk)
+    # Agenda a execução
+    transaction.on_commit(trigger_greeting)

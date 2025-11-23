@@ -661,8 +661,13 @@ class Atendimento(models.Model):
         """Transfere atendimento para atendente e envia saudação automática.
 
         Cria uma mensagem de saudação que será enviada automaticamente
-        via signal. Os metadados da última mensagem são copiados para
-        manter a estrutura necessária para o envio.
+        via signal. Os metadados são configurados com a API key da instância
+        Evolution associada ao atendente para garantir que a mensagem seja
+        enviada pela instância correta.
+
+        A API key é obtida do AppInstance vinculado:
+        1. Ao atendente (campo owner do AppInstance)
+        2. Ao departamento do atendente
 
         Args:
             atendente_id: ID do atendente que assumirá o atendimento
@@ -672,8 +677,17 @@ class Atendimento(models.Model):
             Atendente.DoesNotExist: Se o atendente não for encontrado
         """
         try:
-            # 1. Buscar o atendente
-            atendente = Atendente.objects.get(id=atendente_id)
+            # 1. Buscar o atendente com suas relações
+            atendente = (
+                Atendente.objects.select_related("departamento")
+                .filter(id=atendente_id)
+                .first()
+            )
+
+            if not atendente:
+                raise Atendente.DoesNotExist(
+                    f"Atendente com ID {atendente_id} não encontrado."
+                )
 
             # 2. Executar transferência tradicional
             self.transferir_para_humano(
@@ -691,14 +705,62 @@ class Atendimento(models.Model):
                 "atendimento."
             )
 
-            # 4. Copiar metadados da última mensagem (se existir)
+            # 4. Buscar API key do AppInstance vinculado ao atendente ou departamento
+            from smart_core_assistant_painel.app.ui.operacional.models import (
+                AppInstance,
+            )
+
+            api_key: Optional[str] = None
+            app_instance: Optional[AppInstance] = None
+
+            # Prioridade 1: AppInstance vinculado ao atendente (owner)
+            app_instance = (
+                AppInstance.objects.filter(owner=atendente, active=True)
+                .order_by("-created_at")
+                .first()
+            )
+
+            # Prioridade 2: AppInstance vinculado ao departamento
+            if not app_instance and atendente.departamento:
+                app_instance = (
+                    AppInstance.objects.filter(
+                        departamento=atendente.departamento, active=True
+                    )
+                    .order_by("-created_at")
+                    .first()
+                )
+
+            if app_instance:
+                api_key = str(app_instance.api_key)
+                logger.debug(
+                    f"API key obtida de AppInstance para "
+                    f"atendente {atendente.nome}"
+                )
+
+            # 5. Preparar metadados com API key
             metadados: dict[str, Any] = {}
             ultima_mensagem = self.mensagens.order_by("-timestamp").first()
             if ultima_mensagem and ultima_mensagem.metadados:
                 # Copia os metadados para manter estrutura de evolution
                 metadados = dict(ultima_mensagem.metadados)
 
-            # 5. Criar mensagem com saudação
+            # Configura API key nos metadados evolution
+            if api_key:
+                if "evolution" not in metadados:
+                    metadados["evolution"] = {}
+                metadados["evolution"]["api_key"] = api_key
+                logger.info(
+                    f"Metadados configurados com API key para "
+                    f"atendente {atendente.nome}"
+                )
+            else:
+                logger.warning(
+                    f"Não foi possível determinar API key para "
+                    f"atendente {atendente.nome}. Mensagem será enviada "
+                    f"pela instância padrão."
+                )
+
+            # 6. Criar mensagem com saudação
             mensagem = Mensagem.objects.create(
                 atendimento=self,
                 tipo=TipoMensagem.TEXTO_FORMATADO,

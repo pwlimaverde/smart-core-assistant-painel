@@ -26,7 +26,6 @@ class StatusAtendimento(models.TextChoices):
     PENDENCIA = "pendencia", "Pendência"
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
-    TRANSFERIDO = "transferido", "Transferido"
 
 
 # Aliases de compatibilidade esperados pelos testes

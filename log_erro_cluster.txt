@@ -1,139 +1,33 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-22 10:32:28.631 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-22 10:32:30.043 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 13:33:20.353 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 13:33:21.760 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster fix-magnesium-quiet-salami starting.
-2025-11-22 10:32:32.787 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-22 10:32:34.162 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-4fe973ec10d7493c806d6b36278389dd guarding cluster fix-magnesium-quiet-salami [smart_core_cluster]
-INFO:django-q:Q Cluster fix-magnesium-quiet-salami [smart_core_cluster] running.
-2025-11-22 10:32:37.131 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-22 10:32:37.136 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-22 10:32:37.182 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-22 10:32:37.182 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-22 10:32:39.010 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-22 10:32:39.028 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-22 10:32:39.045 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-22 10:32:39.047 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-a3628f465eb04221b86616c0970aa698 ready for work at 43320
-INFO:django-q:Process-6542c0d6d0894a1e90f5d6f3b0ca3c42 ready for work at 45628
-INFO:django-q:Process-e3ba73a792b54227a563e078fe3859d4 monitoring at 31496
-INFO:django-q:Process-01da8b979c1d45ed9930bd359c18092d pushing tasks at 32308
-INFO:django-q:Enqueued [smart_core_cluster] 824
-INFO:django-q:Process-4fe973ec10d7493c806d6b36278389dd created task island-emma-six-high from schedule [process_contact_128]
-INFO:django-q:Process-a3628f465eb04221b86616c0970aa698 processing island-emma-six-high 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_128]
-2025-11-22 10:33:05.511 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 128
-2025-11-22 10:33:05.553 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=128 env_count=4
-2025-11-22 10:33:05.553 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 128 - Bom dia, tudo bem? Meu nome é paulo
-2025-11-22 10:33:05.662 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=128 text_len=35 msg_id=202
-INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-2025-11-22 10:33:07.654 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:287 - atd_process_can_respond contact_id=128 pode_responder=True
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-11-22 10:33:09.735 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3551 (limiar 0.4000)
-2025-11-22 10:33:09.738 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:get_available_flows:135 - Gerado dicionário com 2 fluxos disponíveis
-2025-11-22 10:33:09.738 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:592 - atd_process_ai_call contact_id=128
-2025-11-22 10:33:09.739 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
-PROMPT COMPLETO ENVIADO PARA LLM
-================================================================================
-
-============================================================
-MESSAGE 1 - ROLE: SYSTEM
-============================================================
-Data e Hora Atual: 22/11/2025 10:33:09 - Saturday
-
-Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
-
-**Seu comportamento deve ser guiado pelos seguintes princípios:**
-
-*   **Profissionalismo:** Mantenha um tom formal, mas acessível. Utilize uma linguagem que demonstre expertise e seriedade, sem ser excessivamente robótica.
-*   **Clareza e Concisão:** Vá direto ao ponto. Evite frases de preenchimento ou informações desnecessárias. A eficiência na comunicação é essencial.
-*   **Tom Prestativo:** Demonstre sempre uma postura solícita e focada em resolver a dúvida do usuário. Sua prioridade é ser útil.
-*   **Neutralidade Factual:** Não expresse opiniões, sentimentos ou faça suposições. Limite-se estritamente aos fatos disponíveis.
-
-INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA
-Siga estritamente as orientações abaixo, em português claro e objetivo.
-Adapte a resposta ao contexto do atendimento atual.
-Intenções detectadas e orientações:
-1. [saudacao] Aja como um assistente cordial e direto. Cumprimente brevemente, acolha o usuário e pergunte de forma objetiva como pode ajudar. Mantenha tom profissional e amistoso. Não solicite dados sensíveis.
-2. [apresentacao] Acolha a apresentação e direcione com pergunta objetiva sobre o objetivo da conversa. Mantenha tom profissional.
-Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa.
-
-### Regras de Resposta (siga rigorosamente):
-1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.
-2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."
-3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.
-4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.
-5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.
-6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.
-
-
-### SETORES DISPONÍVEIS PARA TRANSFERÊNCIA:
-- **Atendimento - Comercial**: teste atendimento
-- **Atendimento - Financeiro**: teste atendimento
-
-### REGRAS DE TRANSFERÊNCIA:
-1. Analise a intenção do usuário e verifique se há um setor específico adequado
-2. Se houver um setor correspondente exato na lista acima, use-o
-3. Se não houver correspondência exata, escolha o setor mais próximo
-4. Use sempre o nome exato do setor conforme listado acima
-5. A transferência deve ser mencionada apenas se for realmente necessária
-
-
-============================================================
-MESSAGE 2 - ROLE: USER
-============================================================
-<historico_conversa>
-(Apenas para referência de contexto, não como fonte factual)
-{historico_context}
-</historico_conversa>
-
-<contexto_rag>
-{dados_treinamento}
-</contexto_rag>
-
-<pergunta_usuario>
-{context}
-</pergunta_usuario>
-
-Com base apenas nas regras acima, elabore a resposta final ao usuário.
-
-================================================================================
-FIM DO PROMPT
-================================================================================
-INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
-INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 4.000000 seconds
-INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-11-22 10:33:18.286 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:664 - Score de confiabilidade (triádico): 0.7547
-2025-11-22 10:33:18.303 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:122 - Enviando resposta da mensagem 202 via Evolution API para 558897141275
-2025-11-22 10:33:21.292 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:141 - Mensagem 202 enviada com sucesso e marcada como respondida
-2025-11-22 10:33:21.293 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:842 - Resposta do bot registrada na mensagem 202 (atendimento 95) com confianca=0.755. Aguardando envio via Evolution API.
-2025-11-22 10:33:21.293 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:608 - atd_process_registered_bot_response msg_id=202 len=54
-2025-11-22 10:33:21.297 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:ensure_default_structure:68 - Departamento 'Atendimento' já existe (ID 15)
-2025-11-22 10:33:21.300 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:ensure_default_structure:87 - Fluxo 'Atendimento Inicial' já existe (ID 14)
-2025-11-22 10:33:21.304 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:216 - Atendimento 95 movido para etapa 'Em Atendimento'
-2025-11-22 10:33:21.309 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:227 - Atendimento 95 atualizado para status 'Em Atendimento'
-2025-11-22 10:33:21.314 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=128 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (island-emma-six-high)
-INFO:django-q:Enqueued [smart_core_cluster] 825
-INFO:django-q:Process-4fe973ec10d7493c806d6b36278389dd created task queen-mike-uranus-arizona from schedule [process_contact_129]
-INFO:django-q:Enqueued [smart_core_cluster] 826
-INFO:django-q:Process-4fe973ec10d7493c806d6b36278389dd created task johnny-black-bacon-equal from schedule [process_contact_129]
-INFO:django-q:Process-6542c0d6d0894a1e90f5d6f3b0ca3c42 processing queen-mike-uranus-arizona 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_129]
-INFO:django-q:Process-a3628f465eb04221b86616c0970aa698 processing johnny-black-bacon-equal 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_129]
-2025-11-22 10:33:35.774 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 129
-2025-11-22 10:33:35.778 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=129 env_count=5
-2025-11-22 10:33:35.778 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 129 - 
-2025-11-22 10:33:35.778 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 129. Ignorando processamento.
-2025-11-22 10:33:35.785 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=129 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (johnny-black-bacon-equal)
-2025-11-22 10:33:36.258 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 129
-2025-11-22 10:33:36.354 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=129 env_count=0
-2025-11-22 10:33:36.355 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:82 - Sem mensagens para processar para contato 129
-2025-11-22 10:33:36.364 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=129 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (queen-mike-uranus-arizona)
+INFO:django-q:Q Cluster william-california-equal-comet starting.
+2025-11-23 13:33:24.125 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 13:33:25.530 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-f1d4da43d3e84b7cb987fc2e5a5a3d43 guarding cluster william-california-equal-comet [smart_core_cluster]
+INFO:django-q:Q Cluster william-california-equal-comet [smart_core_cluster] running.
+2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 13:33:28.689 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 13:33:28.733 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 13:33:28.738 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 13:33:28.767 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-0172a1e64a544618929c8646a8d916fb ready for work at 14196
+INFO:django-q:Process-f95b3c3e6eae457bae82d4047067279b ready for work at 25064
+INFO:django-q:Process-f52b99adf5ce4b1fa5cd347f5705bcc8 monitoring at 30124
+INFO:django-q:Process-7e51928e959645c79ade3fe2f7a5b415 pushing tasks at 3636
+INFO:django-q:Enqueued [smart_core_cluster] 854
+INFO:django-q:Process-f1d4da43d3e84b7cb987fc2e5a5a3d43 created task cat-magazine-blue-berlin from schedule [process_contact_137]
+INFO:django-q:Process-0172a1e64a544618929c8646a8d916fb processing cat-magazine-blue-berlin 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_137]
+2025-11-23 13:34:27.845 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 137
+2025-11-23 13:34:27.889 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=137 env_count=1
+2025-11-23 13:34:27.889 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 137 - 
+2025-11-23 13:34:27.889 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 137. Ignorando processamento.
+2025-11-23 13:34:27.895 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=137 cache_cleared=1
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (cat-magazine-blue-berlin)

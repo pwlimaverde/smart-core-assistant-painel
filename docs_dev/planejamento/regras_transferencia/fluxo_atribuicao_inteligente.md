@@ -69,37 +69,58 @@ Ao detectar a atribuição, o sistema executa a seguinte lógica (`AtendimentoHa
     *   Ouvir `pre_save` ou `post_save` de `Atendimento`.
     *   Detectar `if old_instance.atendente_humano is None and new_instance.atendente_humano is not None`.
 
-### 5.2. Exemplo de Implementação (Pseudocódigo)
+### 5.2. Exemplo de Implementação (Arquitetura Baseada em Sinais)
+
+A implementação utiliza **Django Signals** para desacoplar o modelo de atendimento do serviço de mensageria. O `Atendimento` não conhece o `EvolutionWhatsAppService`.
 
 ```python
-# services/handover_service.py
-
-def process_handover(atendimento, atendente):
-    # 1. Determinar Instância
-    instancia_alvo = atendente.app_instance
-    if not instancia_alvo or not instancia_alvo.active:
-        instancia_alvo = atendimento.departamento.get_instancia_padrao()
-
-    # 2. Atualizar Contexto do Atendimento
-    atendimento.atualizar_contexto("api_key_atual", instancia_alvo.api_key)
-
-    # 3. Enviar Mensagem
-    mensagem_texto = f"Olá, meu nome é {atendente.nome_curto}, darei continuidade ao seu atendimento."
-
-    send_whatsapp_message(
-        api_key=instancia_alvo.api_key,
-        phone=atendimento.contato.telefone,
-        message=mensagem_texto
+# models.py (Atendimento)
+def assign_to_agent(self, atendente):
+    # ... lógica de atribuição ...
+    
+    # 1. Cria Mensagem de Saudação (Objeto Mensagem)
+    mensagem = Mensagem.objects.create(
+        atendimento=self,
+        remetente=TipoRemetente.ATENDENTE_HUMANO,
+        atendente=atendente,  # Novo campo para rastreabilidade
+        conteudo=f"Olá, meu nome é {atendente.nome}...",
+        # ...
     )
 
-    # 4. Registrar no Banco
-    Mensagem.objects.create(
-        atendimento=atendimento,
-        remetente="atendente_humano",
-        conteudo=mensagem_texto,
+    # 2. Dispara Sinal
+    atendimento_assigned.send(sender=self.__class__, atendimento=self, mensagem=mensagem)
+
+# signals.py
+atendimento_assigned = django.dispatch.Signal()
+
+# receivers.py (Evolution Sync App)
+@receiver(atendimento_assigned)
+def handle_assignment(sender, atendimento, mensagem, **kwargs):
+    # 1. Determinar Instância (Agente ou Departamento)
+    instance = atendente.app_instance or departamento.get_instancia_padrao()
+    
+    # 2. Enviar via Evolution API
+    service.send_message(
+        instance=instance,
+        text=mensagem.conteudo,
         # ...
     )
 ```
+
+### 5.3. Fluxo de Mensagens (Novo Objeto Mensagem)
+
+Para garantir o registro auditável de todas as interações:
+
+1.  **Mensagens do Agente (Saudação ou Manual)**:
+    *   Sempre geram um novo objeto `Mensagem`.
+    *   `remetente` = `ATENDENTE_HUMANO`.
+    *   `atendente` = ID do atendente responsável.
+    *   Se for manual (via celular), o Webhook (`fromMe=True`) é responsável por criar este objeto.
+
+2.  **Mensagens do Contato (Durante Atendimento Humano)**:
+    *   Geram um novo objeto `Mensagem`.
+    *   `remetente` = `CONTATO`.
+    *   **Importante**: O Bot **não** responde, mas a mensagem **deve** ser analisada (NLP) para extração de dados/intents.
 
 ## 6. Próximos Passos para Implementação
 

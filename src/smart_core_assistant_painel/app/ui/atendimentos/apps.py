@@ -7,6 +7,11 @@ class AtendimentosConfig(AppConfig):
     name = "smart_core_assistant_painel.app.ui.atendimentos"
 
     def ready(self) -> None:
+        # Importa signals para registrá-los
+        from smart_core_assistant_painel.app.ui.atendimentos import (
+            signals,  # noqa: F401
+        )
+
         # Inicialização idempotente dos serviços essenciais
         try:
             from smart_core_assistant_painel.modules.initial_loading import (

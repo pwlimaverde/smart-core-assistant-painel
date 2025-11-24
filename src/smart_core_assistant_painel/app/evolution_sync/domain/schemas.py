@@ -32,10 +32,23 @@ class EvolutionMessageData:
             EvolutionMessageData: Instância populada com os dados da mensagem.
         """
         message: Dict[str, Any] = data.get("message", {})
-        message_keys = list(message.keys())
-        message_type: str | None = (
-            message_keys[0] if message_keys else data.get("messageType")
-        )
+        # Prioritize explicit messageType from payload
+        message_type: str | None = data.get("messageType")
+
+        if not message_type and message:
+            # Filter out known metadata keys to find the real message type
+            ignore_keys = {
+                "messageContextInfo",
+                "senderKeyDistributionMessage",
+            }
+            valid_keys = [k for k in message.keys() if k not in ignore_keys]
+            if valid_keys:
+                message_type = valid_keys[0]
+            else:
+                # Fallback to first key if everything is ignored or empty
+                keys = list(message.keys())
+                if keys:
+                    message_type = keys[0]
 
         text: str = ""
         if message_type == "conversation":
@@ -44,13 +57,8 @@ class EvolutionMessageData:
         elif message_type == "extendedTextMessage":
             text = message.get("extendedTextMessage", {}).get("text", "")
 
+        # Metadados vazios - removidos campos não utilizados
         md: Dict[str, Any] = {}
-        if "messageTimestamp" in data:
-            md["messageTimestamp"] = data["messageTimestamp"]
-        if "instanceId" in data:
-            md["instanceId"] = data["instanceId"]
-        if "source" in data:
-            md["source"] = data["source"]
 
         return cls(
             id=key.get("id"),

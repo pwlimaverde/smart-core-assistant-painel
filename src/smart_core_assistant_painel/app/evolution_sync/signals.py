@@ -101,11 +101,11 @@ def _on_message_saved(
 
         meta = dict(getattr(instance, "metadados", {}) or {})
         evo = dict(meta.get("evolution", {}) or {})
-        inst_db_id = evo.get("instance_db_id")
+        api_key_meta = evo.get("api_key")
 
-        if inst_db_id:
+        if api_key_meta:
             inst = EvolutionInstance.objects.filter(
-                id=int(inst_db_id), active=True
+                api_key=str(api_key_meta), active=True
             ).first()
 
         # Se não encontrou nos metadados, usa a do contato (fallback)

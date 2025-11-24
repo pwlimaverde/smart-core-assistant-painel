@@ -29,7 +29,20 @@ O sistema opera com um modelo híbrido de estados:
     *   Define a posição visual no Kanban.
     *   Deve ser consistente com o `status` global (ex: uma etapa do tipo `FINALIZACAO` geralmente implica status `RESOLVIDO`).
 
-## 3. Mecanismos de Transferência (Lógica Atual)
+## 3. Lógica de Comunicação Humano-Agente
+
+A comunicação entre atendente humano e contato segue regras específicas para garantir registro e controle:
+
+1.  **Registro de Mensagens**:
+    *   Toda interação gera um novo objeto `Mensagem`.
+    *   Mensagens enviadas pelo atendente (via painel ou celular) são registradas com `remetente=ATENDENTE_HUMANO` e vinculadas ao `Atendente` específico.
+
+2.  **Análise em Tempo Real (Human Loop)**:
+    *   Mesmo quando um humano está atendendo (`bot_pode_atender=False`), as mensagens do contato **continuam passando pela análise de IA** (NLP).
+    *   **Objetivo**: Extrair entidades, detectar intenções e atualizar o contexto do atendimento silenciosamente.
+    *   **Regra de Ouro**: O Bot analisa, salva os metadados, mas **NÃO gera resposta** (silenciado pelo `BotRulesEngine`).
+
+## 4. Mecanismos de Transferência (Lógica Atual)
 
 Existem três vetores principais que disparam transferências:
 
@@ -86,7 +99,7 @@ O modelo `Atendimento` implementa validações rígidas no método `clean()` par
 2.  **Erro de Validação**:
     *   Tentar salvar um atendimento com Etapa X (do Depto A) e Departamento B levanta `ValidationError`.
 
-## 5. Limitações Técnicas Atuais
+## 6. Limitações Técnicas Atuais
 
 1.  **Dependência de Strings Mágicas**: A IA depende que a resposta gerada contenha exatamente a frase "Estarei transferindo..." para extrair o destino. Se o prompt do sistema mudar, a extração quebra.
 2.  **Roteamento "Cego"**: No fallback, o sistema joga para o primeiro fluxo encontrado, o que pode ser incorreto em ambientes com múltiplos departamentos.
@@ -104,7 +117,7 @@ Para mitigar as limitações acima, propõe-se a seguinte reestruturação (deta
 3.  **Handover Contextual**:
     *   Ao transferir, gerar uma "Nota Interna" automática resumindo o motivo da transferência e o resumo da conversa até o momento.
 
-## 7. Exemplos Práticos de Fluxo
+## 8. Exemplos Práticos de Fluxo
 
 Para ilustrar como as regras acima se aplicam na prática, considere os seguintes cenários:
 

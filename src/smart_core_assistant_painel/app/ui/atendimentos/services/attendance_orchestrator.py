@@ -553,17 +553,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 mensagem = mensagens_qs.first()
 
             if mensagem:
-                inst_name = str(last_env.get("instance") or "")
-                inst_id = str(last_env.get("instance_id") or "")
-
-                evo_from_env = last_env.get("evolution") or {}
-                inst_db_id = evo_from_env.get("instance_db_id")
+                api_key = str(last_env.get("apikey") or "")
 
                 meta = dict(mensagem.metadados or {})
                 meta["evolution"] = {
-                    "instance_id": inst_id or None,
-                    "instance_name": inst_name or None,
-                    "instance_db_id": inst_db_id,
+                    "api_key": api_key or None,
                 }
                 mensagem.metadados = meta
                 mensagem.save(update_fields=["metadados"])

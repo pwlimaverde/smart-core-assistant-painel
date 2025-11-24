@@ -475,6 +475,34 @@ class ClicupUnifiedDataService(UnifiedDataService):
                 field=field_id,
             )
             return True
+        except requests.exceptions.HTTPError as exc:
+            # Comentário: detecta erro específico de limite de custom fields
+            if exc.response is not None and exc.response.status_code == 400:
+                try:
+                    err_data = exc.response.json()
+                    ecode = err_data.get("ECODE", "")
+                    if ecode == "FIELD_033":
+                        # Comentário: erro de limite de custom fields (plano free)
+                        logger.warning(
+                            "⚠️ Limite de custom fields atingido (FIELD_033). "
+                            "O plano gratuito do ClickUp permite apenas 60 usos de custom fields. "
+                            "Task: {task}, Field: {field}. "
+                            "Considere fazer upgrade para plano pago para usos ilimitados.",
+                            task=task_id,
+                            field=field_id,
+                        )
+                        return False
+                except Exception:
+                    pass
+
+            # Comentário: outros erros HTTP
+            self._log(
+                "falha ao atualizar custom field: task={task} field={field} err={err}",
+                task=task_id,
+                field=field_id,
+                err=str(exc),
+            )
+            return False
         except Exception as exc:
             self._log(
                 "falha ao atualizar custom field: task={task} field={field} err={err}",

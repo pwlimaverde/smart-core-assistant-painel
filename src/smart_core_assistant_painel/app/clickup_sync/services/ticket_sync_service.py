@@ -37,6 +37,10 @@ class TicketSyncService:
         )
         self.udservice = ClicupUnifiedDataService(params)
 
+        # Comentário: cache de custom fields por list_id para evitar consultas
+        # desnecessárias à API (otimização para limite de usos)
+        self._field_cache: Dict[str, List[Dict[str, Any]]] = {}
+
     def ensure_task(
         self,
         atendimento: Any,
@@ -281,10 +285,19 @@ class TicketSyncService:
             )
 
     def _sync_list_custom_fields(self, list_external_id: str) -> None:
-        """Sincroniza o catálogo de Custom Fields da List no banco local."""
-        fields: List[Dict[str, Any]] = self.udservice.get_list_custom_fields(
-            list_external_id
-        )
+        """Sincroniza o catálogo de Custom Fields da List no banco local.
+
+        Comentário (PT-BR): usa cache para evitar consultas repetidas à API,
+        economizando chamadas e reduzindo latência.
+        """
+        # Comentário: verifica cache primeiro
+        if list_external_id in self._field_cache:
+            fields = self._field_cache[list_external_id]
+        else:
+            fields = self.udservice.get_list_custom_fields(list_external_id)
+            # Comentário: armazena no cache para próximas chamadas
+            self._field_cache[list_external_id] = fields
+
         if not fields:
             # Comentário: nenhum CF acessível; orientar configuração no ClickUp
             logger.info(
@@ -292,13 +305,14 @@ class TicketSyncService:
                 list_external_id,
             )
             return
+
         for f in fields:
             field_id: str = str(f.get("id", ""))
             name: str = str(f.get("name", ""))
             ftype: str = str(f.get("type", ""))
             if not field_id or not name:
                 continue
-            obj, _ = ClickupCustomField.objects.update_or_create(
+            ClickupCustomField.objects.update_or_create(
                 field_id=field_id,
                 defaults={
                     "name": name,
@@ -310,18 +324,40 @@ class TicketSyncService:
             # Comentário: update_or_create garante persistência do catálogo
 
     def _map_cf_values(self, atendimento: Any) -> Dict[str, Any]:
-        """Monta o dicionário de valores para Custom Fields a partir do Atendimento."""
+        """Monta o dicionário de valores para Custom Fields a partir do Atendimento.
+
+        Comentário (PT-BR): mapeia APENAS os campos especificados na documentação
+        oficial (06_mapeamento_campos_atendimento_para_clickup.md). Remove
+        duplicatas PT-BR/EN e campos não oficiais para reduzir uso de custom fields.
+        """
         contato = getattr(atendimento, "contato", None)
-        departamento = getattr(atendimento, "departamento", None)
-        etapa = getattr(atendimento, "etapa_atual", None)
+        cliente = getattr(contato, "cliente", None) if contato else None
+        atendente = getattr(atendimento, "atendente_humano", None)
 
         # Comentário: resolve nome do contato com fallback
         contato_nome: str = (
-            str(getattr(contato, "nome_contato", ""))
+            str(getattr(contato, "nome", ""))
             or str(getattr(contato, "nome_perfil_whatsapp", ""))
-            or str(getattr(contato, "nome", ""))
+            or ""
+        )
+        nome_perfil_whatsapp: Optional[str] = getattr(
+            contato, "nome_perfil_whatsapp", None
         )
         telefone: Optional[str] = getattr(contato, "telefone", None)
+        email: Optional[str] = getattr(contato, "email", None)
+
+        # Comentário: dados do cliente (empresa)
+        nome_fantasia: Optional[str] = (
+            getattr(cliente, "nome_fantasia", None) if cliente else None
+        )
+        ramo_atividade: Optional[str] = (
+            getattr(cliente, "ramo_atividade", None) if cliente else None
+        )
+        observacoes: Optional[str] = (
+            getattr(cliente, "observacoes", None) if cliente else None
+        )
+
+        # Comentário: dados do atendimento
         canal: Optional[str] = getattr(atendimento, "canal", None)
         assunto: Optional[str] = getattr(atendimento, "assunto", None)
         prioridade: str = getattr(atendimento, "prioridade", "normal")
@@ -338,44 +374,43 @@ class TicketSyncService:
             else getattr(atendimento, "data_ultima_mensagem", None)
         )
 
-        # Comentário: suportar nomes em PT-BR e EN conforme documentação
+        # Comentário: mapeia apenas campos oficiais (14 campos conforme documentação)
+        # Workspace Level: 12 campos | List Level: 2 campos
         values: Dict[str, Any] = {
-            # Resumo/Assunto
-            "Assunto": assunto,
-            "Subject (Summary)": assunto,
-            # Departamento
-            "Departamento": str(getattr(departamento, "nome", "")),
-            "Department": str(getattr(departamento, "nome", "")),
-            # Fluxo/List contexto
-            "Etapa": str(getattr(etapa, "nome", "")),
-            "Flow": str(
-                getattr(
-                    getattr(atendimento, "fluxo_atendimento", None), "nome", ""
-                )
-            ),
-            # Prioridade
-            "Prioridade": prioridade,
-            "Priority (Local)": prioridade,
-            # Contato (dados derivados)
+            # === WORKSPACE LEVEL (12 campos) ===
+            # 1. Contato - Nome do contato (texto)
             "Contato": contato_nome,
-            "Contact Name": contato_nome,
+            # 2. Telefone - Telefone do contato (phone)
             "Telefone": telefone,
-            "Contact Phone": telefone,
-            "Contact Email": getattr(contato, "email", None),
-            "Contact ID": getattr(contato, "id", None),
-            # Canal
-            "Canal": canal,
-            "Channel": canal,
-            # Datas
-            "Last Message At": last_dt,
-            "First Response At": getattr(
-                atendimento, "data_primeira_resposta", None
+            # 3. Email - Email do contato (email)
+            "Email": email,
+            # 4. Nome Perfil WhatsApp - Nome do perfil WhatsApp (texto)
+            "Nome Perfil WhatsApp": nome_perfil_whatsapp,
+            # 5. Nome Fantasia - Nome fantasia do cliente (texto)
+            "Nome Fantasia": nome_fantasia,
+            # 6. Ramo de Atividade - Ramo de atividade do cliente (texto)
+            "Ramo de Atividade": ramo_atividade,
+            # 7. Observações - Observações sobre o cliente (área de texto)
+            "Observações": observacoes,
+            # 8. Atendente - Atendente humano (pessoas)
+            # Nota: campo "Atendente" tipo pessoas é atualizado via assignees,
+            # não via custom field. Mantemos aqui para compatibilidade.
+            "Atendente": (
+                str(getattr(atendente, "nome", "")) if atendente else None
             ),
-            "Service Start": getattr(atendimento, "data_inicio", None),
-            "Service End": getattr(atendimento, "data_fim", None),
-            # Feedback/Avaliação
-            "Customer Rating (1–5)": getattr(atendimento, "avaliacao", None),
-            "Customer Feedback": getattr(atendimento, "feedback", None),
+            # 9. Início do Atendimento - Data de início (date)
+            "Início do Atendimento": getattr(atendimento, "data_inicio", None),
+            # 10. Fim do Atendimento - Data de fim (date)
+            "Fim do Atendimento": getattr(atendimento, "data_fim", None),
+            # 11. Última Mensagem - Data da última mensagem (date)
+            "Última Mensagem": last_dt,
+            # 12. Canal - Canal de comunicação (lista suspensa)
+            "Canal": canal,
+            # === LIST LEVEL (2 campos) ===
+            # 13. Assunto - Assunto do atendimento (texto)
+            "Assunto": assunto,
+            # 14. Prioridade (Local) - Prioridade (rótulos)
+            "Prioridade (Local)": prioridade,
         }
         return values
 

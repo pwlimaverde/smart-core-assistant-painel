@@ -104,7 +104,7 @@ class TestLoadMensageDataUseCase(unittest.TestCase):
         params = DataMensageParameters(data=payload, error=DataMessageError)
         result = self.use_case(params)
         self.assertIsInstance(result, ErrorReturn)
-        self.assertIn("Campo 'remoteJid' não encontrado", result.result.message)
+        self.assertIn("Identificador de contato não encontrado", result.result.message)
 
     def test_call_missing_message_section(self) -> None:
         payload = self._create_base_payload()
@@ -125,9 +125,6 @@ class TestLoadMensageDataUseCase(unittest.TestCase):
         
         # Debug: vamos ver o que está acontecendo
         if isinstance(result, ErrorReturn):
-            print(f"Erro recebido: {result.result.message}")
-            # Pode ser que esteja caindo na exceção do try-catch
-            # Vamos verificar se ainda funciona mesmo com erro
             self.assertIsInstance(result, ErrorReturn)
             self.assertIn("Exception:", result.result.message)
         else:
@@ -547,104 +544,6 @@ class TestLoadMensageDataUseCase(unittest.TestCase):
         message_data = result.result
         self.assertIsNone(message_data.message_id)  # Deve ser None
         self.assertEqual(message_data.conteudo, "Message without ID")
-
-
-if __name__ == "__main__":
-    unittest.main()
-
-    def test_call_missing_instance(self) -> None:
-        payload = self._create_base_payload()
-        del payload["instance"]
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-        result = self.use_case(params)
-        self.assertIsInstance(result, ErrorReturn)
-        self.assertIn("Campo 'instance' não encontrado", result.result.message)
-
-    def test_call_missing_data_section(self) -> None:
-        payload = self._create_base_payload()
-        del payload["data"]
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-        result = self.use_case(params)
-        self.assertIsInstance(result, ErrorReturn)
-        self.assertIn("Campo 'data' não encontrado", result.result.message)
-
-    def test_call_missing_key_section(self) -> None:
-        payload = self._create_base_payload()
-        del payload["data"]["key"]
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-        result = self.use_case(params)
-        self.assertIsInstance(result, ErrorReturn)
-        self.assertIn("Campo 'key' não encontrado", result.result.message)
-
-    def test_call_missing_remote_jid(self) -> None:
-        payload = self._create_base_payload()
-        del payload["data"]["key"]["remoteJid"]
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-        result = self.use_case(params)
-        self.assertIsInstance(result, ErrorReturn)
-        self.assertIn("Campo 'remoteJid' não encontrado", result.result.message)
-
-    def test_call_missing_message_section(self) -> None:
-        payload = self._create_base_payload()
-        del payload["data"]["message"]
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-        result = self.use_case(params)
-        self.assertIsInstance(result, ErrorReturn)
-        self.assertIn("Campo 'message' não encontrado", result.result.message)
-
-    def test_call_conversation_message(self) -> None:
-        payload = self._create_base_payload()
-        payload["data"]["message"] = {"conversation": "Hello World"}
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-
-        result = self.use_case(params)
-
-        self.assertIsInstance(result, SuccessReturn)
-        message_data = result.result
-        self.assertEqual(message_data.instance, "test_instance")
-        self.assertEqual(message_data.numero_telefone, "5511987654321")
-        self.assertEqual(message_data.from_me, False)
-        self.assertEqual(message_data.conteudo, "Hello World")
-        self.assertEqual(message_data.message_type, "conversation")
-        self.assertEqual(message_data.message_id, "MSG_ID_123")
-        self.assertEqual(message_data.nome_perfil_whatsapp, "Test User")
-        self.assertEqual(message_data.metadados["messageTimestamp"], 1678886400)
-
-    def test_call_extended_text_message(self) -> None:
-        payload = self._create_base_payload()
-        payload["data"]["message"] = {
-            "extendedTextMessage": {"text": "This is an extended message"}
-        }
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-
-        result = self.use_case(params)
-
-        self.assertIsInstance(result, SuccessReturn)
-        message_data = result.result
-        self.assertEqual(message_data.conteudo, "This is an extended message")
-        self.assertEqual(message_data.message_type, "extendedTextMessage")
-
-    def test_call_image_message(self) -> None:
-        payload = self._create_base_payload()
-        payload["data"]["message"] = {
-            "imageMessage": {
-                "caption": "Beautiful view",
-                "mimetype": "image/jpeg",
-                "url": "http://example.com/image.jpg",
-                "fileLength": 12345,
-            }
-        }
-        params = DataMensageParameters(data=payload, error=DataMessageError("Erro de validacao"))
-
-        result = self.use_case(params)
-
-        self.assertIsInstance(result, SuccessReturn)
-        message_data = result.result
-        self.assertEqual(message_data.conteudo, "Beautiful view")
-        self.assertEqual(message_data.message_type, "imageMessage")
-        self.assertEqual(message_data.metadados["mimetype"], "image/jpeg")
-        self.assertEqual(message_data.metadados["url"], "http://example.com/image.jpg")
-        self.assertEqual(message_data.metadados["fileLength"], 12345)
 
 
 if __name__ == "__main__":

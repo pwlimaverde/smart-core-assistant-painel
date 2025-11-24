@@ -303,6 +303,8 @@ class Atendimento(models.Model):
                         else None
                     )
             except Exception as exc:
+                if isinstance(exc, ValidationError):
+                    raise
                 logger.warning(
                     "Falha ao validar etapa_atual por departamento: {}", exc
                 )
@@ -357,6 +359,8 @@ class Atendimento(models.Model):
                         }
                     )
             except Exception as exc:
+                if isinstance(exc, ValidationError):
+                    raise
                 logger.warning(
                     "Falha ao validar fluxo_atendimento por departamento: {}",
                     exc,
@@ -392,6 +396,8 @@ class Atendimento(models.Model):
                         }
                     )
             except Exception as exc:
+                if isinstance(exc, ValidationError):
+                    raise
                 logger.warning(
                     "Falha ao validar consistência etapa_atual/fluxo: {}",
                     exc,

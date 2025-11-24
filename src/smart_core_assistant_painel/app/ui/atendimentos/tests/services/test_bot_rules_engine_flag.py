@@ -26,9 +26,8 @@ class TestBotRulesEngineFlag:
 
         engine = BotRulesEngine()
 
-        with (
-            patch.object(engine, "_is_in_bot_department", return_value=True),
-            patch.object(engine, "_has_human_interaction", return_value=False),
+        with patch.object(
+            engine, "_has_human_interaction", return_value=False
         ):
             assert engine.can_bot_respond(atendimento) is True
 
@@ -41,9 +40,8 @@ class TestBotRulesEngineFlag:
         engine = BotRulesEngine()
 
         # Even if other conditions are met
-        with (
-            patch.object(engine, "_is_in_bot_department", return_value=True),
-            patch.object(engine, "_has_human_interaction", return_value=False),
+        with patch.object(
+            engine, "_has_human_interaction", return_value=False
         ):
             assert engine.can_bot_respond(atendimento) is False
 

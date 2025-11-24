@@ -25,17 +25,12 @@ class UnifieldDataServicesUseCase(UDSUsecase):
         if isinstance(data, SuccessReturn):
             return SuccessReturn(data.result)
         elif isinstance(data, ErrorReturn):
-            return ErrorReturn(
-                parameters.error(
-                    message=(
-                        "Erro ao executar unifield_data_services: "
-                        + str(data.result)
-                    )
-                )
+            error = parameters.error
+            error.message = (
+                "Erro ao executar unifield_data_services: " + str(data.result)
             )
+            return ErrorReturn(error)
         else:
-            return ErrorReturn(
-                parameters.error(
-                    message=("Tipo de retorno inesperado do datasource.")
-                )
-            )
+            error = parameters.error
+            error.message = "Tipo de retorno inesperado do datasource."
+            return ErrorReturn(error)

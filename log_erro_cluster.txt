@@ -1,33 +1,234 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-23 13:33:20.353 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:21.760 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 20:42:04.315 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 20:42:05.875 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster william-california-equal-comet starting.
-2025-11-23 13:33:24.125 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:25.530 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-f1d4da43d3e84b7cb987fc2e5a5a3d43 guarding cluster william-california-equal-comet [smart_core_cluster]
-INFO:django-q:Q Cluster william-california-equal-comet [smart_core_cluster] running.
-2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:27.175 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:28.689 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-23 13:33:28.733 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-23 13:33:28.738 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-23 13:33:28.767 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-0172a1e64a544618929c8646a8d916fb ready for work at 14196
-INFO:django-q:Process-f95b3c3e6eae457bae82d4047067279b ready for work at 25064
-INFO:django-q:Process-f52b99adf5ce4b1fa5cd347f5705bcc8 monitoring at 30124
-INFO:django-q:Process-7e51928e959645c79ade3fe2f7a5b415 pushing tasks at 3636
-INFO:django-q:Enqueued [smart_core_cluster] 854
-INFO:django-q:Process-f1d4da43d3e84b7cb987fc2e5a5a3d43 created task cat-magazine-blue-berlin from schedule [process_contact_137]
-INFO:django-q:Process-0172a1e64a544618929c8646a8d916fb processing cat-magazine-blue-berlin 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_137]
-2025-11-23 13:34:27.845 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 137
-2025-11-23 13:34:27.889 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=137 env_count=1
-2025-11-23 13:34:27.889 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 137 - 
-2025-11-23 13:34:27.889 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:219 - Conteúdo vazio para contato 137. Ignorando processamento.
-2025-11-23 13:34:27.895 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=137 cache_cleared=1
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (cat-magazine-blue-berlin)
+INFO:django-q:Q Cluster comet-charlie-arkansas-pennsylvania starting.
+2025-11-23 20:42:09.670 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 20:42:11.251 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-2f0a328947e841d3836341a13d10a49a guarding cluster comet-charlie-arkansas-pennsylvania [smart_core_cluster]
+INFO:django-q:Q Cluster comet-charlie-arkansas-pennsylvania [smart_core_cluster] running.
+2025-11-23 20:42:13.166 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 20:42:13.166 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 20:42:13.166 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 20:42:13.166 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-23 20:42:14.920 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 20:42:14.934 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 20:42:14.948 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-23 20:42:14.950 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 ready for work at 15428
+INFO:django-q:Process-ae1c6fcd88ee4dc087183349ede960e6 ready for work at 21152
+INFO:django-q:Process-d1be2aa02b4f4400b5cf60056fce80a7 pushing tasks at 10480
+INFO:django-q:Process-83e88f7817664849bc13e9a7d9136e83 monitoring at 7996
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 processing monkey-bulldog-pennsylvania-river 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_delete_task'
+2025-11-23 20:42:29.367 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-23 20:42:29.412 | WARNING  | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:delete_task:579 - Task não encontrada para atendimento 103
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_delete_task' (monkey-bulldog-pennsylvania-river)
+INFO:django-q:Enqueued [smart_core_cluster] 873
+INFO:django-q:Process-2f0a328947e841d3836341a13d10a49a created task fifteen-december-louisiana-pizza from schedule [process_contact_137]
+INFO:django-q:Process-ae1c6fcd88ee4dc087183349ede960e6 processing fifteen-december-louisiana-pizza 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_137]
+2025-11-23 20:43:44.931 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 137
+2025-11-23 20:43:44.987 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=137 env_count=1
+2025-11-23 20:43:44.987 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 137 - bom dia, meu nome é paulo. qual o horario de funcionamento de vocês
+INFO:django-q:Enqueued [smart_core_cluster] 874
+INFO:django-q:Enqueued [smart_core_cluster] 875
+INFO:django-q:Enqueued [smart_core_cluster] 876
+INFO:django-q:Enqueued [smart_core_cluster] 877
+2025-11-23 20:43:45.282 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=137 text_len=67 msg_id=246
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 processing vegan-edward-kansas-quiet 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_ensure_task'
+2025-11-23 20:43:45.347 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+2025-11-23 20:43:46.510 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task criada: lista=901322461036 -> 86adegnxk
+2025-11-23 20:43:46.525 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:ensure_task:90 - Criada Task ClickUp 86adegnxk para atendimento 104
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:django-q:Enqueued [smart_core_cluster] 878
+2025-11-23 20:43:47.542 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:289 - atd_process_can_respond contact_id=137 pode_responder=True
+2025-11-23 20:43:48.472 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:48.472 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=46a9ebda-c0e4-4d74-acb5-344c4c3ab61f err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/46a9ebda-c0e4-4d74-acb5-344c4c3ab61f
+2025-11-23 20:43:49.229 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:49.229 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=fc25741c-2d80-4906-a326-68a607250464 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/fc25741c-2d80-4906-a326-68a607250464
+2025-11-23 20:43:50.017 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:50.017 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=3ce22f5a-3ba3-47e5-985a-ceff1350806c err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/3ce22f5a-3ba3-47e5-985a-ceff1350806c
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-23 20:43:50.748 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3051 (limiar 0.4000)
+2025-11-23 20:43:50.751 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3680 (limiar 0.4000)
+2025-11-23 20:43:50.754 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3741 (limiar 0.4000)
+2025-11-23 20:43:50.758 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3879 (limiar 0.4000)
+2025-11-23 20:43:50.762 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3961 (limiar 0.4000)
+2025-11-23 20:43:50.769 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:50.769 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8569f34f-5c63-44ec-88a6-b56c98091008 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8569f34f-5c63-44ec-88a6-b56c98091008
+2025-11-23 20:43:50.771 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:get_available_flows:135 - Gerado dicionário com 2 fluxos disponíveis
+2025-11-23 20:43:50.771 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:709 - atd_process_ai_call contact_id=137
+2025-11-23 20:43:50.771 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
+PROMPT COMPLETO ENVIADO PARA LLM
+================================================================================
+
+============================================================
+MESSAGE 1 - ROLE: SYSTEM
+============================================================
+Data e Hora Atual: 23/11/2025 20:43:50 - Sunday
+
+Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
+
+**Seu comportamento deve ser guiado pelos seguintes princípios:**
+
+*   **Profissionalismo:** Mantenha um tom formal, mas acessível. Utilize uma linguagem que demonstre expertise e seriedade, sem ser excessivamente robótica.
+*   **Clareza e Concisão:** Vá direto ao ponto. Evite frases de preenchimento ou informações desnecessárias. A eficiência na comunicação é essencial.
+*   **Tom Prestativo:** Demonstre sempre uma postura solícita e focada em resolver a dúvida do usuário. Sua prioridade é ser útil.
+*   **Neutralidade Factual:** Não expresse opiniões, sentimentos ou faça suposições. Limite-se estritamente aos fatos disponíveis.
+
+INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA
+Siga estritamente as orientações abaixo, em português claro e objetivo.
+Adapte a resposta ao contexto do atendimento atual.
+Intenções detectadas e orientações:
+1. [saudacao] Aja como um assistente cordial e direto. Cumprimente brevemente, acolha o usuário e pergunte de forma objetiva como pode ajudar. Mantenha tom profissional e amistoso. Não solicite dados sensíveis.
+2. [pergunta] Forneça informações claras e verificáveis. Se o pedido for amplo, solicite até 2 esclarecimentos objetivos. Evite jargões e respostas longas.
+Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa.
+
+### Regras de Resposta (siga rigorosamente):
+1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.
+2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."
+3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.
+4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.
+5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.
+6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.
+
+
+### SETORES DISPONÍVEIS PARA TRANSFERÊNCIA:
+- **Atendimento - Comercial**: teste atendimento
+- **Atendimento - Financeiro**: teste atendimento
+
+### REGRAS DE TRANSFERÊNCIA:
+1. Analise a intenção do usuário e verifique se há um setor específico adequado
+2. Se houver um setor correspondente exato na lista acima, use-o
+3. Se não houver correspondência exata, escolha o setor mais próximo
+4. Use sempre o nome exato do setor conforme listado acima
+5. A transferência deve ser mencionada apenas se for realmente necessária
+
+
+============================================================
+MESSAGE 2 - ROLE: USER
+============================================================
+<historico_conversa>
+(Apenas para referência de contexto, não como fonte factual)
+{historico_context}
+</historico_conversa>
+
+<contexto_rag>
+{dados_treinamento}
+</contexto_rag>
+
+<pergunta_usuario>
+{context}
+</pergunta_usuario>
+
+Com base apenas nas regras acima, elabore a resposta final ao usuário.
+
+================================================================================
+FIM DO PROMPT
+================================================================================
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 9.000000 seconds
+2025-11-23 20:43:51.510 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:51.510 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8fa8f752-c5fe-4302-b4f6-85fe7314a05a err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8fa8f752-c5fe-4302-b4f6-85fe7314a05a
+2025-11-23 20:43:52.211 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:52.211 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=d3447692-4593-473a-952a-e94d1cd0a88b err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/d3447692-4593-473a-952a-e94d1cd0a88b
+2025-11-23 20:43:52.953 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:52.953 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=976a0042-bb76-4594-94ce-ffbd3ed5b415 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/976a0042-bb76-4594-94ce-ffbd3ed5b415
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 processing island-louisiana-fourteen-jersey 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content'
+2025-11-23 20:43:53.018 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_ensure_task' (vegan-edward-kansas-quiet)
+2025-11-23 20:43:54.257 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task atualizada: lista=901322461036 -> 86adegnxk
+2025-11-23 20:43:54.258 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:update_rich_content:119 - Atualizado conteúdo enriquecido da Task 86adegnxk
+2025-11-23 20:43:55.836 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:55.836 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=46a9ebda-c0e4-4d74-acb5-344c4c3ab61f err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/46a9ebda-c0e4-4d74-acb5-344c4c3ab61f
+2025-11-23 20:43:56.544 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:56.544 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=fc25741c-2d80-4906-a326-68a607250464 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/fc25741c-2d80-4906-a326-68a607250464
+2025-11-23 20:43:57.228 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:57.228 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=3ce22f5a-3ba3-47e5-985a-ceff1350806c err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/3ce22f5a-3ba3-47e5-985a-ceff1350806c
+2025-11-23 20:43:57.980 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:57.980 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8569f34f-5c63-44ec-88a6-b56c98091008 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8569f34f-5c63-44ec-88a6-b56c98091008
+2025-11-23 20:43:58.680 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:58.681 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8fa8f752-c5fe-4302-b4f6-85fe7314a05a err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8fa8f752-c5fe-4302-b4f6-85fe7314a05a
+2025-11-23 20:43:59.384 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:43:59.384 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=d3447692-4593-473a-952a-e94d1cd0a88b err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/d3447692-4593-473a-952a-e94d1cd0a88b
+2025-11-23 20:44:00.106 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:00.106 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=976a0042-bb76-4594-94ce-ffbd3ed5b415 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/976a0042-bb76-4594-94ce-ffbd3ed5b415
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 processing mobile-washington-bacon-pluto 'smart_core_assistant_painel.app.clickup_sync.tasks.task_mensagem_append_comment'
+2025-11-23 20:44:00.158 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content' (island-louisiana-fourteen-jersey)
+2025-11-23 20:44:01.061 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - comentário criado: task=86adegnxk -> 90130194097941
+2025-11-23 20:44:01.061 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:append_message_comment:404 - Comentário de mensagem anexado na Task 86adegnxk
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 processing sodium-thirteen-nevada-yankee 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content'
+2025-11-23 20:44:01.088 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_mensagem_append_comment' (mobile-washington-bacon-pluto)
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-23 20:44:02.648 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task atualizada: lista=901322461036 -> 86adegnxk
+2025-11-23 20:44:02.648 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:update_rich_content:119 - Atualizado conteúdo enriquecido da Task 86adegnxk
+2025-11-23 20:44:04.522 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:04.522 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=46a9ebda-c0e4-4d74-acb5-344c4c3ab61f err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/46a9ebda-c0e4-4d74-acb5-344c4c3ab61f
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-23 20:44:05.291 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:05.292 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=fc25741c-2d80-4906-a326-68a607250464 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/fc25741c-2d80-4906-a326-68a607250464
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-23 20:44:05.639 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:664 - Score de confiabilidade (triádico): 0.7507
+2025-11-23 20:44:05.657 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:127 - Enviando resposta da mensagem 246 via Evolution API para 558881061874
+2025-11-23 20:44:06.001 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:06.001 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=3ce22f5a-3ba3-47e5-985a-ceff1350806c err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/3ce22f5a-3ba3-47e5-985a-ceff1350806c
+2025-11-23 20:44:06.689 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:06.689 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8569f34f-5c63-44ec-88a6-b56c98091008 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8569f34f-5c63-44ec-88a6-b56c98091008
+2025-11-23 20:44:07.408 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:07.409 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8fa8f752-c5fe-4302-b4f6-85fe7314a05a err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8fa8f752-c5fe-4302-b4f6-85fe7314a05a
+2025-11-23 20:44:08.154 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:08.154 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=d3447692-4593-473a-952a-e94d1cd0a88b err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/d3447692-4593-473a-952a-e94d1cd0a88b
+2025-11-23 20:44:08.479 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:146 - Mensagem 246 enviada com sucesso e marcada como respondida
+2025-11-23 20:44:08.479 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:972 - Resposta do bot registrada na mensagem 246 (atendimento 104) com confianca=0.751. Aguardando envio via Evolution API.
+2025-11-23 20:44:08.479 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:725 - atd_process_registered_bot_response msg_id=246 len=164
+2025-11-23 20:44:08.489 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:252 - Atendimento 104 movido para etapa 'Em Atendimento' do fluxo 'Atendimento Inicial'
+INFO:django-q:Enqueued [smart_core_cluster] 879
+2025-11-23 20:44:08.552 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:271 - Atendimento 104 atualizado para status 'Em Atendimento'
+2025-11-23 20:44:08.558 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=137 cache_cleared=1
+INFO:django-q:Process-ae1c6fcd88ee4dc087183349ede960e6 processing crazy-gee-gee-bulldog 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content'
+2025-11-23 20:44:08.591 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (fifteen-december-louisiana-pizza)
+2025-11-23 20:44:08.897 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:08.897 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=976a0042-bb76-4594-94ce-ffbd3ed5b415 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/976a0042-bb76-4594-94ce-ffbd3ed5b415
+INFO:django-q:Process-fbffadea810d4927a830dac971f200c0 processing whiskey-fruit-charlie-violet 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content'
+2025-11-23 20:44:08.961 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:__init__:66 - ClicupUnifiedDataService inicializado
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content' (sodium-thirteen-nevada-yankee)
+2025-11-23 20:44:10.004 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task atualizada: lista=901322461036 -> 86adegnxk
+2025-11-23 20:44:10.005 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:update_rich_content:119 - Atualizado conteúdo enriquecido da Task 86adegnxk
+2025-11-23 20:44:11.396 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - task atualizada: lista=901322461036 -> 86adegnxk
+2025-11-23 20:44:11.396 | INFO     | smart_core_assistant_painel.app.clickup_sync.services.ticket_sync_service:update_rich_content:119 - Atualizado conteúdo enriquecido da Task 86adegnxk
+2025-11-23 20:44:11.747 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:11.747 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=46a9ebda-c0e4-4d74-acb5-344c4c3ab61f err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/46a9ebda-c0e4-4d74-acb5-344c4c3ab61f
+2025-11-23 20:44:12.512 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:12.513 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=fc25741c-2d80-4906-a326-68a607250464 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/fc25741c-2d80-4906-a326-68a607250464
+2025-11-23 20:44:13.254 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:13.254 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=46a9ebda-c0e4-4d74-acb5-344c4c3ab61f err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/46a9ebda-c0e4-4d74-acb5-344c4c3ab61f
+2025-11-23 20:44:13.271 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:13.271 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=3ce22f5a-3ba3-47e5-985a-ceff1350806c err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/3ce22f5a-3ba3-47e5-985a-ceff1350806c
+2025-11-23 20:44:13.991 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:13.991 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8569f34f-5c63-44ec-88a6-b56c98091008 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8569f34f-5c63-44ec-88a6-b56c98091008
+2025-11-23 20:44:14.326 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:14.327 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=fc25741c-2d80-4906-a326-68a607250464 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/fc25741c-2d80-4906-a326-68a607250464
+2025-11-23 20:44:14.702 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:14.702 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8fa8f752-c5fe-4302-b4f6-85fe7314a05a err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8fa8f752-c5fe-4302-b4f6-85fe7314a05a
+2025-11-23 20:44:15.014 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:15.015 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=3ce22f5a-3ba3-47e5-985a-ceff1350806c err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/3ce22f5a-3ba3-47e5-985a-ceff1350806c
+2025-11-23 20:44:15.435 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:15.436 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=d3447692-4593-473a-952a-e94d1cd0a88b err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/d3447692-4593-473a-952a-e94d1cd0a88b
+2025-11-23 20:44:15.725 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:15.725 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8569f34f-5c63-44ec-88a6-b56c98091008 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8569f34f-5c63-44ec-88a6-b56c98091008
+2025-11-23 20:44:16.189 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:16.189 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=976a0042-bb76-4594-94ce-ffbd3ed5b415 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/976a0042-bb76-4594-94ce-ffbd3ed5b415
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content' (crazy-gee-gee-bulldog)
+2025-11-23 20:44:16.479 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:16.479 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=8fa8f752-c5fe-4302-b4f6-85fe7314a05a err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/8fa8f752-c5fe-4302-b4f6-85fe7314a05a
+2025-11-23 20:44:17.193 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:17.194 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=d3447692-4593-473a-952a-e94d1cd0a88b err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/d3447692-4593-473a-952a-e94d1cd0a88b
+2025-11-23 20:44:17.995 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_request:101 - Falha ClickUp API: 400 {"err":"Custom field usages exceeded for your plan","ECODE":"FIELD_033"}
+2025-11-23 20:44:17.995 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter:_log:113 - falha ao atualizar custom field: task=86adegnxk field=976a0042-bb76-4594-94ce-ffbd3ed5b415 err=400 Client Error: Bad Request for url: https://api.clickup.com/api/v2/task/86adegnxk/field/976a0042-bb76-4594-94ce-ffbd3ed5b415
+INFO:django-q:Processed 'smart_core_assistant_painel.app.clickup_sync.tasks.task_atendimento_update_task_rich_content' (whiskey-fruit-charlie-violet)

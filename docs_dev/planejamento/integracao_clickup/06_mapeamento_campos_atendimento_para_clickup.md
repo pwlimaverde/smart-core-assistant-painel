@@ -24,22 +24,22 @@ Esta seção lista **todos** os campos personalizados que devem ser criados no C
 
 ### 📋 Tabela Resumo dos Campos
 
-| Campo no ClickUp             | Tipo no ClickUp          | Nível        | Campo Origem (Sistema)      | Justificativa |
-|------------------------------|--------------------------|--------------|----------------------------|---------------|
-| `Assunto`                    | Texto                    | List         | `assunto`                  | Resumo legível no card além do título |
-| `Canal`                      | Lista suspensa           | Workspace    | `canal`                    | Estratégia e métricas por canal (WhatsApp, e-mail etc.) |
-| `Contato`                    | Texto                    | Workspace    | `contato.nome`             | Atendimento humanizado e melhor triagem |
-| `Telefone`                   | Telefone                 | Workspace    | `contato.telefone`         | Contato rápido; integrações de discagem |
-| `Email`                      | E-mail                   | Workspace    | `contato.email`            | Escalonamento e follow-up por e-mail |
-| `Nome Perfil WhatsApp`       | Texto                    | Workspace    | `contato.nome_perfil_whatsapp` | Identificação consistente com o perfil do WhatsApp |
-| `Início do Atendimento`      | Data                     | Workspace    | `data_inicio`              | Ponto inicial para SLA e métricas operacionais |
-| `Fim do Atendimento`         | Data                     | Workspace    | `data_fim`                 | Cálculo de tempo total de atendimento |
-| `Última Mensagem`            | Data                     | Workspace    | `data_ultima_mensagem`     | Ajuda no ordenamento e triagem por recência |
-| `Prioridade (Local)`         | Rótulos                  | List         | `prioridade`               | Permite múltiplos níveis e cores diferentes |
-| `Atendente`                  | Pessoas                  | Workspace    | `atendente_humano`         | Destaca o responsável pelo caso como campo dedicado |
-| `Nome Fantasia`              | Texto                    | Workspace    | `cliente.nome_fantasia`    | Identificação comercial clara do cliente |
-| `Ramo de Atividade`          | Texto                    | Workspace    | `cliente.ramo_atividade`   | Segmentação e análise por setor |
-| `Observações`                | Área de texto            | Workspace    | `cliente.observacoes`      | Contexto adicional para atendimento e histórico |
+| Campo no ClickUp             | Tipo no ClickUp          | Descrição no ClickUp | Nível        | Campo Origem (Sistema)      | Justificativa |
+|------------------------------|--------------------------|----------------------|--------------|----------------------------|---------------|
+| `Assunto`                    | Texto                    | Resumo ou assunto principal do atendimento | List         | `assunto`                  | Resumo legível no card além do título |
+| `Canal`                      | Lista suspensa           | Canal de comunicação utilizado pelo cliente (WhatsApp, Email, Telefone, Web) | Workspace    | `canal`                    | Estratégia e métricas por canal (WhatsApp, e-mail etc.) |
+| `Contato`                    | Texto                    | Nome completo do contato que está sendo atendido | Workspace    | `contato.nome`             | Atendimento humanizado e melhor triagem |
+| `Telefone`                   | Telefone                 | Número de telefone do contato para comunicação direta | Workspace    | `contato.telefone`         | Contato rápido; integrações de discagem |
+| `Email`                      | E-mail                   | Endereço de e-mail do contato para follow-up | Workspace    | `contato.email`            | Escalonamento e follow-up por e-mail |
+| `Nome Perfil WhatsApp`       | Texto                    | Nome exibido no perfil do WhatsApp do contato | Workspace    | `contato.nome_perfil_whatsapp` | Identificação consistente com o perfil do WhatsApp |
+| `Início do Atendimento`      | Data                     | Data e hora de início do atendimento | Workspace    | `data_inicio`              | Ponto inicial para SLA e métricas operacionais |
+| `Fim do Atendimento`         | Data                     | Data e hora de conclusão do atendimento | Workspace    | `data_fim`                 | Cálculo de tempo total de atendimento |
+| `Última Mensagem`            | Data                     | Data e hora da última mensagem recebida ou enviada | Workspace    | `data_ultima_mensagem`     | Ajuda no ordenamento e triagem por recência |
+| `Prioridade (Local)`         | Rótulos                  | Nível de prioridade do atendimento (Baixa, Normal, Alta, Urgente) | List         | `prioridade`               | Permite múltiplos níveis e cores diferentes |
+| `Atendente`                  | Pessoas                  | Atendente humano responsável pelo atendimento | Workspace    | `atendente_humano`         | Destaca o responsável pelo caso como campo dedicado |
+| `Nome Fantasia`              | Texto                    | Nome comercial/fantasia da empresa cliente | Workspace    | `cliente.nome_fantasia`    | Identificação comercial clara do cliente |
+| `Ramo de Atividade`          | Texto                    | Setor ou ramo de atividade da empresa cliente | Workspace    | `cliente.ramo_atividade`   | Segmentação e análise por setor |
+| `Observações`                | Área de texto            | Observações e notas importantes sobre o cliente | Workspace    | `cliente.observacoes`      | Contexto adicional para atendimento e histórico |
 
 ### 📝 Campos Nativos do ClickUp (Não criar como Custom Fields)
 
@@ -57,48 +57,58 @@ Estes campos já existem nativamente no ClickUp e devem ser utilizados:
 
 #### `Contato` (Texto - Workspace)
 - **Origem**: `contato.nome`
+- **Descrição**: Nome completo do contato que está sendo atendido
 - **Finalidade**: Nome do contato para atendimento humanizado
 
 #### `Telefone` (Telefone - Workspace)
 - **Origem**: `contato.telefone`
+- **Descrição**: Número de telefone do contato para comunicação direta
 - **Finalidade**: Contato direto, integrações de discagem
 
 #### `Email` (E-mail - Workspace)
 - **Origem**: `contato.email`
+- **Descrição**: Endereço de e-mail do contato para follow-up
 - **Finalidade**: Escalonamento e follow-up
 
 #### `Nome Perfil WhatsApp` (Texto - Workspace)
 - **Origem**: `contato.nome_perfil_whatsapp`
+- **Descrição**: Nome exibido no perfil do WhatsApp do contato
 - **Finalidade**: Identificação consistente com perfil WhatsApp
 
 ### 2. Campos de Informação do Cliente
 
 #### `Nome Fantasia` (Texto - Workspace)
 - **Origem**: `cliente.nome_fantasia`
+- **Descrição**: Nome comercial/fantasia da empresa cliente
 - **Finalidade**: Identificação comercial do cliente
 
 #### `Ramo de Atividade` (Texto - Workspace)
 - **Origem**: `cliente.ramo_atividade`
+- **Descrição**: Setor ou ramo de atividade da empresa cliente
 - **Finalidade**: Segmentação por setor
 - **Observação**: Campo de texto para permitir valores dinâmicos
 
 #### `Observações` (Área de texto - Workspace)
 - **Origem**: `cliente.observacoes`
+- **Descrição**: Observações e notas importantes sobre o cliente
 - **Finalidade**: Contexto adicional e histórico
 
 ### 3. Campos de Controle do Atendimento
 
 #### `Assunto` (Texto - List)
 - **Origem**: `assunto`
+- **Descrição**: Resumo ou assunto principal do atendimento
 - **Finalidade**: Resumo legível além do título
 
 #### `Canal` (Lista suspensa - Workspace)
 - **Origem**: `canal`
+- **Descrição**: Canal de comunicação utilizado pelo cliente (WhatsApp, Email, Telefone, Web)
 - **Opções**: `WhatsApp`, `Email`, `Telefone`, `Web`
 - **Finalidade**: Identificação imediata do canal de origem
 
 #### `Prioridade (Local)` (Rótulos - List)
 - **Origem**: `prioridade`
+- **Descrição**: Nível de prioridade do atendimento (Baixa, Normal, Alta, Urgente)
 - **Opções**:
   - `Baixa` (Azul: #00A0E3)
   - `Normal` (Cinza: #B7B7B7)
@@ -108,20 +118,24 @@ Estes campos já existem nativamente no ClickUp e devem ser utilizados:
 
 #### `Atendente` (Pessoas - Workspace)
 - **Origem**: `atendente_humano`
+- **Descrição**: Atendente humano responsável pelo atendimento
 - **Finalidade**: Identificação do responsável pelo atendimento
 
 ### 4. Campos de Datas e SLA
 
 #### `Início do Atendimento` (Data - Workspace)
 - **Origem**: `data_inicio`
+- **Descrição**: Data e hora de início do atendimento
 - **Finalidade**: Cálculo de SLA e métricas
 
 #### `Fim do Atendimento` (Data - Workspace)
 - **Origem**: `data_fim`
+- **Descrição**: Data e hora de conclusão do atendimento
 - **Finalidade**: Cálculo de tempo total
 
 #### `Última Mensagem` (Data - Workspace)
 - **Origem**: `data_ultima_mensagem`
+- **Descrição**: Data e hora da última mensagem recebida ou enviada
 - **Finalidade**: Ordenamento por recência
 
 ---
@@ -155,34 +169,70 @@ Estes campos já existem nativamente no ClickUp e devem ser utilizados:
 Crie os seguintes campos no nível **Workspace** (para reutilização em todas as Lists):
 
 #### Campos de Texto
-1. **Contato** (Texto)
-2. **Nome Fantasia** (Texto)
-3. **Nome Perfil WhatsApp** (Texto)
-4. **Ramo de Atividade** (Texto)
+1. **Contato**
+   - Tipo: Texto
+   - Descrição: `Nome completo do contato que está sendo atendido`
+
+2. **Nome Fantasia**
+   - Tipo: Texto
+   - Descrição: `Nome comercial/fantasia da empresa cliente`
+
+3. **Nome Perfil WhatsApp**
+   - Tipo: Texto
+   - Descrição: `Nome exibido no perfil do WhatsApp do contato`
+
+4. **Ramo de Atividade**
+   - Tipo: Texto
+   - Descrição: `Setor ou ramo de atividade da empresa cliente`
 
 #### Campos de Área de Texto
-5. **Observações** (Área de texto)
+5. **Observações**
+   - Tipo: Área de texto
+   - Descrição: `Observações e notas importantes sobre o cliente`
 
 #### Campos Específicos
-6. **Telefone** (Telefone)
-7. **Email** (E-mail)
-8. **Atendente** (Pessoas)
+6. **Telefone**
+   - Tipo: Telefone
+   - Descrição: `Número de telefone do contato para comunicação direta`
+
+7. **Email**
+   - Tipo: E-mail
+   - Descrição: `Endereço de e-mail do contato para follow-up`
+
+8. **Atendente**
+   - Tipo: Pessoas
+   - Descrição: `Atendente humano responsável pelo atendimento`
 
 #### Campos de Data
-9. **Início do Atendimento** (Data)
-10. **Fim do Atendimento** (Data)
-11. **Última Mensagem** (Data)
+9. **Início do Atendimento**
+   - Tipo: Data
+   - Descrição: `Data e hora de início do atendimento`
+
+10. **Fim do Atendimento**
+    - Tipo: Data
+    - Descrição: `Data e hora de conclusão do atendimento`
+
+11. **Última Mensagem**
+    - Tipo: Data
+    - Descrição: `Data e hora da última mensagem recebida ou enviada`
 
 #### Campos de Lista Suspensa
-12. **Canal** (Lista suspensa)
+12. **Canal**
+    - Tipo: Lista suspensa
+    - Descrição: `Canal de comunicação utilizado pelo cliente (WhatsApp, Email, Telefone, Web)`
     - Opções: `WhatsApp`, `Email`, `Telefone`, `Web`
 
 ### Passo 3: Criar Campos de List
 
 Crie os seguintes campos no nível **List** (específicos para cada fluxo):
 
-1. **Assunto** (Texto)
-2. **Prioridade (Local)** (Rótulos)
+1. **Assunto**
+   - Tipo: Texto
+   - Descrição: `Resumo ou assunto principal do atendimento`
+
+2. **Prioridade (Local)**
+   - Tipo: Rótulos
+   - Descrição: `Nível de prioridade do atendimento (Baixa, Normal, Alta, Urgente)`
    - Opções:
      - `Baixa` (cor: #00A0E3 - Azul)
      - `Normal` (cor: #B7B7B7 - Cinza)
@@ -212,33 +262,39 @@ headers = {
     "Content-Type": "application/json"
 }
 
-def criar_campo_texto(workspace_id, field_name):
+def criar_campo_texto(workspace_id, field_name, description):
     """Cria um campo de texto no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
-        "type": "text"
+        "type": "text",
+        "description": description
     }
     
     response = requests.post(url, json=data, headers=headers)
     return response.json()
 
 # Exemplo de uso
-campo_contato = criar_campo_texto(WORKSPACE_ID, "Contato")
+campo_contato = criar_campo_texto(
+    WORKSPACE_ID, 
+    "Contato",
+    "Nome completo do contato que está sendo atendido"
+)
 print(f"Campo criado: {campo_contato}")
 ```
 
 ### 2. Criar Campo de Lista Suspensa
 
 ```python
-def criar_campo_lista_suspensa(workspace_id, field_name, options):
+def criar_campo_lista_suspensa(workspace_id, field_name, description, options):
     """Cria um campo de lista suspensa no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
         "type": "drop_down",
+        "description": description,
         "type_config": {
             "options": [
                 {"name": option, "orderindex": idx} 
@@ -252,20 +308,26 @@ def criar_campo_lista_suspensa(workspace_id, field_name, options):
 
 # Exemplo de uso
 opcoes_canal = ["WhatsApp", "Email", "Telefone", "Web"]
-campo_canal = criar_campo_lista_suspensa(WORKSPACE_ID, "Canal", opcoes_canal)
+campo_canal = criar_campo_lista_suspensa(
+    WORKSPACE_ID,
+    "Canal",
+    "Canal de comunicação utilizado pelo cliente (WhatsApp, Email, Telefone, Web)",
+    opcoes_canal
+)
 print(f"Campo criado: {campo_canal}")
 ```
 
 ### 3. Criar Campo de Rótulos (Prioridade)
 
 ```python
-def criar_campo_rotulos_prioridade(workspace_id, list_id):
+def criar_campo_rotulos_prioridade(list_id):
     """Cria campo de rótulos para prioridades na List."""
     url = f"https://api.clickup.com/api/v2/list/{list_id}/field"
     
     data = {
         "name": "Prioridade (Local)",
         "type": "labels",
+        "description": "Nível de prioridade do atendimento (Baixa, Normal, Alta, Urgente)",
         "type_config": {
             "sorting": "manual",
             "options": [
@@ -284,32 +346,38 @@ def criar_campo_rotulos_prioridade(workspace_id, list_id):
 ### 4. Criar Campo de Data
 
 ```python
-def criar_campo_data(workspace_id, field_name):
+def criar_campo_data(workspace_id, field_name, description):
     """Cria um campo de data no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
-        "type": "date"
+        "type": "date",
+        "description": description
     }
     
     response = requests.post(url, json=data, headers=headers)
     return response.json()
 
 # Exemplo de uso
-campo_data_inicio = criar_campo_data(WORKSPACE_ID, "Início do Atendimento")
+campo_data_inicio = criar_campo_data(
+    WORKSPACE_ID,
+    "Início do Atendimento",
+    "Data e hora de início do atendimento"
+)
 ```
 
 ### 5. Criar Campo de Telefone
 
 ```python
-def criar_campo_telefone(workspace_id, field_name):
+def criar_campo_telefone(workspace_id, field_name, description):
     """Cria um campo de telefone no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
-        "type": "phone"
+        "type": "phone",
+        "description": description
     }
     
     response = requests.post(url, json=data, headers=headers)
@@ -319,13 +387,14 @@ def criar_campo_telefone(workspace_id, field_name):
 ### 6. Criar Campo de E-mail
 
 ```python
-def criar_campo_email(workspace_id, field_name):
+def criar_campo_email(workspace_id, field_name, description):
     """Cria um campo de e-mail no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
-        "type": "email"
+        "type": "email",
+        "description": description
     }
     
     response = requests.post(url, json=data, headers=headers)
@@ -335,13 +404,14 @@ def criar_campo_email(workspace_id, field_name):
 ### 7. Criar Campo de Área de Texto
 
 ```python
-def criar_campo_area_texto(workspace_id, field_name):
+def criar_campo_area_texto(workspace_id, field_name, description):
     """Cria um campo de área de texto no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
-        "type": "text_area"
+        "type": "text_area",
+        "description": description
     }
     
     response = requests.post(url, json=data, headers=headers)
@@ -351,13 +421,14 @@ def criar_campo_area_texto(workspace_id, field_name):
 ### 8. Criar Campo de Pessoas
 
 ```python
-def criar_campo_pessoas(workspace_id, field_name):
+def criar_campo_pessoas(workspace_id, field_name, description):
     """Cria um campo de pessoas no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
     data = {
         "name": field_name,
-        "type": "users"
+        "type": "users",
+        "description": description
     }
     
     response = requests.post(url, json=data, headers=headers)
@@ -382,7 +453,7 @@ headers = {
     "Content-Type": "application/json"
 }
 
-def criar_campo(workspace_id, field_name, field_type, type_config=None, list_id=None):
+def criar_campo(workspace_id, field_name, field_type, description, type_config=None, list_id=None):
     """Função genérica para criar um campo no ClickUp."""
     url = f"https://api.clickup.com/api/v2/workspace/{workspace_id}/field"
     
@@ -391,7 +462,8 @@ def criar_campo(workspace_id, field_name, field_type, type_config=None, list_id=
     
     data = {
         "name": field_name,
-        "type": field_type
+        "type": field_type,
+        "description": description
     }
     
     if type_config:
@@ -405,27 +477,60 @@ def criar_todos_os_campos_workspace(workspace_id):
     print("=== Criando Campos de Workspace ===")
     
     # Campos de texto
-    for nome in ["Contato", "Nome Fantasia", "Nome Perfil WhatsApp", "Ramo de Atividade"]:
-        resultado = criar_campo(workspace_id, nome, "text")
+    campos_texto = [
+        ("Contato", "Nome completo do contato que está sendo atendido"),
+        ("Nome Fantasia", "Nome comercial/fantasia da empresa cliente"),
+        ("Nome Perfil WhatsApp", "Nome exibido no perfil do WhatsApp do contato"),
+        ("Ramo de Atividade", "Setor ou ramo de atividade da empresa cliente")
+    ]
+    
+    for nome, desc in campos_texto:
+        resultado = criar_campo(workspace_id, nome, "text", desc)
         print(f"✓ Campo '{nome}' criado")
     
     # Campo de área de texto
-    resultado = criar_campo(workspace_id, "Observações", "text_area")
+    resultado = criar_campo(
+        workspace_id,
+        "Observações",
+        "text_area",
+        "Observações e notas importantes sobre o cliente"
+    )
     print(f"✓ Campo 'Observações' criado")
     
     # Campos específicos
-    resultado = criar_campo(workspace_id, "Telefone", "phone")
+    resultado = criar_campo(
+        workspace_id,
+        "Telefone",
+        "phone",
+        "Número de telefone do contato para comunicação direta"
+    )
     print(f"✓ Campo 'Telefone' criado")
     
-    resultado = criar_campo(workspace_id, "Email", "email")
+    resultado = criar_campo(
+        workspace_id,
+        "Email",
+        "email",
+        "Endereço de e-mail do contato para follow-up"
+    )
     print(f"✓ Campo 'Email' criado")
     
-    resultado = criar_campo(workspace_id, "Atendente", "users")
+    resultado = criar_campo(
+        workspace_id,
+        "Atendente",
+        "users",
+        "Atendente humano responsável pelo atendimento"
+    )
     print(f"✓ Campo 'Atendente' criado")
     
     # Campos de data
-    for nome in ["Início do Atendimento", "Fim do Atendimento", "Última Mensagem"]:
-        resultado = criar_campo(workspace_id, nome, "date")
+    campos_data = [
+        ("Início do Atendimento", "Data e hora de início do atendimento"),
+        ("Fim do Atendimento", "Data e hora de conclusão do atendimento"),
+        ("Última Mensagem", "Data e hora da última mensagem recebida ou enviada")
+    ]
+    
+    for nome, desc in campos_data:
+        resultado = criar_campo(workspace_id, nome, "date", desc)
         print(f"✓ Campo '{nome}' criado")
     
     # Campo de lista suspensa (Canal)
@@ -435,7 +540,13 @@ def criar_todos_os_campos_workspace(workspace_id):
             for idx, option in enumerate(["WhatsApp", "Email", "Telefone", "Web"])
         ]
     }
-    resultado = criar_campo(workspace_id, "Canal", "drop_down", type_config)
+    resultado = criar_campo(
+        workspace_id,
+        "Canal",
+        "drop_down",
+        "Canal de comunicação utilizado pelo cliente (WhatsApp, Email, Telefone, Web)",
+        type_config
+    )
     print(f"✓ Campo 'Canal' criado")
 
 def criar_todos_os_campos_list(list_id):
@@ -443,7 +554,13 @@ def criar_todos_os_campos_list(list_id):
     print("\n=== Criando Campos de List ===")
     
     # Campo de texto (Assunto)
-    resultado = criar_campo(None, "Assunto", "text", list_id=list_id)
+    resultado = criar_campo(
+        None,
+        "Assunto",
+        "text",
+        "Resumo ou assunto principal do atendimento",
+        list_id=list_id
+    )
     print(f"✓ Campo 'Assunto' criado")
     
     # Campo de rótulos (Prioridade)
@@ -456,7 +573,14 @@ def criar_todos_os_campos_list(list_id):
             {"name": "Urgente", "color": "#FF3333", "orderindex": 3}
         ]
     }
-    resultado = criar_campo(None, "Prioridade (Local)", "labels", type_config, list_id)
+    resultado = criar_campo(
+        None,
+        "Prioridade (Local)",
+        "labels",
+        "Nível de prioridade do atendimento (Baixa, Normal, Alta, Urgente)",
+        type_config,
+        list_id
+    )
     print(f"✓ Campo 'Prioridade (Local)' criado")
 
 # Executar criação
@@ -580,3 +704,4 @@ Authorization: Bearer <token>
 - Campos derivados do `contato` e `cliente` são críticos para visão 360º do cliente no card
 - Manter conversão interna para os `statuses` da List sem criar CF redundante
 - Estrutura de campos segue arquitetura de Workspace (reutilizáveis) e List (específicos por fluxo)
+- **Importante**: Ao criar cada campo no ClickUp, utilize as descrições fornecidas na coluna "Descrição no ClickUp" da tabela resumo para facilitar o entendimento e manutenção futura

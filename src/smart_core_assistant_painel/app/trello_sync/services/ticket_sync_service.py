@@ -1,5 +1,4 @@
 from datetime import timedelta
-from decimal import Decimal
 from typing import Any, Optional, cast
 
 from django.utils import timezone
@@ -326,24 +325,10 @@ class TicketSyncService:
         telefone: str = getattr(contato, "telefone", "") if contato else ""
         email: str = getattr(contato, "email", "") if contato else ""
 
-        departamento_nome: str = (
-            getattr(getattr(atendimento, "departamento", None), "nome", "")
-            or "(não informado)"
-        )
-        etapa_nome: str = (
-            getattr(getattr(atendimento, "etapa_atual", None), "nome", "")
-            or "(não informado)"
-        )
-
         status: str = getattr(atendimento, "status", "")
         prioridade: str = getattr(atendimento, "prioridade", "normal")
         canal: str = getattr(atendimento, "canal", "")
 
-        produto_servico: str = getattr(atendimento, "produto_servico", "")
-        valor_orc: Optional[Decimal] = getattr(
-            atendimento, "valor_orcamento", None
-        )
-        categoria_venda: str = getattr(atendimento, "categoria_venda", "")
         tags: list[str] = cast(list[str], getattr(atendimento, "tags", []))
 
         atendente = getattr(atendimento, "atendente_humano", None)
@@ -354,18 +339,6 @@ class TicketSyncService:
         assunto: str = getattr(atendimento, "assunto", "") or "(sem assunto)"
         data_inicio = getattr(atendimento, "data_inicio", None)
         ultima_msg_dt = getattr(atendimento, "data_ultima_mensagem", None)
-
-        # Função auxiliar para formatação de moeda
-        def fmt_currency(val: Optional[Decimal]) -> str:
-            if val is None:
-                return ""
-            try:
-                cur: str = f"R$ {val:,.2f}"
-                return (
-                    cur.replace(",", "X").replace(".", ",").replace("X", ".")
-                )
-            except Exception:
-                return str(val)
 
         # Obter emojis para visualização
         status_emoji = self._get_status_emoji(status)
@@ -390,29 +363,9 @@ class TicketSyncService:
             "",
             "## 🎯 Detalhes do Atendimento",
             "",
-            f"**Departamento:** {departamento_nome}",
-            f"**Etapa Atual:** {etapa_nome}",
             f"**Prioridade:** {prioridade.capitalize()} {prioridade_emoji}",
             f"**Canal:** {canal_emoji} {canal}",
         ]
-
-        # Adicionar informações comerciais se disponíveis
-        if produto_servico or categoria_venda or valor_orc:
-            linhas.extend(
-                [
-                    "",
-                    "## 💼 Informações Comerciais",
-                    "",
-                ]
-            )
-            if produto_servico:
-                linhas.append(f"**Produto/Serviço:** {produto_servico}")
-            if categoria_venda:
-                linhas.append(f"**Categoria:** {categoria_venda}")
-            if valor_orc:
-                linhas.append(
-                    f"**Valor Orçamento:** {fmt_currency(valor_orc)}"
-                )
 
         # Seção de métricas
         linhas.extend(

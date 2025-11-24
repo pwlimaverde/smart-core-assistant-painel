@@ -100,10 +100,9 @@ Constrói descrição rica do card com formatação Markdown aprimorada.
 1. **Título Principal** (# heading) com emoji de status
 2. **Seção: Informações do Contato** (sempre)
 3. **Seção: Detalhes do Atendimento** (sempre)
-4. **Seção: Informações Comerciais** (condicional)
-5. **Seção: Métricas** (sempre)
-6. **Seção: Análise de IA** (condicional)
-7. **Seção: Mensagens Recentes** (sempre, máx 5)
+4. **Seção: Métricas** (sempre)
+5. **Seção: Análise de IA** (condicional)
+6. **Seção: Mensagens Recentes** (sempre, máx 5)
 
 ---
 
@@ -124,16 +123,8 @@ Constrói descrição rica do card com formatação Markdown aprimorada.
 
 ## 🎯 Detalhes do Atendimento
 
-**Departamento:** Comercial
-**Etapa Atual:** Em Negociação
 **Prioridade:** Alta 🟠
 **Canal:** 📱 whatsapp
-
-## 💼 Informações Comerciais
-
-**Produto/Serviço:** Plano Premium
-**Categoria:** Assinatura
-**Valor Orçamento:** R$ 1.499,90
 
 ## ⏱️ Métricas
 

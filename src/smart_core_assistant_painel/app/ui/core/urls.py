@@ -56,11 +56,22 @@ urlpatterns = [
     # API ClickUp (condicional): só inclui se o app estiver instalado
 ]
 
-if "smart_core_assistant_painel.app.clickup_sync" in settings.INSTALLED_APPS:
+if (
+    "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig"
+    in settings.INSTALLED_APPS
+):
     urlpatterns += [
         path(
             "api/clickup_sync/",
             include("smart_core_assistant_painel.app.clickup_sync.api_urls"),
+        ),
+    ]
+
+if "smart_core_assistant_painel.app.trello_sync" in settings.INSTALLED_APPS:
+    urlpatterns += [
+        path(
+            "api/trello_sync/",
+            include("smart_core_assistant_painel.app.trello_sync.api_urls"),
         ),
     ]
 

@@ -279,7 +279,6 @@ class ServiceHub:
         )
 
     @property
-    @property
     def unified_data_service(self) -> UnifiedDataService:
         """Retorna a instância configurada do UnifiedDataService.
 

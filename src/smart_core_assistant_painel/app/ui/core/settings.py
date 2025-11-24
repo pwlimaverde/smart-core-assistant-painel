@@ -81,10 +81,10 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.ui.clientes",
     "smart_core_assistant_painel.app.ui.atendimentos",
     "smart_core_assistant_painel.app.ui.treinamento",
-    # Integração Trello desativada durante migração para ClickUp
-    # "smart_core_assistant_painel.app.trello_sync",
+    # Integração Trello ativada
+    "smart_core_assistant_painel.app.trello_sync",
     # Usa AppConfig explícito para garantir execução do ready() e sinais
-    "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
+    # "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
     "smart_core_assistant_painel.app.evolution_sync.apps.EvolutionSyncConfig",
     # Desabilitado temporariamente: sincronização com Notion e plataformas
     # externas. Removido para evitar conflitos durante nova integração.

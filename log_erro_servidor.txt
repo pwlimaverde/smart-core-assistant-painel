@@ -1,8 +1,8 @@
 task start
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-23 13:33:15.888 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:17.254 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-24 19:06:19.016 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-24 19:06:20.492 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
 🔍 Caminho relativo fornecido: src/smart_core_assistant_painel/modules/initial_loading/utils/keys/firebase_config/firebase_key.json
@@ -13,8 +13,8 @@ Iniciando a aplicação Django...
 📄 Arquivo existe no diretório atual: True
 Caminho do GOOGLE_APPLICATION_CREDENTIALS resolvido para: C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src\smart_core_assistant_painel\modules\initial_loading\utils\keys\firebase_config\firebase_key.json
 Iniciando serviços e configurações iniciais...
-2025-11-23 13:33:18.932 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-23 13:33:20.313 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-24 19:06:22.106 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-24 19:06:23.704 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
 Watching for file changes with StatReloader
@@ -22,38 +22,195 @@ INFO:django.utils.autoreload:Watching for file changes with StatReloader
 Performing system checks...
 
 System check identified no issues (0 silenced).
-November 23, 2025 - 13:33:21
+November 24, 2025 - 19:06:25
 Django version 5.2.7, using settings 'smart_core_assistant_painel.app.ui.core.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CTRL-BREAK.
 
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-[23/Nov/2025 13:33:30] "GET /admin/atendimentos/atendimento/99/change/ HTTP/1.1" 200 88694
-[23/Nov/2025 13:33:32] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 26777
-[23/Nov/2025 13:33:32] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
-[23/Nov/2025 13:33:32] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[23/Nov/2025 13:33:35] "POST /admin/atendimentos/atendimento/ HTTP/1.1" 200 20571
-[23/Nov/2025 13:33:35] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
-[23/Nov/2025 13:33:36] "POST /admin/atendimentos/atendimento/ HTTP/1.1" 302 0
-[23/Nov/2025 13:33:36] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 22831
-[23/Nov/2025 13:33:36] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
-[23/Nov/2025 13:33:36] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[23/Nov/2025 13:33:37] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 22503
-[23/Nov/2025 13:33:37] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[23/Nov/2025 13:33:39] "GET /admin/clientes/cliente/ HTTP/1.1" 200 22660
-[23/Nov/2025 13:33:39] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[23/Nov/2025 13:33:40] "GET /admin/clientes/contato/ HTTP/1.1" 200 24825
-[23/Nov/2025 13:33:40] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
-[23/Nov/2025 13:34:00] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
-[23/Nov/2025 13:34:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
-2025-11-23 13:34:01.150 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.message_buffer:set_buffer_contact:23 - envelope: {'source': 'EvolutionAPI', 'event': 'messages.upsert', 'instance': '5588921729550', 'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'sender_jid': '5588921729550@s.whatsapp.net', 'from_me': False, 'contact': {'jid': '558881061874@s.whatsapp.net', 'lid': '231846713553072@lid', 'addressing_mode': 'pn', 'phone': '558881061874'}, 'message': {'id': '3EB0954B591DF5C4F325D0', 'type': 'messageContextInfo', 'text': '', 'metadata': {'messageTimestamp': 1763915641, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'web'}}, 'profile': {'push_name': 'Paulo Weslley Limaverde'}, 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'raw': {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558881061874@s.whatsapp.net', 'remoteJidAlt': '231846713553072@lid', 'fromMe': False, 'id': '3EB0954B591DF5C4F325D0', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 120, '1': 71, '2': 67, '3': 139, '4': 19, '5': 189, '6': 237, '7': 5, '8': 193, '9': 170}, 'senderTimestamp': {'low': 1763637302, 'high': 0, 'unsigned': True}, 'senderAccountType': 0, 'receiverAccountType': 0, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 118, '1': 237, '2': 140, '3': 135, '4': 153, '5': 144, '6': 231, '7': 233, '8': 93, '9': 57, '10': 34, '11': 68, '12': 97, '13': 113, '14': 196, '15': 244, '16': 116, '17': 232, '18': 198, '19': 167, '20': 8, '21': 156, '22': 81, '23': 91, '24': 103, '25': 112, '26': 217, '27': 236, '28': 46, '29': 70, '30': 65, '31': 244}, 'limitSharingV2': {'trigger': 0, 'initiatedByMe': False}}, 'conversation': 'bom dia, meu nome é paulo. qual o horario de funcionamento de vocês'}, 'contextInfo': {'mentionedJid': [], 'groupMentions': [], 'ephemeralSettingTimestamp': {'low': 1763737814, 'high': 0, 'unsigned': False}, 'disappearingMode': {'initiator': 0, 'trigger': 1, 'initiatedByMe': False}}, 'messageType': 'conversation', 'messageTimestamp': 1763915641, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'web'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-23T13:34:01.329Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}, 'evolution': {'instance_db_id': 9}}
-2025-11-23 13:34:01.153 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:436 - Scheduling response for contact_id=137. Payload: {'contact_id': 137, 'api_key': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'message': {'id': '3EB0954B591DF5C4F325D0', 'type': 'messageContextInfo', 'text': '', 'metadata': {'messageTimestamp': 1763915641, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'web'}}}
-2025-11-23 13:34:01.171 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:102 - Scheduled response instance 5588921729550
-[23/Nov/2025 13:34:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
-[23/Nov/2025 13:34:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
-2025-11-23 13:34:01.301 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_is_duplicate_message:200 - Ignoring duplicate message 3EB0954B591DF5C4F325D0
-[23/Nov/2025 13:34:01] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
-[23/Nov/2025 13:34:36] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 22671
-[23/Nov/2025 13:34:36] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
-[23/Nov/2025 13:34:36] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:06:30] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:06:37] "GET /admin/operacional/fluxoatendimento/ HTTP/1.1" 200 24337
+[24/Nov/2025 19:06:37] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:06:39] "GET /admin/operacional/fluxoatendimento/add/ HTTP/1.1" 200 29711
+[24/Nov/2025 19:06:39] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+2025-11-24 19:06:55.784 | DEBUG    | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:42 - Signal create_default_etapas_fluxo: fluxo=17 criado=True dep=Comercial
+INFO:django-q:Enqueued [smart_core_cluster] 942
+INFO:django-q:Enqueued [smart_core_cluster] 943
+INFO:django-q:Enqueued [smart_core_cluster] 944
+INFO:django-q:Enqueued [smart_core_cluster] 945
+INFO:django-q:Enqueued [smart_core_cluster] 946
+INFO:django-q:Enqueued [smart_core_cluster] 947
+INFO:django-q:Enqueued [smart_core_cluster] 948
+INFO:django-q:Enqueued [smart_core_cluster] 949
+INFO:django-q:Enqueued [smart_core_cluster] 950
+INFO:django-q:Enqueued [smart_core_cluster] 951
+2025-11-24 19:06:55.883 | INFO     | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:144 - Etapas padrão garantidas para FluxoAtendimento #17
+INFO:django-q:Enqueued [smart_core_cluster] 952
+[24/Nov/2025 19:06:55] "POST /admin/operacional/fluxoatendimento/add/ HTTP/1.1" 302 0
+[24/Nov/2025 19:06:55] "GET /admin/operacional/fluxoatendimento/ HTTP/1.1" 200 27541
+[24/Nov/2025 19:06:56] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:09:23] "GET /admin/operacional/fluxoatendimento/add/ HTTP/1.1" 200 29711
+[24/Nov/2025 19:09:23] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+2025-11-24 19:09:42.454 | DEBUG    | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:42 - Signal create_default_etapas_fluxo: fluxo=18 criado=True dep=Financeiro
+INFO:django-q:Enqueued [smart_core_cluster] 953
+INFO:django-q:Enqueued [smart_core_cluster] 954
+INFO:django-q:Enqueued [smart_core_cluster] 955
+INFO:django-q:Enqueued [smart_core_cluster] 956
+INFO:django-q:Enqueued [smart_core_cluster] 957
+INFO:django-q:Enqueued [smart_core_cluster] 958
+INFO:django-q:Enqueued [smart_core_cluster] 959
+INFO:django-q:Enqueued [smart_core_cluster] 960
+INFO:django-q:Enqueued [smart_core_cluster] 961
+INFO:django-q:Enqueued [smart_core_cluster] 962
+2025-11-24 19:09:42.531 | INFO     | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:144 - Etapas padrão garantidas para FluxoAtendimento #18
+INFO:django-q:Enqueued [smart_core_cluster] 963
+[24/Nov/2025 19:09:42] "POST /admin/operacional/fluxoatendimento/add/ HTTP/1.1" 302 0
+[24/Nov/2025 19:09:42] "GET /admin/operacional/fluxoatendimento/ HTTP/1.1" 200 28204
+[24/Nov/2025 19:09:42] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:09:45] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:09:52] "GET /admin/operacional/atendente/ HTTP/1.1" 200 25217
+[24/Nov/2025 19:09:53] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:09:57] "GET /admin/operacional/atendente/add/ HTTP/1.1" 200 43814
+[24/Nov/2025 19:09:57] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO:django-q:Enqueued [smart_core_cluster] 964
+[24/Nov/2025 19:10:12] "POST /admin/operacional/atendente/add/ HTTP/1.1" 302 0
+[24/Nov/2025 19:10:12] "GET /admin/operacional/atendente/ HTTP/1.1" 200 29763
+[24/Nov/2025 19:10:12] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:10:16] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:11:32] "GET /admin/operacional/appinstance/ HTTP/1.1" 200 28167
+[24/Nov/2025 19:11:32] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:11:34] "GET /admin/operacional/appinstance/4/change/ HTTP/1.1" 200 30504
+[24/Nov/2025 19:11:34] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:11:38] "POST /admin/operacional/appinstance/4/change/ HTTP/1.1" 302 0
+[24/Nov/2025 19:11:38] "GET /admin/operacional/appinstance/ HTTP/1.1" 200 28442
+[24/Nov/2025 19:11:38] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:11:41] "GET /admin/operacional/appinstance/1/change/ HTTP/1.1" 200 30504
+[24/Nov/2025 19:11:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:11:45] "POST /admin/operacional/appinstance/1/change/ HTTP/1.1" 302 0
+[24/Nov/2025 19:11:45] "GET /admin/operacional/appinstance/ HTTP/1.1" 200 28452
+[24/Nov/2025 19:11:46] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:12:49] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:12:49] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:12:49] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:12:49.656 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.message_buffer:set_buffer_contact:23 - envelope: {'source': 'EvolutionAPI', 'event': 'messages.upsert', 'instance': '5588921729550', 'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'sender_jid': '5588921729550@s.whatsapp.net', 'from_me': False, 'contact': {'jid': '558881061874@s.whatsapp.net', 'lid': '231846713553072@lid', 'addressing_mode': 'pn', 'phone': '558881061874'}, 'message': {'id': '3EB0080B291B91138DB3F1', 'type': 'conversation', 'text': 'bom dia, meu nome é paulo. qual o horario de funcionamento de vocês', 'metadata': {}}, 'profile': {'push_name': 'Paulo Weslley Limaverde'}, 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'raw': {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558881061874@s.whatsapp.net', 'remoteJidAlt': '231846713553072@lid', 'fromMe': False, 'id': '3EB0080B291B91138DB3F1', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 120, '1': 71, '2': 67, '3': 139, '4': 19, '5': 189, '6': 237, '7': 5, '8': 193, '9': 170}, 'senderTimestamp': {'low': 1763637302, 'high': 0, 'unsigned': True}, 'senderAccountType': 0, 'receiverAccountType': 0, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 119, '1': 191, '2': 91, '3': 2, '4': 223, '5': 231, '6': 190, '7': 229, '8': 240, '9': 203, '10': 122, '11': 112, '12': 129, '13': 104, '14': 108, '15': 17, '16': 179, '17': 236, '18': 20, '19': 253, '20': 10, '21': 1, '22': 203, '23': 96, '24': 185, '25': 103, '26': 47, '27': 124, '28': 130, '29': 201, '30': 76, '31': 183}, 'limitSharingV2': {'trigger': 0, 'initiatedByMe': False}}, 'conversation': 'bom dia, meu nome é paulo. qual o horario de funcionamento de vocês'}, 'contextInfo': {'mentionedJid': [], 'groupMentions': [], 'ephemeralSettingTimestamp': {'low': 1763771332, 'high': 0, 'unsigned': False}, 'disappearingMode': {'initiator': 0, 'trigger': 1, 'initiatedByMe': False}}, 'messageType': 'conversation', 'messageTimestamp': 1764022369, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'web'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-24T19:12:49.205Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}, 'evolution': {'instance_db_id': 9}}
+2025-11-24 19:12:49.661 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:436 - Scheduling response for contact_id=139. Payload: {'contact_id': 139, 'api_key': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'message': {'id': '3EB0080B291B91138DB3F1', 'type': 'conversation', 'text': 'bom dia, meu nome é paulo. qual o horario de funcionamento de vocês', 'metadata': {}}}
+2025-11-24 19:12:49.682 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:102 - Scheduled response instance 5588921729550
+[24/Nov/2025 19:12:49] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-24 19:12:49.771 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_is_duplicate_message:200 - Ignoring duplicate message 3EB0080B291B91138DB3F1
+[24/Nov/2025 19:12:49] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:12:56] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 25475
+[24/Nov/2025 19:12:56] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:12:56] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:13:19] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 29548
+[24/Nov/2025 19:13:19] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:13:19] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:13:21] "GET /admin/atendimentos/mensagem/ HTTP/1.1" 200 29109
+[24/Nov/2025 19:13:22] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:13:37] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:13:37] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:14:04] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:14:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:14:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:14:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:14:14.567 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.message_buffer:set_buffer_contact:23 - envelope: {'source': 'EvolutionAPI', 'event': 'messages.upsert', 'instance': '5588921729550', 'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'sender_jid': '5588921729550@s.whatsapp.net', 'from_me': False, 'contact': {'jid': '558881061874@s.whatsapp.net', 'lid': '231846713553072@lid', 'addressing_mode': 'pn', 'phone': '558881061874'}, 'message': {'id': '3EB0BF1E8AA737FF2C393E', 'type': 'conversation', 'text': 'quais produtos vocês trabalham?', 'metadata': {}}, 'profile': {'push_name': 'Paulo Weslley Limaverde'}, 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'raw': {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558881061874@s.whatsapp.net', 'remoteJidAlt': '231846713553072@lid', 'fromMe': False, 'id': '3EB0BF1E8AA737FF2C393E', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 120, '1': 71, '2': 67, '3': 139, '4': 19, '5': 189, '6': 237, '7': 5, '8': 193, '9': 170}, 'senderTimestamp': {'low': 1763637302, 'high': 0, 'unsigned': True}, 'senderAccountType': 0, 'receiverAccountType': 0, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 77, '1': 138, '2': 184, '3': 165, '4': 155, '5': 61, '6': 143, '7': 103, '8': 161, '9': 72, '10': 239, '11': 16, '12': 66, '13': 29, '14': 224, '15': 198, '16': 66, '17': 29, '18': 29, '19': 248, '20': 129, '21': 175, '22': 14, '23': 211, '24': 11, '25': 159, '26': 135, '27': 12, '28': 39, '29': 52, '30': 36, '31': 191}, 'limitSharingV2': {'trigger': 0, 'initiatedByMe': False}}, 'conversation': 'quais produtos vocês trabalham?'}, 'contextInfo': {'mentionedJid': [], 'groupMentions': [], 'ephemeralSettingTimestamp': {'low': 1763849616, 'high': 0, 'unsigned': False}, 'disappearingMode': {'initiator': 0, 'trigger': 1, 'initiatedByMe': False}}, 'messageType': 'conversation', 'messageTimestamp': 1764022454, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'web'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-24T19:14:14.172Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}, 'evolution': {'instance_db_id': 9}}
+2025-11-24 19:14:14.570 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:436 - Scheduling response for contact_id=139. Payload: {'contact_id': 139, 'api_key': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'message': {'id': '3EB0BF1E8AA737FF2C393E', 'type': 'conversation', 'text': 'quais produtos vocês trabalham?', 'metadata': {}}}
+[24/Nov/2025 19:14:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:14:14.591 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:102 - Scheduled response instance 5588921729550
+[24/Nov/2025 19:14:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+2025-11-24 19:14:14.690 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_is_duplicate_message:200 - Ignoring duplicate message 3EB0BF1E8AA737FF2C393E
+[24/Nov/2025 19:14:14] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:14:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:14:15] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:15:07] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:15:07] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:16:35] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:16:46] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:16:46.728 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.message_buffer:set_buffer_contact:23 - envelope: {'source': 'EvolutionAPI', 'event': 'messages.upsert', 'instance': '5588921729550', 'instance_id': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'sender_jid': '5588921729550@s.whatsapp.net', 'from_me': False, 'contact': {'jid': '558881061874@s.whatsapp.net', 'lid': '231846713553072@lid', 'addressing_mode': 'pn', 'phone': '558881061874'}, 'message': {'id': '3EB059E01682947DE1BD6A', 'type': 'conversation', 'text': 'quero falar com o setor comercial', 'metadata': {}}, 'profile': {'push_name': 'Paulo Weslley Limaverde'}, 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'raw': {'event': 'messages.upsert', 'instance': '5588921729550', 'data': {'key': {'remoteJid': '558881061874@s.whatsapp.net', 'remoteJidAlt': '231846713553072@lid', 'fromMe': False, 'id': '3EB059E01682947DE1BD6A', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 120, '1': 71, '2': 67, '3': 139, '4': 19, '5': 189, '6': 237, '7': 5, '8': 193, '9': 170}, 'senderTimestamp': {'low': 1763637302, 'high': 0, 'unsigned': True}, 'senderAccountType': 0, 'receiverAccountType': 0, 'recipientKeyHash': {'0': 241, '1': 11, '2': 63, '3': 31, '4': 208, '5': 55, '6': 9, '7': 2, '8': 165, '9': 28}, 'recipientTimestamp': {'low': 1763424171, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 129, '1': 7, '2': 80, '3': 135, '4': 230, '5': 73, '6': 252, '7': 18, '8': 254, '9': 121, '10': 239, '11': 191, '12': 69, '13': 160, '14': 96, '15': 19, '16': 221, '17': 145, '18': 85, '19': 13, '20': 52, '21': 76, '22': 65, '23': 53, '24': 175, '25': 117, '26': 218, '27': 44, '28': 198, '29': 159, '30': 118, '31': 59}, 'limitSharingV2': {'trigger': 0, 'initiatedByMe': False}}, 'conversation': 'quero falar com o setor comercial'}, 'contextInfo': {'mentionedJid': [], 'groupMentions': [], 'ephemeralSettingTimestamp': {'low': 1763849707, 'high': 0, 'unsigned': False}, 'disappearingMode': {'initiator': 0, 'trigger': 1, 'initiatedByMe': False}}, 'messageType': 'conversation', 'messageTimestamp': 1764022606, 'instanceId': '99910a55-8bbd-440a-9e14-9d5833a63c5e', 'source': 'web'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-24T19:16:46.375Z', 'sender': '5588921729550@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '50675099048D-44D0-A0C6-FAE0F020EC3E'}, 'evolution': {'instance_db_id': 9}}
+2025-11-24 19:16:46.730 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:436 - Scheduling response for contact_id=139. Payload: {'contact_id': 139, 'api_key': '50675099048D-44D0-A0C6-FAE0F020EC3E', 'message': {'id': '3EB059E01682947DE1BD6A', 'type': 'conversation', 'text': 'quero falar com o setor comercial', 'metadata': {}}}
+2025-11-24 19:16:46.745 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:102 - Scheduled response instance 5588921729550
+[24/Nov/2025 19:16:46] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[24/Nov/2025 19:16:46] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:16:46] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:16:46.829 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_is_duplicate_message:200 - Ignoring duplicate message 3EB059E01682947DE1BD6A
+[24/Nov/2025 19:16:46] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:16:47] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:16:47] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:12] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:38] "GET /admin/atendimentos/mensagem/248/change/ HTTP/1.1" 200 36518
+[24/Nov/2025 19:17:38] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:17:41] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 29576
+[24/Nov/2025 19:17:41] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:17:41] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:17:43] "GET /admin/atendimentos/atendimento/106/change/ HTTP/1.1" 200 73442
+[24/Nov/2025 19:17:43] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:17:43] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO:django-q:Enqueued [smart_core_cluster] 991
+INFO:django-q:Enqueued [smart_core_cluster] 992
+INFO:django-q:Enqueued [smart_core_cluster] 993
+2025-11-24 19:17:53.081 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.models:transferir_para_humano_com_saudacao:734 - API key obtida de AppInstance para atendente Paulo Weslley
+2025-11-24 19:17:53.086 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:transferir_para_humano_com_saudacao:751 - Metadados configurados com API key para atendente Paulo Weslley
+INFO:django-q:Enqueued [smart_core_cluster] 994
+2025-11-24 19:17:53.158 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:127 - Enviando resposta da mensagem 251 via Evolution API para 558881061874
+[24/Nov/2025 19:17:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:17:55] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:17:56.260 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:146 - Mensagem 251 enviada com sucesso e marcada como respondida
+2025-11-24 19:17:56.260 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:transferir_para_humano_com_saudacao:773 - Transferência com saudação concluída: Atendimento 106 -> Atendente Paulo Weslley (ID: 5), Mensagem ID: 251
+[24/Nov/2025 19:17:56] "POST /admin/atendimentos/atendimento/106/change/ HTTP/1.1" 302 0
+[24/Nov/2025 19:17:56] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 29854
+[24/Nov/2025 19:17:56] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:17:56] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:18:08] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:18:18] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:13] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:23] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:25] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:29] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:29] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+INFO:django-q:Enqueued [smart_core_cluster] 995
+[24/Nov/2025 19:19:29] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+INFO:django-q:Enqueued [smart_core_cluster] 996
+[24/Nov/2025 19:19:29] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:19:29] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:19:50] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:19:53] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:20:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:20:11.592 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.message_buffer:set_buffer_contact:23 - envelope: {'source': 'EvolutionAPI', 'event': 'messages.upsert', 'instance': '5588997141275', 'instance_id': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'sender_jid': '558897141275@s.whatsapp.net', 'from_me': False, 'contact': {'jid': '558881061874@s.whatsapp.net', 'lid': '231846713553072@lid', 'addressing_mode': 'pn', 'phone': '558881061874'}, 'message': {'id': '3EB044CF9F2C587B44D46F', 'type': 'conversation', 'text': 'gostaria de um orçamento de um batom mate', 'metadata': {}}, 'profile': {'push_name': 'Paulo Weslley Limaverde'}, 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03', 'raw': {'event': 'messages.upsert', 'instance': '5588997141275', 'data': {'key': {'remoteJid': '558881061874@s.whatsapp.net', 'remoteJidAlt': '231846713553072@lid', 'fromMe': False, 'id': '3EB044CF9F2C587B44D46F', 'participant': '', 'addressingMode': 'pn'}, 'pushName': 'Paulo Weslley Limaverde', 'status': 'DELIVERY_ACK', 'message': {'messageContextInfo': {'deviceListMetadata': {'senderKeyIndexes': [], 'recipientKeyIndexes': [], 'senderKeyHash': {'0': 120, '1': 71, '2': 67, '3': 139, '4': 19, '5': 189, '6': 237, '7': 5, '8': 193, '9': 170}, 'senderTimestamp': {'low': 1763637302, 'high': 0, 'unsigned': True}, 'senderAccountType': 0, 'receiverAccountType': 0, 'recipientKeyHash': {'0': 54, '1': 48, '2': 82, '3': 110, '4': 21, '5': 18, '6': 184, '7': 91, '8': 69, '9': 139}, 'recipientTimestamp': {'low': 1763673405, 'high': 0, 'unsigned': True}}, 'deviceListMetadataVersion': 2, 'messageSecret': {'0': 225, '1': 72, '2': 17, '3': 96, '4': 233, '5': 215, '6': 30, '7': 63, '8': 53, '9': 233, '10': 254, '11': 211, '12': 231, '13': 99, '14': 85, '15': 32, '16': 2, '17': 163, '18': 234, '19': 136, '20': 22, '21': 72, '22': 87, '23': 159, '24': 109, '25': 34, '26': 117, '27': 52, '28': 230, '29': 55, '30': 54, '31': 29}, 'limitSharingV2': {'trigger': 0, 'initiatedByMe': False}}, 'conversation': 'gostaria de um orçamento de um batom mate'}, 'contextInfo': {'mentionedJid': [], 'groupMentions': [], 'ephemeralSettingTimestamp': {'low': 1763849874, 'high': 0, 'unsigned': False}, 'disappearingMode': {'initiator': 0, 'trigger': 1, 'initiatedByMe': False}}, 'messageType': 'conversation', 'messageTimestamp': 1764022811, 'instanceId': '4c9dbb2c-ff35-4ebf-9ded-2fcdb3166da7', 'source': 'web'}, 'destination': 'http://192.168.3.90:8000/sync/evolution/webhook/', 'date_time': '2025-11-24T19:20:11.216Z', 'sender': '558897141275@s.whatsapp.net', 'server_url': 'http://localhost:8080', 'apikey': '003E2369FA59-40D5-87B9-A42B29F89B03'}, 'evolution': {'instance_db_id': 22}}
+2025-11-24 19:20:11.595 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:_schedule_response:436 - Scheduling response for contact_id=139. Payload: {'contact_id': 139, 'api_key': '003E2369FA59-40D5-87B9-A42B29F89B03', 'message': {'id': '3EB044CF9F2C587B44D46F', 'type': 'conversation', 'text': 'gostaria de um orçamento de um batom mate', 'metadata': {}}}
+2025-11-24 19:20:11.612 | DEBUG    | smart_core_assistant_painel.app.evolution_sync.services.webhook:process_webhook:102 - Scheduled response instance 5588997141275
+[24/Nov/2025 19:20:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 32
+[24/Nov/2025 19:20:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:20:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+2025-11-24 19:20:11.715 | INFO     | smart_core_assistant_painel.app.evolution_sync.services.webhook:_is_duplicate_message:200 - Ignoring duplicate message 3EB044CF9F2C587B44D46F
+[24/Nov/2025 19:20:11] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:20:19] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:20:19] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:20:41] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:20:41] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+INFO:django-q:Enqueued [smart_core_cluster] 1000
+[24/Nov/2025 19:20:41] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+INFO:django-q:Enqueued [smart_core_cluster] 1001
+[24/Nov/2025 19:20:41] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:20:41] "POST /sync/evolution/webhook/ HTTP/1.1" 200 27
+[24/Nov/2025 19:20:41] "POST /sync/evolution/webhook/ HTTP/1.1" 200 42
+[24/Nov/2025 19:21:19] "GET /admin/atendimentos/atendimento/106/change/ HTTP/1.1" 200 86631
+[24/Nov/2025 19:21:19] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:21:19] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:21:42] "POST /admin/atendimentos/atendimento/106/change/ HTTP/1.1" 200 86949
+[24/Nov/2025 19:21:42] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:21:42] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[24/Nov/2025 19:21:53] "POST /admin/atendimentos/atendimento/106/change/ HTTP/1.1" 200 86941
+[24/Nov/2025 19:21:54] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:21:54] "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+INFO:django-q:Enqueued [smart_core_cluster] 1002
+INFO:django-q:Enqueued [smart_core_cluster] 1003
+[24/Nov/2025 19:22:22] "POST /admin/atendimentos/atendimento/106/change/ HTTP/1.1" 302 0
+[24/Nov/2025 19:22:22] "GET /admin/atendimentos/atendimento/ HTTP/1.1" 200 29844
+[24/Nov/2025 19:22:22] "GET /static/atendimentos/admin_etapas.js HTTP/1.1" 404 1898
+[24/Nov/2025 19:22:22] "GET /admin/jsi18n/ HTTP/1.1" 200 3342

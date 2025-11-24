@@ -159,6 +159,71 @@ class TicketSyncService:
             pass
         return card
 
+    def _get_status_emoji(self, status: str) -> str:
+        """Retorna emoji apropriado para o status do atendimento."""
+        emoji_map = {
+            "fila": "⏳",
+            "em_atendimento": "💬",
+            "pendencia": "⏸️",
+            "resolvido": "✅",
+            "cancelado": "❌",
+            "transferido": "↪️",
+        }
+        return emoji_map.get(status, "📋")
+
+    def _get_prioridade_emoji(self, prioridade: str) -> str:
+        """Retorna emoji apropriado para a prioridade."""
+        emoji_map = {
+            "baixa": "🟢",
+            "normal": "🔵",
+            "alta": "🟠",
+            "urgente": "🔴",
+        }
+        return emoji_map.get(prioridade.lower(), "⚪")
+
+    def _get_canal_emoji(self, canal: str) -> str:
+        """Retorna emoji apropriado para o canal de comunicação."""
+        canal_lower = canal.lower()
+        if "whatsapp" in canal_lower:
+            return "📱"
+        elif "telegram" in canal_lower:
+            return "✈️"
+        elif "email" in canal_lower:
+            return "📧"
+        elif "web" in canal_lower:
+            return "🌐"
+        return "💬"
+
+    def _format_time_delta(self, dt: Optional[Any]) -> str:
+        """Formata timedelta de forma humanizada.
+
+        Args:
+            dt: Datetime a ser comparado com o momento atual.
+
+        Returns:
+            String formatada como "há X dia(s)/hora(s)/minuto(s)".
+        """
+        if dt is None:
+            return "(não disponível)"
+
+        try:
+            delta = timezone.now() - dt
+
+            if delta.days > 0:
+                return f"há {delta.days} dia(s)"
+
+            hours = delta.seconds // 3600
+            if hours > 0:
+                return f"há {hours} hora(s)"
+
+            minutes = (delta.seconds % 3600) // 60
+            if minutes > 0:
+                return f"há {minutes} minuto(s)"
+
+            return "há menos de 1 minuto"
+        except Exception:
+            return "(erro ao calcular)"
+
     def _build_card_name(self, atendimento: Any) -> str:
         """
         Constrói o nome do card com assunto e contato.
@@ -245,16 +310,22 @@ class TicketSyncService:
 
     def _build_rich_description(self, atendimento: Any) -> str:
         """
-        Monta descrição rica com dados-chave do atendimento e últimas mensagens.
+        Monta descrição rica com formatação Markdown aprimorada.
 
-        Comentário: texto multi-linha para leitura rápida ao abrir o card.
+        Comentário: usa headings, emojis e tempo humanizado para
+        leitura visual superior e identificação rápida de informações.
         """
+        # Extração de dados do atendimento
         contato = getattr(atendimento, "contato", None)
         nome_contato: str = (
-            getattr(contato, "nome_contato", "") if contato else ""
+            getattr(contato, "nome_contato", "")
+            or getattr(contato, "nome_perfil_whatsapp", "")
+            if contato
+            else ""
         )
         telefone: str = getattr(contato, "telefone", "") if contato else ""
         email: str = getattr(contato, "email", "") if contato else ""
+
         departamento_nome: str = (
             getattr(getattr(atendimento, "departamento", None), "nome", "")
             or "(não informado)"
@@ -263,21 +334,28 @@ class TicketSyncService:
             getattr(getattr(atendimento, "etapa_atual", None), "nome", "")
             or "(não informado)"
         )
-        prioridade: str = getattr(atendimento, "prioridade", "")
+
+        status: str = getattr(atendimento, "status", "")
+        prioridade: str = getattr(atendimento, "prioridade", "normal")
         canal: str = getattr(atendimento, "canal", "")
+
         produto_servico: str = getattr(atendimento, "produto_servico", "")
         valor_orc: Optional[Decimal] = getattr(
             atendimento, "valor_orcamento", None
         )
         categoria_venda: str = getattr(atendimento, "categoria_venda", "")
         tags: list[str] = cast(list[str], getattr(atendimento, "tags", []))
+
         atendente = getattr(atendimento, "atendente_humano", None)
         atendente_nome: str = (
             getattr(atendente, "nome", "") if atendente else ""
         )
+
         assunto: str = getattr(atendimento, "assunto", "") or "(sem assunto)"
+        data_inicio = getattr(atendimento, "data_inicio", None)
         ultima_msg_dt = getattr(atendimento, "data_ultima_mensagem", None)
 
+        # Função auxiliar para formatação de moeda
         def fmt_currency(val: Optional[Decimal]) -> str:
             if val is None:
                 return ""
@@ -289,40 +367,75 @@ class TicketSyncService:
             except Exception:
                 return str(val)
 
-        linhas: list[str] = [
-            (f"### Atendimento #{getattr(atendimento, 'pk', '')} — {assunto}"),
-            "---",
-            "Resumo:",
-            f"- Contato: {nome_contato or '(não informado)'}",
-            f"- Telefone: {telefone}",
-            f"- E-mail: {email or '(não informado)'}",
-            f"- Departamento: {departamento_nome}",
-            f"- Etapa atual: {etapa_nome}",
-            f"- Prioridade: {prioridade}",
-            f"- Canal: {canal}",
-            # Mantém 'Atendente:' para compatibilidade com testes e leitura
-            f"- Atendente: {atendente_nome or '(não atribuído)'}",
-        ]
-        if produto_servico:
-            linhas.append(f"Produto/Serviço: {produto_servico}")
-        if categoria_venda:
-            linhas.append(f"Categoria Venda: {categoria_venda}")
-        if valor_orc is not None:
-            linhas.append(f"Valor Orçamento: {fmt_currency(valor_orc)}")
-        if tags:
-            linhas.append(f"Tags: {', '.join(tags)}")
-        if ultima_msg_dt:
-            try:
-                linhas.append(
-                    (
-                        "- Última mensagem: "
-                        f"{timezone.localtime(ultima_msg_dt).strftime('%d/%m/%Y %H:%M')}"
-                    )
-                )
-            except Exception:
-                linhas.append("- Última mensagem: (indisponível)")
+        # Obter emojis para visualização
+        status_emoji = self._get_status_emoji(status)
+        prioridade_emoji = self._get_prioridade_emoji(prioridade)
+        canal_emoji = self._get_canal_emoji(canal)
 
-        # Comentário: bloco de análise automática (intents/entidades)
+        # Calcular tempo total do atendimento
+        tempo_total = self._format_time_delta(data_inicio)
+        tempo_ultima_msg = self._format_time_delta(ultima_msg_dt)
+
+        # Construir descrição com headings Markdown
+        linhas: list[str] = [
+            f"# {status_emoji} Atendimento #{getattr(atendimento, 'pk', '')}",
+            "",
+            f"**Assunto:** {assunto}",
+            "",
+            "## 📋 Informações do Contato",
+            "",
+            f"**Nome:** {nome_contato or '(não informado)'}",
+            f"**Telefone:** `{telefone}`",
+            f"**E-mail:** {email or '(não informado)'}",
+            "",
+            "## 🎯 Detalhes do Atendimento",
+            "",
+            f"**Departamento:** {departamento_nome}",
+            f"**Etapa Atual:** {etapa_nome}",
+            f"**Prioridade:** {prioridade.capitalize()} {prioridade_emoji}",
+            f"**Canal:** {canal_emoji} {canal}",
+        ]
+
+        # Adicionar informações comerciais se disponíveis
+        if produto_servico or categoria_venda or valor_orc:
+            linhas.extend(
+                [
+                    "",
+                    "## 💼 Informações Comerciais",
+                    "",
+                ]
+            )
+            if produto_servico:
+                linhas.append(f"**Produto/Serviço:** {produto_servico}")
+            if categoria_venda:
+                linhas.append(f"**Categoria:** {categoria_venda}")
+            if valor_orc:
+                linhas.append(
+                    f"**Valor Orçamento:** {fmt_currency(valor_orc)}"
+                )
+
+        # Seção de métricas
+        linhas.extend(
+            [
+                "",
+                "## ⏱️ Métricas",
+                "",
+                f"**Tempo Total:** {tempo_total}",
+                f"**Última Interação:** {tempo_ultima_msg}",
+                f"**Atendente:** {atendente_nome or '⏳ Não atribuído'}",
+            ]
+        )
+
+        # Adicionar tags se existirem
+        if tags:
+            linhas.extend(
+                [
+                    "",
+                    f"**Tags:** {', '.join(tags)}",
+                ]
+            )
+
+        # Bloco de análise automática (intents/entidades)
         try:
             historico = atendimento.carregar_historico_mensagens()
             intents = cast(
@@ -331,34 +444,59 @@ class TicketSyncService:
             entidades = cast(
                 list[dict[str, str]], historico.get("entidades_extraidas", [])
             )
+
             if intents or entidades:
-                linhas.append("")
-                linhas.append("Análise de IA:")
+                linhas.extend(
+                    [
+                        "",
+                        "## 🤖 Análise de IA",
+                        "",
+                    ]
+                )
+
             if intents:
-                linhas.append("- Intenções detectadas:")
+                linhas.append("**Intenções Detectadas:**")
                 for item in intents[:5]:
                     try:
-                        k: str = list(item.keys())[0]
-                        v: str = str(item.get(k, ""))
-                        linhas.append(f"  - {k}: {v}")
+                        if isinstance(item, dict):
+                            k: str = list(item.keys())[0]
+                            v: str = str(item.get(k, ""))
+                            linhas.append(f"- `{k}`: {v}")
+                        else:
+                            linhas.append(f"- {str(item)}")
                     except Exception:
-                        linhas.append(f"  - {str(item)}")
+                        linhas.append(f"- {str(item)}")
+                linhas.append("")
+
             if entidades:
-                linhas.append("- Entidades extraídas:")
+                linhas.append("**Entidades Extraídas:**")
                 for item in entidades[:5]:
                     try:
-                        k: str = list(item.keys())[0]
-                        v: str = str(item.get(k, ""))
-                        linhas.append(f"  - {k}: {v}")
+                        if isinstance(item, dict):
+                            k: str = list(item.keys())[0]
+                            v: str = str(item.get(k, ""))
+                            linhas.append(f"- `{k}`: {v}")
+                        else:
+                            linhas.append(f"- {str(item)}")
                     except Exception:
-                        linhas.append(f"  - {str(item)}")
+                        linhas.append(f"- {str(item)}")
         except Exception:
-            linhas.append("")
-            linhas.append("(Análise automática indisponível)")
+            linhas.extend(
+                [
+                    "",
+                    "*(Análise automática indisponível)*",
+                ]
+            )
 
-        # Comentário: blocos de mensagens recentes
-        linhas.append("")
-        linhas.append("Mensagens recentes:")
+        # Bloco de mensagens recentes (máximo 5)
+        linhas.extend(
+            [
+                "",
+                "## 💬 Mensagens Recentes (últimas 5)",
+                "",
+            ]
+        )
+
         try:
             from smart_core_assistant_painel.app.ui.atendimentos.models import (
                 Mensagem,
@@ -371,24 +509,32 @@ class TicketSyncService:
                 tipo=TipoMensagem.TEXTO_FORMATADO,
                 remetente=TipoRemetente.CONTATO,
             ).order_by("-timestamp")[:5]
-            for m in msgs_qs:
-                conteudo: str = (m.conteudo or "").replace("\n", " ")
-                preview: str = conteudo[:240] + (
-                    "..." if len(conteudo) > 240 else ""
-                )
-                ts_str: str = timezone.localtime(m.timestamp).strftime(
-                    "%d/%m %H:%M"
-                )
-                linhas.append(f"- [{ts_str}] {m.remetente}: {preview}")
-                # Comentário (PT-BR): exibe a resposta do bot abaixo da mensagem
-                if getattr(m, "resposta_bot", None):
-                    resp: str = str(m.resposta_bot).replace("\n", " ")
-                    resp_prev: str = resp[:240] + (
-                        "..." if len(resp) > 240 else ""
+
+            if msgs_qs.exists():
+                for m in msgs_qs:
+                    # Formato: tempo humanizado + conteúdo
+                    tempo_msg = self._format_time_delta(m.timestamp)
+                    conteudo: str = (m.conteudo or "").replace("\n", " ")
+                    preview: str = conteudo[:200] + (
+                        "..." if len(conteudo) > 200 else ""
                     )
-                    linhas.append(f"  Resposta: {resp_prev}")
+
+                    linhas.append(f"**{tempo_msg}**")
+                    linhas.append(f"> {preview}")
+
+                    # Mostrar resposta do bot se existir
+                    if getattr(m, "resposta_bot", None):
+                        resp: str = str(m.resposta_bot).replace("\n", " ")
+                        resp_prev: str = resp[:200] + (
+                            "..." if len(resp) > 200 else ""
+                        )
+                        linhas.append(f"> 🤖 *Resposta:* {resp_prev}")
+
+                    linhas.append("")  # Linha em branco entre mensagens
+            else:
+                linhas.append("*(Nenhuma mensagem recente disponível)*")
         except Exception:
-            linhas.append("(Não foi possível carregar mensagens)")
+            linhas.append("*(Não foi possível carregar mensagens)*")
 
         return "\n".join(linhas)
 

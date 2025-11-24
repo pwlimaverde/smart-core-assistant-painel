@@ -178,7 +178,6 @@ Funcionam como "ícones" para identificação visual instantânea:
 
 ### Seções Condicionais
 Seções só aparecem quando há dados relevantes:
-- **Informações Comerciais**: Só se houver produto/serviço/valor
 - **Análise de IA**: Só se houver intents/entidades detectadas
 - **Tags**: Só se houver tags associadas
 
@@ -302,13 +301,10 @@ Próxima melhoria planejada:
 **Teste 2**: Atendimento urgente  
 → Espera-se emoji 🔴 e label vermelho
 
-**Teste 3**: Atendimento com valores comerciais  
-→ Espera-se seção "## 💼 Informações Comerciais"
-
-**Teste 4**: Múltiplas mensagens (>5)  
+**Teste 3**: Múltiplas mensagens (>5)  
 → Espera-se apenas 5 mais recentes
 
-**Teste 5**: Atendimento recém-criado  
+**Teste 4**: Atendimento recém-criado  
 → Espera-se "há menos de 1 minuto"
 
 ---

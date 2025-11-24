@@ -326,7 +326,7 @@ class TicketSyncService:
         email: str = getattr(contato, "email", "") if contato else ""
 
         status: str = getattr(atendimento, "status", "")
-        prioridade: str = getattr(atendimento, "prioridade", "normal")
+        # prioridade: str = getattr(atendimento, "prioridade", "normal") # Removido da descrição
         canal: str = getattr(atendimento, "canal", "")
 
         tags: list[str] = cast(list[str], getattr(atendimento, "tags", []))
@@ -340,9 +340,26 @@ class TicketSyncService:
         data_inicio = getattr(atendimento, "data_inicio", None)
         ultima_msg_dt = getattr(atendimento, "data_ultima_mensagem", None)
 
+        # Fallback para data_ultima_mensagem se estiver nulo
+        if ultima_msg_dt is None:
+            try:
+                from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                    Mensagem,
+                )
+
+                last_msg = (
+                    Mensagem.objects.filter(atendimento=atendimento)
+                    .order_by("-timestamp")
+                    .first()
+                )
+                if last_msg:
+                    ultima_msg_dt = last_msg.timestamp
+            except Exception:
+                pass
+
         # Obter emojis para visualização
         status_emoji = self._get_status_emoji(status)
-        prioridade_emoji = self._get_prioridade_emoji(prioridade)
+        # prioridade_emoji = self._get_prioridade_emoji(prioridade) # Removido
         canal_emoji = self._get_canal_emoji(canal)
 
         # Calcular tempo total do atendimento
@@ -354,17 +371,13 @@ class TicketSyncService:
             f"# {status_emoji} Atendimento #{getattr(atendimento, 'pk', '')}",
             "",
             f"**Assunto:** {assunto}",
+            f"**Canal:** {canal_emoji} {canal}",
             "",
             "## 📋 Informações do Contato",
             "",
             f"**Nome:** {nome_contato or '(não informado)'}",
             f"**Telefone:** `{telefone}`",
             f"**E-mail:** {email or '(não informado)'}",
-            "",
-            "## 🎯 Detalhes do Atendimento",
-            "",
-            f"**Prioridade:** {prioridade.capitalize()} {prioridade_emoji}",
-            f"**Canal:** {canal_emoji} {canal}",
         ]
 
         # Seção de métricas
@@ -441,11 +454,11 @@ class TicketSyncService:
                 ]
             )
 
-        # Bloco de mensagens recentes (máximo 5)
+        # Bloco de mensagens recentes (máximo 10)
         linhas.extend(
             [
                 "",
-                "## 💬 Mensagens Recentes (últimas 5)",
+                "## 💬 Mensagens Recentes (últimas 10)",
                 "",
             ]
         )
@@ -457,14 +470,17 @@ class TicketSyncService:
                 TipoRemetente,
             )
 
+            # Buscar últimas 10 mensagens de qualquer remetente
             msgs_qs = Mensagem.objects.filter(
                 atendimento=atendimento,
                 tipo=TipoMensagem.TEXTO_FORMATADO,
-                remetente=TipoRemetente.CONTATO,
-            ).order_by("-timestamp")[:5]
+            ).order_by("-timestamp")[:10]
 
             if msgs_qs.exists():
-                for m in msgs_qs:
+                # Reordenar para cronológico (mais antigo -> mais novo) para leitura natural
+                msgs_list = list(msgs_qs)[::-1]
+
+                for m in msgs_list:
                     # Formato: tempo humanizado + conteúdo
                     tempo_msg = self._format_time_delta(m.timestamp)
                     conteudo: str = (m.conteudo or "").replace("\n", " ")
@@ -472,10 +488,18 @@ class TicketSyncService:
                         "..." if len(conteudo) > 200 else ""
                     )
 
-                    linhas.append(f"**{tempo_msg}**")
-                    linhas.append(f"> {preview}")
+                    # Identificar remetente com ícone
+                    icone_remetente = "👤"  # Contato
+                    if m.remetente == TipoRemetente.BOT.value:
+                        icone_remetente = "🤖"
+                    elif m.remetente == TipoRemetente.ATENDENTE_HUMANO.value:
+                        icone_remetente = "👨‍💻"
 
-                    # Mostrar resposta do bot se existir
+                    linhas.append(f"**{icone_remetente} {tempo_msg}**")
+                    if preview:
+                        linhas.append(f"> {preview}")
+
+                    # Mostrar resposta do bot se existir (para mensagens de contato que tiveram resposta)
                     if getattr(m, "resposta_bot", None):
                         resp: str = str(m.resposta_bot).replace("\n", " ")
                         resp_prev: str = resp[:200] + (
@@ -559,7 +583,7 @@ class TicketSyncService:
             # Comentário: se labels não suportadas, ignora
             pass
 
-        atendente = getattr(atendimento, "atendente_humano", None)
+        # atendente = getattr(atendimento, "atendente_humano", None) # Removido variável não utilizada
 
         # Comentário: Trello (plano gratuito) — não atualiza Custom Fields
 

@@ -55,6 +55,11 @@ def task_etapa_ensure_list(etapa_id: int) -> None:
     """
     try:
         etapa = EtapaFluxo.objects.get(id=etapa_id)
+        # Fix: Garante que o board do fluxo existe antes de tentar criar a lista
+        # Isso evita o erro "Board do fluxo ainda não criado para a etapa"
+        if etapa.fluxo:
+            FlowSyncService().ensure_board_for_fluxo(etapa.fluxo)
+
         FlowSyncService().ensure_list_for_etapa(etapa)
     except EtapaFluxo.DoesNotExist:
         logger.warning("Etapa não encontrada para criar lista: {}", etapa_id)

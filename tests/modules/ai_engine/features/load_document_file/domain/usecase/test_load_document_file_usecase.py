@@ -1,11 +1,12 @@
-import pytest
-from unittest.mock import Mock, patch
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+import pytest
+from langchain_core.documents import Document
 from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,
 )
-from langchain_core.documents import Document
 
 from smart_core_assistant_painel.modules.ai_engine import (
     DocumentError,

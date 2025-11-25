@@ -1,5 +1,6 @@
-import pytest
 from unittest.mock import Mock, patch
+
+import pytest
 from py_return_success_or_error import (
     ErrorReturn,
     SuccessReturn,

@@ -1,0 +1,484 @@
+from typing import Any, Dict, List
+
+from django.core.cache import cache
+from django.db import IntegrityError
+from django.db.models import Q
+from loguru import logger
+
+from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
+    EvolutionWebhookEnvelope,
+)
+from smart_core_assistant_painel.app.evolution_sync.models import (
+    EvolutionContact,
+    EvolutionInstance,
+    WhiteList,
+)
+from smart_core_assistant_painel.app.evolution_sync.services import (
+    sched_response_contact,
+    set_buffer_contact,
+)
+from smart_core_assistant_painel.app.ui.atendimentos.models import (
+    processar_mensagem_por_contato,
+)
+from smart_core_assistant_painel.app.ui.clientes.models import Contato
+
+
+class WebhookProcessor:
+    """Processador de Webhooks da Evolution API.
+
+    Responsável por orquestrar o processamento de mensagens recebidas,
+    gerenciamento de instâncias e contatos, e agendamento de respostas.
+    """
+
+    def process_webhook(
+        self,
+        payload: Dict[str, Any],
+        envelopes: List[EvolutionWebhookEnvelope],
+    ) -> Dict[str, Any]:
+        """Processa o webhook recebido.
+
+        Args:
+            payload: O payload bruto recebido.
+            envelopes: Lista de envelopes normalizados.
+
+        Returns:
+            Dict[str, Any]: Resultado do processamento.
+        """
+        valid_envelopes = []
+
+        for e in envelopes:
+            # Safety Check: Ensure contact has JID
+            if not e.contact.jid:
+                logger.warning(
+                    f"Ignoring envelope - missing contact JID. Event: {e.event}"
+                )
+                continue
+
+            # Verificações de ignorar mensagem
+            if self._should_ignore_message(e):
+                continue
+
+            # Processa mensagens enviadas pela própria instância (atendente)
+            if e.from_me:
+                try:
+                    self._handle_from_me_message(e, payload)
+                except Exception as exc:
+                    logger.error(f"Error handling from_me message: {exc}")
+                continue
+
+            # Verificação de duplicidade de mensagem
+            if self._is_duplicate_message(e):
+                continue
+
+            valid_envelopes.append(e)
+
+        if not valid_envelopes:
+            return {"status": "ignored_or_processed_from_me"}
+
+        # Processar o primeiro envelope para obter instância e contato (assumindo mesmo contexto)
+        first_env = valid_envelopes[0]
+        instance = self._get_or_create_instance(first_env, payload)
+        evo_contact = self._resolve_contact(instance, first_env)
+
+        # Garantir que o contato principal existe e está vinculado
+        if not evo_contact.contact_id:
+            self._link_contact(
+                evo_contact, first_env, from_me=first_env.from_me
+            )
+            evo_contact.refresh_from_db()
+
+        # Bug 5: Só agendar resposta se contact_id é válido
+        if not evo_contact.contact_id:
+            logger.warning(
+                f"Skipping scheduling - no valid contact_id for jid={first_env.contact.jid}"
+            )
+            return {"status": "ignored_no_contact", "processed": 0}
+
+        # Agendar resposta (buffer)
+        self._schedule_response(
+            instance, evo_contact, valid_envelopes, first_env
+        )
+
+        logger.debug(f"Scheduled response instance {instance.name}")
+        return {"status": "ok", "processed": len(valid_envelopes)}
+
+    def _should_ignore_message(
+        self, envelope: EvolutionWebhookEnvelope
+    ) -> bool:
+        """Verifica se a mensagem deve ser ignorada com base nas regras de negócio."""
+
+        # 1. Mensagens de Grupo
+        if self._is_group_message(envelope):
+            return True
+
+        # 2. Comunicação entre Instâncias (Internal Loop)
+        if self._is_internal_instance_communication(envelope):
+            return True
+
+        # 3. Whitelist (Gestão)
+        if self._is_whitelist_contact(envelope):
+            return True
+
+        return False
+
+    def _is_group_message(self, envelope: EvolutionWebhookEnvelope) -> bool:
+        """Verifica se é mensagem de grupo."""
+        if envelope.contact.is_group():
+            logger.info(f"Ignoring group message from {envelope.contact.jid}")
+            return True
+
+        # Verificação extra por JID
+        jid = envelope.contact.jid or ""
+        if jid.endswith("@g.us"):
+            logger.debug(f"Ignoring event for group JID {jid}")
+            return True
+
+        return False
+
+    def _is_internal_instance_communication(
+        self, envelope: EvolutionWebhookEnvelope
+    ) -> bool:
+        """Verifica se é comunicação entre instâncias internas."""
+        other_phone = envelope.contact.phone
+        jid_check = envelope.contact.jid or ""
+
+        # Verificação por telefone
+        if other_phone:
+            phone_variations = self._get_phone_variations(other_phone)
+
+            instance_query = Q()
+            for phone_var in phone_variations:
+                instance_query |= Q(phone_number=phone_var) | Q(name=phone_var)
+
+            if EvolutionInstance.objects.filter(instance_query).exists():
+                logger.info(
+                    f"Ignoring interaction with instance {other_phone} (from_me={envelope.from_me})"
+                )
+                return True
+
+        # Verificação por JID (fallback)
+        if jid_check:
+            jid_phone = jid_check.split("@")[0]
+            if EvolutionInstance.objects.filter(
+                phone_number=jid_phone
+            ).exists():
+                logger.info(
+                    f"Ignoring interaction with instance JID {jid_check}"
+                )
+                return True
+
+        return False
+
+    def _is_whitelist_contact(
+        self, envelope: EvolutionWebhookEnvelope
+    ) -> bool:
+        """Verifica se o contato está na Whitelist."""
+        other_phone = envelope.contact.phone
+        if not other_phone:
+            return False
+
+        phone_variations = self._get_phone_variations(other_phone)
+
+        whitelist_query = Q()
+        for phone_var in phone_variations:
+            whitelist_query |= Q(phone_number=phone_var)
+
+        if WhiteList.objects.filter(whitelist_query, active=True).exists():
+            logger.info(f"Ignoring interaction with whitelist {other_phone}")
+            return True
+
+        return False
+
+    def _is_duplicate_message(
+        self, envelope: EvolutionWebhookEnvelope
+    ) -> bool:
+        """Verifica se a mensagem é duplicada."""
+        msg_id = envelope.message.id
+        if msg_id:
+            cache_key = f"evo_msg_proc_{msg_id}"
+            if cache.get(cache_key):
+                logger.info(f"Ignoring duplicate message {msg_id}")
+                return True
+            # Marca mensagem como processada por 5 minutos
+            cache.set(cache_key, "1", timeout=300)
+        return False
+
+    def _get_phone_variations(self, phone: str) -> List[str]:
+        """Gera variações de telefone (com e sem 9º dígito)."""
+        variations = [phone]
+        if phone.startswith("55") and len(phone) in [12, 13]:
+            if len(phone) == 13 and phone[4] == "9":
+                # Remove 9th digit: 55 88 9 9714 1275 -> 55 88 9714 1275
+                variations.append(phone[:4] + phone[5:])
+            elif len(phone) == 12:
+                # Add 9th digit: 55 88 9714 1275 -> 55 88 9 9714 1275
+                variations.append(phone[:4] + "9" + phone[4:])
+        return variations
+
+    def _get_or_create_instance(
+        self, envelope: EvolutionWebhookEnvelope, payload: Dict[str, Any]
+    ) -> EvolutionInstance:
+        """Obtém ou cria a instância Evolution no banco de dados."""
+        inst_name = envelope.instance
+        inst_id = envelope.instance_id
+        api_key = str(envelope.apikey or "")
+        name_val = str(inst_name or inst_id or "")
+        # phone_number tem limite de 20 caracteres no banco
+        phone_number_val = name_val[:20] if name_val else ""
+
+        instance = None
+
+        # 1. Tentar buscar por instance_id se disponível
+        if inst_id:
+            instance = EvolutionInstance.objects.filter(
+                instance_id=inst_id
+            ).first()
+
+        # 2. Se não achou (ou sem ID), buscar por nome para evitar duplicidade
+        if not instance and inst_name:
+            instance = EvolutionInstance.objects.filter(name=inst_name).first()
+
+        if instance:
+            # Atualiza campos se necessário
+            update_fields: list[str] = []
+            if inst_id and instance.instance_id != inst_id:
+                instance.instance_id = inst_id
+                update_fields.append("instance_id")
+            if name_val and instance.name != name_val:
+                instance.name = name_val
+                update_fields.append("name")
+            if api_key and instance.api_key != api_key:
+                instance.api_key = api_key
+                update_fields.append("api_key")
+            if phone_number_val and instance.phone_number != phone_number_val:
+                instance.phone_number = phone_number_val
+                update_fields.append("phone_number")
+
+            if update_fields:
+                instance.save(update_fields=update_fields)
+        else:
+            # Cria nova instância com tratamento de erro de integridade
+            try:
+                instance = EvolutionInstance.objects.create(
+                    instance_id=inst_id or None,
+                    name=name_val,
+                    api_key=api_key,
+                    phone_number=phone_number_val,
+                )
+            except IntegrityError:
+                # Se falhar por duplicidade (race condition), tenta buscar novamente
+                logger.warning(
+                    f"IntegrityError creating instance {inst_id}. Retrying fetch."
+                )
+                if inst_id:
+                    instance = EvolutionInstance.objects.filter(
+                        instance_id=inst_id
+                    ).first()
+                if not instance and inst_name:
+                    instance = EvolutionInstance.objects.filter(
+                        name=inst_name
+                    ).first()
+
+                if not instance:
+                    # Se ainda assim não encontrar, algo estranho aconteceu
+                    logger.error(
+                        f"Failed to recover instance {inst_id} after IntegrityError"
+                    )
+                    raise
+
+        return instance
+
+    def _resolve_contact(
+        self, instance: EvolutionInstance, envelope: EvolutionWebhookEnvelope
+    ) -> EvolutionContact:
+        """Resolve o contato Evolution (busca ou cria)."""
+        jid = envelope.contact.jid
+        lid = envelope.contact.lid
+        addressing_mode = envelope.contact.addressing_mode
+
+        qs = EvolutionContact.objects.filter(instance=instance)
+
+        if not jid:
+            raise ValueError("Cannot resolve contact without JID")
+
+        if jid:
+            qs = qs.filter(jid=jid)
+
+            # Check if JID belongs to a managed instance
+            jid_phone = jid.split("@")[0]
+            if EvolutionInstance.objects.filter(
+                phone_number=jid_phone
+            ).exists():
+                logger.info(
+                    f"Skipping EvolutionContact creation for instance JID {jid}"
+                )
+                # We still proceed to try and find it, but we won't create it if not found?
+                # Actually, the original logic was a bit fuzzy here.
+                # If it's an instance, we probably shouldn't create a contact for it.
+                pass
+
+        if not qs.exists() and lid:
+            qs = EvolutionContact.objects.filter(instance=instance, lid=lid)
+
+        evo_contact = qs.first()
+        if evo_contact is None:
+            evo_contact = EvolutionContact.objects.create(
+                instance=instance,
+                jid=jid,
+                lid=lid,
+                addressing_mode=addressing_mode,
+            )
+        else:
+            update_fields_contact: list[str] = []
+            if jid and evo_contact.jid != jid:
+                evo_contact.jid = jid
+                update_fields_contact.append("jid")
+            if lid and evo_contact.lid != lid:
+                evo_contact.lid = lid
+                update_fields_contact.append("lid")
+            if (
+                addressing_mode
+                and evo_contact.addressing_mode != addressing_mode
+            ):
+                evo_contact.addressing_mode = addressing_mode
+                update_fields_contact.append("addressing_mode")
+            if update_fields_contact:
+                evo_contact.save(update_fields=update_fields_contact)
+
+        return evo_contact
+
+    def _link_contact(
+        self,
+        evo_contact: EvolutionContact,
+        envelope: EvolutionWebhookEnvelope,
+        from_me: bool = False,
+    ) -> None:
+        """Vincula ou cria um Contato do sistema principal."""
+        push_name = envelope.profile.push_name
+        phone = envelope.contact.phone
+
+        # Bug 2: Não criar contatos sem telefone
+        if not phone:
+            logger.debug(
+                f"Skipping contact creation: no phone available (push_name={push_name})"
+            )
+            return
+
+        # Bug 3: Não criar contatos para números de instâncias internas
+        if EvolutionInstance.objects.filter(
+            phone_number=str(phone), active=True
+        ).exists():
+            logger.info(
+                f"Skipping contact creation for own instance phone {phone}"
+            )
+            return
+
+        contato: Contato | None = None
+        use_push_name = push_name if not from_me else None
+
+        if phone:
+            contato, created_contact = Contato.objects.get_or_create(
+                telefone=str(phone),
+                defaults={
+                    "nome_contato": str(use_push_name or ""),
+                    "nome_perfil_whatsapp": str(use_push_name or ""),
+                    "ativo": True,
+                    "metadados": {},
+                },
+            )
+        else:
+            return
+
+        if contato:
+            if not created_contact and use_push_name:
+                if not contato.nome_perfil_whatsapp:
+                    contato.nome_perfil_whatsapp = str(use_push_name)
+                    contato.save(update_fields=["nome_perfil_whatsapp"])
+
+            if evo_contact.contact != contato:
+                evo_contact.contact = contato
+                evo_contact.save(update_fields=["contact"])
+
+    def _schedule_response(
+        self,
+        instance: EvolutionInstance,
+        evo_contact: EvolutionContact,
+        envelopes: List[EvolutionWebhookEnvelope],
+        first_env: EvolutionWebhookEnvelope,
+    ) -> None:
+        """Agenda a resposta para o contato."""
+        # Ensure phone is updated in main contact if missing
+        if first_env.contact.phone:
+            contato = evo_contact.contact
+            if contato and not getattr(contato, "telefone", None):
+                contato.telefone = str(first_env.contact.phone)
+                contato.save(update_fields=["telefone"])
+
+        # Buffer messages for processing
+        if evo_contact.contact_id:
+            for env in envelopes:
+                env_dict = env.to_dict()
+                if instance.id:
+                    if "evolution" not in env_dict:
+                        env_dict["evolution"] = {}
+                    env_dict["evolution"]["instance_db_id"] = instance.id
+
+                set_buffer_contact(int(evo_contact.contact_id), env_dict)
+
+        sched_payload: Dict[str, Any] = {
+            "contact_id": evo_contact.contact_id,
+            "api_key": first_env.apikey,
+            "message": first_env.message.to_dict()
+            if first_env.message
+            else {},
+        }
+
+        logger.debug(
+            f"Scheduling response for contact_id={evo_contact.contact_id}. "
+            f"Payload: {sched_payload}"
+        )
+
+        sched_response_contact(sched_payload)
+
+    def _handle_from_me_message(
+        self, envelope: EvolutionWebhookEnvelope, payload: Dict[str, Any]
+    ) -> None:
+        """Processa mensagens enviadas pela própria instância."""
+        if envelope.event == "send.message":
+            logger.debug(
+                f"Ignoring send.message event (bot automated message): {envelope.message.id}"
+            )
+            return
+
+        if envelope.event == "messages.update":
+            logger.debug(
+                f"Ignoring messages.update event for fromMe message: {envelope.message.id}"
+            )
+            return
+
+        instance = self._get_or_create_instance(envelope, payload)
+
+        if envelope.sender_jid:
+            phone = envelope.sender_jid.split("@")[0]
+            if phone.isdigit() and len(phone) <= 20:
+                if instance.phone_number != phone:
+                    instance.phone_number = phone
+                    instance.save(update_fields=["phone_number"])
+
+        evo_contact = self._resolve_contact(instance, envelope)
+
+        if not evo_contact.contact_id:
+            self._link_contact(evo_contact, envelope, from_me=True)
+            evo_contact.refresh_from_db()
+
+        if evo_contact.contact_id:
+            processar_mensagem_por_contato(
+                contato_id=int(evo_contact.contact_id),
+                conteudo=envelope.message.text,
+                message_type=envelope.message.type or "conversation",
+                message_id=envelope.message.id or "",
+                metadados=envelope.message.metadata,
+                nome_perfil_whatsapp=envelope.profile.push_name,
+                from_me=True,
+                api_key=envelope.apikey,
+            )

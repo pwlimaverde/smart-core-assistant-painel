@@ -37,3 +37,8 @@ class MessageData:
     message_id: str
     metadados: Optional[dict[str, Any]]
     nome_perfil_whatsapp: Optional[str]
+    remote_jid: Optional[str] = None
+    remote_jid_alt: Optional[str] = None
+    addressing_mode: Optional[str] = None
+    instance_id: Optional[str] = None
+    sender_jid: Optional[str] = None

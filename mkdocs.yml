@@ -43,6 +43,7 @@ plugins:
 nav:
   - Home: index.md
   - Feature Creation: feature_creation_methodology.md
+  - ClickUp Statuses: clickup_status_limitations.md
   - API Reference:
     - AI Engine:
       - 'Feature Facade': api/ai_engine_facade.md

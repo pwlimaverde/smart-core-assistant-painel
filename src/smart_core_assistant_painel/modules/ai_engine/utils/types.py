@@ -8,7 +8,7 @@ de dados específicas.
 
 from typing import Any, NamedTuple, TypeAlias
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from py_return_success_or_error import (
     Datasource,
     UsecaseBase,
@@ -22,6 +22,7 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
     MessageData,
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    AnaliseMensageParameters,
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
     GenerateChunksParameters,
@@ -98,4 +99,28 @@ SSEUsecase: TypeAlias = UsecaseBase[
 GCUsecase: TypeAlias = UsecaseBase[
     list[Document],
     GenerateChunksParameters,
+]
+
+
+class AMTuple(NamedTuple):
+    """Tupla nomeada para dados de Análise Prévia de Mensagem.
+
+    Attributes:
+        intent_types (list[dict[str, Any]]): Lista de tipos de intenção válidos
+            com suas configurações.
+        entity_types (list[dict[str, Any]]): Lista de tipos de entidade válidos
+            com suas configurações.
+    """
+
+    resposta_bot: str
+    confiabilidade: float
+    transferir_atendimento: bool
+    fluxo_transferencia: str
+
+
+AMData: TypeAlias = Datasource[str, AnaliseMensageParameters]
+AMUsecase: TypeAlias = UsecaseBaseCallData[
+    str,
+    str,
+    AnaliseMensageParameters,
 ]

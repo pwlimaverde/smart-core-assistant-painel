@@ -1,15 +1,19 @@
 from py_return_success_or_error import (
     ErrorReturn,
-    NoParams,
+    ReturnSuccessOrError,
     SuccessReturn,
 )
 
-from ..utils.erros import SetEnvironRemoteError
-from ..utils.parameters import SetEnvironRemoteParameters
+from ..utils.erros import SetEnvironRemoteError, UnifieldDataServicesError
+from ..utils.parameters import (
+    SetEnvironRemoteParameters,
+    UnifieldDataServicesParameters,
+)
 from ..utils.types import (
     SERData,
     SERUsecase,
-    WSData,
+    UDSData,
+    UDSUsecase,
 )
 from .service_hub import SERVICEHUB
 from .set_environ_remote.datasource.set_environ_remote_firebase_datasource import (
@@ -18,11 +22,14 @@ from .set_environ_remote.datasource.set_environ_remote_firebase_datasource impor
 from .set_environ_remote.domain.usecase.set_environ_remote_usecase import (
     SetEnvironRemoteUseCase,
 )
-from .whatsapp_services.datasource.evolution.evolution_api_datasource import (
-    EvolutionAPIDatasource,
+from .unifield_data_services.datasource.unifield_data_services_datasource import (
+    UnifieldDataServicesDatasource,
 )
-from .whatsapp_services.domain.usecase.whatsapp_service_usecase import (
-    WhatsAppServiceUsecase,
+from .unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
+)
+from .unifield_data_services.domain.usecase.unifield_data_services_usecase import (
+    UnifieldDataServicesUseCase,
 )
 
 
@@ -30,8 +37,7 @@ class FeaturesCompose:
     """Facade para os casos de uso do módulo de Serviços.
 
     Esta classe inicializa e configura os principais serviços da aplicação,
-    como variáveis de ambiente, o banco de dados vetorial (vector storage)
-    e o serviço de mensagens do WhatsApp.
+    como variáveis de ambiente e o banco de dados vetorial (vector storage).
     """
 
     @staticmethod
@@ -59,19 +65,14 @@ class FeaturesCompose:
             "prompt_human_melhoria_conteudo": "PROMPT_HUMAN_MELHORIA_CONTEUDO",
             "prompt_human_analise_previa_mensagem": "PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM",
             "prompt_system_analise_previa_mensagem": "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM",
+            "prompt_system_analise_mensagem": "PROMPT_SYSTEM_ANALISE_MENSAGEM",
             # Embeddings
             "chunk_overlap": "CHUNK_OVERLAP",
             "chunk_size": "CHUNK_SIZE",
             "embeddings_model": "EMBEDDINGS_MODEL",
             "embeddings_class": "EMBEDDINGS_CLASS",
-            # Whatsapp
-            "whatsapp_api_base_url": "WHATSAPP_API_BASE_URL",
-            "whatsapp_api_send_text_url": "WHATSAPP_API_SEND_TEXT_URL",
-            "whatsapp_api_start_typing_url": "WHATSAPP_API_START_TYPING_URL",
-            "whatsapp_api_stop_typing_url": "WHATSAPP_API_STOP_TYPING_URL",
             # Utilitarios
             "valid_entity_types": "VALID_ENTITY_TYPES",
-            "valid_intent_types": "VALID_INTENT_TYPES",
             "time_cache": "TIME_CACHE",
         }
         error: SetEnvironRemoteError = SetEnvironRemoteError(
@@ -92,20 +93,27 @@ class FeaturesCompose:
         SERVICEHUB.reload_config()
 
     @staticmethod
-    def whatsapp_service() -> None:
-        """Inicializa o serviço de cliente de API do WhatsApp (Evolution API)
-        e o disponibiliza no `SERVICEHUB`.
+    def unifield_data_services() -> None:
+        """Inicializa o serviço de dados unificado e registra no SERVICEHUB.
 
-        Raises:
-            WhatsappServiceError: Se ocorrer um erro ao inicializar o serviço.
+        Levanta erro padronizado em caso de falha na construção/registro.
         """
-        # Cria os parâmetros
-        parameters: NoParams = NoParams()
-        datasource: WSData = EvolutionAPIDatasource()
-        usecase = WhatsAppServiceUsecase(datasource=datasource)
-
-        data = usecase(parameters)
-        if isinstance(data, SuccessReturn):
-            SERVICEHUB.set_whatsapp_service(data.result)
-        if isinstance(data, ErrorReturn):
-            raise data.result
+        error = UnifieldDataServicesError(
+            "Erro ao executar unifield_data_services!"
+        )
+        parameters = UnifieldDataServicesParameters(
+            data_source_id="",
+            provider="trello",
+            root_container_name="Unified Data Root",
+            enable_observability=True,  # Habilitando observabilidade para debug
+            error=error,
+        )
+        datasource: UDSData = UnifieldDataServicesDatasource()
+        usecase: UDSUsecase = UnifieldDataServicesUseCase(
+            datasource=datasource
+        )
+        result: ReturnSuccessOrError[UnifiedDataService] = usecase(parameters)
+        if isinstance(result, SuccessReturn):
+            SERVICEHUB.set_unified_data_service(result.result)
+        elif isinstance(result, ErrorReturn):
+            raise result.result

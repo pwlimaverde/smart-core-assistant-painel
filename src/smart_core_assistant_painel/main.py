@@ -71,6 +71,8 @@ def _resolve_firebase_credentials_path() -> None:
 
 def main() -> None:
     """Ponto de entrada principal."""
+    # Configura logger com sink de arquivo para multiprocessos.
+
     _resolve_firebase_credentials_path()
     print("Iniciando serviços e configurações iniciais...")
     start_initial_loading()

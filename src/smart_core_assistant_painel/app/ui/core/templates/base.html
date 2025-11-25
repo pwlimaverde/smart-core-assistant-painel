@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    </head>
+    <body class="min-h-screen">
+        <!-- Navbar -->
+        <header class="app-navbar">
+            <div class="app-container flex items-center justify-between py-3">
+                <div class="flex items-center gap-3">
+                    <span class="brand text-sm md:text-base">Smart Core Assistant</span>
+                    <span class="hidden md:inline-flex text-xs text-gray-400">Painel</span>
+                </div>
+                <nav class="flex items-center gap-4 text-sm">
+                    <a href="/" class="hover:underline">Home</a>
+                    <a href="/admin/" class="hover:underline">Admin</a>
+                </nav>
+            </div>
+        </header>
+
+        {% block 'conteudo' %}
+        {% endblock 'conteudo' %}
+
+        <footer class="fixed bottom-0 left-0 right-0 bg-gray-100 text-gray-700 text-xs py-2 px-4 flex items-center justify-between border-t border-gray-200 app-footer">
+            <span>Smart Core Assistant Painel</span>
+            <span>Versão {{ PROJECT_VERSION }}</span>
+        </footer>
+    </body>
+</html>

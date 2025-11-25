@@ -1,1 +1,0 @@
-"""Módulo de testes para Evolution WhatsApp Service."""

@@ -203,6 +203,70 @@ result = send_whatsapp_message(
 )
 ```
 
+### Integração Notion (notion_sync)
+- Habilitado via `INSTALLED_APPS` em `src/smart_core_assistant_painel/app/ui/core/settings.py`.
+- Configure `NOTION_TOKEN` e `NOTION_PAGE_ID` em `.env` (veja `.env.example`).
+- Aplique migrações e inicialize as configurações das databases.
+
+#### Passos de Configuração
+- Copie e edite seu `.env`:
+  - `NOTION_TOKEN`: token da integração (Notion → My Integrations).
+  - `NOTION_PAGE_ID`: ID da página pai onde criar databases.
+  - Opcional: `NOTION_API_VERSION` e `NOTION_TIMEOUT` (veja `temp/.env.example`).
+- Aplique migrações:
+  - `uv run task migrate`
+- Opcional: use comandos para preparar schemas iniciais:
+  - Departamentos/Atendentes:
+    `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_notion_databases --update`
+
+### Integração ClickUp (clickup_sync)
+- Aplicação já inclui `clickup_sync` em `INSTALLED_APPS`.
+- A sincronização segue o padrão de signals (sem gates adicionais),
+  espelhando a implementação do Trello.
+
+#### Variáveis de Ambiente
+- `CLICKUP_APP_ESPACO`: nome do Space alvo onde serão criados
+  `Folders` (por `Departamento`) e `Lists` (por `FluxoAtendimento`).
+
+Exemplo no `.env`:
+```env
+# Space de trabalho ClickUp para a aplicação
+CLICKUP_APP_ESPACO=smart-core-assistant
+```
+
+#### Como funciona
+- Ao criar um `Departamento`, o service garante o `Space` (por nome) e
+  o `Folder` correspondente ao departamento.
+- Ao criar/alterar um `FluxoAtendimento` ou suas `Etapas`, são
+  enfileiradas tarefas para garantir/atualizar a `List` e seus
+  `statuses` dentro do `Folder` do `Departamento`.
+– O disparo é exclusivamente via signals do Django, como no Trello;
+  não há controle adicional por variável de ambiente.
+  - Atendimentos/Mensagens:
+    `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_atendimento_database`
+- Para criar databases diretamente no Notion com relacionamentos, use o script:
+  - `uv run python src/smart_core_assistant_painel/app/ui/manage.py shell < src/smart_core_assistant_painel/app/notion_sync/scripts/script_constructor_notion.py`
+
+#### Verificação
+- No Django Admin: verifique `NotionDatabaseConfig` e confirme:
+  - `notion_database_id` e `data_source_id` preenchidos.
+  - `sync_enabled` como verdadeiro.
+- Ao salvar modelos (Contato, Cliente, Departamento, Atendente,
+  Atendimento, Mensagem), os signals disparam sincronização.
+
+#### Testes
+- Recomenda-se executar os testes no Docker:
+  - `uv run task test-docker`
+
+### Integração Trello (trello_sync)
+- Adapter focado no Trello gratuito, sem Custom Fields.
+- Atualiza apenas campos nativos: `name`, `desc`, `start`, `due`,
+  `idLabels` e `idMembers`.
+- Para uso futuro de Custom Fields, crie um novo adapter específico
+  (consulte a API: https://developer.atlassian.com/cloud/trello/).
+- Recomenda-se executar os testes:
+  - `uv run task test-docker`
+
 ## Licença
 
 MIT License

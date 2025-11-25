@@ -14,8 +14,8 @@ from typing import Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from .whatsapp_services.domain.interface.whatsapp_service import (
-    WhatsAppService,
+from .unifield_data_services.domain.interface.unified_data_service import (
+    UnifiedDataService,
 )
 
 
@@ -49,7 +49,7 @@ class ServiceHub:
         if not self._initialized:
             # Instancias
             self.base_dir: Path = Path(__file__).resolve().parent.parent.parent
-            self._whatsapp_service: Optional[WhatsAppService] = None
+            self._unified_data_service: Optional[UnifiedDataService] = None
             # Api_Keys
             self._huggingface_api_key: Optional[str] = None
             # LLM
@@ -63,19 +63,14 @@ class ServiceHub:
             self._prompt_human_melhoria_conteudo: Optional[str] = None
             self._prompt_human_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_previa_mensagem: Optional[str] = None
+            self._prompt_system_analise_mensagem: Optional[str] = None
             # Embeddings
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
             self._embeddings_model: Optional[str] = None
             self._embeddings_class: Optional[str] = None
-            # Whatsapp
-            self._whatsapp_api_base_url: Optional[str] = None
-            self._whatsapp_api_send_text_url: Optional[str] = None
-            self._whatsapp_api_start_typing_url: Optional[str] = None
-            self._whatsapp_api_stop_typing_url: Optional[str] = None
             # Utilitarios
             self._valid_entity_types: Optional[str] = None
-            self._valid_intent_types: Optional[str] = None
             self._time_cache: Optional[int] = None
 
             self._load_config()
@@ -89,7 +84,6 @@ class ServiceHub:
         self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
         self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
         self._model = os.environ.get("MODEL", "llama3.1")
-        self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
 
     def reload_config(self) -> None:
         """Recarrega as configurações a partir de variáveis de ambiente.
@@ -104,29 +98,16 @@ class ServiceHub:
         self._embeddings_model = os.environ.get("EMBEDDINGS_MODEL")
         self._llm_temperature = int(os.environ.get("LLM_TEMPERATURE", "0"))
         self._model = os.environ.get("MODEL", "llama3.1")
-        self._whatsapp_api_base_url = os.environ.get("WHATSAPP_API_BASE_URL")
-
         # Limpa o cache da classe LLM para forçar recarregamento
         self._llm_class = None
 
-        whatsapp_service_type = os.environ.get("WHATSAPP_SERVICE_TYPE")
-        if (
-            whatsapp_service_type is not None
-            and self._whatsapp_service is None
-        ):
-            raise RuntimeError(
-                "Falha ao auto-configurar WhatsAppService. "
-                "Use set_whatsapp_service() para definir a instância manualmente."
-            )
-
-    def set_whatsapp_service(self, whatsapp_service: WhatsAppService) -> None:
-        """Define a implementação de WhatsAppService a ser utilizada.
+    def set_unified_data_service(self, uds: UnifiedDataService) -> None:
+        """Define a implementação de UnifiedDataService a ser utilizada.
 
         Args:
-            whatsapp_service (WhatsAppService): Uma instância de uma classe que
-                implementa a interface WhatsAppService.
+            uds (UnifiedDataService): Instância de serviço de dados unificado.
         """
-        self._whatsapp_service = whatsapp_service
+        self._unified_data_service = uds
 
     # Api_Keys
     @property
@@ -247,6 +228,19 @@ class ServiceHub:
             else ""
         )
 
+    @property
+    def PROMPT_SYSTEM_ANALISE_MENSAGEM(self) -> str:
+        """Retorna o prompt de sistema para análise de mensagem."""
+        if self._prompt_system_analise_mensagem is None:
+            self._prompt_system_analise_mensagem = os.environ.get(
+                "PROMPT_SYSTEM_ANALISE_MENSAGEM"
+            )
+        return (
+            self._prompt_system_analise_mensagem
+            if self._prompt_system_analise_mensagem is not None
+            else ""
+        )
+
     # Embeddings
     @property
     def CHUNK_OVERLAP(self) -> int:
@@ -284,69 +278,19 @@ class ServiceHub:
             else "OpenAIEmbeddings"
         )
 
-    # Whatsapp
     @property
-    def WHATSAPP_API_BASE_URL(self) -> str:
-        """Retorna a URL base para a API do WhatsApp."""
-        if self._whatsapp_api_base_url is None:
-            self._whatsapp_api_base_url = os.environ.get(
-                "WHATSAPP_API_BASE_URL"
-            )
-        return (
-            self._whatsapp_api_base_url
-            if self._whatsapp_api_base_url is not None
-            else ""
-        )
-
-    @property
-    def WHATSAPP_API_SEND_TEXT_URL(self) -> str:
-        if self._whatsapp_api_send_text_url is None:
-            self._whatsapp_api_send_text_url = os.environ.get(
-                "WHATSAPP_API_SEND_TEXT_URL"
-            )
-        return (
-            self._whatsapp_api_send_text_url
-            if self._whatsapp_api_send_text_url is not None
-            else ""
-        )
-
-    @property
-    def WHATSAPP_API_START_TYPING_URL(self) -> str:
-        if self._whatsapp_api_start_typing_url is None:
-            self._whatsapp_api_start_typing_url = os.environ.get(
-                "WHATSAPP_API_START_TYPING_URL"
-            )
-        return (
-            self._whatsapp_api_start_typing_url
-            if self._whatsapp_api_start_typing_url is not None
-            else ""
-        )
-
-    @property
-    def WHATSAPP_API_STOP_TYPING_URL(self) -> str:
-        if self._whatsapp_api_stop_typing_url is None:
-            self._whatsapp_api_stop_typing_url = os.environ.get(
-                "WHATSAPP_API_STOP_TYPING_URL"
-            )
-        return (
-            self._whatsapp_api_stop_typing_url
-            if self._whatsapp_api_stop_typing_url is not None
-            else ""
-        )
-
-    @property
-    def whatsapp_service(self) -> WhatsAppService:
-        """Retorna a instância configurada do WhatsAppService.
+    def unified_data_service(self) -> UnifiedDataService:
+        """Retorna a instância configurada do UnifiedDataService.
 
         Raises:
             RuntimeError: Se o serviço não tiver sido configurado.
         """
-        if self._whatsapp_service is None:
+        if self._unified_data_service is None:
             raise RuntimeError(
-                "WhatsAppService não configurado. "
-                "Use set_whatsapp_service() para definir a instância manualmente."
+                "UnifiedDataService não configurado. "
+                "Use set_unified_data_service() para definir a instância."
             )
-        return self._whatsapp_service
+        return self._unified_data_service
 
     # Utilitarios
     @property
@@ -357,17 +301,6 @@ class ServiceHub:
         return (
             self._valid_entity_types
             if self._valid_entity_types is not None
-            else ""
-        )
-
-    @property
-    def VALID_INTENT_TYPES(self) -> str:
-        """Retorna uma string JSON com intenções válidas, ou vazia se não definida."""
-        if self._valid_intent_types is None:
-            self._valid_intent_types = os.environ.get("VALID_INTENT_TYPES")
-        return (
-            self._valid_intent_types
-            if self._valid_intent_types is not None
             else ""
         )
 

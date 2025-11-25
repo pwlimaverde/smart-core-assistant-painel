@@ -1,1 +1,0 @@
-"""Interfaces do domínio de WhatsApp."""

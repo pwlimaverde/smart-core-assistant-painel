@@ -12,6 +12,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from py_return_success_or_error import ParametersReturnResult
 
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    AnaliseMensageError,
     DataMessageError,
     DocumentError,
     EmbeddingError,
@@ -242,4 +243,16 @@ class GenerateChunksParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class AnaliseMensageParameters(ParametersReturnResult):
+    fluxos_disponiveis: dict[str, str]
+    historico_atendimento: dict[str, Any]
+    dados_treinamento: str
+    llm_parameters: LlmParameters
+    error: AnaliseMensageError
+
+    def __str__(self) -> str:
         return self.__repr__()

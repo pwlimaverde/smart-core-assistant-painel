@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block 'conteudo' %}
+<div class="container mx-auto px-4 py-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold">{{ modo_edicao|yesno:"Editar Intent, Cadastrar Intent" }}</h1>
+    <a href="{% url 'treinamento:verificar_query_compose' %}" class="text-blue-600 hover:underline">Voltar para verificação</a>
+  </div>
+
+  {% if messages %}
+    <ul class="mb-4">
+      {% for message in messages %}
+        <li class="text-{{ message.tags }}-600">{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% if modo_edicao %}
+      <input type="hidden" name="query_compose_id" value="{{ query_compose_id }}" />
+    {% endif %}
+
+    <div>
+      <label for="tag" class="block text-sm font-medium">Tag</label>
+      <input
+        type="text"
+        id="tag"
+        name="tag"
+        class="mt-1 block w-full border rounded p-2"
+        placeholder="Ex: saudacao.inicio"
+        value="{{ tag_inicial }}"
+        required
+      />
+    </div>
+
+    <div>
+      <label for="grupo" class="block text-sm font-medium">Grupo</label>
+      <input
+        type="text"
+        id="grupo"
+        name="grupo"
+        class="mt-1 block w-full border rounded p-2"
+        placeholder="Ex: saudacoes"
+        value="{{ grupo_inicial }}"
+        required
+      />
+    </div>
+
+    <div>
+      <label for="descricao" class="block text-sm font-medium">Descrição</label>
+      <textarea
+        id="descricao"
+        name="descricao"
+        class="mt-1 block w-full border rounded p-2"
+        rows="3"
+        placeholder="Descrição do comportamento para gerar embedding"
+        required
+      >{{ descricao_inicial }}</textarea>
+    </div>
+
+    <div>
+      <label for="exemplo" class="block text-sm font-medium">Exemplo</label>
+      <textarea
+        id="exemplo"
+        name="exemplo"
+        class="mt-1 block w-full border rounded p-2"
+        rows="3"
+        placeholder="Exemplo de query que representa o intent"
+        required
+      >{{ exemplo_inicial }}</textarea>
+    </div>
+
+    <div>
+      <label for="comportamento" class="block text-sm font-medium">Comportamento</label>
+      <textarea
+        id="comportamento"
+        name="comportamento"
+        class="mt-1 block w-full border rounded p-2"
+        rows="6"
+        placeholder="Respostas/ações do assistente"
+        required
+      >{{ comportamento_inicial }}</textarea>
+    </div>
+
+    <div class="pt-4">
+      <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        {% if modo_edicao %}Salvar alterações{% else %}Cadastrar{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock 'conteudo' %}

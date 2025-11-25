@@ -72,15 +72,40 @@ INSTALLED_APPS = [
     "pgvector.django",
     "rolepermissions",
     "django_q",
+    "rest_framework",
+    "corsheaders",
+    "smart_core_assistant_painel.app.ui.core",
     "smart_core_assistant_painel.app.ui.usuarios",
-    "smart_core_assistant_painel.app.ui.oraculo",
+    # Usa AppConfig explícito para garantir execução do ready() e sinais
+    "smart_core_assistant_painel.app.ui.operacional.apps.OperacionalConfig",
+    "smart_core_assistant_painel.app.ui.clientes",
+    "smart_core_assistant_painel.app.ui.atendimentos",
+    "smart_core_assistant_painel.app.ui.treinamento",
+    # Integração Trello ativada
+    "smart_core_assistant_painel.app.trello_sync",
+    # Usa AppConfig explícito para garantir execução do ready() e sinais
+    # "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
+    "smart_core_assistant_painel.app.evolution_sync.apps.EvolutionSyncConfig",
+    # Desabilitado temporariamente: sincronização com Notion e plataformas
+    # externas. Removido para evitar conflitos durante nova integração.
+    # "smart_core_assistant_painel.app.notion_sync",
 ]
+
+# Flag informativa de habilitação do módulo de sincronização Notion.
+# Observação: usada apenas como documentação; verifique configs por app.
+NOTION_SYNC_ENABLED: bool = False
+
+# Controle do filtro do signal de criação de etapas padrão.
+# Lista de nomes de departamentos permitidos (case-insensitive).
+# Se vazio, aplica a todos os departamentos.
+OPERACIONAL_AUTO_ETAPAS_ALLOWED_DEPARTAMENTOS: list[str] = []
 
 ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -94,13 +119,14 @@ ROOT_URLCONF = "smart_core_assistant_painel.app.ui.core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [],  # Usar apenas templates por app (APP_DIRS)
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "smart_core_assistant_painel.app.ui.core.context_processors.project_version",
             ],
         },
     },
@@ -182,12 +208,12 @@ USE_TZ = True
 
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "templates/static"),)
+# Centraliza assets opcionais em core/static e permite AppDirectoriesFinder
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "core", "static"),)
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_ROOT = os.path.join(BASE_DIR.parent, "media")
 MEDIA_URL = "/media/"
 
-STATIC_URL = "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -228,3 +254,59 @@ EVOLUTION_API_URL = os.getenv(
 OLLAMA_BASE_URL = os.getenv(
     "OLLAMA_BASE_URL", "http://192.168.3.127:11434"
 ).strip()
+
+# Configurações DRF e JWT
+REST_FRAMEWORK = {
+    # Exige autenticação por JWT para endpoints protegidos do adapter
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
+}
+
+# Durações dos tokens JWT controladas por variáveis de ambiente
+try:
+    _jwt_access_min = int(os.getenv("JWT_ACCESS_EXPIRES_MIN", "15"))
+    _jwt_refresh_min = int(os.getenv("JWT_REFRESH_EXPIRES_MIN", "60"))
+except Exception:
+    _jwt_access_min = 15
+    _jwt_refresh_min = 60
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": __import__("datetime").timedelta(
+        minutes=_jwt_access_min
+    ),
+    "REFRESH_TOKEN_LIFETIME": __import__("datetime").timedelta(
+        minutes=_jwt_refresh_min
+    ),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+
+# CORS configuration
+def _get_cors_allowed_origins() -> list[str]:
+    """Lista de origens permitidas para CORS.
+
+    Lê da variável de ambiente `CORS_ALLOWED_ORIGINS` separada por vírgulas.
+    Em desenvolvimento, libera localhost:4200 por padrão para o Flutter web.
+    """
+    origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
+    if origins_env:
+        return [o.strip() for o in origins_env.split(",") if o.strip()]
+    # Defaults para ambiente de desenvolvimento
+    return [
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+    ]
+
+
+CORS_ALLOWED_ORIGINS = _get_cors_allowed_origins()
+CORS_ALLOW_CREDENTIALS = True
+
+# Para eventuais POST vindos do frontend
+CSRF_TRUSTED_ORIGINS = [
+    o.replace("http://", "https://") if o.startswith("http://") else o
+    for o in CORS_ALLOWED_ORIGINS
+]

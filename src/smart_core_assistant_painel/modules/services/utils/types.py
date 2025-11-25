@@ -7,7 +7,7 @@ relacionados à configuração de ambiente, armazenamento de vetores e serviços
 de WhatsApp.
 """
 
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from py_return_success_or_error import (
     Datasource,
@@ -16,10 +16,13 @@ from py_return_success_or_error import (
     UsecaseBaseCallData,
 )
 
-from ..features.whatsapp_services.domain.interface.whatsapp_service import (
-    WhatsAppService,
+from ..features.unifield_data_services.domain.interface import (
+    UnifiedDataService,
 )
-from .parameters import SetEnvironRemoteParameters
+from .parameters import (
+    SetEnvironRemoteParameters,
+    UnifieldDataServicesParameters,
+)
 
 SERUsecase: TypeAlias = UsecaseBaseCallData[
     Empty,
@@ -28,10 +31,22 @@ SERUsecase: TypeAlias = UsecaseBaseCallData[
 ]
 SERData: TypeAlias = Datasource[bool, SetEnvironRemoteParameters]
 
-# Tipos para o serviço de WhatsApp
+# Tipos para o serviço de WhatsApp (agora genéricos)
 WSUsecase: TypeAlias = UsecaseBaseCallData[
-    WhatsAppService,
-    WhatsAppService,
+    Any,
+    Any,
     NoParams,
 ]
-WSData: TypeAlias = Datasource[WhatsAppService, NoParams]
+WSData: TypeAlias = Datasource[Any, NoParams]
+
+
+# Tipos para o serviço de dados unificado (UDS)
+UDSData: TypeAlias = Datasource[
+    UnifiedDataService,
+    UnifieldDataServicesParameters,
+]
+UDSUsecase: TypeAlias = UsecaseBaseCallData[
+    UnifiedDataService,
+    UnifiedDataService,
+    UnifieldDataServicesParameters,
+]

@@ -1,8 +1,8 @@
 """Testes para PydanticModelFactory."""
 
 import json
+
 import pytest
-from typing import Type
 from pydantic import BaseModel
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
@@ -20,12 +20,12 @@ class TestPydanticModelFactory:
         return json.dumps({
             "intent_types": {
                 "comunicacao_basica": {
-                    "saudacao": "Cumprimentos e saudações",
-                    "despedida": "Finalizações de conversa"
+                    "saudacao": "Cumprimentos e saudações\nExemplos:\n- Olá!\n- Oi, tudo bem?",
+                    "despedida": "Finalizações de conversa\nExemplos:\n- Tchau\n- Até logo"
                 },
                 "solicitacoes": {
-                    "informacao": "Pedidos de informação",
-                    "ajuda": "Solicitações de ajuda"
+                    "informacao": "Pedidos de informação\nExemplos:\n- Poderia me informar o horário?\n- Qual o endereço?",
+                    "ajuda": "Solicitações de ajuda\nExemplos:\n- Preciso de ajuda\n- Pode me ajudar?"
                 }
             }
         })

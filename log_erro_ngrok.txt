@@ -1,0 +1,7 @@
+task ngrok-trello
+[OK] Túnel ngrok iniciado.
+Porta local: 8000
+URL pública: https://margareta-impedimentary-congenially.ngrok-free.dev
+TRELLO_OAUTH_REDIRECT_URI atualizado em .env para:
+https://margareta-impedimentary-congenially.ngrok-free.dev/integrations/trello/callback/
+Adicione esta URL como Redirect URI no app do Trello e mantenha o processo do ngrok rodando enquanto autentica.

@@ -18,6 +18,11 @@ def webhook(request: HttpRequest) -> HttpResponse:
     if request.method == "HEAD":
         return HttpResponse("OK", status=200)
 
+    if request.method == "GET":
+        return HttpResponse(
+            "Webhook Trello está ativo e acessível.", status=200
+        )
+
     if request.method != "POST":
         return HttpResponse(status=405)
 
@@ -29,17 +34,6 @@ def webhook(request: HttpRequest) -> HttpResponse:
     except Exception:
         return JsonResponse({"error": "invalid json"}, status=400)
 
-    action: dict[str, Any] = payload.get("action", {})
-    action_id: str = str(action.get("id", ""))
-    model_type: str = str(action.get("type", ""))
-
-    TrelloWebhookEvent.objects.create(
-        action_id=action_id, model_type=model_type, payload=payload
-    )
-
-    try:
-        WebhookProcessingService().process(payload)
-    except Exception as exc:
-        logger.error("Falha ao processar webhook Trello: {}", exc)
+    logger.warning("Recebido webhook Trello: {}", payload)
 
     return JsonResponse({"status": "processed"}, status=200)

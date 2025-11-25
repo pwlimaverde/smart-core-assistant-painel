@@ -85,24 +85,18 @@ class FlowSyncService:
             metadata=board_data,
         )
 
-        # Registro de webhook condicionado a configuração/ambiente
-        cb_url: str = self._callback_url()
-        if self._should_register_webhook(cb_url):
-            try:
-                self.client.register_webhook(
-                    model_id=board.external_id,
-                    callback_url=cb_url,
-                    description="Webhook de FluxoAtendimento (board)",
-                )
-            except Exception as exc:
-                logger.warning("Falha ao registrar webhook do board: {}", exc)
-        else:
-            logger.info(
-                "Webhook Trello não registrado (URL não pública ou flag desativada)."
-            )
+        board: TrelloBoard = TrelloBoard.objects.create(
+            fluxo=fluxo,
+            external_id=board_id,
+            name=board_data.get("name", name or fluxo.nome),
+            url=board_data.get("shortUrl"),
+            metadata=board_data,
+        )
+
+        # Comentário: Webhook agora é registrado via task assíncrona (task_fluxo_ensure_board)
+        # para garantir robustez e retry, removendo a lógica inline daqui.
         # Comentário: após criar o board, garantir listas para etapas já existentes
         try:
-
             etapas = getattr(fluxo, "etapas", None)
             if etapas is not None:
                 for etapa in etapas.all():

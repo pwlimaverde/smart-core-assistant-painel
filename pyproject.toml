@@ -3,9 +3,7 @@ name = "smart-core-assistant-painel"
 version = "0.8.5"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "pwlimaverde", email = "pwlimaverde@gmail.com" }
-]
+authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
     "aiohappyeyeballs==2.6.1",
@@ -189,5 +187,5 @@ type-check = "pyright"
 # Reset do banco de dados
 reset-db = "python scripts/database_reset/reset_database.py"
 
-# Callback do ClickUp via túnel ngrok
-ngrok-clickup = "python scripts/clickup_setup/ngrok_clickup.py"
+# Callback do Trello via túnel ngrok
+ngrok-trello = "python scripts/trello/ngrok_trello.py"

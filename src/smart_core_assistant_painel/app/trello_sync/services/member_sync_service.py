@@ -85,13 +85,30 @@ class MemberSyncService:
             logger.error("Falha ao convidar membro para board Trello: {}", exc)
             data = {"error": str(exc)}
 
+        # Tenta extrair ID e username do retorno do convite
+        extracted_id = None
+        extracted_username = ""
+        if isinstance(data, dict):
+            # O retorno do Trello costuma ser {"id": "...", "members": [{...}]}
+            members_list = data.get("members", [])
+            if isinstance(members_list, list) and len(members_list) > 0:
+                first_member = members_list[0]
+                if isinstance(first_member, dict):
+                    extracted_id = first_member.get("id")
+                    extracted_username = first_member.get("username", "")
+                    logger.info(
+                        "Dados do membro Trello extraídos do convite: ID={}, Username={}",
+                        extracted_id,
+                        extracted_username,
+                    )
+
         # Cria ou atualiza o TrelloMember vinculado ao atendente
         tm: Optional[TrelloMember] = getattr(atendente, "trello_member", None)
         if tm is None:
             tm = TrelloMember.objects.create(
                 atendente=atendente,
-                external_id=None,
-                username="",
+                external_id=extracted_id,
+                username=extracted_username or "",
                 full_name=getattr(atendente, "nome", ""),
                 email=email,
                 metadata={
@@ -107,6 +124,13 @@ class MemberSyncService:
             tm.metadata = {**(tm.metadata or {}), "invite": data}
             tm.is_invited = True
             tm.invite_sent_at = timezone.now()
+
+            # Atualiza ID e username se extraídos
+            if extracted_id:
+                tm.external_id = extracted_id
+            if extracted_username:
+                tm.username = extracted_username
+
             tm.save(
                 update_fields=[
                     "email",
@@ -114,6 +138,8 @@ class MemberSyncService:
                     "metadata",
                     "is_invited",
                     "invite_sent_at",
+                    "external_id",
+                    "username",
                 ]
             )
 

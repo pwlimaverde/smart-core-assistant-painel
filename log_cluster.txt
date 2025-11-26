@@ -1,0 +1,38 @@
+task cluster
+Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
+Iniciando serviços e configurações iniciais...
+2025-11-26 19:55:34.338 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-26 19:55:35.757 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+Serviços iniciados com sucesso.
+Iniciando a aplicação Django...
+INFO:django-q:Q Cluster carpet-network-winner-lima starting.
+2025-11-26 19:55:38.305 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-26 19:55:39.698 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-f2a26fdb89d1466eb5ae521aafbaf8a6 guarding cluster carpet-network-winner-lima [smart_core_cluster]
+INFO:django-q:Q Cluster carpet-network-winner-lima [smart_core_cluster] running.
+2025-11-26 19:55:41.447 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-26 19:55:41.449 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-26 19:55:41.449 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-26 19:55:41.450 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-26 19:55:43.032 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-26 19:55:43.055 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-26 19:55:43.058 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-26 19:55:43.103 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-38aad0b4cdee4ca6afb783a5aebbdb66 ready for work at 34208
+INFO:django-q:Process-7d54bba03c8c451aae5b506824a52698 ready for work at 12036
+INFO:django-q:Process-82994e551f21404aa886b8db49b36584 monitoring at 39296
+INFO:django-q:Process-86bf3c45e5e24da69cbac263f327d523 pushing tasks at 32644
+INFO:django-q:Process-38aad0b4cdee4ca6afb783a5aebbdb66 processing london-wolfram-monkey-mars 'smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_card_move'
+2025-11-26 19:55:57.348 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_process_trello_card_move:867 - Verificando atribuição automática. Card: Paulo Weslley Limaverde - Atendimento 133, Lista Anterior: Fila de Atendimento, Status Anterior: fila, Member ID: 5b04cace3fe94dd41aab1c6f
+2025-11-26 19:55:57.351 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_process_trello_card_move:912 - Membro Trello não encontrado para external_id: 5b04cace3fe94dd41aab1c6f. Ignorando atribuição.
+2025-11-26 19:55:57.355 | INFO     | smart_core_assistant_painel.app.trello_sync.tasks:task_process_trello_card_move:928 - Atualizando etapa do atendimento #133 via Trello: Fila de Atendimento - Comercial -> Em Atendimento - Comercial
+INFO:django-q:Enqueued [smart_core_cluster] 1678
+2025-11-26 19:55:57.460 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
+2025-11-26 19:55:57.460 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
+INFO:django-q:Process-7d54bba03c8c451aae5b506824a52698 processing fanta-lamp-music-cola 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+2025-11-26 19:55:57.607 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
+2025-11-26 19:55:57.607 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
+2025-11-26 19:55:58.226 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - capa do card atualizada: card=69277bdd63274bbf3fa696c5 color=purple
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_card_move' (london-wolfram-monkey-mars)
+2025-11-26 19:56:00.324 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6926444e3e5b12eb439bb1d6 -> 69277bdd63274bbf3fa696c5
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (fanta-lamp-music-cola)

@@ -48,23 +48,24 @@ def webhook(request: HttpRequest) -> HttpResponse:
             if list_before and list_after and card:
                 card_id = card.get("id")
                 list_after_id = list_after.get("id")
+                # Extrai ID do membro que realizou a ação
+                member_creator_id = action.get("idMemberCreator")
 
                 if card_id and list_after_id:
                     from django_q.tasks import async_task
 
                     logger.info(
-                        "Detectada movimentação de card Trello: {} -> {}",
+                        "Detectada movimentação de card Trello: {} -> {} (por {})",
                         card_id,
                         list_after_id,
+                        member_creator_id,
                     )
                     async_task(
                         "smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_card_move",
                         card_id,
                         list_after_id,
+                        member_creator_id,
                     )
-
-        # Persistência do evento (opcional, mantendo lógica original se desejado)
-        # TrelloWebhookEvent.objects.create(...)
 
     except Exception as exc:
         logger.error("Erro ao processar payload do webhook: {}", exc)

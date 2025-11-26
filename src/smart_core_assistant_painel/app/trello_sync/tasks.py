@@ -797,20 +797,28 @@ def _map_hex_to_trello_color(hex_color: str) -> str:
 
 
 def task_process_trello_card_move(
-    card_external_id: str, list_after_external_id: str
+    card_external_id: str,
+    list_after_external_id: str,
+    member_creator_id: Optional[str] = None,
 ) -> None:
     """Processa movimentação de card no Trello via webhook.
 
     Atualiza a etapa do atendimento correspondente sem gerar loop de sync.
+    Se movido da Fila por um atendente, atribui o atendimento.
 
     Args:
         card_external_id: ID do card no Trello.
         list_after_external_id: ID da lista destino no Trello.
+        member_creator_id: ID do membro Trello que realizou a ação.
     """
     try:
         from smart_core_assistant_painel.app.trello_sync.models import (
             TrelloCard,
             TrelloList,
+            TrelloMember,
+        )
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            StatusAtendimento,
         )
 
         # 1. Busca Card e Lista Destino
@@ -835,6 +843,7 @@ def task_process_trello_card_move(
             return
 
         # 2. Atualiza referência local do card
+        lista_anterior = card.list_sync
         if card.list_sync_id != lista_dest.id:
             card.list_sync = lista_dest
             card.save(update_fields=["list_sync"])
@@ -842,6 +851,78 @@ def task_process_trello_card_move(
         # 3. Atualiza etapa do atendimento (com flag de contexto)
         atendimento = card.atendimento
         nova_etapa = lista_dest.etapa
+
+        # Lógica de Atribuição de Atendente (se movido da Fila)
+        # Verifica se estava na fila (pelo status ou nome da lista anterior)
+        estava_na_fila = False
+        if atendimento.status == StatusAtendimento.FILA:
+            estava_na_fila = True
+        elif lista_anterior:
+            nome_ant = lista_anterior.name.lower().strip()
+            if nome_ant in ("fila", "fila de atendimento"):
+                estava_na_fila = True
+
+        # Log para debug da atribuição
+        if member_creator_id:
+            logger.warning(
+                "Verificando atribuição automática. Card: {}, Lista Anterior: {}, Status Anterior: {}, Member ID: {}",
+                card.name,
+                lista_anterior.name if lista_anterior else "None",
+                atendimento.status,
+                member_creator_id,
+            )
+
+        if estava_na_fila and member_creator_id:
+            # Tenta encontrar atendente vinculado ao membro Trello
+            try:
+                trello_member = TrelloMember.objects.get(
+                    external_id=member_creator_id
+                )
+                atendente = getattr(trello_member, "atendente", None)
+
+                if atendente:
+                    # Verifica se já não é o atendente atual
+                    if atendimento.atendente_humano_id != atendente.id:
+                        logger.warning(
+                            "Atribuindo atendimento #{} a {} via movimento Trello",
+                            atendimento.id,
+                            atendente.nome,
+                        )
+                        # Usa transferir_para_humano_com_saudacao conforme solicitado
+                        # Isso já define status para EM_ATENDIMENTO
+                        atendimento.transferir_para_humano_com_saudacao(
+                            atendente.id,
+                            observacao="Atribuído automaticamente via Trello (saiu da Fila)",
+                        )
+                        # Recarrega para ter status atualizado
+                        atendimento.refresh_from_db()
+                    else:
+                        logger.warning(
+                            "Atendente {} já é o responsável pelo atendimento #{}.",
+                            atendente.nome,
+                            atendimento.id,
+                        )
+                else:
+                    logger.warning(
+                        "Membro Trello {} encontrado, mas sem atendente vinculado.",
+                        trello_member.username,
+                    )
+
+            except TrelloMember.DoesNotExist:
+                logger.warning(
+                    "Membro Trello não encontrado para external_id: {}. Ignorando atribuição.",
+                    member_creator_id,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao atribuir atendente via Trello: {}", exc
+                )
+        elif member_creator_id and not estava_na_fila:
+            logger.warning(
+                "Não estava na fila (estava em {} / status {}). Ignorando atribuição.",
+                lista_anterior.name if lista_anterior else "None",
+                atendimento.status,
+            )
 
         if atendimento.etapa_atual_id != nova_etapa.id:
             logger.info(

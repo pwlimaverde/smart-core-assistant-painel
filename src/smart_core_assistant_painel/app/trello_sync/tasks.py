@@ -853,7 +853,52 @@ def task_process_trello_card_move(
             # Define flag para o signal ignorar o sync de volta
             atendimento._syncing_from_trello = True  # type: ignore[attr-defined]
             atendimento.etapa_atual = nova_etapa
-            atendimento.save(update_fields=["etapa_atual"])
+
+            # Atualiza StatusAtendimento baseado no nome da etapa
+            from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                StatusAtendimento,
+            )
+
+            nome_etapa = nova_etapa.nome.lower().strip()
+            novo_status = StatusAtendimento.EM_ATENDIMENTO  # Default
+
+            # Mapeamento baseado no nome da etapa conforme solicitado
+            if nome_etapa in ("fila", "fila de atendimento"):
+                novo_status = StatusAtendimento.FILA
+            elif nome_etapa == "em atendimento":
+                novo_status = StatusAtendimento.EM_ATENDIMENTO
+            elif nome_etapa in ("pendência", "pendencia"):
+                novo_status = StatusAtendimento.PENDENCIA
+            elif nome_etapa == "resolvido":
+                novo_status = StatusAtendimento.RESOLVIDO
+            elif nome_etapa == "cancelado":
+                novo_status = StatusAtendimento.CANCELADO
+
+            if atendimento.status != novo_status:
+                atendimento.status = novo_status
+
+                # Se finalizado, define data_fim
+                if novo_status in (
+                    StatusAtendimento.RESOLVIDO,
+                    StatusAtendimento.CANCELADO,
+                ):
+                    if not atendimento.data_fim:
+                        atendimento.data_fim = timezone.now()
+
+                # Adiciona histórico
+                atendimento.adicionar_historico_status(
+                    novo_status,
+                    f"Atualizado via Trello (Lista: {nova_etapa.nome})",
+                )
+
+            atendimento.save(
+                update_fields=[
+                    "etapa_atual",
+                    "status",
+                    "data_fim",
+                    "historico_status",
+                ]
+            )
 
         # 4. Aplica estilos visuais (cor e conclusão) no Trello
         # Mesmo que o card já esteja na lista, precisamos garantir a cor e o status

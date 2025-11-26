@@ -855,5 +855,27 @@ def task_process_trello_card_move(
             atendimento.etapa_atual = nova_etapa
             atendimento.save(update_fields=["etapa_atual"])
 
+        # 4. Aplica estilos visuais (cor e conclusão) no Trello
+        # Mesmo que o card já esteja na lista, precisamos garantir a cor e o status
+        try:
+            service = TicketSyncService()
+
+            # Aplica cor da etapa
+            etapa_cor: str = getattr(nova_etapa, "cor", "#6B7280")
+            cover_color: str = _map_hex_to_trello_color(etapa_cor)
+            service.client.set_card_cover_color(card.external_id, cover_color)
+
+            # Marca como concluído se for finalização
+            if getattr(nova_etapa, "tipo_etapa", "") == TipoEtapa.FINALIZACAO:
+                service.client.update_item(
+                    data_source_id=lista_dest.external_id,
+                    item_id=card.external_id,
+                    payload={"dueComplete": True},
+                )
+        except Exception as exc:
+            logger.warning(
+                "Falha ao aplicar estilos visuais no Trello: {}", exc
+            )
+
     except Exception as exc:
         logger.error("Falha ao processar movimento de card Trello: {}", exc)

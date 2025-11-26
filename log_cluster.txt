@@ -1,62 +1,124 @@
 task cluster
 Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
 Iniciando serviços e configurações iniciais...
-2025-11-25 10:19:46.131 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-25 10:19:47.672 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-25 20:13:39.030 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-25 20:13:40.462 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
 Serviços iniciados com sucesso.
 Iniciando a aplicação Django...
-INFO:django-q:Q Cluster autumn-nuts-kitten-sodium starting.
-2025-11-25 10:19:50.626 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-25 10:19:52.343 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-31c76ebde0eb4bff92ab9b67207e93ff guarding cluster autumn-nuts-kitten-sodium [smart_core_cluster]
-INFO:django-q:Q Cluster autumn-nuts-kitten-sodium [smart_core_cluster] running.
-2025-11-25 10:19:55.213 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-25 10:19:55.216 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-25 10:19:55.232 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-25 10:19:55.248 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
-2025-11-25 10:19:57.370 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-25 10:19:57.380 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-25 10:19:57.405 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-2025-11-25 10:19:57.421 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
-INFO:django-q:Process-854734b278364b4c83f06c44fc4a90d4 ready for work at 36992
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 ready for work at 35080
-INFO:django-q:Process-b4425018ba924daebc26e7185a839a69 pushing tasks at 36292
-INFO:django-q:Process-9c121d30f774475cbf6b039390a879b4 monitoring at 37420
-INFO:django-q:Enqueued [smart_core_cluster] 1155
-INFO:django-q:Process-31c76ebde0eb4bff92ab9b67207e93ff created task ten-lactose-may-magazine from schedule [process_contact_139]
-INFO:django-q:Process-854734b278364b4c83f06c44fc4a90d4 processing ten-lactose-may-magazine 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_139]
-2025-11-25 10:20:55.039 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 139
-2025-11-25 10:20:55.084 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=139 env_count=1
-2025-11-25 10:20:55.084 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 139 - bom dia, meu nome é paulo. qual o horario de funcionamento de vocês
-INFO:django-q:Enqueued [smart_core_cluster] 1156
-INFO:django-q:Enqueued [smart_core_cluster] 1157
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 processing eleven-comet-early-georgia 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card'
-INFO:django-q:Enqueued [smart_core_cluster] 1158
-2025-11-25 10:20:55.344 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
-2025-11-25 10:20:55.344 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
-INFO:django-q:Enqueued [smart_core_cluster] 1159
-2025-11-25 10:20:55.391 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=139 text_len=67 msg_id=281
-2025-11-25 10:20:57.055 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card criado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
+INFO:django-q:Q Cluster timing-wisconsin-network-carolina starting.
+2025-11-25 20:13:43.037 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-25 20:13:44.398 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-43685cd0189c4f52824f453163453432 guarding cluster timing-wisconsin-network-carolina [smart_core_cluster]
+INFO:django-q:Q Cluster timing-wisconsin-network-carolina [smart_core_cluster] running.
+2025-11-25 20:13:46.242 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-25 20:13:46.243 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-25 20:13:46.248 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-25 20:13:46.248 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-11-25 20:13:47.897 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-25 20:13:47.900 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-11-25 20:13:47.910 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 ready for work at 31156
+INFO:django-q:Process-4304de3db1e344409245564429cdb589 pushing tasks at 9308
+INFO:django-q:Process-e70d990dd0f441778db867805f9e5292 monitoring at 31132
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing juliet-juliet-delta-six 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.272 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 92
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing asparagus-hamper-edward-bulldog 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.308 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 93
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing colorado-butter-lamp-comet 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (juliet-juliet-delta-six)
+2025-11-25 20:13:48.358 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 94
+2025-11-25 20:13:48.380 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing edward-steak-avocado-music 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.409 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 95
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (asparagus-hamper-edward-bulldog)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing wyoming-snake-lithium-double 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.457 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 96
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing harry-michigan-berlin-oranges 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (colorado-butter-lamp-comet)
+2025-11-25 20:13:48.507 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 97
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing louisiana-sad-july-lactose 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 ready for work at 31144
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (edward-steak-avocado-music)
+2025-11-25 20:13:48.565 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 98
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing thirteen-uniform-louisiana-artist 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.629 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 99
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (wyoming-snake-lithium-double)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing georgia-skylark-item-don 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.673 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 100
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing stairway-mike-kansas-magnesium 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (harry-michigan-berlin-oranges)
+2025-11-25 20:13:48.723 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 101
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing beryllium-delaware-hawaii-snake 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (louisiana-sad-july-lactose)
+2025-11-25 20:13:48.773 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 102
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing sodium-island-sad-queen 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.827 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 103
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (thirteen-uniform-louisiana-artist)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing william-may-five-arizona 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:48.888 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 104
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing echo-robert-black-friend 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (georgia-skylark-item-don)
+2025-11-25 20:13:48.996 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 105
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing whiskey-twenty-batman-william 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list'
+2025-11-25 20:13:49.054 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_archive_list:205 - Etapa não encontrada para arquivar lista: 106
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (stairway-mike-kansas-magnesium)
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing zulu-glucose-equal-cola 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_archive_board'
+2025-11-25 20:13:49.101 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_fluxo_archive_board:222 - Fluxo não encontrado para arquivar board: 22
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing mars-louisiana-charlie-march 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_archive_board'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (beryllium-delaware-hawaii-snake)
+2025-11-25 20:13:49.154 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_fluxo_archive_board:222 - Fluxo não encontrado para arquivar board: 23
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing texas-oregon-tango-utah 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_archive_board'
+2025-11-25 20:13:49.202 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_fluxo_archive_board:222 - Fluxo não encontrado para arquivar board: 24
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (sodium-island-sad-queen)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (william-may-five-arizona)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (echo-robert-black-friend)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_archive_list' (whiskey-twenty-batman-william)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_archive_board' (zulu-glucose-equal-cola)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_archive_board' (mars-louisiana-charlie-march)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_archive_board' (texas-oregon-tango-utah)
+INFO:django-q:Enqueued [smart_core_cluster] 1325
+INFO:django-q:Process-43685cd0189c4f52824f453163453432 created task georgia-california-music-georgia from schedule [process_contact_142]
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing georgia-california-music-georgia 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_142]
+2025-11-25 20:14:15.787 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 142
+2025-11-25 20:14:15.846 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=142 env_count=1
+2025-11-25 20:14:15.846 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 142 - bom dia, meu nome é paulo. qual o horario de funcionamento de vocês
+INFO:django-q:Enqueued [smart_core_cluster] 1326
+INFO:django-q:Enqueued [smart_core_cluster] 1327
+INFO:django-q:Enqueued [smart_core_cluster] 1328
+2025-11-25 20:14:16.110 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=142 text_len=67 msg_id=295
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing enemy-may-lithium-cola 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card'
+2025-11-25 20:14:16.183 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
+2025-11-25 20:14:16.183 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
+2025-11-25 20:14:16.189 | INFO     | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:ensure_card_for_atendimento:54 - Atendimento %s sem etapa_atual; aguardando definição para criar card
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing virginia-lake-edward-spaghetti 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+2025-11-25 20:14:16.254 | INFO     | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:ensure_card_for_atendimento:54 - Atendimento %s sem etapa_atual; aguardando definição para criar card
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing delta-stream-william-hamper 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card' (enemy-may-lithium-cola)
+2025-11-25 20:14:16.319 | INFO     | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:ensure_card_for_atendimento:54 - Atendimento %s sem etapa_atual; aguardando definição para criar card
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (virginia-lake-edward-spaghetti)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (delta-stream-william-hamper)
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-INFO:django-q:Enqueued [smart_core_cluster] 1160
-2025-11-25 10:20:57.591 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:289 - atd_process_can_respond contact_id=139 pode_responder=True
-2025-11-25 10:20:59.775 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
+INFO:django-q:Enqueued [smart_core_cluster] 1329
+2025-11-25 20:14:18.463 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:289 - atd_process_can_respond contact_id=142 pode_responder=True
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing xray-apart-emma-spaghetti 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+2025-11-25 20:14:18.682 | INFO     | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:ensure_card_for_atendimento:54 - Atendimento %s sem etapa_atual; aguardando definição para criar card
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (xray-apart-emma-spaghetti)
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-11-25 10:21:01.462 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3051 (limiar 0.4000)
-2025-11-25 10:21:01.465 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3680 (limiar 0.4000)
-2025-11-25 10:21:01.469 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3741 (limiar 0.4000)
-2025-11-25 10:21:01.473 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3879 (limiar 0.4000)
-2025-11-25 10:21:01.477 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3961 (limiar 0.4000)
-2025-11-25 10:21:01.483 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:get_available_flows:135 - Gerado dicionário com 2 fluxos disponíveis
-2025-11-25 10:21:01.483 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:709 - atd_process_ai_call contact_id=139
-2025-11-25 10:21:01.484 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
+2025-11-25 20:14:31.478 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3051 (limiar 0.4000)
+2025-11-25 20:14:31.484 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3680 (limiar 0.4000)
+2025-11-25 20:14:31.489 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3741 (limiar 0.4000)
+2025-11-25 20:14:31.493 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3879 (limiar 0.4000)
+2025-11-25 20:14:31.499 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3961 (limiar 0.4000)
+2025-11-25 20:14:31.512 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:get_available_flows:135 - Gerado dicionário com 0 fluxos disponíveis
+2025-11-25 20:14:31.512 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:709 - atd_process_ai_call contact_id=142
+2025-11-25 20:14:31.513 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
 PROMPT COMPLETO ENVIADO PARA LLM
 ================================================================================
 
 ============================================================
 MESSAGE 1 - ROLE: SYSTEM
 ============================================================
-Data e Hora Atual: 25/11/2025 10:21:01 - Tuesday
+Data e Hora Atual: 25/11/2025 20:14:31 - Tuesday
 
 Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
 
@@ -86,15 +148,7 @@ Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta
 
 
 ### SETORES DISPONÍVEIS PARA TRANSFERÊNCIA:
-- **Atendimento Comercial - Comercial**: Fluxo comercial
-- **Atendimento Financeiro - Financeiro**: Fluxo financeiro
-
-### REGRAS DE TRANSFERÊNCIA:
-1. Analise a intenção do usuário e verifique se há um setor específico adequado
-2. Se houver um setor correspondente exato na lista acima, use-o
-3. Se não houver correspondência exata, escolha o setor mais próximo
-4. Use sempre o nome exato do setor conforme listado acima
-5. A transferência deve ser mencionada apenas se for realmente necessária
+Nenhum setor disponível no momento.
 
 
 ============================================================
@@ -118,46 +172,282 @@ Com base apenas nas regras acima, elabore a resposta final ao usuário.
 ================================================================================
 FIM DO PROMPT
 ================================================================================
-2025-11-25 10:21:01.730 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 processing mockingbird-low-sad-apart 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card' (eleven-comet-early-georgia)
-INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
-INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 7.000000 seconds
-2025-11-25 10:21:04.511 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 processing fruit-hawaii-violet-mexico 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (mockingbird-low-sad-apart)
-2025-11-25 10:21:06.553 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
-2025-11-25 10:21:07.201 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - capa do card atualizada: card=6925ad3898bf36f0d4a97ed6 color=purple
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 processing muppet-sink-uniform-massachusetts 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
-2025-11-25 10:21:07.230 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:task_atendimento_update_card_rich_content:438 - Atendimento não encontrado para atualizar conteúdo: 281
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 processing video-kentucky-nitrogen-monkey 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (fruit-hawaii-violet-mexico)
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (muppet-sink-uniform-massachusetts)
-2025-11-25 10:21:09.680 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (video-kentucky-nitrogen-monkey)
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
 INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-11-25 10:21:14.918 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:664 - Score de confiabilidade (triádico): 0.7600
-2025-11-25 10:21:14.939 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:127 - Enviando resposta da mensagem 281 via Evolution API para 558881061874
-2025-11-25 10:21:17.900 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:146 - Mensagem 281 enviada com sucesso e marcada como respondida
-2025-11-25 10:21:17.900 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:972 - Resposta do bot registrada na mensagem 281 (atendimento 118) com confianca=0.760. Aguardando envio via Evolution API.
-2025-11-25 10:21:17.900 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:725 - atd_process_registered_bot_response msg_id=281 len=190
-2025-11-25 10:21:17.910 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:252 - Atendimento 118 movido para etapa 'Em Atendimento' do fluxo 'Atendimento Inicial'
-INFO:django-q:Enqueued [smart_core_cluster] 1161
-INFO:django-q:Process-3f8ef91a45384e7d8d99e16bf2e84091 processing pip-mango-alanine-uranus 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Enqueued [smart_core_cluster] 1162
-2025-11-25 10:21:18.021 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:271 - Atendimento 118 atualizado para status 'Em Atendimento'
-2025-11-25 10:21:18.027 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=139 cache_cleared=1
-INFO:django-q:Process-854734b278364b4c83f06c44fc4a90d4 processing mike-saturn-cold-london 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
-2025-11-25 10:21:18.109 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
-2025-11-25 10:21:18.109 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (ten-lactose-may-magazine)
-2025-11-25 10:21:19.090 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d896b880cd82a325ccb0 -> 6925ad3898bf36f0d4a97ed6
-2025-11-25 10:21:19.104 | INFO     | smart_core_assistant_painel.app.trello_sync.signals:trello_card_list_changed_update_atendimento:610 - Detectada mudança de lista no card Trello 15: 11 -> 12
-2025-11-25 10:21:21.284 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d894fe88e13d673fd0b5 -> 6925ad3898bf36f0d4a97ed6
-2025-11-25 10:21:21.342 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6924d896b880cd82a325ccb0 -> 6925ad3898bf36f0d4a97ed6
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (pip-mango-alanine-uranus)
-2025-11-25 10:21:22.123 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - capa do card atualizada: card=6925ad3898bf36f0d4a97ed6 color=purple
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (mike-saturn-cold-london)
+2025-11-25 20:14:38.437 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:664 - Score de confiabilidade (triádico): 0.7677
+2025-11-25 20:14:38.461 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:127 - Enviando resposta da mensagem 295 via Evolution API para 558881061874
+2025-11-25 20:14:41.615 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:146 - Mensagem 295 enviada com sucesso e marcada como respondida
+2025-11-25 20:14:41.615 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:972 - Resposta do bot registrada na mensagem 295 (atendimento 123) com confianca=0.768. Aguardando envio via Evolution API.
+2025-11-25 20:14:41.615 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:725 - atd_process_registered_bot_response msg_id=295 len=134
+2025-11-25 20:14:41.619 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:ensure_default_structure:68 - Departamento 'Atendimento' já existe (ID 16)
+2025-11-25 20:14:41.632 | DEBUG    | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:42 - Signal create_default_etapas_fluxo: fluxo=25 criado=True dep=Atendimento
+INFO:django-q:Enqueued [smart_core_cluster] 1330
+INFO:django-q:Enqueued [smart_core_cluster] 1331
+INFO:django-q:Enqueued [smart_core_cluster] 1332
+INFO:django-q:Enqueued [smart_core_cluster] 1333
+INFO:django-q:Enqueued [smart_core_cluster] 1334
+INFO:django-q:Enqueued [smart_core_cluster] 1335
+INFO:django-q:Enqueued [smart_core_cluster] 1336
+INFO:django-q:Enqueued [smart_core_cluster] 1337
+INFO:django-q:Enqueued [smart_core_cluster] 1338
+INFO:django-q:Enqueued [smart_core_cluster] 1339
+2025-11-25 20:14:41.721 | INFO     | smart_core_assistant_painel.app.ui.operacional.signals:create_default_etapas_fluxo:144 - Etapas padrão garantidas para FluxoAtendimento #25
+INFO:django-q:Enqueued [smart_core_cluster] 1340
+2025-11-25 20:14:41.736 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:ensure_default_structure:83 - Fluxo 'Atendimento Inicial' criado com ID 25
+2025-11-25 20:14:41.744 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:252 - Atendimento 123 movido para etapa 'Em Atendimento' do fluxo 'Atendimento Inicial'
+INFO:django-q:Enqueued [smart_core_cluster] 1341
+INFO:django-q:Enqueued [smart_core_cluster] 1342
+2025-11-25 20:14:41.897 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:271 - Atendimento 123 atualizado para status 'Em Atendimento'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing fruit-early-connecticut-one 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+2025-11-25 20:14:41.904 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=142 cache_cleared=1
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing leopard-connecticut-sixteen-sweet 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+2025-11-25 20:14:41.992 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
+2025-11-25 20:14:41.992 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (georgia-california-music-georgia)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing william-mountain-ink-edward 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (leopard-connecticut-sixteen-sweet)
+2025-11-25 20:14:42.993 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - board criado: Atendimento Inicial -> 692638610e5fb7afea63f11a
+2025-11-25 20:14:44.434 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 107: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:14:44.435 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 108: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:14:44.435 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 110: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:14:44.435 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 109: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:14:44.435 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 111: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:14:44.435 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_ensure_list:175 - Falha ao garantir lista Trello: Board do fluxo ainda não criado para a etapa
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing spaghetti-coffee-idaho-freddie 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+2025-11-25 20:14:44.480 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_ensure_list:175 - Falha ao garantir lista Trello: Board do fluxo ainda não criado para a etapa
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing nineteen-oregon-nevada-carbon 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing happy-cardinal-cardinal-eighteen 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing mockingbird-eleven-princess-zebra 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (fruit-early-connecticut-one)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (william-mountain-ink-edward)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (spaghetti-coffee-idaho-freddie)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (happy-cardinal-cardinal-eighteen)
+2025-11-25 20:14:45.360 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Resolvido em 692638610e5fb7afea63f11a -> 6926386452683dddbc35b098
+2025-11-25 20:14:45.439 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Pendência em 692638610e5fb7afea63f11a -> 69263864206e3f048d4c681e
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing fifteen-don-lion-winter 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing magazine-failed-alpha-lactose 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (nineteen-oregon-nevada-carbon)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (mockingbird-eleven-princess-zebra)
+2025-11-25 20:14:46.861 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=6926386452683dddbc35b098 -> 1000
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing hamper-pasta-rugby-echo 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (fifteen-don-lion-winter)
+2025-11-25 20:14:47.013 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Cancelado em 692638610e5fb7afea63f11a -> 69263865d3895b310774fc7a
+2025-11-25 20:14:47.647 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=69263864206e3f048d4c681e -> 999
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing burger-east-artist-mars 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_ensure_board'
+2025-11-25 20:14:47.768 | INFO     | smart_core_assistant_painel.app.trello_sync.tasks:_ensure_webhook_for_board:116 - Tentando registrar webhook para board 692638610e5fb7afea63f11a em https://margareta-impedimentary-congenially.ngrok-free.dev/api/trello_sync/webhook/
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (magazine-failed-alpha-lactose)
+2025-11-25 20:14:48.833 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - webhook registrado: model=692638610e5fb7afea63f11a -> 692638675d1555d600cfd88a
+2025-11-25 20:14:48.834 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:_ensure_webhook_for_board:126 - Webhook registrado com sucesso: Board 692638610e5fb7afea63f11a -> Webhook 692638675d1555d600cfd88a
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing emma-stream-utah-connecticut 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+2025-11-25 20:14:48.841 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=6926386452683dddbc35b098 -> 1000
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing whiskey-charlie-alaska-florida 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_ensure_board' (burger-east-artist-mars)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (hamper-pasta-rugby-echo)
+2025-11-25 20:14:49.682 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Em Atendimento em 692638610e5fb7afea63f11a -> 692638681f8913eaf5bb6f85
+2025-11-25 20:14:50.179 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Em Atendimento em 692638610e5fb7afea63f11a -> 69263869a329fda3d443130d
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (whiskey-charlie-alaska-florida)
+2025-11-25 20:14:51.791 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - label criada: baixa (green) -> 6926386a07be4eb290ea1158
+2025-11-25 20:14:52.503 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - label criada: normal (blue) -> 6926386bd20c66f28506be19
+2025-11-25 20:14:53.211 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - label criada: alta (orange) -> 6926386ce610b6bbfe3993ec
+2025-11-25 20:14:53.918 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - label criada: urgente (red) -> 6926386c04e956dae6e0fed1
+2025-11-25 20:14:54.913 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card criado: lista=692638681f8913eaf5bb6f85 -> 6926386d73c0614cef2d2145
+2025-11-25 20:14:57.056 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=692638681f8913eaf5bb6f85 -> 6926386d73c0614cef2d2145
+2025-11-25 20:14:59.164 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=692638681f8913eaf5bb6f85 -> 6926386d73c0614cef2d2145
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (emma-stream-utah-connecticut)
+INFO:django-q:Enqueued [smart_core_cluster] 1343
+INFO:django-q:Process-43685cd0189c4f52824f453163453432 created task pasta-fillet-double-arkansas from schedule [process_contact_142]
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing pasta-fillet-double-arkansas 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_142]
+2025-11-25 20:16:18.438 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 142
+2025-11-25 20:16:18.442 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_get_buffered_messages:143 - atd_process_start contact_id=142 env_count=1
+2025-11-25 20:16:18.442 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:92 - Processando mensagem para contato 142 - quais produtos vocês trabalham?
+INFO:django-q:Enqueued [smart_core_cluster] 1344
+2025-11-25 20:16:18.538 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:238 - atd_process_compiled contact_id=142 text_len=31 msg_id=296
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing happy-lactose-snake-kansas 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+2025-11-25 20:16:20.061 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:289 - atd_process_can_respond contact_id=142 pode_responder=True
+2025-11-25 20:16:20.271 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=692638681f8913eaf5bb6f85 -> 6926386d73c0614cef2d2145
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (happy-lactose-snake-kansas)
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-25 20:16:20.825 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3282 (limiar 0.4000)
+2025-11-25 20:16:20.829 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3387 (limiar 0.4000)
+2025-11-25 20:16:20.832 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3497 (limiar 0.4000)
+2025-11-25 20:16:20.834 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3598 (limiar 0.4000)
+2025-11-25 20:16:20.837 | INFO     | smart_core_assistant_painel.app.ui.treinamento.models:buscar_documentos_similares:180 - Documento encontrado com distância 0.3652 (limiar 0.4000)
+2025-11-25 20:16:20.840 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:get_available_flows:135 - Gerado dicionário com 0 fluxos disponíveis
+2025-11-25 20:16:20.840 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:709 - atd_process_ai_call contact_id=142
+2025-11-25 20:16:20.840 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:__call__:77 - ================================================================================
+PROMPT COMPLETO ENVIADO PARA LLM
+================================================================================
+
+============================================================
+MESSAGE 1 - ROLE: SYSTEM
+============================================================
+Data e Hora Atual: 25/11/2025 20:16:20 - Tuesday
+
+Você é um Assistente Virtual Especialista da Fique Bela, seu nome é Smart. Sua principal diretriz é fornecer informações precisas e úteis aos nossos clientes, agindo sempre como um representante confiável da nossa marca.
+
+**Seu comportamento deve ser guiado pelos seguintes princípios:**
+
+*   **Profissionalismo:** Mantenha um tom formal, mas acessível. Utilize uma linguagem que demonstre expertise e seriedade, sem ser excessivamente robótica.
+*   **Clareza e Concisão:** Vá direto ao ponto. Evite frases de preenchimento ou informações desnecessárias. A eficiência na comunicação é essencial.
+*   **Tom Prestativo:** Demonstre sempre uma postura solícita e focada em resolver a dúvida do usuário. Sua prioridade é ser útil.
+*   **Neutralidade Factual:** Não expresse opiniões, sentimentos ou faça suposições. Limite-se estritamente aos fatos disponíveis.
+
+INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA
+Siga estritamente as orientações abaixo, em português claro e objetivo.
+Adapte a resposta ao contexto do atendimento atual.
+Intenções detectadas e orientações:
+1. [pergunta] Forneça informações claras e verificáveis. Se o pedido for amplo, solicite até 2 esclarecimentos objetivos. Evite jargões e respostas longas.
+Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa.
+
+### Regras de Resposta (siga rigorosamente):
+1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.
+2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."
+3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.
+4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.
+5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.
+6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.
+
+
+### SETORES DISPONÍVEIS PARA TRANSFERÊNCIA:
+Nenhum setor disponível no momento.
+
+
+============================================================
+MESSAGE 2 - ROLE: USER
+============================================================
+<historico_conversa>
+(Apenas para referência de contexto, não como fonte factual)
+{historico_context}
+</historico_conversa>
+
+<contexto_rag>
+{dados_treinamento}
+</contexto_rag>
+
+<pergunta_usuario>
+{context}
+</pergunta_usuario>
+
+Com base apenas nas regras acima, elabore a resposta final ao usuário.
+
+================================================================================
+FIM DO PROMPT
+================================================================================
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 429 Too Many Requests"
+INFO:groq._base_client:Retrying request to /openai/v1/chat/completions in 10.000000 seconds
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
+2025-11-25 20:16:36.629 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:664 - Score de confiabilidade (triádico): 0.7677
+2025-11-25 20:16:36.645 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:127 - Enviando resposta da mensagem 296 via Evolution API para 558881061874
+2025-11-25 20:16:39.357 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:146 - Mensagem 296 enviada com sucesso e marcada como respondida
+2025-11-25 20:16:39.358 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:972 - Resposta do bot registrada na mensagem 296 (atendimento 123) com confianca=0.768. Aguardando envio via Evolution API.
+2025-11-25 20:16:39.358 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:725 - atd_process_registered_bot_response msg_id=296 len=252
+2025-11-25 20:16:39.367 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:252 - Atendimento 123 movido para etapa 'Em Atendimento' do fluxo 'Atendimento Inicial'
+INFO:django-q:Enqueued [smart_core_cluster] 1345
+2025-11-25 20:16:39.424 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:271 - Atendimento 123 atualizado para status 'Em Atendimento'
+2025-11-25 20:16:39.547 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:125 - atd_process_done contact_id=142 cache_cleared=1
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing mountain-emma-nineteen-ten 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (pasta-fillet-double-arkansas)
+2025-11-25 20:16:41.732 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=692638681f8913eaf5bb6f85 -> 6926386d73c0614cef2d2145
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (mountain-emma-nineteen-ten)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing beer-tennis-magazine-zebra 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing quiet-idaho-moon-wolfram 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+2025-11-25 20:17:40.532 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=69263864206e3f048d4c681e -> 6926386d73c0614cef2d2145
+2025-11-25 20:17:41.757 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=692638681f8913eaf5bb6f85 -> 6926386d73c0614cef2d2145
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (beer-tennis-magazine-zebra)
+2025-11-25 20:17:41.985 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=69263864206e3f048d4c681e -> 6926386d73c0614cef2d2145
+2025-11-25 20:17:42.866 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - capa do card atualizada: card=6926386d73c0614cef2d2145 color=pink
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (quiet-idaho-moon-wolfram)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing grey-bacon-high-cat 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing two-fix-blossom-diet 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+2025-11-25 20:18:03.064 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6926386452683dddbc35b098 -> 6926386d73c0614cef2d2145
+2025-11-25 20:18:04.255 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=69263864206e3f048d4c681e -> 6926386d73c0614cef2d2145
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (grey-bacon-high-cat)
+2025-11-25 20:18:04.380 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6926386452683dddbc35b098 -> 6926386d73c0614cef2d2145
+2025-11-25 20:18:05.078 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - capa do card atualizada: card=6926386d73c0614cef2d2145 color=lime
+2025-11-25 20:18:05.826 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=6926386452683dddbc35b098 -> 6926386d73c0614cef2d2145
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (two-fix-blossom-diet)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing mars-football-kentucky-black 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing lithium-nineteen-arizona-london 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (mars-football-kentucky-black)
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing eighteen-purple-winner-wolfram 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+2025-11-25 20:18:35.753 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - board criado: Atendimento Comercial -> 6926394a79f8529399704f3b
+2025-11-25 20:18:36.333 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 112: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:18:36.333 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 113: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:18:36.333 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 115: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:18:36.333 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 114: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:18:36.333 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 116: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:18:36.334 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_ensure_list:175 - Falha ao garantir lista Trello: Board do fluxo ainda não criado para a etapa
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing coffee-steak-alaska-fillet 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+2025-11-25 20:18:36.337 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_ensure_list:175 - Falha ao garantir lista Trello: Board do fluxo ainda não criado para a etapa
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing arkansas-butter-wolfram-idaho 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing sink-queen-beer-texas 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing stream-bluebird-early-gee 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (lithium-nineteen-arizona-london)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (eighteen-purple-winner-wolfram)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (coffee-steak-alaska-fillet)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (sink-queen-beer-texas)
+2025-11-25 20:18:37.072 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Em Atendimento em 6926394a79f8529399704f3b -> 6926394bc6a81282649e500a
+2025-11-25 20:18:37.142 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Pendência em 6926394a79f8529399704f3b -> 6926394c7b34067cfcce16d4
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing twelve-alpha-wyoming-hotel 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing mockingbird-freddie-wisconsin-nebraska 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (arkansas-butter-wolfram-idaho)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (stream-bluebird-early-gee)
+2025-11-25 20:18:38.520 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=6926394bc6a81282649e500a -> 998
+2025-11-25 20:18:38.687 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Cancelado em 6926394a79f8529399704f3b -> 6926394d5d19987127a43d5c
+2025-11-25 20:18:39.129 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=6926394c7b34067cfcce16d4 -> 999
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing winner-coffee-hawaii-winner 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (twelve-alpha-wyoming-hotel)
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing west-oranges-undress-bakerloo 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_ensure_board'
+2025-11-25 20:18:39.298 | INFO     | smart_core_assistant_painel.app.trello_sync.tasks:_ensure_webhook_for_board:116 - Tentando registrar webhook para board 6926394a79f8529399704f3b em https://margareta-impedimentary-congenially.ngrok-free.dev/api/trello_sync/webhook/
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (mockingbird-freddie-wisconsin-nebraska)
+2025-11-25 20:18:39.763 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=6926394bc6a81282649e500a -> 998
+2025-11-25 20:18:40.312 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - webhook registrado: model=6926394a79f8529399704f3b -> 6926394fce1771bbbfb259e7
+2025-11-25 20:18:40.313 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:_ensure_webhook_for_board:126 - Webhook registrado com sucesso: Board 6926394a79f8529399704f3b -> Webhook 6926394fce1771bbbfb259e7
+2025-11-25 20:18:40.325 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=6926394c7b34067cfcce16d4 -> 999
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_ensure_board' (west-oranges-undress-bakerloo)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (winner-coffee-hawaii-winner)
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing apart-video-diet-victor 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing social-connecticut-eleven-grey 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing india-lithium-blue-tango 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (social-connecticut-eleven-grey)
+2025-11-25 20:20:10.133 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - board criado: Atendimento Financeiro -> 692639a878832d03aec7111b
+2025-11-25 20:20:10.736 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 117: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:20:10.737 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 118: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:20:10.737 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 120: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:20:10.737 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 119: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:20:10.737 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.flow_sync_service:ensure_board_for_fluxo:136 - Falha ao garantir lista para etapa 121: Board do fluxo ainda não criado para a etapa
+2025-11-25 20:20:10.737 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_ensure_list:175 - Falha ao garantir lista Trello: Board do fluxo ainda não criado para a etapa
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing tennessee-glucose-sierra-nebraska 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+2025-11-25 20:20:10.742 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_etapa_ensure_list:175 - Falha ao garantir lista Trello: Board do fluxo ainda não criado para a etapa
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing twenty-princess-mobile-seven 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing salami-maine-bulldog-mango 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing crazy-glucose-alaska-illinois 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (apart-video-diet-victor)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (india-lithium-blue-tango)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (tennessee-glucose-sierra-nebraska)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (salami-maine-bulldog-mango)
+2025-11-25 20:20:11.504 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Resolvido em 692639a878832d03aec7111b -> 692639aa5919c27c46ae3123
+2025-11-25 20:20:11.589 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Pendência em 692639a878832d03aec7111b -> 692639aa5b8d7a0c24ac65fa
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing uniform-grey-emma-mars 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (twenty-princess-mobile-seven)
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing apart-paris-three-kentucky 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (crazy-glucose-alaska-illinois)
+2025-11-25 20:20:12.765 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=692639aa5919c27c46ae3123 -> 1000
+INFO:django-q:Process-2dccaf28cd174e31a755a7f49b2736f9 processing orange-kilo-helium-september 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (uniform-grey-emma-mars)
+2025-11-25 20:20:12.905 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Cancelado em 692639a878832d03aec7111b -> 692639ab95b215cd86f9ef5e
+2025-11-25 20:20:13.457 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=692639aa5b8d7a0c24ac65fa -> 999
+INFO:django-q:Process-47b30d2d6b724ab1a0b496e1e49fb5a8 processing magnesium-uncle-avocado-zebra 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_ensure_board'
+2025-11-25 20:20:13.565 | INFO     | smart_core_assistant_painel.app.trello_sync.tasks:_ensure_webhook_for_board:116 - Tentando registrar webhook para board 692639a878832d03aec7111b em https://margareta-impedimentary-congenially.ngrok-free.dev/api/trello_sync/webhook/
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_etapa_ensure_list' (apart-paris-three-kentucky)
+2025-11-25 20:20:14.111 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - pos atualizado: lista=692639aa5919c27c46ae3123 -> 1000
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_reorder_lists_for_fluxo' (orange-kilo-helium-september)
+2025-11-25 20:20:14.530 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - webhook registrado: model=692639a878832d03aec7111b -> 692639adc294fddc0276629c
+2025-11-25 20:20:14.531 | WARNING  | smart_core_assistant_painel.app.trello_sync.tasks:_ensure_webhook_for_board:126 - Webhook registrado com sucesso: Board 692639a878832d03aec7111b -> Webhook 692639adc294fddc0276629c
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_fluxo_ensure_board' (magnesium-uncle-avocado-zebra)

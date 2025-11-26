@@ -1,6 +1,7 @@
 from datetime import timedelta
 from typing import Any, Optional, cast
 
+from django.db import transaction
 from django.utils import timezone
 from loguru import logger
 
@@ -37,126 +38,142 @@ class TicketSyncService:
             FeaturesCompose.unifield_data_services()
             self.client = SERVICEHUB.unified_data_service
 
-    def ensure_card_for_atendimento(self, atendimento: Any) -> TrelloCard:
+    def ensure_card_for_atendimento(
+        self, atendimento: Any
+    ) -> Optional[TrelloCard]:
         """
         Garante criação de Card no Trello para o atendimento.
         """
-        existing: Optional[TrelloCard] = getattr(
-            atendimento, "trello_card", None
-        )
-        if existing:
-            return existing
+        # Lock no atendimento para evitar duplicidade de criação de card
+        atendimento_id = getattr(atendimento, "id", None)
+        if not atendimento_id:
+            return None
 
-        etapa = getattr(atendimento, "etapa_atual", None)
-        if not etapa:
-            logger.info(
-                "Atendimento %s sem etapa_atual; não cria card",
-                atendimento.pk,
+        with transaction.atomic():
+            atendimento_locked = Atendimento.objects.select_for_update().get(
+                id=atendimento_id
             )
-            raise ValueError("Atendimento sem etapa_atual para Trello")
 
-        lista: Optional[TrelloList] = getattr(etapa, "trello_list", None)
-        if not lista:
-            from .flow_sync_service import FlowSyncService
-
-            lista = FlowSyncService().ensure_list_for_etapa(etapa)
-
-        # Comentário (PT-BR): Monta nome e descrição rica para o card.
-        name: str = self._build_card_name(atendimento)
-        desc: str = self._build_rich_description(atendimento)
-
-        # Comentário: Atribui membro se já houver um atendente humano
-        id_members: list[str] = []
-        atendente = getattr(atendimento, "atendente_humano", None)
-        if atendente is not None:
-            member_id = MemberSyncService().resolve_member_external_id(
-                atendente
+            existing: Optional[TrelloCard] = getattr(
+                atendimento_locked, "trello_card", None
             )
-            if member_id:
-                id_members = [member_id]
+            if existing:
+                return existing
 
-        # Comentário: Trello (plano gratuito) — sem uso de Custom Fields
+            etapa = getattr(atendimento_locked, "etapa_atual", None)
+            if not etapa:
+                logger.info(
+                    "Atendimento %s sem etapa_atual; aguardando definição para criar card",
+                    atendimento_locked.pk,
+                )
+                return None
 
-        # Comentário: create_item retorna o ID do card; montar payload.
-        # Comentário: define datas (start/due) e labels de prioridade
-        data_inicio = getattr(atendimento, "data_inicio", None)
-        data_ultima = getattr(atendimento, "data_ultima_mensagem", None)
-        # Comentário: due deve ser no próximo dia em relação ao start;
-        # fallback para próxima dia da última mensagem.
-        start_str: Optional[str] = (
-            timezone.localtime(data_inicio).isoformat()
-            if data_inicio is not None
-            else None
-        )
-        if data_inicio is not None:
+            lista: Optional[TrelloList] = getattr(etapa, "trello_list", None)
+            if not lista:
+                from .flow_sync_service import FlowSyncService
+
+                lista = FlowSyncService().ensure_list_for_etapa(etapa)
+
+            # Comentário (PT-BR): Monta nome e descrição rica para o card.
+            name: str = self._build_card_name(atendimento_locked)
+            desc: str = self._build_rich_description(atendimento_locked)
+
+            # Comentário: Atribui membro se já houver um atendente humano
+            id_members: list[str] = []
+            atendente = getattr(atendimento_locked, "atendente_humano", None)
+            if atendente is not None:
+                member_id = MemberSyncService().resolve_member_external_id(
+                    atendente
+                )
+                if member_id:
+                    id_members = [member_id]
+
+            # Comentário: Trello (plano gratuito) — sem uso de Custom Fields
+
+            # Comentário: create_item retorna o ID do card; montar payload.
+            # Comentário: define datas (start/due) e labels de prioridade
+            data_inicio = getattr(atendimento_locked, "data_inicio", None)
+            data_ultima = getattr(
+                atendimento_locked, "data_ultima_mensagem", None
+            )
+            # Comentário: due deve ser no próximo dia em relação ao start;
+            # fallback para próxima dia da última mensagem.
+            start_str: Optional[str] = (
+                timezone.localtime(data_inicio).isoformat()
+                if data_inicio is not None
+                else None
+            )
+            if data_inicio is not None:
+                try:
+                    due_str = timezone.localtime(
+                        data_inicio + timedelta(days=1)
+                    ).isoformat()
+                except Exception:
+                    due_str = (data_inicio + timedelta(days=1)).isoformat()
+            elif data_ultima is not None:
+                try:
+                    due_str = timezone.localtime(
+                        data_ultima + timedelta(days=1)
+                    ).isoformat()
+                except Exception:
+                    due_str = (data_ultima + timedelta(days=1)).isoformat()
+            else:
+                due_str = None
+
+            id_labels: list[str] = []
             try:
-                due_str = timezone.localtime(
-                    data_inicio + timedelta(days=1)
-                ).isoformat()
+                board_id: str = cast(str, lista.board.external_id)
+                prioridade: str = getattr(
+                    atendimento_locked, "prioridade", "normal"
+                )
+                labels_map = self.client.ensure_labels(
+                    board_id,
+                    {
+                        "baixa": "green",
+                        "normal": "blue",
+                        "alta": "orange",
+                        "urgente": "red",
+                    },
+                )
+                lb_id = labels_map.get(prioridade)
+                if lb_id:
+                    id_labels = [lb_id]
             except Exception:
-                due_str = (data_inicio + timedelta(days=1)).isoformat()
-        elif data_ultima is not None:
-            try:
-                due_str = timezone.localtime(
-                    data_ultima + timedelta(days=1)
-                ).isoformat()
-            except Exception:
-                due_str = (data_ultima + timedelta(days=1)).isoformat()
-        else:
-            due_str = None
+                # Comentário: se adapter não suportar labels, segue sem elas
+                id_labels = []
 
-        id_labels: list[str] = []
-        try:
-            board_id: str = cast(str, lista.board.external_id)
-            prioridade: str = getattr(atendimento, "prioridade", "normal")
-            labels_map = self.client.ensure_labels(
-                board_id,
-                {
-                    "baixa": "green",
-                    "normal": "blue",
-                    "alta": "orange",
-                    "urgente": "red",
-                },
+            payload: dict[str, Any] = {
+                "name": name,
+                "desc": desc,
+                "idMembers": id_members or [],
+                "idLabels": id_labels or [],
+                "start": start_str,
+                "due": due_str,
+                # Comentário: sem "custom_fields" no payload
+            }
+            card_id: str = self.client.create_item(
+                data_source_id=lista.external_id, payload=payload
             )
-            lb_id = labels_map.get(prioridade)
-            if lb_id:
-                id_labels = [lb_id]
-        except Exception:
-            # Comentário: se adapter não suportar labels, segue sem elas
-            id_labels = []
-
-        payload: dict[str, Any] = {
-            "name": name,
-            "desc": desc,
-            "idMembers": id_members or [],
-            "idLabels": id_labels or [],
-            "start": start_str,
-            "due": due_str,
-            # Comentário: sem "custom_fields" no payload
-        }
-        card_id: str = self.client.create_item(
-            data_source_id=lista.external_id, payload=payload
-        )
-        # Buscar dados completos do card para metadados.
-        data: Optional[dict[str, Any]] = self.client.get_item(
-            data_source_id=lista.external_id, item_id=card_id
-        )
-        card_data: dict[str, Any] = data if isinstance(data, dict) else {}
-        card: TrelloCard = TrelloCard.objects.create(
-            atendimento=atendimento,
-            list_sync=lista,
-            external_id=card_id,
-            name=card_data.get("name", name),
-            url=card_data.get("shortUrl"),
-            metadata=card_data,
-        )
-        # Comentário: Atualiza descrição com mensagens recentes, sem bloquear criação
-        try:
-            self.update_card_rich_content(card, atendimento)
-        except Exception:
-            # Falhas de enriquecimento não devem impedir o fluxo básico
-            pass
-        return card
+            # Buscar dados completos do card para metadados.
+            data: Optional[dict[str, Any]] = self.client.get_item(
+                data_source_id=lista.external_id, item_id=card_id
+            )
+            card_data: dict[str, Any] = data if isinstance(data, dict) else {}
+            card: TrelloCard = TrelloCard.objects.create(
+                atendimento=atendimento_locked,
+                list_sync=lista,
+                external_id=card_id,
+                name=card_data.get("name", name),
+                url=card_data.get("shortUrl"),
+                metadata=card_data,
+            )
+            # Comentário: Atualiza descrição com mensagens recentes, sem bloquear criação
+            try:
+                self.update_card_rich_content(card, atendimento_locked)
+            except Exception:
+                # Falhas de enriquecimento não devem impedir o fluxo básico
+                pass
+            return card
 
     def _get_status_emoji(self, status: str) -> str:
         """Retorna emoji apropriado para o status do atendimento."""

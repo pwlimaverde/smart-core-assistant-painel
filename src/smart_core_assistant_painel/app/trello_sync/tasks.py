@@ -10,9 +10,12 @@ As tarefas são agendadas pelos sinais em
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any, Dict, Optional, cast
 
 from decouple import config
+from django.utils import timezone
+from django_q.tasks import schedule
 from loguru import logger
 
 from smart_core_assistant_painel.app.trello_sync.models import TrelloBoard
@@ -145,9 +148,14 @@ def task_fluxo_ensure_board(fluxo_id: int) -> None:
         fluxo = FluxoAtendimento.objects.get(id=fluxo_id)
         board = FlowSyncService().ensure_board_for_fluxo(fluxo)
 
-        # Garante o webhook imediatamente após garantir o board
+        # Garante o webhook com delay de 10s para estabilidade
         if board and board.external_id:
-            _ensure_webhook_for_board(board.external_id, fluxo_id)
+            schedule(
+                "smart_core_assistant_painel.app.trello_sync.tasks._ensure_webhook_for_board",
+                board.external_id,
+                fluxo_id,
+                next_run=timezone.now() + timedelta(seconds=10),
+            )
 
     except FluxoAtendimento.DoesNotExist:
         logger.warning("Fluxo não encontrado para criar board: {}", fluxo_id)
@@ -237,10 +245,13 @@ def task_atendimento_ensure_card(atendimento_id: int) -> None:
         service = TicketSyncService()
         card = service.ensure_card_for_atendimento(atendimento)
         # Comentário: após criar o card, enriquecer com descrição/membros/custom fields
-        try:
-            service.update_card_rich_content(card, atendimento)
-        except Exception as exc:
-            logger.warning("Falha ao enriquecer card após criação: {}", exc)
+        if card:
+            try:
+                service.update_card_rich_content(card, atendimento)
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao enriquecer card após criação: {}", exc
+                )
     except Atendimento.DoesNotExist:
         logger.warning(
             "Atendimento não encontrado para garantir card: {}",

@@ -239,6 +239,11 @@ def atendimento_etapa_updated_move_card(
         if old_etapa_id == getattr(instance, "etapa_atual_id", None):
             # Comentário: sem alteração efetiva de etapa, evita agendar.
             return
+
+        # Prevenção de loop: se a atualização veio do Trello, não enviar de volta
+        if getattr(instance, "_syncing_from_trello", False):
+            return
+
         async_task(
             (
                 "smart_core_assistant_painel.app.trello_sync.tasks"

@@ -794,3 +794,66 @@ def _map_hex_to_trello_color(hex_color: str) -> str:
             best_d = d
             best = name
     return best
+
+
+def task_process_trello_card_move(
+    card_external_id: str, list_after_external_id: str
+) -> None:
+    """Processa movimentação de card no Trello via webhook.
+
+    Atualiza a etapa do atendimento correspondente sem gerar loop de sync.
+
+    Args:
+        card_external_id: ID do card no Trello.
+        list_after_external_id: ID da lista destino no Trello.
+    """
+    try:
+        from smart_core_assistant_painel.app.trello_sync.models import (
+            TrelloCard,
+            TrelloList,
+        )
+
+        # 1. Busca Card e Lista Destino
+        try:
+            card = TrelloCard.objects.get(external_id=card_external_id)
+        except TrelloCard.DoesNotExist:
+            logger.warning(
+                "Card Trello não encontrado para processar movimento: {}",
+                card_external_id,
+            )
+            return
+
+        try:
+            lista_dest = TrelloList.objects.get(
+                external_id=list_after_external_id
+            )
+        except TrelloList.DoesNotExist:
+            logger.warning(
+                "Lista Trello destino não encontrada: {}",
+                list_after_external_id,
+            )
+            return
+
+        # 2. Atualiza referência local do card
+        if card.list_sync_id != lista_dest.id:
+            card.list_sync = lista_dest
+            card.save(update_fields=["list_sync"])
+
+        # 3. Atualiza etapa do atendimento (com flag de contexto)
+        atendimento = card.atendimento
+        nova_etapa = lista_dest.etapa
+
+        if atendimento.etapa_atual_id != nova_etapa.id:
+            logger.info(
+                "Atualizando etapa do atendimento #{} via Trello: {} -> {}",
+                atendimento.id,
+                atendimento.etapa_atual,
+                nova_etapa,
+            )
+            # Define flag para o signal ignorar o sync de volta
+            atendimento._syncing_from_trello = True  # type: ignore[attr-defined]
+            atendimento.etapa_atual = nova_etapa
+            atendimento.save(update_fields=["etapa_atual"])
+
+    except Exception as exc:
+        logger.error("Falha ao processar movimento de card Trello: {}", exc)

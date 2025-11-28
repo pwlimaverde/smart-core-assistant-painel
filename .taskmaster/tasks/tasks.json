@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Configuração da Infraestrutura Docker e Inicialização do Projeto Django",
         "description": "Configurar o ambiente de desenvolvimento com Docker Compose, incluindo serviços para PostgreSQL (com pgvector), Redis e a aplicação Django. Inicializar a estrutura do projeto.",
         "details": "1. Criar `docker-compose.yml` com serviços: `web` (Django), `db` (PostgreSQL 16+), `redis` (Cache/Queue). \n2. Configurar Dockerfile para Python 3.13+. \n3. Inicializar projeto Django 5.x com estrutura de 'config' separada. \n4. Configurar variáveis de ambiente (.env) para segredos. \n5. Garantir que a extensão `vector` esteja habilitada no init do Postgres.",
@@ -14,7 +14,7 @@
         "updatedAt": "2025-11-28T13:28:02.047Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Modelagem do Core Database e Migrations",
         "description": "Implementar os modelos de dados fundamentais para o sistema: Clientes, Atendimentos, Mensagens e Departamentos.",
         "details": "Criar apps Django (ex: `core`, `attendance`). Definir models:\n- `Customer`: nome, telefone (chave única), metadados.\n- `Department`: nome, configurações de SLA.\n- `Attendance` (Ticket): fk_customer, fk_department, status (aberto, pendente, fechado), trello_card_id.\n- `Message`: fk_attendance, conteúdo, tipo (texto/mídia), direção (in/out), timestamp.\nUtilizar UUIDs como chaves primárias.",
@@ -30,19 +30,50 @@
       {
         "id": "3",
         "title": "Implementação do Wrapper da Evolution API (WhatsApp)",
-        "description": "Desenvolver a camada de serviço para comunicação com a Evolution API, permitindo envio de mensagens e gestão de instâncias.",
-        "details": "1. Criar serviço `EvolutionClient` usando `httpx` ou `requests`. \n2. Implementar métodos: `send_text`, `send_media`, `check_health`. \n3. Implementar endpoint de Webhook (Django REST Framework) para receber eventos da Evolution API (mensagens, status de entrega). \n4. Adicionar autenticação via API Key no header.",
-        "testStrategy": "Usar `responses` ou `unittest.mock` para simular respostas da API Evolution. Testar endpoint de webhook com payload de exemplo.",
-        "priority": "high",
-        "dependencies": [
-          "2"
-        ],
+        "description": "Desenvolver a camada de serviço e persistência dentro do app `evolution_sync` para gerenciar instâncias e comunicar com a Evolution API.",
         "status": "done",
-        "subtasks": [],
-        "updatedAt": "2025-11-28T13:28:02.097Z"
+        "dependencies": [
+          2
+        ],
+        "priority": "high",
+        "details": "A integração deve ser centralizada no app `evolution_sync`, eliminando uso de módulos genéricos como `whatsapp_services`. O foco é gerenciar múltiplas instâncias e processar webhooks.\n\n1. **Estrutura do App `evolution_sync`**:\n   - Garantir que `evolution_sync/models.py` possua modelos para armazenar credenciais de instâncias (ex: `EvolutionInstance` com campos `instance_name`, `token`, `base_url`, `state`).\n\n2. **Service Layer (`EvolutionClient`)**:\n   - Implementar em `evolution_sync/services.py` (ou pasta `services/`).\n   - Utilizar `httpx` (preferencialmente assíncrono) para comunicação.\n   - Métodos obrigatórios: `send_message` (texto/mídia), `get_instance_status`, `connect_instance`.\n\n3. **Webhook Handling**:\n   - Implementar View no `evolution_sync/views.py` para receber POSTs da Evolution API.\n   - Normalizar o payload de entrada antes de passar para o processador de mensagens (Task 4).",
+        "testStrategy": "Criar testes unitários em `evolution_sync/tests/` mockando as chamadas externas com `respx` ou `unittest.mock`. Validar o parseamento correto de payloads de webhook (ex: `messages.upsert`) e a persistência das configurações da instância.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Modelagem de Instâncias no evolution_sync",
+            "description": "Criar ou ajustar o model `EvolutionInstance` em `evolution_sync/models.py` para salvar URL da API, Token (ApiKey) e Nome da Instância.",
+            "dependencies": [],
+            "details": "Campos sugeridos: nome (char), api_url (url), token (encrypted/char), is_active (bool).",
+            "status": "pending",
+            "testStrategy": "Testar criação e recuperação de instâncias no DB."
+          },
+          {
+            "id": 2,
+            "title": "Implementação do EvolutionClient Service",
+            "description": "Desenvolver a classe cliente HTTP para realizar chamadas à API externa da Evolution.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implementar métodos de envio de mensagem e checagem de saúde. O cliente deve ser instanciado carregando as configurações do model `EvolutionInstance`.",
+            "status": "pending",
+            "testStrategy": "Mockar respostas HTTP e verificar se o serviço trata erros (401, 500) corretamente."
+          },
+          {
+            "id": 3,
+            "title": "Endpoint de Webhook (Receiver)",
+            "description": "Criar endpoint DRF para receber notificações de novas mensagens.",
+            "dependencies": [
+              1
+            ],
+            "details": "Endpoint deve validar o token de segurança do webhook e identificar a instância de origem. Deve apenas receber e estruturar os dados preliminares.",
+            "status": "pending",
+            "testStrategy": "Enviar payload JSON de exemplo (message upsert) e verificar retorno 200 OK."
+          }
+        ]
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Orquestrador de Mensagens e Gestão de Contexto",
         "description": "Criar a lógica central que processa mensagens recebidas, identifica o cliente e decide o roteamento (Novo Atendimento vs Atendimento Existente).",
         "details": "1. Service Layer `MessageProcessor`: Receber payload do webhook. \n2. Buscar `Customer` pelo telefone (criar se não existir). \n3. Buscar `Attendance` ativo. Se não houver, criar novo. \n4. Salvar `Message` no banco. \n5. Implementar lógica de 'Debounce' para agrupar mensagens rápidas (opcional, via Redis).",
@@ -56,7 +87,7 @@
         "updatedAt": "2025-11-28T13:28:02.114Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Integração com Trello (Adapter e Autenticação)",
         "description": "Implementar o adaptador para a API do Trello, gerenciando autenticação e mapeamento de Departamentos para Boards/Lists.",
         "details": "1. Configurar credenciais do Trello no .env. \n2. Criar serviço `TrelloService`: métodos para `create_card`, `add_comment`, `move_card`. \n3. Implementar lógica de mapeamento: Status do Atendimento -> Lista do Trello (Ex: 'A Fazer', 'Em Andamento'). \n4. Garantir tratamento de Rate Limits.",
@@ -70,7 +101,7 @@
         "updatedAt": "2025-11-28T13:28:02.132Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Sincronização Bidirecional: Django para Trello (Background Jobs)",
         "description": "Configurar tarefas assíncronas para espelhar atendimentos e mensagens no Trello sem bloquear a thread principal.",
         "details": "1. Configurar `django-q2` com Redis. \n2. Criar tasks: `sync_ticket_to_trello` (cria card se ticket novo), `sync_message_to_trello` (adiciona comentário no card). \n3. Acionar estas tasks a partir do Orquestrador (Task 4) quando necessário (ex: transbordo para humano).",
@@ -85,7 +116,7 @@
         "updatedAt": "2025-11-28T13:28:02.151Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Sincronização Bidirecional: Trello para Django (Webhooks)",
         "description": "Receber atualizações do Trello (resposta do atendente) e enviar para o WhatsApp do cliente.",
         "details": "1. Endpoint para Webhook do Trello (verificar assinatura de segurança). \n2. Tratar eventos: `commentCard` (resposta do atendente) e `updateCard` (mudança de lista/status). \n3. Se for comentário de atendente: enviar via `EvolutionClient` para o WhatsApp. \n4. Se for mudança de lista: atualizar status do `Attendance` no DB.",
@@ -99,20 +130,55 @@
         "updatedAt": "2025-11-28T13:28:02.168Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Implementação de RAG: Ingestão e Banco Vetorial",
-        "description": "Preparar a infraestrutura de IA para ingestão de documentos e busca semântica.",
-        "details": "1. Configurar modelo `Document` para armazenar referência de arquivos. \n2. Implementar pipeline de ingestão: Carregar PDF/TXT -> Splitter -> Embedding (OpenAI/Ollama) -> Salvar no Postgres (`pgvector`). \n3. Criar serviço de busca por similaridade (retriever).",
-        "testStrategy": "Ingerir um documento de texto simples. Realizar uma query de similaridade e verificar se o trecho correto é retornado.",
-        "priority": "medium",
+        "description": "Configurar a infraestrutura de RAG (Retrieval-Augmented Generation) utilizando PostgreSQL com pgvector no app `treinamento` para ingestão e recuperação semântica.",
+        "status": "done",
         "dependencies": [
           "2"
         ],
-        "status": "pending",
-        "subtasks": []
+        "priority": "medium",
+        "details": "Implementar o fluxo de RAG diretamente no PostgreSQL utilizando a extensão `pgvector` integrada aos models do Django. O app `treinamento` será o ponto central.\n\n1. **Modelagem**: Revisar e utilizar os models existentes no app `treinamento` (ex: `Documento`, `Trecho`) garantindo suporte a vetores (campo `VectorField`).\n2. **Ingestão**: Implementar serviço ou comando de gestão para processar arquivos (PDF/TXT), aplicar chunking (splitter) e gerar embeddings (OpenAI/Azure/Ollama) salvando diretamente nos modelos.\n3. **Recuperação (Retrieval)**: Implementar métodos no Django Manager ou Service Layer para busca por similaridade usando operadores do pgvector (distância de cosseno/L2).\n4. **Infraestrutura**: Assegurar que a migração de extensão `pgvector` esteja aplicada no banco.",
+        "testStrategy": "Criar testes de integração que:\n1. Ingerem um arquivo de texto simulado.\n2. Verificam se os vetores foram gerados e salvos no banco.\n3. Executam uma consulta por similaridade e validam se o trecho mais relevante é retornado primeiro.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configuração e Modelagem pgvector",
+            "description": "Verificar models no app `treinamento` para suporte a embeddings e garantir que a extensão pgvector esteja ativa nas migrations.",
+            "dependencies": [],
+            "details": "Verificar models como `Documento` e criar/ajustar model `Trecho` (Chunk) com campo `VectorField`. Garantir operação `CreateExtension('vector')` na migration inicial.",
+            "status": "pending",
+            "testStrategy": "Verificar se makemigrations gera os campos corretos e se o banco aceita operações vetoriais.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Pipeline de Ingestão e Chunking",
+            "description": "Desenvolver pipeline para ler arquivos, dividir em trechos (chunking) e gerar embeddings.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implementar função/classe que recebe arquivo, usa biblioteca (ex: LangChain ou script customizado) para split, chama API de Embedding e salva objetos `Trecho` com o vetor.",
+            "status": "pending",
+            "testStrategy": "Testar ingestão de um PDF pequeno e verificar contagem de chunks criados no banco.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implementação de Busca Semântica",
+            "description": "Criar serviço de busca que converte query em vetor e consulta o banco usando operadores de similaridade.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implementar método `search_similar(query_text, k=3)` que gera embedding da query e faz query Django com `metrics.CosineDistance` ou operador SQL customizado.",
+            "status": "pending",
+            "testStrategy": "Realizar busca com termo específico presente nos documentos ingeridos e asserter que o chunk correto vem no topo.",
+            "parentId": "undefined"
+          }
+        ]
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Fluxo de Chatbot com IA (LangChain)",
         "description": "Integrar o motor de IA ao fluxo de atendimento para respostas automáticas.",
         "details": "1. Integrar `LangChain`. \n2. Criar Chain: Input do Usuário -> Retrieval (Task 8) -> Prompt (System Message + Contexto) -> LLM -> Resposta. \n3. Atualizar o Orquestrador (Task 4): Se atendimento estiver em estágio 'bot', chamar a Chain e responder automaticamente. \n4. Detectar intenção de 'falar com humano' para acionar transbordo (Task 6).",
@@ -126,7 +192,7 @@
         "subtasks": []
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Dashboard Administrativo e Gestão Operacional",
         "description": "Configurar o Django Admin e criar endpoints para gestão de departamentos, filas e visualização de métricas básicas.",
         "details": "1. Customizar Django Admin para facilitar visualização de Tickets e Logs. \n2. Implementar autenticação JWT para API do front-end (se houver) ou Views de Gestão. \n3. Adicionar Health Checks para monitorar conexões (Redis, DB, APIs externas).",
@@ -139,7 +205,7 @@
         "subtasks": []
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Refatoração de Docstrings e Rastreabilidade PRD",
         "description": "Atualização de docstrings em módulos e apps do projeto para incluir códigos de funcionalidade do PRD (ex: [TRL-CRD-001]) e descrições padronizadas, garantindo rastreabilidade entre código e requisitos.",
         "details": "",
@@ -153,12 +219,14 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-11-28T18:10:26.700Z",
+      "lastModified": "2025-11-28T22:10:55.169Z",
       "taskCount": 11,
-      "completedCount": 8,
+      "completedCount": 7,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2025-11-28T22:11:02.565Z",
+      "description": "Tasks for master context"
     }
   }
 }

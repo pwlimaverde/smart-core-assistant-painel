@@ -1,1 +1,0 @@
-"""Casos de uso do domínio de armazenamento vetorial."""

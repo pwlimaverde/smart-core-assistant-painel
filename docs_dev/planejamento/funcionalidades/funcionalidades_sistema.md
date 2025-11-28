@@ -41,7 +41,7 @@ Este módulo abrange as funcionalidades essenciais de inicialização, configura
 | Código | Funcionalidade | Descrição Detalhada |
 | :--- | :--- | :--- |
 | **SYS-DAT-001** | **Serviços de Dados Unificados** | Camada de abstração para acesso e manipulação de dados, garantindo consistência e centralização da lógica de persistência. |
-| **SYS-DAT-002** | **Gerenciamento de Armazenamento Vetorial** | Gerencia a conexão e operações com o banco de dados vetorial (Vector Storage), essencial para as funcionalidades de busca semântica e RAG. |
+| **SYS-DAT-002** | **Armazenamento Vetorial Nativo (pgvector)** | Gerencia o armazenamento e operações vetoriais diretamente no PostgreSQL através da extensão `pgvector`, eliminando a necessidade de serviços externos. |
 
 ---
 

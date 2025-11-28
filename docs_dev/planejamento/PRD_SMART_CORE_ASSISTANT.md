@@ -37,45 +37,6 @@ Criar uma solução de atendimento que combine a eficiência da IA com a empatia
 4.  **Integração Transparente:** Sincronizar perfeitamente com o Trello para gestão visual de tarefas sem duplicidade de dados.
 
 ---
-# Product Requirements Document (PRD) - Smart Core Assistant Painel
-
-**Versão:** 2.0
-**Data:** 27/11/2025
-**Status:** Em Desenvolvimento
-**Responsável:** Arquiteto de Software
-
----
-
-## 1. Introdução
-
-### 1.1. Propósito
-Este documento define os requisitos funcionais e não funcionais, escopo e arquitetura do **Smart Core Assistant Painel**. Ele serve como a fonte única de verdade para o desenvolvimento, garantindo que todas as partes interessadas tenham um entendimento alinhado sobre o produto a ser entregue.
-
-### 1.2. Escopo do Produto
-O Smart Core Assistant Painel é uma plataforma centralizada de atendimento multicanal que integra inteligência artificial (chatbot) com atendimento humano. O sistema orquestra a comunicação via WhatsApp (Evolution API), gerencia fluxos de trabalho personalizados por departamento e utiliza o Trello como interface visual para gestão de tickets (Kanban).
-
-### 1.3. Definições e Acrônimos
-- **PRD:** Product Requirements Document
-- **RAG:** Retrieval-Augmented Generation (Geração Aumentada por Recuperação)
-- **LLM:** Large Language Model
-- **CRM:** Customer Relationship Management
-- **SLA:** Service Level Agreement
-- **Evolution API:** Gateway de API para WhatsApp.
-
----
-
-## 2. Visão Geral do Produto
-
-### 2.1. Visão
-Criar uma solução de atendimento que combine a eficiência da IA com a empatia do atendimento humano, oferecendo uma experiência fluida para o cliente e ferramentas poderosas de gestão para a equipe.
-
-### 2.2. Objetivos Principais
-1.  **Centralização:** Unificar o atendimento de múltiplos canais e departamentos em uma única plataforma.
-2.  **Automação Inteligente:** Utilizar IA para triagem, respostas automáticas e suporte ao atendente.
-3.  **Flexibilidade:** Permitir a criação de fluxos de trabalho personalizados para cada departamento.
-4.  **Integração Transparente:** Sincronizar perfeitamente com o Trello para gestão visual de tarefas sem duplicidade de dados.
-
----
 
 ## 3. Stack Tecnológico
 

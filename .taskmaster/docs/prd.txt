@@ -4,7 +4,7 @@ O Smart Core Assistant Painel é uma plataforma centralizada de atendimento mult
 # Core Features
 1. Sistema Central e Configuração (SYS)
    - Gerenciamento centralizado de configurações via Firebase Remote Config e .env.
-   - Serviços de dados unificados e armazenamento vetorial (pgvector) para RAG.
+   - Serviços de dados unificados e armazenamento vetorial nativo (pgvector) para RAG.
    - Monitoramento e Health Checks.
 
 2. Gestão Administrativa e Acesso (ADM)

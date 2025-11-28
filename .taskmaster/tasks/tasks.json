@@ -1,0 +1,141 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 1,
+        "title": "Configuração da Infraestrutura Docker e Inicialização do Projeto Django",
+        "description": "Configurar o ambiente de desenvolvimento com Docker Compose, incluindo serviços para PostgreSQL (com pgvector), Redis e a aplicação Django. Inicializar a estrutura do projeto.",
+        "details": "1. Criar `docker-compose.yml` com serviços: `web` (Django), `db` (PostgreSQL 16+), `redis` (Cache/Queue). \n2. Configurar Dockerfile para Python 3.13+. \n3. Inicializar projeto Django 5.x com estrutura de 'config' separada. \n4. Configurar variáveis de ambiente (.env) para segredos. \n5. Garantir que a extensão `vector` esteja habilitada no init do Postgres.",
+        "testStrategy": "Executar `docker-compose up` e verificar se todos os contêineres estão 'healthy'. Acessar a página de boas-vindas do Django.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 2,
+        "title": "Modelagem do Core Database e Migrations",
+        "description": "Implementar os modelos de dados fundamentais para o sistema: Clientes, Atendimentos, Mensagens e Departamentos.",
+        "details": "Criar apps Django (ex: `core`, `attendance`). Definir models:\n- `Customer`: nome, telefone (chave única), metadados.\n- `Department`: nome, configurações de SLA.\n- `Attendance` (Ticket): fk_customer, fk_department, status (aberto, pendente, fechado), trello_card_id.\n- `Message`: fk_attendance, conteúdo, tipo (texto/mídia), direção (in/out), timestamp.\nUtilizar UUIDs como chaves primárias.",
+        "testStrategy": "Criar testes de unidade com `pytest` para validar a criação e relacionamentos dos modelos. Verificar integridade referencial.",
+        "priority": "high",
+        "dependencies": [
+          1
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 3,
+        "title": "Implementação do Wrapper da Evolution API (WhatsApp)",
+        "description": "Desenvolver a camada de serviço para comunicação com a Evolution API, permitindo envio de mensagens e gestão de instâncias.",
+        "details": "1. Criar serviço `EvolutionClient` usando `httpx` ou `requests`. \n2. Implementar métodos: `send_text`, `send_media`, `check_health`. \n3. Implementar endpoint de Webhook (Django REST Framework) para receber eventos da Evolution API (mensagens, status de entrega). \n4. Adicionar autenticação via API Key no header.",
+        "testStrategy": "Usar `responses` ou `unittest.mock` para simular respostas da API Evolution. Testar endpoint de webhook com payload de exemplo.",
+        "priority": "high",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 4,
+        "title": "Orquestrador de Mensagens e Gestão de Contexto",
+        "description": "Criar a lógica central que processa mensagens recebidas, identifica o cliente e decide o roteamento (Novo Atendimento vs Atendimento Existente).",
+        "details": "1. Service Layer `MessageProcessor`: Receber payload do webhook. \n2. Buscar `Customer` pelo telefone (criar se não existir). \n3. Buscar `Attendance` ativo. Se não houver, criar novo. \n4. Salvar `Message` no banco. \n5. Implementar lógica de 'Debounce' para agrupar mensagens rápidas (opcional, via Redis).",
+        "testStrategy": "Testes de integração simulando um fluxo completo: Webhook recebido -> Cliente criado -> Atendimento criado -> Mensagem salva.",
+        "priority": "high",
+        "dependencies": [
+          3
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 5,
+        "title": "Integração com Trello (Adapter e Autenticação)",
+        "description": "Implementar o adaptador para a API do Trello, gerenciando autenticação e mapeamento de Departamentos para Boards/Lists.",
+        "details": "1. Configurar credenciais do Trello no .env. \n2. Criar serviço `TrelloService`: métodos para `create_card`, `add_comment`, `move_card`. \n3. Implementar lógica de mapeamento: Status do Atendimento -> Lista do Trello (Ex: 'A Fazer', 'Em Andamento'). \n4. Garantir tratamento de Rate Limits.",
+        "testStrategy": "Testes unitários mockando a API do Trello. Verificar se os payloads de criação de card estão corretos.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 6,
+        "title": "Sincronização Bidirecional: Django para Trello (Background Jobs)",
+        "description": "Configurar tarefas assíncronas para espelhar atendimentos e mensagens no Trello sem bloquear a thread principal.",
+        "details": "1. Configurar `django-q2` com Redis. \n2. Criar tasks: `sync_ticket_to_trello` (cria card se ticket novo), `sync_message_to_trello` (adiciona comentário no card). \n3. Acionar estas tasks a partir do Orquestrador (Task 4) quando necessário (ex: transbordo para humano).",
+        "testStrategy": "Verificar se as tarefas são enfileiradas no Redis e executadas com sucesso pelo worker. Validar criação de Card real em board de teste.",
+        "priority": "high",
+        "dependencies": [
+          4,
+          5
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 7,
+        "title": "Sincronização Bidirecional: Trello para Django (Webhooks)",
+        "description": "Receber atualizações do Trello (resposta do atendente) e enviar para o WhatsApp do cliente.",
+        "details": "1. Endpoint para Webhook do Trello (verificar assinatura de segurança). \n2. Tratar eventos: `commentCard` (resposta do atendente) e `updateCard` (mudança de lista/status). \n3. Se for comentário de atendente: enviar via `EvolutionClient` para o WhatsApp. \n4. Se for mudança de lista: atualizar status do `Attendance` no DB.",
+        "testStrategy": "Simular payload de webhook do Trello. Verificar se a mensagem de saída é enfileirada para a Evolution API.",
+        "priority": "high",
+        "dependencies": [
+          6
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 8,
+        "title": "Implementação de RAG: Ingestão e Banco Vetorial",
+        "description": "Preparar a infraestrutura de IA para ingestão de documentos e busca semântica.",
+        "details": "1. Configurar modelo `Document` para armazenar referência de arquivos. \n2. Implementar pipeline de ingestão: Carregar PDF/TXT -> Splitter -> Embedding (OpenAI/Ollama) -> Salvar no Postgres (`pgvector`). \n3. Criar serviço de busca por similaridade (retriever).",
+        "testStrategy": "Ingerir um documento de texto simples. Realizar uma query de similaridade e verificar se o trecho correto é retornado.",
+        "priority": "medium",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 9,
+        "title": "Fluxo de Chatbot com IA (LangChain)",
+        "description": "Integrar o motor de IA ao fluxo de atendimento para respostas automáticas.",
+        "details": "1. Integrar `LangChain`. \n2. Criar Chain: Input do Usuário -> Retrieval (Task 8) -> Prompt (System Message + Contexto) -> LLM -> Resposta. \n3. Atualizar o Orquestrador (Task 4): Se atendimento estiver em estágio 'bot', chamar a Chain e responder automaticamente. \n4. Detectar intenção de 'falar com humano' para acionar transbordo (Task 6).",
+        "testStrategy": "Testes de fluxo: Enviar pergunta contida na base de conhecimento e validar se a resposta usa o contexto (RAG).",
+        "priority": "medium",
+        "dependencies": [
+          4,
+          8
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 10,
+        "title": "Dashboard Administrativo e Gestão Operacional",
+        "description": "Configurar o Django Admin e criar endpoints para gestão de departamentos, filas e visualização de métricas básicas.",
+        "details": "1. Customizar Django Admin para facilitar visualização de Tickets e Logs. \n2. Implementar autenticação JWT para API do front-end (se houver) ou Views de Gestão. \n3. Adicionar Health Checks para monitorar conexões (Redis, DB, APIs externas).",
+        "testStrategy": "Acessar painel admin, criar um usuário operador, configurar um departamento e visualizar logs de mensagens.",
+        "priority": "low",
+        "dependencies": [
+          2
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-11-28T10:58:33.835Z",
+      "updated": "2025-11-28T10:58:33.836Z",
+      "description": "Tasks for master context"
+    }
+  }
+}

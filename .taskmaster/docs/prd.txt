@@ -1,0 +1,93 @@
+# Overview
+O Smart Core Assistant Painel é uma plataforma centralizada de atendimento multicanal que unifica a comunicação via WhatsApp (usando Evolution API) com fluxos de trabalho operacionais geridos no Trello. O sistema combina a eficiência da automação por IA (Chatbots com RAG) com a empatia do atendimento humano, permitindo que departamentos gerenciem tickets visualmente (Kanban) sem duplicidade de dados. O objetivo é resolver a fragmentação do atendimento, oferecer triagem automática e fornecer ferramentas de gestão robustas.
+
+# Core Features
+1. Sistema Central e Configuração (SYS)
+   - Gerenciamento centralizado de configurações via Firebase Remote Config e .env.
+   - Serviços de dados unificados e armazenamento vetorial (pgvector) para RAG.
+   - Monitoramento e Health Checks.
+
+2. Gestão Administrativa e Acesso (ADM)
+   - Autenticação de usuários e gestão de papéis (RBAC).
+   - Dashboard gerencial com KPIs.
+   - Gestão de conexões OAuth (Trello, ClickUp).
+
+3. Integração WhatsApp via Evolution API (EVO)
+   - Suporte multi-instância (Multitenancy).
+   - Envio e recebimento de mensagens rich media (áudio, imagem, docs).
+   - Webhooks para status de entrega e recebimento.
+   - Whitelist e mapeamento de contatos.
+
+4. Gestão de Atendimentos e Orquestração (ATD)
+   - Orquestrador central de mensagens e manutenção de contexto (memória).
+   - Mecanismo de transferência fluida entre Bot e Humano ou entre Departamentos.
+   - Log completo de interações.
+
+5. Sincronização Bidirecional com Trello (TRL)
+   - Espelhamento de atendimentos como Cards no Trello.
+   - Sincronização de listas (etapas) e boards (fluxos).
+   - Atualizações em tempo real via Webhooks.
+
+6. Inteligência Artificial e RAG (TRN)
+   - Ingestão de documentos (PDF, TXT) para base de conhecimento.
+   - Curadoria de conteúdo e gestão de embeddings.
+   - Detecção de intenções.
+
+7. Gestão Operacional e Clientes (OPS/CLI)
+   - Configuração de departamentos e fluxos personalizados.
+   - CRM leve para gestão de dados de clientes e histórico unificado.
+   - Cálculo de SLA e registro de movimentações.
+
+# User Experience
+- Atendentes: Utilizam primariamente o Trello para visualizar e responder tickets. A movimentação de cards reflete no status do atendimento.
+- Gestores: Acessam o Painel Administrativo (Django Admin / Dashboard) para configurar fluxos, visualizar métricas e gerenciar equipe.
+- Clientes Finais: Interagem via WhatsApp, recebendo respostas imediatas da IA ou sendo transbordados para atendimento humano de forma transparente.
+- Fluxo Principal: Mensagem chega -> IA processa/responde -> Se necessário humano, cria/atualiza Card no Trello -> Atendente responde no Trello -> Resposta enviada ao WhatsApp.
+
+# Technical Architecture
+- Backend: Python 3.13+, Django 5.x, Django REST Framework.
+- Async/Queue: Django-Q2 com Redis.
+- Database: PostgreSQL 16+ (Relacional) e pgvector (Vetorial).
+- AI Engine: LangChain integrando OpenAI/Groq/Ollama.
+- Integrações: Evolution API (WhatsApp), Trello API.
+- Infraestrutura: Docker, Docker Compose.
+- Segurança: Segredos em .env, autenticação robusta, validação estrita (Ruff/Mypy).
+
+# Development Roadmap
+Phase 1: Foundation & Connectivity
+- Setup do projeto Django, Docker e Banco de Dados (SYS).
+- Integração básica com Evolution API (envio/recebimento) (EVO).
+- Modelagem de dados Core (Atendimento, Cliente, Mensagem).
+
+Phase 2: Basic Attendance & Trello Sync
+- Implementação do Orquestrador de Mensagens (ATD).
+- Integração unidirecional (Django -> Trello) para criação de cards.
+- Integração bidirecional (Trello -> Django) via Webhooks (TRL).
+
+Phase 3: AI & RAG Integration
+- Implementação do módulo de Vetores e Ingestão de documentos (TRN).
+- Integração do fluxo de Chatbot no Orquestrador.
+- Testes de fluxo completo (RAG -> Resposta).
+
+Phase 4: Operational Management & Polish
+- Gestão de Departamentos e SLAs (OPS).
+- Auth avançado e Permissões (ADM).
+- Dashboard e Relatórios.
+
+Phase 5: Future Enhancements (Post-MVP)
+- Transcrição de áudio, Análise de Sentimento.
+- Suporte Omnichannel (Instagram/Telegram).
+
+# Logical Dependency Chain
+1. Foundation (SYS): O banco de dados e a estrutura básica do Django devem existir.
+2. WhatsApp (EVO): Precisamos receber mensagens para ter o que processar.
+3. Core Logic (ATD): Precisamos salvar e gerenciar essas mensagens.
+4. Trello (TRL): A interface de operação depende dos dados do Core.
+5. AI (TRN): Pode ser desenvolvido em paralelo, mas acoplado ao ATD para funcionar.
+6. Ops/Admin: Camada de gestão sobre o sistema funcional.
+
+# Risks and Mitigations
+- Dependência da Evolution API: O WhatsApp pode desconectar ou a API falhar. Mitigação: Implementar health checks robustos, filas de retentativa (DLQ) e alertas.
+- Latência no Sync do Trello: O Trello tem rate limits. Mitigação: Uso intensivo de filas (Django-Q2) para desacoplar a operação do usuário da chamada API.
+- Custos de LLM: Alto volume pode encarecer. Mitigação: Uso de cache de respostas e modelos menores/locais (Ollama) para triagem simples.
+- Complexidade de Estado: Manter estado sincronizado entre WhatsApp, BD Local e Trello é complexo. Mitigação: "Source of Truth" é sempre o BD Local; Trello é view. Logs de auditoria rigorosos.

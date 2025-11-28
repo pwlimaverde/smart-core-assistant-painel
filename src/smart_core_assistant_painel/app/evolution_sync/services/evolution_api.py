@@ -5,7 +5,10 @@ import requests
 
 
 class EvolutionWhatsAppService:
-    """Serviço para interagir com a API Evolution."""
+    """[EVO-MSG-001] Serviço para interagir com a API Evolution.
+
+    Conexão Multi-Instância e gerenciamento de requisições.
+    """
 
     def _send_request(
         self,
@@ -95,7 +98,9 @@ class EvolutionWhatsAppService:
         text: str,
         base_url: str,
     ) -> None:
-        """Envia uma mensagem de texto via WhatsApp.
+        """[EVO-MSG-002] Envia uma mensagem de texto via WhatsApp.
+
+        Envio de Mensagens.
 
         Simula o status 'digitando' antes de enviar a mensagem para uma
         experiência de usuário mais natural.

@@ -33,6 +33,11 @@ def validate_identificador(value: str) -> None:
 
 
 class Treinamento(models.Model):
+    """[TRN-CON-003] Modelo para gestão de treinamentos vetorizados.
+
+    Armazena metadados e status dos documentos processados para a base de conhecimento.
+    """
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -217,8 +222,9 @@ class Documento(models.Model):
 
 
 class QueryCompose(models.Model):
-    """
-    Representa um intent: descrição -> embedding + prompt system associado.
+    """[TRN-INT-001] Representa um intent: descrição -> embedding + prompt system associado.
+
+    Cadastro de Intenções (Query Compose).
     """
 
     id: models.AutoField = models.AutoField(

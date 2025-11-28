@@ -11,7 +11,7 @@ from rolepermissions.roles import AbstractUserRole
 
 
 class Gerente(AbstractUserRole):  # type: ignore
-    """Define a função de Gerente e suas permissões.
+    """[ADM-USR-003] Define a função de Gerente e suas permissões.
 
     A função de Gerente tem permissão para treinar a IA.
 

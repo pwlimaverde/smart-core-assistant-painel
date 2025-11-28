@@ -23,8 +23,9 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 
 
 class MemberSyncService:
-    """
-    Serviço de sincronização de membros (Atendente ↔ Trello Member).
+    """[TRL-MEM-001] Serviço de sincronização de membros (Atendente ↔ Trello Member).
+
+    Sincronização de Membros.
 
     Comentário: convida o e-mail do atendente para o board do fluxo
     e tenta resolver o `external_id` do membro posteriormente.

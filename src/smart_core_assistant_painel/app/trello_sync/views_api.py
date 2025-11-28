@@ -7,7 +7,9 @@ from loguru import logger
 
 @csrf_exempt
 def webhook(request: HttpRequest) -> HttpResponse:
-    """Endpoint público para receber webhooks do Trello.
+    """[TRL-MOV-001] Endpoint público para receber webhooks do Trello.
+
+    Sincronização Bidirecional de Movimentação.
 
     - HEAD: usado pelo Trello para verificação de existência (retorna 200).
     - POST: processa o payload JSON e persiste o evento.

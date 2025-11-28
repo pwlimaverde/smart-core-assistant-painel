@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class MessageAnalyzer(MessageAnalyzerInterface):
-    """Serviço de análise de mensagens.
+    """[ATD-LIF-001] Serviço de análise de mensagens.
 
     Responsabilidades:
     - Detectar intenções em mensagens

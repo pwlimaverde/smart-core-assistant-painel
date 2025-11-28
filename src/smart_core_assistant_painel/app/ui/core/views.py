@@ -81,7 +81,7 @@ def _exchange_code_for_token(code: str, redirect_uri: str) -> Dict[str, Any]:
 
 
 def health_check(request: HttpRequest) -> HttpResponse:
-    """View simples para health check do Docker.
+    """[SYS-INI-003] View simples para health check do Docker.
 
     Args:
         request: Requisição HTTP.
@@ -110,7 +110,7 @@ def home(request: HttpRequest) -> HttpResponse:
 
 
 def clickup_callback(request: HttpRequest) -> HttpResponse:
-    """Callback OAuth do ClickUp.
+    """[ADM-CFG-001] Callback OAuth do ClickUp.
 
     Fluxo:
     - Lê `code` da querystring.

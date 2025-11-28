@@ -17,14 +17,12 @@ if TYPE_CHECKING:
 
 
 class BotRulesEngine(BotRulesEngineInterface):
-    """Motor de regras de negócio do bot.
+    """[ATD-LIF-003] Motor de regras de negócio do bot.
 
-        Responsabilidades:
-        - Avaliar se bot pode responder
-        - Aplicar regras de negócio
-        - Ver
-
-    ificar interação humana
+    Responsabilidades:
+    - Avaliar se bot pode responder
+    - Aplicar regras de negócio
+    - Verificar interação humana
     """
 
     def can_bot_respond(self, attendance: Optional["Atendimento"]) -> bool:

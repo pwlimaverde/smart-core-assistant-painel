@@ -16,7 +16,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
 
 
 class LoadDocumentConteudoUseCase(LDCUsecase):
-    """Use case para carregar um conteúdo de texto em um objeto Document.
+    """[BOT-EMB-003] Use case para carregar um conteúdo de texto em um objeto Document.
 
     Este caso de uso não possui um datasource, pois opera diretamente em
     memória. Ele recebe uma string de conteúdo e a transforma em um

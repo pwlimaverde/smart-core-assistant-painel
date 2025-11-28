@@ -6,10 +6,15 @@ from smart_core_assistant_painel.app.trello_sync.models import TrelloCard
 
 
 class WebhookProcessingService:
-    """Processa payloads de webhook do Trello e aplica mudanças."""
+    """[TRL-MOV-001] Processa payloads de webhook do Trello e aplica mudanças.
+
+    Sincronização Bidirecional de Movimentação.
+    """
 
     def process(self, payload: dict[str, Any]) -> None:
-        """Processa o evento recebido do Trello.
+        """[TRL-MOV-001] Processa o evento recebido do Trello.
+
+        Sincronização Bidirecional de Movimentação.
 
         Comentário: Implementação mínima que lida com mudança de lista
         (card move). Atualiza a etapa_atual do atendimento se mapeada.

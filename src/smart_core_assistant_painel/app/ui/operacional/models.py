@@ -52,7 +52,10 @@ def validate_telefone_instancia(value: str) -> None:
 
 
 class Departamento(models.Model):
-    """Modelo para departamentos da organizacao."""
+    """[OPS-ORG-001] Modelo para departamentos da organizacao.
+
+    Gestão de Departamentos (com isolamento de dados).
+    """
 
     id: models.AutoField = models.AutoField(primary_key=True)
     nome: models.CharField[str] = models.CharField(max_length=100, unique=True)
@@ -205,7 +208,10 @@ class Departamento(models.Model):
 
 
 class Atendente(models.Model):
-    """Modelo para atendentes humanos da organizacao."""
+    """[OPS-ORG-002] Modelo para atendentes humanos da organizacao.
+
+    Gestão de Atendentes (Horários, Limites).
+    """
 
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primaria do registro"
@@ -421,6 +427,11 @@ class Atendente(models.Model):
 
 
 class AppInstance(models.Model):
+    """[OPS-ORG-003] Modelo para instâncias de comunicação (ex: Evolution API).
+
+    Configuração das instâncias de conexão com canais de mensagem.
+    """
+
     id: models.AutoField = models.AutoField(primary_key=True)
     api_key: models.CharField[str] = models.CharField(
         max_length=128, unique=True

@@ -25,8 +25,9 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 
 
 class TicketSyncService:
-    """
-    Serviço de sincronização de tickets (Atendimento → Card).
+    """[TRL-CRD-001] Serviço de sincronização de tickets (Atendimento → Card).
+
+    Criação e Atualização de Cartões.
     """
 
     def __init__(self) -> None:
@@ -41,8 +42,9 @@ class TicketSyncService:
     def ensure_card_for_atendimento(
         self, atendimento: Any
     ) -> Optional[TrelloCard]:
-        """
-        Garante criação de Card no Trello para o atendimento.
+        """[TRL-CRD-001] Garante criação de Card no Trello para o atendimento.
+
+        Criação e Atualização de Cartões.
         """
         # Lock no atendimento para evitar duplicidade de criação de card
         atendimento_id = getattr(atendimento, "id", None)
@@ -535,8 +537,9 @@ class TicketSyncService:
     def update_card_rich_content(
         self, card: TrelloCard, atendimento: Atendimento
     ) -> None:
-        """
-        Atualiza conteúdo rico do card: descrição, membros e custom fields.
+        """[TRL-CRD-001] Atualiza conteúdo rico do card: descrição, membros e custom fields.
+
+        Criação e Atualização de Cartões.
 
         Comentário: usa adapter Trello com fail-soft em campos ausentes.
         """

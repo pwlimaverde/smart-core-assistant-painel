@@ -22,8 +22,9 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 
 
 class FlowSyncService:
-    """
-    Serviço de sincronização de fluxo (Departamento/Etapas → Board/Lists).
+    """[TRL-FLW-001] Serviço de sincronização de fluxo (Departamento/Etapas → Board/Lists).
+
+    Geração Automática de Quadros e Listas.
 
     Comentário: usa TrelloUnifiedDataService para criar artefatos.
     """
@@ -156,7 +157,7 @@ class FlowSyncService:
         return board
 
     def ensure_list_for_etapa(self, etapa: Any) -> TrelloList:
-        """Garante list Trello para a EtapaFluxo associada a um board."""
+        """[TRL-LST-001] Garante list Trello para a EtapaFluxo associada a um board."""
         etapa_id = getattr(etapa, "id", None)
         if not etapa_id:
             raise ValueError("Etapa sem ID")

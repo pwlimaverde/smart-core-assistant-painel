@@ -31,7 +31,7 @@ if TYPE_CHECKING:
 
 
 class AttendanceOrchestrator(AttendanceOrchestratorInterface):
-    """Orquestrador de processamento de atendimentos.
+    """[ATD-LIF-001] Orquestrador de processamento de atendimentos.
 
     Responsabilidades:
     - Coordenar processamento de respostas

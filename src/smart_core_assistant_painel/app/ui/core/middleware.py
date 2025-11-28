@@ -6,7 +6,7 @@ from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 
 
 class AdminStaffRequiredMiddleware:
-    """Retorna 403 para usuários autenticados não-staff ao acessar o admin.
+    """[ADM-USR-003] Retorna 403 para usuários autenticados não-staff ao acessar o admin.
 
     Por padrão, o Django Admin redireciona (302) para a tela de login quando
     o usuário autenticado não possui `is_staff=True`. Os testes do projeto

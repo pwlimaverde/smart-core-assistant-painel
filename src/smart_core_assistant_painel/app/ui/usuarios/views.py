@@ -24,7 +24,9 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 
 
 def cadastro(request: HttpRequest) -> HttpResponse:
-    """Realiza o cadastro de um novo usuário.
+    """[ADM-USR-001] Realiza o cadastro de um novo usuário.
+
+    Permite o registro de novos usuários com validação de credenciais.
 
     Args:
         request (HttpRequest): O objeto de requisição.
@@ -71,7 +73,7 @@ def cadastro(request: HttpRequest) -> HttpResponse:
 
 
 def login(request: HttpRequest) -> HttpResponse:
-    """Realiza o login de um usuário.
+    """[ADM-USR-002] Realiza o login de um usuário.
 
     Após login bem-sucedido, redireciona para o Kanban do departamento
     associado ao atendente humano vinculado ao usuário (usuario_sistema).
@@ -107,7 +109,9 @@ def login(request: HttpRequest) -> HttpResponse:
 
 
 def permissoes(request: HttpRequest) -> HttpResponse:
-    """Exibe a página de gerenciamento de permissões.
+    """[ADM-USR-003] Exibe a página de gerenciamento de permissões.
+
+    Interface para atribuição de papéis e permissões específicas.
 
     Args:
         request (HttpRequest): O objeto de requisição.
@@ -120,7 +124,7 @@ def permissoes(request: HttpRequest) -> HttpResponse:
 
 
 def tornar_gerente(request: HttpRequest, id: int) -> HttpResponseRedirect:
-    """Atribui a função de gerente a um usuário.
+    """[ADM-USR-003] Atribui a função de gerente a um usuário.
 
     Args:
         request (HttpRequest): O objeto de requisição.
@@ -135,7 +139,9 @@ def tornar_gerente(request: HttpRequest, id: int) -> HttpResponseRedirect:
 
 
 def dashboard_gerente(request: HttpRequest) -> HttpResponse:
-    """Exibe o dashboard para gerentes com métricas de atendimentos.
+    """[ADM-USR-004] Exibe o dashboard para gerentes com métricas de atendimentos.
+
+    Painel exclusivo para gerentes com métricas consolidadas.
 
     Requer a permissão "treinar_ia" para acesso, conforme política de
     permissões do projeto.

@@ -17,7 +17,10 @@ class TreinamentoService:
     def aplicar_pre_analise_documentos(
         documentos: list[Document],
     ) -> list[Document]:
-        """Aplica pré-análise de IA ao conteúdo de uma lista de documentos."""
+        """[TRN-CON-002] Aplica pré-análise de IA ao conteúdo de uma lista de documentos.
+
+        Pré-processamento e Curadoria.
+        """
         documentos_processados = []
         for documento in documentos:
             try:
@@ -35,7 +38,10 @@ class TreinamentoService:
 
     @staticmethod
     def processar_arquivo_upload(arquivo: Any) -> str | None:
-        """Processa um arquivo enviado e retorna seu caminho temporário."""
+        """[TRN-CON-001] Processa um arquivo enviado e retorna seu caminho temporário.
+
+        Upload e Ingestão de Documentos.
+        """
         if not arquivo:
             return None
         try:

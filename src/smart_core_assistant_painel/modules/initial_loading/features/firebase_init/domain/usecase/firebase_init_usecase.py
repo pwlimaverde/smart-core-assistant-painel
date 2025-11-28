@@ -17,7 +17,7 @@ from smart_core_assistant_painel.modules.initial_loading.utils.types import (
 
 
 class FirebaseInitUseCase(FIUsecase):
-    """Use case para inicializar o SDK do Firebase Admin.
+    """[SYS-INI-001] Use case para inicializar o SDK do Firebase Admin.
 
     Esta classe garante que o Firebase seja inicializado corretamente no início
     da aplicação, carregando as credenciais a partir das variáveis de ambiente.

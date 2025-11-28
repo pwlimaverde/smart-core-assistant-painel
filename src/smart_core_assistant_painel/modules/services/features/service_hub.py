@@ -20,7 +20,7 @@ from .unifield_data_services.domain.interface.unified_data_service import (
 
 
 class ServiceHub:
-    """Hub central de serviços e configurações da aplicação.
+    """[SYS-DAT-001] Hub central de serviços e configurações da aplicação.
 
     É responsável por carregar e prover configurações via variáveis de ambiente
     e por disponibilizar instâncias e integrações entre serviços.

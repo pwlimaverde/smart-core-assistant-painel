@@ -48,11 +48,8 @@ class TestAnalisePreviaLangchainDatasource(unittest.TestCase):
 
         # Setup Chain invoke
         mock_chain = MagicMock()
-        mock_structured_llm.__ror__ = MagicMock(return_value=mock_chain) # handle prompt | llm
-        # Actually the code does: messages | structured_llm
-        # I need to mock ChatPromptTemplate too or ensure the pipe works.
+        mock_structured_llm.__ror__ = MagicMock(return_value=mock_chain)
 
-        # If I mock ChatPromptTemplate.from_messages
         with patch("smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource.ChatPromptTemplate") as MockPrompt:
             mock_messages = MagicMock()
             MockPrompt.from_messages.return_value = mock_messages
@@ -77,10 +74,17 @@ class TestAnalisePreviaLangchainDatasource(unittest.TestCase):
         result = self.datasource._normalize_types_config(config)
         self.assertEqual(result, [{"key": "value"}])
 
+        # Error case
+        result = self.datasource._normalize_types_config("invalid")
+        self.assertEqual(result, [])
+
     def test_normalize_types_config_list(self):
         config = ["type1", {"type": "type2"}]
         result = self.datasource._normalize_types_config(config)
         self.assertEqual(result, [{"type": "type1"}, {"type": "type2"}])
+
+        # None
+        self.assertEqual(self.datasource._normalize_types_config(None), [])
 
     def test_format_service_history_dict(self):
         history = {"conteudo_mensagens": ["msg1"]}
@@ -97,9 +101,14 @@ class TestAnalisePreviaLangchainDatasource(unittest.TestCase):
         result = self.datasource._format_service_history(history)
         self.assertIn("1. simple message", result)
 
+        # Empty
+        result_empty = self.datasource._format_service_history({})
+        self.assertIn("Nenhuma mensagem anterior disponível", result_empty)
+
     def test_slugify_type(self):
         self.assertEqual(self.datasource._slugify_type("Teste de Ação"), "teste_de_acao")
         self.assertEqual(self.datasource._slugify_type("  Space  "), "space")
+        self.assertEqual(self.datasource._slugify_type(None), "none")
 
     def test_map_to_allowed(self):
         allowed = {"pergunta", "horario", "nome_contato"}
@@ -144,6 +153,10 @@ class TestAnalisePreviaLangchainDatasource(unittest.TestCase):
         result = self.datasource._parse_json_to_model(json_str, MyModel)
         self.assertEqual(result.field, "value")
 
+        # Error
+        with self.assertRaises(ValueError):
+            self.datasource._parse_json_to_model("invalid", MyModel)
+
     @patch("smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource.build_analise_previa_model")
     def test_call_fallback_parsing(self, mock_build_model):
         class ItemModel(BaseModel):
@@ -161,7 +174,6 @@ class TestAnalisePreviaLangchainDatasource(unittest.TestCase):
         mock_build_model.return_value = MockModel
 
         # Mock LLM to fail structured output (return None or raise)
-        # The code tries json_schema then default. If both fail, structured_llm is None.
         self.mock_llm.with_structured_output.side_effect = Exception("Fail")
 
         # Mock Chain for fallback
@@ -179,3 +191,37 @@ class TestAnalisePreviaLangchainDatasource(unittest.TestCase):
             result = self.datasource(self.parameters)
 
             self.assertEqual(result.intent, [{"i1": "v1"}])
+
+    @patch("smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource.build_analise_previa_model")
+    def test_call_exception(self, mock_build_model):
+        mock_build_model.side_effect = Exception("Build Error")
+        with self.assertRaises(Exception):
+            self.datasource(self.parameters)
+
+    def test_normalize_prediction_types(self):
+        class MockModel(BaseModel):
+            __intent_allowed__ = ("allowed",)
+            __entity_allowed__ = ("allowed_ent",)
+
+        data = {
+            "intent": [
+                {"type": "allowed", "value": "v1"},
+                {"type": "invalid", "value": "v2"},
+                {"type": "allowed_prefixed_foo", "value": "v3"} # Should be mapped if slugify works
+            ],
+            "entities": [
+                {"type": "allowed_ent", "value": "e1"}
+            ]
+        }
+
+        # _map_to_allowed returns 'allowed' for 'allowed_prefixed_foo' because 'allowed' is prefix of 'allowed_prefixed...'?
+        # Wait, logic:
+        # if v.startswith(av): return av
+        # Yes.
+
+        normalized = self.datasource._normalize_prediction_types(data, MockModel)
+
+        self.assertEqual(len(normalized["intent"]), 2)
+        self.assertEqual(normalized["intent"][0]["type"], "allowed")
+        self.assertEqual(normalized["intent"][1]["type"], "allowed") # mapped
+        self.assertEqual(len(normalized["entities"]), 1)

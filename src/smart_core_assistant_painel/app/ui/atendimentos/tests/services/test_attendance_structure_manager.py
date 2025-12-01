@@ -160,6 +160,8 @@ class TestAttendanceStructureManager:
         mock_fluxo_get_or_create.return_value = (mock_fluxo, False)
         mock_fluxo.etapas.filter.return_value.first.return_value = mock_etapa
 
+        mock_atendimento_instance.fluxo_atendimento = mock_fluxo
+
         manager = AttendanceStructureManager()
         manager._update_attendance_status_ongoing(mock_atendimento_instance)
 
@@ -172,5 +174,10 @@ class TestAttendanceStructureManager:
             nome="Em Atendimento", tipo_etapa="trabalho"
         )  # Using string to avoid import issue from TipoEtapa
         mock_atendimento_instance.save.assert_called_once_with(
-            update_fields=["status", "etapa_atual"]
+            update_fields=[
+                "status",
+                "etapa_atual",
+                "fluxo_atendimento",
+                "departamento",
+            ]
         )

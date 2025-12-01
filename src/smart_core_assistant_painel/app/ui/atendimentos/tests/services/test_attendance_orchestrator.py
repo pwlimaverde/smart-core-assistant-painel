@@ -1,3 +1,4 @@
+
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -6,11 +7,10 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
 )
-
-# Assuming the models and services are in the correct path.
 from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator import (
     AttendanceOrchestrator,
 )
+from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
 pytestmark = pytest.mark.django_db
 
@@ -232,3 +232,116 @@ class TestAttendanceOrchestrator:
             mock_message.atendimento
         )
         orchestrator_instance._generate_and_register_response.assert_not_called()
+
+    @patch("smart_core_assistant_painel.app.ui.operacional.models.AppInstance.objects.filter")
+    def test_check_and_update_instance_context(
+        self,
+        mock_app_filter,
+        mock_cache,
+        mock_clear_buffer,
+        orchestrator_instance
+    ):
+        mock_atendimento = MagicMock(spec=Atendimento)
+        mock_atendimento.departamento = MagicMock()
+        mock_atendimento.departamento.id = 1
+
+        # Case 1: Same department
+        mock_app = MagicMock()
+        mock_app.departamento.id = 1
+        mock_app_filter.return_value.first.return_value = mock_app
+
+        orchestrator_instance._check_and_update_instance_context(mock_atendimento, "key")
+        mock_atendimento.save.assert_not_called() # Or called only if agent updated
+
+        # Case 2: Different department
+        mock_app.departamento.id = 2
+        mock_fluxo = MagicMock()
+        mock_app.departamento.get_fluxo.return_value = mock_fluxo
+        mock_fluxo.get_etapa_inicial.return_value = MagicMock()
+
+        orchestrator_instance._check_and_update_instance_context(mock_atendimento, "key")
+        mock_atendimento.save.assert_called()
+        assert mock_atendimento.departamento == mock_app.departamento
+
+    def test_save_api_key_to_context(
+        self, mock_cache, mock_clear_buffer, orchestrator_instance
+    ):
+        mock_atendimento = MagicMock(spec=Atendimento)
+        mock_atendimento.contexto_conversa = {}
+
+        orchestrator_instance._save_api_key_to_context(mock_atendimento, "new_key")
+
+        assert mock_atendimento.contexto_conversa["api_key"] == "new_key"
+        mock_atendimento.save.assert_called_once()
+
+    @patch("smart_core_assistant_painel.app.ui.operacional.models.AppInstance.objects.filter")
+    @patch("smart_core_assistant_painel.app.ui.operacional.models.FluxoAtendimento.objects.filter")
+    def test_configure_department_from_app_instance(
+        self,
+        mock_fluxo_filter,
+        mock_app_filter,
+        mock_cache,
+        mock_clear_buffer,
+        orchestrator_instance
+    ):
+        mock_atendimento = MagicMock(spec=Atendimento)
+        mock_atendimento.departamento = None
+        mock_atendimento.departamento_id = 1
+        mock_atendimento.fluxo_atendimento_id = None
+
+        mock_app = MagicMock()
+        mock_app.departamento = MagicMock()
+        mock_app_filter.return_value.first.return_value = mock_app
+
+        mock_fluxo = MagicMock()
+        mock_fluxo_filter.return_value.order_by.return_value.first.return_value = mock_fluxo
+
+        orchestrator_instance._configure_department_from_app_instance(mock_atendimento, "key")
+
+        assert mock_atendimento.departamento == mock_app.departamento
+        assert mock_atendimento.fluxo_atendimento == mock_fluxo
+        mock_atendimento.save.assert_called()
+
+    @patch("smart_core_assistant_painel.app.ui.treinamento.models.Documento.buscar_documentos_similares")
+    @patch("smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.generate_embeddings")
+    @patch("smart_core_assistant_painel.modules.ai_engine.FeaturesCompose.analise_mensage")
+    def test_generate_and_register_response(
+        self,
+        mock_analise_mensage,
+        mock_gen_emb,
+        mock_buscar_docs,
+        mock_cache,
+        mock_clear_buffer,
+        orchestrator_instance,
+        mock_services
+    ):
+        mock_msg = MagicMock(spec=Mensagem)
+        mock_msg.conteudo = "Hello"
+        mock_msg.intent_detectado = []
+
+        mock_atendimento = MagicMock(spec=Atendimento)
+        mock_atendimento.carregar_historico_mensagens.return_value = {}
+
+        mock_buscar_docs.return_value = ["Doc1"]
+        mock_services["structure_manager"].get_available_flows.return_value = {}
+
+        mock_result = MagicMock()
+        mock_result.resposta_bot = "Bot Response"
+        mock_analise_mensage.return_value = mock_result
+
+        orchestrator_instance._generate_and_register_response(mock_msg, mock_atendimento, [])
+
+        mock_analise_mensage.assert_called()
+        mock_msg.registrar_resposta_bot.assert_called()
+        mock_services["structure_manager"]._update_attendance_status_ongoing.assert_called()
+
+    def test_register_fallback_response(
+        self, mock_cache, mock_clear_buffer, orchestrator_instance, mock_services
+    ):
+        mock_msg = MagicMock(spec=Mensagem)
+        mock_atendimento = MagicMock(spec=Atendimento)
+
+        orchestrator_instance._register_fallback_response(mock_msg, mock_atendimento)
+
+        mock_msg.registrar_resposta_bot.assert_called_with(resposta="Recebemos sua mensagem. Em breve retornaremos.", confianca=0.0)
+        mock_services["structure_manager"]._update_attendance_status_ongoing.assert_called()

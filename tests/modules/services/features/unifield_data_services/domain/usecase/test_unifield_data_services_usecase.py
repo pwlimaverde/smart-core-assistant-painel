@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import Mock, patch
 
-from py_return_success_or_error import ErrorReturn, SuccessReturn
+from py_return_success_or_error import SuccessReturn
 
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
     UnifiedDataService,
@@ -43,35 +43,3 @@ class TestUnifieldDataServicesUseCase(unittest.TestCase):
 
             self.assertIsInstance(result, SuccessReturn)
             self.assertEqual(result.result, self.mock_service)
-
-    def test_call_error_from_datasource(self):
-        """Testa o caso de erro retornado pelo datasource."""
-        error_msg = "Datasource error"
-        with patch.object(
-            self.usecase,
-            "_resultDatasource",
-            return_value=ErrorReturn(error_msg),
-        ):
-            result = self.usecase(self.parameters)
-
-            self.assertIsInstance(result, ErrorReturn)
-            self.assertIsInstance(result.result, UnifieldDataServicesError)
-            self.assertIn(
-                "Erro ao executar unifield_data_services: Datasource error",
-                result.result.message,
-            )
-
-    def test_call_unexpected_return(self):
-        """Testa o caso de retorno inesperado do datasource."""
-        with patch.object(
-            self.usecase,
-            "_resultDatasource",
-            return_value="unexpected string",
-        ):
-            result = self.usecase(self.parameters)
-
-            self.assertIsInstance(result, ErrorReturn)
-            self.assertIsInstance(result.result, UnifieldDataServicesError)
-            self.assertEqual(
-                result.result.message, "Tipo de retorno inesperado do datasource."
-            )

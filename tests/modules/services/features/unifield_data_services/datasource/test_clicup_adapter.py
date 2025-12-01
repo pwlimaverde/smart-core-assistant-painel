@@ -272,3 +272,103 @@ class TestClicupUnifiedDataService(unittest.TestCase):
         res = service.ensure_space_by_name("New Space")
         self.assertEqual(res, "s2")
         mock_requests.post.assert_called()
+
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.requests")
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.config")
+    def test_folders_operations(self, mock_config, mock_requests):
+        mock_config.return_value = "token"
+        service = ClicupUnifiedDataService(self.params)
+
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"folders": [{"id": "f1", "name": "Folder1"}], "id": "f2"}
+        mock_resp.content = b"ok"
+        mock_requests.get.return_value = mock_resp
+        mock_requests.post.return_value = mock_resp
+        mock_requests.delete.return_value = mock_resp
+
+        self.assertEqual(len(service.list_folders("s1")), 1)
+        self.assertEqual(service.find_folder_by_name("s1", "Folder1")["id"], "f1")
+        self.assertEqual(service.create_folder("s1", "Folder2"), "f2")
+        self.assertTrue(service.delete_folder("f1"))
+
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.requests")
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.config")
+    def test_list_operations(self, mock_config, mock_requests):
+        mock_config.return_value = "token"
+        service = ClicupUnifiedDataService(self.params)
+
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"lists": [{"id": "l1", "name": "List1"}], "id": "l2"}
+        mock_resp.content = b"ok"
+        mock_requests.get.return_value = mock_resp
+        mock_requests.post.return_value = mock_resp
+        mock_requests.delete.return_value = mock_resp
+
+        self.assertEqual(service.add_list_to_folder("f1", "L2"), "l2")
+        self.assertEqual(len(service.list_folder_lists("f1")), 1)
+        self.assertEqual(service.find_list_in_folder_by_name("f1", "List1")["id"], "l1")
+        self.assertTrue(service.delete_list("l1"))
+
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.requests")
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.config")
+    def test_members_operations(self, mock_config, mock_requests):
+        mock_config.return_value = "token"
+        service = ClicupUnifiedDataService(self.params)
+        service._team_id = "t1"
+
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"members": [{"user": {"id": "m1", "email": "e@e.com"}}]}
+        mock_requests.get.return_value = mock_resp
+        mock_requests.delete.return_value = mock_resp
+
+        self.assertTrue(service.remove_member("m1"))
+        self.assertEqual(len(service.list_team_members()), 1)
+        self.assertEqual(len(service.list_list_members("l1")), 1)
+        self.assertIsNotNone(service.find_member_by_email("e@e.com"))
+
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.requests")
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.config")
+    def test_custom_fields(self, mock_config, mock_requests):
+        mock_config.return_value = "token"
+        service = ClicupUnifiedDataService(self.params)
+
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"fields": [{"id": "cf1"}]}
+        mock_requests.get.return_value = mock_resp
+        mock_requests.post.return_value = mock_resp
+
+        self.assertEqual(len(service.get_list_custom_fields("l1")), 1)
+        self.assertTrue(service.set_task_custom_field("t1", "cf1", "val"))
+
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.requests")
+    @patch("smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter.config")
+    def test_misc_methods(self, mock_config, mock_requests):
+        mock_config.return_value = "token"
+        service = ClicupUnifiedDataService(self.params)
+        service._team_id = "t1"
+
+        mock_resp = MagicMock()
+        mock_resp.ok = True
+        mock_resp.json.return_value = {"id": "1", "lists": [{"id": "l1"}]}
+        mock_resp.content = b"ok"
+        mock_requests.get.return_value = mock_resp
+        mock_requests.post.return_value = mock_resp
+        mock_requests.put.return_value = mock_resp
+
+        self.assertEqual(service.update_schema("l1", {}), "schema-l1")
+        self.assertEqual(service.update_item("l1", "t1", {}), "1")
+        self.assertIsNotNone(service.add_relation_property("t1", "rel", "id"))
+        self.assertIsNotNone(service.add_comment("t1", "msg"))
+        self.assertIsNotNone(service.get_container("s1"))
+        self.assertIsNotNone(service.get_data_source("l1"))
+        self.assertIsNotNone(service.get_item("l1", "t1"))
+        self.assertIsNotNone(service.append_block("s1", {}))
+        self.assertEqual(len(service.list_items("l1")), 0) # mocked response structure might not match tasks list perfectly if reused
+        self.assertEqual(len(service.list_data_sources("s1")), 1)
+
+        with self.assertRaises(NotImplementedError):
+            service.set_data_source_position("l1", 1)

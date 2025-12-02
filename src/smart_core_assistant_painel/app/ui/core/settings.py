@@ -119,7 +119,7 @@ ROOT_URLCONF = "smart_core_assistant_painel.app.ui.core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],  # Usar apenas templates por app (APP_DIRS)
+        "DIRS": [os.path.join(BASE_DIR, "core", "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [

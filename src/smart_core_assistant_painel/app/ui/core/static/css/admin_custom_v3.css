@@ -44,3 +44,9 @@ a:hover,
 .btn-link:hover {
     color: #8c735a !important;
 }
+
+/* Force white text on buttons to ensure readability */
+.btn,
+a.btn {
+    color: #ffffff !important;
+}

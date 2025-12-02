@@ -96,6 +96,7 @@ dependencies = [
     "langchain-huggingface>=0.2.0",
     "notion-py-client>=0.1.14",
     "brazilcep>=7.0.1",
+    "django-jazzmin>=3.0.0",
 ]
 
 

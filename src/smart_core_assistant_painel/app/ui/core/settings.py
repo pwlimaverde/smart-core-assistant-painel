@@ -62,6 +62,7 @@ ALLOWED_HOSTS = _get_allowed_hosts()
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -310,3 +311,80 @@ CSRF_TRUSTED_ORIGINS = [
     o.replace("http://", "https://") if o.startswith("http://") else o
     for o in CORS_ALLOWED_ORIGINS
 ]
+
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Smart Core Assistant",
+    "site_header": "Smart Core Assistant",
+    "site_brand": "Smart Core Assistant",
+    "site_logo": "img/logo_smart.png",
+    "login_logo": "img/logo_smart.png",
+    "login_logo_dark": "img/logo_smart.png",
+    "site_logo_classes": "img-circle",
+    "site_icon": None,
+    "welcome_sign": "Bem-vindo ao Smart Core Assistant",
+    "copyright": "Smart Core Assistant",
+    "search_model": ["ui_usuarios.User", "ui_clientes.Cliente"],
+    "user_avatar": None,
+    "topmenu_links": [
+        {
+            "name": "Home",
+            "url": "admin:index",
+            "permissions": ["auth.view_user"],
+        },
+        {
+            "name": "Treinamento IA",
+            "url": "treinamento:treinar_ia",
+            "new_window": True,
+        },
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["ui_atendimentos", "ui_clientes", "ui_usuarios"],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "ui_usuarios.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-warning",
+    "navbar": "navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "flatly",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-warning",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}

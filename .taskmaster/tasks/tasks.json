@@ -602,6 +602,74 @@
             "parentTaskId": 21
           }
         ]
+      },
+      {
+        "id": 22,
+        "title": "Desenvolver Nova Home Page com Dashboard",
+        "description": "Desenvolver uma nova página de Home para o sistema, substituindo a view atual. A nova página deve seguir o padrão de design atual (utilizando o template base e Tailwind CSS) e fornecer acesso rápido às funcionalidades principais: Treinar IA, Verificar Treinamentos, Queries e Admin.",
+        "details": "1. **Atualizar `src/smart_core_assistant_painel/app/ui/core/views.py`**:\n   - Alterar a view `home` para renderizar um template HTML em vez de retornar HTML inline.\n   - Nome sugerido do template: `core/home.html`.\n\n2. **Criar Template `src/smart_core_assistant_painel/app/ui/core/templates/core/home.html`**:\n   - O template deve estender `base.html`.\n   - Utilizar classes do Tailwind CSS para manter a consistência visual (cards, grid, botões estilizados).\n   - Criar uma seção de \"Acesso Rápido\" ou \"Dashboard\" contendo cards/links para:\n     - **Treinar IA**: URL `{% url 'treinamento:treinar_ia' %}`.\n     - **Verificar Treinamentos**: URL `{% url 'treinamento:verificar_treinamentos_vetorizados' %}`.\n     - **Queries**: URL `{% url 'treinamento:verificar_query_compose' %}` (ou a view principal de queries).\n     - **Admin**: URL `/admin/`.\n\n3. **Design**:\n   - Utilizar um layout responsivo (ex: grid com cards).\n   - Adicionar ícones ou descrições breves para cada funcionalidade para melhorar a UX.\n   - Garantir que o footer e navbar do `base.html` sejam exibidos corretamente.\n\n4. **Verificação**:\n   - Acessar a rota `/` e verificar se a nova página é carregada.\n   - Testar todos os links para garantir que redirecionam para as páginas corretas.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": 23,
+        "title": "Implementar Lógica de Registros de Movimento do Fluxo",
+        "description": "Implementar a lógica centralizada para registros de movimento do fluxo, garantindo integridade e aplicação de regras de negócio.",
+        "details": "1. Criar `FlowMovementService` para centralizar a lógica.\n2. Validar transições baseadas em `EtapaFluxo.regras_transicao`.\n3. Assegurar registro correto de métricas (SLA/duração).\n4. Disparar side-effects (notificações, sync).\n5. Testes abrangentes.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Definir Interface do Service",
+            "description": "Definir a classe FlowMovementService e seus métodos principais.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23
+          },
+          {
+            "id": 2,
+            "title": "Implementar Validação de Regras",
+            "description": "Implementar validação das regras de transição definidas em EtapaFluxo.regras_transicao.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23
+          },
+          {
+            "id": 3,
+            "title": "Implementar Registro de Métricas",
+            "description": "Implementar lógica para cálculo preciso de duração e métricas de SLA.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23
+          },
+          {
+            "id": 4,
+            "title": "Refatorar Usos Existentes",
+            "description": "Identificar e refatorar chamadas diretas ao modelo ou webhook service para usar o novo Service.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23
+          },
+          {
+            "id": 5,
+            "title": "Criar Testes",
+            "description": "Criar testes unitários para o Service e testes de integração para o fluxo completo.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23
+          }
+        ]
       }
     ],
     "metadata": {
@@ -614,7 +682,7 @@
       ],
       "created": "2025-12-01T14:10:31.200Z",
       "description": "Tasks for master context",
-      "updated": "2025-12-02T00:11:46.552Z"
+      "updated": "2025-12-02T22:31:38.013Z"
     }
   }
 }

@@ -1,93 +1,111 @@
-# Overview
-O Smart Core Assistant Painel é uma plataforma centralizada de atendimento multicanal que unifica a comunicação via WhatsApp (usando Evolution API) com fluxos de trabalho operacionais geridos no Trello. O sistema combina a eficiência da automação por IA (Chatbots com RAG) com a empatia do atendimento humano, permitindo que departamentos gerenciem tickets visualmente (Kanban) sem duplicidade de dados. O objetivo é resolver a fragmentação do atendimento, oferecer triagem automática e fornecer ferramentas de gestão robustas.
+# Product Requirements Document (PRD) - Smart Core Assistant Painel
 
-# Core Features
-1. Sistema Central e Configuração (SYS)
-   - Gerenciamento centralizado de configurações via Firebase Remote Config e .env.
-   - Serviços de dados unificados e armazenamento vetorial nativo (pgvector) para RAG.
-   - Monitoramento e Health Checks.
+**Versão:** 2.0
+**Data:** 27/11/2025
+**Status:** Em Desenvolvimento
 
-2. Gestão Administrativa e Acesso (ADM)
-   - Autenticação de usuários e gestão de papéis (RBAC).
-   - Dashboard gerencial com KPIs.
-   - Gestão de conexões OAuth (Trello, ClickUp).
+---
 
-3. Integração WhatsApp via Evolution API (EVO)
-   - Suporte multi-instância (Multitenancy).
-   - Envio e recebimento de mensagens rich media (áudio, imagem, docs).
-   - Webhooks para status de entrega e recebimento.
-   - Whitelist e mapeamento de contatos.
+## 1. Introdução
 
-4. Gestão de Atendimentos e Orquestração (ATD)
-   - Orquestrador central de mensagens e manutenção de contexto (memória).
-   - Mecanismo de transferência fluida entre Bot e Humano ou entre Departamentos.
-   - Log completo de interações.
+### 1.1. Propósito
+Este documento define os requisitos funcionais e não funcionais, escopo e arquitetura do **Smart Core Assistant Painel**. O sistema é uma plataforma centralizada de atendimento multicanal que integra inteligência artificial (chatbot) com atendimento humano, utilizando o Trello como interface visual (Kanban).
 
-5. Sincronização Bidirecional com Trello (TRL)
-   - Espelhamento de atendimentos como Cards no Trello.
-   - Sincronização de listas (etapas) e boards (fluxos).
-   - Atualizações em tempo real via Webhooks.
+### 1.2. Objetivos Principais
+1.  **Centralização:** Unificar o atendimento de múltiplos canais e departamentos.
+2.  **Automação Inteligente:** Utilizar IA (RAG) para triagem e respostas.
+3.  **Integração Transparente:** Sincronizar com o Trello sem duplicidade de dados.
 
-6. Inteligência Artificial e RAG (TRN)
-   - Ingestão de documentos (PDF, TXT) para base de conhecimento.
-   - Curadoria de conteúdo e gestão de embeddings.
-   - Detecção de intenções.
+---
 
-7. Gestão Operacional e Clientes (OPS/CLI)
-   - Configuração de departamentos e fluxos personalizados.
-   - CRM leve para gestão de dados de clientes e histórico unificado.
-   - Cálculo de SLA e registro de movimentações.
+## 2. Arquitetura e Stack Tecnológico
 
-# User Experience
-- Atendentes: Utilizam primariamente o Trello para visualizar e responder tickets. A movimentação de cards reflete no status do atendimento.
-- Gestores: Acessam o Painel Administrativo (Django Admin / Dashboard) para configurar fluxos, visualizar métricas e gerenciar equipe.
-- Clientes Finais: Interagem via WhatsApp, recebendo respostas imediatas da IA ou sendo transbordados para atendimento humano de forma transparente.
-- Fluxo Principal: Mensagem chega -> IA processa/responde -> Se necessário humano, cria/atualiza Card no Trello -> Atendente responde no Trello -> Resposta enviada ao WhatsApp.
+*   **Backend:** Python 3.13+, Django 5.x, Django REST Framework.
+*   **Async/Queue:** Django-Q2 com Redis.
+*   **Database:** PostgreSQL 16+ (Relacional) e `pgvector` (Vetorial).
+*   **Integrações:** Evolution API (WhatsApp), Trello API.
+*   **AI Engine:** LangChain (OpenAI/Groq/Ollama).
+*   **Infraestrutura:** Docker, Docker Compose.
 
-# Technical Architecture
-- Backend: Python 3.13+, Django 5.x, Django REST Framework.
-- Async/Queue: Django-Q2 com Redis.
-- Database: PostgreSQL 16+ (Relacional) e pgvector (Vetorial).
-- AI Engine: LangChain integrando OpenAI/Groq/Ollama.
-- Integrações: Evolution API (WhatsApp), Trello API.
-- Infraestrutura: Docker, Docker Compose.
-- Segurança: Segredos em .env, autenticação robusta, validação estrita (Ruff/Mypy).
+---
 
-# Development Roadmap
-Phase 1: Foundation & Connectivity
-- Setup do projeto Django, Docker e Banco de Dados (SYS).
-- Integração básica com Evolution API (envio/recebimento) (EVO).
-- Modelagem de dados Core (Atendimento, Cliente, Mensagem).
+## 3. Funcionalidades e Requisitos (Códigos de Rastreabilidade)
 
-Phase 2: Basic Attendance & Trello Sync
-- Implementação do Orquestrador de Mensagens (ATD).
-- Integração unidirecional (Django -> Trello) para criação de cards.
-- Integração bidirecional (Trello -> Django) via Webhooks (TRL).
+### 3.1. Módulo: Configuração e Núcleo do Sistema `[SYS]`
+*   **SYS-INI-001:** Inicialização do Firebase Admin SDK.
+*   **SYS-INI-002:** Gestão de variáveis via Remote Config e `.env`.
+*   **SYS-INI-003:** Health Check e Monitoramento (Redis, DB, APIs).
+*   **SYS-DAT-001:** Serviços de dados unificados (Facade Pattern).
+*   **SYS-DAT-002:** Gerenciamento de Vector Storage (`pgvector`) no PostgreSQL.
 
-Phase 3: AI & RAG Integration
-- Implementação do módulo de Vetores e Ingestão de documentos (TRN).
-- Integração do fluxo de Chatbot no Orquestrador.
-- Testes de fluxo completo (RAG -> Resposta).
+### 3.2. Módulo: Gestão Administrativa e Acesso `[ADM]`
+*   **ADM-USR-001:** Cadastro de usuários e atendentes.
+*   **ADM-USR-002:** Autenticação e Login (JWT/Session).
+*   **ADM-USR-003:** Gestão de Papéis e Permissões (RBAC com `django-role-permissions`).
+*   **ADM-USR-004:** Dashboard Gerencial com KPIs (Atendimentos por status/depto).
+*   **ADM-CFG-001:** Gestão de OAuth (Trello/ClickUp) para tokens de acesso.
 
-Phase 4: Operational Management & Polish
-- Gestão de Departamentos e SLAs (OPS).
-- Auth avançado e Permissões (ADM).
-- Dashboard e Relatórios.
+### 3.3. Módulo: Gestão Operacional `[OPS]`
+*   **OPS-ORG-001:** Gestão de Departamentos (Isolamento de dados, chaves de API).
+*   **OPS-ORG-002:** Gestão de Atendentes (Horários, Limites de tickets).
+*   **OPS-ORG-003:** Configuração de Instâncias WhatsApp por Departamento.
+*   **OPS-FLW-001:** Configuração de Fluxos Kanban e Etapas.
+*   **OPS-FLW-003:** Registro de movimentação e cálculo de SLA (Tempo em cada etapa).
 
-Phase 5: Future Enhancements (Post-MVP)
-- Transcrição de áudio, Análise de Sentimento.
-- Suporte Omnichannel (Instagram/Telegram).
+### 3.4. Módulo: Treinamento e Conhecimento (RAG UI) `[TRN]`
+*   **TRN-CON-001:** Ingestão de documentos (PDF, DOCX, TXT) via Interface.
+*   **TRN-CON-002:** Interface de Curadoria (Human-in-the-loop) para aprovar/editar chunks.
+*   **TRN-CON-003:** Gestão de embeddings ativos/inativos.
+*   **TRN-INT-001:** Cadastro de Intenções (Query Compose) e exemplos (Few-shot).
 
-# Logical Dependency Chain
-1. Foundation (SYS): O banco de dados e a estrutura básica do Django devem existir.
-2. WhatsApp (EVO): Precisamos receber mensagens para ter o que processar.
-3. Core Logic (ATD): Precisamos salvar e gerenciar essas mensagens.
-4. Trello (TRL): A interface de operação depende dos dados do Core.
-5. AI (TRN): Pode ser desenvolvido em paralelo, mas acoplado ao ATD para funcionar.
-6. Ops/Admin: Camada de gestão sobre o sistema funcional.
+### 3.5. Módulo: Gestão de Clientes e Contatos `[CLI]`
+*   **CLI-CTT-001:** Gestão de contatos WhatsApp (JID/LID) e validação de telefone.
+*   **CLI-CRM-001:** Mini-CRM para PF/PJ (Dados fiscais, endereços).
+*   **CLI-CRM-002:** Vinculação de múltiplos contatos a um único Cliente (Histórico unificado).
 
-# Risks and Mitigations
-- Dependência da Evolution API: O WhatsApp pode desconectar ou a API falhar. Mitigação: Implementar health checks robustos, filas de retentativa (DLQ) e alertas.
-- Latência no Sync do Trello: O Trello tem rate limits. Mitigação: Uso intensivo de filas (Django-Q2) para desacoplar a operação do usuário da chamada API.
-- Custos de LLM: Alto volume pode encarecer. Mitigação: Uso de cache de respostas e modelos menores/locais (Ollama) para triagem simples.
-- Complexidade de Estado: Manter estado sincronizado entre WhatsApp, BD Local e Trello é complexo. Mitigação: "Source of Truth" é sempre o BD Local; Trello é view. Logs de auditoria rigorosos.
+### 3.6. Módulo: Gestão de Atendimentos `[ATD]`
+*   **ATD-LIF-001:** Orquestrador central de mensagens (Router).
+*   **ATD-LIF-003:** Mecanismo de Transferência Inteligente (Active Push e Seleção de Instância).
+*   **ATD-CTX-001:** Log completo de mensagens (In/Out) e metadados.
+*   **ATD-CTX-002:** Manutenção de contexto conversacional (Memória de curto prazo).
+
+### 3.7. Módulo: Integração Trello (Sidecar) `[TRL]`
+*   **TRL-FLW-001:** Sincronização de Boards (Fluxos de Depto).
+*   **TRL-LST-001:** Sincronização de Listas (Etapas do Kanban).
+*   **TRL-CRD-001:** Criação automática de Cards para novos atendimentos (Modelos OneToOne).
+*   **TRL-CRD-003:** Sync Bidirecional de Movimentação (Card Move <-> Ticket Status).
+*   **TRL-WEB-001:** Gestão automática de Webhooks do Trello.
+*   **TRL-MEM-001:** Sincronização de Membros (Atendentes).
+
+### 3.8. Módulo: Integração Evolution API `[EVO]`
+*   **EVO-MSG-001:** Suporte a múltiplas instâncias (Multitenancy).
+*   **EVO-MSG-002:** Envio/Recebimento de Mídia (Áudio, Imagem, Docs).
+*   **EVO-MSG-003:** Webhooks de status (Sent, Delivered, Read).
+*   **EVO-MSG-005:** Whitelist de números permitidos.
+
+---
+
+## 4. Roadmap de Desenvolvimento (Fases)
+
+### Phase 1: Foundation & Connectivity (Concluído)
+*   Setup Docker/Django `[SYS]`.
+*   Wrapper Evolution API `[EVO]`.
+*   Modelagem Core `[ATD]`.
+
+### Phase 2: Basic Attendance & Trello Sync (Concluído)
+*   Orquestrador Básico `[ATD]`.
+*   Sync Bidirecional Trello `[TRL]`.
+
+### Phase 3: AI & RAG Integration (Em Andamento)
+*   Infraestrutura Vetorial `[SYS-DAT-002]`.
+*   Fluxo de Chatbot LangChain `[ATD-LIF-001]`.
+*   Interface de Curadoria `[TRN]`.
+
+### Phase 4: Operational Management (Próximos Passos)
+*   CRM e Gestão de Clientes `[CLI]`.
+*   Gestão de Departamentos e SLAs `[OPS]`.
+*   Dashboard Administrativo e RBAC `[ADM]`.
+
+### Phase 5: Polish & Future
+*   Transcrição de Áudio.
+*   Análise de Sentimento.

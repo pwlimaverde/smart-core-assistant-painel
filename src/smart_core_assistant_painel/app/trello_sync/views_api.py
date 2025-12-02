@@ -69,6 +69,50 @@ def webhook(request: HttpRequest) -> HttpResponse:
                         member_creator_id,
                     )
 
+        # Detecta criação de lista
+        elif action_type == "createList":
+            list_data = data.get("list", {})
+            board_data = data.get("board", {})
+
+            list_id = list_data.get("id")
+            list_name = list_data.get("name")
+            board_id = board_data.get("id")
+
+            if list_id and list_name and board_id:
+                from django_q.tasks import async_task
+
+                logger.info("Detectada criação de lista Trello: {}", list_name)
+                async_task(
+                    "smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_list_create",
+                    list_id,
+                    list_name,
+                    board_id,
+                )
+
+        # Detecta atualização de lista (renomear ou arquivar)
+        elif action_type == "updateList":
+            list_data = data.get("list", {})
+            old_data = data.get("old", {})
+
+            list_id = list_data.get("id")
+
+            # Se houve mudança de nome ou status (closed)
+            if list_id and ("name" in old_data or "closed" in old_data):
+                list_name = list_data.get("name")
+                closed = list_data.get("closed")
+
+                from django_q.tasks import async_task
+
+                logger.info(
+                    "Detectada atualização de lista Trello: {}", list_id
+                )
+                async_task(
+                    "smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_list_update",
+                    list_id,
+                    list_name,
+                    closed,
+                )
+
     except Exception as exc:
         logger.error("Erro ao processar payload do webhook: {}", exc)
 

@@ -43,6 +43,10 @@ def etapa_created_sync_trello(
 ) -> None:
     """Cria List Trello quando nova etapa e reordena listas (imediato)."""
     try:
+        # Prevenção de loop: se a criação veio do Trello, não enviar de volta
+        if getattr(instance, "_syncing_from_trello", False):
+            return
+
         if created:
             async_task(
                 (
@@ -68,6 +72,10 @@ def etapa_deleted_archive_trello(
 ) -> None:
     """Arquiva a List Trello ao excluir uma EtapaFluxo (imediato)."""
     try:
+        # Prevenção de loop: se a exclusão veio do Trello, não enviar de volta
+        if getattr(instance, "_syncing_from_trello", False):
+            return
+
         async_task(
             (
                 "smart_core_assistant_painel.app.trello_sync.tasks"

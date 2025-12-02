@@ -534,15 +534,21 @@ class TicketSyncService:
 
         return "\n".join(linhas)
 
-    def update_card_rich_content(
-        self, card: TrelloCard, atendimento: Atendimento
-    ) -> None:
+    def update_card_rich_content(self, atendimento: Atendimento) -> None:
         """[TRL-CRD-001] Atualiza conteúdo rico do card: descrição, membros e custom fields.
 
         Criação e Atualização de Cartões.
 
         Comentário: usa adapter Trello com fail-soft em campos ausentes.
         """
+        # Recupera card do atendimento
+        card: Optional[TrelloCard] = getattr(atendimento, "trello_card", None)
+        if not card:
+            logger.warning(
+                "Atendimento {} sem card Trello para atualizar.", atendimento.pk
+            )
+            return
+
         desc: str = self._build_rich_description(atendimento)
         payload: dict[str, Any] = {"desc": desc}
 
@@ -616,6 +622,207 @@ class TicketSyncService:
         except Exception as exc:
             logger.warning("Falha ao atualizar conteúdo do card: {}", exc)
 
-        # Comentário (PT-BR): removido o envio de comentários ao Trello para
-        # evitar duplicação de conteúdo; as mensagens recentes já constam na
-        # descrição rica do card.
+    def sync_card_members(
+        self, atendimento: Atendimento, old_atendente_id: Optional[int] = None
+    ) -> None:
+        """Sincroniza membros do card Trello com o atendente responsável.
+
+        Args:
+            atendimento: Instância de ``Atendimento``.
+            old_atendente_id: ID do atendente anterior (opcional).
+        """
+        card: Optional[TrelloCard] = getattr(atendimento, "trello_card", None)
+        if not card:
+            logger.warning(
+                "Atendimento {} sem card Trello para sync membros.",
+                atendimento.pk,
+            )
+            return
+
+        # 1. Resolver membro atual
+        atendente_atual = getattr(atendimento, "atendente_humano", None)
+        member_id_atual: Optional[str] = None
+        if atendente_atual:
+            member_id_atual = MemberSyncService().resolve_member_external_id(
+                atendente_atual
+            )
+
+        # 2. Resolver membro anterior (se houver)
+        member_id_anterior: Optional[str] = None
+        if old_atendente_id:
+            try:
+                from smart_core_assistant_painel.app.ui.operacional.models import (
+                    Atendente,
+                )
+
+                old_atendente = Atendente.objects.get(id=old_atendente_id)
+                member_id_anterior = (
+                    MemberSyncService().resolve_member_external_id(
+                        old_atendente
+                    )
+                )
+            except Exception:
+                pass
+
+        # 3. Atualizar no Trello
+        try:
+            # Adicionar novo membro
+            if member_id_atual:
+                try:
+                    self.client.add_member_to_card(
+                        card.external_id, member_id_atual
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Falha ao adicionar membro {} ao card {}: {}",
+                        member_id_atual,
+                        card.external_id,
+                        exc,
+                    )
+
+            # Remover membro anterior (se diferente e existir)
+            if (
+                member_id_anterior
+                and member_id_anterior != member_id_atual
+            ):
+                try:
+                    self.client.remove_member_from_card(
+                        card.external_id, member_id_anterior
+                    )
+                except Exception as exc:
+                    logger.warning(
+                        "Falha ao remover membro {} do card {}: {}",
+                        member_id_anterior,
+                        card.external_id,
+                        exc,
+                    )
+
+        except Exception as exc:
+            logger.error("Erro geral ao sincronizar membros do card: {}", exc)
+
+    def move_card_to_etapa(self, atendimento: Atendimento) -> None:
+        """Move o card Trello para a lista correspondente à etapa atual.
+
+        Args:
+            atendimento: Instância de ``Atendimento``.
+        """
+        card: Optional[TrelloCard] = getattr(atendimento, "trello_card", None)
+        if not card:
+            logger.warning(
+                "Atendimento {} sem card Trello para mover.", atendimento.pk
+            )
+            return
+
+        etapa = getattr(atendimento, "etapa_atual", None)
+        if not etapa:
+            logger.warning(
+                "Atendimento {} sem etapa atual definida.", atendimento.pk
+            )
+            return
+
+        # Garante que a lista da etapa existe
+        from .flow_sync_service import FlowSyncService
+
+        trello_list = FlowSyncService().ensure_list_for_etapa(etapa)
+        if not trello_list:
+            logger.error(
+                "Falha ao obter lista Trello para etapa {}.", etapa.pk
+            )
+            return
+
+        # Se já estiver na lista correta, ignora (mas atualiza referência local se precisar)
+        if card.list_sync_id == trello_list.id:
+            return
+
+        try:
+            # Move no Trello
+            self.client.move_item(
+                card.external_id, trello_list.external_id
+            )
+            
+            # Atualiza referência local
+            card.list_sync = trello_list
+            card.save(update_fields=["list_sync"])
+            
+            logger.info(
+                "Card {} movido para lista {} (Etapa {})",
+                card.external_id,
+                trello_list.name,
+                etapa.nome,
+            )
+        except Exception as exc:
+            logger.error(
+                "Falha ao mover card {} para lista {}: {}",
+                card.external_id,
+                trello_list.external_id,
+                exc,
+            )
+
+    def process_webhook_card_move(
+        self, card_id: str, list_after_id: str, member_creator_id: str
+    ) -> None:
+        """Processa movimentação de card originada no Trello (Webhook).
+
+        Args:
+            card_id: ID externo do card.
+            list_after_id: ID externo da lista de destino.
+            member_creator_id: ID externo do usuário que moveu.
+        """
+        try:
+            # 1. Localizar Card e Lista no banco
+            card = TrelloCard.objects.select_related("atendimento").get(
+                external_id=card_id
+            )
+            nova_lista = TrelloList.objects.select_related("etapa").get(
+                external_id=list_after_id
+            )
+            
+            atendimento = card.atendimento
+            nova_etapa = nova_lista.etapa
+
+            # 2. Verificar se houve mudança real de etapa
+            if atendimento.etapa_atual_id == nova_etapa.id:
+                # Apenas mudou de lista (se houver múltiplas listas por etapa, o que não é o caso padrão)
+                # ou evento duplicado. Atualiza referência do card apenas.
+                if card.list_sync_id != nova_lista.id:
+                    card.list_sync = nova_lista
+                    card.save(update_fields=["list_sync"])
+                return
+
+            # 3. Atualizar Etapa do Atendimento
+            # Importante: Usar o service de estrutura para garantir regras de negócio/transição?
+            # Ou atualizar direto? Para evitar loops, idealmente usamos um método que saiba
+            # que a origem é externa. Mas o `AttendanceStructureManager` pode não ter essa flag.
+            # Vamos atualizar direto e confiar que os sinais tratarão o resto,
+            # MAS precisamos evitar que o sinal de `post_save` do Atendimento tente mover o card de volta
+            # ou duplicar a ação.
+            # O `task_atendimento_move_to_etapa_list` verifica se já está na lista.
+            # Então, se atualizarmos o `card.list_sync` ANTES de salvar o atendimento,
+            # a task de sync vai ver que já está certo.
+            
+            logger.info(
+                "Card {} movido no Trello para lista {}. Atualizando Atendimento {} para etapa {}.",
+                card_id,
+                nova_lista.name,
+                atendimento.pk,
+                nova_etapa.nome,
+            )
+
+            with transaction.atomic():
+                # Atualiza referência do card
+                card.list_sync = nova_lista
+                card.save(update_fields=["list_sync"])
+
+                # Atualiza etapa do atendimento
+                # Flag para indicar origem externa (se necessário nos signals)
+                atendimento._syncing_from_trello = True 
+                atendimento.etapa_atual = nova_etapa
+                atendimento.save(update_fields=["etapa_atual"])
+
+        except TrelloCard.DoesNotExist:
+            logger.warning("Card movido no Trello {} não encontrado no sistema.", card_id)
+        except TrelloList.DoesNotExist:
+            logger.warning("Lista de destino {} não encontrada no sistema.", list_after_id)
+        except Exception as exc:
+            logger.error("Erro ao processar movimento de card via webhook: {}", exc)
+

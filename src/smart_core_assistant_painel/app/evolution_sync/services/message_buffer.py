@@ -21,7 +21,7 @@ def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:
 
     buf.append(envelope)
     logger.debug("envelope: {}", envelope)
-    cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 60) + 60)
+    cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 20) + 20)
 
 
 def clear_buffer_contact(contact_id: int) -> None:
@@ -39,7 +39,7 @@ def sched_response_contact(params: Dict[str, Any]) -> None:
     timer_key = f"evo_timer_{contact_id}"
     if cache.get(timer_key):
         return
-    cache.set(timer_key, True, timeout=(SERVICEHUB.TIME_CACHE or 60) + 60)
+    cache.set(timer_key, True, timeout=(SERVICEHUB.TIME_CACHE or 20) + 20)
     name = f"process_contact_{contact_id}"
     next_run = timezone.now() + timezone.timedelta(
         seconds=SERVICEHUB.TIME_CACHE

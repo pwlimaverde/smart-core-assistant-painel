@@ -189,3 +189,6 @@ reset-db = "python scripts/database_reset/reset_database.py"
 
 # Callback do Trello via túnel ngrok
 ngrok-trello = "python scripts/trello/ngrok_trello.py"
+
+# Task Master Visualization
+list-tasks = "python scripts/visualize_tasks.py"

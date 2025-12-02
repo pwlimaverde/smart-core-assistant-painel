@@ -107,7 +107,8 @@ O sistema é modularizado para facilitar a manutenção e escalabilidade. Abaixo
 
 ### 4.6. Módulo: Gestão de Atendimentos `[ATD]`
 -   **ATD-LIF-001:** Orquestrador central de mensagens.
--   **ATD-LIF-003:** Mecanismo de Transferência (Bot ↔ Humano, Depto ↔ Depto).
+-   **ATD-LIF-003:** Mecanismo de Transferência Inteligente (Handover).
+    -   *Detalhe:* Suporte a "Active Push" (envio de saudação automática ao atribuir) e seleção dinâmica de instância (Instância Pessoal do Atendente tem prioridade sobre a do Departamento).
 -   **ATD-CTX-001:** Log completo de mensagens e metadados.
 -   **ATD-CTX-002:** Manutenção de contexto conversacional (Memória).
 
@@ -116,7 +117,7 @@ O sistema é modularizado para facilitar a manutenção e escalabilidade. Abaixo
 -   **TRL-LST-001:** Sync de Listas (Etapas).
 -   **TRL-CRD-001/002:** Sync de Cards (Atendimentos) com detalhes ricos.
 -   **TRL-WEB-001/002:** Gestão automática de Webhooks para atualizações em tempo real (Bidirecional).
--   **Arquitetura:** App dedicado (`trello_sync`) usando Signals para desacoplamento.
+-   **Arquitetura:** App dedicado (`trello_sync`) usando Signals para desacoplamento e modelos espelhados (`OneToOneField`) para `Board`, `List`, `Card` e `Member`.
 
 ### 4.8. Módulo: Integração Evolution API `[EVO]`
 -   **EVO-MSG-001:** Suporte a múltiplas instâncias (Multitenancy) via `EvolutionInstance`.

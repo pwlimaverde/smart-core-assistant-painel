@@ -1,18 +1,22 @@
 {% extends "base.html" %}
 {% load static %}
 
+{% block navbar %}
+<!-- Navbar hidden for this page -->
+{% endblock navbar %}
+
 {% block 'conteudo' %}
-<main class="min-h-screen" style="background-color: #141517;">
-    <header class="shadow-sm" style="background-color: #141517; border-bottom: 1px solid #374151;">
+<main class="bg-stone-50 min-h-screen">
+    <header class="bg-white shadow-sm">
         <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-x-4">
                     <img src="{% static 'img/logo_smart.png' %}" alt="Smart Core Logo" class="h-12 w-auto">
                     <div>
-                        <h1 class="text-2xl font-bold tracking-tight text-white">
+                        <h1 class="text-2xl font-bold tracking-tight text-stone-900">
                             Dashboard
                         </h1>
-                        <p class="text-sm text-gray-400">
+                        <p class="text-sm text-stone-500">
                             Bem-vindo ao Smart Core Assistant Painel
                         </p>
                     </div>
@@ -25,67 +29,67 @@
         <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <!-- Card: Treinar IA -->
             <a href="{% url 'treinamento:treinar_ia' %}" class="block group">
-                <div class="relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    style="background-color: #1f2937; border: 1px solid #374151;">
+                <div
+                    class="relative overflow-hidden rounded-2xl p-6 shadow-sm bg-white border border-stone-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="rounded-lg p-3" style="background-color: rgba(169, 143, 113, 0.1);">
-                            <svg class="h-6 w-6" style="color: #a98f71;" fill="none" viewBox="0 0 24 24"
-                                stroke-width="1.5" stroke="currentColor">
+                        <div class="rounded-lg p-3 bg-stone-50 group-hover:bg-stone-100 transition-colors">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.499 5.216 50.59 50.59 0 00-2.662.813m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5" />
                             </svg>
                         </div>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Treinar IA</h3>
-                    <p class="text-sm text-gray-400">Carregar novos documentos e textos para expandir o conhecimento da
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">Treinar IA</h3>
+                    <p class="text-sm text-stone-500">Carregar novos documentos e textos para expandir o conhecimento da
                         IA.</p>
                 </div>
             </a>
 
             <!-- Card: Verificar Treinamentos -->
             <a href="{% url 'treinamento:verificar_treinamentos_vetorizados' %}" class="block group">
-                <div class="relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    style="background-color: #1f2937; border: 1px solid #374151;">
+                <div
+                    class="relative overflow-hidden rounded-2xl p-6 shadow-sm bg-white border border-stone-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="rounded-lg p-3" style="background-color: rgba(169, 143, 113, 0.1);">
-                            <svg class="h-6 w-6" style="color: #a98f71;" fill="none" viewBox="0 0 24 24"
-                                stroke-width="1.5" stroke="currentColor">
+                        <div class="rounded-lg p-3 bg-stone-50 group-hover:bg-stone-100 transition-colors">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                         </div>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Verificar Treinamentos</h3>
-                    <p class="text-sm text-gray-400">Consultar e gerenciar os dados já processados e vetorizados.</p>
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">Verificar Treinamentos</h3>
+                    <p class="text-sm text-stone-500">Consultar e gerenciar os dados já processados e vetorizados.</p>
                 </div>
             </a>
 
             <!-- Card: Queries -->
             <a href="{% url 'treinamento:verificar_query_compose' %}" class="block group">
-                <div class="relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    style="background-color: #1f2937; border: 1px solid #374151;">
+                <div
+                    class="relative overflow-hidden rounded-2xl p-6 shadow-sm bg-white border border-stone-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="rounded-lg p-3" style="background-color: rgba(169, 143, 113, 0.1);">
-                            <svg class="h-6 w-6" style="color: #a98f71;" fill="none" viewBox="0 0 24 24"
-                                stroke-width="1.5" stroke="currentColor">
+                        <div class="rounded-lg p-3 bg-stone-50 group-hover:bg-stone-100 transition-colors">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                             </svg>
                         </div>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Queries</h3>
-                    <p class="text-sm text-gray-400">Gerenciar e testar as queries compostas do sistema.</p>
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">Queries</h3>
+                    <p class="text-sm text-stone-500">Gerenciar e testar as queries compostas do sistema.</p>
                 </div>
             </a>
 
             <!-- Card: Admin -->
             <a href="/admin/" class="block group">
-                <div class="relative overflow-hidden rounded-2xl p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
-                    style="background-color: #1f2937; border: 1px solid #374151;">
+                <div
+                    class="relative overflow-hidden rounded-2xl p-6 shadow-sm bg-white border border-stone-200 transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                     <div class="flex items-center justify-between mb-4">
-                        <div class="rounded-lg p-3" style="background-color: rgba(169, 143, 113, 0.1);">
-                            <svg class="h-6 w-6" style="color: #a98f71;" fill="none" viewBox="0 0 24 24"
-                                stroke-width="1.5" stroke="currentColor">
+                        <div class="rounded-lg p-3 bg-stone-50 group-hover:bg-stone-100 transition-colors">
+                            <svg class="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
                                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -93,8 +97,8 @@
                             </svg>
                         </div>
                     </div>
-                    <h3 class="text-lg font-semibold text-white mb-2">Administração</h3>
-                    <p class="text-sm text-gray-400">Acesso ao painel administrativo do Django.</p>
+                    <h3 class="text-lg font-semibold text-stone-900 mb-2">Administração</h3>
+                    <p class="text-sm text-stone-500">Acesso ao painel administrativo do Django.</p>
                 </div>
             </a>
         </div>

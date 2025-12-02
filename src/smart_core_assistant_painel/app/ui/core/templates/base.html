@@ -10,6 +10,7 @@
 </head>
 
 <body class="min-h-screen">
+    {% block navbar %}
     <!-- Navbar -->
     <header class="app-navbar">
         <div class="app-container flex items-center justify-between py-3">
@@ -24,6 +25,7 @@
             </nav>
         </div>
     </header>
+    {% endblock navbar %}
 
     {% block 'conteudo' %}
     {% endblock 'conteudo' %}

@@ -329,13 +329,8 @@ JAZZMIN_SETTINGS = {
     "topmenu_links": [
         {
             "name": "Home",
-            "url": "admin:index",
+            "url": "/",
             "permissions": ["auth.view_user"],
-        },
-        {
-            "name": "Treinamento IA",
-            "url": "treinamento:treinar_ia",
-            "new_window": True,
         },
     ],
     "show_sidebar": True,

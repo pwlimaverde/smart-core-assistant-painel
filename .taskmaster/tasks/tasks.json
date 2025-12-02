@@ -45,9 +45,10 @@
             "description": "Criar ou ajustar o model `EvolutionInstance` em `evolution_sync/models.py` para salvar URL da API, Token (ApiKey) e Nome da Instância.",
             "dependencies": [],
             "details": "Campos sugeridos: nome (char), api_url (url), token (encrypted/char), is_active (bool).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Testar criação e recuperação de instâncias no DB.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.746Z"
           },
           {
             "id": 2,
@@ -57,9 +58,10 @@
               1
             ],
             "details": "Implementar métodos de envio de mensagem e checagem de saúde. O cliente deve ser instanciado carregando as configurações do model `EvolutionInstance`.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Mockar respostas HTTP e verificar se o serviço trata erros (401, 500) corretamente.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.774Z"
           },
           {
             "id": 3,
@@ -69,11 +71,13 @@
               1
             ],
             "details": "Endpoint deve validar o token de segurança do webhook e identificar a instância de origem. Deve apenas receber e estruturar os dados preliminares.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Enviar payload JSON de exemplo (message upsert) e verificar retorno 200 OK.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.795Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-02T23:34:51.795Z"
       },
       {
         "id": "4",
@@ -150,9 +154,10 @@
             "description": "Verificar models no app `treinamento` para suporte a embeddings e garantir que a extensão pgvector esteja ativa nas migrations.",
             "dependencies": [],
             "details": "Verificar models como `Documento` e criar/ajustar model `Trecho` (Chunk) com campo `VectorField`. Garantir operação `CreateExtension('vector')` na migration inicial.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verificar se makemigrations gera os campos corretos e se o banco aceita operações vetoriais.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.813Z"
           },
           {
             "id": 2,
@@ -162,9 +167,10 @@
               1
             ],
             "details": "Implementar função/classe que recebe arquivo, usa biblioteca (ex: LangChain ou script customizado) para split, chama API de Embedding e salva objetos `Trecho` com o vetor.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Testar ingestão de um PDF pequeno e verificar contagem de chunks criados no banco.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.832Z"
           },
           {
             "id": 3,
@@ -174,11 +180,13 @@
               2
             ],
             "details": "Implementar método `search_similar(query_text, k=3)` que gera embedding da query e faz query Django com `metrics.CosineDistance` ou operador SQL customizado.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Realizar busca com termo específico presente nos documentos ingeridos e asserter que o chunk correto vem no topo.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.849Z"
           }
-        ]
+        ],
+        "updatedAt": "2025-12-02T23:34:51.849Z"
       },
       {
         "id": "9",
@@ -613,11 +621,11 @@
         "description": "Desenvolver uma nova página de Home para o sistema, substituindo a view atual. A nova página deve seguir o padrão de design atual (utilizando o template base e Tailwind CSS) e fornecer acesso rápido às funcionalidades principais: Treinar IA, Verificar Treinamentos, Queries e Admin.",
         "details": "1. **Atualizar `src/smart_core_assistant_painel/app/ui/core/views.py`**:\n   - Alterar a view `home` para renderizar um template HTML em vez de retornar HTML inline.\n   - Nome sugerido do template: `core/home.html`.\n\n2. **Criar Template `src/smart_core_assistant_painel/app/ui/core/templates/core/home.html`**:\n   - O template deve estender `base.html`.\n   - Utilizar classes do Tailwind CSS para manter a consistência visual (cards, grid, botões estilizados).\n   - Criar uma seção de \"Acesso Rápido\" ou \"Dashboard\" contendo cards/links para:\n     - **Treinar IA**: URL `{% url 'treinamento:treinar_ia' %}`.\n     - **Verificar Treinamentos**: URL `{% url 'treinamento:verificar_treinamentos_vetorizados' %}`.\n     - **Queries**: URL `{% url 'treinamento:verificar_query_compose' %}` (ou a view principal de queries).\n     - **Admin**: URL `/admin/`.\n\n3. **Design**:\n   - Utilizar um layout responsivo (ex: grid com cards).\n   - Adicionar ícones ou descrições breves para cada funcionalidade para melhorar a UX.\n   - Garantir que o footer e navbar do `base.html` sejam exibidos corretamente.\n\n4. **Verificação**:\n   - Acessar a rota `/` e verificar se a nova página é carregada.\n   - Testar todos os links para garantir que redirecionam para as páginas corretas.",
         "testStrategy": "",
-        "status": "in-progress",
+        "status": "done",
         "dependencies": [],
         "priority": "medium",
         "subtasks": [],
-        "updatedAt": "2025-12-02T23:07:03.130Z"
+        "updatedAt": "2025-12-02T23:28:59.075Z"
       },
       {
         "id": "23",
@@ -684,9 +692,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-02T23:07:03.142Z",
+      "lastModified": "2025-12-02T23:34:51.851Z",
       "taskCount": 23,
-      "completedCount": 10,
+      "completedCount": 11,
       "tags": [
         "master"
       ]

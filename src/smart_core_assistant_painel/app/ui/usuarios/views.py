@@ -88,6 +88,12 @@ def login(request: HttpRequest) -> HttpResponse:
         )
         if user:
             auth.login(request, user)
+
+            # Verificar se há um parâmetro 'next'
+            next_url = request.POST.get("next")
+            if next_url:
+                return redirect(next_url)
+
             # Encontrar atendente vinculado ao usuário para redirecionamento
             agente = (
                 Atendente.objects.filter(usuario_sistema=user.username)
@@ -99,13 +105,22 @@ def login(request: HttpRequest) -> HttpResponse:
                     "atendimentos:kanban_departamento",
                     departamento_id=agente.departamento_id,
                 )
-            # Fallback: se não houver vínculo, redireciona para seleção/treinamento
-            return redirect("treinamento:treinar_ia")
+            # Fallback: redireciona para a home
+            return redirect("/")
         messages.add_message(
             request, constants.ERROR, "Nome de usuário ou senha inválidos."
         )
         return redirect("login")
     return redirect("login")
+
+
+def logout_view(request: HttpRequest) -> HttpResponse:
+    """[ADM-USR-005] Realiza o logout do usuário.
+
+    Redireciona para a página inicial após o logout.
+    """
+    auth.logout(request)
+    return redirect("/")
 
 
 def permissoes(request: HttpRequest) -> HttpResponse:

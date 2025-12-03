@@ -313,6 +313,42 @@
             "status": "pending",
             "dependencies": [],
             "parentTaskId": 12
+          },
+          {
+            "id": 8,
+            "title": "[Refactor] Implementar Structured Output na AnaliseMensage",
+            "description": "Substituir a extração via Regex da resposta e transferência por Structured Output (Pydantic) na `AnaliseMensage` para garantir precisão 100% no roteamento.\n\nDetalhes Técnicos:\n1. Criar modelo Pydantic `RespostaBot` em `modules/ai_engine/utils/types.py`:\n   - `resposta_texto` (str): A resposta final para o usuário.\n   - `acao_transferencia` (Optional[str]): Nome exato do setor para transferência (ou None).\n   - `confianca` (float): Nível de confiança (0.0 a 1.0).\n2. Atualizar `AnaliseMensageDatasource`:\n   - Utilizar `llm.with_structured_output(RespostaBot)`.\n   - Ajustar prompt para instruir o preenchimento do campo `acao_transferencia` com o nome exato do setor, removendo a instrução de \"Estarei transferindo...\".\n3. Refatorar `AttendanceOrchestrator` e `FeaturesCompose`:\n   - Remover método `_extrair_fluxo_transferencia` (regex).\n   - Consumir diretamente `resultado.acao_transferencia`.",
+            "details": "Implementação de Structured Output para eliminar fragilidade de Regex na detecção de transferência.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
+          },
+          {
+            "id": 9,
+            "title": "[Optimization] Otimizar Busca Vetorial no QueryCompose",
+            "description": "Mover a lógica de filtro de similaridade (distância < 0.25) do Python para a query do banco de dados para otimizar performance.\n\nDetalhes Técnicos:\n1. No método `QueryCompose.buscar_comportamento_similar` (`app/ui/treinamento/models.py`):\n   - Utilizar `annotate(distance=CosineDistance(\"embedding\", query_vec))`.\n   - Adicionar filtro `.filter(distance__lt=0.25)` diretamente na query.\n   - Remover a lógica Python `if most_similar_distance > 0.25: return None`.\n2. Verificar se a extensão `pgvector` está corretamente configurada para suportar essa operação eficientemente.",
+            "details": "Otimização de busca vetorial usando recursos nativos do banco de dados.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
+          },
+          {
+            "id": 10,
+            "title": "[Refactor] Externalizar Prompts e Configurações de IA",
+            "description": "Remover prompts hardcoded do código fonte e centralizá-los no `ServiceHub` carregados via variáveis de ambiente.\n\nDetalhes Técnicos:\n1. Identificar prompts em `AnaliseMensageDatasource` (system e user prompts) e `AttendanceOrchestrator` (intent prompt).\n2. Criar novas variáveis de ambiente (ex: `PROMPT_SYSTEM_ANALISE_MENSAGEM`, `PROMPT_USER_RAG_CONTEXT`) no `.env`.\n3. Atualizar `ServiceHub` (`modules/services/features/service_hub.py`) para carregar essas variáveis.\n4. Substituir strings hardcoded nos arquivos originais por chamadas ao `ServiceHub` (ex: `ServiceHub.get_instance().prompt_system_analise_mensagem`).",
+            "details": "Externalização de prompts para facilitar manutenção e ajustes sem deploy.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
+          },
+          {
+            "id": 11,
+            "title": "[Feature] Implementar Rastreabilidade de RAG (Source Documents)",
+            "description": "Registrar quais documentos foram utilizados para gerar a resposta da IA para fins de auditoria e debug.\n\nDetalhes Técnicos:\n1. Estender modelo `RespostaBot` (Task 12.5) para incluir campo `lista_ids_documentos` (List[int]).\n2. Atualizar `AnaliseMensageDatasource` para retornar os IDs dos documentos que foram passados no contexto RAG (ou filtrados pela LLM se possível).\n3. Atualizar `AttendanceOrchestrator` para persistir esses IDs em `Mensagem.metadados['rag_sources']` ao salvar a resposta.\n4. Garantir que `Documento.buscar_documentos_similares` retorne os IDs corretamente.",
+            "details": "Implementação de rastreabilidade para documentos usados no RAG.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
           }
         ],
         "updatedAt": "2025-12-03T12:39:03.187Z"

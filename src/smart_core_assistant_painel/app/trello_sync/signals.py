@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
@@ -560,16 +561,22 @@ def mensagem_created_update_trello_card(
     Comentário: agenda atualização de descrição/custom fields do card
     associado ao ``Atendimento`` para refletir mensagens recentes.
     """
-    if not created:
+    # Verifica se é uma atualização de resposta do bot
+    update_fields = kwargs.get("update_fields") or []
+    is_bot_response = update_fields and "resposta_bot" in update_fields
+
+    if not created and not is_bot_response:
         return
     try:
         at_id: int = instance.atendimento_id  # type: ignore[assignment]
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_update_card_rich_content"
-            ),
-            at_id,
+        transaction.on_commit(
+            lambda: async_task(
+                (
+                    "smart_core_assistant_painel.app.trello_sync.tasks"
+                    ".task_atendimento_update_card_rich_content"
+                ),
+                at_id,
+            )
         )
     except Exception as exc:
         logger.warning(

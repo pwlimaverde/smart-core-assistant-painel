@@ -51,15 +51,4 @@ a.btn {
     color: #ffffff !important;
 }
 
-/* Delete Confirmation Button - Match 'Add' button green */
-.delete-confirmation .btn-danger,
-.delete-selected-confirmation .btn-danger {
-    background-color: #18bc9c !important;
-    border-color: #18bc9c !important;
-}
-
-.delete-confirmation .btn-danger:hover,
-.delete-selected-confirmation .btn-danger:hover {
-    background-color: #128f76 !important;
-    border-color: #128f76 !important;
-}
+/* Delete Confirmation: usar cores padrão do tema (success/danger) */

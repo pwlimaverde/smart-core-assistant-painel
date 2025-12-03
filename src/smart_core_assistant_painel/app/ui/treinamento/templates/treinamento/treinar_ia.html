@@ -77,6 +77,7 @@
                                     class="block text-sm font-medium leading-6 text-stone-900">Documento
                                     (Upload)</label>
                                 <div
+                                    id="upload-dropzone"
                                     class="mt-2 flex justify-center rounded-lg border border-dashed border-stone-900/25 px-6 py-10 hover:bg-stone-50 transition-colors">
                                     <div class="text-center">
                                         <svg class="mx-auto h-12 w-12 text-stone-300" viewBox="0 0 24 24"
@@ -89,12 +90,22 @@
                                             <label for="file-upload"
                                                 class="relative cursor-pointer rounded-md bg-white font-semibold text-amber-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-amber-600 focus-within:ring-offset-2 hover:text-amber-500">
                                                 <span>Upload de arquivo</span>
-                                                <input id="file-upload" name="documento" type="file" class="sr-only">
+                                                <input id="file-upload" name="documento" type="file" accept=".pdf,.doc,.docx,.txt" class="sr-only">
                                             </label>
                                             <p class="pl-1">ou arraste e solte</p>
                                         </div>
                                         <p class="text-xs leading-5 text-stone-600">PDF, DOCX, TXT até 10MB</p>
                                     </div>
+                                </div>
+                                <div id="file-feedback" class="mt-3 hidden">
+                                    <div class="flex items-center justify-between rounded-md border border-stone-200 bg-stone-50 px-3 py-2">
+                                        <div class="text-sm text-stone-700">
+                                            <span id="file-name" class="font-semibold"></span>
+                                            <span id="file-size" class="ml-2 text-stone-500"></span>
+                                        </div>
+                                        <button type="button" id="remove-file" class="text-sm font-semibold text-rose-600 hover:text-rose-500">Remover arquivo</button>
+                                    </div>
+                                    <p id="file-error" class="mt-2 text-sm text-rose-600 hidden"></p>
                                 </div>
                             </div>
                         </div>
@@ -110,5 +121,38 @@
             </div>
         </div>
     </div>
+    <script>
+        const input = document.getElementById('file-upload');
+        const dropzone = document.getElementById('upload-dropzone');
+        const feedback = document.getElementById('file-feedback');
+        const nameEl = document.getElementById('file-name');
+        const sizeEl = document.getElementById('file-size');
+        const removeBtn = document.getElementById('remove-file');
+        const errorEl = document.getElementById('file-error');
+        const maxSize = 10 * 1024 * 1024;
+        function formatSize(b){return (b/1024/1024).toFixed(2)+' MB'}
+        function validate(file){
+            const n = file.name.toLowerCase();
+            const okExt = n.endsWith('.pdf')||n.endsWith('.doc')||n.endsWith('.docx')||n.endsWith('.txt');
+            if(!okExt){errorEl.textContent='Tipo de arquivo não suportado'; errorEl.classList.remove('hidden'); return false}
+            if(file.size>maxSize){errorEl.textContent='Arquivo acima de 10MB'; errorEl.classList.remove('hidden'); return false}
+            errorEl.classList.add('hidden');
+            return true
+        }
+        function setFile(file){
+            if(!validate(file)) return;
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+            nameEl.textContent = file.name;
+            sizeEl.textContent = formatSize(file.size);
+            feedback.classList.remove('hidden');
+        }
+        input.addEventListener('change',()=>{const f=input.files[0]; if(f) setFile(f)});
+        removeBtn.addEventListener('click',()=>{input.value=''; feedback.classList.add('hidden')});
+        ['dragenter','dragover'].forEach(e=>dropzone.addEventListener(e,(ev)=>{ev.preventDefault(); dropzone.classList.add('ring-2','ring-amber-600','bg-amber-50')}));
+        ['dragleave','drop'].forEach(e=>dropzone.addEventListener(e,(ev)=>{ev.preventDefault(); dropzone.classList.remove('ring-2','ring-amber-600','bg-amber-50')}));
+        dropzone.addEventListener('drop',(ev)=>{const f=ev.dataTransfer.files[0]; if(f) setFile(f)});
+    </script>
 </main>
 {% endblock 'conteudo' %}

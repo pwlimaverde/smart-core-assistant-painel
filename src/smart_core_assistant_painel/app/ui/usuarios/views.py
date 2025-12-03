@@ -6,6 +6,7 @@ cadastro, login e atribuição de permissões.
 
 from django.contrib import auth, messages
 from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.messages import constants
 from django.db.models import Count
@@ -13,7 +14,6 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from rolepermissions.checkers import has_permission
 from rolepermissions.roles import assign_role
-
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     StatusAtendimento,
@@ -123,16 +123,11 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     return redirect("/")
 
 
+@user_passes_test(lambda u: u.is_superuser)
 def permissoes(request: HttpRequest) -> HttpResponse:
     """[ADM-USR-003] Exibe a página de gerenciamento de permissões.
 
-    Interface para atribuição de papéis e permissões específicas.
-
-    Args:
-        request (HttpRequest): O objeto de requisição.
-
-    Returns:
-        HttpResponse: A resposta HTTP com a lista de usuários.
+    Apenas superusuários podem acessar esta página.
     """
     users = User.objects.filter(is_superuser=False)
     return render(request, "permissoes.html", {"users": users})

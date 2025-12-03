@@ -143,3 +143,17 @@ def clickup_callback(request: HttpRequest) -> HttpResponse:
         "<p>Agora você pode fechar esta janela e continuar.</p>"
     )
     return HttpResponse(html, content_type="text/html", status=200)
+
+
+def custom_page_not_found(
+    request: HttpRequest, exception: Any = None
+) -> HttpResponse:
+    """View customizada para erro 404."""
+    return render(request, "404.html", status=404)
+
+
+def custom_permission_denied(
+    request: HttpRequest, exception: Any = None
+) -> HttpResponse:
+    """View customizada para erro 403."""
+    return render(request, "403.html", status=403)

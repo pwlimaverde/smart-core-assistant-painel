@@ -332,6 +332,11 @@ JAZZMIN_SETTINGS = {
             "url": "/",
             "permissions": ["auth.view_user"],
         },
+        {
+            "name": "Permissões",
+            "url": "permissoes",
+            "permissions": ["auth.view_user"],
+        },
     ],
     "show_sidebar": True,
     "navigation_expanded": True,

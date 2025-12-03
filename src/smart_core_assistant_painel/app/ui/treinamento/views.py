@@ -5,8 +5,9 @@ Views para o aplicativo Treinamento.
 """
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from loguru import logger
 from rolepermissions.checkers import has_permission
@@ -26,7 +27,7 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
-        return redirect("treinamento:treinar_ia")
+        return redirect("home")
 
     if request.method == "GET":
         dados_edicao = request.session.get("treinamento_edicao")
@@ -266,7 +267,7 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
     Gestão de treinamentos ativos na base de conhecimento.
     """
     if not has_permission(request.user, "treinar_ia"):
-        raise Http404()
+        raise PermissionDenied()
 
     if request.method == "POST":
         acao = request.POST.get("acao")
@@ -338,7 +339,7 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
     - Ação "excluir": remove o registro.
     """
     if not has_permission(request.user, "treinar_ia"):
-        raise Http404()
+        raise PermissionDenied()
 
     if request.method == "POST":
         acao = request.POST.get("acao")

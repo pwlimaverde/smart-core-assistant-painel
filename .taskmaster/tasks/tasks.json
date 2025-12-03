@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": "1",
+        "id": 1,
         "title": "Configuração da Infraestrutura Docker e Inicialização do Projeto Django",
         "description": "Configurar o ambiente de desenvolvimento com Docker Compose, incluindo serviços para PostgreSQL (com pgvector), Redis e a aplicação Django. Inicializar a estrutura do projeto.",
         "details": "1. Criar `docker-compose.yml` com serviços: `web` (Django), `db` (PostgreSQL 16+), `redis` (Cache/Queue). \n2. Configurar Dockerfile para Python 3.13+. \n3. Inicializar projeto Django 5.x com estrutura de 'config' separada. \n4. Configurar variáveis de ambiente (.env) para segredos. \n5. Garantir que a extensão `vector` esteja habilitada no init do Postgres.",
@@ -14,7 +14,7 @@
         "updatedAt": "2025-11-28T13:28:02.047Z"
       },
       {
-        "id": "2",
+        "id": 2,
         "title": "Modelagem do Core Database e Migrations",
         "description": "Implementar os modelos de dados fundamentais para o sistema: Clientes, Atendimentos, Mensagens e Departamentos.",
         "details": "Criar apps Django (ex: `core`, `attendance`). Definir models:\n- `Customer`: nome, telefone (chave única), metadados.\n- `Department`: nome, configurações de SLA.\n- `Attendance` (Ticket): fk_customer, fk_department, status (aberto, pendente, fechado), trello_card_id.\n- `Message`: fk_attendance, conteúdo, tipo (texto/mídia), direção (in/out), timestamp.\nUtilizar UUIDs como chaves primárias.",
@@ -28,7 +28,7 @@
         "updatedAt": "2025-11-28T13:28:02.078Z"
       },
       {
-        "id": "3",
+        "id": 3,
         "title": "Implementação do Wrapper da Evolution API (WhatsApp)",
         "description": "Desenvolver a camada de serviço e persistência dentro do app `evolution_sync` para gerenciar instâncias e comunicar com a Evolution API.",
         "status": "done",
@@ -80,7 +80,7 @@
         "updatedAt": "2025-12-02T23:34:51.795Z"
       },
       {
-        "id": "4",
+        "id": 4,
         "title": "Orquestrador de Mensagens e Gestão de Contexto",
         "description": "Criar a lógica central que processa mensagens recebidas, identifica o cliente e decide o roteamento (Novo Atendimento vs Atendimento Existente).",
         "details": "1. Service Layer `MessageProcessor`: Receber payload do webhook. \n2. Buscar `Customer` pelo telefone (criar se não existir). \n3. Buscar `Attendance` ativo. Se não houver, criar novo. \n4. Salvar `Message` no banco. \n5. Implementar lógica de 'Debounce' para agrupar mensagens rápidas (opcional, via Redis).",
@@ -94,7 +94,7 @@
         "updatedAt": "2025-11-28T13:28:02.114Z"
       },
       {
-        "id": "5",
+        "id": 5,
         "title": "Integração com Trello (Adapter e Autenticação)",
         "description": "Implementar o adaptador para a API do Trello, gerenciando autenticação e mapeamento de Departamentos para Boards/Lists.",
         "details": "1. Configurar credenciais do Trello no .env. \n2. Criar serviço `TrelloService`: métodos para `create_card`, `add_comment`, `move_card`. \n3. Implementar lógica de mapeamento: Status do Atendimento -> Lista do Trello (Ex: 'A Fazer', 'Em Andamento'). \n4. Garantir tratamento de Rate Limits.",
@@ -108,7 +108,7 @@
         "updatedAt": "2025-11-28T13:28:02.132Z"
       },
       {
-        "id": "6",
+        "id": 6,
         "title": "Sincronização Bidirecional: Django para Trello (Background Jobs)",
         "description": "Configurar tarefas assíncronas para espelhar atendimentos e mensagens no Trello sem bloquear a thread principal.",
         "details": "1. Configurar `django-q2` com Redis. \n2. Criar tasks: `sync_ticket_to_trello` (cria card se ticket novo), `sync_message_to_trello` (adiciona comentário no card). \n3. Acionar estas tasks a partir do Orquestrador (Task 4) quando necessário (ex: transbordo para humano).",
@@ -123,7 +123,7 @@
         "updatedAt": "2025-11-28T13:28:02.151Z"
       },
       {
-        "id": "7",
+        "id": 7,
         "title": "Sincronização Bidirecional: Trello para Django (Webhooks)",
         "description": "Receber atualizações do Trello (resposta do atendente) e enviar para o WhatsApp do cliente.",
         "details": "1. Endpoint para Webhook do Trello (verificar assinatura de segurança). \n2. Tratar eventos: `commentCard` (resposta do atendente) e `updateCard` (mudança de lista/status). \n3. Se for comentário de atendente: enviar via `EvolutionClient` para o WhatsApp. \n4. Se for mudança de lista: atualizar status do `Attendance` no DB.",
@@ -137,7 +137,7 @@
         "updatedAt": "2025-11-28T13:28:02.168Z"
       },
       {
-        "id": "8",
+        "id": 8,
         "title": "Implementação de RAG: Ingestão e Banco Vetorial",
         "description": "Configurar a infraestrutura de RAG (Retrieval-Augmented Generation) utilizando PostgreSQL com pgvector no app `treinamento` para ingestão e recuperação semântica.",
         "status": "done",
@@ -189,7 +189,7 @@
         "updatedAt": "2025-12-02T23:34:51.849Z"
       },
       {
-        "id": "9",
+        "id": 9,
         "title": "Refatoração de Docstrings e Rastreabilidade PRD",
         "description": "Atualização de docstrings em módulos e apps do projeto para incluir códigos de funcionalidade do PRD (ex: [TRL-CRD-001]) e descrições padronizadas, garantindo rastreabilidade entre código e requisitos.",
         "details": "",
@@ -201,7 +201,7 @@
         "updatedAt": "2025-11-28T18:10:26.697Z"
       },
       {
-        "id": "10",
+        "id": 10,
         "title": "Sync CreateList Trello to EtapaFluxo",
         "description": "Atualizar o app trello_sync para processar o evento 'createList' do webhook do Trello. Quando uma nova lista for criada no Trello, o sistema deve criar automaticamente uma nova EtapaFluxo associada ao FluxoAtendimento do board e vincular via TrelloList.",
         "details": "1. Modificar WebhookProcessingService para aceitar action_type 'createList'.\n2. Implementar lógica para buscar o TrelloBoard associado.\n3. Criar EtapaFluxo no FluxoAtendimento correspondente.\n4. Criar TrelloList vinculando a nova EtapaFluxo e a lista do Trello.\n5. Validar campos obrigatórios da EtapaFluxo.",
@@ -213,7 +213,7 @@
         "updatedAt": "2025-12-01T13:32:54.740Z"
       },
       {
-        "id": "11",
+        "id": 11,
         "title": "Desenvolver Nova Home Page com Dashboard",
         "description": "Desenvolver uma nova página de Home para o sistema, substituindo a view atual. A nova página deve seguir o padrão de design atual (utilizando o template base e Tailwind CSS) e fornecer acesso rápido às funcionalidades principais: Treinar IA, Verificar Treinamentos, Queries e Admin.",
         "details": "1. **Atualizar `src/smart_core_assistant_painel/app/ui/core/views.py`**:\n   - Alterar a view `home` para renderizar um template HTML em vez de retornar HTML inline.\n   - Nome sugerido do template: `core/home.html`.\n\n2. **Criar Template `src/smart_core_assistant_painel/app/ui/core/templates/core/home.html`**:\n   - O template deve estender `base.html`.\n   - Utilizar classes do Tailwind CSS para manter a consistência visual (cards, grid, botões estilizados).\n   - Criar uma seção de \"Acesso Rápido\" ou \"Dashboard\" contendo cards/links para:\n     - **Treinar IA**: URL `{% url 'treinamento:treinar_ia' %}`.\n     - **Verificar Treinamentos**: URL `{% url 'treinamento:verificar_treinamentos_vetorizados' %}`.\n     - **Queries**: URL `{% url 'treinamento:verificar_query_compose' %}` (ou a view principal de queries).\n     - **Admin**: URL `/admin/`.\n\n3. **Design**:\n   - Utilizar um layout responsivo (ex: grid com cards).\n   - Adicionar ícones ou descrições breves para cada funcionalidade para melhorar a UX.\n   - Garantir que o footer e navbar do `base.html` sejam exibidos corretamente.\n\n4. **Verificação**:\n   - Acessar a rota `/` e verificar se a nova página é carregada.\n   - Testar todos os links para garantir que redirecionam para as páginas corretas.",
@@ -225,10 +225,10 @@
         "updatedAt": "2025-12-02T23:28:59.075Z"
       },
       {
-        "id": "12",
+        "id": 12,
         "title": "[ATD] Fluxo de Chatbot com IA (LangChain)",
         "description": "Implementar o fluxo completo de atendimento automatizado utilizando LangChain, integrando o orquestrador de mensagens à lógica de IA generativa (RAG) e gestão de contexto, garantindo a conformidade com os requisitos ATD-LIF-001, ATD-LIF-003 e ATD-CTX-002 do PRD v2.0.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "4",
           "8"
@@ -243,9 +243,10 @@
             "description": "Criar serviço dedicado (`apps/ai_assistant/services.py`) para encapsular a lógica do LangChain, configurando o modelo (OpenAI/Anthropic) e o Prompt Template base.",
             "dependencies": [],
             "details": "Definir System Prompt com instruções de persona e diretrizes de segurança. Configurar conexão com LLM via variáveis de ambiente.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Testar invocação básica do LLM com um prompt simples.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.129Z"
           },
           {
             "id": 2,
@@ -255,9 +256,10 @@
               1
             ],
             "details": "Recuperar histórico recente da conversa (SessionHistory). Recuperar documentos relevantes (RAG). Montar contexto final para o LLM.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Validar se respostas utilizam informações contidas apenas nos documentos indexados.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.153Z"
           },
           {
             "id": 3,
@@ -267,9 +269,10 @@
               2
             ],
             "details": "Pode ser feito via 'Tool calling' ou prompt classifier. Se detectado, retornar flag específica para o Orquestrador pausar o bot e mover card no Trello.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Enviar inputs variados solicitando humano e verificar a classificação correta.",
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.170Z"
           },
           {
             "id": 4,
@@ -279,14 +282,43 @@
               3
             ],
             "details": "No `MessageProcessor.process_message`: adicionar condicional `if attendance.is_bot_enabled: await ai_service.process(...)`. Enviar resposta gerada de volta ao cliente (via Evolution API).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": null,
-            "parentId": "undefined"
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.187Z"
+          },
+          {
+            "id": 5,
+            "title": "[Refactor] Structured Output para AnaliseMensage",
+            "description": "Substituir a extração via regex da resposta por Structured Output (Pydantic) na `AnaliseMensage`. O modelo deve retornar um objeto contendo: `resposta_usuario` (str), `transferencia_necessaria` (bool) e `fluxo_alvo` (str). Isso elimina a fragilidade do parsing de texto (\"Estarei transferindo...\") e garante tipagem forte.",
+            "details": "Atualmente `FeaturesCompose._extrair_fluxo_transferencia` usa regex. Deve-se criar um `AnaliseMensageResult` (Pydantic) e usar `with_structured_output` no LangChain, similar ao que é feito em `AnalisePreviaMensagem`.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
+          },
+          {
+            "id": 6,
+            "title": "[Optimization] Roteamento Proativo (Fast-Path)",
+            "description": "Implementar lógica no `AttendanceOrchestrator` para realizar transbordo imediato caso a `AnalisePrevia` detecte intent crítica (ex: `falar_com_humano`), sem passar pela geração de resposta RAG.",
+            "details": "Hoje o fluxo é sempre: Previa -> RAG -> Resposta -> Check Transferência. O novo fluxo deve ser: Previa -> Se 'Handover' -> Transfere Imediato. Isso economiza tokens e reduz latência. Requer definir uma flag/intent padrão para handover.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
+          },
+          {
+            "id": 7,
+            "title": "[Refactor] Externalização de Configurações de IA",
+            "description": "Mover prompts, templates e limiares (ex: threshold 0.6 de similaridade) para configurações externas (Banco de Dados ou Variáveis de Ambiente) para facilitar ajustes sem deploy.",
+            "details": "Criar tabela `AIConfig` ou usar `Constance` (se instalado) para gerenciar: Templates de Prompt, Threshold de Confiança, Mensagens de Fallback/Erro. Atualizar `FeaturesCompose` para ler dessas configs.",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 12
           }
-        ]
+        ],
+        "updatedAt": "2025-12-03T12:39:03.187Z"
       },
       {
-        "id": "13",
+        "id": 13,
         "title": "[ADM] Módulo Administrativo e Segurança",
         "description": "Implementar o módulo de administração e segurança conforme PRD v2.0, cobrindo os requisitos de cadastro (ADM-USR-001), autenticação (ADM-USR-002), controle de acesso RBAC (ADM-USR-003), dashboard gerencial (ADM-USR-004) e gestão segura de tokens (ADM-CFG-001).",
         "status": "pending",
@@ -343,7 +375,7 @@
         ]
       },
       {
-        "id": "14",
+        "id": 14,
         "title": "[TRN] Implementação UI de Curadoria e Treinamento",
         "description": "Desenvolver interfaces gráficas para gestão de documentos RAG, revisão de chunks vetorizados e configuração de intenções, permitindo curadoria humana do conhecimento da IA.",
         "status": "pending",
@@ -403,7 +435,7 @@
         ]
       },
       {
-        "id": "15",
+        "id": 15,
         "title": "[OPS] Implementação do Módulo de Gestão Operacional e SLAs",
         "description": "Desenvolver a lógica de negócios para gerenciamento de Níveis de Serviço (SLA), configuração de horários de funcionamento por departamento e cálculo de métricas operacionais (TMA/TME), garantindo a conformidade com os códigos OPS-ORG-001, OPS-ORG-002, OPS-FLW-001 e OPS-SLA-001.",
         "status": "pending",
@@ -452,7 +484,7 @@
         ]
       },
       {
-        "id": "16",
+        "id": 16,
         "title": "[CLI] Implementação do Módulo CRM e Gestão de Clientes",
         "description": "Desenvolver as estruturas e interfaces para gestão avançada de relacionamento com o cliente, incluindo enriquecimento de dados, segmentação por tags, histórico unificado e ferramentas de fusão de contatos.",
         "status": "pending",
@@ -501,7 +533,7 @@
         ]
       },
       {
-        "id": "17",
+        "id": 17,
         "title": "Implementação do Módulo de Agendamento Inteligente (AGD)",
         "description": "Desenvolver o sistema de gestão de agendas, incluindo modelos de recursos, tipos de serviço e lógica de cálculo de slots disponíveis (disponibilidade) com foco em clínicas.",
         "details": "Implementar o app `apps/scheduling` para gerenciar o fluxo de reservas e recursos. Este módulo deve consumir as configurações operacionais definidas na Task 13.\n\n1. **Modelagem de Dados (AGD-MOD):**\n   - `ServiceType`: Nome (ex: 'Consulta Geral'), Duração (minutos), Preço, Buffer (tempo de preparação entre consultas).\n   - `Resource` ou `ProfessionalProfile`: Link OneToOne com `User` (Task 10), associado a um ou mais `Departments` (Task 2/13).\n   - `Appointment`: Chaves estrangeiras para `Customer` (Task 2/14), `Resource` e `ServiceType`. Campos: `start_datetime`, `end_datetime`, `status` (PENDING, CONFIRMED, CANCELED, COMPLETED, NO_SHOW).\n\n2. **Motor de Disponibilidade (AGD-ENG):**\n   - Criar service `AvailabilityService`. Função principal: `get_available_slots(date, service_type_id, resource_id=None)`.\n   - Lógica: Intersectar o `DepartmentConfig` (horário de funcionamento da Task 13) com as exceções do profissional (folgas) e subtrair os intervalos já ocupados por `Appointments` existentes.\n   - Algoritmo deve considerar a duração do serviço + buffer time.\n\n3. **Integração e Automação:**\n   - Expor API REST (DRF) para listar slots (usado pelo Frontend ou Bot).\n   - Implementar `AppointmentSerializer` com validação de conflito de horário (race condition check).\n   - Criar sinal (Django Signal) `post_save` em `Appointment`: Se criado, agendar tarefa Celery para envio de lembrete (integração futura com envio de mensagens).",
@@ -517,7 +549,7 @@
         "subtasks": []
       },
       {
-        "id": "18",
+        "id": 18,
         "title": "Implementação do Módulo de Inteligência Multimodal (MMD)",
         "description": "Desenvolver serviços de processamento de mídia (áudio e imagem) para transcrição e análise visual, garantindo acessibilidade e enriquecimento de contexto para a IA.",
         "details": "Implementar o app `apps/multimodal` ou estender `apps/ia` para lidar com inputs não textuais. O objetivo é transformar áudio e imagens em texto processável pelo LLM e legível para operadores humanos.\n\n1. **Serviço de Transcrição (STT - Speech-to-Text):**\n   - Criar interface `AudioTranscriber` para abstrair provedores (ex: OpenAI Whisper API ou Local Whisper).\n   - Implementar lógica para converter áudios (OGG/MP3) recebidos via WhatsApp em texto.\n   - O texto transcrito deve ser salvo no campo `transcription` ou `body` do model `Message` (Task 4) e marcado com uma flag `is_transcribed`.\n\n2. **Serviço de Visão Computacional (Vision):**\n   - Implementar `ImageAnalyzer` utilizando modelos de visão (ex: GPT-4o ou Azure Vision) para gerar descrições textuais de imagens enviadas.\n   - Foco em identificar documentos, produtos ou contexto da cena para alimentar o RAG.\n\n3. **Integração com Pipeline de Mensagens (Task 4):**\n   - Interceptar mensagens do tipo 'audio' ou 'image' no `MessageProcessor`.\n   - Disparar tarefas assíncronas (Celery) para não bloquear o webhook de recebimento.\n   - Atualizar o contexto da conversa (`ConversationHistory`) com o conteúdo processado para que a IA possa 'ler' o áudio ou 'ver' a imagem na próxima resposta.\n\n4. **Acessibilidade:**\n   - Garantir que o painel administrativo exiba a transcrição logo abaixo do player de áudio.",
@@ -531,7 +563,7 @@
         "subtasks": []
       },
       {
-        "id": "19",
+        "id": 19,
         "title": "Implementação do Módulo Omnichannel (Instagram e Web) [OMN]",
         "description": "Desenvolver a integração de canais adicionais (Instagram Direct e Widget Web) para centralizar o atendimento, unificando o fluxo de mensagens no core do sistema.",
         "details": "Esta task visa expandir a capacidade de atendimento para além do WhatsApp. O desenvolvimento deve ocorrer em um novo app `apps/omnichannel` ou estendendo `apps/evolution_sync` para Instagram e criando `apps/webchat` para o widget.\n\n1. **Adaptação do Modelo de Dados (OMN-MOD):**\n   - Alterar o model `Message` (Task 2) ou criar um mixin para suportar o campo `channel_type` (Choices: 'WHATSAPP', 'INSTAGRAM', 'WEB_WIDGET').\n   - Alterar `Customer` para suportar múltiplos identificadores sociais (`instagram_id`, `session_id` para web).\n\n2. **Integração Instagram (Via Evolution API ou Graph API):**\n   - Aproveitar a estrutura da Task 3 (`evolution_sync`) para configurar instâncias do tipo 'instagram'.\n   - Implementar `InstagramWebhookProcessor` que normaliza o payload (Stories mentions, Direct messages) para o formato padrão de `Message` do sistema.\n   - Tratamento de mídias específicas do Instagram (Links efêmeros).\n\n3. **Widget de Chat Web (OMN-WEB):**\n   - Criar API REST em `apps/webchat/api/`: endpoints para `start_conversation` (gerar Guest Token), `send_message` e `get_history`.\n   - Implementar lógica de persistência: Usuários não logados devem ser tratados como `Customer` provisórios até que forneçam dados (nome/email/telefone) para fusão com o módulo CRM (Task 14).\n   - Desenvolver snippet JS básico para embedar o chat em sites externos.",
@@ -546,7 +578,7 @@
         "subtasks": []
       },
       {
-        "id": "20",
+        "id": 20,
         "title": "Implementação do Módulo de Deploy, CI/CD e DevOps (DEP)",
         "description": "Estruturar o pipeline de integração contínua, otimizar a infraestrutura Docker para produção e configurar mecanismos de servimento seguro e monitoramento.",
         "details": "Esta task visa transformar o ambiente de desenvolvimento em um ambiente de produção robusto, seguro e escalável. O foco é na automação e na performance do servidor de aplicação.\n\n1. **Otimização de Imagens (DEP-DOCKER):**\n   - Refatorar o `Dockerfile` para utilizar 'Multi-stage Builds'. Estágio 1: Builder (instalação de compiladores e deps). Estágio 2: Runner (imagem 'slim', apenas runtime, sem cache pip).\n   - Substituir o servidor de desenvolvimento (`runserver`) pelo **Gunicorn** utilizando workers Uvicorn (`uvicorn.workers.UvicornWorker`) para suportar a natureza assíncrona/Django 5.\n\n2. **Integração Contínua (DEP-CI):**\n   - Criar workflow de CI (ex: `.github/workflows/ci.yml`).\n   - **Steps:** Checkout -> Setup Python -> Install Deps -> Linting (Ruff/Flake8) -> Testes (Pytest com report) -> Build Docker Image.\n   - Implementar verificação de segurança de dependências (ex: `safety` ou `pip-audit`).\n\n3. **Servidor Web e Proxy Reverso (DEP-WEB):**\n   - Configurar container **Nginx** para atuar como Proxy Reverso à frente do Django.\n   - Configurar servimento de arquivos estáticos (`collectstatic`) e mídia via volume compartilhado ou Nginx.\n   - Implementar configuração de SSL/TLS (preparação para Let's Encrypt/Certbot).\n\n4. **Scripts de Manutenção (DEP-OPS):**\n   - Criar scripts em `scripts/` para automação de backup do banco de dados PostgreSQL (`pg_dump` com rotação de arquivos).\n   - Configurar `HEALTHCHECK` no Dockerfile para monitoramento de uptime.",
@@ -561,7 +593,7 @@
         "subtasks": []
       },
       {
-        "id": "21",
+        "id": 21,
         "title": "[ATD] Implementação do Handover Ativo e Gestão de Instâncias",
         "description": "Implementar a lógica de 'Active Push' (Saudação Automática) e seleção dinâmica de instância de envio quando um atendente assume um ticket.",
         "details": "Conforme definido no PRD v2.0 (ATD-LIF-003) e no documento 'fluxo_atribuicao_inteligente.md':\\n\\n1. **Service Layer (`AtendimentoHandoverService`)**:\\n   - Criar serviço que orquestra a troca de responsabilidade.\\n   - Implementar lógica de seleção de instância: Se `Atendente` possui `AppInstance` vinculada, usar essa. Caso contrário, usar instância do `Departamento`.\\n\\n2. **Signals**:\\n   - Criar/Escutar signal `atendimento_assigned` (ou `post_save` monitorando mudança de campo `atendente`).\\n   - Ao detectar atribuição, disparar envio de mensagem de saudação (\"Olá, meu nome é X...\") usando a instância correta.\\n   - Garantir que isso ocorra de forma assíncrona (Django-Q2).\\n\\n3. **Prevenção de Duplicidade**:\\n   - Garantir que a saudação só seja enviada na *primeira* atribuição ou quando explicitamente trocado de atendente, evitando spam em mudanças de status internas.\\n\\n4. **Mensageria**:\\n   - Registrar essa mensagem de saudação no banco como `Mensagem` (tipo: `text`, remetente: `agent`).",
@@ -576,7 +608,7 @@
         "subtasks": []
       },
       {
-        "id": "22",
+        "id": 22,
         "title": "Implementar Serviço de Gestão de Logs de Crash (CrashLogService)",
         "description": "Planejar e desenvolver a estrutura base de um serviço de logs unificado (Unified Logger), agnóstico a framework (Pure Python) e desacoplado do Django no núcleo, utilizando interfaces para Datasources. O serviço deve ser reutilizável em outros contextos (ex: FastAPI) e prever a refatoração global dos logs do sistema atual.",
         "status": "pending",
@@ -628,7 +660,7 @@
         ]
       },
       {
-        "id": "23",
+        "id": 23,
         "title": "Implementar Lógica de Registros de Movimento do Fluxo",
         "description": "Implementar a lógica centralizada para registros de movimento do fluxo, garantindo integridade e aplicação de regras de negócio.",
         "details": "1. Criar `FlowMovementService` para centralizar a lógica.\n2. Validar transições baseadas em `EtapaFluxo.regras_transicao`.\n3. Assegurar registro correto de métricas (SLA/duração).\n4. Disparar side-effects (notificações, sync).\n5. Testes abrangentes.",
@@ -692,12 +724,14 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-02T23:34:51.851Z",
+      "lastModified": "2025-12-03T12:39:03.188Z",
       "taskCount": 23,
-      "completedCount": 11,
+      "completedCount": 12,
       "tags": [
         "master"
-      ]
+      ],
+      "created": "2025-12-03T12:39:11.007Z",
+      "description": "Tasks for master context"
     }
   }
 }

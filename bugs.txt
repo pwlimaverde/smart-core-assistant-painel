@@ -1,2 +1,1 @@
-1 - ao apagar um atendimento, no sistema, esse atendimentonão está sendo removido do trello
-2 - ao movimentar um card pelo trello, não pode disparar alteração depois de atualizar no atendimento, para não ficar em loop infinito. ex: movo um card no trello, ele atualiza no atendimento, e dispara outra alteração no trello, e assim por diante.
+1 - corrigir a visualização do trello, não está mostrando a o conteudo completo da mensagem

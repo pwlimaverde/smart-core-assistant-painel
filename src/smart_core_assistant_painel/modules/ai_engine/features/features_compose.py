@@ -598,6 +598,7 @@ class FeaturesCompose:
         parameters = AnaliseMensageParameters(
             fluxos_disponiveis=fluxos_disponiveis,
             historico_atendimento=historico_atendimento,
+            dados_empresa=SERVICEHUB.PROMPT_SYSTEM_DADOS_EMPRESA,
             dados_treinamento=dados_treinamento,
             llm_parameters=llm_parameters,
             error=error,

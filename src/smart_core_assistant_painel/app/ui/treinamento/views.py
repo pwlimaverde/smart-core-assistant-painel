@@ -30,6 +30,11 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
         return redirect("home")
 
     if request.method == "GET":
+        if request.GET.get("reset"):
+            if "treinamento_edicao" in request.session:
+                del request.session["treinamento_edicao"]
+            return redirect("treinamento:treinar_ia")
+
         dados_edicao = request.session.get("treinamento_edicao")
 
         if dados_edicao:

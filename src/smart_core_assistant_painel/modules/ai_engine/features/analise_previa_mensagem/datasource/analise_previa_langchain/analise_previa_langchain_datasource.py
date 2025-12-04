@@ -509,6 +509,7 @@ class AnalisePreviaLangchainDatasource(APMData):
     @traceable(name="AnalisePrevia")
     def _run(self, parameters: AnalisePreviaMensagemParameters) -> str:
         try:
+            logger.debug("Iniciando _run de AnalisePreviaLangchainDatasource")
             # 1) Modelo dinâmico
             # Normaliza configurações de tipos (podem vir como string JSON)
             intent_types_json = self._normalize_types_config(
@@ -517,13 +518,23 @@ class AnalisePreviaLangchainDatasource(APMData):
             entity_types_json = self._normalize_types_config(
                 parameters.valid_entity_types
             )
+            logger.debug(
+                f"Tipos normalizados. Intents: {len(intent_types_json)}, Entities: {len(entity_types_json)}"
+            )
+
             PydanticModel = build_analise_previa_model(
                 intent_types_json=intent_types_json,
                 entity_types_json=entity_types_json,
             )
+            logger.debug("Modelo Pydantic construído")
+
             historico_formatado = self._format_service_history(
                 parameters.historico_atendimento
             )
+            logger.debug(
+                f"Histórico formatado (tamanho: {len(historico_formatado)})"
+            )
+
             doc = getattr(PydanticModel, "__doc__", "") or ""
 
             raw_system_prompt = (
@@ -546,6 +557,7 @@ class AnalisePreviaLangchainDatasource(APMData):
             )
 
             llm: BaseChatModel = parameters.llm_parameters.create_llm
+            logger.debug(f"LLM criada: {type(llm)}")
 
             # 5) Structured output com preferencia por json_schema
             structured_llm: (
@@ -558,6 +570,7 @@ class AnalisePreviaLangchainDatasource(APMData):
                         PydanticModel, method="json_schema"
                     ),
                 )
+                logger.debug("Structured LLM (json_schema) configurado")
             except Exception as e_json_schema:
                 logger.debug(
                     "with_structured_output json_schema falhou: "
@@ -568,6 +581,7 @@ class AnalisePreviaLangchainDatasource(APMData):
                         Runnable[Any, BaseModel | Dict[str, Any]],
                         llm.with_structured_output(PydanticModel),  # type: ignore[reportUnknownMemberType]
                     )
+                    logger.debug("Structured LLM (padrão) configurado")
                 except Exception as e_default:
                     logger.debug(
                         f"with_structured_output padrão falhou: {e_default}"
@@ -579,10 +593,12 @@ class AnalisePreviaLangchainDatasource(APMData):
                 "context": parameters.llm_parameters.context,
                 "historico_context": historico_formatado,
             }
+            logger.debug("Dados de invocação preparados")
 
             response: Any | None = None
             if structured_llm is not None:
                 try:
+                    logger.debug("Invocando structured_llm...")
                     # Define o tipo explicitamente para evitar Unknown
                     chain: Runnable[
                         Dict[str, Any], BaseModel | Dict[str, Any]
@@ -591,6 +607,9 @@ class AnalisePreviaLangchainDatasource(APMData):
                         messages | structured_llm,
                     )
                     response = chain.invoke(invoke_data)
+                    logger.debug(
+                        f"Resposta structured_llm recebida: {response}"
+                    )
                 except Exception as exc_structured:
                     logger.warning(
                         "Falha no structured output, fallback para JSON: "
@@ -598,6 +617,7 @@ class AnalisePreviaLangchainDatasource(APMData):
                     )
 
             if response is None:
+                logger.debug("Invocando fallback (raw LLM)...")
                 # Fallback: chama sem structured e tenta extrair JSON do texto
                 # Define o tipo explicitamente para evitar Unknown no input
                 chain_fallback: Runnable[Dict[str, Any], Any] = cast(
@@ -605,6 +625,7 @@ class AnalisePreviaLangchainDatasource(APMData):
                     messages | llm,
                 )
                 raw = chain_fallback.invoke(invoke_data)
+                logger.debug(f"Resposta raw recebida: {raw}")
                 # Normaliza para string, pois content pode ser str ou lista/objeto
                 content = getattr(raw, "content", raw)
                 if isinstance(content, str):
@@ -634,12 +655,18 @@ class AnalisePreviaLangchainDatasource(APMData):
                         str(response), PydanticModel
                     )
 
+            logger.debug(f"Objeto de modelo final: {model_obj}")
+
             # 6) Pós-processamento: converter em dicts simples {type: value}
             intent_dicts = self._filter_and_convert_items(
                 getattr(model_obj, "intent", [])
             )
             entity_dicts = self._filter_and_convert_items(
                 getattr(model_obj, "entities", [])
+            )
+
+            logger.debug(
+                f"Resultado final - Intents: {intent_dicts}, Entities: {entity_dicts}"
             )
 
             return AnalisePreviaMensagemLangchain(

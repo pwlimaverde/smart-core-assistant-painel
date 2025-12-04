@@ -6,7 +6,6 @@ coordenar serviços e gerar respostas do bot.
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from django.core.cache import cache
 from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.services import (
@@ -567,6 +566,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 message
             )
 
+            logger.info(
+                f"DEBUG: message_id={message.id}, has_known_intent={has_known_intent}"
+            )
+            logger.info(f"DEBUG: intent_detectado={message.intent_detectado}")
+
             # Carrega histórico
             historico_atendimento = attendance.carregar_historico_mensagens(
                 excluir_mensagem_id=message.id
@@ -585,14 +589,22 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 query_vec=vector_conteudo
             )
 
+            logger.info(
+                f"DEBUG: dados_treinamento found: {len(dados_treinamento) if isinstance(dados_treinamento, list) else 'Not a list'}"
+            )
+
             # Obtém fluxos disponíveis
             fluxos_disponiveis = self._structure_manager.get_available_flows()
 
             # Decide se deve chamar IA
-            should_call_ai = has_known_intent or (
-                isinstance(dados_treinamento, list)
-                and len(dados_treinamento) > 0
+            # Nota: dados_treinamento é uma string formatada, não uma lista
+            has_training_data = (
+                isinstance(dados_treinamento, str)
+                and len(dados_treinamento.strip()) > 0
             )
+            should_call_ai = has_known_intent or has_training_data
+
+            logger.info(f"DEBUG: should_call_ai={should_call_ai}")
 
             if should_call_ai:
                 self._call_ai_and_register(
@@ -604,6 +616,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     fluxos_disponiveis,
                 )
             else:
+                logger.warning(
+                    f"DEBUG: Fallback triggered for message {message.id}"
+                )
                 self._register_fallback_response(message, attendance)
 
         except Exception as e:
@@ -676,7 +691,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         attendance: "Atendimento",
         prompt_intent: str,
         historico_atendimento: dict[str, Any],
-        dados_treinamento: list[Any],
+        dados_treinamento: str,
         fluxos_disponiveis: dict[str, str],
     ) -> None:
         """Chama IA e registra resposta.

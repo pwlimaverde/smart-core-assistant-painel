@@ -64,6 +64,7 @@ class ServiceHub:
             self._prompt_human_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_mensagem: Optional[str] = None
+            self._prompt_system_dados_empresa: Optional[str] = None
             # Embeddings
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
@@ -150,6 +151,19 @@ class ServiceHub:
         )
 
     # Prompts
+    @property
+    def PROMPT_SYSTEM_DADOS_EMPRESA(self) -> str:
+        """Retorna o prompt de sistema para dados da empresa."""
+        if self._prompt_system_dados_empresa is None:
+            self._prompt_system_dados_empresa = os.environ.get(
+                "PROMPT_SYSTEM_DADOS_EMPRESA"
+            )
+        return (
+            self._prompt_system_dados_empresa
+            if self._prompt_system_dados_empresa is not None
+            else ""
+        )
+
     @property
     def PROMPT_SYSTEM_ANALISE_CONTEUDO(self) -> str:
         """Retorna o prompt de sistema para análise de conteúdo."""

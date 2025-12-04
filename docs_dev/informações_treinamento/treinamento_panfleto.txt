@@ -1,0 +1,61 @@
+GUIA TÉCNICO DE PRODUÇÃO: PANFLETOS (OFFSET EM GRADE)
+
+1. O QUE É UM PANFLETO E SUA FUNÇÃO
+O panfleto (ou flyer) é uma ferramenta de marketing direto, impressa em papel, destinada à distribuição em massa. Seu objetivo é comunicar promoções, eventos ou informações institucionais de forma rápida e impactante. Na Ecoprint, a produção é otimizada para alto volume e baixo custo através do sistema de "Grade".
+
+2. O SISTEMA DE "GRADE" (GANG RUN PRINTING) - A PECULIARIDADE DA ECOPRINT
+Este é o conceito mais importante para entender a precificação e as quantidades.
+
+O que é: A "Grade" consiste em imprimir vários trabalhos de diferentes clientes em uma única chapa de impressão (matriz) e em uma única folha de papel grande.
+Por que existe: Para dividir os custos fixos (chapas, acerto de máquina, papel) entre vários clientes.
+A Regra das Quantidades Fixas (Por Formato):
+Como a folha é dividida matematicamente, as quantidades são fixas e variam conforme o tamanho:
+
+Grade 15x21cm (A5):
+- 2.000 unidades
+- 4.000 unidades
+- 6.000 unidades
+- 10.000 unidades
+
+Grade 10x15cm (1/4 de Ofício) - O Dobro da Quantidade:
+- 4.000 unidades
+- 8.000 unidades
+- 12.000 unidades
+- 20.000 unidades
+
+Regra de Exceção (Orçamento Personalizado):
+Se o cliente solicitar 1.500, 3.000 ou 50.000 unidades, o trabalho NÃO entra na grade. Ele se torna um "trabalho exclusivo", exigindo chapas e acerto de máquina dedicados apenas a ele. Isso encarece o custo unitário. O agente deve sempre sugerir a grade mais próxima (ex: se o cliente quer 3.000, ofereça 4.000, pois o preço será muito próximo ou até menor que o personalizado).
+
+3. ESPECIFICAÇÕES TÉCNICAS OBRIGATÓRIAS (PRÉ-IMPRESSÃO)
+Para garantir a qualidade "Offset Industrial", o arquivo deve seguir rigorosamente:
+
+A. Padrão de Cor: CMYK (Ciano, Magenta, Yellow, Black)
+- NUNCA usar RGB (padrão de tela). O RGB convertido para CMYK pode apagar cores vibrantes.
+- O preto do texto deve ser 100% K (C:0 M:0 Y:0 K:100) para nitidez.
+- O preto "rico" (fundo) deve ser calçado (ex: C:40 M:0 Y:0 K:100).
+
+B. Resolução: 300 DPI (Pontos por Polegada)
+- Imagens com menos de 300 DPI ficarão pixeladas/borradas na impressão.
+- Não adianta aumentar a resolução de uma imagem baixa no Photoshop; a imagem original deve ter qualidade.
+
+C. Margens e Sangria (Bleed) - CRUCIAL PARA CORTE
+- Sangria (Bleed): 3mm a 5mm de arte estendida além da borda final. Evita filetes brancos se o corte oscilar.
+- Margem de Segurança: Todo texto ou logo deve estar recuado pelo menos 3mm a 5mm para DENTRO da borda. Evita que informações sejam cortadas.
+
+4. MATERIAIS E ACABAMENTOS PADRÃO
+Papéis:
+- Padrão (Promocional): Couché Brilho 90g ou 115g. É o papel "de revista", fino e brilhante, ideal para panfletagem de rua.
+- Premium: Couché 150g ou 170g. Mais encorpado, transmite maior valor agregado.
+
+Formatos Comuns (Regra da Grade):
+- 10x15cm (1/4 de ofício) - DISPONÍVEL NA GRADE
+- 15x21cm (A5 - Metade de uma folha sulfite) - DISPONÍVEL NA GRADE
+- Outros formatos (ex: 21x29,7cm - A4) - NÃO ENTRAM NA GRADE (Exigem Orçamento Personalizado)
+
+5. PRAZOS E LOGÍSTICA (FAMÍLIAS A e K)
+- Prazo Padrão (Família A): 4 dias úteis após aprovação da arte e pagamento.
+- A Regra da "Família K" (Panfletos Expressos):
+  - Artes enviadas e aprovadas até QUINTA-FEIRA às 17h.
+  - Entram na produção noturna/madrugada.
+  - Entrega disponível na SEXTA-FEIRA.
+  - Ideal para eventos de fim de semana.

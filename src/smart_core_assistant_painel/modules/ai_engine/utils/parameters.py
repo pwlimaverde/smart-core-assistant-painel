@@ -250,6 +250,7 @@ class GenerateChunksParameters(ParametersReturnResult):
 class AnaliseMensageParameters(ParametersReturnResult):
     fluxos_disponiveis: dict[str, str]
     historico_atendimento: dict[str, Any]
+    dados_empresa: str
     dados_treinamento: str
     llm_parameters: LlmParameters
     error: AnaliseMensageError

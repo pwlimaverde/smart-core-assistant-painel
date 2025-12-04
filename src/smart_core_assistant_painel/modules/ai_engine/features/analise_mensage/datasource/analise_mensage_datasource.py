@@ -106,8 +106,12 @@ class AnaliseMensageDatasource(AMData):
     @traceable(name="AnaliseMensage")
     def _run(self, parameters: AnaliseMensageParameters) -> str:
         try:
+            logger.debug("Iniciando _run de AnaliseMensageDatasource")
             historico_formatado = self._formatar_historico_atendimento(
                 parameters.historico_atendimento
+            )
+            logger.debug(
+                f"Histórico formatado (tamanho: {len(historico_formatado)})"
             )
 
             fluxos_disponiveis = self._formatar_fluxos_disponiveis(
@@ -142,6 +146,9 @@ class AnaliseMensageDatasource(AMData):
                         "{historico_context}\n"
                         "</historico_conversa>\n\n"
                         "<contexto_rag>\n"
+                        "### Apresentação da Empresa:\n"
+                        "{dados_empresa}\n\n"
+                        "### Dados do Treinamento:\n"
                         "{dados_treinamento}\n"
                         "</contexto_rag>\n\n"
                         "<pergunta_usuario>\n"
@@ -174,10 +181,14 @@ class AnaliseMensageDatasource(AMData):
             chain = messages | llm | parser
             invoke_data = {
                 "historico_context": historico_formatado,
+                "dados_empresa": parameters.dados_empresa,
                 "dados_treinamento": parameters.dados_treinamento,
                 "context": parameters.llm_parameters.context,
             }
+
+            logger.debug("Invocando LLM para AnaliseMensage...")
             resposta_bot = chain.invoke(invoke_data)
+            logger.debug(f"Resposta LLM recebida: {resposta_bot}")
 
             return resposta_bot
 

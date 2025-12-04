@@ -507,10 +507,7 @@ class TicketSyncService:
                 for m in msgs_list:
                     # Formato: tempo humanizado + conteúdo
                     tempo_msg = self._format_time_delta(m.timestamp)
-                    conteudo: str = (m.conteudo or "").replace("\n", " ")
-                    preview: str = conteudo[:200] + (
-                        "..." if len(conteudo) > 200 else ""
-                    )
+                    conteudo: str = m.conteudo or ""
 
                     # Identificar remetente com ícone
                     icone_remetente = "👤"  # Contato
@@ -520,16 +517,22 @@ class TicketSyncService:
                         icone_remetente = "👨‍💻"
 
                     linhas.append(f"**{icone_remetente} {tempo_msg}**")
-                    if preview:
-                        linhas.append(f"> {preview}")
+
+                    if conteudo:
+                        # Preserva quebras de linha e adiciona > em cada linha
+                        quoted_content = "\n".join(
+                            f"> {line}" for line in conteudo.splitlines()
+                        )
+                        linhas.append(quoted_content)
 
                     # Mostrar resposta do bot se existir (para mensagens de contato que tiveram resposta)
                     if getattr(m, "resposta_bot", None):
-                        resp: str = str(m.resposta_bot).replace("\n", " ")
-                        resp_prev: str = resp[:200] + (
-                            "..." if len(resp) > 200 else ""
-                        )
-                        linhas.append(f"> 🤖 *Resposta:* {resp_prev}")
+                        resp: str = str(m.resposta_bot)
+                        if resp:
+                            quoted_resp = "\n".join(
+                                f"> {line}" for line in resp.splitlines()
+                            )
+                            linhas.append(f"> 🤖 *Resposta:*\n{quoted_resp}")
 
                     linhas.append("")  # Linha em branco entre mensagens
             else:

@@ -132,8 +132,6 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
 
             if "treinamento_edicao" in request.session:
                 del request.session["treinamento_edicao"]
-
-            messages.success(request, "Treinamento criado com sucesso!")
             return redirect("treinamento:pre_processamento", id=treinamento.id)
     except Exception as e:
         logger.error(f"Erro ao processar treinamento: {e}")

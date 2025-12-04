@@ -25,7 +25,8 @@ def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:
 
         buf.append(envelope)
         logger.debug("envelope: {}", envelope)
-        cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 20) + 20)
+        # Aumentado para 300s (5min) para evitar perda de mensagens em caso de delay no worker
+        cache.set(key, buf, timeout=300)
 
 
 def get_and_clear_buffer_contact(contact_id: int) -> List[Dict[str, Any]]:

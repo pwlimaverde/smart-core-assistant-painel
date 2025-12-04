@@ -29,11 +29,11 @@ class AnaliseConteudoLangchainDatasource(ACData):
         Raises:
             TypeError: Se a resposta do LLM não for uma string.
         """
-        result: str = self.run(parameters)
+        result: str = self._run(parameters)
         return result
 
     @traceable(name="AnaliseConteudo")
-    def run(self, parameters: LlmParameters) -> str:
+    def _run(self, parameters: LlmParameters) -> str:
         llm = parameters.create_llm
 
         messages = ChatPromptTemplate.from_messages(

@@ -8,6 +8,7 @@ from typing import Any, Dict, Iterable, List, Tuple, cast
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable
+from langsmith import traceable
 from loguru import logger
 from pydantic import BaseModel
 
@@ -39,149 +40,8 @@ class AnalisePreviaLangchainDatasource(APMData):
         - Formata histórico do atendimento.
         - Tenta structured output via json_schema, com fallback para parsing.
         """
-        try:
-            # 1) Modelo dinâmico
-            # Normaliza configurações de tipos (podem vir como string JSON)
-            intent_types_json = self._normalize_types_config(
-                parameters.valid_intent_types
-            )
-            entity_types_json = self._normalize_types_config(
-                parameters.valid_entity_types
-            )
-            PydanticModel = build_analise_previa_model(
-                intent_types_json=intent_types_json,
-                entity_types_json=entity_types_json,
-            )
-            historico_formatado = self._format_service_history(
-                parameters.historico_atendimento
-            )
-            doc = getattr(PydanticModel, "__doc__", "") or ""
-
-            raw_system_prompt = (
-                parameters.llm_parameters.prompt_system
-                if getattr(parameters.llm_parameters, "prompt_system", None)
-                else doc
-            )
-            system_prompt = raw_system_prompt.replace("{", "{{").replace(
-                "}", "}}"
-            )
-            messages_spec: List[Tuple[str, str]] = [
-                ("system", system_prompt),
-                (
-                    "user",
-                    "{historico_context}\n\n{prompt_human}: {context}",
-                ),
-            ]
-            messages: ChatPromptTemplate = ChatPromptTemplate.from_messages(  # type: ignore[reportUnknownMemberType]
-                messages_spec
-            )
-
-            llm: BaseChatModel = parameters.llm_parameters.create_llm
-
-            # 5) Structured output com preferencia por json_schema
-            structured_llm: (
-                Runnable[Any, BaseModel | Dict[str, Any]] | None
-            ) = None
-            try:
-                structured_llm = cast(
-                    Runnable[Any, BaseModel | Dict[str, Any]],
-                    llm.with_structured_output(  # type: ignore[reportUnknownMemberType]
-                        PydanticModel, method="json_schema"
-                    ),
-                )
-            except Exception as e_json_schema:
-                logger.debug(
-                    "with_structured_output json_schema falhou: "
-                    f"{e_json_schema}"
-                )
-                try:
-                    structured_llm = cast(
-                        Runnable[Any, BaseModel | Dict[str, Any]],
-                        llm.with_structured_output(PydanticModel),  # type: ignore[reportUnknownMemberType]
-                    )
-                except Exception as e_default:
-                    logger.debug(
-                        f"with_structured_output padrão falhou: {e_default}"
-                    )
-                    structured_llm = None
-
-            invoke_data = {
-                "prompt_human": parameters.llm_parameters.prompt_human,
-                "context": parameters.llm_parameters.context,
-                "historico_context": historico_formatado,
-            }
-
-            response: Any | None = None
-            if structured_llm is not None:
-                try:
-                    # Define o tipo explicitamente para evitar Unknown
-                    chain: Runnable[
-                        Dict[str, Any], BaseModel | Dict[str, Any]
-                    ] = cast(
-                        Runnable[Dict[str, Any], BaseModel | Dict[str, Any]],
-                        messages | structured_llm,
-                    )
-                    response = chain.invoke(invoke_data)
-                except Exception as exc_structured:
-                    logger.warning(
-                        "Falha no structured output, fallback para JSON: "
-                        f"{exc_structured}"
-                    )
-
-            if response is None:
-                # Fallback: chama sem structured e tenta extrair JSON do texto
-                # Define o tipo explicitamente para evitar Unknown no input
-                chain_fallback: Runnable[Dict[str, Any], Any] = cast(
-                    Runnable[Dict[str, Any], Any],
-                    messages | llm,
-                )
-                raw = chain_fallback.invoke(invoke_data)
-                # Normaliza para string, pois content pode ser str ou lista/objeto
-                content = getattr(raw, "content", raw)
-                if isinstance(content, str):
-                    text = content
-                else:
-                    try:
-                        text = json.dumps(content, ensure_ascii=False)
-                    except Exception:
-                        text = str(content)
-                model_obj: BaseModel = self._parse_json_to_model(
-                    text, PydanticModel
-                )
-            else:
-                # Garante que model_obj seja sempre BaseModel
-                if isinstance(response, BaseModel):
-                    model_obj = response
-                elif isinstance(response, dict):
-                    try:
-                        model_obj = PydanticModel.model_validate(response)
-                    except Exception:
-                        model_obj = self._parse_json_to_model(
-                            json.dumps(response, ensure_ascii=False),
-                            PydanticModel,
-                        )
-                else:
-                    model_obj = self._parse_json_to_model(
-                        str(response), PydanticModel
-                    )
-
-            # 6) Pós-processamento: converter em dicts simples {type: value}
-            intent_dicts = self._filter_and_convert_items(
-                getattr(model_obj, "intent", [])
-            )
-            entity_dicts = self._filter_and_convert_items(
-                getattr(model_obj, "entities", [])
-            )
-
-            return AnalisePreviaMensagemLangchain(
-                intent=intent_dicts, entities=entity_dicts
-            )
-
-        except (
-            Exception
-        ) as e:  # pragma: no cover (mapeado por testes mais altos)
-            logger.error(f"Erro ao processar análise prévia: {e}")
-            raise
+        result: str = self._run(parameters)
+        return result
 
     # ----------------------- Helpers internos -----------------------
     def _format_service_history(self, historico: Any) -> str:
@@ -645,3 +505,149 @@ class AnalisePreviaLangchainDatasource(APMData):
         # Ajuste de tipos não permitidos antes da validação Pydantic
         data = self._normalize_prediction_types(data, PydanticModel)
         return PydanticModel.model_validate(data)
+
+    @traceable(name="AnalisePrevia")
+    def _run(self, parameters: AnalisePreviaMensagemParameters) -> str:
+        try:
+            # 1) Modelo dinâmico
+            # Normaliza configurações de tipos (podem vir como string JSON)
+            intent_types_json = self._normalize_types_config(
+                parameters.valid_intent_types
+            )
+            entity_types_json = self._normalize_types_config(
+                parameters.valid_entity_types
+            )
+            PydanticModel = build_analise_previa_model(
+                intent_types_json=intent_types_json,
+                entity_types_json=entity_types_json,
+            )
+            historico_formatado = self._format_service_history(
+                parameters.historico_atendimento
+            )
+            doc = getattr(PydanticModel, "__doc__", "") or ""
+
+            raw_system_prompt = (
+                parameters.llm_parameters.prompt_system
+                if getattr(parameters.llm_parameters, "prompt_system", None)
+                else doc
+            )
+            system_prompt = raw_system_prompt.replace("{", "{{").replace(
+                "}", "}}"
+            )
+            messages_spec: List[Tuple[str, str]] = [
+                ("system", system_prompt),
+                (
+                    "user",
+                    "{historico_context}\n\n{prompt_human}: {context}",
+                ),
+            ]
+            messages: ChatPromptTemplate = ChatPromptTemplate.from_messages(  # type: ignore[reportUnknownMemberType]
+                messages_spec
+            )
+
+            llm: BaseChatModel = parameters.llm_parameters.create_llm
+
+            # 5) Structured output com preferencia por json_schema
+            structured_llm: (
+                Runnable[Any, BaseModel | Dict[str, Any]] | None
+            ) = None
+            try:
+                structured_llm = cast(
+                    Runnable[Any, BaseModel | Dict[str, Any]],
+                    llm.with_structured_output(  # type: ignore[reportUnknownMemberType]
+                        PydanticModel, method="json_schema"
+                    ),
+                )
+            except Exception as e_json_schema:
+                logger.debug(
+                    "with_structured_output json_schema falhou: "
+                    f"{e_json_schema}"
+                )
+                try:
+                    structured_llm = cast(
+                        Runnable[Any, BaseModel | Dict[str, Any]],
+                        llm.with_structured_output(PydanticModel),  # type: ignore[reportUnknownMemberType]
+                    )
+                except Exception as e_default:
+                    logger.debug(
+                        f"with_structured_output padrão falhou: {e_default}"
+                    )
+                    structured_llm = None
+
+            invoke_data = {
+                "prompt_human": parameters.llm_parameters.prompt_human,
+                "context": parameters.llm_parameters.context,
+                "historico_context": historico_formatado,
+            }
+
+            response: Any | None = None
+            if structured_llm is not None:
+                try:
+                    # Define o tipo explicitamente para evitar Unknown
+                    chain: Runnable[
+                        Dict[str, Any], BaseModel | Dict[str, Any]
+                    ] = cast(
+                        Runnable[Dict[str, Any], BaseModel | Dict[str, Any]],
+                        messages | structured_llm,
+                    )
+                    response = chain.invoke(invoke_data)
+                except Exception as exc_structured:
+                    logger.warning(
+                        "Falha no structured output, fallback para JSON: "
+                        f"{exc_structured}"
+                    )
+
+            if response is None:
+                # Fallback: chama sem structured e tenta extrair JSON do texto
+                # Define o tipo explicitamente para evitar Unknown no input
+                chain_fallback: Runnable[Dict[str, Any], Any] = cast(
+                    Runnable[Dict[str, Any], Any],
+                    messages | llm,
+                )
+                raw = chain_fallback.invoke(invoke_data)
+                # Normaliza para string, pois content pode ser str ou lista/objeto
+                content = getattr(raw, "content", raw)
+                if isinstance(content, str):
+                    text = content
+                else:
+                    try:
+                        text = json.dumps(content, ensure_ascii=False)
+                    except Exception:
+                        text = str(content)
+                model_obj: BaseModel = self._parse_json_to_model(
+                    text, PydanticModel
+                )
+            else:
+                # Garante que model_obj seja sempre BaseModel
+                if isinstance(response, BaseModel):
+                    model_obj = response
+                elif isinstance(response, dict):
+                    try:
+                        model_obj = PydanticModel.model_validate(response)
+                    except Exception:
+                        model_obj = self._parse_json_to_model(
+                            json.dumps(response, ensure_ascii=False),
+                            PydanticModel,
+                        )
+                else:
+                    model_obj = self._parse_json_to_model(
+                        str(response), PydanticModel
+                    )
+
+            # 6) Pós-processamento: converter em dicts simples {type: value}
+            intent_dicts = self._filter_and_convert_items(
+                getattr(model_obj, "intent", [])
+            )
+            entity_dicts = self._filter_and_convert_items(
+                getattr(model_obj, "entities", [])
+            )
+
+            return AnalisePreviaMensagemLangchain(
+                intent=intent_dicts, entities=entity_dicts
+            )
+
+        except (
+            Exception
+        ) as e:  # pragma: no cover (mapeado por testes mais altos)
+            logger.error(f"Erro ao processar análise prévia: {e}")
+            raise

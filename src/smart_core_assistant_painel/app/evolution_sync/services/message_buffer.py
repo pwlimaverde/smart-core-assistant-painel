@@ -10,25 +10,50 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:
     key = f"evo_buffer_{contact_id}"
-    buf: List[Dict[str, Any]] = cache.get(key, [])
+    lock_key = f"evo_buffer_lock_{contact_id}"
 
-    # Check for duplicates
-    new_msg_id = envelope.get("message", {}).get("id")
-    if new_msg_id:
-        for existing_env in buf:
-            if existing_env.get("message", {}).get("id") == new_msg_id:
-                return
+    # Use lock to ensure atomicity when reading/writing buffer
+    with cache.lock(lock_key, timeout=5):
+        buf: List[Dict[str, Any]] = cache.get(key, [])
 
-    buf.append(envelope)
-    logger.debug("envelope: {}", envelope)
-    cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 20) + 20)
+        # Check for duplicates
+        new_msg_id = envelope.get("message", {}).get("id")
+        if new_msg_id:
+            for existing_env in buf:
+                if existing_env.get("message", {}).get("id") == new_msg_id:
+                    return
+
+        buf.append(envelope)
+        logger.debug("envelope: {}", envelope)
+        cache.set(key, buf, timeout=(SERVICEHUB.TIME_CACHE or 20) + 20)
 
 
-def clear_buffer_contact(contact_id: int) -> None:
+def get_and_clear_buffer_contact(contact_id: int) -> List[Dict[str, Any]]:
+    """Recupera e limpa o buffer de mensagens de forma atômica."""
     key = f"evo_buffer_{contact_id}"
+    lock_key = f"evo_buffer_lock_{contact_id}"
+
+    with cache.lock(lock_key, timeout=5):
+        buf: List[Dict[str, Any]] = cache.get(key, [])
+        if buf:
+            cache.delete(key)
+
+    return buf
+
+
+def clear_scheduling_lock(contact_id: int) -> None:
+    """Limpa apenas o timer de agendamento, permitindo novas tasks."""
     timer_key = f"evo_timer_{contact_id}"
-    cache.delete(key)
     cache.delete(timer_key)
+
+
+# Deprecated: alias for backward compatibility if needed, but prefer clear_scheduling_lock
+# or get_and_clear_buffer_contact depending on usage.
+def clear_buffer_contact(contact_id: int) -> None:
+    """DEPRECATED: Use clear_scheduling_lock or get_and_clear_buffer_contact."""
+    clear_scheduling_lock(contact_id)
+    # We do NOT clear the buffer here anymore to avoid race conditions.
+    # The buffer is cleared atomically in get_and_clear_buffer_contact.
 
 
 def sched_response_contact(params: Dict[str, Any]) -> None:

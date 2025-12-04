@@ -1,6 +1,7 @@
 import re
 
 from langchain_core.prompts import ChatPromptTemplate
+from langsmith import traceable
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LlmParameters,
@@ -28,6 +29,11 @@ class AnaliseConteudoLangchainDatasource(ACData):
         Raises:
             TypeError: Se a resposta do LLM não for uma string.
         """
+        result: str = self.run(parameters)
+        return result
+
+    @traceable(name="AnaliseConteudo")
+    def run(self, parameters: LlmParameters) -> str:
         llm = parameters.create_llm
 
         messages = ChatPromptTemplate.from_messages(

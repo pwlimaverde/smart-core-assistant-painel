@@ -119,6 +119,7 @@ dev = [
     "types-requests>=2.32.0.20250602",
     "django-types>=0.22.0",
     "django-stubs-ext>=5.2.2",
+    "langsmith>=0.3.45",
 ]
 doc = [
     "mkdocs>=1.6.1",

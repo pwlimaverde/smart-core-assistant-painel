@@ -1,6 +1,8 @@
 from datetime import timedelta
 from typing import Any, Optional, cast
 
+import requests
+
 from django.db import transaction
 from django.utils import timezone
 from loguru import logger
@@ -8,6 +10,9 @@ from loguru import logger
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloCard,
     TrelloList,
+)
+from smart_core_assistant_painel.app.trello_sync.services.flow_sync_service import (
+    FlowSyncService,
 )
 from smart_core_assistant_painel.app.trello_sync.services.member_sync_service import (
     MemberSyncService,
@@ -545,7 +550,8 @@ class TicketSyncService:
         card: Optional[TrelloCard] = getattr(atendimento, "trello_card", None)
         if not card:
             logger.warning(
-                "Atendimento {} sem card Trello para atualizar.", atendimento.pk
+                "Atendimento {} sem card Trello para atualizar.",
+                atendimento.pk,
             )
             return
 
@@ -681,10 +687,7 @@ class TicketSyncService:
                     )
 
             # Remover membro anterior (se diferente e existir)
-            if (
-                member_id_anterior
-                and member_id_anterior != member_id_atual
-            ):
+            if member_id_anterior and member_id_anterior != member_id_atual:
                 try:
                     self.client.remove_member_from_card(
                         card.external_id, member_id_anterior
@@ -736,20 +739,63 @@ class TicketSyncService:
 
         try:
             # Move no Trello
-            self.client.move_item(
-                card.external_id, trello_list.external_id
-            )
-            
+            self.client.move_item(card.external_id, trello_list.external_id)
+
             # Atualiza referência local
             card.list_sync = trello_list
             card.save(update_fields=["list_sync"])
-            
+
             logger.info(
                 "Card {} movido para lista {} (Etapa {})",
                 card.external_id,
                 trello_list.name,
                 etapa.nome,
             )
+
+        except requests.exceptions.HTTPError as http_exc:
+            # Tratamento específico para 404 (Lista não existe mais no Trello)
+            if http_exc.response.status_code == 404:
+                logger.warning(
+                    "Lista Trello {} não encontrada (404). Tentando recuperar...",
+                    trello_list.external_id,
+                )
+                try:
+                    # 1. Remove a lista obsoleta do banco
+                    old_list_id = trello_list.external_id
+                    trello_list.delete()
+
+                    # 2. Garante recriação da lista correta
+                    flow_service = FlowSyncService()
+                    new_list = flow_service.ensure_list_for_etapa(etapa)
+
+                    logger.info(
+                        "Lista recriada: {} -> {}. Tentando mover card novamente...",
+                        old_list_id,
+                        new_list.external_id,
+                    )
+
+                    # 3. Tenta mover novamente com a nova lista
+                    self.client.move_item(
+                        card.external_id, new_list.external_id
+                    )
+
+                    # 4. Atualiza referência local
+                    card.list_sync = new_list
+                    card.save(update_fields=["list_sync"])
+
+                except Exception as recovery_exc:
+                    logger.error(
+                        "Falha na recuperação automática de lista 404: {}",
+                        recovery_exc,
+                    )
+            else:
+                # Outros erros HTTP
+                logger.error(
+                    "Erro HTTP ao mover card {} para lista {}: {}",
+                    card.external_id,
+                    trello_list.external_id,
+                    http_exc,
+                )
         except Exception as exc:
             logger.error(
                 "Falha ao mover card {} para lista {}: {}",
@@ -776,7 +822,7 @@ class TicketSyncService:
             nova_lista = TrelloList.objects.select_related("etapa").get(
                 external_id=list_after_id
             )
-            
+
             atendimento = card.atendimento
             nova_etapa = nova_lista.etapa
 
@@ -799,7 +845,7 @@ class TicketSyncService:
             # O `task_atendimento_move_to_etapa_list` verifica se já está na lista.
             # Então, se atualizarmos o `card.list_sync` ANTES de salvar o atendimento,
             # a task de sync vai ver que já está certo.
-            
+
             logger.info(
                 "Card {} movido no Trello para lista {}. Atualizando Atendimento {} para etapa {}.",
                 card_id,
@@ -815,14 +861,19 @@ class TicketSyncService:
 
                 # Atualiza etapa do atendimento
                 # Flag para indicar origem externa (se necessário nos signals)
-                atendimento._syncing_from_trello = True 
+                atendimento._syncing_from_trello = True
                 atendimento.etapa_atual = nova_etapa
                 atendimento.save(update_fields=["etapa_atual"])
 
         except TrelloCard.DoesNotExist:
-            logger.warning("Card movido no Trello {} não encontrado no sistema.", card_id)
+            logger.warning(
+                "Card movido no Trello {} não encontrado no sistema.", card_id
+            )
         except TrelloList.DoesNotExist:
-            logger.warning("Lista de destino {} não encontrada no sistema.", list_after_id)
+            logger.warning(
+                "Lista de destino {} não encontrada no sistema.", list_after_id
+            )
         except Exception as exc:
-            logger.error("Erro ao processar movimento de card via webhook: {}", exc)
-
+            logger.error(
+                "Erro ao processar movimento de card via webhook: {}", exc
+            )

@@ -10,7 +10,8 @@ from django.core.cache import cache
 from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.services import (
-    clear_buffer_contact,
+    clear_scheduling_lock,
+    get_and_clear_buffer_contact,
 )
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
@@ -76,8 +77,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             api_key: Chave de API para envio de mensagens (opcional).
         """
         try:
-            # 1. Obtém mensagens do buffer
-            env_list = self._get_buffered_messages(contact_id)
+            # 1. Obtém mensagens do buffer e limpa atomicamente
+            env_list = get_and_clear_buffer_contact(contact_id)
             if not env_list:
                 logger.warning(
                     f"Sem mensagens para processar para contato {contact_id}"
@@ -119,32 +120,14 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 f"Erro ao processar mensagens para contato {contact_id}: {e}"
             )
         finally:
-            # 6. Limpa buffer
+            # 6. Limpa lock de agendamento para permitir novas tasks
             try:
-                clear_buffer_contact(contact_id)
+                clear_scheduling_lock(contact_id)
                 logger.info(
-                    f"atd_process_done contact_id={contact_id} cache_cleared=1"
+                    f"atd_process_done contact_id={contact_id} scheduling_lock_cleared=1"
                 )
             except Exception:
                 pass
-
-    def _get_buffered_messages(self, contact_id: int) -> list[dict[str, Any]]:
-        """Obtém mensagens em buffer para o contato.
-
-        Args:
-            contact_id: ID do contato.
-
-        Returns:
-            Lista de envelopes de mensagens.
-        """
-        cache_key = f"evo_buffer_{contact_id}"
-        env_list: list[dict[str, Any]] = cache.get(cache_key, [])
-
-        logger.info(
-            f"atd_process_start contact_id={contact_id} env_count={len(env_list)}"
-        )
-
-        return env_list
 
     def _compile_message_content(
         self, env_list: list[dict[str, Any]]

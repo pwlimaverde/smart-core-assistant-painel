@@ -228,7 +228,7 @@
         "id": 12,
         "title": "[ATD] Fluxo de Chatbot com IA (LangChain)",
         "description": "Implementar o fluxo completo de atendimento automatizado utilizando LangChain, integrando o orquestrador de mensagens à lógica de IA generativa (RAG) e gestão de contexto, garantindo a conformidade com os requisitos ATD-LIF-001, ATD-LIF-003 e ATD-CTX-002 do PRD v2.0.",
-        "status": "done",
+        "status": "in_progress",
         "dependencies": [
           "4",
           "8"

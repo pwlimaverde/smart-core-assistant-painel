@@ -1,1 +1,4 @@
-1 - corrigir a visualização do trello, não está mostrando a o conteudo completo da mensagem
+1 - não está transferindo para o setor responsável apos a conclusão do atendimento inicial
+2 - investigar alto tempo no processamento dos treinamentos
+3 - investigar alto tempo no pre-processamento e processamento das mensagens
+4 - melhorar a formatação de texto das resposta do bot

@@ -65,7 +65,7 @@ def sched_response_contact(params: Dict[str, Any]) -> None:
     timer_key = f"evo_timer_{contact_id}"
     if cache.get(timer_key):
         return
-    cache.set(timer_key, True, timeout=(SERVICEHUB.TIME_CACHE or 20) + 20)
+    cache.set(timer_key, True, timeout=(SERVICEHUB.TIME_CACHE or 5) + 5)
     name = f"process_contact_{contact_id}"
     next_run = timezone.now() + timezone.timedelta(
         seconds=SERVICEHUB.TIME_CACHE

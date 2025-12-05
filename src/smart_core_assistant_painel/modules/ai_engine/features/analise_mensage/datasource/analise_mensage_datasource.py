@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Any
 
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langsmith import traceable
 from loguru import logger
@@ -9,12 +8,24 @@ from loguru import logger
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnaliseMensageParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import AMData
+from smart_core_assistant_painel.modules.ai_engine.utils.types import (
+    AMData,
+    RespostaBot,
+)
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class AnaliseMensageDatasource(AMData):
-    def __call__(self, parameters: AnaliseMensageParameters) -> str:
-        result: str = self._run(parameters)
+    """Datasource para análise de mensagem com Structured Output.
+
+    Retorna RespostaBot com estrutura:
+    - resposta_texto: Texto para o usuário
+    - acao_transferencia: Setor para transferência (se necessário)
+    - confianca: Score de confiança (0.0 a 1.0)
+    """
+
+    def __call__(self, parameters: AnaliseMensageParameters) -> RespostaBot:
+        result: RespostaBot = self._run(parameters)
         return result
 
     def _formatar_fluxos_disponiveis(
@@ -35,14 +46,25 @@ class AnaliseMensageDatasource(AMData):
         for fluxo_key, fluxo_desc in fluxos_disponiveis.items():
             fluxos_info += f"- **{fluxo_key}**: {fluxo_desc}\n"
 
-        fluxos_info += (
-            "\n### REGRAS DE TRANSFERÊNCIA:\n"
-            "1. Analise a intenção do usuário e verifique se há um setor específico adequado\n"
-            "2. Se houver um setor correspondente exato na lista acima, use-o\n"
-            "3. Se não houver correspondência exata, escolha o setor mais próximo\n"
-            "4. Use sempre o nome exato do setor conforme listado acima\n"
-            "5. A transferência deve ser mencionada apenas se for realmente necessária\n"
-        )
+        # Usa regras externalizadas ou fallback padrão
+        regras_transferencia = SERVICEHUB.PROMPT_REGRAS_TRANSFERENCIA
+        if not regras_transferencia:
+            regras_transferencia = (
+                "\n### REGRAS DE TRANSFERÊNCIA:\n"
+                "1. Analise a intenção do usuário e verifique se "
+                "há um setor específico adequado\n"
+                "2. Se houver um setor correspondente exato na lista acima, "
+                "use-o\n"
+                "3. Se não houver correspondência exata, "
+                "escolha o setor mais próximo\n"
+                "4. Use sempre o nome exato do setor conforme listado acima\n"
+                "5. A transferência deve ser mencionada apenas se for "
+                "realmente necessária\n"
+            )
+        else:
+            regras_transferencia = f"\n{regras_transferencia}\n"
+
+        fluxos_info += regras_transferencia
 
         return fluxos_info
 
@@ -104,7 +126,7 @@ class AnaliseMensageDatasource(AMData):
         return "\n".join(historico_parts)
 
     @traceable(name="AnaliseMensage")
-    def _run(self, parameters: AnaliseMensageParameters) -> str:
+    def _run(self, parameters: AnaliseMensageParameters) -> RespostaBot:
         try:
             logger.debug("Iniciando _run de AnaliseMensageDatasource")
             historico_formatado = self._formatar_historico_atendimento(
@@ -119,6 +141,57 @@ class AnaliseMensageDatasource(AMData):
             )
             data_atual = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             dia_semana = datetime.now().strftime("%A")
+
+            # Carrega regras de resposta externalizadas ou usa fallback
+            regras_resposta = SERVICEHUB.PROMPT_REGRAS_RESPOSTA
+            msg_fallback = SERVICEHUB.MSG_FALLBACK_SEM_INFO
+            if not regras_resposta:
+                regras_resposta = (
+                    "### Regras de Resposta (siga rigorosamente):\n"
+                    "1. **Fonte da Resposta:** Baseie sua resposta "
+                    "exclusivamente nas informações contidas no bloco "
+                    "<contexto_rag>. O <historico_conversa> pode ser usado "
+                    "apenas para compreender a intenção do usuário, mas nunca "
+                    "como fonte de informação factual.\n"
+                    "2. **Informação Incorreta:** Se o <contexto_rag> não "
+                    "contiver informações relacionadas a <pergunta_usuario>, "
+                    f'responda exatamente: "{msg_fallback}"\n'
+                    "3. **Linguagem e Estilo:** Responda sempre em português. "
+                    "A resposta deve ser concisa (máximo de 5 frases), "
+                    "objetiva e educada.\n"
+                    "4. **Fidelidade ao Contexto:** Não invente, deduza ou "
+                    "adicione informações que não estejam explicitamente "
+                    "presentes no <contexto_rag>.\n"
+                    "5. **Análise de Transferência:** Analise se o usuário "
+                    "precisa ser transferido para um setor específico com base "
+                    "nos setores disponíveis listados abaixo.\n"
+                    "6. **Regra de Transferência:** Se identificar que uma "
+                    "transferência é necessária, preencha o campo "
+                    "'acao_transferencia' com o NOME EXATO do setor.\n"
+                )
+
+            # Carrega template user RAG externalizado ou usa fallback
+            template_user_rag = SERVICEHUB.PROMPT_TEMPLATE_USER_RAG
+            if not template_user_rag:
+                template_user_rag = (
+                    "<historico_conversa>\n"
+                    "(Apenas para referência de contexto, não como fonte "
+                    "factual)\n"
+                    "{historico_context}\n"
+                    "</historico_conversa>\n\n"
+                    "<contexto_rag>\n"
+                    "### Apresentação da Empresa:\n"
+                    "{dados_empresa}\n\n"
+                    "### Dados do Treinamento:\n"
+                    "{dados_treinamento}\n"
+                    "</contexto_rag>\n\n"
+                    "<pergunta_usuario>\n"
+                    "{context}\n"
+                    "</pergunta_usuario>\n\n"
+                    "Com base apenas nas regras acima, elabore a resposta "
+                    "final ao usuário."
+                )
+
             messages_spec: list[tuple[str, str]] = [
                 (
                     "system",
@@ -126,36 +199,13 @@ class AnaliseMensageDatasource(AMData):
                         f"Data e Hora Atual: {data_atual} - {dia_semana}\n\n"
                         f"{parameters.llm_parameters.prompt_system}\n\n"
                         f"{parameters.llm_parameters.prompt_human}\n\n"
-                        "### Regras de Resposta (siga rigorosamente):\n"
-                        "1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. "
-                        "O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\n"
-                        "2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, "
-                        'responda exatamente: "Desculpe, não encontrei informações relacionadas à sua pergunta."\n'
-                        "3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\n"
-                        "4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\n"
-                        "5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.\n"
-                        "6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.\n"
+                        f"{regras_resposta}"
                         f"{fluxos_disponiveis}"
                     ),
                 ),
                 (
                     "user",
-                    (
-                        "<historico_conversa>\n"
-                        "(Apenas para referência de contexto, não como fonte factual)\n"
-                        "{historico_context}\n"
-                        "</historico_conversa>\n\n"
-                        "<contexto_rag>\n"
-                        "### Apresentação da Empresa:\n"
-                        "{dados_empresa}\n\n"
-                        "### Dados do Treinamento:\n"
-                        "{dados_treinamento}\n"
-                        "</contexto_rag>\n\n"
-                        "<pergunta_usuario>\n"
-                        "{context}\n"
-                        "</pergunta_usuario>\n\n"
-                        "Com base apenas nas regras acima, elabore a resposta final ao usuário."
-                    ),
+                    template_user_rag,
                 ),
             ]
             # Log do prompt completo para debug formatado
@@ -177,8 +227,11 @@ class AnaliseMensageDatasource(AMData):
 
             messages = ChatPromptTemplate.from_messages(messages_spec)
             llm = parameters.llm_parameters.create_llm
-            parser = StrOutputParser()
-            chain = messages | llm | parser
+
+            # Usa Structured Output para extrair resposta estruturada
+            structured_llm = llm.with_structured_output(RespostaBot)
+            chain = messages | structured_llm
+
             invoke_data = {
                 "historico_context": historico_formatado,
                 "dados_empresa": parameters.dados_empresa,
@@ -186,12 +239,16 @@ class AnaliseMensageDatasource(AMData):
                 "context": parameters.llm_parameters.context,
             }
 
-            logger.debug("Invocando LLM para AnaliseMensage...")
-            resposta_bot = chain.invoke(invoke_data)
-            logger.debug(f"Resposta LLM recebida: {resposta_bot}")
+            logger.debug("Invocando LLM com Structured Output...")
+            resultado: RespostaBot = chain.invoke(invoke_data)
+            logger.debug(
+                f"Resposta estruturada: resposta_texto={resultado.resposta_texto[:50]}..., "
+                f"acao_transferencia={resultado.acao_transferencia}, "
+                f"confianca={resultado.confianca}"
+            )
 
-            return resposta_bot
+            return resultado
 
         except Exception as e:
-            logger.error(f"Erro ao processar análise prévia: {e}")
+            logger.error(f"Erro ao processar análise de mensagem: {e}")
             raise

@@ -228,7 +228,7 @@
         "id": 12,
         "title": "[ATD] Fluxo de Chatbot com IA (LangChain)",
         "description": "Implementar o fluxo completo de atendimento automatizado utilizando LangChain, integrando o orquestrador de mensagens à lógica de IA generativa (RAG) e gestão de contexto, garantindo a conformidade com os requisitos ATD-LIF-001, ATD-LIF-003 e ATD-CTX-002 do PRD v2.0.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
           "4",
           "8"
@@ -292,7 +292,7 @@
             "title": "[Refactor] Structured Output para AnaliseMensage",
             "description": "Substituir a extração via regex da resposta por Structured Output (Pydantic) na `AnaliseMensage`. O modelo deve retornar um objeto contendo: `resposta_usuario` (str), `transferencia_necessaria` (bool) e `fluxo_alvo` (str). Isso elimina a fragilidade do parsing de texto (\"Estarei transferindo...\") e garante tipagem forte.",
             "details": "Atualmente `FeaturesCompose._extrair_fluxo_transferencia` usa regex. Deve-se criar um `AnaliseMensageResult` (Pydantic) e usar `with_structured_output` no LangChain, similar ao que é feito em `AnalisePreviaMensagem`.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           },
@@ -301,7 +301,7 @@
             "title": "[Optimization] Roteamento Proativo (Fast-Path)",
             "description": "Implementar lógica no `AttendanceOrchestrator` para realizar transbordo imediato caso a `AnalisePrevia` detecte intent crítica (ex: `falar_com_humano`), sem passar pela geração de resposta RAG.",
             "details": "Hoje o fluxo é sempre: Previa -> RAG -> Resposta -> Check Transferência. O novo fluxo deve ser: Previa -> Se 'Handover' -> Transfere Imediato. Isso economiza tokens e reduz latência. Requer definir uma flag/intent padrão para handover.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           },
@@ -310,7 +310,7 @@
             "title": "[Refactor] Externalização de Configurações de IA",
             "description": "Mover prompts, templates e limiares (ex: threshold 0.6 de similaridade) para configurações externas (Banco de Dados ou Variáveis de Ambiente) para facilitar ajustes sem deploy.",
             "details": "Criar tabela `AIConfig` ou usar `Constance` (se instalado) para gerenciar: Templates de Prompt, Threshold de Confiança, Mensagens de Fallback/Erro. Atualizar `FeaturesCompose` para ler dessas configs.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           },
@@ -319,7 +319,7 @@
             "title": "[Refactor] Implementar Structured Output na AnaliseMensage",
             "description": "Substituir a extração via Regex da resposta e transferência por Structured Output (Pydantic) na `AnaliseMensage` para garantir precisão 100% no roteamento.\n\nDetalhes Técnicos:\n1. Criar modelo Pydantic `RespostaBot` em `modules/ai_engine/utils/types.py`:\n   - `resposta_texto` (str): A resposta final para o usuário.\n   - `acao_transferencia` (Optional[str]): Nome exato do setor para transferência (ou None).\n   - `confianca` (float): Nível de confiança (0.0 a 1.0).\n2. Atualizar `AnaliseMensageDatasource`:\n   - Utilizar `llm.with_structured_output(RespostaBot)`.\n   - Ajustar prompt para instruir o preenchimento do campo `acao_transferencia` com o nome exato do setor, removendo a instrução de \"Estarei transferindo...\".\n3. Refatorar `AttendanceOrchestrator` e `FeaturesCompose`:\n   - Remover método `_extrair_fluxo_transferencia` (regex).\n   - Consumir diretamente `resultado.acao_transferencia`.",
             "details": "Implementação de Structured Output para eliminar fragilidade de Regex na detecção de transferência.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           },
@@ -328,7 +328,7 @@
             "title": "[Optimization] Otimizar Busca Vetorial no QueryCompose",
             "description": "Mover a lógica de filtro de similaridade (distância < 0.25) do Python para a query do banco de dados para otimizar performance.\n\nDetalhes Técnicos:\n1. No método `QueryCompose.buscar_comportamento_similar` (`app/ui/treinamento/models.py`):\n   - Utilizar `annotate(distance=CosineDistance(\"embedding\", query_vec))`.\n   - Adicionar filtro `.filter(distance__lt=0.25)` diretamente na query.\n   - Remover a lógica Python `if most_similar_distance > 0.25: return None`.\n2. Verificar se a extensão `pgvector` está corretamente configurada para suportar essa operação eficientemente.",
             "details": "Otimização de busca vetorial usando recursos nativos do banco de dados.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           },
@@ -337,7 +337,7 @@
             "title": "[Refactor] Externalizar Prompts e Configurações de IA",
             "description": "Remover prompts hardcoded do código fonte e centralizá-los no `ServiceHub` carregados via variáveis de ambiente.\n\nDetalhes Técnicos:\n1. Identificar prompts em `AnaliseMensageDatasource` (system e user prompts) e `AttendanceOrchestrator` (intent prompt).\n2. Criar novas variáveis de ambiente (ex: `PROMPT_SYSTEM_ANALISE_MENSAGEM`, `PROMPT_USER_RAG_CONTEXT`) no `.env`.\n3. Atualizar `ServiceHub` (`modules/services/features/service_hub.py`) para carregar essas variáveis.\n4. Substituir strings hardcoded nos arquivos originais por chamadas ao `ServiceHub` (ex: `ServiceHub.get_instance().prompt_system_analise_mensagem`).",
             "details": "Externalização de prompts para facilitar manutenção e ajustes sem deploy.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           },
@@ -346,7 +346,7 @@
             "title": "[Feature] Implementar Rastreabilidade de RAG (Source Documents)",
             "description": "Registrar quais documentos foram utilizados para gerar a resposta da IA para fins de auditoria e debug.\n\nDetalhes Técnicos:\n1. Estender modelo `RespostaBot` (Task 12.5) para incluir campo `lista_ids_documentos` (List[int]).\n2. Atualizar `AnaliseMensageDatasource` para retornar os IDs dos documentos que foram passados no contexto RAG (ou filtrados pela LLM se possível).\n3. Atualizar `AttendanceOrchestrator` para persistir esses IDs em `Mensagem.metadados['rag_sources']` ao salvar a resposta.\n4. Garantir que `Documento.buscar_documentos_similares` retorne os IDs corretamente.",
             "details": "Implementação de rastreabilidade para documentos usados no RAG.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 12
           }

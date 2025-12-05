@@ -15,6 +15,7 @@ from smart_core_assistant_painel.app.evolution_sync.services import (
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
 )
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .interfaces import (
     AttendanceOrchestratorInterface,
@@ -571,6 +572,49 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             logger.info(f"DEBUG: intent_detectado={message.intent_detectado}")
 
+            # --- FAST-PATH: Roteamento Proativo ---
+            # Se detectou intent crítico (falar_com_humano, etc), transfere
+            # imediatamente sem chamar RAG/LLM para economizar tokens.
+            critical_intents = {
+                "falar_com_humano",
+                "transferir_atendimento",
+                "atendente_humano",
+                "suporte_humano",
+            }
+            detected_tags = {
+                list(intent.keys())[0].lower()
+                for intent in (message.intent_detectado or [])
+            }
+            critical_match = detected_tags & critical_intents
+
+            if critical_match:
+                logger.info(
+                    f"FAST-PATH: Intent crítico detectado: {critical_match}. "
+                    "Transferindo imediatamente."
+                )
+                # Resposta de fast-path
+                fast_path_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                message.registrar_resposta_bot(
+                    resposta=fast_path_msg,
+                    confianca=1.0,  # Alta confiança - intent explícito
+                )
+                # Obtém fluxos e inicia transferência
+                fluxos_disponiveis = (
+                    self._structure_manager.get_available_flows()
+                )
+                if fluxos_disponiveis:
+                    fluxo = next(iter(fluxos_disponiveis.keys()))
+                    logger.info(f"FAST-PATH: Transferindo para fluxo {fluxo}")
+                    # Usa método do modelo Atendimento para transferência
+                    attendance.apply_flow_by_description(fluxo)
+                else:
+                    # Atualiza status sem transferência
+                    self._structure_manager._update_attendance_status_ongoing(
+                        attendance
+                    )
+                return  # Sai sem chamar LLM
+            # --- FIM FAST-PATH ---
+
             # Carrega histórico
             historico_atendimento = attendance.carregar_historico_mensagens(
                 excluir_mensagem_id=message.id
@@ -585,23 +629,33 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 Documento,
             )
 
-            dados_treinamento = Documento.buscar_documentos_similares(
-                query_vec=vector_conteudo
+            # Busca retorna tupla (contexto, lista_ids) para rastreabilidade
+            dados_treinamento, rag_doc_ids = (
+                Documento.buscar_documentos_similares(
+                    query_vec=vector_conteudo
+                )
             )
 
+            # Salva IDs dos documentos RAG para rastreabilidade
+            if rag_doc_ids:
+                if message.metadados is None:
+                    message.metadados = {}
+                message.metadados["rag_sources"] = rag_doc_ids
+                message.save(update_fields=["metadados"])
+                logger.info(
+                    f"RAG: rag_sources={rag_doc_ids} salvos em mensagem {message.id}"
+                )
+
             logger.info(
-                f"DEBUG: dados_treinamento found: {len(dados_treinamento) if isinstance(dados_treinamento, list) else 'Not a list'}"
+                f"DEBUG: dados_treinamento len={len(dados_treinamento)}, "
+                f"rag_doc_ids={rag_doc_ids}"
             )
 
             # Obtém fluxos disponíveis
             fluxos_disponiveis = self._structure_manager.get_available_flows()
 
             # Decide se deve chamar IA
-            # Nota: dados_treinamento é uma string formatada, não uma lista
-            has_training_data = (
-                isinstance(dados_treinamento, str)
-                and len(dados_treinamento.strip()) > 0
-            )
+            has_training_data = len(dados_treinamento.strip()) > 0
             should_call_ai = has_known_intent or has_training_data
 
             logger.info(f"DEBUG: should_call_ai={should_call_ai}")
@@ -633,13 +687,18 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         Returns:
             Tupla (prompt, has_known_intent).
         """
-        prompt_lines: list[str] = [
-            (
+        # Usa prompt de intent externalizado ou fallback
+        prompt_intent_system = SERVICEHUB.PROMPT_INTENT_SYSTEM
+        if not prompt_intent_system:
+            prompt_intent_system = (
                 "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
                 "Siga estritamente as orientações abaixo, em "
                 "português claro e objetivo.\n"
                 "Adapte a resposta ao contexto do atendimento atual."
-            ),
+            )
+
+        prompt_lines: list[str] = [
+            prompt_intent_system,
             "Intenções detectadas e orientações:",
         ]
 
@@ -679,9 +738,14 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 if comportamento:
                     prompt_lines.append(f"{index}. [{tag}] {comportamento}")
 
-        prompt_lines.append(
-            "Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa."
-        )
+        # Usa footer de intent externalizado ou fallback
+        prompt_intent_footer = SERVICEHUB.PROMPT_INTENT_FOOTER
+        if not prompt_intent_footer:
+            prompt_intent_footer = (
+                "Se houver múltiplas intenções, priorize a ordem "
+                "listada e mantenha a resposta concisa."
+            )
+        prompt_lines.append(prompt_intent_footer)
 
         return "\n".join(prompt_lines), has_known_intent
 
@@ -741,7 +805,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             message: Mensagem.
             attendance: Atendimento.
         """
-        texto_fallback = "Recebemos sua mensagem. Em breve retornaremos."
+        # Usa mensagem de fallback externalizada
+        texto_fallback = SERVICEHUB.MSG_FALLBACK_GERAL
 
         message.registrar_resposta_bot(
             resposta=texto_fallback,

@@ -61,6 +61,7 @@ from ..utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
+    RespostaBot,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
@@ -527,8 +528,10 @@ class FeaturesCompose:
     def _extrair_fluxo_transferencia(
         response_text: str, fluxos_disponiveis: dict[str, str]
     ) -> str:
-        """
+        """DEPRECATED: Use _mapear_acao_para_fluxo com Structured Output.
+
         Extrai a chave do fluxo de transferência adequado da resposta do bot.
+        Este método usa regex e será removido em versão futura.
 
         Args:
             response_text: Resposta do bot que contém a menção de transferência
@@ -537,7 +540,15 @@ class FeaturesCompose:
         Returns:
             str: Chave do fluxo correspondente ou string vazia se não encontrar
         """
+        import warnings
         import re
+
+        warnings.warn(
+            "_extrair_fluxo_transferencia está deprecated. "
+            "Use _mapear_acao_para_fluxo com Structured Output.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
         # Padrão para extrair o nome do setor após "Estarei transferindo seu atendimento para"
         pattern = r"Estarei transferindo seu atendimento para ([^.]+)"
@@ -607,36 +618,34 @@ class FeaturesCompose:
         usecase: AMUsecase = AnaliseMensageUseCase(datasource)
         data = usecase(parameters)
         if isinstance(data, SuccessReturn):
-            # Normaliza resposta do bot para avaliação e regras de negócio
-            response_text: str = str(data.result).strip()
+            # Obtém RespostaBot estruturada (via Structured Output)
+            resposta_estruturada: RespostaBot = data.result  # type: ignore
+            response_text: str = str(
+                resposta_estruturada.resposta_texto
+            ).strip()
 
-            # Define flag de transferência quando a resposta indica não ter
-            # encontrado informações relacionadas OU solicitação de transferência
-            transfer_attendance: bool = False
-            transferencia_explicita: bool = False  # Flag para indicar se o bot já mencionou a transferência
+            # Determina transferência via Structured Output
+            # (acao_transferencia preenchido automaticamente pelo LLM)
+            acao_transferencia = resposta_estruturada.acao_transferencia
+            confianca_llm = resposta_estruturada.confianca
+
+            logger.info(
+                f"Structured Output: acao_transferencia={acao_transferencia}, "
+                f"confianca={confianca_llm}"
+            )
+
+            # Define flags com base na resposta estruturada
+            transfer_attendance: bool = acao_transferencia is not None
             fluxo_transferencia: str = ""
-            apology_phrase: str = "Desculpe, não encontrei informações relacionadas à sua pergunta"
-            transfer_phrase: str = "Estarei transferindo seu atendimento"
-            if (
-                apology_phrase in response_text
-                or transfer_phrase in response_text
-            ):
-                transfer_attendance = True
-                transferencia_explicita = (
-                    True  # Bot mencionou explicitamente a transferência
-                )
-                # verificação do fluxo de transferência de atendimento adequado
-                fluxo_transferencia = (
-                    FeaturesCompose._extrair_fluxo_transferencia(
-                        response_text, fluxos_disponiveis
-                    )
-                )
 
-                # Log para depuração do fluxo de transferência de atendimento
+            # Mapeia acao_transferencia para fluxo_disponiveis
+            if transfer_attendance and acao_transferencia:
+                fluxo_transferencia = FeaturesCompose._mapear_acao_para_fluxo(
+                    acao_transferencia, fluxos_disponiveis
+                )
                 logger.info(
-                    "Regra de transferência acionada (explícita). "
-                    f"transferir_atendimento=True. "
-                    f"fluxo_transferencia={fluxo_transferencia}"
+                    f"Transferência detectada via Structured Output. "
+                    f"acao={acao_transferencia} → fluxo={fluxo_transferencia}"
                 )
 
             # Gera embeddings para pergunta (context), treinamento (se houver)
@@ -667,40 +676,23 @@ class FeaturesCompose:
             )
 
             # Se o score ficar abaixo do limiar, transfere atendimento
-            if final_score < 0.6:
-                transfer_attendance = True
-                logger.info(
-                    "Score abaixo do limiar (0.6). "
-                    "transferir_atendimento=True."
-                )
-
-            # Adiciona mensagem de transferência apenas se:
-            # 1. A transferência estiver habilitada E
-            # 2. O bot NÃO mencionou explicitamente a transferência na resposta
-            # (evita duplicação quando o bot já disse que estava transferindo)
-            if transfer_attendance and not transferencia_explicita:
-                transfer_message: str = "\n\nVou transferir seu atendimento para o setor responsável"
-                response_text = f"{response_text}{transfer_message}"
-                logger.info(
-                    "Mensagem de transferência genérica adicionada "
-                    "(transferência por baixa confiabilidade)"
-                )
-
-            # Garante que o fluxo de transferência seja extraído quando necessário
-            if transfer_attendance:
-                # Se precisar transferir e o fluxo ainda estiver vazio, tenta extrair
-                if fluxo_transferencia == "":
-                    fluxo_transferencia = (
-                        FeaturesCompose._extrair_fluxo_transferencia(
-                            response_text, fluxos_disponiveis
-                        )
-                    )
+            similarity_threshold = SERVICEHUB.SIMILARITY_THRESHOLD
+            if final_score < similarity_threshold:
+                if not transfer_attendance:
+                    transfer_attendance = True
                     logger.info(
-                        f"Fluxo de transferência extraído: {fluxo_transferencia}"
+                        f"Score abaixo do limiar ({similarity_threshold}). "
+                        "transferir_atendimento=True (por baixa confiabilidade)."
                     )
-            else:
-                # Se não houver transferência, garante que o fluxo fique vazio
-                fluxo_transferencia = ""
+                    # Adiciona mensagem de transferência
+                    msg_transferencia = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                    response_text = f"{response_text}\n\n{msg_transferencia}"
+
+            # Se precisa transferir e ainda não tem fluxo, usa o primeiro
+            if transfer_attendance and not fluxo_transferencia:
+                if fluxos_disponiveis:
+                    fluxo_transferencia = next(iter(fluxos_disponiveis.keys()))
+                    logger.info(f"Usando fluxo padrão: {fluxo_transferencia}")
 
             return AMTuple(
                 resposta_bot=response_text,
@@ -712,3 +704,42 @@ class FeaturesCompose:
             raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def _mapear_acao_para_fluxo(
+        acao_transferencia: str, fluxos_disponiveis: dict[str, str]
+    ) -> str:
+        """Mapeia ação de transferência para chave de fluxo disponível.
+
+        Args:
+            acao_transferencia: Nome do setor retornado pelo LLM.
+            fluxos_disponiveis: Dicionário com fluxos disponíveis.
+
+        Returns:
+            Chave do fluxo correspondente ou string vazia.
+        """
+        acao_lower = acao_transferencia.lower().strip()
+
+        # Correspondência exata ou parcial com chaves de fluxo
+        for fluxo_key in fluxos_disponiveis.keys():
+            nome_setor = fluxo_key.split(" - ")[0].strip().lower()
+            if (
+                acao_lower == nome_setor
+                or acao_lower in nome_setor
+                or nome_setor in acao_lower
+            ):
+                logger.info(
+                    f"Mapeamento: '{acao_transferencia}' → '{fluxo_key}'"
+                )
+                return fluxo_key
+
+        # Fallback: usa primeiro fluxo disponível
+        if fluxos_disponiveis:
+            primeira_key = next(iter(fluxos_disponiveis.keys()))
+            logger.warning(
+                f"Nenhum fluxo correspondente para '{acao_transferencia}'. "
+                f"Usando padrão: {primeira_key}"
+            )
+            return primeira_key
+
+        return ""

@@ -926,12 +926,69 @@
           }
         ],
         "updatedAt": "2025-12-06T12:30:00.000Z"
+      },
+      {
+        "id": 27,
+        "title": "[FIX] Correção de Sincronização Trello - Arquivamento e Movimentação",
+        "description": "Corrigir bugs de sincronização Trello: (1) Cards não arquivados ao apagar atendimento; (2) Cards não movidos ao transferir entre fluxos/boards.",
+        "details": "## Contexto e Motivação\nO sistema apresenta falhas na sincronização com o Trello quando um atendimento é transferido para outro setor/fluxo.\n\n## Fluxo de Erro (Investigação Completa)\n1. **IA detecta transferência**: `AnaliseMensage` identifica intenção e retorna `acao_transferencia='Comercial'`\n2. **Orchestrator aplica fluxo**: `AttendanceOrchestrator` chama `atendimento.apply_flow_by_description('Comercial - Comercial')`\n3. **Atendimento muda**: `departamento`, `fluxo_atendimento` e `etapa_atual` são alterados para o novo fluxo\n4. **Signal dispara**: `post_save` aciona `atendimento_etapa_updated_move_card` que agenda `task_atendimento_move_to_etapa_list`\n5. **Lista criada em board diferente**: `move_card_to_etapa` chama `ensure_list_for_etapa` que cria lista no board do NOVO fluxo\n6. **Tentativa de mover falha**: `move_item` usa `PUT /cards/{id}?idList={listId}` que retorna 404\n7. **Razão do 404**: A API do Trello não permite mover card para lista de outro board sem especificar `idBoard`\n\n## Causa Raiz\n- O método `move_item` usa apenas `idList` no payload\n- Para cross-board moves, a API requer `idBoard` + `idList`\n- O card está em Board A mas a lista destino está em Board B\n\n## Evidência do Log\n```\nlista criada: Fila de Atendimento em 6926444ca03671bd4cd4ba9d -> 69343cb7ca69bcf8d9bfcd27\nFalha Trello API: 404 List 69343cb7ca69bcf8d9bfcd27 does not exist on board 692643b5c0c9dfa73f7bca0f\n```\n\n## Solução\n1. Implementar `move_item_to_board` no TrelloAdapter\n2. Em `move_card_to_etapa`, detectar se boards são diferentes\n3. Se diferente, usar `PUT /cards/{id}?idBoard={boardId}&idList={listId}`",
+        "testStrategy": "1. **Teste Transferência**: Iniciar conversa pedindo orçamento de panfletos, verificar que card move para board do Comercial.\n2. **Logs**: `uv run task logs-docker | grep 'cross-board\\|movido entre boards'`\n3. **Teste Movimento Normal**: Mover card no mesmo board deve continuar funcionando.",
+        "status": "completed",
+        "dependencies": [
+          "5",
+          "6"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Melhorar Signal de Arquivamento (pre_delete)",
+            "description": "Aprimorar validação e tentar arquivamento síncrono antes de agendar task assíncrona.",
+            "details": "Modificar `atendimento_deleted_archive_card` em signals.py:\n1. Validar presença de `trello_card` com log de warning se ausente.\n2. Validar `external_id` não vazio.\n3. Tentar arquivamento síncrono via `SERVICEHUB.unified_data_service.archive_item()`.\n4. Se falhar (timeout), agendar task assíncrona como fallback.",
+            "status": "completed",
+            "dependencies": [],
+            "parentTaskId": 27
+          },
+          {
+            "id": 2,
+            "title": "Implementar move_item_to_board no TrelloAdapter",
+            "description": "Adicionar método para mover cards entre boards diferentes.",
+            "details": "Criar método em trello_adapter.py que use `PUT /cards/{id}?idBoard={boardId}&idList={listId}` para movimentação cross-board.",
+            "status": "completed",
+            "dependencies": [],
+            "parentTaskId": 27
+          },
+          {
+            "id": 3,
+            "title": "Atualizar move_card_to_etapa para suportar cross-board",
+            "description": "Modificar TicketSyncService.move_card_to_etapa para detectar mudança de board.",
+            "details": "Em ticket_sync_service.py:\n1. Comparar `card.list_sync.board_id` com `trello_list.board_id`.\n2. Se diferentes, chamar `move_item_to_board`.\n3. Se iguais, manter comportamento atual (`move_item`).\n4. Atualizar `card.list_sync` após movimentação.",
+            "status": "completed",
+            "dependencies": [
+              "2"
+            ],
+            "parentTaskId": 27
+          },
+          {
+            "id": 4,
+            "title": "Testes e Validação Manual",
+            "description": "Executar testes manuais e verificar logs.",
+            "details": "1. Testar exclusão de atendimento e verificar arquivamento no Trello.\n2. Testar transferência entre fluxos e verificar movimentação de card.\n3. Verificar logs do cluster para confirmar operações.",
+            "status": "completed",
+            "dependencies": [
+              "1",
+              "3"
+            ],
+            "parentTaskId": 27
+          }
+        ],
+        "updatedAt": "2025-12-06T15:39:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T12:15:00.000Z",
-      "taskCount": 25,
+      "lastModified": "2025-12-06T14:30:00.000Z",
+      "taskCount": 26,
       "completedCount": 12,
       "tags": [
         "master"

@@ -740,9 +740,35 @@ class TicketSyncService:
         if card.list_sync_id == trello_list.id:
             return
 
+        # Verifica se é uma movimentação entre boards diferentes (Cross-Board)
+        current_board_id = card.list_sync.board_id if card.list_sync else None
+        target_board_id = trello_list.board_id
+
+        needs_cross_board_move = (
+            current_board_id is not None
+            and current_board_id != target_board_id
+        )
+
         try:
-            # Move no Trello
-            self.client.move_item(card.external_id, trello_list.external_id)
+            if needs_cross_board_move:
+                logger.info(
+                    "Card {} mudando de board (ID {} -> {}).",
+                    card.external_id,
+                    current_board_id,
+                    target_board_id,
+                )
+                # Recupera external_id do board de destino
+                target_board_ext = trello_list.board.external_id
+                self.client.move_item_to_board(
+                    item_id=card.external_id,
+                    target_board_id=target_board_ext,
+                    target_list_id=trello_list.external_id,
+                )
+            else:
+                # Mesmo board, movimento simples de lista
+                self.client.move_item(
+                    card.external_id, trello_list.external_id
+                )
 
             # Atualiza referência local
             card.list_sync = trello_list
@@ -777,10 +803,22 @@ class TicketSyncService:
                         new_list.external_id,
                     )
 
-                    # 3. Tenta mover novamente com a nova lista
-                    self.client.move_item(
-                        card.external_id, new_list.external_id
-                    )
+                    # 3. Tenta mover novamente (re-avaliando cross-board se necessário)
+                    # Nota: na recuperação simplificamos para move_item ou move_item_to_board
+                    # Assumindo que a recriação já traz o board correto.
+
+                    target_board_ext_rec = new_list.board.external_id
+
+                    if needs_cross_board_move:
+                        self.client.move_item_to_board(
+                            item_id=card.external_id,
+                            target_board_id=target_board_ext_rec,
+                            target_list_id=new_list.external_id,
+                        )
+                    else:
+                        self.client.move_item(
+                            card.external_id, new_list.external_id
+                        )
 
                     # 4. Atualiza referência local
                     card.list_sync = new_list

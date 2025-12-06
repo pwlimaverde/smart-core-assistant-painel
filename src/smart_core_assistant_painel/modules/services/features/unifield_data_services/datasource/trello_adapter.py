@@ -287,6 +287,27 @@ class TrelloUnifiedDataService(UnifiedDataService):
         )
         return True
 
+    def move_item_to_board(
+        self, item_id: str, target_board_id: str, target_list_id: str
+    ) -> bool:
+        """Move um card para outro board e lista.
+
+        Usa PUT /cards/{id}?idBoard={boardId}&idList={listId}
+        Para movimentação entre boards diferentes.
+        """
+        params: Dict[str, Any] = {
+            "idBoard": target_board_id,
+            "idList": target_list_id,
+        }
+        data = self._request("PUT", f"/cards/{item_id}", params=params)
+        self._log(
+            "card movido entre boards: {} -> board={}, lista={}",
+            item_id,
+            target_board_id,
+            target_list_id,
+        )
+        return True
+
     # -------------------------- Membros (Boards/Cards) --------------------
     def invite_member_to_board(
         self, board_id: str, email: str, member_type: str = "normal"

@@ -20,6 +20,7 @@ from smart_core_assistant_painel.app.trello_sync.services.member_sync_service im
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
 )
+from smart_core_assistant_painel.app.ui.operacional.models import TipoEtapa
 from smart_core_assistant_painel.modules.services import (
     SERVICEHUB,
     FeaturesCompose,
@@ -887,6 +888,9 @@ class TicketSyncService:
             # Então, se atualizarmos o `card.list_sync` ANTES de salvar o atendimento,
             # a task de sync vai ver que já está certo.
 
+            # Recupera a etapa anterior para comparação
+            etapa_anterior = atendimento.etapa_atual
+
             logger.info(
                 "Card {} movido no Trello para lista {}. Atualizando Atendimento {} para etapa {}.",
                 card_id,
@@ -905,6 +909,38 @@ class TicketSyncService:
                 atendimento._syncing_from_trello = True
                 atendimento.etapa_atual = nova_etapa
                 atendimento.save(update_fields=["etapa_atual"])
+
+                # --- Lógica de Atribuição de Atendente (FILA -> TRABALHO) ---
+                if (
+                    etapa_anterior
+                    and etapa_anterior.tipo_etapa == TipoEtapa.FILA
+                    and nova_etapa.tipo_etapa == TipoEtapa.TRABALHO
+                    and member_creator_id
+                ):
+                    try:
+                        atendente = MemberSyncService().resolve_atendente_by_external_id(
+                            member_creator_id
+                        )
+                        if atendente:
+                            logger.info(
+                                "Movimento Trello detectado como 'Assumir Atendimento'. Atendente identificado: {}",
+                                getattr(atendente, "nome", "Desconhecido"),
+                            )
+                            # Usa método que atribui, muda status e envia saudação
+                            # Importante: transferir_para_humano_com_saudacao espera atendente_id
+                            atendimento.transferir_para_humano_com_saudacao(
+                                atendente_id=atendente.pk,
+                            )
+                        else:
+                            logger.warning(
+                                "Movimento para 'Em Trabalho' no Trello com member_id {} não resolvido para nenhum atendente.",
+                                member_creator_id,
+                            )
+                    except Exception as e:
+                        logger.error(
+                            "Erro ao tentar atribuir atendente via movimento Trello: {}",
+                            e,
+                        )
 
         except TrelloCard.DoesNotExist:
             logger.warning(

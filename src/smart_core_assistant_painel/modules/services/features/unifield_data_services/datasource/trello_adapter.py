@@ -301,10 +301,10 @@ class TrelloUnifiedDataService(UnifiedDataService):
         }
         data = self._request("PUT", f"/cards/{item_id}", params=params)
         self._log(
-            "card movido entre boards: {} -> board={}, lista={}",
-            item_id,
-            target_board_id,
-            target_list_id,
+            "card movido entre boards: {card} -> board={board}, lista={list}",
+            card=item_id,
+            board=target_board_id,
+            list=target_list_id,
         )
         return True
 

@@ -933,7 +933,7 @@
         "description": "Corrigir bugs de sincronização Trello: (1) Cards não arquivados ao apagar atendimento; (2) Cards não movidos ao transferir entre fluxos/boards.",
         "details": "## Contexto e Motivação\nO sistema apresenta falhas na sincronização com o Trello quando um atendimento é transferido para outro setor/fluxo.\n\n## Fluxo de Erro (Investigação Completa)\n1. **IA detecta transferência**: `AnaliseMensage` identifica intenção e retorna `acao_transferencia='Comercial'`\n2. **Orchestrator aplica fluxo**: `AttendanceOrchestrator` chama `atendimento.apply_flow_by_description('Comercial - Comercial')`\n3. **Atendimento muda**: `departamento`, `fluxo_atendimento` e `etapa_atual` são alterados para o novo fluxo\n4. **Signal dispara**: `post_save` aciona `atendimento_etapa_updated_move_card` que agenda `task_atendimento_move_to_etapa_list`\n5. **Lista criada em board diferente**: `move_card_to_etapa` chama `ensure_list_for_etapa` que cria lista no board do NOVO fluxo\n6. **Tentativa de mover falha**: `move_item` usa `PUT /cards/{id}?idList={listId}` que retorna 404\n7. **Razão do 404**: A API do Trello não permite mover card para lista de outro board sem especificar `idBoard`\n\n## Causa Raiz\n- O método `move_item` usa apenas `idList` no payload\n- Para cross-board moves, a API requer `idBoard` + `idList`\n- O card está em Board A mas a lista destino está em Board B\n\n## Evidência do Log\n```\nlista criada: Fila de Atendimento em 6926444ca03671bd4cd4ba9d -> 69343cb7ca69bcf8d9bfcd27\nFalha Trello API: 404 List 69343cb7ca69bcf8d9bfcd27 does not exist on board 692643b5c0c9dfa73f7bca0f\n```\n\n## Solução\n1. Implementar `move_item_to_board` no TrelloAdapter\n2. Em `move_card_to_etapa`, detectar se boards são diferentes\n3. Se diferente, usar `PUT /cards/{id}?idBoard={boardId}&idList={listId}`",
         "testStrategy": "1. **Teste Transferência**: Iniciar conversa pedindo orçamento de panfletos, verificar que card move para board do Comercial.\n2. **Logs**: `uv run task logs-docker | grep 'cross-board\\|movido entre boards'`\n3. **Teste Movimento Normal**: Mover card no mesmo board deve continuar funcionando.",
-        "status": "completed",
+        "status": "done",
         "dependencies": [
           "5",
           "6"
@@ -945,7 +945,7 @@
             "title": "Melhorar Signal de Arquivamento (pre_delete)",
             "description": "Aprimorar validação e tentar arquivamento síncrono antes de agendar task assíncrona.",
             "details": "Modificar `atendimento_deleted_archive_card` em signals.py:\n1. Validar presença de `trello_card` com log de warning se ausente.\n2. Validar `external_id` não vazio.\n3. Tentar arquivamento síncrono via `SERVICEHUB.unified_data_service.archive_item()`.\n4. Se falhar (timeout), agendar task assíncrona como fallback.",
-            "status": "completed",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 27
           },
@@ -954,7 +954,7 @@
             "title": "Implementar move_item_to_board no TrelloAdapter",
             "description": "Adicionar método para mover cards entre boards diferentes.",
             "details": "Criar método em trello_adapter.py que use `PUT /cards/{id}?idBoard={boardId}&idList={listId}` para movimentação cross-board.",
-            "status": "completed",
+            "status": "done",
             "dependencies": [],
             "parentTaskId": 27
           },
@@ -963,7 +963,7 @@
             "title": "Atualizar move_card_to_etapa para suportar cross-board",
             "description": "Modificar TicketSyncService.move_card_to_etapa para detectar mudança de board.",
             "details": "Em ticket_sync_service.py:\n1. Comparar `card.list_sync.board_id` com `trello_list.board_id`.\n2. Se diferentes, chamar `move_item_to_board`.\n3. Se iguais, manter comportamento atual (`move_item`).\n4. Atualizar `card.list_sync` após movimentação.",
-            "status": "completed",
+            "status": "done",
             "dependencies": [
               "2"
             ],
@@ -974,7 +974,7 @@
             "title": "Testes e Validação Manual",
             "description": "Executar testes manuais e verificar logs.",
             "details": "1. Testar exclusão de atendimento e verificar arquivamento no Trello.\n2. Testar transferência entre fluxos e verificar movimentação de card.\n3. Verificar logs do cluster para confirmar operações.",
-            "status": "completed",
+            "status": "done",
             "dependencies": [
               "1",
               "3"
@@ -983,13 +983,69 @@
           }
         ],
         "updatedAt": "2025-12-06T15:39:00.000Z"
+      },
+      {
+        "id": 28,
+        "title": "[FIX] Correção de Sincronização Trello - Log e Atribuição de Atendente",
+        "description": "Corrigir bugs de sincronização Trello: (1) Erro no método _log() ao mover cards entre boards; (2) Falha na atribuição automática de atendente ao mover card da Fila para Em Atendimento via Trello.",
+        "details": "## Contexto e Motivação\nO sistema apresenta dois problemas críticos na integração com o Trello:\n1. Um erro de log `TrelloUnifiedDataService._log() takes 2 positional arguments but 5 were given` ocorre após a transferência de atendimento.\n2. Ao mover um card manualmente no Trello de 'Fila' para 'Em Atendimento', o sistema não atribui o atendente responsável e não envia mensagem de continuidade.\n\n## Bug 1: Erro no método _log()\n### Diagnóstico\nO método `move_item_to_board` em `trello_adapter.py` (linha 303-308) chama `_log()` com argumentos posicionais:\n```python\nself._log(\n    \"card movido entre boards: {} -> board={}, lista={}\",\n    item_id,\n    target_board_id,\n    target_list_id,\n)\n```\nMas a assinatura espera kwargs nomeados: `_log(self, message: str, **kwargs: Any)`\n\n### Solução\nAlterar para usar kwargs nomeados com placeholders:\n```python\nself._log(\n    \"card movido entre boards: {card} -> board={board}, lista={list}\",\n    card=item_id,\n    board=target_board_id,\n    list=target_list_id,\n)\n```\n\n## Bug 2: Atendente não atribuído\n### Diagnóstico\nO método `process_webhook_card_move` em `ticket_sync_service.py` (linha 848-921):\n- Recebe `member_creator_id` (ID do usuário Trello que moveu o card)\n- NÃO utiliza esse parâmetro para resolver o atendente\n- NÃO atribui o atendente ao atendimento\n- NÃO envia mensagem de continuidade\n\n### Solução\n1. Adicionar método `resolve_atendente_by_external_id` em `MemberSyncService`\n2. Modificar `process_webhook_card_move` para:\n   - Detectar transições FILA -> TRABALHO\n   - Resolver atendente pelo external_id\n   - Usar `transferir_para_humano_com_saudacao` (já existente) para atribuir e enviar mensagem\n\n## Arquivos Afetados\n- `modules/services/features/unifield_data_services/datasource/trello_adapter.py`\n- `app/trello_sync/services/member_sync_service.py`\n- `app/trello_sync/services/ticket_sync_service.py`",
+        "testStrategy": "## Testes Manuais\n\n### Bug 1 - Movimentação entre boards:\n1. Criar atendimento em um fluxo\n2. Transferir para outro fluxo (que resulte em movimentação entre boards)\n3. Verificar que não há erro no log do cluster\n4. Verificar que o card foi movido corretamente no Trello\n\n### Bug 2 - Atribuição de atendente:\n1. Criar atendimento que fique na lista 'Fila' do Trello\n2. Acessar o Trello com a conta de um atendente cadastrado\n3. Arrastar o card da lista 'Fila' para 'Em Atendimento'\n4. Verificar que o atendimento no sistema foi atualizado com o atendente correto\n5. Verificar que a mensagem de continuidade foi enviada ao contato\n\n### Logs Esperados:\n```\nINFO: card movido entre boards: {card_id} -> board={board_id}, lista={list_id}\nINFO: Atendente {nome} identificado pela movimentação de card.\nINFO: Mensagem de continuidade enviada para atendimento {id}.\n```",
+        "status": "pending",
+        "dependencies": [
+          "27"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Corrigir chamadas ao método _log() em trello_adapter.py",
+            "description": "Ajustar as chamadas internas ao método _log para usar kwargs nomeados.",
+            "details": "Arquivo: `modules/services/features/unifield_data_services/datasource/trello_adapter.py`\n\nLocalizar linha 303-308 no método `move_item_to_board` e alterar:\n\n```python\n# Antes:\nself._log(\n    \"card movido entre boards: {} -> board={}, lista={}\",\n    item_id,\n    target_board_id,\n    target_list_id,\n)\n\n# Depois:\nself._log(\n    \"card movido entre boards: {card} -> board={board}, lista={list}\",\n    card=item_id,\n    board=target_board_id,\n    list=target_list_id,\n)\n```",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 28
+          },
+          {
+            "id": 2,
+            "title": "Adicionar método resolve_atendente_by_external_id em MemberSyncService",
+            "description": "Criar método para buscar Atendente pelo external_id do membro Trello.",
+            "details": "Arquivo: `app/trello_sync/services/member_sync_service.py`\n\nAdicionar novo método:\n```python\ndef resolve_atendente_by_external_id(\n    self, external_id: str\n) -> Optional[Any]:\n    \"\"\"Busca o atendente pelo external_id do membro Trello.\"\"\"\n    if not external_id:\n        return None\n    try:\n        tm = TrelloMember.objects.select_related(\"atendente\").get(\n            external_id=external_id\n        )\n        return tm.atendente\n    except TrelloMember.DoesNotExist:\n        logger.warning(\n            \"TrelloMember com external_id {} não encontrado.\",\n            external_id,\n        )\n        return None\n```",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 28
+          },
+          {
+            "id": 3,
+            "title": "Modificar process_webhook_card_move para atribuir atendente",
+            "description": "Implementar lógica de atribuição de atendente e envio de mensagem de continuidade.",
+            "details": "Arquivo: `app/trello_sync/services/ticket_sync_service.py`\nMétodo: `process_webhook_card_move` (linha 848-921)\n\nAlterações:\n1. Importar TipoEtapa e MemberSyncService\n2. Detectar transição FILA -> TRABALHO (comparar tipo_etapa da etapa anterior e nova)\n3. Se for transição FILA -> TRABALHO e member_creator_id presente:\n   - Chamar `MemberSyncService().resolve_atendente_by_external_id(member_creator_id)`\n   - Se atendente encontrado, chamar `atendimento.transferir_para_humano_com_saudacao(atendente.id)`\n4. Adicionar logs apropriados",
+            "status": "done",
+            "dependencies": [
+              "1",
+              "2"
+            ],
+            "parentTaskId": 28
+          },
+          {
+            "id": 4,
+            "title": "Testes e Validação Manual",
+            "description": "Executar testes manuais dos dois cenários de correção.",
+            "details": "1. **Bug 1 - Movimentação entre boards:**\n   - Transferir atendimento entre fluxos/boards\n   - Verificar logs não contêm erro de argumento\n   - Verificar card movido corretamente no Trello\n\n2. **Bug 2 - Atribuição de atendente:**\n   - Criar atendimento na Fila\n   - Mover card no Trello para 'Em Atendimento' usando conta de atendente\n   - Verificar atribuição correta no sistema\n   - Verificar envio de mensagem de continuidade",
+            "status": "done",
+            "dependencies": [
+              "3"
+            ],
+            "parentTaskId": 28
+          }
+        ],
+        "updatedAt": "2025-12-06T15:58:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-06T14:30:00.000Z",
-      "taskCount": 26,
-      "completedCount": 12,
+      "lastModified": "2025-12-06T15:58:00.000Z",
+      "taskCount": 27,
+      "doneCount": 14,
       "tags": [
         "master"
       ],

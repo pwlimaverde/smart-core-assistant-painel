@@ -228,3 +228,29 @@ class MemberSyncService:
                 pass
 
         return found_id
+
+    def resolve_atendente_by_external_id(
+        self, external_id: str
+    ) -> Optional[Any]:
+        """Busca o atendente correspondente ao external_id do membro Trello.
+
+        Args:
+            external_id: ID externo do membro no Trello.
+
+        Returns:
+            Instância de Atendente ou None se não encontrado.
+        """
+        if not external_id:
+            return None
+
+        try:
+            tm = TrelloMember.objects.select_related("atendente").get(
+                external_id=external_id
+            )
+            return tm.atendente
+        except TrelloMember.DoesNotExist:
+            logger.warning(
+                "TrelloMember com external_id {} não encontrado.",
+                external_id,
+            )
+            return None

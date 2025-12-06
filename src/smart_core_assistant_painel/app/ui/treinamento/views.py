@@ -412,6 +412,11 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
         return redirect("home")
 
     if request.method == "GET":
+        if request.GET.get("reset"):
+            if "query_compose_edicao" in request.session:
+                del request.session["query_compose_edicao"]
+            return redirect("treinamento:cadastrar_query_compose")
+
         dados_edicao = request.session.get("query_compose_edicao")
         if dados_edicao:
             context = {

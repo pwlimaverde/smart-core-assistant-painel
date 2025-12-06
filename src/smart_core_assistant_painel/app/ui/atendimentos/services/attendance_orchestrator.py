@@ -654,11 +654,27 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Obtém fluxos disponíveis
             fluxos_disponiveis = self._structure_manager.get_available_flows()
 
+            # Verifica se há histórico de conversa (diálogo em andamento)
+            has_active_history = (
+                len(historico_atendimento.get("conteudo_mensagens", [])) > 0
+            )
+
             # Decide se deve chamar IA
             has_training_data = len(dados_treinamento.strip()) > 0
-            should_call_ai = has_known_intent or has_training_data
 
-            logger.info(f"DEBUG: should_call_ai={should_call_ai}")
+            # A IA deve ser chamada se:
+            # 1. Há uma intenção conhecida detectada OU
+            # 2. Há dados de treinamento relevantes (RAG) OU
+            # 3. Há um histórico de conversa ativo (diálogo em andamento)
+            should_call_ai = (
+                has_active_history or has_known_intent or has_training_data
+            )
+
+            logger.info(
+                f"DEBUG: should_call_ai={should_call_ai} "
+                f"(history={has_active_history}, intent={has_known_intent}, "
+                f"rag={has_training_data})"
+            )
 
             if should_call_ai:
                 self._call_ai_and_register(
@@ -742,8 +758,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         prompt_intent_footer = SERVICEHUB.PROMPT_INTENT_FOOTER
         if not prompt_intent_footer:
             prompt_intent_footer = (
-                "Se houver múltiplas intenções, priorize a ordem "
-                "listada e mantenha a resposta concisa."
+                "Se houver múltiplas intenções, processe as instruções de CADA UMA "
+                "delas. Em seguida, combine as respostas em um único texto fluido, "
+                "coeso e natural, garantindo que todos os pontos foram abordados "
+                "de forma lógica e concisa."
             )
         prompt_lines.append(prompt_intent_footer)
 

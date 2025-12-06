@@ -3,7 +3,7 @@ GUIA TÉCNICO DE PRODUÇÃO: PANFLETOS (OFFSET EM GRADE)
 1. O QUE É UM PANFLETO E SUA FUNÇÃO
 O panfleto (ou flyer) é uma ferramenta de marketing direto, impressa em papel, destinada à distribuição em massa. Seu objetivo é comunicar promoções, eventos ou informações institucionais de forma rápida e impactante. Na Ecoprint, a produção é otimizada para alto volume e baixo custo através do sistema de "Grade".
 
-2. O SISTEMA DE "GRADE" (GANG RUN PRINTING) - A PECULIARIDADE DA ECOPRINT
+2. O SISTEMA DE "GRADE" - A PECULIARIDADE DA ECOPRINT
 Este é o conceito mais importante para entender a precificação e as quantidades.
 
 O que é: A "Grade" consiste em imprimir vários trabalhos de diferentes clientes em uma única chapa de impressão (matriz) e em uma única folha de papel grande.
@@ -27,6 +27,7 @@ Regra de Exceção (Orçamento Personalizado):
 Se o cliente solicitar 1.500, 3.000 ou 50.000 unidades, o trabalho NÃO entra na grade. Ele se torna um "trabalho exclusivo", exigindo chapas e acerto de máquina dedicados apenas a ele. Isso encarece o custo unitário. O agente deve sempre sugerir a grade mais próxima (ex: se o cliente quer 3.000, ofereça 4.000, pois o preço será muito próximo ou até menor que o personalizado).
 
 3. ESPECIFICAÇÕES TÉCNICAS OBRIGATÓRIAS (PRÉ-IMPRESSÃO)
+Panfletos são produzidos em OFFSET.
 Para garantir a qualidade "Offset Industrial", o arquivo deve seguir rigorosamente:
 
 A. Padrão de Cor: CMYK (Ciano, Magenta, Yellow, Black)

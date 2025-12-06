@@ -442,7 +442,7 @@ class ServiceHub:
         """Retorna o limiar de similaridade para transferência."""
         if self._similarity_threshold is None:
             self._similarity_threshold = float(
-                os.environ.get("SIMILARITY_THRESHOLD", "0.6")
+                os.environ.get("SIMILARITY_THRESHOLD", "0.4")
             )
         return self._similarity_threshold
 
@@ -451,7 +451,7 @@ class ServiceHub:
         """Retorna o limiar de distância vetorial para busca."""
         if self._vector_distance_threshold is None:
             self._vector_distance_threshold = float(
-                os.environ.get("VECTOR_DISTANCE_THRESHOLD", "0.25")
+                os.environ.get("VECTOR_DISTANCE_THRESHOLD", "0.5")
             )
         return self._vector_distance_threshold
 

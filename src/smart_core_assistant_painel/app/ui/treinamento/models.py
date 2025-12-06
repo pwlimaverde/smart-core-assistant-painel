@@ -156,8 +156,13 @@ class Documento(models.Model):
         cls,
         query_vec: list[float],
         top_k: int = 5,
-        distance_threshold: float = 0.40,  # valor de corte para distância
+        distance_threshold: float | None = None,
     ) -> tuple[str, list[int]]:
+        # Usa threshold do Remote Config se não especificado
+        from smart_core_assistant_painel.modules.services import SERVICEHUB
+
+        if distance_threshold is None:
+            distance_threshold = SERVICEHUB.VECTOR_DISTANCE_THRESHOLD
         """Busca documentos similares com rastreabilidade.
 
         Args:

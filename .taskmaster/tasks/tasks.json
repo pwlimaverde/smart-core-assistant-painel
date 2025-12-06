@@ -756,12 +756,182 @@
             "parentId": "undefined"
           }
         ]
+      },
+      {
+        "id": 24,
+        "title": "[PERF] Investigação de Desempenho do Fluxo de Mensagens e Treinamento",
+        "description": "Investigar e otimizar o desempenho do fluxo de resposta do bot e do sistema de treinamento. O treinamento está demorando muito para processar dados, e as mensagens estão com tempo de resposta muito alto (acima de 40 segundos em casos extremos).",
+        "details": "## Contexto do Problema:\n1. **Treinamento**: O processamento de treinamento está demorando muito para executar chunking e geração de embeddings.\n2. **Mensagens**: O tempo total de resposta do bot está excedendo 40 segundos em casos extremos.\n\n## Fluxo Esperado de Mensagens:\n- Recebimento de mensagem no webhook (`evolution_sync/services/webhook.py`)\n- Agendamento via buffer (5 + 5 = 10 segundos) (`message_buffer.py`)\n- Pré-processamento: `analyze_message_content` em `message_analyzer.py`\n- Processamento: `_generate_and_register_response` em `attendance_orchestrator.py`\n- Resposta enviada\n\n**Meta de Tempo**: 10s buffer + máximo 30s processamento = 40s total\n\n## Fluxo de Treinamento:\n- Signal `post_save` dispara `async_task(__gerar_documentos)` em `treinamento/signals.py`\n- Chunking via `__processar_conteudo_para_chunks`\n- Criação de documentos via `Documento.criar_documentos_de_chunks`\n- Signal `post_save` em cada Documento dispara `async_task(__gerar_embedding_documento)`\n- Geração de embedding via `FeaturesCompose.generate_embeddings`\n\n## Arquivos Principais:\n- `evolution_sync/services/webhook.py` - Recebimento webhook\n- `evolution_sync/services/message_buffer.py` - Buffer e agendamento\n- `atendimentos/services/attendance_orchestrator.py` - Orquestrador principal\n- `atendimentos/services/message_analyzer.py` - Análise prévia\n- `treinamento/signals.py` - Fluxo de treinamento\n- `ai_engine/features/generate_embeddings/` - Geração de embeddings\n\n## Métricas da LLM (Referência):\n- AnalisePrévia: 2.94s - 18.98s (adequado)\n- AnaliseMensage: 11.18s - 14.33s (adequado)\n\n## Gargalos Potenciais:\n1. Tempo de buffer muito longo (5+5s)\n2. Serialização/deserialização de envelopes\n3. Consultas ao banco de dados não otimizadas\n4. Geração de embeddings individual por documento (N chamadas à API)\n5. Busca vetorial não otimizada\n6. Carregamento de histórico de mensagens",
+        "testStrategy": "1. Adicionar logs de profiling em cada etapa do fluxo.\n2. Medir tempo individual de cada componente.\n3. Comparar com baseline definido.\n4. Testar com diferentes volumes de dados.",
+        "status": "pending",
+        "dependencies": [
+          "12"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "[Diagnóstico] Instrumentação de Profiling no Fluxo de Mensagens",
+            "description": "Adicionar logs de profiling detalhados em cada etapa do fluxo de processamento de mensagens para identificar gargalos.",
+            "details": "## Pontos de Instrumentação:\n\n1. **Webhook Receiver** (`evolution_sync/views_api.py`):\n   - Log de timestamp de recebimento da mensagem\n   - Log de tempo de normalização do payload\n\n2. **Buffer e Agendamento** (`message_buffer.py`):\n   - Log do tempo entre recebimento e agendamento\n   - Log do tempo configurado de buffer\n   - Log do momento de criação do Schedule\n\n3. **Orchestrator** (`attendance_orchestrator.py`):\n   - `process_contact_response`: Início e fim\n   - `_get_buffered_messages`: Tempo de recuperação do buffer\n   - `_compile_message_content`: Tempo de compilação\n   - `_create_message`: Tempo de persistência\n   - `_process_message_and_respond`: Tempo total de processamento\n\n4. **MessageAnalyzer** (`message_analyzer.py`):\n   - `analyze_message_content`: Tempo total de análise\n   - Tempo de carregamento de histórico\n   - Tempo de chamada à LLM (AnalisePrévia)\n\n5. **Response Generation**:\n   - `_generate_and_register_response`: Tempo total\n   - Tempo de busca RAG\n   - Tempo de chamada à LLM (AnaliseMensage)\n   - Tempo de persistência da resposta\n\n## Formato de Log:\n```python\nlogger.info(\n    f\"[PROFILING] {etapa} | contact_id={id} | duration={tempo:.3f}s\"\n)\n```",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 24
+          },
+          {
+            "id": 2,
+            "title": "[Diagnóstico] Instrumentação de Profiling no Fluxo de Treinamento",
+            "description": "Adicionar logs de profiling no fluxo de treinamento para identificar gargalos no processamento de chunking e embeddings.",
+            "details": "## Pontos de Instrumentação:\n\n1. **Signal de Treinamento** (`treinamento/signals.py`):\n   - `signals_gerar_documentos_treinamento`: Timestamp de disparo\n   - `__gerar_documentos`: Início e fim, tempo total\n   - `__processar_conteudo_para_chunks`: Tempo de chunking e quantidade de chunks gerados\n   - Tempo de criação de documentos em batch\n\n2. **Geração de Embeddings** (`signals.py`):\n   - `signals_embeddings_documento`: Timestamp de disparo por documento\n   - `__gerar_embedding_documento`: Tempo individual de geração\n   - Tempo de chamada à API de embeddings\n   - Tempo de persistência no banco\n\n3. **FeaturesCompose** (`ai_engine/features/`):\n   - `generate_chunks`: Tempo e quantidade de chunks\n   - `generate_embeddings`: Tempo de chamada à API\n\n## Métricas a Capturar:\n- Tempo total por treinamento completo\n- Tempo médio por documento/chunk\n- Quantidade de chamadas à API de embeddings\n- Tempo de overhead entre tasks assíncronas",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 24
+          },
+          {
+            "id": 3,
+            "title": "[Análise] Revisar Configuração do Buffer de Mensagens",
+            "description": "Analisar e otimizar a configuração do buffer de mensagens (TIME_CACHE) e sua estratégia de agendamento.",
+            "details": "## Análise a Realizar:\n\n1. **Configuração Atual**:\n   - Revisar valor de `SERVICEHUB.TIME_CACHE` (default: 5s)\n   - Analisar cálculo de timeout: `(TIME_CACHE or 5) + 5 = 10s`\n   - Verificar se o tempo de buffer pode ser reduzido\n\n2. **Estratégia de Buffer**:\n   - Avaliar se o buffer de 10s é necessário para agrupar mensagens\n   - Considerar estratégia de 'early trigger' quando mensagem única é detectada\n   - Avaliar tradeoff: menos buffer = mais responsividade vs mais processamentos\n\n3. **Otimizações Potenciais**:\n   - Reduzir TIME_CACHE para 3s (total 6-8s)\n   - Implementar 'fast path' para mensagens únicas\n   - Considerar timeout dinâmico baseado em padrão do contato\n\n## Arquivo Alvo:\n- `evolution_sync/services/message_buffer.py`\n- `modules/services/features/service_hub.py` (configuração)",
+            "status": "pending",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 24
+          },
+          {
+            "id": 4,
+            "title": "[Otimização] Otimizar Carregamento de Histórico de Mensagens",
+            "description": "Otimizar as queries de carregamento de histórico de atendimento e mensagens usadas na análise.",
+            "details": "## Análise a Realizar:\n\n1. **Ponto Atual**:\n   - `Atendimento.carregar_historico_mensagens()` em `message_analyzer.py`\n   - Verificar se usa `select_related` e `prefetch_related` corretamente\n   - Avaliar quantidade de mensagens carregadas\n\n2. **Otimizações Potenciais**:\n   - Limitar número de mensagens no histórico (ex: últimas 20)\n   - Usar `only()` ou `defer()` para campos pesados não necessários\n   - Adicionar índices se necessário\n   - Cache de histórico recente em Redis\n\n3. **Verificar Queries N+1**:\n   - Usar Django Debug Toolbar ou logs de query para detectar\n   - Otimizar relacionamentos precarregados\n\n## Arquivos Alvo:\n- `atendimentos/models.py` (método `carregar_historico_mensagens`)\n- `atendimentos/services/message_analyzer.py`",
+            "status": "pending",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 24
+          },
+          {
+            "id": 5,
+            "title": "[Otimização] Otimizar Geração de Embeddings em Batch",
+            "description": "Implementar geração de embeddings em batch ao invés de chamadas individuais por documento durante o treinamento.",
+            "details": "## Problema Atual:\n- Cada `Documento` dispara um signal `post_save` individual\n- Cada signal cria uma `async_task` separada para gerar embedding\n- N documentos = N chamadas à API de embeddings\n- Overhead significativo de I/O e latência de rede\n\n## Solução Proposta:\n\n1. **Batch de Embeddings**:\n   - Modificar `__gerar_documentos` para coletar todos os chunks primeiro\n   - Gerar embeddings em batch único (ou batches de 50-100)\n   - API OpenAI suporta batch de até 2048 textos\n   - Salvar todos os documentos com embeddings em uma única transação\n\n2. **Remover Signal Individual**:\n   - Desabilitar ou condicionar `signals_embeddings_documento`\n   - Ou adicionar flag `skip_embedding_signal` durante criação inicial\n\n3. **Implementação**:\n   - Modificar `FeaturesCompose.generate_embeddings` para aceitar lista de textos\n   - Atualizar datasource de embeddings para batch\n   - Usar `bulk_update` do Django para persistência\n\n## Arquivos Alvo:\n- `treinamento/signals.py`\n- `ai_engine/features/generate_embeddings/`\n- `treinamento/models.py` (método `criar_documentos_de_chunks`)",
+            "status": "pending",
+            "dependencies": [
+              "2"
+            ],
+            "parentTaskId": 24
+          },
+          {
+            "id": 6,
+            "title": "[Otimização] Revisar Busca Vetorial e RAG",
+            "description": "Otimizar as buscas vetoriais usadas no RAG para reduzir latência de recuperação de contexto.",
+            "details": "## Pontos de Análise:\n\n1. **Busca de Documentos Similares**:\n   - `Documento.buscar_documentos_similares` em `treinamento/models.py`\n   - Verificar se filtro de distância está na query (já implementado em Task 12.9)\n   - Avaliar uso de índices HNSW para pgvector\n\n2. **Busca de QueryCompose**:\n   - `QueryCompose.buscar_comportamento_similar`\n   - Verificar threshold e quantidade de resultados\n\n3. **Otimizações Potenciais**:\n   - Criar índice HNSW: `CREATE INDEX ON documento USING hnsw (embedding vector_cosine_ops)`\n   - Reduzir dimensionalidade se possível\n   - Cache de resultados frequentes\n   - Limitar número de resultados retornados\n\n4. **Paralelização**:\n   - Buscar documentos e QueryCompose em paralelo\n   - Usar `asyncio.gather` se ambiente suporta",
+            "status": "pending",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 24
+          },
+          {
+            "id": 7,
+            "title": "[Análise] Baseline e Métricas de Tempo Atual",
+            "description": "Estabelecer baseline de performance atual e definir métricas alvo para cada etapa do fluxo.",
+            "details": "## Baseline a Coletar (após instrumentação):\n\n### Fluxo de Mensagens:\n| Etapa | Tempo Observado | Meta |\n|-------|-----------------|------|\n| Webhook -> Buffer | ? | <100ms |\n| Buffer wait | 10s atual | 3-5s |\n| Recuperar buffer | ? | <50ms |\n| Compilar mensagem | ? | <50ms |\n| Criar mensagem (DB) | ? | <100ms |\n| Carregar histórico | ? | <200ms |\n| Análise prévia (LLM) | 2.9-19s | <15s |\n| Busca RAG | ? | <500ms |\n| Análise mensagem (LLM) | 11-14s | <15s |\n| Persistir resposta | ? | <100ms |\n| **TOTAL** | **>40s** | **<30s** |\n\n### Fluxo de Treinamento:\n| Etapa | Tempo Observado | Meta |\n|-------|-----------------|------|\n| Chunking | ? | <5s |\n| Criação docs (batch) | ? | <2s |\n| Embedding batch | ? | <30s (100 docs) |\n| Persist embeddings | ? | <2s |\n| **TOTAL (100 chunks)** | **?** | **<45s** |\n\n## Metodologia:\n- Executar 10 testes com dados representativos\n- Calcular média e percentil 95\n- Identificar outliers e suas causas",
+            "status": "pending",
+            "dependencies": [
+              "1",
+              "2"
+            ],
+            "parentTaskId": 24
+          },
+          {
+            "id": 8,
+            "title": "[Implementação] Aplicar Otimizações e Validar Resultados",
+            "description": "Implementar as otimizações identificadas e validar melhoria de performance.",
+            "details": "## Priorização de Otimizações:\n\n1. **Alto Impacto, Baixo Risco**:\n   - Reduzir TIME_CACHE de 5s para 3s\n   - Adicionar índice HNSW na tabela de embeddings\n   - Limitar histórico de mensagens\n\n2. **Alto Impacto, Médio Risco**:\n   - Batch de embeddings no treinamento\n   - Cache de histórico em Redis\n\n3. **Médio Impacto**:\n   - Paralelização de buscas vetoriais\n   - Otimização de queries com `only()`\n\n## Validação:\n- Executar mesmos testes do baseline\n- Comparar tempos antes/depois\n- Garantir que funcionalidade não foi afetada\n- Monitorar logs de erro por 24h\n\n## Critério de Sucesso:\n- Tempo total de resposta do bot < 30s (P95)\n- Tempo de treinamento (100 chunks) < 45s",
+            "status": "pending",
+            "dependencies": [
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "parentTaskId": 24
+          }
+        ]
+      },
+      {
+        "id": 26,
+        "title": "Implementar Ciclo de Feedback de Atendimento e Agente de Avaliação",
+        "description": "Implementar um ciclo de feedback para atendimentos resolvidos. Quando um atendimento é marcado como 'RESOLVIDO', uma mensagem solicitando avaliação (1-5) é registrada para envio. As respostas do usuário recebidas dentro de 10 minutos após a resolução são interceptadas e processadas por um agente de IA especializado (analise_avaliacao), que extrai nota, sentimento e normaliza os valores conforme regras de negócio.",
+        "details": "## Revisão do Usuário Necessária\n> [!IMPORTANT]\n> O envio de mensagens deve ser feito exclusivamente criando um registro no modelo `Mensagem`. O `evolution_sync` capturará o sinal e processará o envio. A classe `Atendimento` não deve invocar serviços de envio diretamente.\n\n## Mudanças Propostas\n\n### AI Engine (`src/smart_core_assistant_painel/modules/ai_engine`)\n[NOVO] `features/analise_avaliacao`\nCriar um novo módulo de feature seguindo rigorosamente o padrão Clean Architecture documentado em `docs_dev/normalizacao/features/prompt_new_feature.md` (Tipo: --type base).\n\n**Arquivos a Criar/Editar:**\n- `utils/erros.py`: Adicionar `AnaliseAvaliacaoError`.\n- `utils/parameters.py`: Adicionar `AnaliseAvaliacaoParameters`.\n- `utils/types.py`: Adicionar `AAUsecase` (UsecaseBase).\n- `features/analise_avaliacao/domain/usecase/analise_avaliacao_usecase.py`: Lógica de chamada ao LLM e extração.\n- `features/features_compose.py`: Método estático `analise_avaliacao`.\n\n**Lógica de Normalização de Nota (no UseCase):**\n- Se nota <= 5: Mantém.\n- Se nota entre 6 e 10: floor(nota / 2).\n- Se nota > 10: Define como 5.\n\n### UI / Lógica Central (`src/smart_core_assistant_painel/app/ui/atendimentos`)\n[MODIFICAR] `models.py`\nEm `Atendimento.finalizar_atendimento` (ou onde o status for alterado para RESOLVIDO):\n- Criar registro de `Mensagem`:\n  - Conteúdo: Texto solicitando avaliação.\n  - Tipo: Texto.\n  - Remetente: Bot/Sistema.\n- O signal do Django cuidará do envio.\n\n[MODIFICAR] `services/attendance_orchestrator.py`\n- Método `processar_feedback_se_elegivel()` (novo ou integrado):\n  - Identificar se existe atendimento resolvido há menos de 10 min e sem avaliação.\n  - Se sim e a mensagem for do cliente:\n    - Chamar `FeaturesCompose.analise_avaliacao(texto_mensagem)`.\n    - Atualizar `Atendimento`: avaliacao, feedback, tags (\"sentimento: X\").\n    - Agendar Mensagem de Agradecimento: Não enviar \"Obrigado\" imediatamente. Criar uma tarefa agendada (Django Q) para enviar após 10 minutos.\n\n## Plano de Verificação\n### Verificação Manual\n1. **Disparo da Avaliação**: Resolver atendimento -> Verificar criação de Mensagem no banco.\n2. **Processamento de Feedback e Normalização**:\n   - Nota 3 -> Salva 3.\n   - Nota 9 -> Salva 4.\n   - Nota 100 -> Salva 5.\n3. **Agradecimento Diferido**: Após feedback, verificar se a mensagem de agradecimento foi agendada (verificar fila do Django Q).",
+        "status": "pending",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "12"
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "AI Engine - Implementar Feature AnaliseAvaliacao (Clean Arch)",
+            "description": "Criar a estrutura da nova feature no AI Engine.",
+            "details": "Arquivos: `modules/ai_engine/features/analise_avaliacao/`.\n1. Criar `AnaliseAvaliacaoError` em `utils/erros.py`.\n2. Criar `AnaliseAvaliacaoParameters` (prompt input) em `utils/parameters.py`.\n3. Definir tipo `AAUsecase` em `utils/types.py`.\n4. Implementar `AnaliseAvaliacaoUsecase` com a lógica de LLM e regras de normalização de nota (floor(x/2) para 6-10).\n5. Adicionar método `analise_avaliacao` na fachada `FeaturesCompose`.",
+            "status": "pending",
+            "dependencies": [],
+            "updatedAt": "2025-12-06T12:00:00.000Z"
+          },
+          {
+            "id": 2,
+            "title": "Core Logic - Disparo Automático de Solicitação",
+            "description": "Configurar o gatilho para enviar o pedido de avaliação.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/models.py`.\nNo método `Atendimento.finalizar_atendimento` (ou signal de mudança de status):\n- Detectar mudança para 'RESOLVIDO'.\n- Executar `Mensagem.objects.create(...)` com o texto de solicitação de feedback.\n- Garantir que nenhum serviço externo seja chamado diretamente (apenas signal).",
+            "status": "pending",
+            "dependencies": [],
+            "updatedAt": "2025-12-06T12:00:00.000Z"
+          },
+          {
+            "id": 3,
+            "title": "Core Logic - Orquestração e Interceptação",
+            "description": "Implementar a lógica de interceptação de respostas no Orquestrador.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/services/attendance_orchestrator.py`.\n1. Criar método de verificação `check_feedback_eligibility(message)`.\n2. Lógica: Se (Atendimento Resolvido < 10min) E (Sem Avaliação):\n   - Chamar `FeaturesCompose.analise_avaliacao`.\n   - Atualizar campos `avaliacao`, `feedback`, `tags` do Atendimento.\n   - Retornar True para interromper fluxo normal de bot.",
+            "status": "pending",
+            "dependencies": [
+              "1",
+              "2"
+            ],
+            "updatedAt": "2025-12-06T12:00:00.000Z"
+          },
+          {
+            "id": 4,
+            "title": "Agendamento de Agradecimento Diferido",
+            "description": "Implementar o envio da mensagem de agradecimento com delay.",
+            "details": "Usar Django-Q2 (`async_task` ou `schedule`).\n- Após salvar avaliação com sucesso (Subtask 3), agendar task `send_thank_you_message` para dali a 10 minutos.\n- Essa task deve criar uma `Mensagem` de agradecimento no banco.",
+            "status": "pending",
+            "dependencies": [
+              "3"
+            ],
+            "updatedAt": "2025-12-06T12:00:00.000Z"
+          },
+          {
+            "id": 5,
+            "title": "Verificação e Testes Manuais",
+            "description": "Executar roteiro de testes para validar a feature.",
+            "details": "1. Resolver atendimento e verificar msg de solicitação.\n2. Responder com notas variadas (3, 9, 100) e validar normalização no banco.\n3. Verificar se a mensagem de agradecimento aparece na fila de agendamento e é enviada após 10min.",
+            "status": "pending",
+            "dependencies": [
+              "4"
+            ],
+            "updatedAt": "2025-12-06T12:00:00.000Z"
+          }
+        ],
+        "updatedAt": "2025-12-06T12:30:00.000Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-03T12:39:03.188Z",
-      "taskCount": 23,
+      "lastModified": "2025-12-06T12:15:00.000Z",
+      "taskCount": 25,
       "completedCount": 12,
       "tags": [
         "master"

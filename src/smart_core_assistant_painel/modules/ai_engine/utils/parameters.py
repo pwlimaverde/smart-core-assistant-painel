@@ -248,8 +248,24 @@ class GenerateChunksParameters(ParametersReturnResult):
 
 @dataclass
 class AnaliseMensageParameters(ParametersReturnResult):
+    """Parâmetros para análise de mensagem com ChatPromptTemplate multi-turn.
+
+    Attributes:
+        fluxos_disponiveis: Dicionário com fluxos disponíveis para
+            transferência.
+        chat_history: Lista de BaseMessage (HumanMessage/AIMessage) com o
+            histórico da conversa estruturado para LangChain.
+        dados_contexto: Dicionário com entidades extraídas, intents detectados
+            e histórico de atendimentos anteriores.
+        dados_empresa: Texto com dados da empresa para RAG.
+        dados_treinamento: Texto com dados de treinamento para RAG.
+        llm_parameters: Parâmetros do LLM.
+        error: Erro a ser levantado em caso de falha.
+    """
+
     fluxos_disponiveis: dict[str, str]
-    historico_atendimento: dict[str, Any]
+    chat_history: list[Any]  # list[BaseMessage] - Any para evitar import
+    dados_contexto: dict[str, Any]
     dados_empresa: str
     dados_treinamento: str
     llm_parameters: LlmParameters

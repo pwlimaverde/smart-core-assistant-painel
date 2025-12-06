@@ -656,7 +656,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # Verifica se há histórico de conversa (diálogo em andamento)
             has_active_history = (
-                len(historico_atendimento.get("conteudo_mensagens", [])) > 0
+                len(historico_atendimento.get("chat_history", [])) > 0
             )
 
             # Decide se deve chamar IA

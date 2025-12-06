@@ -63,7 +63,7 @@ class MessageAnalyzer(MessageAnalyzerInterface):
             # Se é primeira mensagem, dispara apresentação
             if (
                 not exists_atendimento_anterior
-                and not historico_atendimento.get("conteudo_mensagens")
+                and not historico_atendimento.get("chat_history")
             ):
                 FeaturesCompose.mensagem_apresentacao()
 

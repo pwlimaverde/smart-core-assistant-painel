@@ -608,7 +608,18 @@ class FeaturesCompose:
 
         parameters = AnaliseMensageParameters(
             fluxos_disponiveis=fluxos_disponiveis,
-            historico_atendimento=historico_atendimento,
+            chat_history=historico_atendimento.get("chat_history", []),
+            dados_contexto={
+                "entidades_extraidas": historico_atendimento.get(
+                    "entidades_extraidas", []
+                ),
+                "intents_detectados": historico_atendimento.get(
+                    "intents_detectados", []
+                ),
+                "historico_atendimentos": historico_atendimento.get(
+                    "historico_atendimentos", []
+                ),
+            },
             dados_empresa=SERVICEHUB.PROMPT_SYSTEM_DADOS_EMPRESA,
             dados_treinamento=dados_treinamento,
             llm_parameters=llm_parameters,

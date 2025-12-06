@@ -789,6 +789,29 @@ class Atendimento(models.Model):
     def carregar_historico_mensagens(
         self, excluir_mensagem_id: Optional[int] = None
     ) -> dict[str, Any]:
+        """Carrega o histórico de mensagens do atendimento.
+
+        Retorna um dicionário contendo:
+        - chat_history: Lista de BaseMessage (HumanMessage/AIMessage) para
+          uso com LangChain ChatPromptTemplate multi-turn.
+        - intents_detectados: Lista de intents detectados nas mensagens.
+        - entidades_extraidas: Lista de entidades extraídas das mensagens.
+        - historico_atendimentos: Lista de atendimentos anteriores do contato.
+
+        Args:
+            excluir_mensagem_id: ID da mensagem a ser excluída do histórico
+                (geralmente a mensagem atual que está sendo processada).
+
+        Returns:
+            dict[str, Any]: Dicionário com o histórico estruturado.
+        """
+        # Import local para evitar dependência circular
+        from langchain_core.messages import (
+            AIMessage,
+            BaseMessage,
+            HumanMessage,
+        )
+
         try:
             mensagens_query: QuerySet["Mensagem"] = cast(
                 QuerySet["Mensagem"],
@@ -799,12 +822,29 @@ class Atendimento(models.Model):
                     id=excluir_mensagem_id
                 )
             mensagens: list["Mensagem"] = list(mensagens_query)
-            conteudo_mensagens: list[str] = []
+
+            # Histórico de chat estruturado para LangChain
+            chat_history: list[BaseMessage] = []
             intents_detectados: list[dict[str, str]] = []
             entidades_extraidas: list[dict[str, str]] = []
+
             for mensagem in mensagens:
-                if mensagem.conteudo:
-                    conteudo_mensagens.append(mensagem.conteudo)
+                # Mensagem do cliente (HumanMessage)
+                if mensagem.conteudo and mensagem.remetente in [
+                    TipoRemetente.CONTATO,
+                    TipoRemetente.ATENDENTE_HUMANO,
+                ]:
+                    chat_history.append(
+                        HumanMessage(content=mensagem.conteudo)
+                    )
+
+                # Resposta do bot (AIMessage)
+                if mensagem.resposta_bot:
+                    chat_history.append(
+                        AIMessage(content=mensagem.resposta_bot)
+                    )
+
+                # Coleta intents e entidades
                 if mensagem.intent_detectado:
                     for intent_dict in mensagem.intent_detectado:
                         if intent_dict not in intents_detectados:
@@ -813,6 +853,8 @@ class Atendimento(models.Model):
                     for entidade_dict in mensagem.entidades_extraidas:
                         if entidade_dict not in entidades_extraidas:
                             entidades_extraidas.append(entidade_dict)
+
+            # Histórico de atendimentos anteriores
             historico_atendimentos: list[str] = []
             atendimentos_anteriores = (
                 Atendimento.objects.filter(contato=self.contato)
@@ -829,10 +871,12 @@ class Atendimento(models.Model):
                         "%d/%m/%Y"
                     )
                     historico_atendimentos.append(
-                        f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
+                        f"{data_formatada} - assunto tratado: "
+                        f"{atendimento_anterior.assunto}"
                     )
+
             resultado = {
-                "conteudo_mensagens": conteudo_mensagens,
+                "chat_history": chat_history,
                 "intents_detectados": intents_detectados,
                 "entidades_extraidas": entidades_extraidas,
                 "historico_atendimentos": historico_atendimentos,
@@ -840,10 +884,11 @@ class Atendimento(models.Model):
             return resultado
         except Exception as e:
             logger.error(
-                f"Erro ao carregar histórico de mensagens do atendimento {self.id}: {e}"
+                f"Erro ao carregar histórico de mensagens do "
+                f"atendimento {self.id}: {e}"
             )
             return {
-                "conteudo_mensagens": [],
+                "chat_history": [],
                 "intents_detectados": [],
                 "entidades_extraidas": [],
                 "historico_atendimentos": [],

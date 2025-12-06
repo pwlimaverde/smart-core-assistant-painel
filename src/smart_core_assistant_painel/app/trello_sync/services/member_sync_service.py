@@ -57,7 +57,7 @@ class MemberSyncService:
         )
         return without_accents.casefold().strip()
 
-    def invite_for_atendente(self, atendente: Any) -> TrelloMember:
+    def ensure_member_for_atendente(self, atendente: Any) -> TrelloMember:
         """Envia convite para o board do fluxo e cria/atualiza TrelloMember.
 
         - Usa `atendente.fluxo.trello_board.external_id` para o board.

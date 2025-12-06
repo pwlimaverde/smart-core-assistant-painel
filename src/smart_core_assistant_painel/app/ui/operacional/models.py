@@ -252,14 +252,14 @@ class Atendente(models.Model):
         "FluxoAtendimento",
         on_delete=models.PROTECT,
         related_name="atendentes",
-        blank=True,
+        blank=False,
         null=True,
         help_text=(
             "Fluxo de atendimento (quadro) ao qual o atendente sera convidado"
         ),
     )
     email: models.EmailField[str | None] = models.EmailField(
-        blank=True, null=True, help_text="E-mail corporativo do atendente"
+        blank=False, null=True, help_text="E-mail corporativo do atendente"
     )
     usuario: models.OneToOneField[User | None] = models.OneToOneField(
         User,
@@ -366,9 +366,12 @@ class Atendente(models.Model):
     @override
     def clean(self) -> None:
         super().clean()
-        # Comentario: email permanece opcional conforme definicao de campo.
-        # A obrigatoriedade anterior foi removida para compatibilidade
-        # com a suíte de testes. Caso necessario, validar em formulários.
+        # Comentario: email e fluxo tornaram-se obrigatorios para garantir
+        # o convite correto ao Trello.
+        if not self.email:
+            raise ValidationError(
+                {"email": "E-mail e obrigatorio para cadastro de atendente."}
+            )
         # Comentário: usar fluxo_id para evitar acesso ao descriptor quando vazio
         # Comentario: ao criar um novo atendente, o fluxo e obrigatorio.
         # Em edicao (self.pk existe), manteremos o fluxo atual caso

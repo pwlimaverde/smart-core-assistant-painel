@@ -511,6 +511,10 @@ class TicketSyncService:
                     tempo_msg = self._format_time_delta(m.timestamp)
                     conteudo: str = m.conteudo or ""
 
+                    # [Task 26.5] Mascarar feedback para evitar exposição de conteúdo sensível
+                    if m.metadados and m.metadados.get("is_feedback"):
+                        conteudo = "Feedback realizado"
+
                     # Identificar remetente com ícone e rótulo textual
                     icone_remetente = "👤"
                     label_remetente = "Cliente"

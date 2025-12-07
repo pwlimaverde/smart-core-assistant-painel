@@ -471,8 +471,6 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         try:
             from smart_core_assistant_painel.app.ui.operacional.models import (
                 AppInstance,
-            )
-            from smart_core_assistant_painel.app.ui.operacional.models import (
                 FluxoAtendimento,
             )
 
@@ -935,6 +933,17 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             msg_agradecimento = (
                 "Obrigado pelo seu feedback! Ele é muito importante para nós."
             )
+
+            # [Task 26.5] Taggear mensagem como feedback para mascarar no Trello
+            if message.metadados is None:
+                message.metadados = {}
+            # Copia para garantir que é um dicionário mutável de Python e não um objeto proxy
+            meta = dict(message.metadados)
+            meta["is_feedback"] = True
+            message.metadados = meta
+            # Salva metadados antes de registrar resposta (que já salva, mas melhor garantir)
+            message.save(update_fields=["metadados"])
+
             message.registrar_resposta_bot(msg_agradecimento, 1.0)
 
             # Cancela o atendimento "temporário" criado apenas para esta mensagem

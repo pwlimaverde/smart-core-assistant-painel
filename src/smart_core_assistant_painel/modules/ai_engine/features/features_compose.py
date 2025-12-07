@@ -262,6 +262,57 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
+    def analise_avaliacao(
+        chat_history: list[dict[str, Any]] | list[Any],
+        llm_config: LlmParameters | None = None,
+    ) -> AnaliseAvaliacao:
+        """Realiza análise de avaliação (feedback) da mensagem.
+
+        Args:
+            chat_history: Histórico da conversa para análise.
+            llm_config: Configurações opcionais do LLM.
+
+        Returns:
+            AnaliseAvaliacao: Objeto com nota, sentimento e feedback.
+
+        Raises:
+            AnaliseAvaliacaoError: Se houver erro na análise.
+        """
+        try:
+            if llm_config is None:
+                llm_config = LlmParameters(
+                    llm_class=SERVICEHUB.LLM_CLASS,
+                    model=SERVICEHUB.MODEL,
+                    error=LlmError,
+                    prompt_system="",
+                    prompt_human="",
+                    context="",
+                    extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+                )
+
+            error_param = AnaliseAvaliacaoError("Erro na análise de avaliação")
+
+            params = AnaliseAvaliacaoParameters(
+                chat_history=chat_history,
+                llm_parameters=llm_config,
+                error=error_param,
+            )
+            datasource = AnaliseAvaliacaoDatasource()
+            usecase = AnaliseAvaliacaoUsecase(datasource)
+            result = usecase(params)
+
+            if isinstance(result, SuccessReturn):
+                return result.result
+            elif isinstance(result, ErrorReturn):
+                raise result.result
+            else:
+                raise ValueError("Unexpected return type from usecase")
+
+        except Exception as e:
+            logger.error(f"Erro na feature analise_avaliacao: {e}")
+            raise AnaliseAvaliacaoError(f"Erro na análise de avaliação: {e}")
+
+    @staticmethod
     def analise_previa_mensagem(
         historico_atendimento: dict[str, Any],
         context: str,

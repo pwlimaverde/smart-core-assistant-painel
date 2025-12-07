@@ -30,7 +30,7 @@ Analise a última resposta do usuário."""
 class AnaliseAvaliacaoDatasource(AAData):
     def __call__(
         self, parameters: AnaliseAvaliacaoParameters
-    ) -> SuccessReturn[AnaliseAvaliacao] | ErrorReturn:
+    ) -> AnaliseAvaliacao | ErrorReturn:
         try:
             llm = parameters.llm_parameters.create_llm
             structured_llm = llm.with_structured_output(AnaliseAvaliacao)
@@ -57,7 +57,7 @@ class AnaliseAvaliacaoDatasource(AAData):
 
             result: AnaliseAvaliacao = chain.invoke({"chat_history": chat_str})  # type: ignore
 
-            return SuccessReturn(success=result)
+            return result
 
         except Exception as e:
             error = parameters.error

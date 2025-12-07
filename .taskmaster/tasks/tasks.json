@@ -880,7 +880,7 @@
         "title": "Implementar Ciclo de Feedback de Atendimento e Agente de Avaliação",
         "description": "Implementar um ciclo de feedback para atendimentos resolvidos. Quando um atendimento é marcado como 'RESOLVIDO', uma mensagem solicitando avaliação (1-5) é registrada para envio. As respostas do usuário recebidas dentro de 10 minutos após a resolução são interceptadas e processadas por um agente de IA especializado (analise_avaliacao), que extrai nota, sentimento e normaliza os valores conforme regras de negócio.",
         "details": "## Revisão do Usuário Necessária\n> [!IMPORTANT]\n> O envio de mensagens deve ser feito exclusivamente criando um registro no modelo `Mensagem`. O `evolution_sync` capturará o sinal e processará o envio. A classe `Atendimento` não deve invocar serviços de envio diretamente.\n\n## Mudanças Propostas\n\n### AI Engine (`src/smart_core_assistant_painel/modules/ai_engine`)\n[NOVO] `features/analise_avaliacao`\nCriar um novo módulo de feature seguindo rigorosamente o padrão Clean Architecture documentado em `docs_dev/normalizacao/features/prompt_new_feature.md` (Tipo: --type base).\n\n**Arquivos a Criar/Editar:**\n- `utils/erros.py`: Adicionar `AnaliseAvaliacaoError`.\n- `utils/parameters.py`: Adicionar `AnaliseAvaliacaoParameters`.\n- `utils/types.py`: Adicionar `AAUsecase` (UsecaseBase).\n- `features/analise_avaliacao/domain/usecase/analise_avaliacao_usecase.py`: Lógica de chamada ao LLM e extração.\n- `features/features_compose.py`: Método estático `analise_avaliacao`.\n\n**Lógica de Normalização de Nota (no UseCase):**\n- Se nota <= 5: Mantém.\n- Se nota entre 6 e 10: floor(nota / 2).\n- Se nota > 10: Define como 5.\n\n### UI / Lógica Central (`src/smart_core_assistant_painel/app/ui/atendimentos`)\n[MODIFICAR] `models.py`\nEm `Atendimento.finalizar_atendimento` (ou onde o status for alterado para RESOLVIDO):\n- Criar registro de `Mensagem`:\n  - Conteúdo: Texto solicitando avaliação.\n  - Tipo: Texto.\n  - Remetente: Bot/Sistema.\n- O signal do Django cuidará do envio.\n\n[MODIFICAR] `services/attendance_orchestrator.py`\n- Método `processar_feedback_se_elegivel()` (novo ou integrado):\n  - Identificar se existe atendimento resolvido há menos de 10 min e sem avaliação.\n  - Se sim e a mensagem for do cliente:\n    - Chamar `FeaturesCompose.analise_avaliacao(texto_mensagem)`.\n    - Atualizar `Atendimento`: avaliacao, feedback, tags (\"sentimento: X\").\n    - Agendar Mensagem de Agradecimento: Não enviar \"Obrigado\" imediatamente. Criar uma tarefa agendada (Django Q) para enviar após 10 minutos.\n\n## Plano de Verificação\n### Verificação Manual\n1. **Disparo da Avaliação**: Resolver atendimento -> Verificar criação de Mensagem no banco.\n2. **Processamento de Feedback e Normalização**:\n   - Nota 3 -> Salva 3.\n   - Nota 9 -> Salva 4.\n   - Nota 100 -> Salva 5.\n3. **Agradecimento Diferido**: Após feedback, verificar se a mensagem de agradecimento foi agendada (verificar fila do Django Q).",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "dependencies": [
           "2",
@@ -892,9 +892,9 @@
             "title": "AI Engine - Implementar Feature AnaliseAvaliacao (Clean Arch)",
             "description": "Criar a estrutura da nova feature no AI Engine.",
             "details": "Arquivos: `modules/ai_engine/features/analise_avaliacao/`.\n1. Criar `AnaliseAvaliacaoError` em `utils/erros.py`.\n2. Criar `AnaliseAvaliacaoParameters` (prompt input) em `utils/parameters.py`.\n3. Definir tipo `AAUsecase` em `utils/types.py`.\n4. Implementar `AnaliseAvaliacaoUsecase` com a lógica de LLM e regras de normalização de nota (floor(x/2) para 6-10).\n5. Adicionar método `analise_avaliacao` na fachada `FeaturesCompose`.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
-            "updatedAt": "2025-12-06T12:00:00.000Z",
+            "updatedAt": "2025-12-07T15:14:26.945Z",
             "parentId": "undefined"
           },
           {
@@ -902,9 +902,9 @@
             "title": "Core Logic - Disparo Automático de Solicitação",
             "description": "Configurar o gatilho para enviar o pedido de avaliação.",
             "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/models.py`.\nNo método `Atendimento.finalizar_atendimento` (ou signal de mudança de status):\n- Detectar mudança para 'RESOLVIDO'.\n- Executar `Mensagem.objects.create(...)` com o texto de solicitação de feedback.\n- Garantir que nenhum serviço externo seja chamado diretamente (apenas signal).",
-            "status": "pending",
+            "status": "done",
             "dependencies": [],
-            "updatedAt": "2025-12-06T12:00:00.000Z",
+            "updatedAt": "2025-12-07T15:14:26.969Z",
             "parentId": "undefined"
           },
           {
@@ -912,12 +912,12 @@
             "title": "Core Logic - Orquestração e Interceptação",
             "description": "Implementar a lógica de interceptação de respostas no Orquestrador.",
             "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/services/attendance_orchestrator.py`.\n1. Criar método de verificação `check_feedback_eligibility(message)`.\n2. Lógica: Se (Atendimento Resolvido < 10min) E (Sem Avaliação):\n   - Chamar `FeaturesCompose.analise_avaliacao`.\n   - Atualizar campos `avaliacao`, `feedback`, `tags` do Atendimento.\n   - Retornar True para interromper fluxo normal de bot.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               "1",
               "2"
             ],
-            "updatedAt": "2025-12-06T12:00:00.000Z",
+            "updatedAt": "2025-12-07T15:14:26.992Z",
             "parentId": "undefined"
           },
           {
@@ -925,11 +925,11 @@
             "title": "Agendamento de Agradecimento Diferido",
             "description": "Implementar o envio da mensagem de agradecimento com delay.",
             "details": "Usar Django-Q2 (`async_task` ou `schedule`).\n- Após salvar avaliação com sucesso (Subtask 3), agendar task `send_thank_you_message` para dali a 10 minutos.\n- Essa task deve criar uma `Mensagem` de agradecimento no banco.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               "3"
             ],
-            "updatedAt": "2025-12-06T12:00:00.000Z",
+            "updatedAt": "2025-12-07T15:14:27.014Z",
             "parentId": "undefined"
           },
           {
@@ -937,15 +937,25 @@
             "title": "Verificação e Testes Manuais",
             "description": "Executar roteiro de testes para validar a feature.",
             "details": "1. Resolver atendimento e verificar msg de solicitação.\n2. Responder com notas variadas (3, 9, 100) e validar normalização no banco.\n3. Verificar se a mensagem de agradecimento aparece na fila de agendamento e é enviada após 10min.",
-            "status": "pending",
+            "status": "done",
             "dependencies": [
               "4"
             ],
-            "updatedAt": "2025-12-06T12:00:00.000Z",
+            "updatedAt": "2025-12-07T15:14:27.032Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Mascarar Feedback no Trello",
+            "description": "",
+            "details": "Implementar mascaramento do feedback na sincronização do Trello.\n1. `AttendanceOrchestrator`: Adicionar metadado `is_feedback` na mensagem de feedback.\n2. `TicketSyncService`: Verificar metadado e substituir conteúdo por \"Feedback realizado\".",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 26,
             "parentId": "undefined"
           }
         ],
-        "updatedAt": "2025-12-06T12:30:00.000Z"
+        "updatedAt": "2025-12-07T15:14:27.032Z"
       },
       {
         "id": "27",
@@ -1146,9 +1156,9 @@
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2025-12-07T12:07:36.019Z",
+      "lastModified": "2025-12-07T15:14:27.033Z",
       "taskCount": 28,
-      "completedCount": 14,
+      "completedCount": 16,
       "tags": [
         "master"
       ]

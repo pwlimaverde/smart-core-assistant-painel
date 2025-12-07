@@ -1,45 +1,72 @@
-2025-12-06 11:24:45.960 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:_run:270 - Invocando LLM com 2 mensagens no histórico...
+cd "C:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel"; task cluster
+Aviso: GOOGLE_APPLICATION_CREDENTIALS não está definida.
+Iniciando serviços e configurações iniciais...
+2025-12-07 09:09:16.795 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-12-07 09:09:18.214 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+Serviços iniciados com sucesso.
+Iniciando a aplicação Django...
+INFO:django-q:Q Cluster football-eight-alabama-east starting.
+2025-12-07 09:09:20.552 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-12-07 09:09:22.027 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-0bf8c67c3a264ea89e4ae7ac96b38e0c guarding cluster football-eight-alabama-east [smart_core_cluster]
+INFO:django-q:Q Cluster football-eight-alabama-east [smart_core_cluster] running.
+2025-12-07 09:09:23.769 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-12-07 09:09:23.769 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-12-07 09:09:23.769 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-12-07 09:09:23.772 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:104 - 🚀 Iniciando SetEnvironRemoteFirebaseDatasource...
+2025-12-07 09:09:25.452 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-12-07 09:09:25.475 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-12-07 09:09:25.479 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+2025-12-07 09:09:25.483 | INFO     | smart_core_assistant_painel.modules.services.features.set_environ_remote.datasource.set_environ_remote_firebase_datasource:__call__:108 - ✅ SetEnvironRemoteFirebaseDatasource concluído com sucesso!
+INFO:django-q:Process-2f7001835532439d821a360d95c6c7e6 ready for work at 18920
+INFO:django-q:Process-12af8a8d307844dbb6049ec1860ea515 ready for work at 19020
+INFO:django-q:Process-48ce525caa6447a1943b0e6e5de03251 pushing tasks at 19676
+INFO:django-q:Process-9b97c38fb49e4f3cad6687b2bd94a018 monitoring at 24536
+INFO:django-q:Enqueued [smart_core_cluster] 3093
+INFO:django-q:Process-0bf8c67c3a264ea89e4ae7ac96b38e0c created task cat-kansas-early-batman from schedule [process_contact_195]
+INFO:django-q:Process-2f7001835532439d821a360d95c6c7e6 processing cat-kansas-early-batman 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' [process_contact_195]
+2025-12-07 09:10:55.193 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services:process_contact_response_task:69 - Iniciando task de processamento para contato 195
+2025-12-07 09:10:55.271 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:93 - Processando mensagem para contato 195 - bom dia, tudo bem?
+INFO:django-q:Enqueued [smart_core_cluster] 3094
+INFO:django-q:Enqueued [smart_core_cluster] 3095
+INFO:django-q:Enqueued [smart_core_cluster] 3096
+INFO:django-q:Process-12af8a8d307844dbb6049ec1860ea515 processing nuts-spring-washington-wyoming 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card'
+INFO:django-q:Enqueued [smart_core_cluster] 3097
+2025-12-07 09:10:55.580 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_create_message:221 - atd_process_compiled contact_id=195 text_len=18 msg_id=580
+2025-12-07 09:10:55.616 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
+2025-12-07 09:10:55.616 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
+2025-12-07 09:10:55.802 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:512 - Iniciando _run de AnalisePreviaLangchainDatasource
+2025-12-07 09:10:55.802 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:521 - Tipos normalizados. Intents: 3, Entities: 38
+2025-12-07 09:10:55.809 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:529 - Modelo Pydantic construído
+2025-12-07 09:10:55.809 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:534 - Histórico formatado (tamanho: 146)
+2025-12-07 09:10:56.745 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:560 - LLM criada: <class 'langchain_groq.chat_models.ChatGroq'>
+2025-12-07 09:10:56.753 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:573 - Structured LLM (json_schema) configurado
+2025-12-07 09:10:56.753 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:596 - Dados de invocação preparados
+2025-12-07 09:10:56.753 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:601 - Invocando structured_llm...
+2025-12-07 09:10:57.403 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card criado: lista=69345d2cbb79993f6a17e028 -> 69356ecfa628e32460ffbb37
 INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
-2025-12-06 11:24:46.517 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_mensage.datasource.analise_mensage_datasource:_run:281 - Resposta estruturada: resposta_texto=Obrigado pelas informações! Vou transferir seu ate..., acao_transferencia=Atendimento Comercial - Comercial, confianca=0.95
-2025-12-06 11:24:46.518 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:643 - Structured Output: acao_transferencia=Atendimento Comercial - Comercial, confianca=0.95
-2025-12-06 11:24:46.519 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:_mapear_acao_para_fluxo:742 - Mapeamento: 'Atendimento Comercial - Comercial' → 'Atendimento Comercial - Comercial'
-2025-12-06 11:24:46.520 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:657 - Transferência detectada via Structured Output. acao=Atendimento Comercial - Comercial → fluxo=Atendimento Comercial - Comercial
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-INFO:httpx:HTTP Request: POST http://192.168.3.127:11434/api/embed "HTTP/1.1 200 OK"
-2025-12-06 11:24:50.906 | INFO     | smart_core_assistant_painel.modules.ai_engine.features.features_compose:analise_mensage:685 - Score de confiabilidade (triádico): 0.6761
-INFO:django-q:Enqueued [smart_core_cluster] 2860
-2025-12-06 11:24:50.976 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:127 - Enviando resposta da mensagem 547 via Evolution API para 558881061874
-INFO:django-q:Process-5bad5d5fa8f74cb7af2b631257dfbcce processing pasta-colorado-mike-tennessee 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
-2025-12-06 11:24:52.625 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=692643b824cdaa808d472d9d -> 69343bf2c02c774d015f6c54
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (pasta-colorado-mike-tennessee)
-2025-12-06 11:24:53.664 | INFO     | smart_core_assistant_painel.app.evolution_sync.signals:_on_message_saved:146 - Mensagem 547 enviada com sucesso e marcada como respondida
-2025-12-06 11:24:53.664 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.models:registrar_resposta_bot:1017 - Resposta do bot registrada na mensagem 547 (atendimento 198) com confianca=0.676. Aguardando envio via Evolution API.
-2025-12-06 11:24:53.665 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_call_ai_and_register:805 - atd_process_registered_bot_response msg_id=547 len=133
-2025-12-06 11:24:53.678 | DEBUG    | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:252 - Atendimento 198 movido para etapa 'Em Atendimento' do fluxo 'Atendimento Inicial'
-INFO:django-q:Enqueued [smart_core_cluster] 2861
-2025-12-06 11:24:53.772 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager:_update_attendance_status_ongoing:271 - Atendimento 198 atualizado para status 'Em Atendimento'
-INFO:django-q:Enqueued [smart_core_cluster] 2862
-INFO:django-q:Enqueued [smart_core_cluster] 2863
-2025-12-06 11:24:53.915 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:126 - atd_process_done contact_id=185 scheduling_lock_cleared=1
-INFO:django-q:Process-5bad5d5fa8f74cb7af2b631257dfbcce processing island-dakota-solar-sixteen 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (friend-crazy-kilo-asparagus)
-INFO:django-q:Process-3e0d88e146974f46a81947503fd7ccd4 processing thirteen-cola-nebraska-hawaii 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
-INFO:django-q:Process-5bad5d5fa8f74cb7af2b631257dfbcce processing queen-happy-delta-potato 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (island-dakota-solar-sixteen)
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (thirteen-cola-nebraska-hawaii)
-2025-12-06 11:24:54.720 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Fila de Atendimento em 6926444ca03671bd4cd4ba9d -> 69343cb58b77c6c52085f9d8
-INFO:django-q:Process-3e0d88e146974f46a81947503fd7ccd4 processing uncle-four-green-seventeen 'smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_list_create'
-2025-12-06 11:24:55.301 | INFO     | smart_core_assistant_painel.app.trello_sync.tasks:task_process_trello_list_create:399 - Lista Trello 69343cb58b77c6c52085f9d8 já existe no sistema.
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_list_create' (uncle-four-green-seventeen)
-2025-12-06 11:24:55.821 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_request:113 - Falha Trello API: 404 List 69343cb58b77c6c52085f9d8 does not exist on board 692643b5c0c9dfa73f7bca0f
-2025-12-06 11:24:55.821 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:move_card_to_etapa:761 - Lista Trello 69343cb58b77c6c52085f9d8 não encontrada (404). Tentando recuperar...
-2025-12-06 11:24:56.436 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - lista criada: Fila de Atendimento em 6926444ca03671bd4cd4ba9d -> 69343cb7ca69bcf8d9bfcd27
-INFO:django-q:Process-3e0d88e146974f46a81947503fd7ccd4 processing mango-river-rugby-idaho 'smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_list_create'
-2025-12-06 11:24:56.977 | INFO     | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:move_card_to_etapa:774 - Lista recriada: 69343cb58b77c6c52085f9d8 -> 69343cb7ca69bcf8d9bfcd27. Tentando mover card novamente...
-2025-12-06 11:24:56.996 | ERROR    | smart_core_assistant_painel.app.trello_sync.tasks:task_process_trello_list_create:449 - Falha ao processar criação de lista Trello: duplicate key value violates unique constraint "trello_list_sync_external_id_key"
-DETAIL:  Key (external_id)=(69343cb7ca69bcf8d9bfcd27) already exists.
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_process_trello_list_create' (mango-river-rugby-idaho)
-2025-12-06 11:24:57.514 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_request:113 - Falha Trello API: 404 List 69343cb7ca69bcf8d9bfcd27 does not exist on board 692643b5c0c9dfa73f7bca0f
-2025-12-06 11:24:57.514 | ERROR    | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:move_card_to_etapa:790 - Falha na recuperação automática de lista 404: 404 Client Error: Not Found for url: https://api.trello.com/1/cards/69343bf2c02c774d015f6c54?key=9cc88ac47192943139133443cfd6c153&token=ATTAda0f07c4a584667a3fe4fdf7275167b5b6d52cd35f7d8eedad75710854719bd57FD0B15A&idList=69343cb7ca69bcf8d9bfcd27
-INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (queen-happy-delta-potato)
+2025-12-07 09:10:57.510 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:610 - Resposta structured_llm recebida: intent=[IntentItem(type='saudacao', value='bom dia, tudo bem?')] entities=[]
+2025-12-07 09:10:57.511 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:658 - Objeto de modelo final: intent=[IntentItem(type='saudacao', value='bom dia, tudo bem?')] entities=[]
+2025-12-07 09:10:57.511 | DEBUG    | smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.analise_previa_langchain.analise_previa_langchain_datasource:_run:668 - Resultado final - Intents: [{'saudacao': 'bom dia, tudo bem?'}], Entities: []
+INFO:django-q:Process-12af8a8d307844dbb6049ec1860ea515 processing comet-wyoming-steak-cup 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Enqueued [smart_core_cluster] 3098
+2025-12-07 09:10:57.992 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine:can_bot_respond:53 - Bot não pode responder atendimento 209: instância da api_key=DC17FBBF... bloqueada (resposta_bot=False)
+2025-12-07 09:10:57.992 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:275 - atd_process_can_respond contact_id=195 pode_responder=False
+2025-12-07 09:10:57.992 | WARNING  | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:_process_message_and_respond:285 - Bot não pode responder - pulando processamento de intents
+2025-12-07 09:10:57.995 | INFO     | smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator:process_contact_response:126 - atd_process_done contact_id=195 scheduling_lock_cleared=1
+INFO:django-q:Process-2f7001835532439d821a360d95c6c7e6 processing triple-edward-kilo-november 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_ensure_card' (nuts-spring-washington-wyoming)
+2025-12-07 09:10:58.022 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:__init__:54 - TrelloUnifiedDataService inicializado
+2025-12-07 09:10:58.022 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource:__call__:202 - UnifiedDataService Trello inicializado para provider=trello
+INFO:django-q:Process-2f7001835532439d821a360d95c6c7e6 processing carpet-don-carolina-zebra 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task' (cat-kansas-early-batman)
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_move_to_etapa_list' (triple-edward-kilo-november)
+2025-12-07 09:10:58.492 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_request:113 - Falha Trello API: 400 member is already on the card
+2025-12-07 09:10:58.492 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:sync_card_members:692 - Falha ao adicionar membro 5b04cace3fe94dd41aab1c6f ao card 69356ecfa628e32460ffbb37: 400 Client Error: Bad Request for url: https://api.trello.com/1/cards/69356ecfa628e32460ffbb37/idMembers?key=9cc88ac47192943139133443cfd6c153&token=ATTAda0f07c4a584667a3fe4fdf7275167b5b6d52cd35f7d8eedad75710854719bd57FD0B15A&value=5b04cace3fe94dd41aab1c6f
+INFO:django-q:Process-12af8a8d307844dbb6049ec1860ea515 processing tennessee-eight-pluto-tennessee 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members'
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (comet-wyoming-steak-cup)
+2025-12-07 09:10:59.035 | ERROR    | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_request:113 - Falha Trello API: 400 member is already on the card
+2025-12-07 09:10:59.036 | WARNING  | smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service:sync_card_members:692 - Falha ao adicionar membro 5b04cace3fe94dd41aab1c6f ao card 69356ecfa628e32460ffbb37: 400 Client Error: Bad Request for url: https://api.trello.com/1/cards/69356ecfa628e32460ffbb37/idMembers?key=9cc88ac47192943139133443cfd6c153&token=ATTAda0f07c4a584667a3fe4fdf7275167b5b6d52cd35f7d8eedad75710854719bd57FD0B15A&value=5b04cace3fe94dd41aab1c6f
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_sync_card_members' (tennessee-eight-pluto-tennessee)
+2025-12-07 09:10:59.818 | INFO     | smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter:_log:128 - card atualizado: lista=69345d2cbb79993f6a17e028 -> 69356ecfa628e32460ffbb37
+INFO:django-q:Processed 'smart_core_assistant_painel.app.trello_sync.tasks.task_atendimento_update_card_rich_content' (carpet-don-carolina-zebra)

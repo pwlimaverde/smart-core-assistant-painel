@@ -267,7 +267,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
 
             # Verifica se bot pode responder
-            pode_responder = self._rules_engine.can_bot_respond(atendimento)
+            # Verifica se bot pode responder
+            pode_responder = self._rules_engine.can_bot_respond(
+                atendimento, api_key
+            )
 
             logger.info(
                 f"atd_process_can_respond contact_id={contact_id} "

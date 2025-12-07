@@ -510,14 +510,20 @@ class TicketSyncService:
                     tempo_msg = self._format_time_delta(m.timestamp)
                     conteudo: str = m.conteudo or ""
 
-                    # Identificar remetente com ícone
-                    icone_remetente = "👤"  # Contato
+                    # Identificar remetente com ícone e rótulo textual
+                    icone_remetente = "👤"
+                    label_remetente = "Cliente"
+
                     if m.remetente == TipoRemetente.BOT.value:
                         icone_remetente = "🤖"
+                        label_remetente = "Bot"
                     elif m.remetente == TipoRemetente.ATENDENTE_HUMANO.value:
                         icone_remetente = "👨‍💻"
+                        label_remetente = "Atendente"
 
-                    linhas.append(f"**{icone_remetente} {tempo_msg}**")
+                    linhas.append(
+                        f"**{icone_remetente} {label_remetente}** - {tempo_msg}"
+                    )
 
                     if conteudo:
                         # Preserva quebras de linha e adiciona > em cada linha

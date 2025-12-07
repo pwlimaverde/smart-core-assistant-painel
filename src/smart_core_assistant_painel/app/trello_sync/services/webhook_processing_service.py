@@ -75,6 +75,47 @@ class WebhookProcessingService:
             atendimento.etapa_atual = etapa_dest
             atendimento.save(update_fields=["etapa_atual"])
 
+            # Sincroniza status para etapas padrão
+            try:
+                from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                    StatusAtendimento,
+                )
+                from smart_core_assistant_painel.app.ui.operacional.models import (
+                    TipoEtapa,
+                )
+
+                tipo_etapa = getattr(etapa_dest, "tipo_etapa", None)
+                novo_status = None
+
+                if tipo_etapa == TipoEtapa.FILA:
+                    novo_status = StatusAtendimento.FILA
+                elif tipo_etapa == TipoEtapa.TRABALHO:
+                    novo_status = StatusAtendimento.EM_ATENDIMENTO
+                elif tipo_etapa == TipoEtapa.ESPERA:
+                    novo_status = StatusAtendimento.PENDENCIA
+                elif tipo_etapa == TipoEtapa.FINALIZACAO:
+                    # Distinguir entre resolvido e cancelado pelo nome da etapa
+                    nome_lower = etapa_dest.nome.lower()
+                    if "cancelado" in nome_lower or "cancel" in nome_lower:
+                        novo_status = StatusAtendimento.CANCELADO
+                    else:
+                        novo_status = StatusAtendimento.RESOLVIDO
+
+                if novo_status and atendimento.status != novo_status:
+                    atendimento.status = novo_status
+                    atendimento.save(update_fields=["status"])
+                    logger.info(
+                        "Status do atendimento {} atualizado para {} via Trello",
+                        atendimento.id,
+                        novo_status,
+                    )
+
+            except Exception as exc:
+                logger.warning(
+                    "Falha ao sincronizar status do atendimento via Trello: {}",
+                    exc,
+                )
+
             try:
                 from smart_core_assistant_painel.app.ui.operacional.models import (
                     MovimentoFluxo,

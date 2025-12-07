@@ -458,6 +458,10 @@ class AppInstance(models.Model):
         null=True,
     )
     active: models.BooleanField[bool] = models.BooleanField(default=True)
+    resposta_bot: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Se True, o bot pode responder automaticamente mensagens desta instância",
+    )
     metadata: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict, blank=True
     )

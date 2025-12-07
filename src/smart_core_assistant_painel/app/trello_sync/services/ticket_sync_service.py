@@ -19,6 +19,7 @@ from smart_core_assistant_painel.app.trello_sync.services.member_sync_service im
 )
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
+    StatusAtendimento,
 )
 from smart_core_assistant_painel.app.ui.operacional.models import TipoEtapa
 from smart_core_assistant_painel.modules.services import (
@@ -968,6 +969,16 @@ class TicketSyncService:
                             "Erro ao tentar atribuir atendente via movimento Trello: {}",
                             e,
                         )
+
+                # --- Lógica de Finalização (Qualquer -> FINALIZACAO) ---
+                if nova_etapa.tipo_etapa == TipoEtapa.FINALIZACAO:
+                    # Verifica se o status já não é resolvido para evitar duplicidade de feedback
+                    if atendimento.status != StatusAtendimento.RESOLVIDO:
+                        logger.info(
+                            "Movimento para etapa 'Finalização' no Trello. Encerrando atendimento {} e solicitando feedback.",
+                            atendimento.pk,
+                        )
+                        atendimento.finalizar_atendimento()
 
         except TrelloCard.DoesNotExist:
             logger.warning(

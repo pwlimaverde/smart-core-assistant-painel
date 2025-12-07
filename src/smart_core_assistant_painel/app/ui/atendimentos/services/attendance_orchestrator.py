@@ -252,6 +252,14 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Obtém mensagem
             mensagem: Mensagem = Mensagem.objects.get(id=message_id)
 
+            # --- Feedback Loop Check ---
+            if self._check_and_process_feedback(mensagem, contact_id):
+                logger.info(
+                    f"Mensagem {message_id} processada como feedback. Encerrando fluxo."
+                )
+                return
+            # ---------------------------
+
             # Analisa conteúdo (intenções e entidades)
             self._message_analyzer.analyze_message_content(message_id)
 
@@ -840,3 +848,108 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         )
 
         self._structure_manager._update_attendance_status_ongoing(attendance)
+
+    def _check_and_process_feedback(
+        self, message: "Mensagem", contact_id: int
+    ) -> bool:
+        """Verifica se a mensagem é um feedback para um atendimento recém-concluído.
+
+        Args:
+            message: Mensagem recebida.
+            contact_id: ID do contato.
+
+        Returns:
+            bool: True se processado como feedback, False caso contrário.
+        """
+        try:
+            from datetime import timedelta
+
+            from django.utils import timezone
+            from langchain_core.messages import HumanMessage
+
+            from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                Atendimento,
+                StatusAtendimento,
+            )
+            from smart_core_assistant_painel.modules.ai_engine import (
+                FeaturesCompose,
+            )
+
+            # Busca último atendimento resolvido deste contato
+            # Ordena por data_fim decrescente
+            last_atd = (
+                Atendimento.objects.filter(
+                    contato_id=contact_id,
+                    status=StatusAtendimento.RESOLVIDO,
+                )
+                .exclude(data_fim__isnull=True)
+                .order_by("-data_fim")
+                .first()
+            )
+
+            if not last_atd or not last_atd.data_fim:
+                return False
+
+            # Verifica janela de tempo (10 minutos)
+            if timezone.now() - last_atd.data_fim > timedelta(minutes=10):
+                return False
+
+            # Se já tem avaliação, ignora
+            if last_atd.avaliacao:
+                return False
+
+            # Analisa se é feedback válido usando AI
+            chat_history = [HumanMessage(content=message.conteudo or "")]
+
+            try:
+                resultado = FeaturesCompose.analise_avaliacao(chat_history)
+            except Exception as e:
+                logger.warning(f"Falha na análise de avaliação: {e}")
+                return False
+
+            # Atualiza atendimento anterior
+            last_atd.avaliacao = resultado.nota
+            if resultado.feedback_original:
+                last_atd.feedback = resultado.feedback_original
+            elif message.conteudo:
+                last_atd.feedback = message.conteudo
+
+            # Tags de sentimento
+            tags = last_atd.tags or []
+            tag_sentimento = f"Sentimento: {resultado.sentimento}"
+            if tag_sentimento not in tags:
+                tags.append(tag_sentimento)
+            last_atd.tags = tags
+
+            last_atd.save(update_fields=["avaliacao", "feedback", "tags"])
+
+            logger.info(
+                f"Feedback registrado para atendimento {last_atd.id}: "
+                f"Nota={resultado.nota}, Sentimento={resultado.sentimento}"
+            )
+
+            # Envia agradecimento
+            msg_agradecimento = (
+                "Obrigado pelo seu feedback! Ele é muito importante para nós."
+            )
+            message.registrar_resposta_bot(msg_agradecimento, 1.0)
+
+            # Cancela o atendimento "temporário" criado apenas para esta mensagem
+            current_atd = message.atendimento
+            if current_atd and current_atd.id != last_atd.id:
+                if current_atd.mensagens.count() <= 1:
+                    current_atd.status = StatusAtendimento.CANCELADO
+                    current_atd.save(update_fields=["status"])
+                    logger.info(
+                        f"Atendimento temporário {current_atd.id} cancelado após feedback."
+                    )
+                else:
+                    # Se tem mais mensagens, talvez devêssemos marcar como resolvido também?
+                    # Ou deixar como está.
+                    pass
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Erro ao processar feedback: {e}")
+            return False

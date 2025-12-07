@@ -32,12 +32,14 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from ..utils.erros import (
     AnaliseMensageError,
+    AnaliseAvaliacaoError,
     DataMessageError,
     DocumentError,
     LlmError,
 )
 from ..utils.parameters import (
     AnaliseMensageParameters,
+    AnaliseAvaliacaoParameters,
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
     GenerateChunksParameters,
@@ -61,6 +63,9 @@ from ..utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
+    AAData,
+    AAUsecase,
+    AnaliseAvaliacao,
     RespostaBot,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
@@ -74,6 +79,12 @@ from .analise_mensage.datasource.analise_mensage_datasource import (
 )
 from .analise_mensage.domain.usecase.analise_mensage_usecase import (
     AnaliseMensageUseCase,
+)
+from .analise_avaliacao.datasource.analise_avaliacao_datasource import (
+    AnaliseAvaliacaoDatasource,
+)
+from .analise_avaliacao.domain.usecase.analise_avaliacao_usecase import (
+    AnaliseAvaliacaoUsecase,
 )
 
 # REMOVIDO: import legado AnalisePreviaMensagemLangchainDatasource

@@ -410,11 +410,77 @@ class Atendimento(models.Model):
             else None
         )
 
-    def finalizar_atendimento(self, novo_status: str = "resolvido") -> None:
+    def finalizar_atendimento(
+        self, novo_status: str = "resolvido", solicitar_feedback: bool = True
+    ) -> None:
         self.status = novo_status
         self.data_fim = timezone.now()
         self.adicionar_historico_status(novo_status, "Atendimento finalizado")
         self.save()
+
+        if solicitar_feedback:
+            self._enviar_solicitacao_feedback()
+
+    def _enviar_solicitacao_feedback(self) -> None:
+        """Envia solicitação de feedback via instância do departamento Atendimento."""
+        try:
+            from smart_core_assistant_painel.app.ui.operacional.models import (
+                AppInstance,
+                Departamento,
+            )
+
+            # Buscar departamento Atendimento
+            dept = Departamento.objects.filter(
+                nome="Atendimento", ativo=True
+            ).first()
+
+            if not dept:
+                logger.warning(
+                    "Departamento 'Atendimento' não encontrado. "
+                    "Tentando usar departamento atual."
+                )
+                dept = self.departamento
+
+            api_key: Optional[str] = None
+            if dept:
+                app_instance = (
+                    AppInstance.objects.filter(departamento=dept, active=True)
+                    .order_by("-created_at")
+                    .first()
+                )
+                if app_instance:
+                    api_key = str(app_instance.api_key)
+
+            metadados: dict[str, Any] = {}
+            if api_key:
+                metadados["evolution"] = {"api_key": api_key}
+                logger.info(
+                    f"API key configurada para feedback (Dept: {dept.nome if dept else 'N/A'})"
+                )
+
+            msg_texto = (
+                "Seu atendimento foi finalizado! "
+                "Por favor, avalie nosso atendimento com uma nota de 1 a 5."
+            )
+
+            # Usando global Mensagem pois é definida neste mesmo arquivo depois
+            Mensagem.objects.create(
+                atendimento=self,
+                tipo=TipoMensagem.TEXTO_FORMATADO,
+                conteudo="",
+                remetente=TipoRemetente.BOT,
+                resposta_bot=msg_texto,
+                metadados=metadados,
+                respondida=False,
+            )
+            logger.info(
+                f"Solicitação de feedback criada para atendimento {self.id}"
+            )
+
+        except Exception as e:
+            logger.error(
+                f"Erro ao enviar solicitação de feedback para atendimento {self.id}: {e}"
+            )
 
     def change_status(
         self, novo_status: StatusAtendimento, observacao: str = ""

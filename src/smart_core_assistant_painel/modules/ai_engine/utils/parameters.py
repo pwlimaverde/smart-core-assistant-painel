@@ -12,6 +12,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from py_return_success_or_error import ParametersReturnResult
 
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    AnaliseAvaliacaoError,
     AnaliseMensageError,
     DataMessageError,
     DocumentError,
@@ -270,6 +271,24 @@ class AnaliseMensageParameters(ParametersReturnResult):
     dados_treinamento: str
     llm_parameters: LlmParameters
     error: AnaliseMensageError
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+@dataclass
+class AnaliseAvaliacaoParameters(ParametersReturnResult):
+    """Parâmetros para e a feature de análise de avaliação.
+
+    Attributes:
+        chat_history: Histórico da conversa (LangChain format).
+        llm_parameters: Parâmetros do LLM.
+        error: Erro a ser levantado em caso de falha.
+    """
+
+    chat_history: list[Any]
+    llm_parameters: LlmParameters
+    error: AnaliseAvaliacaoError
 
     def __str__(self) -> str:
         return self.__repr__()

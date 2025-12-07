@@ -23,6 +23,7 @@ from smart_core_assistant_painel.modules.ai_engine.features.load_mensage_data.do
     MessageData,
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
+    AnaliseAvaliacaoParameters,
     AnaliseMensageParameters,
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
@@ -157,3 +158,25 @@ AMUsecase: TypeAlias = UsecaseBaseCallData[
     str,
     AnaliseMensageParameters,
 ]
+
+
+class AnaliseAvaliacao(BaseModel):
+    """Modelo Pydantic para Structured Output da análise de avaliação."""
+
+    nota: int = Field(
+        description="Nota de avaliação numérica convertida para escala 1-5"
+    )
+    sentimento: str = Field(
+        description="Sentimento do cliente (positivo, negativo, neutro)"
+    )
+    feedback_original: Optional[str] = Field(
+        description="Texto original do feedback, se houver", default=None
+    )
+
+
+AAUsecase: TypeAlias = UsecaseBaseCallData[
+    AnaliseAvaliacao,
+    AnaliseAvaliacao,
+    AnaliseAvaliacaoParameters,
+]
+AAData: TypeAlias = Datasource[AnaliseAvaliacao, AnaliseAvaliacaoParameters]

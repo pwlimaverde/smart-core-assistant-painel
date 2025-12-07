@@ -463,9 +463,9 @@ class Atendimento(models.Model):
                 "Por favor, avalie nosso atendimento com uma nota de 1 a 5."
             )
 
-            # Usando global Mensagem pois é definida neste mesmo arquivo depois
-            Mensagem.objects.create(
-                atendimento=self,
+            # Usando self.mensagens.create para evitar referência direta à classe Mensagem
+            # que é definida posteriormente neste arquivo.
+            self.mensagens.create(
                 tipo=TipoMensagem.TEXTO_FORMATADO,
                 conteudo="",
                 remetente=TipoRemetente.BOT,
@@ -476,6 +476,30 @@ class Atendimento(models.Model):
             logger.info(
                 f"Solicitação de feedback criada para atendimento {self.id}"
             )
+
+            # Agendar task de verificação de timeout (5 minutos)
+            try:
+                # 5 minutos = 300 segundos
+                from django.utils import timezone
+                from datetime import timedelta
+                from django_q.tasks import schedule
+
+                run_at = timezone.now() + timedelta(minutes=5)
+
+                schedule(
+                    "smart_core_assistant_painel.app.ui.atendimentos.tasks.verificar_feedback_atendimento",
+                    self.id,
+                    schedule_type="O",  # O = Once
+                    next_run=run_at,
+                )
+                logger.info(
+                    f"Task de timeout de feedback agendada para {run_at}"
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"Erro ao agendar task de timeout de feedback: {e}"
+                )
 
         except Exception as e:
             logger.error(
@@ -1427,13 +1451,30 @@ def processar_mensagem_por_contato(
 
         atendimento = buscar_atendimento_ativo_por_contato(contato_id)
         if not atendimento:
-            atendimento = inicializar_atendimento_por_contato(
-                contato,
-                primeira_mensagem=conteudo,
-                metadata_contato=metadados,
-                nome_perfil_whatsapp=nome_perfil_whatsapp,
-                api_key=api_key,
+            # Verifica se há atendimento recém-resolvido (janela de feedback de 10 min)
+            from datetime import timedelta
+            # StatusAtendimento is available in global scope (imported/defined above)
+
+            recent_resolved = (
+                Atendimento.objects.filter(
+                    contato_id=contato_id,
+                    status=StatusAtendimento.RESOLVIDO,
+                    data_fim__gte=timezone.now() - timedelta(minutes=10),
+                )
+                .order_by("-data_fim")
+                .first()
             )
+
+            if recent_resolved and not recent_resolved.avaliacao:
+                atendimento = recent_resolved
+            else:
+                atendimento = inicializar_atendimento_por_contato(
+                    contato,
+                    primeira_mensagem=conteudo,
+                    metadata_contato=metadados,
+                    nome_perfil_whatsapp=nome_perfil_whatsapp,
+                    api_key=api_key,
+                )
 
         if message_id:
             existente = Mensagem.objects.filter(

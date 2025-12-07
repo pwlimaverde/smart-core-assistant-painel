@@ -916,7 +916,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # Tags de sentimento
             tags = last_atd.tags or []
-            tag_sentimento = f"Sentimento: {resultado.sentimento}"
+            # Remove tags de sentimento anteriores para evitar duplicidade
+            tags = [t for t in tags if not t.startswith("sentimento:")]
+
+            tag_sentimento = f"sentimento: {resultado.sentimento}"
             if tag_sentimento not in tags:
                 tags.append(tag_sentimento)
             last_atd.tags = tags

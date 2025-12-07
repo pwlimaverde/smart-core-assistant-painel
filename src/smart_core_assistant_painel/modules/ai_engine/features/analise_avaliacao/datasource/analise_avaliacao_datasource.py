@@ -1,5 +1,3 @@
-from typing import Any, Dict
-
 from langchain_core.prompts import ChatPromptTemplate
 from py_return_success_or_error import ErrorReturn, SuccessReturn
 
@@ -11,16 +9,16 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     AnaliseAvaliacao,
 )
 
-PROMPT_SYSTEM = """Você é um especialista em análise de satisfação do cliente (CSAT/NPS).
+PROMPT_SYSTEM = """Você é um especialista em análise de satisfação do cliente.
 Sua tarefa é analisar a resposta do usuário a uma solicitação de feedback e extrair:
-1. A nota numérica (se presente).
-2. O sentimento (positivo, negativo, neutro).
-3. O feedback textual original.
+1. A nota numérica (1 a 5).
+2. O sentimento (apenas 'positivo' ou 'negativo').
+3. O feedback textual.
 
 REGRAS:
-- Extraia a nota EXATAMENTE como o usuário escreveu (ex: 10, 5, 3.5). Se for texto (ex: "cinco"), converta para número.
-- Se não houver nota explícita, tente inferir pelo sentimento (Muito Bom=5, Bom=4, Regular=3, Ruim=2, Péssimo=1), mas a prioridade é o número.
-- Se não conseguir identificar nota, use 0 ou -1 para indicar ausência (o sistema tratará).
+- Nota: Extraia o número 1-5. Se for > 5, normalize (ex: 10 -> 5). Se não houver número, infira pelo sentimento (Positivo=5, Negativo=1).
+- Sentimento: Classifique estritamente como 'positivo' (notas 4-5 ou elogios) ou 'negativo' (notas 1-3 ou críticas). Evite 'neutro'.
+- Feedback: Extraia o texto explicativo. Se for apenas a nota, retorne None.
 """
 
 PROMPT_HUMAN = """Histórico da conversa recentes (foco na última mensagem do usuário):
@@ -57,11 +55,11 @@ class AnaliseAvaliacaoDatasource(AAData):
                 ]
             )
 
-            result: AnaliseAvaliacao = chain.invoke({"chat_history": chat_str})
+            result: AnaliseAvaliacao = chain.invoke({"chat_history": chat_str})  # type: ignore
 
             return SuccessReturn(success=result)
 
         except Exception as e:
             error = parameters.error
             error.message = f"{error.message} - {str(e)}"
-            return ErrorReturn(result=error)
+            return ErrorReturn(error)

@@ -688,6 +688,27 @@ class TicketSyncService:
                     self.client.add_member_to_card(
                         card.external_id, member_id_atual
                     )
+                except requests.exceptions.HTTPError as http_err:
+                    # [FIX] Silencia erro se membro já estiver no card (400)
+                    if (
+                        http_err.response is not None
+                        and http_err.response.status_code == 400
+                        and "already on the card"
+                        in http_err.response.text.lower()
+                    ):
+                        logger.info(
+                            "Membro {} já está no card {}. Ignorando.",
+                            member_id_atual,
+                            card.external_id,
+                        )
+                    else:
+                        # Loga outros erros HTTP como warning
+                        logger.warning(
+                            "Falha HTTP ao adicionar membro {} ao card {}: {}",
+                            member_id_atual,
+                            card.external_id,
+                            http_err,
+                        )
                 except Exception as exc:
                     logger.warning(
                         "Falha ao adicionar membro {} ao card {}: {}",

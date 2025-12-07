@@ -459,8 +459,8 @@ class Atendimento(models.Model):
                 )
 
             msg_texto = (
-                "Seu atendimento foi finalizado! "
-                "Por favor, avalie nosso atendimento com uma nota de 1 a 5."
+                "Seu atendimento na Ecoprint foi concluído!\n "
+                "Sua opinião é muito importante para nós. Poderia nos avaliar com uma nota de 1 a 5 e compartilhar um comentário sobre como foi sua experiência?"
             )
 
             # Usando self.mensagens.create para evitar referência direta à classe Mensagem
@@ -790,7 +790,7 @@ class Atendimento(models.Model):
 
             # 3. Preparar mensagem de saudação
             mensagem_saudacao = (
-                f"Olá, meu nome é {atendente.nome}, irei continuar seu "
+                f"Olá, meu nome é {atendente.nome}, sou Vendedor da Ecoprint, irei continuar seu "
                 "atendimento."
             )
 

@@ -768,9 +768,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         if not prompt_intent_footer:
             prompt_intent_footer = (
                 "Se houver múltiplas intenções, processe as instruções de CADA UMA "
-                "delas. Em seguida, combine as respostas em um único texto fluido, "
-                "coeso e natural, garantindo que todos os pontos foram abordados "
-                "de forma lógica e concisa."
+                "delas. Em seguida, combine as respostas em um texto organizado. "
+                "Use listas e parágrafos curtos para separar os assuntos. "
+                "Garanta que a resposta seja fluida, mas estruturada visualmente."
             )
         prompt_lines.append(prompt_intent_footer)
 
@@ -940,6 +940,16 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Copia para garantir que é um dicionário mutável de Python e não um objeto proxy
             meta = dict(message.metadados)
             meta["is_feedback"] = True
+
+            # [FIX] Injeta API Key da instância original para envio correto
+            ctx = last_atd.contexto_conversa or {}
+            api_key = ctx.get("api_key")
+            if api_key:
+                meta["evolution"] = {"api_key": str(api_key)}
+                logger.info(
+                    f"API Key {api_key} injetada na resposta de feedback"
+                )
+
             message.metadados = meta
             # Salva metadados antes de registrar resposta (que já salva, mas melhor garantir)
             message.save(update_fields=["metadados"])

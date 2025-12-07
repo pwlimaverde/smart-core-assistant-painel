@@ -223,7 +223,9 @@ class AnaliseMensageDatasource(AMData):
                     "3. **Informação Incorreta:** Se não houver informações "
                     f'relevantes, responda: "{msg_fallback}"\n'
                     "4. **Linguagem e Estilo:** Responda em português, de "
-                    "forma concisa (máximo 5 frases), objetiva e educada.\n"
+                    "forma sóbria, organizada e educada. Use quebras de linha e "
+                    "listas com marcadores (-) para facilitar a leitura sempre que "
+                    "houver múltiplos tópicos. Evite blocos de texto muito longos.\n"
                     "5. **Análise de Transferência:** Analise se o usuário "
                     "precisa ser transferido para um setor específico.\n"
                     "6. **Regra de Transferência:** Se identificar que uma "

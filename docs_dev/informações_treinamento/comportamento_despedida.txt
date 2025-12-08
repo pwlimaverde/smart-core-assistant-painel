@@ -1,7 +1,7 @@
 "tag": despedida,
 "grupo": comunicacao_basica,
 "descricao": 
-Encerramento cordial da conversa.
+Expressões usadas para encerrar uma interação ou finalizar uma conversa, reconhecendo o término do contato de forma cordial.
 "exemplo": 
 Obrigado, tchau.
 Até mais.

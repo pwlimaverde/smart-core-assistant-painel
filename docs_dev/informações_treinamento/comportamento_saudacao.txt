@@ -1,7 +1,7 @@
 "tag": saudacao,
 "grupo": comunicacao_basica,
 "descricao": 
-Padrão de saudação e apresentação do assistente virtual da Ecoprint.
+Expressões usadas para abrir uma interação ou iniciar uma conversa, reconhecendo a presença do interlocutor de forma cordial.
 "exemplo": 
 Olá, Ecoprint!
 Bom dia, gostaria de atendimento.

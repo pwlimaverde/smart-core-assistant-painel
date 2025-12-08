@@ -20,7 +20,7 @@ from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class GenerateChunksUseCase(GCUsecase):
-    """Use case para gerar chunks a partir de conteúdo de texto.
+    """[BOT-EMB-002] Use case para gerar chunks a partir de conteúdo de texto.
 
     Esta classe processa um texto e o divide em chunks menores usando
     o RecursiveCharacterTextSplitter do LangChain, aplicando as configurações

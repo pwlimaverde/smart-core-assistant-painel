@@ -410,11 +410,101 @@ class Atendimento(models.Model):
             else None
         )
 
-    def finalizar_atendimento(self, novo_status: str = "resolvido") -> None:
+    def finalizar_atendimento(
+        self, novo_status: str = "resolvido", solicitar_feedback: bool = True
+    ) -> None:
         self.status = novo_status
         self.data_fim = timezone.now()
         self.adicionar_historico_status(novo_status, "Atendimento finalizado")
         self.save()
+
+        if solicitar_feedback:
+            self._enviar_solicitacao_feedback()
+
+    def _enviar_solicitacao_feedback(self) -> None:
+        """Envia solicitação de feedback via instância do departamento Atendimento."""
+        try:
+            from smart_core_assistant_painel.app.ui.operacional.models import (
+                AppInstance,
+                Departamento,
+            )
+
+            # Buscar departamento Atendimento
+            dept = Departamento.objects.filter(
+                nome="Atendimento", ativo=True
+            ).first()
+
+            if not dept:
+                logger.warning(
+                    "Departamento 'Atendimento' não encontrado. "
+                    "Tentando usar departamento atual."
+                )
+                dept = self.departamento
+
+            api_key: Optional[str] = None
+            if dept:
+                app_instance = (
+                    AppInstance.objects.filter(departamento=dept, active=True)
+                    .order_by("-created_at")
+                    .first()
+                )
+                if app_instance:
+                    api_key = str(app_instance.api_key)
+
+            metadados: dict[str, Any] = {}
+            if api_key:
+                metadados["evolution"] = {"api_key": api_key}
+                logger.info(
+                    f"API key configurada para feedback (Dept: {dept.nome if dept else 'N/A'})"
+                )
+
+            msg_texto = (
+                "Seu atendimento na Ecoprint foi concluído!\n "
+                "Sua opinião é muito importante para nós. Poderia nos avaliar com uma nota de 1 a 5 e compartilhar um comentário sobre como foi sua experiência?"
+            )
+
+            # Usando self.mensagens.create para evitar referência direta à classe Mensagem
+            # que é definida posteriormente neste arquivo.
+            self.mensagens.create(
+                tipo=TipoMensagem.TEXTO_FORMATADO,
+                conteudo="",
+                remetente=TipoRemetente.BOT,
+                resposta_bot=msg_texto,
+                metadados=metadados,
+                respondida=False,
+            )
+            logger.info(
+                f"Solicitação de feedback criada para atendimento {self.id}"
+            )
+
+            # Agendar task de verificação de timeout (5 minutos)
+            try:
+                # 5 minutos = 300 segundos
+                from django.utils import timezone
+                from datetime import timedelta
+                from django_q.tasks import schedule
+
+                run_at = timezone.now() + timedelta(minutes=5)
+
+                schedule(
+                    "smart_core_assistant_painel.app.ui.atendimentos.tasks.verificar_feedback_atendimento",
+                    self.id,
+                    schedule_type="O",  # O = Once
+                    next_run=run_at,
+                )
+                logger.info(
+                    f"Task de timeout de feedback agendada para {run_at}"
+                )
+
+            except Exception as e:
+                logger.error(
+                    f"Erro ao agendar task de timeout de feedback: {e}"
+                )
+
+        except Exception as e:
+            logger.error(
+                f"Erro ao enviar solicitação de feedback para atendimento {self.id}: {e}"
+            )
 
     def change_status(
         self, novo_status: StatusAtendimento, observacao: str = ""
@@ -700,7 +790,7 @@ class Atendimento(models.Model):
 
             # 3. Preparar mensagem de saudação
             mensagem_saudacao = (
-                f"Olá, meu nome é {atendente.nome}, irei continuar seu "
+                f"Olá, meu nome é {atendente.nome}, sou Vendedor da Ecoprint, irei continuar seu "
                 "atendimento."
             )
 
@@ -789,6 +879,29 @@ class Atendimento(models.Model):
     def carregar_historico_mensagens(
         self, excluir_mensagem_id: Optional[int] = None
     ) -> dict[str, Any]:
+        """Carrega o histórico de mensagens do atendimento.
+
+        Retorna um dicionário contendo:
+        - chat_history: Lista de BaseMessage (HumanMessage/AIMessage) para
+          uso com LangChain ChatPromptTemplate multi-turn.
+        - intents_detectados: Lista de intents detectados nas mensagens.
+        - entidades_extraidas: Lista de entidades extraídas das mensagens.
+        - historico_atendimentos: Lista de atendimentos anteriores do contato.
+
+        Args:
+            excluir_mensagem_id: ID da mensagem a ser excluída do histórico
+                (geralmente a mensagem atual que está sendo processada).
+
+        Returns:
+            dict[str, Any]: Dicionário com o histórico estruturado.
+        """
+        # Import local para evitar dependência circular
+        from langchain_core.messages import (
+            AIMessage,
+            BaseMessage,
+            HumanMessage,
+        )
+
         try:
             mensagens_query: QuerySet["Mensagem"] = cast(
                 QuerySet["Mensagem"],
@@ -799,12 +912,29 @@ class Atendimento(models.Model):
                     id=excluir_mensagem_id
                 )
             mensagens: list["Mensagem"] = list(mensagens_query)
-            conteudo_mensagens: list[str] = []
+
+            # Histórico de chat estruturado para LangChain
+            chat_history: list[BaseMessage] = []
             intents_detectados: list[dict[str, str]] = []
             entidades_extraidas: list[dict[str, str]] = []
+
             for mensagem in mensagens:
-                if mensagem.conteudo:
-                    conteudo_mensagens.append(mensagem.conteudo)
+                # Mensagem do cliente (HumanMessage)
+                if mensagem.conteudo and mensagem.remetente in [
+                    TipoRemetente.CONTATO,
+                    TipoRemetente.ATENDENTE_HUMANO,
+                ]:
+                    chat_history.append(
+                        HumanMessage(content=mensagem.conteudo)
+                    )
+
+                # Resposta do bot (AIMessage)
+                if mensagem.resposta_bot:
+                    chat_history.append(
+                        AIMessage(content=mensagem.resposta_bot)
+                    )
+
+                # Coleta intents e entidades
                 if mensagem.intent_detectado:
                     for intent_dict in mensagem.intent_detectado:
                         if intent_dict not in intents_detectados:
@@ -813,6 +943,8 @@ class Atendimento(models.Model):
                     for entidade_dict in mensagem.entidades_extraidas:
                         if entidade_dict not in entidades_extraidas:
                             entidades_extraidas.append(entidade_dict)
+
+            # Histórico de atendimentos anteriores
             historico_atendimentos: list[str] = []
             atendimentos_anteriores = (
                 Atendimento.objects.filter(contato=self.contato)
@@ -829,10 +961,12 @@ class Atendimento(models.Model):
                         "%d/%m/%Y"
                     )
                     historico_atendimentos.append(
-                        f"{data_formatada} - assunto tratado: {atendimento_anterior.assunto}"
+                        f"{data_formatada} - assunto tratado: "
+                        f"{atendimento_anterior.assunto}"
                     )
+
             resultado = {
-                "conteudo_mensagens": conteudo_mensagens,
+                "chat_history": chat_history,
                 "intents_detectados": intents_detectados,
                 "entidades_extraidas": entidades_extraidas,
                 "historico_atendimentos": historico_atendimentos,
@@ -840,10 +974,11 @@ class Atendimento(models.Model):
             return resultado
         except Exception as e:
             logger.error(
-                f"Erro ao carregar histórico de mensagens do atendimento {self.id}: {e}"
+                f"Erro ao carregar histórico de mensagens do "
+                f"atendimento {self.id}: {e}"
             )
             return {
-                "conteudo_mensagens": [],
+                "chat_history": [],
                 "intents_detectados": [],
                 "entidades_extraidas": [],
                 "historico_atendimentos": [],
@@ -1316,13 +1451,30 @@ def processar_mensagem_por_contato(
 
         atendimento = buscar_atendimento_ativo_por_contato(contato_id)
         if not atendimento:
-            atendimento = inicializar_atendimento_por_contato(
-                contato,
-                primeira_mensagem=conteudo,
-                metadata_contato=metadados,
-                nome_perfil_whatsapp=nome_perfil_whatsapp,
-                api_key=api_key,
+            # Verifica se há atendimento recém-resolvido (janela de feedback de 10 min)
+            from datetime import timedelta
+            # StatusAtendimento is available in global scope (imported/defined above)
+
+            recent_resolved = (
+                Atendimento.objects.filter(
+                    contato_id=contato_id,
+                    status=StatusAtendimento.RESOLVIDO,
+                    data_fim__gte=timezone.now() - timedelta(minutes=10),
+                )
+                .order_by("-data_fim")
+                .first()
             )
+
+            if recent_resolved and not recent_resolved.avaliacao:
+                atendimento = recent_resolved
+            else:
+                atendimento = inicializar_atendimento_por_contato(
+                    contato,
+                    primeira_mensagem=conteudo,
+                    metadata_contato=metadados,
+                    nome_perfil_whatsapp=nome_perfil_whatsapp,
+                    api_key=api_key,
+                )
 
         if message_id:
             existente = Mensagem.objects.filter(

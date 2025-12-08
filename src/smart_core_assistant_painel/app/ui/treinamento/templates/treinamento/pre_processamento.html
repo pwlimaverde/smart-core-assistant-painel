@@ -4,96 +4,99 @@
 {% load markdown_extras %}
 
 {% block 'conteudo' %}
-    <main>
-        <header class="relative isolate bg-lime-200/80">
-            <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-                <div class="mx-auto flex max-w-2xl items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
-                    <div class="flex items-center gap-x-6">
-                        <img src="{% static 'img/arcane.png' %}" alt="" class="w-1/3">
-                        <h1>
-                            <div class="text-sm/6 text-gray-500">Upload</div>
-                            <div class="mt-1 text-base font-semibold text-gray-900">Treinamento da IA - Processar os Dados - id: {{ treinamento.id }}</div>
+<main class="bg-stone-50 min-h-screen">
+    <header class="bg-white shadow-sm">
+        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-x-4">
+                    <img src="{% static 'img/logo_smart.png' %}" alt="Smart Core Logo" class="h-12 w-auto">
+                    <div>
+                        <h1 class="text-2xl font-bold tracking-tight text-stone-900">
+                            Pré-processamento
                         </h1>
-                    </div>
-                    <div class="flex items-center gap-x-4 sm:gap-x-6">
-                        <a href="{% url 'treinamento:treinar_ia' %}"
-                           type="button"
-                           class="hidden text-sm/6 font-semibold text-gray-900 sm:block">Treinamento da IA</a>
-                        <a href="{% url 'treinamento:verificar_treinamentos_vetorizados' %}"
-                           type="button"
-                           class="hidden text-sm/6 font-semibold text-gray-900 sm:block">Verificar Treinamentos</a>
-                        <a href=""
-                           type="button"
-                           class="hidden text-sm/6 font-semibold text-gray-900 sm:block">Perguntar</a>
+                        <p class="text-sm text-stone-500">
+                            Revisão e curadoria do conteúdo antes da indexação
+                        </p>
                     </div>
                 </div>
-            </div>
-        </header>
-        <div class="w-full min-h-screen px-4 py-6 sm:px-6 lg:px-8">
-            <div class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 items-start gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-                <!-- Upload -->
-                <div class="-mx-4 px-4 py-8 shadow-xs ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 lg:col-span-2 lg:row-span-2 lg:row-end-2 ">
-                    <div class="divide-y divide-gray-900/10  max-w-1xl mx-auto ">
-                        <form class="sm:rounded-xl md:col-span-2"
-                              action="{% url 'treinamento:pre_processamento' id=treinamento.id %}"
-                              method="POST"
-                              enctype='multipart/form-data'>
-                            {% csrf_token %}
-                            <div class="flex-1 w-full min-h-screen px-4 py-6 sm:p-1">
-                                <div class="grid w-full grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
-                                    <div class="sm:col-span-2 h-fit">
-                                        <div class="sm:col-span-2 h-fit flex items-center justify-between gap-4">
-                                            <div class="mb-4">
-                                            <div class="mt-1 text-base font-semibold text-gray-900">Tag: {{ treinamento.tag }}</div>    
-                                            <div class="mt-1 text-base font-semibold text-gray-900">Grupo: {{ treinamento.grupo }}</div>    
-                                            
-                                        </div>
-                                            <div class="flex gap-3">
-                                                <button type="submit" name="acao" value="aceitar"
-                                                        class="rounded-md bg-green-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-green-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
-                                                    Aceitar Melhorias
-                                                </button>
-                                                <button type="submit" name="acao" value="manter"
-                                                        class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                                                    Manter Original
-                                                </button>
-                                                <button type="submit" name="acao" value="descartar"
-                                                        class="rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
-                                                    Descartar Treinamento
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="min-h-screen col-span-full">
-                                        <div class="mt-2">
-                                            <!-- Editor lado esquerdo -->
-                                            <div class="grid grid-cols-2 gap-4">
-                                                
-                                                <div>
-                                                    <h3 class="text-sm font-medium text-gray-700 mb-2">Dados do Treinamento</h3>
-                                                    <div class="block w-full h-screen overflow-y-auto rounded-md bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 prose prose-sm max-w-none">
-                                                        {{ conteudo_unificado|markdown_format }}
-                                                    </div>
-                                                </div>
-                                                <!-- Preview lado direito -->
-                                                <div>
-                                                    <h3 class="text-sm font-medium text-gray-700 mb-2">Sugestão de Melhoria</h3>
-                                                    <div class="block w-full h-screen overflow-y-auto rounded-md bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 prose prose-sm max-w-none">
-                                                        {{ texto_melhorado|markdown_format }}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                </div>
-                            </div>
-                        </form>
-                    </div>
+                <div class="flex gap-x-3">
+                    <a href="{% url 'treinamento:treinar_ia' %}"
+                        class="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-stone-900 shadow-sm ring-1 ring-inset ring-stone-300 hover:bg-stone-50">
+                        Voltar
+                    </a>
                 </div>
             </div>
         </div>
+    </header>
+
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <form action="{% url 'treinamento:pre_processamento' id=treinamento.id %}" method="POST">
+            {% csrf_token %}
+
+            <!-- Info Bar -->
+            <div
+                class="bg-white rounded-lg shadow-sm p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 border border-stone-200">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-stone-500">Tag:</span>
+                        <span
+                            class="inline-flex items-center rounded-md bg-stone-100 px-2 py-1 text-sm font-medium text-stone-700 ring-1 ring-inset ring-stone-500/10">
+                            {{ treinamento.tag }}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-stone-500">Grupo:</span>
+                        <span
+                            class="inline-flex items-center rounded-md bg-amber-50 px-2 py-1 text-sm font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                            {{ treinamento.grupo }}
+                        </span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button type="submit" name="acao" value="aceitar"
+                        class="rounded-md bg-emerald-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 transition-colors">
+                        Aceitar Melhorias
+                    </button>
+                    <button type="submit" name="acao" value="manter"
+                        class="rounded-md bg-stone-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-stone-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-stone-600 transition-colors">
+                        Manter Original
+                    </button>
+                    <button type="submit" name="acao" value="descartar"
+                        class="rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 transition-colors">
+                        Descartar
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-250px)]">
+                <!-- Original -->
+                <div class="flex flex-col h-full">
+                    <h3 class="text-sm font-semibold text-stone-900 mb-2 flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-stone-400"></span>
+                        Conteúdo Original
+                    </h3>
+                    <div class="flex-1 bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+                        <div class="h-full overflow-y-auto p-6 prose prose-stone prose-sm max-w-none">
+                            {{ conteudo_unificado|markdown_format }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Melhorado -->
+                <div class="flex flex-col h-full">
+                    <h3 class="text-sm font-semibold text-amber-600 mb-2 flex items-center gap-2">
+                        <span class="h-2 w-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        Sugestão da IA
+                    </h3>
+                    <div
+                        class="flex-1 bg-white rounded-xl shadow-md border border-amber-100 overflow-hidden ring-1 ring-amber-500/20">
+                        <div class="h-full overflow-y-auto p-6 prose prose-stone prose-sm max-w-none bg-amber-50/30">
+                            {{ texto_melhorado|markdown_format }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
-</div>
 </main>
 {% endblock 'conteudo' %}

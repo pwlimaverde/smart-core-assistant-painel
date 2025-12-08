@@ -62,6 +62,7 @@ ALLOWED_HOSTS = _get_allowed_hosts()
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -119,7 +120,7 @@ ROOT_URLCONF = "smart_core_assistant_painel.app.ui.core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],  # Usar apenas templates por app (APP_DIRS)
+        "DIRS": [os.path.join(BASE_DIR, "core", "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -310,3 +311,106 @@ CSRF_TRUSTED_ORIGINS = [
     o.replace("http://", "https://") if o.startswith("http://") else o
     for o in CORS_ALLOWED_ORIGINS
 ]
+
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Smart Core Assistant",
+    "site_header": "Smart Core Assistant",
+    "site_brand": "Smart Core Assistant",
+    "site_logo": "img/logo_branca_smart_v2.png",
+    "login_logo": "img/logo_branca_smart_v2.png",
+    "login_logo_dark": "img/logo_branca_smart_v2.png",
+    "site_logo_classes": "img-fluid",
+    "site_icon": None,
+    "welcome_sign": "Bem-vindo ao Smart Core Assistant",
+    "copyright": "Smart Core Assistant",
+    "search_model": ["ui_usuarios.User", "ui_clientes.Cliente"],
+    "user_avatar": None,
+    "topmenu_links": [
+        {
+            "name": "Home",
+            "url": "/",
+            "permissions": ["auth.view_user"],
+        },
+        {
+            "name": "Permissões",
+            "url": "permissoes",
+            "permissions": ["auth.view_user"],
+        },
+    ],
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    "hide_apps": [],
+    "hide_models": [],
+    "order_with_respect_to": ["ui_atendimentos", "ui_clientes", "ui_usuarios"],
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "ui_usuarios.user": "fas fa-user-shield",
+        "auth.User": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "atendimentos.Atendimento": "fas fa-headset",
+        "atendimentos.Mensagem": "fas fa-comments",
+        "clientes.Cliente": "fas fa-user-tie",
+        "clientes.Contato": "fas fa-address-book",
+        "trello_sync.TrelloBoard": "fab fa-trello",
+        "trello_sync.TrelloList": "fas fa-list",
+        "trello_sync.TrelloCard": "fas fa-clipboard-list",
+        "trello_sync.TrelloMember": "fas fa-users",
+        "trello_sync.TrelloWebhookEvent": "fas fa-satellite-dish",
+        "evolution_sync.EvolutionInstance": "fas fa-server",
+        "evolution_sync.EvolutionContact": "fas fa-id-card",
+        "evolution_sync.WhiteList": "fas fa-list-ul",
+        "operacional.Departamento": "fas fa-building",
+        "operacional.Atendente": "fas fa-user-check",
+        "operacional.AppInstance": "fas fa-mobile-alt",
+        "operacional.FluxoAtendimento": "fas fa-project-diagram",
+        "operacional.EtapaFluxo": "fas fa-step-forward",
+        "operacional.MovimentoFluxo": "fas fa-exchange-alt",
+        "treinamento.Treinamento": "fas fa-graduation-cap",
+        "treinamento.Documento": "fas fa-file-alt",
+        "treinamento.QueryCompose": "fas fa-brain",
+        "django_q.OrmQ": "fas fa-tasks",
+        "django_q.Schedule": "fas fa-clock",
+        "django_q.Failure": "fas fa-times-circle",
+        "django_q.Success": "fas fa-check-circle",
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "custom_css": "css/admin_custom_v3.css",
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-primary",
+    "navbar": "navbar-dark",
+    "no_navbar_border": False,
+    "navbar_fixed": False,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": False,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": True,
+    "theme": "flatly",
+    "dark_mode_theme": None,
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
+    },
+}

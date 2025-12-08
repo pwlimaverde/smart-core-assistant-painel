@@ -1,3 +1,22 @@
+## 0.9.0
+
+### Added
+- **Suporte Multi-Turn**: Reestruturação completa do prompt para suportar `chat_history` e contexto dinâmico, permitindo diálogos contínuos.
+- **Externalização de Prompts**: Templates de prompt movidos para configuração externa, facilitando ajustes sem deploy.
+- **Feedback Loop**: Sistema de coleta de avaliação de atendimento com agradecimento automático e normalização de notas.
+- **Task Master 2.0**: Melhorias na geração de tasks e planejamento via AI.
+
+### Changed
+- **Melhoria no RAG**: Ajuste na recuperação de documentos para garantir carregamento completo do contexto de treinamento.
+
+## 0.8.5
+
+### Fixed
+- **Sync Trello**: Resolução de erro `member already on card` e falhas na transferência/arquivamento de cards.
+- **Mensagens Curtas**: Correção para que a IA processe mensagens como "sim" ou "não" mantendo o contexto.
+- **Fluxo de Saudação**: Separação entre saudação e inquérito de necessidades para maior naturalidade.
+- **UI Admin**: Correção no reset de formulários na tela de Query Compose.
+
 ## 0.8.4
 
 ### Added

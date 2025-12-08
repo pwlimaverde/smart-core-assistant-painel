@@ -101,15 +101,21 @@ class BotRulesEngineInterface(ABC):
     """
 
     @abstractmethod
-    def can_bot_respond(self, attendance: Optional["Atendimento"]) -> bool:
+    def can_bot_respond(
+        self,
+        attendance: Optional["Atendimento"],
+        api_key: Optional[str] = None,
+    ) -> bool:
         """Verifica se o bot pode responder automaticamente a um atendimento.
 
         Regras:
+        - Verifica permissão da instância (AppInstance.resposta_bot)
         - Somente responde quando o atendimento está no departamento "Atendimento"
         - Não responde se há interação humana
 
         Args:
             attendance: Atendimento a ser verificado.
+            api_key: Chave de API da instância que recebeu a mensagem.
 
         Returns:
             True se o bot pode responder, False caso contrário.

@@ -5,8 +5,9 @@ Views para o aplicativo Treinamento.
 """
 
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from loguru import logger
 from rolepermissions.checkers import has_permission
@@ -18,14 +19,22 @@ from .services import TreinamentoService
 
 
 def treinar_ia(request: HttpRequest) -> HttpResponse:
-    """View para o treinamento da IA."""
+    """[TRN-CON-001] View para o treinamento da IA.
+
+    Interface para envio de arquivos ou inserção de texto livre para treinamento.
+    """
     if not has_permission(request.user, "treinar_ia"):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
-        return redirect("treinamento:treinar_ia")
+        return redirect("home")
 
     if request.method == "GET":
+        if request.GET.get("reset"):
+            if "treinamento_edicao" in request.session:
+                del request.session["treinamento_edicao"]
+            return redirect("treinamento:treinar_ia")
+
         dados_edicao = request.session.get("treinamento_edicao")
 
         if dados_edicao:
@@ -128,8 +137,6 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
 
             if "treinamento_edicao" in request.session:
                 del request.session["treinamento_edicao"]
-
-            messages.success(request, "Treinamento criado com sucesso!")
             return redirect("treinamento:pre_processamento", id=treinamento.id)
     except Exception as e:
         logger.error(f"Erro ao processar treinamento: {e}")
@@ -140,7 +147,10 @@ def _processar_treinamento(request: HttpRequest) -> HttpResponse:
 
 
 def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
-    """View para o pré-processamento do treinamento."""
+    """[TRN-CON-002] View para o pré-processamento do treinamento.
+
+    Fluxo de revisão e curadoria do conteúdo antes da indexação.
+    """
     if not has_permission(request.user, "treinar_ia"):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
@@ -255,9 +265,12 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
 
 
 def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
-    """View para verificar treinamentos vetorizados com sucesso e com erro."""
+    """[TRN-CON-003] View para verificar treinamentos vetorizados com sucesso e com erro.
+
+    Gestão de treinamentos ativos na base de conhecimento.
+    """
     if not has_permission(request.user, "treinar_ia"):
-        raise Http404()
+        raise PermissionDenied()
 
     if request.method == "POST":
         acao = request.POST.get("acao")
@@ -319,7 +332,9 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
 
 # NOVO: View para verificar e editar QueryCompose (intents)
 def verificar_query_compose(request: HttpRequest) -> HttpResponse:
-    """Lista intents (QueryCompose) com sucesso e com erro, permite editar/excluir.
+    """[TRN-INT-002] Lista intents (QueryCompose) com sucesso e com erro, permite editar/excluir.
+
+    Verificação e Ajuste de Intenções.
 
     - Sucesso: registros com embedding preenchido.
     - Erro: registros sem embedding ("embedding" nulo).
@@ -327,7 +342,7 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
     - Ação "excluir": remove o registro.
     """
     if not has_permission(request.user, "treinar_ia"):
-        raise Http404()
+        raise PermissionDenied()
 
     if request.method == "POST":
         acao = request.POST.get("acao")
@@ -381,7 +396,9 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
 
 
 def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
-    """View para cadastrar um intent (QueryCompose).
+    """[TRN-INT-001] View para cadastrar um intent (QueryCompose).
+
+    Cadastro de Intenções.
 
     - Exibe formulário para inserir tag, grupo, description e comportamento.
     - Ao enviar (POST), persiste o registro; o embedding será gerado de forma
@@ -395,6 +412,11 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
         return redirect("home")
 
     if request.method == "GET":
+        if request.GET.get("reset"):
+            if "query_compose_edicao" in request.session:
+                del request.session["query_compose_edicao"]
+            return redirect("treinamento:cadastrar_query_compose")
+
         dados_edicao = request.session.get("query_compose_edicao")
         if dados_edicao:
             context = {

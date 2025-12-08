@@ -52,7 +52,10 @@ def validate_telefone_instancia(value: str) -> None:
 
 
 class Departamento(models.Model):
-    """Modelo para departamentos da organizacao."""
+    """[OPS-ORG-001] Modelo para departamentos da organizacao.
+
+    Gestão de Departamentos (com isolamento de dados).
+    """
 
     id: models.AutoField = models.AutoField(primary_key=True)
     nome: models.CharField[str] = models.CharField(max_length=100, unique=True)
@@ -205,7 +208,10 @@ class Departamento(models.Model):
 
 
 class Atendente(models.Model):
-    """Modelo para atendentes humanos da organizacao."""
+    """[OPS-ORG-002] Modelo para atendentes humanos da organizacao.
+
+    Gestão de Atendentes (Horários, Limites).
+    """
 
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primaria do registro"
@@ -246,14 +252,14 @@ class Atendente(models.Model):
         "FluxoAtendimento",
         on_delete=models.PROTECT,
         related_name="atendentes",
-        blank=True,
+        blank=False,
         null=True,
         help_text=(
             "Fluxo de atendimento (quadro) ao qual o atendente sera convidado"
         ),
     )
     email: models.EmailField[str | None] = models.EmailField(
-        blank=True, null=True, help_text="E-mail corporativo do atendente"
+        blank=False, null=True, help_text="E-mail corporativo do atendente"
     )
     usuario: models.OneToOneField[User | None] = models.OneToOneField(
         User,
@@ -360,9 +366,12 @@ class Atendente(models.Model):
     @override
     def clean(self) -> None:
         super().clean()
-        # Comentario: email permanece opcional conforme definicao de campo.
-        # A obrigatoriedade anterior foi removida para compatibilidade
-        # com a suíte de testes. Caso necessario, validar em formulários.
+        # Comentario: email e fluxo tornaram-se obrigatorios para garantir
+        # o convite correto ao Trello.
+        if not self.email:
+            raise ValidationError(
+                {"email": "E-mail e obrigatorio para cadastro de atendente."}
+            )
         # Comentário: usar fluxo_id para evitar acesso ao descriptor quando vazio
         # Comentario: ao criar um novo atendente, o fluxo e obrigatorio.
         # Em edicao (self.pk existe), manteremos o fluxo atual caso
@@ -421,6 +430,11 @@ class Atendente(models.Model):
 
 
 class AppInstance(models.Model):
+    """[OPS-ORG-003] Modelo para instâncias de comunicação (ex: Evolution API).
+
+    Configuração das instâncias de conexão com canais de mensagem.
+    """
+
     id: models.AutoField = models.AutoField(primary_key=True)
     api_key: models.CharField[str] = models.CharField(
         max_length=128, unique=True
@@ -444,6 +458,10 @@ class AppInstance(models.Model):
         null=True,
     )
     active: models.BooleanField[bool] = models.BooleanField(default=True)
+    resposta_bot: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Se True, o bot pode responder automaticamente mensagens desta instância",
+    )
     metadata: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict, blank=True
     )

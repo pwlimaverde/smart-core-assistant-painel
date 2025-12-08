@@ -16,7 +16,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.types import (
 
 
 class LoadDocumentFileUseCase(LDFUsecase):
-    """Use case para carregar um arquivo e prepará-lo para treinamento.
+    """[BOT-EMB-004] Use case para carregar um arquivo e prepará-lo para treinamento.
 
     Esta classe orquestra o processo de carregar um arquivo de um caminho,
     processar seu conteúdo e enriquecer seus metadados para uso futuro em

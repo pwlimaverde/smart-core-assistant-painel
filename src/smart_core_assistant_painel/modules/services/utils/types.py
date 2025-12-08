@@ -12,7 +12,6 @@ from typing import Any, TypeAlias
 from py_return_success_or_error import (
     Datasource,
     Empty,
-    NoParams,
     UsecaseBaseCallData,
 )
 
@@ -30,14 +29,6 @@ SERUsecase: TypeAlias = UsecaseBaseCallData[
     SetEnvironRemoteParameters,
 ]
 SERData: TypeAlias = Datasource[bool, SetEnvironRemoteParameters]
-
-# Tipos para o serviço de WhatsApp (agora genéricos)
-WSUsecase: TypeAlias = UsecaseBaseCallData[
-    Any,
-    Any,
-    NoParams,
-]
-WSData: TypeAlias = Datasource[Any, NoParams]
 
 
 # Tipos para o serviço de dados unificado (UDS)

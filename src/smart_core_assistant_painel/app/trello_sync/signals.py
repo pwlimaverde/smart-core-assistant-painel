@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from django_q.tasks import async_task
@@ -43,6 +44,10 @@ def etapa_created_sync_trello(
 ) -> None:
     """Cria List Trello quando nova etapa e reordena listas (imediato)."""
     try:
+        # Prevenção de loop: se a criação veio do Trello, não enviar de volta
+        if getattr(instance, "_syncing_from_trello", False):
+            return
+
         if created:
             async_task(
                 (
@@ -68,6 +73,10 @@ def etapa_deleted_archive_trello(
 ) -> None:
     """Arquiva a List Trello ao excluir uma EtapaFluxo (imediato)."""
     try:
+        # Prevenção de loop: se a exclusão veio do Trello, não enviar de volta
+        if getattr(instance, "_syncing_from_trello", False):
+            return
+
         async_task(
             (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
@@ -239,6 +248,11 @@ def atendimento_etapa_updated_move_card(
         if old_etapa_id == getattr(instance, "etapa_atual_id", None):
             # Comentário: sem alteração efetiva de etapa, evita agendar.
             return
+
+        # Prevenção de loop: se a atualização veio do Trello, não enviar de volta
+        if getattr(instance, "_syncing_from_trello", False):
+            return
+
         async_task(
             (
                 "smart_core_assistant_painel.app.trello_sync.tasks"
@@ -515,27 +529,62 @@ def atendimento_deleted_archive_card(
 ) -> None:
     """Arquiva o card Trello ao excluir um Atendimento.
 
-    Comentário: usa o ``external_id`` do card (se disponível) e agenda
-    arquivamento direto para evitar depender do banco após a deleção.
+    Tenta arquivamento síncrono via ServiceHub para consistência imediata.
+    Se falhar ou timeout, faz fallback para task assíncrona.
+
+    Comentário: usa o ``external_id`` do card.
     """
+    # Import local para evitar ciclos.
+    from smart_core_assistant_painel.modules.services.features.service_hub import (
+        SERVICEHUB,
+    )
+
     try:
         card = getattr(instance, "trello_card", None)
+        # Validação robusta do ID
         external_id: str = getattr(card, "external_id", "") if card else ""
-        if external_id:
-            async_task(
-                (
-                    "smart_core_assistant_painel.app.trello_sync.tasks"
-                    ".task_trello_archive_card_by_external_id"
-                ),
-                external_id,
-            )
-        else:
+
+        if not external_id:
             logger.warning(
-                "Atendimento {} sem card Trello para arquivar na deleção",
+                "Atendimento {} sem card Trello (external_id) para arquivar.",
                 instance.id,
             )
+            return
+
+        # Tentativa Síncrona
+        try:
+            logger.info(
+                "Tentando arquivar card {} síncronamente (Atendimento {})...",
+                external_id,
+                instance.id,
+            )
+            SERVICEHUB.unified_data_service.archive_item(external_id)
+            logger.info("Card {} arquivado com sucesso (Sync).", external_id)
+            return
+        except Exception as sync_exc:
+            logger.error(
+                "Falha no arquivamento síncrono do card {}: {}. "
+                "Agendando fallback assíncrono.",
+                external_id,
+                sync_exc,
+            )
+
+        # Fallback Assíncrono
+        async_task(
+            (
+                "smart_core_assistant_painel.app.trello_sync.tasks"
+                ".task_trello_archive_card_by_external_id"
+            ),
+            external_id,
+        )
+        logger.info("Fallback assíncrono agendado para card {}.", external_id)
+
     except Exception as exc:
-        logger.warning("Falha ao arquivar por deleção: {}", exc)
+        logger.critical(
+            "Erro crítico ao processar arquivamento do card p/ Atendimento {}: {}",
+            instance.id,
+            exc,
+        )
 
 
 @receiver(post_save, sender=Mensagem)
@@ -547,16 +596,22 @@ def mensagem_created_update_trello_card(
     Comentário: agenda atualização de descrição/custom fields do card
     associado ao ``Atendimento`` para refletir mensagens recentes.
     """
-    if not created:
+    # Verifica se é uma atualização de resposta do bot
+    update_fields = kwargs.get("update_fields") or []
+    is_bot_response = update_fields and "resposta_bot" in update_fields
+
+    if not created and not is_bot_response:
         return
     try:
         at_id: int = instance.atendimento_id  # type: ignore[assignment]
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_update_card_rich_content"
-            ),
-            at_id,
+        transaction.on_commit(
+            lambda: async_task(
+                (
+                    "smart_core_assistant_painel.app.trello_sync.tasks"
+                    ".task_atendimento_update_card_rich_content"
+                ),
+                at_id,
+            )
         )
     except Exception as exc:
         logger.warning(

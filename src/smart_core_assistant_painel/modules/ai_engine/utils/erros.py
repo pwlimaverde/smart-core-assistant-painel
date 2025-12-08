@@ -82,3 +82,11 @@ class AnaliseMensageError(AppError):
 
     def __str__(self) -> str:
         return f"AnaliseMensageError - {self.message}"
+
+
+@dataclass
+class AnaliseAvaliacaoError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f"AnaliseAvaliacaoError - {self.message}"

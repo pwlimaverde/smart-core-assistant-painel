@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class AttendanceStructureManager(AttendanceStructureManagerInterface):
-    """Gerenciador de estrutura de atendimento.
+    """[ATD-LIF-002] Gerenciador de estrutura de atendimento.
 
     Responsabilidades:
     - Garantir estrutura padrão existe

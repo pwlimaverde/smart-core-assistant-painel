@@ -6,15 +6,16 @@ coordenar serviços e gerar respostas do bot.
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from django.core.cache import cache
 from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.services import (
-    clear_buffer_contact,
+    clear_scheduling_lock,
+    get_and_clear_buffer_contact,
 )
 from smart_core_assistant_painel.modules.ai_engine import (
     FeaturesCompose,
 )
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from .interfaces import (
     AttendanceOrchestratorInterface,
@@ -31,7 +32,7 @@ if TYPE_CHECKING:
 
 
 class AttendanceOrchestrator(AttendanceOrchestratorInterface):
-    """Orquestrador de processamento de atendimentos.
+    """[ATD-LIF-001] Orquestrador de processamento de atendimentos.
 
     Responsabilidades:
     - Coordenar processamento de respostas
@@ -76,8 +77,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             api_key: Chave de API para envio de mensagens (opcional).
         """
         try:
-            # 1. Obtém mensagens do buffer
-            env_list = self._get_buffered_messages(contact_id)
+            # 1. Obtém mensagens do buffer e limpa atomicamente
+            env_list = get_and_clear_buffer_contact(contact_id)
             if not env_list:
                 logger.warning(
                     f"Sem mensagens para processar para contato {contact_id}"
@@ -119,32 +120,14 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 f"Erro ao processar mensagens para contato {contact_id}: {e}"
             )
         finally:
-            # 6. Limpa buffer
+            # 6. Limpa lock de agendamento para permitir novas tasks
             try:
-                clear_buffer_contact(contact_id)
+                clear_scheduling_lock(contact_id)
                 logger.info(
-                    f"atd_process_done contact_id={contact_id} cache_cleared=1"
+                    f"atd_process_done contact_id={contact_id} scheduling_lock_cleared=1"
                 )
             except Exception:
                 pass
-
-    def _get_buffered_messages(self, contact_id: int) -> list[dict[str, Any]]:
-        """Obtém mensagens em buffer para o contato.
-
-        Args:
-            contact_id: ID do contato.
-
-        Returns:
-            Lista de envelopes de mensagens.
-        """
-        cache_key = f"evo_buffer_{contact_id}"
-        env_list: list[dict[str, Any]] = cache.get(cache_key, [])
-
-        logger.info(
-            f"atd_process_start contact_id={contact_id} env_count={len(env_list)}"
-        )
-
-        return env_list
 
     def _compile_message_content(
         self, env_list: list[dict[str, Any]]
@@ -269,6 +252,14 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Obtém mensagem
             mensagem: Mensagem = Mensagem.objects.get(id=message_id)
 
+            # --- Feedback Loop Check ---
+            if self._check_and_process_feedback(mensagem, contact_id):
+                logger.info(
+                    f"Mensagem {message_id} processada como feedback. Encerrando fluxo."
+                )
+                return
+            # ---------------------------
+
             # Analisa conteúdo (intenções e entidades)
             self._message_analyzer.analyze_message_content(message_id)
 
@@ -284,7 +275,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
 
             # Verifica se bot pode responder
-            pode_responder = self._rules_engine.can_bot_respond(atendimento)
+            # Verifica se bot pode responder
+            pode_responder = self._rules_engine.can_bot_respond(
+                atendimento, api_key
+            )
 
             logger.info(
                 f"atd_process_can_respond contact_id={contact_id} "
@@ -477,8 +471,6 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         try:
             from smart_core_assistant_painel.app.ui.operacional.models import (
                 AppInstance,
-            )
-            from smart_core_assistant_painel.app.ui.operacional.models import (
                 FluxoAtendimento,
             )
 
@@ -584,6 +576,54 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 message
             )
 
+            logger.info(
+                f"DEBUG: message_id={message.id}, has_known_intent={has_known_intent}"
+            )
+            logger.info(f"DEBUG: intent_detectado={message.intent_detectado}")
+
+            # --- FAST-PATH: Roteamento Proativo ---
+            # Se detectou intent crítico (falar_com_humano, etc), transfere
+            # imediatamente sem chamar RAG/LLM para economizar tokens.
+            critical_intents = {
+                "falar_com_humano",
+                "transferir_atendimento",
+                "atendente_humano",
+                "suporte_humano",
+            }
+            detected_tags = {
+                list(intent.keys())[0].lower()
+                for intent in (message.intent_detectado or [])
+            }
+            critical_match = detected_tags & critical_intents
+
+            if critical_match:
+                logger.info(
+                    f"FAST-PATH: Intent crítico detectado: {critical_match}. "
+                    "Transferindo imediatamente."
+                )
+                # Resposta de fast-path
+                fast_path_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                message.registrar_resposta_bot(
+                    resposta=fast_path_msg,
+                    confianca=1.0,  # Alta confiança - intent explícito
+                )
+                # Obtém fluxos e inicia transferência
+                fluxos_disponiveis = (
+                    self._structure_manager.get_available_flows()
+                )
+                if fluxos_disponiveis:
+                    fluxo = next(iter(fluxos_disponiveis.keys()))
+                    logger.info(f"FAST-PATH: Transferindo para fluxo {fluxo}")
+                    # Usa método do modelo Atendimento para transferência
+                    attendance.apply_flow_by_description(fluxo)
+                else:
+                    # Atualiza status sem transferência
+                    self._structure_manager._update_attendance_status_ongoing(
+                        attendance
+                    )
+                return  # Sai sem chamar LLM
+            # --- FIM FAST-PATH ---
+
             # Carrega histórico
             historico_atendimento = attendance.carregar_historico_mensagens(
                 excluir_mensagem_id=message.id
@@ -598,17 +638,51 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 Documento,
             )
 
-            dados_treinamento = Documento.buscar_documentos_similares(
-                query_vec=vector_conteudo
+            # Busca retorna tupla (contexto, lista_ids) para rastreabilidade
+            dados_treinamento, rag_doc_ids = (
+                Documento.buscar_documentos_similares(
+                    query_vec=vector_conteudo
+                )
+            )
+
+            # Salva IDs dos documentos RAG para rastreabilidade
+            if rag_doc_ids:
+                if message.metadados is None:
+                    message.metadados = {}
+                message.metadados["rag_sources"] = rag_doc_ids
+                message.save(update_fields=["metadados"])
+                logger.info(
+                    f"RAG: rag_sources={rag_doc_ids} salvos em mensagem {message.id}"
+                )
+
+            logger.info(
+                f"DEBUG: dados_treinamento len={len(dados_treinamento)}, "
+                f"rag_doc_ids={rag_doc_ids}"
             )
 
             # Obtém fluxos disponíveis
             fluxos_disponiveis = self._structure_manager.get_available_flows()
 
+            # Verifica se há histórico de conversa (diálogo em andamento)
+            has_active_history = (
+                len(historico_atendimento.get("chat_history", [])) > 0
+            )
+
             # Decide se deve chamar IA
-            should_call_ai = has_known_intent or (
-                isinstance(dados_treinamento, list)
-                and len(dados_treinamento) > 0
+            has_training_data = len(dados_treinamento.strip()) > 0
+
+            # A IA deve ser chamada se:
+            # 1. Há uma intenção conhecida detectada OU
+            # 2. Há dados de treinamento relevantes (RAG) OU
+            # 3. Há um histórico de conversa ativo (diálogo em andamento)
+            should_call_ai = (
+                has_active_history or has_known_intent or has_training_data
+            )
+
+            logger.info(
+                f"DEBUG: should_call_ai={should_call_ai} "
+                f"(history={has_active_history}, intent={has_known_intent}, "
+                f"rag={has_training_data})"
             )
 
             if should_call_ai:
@@ -621,6 +695,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     fluxos_disponiveis,
                 )
             else:
+                logger.warning(
+                    f"DEBUG: Fallback triggered for message {message.id}"
+                )
                 self._register_fallback_response(message, attendance)
 
         except Exception as e:
@@ -635,13 +712,18 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         Returns:
             Tupla (prompt, has_known_intent).
         """
-        prompt_lines: list[str] = [
-            (
+        # Usa prompt de intent externalizado ou fallback
+        prompt_intent_system = SERVICEHUB.PROMPT_INTENT_SYSTEM
+        if not prompt_intent_system:
+            prompt_intent_system = (
                 "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
                 "Siga estritamente as orientações abaixo, em "
                 "português claro e objetivo.\n"
                 "Adapte a resposta ao contexto do atendimento atual."
-            ),
+            )
+
+        prompt_lines: list[str] = [
+            prompt_intent_system,
             "Intenções detectadas e orientações:",
         ]
 
@@ -681,9 +763,16 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 if comportamento:
                     prompt_lines.append(f"{index}. [{tag}] {comportamento}")
 
-        prompt_lines.append(
-            "Se houver múltiplas intenções, priorize a ordem listada e mantenha a resposta concisa."
-        )
+        # Usa footer de intent externalizado ou fallback
+        prompt_intent_footer = SERVICEHUB.PROMPT_INTENT_FOOTER
+        if not prompt_intent_footer:
+            prompt_intent_footer = (
+                "Se houver múltiplas intenções, processe as instruções de CADA UMA "
+                "delas. Em seguida, combine as respostas em um texto organizado. "
+                "Use listas e parágrafos curtos para separar os assuntos. "
+                "Garanta que a resposta seja fluida, mas estruturada visualmente."
+            )
+        prompt_lines.append(prompt_intent_footer)
 
         return "\n".join(prompt_lines), has_known_intent
 
@@ -693,7 +782,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         attendance: "Atendimento",
         prompt_intent: str,
         historico_atendimento: dict[str, Any],
-        dados_treinamento: list[Any],
+        dados_treinamento: str,
         fluxos_disponiveis: dict[str, str],
     ) -> None:
         """Chama IA e registra resposta.
@@ -743,7 +832,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             message: Mensagem.
             attendance: Atendimento.
         """
-        texto_fallback = "Recebemos sua mensagem. Em breve retornaremos."
+        # Usa mensagem de fallback externalizada
+        texto_fallback = SERVICEHUB.MSG_FALLBACK_GERAL
 
         message.registrar_resposta_bot(
             resposta=texto_fallback,
@@ -756,3 +846,132 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         )
 
         self._structure_manager._update_attendance_status_ongoing(attendance)
+
+    def _check_and_process_feedback(
+        self, message: "Mensagem", contact_id: int
+    ) -> bool:
+        """Verifica se a mensagem é um feedback para um atendimento recém-concluído.
+
+        Args:
+            message: Mensagem recebida.
+            contact_id: ID do contato.
+
+        Returns:
+            bool: True se processado como feedback, False caso contrário.
+        """
+        try:
+            from datetime import timedelta
+
+            from django.utils import timezone
+            from langchain_core.messages import HumanMessage
+
+            from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                Atendimento,
+                StatusAtendimento,
+            )
+            from smart_core_assistant_painel.modules.ai_engine import (
+                FeaturesCompose,
+            )
+
+            # Busca último atendimento resolvido deste contato
+            # Ordena por data_fim decrescente
+            last_atd = (
+                Atendimento.objects.filter(
+                    contato_id=contact_id,
+                    status=StatusAtendimento.RESOLVIDO,
+                )
+                .exclude(data_fim__isnull=True)
+                .order_by("-data_fim")
+                .first()
+            )
+
+            if not last_atd or not last_atd.data_fim:
+                return False
+
+            # Verifica janela de tempo (10 minutos)
+            if timezone.now() - last_atd.data_fim > timedelta(minutes=10):
+                return False
+
+            # Se já tem avaliação, ignora
+            if last_atd.avaliacao:
+                return False
+
+            # Analisa se é feedback válido usando AI
+            chat_history = [HumanMessage(content=message.conteudo or "")]
+
+            try:
+                resultado = FeaturesCompose.analise_avaliacao(chat_history)
+            except Exception as e:
+                logger.warning(f"Falha na análise de avaliação: {e}")
+                return False
+
+            # Atualiza atendimento anterior
+            last_atd.avaliacao = resultado.nota
+            if resultado.feedback_original:
+                last_atd.feedback = resultado.feedback_original
+            elif message.conteudo:
+                last_atd.feedback = message.conteudo
+
+            # Tags de sentimento
+            tags = last_atd.tags or []
+            # Remove tags de sentimento anteriores para evitar duplicidade
+            tags = [t for t in tags if not t.startswith("sentimento:")]
+
+            tag_sentimento = f"sentimento: {resultado.sentimento}"
+            if tag_sentimento not in tags:
+                tags.append(tag_sentimento)
+            last_atd.tags = tags
+
+            last_atd.save(update_fields=["avaliacao", "feedback", "tags"])
+
+            logger.info(
+                f"Feedback registrado para atendimento {last_atd.id}: "
+                f"Nota={resultado.nota}, Sentimento={resultado.sentimento}"
+            )
+
+            # Envia agradecimento
+            msg_agradecimento = (
+                "Obrigado pelo seu feedback! Ele é muito importante para nós."
+            )
+
+            # [Task 26.5] Taggear mensagem como feedback para mascarar no Trello
+            if message.metadados is None:
+                message.metadados = {}
+            # Copia para garantir que é um dicionário mutável de Python e não um objeto proxy
+            meta = dict(message.metadados)
+            meta["is_feedback"] = True
+
+            # [FIX] Injeta API Key da instância original para envio correto
+            ctx = last_atd.contexto_conversa or {}
+            api_key = ctx.get("api_key")
+            if api_key:
+                meta["evolution"] = {"api_key": str(api_key)}
+                logger.info(
+                    f"API Key {api_key} injetada na resposta de feedback"
+                )
+
+            message.metadados = meta
+            # Salva metadados antes de registrar resposta (que já salva, mas melhor garantir)
+            message.save(update_fields=["metadados"])
+
+            message.registrar_resposta_bot(msg_agradecimento, 1.0)
+
+            # Cancela o atendimento "temporário" criado apenas para esta mensagem
+            current_atd = message.atendimento
+            if current_atd and current_atd.id != last_atd.id:
+                if current_atd.mensagens.count() <= 1:
+                    current_atd.status = StatusAtendimento.CANCELADO
+                    current_atd.save(update_fields=["status"])
+                    logger.info(
+                        f"Atendimento temporário {current_atd.id} cancelado após feedback."
+                    )
+                else:
+                    # Se tem mais mensagens, talvez devêssemos marcar como resolvido também?
+                    # Ou deixar como está.
+                    pass
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Erro ao processar feedback: {e}")
+            return False

@@ -14,6 +14,10 @@ from smart_core_assistant_painel.modules.services.utils.types import UDSUsecase
 
 
 class UnifieldDataServicesUseCase(UDSUsecase):
+    """[SYS-DAT-001] Caso de uso para serviços de dados unificados.
+
+    Esta classe orquestra o acesso aos serviços de dados unificados.
+    """
     def __call__(
         self, parameters: UnifieldDataServicesParameters
     ) -> ReturnSuccessOrError[UnifiedDataService]:

@@ -10,17 +10,13 @@ from .features.service_hub import SERVICEHUB, ServiceHub
 from .start_services import start_services
 from .utils.erros import (
     SetEnvironRemoteError,
-    WhatsAppServiceError,
 )
 from .utils.parameters import (
     SetEnvironRemoteParameters,
-    WhatsAppMensagemParameters,
 )
 from .utils.types import (
     SERData,
     SERUsecase,
-    WSData,
-    WSUsecase,
 )
 
 __all__ = [
@@ -33,13 +29,9 @@ __all__ = [
     "start_services",
     # Erros
     "SetEnvironRemoteError",
-    "WhatsAppServiceError",
     # Parameters
     "SetEnvironRemoteParameters",
-    "WhatsAppMensagemParameters",
     # Types
     "SERUsecase",
     "SERData",
-    "WSUsecase",
-    "WSData",
 ]

@@ -1,0 +1,105 @@
+Aqui estão diversas simulações de perguntas, separadas por Cenários de Uso e Segmentos, para você testar se o seu chatbot está identificando corretamente as intenções (intents) e seguindo as regras de negócio da Ecoprint (especialmente a de não dar preço sem coletar dados).
+
+1. Triagem e Orçamentos (O teste de "SDR")
+
+O objetivo aqui é ver se o bot para de dar preço e começa a coletar as especificações técnicas.
+
+Genérico: "Olá, gostaria de fazer um orçamento de impressão."
+
+Intent Esperada: triagem_inicial_orcamento
+
+Offset (Industrial): "Bom dia. Preciso cotar 50 mil caixas para embalagem de cosmético. Vocês fazem?"
+
+Intent Esperada: coleta_dados_offset_embalagem
+
+Flexografia (Rótulos): "Estou precisando de rótulos adesivos em bobina para minha linha de refrigerantes. É para rotulagem automática."
+
+Intent Esperada: coleta_dados_flexografia
+
+Comunicação Visual: "Quanto custa para envelopar um caminhão baú da minha frota com a logo da empresa?"
+
+Intent Esperada: coleta_dados_comunicacao_visual
+
+Gráfica Rápida: "Oi, quanto sai o milheiro de cartão de visita colorido frente e verso?"
+
+Intent Esperada: coleta_dados_grafica_rapida
+
+2. Dúvidas Técnicas e Arquivos
+
+Testar se o bot age como suporte de pré-impressão e protege a empresa (responsabilidade da arte).
+
+Envio de Arquivo: "Posso mandar a arte em Word ou PowerPoint? Ou precisa ser PDF?"
+
+Intent Esperada: duvida_tecnica_arquivos
+
+Sangria: "O que é essa margem de sangria que vocês pedem? Não entendi."
+
+Intent Esperada: duvida_tecnica_arquivos
+
+Criação: "Eu não tenho a arte pronta, só a ideia. Vocês criam o layout pra mim ou tenho que contratar designer?"
+
+Intent Esperada: duvida_arte_para_orcamento
+
+Materiais: "Qual a diferença entre papel couché e bopp? Qual é melhor para rótulo de congelado?"
+
+Intent Esperada: duvida_material_substrato
+
+3. Prazos e Logística
+
+Testar o rigor com a Tabela de Prazos e a lógica de dias úteis.
+
+Prazo Padrão: "Qual o prazo de entrega para 5.000 pastas com bolsa?"
+
+Intent Esperada: consulta_prazos_producao (Deve checar Família B ou C).
+
+Prazo Flexo: "Rótulos em bobina demoram muito pra ficar prontos?"
+
+Intent Esperada: consulta_prazos_producao (Deve citar aprox. 22 dias).
+
+Urgência: "Preciso desses panfletos para amanhã sem falta! É urgente, consigo furar a fila?"
+
+Intent Esperada: solicitacao_urgencia (Deve citar o Comitê de Urgências).
+
+Logística/Frete: "Vocês entregam aqui em Salvador? Ou tenho que buscar na fábrica no Ceará?"
+
+Intent Esperada: logistica_retirada_entrega
+
+4. Institucional e Sustentabilidade (ESG)
+
+Testar se o bot usa os dados de impacto ambiental como argumento de venda.
+
+Sustentabilidade: "Vi que o nome é Ecoprint. O que vocês têm de ecológico na prática?"
+
+Intent Esperada: info_sustentabilidade
+
+Cadastro PJ: "Sou de uma empresa e queremos comprar faturado no boleto. Como fazemos o cadastro?"
+
+Intent Esperada: info_corporativa_cadastro
+
+5. Pós-Venda e Qualidade (ISO 9001)
+
+Testar a empatia e o fluxo correto de Não Conformidade.
+
+Reclamação de Cor: "Recebi meu material hoje e a cor da logo saiu muito diferente do que eu via na tela. Ficou ruim."
+
+Intent Esperada: reclamacao_nao_conformidade
+
+Avaria: "As caixas chegaram amassadas na ponta. Quero devolver."
+
+Intent Esperada: reclamacao_nao_conformidade
+
+Status: "Já fiz o pedido semana passada, tem como ver se já saiu da produção?"
+
+Intent Esperada: status_pedido
+
+6. Casos de "Transbordo" (Escape)
+
+Testar se o bot sabe quando passar para um humano.
+
+Negociação: "O preço ficou muito alto. Preciso de um desconto ou parcelamento maior pra fechar."
+
+Intent Esperada: transbordo_especialista
+
+Frustração: "Não quero falar com robô, me passa o telefone do vendedor agora."
+
+Intent Esperada: transbordo_especialista

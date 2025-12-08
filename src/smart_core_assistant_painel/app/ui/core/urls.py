@@ -81,3 +81,10 @@ urlpatterns += [
         include("smart_core_assistant_painel.app.evolution_sync.urls"),
     ),
 ]
+
+handler404 = (
+    "smart_core_assistant_painel.app.ui.core.views.custom_page_not_found"
+)
+handler403 = (
+    "smart_core_assistant_painel.app.ui.core.views.custom_permission_denied"
+)

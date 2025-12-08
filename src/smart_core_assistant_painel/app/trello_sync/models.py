@@ -5,8 +5,9 @@ from django.db import models
 
 
 class TrelloBoard(models.Model):
-    """
-    Board Trello vinculado a um FluxoAtendimento.
+    """[TRL-FLW-001] Board Trello vinculado a um FluxoAtendimento.
+
+    Geração Automática de Quadros.
 
     Comentário: Shadow model para mapear um fluxo/board e IDs externos.
     """
@@ -44,8 +45,9 @@ class TrelloBoard(models.Model):
 
 
 class TrelloList(models.Model):
-    """
-    List Trello vinculada a uma EtapaFluxo.
+    """[TRL-LST-001] List Trello vinculada a uma EtapaFluxo.
+
+    Geração Automática de Listas.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -80,8 +82,9 @@ class TrelloList(models.Model):
 
 
 class TrelloMember(models.Model):
-    """
-    Member Trello vinculado a um Atendente.
+    """[TRL-MEM-001] Member Trello vinculado a um Atendente.
+
+    Sincronização de Membros.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -120,8 +123,9 @@ class TrelloMember(models.Model):
 
 
 class TrelloCard(models.Model):
-    """
-    Card Trello vinculado a um Atendimento.
+    """[TRL-CRD-001] Card Trello vinculado a um Atendimento.
+
+    Criação Automática de Cartões.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
@@ -162,8 +166,9 @@ class TrelloCard(models.Model):
 
 
 class TrelloWebhookEvent(models.Model):
-    """
-    Registro persistente de eventos recebidos de webhooks do Trello.
+    """[TRL-MOV-001] Registro persistente de eventos recebidos de webhooks do Trello.
+
+    Sincronização Bidirecional de Movimentação.
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)

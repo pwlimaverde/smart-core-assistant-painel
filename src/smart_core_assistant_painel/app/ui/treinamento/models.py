@@ -33,6 +33,11 @@ def validate_identificador(value: str) -> None:
 
 
 class Treinamento(models.Model):
+    """[TRN-CON-003] Modelo para gestão de treinamentos vetorizados.
+
+    Armazena metadados e status dos documentos processados para a base de conhecimento.
+    """
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -151,8 +156,26 @@ class Documento(models.Model):
         cls,
         query_vec: list[float],
         top_k: int = 5,
-        distance_threshold: float = 0.40,  # valor de corte para distância
-    ) -> str:
+        distance_threshold: float | None = None,
+    ) -> tuple[str, list[int]]:
+        # Usa threshold do Remote Config se não especificado
+        from smart_core_assistant_painel.modules.services import SERVICEHUB
+
+        if distance_threshold is None:
+            distance_threshold = SERVICEHUB.VECTOR_DISTANCE_THRESHOLD
+        """Busca documentos similares com rastreabilidade.
+
+        Args:
+            query_vec: Vetor de embedding da query.
+            top_k: Número máximo de resultados.
+            distance_threshold: Limiar de distância máxima.
+
+        Returns:
+            Tupla (contexto_formatado, lista_ids_documentos).
+            - contexto_formatado: String com contexto RAG.
+            - lista_ids_documentos: Lista de IDs para rastreabilidade.
+        """
+        doc_ids: list[int] = []
         try:
             documentos: QuerySet[Self] = (
                 cls.objects.annotate(
@@ -166,9 +189,11 @@ class Documento(models.Model):
                 .order_by("distance")[:top_k]
             )
             if not documentos:
-                return ""
+                return "", []
+
             contexto_lines: list[str] = ["📚 Contexto relevante:"]
             for i, doc in enumerate(documentos, 1):
+                doc_ids.append(doc.id)  # Coleta ID para rastreabilidade
                 if doc.conteudo:
                     contexto_lines.extend(
                         [
@@ -178,12 +203,14 @@ class Documento(models.Model):
                         ]
                     )
                 logger.info(
-                    f"Documento encontrado com distância {doc.distance:.4f} (limiar {distance_threshold:.4f})"
+                    f"RAG: doc_id={doc.id}, distância={doc.distance:.4f}"
                 )
-            return "\n".join(contexto_lines)
+
+            return "\n".join(contexto_lines), doc_ids
+
         except Exception as e:
             logger.error(f"Erro na busca semântica: {e}")
-            return ""
+            return "", []
 
     @classmethod
     def limpar_documentos_por_treinamento(cls, treinamento_id: int) -> None:
@@ -217,8 +244,9 @@ class Documento(models.Model):
 
 
 class QueryCompose(models.Model):
-    """
-    Representa um intent: descrição -> embedding + prompt system associado.
+    """[TRN-INT-001] Representa um intent: descrição -> embedding + prompt system associado.
+
+    Cadastro de Intenções (Query Compose).
     """
 
     id: models.AutoField = models.AutoField(
@@ -318,27 +346,41 @@ class QueryCompose(models.Model):
         cls,
         query_vec: list[float],
         top_k: int = 1,
+        distance_threshold: float = 0.25,  # threshold configurável
     ) -> str | None:
+        """Busca comportamento similar via embedding com filtro no banco.
+
+        O filtro de distância é aplicado diretamente na query SQL,
+        evitando trazer registros que serão descartados em Python.
+
+        Args:
+            query_vec: Vetor de embedding da query.
+            top_k: Número máximo de resultados.
+            distance_threshold: Limiar de distância (padrão 0.25).
+
+        Returns:
+            Prompt formatado com comportamento ou None se não encontrado.
+        """
         try:
             comportamento: QuerySet[Self] = (
                 cls.objects.filter(
                     embedding__isnull=False,
                 )
                 .annotate(distance=CosineDistance("embedding", query_vec))
+                .filter(distance__lte=distance_threshold)  # Filtro no banco
                 .only("tag", "descricao", "comportamento")
                 .order_by("distance")[:top_k]
             )
             if not comportamento:
-                return ""
+                return None
 
             # Log da distância mais similar encontrada
             most_similar_distance = comportamento[0].distance
-            logger.warning(
+            logger.info(
                 f"Comportamento similar encontrado - Tag: {comportamento[0].tag}, "
-                f"Distância: {most_similar_distance:.4f}"
+                f"Distância: {most_similar_distance:.4f} (limiar: {distance_threshold})"
             )
-            if most_similar_distance > 0.25:
-                return None
+
             # Formatação conforme especificado no planejamento
             prompt = (
                 f"📚 Comportamento que deve ser seguido:\n"

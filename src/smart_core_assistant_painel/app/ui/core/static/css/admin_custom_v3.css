@@ -1,0 +1,54 @@
+/* Override Jazzmin/AdminLTE colors to match the main app theme */
+
+/* Main Header (Navbar) */
+.main-header.navbar {
+    background-color: #141517 !important;
+    border-bottom: 1px solid #374151 !important;
+}
+
+/* Sidebar */
+.main-sidebar {
+    background-color: #141517 !important;
+}
+
+/* Sidebar Brand (Logo area) */
+.brand-link {
+    background-color: #141517 !important;
+    border-bottom: 1px solid #374151 !important;
+}
+
+/* Sidebar User Panel */
+.user-panel {
+    border-bottom: 1px solid #374151 !important;
+}
+
+/* Sidebar Menu Items */
+.nav-sidebar>.nav-item>.nav-link.active {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+}
+
+.nav-sidebar>.nav-item>.nav-link:hover {
+    background-color: #374151 !important;
+}
+
+/* Custom Text Colors */
+a,
+.text-primary,
+.btn-link {
+    color: #a98f71 !important;
+}
+
+a:hover,
+.text-primary:hover,
+.btn-link:hover {
+    color: #8c735a !important;
+}
+
+/* Force white text on buttons to ensure readability */
+.btn,
+a.btn {
+    color: #ffffff !important;
+}
+
+/* Delete Confirmation: usar cores padrão do tema (success/danger) */

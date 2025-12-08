@@ -1,11 +1,16 @@
 from typing import Any, Optional
 
 from decouple import config
+from django.db import transaction
 from loguru import logger
 
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloBoard,
     TrelloList,
+)
+from smart_core_assistant_painel.app.ui.operacional.models import (
+    FluxoAtendimento,
+    EtapaFluxo,
 )
 from smart_core_assistant_painel.modules.services import (
     SERVICEHUB,
@@ -17,8 +22,9 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 
 
 class FlowSyncService:
-    """
-    Serviço de sincronização de fluxo (Departamento/Etapas → Board/Lists).
+    """[TRL-FLW-001] Serviço de sincronização de fluxo (Departamento/Etapas → Board/Lists).
+
+    Geração Automática de Quadros e Listas.
 
     Comentário: usa TrelloUnifiedDataService para criar artefatos.
     """
@@ -68,41 +74,61 @@ class FlowSyncService:
         """
         Garante board Trello para um FluxoAtendimento e registra webhook.
         """
+        # 1. Verificação rápida (sem lock)
         existing: Optional[TrelloBoard] = getattr(fluxo, "trello_board", None)
         if existing:
             return existing
 
-        # Comentário: create_container retorna o ID do board.
-        board_id: str = self.client.create_container(name or fluxo.nome)
-        # Após criar, buscar dados do board para preencher metadados.
-        data: Optional[dict[str, Any]] = self.client.get_container(board_id)
-        board_data: dict[str, Any] = data if isinstance(data, dict) else {}
-        board: TrelloBoard = TrelloBoard.objects.create(
-            fluxo=fluxo,
-            external_id=board_id,
-            name=board_data.get("name", name or fluxo.nome),
-            url=board_data.get("shortUrl"),
-            metadata=board_data,
-        )
+        # 2. Lock no Fluxo para garantir serialização
+        # Precisamos importar FluxoAtendimento para o get, ou usar type(fluxo)
+        # Assumindo que 'fluxo' é instância de FluxoAtendimento.
+        # Mas para garantir, vamos usar o ID.
+        fluxo_id = getattr(fluxo, "id", None)
+        if not fluxo_id:
+            raise ValueError("Fluxo sem ID")
 
-        # Registro de webhook condicionado a configuração/ambiente
-        cb_url: str = self._callback_url()
-        if self._should_register_webhook(cb_url):
-            try:
-                self.client.register_webhook(
-                    model_id=board.external_id,
-                    callback_url=cb_url,
-                    description="Webhook de FluxoAtendimento (board)",
-                )
-            except Exception as exc:
-                logger.warning("Falha ao registrar webhook do board: {}", exc)
-        else:
-            logger.info(
-                "Webhook Trello não registrado (URL não pública ou flag desativada)."
+        with transaction.atomic():
+            # Re-busca o fluxo com lock para bloquear outros processos
+            # Importante: select_for_update bloqueia a linha até o fim da transação
+            fluxo_locked = FluxoAtendimento.objects.select_for_update().get(
+                id=fluxo_id
             )
+
+            # 3. Verificação pós-lock (Double-Check Locking)
+            # Tenta buscar o board novamente via DB para garantir que não foi criado
+            # enquanto esperávamos o lock.
+            existing_locked = TrelloBoard.objects.filter(
+                fluxo=fluxo_locked
+            ).first()
+            if existing_locked:
+                return existing_locked
+
+            # 4. Criação do Board (API + DB)
+            # Nota: Chamada de API dentro de transação segura o lock por mais tempo,
+            # mas é necessário para evitar a race condition de criação duplicada no Trello.
+
+            board_id_trello: str = self.client.create_container(
+                name or fluxo_locked.nome
+            )
+
+            # Após criar, buscar dados do board para preencher metadados.
+            data: Optional[dict[str, Any]] = self.client.get_container(
+                board_id_trello
+            )
+            board_data: dict[str, Any] = data if isinstance(data, dict) else {}
+
+            board: TrelloBoard = TrelloBoard.objects.create(
+                fluxo=fluxo_locked,
+                external_id=board_id_trello,
+                name=board_data.get("name", name or fluxo_locked.nome),
+                url=board_data.get("shortUrl"),
+                metadata=board_data,
+            )
+
+        # Comentário: Webhook agora é registrado via task assíncrona (task_fluxo_ensure_board)
+        # para garantir robustez e retry, removendo a lógica inline daqui.
         # Comentário: após criar o board, garantir listas para etapas já existentes
         try:
-
             etapas = getattr(fluxo, "etapas", None)
             if etapas is not None:
                 for etapa in etapas.all():
@@ -131,46 +157,68 @@ class FlowSyncService:
         return board
 
     def ensure_list_for_etapa(self, etapa: Any) -> TrelloList:
-        """Garante list Trello para a EtapaFluxo associada a um board."""
-        board: Optional[TrelloBoard] = getattr(
-            etapa.fluxo, "trello_board", None
-        )
-        if not board:
-            # Comentário: não cria board aqui para evitar corrida com fluxo criado.
-            # O board é criado pelo signal do Fluxo; aguardar e tentar novamente.
-            raise RuntimeError("Board do fluxo ainda não criado para a etapa")
+        """[TRL-LST-001] Garante list Trello para a EtapaFluxo associada a um board."""
+        etapa_id = getattr(etapa, "id", None)
+        if not etapa_id:
+            raise ValueError("Etapa sem ID")
 
-        existing: Optional[TrelloList] = getattr(etapa, "trello_list", None)
-        if existing:
-            return existing
+        with transaction.atomic():
+            # Lock na etapa para evitar duplicidade de criação de lista
+            etapa_locked = EtapaFluxo.objects.select_for_update().get(
+                id=etapa_id
+            )
 
-        # Comentário: add_data_source cria a lista e retorna seu ID.
-        # Trello não aceita posições negativas; mapeia valores < 0 para 0 (topo).
-        try:
-            ordem_raw = getattr(etapa, "ordem", 0)
-            ordem_val: float = float(ordem_raw if ordem_raw is not None else 0)
-        except Exception:
-            ordem_val = 0.0
-        if ordem_val < 0:
-            ordem_val = 0.0
-        list_id: str = self.client.add_data_source(
-            container_id=board.external_id,
-            data_source_id=etapa.nome,
-            position=ordem_val,
-        )
-        # Buscar dados completos da lista para metadados.
-        data: Optional[dict[str, Any]] = self.client.get_data_source(list_id)
-        list_data: dict[str, Any] = data if isinstance(data, dict) else {}
+            # Re-check se já existe após o lock
+            existing: Optional[TrelloList] = getattr(
+                etapa_locked, "trello_list", None
+            )
+            if existing:
+                return existing
 
-        lista: TrelloList = TrelloList.objects.create(
-            etapa=etapa,
-            board=board,
-            external_id=list_id,
-            name=list_data.get("name", etapa.nome),
-            position=list_data.get("pos", 0.0),
-            metadata=list_data,
-        )
-        return lista
+            board: Optional[TrelloBoard] = getattr(
+                etapa_locked.fluxo, "trello_board", None
+            )
+            if not board:
+                # Comentário: Se o board não existir, tenta garanti-lo agora.
+                # O lock no ensure_board_for_fluxo evitará duplicidade.
+                try:
+                    board = self.ensure_board_for_fluxo(etapa_locked.fluxo)
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"Falha ao garantir board para etapa {etapa_locked.id}: {exc}"
+                    ) from exc
+
+            # Comentário: add_data_source cria a lista e retorna seu ID.
+            # Trello não aceita posições negativas; mapeia valores < 0 para 0 (topo).
+            try:
+                ordem_raw = getattr(etapa_locked, "ordem", 0)
+                ordem_val: float = float(
+                    ordem_raw if ordem_raw is not None else 0
+                )
+            except Exception:
+                ordem_val = 0.0
+            if ordem_val < 0:
+                ordem_val = 0.0
+            list_id: str = self.client.add_data_source(
+                container_id=board.external_id,
+                data_source_id=etapa_locked.nome,
+                position=ordem_val,
+            )
+            # Buscar dados completos da lista para metadados.
+            data: Optional[dict[str, Any]] = self.client.get_data_source(
+                list_id
+            )
+            list_data: dict[str, Any] = data if isinstance(data, dict) else {}
+
+            lista: TrelloList = TrelloList.objects.create(
+                etapa=etapa_locked,
+                board=board,
+                external_id=list_id,
+                name=list_data.get("name", etapa_locked.nome),
+                position=list_data.get("pos", 0.0),
+                metadata=list_data,
+            )
+            return lista
 
     def reorder_lists_for_fluxo(self, fluxo: Any) -> None:
         """Reordena as listas do board conforme `etapa.ordem`.

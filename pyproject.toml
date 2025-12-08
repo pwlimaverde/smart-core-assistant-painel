@@ -1,11 +1,9 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "0.8.5"
+version = "0.9.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "pwlimaverde", email = "pwlimaverde@gmail.com" }
-]
+authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
     "aiohappyeyeballs==2.6.1",
@@ -98,6 +96,7 @@ dependencies = [
     "langchain-huggingface>=0.2.0",
     "notion-py-client>=0.1.14",
     "brazilcep>=7.0.1",
+    "django-jazzmin>=3.0.0",
 ]
 
 
@@ -120,6 +119,7 @@ dev = [
     "types-requests>=2.32.0.20250602",
     "django-types>=0.22.0",
     "django-stubs-ext>=5.2.2",
+    "langsmith>=0.3.45",
 ]
 doc = [
     "mkdocs>=1.6.1",
@@ -149,8 +149,6 @@ strictParameterNoneValue = false
 reportUnknownVariableType = "warning"
 # Reduz para warning ao invés de error
 reportUnknownMemberType = "warning"
-# Alinha com a versão de Python do projeto
-pythonVersion = "3.13.1"
 # Caminhos extras para resolver imports no layout em src/
 extraPaths = [
     "src",
@@ -164,74 +162,37 @@ extraPaths = [
 packages = ["src/smart_core_assistant_painel"]
 
 
-[project.scripts]
-# Servidor Django
-dev = "smart_core_assistant_painel.main:main"
-start-server = "smart_core_assistant_painel.main:main"
-
-
 [tool.taskipy.tasks]
 # Scripts de automação
 base = "python scripts/new_feature_script.py --type base"
 call-data = "python scripts/new_feature_script.py --type call_data"
 
-# Servidor Django - Local
+# Servidor Django
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
-server = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 cluster = "python -m smart_core_assistant_painel.main qcluster"
 start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task cluster'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-clickup' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-clickup' }\""
-
-# Docker commands
-
-start-docker = "docker compose up -d"
-down-docker = "docker compose down"
-pause-docker = "docker compose pause"
-unpause-docker = "docker compose unpause"
-restart-docker = "docker compose down && docker compose up -d --build"
-logs-docker = "docker compose logs -f django-app"
-logs-cluster-docker = "docker compose logs -f django-qcluster"
-
-# Comandos Django úteis - Local
-migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
 makemigrations = "python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-createsuperuser = "python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
-collectstatic = "cd src/smart_core_assistant_painel/app/ui && python manage.py collectstatic --noinput"
-shell = "cd src/smart_core_assistant_painel/app/ui && python manage.py shell"
-startapp = "python src/smart_core_assistant_painel/app/ui/manage.py startapp"
-
-# Atalho: migração remota (aplica migrations no PostgreSQL remoto)
+migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
 migrate-remoto = "python scripts/migrar_remoto.py"
+createsuperuser = "python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
+shell = "python src/smart_core_assistant_painel/app/ui/manage.py shell"
 
 # Desenvolvimento e testes
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"
-# Executa apenas os testes de apps Django dentro de src/
 test-apps = "pytest src/smart_core_assistant_painel/app/ui -v --cov=src --cov-report=term-missing"
-# Executa todos os testes (raiz + apps), equivalente ao Docker (sem container)
 test-all = "pytest -v --cov=src --cov-report=term-missing"
-
-
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"
+
+# Linting
 lint = "ruff check src/"
 format = "ruff format src/"
 type-check = "pyright"
 
-# Comandos combinados - Local
-setup = "uv sync --dev && uv run task migrate && uv run task createsuperuser"
-dev-setup = "uv sync --dev && uv run task migrate"
-
-# Combined routines (Docker)
-dev-setup-docker = "docker compose up -d --build"
 # Reset do banco de dados
 reset-db = "python scripts/database_reset/reset_database.py"
 
-# Testes em Docker (stub atual: executa apenas adapter)
-# Observação: idealmente este comando deve rodar via `docker compose`
-# dentro do container, cobrindo toda a suíte. No momento, para garantir
-# consistência do fluxo, mapeamos para os testes do `appflowy_adapter`.
-test-docker = "pytest -v --cov=src --cov-report=term-missing"
-# init-sync-records desativado: evita interferência enquanto Notion está
-# desligado. Quando reativar o app, remova o comentário abaixo.
-# init-sync-records = "python src/smart_core_assistant_painel/app/notion_sync/management/commands/init_sync_records.py"
+# Callback do Trello via túnel ngrok
+ngrok-trello = "python scripts/trello/ngrok_trello.py"
 
-# Callback do ClickUp via túnel ngrok
-ngrok-clickup = "python scripts/clickup_setup/ngrok_clickup.py"
+# Task Master Visualization
+list-tasks = "python scripts/visualize_tasks.py"

@@ -1,0 +1,111 @@
+# Product Requirements Document (PRD) - Smart Core Assistant Painel
+
+**Versão:** 2.0
+**Data:** 27/11/2025
+**Status:** Em Desenvolvimento
+
+---
+
+## 1. Introdução
+
+### 1.1. Propósito
+Este documento define os requisitos funcionais e não funcionais, escopo e arquitetura do **Smart Core Assistant Painel**. O sistema é uma plataforma centralizada de atendimento multicanal que integra inteligência artificial (chatbot) com atendimento humano, utilizando o Trello como interface visual (Kanban).
+
+### 1.2. Objetivos Principais
+1.  **Centralização:** Unificar o atendimento de múltiplos canais e departamentos.
+2.  **Automação Inteligente:** Utilizar IA (RAG) para triagem e respostas.
+3.  **Integração Transparente:** Sincronizar com o Trello sem duplicidade de dados.
+
+---
+
+## 2. Arquitetura e Stack Tecnológico
+
+*   **Backend:** Python 3.13+, Django 5.x, Django REST Framework.
+*   **Async/Queue:** Django-Q2 com Redis.
+*   **Database:** PostgreSQL 16+ (Relacional) e `pgvector` (Vetorial).
+*   **Integrações:** Evolution API (WhatsApp), Trello API.
+*   **AI Engine:** LangChain (OpenAI/Groq/Ollama).
+*   **Infraestrutura:** Docker, Docker Compose.
+
+---
+
+## 3. Funcionalidades e Requisitos (Códigos de Rastreabilidade)
+
+### 3.1. Módulo: Configuração e Núcleo do Sistema `[SYS]`
+*   **SYS-INI-001:** Inicialização do Firebase Admin SDK.
+*   **SYS-INI-002:** Gestão de variáveis via Remote Config e `.env`.
+*   **SYS-INI-003:** Health Check e Monitoramento (Redis, DB, APIs).
+*   **SYS-DAT-001:** Serviços de dados unificados (Facade Pattern).
+*   **SYS-DAT-002:** Gerenciamento de Vector Storage (`pgvector`) no PostgreSQL.
+
+### 3.2. Módulo: Gestão Administrativa e Acesso `[ADM]`
+*   **ADM-USR-001:** Cadastro de usuários e atendentes.
+*   **ADM-USR-002:** Autenticação e Login (JWT/Session).
+*   **ADM-USR-003:** Gestão de Papéis e Permissões (RBAC com `django-role-permissions`).
+*   **ADM-USR-004:** Dashboard Gerencial com KPIs (Atendimentos por status/depto).
+*   **ADM-CFG-001:** Gestão de OAuth (Trello/ClickUp) para tokens de acesso.
+
+### 3.3. Módulo: Gestão Operacional `[OPS]`
+*   **OPS-ORG-001:** Gestão de Departamentos (Isolamento de dados, chaves de API).
+*   **OPS-ORG-002:** Gestão de Atendentes (Horários, Limites de tickets).
+*   **OPS-ORG-003:** Configuração de Instâncias WhatsApp por Departamento.
+*   **OPS-FLW-001:** Configuração de Fluxos Kanban e Etapas.
+*   **OPS-FLW-003:** Registro de movimentação e cálculo de SLA (Tempo em cada etapa).
+
+### 3.4. Módulo: Treinamento e Conhecimento (RAG UI) `[TRN]`
+*   **TRN-CON-001:** Ingestão de documentos (PDF, DOCX, TXT) via Interface.
+*   **TRN-CON-002:** Interface de Curadoria (Human-in-the-loop) para aprovar/editar chunks.
+*   **TRN-CON-003:** Gestão de embeddings ativos/inativos.
+*   **TRN-INT-001:** Cadastro de Intenções (Query Compose) e exemplos (Few-shot).
+
+### 3.5. Módulo: Gestão de Clientes e Contatos `[CLI]`
+*   **CLI-CTT-001:** Gestão de contatos WhatsApp (JID/LID) e validação de telefone.
+*   **CLI-CRM-001:** Mini-CRM para PF/PJ (Dados fiscais, endereços).
+*   **CLI-CRM-002:** Vinculação de múltiplos contatos a um único Cliente (Histórico unificado).
+
+### 3.6. Módulo: Gestão de Atendimentos `[ATD]`
+*   **ATD-LIF-001:** Orquestrador central de mensagens (Router).
+*   **ATD-LIF-003:** Mecanismo de Transferência Inteligente (Active Push e Seleção de Instância).
+*   **ATD-CTX-001:** Log completo de mensagens (In/Out) e metadados.
+*   **ATD-CTX-002:** Manutenção de contexto conversacional (Memória de curto prazo).
+
+### 3.7. Módulo: Integração Trello (Sidecar) `[TRL]`
+*   **TRL-FLW-001:** Sincronização de Boards (Fluxos de Depto).
+*   **TRL-LST-001:** Sincronização de Listas (Etapas do Kanban).
+*   **TRL-CRD-001:** Criação automática de Cards para novos atendimentos (Modelos OneToOne).
+*   **TRL-CRD-003:** Sync Bidirecional de Movimentação (Card Move <-> Ticket Status).
+*   **TRL-WEB-001:** Gestão automática de Webhooks do Trello.
+*   **TRL-MEM-001:** Sincronização de Membros (Atendentes).
+
+### 3.8. Módulo: Integração Evolution API `[EVO]`
+*   **EVO-MSG-001:** Suporte a múltiplas instâncias (Multitenancy).
+*   **EVO-MSG-002:** Envio/Recebimento de Mídia (Áudio, Imagem, Docs).
+*   **EVO-MSG-003:** Webhooks de status (Sent, Delivered, Read).
+*   **EVO-MSG-005:** Whitelist de números permitidos.
+
+---
+
+## 4. Roadmap de Desenvolvimento (Fases)
+
+### Phase 1: Foundation & Connectivity (Concluído)
+*   Setup Docker/Django `[SYS]`.
+*   Wrapper Evolution API `[EVO]`.
+*   Modelagem Core `[ATD]`.
+
+### Phase 2: Basic Attendance & Trello Sync (Concluído)
+*   Orquestrador Básico `[ATD]`.
+*   Sync Bidirecional Trello `[TRL]`.
+
+### Phase 3: AI & RAG Integration (Em Andamento)
+*   Infraestrutura Vetorial `[SYS-DAT-002]`.
+*   Fluxo de Chatbot LangChain `[ATD-LIF-001]`.
+*   Interface de Curadoria `[TRN]`.
+
+### Phase 4: Operational Management (Próximos Passos)
+*   CRM e Gestão de Clientes `[CLI]`.
+*   Gestão de Departamentos e SLAs `[OPS]`.
+*   Dashboard Administrativo e RBAC `[ADM]`.
+
+### Phase 5: Polish & Future
+*   Transcrição de Áudio.
+*   Análise de Sentimento.

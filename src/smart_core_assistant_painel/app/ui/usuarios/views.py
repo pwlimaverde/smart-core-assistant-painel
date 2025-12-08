@@ -6,6 +6,7 @@ cadastro, login e atribuição de permissões.
 
 from django.contrib import auth, messages
 from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.contrib.messages import constants
 from django.db.models import Count
@@ -13,7 +14,6 @@ from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from rolepermissions.checkers import has_permission
 from rolepermissions.roles import assign_role
-
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     StatusAtendimento,
@@ -24,7 +24,9 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
 
 
 def cadastro(request: HttpRequest) -> HttpResponse:
-    """Realiza o cadastro de um novo usuário.
+    """[ADM-USR-001] Realiza o cadastro de um novo usuário.
+
+    Permite o registro de novos usuários com validação de credenciais.
 
     Args:
         request (HttpRequest): O objeto de requisição.
@@ -71,7 +73,7 @@ def cadastro(request: HttpRequest) -> HttpResponse:
 
 
 def login(request: HttpRequest) -> HttpResponse:
-    """Realiza o login de um usuário.
+    """[ADM-USR-002] Realiza o login de um usuário.
 
     Após login bem-sucedido, redireciona para o Kanban do departamento
     associado ao atendente humano vinculado ao usuário (usuario_sistema).
@@ -86,6 +88,12 @@ def login(request: HttpRequest) -> HttpResponse:
         )
         if user:
             auth.login(request, user)
+
+            # Verificar se há um parâmetro 'next'
+            next_url = request.POST.get("next")
+            if next_url:
+                return redirect(next_url)
+
             # Encontrar atendente vinculado ao usuário para redirecionamento
             agente = (
                 Atendente.objects.filter(usuario_sistema=user.username)
@@ -97,8 +105,8 @@ def login(request: HttpRequest) -> HttpResponse:
                     "atendimentos:kanban_departamento",
                     departamento_id=agente.departamento_id,
                 )
-            # Fallback: se não houver vínculo, redireciona para seleção/treinamento
-            return redirect("treinamento:treinar_ia")
+            # Fallback: redireciona para a home
+            return redirect("/")
         messages.add_message(
             request, constants.ERROR, "Nome de usuário ou senha inválidos."
         )
@@ -106,21 +114,27 @@ def login(request: HttpRequest) -> HttpResponse:
     return redirect("login")
 
 
+def logout_view(request: HttpRequest) -> HttpResponse:
+    """[ADM-USR-005] Realiza o logout do usuário.
+
+    Redireciona para a página inicial após o logout.
+    """
+    auth.logout(request)
+    return redirect("/")
+
+
+@user_passes_test(lambda u: u.is_superuser)
 def permissoes(request: HttpRequest) -> HttpResponse:
-    """Exibe a página de gerenciamento de permissões.
+    """[ADM-USR-003] Exibe a página de gerenciamento de permissões.
 
-    Args:
-        request (HttpRequest): O objeto de requisição.
-
-    Returns:
-        HttpResponse: A resposta HTTP com a lista de usuários.
+    Apenas superusuários podem acessar esta página.
     """
     users = User.objects.filter(is_superuser=False)
     return render(request, "permissoes.html", {"users": users})
 
 
 def tornar_gerente(request: HttpRequest, id: int) -> HttpResponseRedirect:
-    """Atribui a função de gerente a um usuário.
+    """[ADM-USR-003] Atribui a função de gerente a um usuário.
 
     Args:
         request (HttpRequest): O objeto de requisição.
@@ -135,7 +149,9 @@ def tornar_gerente(request: HttpRequest, id: int) -> HttpResponseRedirect:
 
 
 def dashboard_gerente(request: HttpRequest) -> HttpResponse:
-    """Exibe o dashboard para gerentes com métricas de atendimentos.
+    """[ADM-USR-004] Exibe o dashboard para gerentes com métricas de atendimentos.
+
+    Painel exclusivo para gerentes com métricas consolidadas.
 
     Requer a permissão "treinar_ia" para acesso, conforme política de
     permissões do projeto.

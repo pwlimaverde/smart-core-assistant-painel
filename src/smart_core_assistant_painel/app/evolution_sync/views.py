@@ -19,7 +19,9 @@ from smart_core_assistant_painel.app.evolution_sync.services.webhook import (
 
 @csrf_exempt
 def webhook(request: HttpRequest) -> JsonResponse:
-    """Endpoint para receber webhooks da Evolution API.
+    """[EVO-MSG-003] Endpoint para receber webhooks da Evolution API.
+
+    Recebimento de Status e Mensagens (Webhooks).
 
     Args:
         request: O objeto HttpRequest do Django.

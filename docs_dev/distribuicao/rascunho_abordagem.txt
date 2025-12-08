@@ -1,0 +1,21 @@
+O Smart Core Assistant Painel é uma plataforma de atendimento híbrido via WhatsApp, integrando IA com RAG (usando pgvector no PostgreSQL para armazenamento vetorial), Firebase para configurações e autenticação, Trello para visualização Kanban e Evolution API para mensageria, com módulos para gestão operacional, administrativa e de clientes.​
+
+Arquitetura Multi-Tenant Sugerida
+Separe o núcleo da aplicação (código Python/Django, lógica de IA, integrações) da base de dados PostgreSQL (com pgvector), permitindo que cada empresa configure sua própria instância de banco isolada. O núcleo consome a DB via string de conexão configurável (ex: via variável de ambiente ou Firebase Remote Config), suportando hospedagem própria (on-premise com Docker) ou nuvem (Supabase, Neon, AWS RDS). Use schemas PostgreSQL por tenant (empresa) para isolamento lógico na mesma DB física, evitando vazamento de dados entre clientes.​
+
+Distribuição e Instalação
+Docker Compose como Base: Forneça imagens Docker oficiais no Docker Hub ou GitHub Container Registry (ex: seuuser/smartcore:latest). Cada empresa baixa um docker-compose.yml template com volumes para persistência de dados e configurações iniciais (gerando schema único via migração Flyway/Alembic).​
+
+Instalador Automatizado: Crie um script Python/CLI (usando Click ou Typer) que valida pré-requisitos (Docker, PostgreSQL), puxa imagens, configura env vars (DB_URL, FIREBASE_PROJECT_ID por tenant) e inicia com docker compose up -d.
+
+Opções de Hospedagem: Permita escolha entre self-hosted (servidor local/VPS), gerenciado (Railway, Render com DB externa) ou PaaS como Fly.io, com suporte a Kubernetes para escala futura.​
+
+Atualizações Automáticas
+Implemente um serviço de "updater" no núcleo que verifica versão remota via API sua (ex: GitHub Releases ou endpoint S3) e aplica updates via docker compose pull && docker compose up -d --force-recreate. Use Firebase Remote Config para flags de rollout gradual (ex: ativar nova feature por tenant_id). Para zero-downtime, adicione health checks (já no SYS-INI-003) e rolling updates com múltiplas réplicas.​
+
+Gerenciamento de Assinaturas e Manutenção
+Aspecto	Implementação	Benefícios
+Validação de Assinatura	Integre Stripe/LemonSqueezy via webhook no Firebase Functions; núcleo consulta token JWT por tenant na inicialização.	Bloqueio suave (modo read-only após expiry) sem downtime.​
+Multi-Tenancy	tenant_id em todas tabelas principais; middleware Django filtra queries automaticamente.	Isolamento total de dados por empresa.
+Monitoramento	Dashboards centralizados (ex: Grafana + Prometheus no seu side) com métricas agregadas anonimizadas por tenant.	Cobrança por uso (atendimentos/mês) via API de billing.
+Suporte	Portal cliente com tickets (usando seu próprio sistema) e logs exportáveis via admin endpoint.	Manutenção remota sem acesso à DB do cliente.​

@@ -17,30 +17,43 @@ if TYPE_CHECKING:
 
 
 class BotRulesEngine(BotRulesEngineInterface):
-    """Motor de regras de negócio do bot.
+    """[ATD-LIF-003] Motor de regras de negócio do bot.
 
-        Responsabilidades:
-        - Avaliar se bot pode responder
-        - Aplicar regras de negócio
-        - Ver
-
-    ificar interação humana
+    Responsabilidades:
+    - Avaliar se bot pode responder
+    - Aplicar regras de negócio
+    - Verificar interação humana
     """
 
-    def can_bot_respond(self, attendance: Optional["Atendimento"]) -> bool:
+    def can_bot_respond(
+        self,
+        attendance: Optional["Atendimento"],
+        api_key: Optional[str] = None,
+    ) -> bool:
         """Verifica se o bot pode responder automaticamente a um atendimento.
 
         Regras:
+        - Verifica permissão da instância (AppInstance.resposta_bot)
         - Não responde se a flag `bot_pode_atender` for False
         - Não responde se há interação humana (legado/redundante, mas mantido por segurança)
 
         Args:
             attendance: Atendimento a ser verificado.
+            api_key: Chave de API da instância que recebeu a mensagem.
 
         Returns:
             True se o bot pode responder, False caso contrário.
         """
         if not attendance:
+            return False
+
+        # 0. Nova Regra: Verifica se a instância permite resposta do bot.
+        # Se api_key fornecida e instância disable, return False IMEDIATAMENTE.
+        if api_key and not self._is_instance_bot_enabled(api_key):
+            logger.info(
+                f"Bot não pode responder atendimento {attendance.id}: "
+                f"instância da api_key={api_key[:8]}... bloqueada (resposta_bot=False)"
+            )
             return False
 
         # 1. Prioridade máxima: Se houve interação humana, o bot NÃO responde.
@@ -63,6 +76,37 @@ class BotRulesEngine(BotRulesEngineInterface):
             return False
 
         return True
+
+    def _is_instance_bot_enabled(self, api_key: str) -> bool:
+        """Verifica se a instância permite resposta automática do bot.
+
+        Args:
+            api_key: Chave de API da instância.
+
+        Returns:
+            True se permitido (ou se instância não encontrada - fail-safe),
+            False se bloqueado explicitamente.
+        """
+        try:
+            from smart_core_assistant_painel.app.ui.operacional.models import (
+                AppInstance,
+            )
+
+            instance = AppInstance.objects.filter(
+                api_key=api_key, active=True
+            ).first()
+
+            if not instance:
+                logger.warning(
+                    f"AppInstance não encontrada para api_key={api_key[:8]}..."
+                )
+                return True  # Fail-safe: permite se não encontrar instância
+
+            return instance.resposta_bot
+
+        except Exception as e:
+            logger.error(f"Erro ao verificar resposta_bot da instância: {e}")
+            return True  # Fail-safe: permite em caso de erro
 
     def _has_human_interaction(self, attendance: "Atendimento") -> bool:
         """Verifica se há interação humana no atendimento.

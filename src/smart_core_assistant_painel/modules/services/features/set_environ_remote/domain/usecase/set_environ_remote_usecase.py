@@ -24,7 +24,7 @@ from smart_core_assistant_painel.modules.services.utils.types import SERUsecase
 
 
 class SetEnvironRemoteUseCase(SERUsecase):
-    """Caso de uso para acionar o carregamento de variáveis de ambiente remotas.
+    """[SYS-INI-002] Caso de uso para acionar o carregamento de variáveis de ambiente remotas.
 
     Esta classe chama a fonte de dados configurada para buscar e definir
     variáveis de ambiente. Ela garante que o resultado da operação seja

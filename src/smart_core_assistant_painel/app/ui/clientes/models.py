@@ -63,6 +63,11 @@ def validate_cep(value: str) -> None:
 
 
 class Contato(models.Model):
+    """[CLI-CTT-001] Gestão de contatos identificados pelo número de telefone (WhatsApp).
+
+    Inclui nome de perfil e histórico de interações.
+    """
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -72,7 +77,7 @@ class Contato(models.Model):
         validators=[validate_telefone],
         blank=True,
         null=True,
-        help_text="Número de telefone do contato (formato: 5511999999999)",
+        help_text="[CLI-CTT-002] Número de telefone do contato (formato: 5511999999999)",
     )
     nome_contato: models.CharField[str | None] = models.CharField(
         max_length=100, blank=True, null=True, help_text="Nome do contato"
@@ -144,6 +149,11 @@ class Contato(models.Model):
 
 
 class Cliente(models.Model):
+    """[CLI-CRM-001] Cadastro completo de clientes (PF/PJ) com dados fiscais.
+
+    Permite vinculação com múltiplos contatos e unificação de histórico.
+    """
+
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
     )
@@ -247,7 +257,7 @@ class Cliente(models.Model):
             "Contato",
             blank=True,
             related_name="clientes",
-            help_text="Contatos vinculados ao cliente",
+            help_text="[CLI-CRM-002] Contatos vinculados ao cliente",
         )
     )
     data_cadastro: models.DateTimeField[datetime] = models.DateTimeField(

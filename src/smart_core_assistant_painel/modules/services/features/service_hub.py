@@ -20,7 +20,7 @@ from .unifield_data_services.domain.interface.unified_data_service import (
 
 
 class ServiceHub:
-    """Hub central de serviços e configurações da aplicação.
+    """[SYS-DAT-001] Hub central de serviços e configurações da aplicação.
 
     É responsável por carregar e prover configurações via variáveis de ambiente
     e por disponibilizar instâncias e integrações entre serviços.
@@ -64,6 +64,19 @@ class ServiceHub:
             self._prompt_human_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_previa_mensagem: Optional[str] = None
             self._prompt_system_analise_mensagem: Optional[str] = None
+            self._prompt_system_dados_empresa: Optional[str] = None
+            # Novos prompts externalizados (Task 12.7/12.10)
+            self._prompt_regras_resposta: Optional[str] = None
+            self._prompt_regras_transferencia: Optional[str] = None
+            self._prompt_template_user_rag: Optional[str] = None
+            self._prompt_intent_system: Optional[str] = None
+            self._prompt_intent_footer: Optional[str] = None
+            self._msg_fallback_sem_info: Optional[str] = None
+            self._msg_fallback_geral: Optional[str] = None
+            self._msg_transferencia_generica: Optional[str] = None
+            # Thresholds
+            self._similarity_threshold: Optional[float] = None
+            self._vector_distance_threshold: Optional[float] = None
             # Embeddings
             self._chunk_overlap: Optional[int] = None
             self._chunk_size: Optional[int] = None
@@ -150,6 +163,19 @@ class ServiceHub:
         )
 
     # Prompts
+    @property
+    def PROMPT_SYSTEM_DADOS_EMPRESA(self) -> str:
+        """Retorna o prompt de sistema para dados da empresa."""
+        if self._prompt_system_dados_empresa is None:
+            self._prompt_system_dados_empresa = os.environ.get(
+                "PROMPT_SYSTEM_DADOS_EMPRESA"
+            )
+        return (
+            self._prompt_system_dados_empresa
+            if self._prompt_system_dados_empresa is not None
+            else ""
+        )
+
     @property
     def PROMPT_SYSTEM_ANALISE_CONTEUDO(self) -> str:
         """Retorna o prompt de sistema para análise de conteúdo."""
@@ -310,6 +336,124 @@ class ServiceHub:
         if self._time_cache is None:
             self._time_cache = int(os.environ.get("TIME_CACHE", "20"))
         return self._time_cache if self._time_cache is not None else 20
+
+    # ================== Prompts Externalizados (Task 12.7/12.10) ==================
+
+    @property
+    def PROMPT_REGRAS_RESPOSTA(self) -> str:
+        """Retorna as regras de resposta para o LLM."""
+        if self._prompt_regras_resposta is None:
+            self._prompt_regras_resposta = os.environ.get(
+                "PROMPT_REGRAS_RESPOSTA"
+            )
+        return (
+            self._prompt_regras_resposta
+            if self._prompt_regras_resposta is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_REGRAS_TRANSFERENCIA(self) -> str:
+        """Retorna as regras de transferência de atendimento."""
+        if self._prompt_regras_transferencia is None:
+            self._prompt_regras_transferencia = os.environ.get(
+                "PROMPT_REGRAS_TRANSFERENCIA"
+            )
+        return (
+            self._prompt_regras_transferencia
+            if self._prompt_regras_transferencia is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_TEMPLATE_USER_RAG(self) -> str:
+        """Retorna o template de prompt do usuário com contexto RAG."""
+        if self._prompt_template_user_rag is None:
+            self._prompt_template_user_rag = os.environ.get(
+                "PROMPT_TEMPLATE_USER_RAG"
+            )
+        return (
+            self._prompt_template_user_rag
+            if self._prompt_template_user_rag is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_INTENT_SYSTEM(self) -> str:
+        """Retorna o prompt de sistema para construção de intenções."""
+        if self._prompt_intent_system is None:
+            self._prompt_intent_system = os.environ.get("PROMPT_INTENT_SYSTEM")
+        return (
+            self._prompt_intent_system
+            if self._prompt_intent_system is not None
+            else ""
+        )
+
+    @property
+    def PROMPT_INTENT_FOOTER(self) -> str:
+        """Retorna o rodapé do prompt de intenções."""
+        if self._prompt_intent_footer is None:
+            self._prompt_intent_footer = os.environ.get("PROMPT_INTENT_FOOTER")
+        return (
+            self._prompt_intent_footer
+            if self._prompt_intent_footer is not None
+            else ""
+        )
+
+    @property
+    def MSG_FALLBACK_SEM_INFO(self) -> str:
+        """Retorna a mensagem de fallback quando não há informações."""
+        if self._msg_fallback_sem_info is None:
+            self._msg_fallback_sem_info = os.environ.get(
+                "MSG_FALLBACK_SEM_INFO"
+            )
+        return (
+            self._msg_fallback_sem_info
+            if self._msg_fallback_sem_info is not None
+            else "Desculpe, não encontrei informações relacionadas à sua pergunta."
+        )
+
+    @property
+    def MSG_FALLBACK_GERAL(self) -> str:
+        """Retorna a mensagem de fallback genérica."""
+        if self._msg_fallback_geral is None:
+            self._msg_fallback_geral = os.environ.get("MSG_FALLBACK_GERAL")
+        return (
+            self._msg_fallback_geral
+            if self._msg_fallback_geral is not None
+            else "Recebemos sua mensagem. Em breve retornaremos."
+        )
+
+    @property
+    def MSG_TRANSFERENCIA_GENERICA(self) -> str:
+        """Retorna a mensagem de transferência genérica."""
+        if self._msg_transferencia_generica is None:
+            self._msg_transferencia_generica = os.environ.get(
+                "MSG_TRANSFERENCIA_GENERICA"
+            )
+        return (
+            self._msg_transferencia_generica
+            if self._msg_transferencia_generica is not None
+            else "Vou transferir seu atendimento para o setor responsável"
+        )
+
+    @property
+    def SIMILARITY_THRESHOLD(self) -> float:
+        """Retorna o limiar de similaridade para transferência."""
+        if self._similarity_threshold is None:
+            self._similarity_threshold = float(
+                os.environ.get("SIMILARITY_THRESHOLD", "0.4")
+            )
+        return self._similarity_threshold
+
+    @property
+    def VECTOR_DISTANCE_THRESHOLD(self) -> float:
+        """Retorna o limiar de distância vetorial para busca."""
+        if self._vector_distance_threshold is None:
+            self._vector_distance_threshold = float(
+                os.environ.get("VECTOR_DISTANCE_THRESHOLD", "0.5")
+            )
+        return self._vector_distance_threshold
 
     def _get_llm_class(self) -> Type[BaseChatModel]:
         """Retorna a classe do LLM com base na variável de ambiente.

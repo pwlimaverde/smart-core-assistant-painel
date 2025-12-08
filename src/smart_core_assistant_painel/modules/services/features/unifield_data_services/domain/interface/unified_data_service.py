@@ -91,6 +91,18 @@ class UnifiedDataService(ABC):
         """
 
     @abstractmethod
+    def move_item(self, item_id: str, target_data_source_id: str) -> bool:
+        """Move um item para outra fonte de dados (ex.: card para outra lista).
+
+        Args:
+            item_id (str): ID do item a ser movido.
+            target_data_source_id (str): ID da fonte de dados de destino.
+
+        Returns:
+            bool: Verdadeiro se movido com sucesso.
+        """
+
+    @abstractmethod
     def add_relation_property(
         self, data_source_id: str, property_name: str, target_id: str
     ) -> str:

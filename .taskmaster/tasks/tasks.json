@@ -1,0 +1,1167 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": "1",
+        "title": "Configuração da Infraestrutura Docker e Inicialização do Projeto Django",
+        "description": "Configurar o ambiente de desenvolvimento com Docker Compose, incluindo serviços para PostgreSQL (com pgvector), Redis e a aplicação Django. Inicializar a estrutura do projeto.",
+        "details": "1. Criar `docker-compose.yml` com serviços: `web` (Django), `db` (PostgreSQL 16+), `redis` (Cache/Queue). \n2. Configurar Dockerfile para Python 3.13+. \n3. Inicializar projeto Django 5.x com estrutura de 'config' separada. \n4. Configurar variáveis de ambiente (.env) para segredos. \n5. Garantir que a extensão `vector` esteja habilitada no init do Postgres.",
+        "testStrategy": "Executar `docker-compose up` e verificar se todos os contêineres estão 'healthy'. Acessar a página de boas-vindas do Django.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T13:28:02.047Z"
+      },
+      {
+        "id": "2",
+        "title": "Modelagem do Core Database e Migrations",
+        "description": "Implementar os modelos de dados fundamentais para o sistema: Clientes, Atendimentos, Mensagens e Departamentos.",
+        "details": "Criar apps Django (ex: `core`, `attendance`). Definir models:\n- `Customer`: nome, telefone (chave única), metadados.\n- `Department`: nome, configurações de SLA.\n- `Attendance` (Ticket): fk_customer, fk_department, status (aberto, pendente, fechado), trello_card_id.\n- `Message`: fk_attendance, conteúdo, tipo (texto/mídia), direção (in/out), timestamp.\nUtilizar UUIDs como chaves primárias.",
+        "testStrategy": "Criar testes de unidade com `pytest` para validar a criação e relacionamentos dos modelos. Verificar integridade referencial.",
+        "priority": "high",
+        "dependencies": [
+          "1"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T13:28:02.078Z"
+      },
+      {
+        "id": "3",
+        "title": "Implementação do Wrapper da Evolution API (WhatsApp)",
+        "description": "Desenvolver a camada de serviço e persistência dentro do app `evolution_sync` para gerenciar instâncias e comunicar com a Evolution API.",
+        "status": "done",
+        "dependencies": [
+          "2"
+        ],
+        "priority": "high",
+        "details": "A integração deve ser centralizada no app `evolution_sync`, eliminando uso de módulos genéricos como `whatsapp_services`. O foco é gerenciar múltiplas instâncias e processar webhooks.\n\n1. **Estrutura do App `evolution_sync`**:\n   - Garantir que `evolution_sync/models.py` possua modelos para armazenar credenciais de instâncias (ex: `EvolutionInstance` com campos `instance_name`, `token`, `base_url`, `state`).\n\n2. **Service Layer (`EvolutionClient`)**:\n   - Implementar em `evolution_sync/services.py` (ou pasta `services/`).\n   - Utilizar `httpx` (preferencialmente assíncrono) para comunicação.\n   - Métodos obrigatórios: `send_message` (texto/mídia), `get_instance_status`, `connect_instance`.\n\n3. **Webhook Handling**:\n   - Implementar View no `evolution_sync/views.py` para receber POSTs da Evolution API.\n   - Normalizar o payload de entrada antes de passar para o processador de mensagens (Task 4).",
+        "testStrategy": "Criar testes unitários em `evolution_sync/tests/` mockando as chamadas externas com `respx` ou `unittest.mock`. Validar o parseamento correto de payloads de webhook (ex: `messages.upsert`) e a persistência das configurações da instância.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Modelagem de Instâncias no evolution_sync",
+            "description": "Criar ou ajustar o model `EvolutionInstance` em `evolution_sync/models.py` para salvar URL da API, Token (ApiKey) e Nome da Instância.",
+            "dependencies": [],
+            "details": "Campos sugeridos: nome (char), api_url (url), token (encrypted/char), is_active (bool).",
+            "status": "done",
+            "testStrategy": "Testar criação e recuperação de instâncias no DB.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.746Z"
+          },
+          {
+            "id": 2,
+            "title": "Implementação do EvolutionClient Service",
+            "description": "Desenvolver a classe cliente HTTP para realizar chamadas à API externa da Evolution.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implementar métodos de envio de mensagem e checagem de saúde. O cliente deve ser instanciado carregando as configurações do model `EvolutionInstance`.",
+            "status": "done",
+            "testStrategy": "Mockar respostas HTTP e verificar se o serviço trata erros (401, 500) corretamente.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.774Z"
+          },
+          {
+            "id": 3,
+            "title": "Endpoint de Webhook (Receiver)",
+            "description": "Criar endpoint DRF para receber notificações de novas mensagens.",
+            "dependencies": [
+              1
+            ],
+            "details": "Endpoint deve validar o token de segurança do webhook e identificar a instância de origem. Deve apenas receber e estruturar os dados preliminares.",
+            "status": "done",
+            "testStrategy": "Enviar payload JSON de exemplo (message upsert) e verificar retorno 200 OK.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.795Z"
+          }
+        ],
+        "updatedAt": "2025-12-02T23:34:51.795Z"
+      },
+      {
+        "id": "4",
+        "title": "Orquestrador de Mensagens e Gestão de Contexto",
+        "description": "Criar a lógica central que processa mensagens recebidas, identifica o cliente e decide o roteamento (Novo Atendimento vs Atendimento Existente).",
+        "details": "1. Service Layer `MessageProcessor`: Receber payload do webhook. \n2. Buscar `Customer` pelo telefone (criar se não existir). \n3. Buscar `Attendance` ativo. Se não houver, criar novo. \n4. Salvar `Message` no banco. \n5. Implementar lógica de 'Debounce' para agrupar mensagens rápidas (opcional, via Redis).",
+        "testStrategy": "Testes de integração simulando um fluxo completo: Webhook recebido -> Cliente criado -> Atendimento criado -> Mensagem salva.",
+        "priority": "high",
+        "dependencies": [
+          "3"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T13:28:02.114Z"
+      },
+      {
+        "id": "5",
+        "title": "Integração com Trello (Adapter e Autenticação)",
+        "description": "Implementar o adaptador para a API do Trello, gerenciando autenticação e mapeamento de Departamentos para Boards/Lists.",
+        "details": "1. Configurar credenciais do Trello no .env. \n2. Criar serviço `TrelloService`: métodos para `create_card`, `add_comment`, `move_card`. \n3. Implementar lógica de mapeamento: Status do Atendimento -> Lista do Trello (Ex: 'A Fazer', 'Em Andamento'). \n4. Garantir tratamento de Rate Limits.",
+        "testStrategy": "Testes unitários mockando a API do Trello. Verificar se os payloads de criação de card estão corretos.",
+        "priority": "medium",
+        "dependencies": [
+          "2"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T13:28:02.132Z"
+      },
+      {
+        "id": "6",
+        "title": "Sincronização Bidirecional: Django para Trello (Background Jobs)",
+        "description": "Configurar tarefas assíncronas para espelhar atendimentos e mensagens no Trello sem bloquear a thread principal.",
+        "details": "1. Configurar `django-q2` com Redis. \n2. Criar tasks: `sync_ticket_to_trello` (cria card se ticket novo), `sync_message_to_trello` (adiciona comentário no card). \n3. Acionar estas tasks a partir do Orquestrador (Task 4) quando necessário (ex: transbordo para humano).",
+        "testStrategy": "Verificar se as tarefas são enfileiradas no Redis e executadas com sucesso pelo worker. Validar criação de Card real em board de teste.",
+        "priority": "high",
+        "dependencies": [
+          "4",
+          "5"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T13:28:02.151Z"
+      },
+      {
+        "id": "7",
+        "title": "Sincronização Bidirecional: Trello para Django (Webhooks)",
+        "description": "Receber atualizações do Trello (resposta do atendente) e enviar para o WhatsApp do cliente.",
+        "details": "1. Endpoint para Webhook do Trello (verificar assinatura de segurança). \n2. Tratar eventos: `commentCard` (resposta do atendente) e `updateCard` (mudança de lista/status). \n3. Se for comentário de atendente: enviar via `EvolutionClient` para o WhatsApp. \n4. Se for mudança de lista: atualizar status do `Attendance` no DB.",
+        "testStrategy": "Simular payload de webhook do Trello. Verificar se a mensagem de saída é enfileirada para a Evolution API.",
+        "priority": "high",
+        "dependencies": [
+          "6"
+        ],
+        "status": "done",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T13:28:02.168Z"
+      },
+      {
+        "id": "8",
+        "title": "Implementação de RAG: Ingestão e Banco Vetorial",
+        "description": "Configurar a infraestrutura de RAG (Retrieval-Augmented Generation) utilizando PostgreSQL com pgvector no app `treinamento` para ingestão e recuperação semântica.",
+        "status": "done",
+        "dependencies": [
+          "2"
+        ],
+        "priority": "medium",
+        "details": "Implementar o fluxo de RAG diretamente no PostgreSQL utilizando a extensão `pgvector` integrada aos models do Django. O app `treinamento` será o ponto central.\n\n1. **Modelagem**: Revisar e utilizar os models existentes no app `treinamento` (ex: `Documento`, `Trecho`) garantindo suporte a vetores (campo `VectorField`).\n2. **Ingestão**: Implementar serviço ou comando de gestão para processar arquivos (PDF/TXT), aplicar chunking (splitter) e gerar embeddings (OpenAI/Azure/Ollama) salvando diretamente nos modelos.\n3. **Recuperação (Retrieval)**: Implementar métodos no Django Manager ou Service Layer para busca por similaridade usando operadores do pgvector (distância de cosseno/L2).\n4. **Infraestrutura**: Assegurar que a migração de extensão `pgvector` esteja aplicada no banco.",
+        "testStrategy": "Criar testes de integração que:\n1. Ingerem um arquivo de texto simulado.\n2. Verificam se os vetores foram gerados e salvos no banco.\n3. Executam uma consulta por similaridade e validam se o trecho mais relevante é retornado primeiro.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configuração e Modelagem pgvector",
+            "description": "Verificar models no app `treinamento` para suporte a embeddings e garantir que a extensão pgvector esteja ativa nas migrations.",
+            "dependencies": [],
+            "details": "Verificar models como `Documento` e criar/ajustar model `Trecho` (Chunk) com campo `VectorField`. Garantir operação `CreateExtension('vector')` na migration inicial.",
+            "status": "done",
+            "testStrategy": "Verificar se makemigrations gera os campos corretos e se o banco aceita operações vetoriais.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.813Z"
+          },
+          {
+            "id": 2,
+            "title": "Pipeline de Ingestão e Chunking",
+            "description": "Desenvolver pipeline para ler arquivos, dividir em trechos (chunking) e gerar embeddings.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implementar função/classe que recebe arquivo, usa biblioteca (ex: LangChain ou script customizado) para split, chama API de Embedding e salva objetos `Trecho` com o vetor.",
+            "status": "done",
+            "testStrategy": "Testar ingestão de um PDF pequeno e verificar contagem de chunks criados no banco.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.832Z"
+          },
+          {
+            "id": 3,
+            "title": "Implementação de Busca Semântica",
+            "description": "Criar serviço de busca que converte query em vetor e consulta o banco usando operadores de similaridade.",
+            "dependencies": [
+              2
+            ],
+            "details": "Implementar método `search_similar(query_text, k=3)` que gera embedding da query e faz query Django com `metrics.CosineDistance` ou operador SQL customizado.",
+            "status": "done",
+            "testStrategy": "Realizar busca com termo específico presente nos documentos ingeridos e asserter que o chunk correto vem no topo.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-02T23:34:51.849Z"
+          }
+        ],
+        "updatedAt": "2025-12-02T23:34:51.849Z"
+      },
+      {
+        "id": "9",
+        "title": "Refatoração de Docstrings e Rastreabilidade PRD",
+        "description": "Atualização de docstrings em módulos e apps do projeto para incluir códigos de funcionalidade do PRD (ex: [TRL-CRD-001]) e descrições padronizadas, garantindo rastreabilidade entre código e requisitos.",
+        "details": "",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-11-28T18:10:26.697Z"
+      },
+      {
+        "id": "10",
+        "title": "Sync CreateList Trello to EtapaFluxo",
+        "description": "Atualizar o app trello_sync para processar o evento 'createList' do webhook do Trello. Quando uma nova lista for criada no Trello, o sistema deve criar automaticamente uma nova EtapaFluxo associada ao FluxoAtendimento do board e vincular via TrelloList.",
+        "details": "1. Modificar WebhookProcessingService para aceitar action_type 'createList'.\n2. Implementar lógica para buscar o TrelloBoard associado.\n3. Criar EtapaFluxo no FluxoAtendimento correspondente.\n4. Criar TrelloList vinculando a nova EtapaFluxo e a lista do Trello.\n5. Validar campos obrigatórios da EtapaFluxo.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [],
+        "updatedAt": "2025-12-01T13:32:54.740Z"
+      },
+      {
+        "id": "11",
+        "title": "Desenvolver Nova Home Page com Dashboard",
+        "description": "Desenvolver uma nova página de Home para o sistema, substituindo a view atual. A nova página deve seguir o padrão de design atual (utilizando o template base e Tailwind CSS) e fornecer acesso rápido às funcionalidades principais: Treinar IA, Verificar Treinamentos, Queries e Admin.",
+        "details": "1. **Atualizar `src/smart_core_assistant_painel/app/ui/core/views.py`**:\n   - Alterar a view `home` para renderizar um template HTML em vez de retornar HTML inline.\n   - Nome sugerido do template: `core/home.html`.\n\n2. **Criar Template `src/smart_core_assistant_painel/app/ui/core/templates/core/home.html`**:\n   - O template deve estender `base.html`.\n   - Utilizar classes do Tailwind CSS para manter a consistência visual (cards, grid, botões estilizados).\n   - Criar uma seção de \"Acesso Rápido\" ou \"Dashboard\" contendo cards/links para:\n     - **Treinar IA**: URL `{% url 'treinamento:treinar_ia' %}`.\n     - **Verificar Treinamentos**: URL `{% url 'treinamento:verificar_treinamentos_vetorizados' %}`.\n     - **Queries**: URL `{% url 'treinamento:verificar_query_compose' %}` (ou a view principal de queries).\n     - **Admin**: URL `/admin/`.\n\n3. **Design**:\n   - Utilizar um layout responsivo (ex: grid com cards).\n   - Adicionar ícones ou descrições breves para cada funcionalidade para melhorar a UX.\n   - Garantir que o footer e navbar do `base.html` sejam exibidos corretamente.\n\n4. **Verificação**:\n   - Acessar a rota `/` e verificar se a nova página é carregada.\n   - Testar todos os links para garantir que redirecionam para as páginas corretas.",
+        "testStrategy": "",
+        "status": "done",
+        "dependencies": [],
+        "priority": "medium",
+        "subtasks": [],
+        "updatedAt": "2025-12-02T23:28:59.075Z"
+      },
+      {
+        "id": "12",
+        "title": "[ATD] Fluxo de Chatbot com IA (LangChain)",
+        "description": "Implementar o fluxo completo de atendimento automatizado utilizando LangChain, integrando o orquestrador de mensagens à lógica de IA generativa (RAG) e gestão de contexto, garantindo a conformidade com os requisitos ATD-LIF-001, ATD-LIF-003 e ATD-CTX-002 do PRD v2.0.",
+        "status": "done",
+        "dependencies": [
+          "4",
+          "8"
+        ],
+        "priority": "medium",
+        "details": "Esta task deve conectar a camada de processamento de mensagens (Task 4) ao motor de IA. \n\n1. **Orquestrador Central [ATD-LIF-001]:** \n   - Atualizar `apps/core/services/message_processor.py`. Após salvar a mensagem do usuário, verificar se o `Attendance` está em estágio de 'bot' (automático).\n   - Se sim, despachar a mensagem para o `AIService` (assíncrono).\n\n2. **Manutenção de Contexto [ATD-CTX-002]:** \n   - Implementar memória de curto prazo (WindowBuffer) utilizando Redis ou histórico do DB para injetar as últimas N mensagens no prompt.\n\n3. **RAG e Geração:**\n   - Utilizar a `RetrievalQA` chain (ou equivalente LCEL) consumindo a Vector Store configurada na Task 8.\n\n4. **Detecção de Intenção e Transferência [ATD-LIF-003]:**\n   - Antes de gerar a resposta final, o LLM (ou um passo de router) deve classificar se a intenção do usuário é falar com um humano.\n   - Se positivo, acionar mecanismo de transbordo: alterar status do `Attendance` e notificar Trello (Task 5/6).",
+        "testStrategy": "1. **Unitário:** Mockar o `LangChainService` para testar se o `MessageProcessor` chama a IA quando o status é correto. \n2. **Integração:** Testar fluxo de memória (enviar 2 mensagens seguidas e verificar se a segunda resposta considera a primeira). \n3. **Funcional:** Enviar frase gatilho 'quero falar com atendente' e validar se o status do Atendimento muda.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implementar AIService e Configuração LangChain",
+            "description": "Criar serviço dedicado (`apps/ai_assistant/services.py`) para encapsular a lógica do LangChain, configurando o modelo (OpenAI/Anthropic) e o Prompt Template base.",
+            "dependencies": [],
+            "details": "Definir System Prompt com instruções de persona e diretrizes de segurança. Configurar conexão com LLM via variáveis de ambiente.",
+            "status": "done",
+            "testStrategy": "Testar invocação básica do LLM com um prompt simples.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.129Z"
+          },
+          {
+            "id": 2,
+            "title": "Integrar Contexto e RAG [ATD-CTX-002]",
+            "description": "Acoplar o retriever da Task 8 e o histórico de conversa ao prompt.",
+            "dependencies": [
+              1
+            ],
+            "details": "Recuperar histórico recente da conversa (SessionHistory). Recuperar documentos relevantes (RAG). Montar contexto final para o LLM.",
+            "status": "done",
+            "testStrategy": "Validar se respostas utilizam informações contidas apenas nos documentos indexados.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.153Z"
+          },
+          {
+            "id": 3,
+            "title": "Lógica de Roteamento e Transbordo [ATD-LIF-003]",
+            "description": "Implementar lógica para detectar solicitação de atendimento humano.",
+            "dependencies": [
+              2
+            ],
+            "details": "Pode ser feito via 'Tool calling' ou prompt classifier. Se detectado, retornar flag específica para o Orquestrador pausar o bot e mover card no Trello.",
+            "status": "done",
+            "testStrategy": "Enviar inputs variados solicitando humano e verificar a classificação correta.",
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.170Z"
+          },
+          {
+            "id": 4,
+            "title": "Conectar ao MessageProcessor [ATD-LIF-001]",
+            "description": "Atualizar o serviço principal de mensagens para invocar o fluxo de IA.",
+            "dependencies": [
+              3
+            ],
+            "details": "No `MessageProcessor.process_message`: adicionar condicional `if attendance.is_bot_enabled: await ai_service.process(...)`. Enviar resposta gerada de volta ao cliente (via Evolution API).",
+            "status": "done",
+            "testStrategy": null,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-03T12:39:03.187Z"
+          },
+          {
+            "id": 5,
+            "title": "[Refactor] Structured Output para AnaliseMensage",
+            "description": "Substituir a extração via regex da resposta por Structured Output (Pydantic) na `AnaliseMensage`. O modelo deve retornar um objeto contendo: `resposta_usuario` (str), `transferencia_necessaria` (bool) e `fluxo_alvo` (str). Isso elimina a fragilidade do parsing de texto (\"Estarei transferindo...\") e garante tipagem forte.",
+            "details": "Atualmente `FeaturesCompose._extrair_fluxo_transferencia` usa regex. Deve-se criar um `AnaliseMensageResult` (Pydantic) e usar `with_structured_output` no LangChain, similar ao que é feito em `AnalisePreviaMensagem`.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "[Optimization] Roteamento Proativo (Fast-Path)",
+            "description": "Implementar lógica no `AttendanceOrchestrator` para realizar transbordo imediato caso a `AnalisePrevia` detecte intent crítica (ex: `falar_com_humano`), sem passar pela geração de resposta RAG.",
+            "details": "Hoje o fluxo é sempre: Previa -> RAG -> Resposta -> Check Transferência. O novo fluxo deve ser: Previa -> Se 'Handover' -> Transfere Imediato. Isso economiza tokens e reduz latência. Requer definir uma flag/intent padrão para handover.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "[Refactor] Externalização de Configurações de IA",
+            "description": "Mover prompts, templates e limiares (ex: threshold 0.6 de similaridade) para configurações externas (Banco de Dados ou Variáveis de Ambiente) para facilitar ajustes sem deploy.",
+            "details": "Criar tabela `AIConfig` ou usar `Constance` (se instalado) para gerenciar: Templates de Prompt, Threshold de Confiança, Mensagens de Fallback/Erro. Atualizar `FeaturesCompose` para ler dessas configs.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "[Refactor] Implementar Structured Output na AnaliseMensage",
+            "description": "Substituir a extração via Regex da resposta e transferência por Structured Output (Pydantic) na `AnaliseMensage` para garantir precisão 100% no roteamento.\n\nDetalhes Técnicos:\n1. Criar modelo Pydantic `RespostaBot` em `modules/ai_engine/utils/types.py`:\n   - `resposta_texto` (str): A resposta final para o usuário.\n   - `acao_transferencia` (Optional[str]): Nome exato do setor para transferência (ou None).\n   - `confianca` (float): Nível de confiança (0.0 a 1.0).\n2. Atualizar `AnaliseMensageDatasource`:\n   - Utilizar `llm.with_structured_output(RespostaBot)`.\n   - Ajustar prompt para instruir o preenchimento do campo `acao_transferencia` com o nome exato do setor, removendo a instrução de \"Estarei transferindo...\".\n3. Refatorar `AttendanceOrchestrator` e `FeaturesCompose`:\n   - Remover método `_extrair_fluxo_transferencia` (regex).\n   - Consumir diretamente `resultado.acao_transferencia`.",
+            "details": "Implementação de Structured Output para eliminar fragilidade de Regex na detecção de transferência.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 9,
+            "title": "[Optimization] Otimizar Busca Vetorial no QueryCompose",
+            "description": "Mover a lógica de filtro de similaridade (distância < 0.25) do Python para a query do banco de dados para otimizar performance.\n\nDetalhes Técnicos:\n1. No método `QueryCompose.buscar_comportamento_similar` (`app/ui/treinamento/models.py`):\n   - Utilizar `annotate(distance=CosineDistance(\"embedding\", query_vec))`.\n   - Adicionar filtro `.filter(distance__lt=0.25)` diretamente na query.\n   - Remover a lógica Python `if most_similar_distance > 0.25: return None`.\n2. Verificar se a extensão `pgvector` está corretamente configurada para suportar essa operação eficientemente.",
+            "details": "Otimização de busca vetorial usando recursos nativos do banco de dados.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 10,
+            "title": "[Refactor] Externalizar Prompts e Configurações de IA",
+            "description": "Remover prompts hardcoded do código fonte e centralizá-los no `ServiceHub` carregados via variáveis de ambiente.\n\nDetalhes Técnicos:\n1. Identificar prompts em `AnaliseMensageDatasource` (system e user prompts) e `AttendanceOrchestrator` (intent prompt).\n2. Criar novas variáveis de ambiente (ex: `PROMPT_SYSTEM_ANALISE_MENSAGEM`, `PROMPT_USER_RAG_CONTEXT`) no `.env`.\n3. Atualizar `ServiceHub` (`modules/services/features/service_hub.py`) para carregar essas variáveis.\n4. Substituir strings hardcoded nos arquivos originais por chamadas ao `ServiceHub` (ex: `ServiceHub.get_instance().prompt_system_analise_mensagem`).",
+            "details": "Externalização de prompts para facilitar manutenção e ajustes sem deploy.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          },
+          {
+            "id": 11,
+            "title": "[Feature] Implementar Rastreabilidade de RAG (Source Documents)",
+            "description": "Registrar quais documentos foram utilizados para gerar a resposta da IA para fins de auditoria e debug.\n\nDetalhes Técnicos:\n1. Estender modelo `RespostaBot` (Task 12.5) para incluir campo `lista_ids_documentos` (List[int]).\n2. Atualizar `AnaliseMensageDatasource` para retornar os IDs dos documentos que foram passados no contexto RAG (ou filtrados pela LLM se possível).\n3. Atualizar `AttendanceOrchestrator` para persistir esses IDs em `Mensagem.metadados['rag_sources']` ao salvar a resposta.\n4. Garantir que `Documento.buscar_documentos_similares` retorne os IDs corretamente.",
+            "details": "Implementação de rastreabilidade para documentos usados no RAG.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 12,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-03T12:39:03.187Z"
+      },
+      {
+        "id": "13",
+        "title": "[ADM] Módulo Administrativo e Segurança",
+        "description": "Implementar o módulo de administração e segurança conforme PRD v2.0, cobrindo os requisitos de cadastro (ADM-USR-001), autenticação (ADM-USR-002), controle de acesso RBAC (ADM-USR-003), dashboard gerencial (ADM-USR-004) e gestão segura de tokens (ADM-CFG-001).",
+        "status": "pending",
+        "dependencies": [
+          "2",
+          "5"
+        ],
+        "priority": "high",
+        "details": "Desenvolver os requisitos do módulo ADM:\n\n- **ADM-USR-001 (Cadastro)**: Criar views e serializers para cadastro de usuários e atendentes, integrando com o User model customizado.\n- **ADM-USR-002 (Autenticação)**: Implementar endpoints de Login/Logout via JWT (SimpleJWT) e Session (para Admin).\n- **ADM-USR-003 (RBAC)**: Integrar biblioteca `django-role-permissions`. Definir papéis: `Admin`, `Gestor`, `Atendente`. Proteger views com decorators/mixins de permissão.\n- **ADM-USR-004 (Dashboard)**: Criar endpoints que agreguem KPIs (ex: atendimentos por dia, tempo médio de espera) para consumo futuro do front-end. Estruturar queries otimizadas.\n- **ADM-CFG-001 (OAuth/Tokens)**: Estender `TrelloService` ou criar modelo `IntegrationConfig` para armazenar tokens OAuth de forma criptografada (não apenas .env), permitindo configuração dinâmica via painel.",
+        "testStrategy": "1. **Unitários**: Testar atribuição de roles e verificação de permissões (`has_permission`).\n2. **Integração**: Validar fluxo de login e obtenção de token JWT.\n3. **Segurança**: Tentar acessar endpoints protegidos com usuário sem permissão (esperar 403).\n4. **Dados**: Verificar se os dados do dashboard batem com os registros no banco.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Configuração de RBAC e Roles (ADM-USR-003)",
+            "description": "Instalar e configurar `django-role-permissions`. Criar arquivo de definição de roles (ex: `roles.py`) com grupos `Admin`, `Gestor`, `Atendente` e suas respectivas permissões.",
+            "dependencies": [],
+            "details": "Adicionar lib ao `requirements.txt`. Configurar `INSTALLED_APPS` e `ROLEPERMISSIONS_MODULE`. Definir dicionário de permissões para cada nível de acesso.",
+            "status": "pending",
+            "testStrategy": "Testar se usuários atribuídos a um grupo herdam as permissões corretas via shell.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Autenticação e Cadastro de Usuários (ADM-USR-001, ADM-USR-002)",
+            "description": "Configurar autenticação JWT e criar endpoints de CRUD para usuários.",
+            "dependencies": [
+              1
+            ],
+            "details": "Configurar `djangorestframework-simplejwt`. Criar ViewSets para User, permitindo que Admins criem outros usuários e definam seus papéis. Bloquear registro público se necessário.",
+            "status": "pending",
+            "testStrategy": "Testar login via Postman obtendo Access/Refresh tokens. Testar criação de usuário com role específica.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Dashboard Gerencial e Métricas (ADM-USR-004)",
+            "description": "Implementar Views/Actions que retornam KPIs operacionais.",
+            "dependencies": [],
+            "details": "Criar endpoint `/api/dashboard/metrics/` que retorna: Total de atendimentos (dia/mês), Fila atual, Status dos agentes. Usar aggregation do Django ORM.",
+            "status": "pending",
+            "testStrategy": "Validar JSON de resposta com dados mockados no banco.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Gestão Segura de Tokens (ADM-CFG-001)",
+            "description": "Criar mecanismo para armazenar configurações de integração (ex: Trello Tokens) no banco de forma segura.",
+            "dependencies": [],
+            "details": "Criar model `AppConfig` ou `IntegrationToken` com campos criptografados (usar `fernet` ou similar se necessário, ou apenas restrição de acesso). Criar interface no Admin para gestão desses tokens.",
+            "status": "pending",
+            "testStrategy": "Verificar se tokens são salvos e recuperados corretamente pelo serviço de integração.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "14",
+        "title": "[TRN] Implementação UI de Curadoria e Treinamento",
+        "description": "Desenvolver interfaces gráficas para gestão de documentos RAG, revisão de chunks vetorizados e configuração de intenções, permitindo curadoria humana do conhecimento da IA.",
+        "status": "pending",
+        "dependencies": [
+          "8",
+          "13"
+        ],
+        "priority": "medium",
+        "details": "Desenvolver o front-end administrativo (integrado ao Dashboard da Task 10 ou Django Admin customizado) para interagir com os modelos do app `treinamento` implementados na Task 8. O sistema deve seguir os seguintes códigos de funcionalidade:\n\n1. **Gestão de Conteúdo (TRN-CON-001):**\n   - Criar Views e Templates para listar `Documentos` com status de processamento.\n   - Implementar formulário de upload que aciona o pipeline de ingestão (Task 8) de forma assíncrona (Celery/Background Task).\n\n2. **Curadoria de Conteúdo (TRN-CON-002):**\n   - Interface 'Drill-down': ao clicar em um Documento, listar seus `Trechos` (chunks).\n   - Permitir edição manual do texto do chunk com funcionalidade de 'Reindexar' (regerar embedding apenas daquele trecho).\n   - Botão para excluir trechos irrelevantes.\n\n3. **Gestão de Intenções (TRN-INT-001):**\n   - CRUD para configuração de instruções de sistema (System Prompts) ou intenções manuais que sobrepõem o RAG.\n\n4. **Playground de Recuperação (TRN-SIM):**\n   - Criar uma view de teste onde o admin digita uma pergunta e o sistema exibe os top-k chunks retornados pelo `pgvector` com seus scores de similaridade.\n\nRequisitos Técnicos:\n- Utilizar `Django Forms` e `HTMX` para interações dinâmicas sem reload (ex: reindexar chunk).\n- Restringir acesso via decorators de permissão (Role `Gestor` ou `Admin` definidos na Task 10).",
+        "testStrategy": "1. **Funcional/UI:** Utilizar `Django Test Client` ou `Playwright` para simular o upload de um arquivo via interface e verificar feedback de sucesso.\n2. **Integração:** Editar um chunk via form, salvar e verificar se o método de regeração de embedding foi acionado (mockar chamada à API de embedding).\n3. **Permissão:** Tentar acessar a URL de curadoria com usuário sem role de admin e garantir redirecionamento/403.\n4. **Playground:** Enviar query no simulador e verificar se a view renderiza a lista de resultados corretamente.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Implementar Gestão de Documentos (TRN-CON-001)",
+            "description": "Desenvolver views e templates para listagem de documentos e formulário de upload conectado ao pipeline de ingestão.",
+            "dependencies": [],
+            "details": "Criar view de listagem exibindo status. Implementar form de upload que valida o arquivo e dispara task do Celery.",
+            "status": "pending",
+            "testStrategy": "Validar upload de arquivo e atualização de status na listagem.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implementar Curadoria de Trechos (TRN-CON-002)",
+            "description": "Desenvolver interface de detalhe do documento para visualização, edição e reindexação de chunks (trechos).",
+            "dependencies": [
+              1
+            ],
+            "details": "Implementar view que lista os trechos relacionados a um documento. Adicionar funcionalidade de edição (HTMX) que atualiza o texto e o vetor.",
+            "status": "pending",
+            "testStrategy": "Testar edição de trecho e confirmar se o embedding é recalculado.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implementar Gestão de Intenções (TRN-INT-001)",
+            "description": "Criar interface CRUD para gerenciamento de System Prompts e intenções manuais.",
+            "dependencies": [],
+            "details": "Views para adicionar, editar e remover intenções que guiam o comportamento do assistente.",
+            "status": "pending",
+            "testStrategy": "Verificar persistência e validação dos dados de intenção.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implementar Playground de Recuperação",
+            "description": "Desenvolver ferramenta visual para testar a recuperação de informação (RAG) em tempo real.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Interface com campo de busca que executa query no pgvector e retorna os chunks com score de similaridade.",
+            "status": "pending",
+            "testStrategy": "Simular buscas e validar a exibição dos resultados ordenados por score.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "15",
+        "title": "[OPS] Implementação do Módulo de Gestão Operacional e SLAs",
+        "description": "Desenvolver a lógica de negócios para gerenciamento de Níveis de Serviço (SLA), configuração de horários de funcionamento por departamento e cálculo de métricas operacionais (TMA/TME), garantindo a conformidade com os códigos OPS-ORG-001, OPS-ORG-002, OPS-FLW-001 e OPS-SLA-001.",
+        "status": "pending",
+        "dependencies": [
+          "2",
+          "13"
+        ],
+        "priority": "medium",
+        "details": "Implementar as regras de negócio e estruturas de dados necessárias para o controle operacional dos atendimentos, conforme requisitos do módulo OPS.\n\n1. **Configuração Organizacional (OPS-ORG-001/002):**\n   - **OPS-ORG-001:** Estender o model `Department` (apps/core/models.py) para incluir configurações de SLA (`target_first_response_time`, `target_resolution_time`).\n   - **OPS-ORG-002:** Implementar estrutura para Horário de Expediente (`BusinessHours`) relacionando dias da semana e horários (start/end) por departamento.\n\n2. **Motor de Cálculo de SLA (OPS-SLA-001):**\n   - Criar serviço `apps/core/services/sla_engine.py` responsável por calcular datas limite (due_dates).\n   - Implementar lógica que respeite os horários definidos em OPS-ORG-002 (ignorar fora de expediente/fins de semana).\n   - Exemplo: Se SLA é 2h e ticket abre 17:50 (fechamento às 18:00), o vencimento é 09:50 do próximo dia útil.\n\n3. **Fluxo Operacional e Métricas (OPS-FLW-001):**\n   - **OPS-FLW-001:** Atualizar model `Attendance` para rastrear ciclo de vida e timestamps (`first_response_at`, `sla_breached`, `working_time_elapsed`).\n   - Implementar cálculo de TMA (Tempo Médio de Atendimento) e TME (Tempo Médio de Espera) via Managers/QuerySets customizados.\n\n4. **Integração de Eventos:**\n   - Utilizar Django Signals para recalcular status de SLA sempre que um `Attendance` mudar de status ou receber nova mensagem.",
+        "testStrategy": "1. **Testes Unitários (OPS-SLA-001):** Criar bateria de testes para o `sla_engine.py` cobrindo casos de borda (virada de dia, fins de semana, feriados) para garantir cálculo preciso da data de vencimento.\n2. **Testes de Integração (OPS-ORG):** Criar um Departamento com horário 09-18h. Simular abertura de ticket às 17:30 com SLA de 1h e verificar se o `due_date` gravado no banco é 09:30 do dia seguinte.\n3. **Testes de Métricas (OPS-FLW):** Inserir massa de dados simulada (fixtures) e validar se as funções de cálculo de TMA/TME retornam as médias corretas.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Modelagem Organizacional (OPS-ORG-001/002)",
+            "description": "Estender Department com campos de SLA e criar model BusinessHours para horários de funcionamento.",
+            "dependencies": [],
+            "details": "Alterar `apps/core/models.py` para incluir campos `sla_response_minutes` e `sla_resolution_minutes` em `Department`. Criar model `BusinessHours` com FK para Department, dia da semana (0-6), hora_inicio e hora_fim.",
+            "status": "pending",
+            "testStrategy": "Verificar criação de departamentos com horários conflitantes (validação) e persistência correta dos SLAs.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implementação do Motor de SLA (OPS-SLA-001)",
+            "description": "Desenvolver o serviço de cálculo de vencimento de tickets considerando expediente.",
+            "dependencies": [
+              1
+            ],
+            "details": "Criar `apps/core/services/sla_engine.py`. Implementar função `calculate_due_date(start_datetime, duration_minutes, department_id)` que consulta `BusinessHours`.",
+            "status": "pending",
+            "testStrategy": "Unit tests cobrindo: ticket aberto no fim do expediente, ticket no fim de semana, ticket em feriado (se houver tabela de feriados).",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Rastreamento de Fluxo e Métricas (OPS-FLW-001)",
+            "description": "Atualizar Attendance com timestamps e lógica de disparo de SLA.",
+            "dependencies": [
+              2
+            ],
+            "details": "Adicionar campos de timestamp em `Attendance`. Criar signals em `apps/core/signals.py` para chamar `sla_engine` ao criar ticket. Implementar métodos de cálculo de métricas no Manager.",
+            "status": "pending",
+            "testStrategy": "Simular ciclo de vida do ticket e verificar preenchimento automático de timestamps e flag `sla_breached`.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "16",
+        "title": "[CLI] Implementação do Módulo CRM e Gestão de Clientes",
+        "description": "Desenvolver as estruturas e interfaces para gestão avançada de relacionamento com o cliente, incluindo enriquecimento de dados, segmentação por tags, histórico unificado e ferramentas de fusão de contatos.",
+        "status": "pending",
+        "dependencies": [
+          "2",
+          "13"
+        ],
+        "priority": "medium",
+        "details": "Implementar o módulo 'CLI' (Clientes) visando criar uma visão 360º do usuário. O desenvolvimento deve ser realizado no app `apps/crm` (a ser criado) ou estendendo `apps/core` para garantir modularidade.\n\n1. **Modelagem de Dados Estendida (CLI-MOD):**\n   - Estender o model `Customer` existente (definido na Task 2 em `apps/core/models.py`) ou criar um perfil complementar (OneToOne) para incluir: Email, Documento (CPF/CNPJ), Endereço e Campos Personalizados (JSONField).\n   - Criar model `CustomerTag` para segmentação e relação ManyToMany com `Customer`.\n   - Criar model `CustomerNote` para registro de observações internas (com timestamp, autor e vínculo com `Customer`).\n\n2. **Gestão de Contatos e Unificação (CLI-CTT):**\n   - Implementar serviço `CustomerMergeService` para detectar duplicatas por telefone ou documento.\n   - Criar lógica para transferir o histórico (`Attendance`, `Message`) de um `source_customer` para um `target_customer` e arquivar o registro duplicado.\n\n3. **Interface e API (CLI-CRM):**\n   - Integrar ao Dashboard Administrativo as views de CRUD de Clientes.\n   - Criar visualização 'Ficha do Cliente': Exibir timeline de atendimentos, notas e tags.\n   - Expor endpoints REST para atualização cadastral.",
+        "testStrategy": "1. **Testes Unitários (Merge Logic):** Cenário crítico. Criar dois clientes (A e B) com tickets distintos. Executar função de merge (B -> A). Verificar se todos os tickets de B agora referenciam A e se B foi marcado como inativo.\n2. **Testes de Modelagem:** Verificar persistência de Tags e Notas. Garantir que o JSONField de campos personalizados aceite a estrutura correta.\n3. **Testes de Permissão (RBAC):** Garantir que apenas usuários autorizados possam visualizar dados sensíveis.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Modelagem CRM Básica (CLI-CRM-001)",
+            "description": "Criar ou estender modelos para suportar dados ricos do cliente (Email, Documento, Endereço, Custom Fields) e Tags.",
+            "dependencies": [],
+            "details": "Criar app `apps/crm` se necessário. Implementar `CustomerProfile` ou estender `Customer`. Implementar `CustomerTag` e `CustomerNote`. Configurar Admin do Django.",
+            "status": "pending",
+            "testStrategy": "Validar criação de cliente com campos extras e atribuição de tags via shell ou teste unitário.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Serviço de Fusão de Contatos (CLI-CTT-001)",
+            "description": "Implementar lógica de backend para unificar dois cadastros de clientes, migrando atendimentos e mensagens.",
+            "dependencies": [
+              1
+            ],
+            "details": "Criar service `CustomerMergeService`. Método `merge_customers(source_id, target_id)`. Deve atualizar FKs em `Attendance` e `Message` e marcar source como inativo.",
+            "status": "pending",
+            "testStrategy": "Testar merge com dados mockados: verificar se atendimentos do cliente B passaram para cliente A.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "API e Views de Gestão (CLI-CRM-002)",
+            "description": "Desenvolver endpoints e interfaces básicas para visualização 360º do cliente.",
+            "dependencies": [
+              1
+            ],
+            "details": "Criar ViewSets DRF para `Customer` (readonly para bots, full para admin). Implementar filtros por Tag e Dados Cadastrais.",
+            "status": "pending",
+            "testStrategy": "Testar endpoints via Swagger/Postman.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "17",
+        "title": "Implementação do Módulo de Agendamento Inteligente (AGD)",
+        "description": "Desenvolver o sistema de gestão de agendas, incluindo modelos de recursos, tipos de serviço e lógica de cálculo de slots disponíveis (disponibilidade) com foco em clínicas.",
+        "details": "Implementar o app `apps/scheduling` para gerenciar o fluxo de reservas e recursos. Este módulo deve consumir as configurações operacionais definidas na Task 13.\n\n1. **Modelagem de Dados (AGD-MOD):**\n   - `ServiceType`: Nome (ex: 'Consulta Geral'), Duração (minutos), Preço, Buffer (tempo de preparação entre consultas).\n   - `Resource` ou `ProfessionalProfile`: Link OneToOne com `User` (Task 10), associado a um ou mais `Departments` (Task 2/13).\n   - `Appointment`: Chaves estrangeiras para `Customer` (Task 2/14), `Resource` e `ServiceType`. Campos: `start_datetime`, `end_datetime`, `status` (PENDING, CONFIRMED, CANCELED, COMPLETED, NO_SHOW).\n\n2. **Motor de Disponibilidade (AGD-ENG):**\n   - Criar service `AvailabilityService`. Função principal: `get_available_slots(date, service_type_id, resource_id=None)`.\n   - Lógica: Intersectar o `DepartmentConfig` (horário de funcionamento da Task 13) com as exceções do profissional (folgas) e subtrair os intervalos já ocupados por `Appointments` existentes.\n   - Algoritmo deve considerar a duração do serviço + buffer time.\n\n3. **Integração e Automação:**\n   - Expor API REST (DRF) para listar slots (usado pelo Frontend ou Bot).\n   - Implementar `AppointmentSerializer` com validação de conflito de horário (race condition check).\n   - Criar sinal (Django Signal) `post_save` em `Appointment`: Se criado, agendar tarefa Celery para envio de lembrete (integração futura com envio de mensagens).",
+        "testStrategy": "1. **Testes Unitários (Algoritmo de Slots):** Definir um dia de trabalho das 08h às 12h. Criar um agendamento das 09:00 às 10:00. Chamar `get_available_slots` e verificar se o intervalo 09-10h foi removido e se os slots adjacentes respeitam o tempo de duração.\n2. **Testes de Concorrência:** Tentar criar dois agendamentos simultâneos para o mesmo slot via API/Teste de Integração e garantir que apenas um seja efetivado (tratamento de transação atômica).\n3. **Validação de Regras:** Testar agendamento fora do horário de expediente configurado na Task 13 (deve retornar erro de validação).",
+        "status": "pending",
+        "dependencies": [
+          "2",
+          "13",
+          "15",
+          "16"
+        ],
+        "priority": "high",
+        "subtasks": []
+      },
+      {
+        "id": "18",
+        "title": "Implementação do Módulo de Inteligência Multimodal (MMD)",
+        "description": "Desenvolver serviços de processamento de mídia (áudio e imagem) para transcrição e análise visual, garantindo acessibilidade e enriquecimento de contexto para a IA.",
+        "details": "Implementar o app `apps/multimodal` ou estender `apps/ia` para lidar com inputs não textuais. O objetivo é transformar áudio e imagens em texto processável pelo LLM e legível para operadores humanos.\n\n1. **Serviço de Transcrição (STT - Speech-to-Text):**\n   - Criar interface `AudioTranscriber` para abstrair provedores (ex: OpenAI Whisper API ou Local Whisper).\n   - Implementar lógica para converter áudios (OGG/MP3) recebidos via WhatsApp em texto.\n   - O texto transcrito deve ser salvo no campo `transcription` ou `body` do model `Message` (Task 4) e marcado com uma flag `is_transcribed`.\n\n2. **Serviço de Visão Computacional (Vision):**\n   - Implementar `ImageAnalyzer` utilizando modelos de visão (ex: GPT-4o ou Azure Vision) para gerar descrições textuais de imagens enviadas.\n   - Foco em identificar documentos, produtos ou contexto da cena para alimentar o RAG.\n\n3. **Integração com Pipeline de Mensagens (Task 4):**\n   - Interceptar mensagens do tipo 'audio' ou 'image' no `MessageProcessor`.\n   - Disparar tarefas assíncronas (Celery) para não bloquear o webhook de recebimento.\n   - Atualizar o contexto da conversa (`ConversationHistory`) com o conteúdo processado para que a IA possa 'ler' o áudio ou 'ver' a imagem na próxima resposta.\n\n4. **Acessibilidade:**\n   - Garantir que o painel administrativo exiba a transcrição logo abaixo do player de áudio.",
+        "testStrategy": "1. **Mock de APIs Externas:** Criar testes unitários mockando as respostas da API de STT (Whisper) e Vision para garantir que o parsing da resposta e tratamento de erros funcionem.\n2. **Fluxo Assíncrono:** Simular o recebimento de um payload de mensagem de áudio, verificar se a task do Celery foi enfileirada e, após execução, se o registro da mensagem no banco foi atualizado com o texto transcrito.\n3. **Contexto da IA:** Verificar se, ao enviar uma imagem seguida de uma pergunta (\"O que é isso?\"), o prompt montado para a IA inclui a descrição gerada pelo módulo Vision.",
+        "status": "pending",
+        "dependencies": [
+          "4",
+          "13"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "19",
+        "title": "Implementação do Módulo Omnichannel (Instagram e Web) [OMN]",
+        "description": "Desenvolver a integração de canais adicionais (Instagram Direct e Widget Web) para centralizar o atendimento, unificando o fluxo de mensagens no core do sistema.",
+        "details": "Esta task visa expandir a capacidade de atendimento para além do WhatsApp. O desenvolvimento deve ocorrer em um novo app `apps/omnichannel` ou estendendo `apps/evolution_sync` para Instagram e criando `apps/webchat` para o widget.\n\n1. **Adaptação do Modelo de Dados (OMN-MOD):**\n   - Alterar o model `Message` (Task 2) ou criar um mixin para suportar o campo `channel_type` (Choices: 'WHATSAPP', 'INSTAGRAM', 'WEB_WIDGET').\n   - Alterar `Customer` para suportar múltiplos identificadores sociais (`instagram_id`, `session_id` para web).\n\n2. **Integração Instagram (Via Evolution API ou Graph API):**\n   - Aproveitar a estrutura da Task 3 (`evolution_sync`) para configurar instâncias do tipo 'instagram'.\n   - Implementar `InstagramWebhookProcessor` que normaliza o payload (Stories mentions, Direct messages) para o formato padrão de `Message` do sistema.\n   - Tratamento de mídias específicas do Instagram (Links efêmeros).\n\n3. **Widget de Chat Web (OMN-WEB):**\n   - Criar API REST em `apps/webchat/api/`: endpoints para `start_conversation` (gerar Guest Token), `send_message` e `get_history`.\n   - Implementar lógica de persistência: Usuários não logados devem ser tratados como `Customer` provisórios até que forneçam dados (nome/email/telefone) para fusão com o módulo CRM (Task 14).\n   - Desenvolver snippet JS básico para embedar o chat em sites externos.",
+        "testStrategy": "1. **Teste de Payload do Instagram:** Mockar um webhook de 'message_create' do Instagram contendo reação a story e texto simples. Verificar se uma `Attendance` é criada corretamente com a flag de canal correta.\n2. **Teste de Sessão Web:** Simular via Postman/Pytest o fluxo de um visitante anônimo no site: Chamar endpoint de início -> Enviar mensagem -> Verificar persistência no banco. Em seguida, simular o envio de dados de contato e verificar se o sistema vincula o `Customer` provisório a um registro real do CRM.\n3. **Teste de Renderização de Mídia:** Garantir que URLs de imagens vindas do Instagram sejam acessíveis e armazenadas corretamente.",
+        "status": "pending",
+        "dependencies": [
+          "2",
+          "3",
+          "16"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "20",
+        "title": "Implementação do Módulo de Deploy, CI/CD e DevOps (DEP)",
+        "description": "Estruturar o pipeline de integração contínua, otimizar a infraestrutura Docker para produção e configurar mecanismos de servimento seguro e monitoramento.",
+        "details": "Esta task visa transformar o ambiente de desenvolvimento em um ambiente de produção robusto, seguro e escalável. O foco é na automação e na performance do servidor de aplicação.\n\n1. **Otimização de Imagens (DEP-DOCKER):**\n   - Refatorar o `Dockerfile` para utilizar 'Multi-stage Builds'. Estágio 1: Builder (instalação de compiladores e deps). Estágio 2: Runner (imagem 'slim', apenas runtime, sem cache pip).\n   - Substituir o servidor de desenvolvimento (`runserver`) pelo **Gunicorn** utilizando workers Uvicorn (`uvicorn.workers.UvicornWorker`) para suportar a natureza assíncrona/Django 5.\n\n2. **Integração Contínua (DEP-CI):**\n   - Criar workflow de CI (ex: `.github/workflows/ci.yml`).\n   - **Steps:** Checkout -> Setup Python -> Install Deps -> Linting (Ruff/Flake8) -> Testes (Pytest com report) -> Build Docker Image.\n   - Implementar verificação de segurança de dependências (ex: `safety` ou `pip-audit`).\n\n3. **Servidor Web e Proxy Reverso (DEP-WEB):**\n   - Configurar container **Nginx** para atuar como Proxy Reverso à frente do Django.\n   - Configurar servimento de arquivos estáticos (`collectstatic`) e mídia via volume compartilhado ou Nginx.\n   - Implementar configuração de SSL/TLS (preparação para Let's Encrypt/Certbot).\n\n4. **Scripts de Manutenção (DEP-OPS):**\n   - Criar scripts em `scripts/` para automação de backup do banco de dados PostgreSQL (`pg_dump` com rotação de arquivos).\n   - Configurar `HEALTHCHECK` no Dockerfile para monitoramento de uptime.",
+        "testStrategy": "1. **Validação de Pipeline:** Realizar um commit/push e verificar no provedor git se os steps de Lint e Testes passam com sucesso.\n2. **Teste de Production Build:** Executar o build da imagem de produção e subir o ambiente (`docker compose -f docker-compose.prod.yml up`). Verificar se o Gunicorn iniciou sem erros.\n3. **Teste de Arquivos Estáticos:** Acessar a interface administrativa via Nginx e inspecionar o Network tab do navegador para garantir que CSS e JS estão carregando (Status 200) e não 404.\n4. **Teste de Carga Básico:** Utilizar ferramenta como `k6` ou `Apache Benchmark` para enviar 100 requisições simultâneas e validar se o Nginx/Gunicorn processam sem quedas.",
+        "status": "pending",
+        "dependencies": [
+          "1",
+          "2",
+          "13"
+        ],
+        "priority": "low",
+        "subtasks": []
+      },
+      {
+        "id": "21",
+        "title": "[ATD] Implementação do Handover Ativo e Gestão de Instâncias",
+        "description": "Implementar a lógica de 'Active Push' (Saudação Automática) e seleção dinâmica de instância de envio quando um atendente assume um ticket.",
+        "details": "Conforme definido no PRD v2.0 (ATD-LIF-003) e no documento 'fluxo_atribuicao_inteligente.md':\\n\\n1. **Service Layer (`AtendimentoHandoverService`)**:\\n   - Criar serviço que orquestra a troca de responsabilidade.\\n   - Implementar lógica de seleção de instância: Se `Atendente` possui `AppInstance` vinculada, usar essa. Caso contrário, usar instância do `Departamento`.\\n\\n2. **Signals**:\\n   - Criar/Escutar signal `atendimento_assigned` (ou `post_save` monitorando mudança de campo `atendente`).\\n   - Ao detectar atribuição, disparar envio de mensagem de saudação (\"Olá, meu nome é X...\") usando a instância correta.\\n   - Garantir que isso ocorra de forma assíncrona (Django-Q2).\\n\\n3. **Prevenção de Duplicidade**:\\n   - Garantir que a saudação só seja enviada na *primeira* atribuição ou quando explicitamente trocado de atendente, evitando spam em mudanças de status internas.\\n\\n4. **Mensageria**:\\n   - Registrar essa mensagem de saudação no banco como `Mensagem` (tipo: `text`, remetente: `agent`).",
+        "testStrategy": "1. Criar teste de integração simulando atribuição de ticket.\\n2. Mockar `EvolutionClient`.\\n3. Verificar se `send_message` foi chamado com a instância correta (do atendente se houver).\\n4. Verificar se a mensagem foi persistida no banco.",
+        "status": "pending",
+        "dependencies": [
+          "3",
+          "4",
+          "7"
+        ],
+        "priority": "medium",
+        "subtasks": []
+      },
+      {
+        "id": "22",
+        "title": "Implementar Serviço de Gestão de Logs de Crash (CrashLogService)",
+        "description": "Planejar e desenvolver a estrutura base de um serviço de logs unificado (Unified Logger), agnóstico a framework (Pure Python) e desacoplado do Django no núcleo, utilizando interfaces para Datasources. O serviço deve ser reutilizável em outros contextos (ex: FastAPI) e prever a refatoração global dos logs do sistema atual.",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "1. **Arquitetura e Localização**:\n   - Implementação principal em: `src/smart_core_assistant_painel/modules/services/features/unified_logger/`.\n   - Design Pattern: Hexagonal Architecture (Ports and Adapters) ou Clean Architecture.\n   - O núcleo (Core) não deve importar `django.*` ou bibliotecas externas pesadas.\n\n2. **Componentes Principais**:\n   - **LoggerCore**: Classe principal (Singleton ou Injetável) responsável por receber mensagens e despachar para adaptadores.\n   - **ILogDatasource (Interface)**: Contrato para persistência (ex: `save_log(entry: LogEntry)`).\n   - **LogEntry (DTO)**: Dataclass pura contendo: timestamp, level, message, context (dict), stack_trace, tags.\n   - **Datasources Concretos**:\n     - `ConsoleDatasource` (Stdout).\n     - `DjangoModelDatasource` (Implementação específica que salva no DB do Django, injetada em runtime).\n     - `FileDatasource` (Opcional para fallback).\n\n3. **Requisitos Funcionais**:\n   - Suporte a níveis padrão (DEBUG, INFO, WARNING, ERROR, CRITICAL).\n   - Capacidade de sanitização de dados sensíveis no núcleo.\n   - Tratamento de falhas na persistência (Fail-safe: se o DB falhar, logar em arquivo/console e não quebrar a app).\n\n4. **Estratégia de Refatoração**:\n   - Planejar a substituição gradativa dos `print()` e `logging.getLogger()` atuais pelo novo serviço.\n   - Criar um adaptador compatível com o módulo `logging` do Python para facilitar a migração.",
+        "testStrategy": "Desenvolver testes unitários puros para o `LoggerCore` e mocks para `ILogDatasource`. Garantir que o núcleo funcione sem nenhuma dependência de ambiente Django instalada. Testes de integração apenas para o `DjangoModelDatasource`.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Definir Interfaces e Core Agnóstico",
+            "description": "Desenvolver o `ILogger` (Protocol), `LogEntry` (Dataclass/Pydantic) e `ILogDatasource` (ABC) em Python puro. O código deve ser isolado de qualquer dependência web ou ORM. Definir os contratos de métodos como `log`, `info`, `error` e `save`.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 21,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implementar Lógica de Serviço e Datasource Base",
+            "description": "Implementar a classe principal `UnifiedLoggerService` que gerencia a lista de datasources e despacha os logs. Criar uma implementação de datasource `ConsoleDatasource` para testes e fallback. Garantir tratamento de erros silencioso (fail-safe).",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 21,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implementar Adaptadores Django e Handler Python",
+            "description": "Criar o `DjangoDatabaseDatasource` que implementa `ILogDatasource` usando o ORM do Django. Este módulo deve ser o único ponto de acoplamento com o framework. Desenvolver o `UnifiedLogHandler` (Python logging Handler) para interceptar logs nativos.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 21,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Planejamento de Refatoração Global e Documentação",
+            "description": "Desenvolver estratégia de refatoração global: Mapear todos os usos de `print`, `logging` e exceções nuas no projeto. Substituir pela injeção do novo serviço ou configuração do Handler global. Atualizar documentação com exemplos de uso em contextos não-Django.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 21,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "23",
+        "title": "Implementar Lógica de Registros de Movimento do Fluxo",
+        "description": "Implementar a lógica centralizada para registros de movimento do fluxo, garantindo integridade e aplicação de regras de negócio.",
+        "details": "1. Criar `FlowMovementService` para centralizar a lógica.\n2. Validar transições baseadas em `EtapaFluxo.regras_transicao`.\n3. Assegurar registro correto de métricas (SLA/duração).\n4. Disparar side-effects (notificações, sync).\n5. Testes abrangentes.",
+        "testStrategy": "",
+        "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Definir Interface do Service",
+            "description": "Definir a classe FlowMovementService e seus métodos principais.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implementar Validação de Regras",
+            "description": "Implementar validação das regras de transição definidas em EtapaFluxo.regras_transicao.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Implementar Registro de Métricas",
+            "description": "Implementar lógica para cálculo preciso de duração e métricas de SLA.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Refatorar Usos Existentes",
+            "description": "Identificar e refatorar chamadas diretas ao modelo ou webhook service para usar o novo Service.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23,
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Criar Testes",
+            "description": "Criar testes unitários para o Service e testes de integração para o fluxo completo.",
+            "details": "",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 23,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "24",
+        "title": "[PERF] Investigação de Desempenho do Fluxo de Mensagens e Treinamento",
+        "description": "Investigar e otimizar o desempenho do fluxo de resposta do bot e do sistema de treinamento. O treinamento está demorando muito para processar dados, e as mensagens estão com tempo de resposta muito alto (acima de 40 segundos em casos extremos).",
+        "details": "## Contexto do Problema:\n1. **Treinamento**: O processamento de treinamento está demorando muito para executar chunking e geração de embeddings.\n2. **Mensagens**: O tempo total de resposta do bot está excedendo 40 segundos em casos extremos.\n\n## Fluxo Esperado de Mensagens:\n- Recebimento de mensagem no webhook (`evolution_sync/services/webhook.py`)\n- Agendamento via buffer (5 + 5 = 10 segundos) (`message_buffer.py`)\n- Pré-processamento: `analyze_message_content` em `message_analyzer.py`\n- Processamento: `_generate_and_register_response` em `attendance_orchestrator.py`\n- Resposta enviada\n\n**Meta de Tempo**: 10s buffer + máximo 30s processamento = 40s total\n\n## Fluxo de Treinamento:\n- Signal `post_save` dispara `async_task(__gerar_documentos)` em `treinamento/signals.py`\n- Chunking via `__processar_conteudo_para_chunks`\n- Criação de documentos via `Documento.criar_documentos_de_chunks`\n- Signal `post_save` em cada Documento dispara `async_task(__gerar_embedding_documento)`\n- Geração de embedding via `FeaturesCompose.generate_embeddings`\n\n## Arquivos Principais:\n- `evolution_sync/services/webhook.py` - Recebimento webhook\n- `evolution_sync/services/message_buffer.py` - Buffer e agendamento\n- `atendimentos/services/attendance_orchestrator.py` - Orquestrador principal\n- `atendimentos/services/message_analyzer.py` - Análise prévia\n- `treinamento/signals.py` - Fluxo de treinamento\n- `ai_engine/features/generate_embeddings/` - Geração de embeddings\n\n## Métricas da LLM (Referência):\n- AnalisePrévia: 2.94s - 18.98s (adequado)\n- AnaliseMensage: 11.18s - 14.33s (adequado)\n\n## Gargalos Potenciais:\n1. Tempo de buffer muito longo (5+5s)\n2. Serialização/deserialização de envelopes\n3. Consultas ao banco de dados não otimizadas\n4. Geração de embeddings individual por documento (N chamadas à API)\n5. Busca vetorial não otimizada\n6. Carregamento de histórico de mensagens",
+        "testStrategy": "1. Adicionar logs de profiling em cada etapa do fluxo.\n2. Medir tempo individual de cada componente.\n3. Comparar com baseline definido.\n4. Testar com diferentes volumes de dados.",
+        "status": "pending",
+        "dependencies": [
+          "12"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "[Diagnóstico] Instrumentação de Profiling no Fluxo de Mensagens",
+            "description": "Adicionar logs de profiling detalhados em cada etapa do fluxo de processamento de mensagens para identificar gargalos.",
+            "details": "## Pontos de Instrumentação:\n\n1. **Webhook Receiver** (`evolution_sync/views_api.py`):\n   - Log de timestamp de recebimento da mensagem\n   - Log de tempo de normalização do payload\n\n2. **Buffer e Agendamento** (`message_buffer.py`):\n   - Log do tempo entre recebimento e agendamento\n   - Log do tempo configurado de buffer\n   - Log do momento de criação do Schedule\n\n3. **Orchestrator** (`attendance_orchestrator.py`):\n   - `process_contact_response`: Início e fim\n   - `_get_buffered_messages`: Tempo de recuperação do buffer\n   - `_compile_message_content`: Tempo de compilação\n   - `_create_message`: Tempo de persistência\n   - `_process_message_and_respond`: Tempo total de processamento\n\n4. **MessageAnalyzer** (`message_analyzer.py`):\n   - `analyze_message_content`: Tempo total de análise\n   - Tempo de carregamento de histórico\n   - Tempo de chamada à LLM (AnalisePrévia)\n\n5. **Response Generation**:\n   - `_generate_and_register_response`: Tempo total\n   - Tempo de busca RAG\n   - Tempo de chamada à LLM (AnaliseMensage)\n   - Tempo de persistência da resposta\n\n## Formato de Log:\n```python\nlogger.info(\n    f\"[PROFILING] {etapa} | contact_id={id} | duration={tempo:.3f}s\"\n)\n```",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "[Diagnóstico] Instrumentação de Profiling no Fluxo de Treinamento",
+            "description": "Adicionar logs de profiling no fluxo de treinamento para identificar gargalos no processamento de chunking e embeddings.",
+            "details": "## Pontos de Instrumentação:\n\n1. **Signal de Treinamento** (`treinamento/signals.py`):\n   - `signals_gerar_documentos_treinamento`: Timestamp de disparo\n   - `__gerar_documentos`: Início e fim, tempo total\n   - `__processar_conteudo_para_chunks`: Tempo de chunking e quantidade de chunks gerados\n   - Tempo de criação de documentos em batch\n\n2. **Geração de Embeddings** (`signals.py`):\n   - `signals_embeddings_documento`: Timestamp de disparo por documento\n   - `__gerar_embedding_documento`: Tempo individual de geração\n   - Tempo de chamada à API de embeddings\n   - Tempo de persistência no banco\n\n3. **FeaturesCompose** (`ai_engine/features/`):\n   - `generate_chunks`: Tempo e quantidade de chunks\n   - `generate_embeddings`: Tempo de chamada à API\n\n## Métricas a Capturar:\n- Tempo total por treinamento completo\n- Tempo médio por documento/chunk\n- Quantidade de chamadas à API de embeddings\n- Tempo de overhead entre tasks assíncronas",
+            "status": "pending",
+            "dependencies": [],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "[Análise] Revisar Configuração do Buffer de Mensagens",
+            "description": "Analisar e otimizar a configuração do buffer de mensagens (TIME_CACHE) e sua estratégia de agendamento.",
+            "details": "## Análise a Realizar:\n\n1. **Configuração Atual**:\n   - Revisar valor de `SERVICEHUB.TIME_CACHE` (default: 5s)\n   - Analisar cálculo de timeout: `(TIME_CACHE or 5) + 5 = 10s`\n   - Verificar se o tempo de buffer pode ser reduzido\n\n2. **Estratégia de Buffer**:\n   - Avaliar se o buffer de 10s é necessário para agrupar mensagens\n   - Considerar estratégia de 'early trigger' quando mensagem única é detectada\n   - Avaliar tradeoff: menos buffer = mais responsividade vs mais processamentos\n\n3. **Otimizações Potenciais**:\n   - Reduzir TIME_CACHE para 3s (total 6-8s)\n   - Implementar 'fast path' para mensagens únicas\n   - Considerar timeout dinâmico baseado em padrão do contato\n\n## Arquivo Alvo:\n- `evolution_sync/services/message_buffer.py`\n- `modules/services/features/service_hub.py` (configuração)",
+            "status": "pending",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "[Otimização] Otimizar Carregamento de Histórico de Mensagens",
+            "description": "Otimizar as queries de carregamento de histórico de atendimento e mensagens usadas na análise.",
+            "details": "## Análise a Realizar:\n\n1. **Ponto Atual**:\n   - `Atendimento.carregar_historico_mensagens()` em `message_analyzer.py`\n   - Verificar se usa `select_related` e `prefetch_related` corretamente\n   - Avaliar quantidade de mensagens carregadas\n\n2. **Otimizações Potenciais**:\n   - Limitar número de mensagens no histórico (ex: últimas 20)\n   - Usar `only()` ou `defer()` para campos pesados não necessários\n   - Adicionar índices se necessário\n   - Cache de histórico recente em Redis\n\n3. **Verificar Queries N+1**:\n   - Usar Django Debug Toolbar ou logs de query para detectar\n   - Otimizar relacionamentos precarregados\n\n## Arquivos Alvo:\n- `atendimentos/models.py` (método `carregar_historico_mensagens`)\n- `atendimentos/services/message_analyzer.py`",
+            "status": "pending",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "[Otimização] Otimizar Geração de Embeddings em Batch",
+            "description": "Implementar geração de embeddings em batch ao invés de chamadas individuais por documento durante o treinamento.",
+            "details": "## Problema Atual:\n- Cada `Documento` dispara um signal `post_save` individual\n- Cada signal cria uma `async_task` separada para gerar embedding\n- N documentos = N chamadas à API de embeddings\n- Overhead significativo de I/O e latência de rede\n\n## Solução Proposta:\n\n1. **Batch de Embeddings**:\n   - Modificar `__gerar_documentos` para coletar todos os chunks primeiro\n   - Gerar embeddings em batch único (ou batches de 50-100)\n   - API OpenAI suporta batch de até 2048 textos\n   - Salvar todos os documentos com embeddings em uma única transação\n\n2. **Remover Signal Individual**:\n   - Desabilitar ou condicionar `signals_embeddings_documento`\n   - Ou adicionar flag `skip_embedding_signal` durante criação inicial\n\n3. **Implementação**:\n   - Modificar `FeaturesCompose.generate_embeddings` para aceitar lista de textos\n   - Atualizar datasource de embeddings para batch\n   - Usar `bulk_update` do Django para persistência\n\n## Arquivos Alvo:\n- `treinamento/signals.py`\n- `ai_engine/features/generate_embeddings/`\n- `treinamento/models.py` (método `criar_documentos_de_chunks`)",
+            "status": "pending",
+            "dependencies": [
+              "2"
+            ],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "[Otimização] Revisar Busca Vetorial e RAG",
+            "description": "Otimizar as buscas vetoriais usadas no RAG para reduzir latência de recuperação de contexto.",
+            "details": "## Pontos de Análise:\n\n1. **Busca de Documentos Similares**:\n   - `Documento.buscar_documentos_similares` em `treinamento/models.py`\n   - Verificar se filtro de distância está na query (já implementado em Task 12.9)\n   - Avaliar uso de índices HNSW para pgvector\n\n2. **Busca de QueryCompose**:\n   - `QueryCompose.buscar_comportamento_similar`\n   - Verificar threshold e quantidade de resultados\n\n3. **Otimizações Potenciais**:\n   - Criar índice HNSW: `CREATE INDEX ON documento USING hnsw (embedding vector_cosine_ops)`\n   - Reduzir dimensionalidade se possível\n   - Cache de resultados frequentes\n   - Limitar número de resultados retornados\n\n4. **Paralelização**:\n   - Buscar documentos e QueryCompose em paralelo\n   - Usar `asyncio.gather` se ambiente suporta",
+            "status": "pending",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 7,
+            "title": "[Análise] Baseline e Métricas de Tempo Atual",
+            "description": "Estabelecer baseline de performance atual e definir métricas alvo para cada etapa do fluxo.",
+            "details": "## Baseline a Coletar (após instrumentação):\n\n### Fluxo de Mensagens:\n| Etapa | Tempo Observado | Meta |\n|-------|-----------------|------|\n| Webhook -> Buffer | ? | <100ms |\n| Buffer wait | 10s atual | 3-5s |\n| Recuperar buffer | ? | <50ms |\n| Compilar mensagem | ? | <50ms |\n| Criar mensagem (DB) | ? | <100ms |\n| Carregar histórico | ? | <200ms |\n| Análise prévia (LLM) | 2.9-19s | <15s |\n| Busca RAG | ? | <500ms |\n| Análise mensagem (LLM) | 11-14s | <15s |\n| Persistir resposta | ? | <100ms |\n| **TOTAL** | **>40s** | **<30s** |\n\n### Fluxo de Treinamento:\n| Etapa | Tempo Observado | Meta |\n|-------|-----------------|------|\n| Chunking | ? | <5s |\n| Criação docs (batch) | ? | <2s |\n| Embedding batch | ? | <30s (100 docs) |\n| Persist embeddings | ? | <2s |\n| **TOTAL (100 chunks)** | **?** | **<45s** |\n\n## Metodologia:\n- Executar 10 testes com dados representativos\n- Calcular média e percentil 95\n- Identificar outliers e suas causas",
+            "status": "pending",
+            "dependencies": [
+              "1",
+              "2"
+            ],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          },
+          {
+            "id": 8,
+            "title": "[Implementação] Aplicar Otimizações e Validar Resultados",
+            "description": "Implementar as otimizações identificadas e validar melhoria de performance.",
+            "details": "## Priorização de Otimizações:\n\n1. **Alto Impacto, Baixo Risco**:\n   - Reduzir TIME_CACHE de 5s para 3s\n   - Adicionar índice HNSW na tabela de embeddings\n   - Limitar histórico de mensagens\n\n2. **Alto Impacto, Médio Risco**:\n   - Batch de embeddings no treinamento\n   - Cache de histórico em Redis\n\n3. **Médio Impacto**:\n   - Paralelização de buscas vetoriais\n   - Otimização de queries com `only()`\n\n## Validação:\n- Executar mesmos testes do baseline\n- Comparar tempos antes/depois\n- Garantir que funcionalidade não foi afetada\n- Monitorar logs de erro por 24h\n\n## Critério de Sucesso:\n- Tempo total de resposta do bot < 30s (P95)\n- Tempo de treinamento (100 chunks) < 45s",
+            "status": "pending",
+            "dependencies": [
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ],
+            "parentTaskId": 24,
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "26",
+        "title": "Implementar Ciclo de Feedback de Atendimento e Agente de Avaliação",
+        "description": "Implementar um ciclo de feedback para atendimentos resolvidos. Quando um atendimento é marcado como 'RESOLVIDO', uma mensagem solicitando avaliação (1-5) é registrada para envio. As respostas do usuário recebidas dentro de 10 minutos após a resolução são interceptadas e processadas por um agente de IA especializado (analise_avaliacao), que extrai nota, sentimento e normaliza os valores conforme regras de negócio.",
+        "details": "## Revisão do Usuário Necessária\n> [!IMPORTANT]\n> O envio de mensagens deve ser feito exclusivamente criando um registro no modelo `Mensagem`. O `evolution_sync` capturará o sinal e processará o envio. A classe `Atendimento` não deve invocar serviços de envio diretamente.\n\n## Mudanças Propostas\n\n### AI Engine (`src/smart_core_assistant_painel/modules/ai_engine`)\n[NOVO] `features/analise_avaliacao`\nCriar um novo módulo de feature seguindo rigorosamente o padrão Clean Architecture documentado em `docs_dev/normalizacao/features/prompt_new_feature.md` (Tipo: --type base).\n\n**Arquivos a Criar/Editar:**\n- `utils/erros.py`: Adicionar `AnaliseAvaliacaoError`.\n- `utils/parameters.py`: Adicionar `AnaliseAvaliacaoParameters`.\n- `utils/types.py`: Adicionar `AAUsecase` (UsecaseBase).\n- `features/analise_avaliacao/domain/usecase/analise_avaliacao_usecase.py`: Lógica de chamada ao LLM e extração.\n- `features/features_compose.py`: Método estático `analise_avaliacao`.\n\n**Lógica de Normalização de Nota (no UseCase):**\n- Se nota <= 5: Mantém.\n- Se nota entre 6 e 10: floor(nota / 2).\n- Se nota > 10: Define como 5.\n\n### UI / Lógica Central (`src/smart_core_assistant_painel/app/ui/atendimentos`)\n[MODIFICAR] `models.py`\nEm `Atendimento.finalizar_atendimento` (ou onde o status for alterado para RESOLVIDO):\n- Criar registro de `Mensagem`:\n  - Conteúdo: Texto solicitando avaliação.\n  - Tipo: Texto.\n  - Remetente: Bot/Sistema.\n- O signal do Django cuidará do envio.\n\n[MODIFICAR] `services/attendance_orchestrator.py`\n- Método `processar_feedback_se_elegivel()` (novo ou integrado):\n  - Identificar se existe atendimento resolvido há menos de 10 min e sem avaliação.\n  - Se sim e a mensagem for do cliente:\n    - Chamar `FeaturesCompose.analise_avaliacao(texto_mensagem)`.\n    - Atualizar `Atendimento`: avaliacao, feedback, tags (\"sentimento: X\").\n    - Agendar Mensagem de Agradecimento: Não enviar \"Obrigado\" imediatamente. Criar uma tarefa agendada (Django Q) para enviar após 10 minutos.\n\n## Plano de Verificação\n### Verificação Manual\n1. **Disparo da Avaliação**: Resolver atendimento -> Verificar criação de Mensagem no banco.\n2. **Processamento de Feedback e Normalização**:\n   - Nota 3 -> Salva 3.\n   - Nota 9 -> Salva 4.\n   - Nota 100 -> Salva 5.\n3. **Agradecimento Diferido**: Após feedback, verificar se a mensagem de agradecimento foi agendada (verificar fila do Django Q).",
+        "status": "done",
+        "priority": "high",
+        "dependencies": [
+          "2",
+          "12"
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "AI Engine - Implementar Feature AnaliseAvaliacao (Clean Arch)",
+            "description": "Criar a estrutura da nova feature no AI Engine.",
+            "details": "Arquivos: `modules/ai_engine/features/analise_avaliacao/`.\n1. Criar `AnaliseAvaliacaoError` em `utils/erros.py`.\n2. Criar `AnaliseAvaliacaoParameters` (prompt input) em `utils/parameters.py`.\n3. Definir tipo `AAUsecase` em `utils/types.py`.\n4. Implementar `AnaliseAvaliacaoUsecase` com a lógica de LLM e regras de normalização de nota (floor(x/2) para 6-10).\n5. Adicionar método `analise_avaliacao` na fachada `FeaturesCompose`.",
+            "status": "done",
+            "dependencies": [],
+            "updatedAt": "2025-12-07T15:14:26.945Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Core Logic - Disparo Automático de Solicitação",
+            "description": "Configurar o gatilho para enviar o pedido de avaliação.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/models.py`.\nNo método `Atendimento.finalizar_atendimento` (ou signal de mudança de status):\n- Detectar mudança para 'RESOLVIDO'.\n- Executar `Mensagem.objects.create(...)` com o texto de solicitação de feedback.\n- Garantir que nenhum serviço externo seja chamado diretamente (apenas signal).",
+            "status": "done",
+            "dependencies": [],
+            "updatedAt": "2025-12-07T15:14:26.969Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Core Logic - Orquestração e Interceptação",
+            "description": "Implementar a lógica de interceptação de respostas no Orquestrador.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/services/attendance_orchestrator.py`.\n1. Criar método de verificação `check_feedback_eligibility(message)`.\n2. Lógica: Se (Atendimento Resolvido < 10min) E (Sem Avaliação):\n   - Chamar `FeaturesCompose.analise_avaliacao`.\n   - Atualizar campos `avaliacao`, `feedback`, `tags` do Atendimento.\n   - Retornar True para interromper fluxo normal de bot.",
+            "status": "done",
+            "dependencies": [
+              "1",
+              "2"
+            ],
+            "updatedAt": "2025-12-07T15:14:26.992Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Agendamento de Agradecimento Diferido",
+            "description": "Implementar o envio da mensagem de agradecimento com delay.",
+            "details": "Usar Django-Q2 (`async_task` ou `schedule`).\n- Após salvar avaliação com sucesso (Subtask 3), agendar task `send_thank_you_message` para dali a 10 minutos.\n- Essa task deve criar uma `Mensagem` de agradecimento no banco.",
+            "status": "done",
+            "dependencies": [
+              "3"
+            ],
+            "updatedAt": "2025-12-07T15:14:27.014Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Verificação e Testes Manuais",
+            "description": "Executar roteiro de testes para validar a feature.",
+            "details": "1. Resolver atendimento e verificar msg de solicitação.\n2. Responder com notas variadas (3, 9, 100) e validar normalização no banco.\n3. Verificar se a mensagem de agradecimento aparece na fila de agendamento e é enviada após 10min.",
+            "status": "done",
+            "dependencies": [
+              "4"
+            ],
+            "updatedAt": "2025-12-07T15:14:27.032Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 6,
+            "title": "Mascarar Feedback no Trello",
+            "description": "",
+            "details": "Implementar mascaramento do feedback na sincronização do Trello.\n1. `AttendanceOrchestrator`: Adicionar metadado `is_feedback` na mensagem de feedback.\n2. `TicketSyncService`: Verificar metadado e substituir conteúdo por \"Feedback realizado\".",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 26,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-07T15:14:27.032Z"
+      },
+      {
+        "id": "27",
+        "title": "[FIX] Correção de Sincronização Trello - Arquivamento e Movimentação",
+        "description": "Corrigir bugs de sincronização Trello: (1) Cards não arquivados ao apagar atendimento; (2) Cards não movidos ao transferir entre fluxos/boards.",
+        "details": "## Contexto e Motivação\nO sistema apresenta falhas na sincronização com o Trello quando um atendimento é transferido para outro setor/fluxo.\n\n## Fluxo de Erro (Investigação Completa)\n1. **IA detecta transferência**: `AnaliseMensage` identifica intenção e retorna `acao_transferencia='Comercial'`\n2. **Orchestrator aplica fluxo**: `AttendanceOrchestrator` chama `atendimento.apply_flow_by_description('Comercial - Comercial')`\n3. **Atendimento muda**: `departamento`, `fluxo_atendimento` e `etapa_atual` são alterados para o novo fluxo\n4. **Signal dispara**: `post_save` aciona `atendimento_etapa_updated_move_card` que agenda `task_atendimento_move_to_etapa_list`\n5. **Lista criada em board diferente**: `move_card_to_etapa` chama `ensure_list_for_etapa` que cria lista no board do NOVO fluxo\n6. **Tentativa de mover falha**: `move_item` usa `PUT /cards/{id}?idList={listId}` que retorna 404\n7. **Razão do 404**: A API do Trello não permite mover card para lista de outro board sem especificar `idBoard`\n\n## Causa Raiz\n- O método `move_item` usa apenas `idList` no payload\n- Para cross-board moves, a API requer `idBoard` + `idList`\n- O card está em Board A mas a lista destino está em Board B\n\n## Evidência do Log\n```\nlista criada: Fila de Atendimento em 6926444ca03671bd4cd4ba9d -> 69343cb7ca69bcf8d9bfcd27\nFalha Trello API: 404 List 69343cb7ca69bcf8d9bfcd27 does not exist on board 692643b5c0c9dfa73f7bca0f\n```\n\n## Solução\n1. Implementar `move_item_to_board` no TrelloAdapter\n2. Em `move_card_to_etapa`, detectar se boards são diferentes\n3. Se diferente, usar `PUT /cards/{id}?idBoard={boardId}&idList={listId}`",
+        "testStrategy": "1. **Teste Transferência**: Iniciar conversa pedindo orçamento de panfletos, verificar que card move para board do Comercial.\n2. **Logs**: `uv run task logs-docker | grep 'cross-board\\|movido entre boards'`\n3. **Teste Movimento Normal**: Mover card no mesmo board deve continuar funcionando.",
+        "status": "done",
+        "dependencies": [
+          "5",
+          "6"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Melhorar Signal de Arquivamento (pre_delete)",
+            "description": "Aprimorar validação e tentar arquivamento síncrono antes de agendar task assíncrona.",
+            "details": "Modificar `atendimento_deleted_archive_card` em signals.py:\n1. Validar presença de `trello_card` com log de warning se ausente.\n2. Validar `external_id` não vazio.\n3. Tentar arquivamento síncrono via `SERVICEHUB.unified_data_service.archive_item()`.\n4. Se falhar (timeout), agendar task assíncrona como fallback.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 27,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implementar move_item_to_board no TrelloAdapter",
+            "description": "Adicionar método para mover cards entre boards diferentes.",
+            "details": "Criar método em trello_adapter.py que use `PUT /cards/{id}?idBoard={boardId}&idList={listId}` para movimentação cross-board.",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 27,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Atualizar move_card_to_etapa para suportar cross-board",
+            "description": "Modificar TicketSyncService.move_card_to_etapa para detectar mudança de board.",
+            "details": "Em ticket_sync_service.py:\n1. Comparar `card.list_sync.board_id` com `trello_list.board_id`.\n2. Se diferentes, chamar `move_item_to_board`.\n3. Se iguais, manter comportamento atual (`move_item`).\n4. Atualizar `card.list_sync` após movimentação.",
+            "status": "done",
+            "dependencies": [
+              "2"
+            ],
+            "parentTaskId": 27,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Testes e Validação Manual",
+            "description": "Executar testes manuais e verificar logs.",
+            "details": "1. Testar exclusão de atendimento e verificar arquivamento no Trello.\n2. Testar transferência entre fluxos e verificar movimentação de card.\n3. Verificar logs do cluster para confirmar operações.",
+            "status": "done",
+            "dependencies": [
+              "1",
+              "3"
+            ],
+            "parentTaskId": 27,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-06T15:39:00.000Z"
+      },
+      {
+        "id": "28",
+        "title": "[FIX] Correção de Sincronização Trello - Log e Atribuição de Atendente",
+        "description": "Corrigir bugs de sincronização Trello: (1) Erro no método _log() ao mover cards entre boards; (2) Falha na atribuição automática de atendente ao mover card da Fila para Em Atendimento via Trello.",
+        "details": "## Contexto e Motivação\nO sistema apresenta dois problemas críticos na integração com o Trello:\n1. Um erro de log `TrelloUnifiedDataService._log() takes 2 positional arguments but 5 were given` ocorre após a transferência de atendimento.\n2. Ao mover um card manualmente no Trello de 'Fila' para 'Em Atendimento', o sistema não atribui o atendente responsável e não envia mensagem de continuidade.\n\n## Bug 1: Erro no método _log()\n### Diagnóstico\nO método `move_item_to_board` em `trello_adapter.py` (linha 303-308) chama `_log()` com argumentos posicionais:\n```python\nself._log(\n    \"card movido entre boards: {} -> board={}, lista={}\",\n    item_id,\n    target_board_id,\n    target_list_id,\n)\n```\nMas a assinatura espera kwargs nomeados: `_log(self, message: str, **kwargs: Any)`\n\n### Solução\nAlterar para usar kwargs nomeados com placeholders:\n```python\nself._log(\n    \"card movido entre boards: {card} -> board={board}, lista={list}\",\n    card=item_id,\n    board=target_board_id,\n    list=target_list_id,\n)\n```\n\n## Bug 2: Atendente não atribuído\n### Diagnóstico\nO método `process_webhook_card_move` em `ticket_sync_service.py` (linha 848-921):\n- Recebe `member_creator_id` (ID do usuário Trello que moveu o card)\n- NÃO utiliza esse parâmetro para resolver o atendente\n- NÃO atribui o atendente ao atendimento\n- NÃO envia mensagem de continuidade\n\n### Solução\n1. Adicionar método `resolve_atendente_by_external_id` em `MemberSyncService`\n2. Modificar `process_webhook_card_move` para:\n   - Detectar transições FILA -> TRABALHO\n   - Resolver atendente pelo external_id\n   - Usar `transferir_para_humano_com_saudacao` (já existente) para atribuir e enviar mensagem\n\n## Arquivos Afetados\n- `modules/services/features/unifield_data_services/datasource/trello_adapter.py`\n- `app/trello_sync/services/member_sync_service.py`\n- `app/trello_sync/services/ticket_sync_service.py`",
+        "testStrategy": "## Testes Manuais\n\n### Bug 1 - Movimentação entre boards:\n1. Criar atendimento em um fluxo\n2. Transferir para outro fluxo (que resulte em movimentação entre boards)\n3. Verificar que não há erro no log do cluster\n4. Verificar que o card foi movido corretamente no Trello\n\n### Bug 2 - Atribuição de atendente:\n1. Criar atendimento que fique na lista 'Fila' do Trello\n2. Acessar o Trello com a conta de um atendente cadastrado\n3. Arrastar o card da lista 'Fila' para 'Em Atendimento'\n4. Verificar que o atendimento no sistema foi atualizado com o atendente correto\n5. Verificar que a mensagem de continuidade foi enviada ao contato\n\n### Logs Esperados:\n```\nINFO: card movido entre boards: {card_id} -> board={board_id}, lista={list_id}\nINFO: Atendente {nome} identificado pela movimentação de card.\nINFO: Mensagem de continuidade enviada para atendimento {id}.\n```",
+        "status": "done",
+        "dependencies": [
+          "27"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Corrigir chamadas ao método _log() em trello_adapter.py",
+            "description": "Ajustar as chamadas internas ao método _log para usar kwargs nomeados.",
+            "details": "Arquivo: `modules/services/features/unifield_data_services/datasource/trello_adapter.py`\n\nLocalizar linha 303-308 no método `move_item_to_board` e alterar:\n\n```python\n# Antes:\nself._log(\n    \"card movido entre boards: {} -> board={}, lista={}\",\n    item_id,\n    target_board_id,\n    target_list_id,\n)\n\n# Depois:\nself._log(\n    \"card movido entre boards: {card} -> board={board}, lista={list}\",\n    card=item_id,\n    board=target_board_id,\n    list=target_list_id,\n)\n```",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 28,
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Adicionar método resolve_atendente_by_external_id em MemberSyncService",
+            "description": "Criar método para buscar Atendente pelo external_id do membro Trello.",
+            "details": "Arquivo: `app/trello_sync/services/member_sync_service.py`\n\nAdicionar novo método:\n```python\ndef resolve_atendente_by_external_id(\n    self, external_id: str\n) -> Optional[Any]:\n    \"\"\"Busca o atendente pelo external_id do membro Trello.\"\"\"\n    if not external_id:\n        return None\n    try:\n        tm = TrelloMember.objects.select_related(\"atendente\").get(\n            external_id=external_id\n        )\n        return tm.atendente\n    except TrelloMember.DoesNotExist:\n        logger.warning(\n            \"TrelloMember com external_id {} não encontrado.\",\n            external_id,\n        )\n        return None\n```",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 28,
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Modificar process_webhook_card_move para atribuir atendente",
+            "description": "Implementar lógica de atribuição de atendente e envio de mensagem de continuidade.",
+            "details": "Arquivo: `app/trello_sync/services/ticket_sync_service.py`\nMétodo: `process_webhook_card_move` (linha 848-921)\n\nAlterações:\n1. Importar TipoEtapa e MemberSyncService\n2. Detectar transição FILA -> TRABALHO (comparar tipo_etapa da etapa anterior e nova)\n3. Se for transição FILA -> TRABALHO e member_creator_id presente:\n   - Chamar `MemberSyncService().resolve_atendente_by_external_id(member_creator_id)`\n   - Se atendente encontrado, chamar `atendimento.transferir_para_humano_com_saudacao(atendente.id)`\n4. Adicionar logs apropriados",
+            "status": "done",
+            "dependencies": [
+              "1",
+              "2"
+            ],
+            "parentTaskId": 28,
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Testes e Validação Manual",
+            "description": "Executar testes manuais dos dois cenários de correção.",
+            "details": "1. **Bug 1 - Movimentação entre boards:**\n   - Transferir atendimento entre fluxos/boards\n   - Verificar logs não contêm erro de argumento\n   - Verificar card movido corretamente no Trello\n\n2. **Bug 2 - Atribuição de atendente:**\n   - Criar atendimento na Fila\n   - Mover card no Trello para 'Em Atendimento' usando conta de atendente\n   - Verificar atribuição correta no sistema\n   - Verificar envio de mensagem de continuidade",
+            "status": "done",
+            "dependencies": [
+              "3"
+            ],
+            "parentTaskId": 28,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-06T15:58:00.000Z"
+      },
+      {
+        "id": "29",
+        "title": "[FEAT] Controle de Resposta do Bot por AppInstance",
+        "description": "Adicionar campo resposta_bot (boolean) no model AppInstance para controlar se o bot pode responder automaticamente às mensagens recebidas por aquela instância, independente da flag bot_pode_atender do Atendimento.",
+        "details": "## Contexto e Motivação\n\nAtualmente, a verificação se o bot pode responder a um atendimento é feita exclusivamente pela flag `bot_pode_atender` do model `Atendimento` no método `BotRulesEngine.can_bot_respond()`.\n\n**Problema**: Não há controle granular por instância de comunicação (AppInstance). Se uma instância específica não deve ter respostas automáticas do bot (ex: instância de atendimento humano exclusivo), a única forma atual de bloquear é marcando manualmente cada atendimento.\n\n**Solução**: Adicionar um campo `resposta_bot` (booleano) no model `AppInstance` que, quando `False`, impede o processamento da resposta do bot para qualquer mensagem recebida por aquela instância, mesmo que o atendimento esteja marcado como `bot_pode_atender=True`.\n\n## Requisitos Funcionais\n\n1. Novo campo `resposta_bot` no model `AppInstance` com `default=True`\n2. Verificação no `BotRulesEngine.can_bot_respond` deve considerar a flag da instância\n3. Hierarquia de verificação: `AppInstance.resposta_bot` → `Atendimento.bot_pode_atender`\n\n## Arquitetura e Localização\n\n### [MODIFY] operacional/models.py\n- Adicionar campo `resposta_bot: models.BooleanField[bool]` com `default=True` no model `AppInstance` (após linha 460)\n\n### [NEW] Migração\n- Gerada automaticamente via `uv run task makemigrations`\n\n### [MODIFY] atendimentos/services/bot_rules_engine.py\n- Modificar `can_bot_respond` para aceitar parâmetro `api_key: Optional[str] = None`\n- Adicionar método privado `_is_instance_bot_enabled(api_key: str) -> bool`\n- Implementar verificação da flag antes das regras existentes\n\n### [MODIFY] atendimentos/services/attendance_orchestrator.py\n- Passar `api_key` para `can_bot_respond` no método `_process_message_and_respond` (linha ~267)\n\n### [MODIFY] atendimentos/services/interfaces.py\n- Atualizar assinatura do método abstrato `can_bot_respond` para incluir parâmetro `api_key`\n\n## Regras de Negócio\n\n1. Se `AppInstance.resposta_bot=False` → NÃO responde (ignora demais verificações)\n2. Se `AppInstance.resposta_bot=True` e houve interação humana → NÃO responde\n3. Se `AppInstance.resposta_bot=True` e `Atendimento.bot_pode_atender=True` → RESPONDE\n4. Se `AppInstance.resposta_bot=True` e `Atendimento.bot_pode_atender=False` → NÃO responde\n5. Se instância não encontrada (api_key inválida) → permite por padrão (fail-safe)\n\n## Código de Referência\n\n```python\n# Model AppInstance - novo campo\nresposta_bot: models.BooleanField[bool] = models.BooleanField(\n    default=True,\n    help_text=\"Se True, o bot pode responder automaticamente mensagens desta instância\",\n)\n\n# BotRulesEngine - novo método\ndef _is_instance_bot_enabled(self, api_key: str) -> bool:\n    try:\n        from smart_core_assistant_painel.app.ui.operacional.models import AppInstance\n        instance = AppInstance.objects.filter(api_key=api_key, active=True).first()\n        if not instance:\n            logger.warning(f\"AppInstance não encontrada para api_key={api_key[:8]}...\")\n            return True  # Fail-safe\n        return instance.resposta_bot\n    except Exception as e:\n        logger.error(f\"Erro ao verificar resposta_bot da instância: {e}\")\n        return True\n```",
+        "testStrategy": "## Validação da Migração\n```bash\nuv run task makemigrations\nuv run task migrate-remoto\n```\nVerificar no Django Admin que o campo `resposta_bot` aparece no formulário de `AppInstance`.\n\n## Testes Manuais\n\n1. **Cenário A: resposta_bot=False**\n   - Editar uma AppInstance no Django Admin e desmarcar `resposta_bot`\n   - Enviar uma mensagem para o número associado a essa instância\n   - **Esperado**: A mensagem é recebida, mas o bot NÃO gera resposta automática\n   - **Verificar logs**: Deve aparecer log com \"instância com resposta_bot=False\"\n\n2. **Cenário B: resposta_bot=True (padrão)**\n   - Manter `resposta_bot=True` na instância\n   - Enviar uma mensagem para o número associado\n   - **Esperado**: O bot responde normalmente (se `bot_pode_atender` também for True)\n\n3. **Cenário C: Combinação de flags**\n   - `AppInstance.resposta_bot=True` + `Atendimento.bot_pode_atender=False`\n   - **Esperado**: Bot NÃO responde (a flag do atendimento ainda bloqueia)",
+        "status": "done",
+        "dependencies": [],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Adicionar campo resposta_bot no model AppInstance",
+            "description": "Adicionar campo boolean resposta_bot com default=True no model AppInstance e criar migração.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/operacional/models.py`\n\nAdicionar após o campo `active` (linha ~460):\n```python\nresposta_bot: models.BooleanField[bool] = models.BooleanField(\n    default=True,\n    help_text=\"Se True, o bot pode responder automaticamente mensagens desta instância\",\n)\n```\n\nApós a alteração:\n```bash\nuv run task makemigrations\nuv run task migrate-remoto\n```",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 29,
+            "updatedAt": "2025-12-07T12:05:47.165Z",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Atualizar interface BotRulesEngineInterface",
+            "description": "Adicionar parâmetro api_key na assinatura do método abstrato can_bot_respond.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/services/interfaces.py`\n\nAlterar assinatura:\n```python\n@abstractmethod\ndef can_bot_respond(\n    self, \n    attendance: Optional[\"Atendimento\"],\n    api_key: Optional[str] = None,\n) -> bool:\n```",
+            "status": "done",
+            "dependencies": [
+              "1"
+            ],
+            "parentTaskId": 29,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-07T12:06:19.036Z"
+          },
+          {
+            "id": 3,
+            "title": "Implementar verificação no BotRulesEngine",
+            "description": "Modificar can_bot_respond e adicionar método _is_instance_bot_enabled.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/services/bot_rules_engine.py`\n\n1. Adicionar novo método privado `_is_instance_bot_enabled(api_key: str) -> bool`\n2. Modificar `can_bot_respond` para:\n   - Aceitar parâmetro `api_key: Optional[str] = None`\n   - Chamar `_is_instance_bot_enabled` se api_key fornecida\n   - Retornar False se instância não permite resposta",
+            "status": "done",
+            "dependencies": [
+              "2"
+            ],
+            "parentTaskId": 29,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-07T12:06:59.943Z"
+          },
+          {
+            "id": 4,
+            "title": "Atualizar AttendanceOrchestrator",
+            "description": "Passar api_key para can_bot_respond no método _process_message_and_respond.",
+            "details": "Arquivo: `src/smart_core_assistant_painel/app/ui/atendimentos/services/attendance_orchestrator.py`\n\nLocalizar linha ~267 e alterar:\n\n```python\n# Antes:\npode_responder = self._rules_engine.can_bot_respond(atendimento)\n\n# Depois:\npode_responder = self._rules_engine.can_bot_respond(atendimento, api_key)\n```",
+            "status": "done",
+            "dependencies": [
+              "3"
+            ],
+            "parentTaskId": 29,
+            "parentId": "undefined",
+            "updatedAt": "2025-12-07T12:07:36.018Z"
+          },
+          {
+            "id": 5,
+            "title": "Testes e Validação Manual",
+            "description": "Executar testes manuais conforme estratégia de verificação.",
+            "details": "1. Aplicar migração e verificar campo no Django Admin\n2. Testar cenário A: resposta_bot=False\n3. Testar cenário B: resposta_bot=True\n4. Testar cenário C: Combinação de flags\n5. Verificar logs do cluster",
+            "status": "done",
+            "dependencies": [
+              "4"
+            ],
+            "parentTaskId": 29,
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2025-12-07T12:07:36.018Z"
+      }
+    ],
+    "metadata": {
+      "version": "1.0.0",
+      "lastModified": "2025-12-07T15:14:27.033Z",
+      "taskCount": 28,
+      "completedCount": 16,
+      "tags": [
+        "master"
+      ]
+    }
+  }
+}

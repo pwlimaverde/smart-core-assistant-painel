@@ -178,30 +178,15 @@ Para detalhes completos das correções, consulte a seção correspondente em [a
 
 O projeto utiliza uma arquitetura modular baseada no padrão `py-return-success-or-error` para implementar funcionalidades. Recursos recentes incluem:
 
-### Serviço de Envio de Mensagens WhatsApp
+### Integração Evolution API (evolution_sync)
 
-Implementamos um serviço modular para envio de mensagens via WhatsApp utilizando a Evolution API:
+A integração com o WhatsApp é gerenciada pelo app dedicado `evolution_sync`, que centraliza:
 
-- **DataSource**: `WhatsAppAPIDataSource` - Responsável por interagir diretamente com a API
-- **UseCase**: `WhatsAppSendMessageUseCase` - Implementa a lógica de negócio para envio de mensagens
-- **Interface**: `WhatsAppServiceInterface` - Define o contrato para o serviço
-- **Serviço de Alto Nível**: `send_whatsapp_message` - Função simplificada para envio de mensagens
+- **Gestão de Instâncias**: Configuração e persistência de credenciais (API Key, URL).
+- **Webhooks**: Recepção e processamento de eventos em tempo real.
+- **Cliente HTTP**: Camada de serviço robusta para comunicação com a Evolution API.
 
-Exemplo de uso:
-```python
-from smart_core_assistant_painel.modules.services.features.whatsapp_services.send_message_service import send_whatsapp_message
-
-result = send_whatsapp_message(
-    instance="5588921729550",
-    api_key="sua_chave_api",
-    message_data={
-        "number": "5511999999999",
-        "textMessage": {
-            "text": "Olá! Esta é uma mensagem de teste."
-        }
-    }
-)
-```
+A arquitetura elimina serviços genéricos, focando em modelos Django nativos e tarefas assíncronas para alta performance.
 
 ### Integração Notion (notion_sync)
 - Habilitado via `INSTALLED_APPS` em `src/smart_core_assistant_painel/app/ui/core/settings.py`.

@@ -23,8 +23,9 @@ from smart_core_assistant_painel.modules.services.features.unifield_data_service
 
 
 class MemberSyncService:
-    """
-    Serviço de sincronização de membros (Atendente ↔ Trello Member).
+    """[TRL-MEM-001] Serviço de sincronização de membros (Atendente ↔ Trello Member).
+
+    Sincronização de Membros.
 
     Comentário: convida o e-mail do atendente para o board do fluxo
     e tenta resolver o `external_id` do membro posteriormente.
@@ -56,7 +57,7 @@ class MemberSyncService:
         )
         return without_accents.casefold().strip()
 
-    def invite_for_atendente(self, atendente: Any) -> TrelloMember:
+    def ensure_member_for_atendente(self, atendente: Any) -> TrelloMember:
         """Envia convite para o board do fluxo e cria/atualiza TrelloMember.
 
         - Usa `atendente.fluxo.trello_board.external_id` para o board.
@@ -227,3 +228,29 @@ class MemberSyncService:
                 pass
 
         return found_id
+
+    def resolve_atendente_by_external_id(
+        self, external_id: str
+    ) -> Optional[Any]:
+        """Busca o atendente correspondente ao external_id do membro Trello.
+
+        Args:
+            external_id: ID externo do membro no Trello.
+
+        Returns:
+            Instância de Atendente ou None se não encontrado.
+        """
+        if not external_id:
+            return None
+
+        try:
+            tm = TrelloMember.objects.select_related("atendente").get(
+                external_id=external_id
+            )
+            return tm.atendente
+        except TrelloMember.DoesNotExist:
+            logger.warning(
+                "TrelloMember com external_id {} não encontrado.",
+                external_id,
+            )
+            return None

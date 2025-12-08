@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from decouple import config
+from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
 
 API_TOKEN_URL: str = "https://api.clickup.com/api/v2/oauth/token"
@@ -53,8 +54,8 @@ def _exchange_code_for_token(code: str, redirect_uri: str) -> Dict[str, Any]:
 
     Comentário: usa client_id e client_secret do .env via decouple.
     """
-    client_id: str = config("CLICKUP_CLIENT_ID", default="")
-    client_secret: str = config("CLICKUP_CLIENT_SECRET", default="")
+    client_id: str = str(config("CLICKUP_CLIENT_ID", default=""))
+    client_secret: str = str(config("CLICKUP_CLIENT_SECRET", default=""))
     payload: Dict[str, Any] = {
         "client_id": client_id,
         "client_secret": client_secret,
@@ -81,7 +82,7 @@ def _exchange_code_for_token(code: str, redirect_uri: str) -> Dict[str, Any]:
 
 
 def health_check(request: HttpRequest) -> HttpResponse:
-    """View simples para health check do Docker.
+    """[SYS-INI-003] View simples para health check do Docker.
 
     Args:
         request: Requisição HTTP.
@@ -101,16 +102,11 @@ def home(request: HttpRequest) -> HttpResponse:
     Returns:
         HttpResponse: Resposta HTTP simples.
     """
-    return HttpResponse(
-        "<h1>Smart Core Assistant Painel</h1>"
-        "<p>Sistema funcionando corretamente!</p>"
-        "<p><a href='/admin/'>Acessar Admin</a></p>",
-        content_type="text/html",
-    )
+    return render(request, "core/home.html")
 
 
 def clickup_callback(request: HttpRequest) -> HttpResponse:
-    """Callback OAuth do ClickUp.
+    """[ADM-CFG-001] Callback OAuth do ClickUp.
 
     Fluxo:
     - Lê `code` da querystring.
@@ -122,7 +118,7 @@ def clickup_callback(request: HttpRequest) -> HttpResponse:
     if not code:
         return HttpResponse("Faltou o parâmetro 'code' na URL.", status=400)
 
-    redirect_uri: str = config("CLICKUP_OAUTH_REDIRECT_URI", default="")
+    redirect_uri: str = str(config("CLICKUP_OAUTH_REDIRECT_URI", default=""))
     if not redirect_uri:
         return HttpResponse(
             "CLICKUP_OAUTH_REDIRECT_URI não configurado no .env.",
@@ -147,3 +143,17 @@ def clickup_callback(request: HttpRequest) -> HttpResponse:
         "<p>Agora você pode fechar esta janela e continuar.</p>"
     )
     return HttpResponse(html, content_type="text/html", status=200)
+
+
+def custom_page_not_found(
+    request: HttpRequest, exception: Any = None
+) -> HttpResponse:
+    """View customizada para erro 404."""
+    return render(request, "404.html", status=404)
+
+
+def custom_permission_denied(
+    request: HttpRequest, exception: Any = None
+) -> HttpResponse:
+    """View customizada para erro 403."""
+    return render(request, "403.html", status=403)

@@ -5,7 +5,9 @@ from django.db import models
 
 
 class EvolutionInstance(models.Model):
-    """Representa uma instância conectada na Evolution API.
+    """[INT-EVO-001] Representa uma instância conectada na Evolution API.
+
+    Gestão de Instâncias Evolution.
 
     Attributes:
         id: Identificador único da instância no banco de dados.
@@ -42,7 +44,9 @@ class EvolutionInstance(models.Model):
 
 
 class EvolutionContact(models.Model):
-    """Mapeia um contato do WhatsApp (Evolution) para um Contato do sistema.
+    """[INT-EVO-002] Mapeia um contato do WhatsApp (Evolution) para um Contato do sistema.
+
+    Mapeamento de Contatos (Sync).
 
     Attributes:
         id: Identificador único do mapeamento.
@@ -106,7 +110,9 @@ class EvolutionContact(models.Model):
 
 
 class WhiteList(models.Model):
-    """Lista de números que não devem gerar interações no sistema.
+    """[INT-EVO-003] Lista de números que não devem gerar interações no sistema.
+
+    Whitelist de Números.
 
     Attributes:
         id: Identificador único.

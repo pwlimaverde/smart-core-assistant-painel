@@ -12,7 +12,6 @@ from py_return_success_or_error import ParametersReturnResult
 from .erros import (
     SetEnvironRemoteError,
     UnifieldDataServicesError,
-    WhatsAppServiceError,
 )
 
 
@@ -34,28 +33,6 @@ class SetEnvironRemoteParameters(ParametersReturnResult):
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""
         return self.__repr__()
-
-
-@dataclass
-class WhatsAppMensagemParameters(ParametersReturnResult):
-    """Parâmetros para o envio de mensagens via WhatsApp.
-
-    Attributes:
-        instance (str): O identificador da instância do WhatsApp.
-        api_key (str): A chave de API para autenticação com o serviço.
-        message_data (Dict[str, Any]): O payload da mensagem a ser enviada.
-        error (WhatsAppServiceError): O erro a ser levantado se a
-            operação falhar.
-    """
-
-    instance: str
-    api_key: str
-    message_data: Dict[str, Any]
-    error: WhatsAppServiceError
-
-    def __str__(self) -> str:
-        """Retorna uma representação simplificada em string da instância."""
-        return f"WhatsAppServiceParameters(instance={self.instance})"
 
 
 @dataclass

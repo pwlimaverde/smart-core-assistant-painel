@@ -15,6 +15,7 @@ class FeaturesCompose:
 
     Esta classe fornece uma interface para executar as tarefas de inicialização
     necessárias quando a aplicação começa, como a inicialização do Firebase.
+    [SYS-INI-001]
     """
 
     @staticmethod

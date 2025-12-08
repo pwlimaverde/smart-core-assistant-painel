@@ -1,1 +1,0 @@
-"""Datasources para armazenamento vetorial."""

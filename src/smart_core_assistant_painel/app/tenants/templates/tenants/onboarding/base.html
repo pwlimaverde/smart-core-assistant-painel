@@ -1,32 +1,38 @@
 {% load i18n static %}
 <!DOCTYPE html>
 <html lang="{{ LANGUAGE_CODE|default:'pt-br' }}">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ title }} | Smart Core Assistant{% endblock %}</title>
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
-    
+
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #64748b;
-            --bg-body: #f8fafc;
+            --primary: #a98f71;
+            --primary-dark: #8b7355;
+            --secondary: #57534e;
+            --bg-body: #fafaf9;
             --bg-card: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
+            --text-main: #1c1917;
+            --text-muted: #78716c;
+            --border: #e7e5e4;
             --success: #10b981;
             --error: #ef4444;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Outfit', sans-serif;
+        }
+
         body {
             background-color: var(--bg-body);
             color: var(--text-main);
@@ -35,9 +41,9 @@
             align-items: center;
             justify-content: center;
             padding: 2rem;
-            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-                            radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
-                            radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
+                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
             background-size: cover;
             background-attachment: fixed;
         }
@@ -67,7 +73,7 @@
             position: relative;
             margin-top: 1.5rem;
         }
-        
+
         .stepper::before {
             content: '';
             position: absolute;
@@ -116,14 +122,34 @@
             gap: 1.5rem;
         }
 
-        h2 { font-size: 1.875rem; margin-bottom: 0.5rem; background: linear-gradient(45deg, var(--primary), #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        p.subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+        h2 {
+            font-size: 1.875rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, var(--primary), #ec4899);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
 
         /* Forms */
-        .form-group { margin-bottom: 1.5rem; }
-        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--secondary); font-size: 0.9rem; }
-        
-        .form-control, .form-select {
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-control,
+        .form-select {
             width: 100%;
             padding: 0.75rem 1rem;
             border: 1px solid var(--border);
@@ -132,7 +158,7 @@
             transition: all 0.2s;
             background: #f9fafb;
         }
-        
+
         .form-control:focus {
             outline: none;
             border-color: var(--primary);
@@ -140,7 +166,11 @@
             box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
 
-        .help-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+        .help-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
 
         /* Buttons */
         .wizard-footer {
@@ -178,61 +208,80 @@
             border: 1px solid var(--border);
             color: var(--secondary);
         }
-        
-        .btn-outline:hover { background: #fff; border-color: var(--secondary); }
+
+        .btn-outline:hover {
+            background: #fff;
+            border-color: var(--secondary);
+        }
 
         /* Utils */
-        .text-danger { color: var(--error); }
-        .text-success { color: var(--success); }
+        .text-danger {
+            color: var(--error);
+        }
+
+        .text-success {
+            color: var(--success);
+        }
+
         .spinner {
             display: inline-block;
             width: 1.5rem;
             height: 1.5rem;
-            border: 3px solid rgba(255,255,255,0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
+
 <body>
 
-<div class="wizard-container">
-    <div class="wizard-header">
-        <div style="text-align: center; margin-bottom: 1rem; font-weight: 700; font-size: 1.2rem; color: var(--text-main);">
-            Smart Core Assistant
+    <div class="wizard-container">
+        <div class="wizard-header">
+            <div
+                style="text-align: center; margin-bottom: 1rem; font-weight: 700; font-size: 1.2rem; color: var(--text-main);">
+                Smart Core Assistant
+            </div>
+
+            <div class="stepper">
+                <div
+                    class="step {% if request.resolver_match.url_name == 'onboarding_step_1' or 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_2' in request.path or 'step_3' in request.path %}done{% endif %}">
+                    <span>1</span> Empresa
+                </div>
+                <div
+                    class="step {% if 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_3' in request.path %}done{% endif %}">
+                    <span>2</span> Plano
+                </div>
+                <div
+                    class="step {% if 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_4' in request.path %}done{% endif %}">
+                    <span>3</span> Config
+                </div>
+                <div class="step {% if 'step_4' in request.path %}active{% endif %}">
+                    <span>4</span> Pronto
+                </div>
+            </div>
         </div>
-        
-        <div class="stepper">
-            <div class="step {% if request.resolver_match.url_name == 'onboarding_step_1' or 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_2' in request.path or 'step_3' in request.path %}done{% endif %}">
-                <span>1</span> Empresa
-            </div>
-            <div class="step {% if 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_3' in request.path %}done{% endif %}">
-                <span>2</span> Plano
-            </div>
-            <div class="step {% if 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_4' in request.path %}done{% endif %}">
-                <span>3</span> Config
-            </div>
-            <div class="step {% if 'step_4' in request.path %}active{% endif %}">
-                <span>4</span> Pronto
-            </div>
+
+        <div class="wizard-content">
+            {% block wizard_content %}{% endblock %}
         </div>
+
+        {% block wizard_footer %}
+        <div class="wizard-footer">
+            <!-- Default Footer Content -->
+        </div>
+        {% endblock %}
     </div>
 
-    <div class="wizard-content">
-        {% block wizard_content %}{% endblock %}
-    </div>
-
-    {% block wizard_footer %}
-    <div class="wizard-footer">
-        <!-- Default Footer Content -->
-    </div>
-    {% endblock %}
-</div>
-
-{% block extra_js %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
+
 </html>

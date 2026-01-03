@@ -1,39 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Core Assistant{% endblock %}</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=4">
+
+    <style type="text/tailwindcss">
+        @theme {
+          --color-gold-primary: #a98f71;
+          --color-gold-dark: #8b7355;
+          --font-family-sans: 'Outfit', sans-serif;
+        }
+        
+        .font-outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body class="min-h-screen">
-    {% block navbar %}
-    <!-- Navbar -->
-    <header class="app-navbar">
-        <div class="app-container flex items-center justify-between py-3">
-            <div class="flex items-center gap-3">
-                <img src="{% static 'img/logo_branca_smart_v2.png' %}" alt="Logo" class="h-8 w-auto">
-                <span class="brand text-sm md:text-base text-[#a98f71]">Smart Core Assistant</span>
-            </div>
-            <nav class="flex items-center gap-4 text-sm">
-                <a href="/" class="hover:underline text-[#a98f71]">Home</a>
-                <a href="/admin/" class="hover:underline text-[#a98f71]">Admin</a>
-            </nav>
-        </div>
-    </header>
-    {% endblock navbar %}
+<body class="bg-stone-50 text-stone-900 font-outfit antialiased selection:bg-[#a98f71] selection:text-white">
 
-    {% block 'conteudo' %}
-    {% endblock 'conteudo' %}
+    {% block layout %}
+    {% block navbar %}{% endblock %}
 
-    <footer
-        class="fixed bottom-0 left-0 right-0 bg-gray-100 text-gray-700 text-xs py-2 px-4 flex items-center justify-between border-t border-gray-200 app-footer">
-        <span>Smart Core Assistant Painel</span>
-        <span>Versão {{ PROJECT_VERSION }}</span>
-    </footer>
+    {% block content %}{% endblock %}
+
+    {% block footer %}{% endblock %}
+    {% endblock %}
+
+    {% block extra_scripts %}{% endblock %}
 </body>
 
 </html>

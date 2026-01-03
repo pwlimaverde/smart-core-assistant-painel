@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from decouple import config
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
 
@@ -93,8 +94,20 @@ def health_check(request: HttpRequest) -> HttpResponse:
     return HttpResponse("OK", status=200)
 
 
-def home(request: HttpRequest) -> HttpResponse:
-    """View para página inicial.
+from django.views.generic import TemplateView
+from django.shortcuts import redirect
+
+class LandingPageView(TemplateView):
+    template_name = "landing_page.html"
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('dashboard')
+        return super().get(request, *args, **kwargs)
+
+@login_required
+def dashboard(request: HttpRequest) -> HttpResponse:
+    """View para painel administrativo.
 
     Args:
         request: Requisição HTTP.
@@ -102,7 +115,7 @@ def home(request: HttpRequest) -> HttpResponse:
     Returns:
         HttpResponse: Resposta HTTP simples.
     """
-    return render(request, "core/home.html")
+    return render(request, "core/dashboard.html")
 
 
 def clickup_callback(request: HttpRequest) -> HttpResponse:

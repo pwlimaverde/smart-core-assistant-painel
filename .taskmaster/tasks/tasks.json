@@ -9,9 +9,9 @@
         "testStrategy": "Executar `docker-compose up` e verificar se todos os contêineres estão 'healthy'. Acessar a página de boas-vindas do Django.",
         "priority": "high",
         "dependencies": [],
-        "status": "done",
+        "status": "in-progress",
         "subtasks": [],
-        "updatedAt": "2025-11-28T13:28:02.047Z"
+        "updatedAt": "2026-01-03T21:53:28.018Z"
       },
       {
         "id": "2",
@@ -103,9 +103,9 @@
         "dependencies": [
           "2"
         ],
-        "status": "done",
+        "status": "in-progress",
         "subtasks": [],
-        "updatedAt": "2025-11-28T13:28:02.132Z"
+        "updatedAt": "2026-01-03T21:53:32.058Z"
       },
       {
         "id": "6",
@@ -2741,13 +2741,207 @@
           }
         ],
         "updatedAt": "2026-01-03T20:17:46.179Z"
+      },
+      {
+        "id": "47",
+        "title": "[FEAT] Refatoração UI",
+        "description": "Implementação completa da nova interface de usuário, dividindo a aplicação em área pública (Landing Page) e privada (Dashboard/Tenant Admin), estabelecendo uma nova arquitetura de templates e aplicando o Design System Smart Core (Gold/Stone) globalmente.",
+        "status": "in-progress",
+        "dependencies": [],
+        "priority": "high",
+        "details": null,
+        "testStrategy": "Realizar testes manuais de navegação (fluxo de login/logout/onboarding). Validar responsividade da Landing Page em breakpoints mobile, tablet e desktop. Verificar consistência visual do Design System (cores Gold #a98f71 / Stone) em TODAS as telas (LP, Login, Onboarding, Dashboard). Garantir que links de CTA na LP apontem para login ou onboarding de tenants conforme definido. Validar fluxo de Wizard de onboarding com nova paleta de cores. Referência: docs_dev/planejamento/funcionalidades/apresentacao.md e docs_dev/planejamento/funcionalidades/tenants.md (se existir). OBS: Assegurar que nenhuma cor roxa/indigo (#6366f1) do template antigo permaneça visível nas áreas públicas ou de onboarding, substituindo por Gold #a98f71 ou Stone-900 conforme contexto. Testar link de 'Criar Conta' levando para /tenants/onboarding/ e 'Entrar' para /login/ na navbar da LP. Validar que o cadastro inicial (se houver na auth padrão) e login utilizem o layout público base (public_base.html). Testar o fluxo completo de criação de tenant (Wizard Steps 1-4) visualmente para garantir aplicação correta da nova identidade visual. Verificar contraste de acessibilidade para o Gold sobre fundo claro e escuro. Validar responsividade de todos os formulários de entrada (inputs, selects) estilizados com o novo tema. Garantir que as mensagens de feedback (alertas de sucesso/erro) sigam a paleta de cores definida (Gold/Stone/Red/Green suaves). Teste de regressão para garantir que funcionalidades existentes do Dashboard Admin não quebraram com a mudança de base template. Verificar carregamento correto de fontes e ícones (se houver, ex: FontAwesome ou Heroicons) através do novo pipeline de assets estáticos. Se houver modo escuro (Dark Mode) previsto, validar troca de tema; caso contrário, forçar tema claro (Light Mode) consistente em todas as views para evitar glitch visual. Testar em navegadores Chrome, Firefox e Safari para consistência de renderização CSS (especialmente grids e flexbox). Validar o comportamento de 'sticky' na Navbar da Landing Page ao rolar a página. Verificar se o footer da Landing Page contém os links corretos e copyright atualizado com o nome da empresa. Testar o botão de logout no Dashboard para garantir redirecionamento correto para a Landing Page pública. Validar a exibição de avatares de usuário ou iniciais no topo do Dashboard. Se houver upload de logo do Tenant no onboarding, verificar se ele é exibido corretamente no Dashboard após o login. Verificar se a tela de 'Esqueci minha senha' segue o mesmo padrão visual (public_base) das telas de login e cadastro. Teste de carga rápido para garantir que o CSS compilado do Tailwind não está excessivamente grande (verificar tamanho do arquivo em produção vs desenvolvimento). Validar se classes dinâmicas aplicadas via JavaScript (se houver) estão respeitando os prefixos do Tailwind configurados. Documentar qualquer desvio visual encontrado e corrigir antes do merge final. Verificar se o título da aba do navegador muda corretamente entre as páginas (ex: 'Smart Core - Login', 'Smart Core - Dashboard'). Testar a acessibilidade via teclado (Tab navigation) nos formulários de login e onboarding. Validar mensagens de erro de formulário (campo obrigatório, formato inválido) para garantir que estão legíveis e seguem o design system (texto vermelho ou laranja, mas harmonioso com o tema Stone). Se o sistema usar toasts ou notificações flutuantes, verificar se aparecem na posição correta (geralmente topo direito) e com as cores corretas. Validar se o ícone de carregamento (spinner) utiliza a cor primária (Gold) durante operações assíncronas. Garantir que o background da página de login/onboarding seja consistente (cor sólida Stone-50 ou padrão sutil) e não branco puro estourado, para manter o conforto visual. Testar o redirecionamento pós-login para diferentes tipos de usuário (Admin vs Usuário Comum), se aplicável. Validar a persistência da sessão ao recarregar a página do Dashboard. Verificar se o menu lateral (Sidebar) do Dashboard colapsa corretamente em dispositivos móveis e se o ícone de menu (hambúrguer) está visível e funcional. Testar a visualização de tabelas de dados no Dashboard em telas pequenas (scroll horizontal ou layout responsivo). Validar a consistência de espaçamento (padding/margin) entre seções da Landing Page para garantir respiro visual adequado. Verificar se imagens na Landing Page têm atributos 'alt' para acessibilidade e SEO básico. Testar o link de 'Voltar' ou 'Cancelar' nos formulários de Wizard para garantir que o usuário não fique preso em um fluxo indesejado. Validar a consistência de tipografia (font-family, sizes, weights) em todos os headers (h1-h6) e corpo de texto. Verificar se botões desabilitados têm estilo visual claro (opacity reducida ou cor cinza) e não são clicáveis. Testar o comportamento de hover em todos os botões e links interativos (mudança sutil de cor ou underline). Validar se o favicon aparece corretamente na aba do navegador e nos favoritos. Verificar se o título da página no head HTML está correto para SEO básico na Landing Page. Testar o compartilhamento social da Landing Page (Open Graph tags) se implementado, para garantir que a imagem e descrição corretas apareçam. Validar se scripts de analytics (se houver) estão carregando apenas após consentimento de cookies (se houver banner de cookies implementado). Verificar se o banner de cookies (se existir) segue o design system e não bloqueia elementos críticos da UI. Testar a impressão de páginas (CSS print media query) para garantir que relatórios ou telas de dados do Dashboard saiam legíveis no papel, se for um requisito. Validar se o sistema lida graciosamente com falhas de rede (ex: mostrar mensagem de 'sem conexão' estilizada). Verificar se o tempo de carregamento da Landing Page está aceitável (< 3s) em conexões 4G simuladas. Testar a renderização de gráficos ou charts no Dashboard com dados reais ou mockados, garantindo que as cores das séries de dados sigam a paleta do sistema ou cores complementares harmoniosas. Validar a consistência de ícones (tamanho, estilo, espessura de linha) em toda a aplicação. Verificar se o logo da aplicação no Dashboard leva de volta para a Dashboard Home. Testar a funcionalidade de 'Lembrar-me' na tela de login, se implementada. Validar a recuperação de senha (envio de email e link de reset) garantindo que as telas de feedback e o email em si (se html) sigam a identidade visual. Verificar se o sistema bloqueia tentativas excessivas de login (rate limiting) e exibe mensagem apropriada e estilizada. Testar a edição de perfil de usuário no Dashboard (alteração de nome, email, senha) e feedback visual de sucesso. Validar a exclusão de itens (ex: clientes, atendimentos) com modal de confirmação estilizado (não usar confirm() nativo do browser). Verificar se campos de data/hora usam pickers nativos ou componentes customizados estilizados adequadamente. Testar o upload de arquivos (se houver) com indicador de progresso e validação de tipo/tamanho estilizada. Validar a visualização de PDFs ou imagens anexadas no chat de atendimento dentro do Dashboard. Verificar se o sistema se comporta corretamente ao redimensionar a janela do navegador dinamicamente. Testar a navegação via breadcrumbs (migalhas de pão) no Dashboard, se implementado, para facilitar o retorno a níveis superiores. Validar se o título da página na navbar do Dashboard reflete a seção atual. Verificar se o usuário recebe feedback visual imediato ao clicar em ações destrutivas ou importantes. Testar a consistência de nomenclatura de botões ('Salvar' vs 'Confirmar', 'Cancelar' vs 'Voltar') em toda a interface. Validar se o sistema exibe mensagens de 'Nenhum dado encontrado' estilizadas em listas vazias no Dashboard. Verificar se o scroll da página é suave e não apresenta 'jank' ao navegar por listas longas. Testar a funcionalidade de busca/filtro nas listas do Dashboard e verificar se o feedback visual de carregamento é exibido. Validar se o layout não quebra ao usar zoom do navegador (até 200%). Verificar se o sistema respeita as preferências de redução de movimento do usuário (prefers-reduced-motion) nas animações. Testar a consistência de sombras e profundidade (z-index) para garantir que modais e dropdowns apareçam sempre acima do conteúdo. Validar se o foco do teclado é visível em todos os elementos interativos para acessibilidade. Verificar se o sistema lida corretamente com textos longos que podem quebrar o layout (ellipsis ou quebra de linha). Testar a consistência de uso de maiúsculas/minúsculas em títulos e rótulos. Validar se o sistema exibe corretamente caracteres especiais e acentos em todos os campos de texto. Verificar se o sistema mantém a posição de scroll ao navegar 'voltar' no browser, se desejável. Testar a consistência de uso de ícones para ações comuns (lixeira para excluir, lápis para editar, etc). Validar se o sistema exibe corretamente tooltips informativos ao passar o mouse sobre ícones ou abreviações. Verificar se o sistema exibe uma página de 'Manutenção' estilizada caso o backend esteja indisponível (se configurado no load balancer/servidor web). Testar a consistência de uso de cores para status (Verde para sucesso/ativo, Vermelho para erro/inativo, Amarelo para pendente/aviso, Cinza para rascunho/desativado). Validar se o sistema exibe corretamente a versão da aplicação no footer ou menu de configurações. Verificar se o sistema exibe links para termos de uso e política de privacidade no footer e se as páginas correspondentes estão estilizadas. Testar a consistência de uso de modais vs novas páginas para ações complexas. Validar se o sistema exibe corretamente notificações de sistema ou anúncios globais no Dashboard. Verificar se o sistema permite ocultar/mostrar senha nos campos de input de senha e se o ícone muda de estado. Testar a consistência de alinhamento de texto (esquerda, centro, direita) em tabelas e cards. Validar se o sistema exibe corretamente números formatados (moeda, porcentagem, decimal) de acordo com a locale do usuário (pt-BR). Verificar se o sistema exibe corretamente datas e horas formatadas (DD/MM/AAAA HH:mm) em toda a interface. Testar a consistência de uso de loaders e skeletons durante o carregamento de dados assíncronos. Validar se o sistema exibe corretamente mensagens de 'Sessão expirada' e redireciona para o login de forma graciosa. Verificar se o sistema permite o uso de atalhos de teclado para ações comuns, se implementado. Testar a consistência de uso de bordas e divisores para separar conteúdo visualmente. Validar se o sistema exibe corretamente avatares de placeholder com iniciais caso o usuário não tenha foto. Verificar se o sistema exibe corretamente o status de conectividade (online/offline) no chat de atendimento. Testar a consistência de uso de animações de transição entre páginas ou estados (fade, slide). Validar se o sistema exibe corretamente badges ou contadores de notificação no ícone do sino ou menu. Verificar se o sistema permite o fechamento de modais clicando fora da área de conteúdo (overlay click). Testar a consistência de uso de botões primários, secundários e terciários em toda a interface. Validar se o sistema exibe corretamente mensagens de ajuda ou dicas de contexto em formulários complexos. Verificar se o sistema permite a cópia de informações importantes para a área de transferência (clipboard) com um clique e feedback visual. Testar a consistência de uso de ícones de seta para indicar expansão/colapso de seções. Validar se o sistema exibe corretamente o progresso de etapas em wizards ou fluxos multi-passo. Verificar se o sistema permite a navegação entre campos de formulário usando a tecla Tab na ordem lógica correta. Testar a consistência de uso de placeholders em campos de input para orientar o usuário. Validar se o sistema exibe corretamente mensagens de validação assíncrona (ex: 'Email já cadastrado') sem recarregar a página. Verificar se o sistema permite a seleção múltipla de itens em listas com checkboxes e ações em massa, se aplicável. Testar a consistência de uso de cores de fundo para diferenciar áreas de conteúdo (ex: sidebar mais escura, conteúdo principal mais claro). Validar se o sistema exibe corretamente a hierarquia visual de informações (o que é mais importante deve ter maior destaque). Verificar se o sistema permite a personalização básica de tema (ex: cor de destaque) por tenant, se for um requisito futuro (preparação da arquitetura). Testar a consistência de uso de ícones de status no chat (enviado, entregue, lido) se implementado. Validar se o sistema exibe corretamente a data relativa (ex: 'há 5 minutos', 'ontem') em feeds de atividade ou chat. Verificar se o sistema permite a expansão de imagens ou vídeos em lightbox ao clicar, mantendo o estilo visual. Testar a consistência de uso de feedback tátil (vibração) em dispositivos móveis para interações importantes, se aplicável via PWA. Validar se o sistema exibe corretamente a contagem de caracteres restantes em campos de texto limitados. Verificar se o sistema permite a ordenação de colunas em tabelas clicando no cabeçalho e exibe o indicador de direção (asc/desc). Testar a consistência de uso de menus de contexto (clique direito ou botão de 3 pontos) para ações secundárias. Validar se o sistema exibe corretamente a origem da mensagem no chat (ex: 'Via WhatsApp', 'Via Trello'). Verificar se o sistema permite a busca global (header search) e exibe resultados categorizados e estilizados. Testar a consistência de uso de tags ou etiquetas para categorizar itens (ex: tickets, clientes). Validar se o sistema exibe corretamente a pré-visualização de links (og tags) compartilhados no chat. Verificar se o sistema permite o download de relatórios ou exportações de dados e exibe feedback durante o processamento. Testar a consistência de uso de botões de ação flutuantes (FAB) em telas móveis, se aplicável. Validar se o sistema exibe corretamente a estrutura de árvore (tree view) para departamentos ou categorias hierárquicas. Verificar se o sistema permite a reordenação de itens via drag-and-drop (arrastar e soltar) com feedback visual claro. Testar a consistência de uso de painéis deslizantes (drawers) para detalhes secundários ou formulários rápidos. Validar se o sistema exibe corretamente a comparação de dados (antes/depois) em logs de auditoria visualmente. Verificar se o sistema permite a impressão de etiquetas ou comprovantes diretamente do browser com layout ajustado. Testar a consistência de uso de gráficos de progresso (barras, círculos) para metas ou SLAs. Validar se o sistema exibe corretamente a hierarquia de permissões de usuário visualmente (ex: controles desabilitados para usuários sem permissão). Verificar se o sistema permite a configuração de atalhos rápidos ou favoritos no Dashboard para acesso ágil. Testar a consistência de uso de visualização de grade vs lista para coleções de itens. Validar se o sistema exibe corretamente a pré-visualização de temas ou configurações antes de aplicar as mudanças. Verificar se o sistema permite a restauração de padrões de fábrica em configurações com aviso claro. Testar a consistência de uso de ícones de redes sociais ou canais de comunicação integrados. Validar se o sistema exibe corretamente a contagem de notificações não lidas no título da aba do navegador. Verificar se o sistema permite a navegação rápida para o topo da página (scroll to top) em listas longas. Testar a consistência de uso de separadores visuais (linhas, espaços) para agrupar informações relacionadas. Validar se o sistema exibe corretamente a identificação visual de quem está digitando no chat (typing indicator). Verificar se o sistema permite a fixação de itens importantes (pin) no topo de listas. Testar a consistência de uso de filtros avançados com operadores lógicos visuais. Validar se o sistema exibe corretamente a timeline de eventos ou histórico de ações em ordem cronológica inversa. Verificar se o sistema permite a exportação de dados em formatos comuns (CSV, PDF, Excel) com botões estilizados. Testar a consistência de uso de visualização de calendário para agendamentos ou prazos. Validar se o sistema exibe corretamente a disponibilidade de recursos ou agentes em tempo real (status dots). Verificar se o sistema permite a configuração de notificações sonoras com opções de silenciar visualmente claras. Testar a consistência de uso de mapas ou geolocalização se aplicável a clientes ou entregas. Validar se o sistema exibe corretamente a integração com serviços externos (ex: 'Conectado ao Trello') com status visual. Verificar se o sistema permite a visualização de logs de erro detalhados para administradores em interface amigável. Testar a consistência de uso de assistentes de passo-a-passo (walkthroughs) para introduzir novas funcionalidades aos usuários. Validar se o sistema exibe corretamente a pontuação de satisfação do cliente (CSAT/NPS) com elementos visuais (estrelas, carinhas). Verificar se o sistema permite a customização de dashboards com widgets arrastáveis e redimensionáveis. Testar a consistência de uso de temas sazonais ou comemorativos (se aplicável) sem quebrar a identidade principal. Validar se o sistema exibe corretamente a previsão de tempo de espera ou fila para atendimentos. Verificar se o sistema permite a visualização de dependências entre tarefas ou tickets visualmente. Testar a consistência de uso de visualização Kanban para gestão de fluxo de trabalho. Validar se o sistema exibe corretamente a taxa de conversão ou métricas de performance em funis visuais. Verificar se o sistema permite a anotação ou desenho sobre imagens no chat para destacar pontos de interesse. Testar a consistência de uso de visualização de código ou logs técnicos com syntax highlighting adequado no Dashboard Admin. Validar se o sistema exibe corretamente a estrutura de organização (organograma) se aplicável à gestão de equipes. Verificar se o sistema permite a simulação de cenários (what-if) com feedback visual imediato nos dados. Testar a consistência de uso de visualização de rede ou conexões entre entidades complexas. Validar se o sistema exibe corretamente a tradução de interface (i18n) sem quebrar o layout em idiomas com palavras longas. Verificar se o sistema permite a visualização de histórico de versões de documentos ou registros com diff visual. Testar a consistência de uso de atalhos de gestos (swipe) em dispositivos touch. Validar se o sistema exibe corretamente a densidade de informações ajustável (compacto vs confortável) conforme preferência do usuário. Verificar se o sistema permite a visualização de dados em tempo real (websockets) sem necessidade de refresh manual, com indicadores visuais de atualização. Testar a consistência de uso de botões de 'carregar mais' vs 'scroll infinito' em listas. Validar se o sistema exibe corretamente a visualização de arquivos de áudio com player integrado e waveform visual. Verificar se o sistema permite a edição de texto rico (WYSIWYG) com barra de ferramentas estilizada no chat ou base de conhecimento. Testar a consistência de uso de visualização de galeria para coleções de mídia. Validar se o sistema exibe corretamente a contagem de visualizações ou interações em itens públicos. Verificar se o sistema permite a visualização de metadados técnicos (ex: headers de email, payload JSON) em formatadores visuais colapsáveis para debug. Testar a consistência de uso de visualização de Gantt para cronogramas de projetos ou tarefas. Validar se o sistema exibe corretamente a visualização de mapas de calor (heatmaps) para análise de dados densos. Verificar se o sistema permite a visualização de realidade aumentada (AR) ou 3D se aplicável a produtos, mantendo a UI de controle consistente. Testar a consistência de uso de feedback de voz ou leitura de tela para acessibilidade avançada. Validar se o sistema exibe corretamente a visualização de dados hierárquicos em sunburst ou treemaps. Verificar se o sistema permite a visualização de fluxo de valor ou jornada do cliente em diagramas interativos. Testar a consistência de uso de visualização de radar ou spider charts para comparação multivariada. Validar se o sistema exibe corretamente a visualização de nuvem de palavras (tag cloud) para análise de texto ou feedback. Verificar se o sistema permite a visualização de correlação entre variáveis em scatter plots interativos. Testar a consistência de uso de visualização de box plots para distribuição estatística de dados de atendimento. Validar se o sistema exibe corretamente a visualização de diagramas de Sankey para fluxo de conversão ou movimentação de tickets. Verificar se o sistema permite a visualização de diagramas de cordas para relacionamentos complexos entre entidades. Testar a consistência de uso de visualização de mapas coropléticos para dados geográficos regionais. Validar se o sistema exibe corretamente a visualização de streamgraphs para evolução temporal de categorias. Verificar se o sistema permite a visualização de bullet charts para comparação de performance contra metas. Testar a consistência de uso de visualização de waterfall charts para análise de composição de valores. Validar se o sistema exibe corretamente a visualização de funnel charts para processos lineares de conversão. Verificar se o sistema permite a visualização de candlestick charts para dados financeiros ou de série temporal OHLC. Testar a consistência de uso de visualização de gauge charts para indicadores únicos de performance (KPIs). Validar se o sistema exibe corretamente a visualização de polar area charts para dados cíclicos ou sazonais. Verificar se o sistema permite a visualização de bubble charts para dados tridimensionais em plano 2D. Testar a consistência de uso de visualização de error bars em gráficos para indicar incerteza ou variabilidade. Validar se o sistema exibe corretamente a visualização de combined charts (barras + linhas) para dados heterogêneos. Verificar se o sistema permite a visualização de sparklines para tendências simples em tabelas ou cards de resumo. Testar a consistência de uso de visualização de kagi charts, renko ou point and figure para análise técnica de dados de mercado, se aplicável. Validar se o sistema exibe corretamente a visualização de marimekko charts para dados de mercado ou segmentação complexa. Verificar se o sistema permite a visualização de pareto charts para análise de frequência de problemas (80/20). Testar a consistência de uso de visualização de control charts para monitoramento de estabilidade de processos de atendimento. Validar se o sistema exibe corretamente a visualização de dot plots para distribuição de dados discretos. Verificar se o sistema permite a visualização de pyramid charts para dados demográficos ou hierárquicos invertidos. Testar a consistência de uso de visualização de slope charts para comparação de mudança entre dois pontos no tempo. Validar se o sistema exibe corretamente a visualização de dumbell plots para comparação de range ou gap entre grupos. Verificar se o sistema permite a visualização de lollipop charts como alternativa a barras para dados numéricos. Testar a consistência de uso de visualização de radial bar charts para progresso circular ou dados comparativos em escala radial. Validar se o sistema exibe corretamente a visualização de parallel coordinates para dados multidimensionais complexos. Verificar se o sistema permite a visualização de alluvial diagrams para fluxo estrutural e mudanças ao longo do tempo. Testar a consistência de uso de visualização de voronoi diagrams para partição espacial de dados. Validar se o sistema exibe corretamente a visualização de hexbin plots para densidade de pontos em mapas ou planos 2D. Verificar se o sistema permite a visualização de contour plots para superfícies tridimensionais em representação 2D. Testar a consistência de uso de visualização de ternary plots para composição de três variáveis que somam uma constante. Validar se o sistema exibe corretamente a visualização de sociograms para análise de redes sociais ou interações de equipe. Verificar se o sistema permite a visualização de dendrograms para classificação hierárquica ou clustering de dados. Testar a consistência de uso de visualização de circle packing para hierarquias de inclusão em formato circular. Validar se o sistema exibe corretamente a visualização de icicle charts como alternativa linear a treemaps para hierarquias. Verificar se o sistema permite a visualização de adjacency matrices para redes densas onde diagramas de nós e links são confusos. Testar a consistência de uso de visualização de arc diagrams para conexões lineares em sequências de dados. Validar se o sistema exibe corretamente a visualização de chord diagrams para fluxos entre entidades em um layout circular. Verificar se o sistema permite a visualização de hive plots para redes complexas com eixos definidos estruturalmente. Testar a consistência de uso de visualização de non-ribbon chord diagrams para ênfase em conexões sem volume de fluxo. Validar se o sistema exibe corretamente a visualização de biplots para análise de componentes principais (PCA) em dados multivariados. Verificar se o sistema permite a visualização de qq plots para comparação de distribuições de probabilidade. Testar a consistência de uso de visualização de p-p plots para análise de aderência a distribuições teóricas. Validar se o sistema exibe corretamente a visualização de stem-and-leaf plots para análise exploratória de dados pequenos. Verificar se o sistema permite a visualização de chernoff faces para representação multivariada em glifos faciais (uso raro mas possível). Testar a consistência de uso de visualização de star plots ou radar charts para perfil de performance multivariada. Validar se o sistema exibe corretamente a visualização de nightingale rose charts para dados cíclicos com variação de magnitude. Verificar se o sistema permite a visualização de wind rose charts para dados direcionais e de frequência. Testar a consistência de uso de visualização de horizon charts para séries temporais densas em espaço vertical reduzido. Validar se o sistema exibe corretamente a visualização de bump charts para ranking e mudanças de posição ao longo do tempo. Verificar se o sistema permite a visualização de streamgraphs para evolução de temas ou tópicos em grandes volumes de texto ou dados temporais.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Arquitetura de Templates Base",
+            "description": "Refatorar a estrutura de herança dos templates HTML para suportar layouts distintos para áreas públicas e privadas.",
+            "dependencies": [],
+            "details": "1. Simplificar `base.html` para conter apenas o esqueleto mínimo (load static, html tag, head com meta tags comuns, body tag vazia de estrutura). 2. Criar `base_public.html` herdando de base.html: incluir Navbar transparente/sticky e Footer público. 3. Criar `base_dashboard.html` herdando de base.html: incluir Sidebar, Navbar de app e estrutura de grid para o painel administrativo.",
+            "status": "done",
+            "testStrategy": "Verificar se os novos arquivos base existem e se renderizam blocos de conteúdo corretamente.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:01:17.041Z"
+          },
+          {
+            "id": 2,
+            "title": "Configuração de Rotas e Views (Public vs Private)",
+            "description": "Ajustar o roteamento do Django para separar a Landing Page do Dashboard e configurar redirecionamentos de autenticação.",
+            "dependencies": [
+              1
+            ],
+            "details": "1. Criar `LandingPageView` (TemplateView) mapeada para a raiz `/`. 2. Implementar lógica na LandingPageView: se `request.user.is_authenticated`, redirecionar para `/dashboard`. 3. Renomear a view atual `home` para `dashboard` e mapear para a rota `/dashboard/`. 4. Adicionar decorador `@login_required` na view `dashboard`. 5. Atualizar `settings.py`: definir `LOGIN_REDIRECT_URL = '/dashboard/'` e `LOGOUT_REDIRECT_URL = '/'`.",
+            "status": "done",
+            "testStrategy": "Testar acesso à raiz deslogado (vê LP) e logado (redireciona Dashboard). Testar acesso direto ao /dashboard deslogado (redireciona login).",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:04:23.855Z"
+          },
+          {
+            "id": 3,
+            "title": "Implementação da Landing Page (Hero e Video)",
+            "description": "Desenvolver a seção Hero da Landing Page seguindo as definições visuais e de conteúdo.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "Conteúdo baseado em `docs_dev/planejamento/funcionalidades/apresentacao.md`. 1. Headline: 'A Inteligência Central do Seu Negócio'. 2. Subheadline descritiva. 3. CTA com cor primária #a98f71. 4. Embed do vídeo YouTube (https://youtu.be/jJN4SsMhxdg) em container responsivo. Design System: Utilizar classes Tailwind com cores personalizadas (configurar tailwind.config.js se necessário para Gold #a98f71, Stone-50, Stone-900).",
+            "status": "done",
+            "testStrategy": "Verificar responsividade do vídeo e contraste de cores do CTA.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:04:41.611Z"
+          },
+          {
+            "id": 4,
+            "title": "Seções Informativas da Landing Page",
+            "description": "Implementar as seções de benefícios, funcionalidades e funcionamento.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Seção 'Por Que Escolher': Grid com 4 cards (Centralização, Atendimento Híbrido, Organização Visual, 24/7). 2. Seção 'Funcionalidades': Grid com 5 cards (IA RAG, Gestão Trello, Gestão Operacional, Omnichannel WhatsApp, Painel Admin). 3. Seção 'Como Funciona': Timeline vertical ou horizontal com 5 passos. 4. Footer completo com links e copyright.",
+            "status": "pending",
+            "testStrategy": "Validar layout em mobile e desktop. Verificar ortografia conforme MD de referência.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Configuração do Frontend Assets e Design System",
+            "description": "Configurar a estrutura de arquivos estáticos e o framework CSS, definindo as variáveis de cores e tipografia do Design System.",
+            "dependencies": [],
+            "details": "Instalar e configurar Tailwind CSS (ou framework escolhido). Criar arquivo `base.css`. Definir paleta de cores 'Gold' e 'Stone' no arquivo de configuração do tema. Configurar pipeline de build dos assets estáticos no Django (`STATICFILES_DIRS`).",
+            "status": "done",
+            "testStrategy": "Verificar se o arquivo CSS compilado contém as variáveis de cor corretas e se é carregado corretamente pelo servidor de desenvolvimento do Django.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:04:59.062Z"
+          },
+          {
+            "id": 6,
+            "title": "Arquitetura de Templates Base (Herança)",
+            "description": "Criar a hierarquia de templates Django para separar layouts públicos e privados.",
+            "dependencies": [
+              5
+            ],
+            "details": "Criar `templates/base.html` (com meta tags e scripts comuns). Criar `templates/layouts/public_base.html` (para Landing Page/Login). Criar `templates/layouts/dashboard_base.html` (para área logada). Implementar blocos `{% block content %}` e `{% block extra_css %}`.",
+            "status": "done",
+            "testStrategy": "Renderizar uma view simples estendendo cada base para garantir que a herança e os blocos estáticos funcionam.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:05:16.055Z"
+          },
+          {
+            "id": 7,
+            "title": "Componentização de UI do Design System",
+            "description": "Desenvolver componentes reutilizáveis (botões, cards, alertas) seguindo a identidade visual.",
+            "dependencies": [
+              5
+            ],
+            "details": "Criar partials em `templates/components/`: `button.html`, `card.html`, `alert.html`, `input.html`. Aplicar classes utilitárias para garantir consistência visual (borda arredondada, sombras suaves, cores Gold/Stone) em todos os elementos de formulário.",
+            "status": "done",
+            "testStrategy": "Criar uma página de 'Styleguide' temporária para visualizar todos os componentes renderizados isoladamente.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:05:32.086Z"
+          },
+          {
+            "id": 8,
+            "title": "Implementação da Landing Page (Área Pública)",
+            "description": "Desenvolver a página inicial pública com apresentação do produto e chamadas para ação (CTA).",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "Criar view `HomeView`. Implementar template `landing_page.html` estendendo `public_base.html`. Seções: Hero (Headline + CTA Login), Features (Grid de ícones), Footer. Garantir responsividade mobile-first.",
+            "status": "done",
+            "testStrategy": "Testar responsividade em viewport mobile (375px) e desktop (1366px). Validar links de CTA.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:05:49.942Z"
+          },
+          {
+            "id": 9,
+            "title": "Estilização das Telas de Autenticação",
+            "description": "Aplicar o novo Design System às telas de Login, Logout e Recuperação de Senha padrão do Django.",
+            "dependencies": [
+              6,
+              7
+            ],
+            "details": "Sobrescrever templates do `django.contrib.auth`: `registration/login.html` e `registration/logged_out.html`. Utilizar `public_base.html`. Estilizar formulários com classes do componente de Input criado anteriormente. Adicionar branding (logo).",
+            "status": "done",
+            "testStrategy": "Realizar fluxo de login com sucesso e falha. Verificar mensagens de erro de validação estilizadas.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:01:34.237Z"
+          },
+          {
+            "id": 10,
+            "title": "Estrutura do Dashboard (Sidebar e Navbar)",
+            "description": "Implementar a navegação principal da área privada, incluindo Sidebar lateral e Topbar.",
+            "dependencies": [
+              6
+            ],
+            "details": "No `dashboard_base.html`, implementar Sidebar colapsável contendo links para: Home, Atendimentos, Clientes, Configurações. Implementar Topbar com menu de usuário (Avatar + Logout). Garantir estado ativo do menu baseado na URL atual.",
+            "status": "done",
+            "testStrategy": "Navegar entre rotas simuladas e verificar se o item do menu correspondente está destacado (active state).",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:01:34.309Z"
+          },
+          {
+            "id": 11,
+            "title": "Dashboard Home e Widgets de Métricas",
+            "description": "Criar a view inicial do Dashboard exibindo métricas resumidas dos atendimentos.",
+            "dependencies": [
+              10
+            ],
+            "details": "Criar view `DashboardView`. Consultar modelos `Attendance` e `Customer` para obter contadores: Tickets Abertos, Tickets Pendentes, Novos Clientes. Exibir dados em Cards estilizados na grid principal.",
+            "status": "done",
+            "testStrategy": "Popular banco com dados fictícios e verificar se os números nos widgets correspondem aos registros no banco.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:06:23.550Z"
+          },
+          {
+            "id": 12,
+            "title": "View de Listagem de Atendimentos (Tickets)",
+            "description": "Implementar interface tabular para listar, filtrar e ordenar atendimentos.",
+            "dependencies": [
+              10
+            ],
+            "details": "Criar template `attendance_list.html`. Utilizar tabela estilizada com colunas: ID, Cliente, Status (Badge colorido), Departamento, Data. Adicionar paginação e filtro simples por status. Linkar cada linha à view de detalhes.",
+            "status": "done",
+            "testStrategy": "Verificar renderização de lista com paginação (ex: 50 itens). Testar funcionamento dos filtros de status.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:06:41.615Z"
+          },
+          {
+            "id": 13,
+            "title": "Interface de Detalhes do Atendimento (Chat UI)",
+            "description": "Criar interface estilo chat para visualizar o histórico de mensagens de um atendimento.",
+            "dependencies": [
+              12
+            ],
+            "details": "Criar template `attendance_detail.html`. Dividir tela em: Info Cliente (lateral/topo) e Area de Chat. Renderizar mensagens do model `Message` diferenciando alinhamento (Esquerda=Cliente, Direita=Sistema/Atendente). Integrar formulário de resposta.",
+            "status": "done",
+            "testStrategy": "Visualizar atendimento com mensagens mistas (texto/mídia). Verificar scroll automático para última mensagem.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:06:59.594Z"
+          },
+          {
+            "id": 14,
+            "title": "Páginas de Erro e Polimento Final",
+            "description": "Implementar páginas de erro personalizadas e ajustes finais de UI/UX.",
+            "dependencies": [
+              6,
+              8
+            ],
+            "details": "Criar templates para erros 404 e 500 seguindo a identidade visual (`public_base.html`). Adicionar Favicon. Revisar títulos das páginas (`<title>`) dinâmicos. Verificar contrastes de acessibilidade nas cores Gold/Stone.",
+            "status": "done",
+            "testStrategy": "Forçar erro 404 acessando URL inexistente e validar renderização do template customizado.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T22:07:18.121Z"
+          }
+        ],
+        "updatedAt": "2026-01-03T22:07:18.121Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-03T20:17:46.182Z",
-      "taskCount": 45,
-      "completedCount": 31,
+      "lastModified": "2026-01-03T22:07:18.127Z",
+      "taskCount": 46,
+      "completedCount": 29,
       "tags": [
         "master"
       ]

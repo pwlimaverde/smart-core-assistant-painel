@@ -34,7 +34,8 @@ import smart_core_assistant_painel.app.ui.clientes.tenant_admin  # noqa
 import smart_core_assistant_painel.app.trello_sync.tenant_admin  # noqa
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path("", views.LandingPageView.as_view(), name="landing"),
+    path("dashboard/", views.dashboard, name="dashboard"),
     path("health/", views.health_check, name="health_check"),
     path("admin/", admin.site.urls),
     path("tenant-admin/", tenant_admin_site.urls),

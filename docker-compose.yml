@@ -192,8 +192,10 @@ services:
     container_name: smartcoreassistant_tunnel
     restart: unless-stopped
     command: tunnel run --protocol ${CLOUDFLARE_TUNNEL_PROTOCOL:-http2}
+    env_file:
+      - .env
     environment:
-      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?Defina CLOUDFLARE_TUNNEL_TOKEN no .env}
     depends_on:
       django_app:
         condition: service_started

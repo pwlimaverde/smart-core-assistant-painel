@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     # Import apenas para type hints, evitando ciclo de import em runtime
     from smart_core_assistant_painel.app.ui.operacional.models import (
         Departamento,
+        EtapaFluxo,
     )
 
 
@@ -480,17 +481,24 @@ class Atendimento(models.Model):
             # Agendar task de verificação de timeout (5 minutos)
             try:
                 # 5 minutos = 300 segundos
-                from django.utils import timezone
                 from datetime import timedelta
-                from django_q.tasks import schedule
+                from django.utils import timezone
+
+                from smart_core_assistant_painel.app.ui.atendimentos.tasks import (
+                    verificar_feedback_atendimento,
+                )
+                from smart_core_assistant_painel.app.tenants.tenant_context import (
+                    get_current_tenant_slug,
+                )
 
                 run_at = timezone.now() + timedelta(minutes=5)
 
-                schedule(
-                    "smart_core_assistant_painel.app.ui.atendimentos.tasks.verificar_feedback_atendimento",
-                    self.id,
-                    schedule_type="O",  # O = Once
-                    next_run=run_at,
+                verificar_feedback_atendimento.apply_async(
+                    args=[get_current_tenant_slug(), self.id],
+                    eta=run_at,
+                )
+                logger.info(
+                    f"Task de timeout de feedback agendada para {run_at}"
                 )
                 logger.info(
                     f"Task de timeout de feedback agendada para {run_at}"
@@ -1109,6 +1117,137 @@ class Mensagem(models.Model):
             f"(atendimento {self.atendimento_id}) com confianca={conf:.3f}. "
             f"Aguardando envio via Evolution API."
         )
+
+
+class MovimentoFluxo(models.Model):
+    """
+    Registra a movimentacao de um atendimento entre as etapas do fluxo.
+    Mantem historico completo para auditoria e analise.
+    """
+
+    id: models.AutoField = models.AutoField(primary_key=True)
+    atendimento: models.ForeignKey["Atendimento"] = models.ForeignKey(
+        "Atendimento",
+        on_delete=models.CASCADE,
+        related_name="movimentos_fluxo",
+        help_text="Atendimento que foi movido",
+    )
+    etapa_origem: models.ForeignKey["EtapaFluxo"] = models.ForeignKey(
+        "operacional.EtapaFluxo",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_saida",
+        help_text="Etapa de origem (None para novos atendimentos)",
+    )
+    etapa_destino: models.ForeignKey["EtapaFluxo"] = models.ForeignKey(
+        "operacional.EtapaFluxo",
+        on_delete=models.CASCADE,
+        related_name="movimentos_entrada",
+        help_text="Etapa para a qual o atendimento foi movido",
+    )
+    atendente_origem: models.ForeignKey[Atendente] = models.ForeignKey(
+        "operacional.Atendente",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_origem",
+        help_text="Atendente que realizou o movimento (se aplicavel)",
+    )
+    atendente_destino: models.ForeignKey[Atendente] = models.ForeignKey(
+        "operacional.Atendente",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="movimentos_destino",
+        help_text="Atendente que foi atribuido ao atendimento (se aplicavel)",
+    )
+    motivo: models.TextField[str | None] = models.TextField(
+        blank=True, null=True, help_text="Motivo da movimentacao (opcional)"
+    )
+    dados_complementares: models.JSONField[dict[str, Any]] = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Dados complementares sobre a movimentacao",
+    )
+    automatico: models.BooleanField[bool] = models.BooleanField(
+        default=False, help_text="Indica se o movimento foi automatico"
+    )
+    data_movimento: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True, help_text="Data e hora da movimentacao"
+    )
+    duracao_segundos: models.PositiveIntegerField[int | None] = (
+        models.PositiveIntegerField(
+            blank=True,
+            null=True,
+            help_text="Duracao em segundos da etapa anterior (para calculos de SLA)",
+        )
+    )
+
+    class Meta:
+        verbose_name = "Movimento do Fluxo"
+        verbose_name_plural = "Movimentos do Fluxo"
+        db_table = "oraculo_movimento_fluxo"
+        ordering = ["-data_movimento"]
+        indexes = [
+            models.Index(fields=["atendimento", "-data_movimento"]),
+            models.Index(fields=["etapa_destino", "-data_movimento"]),
+            models.Index(fields=["data_movimento"]),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        origem = self.etapa_origem.nome if self.etapa_origem else "Novo"
+        destino = (
+            self.etapa_destino.nome if self.etapa_destino else "Desconhecido"
+        )
+        return f"{self.atendimento.id}: {origem} → {destino}"
+
+    @classmethod
+    def criar_movimento(
+        cls,
+        atendimento: "Atendimento",
+        etapa_destino: "EtapaFluxo",
+        atendente_destino: Optional[Atendente] = None,
+        motivo: Optional[str] = None,
+        automatico: bool = False,
+        atendente_origem: Optional[Atendente] = None,
+        etapa_origem: Optional["EtapaFluxo"] = None,
+    ) -> "MovimentoFluxo":
+        duracao_segundos = None
+        if not etapa_origem:
+            ultimo_movimento = atendimento.movimentos_fluxo.first()
+            if ultimo_movimento:
+                etapa_origem = ultimo_movimento.etapa_destino
+                agora = timezone.now()
+                if ultimo_movimento.data_movimento:
+                    duracao_segundos = int(
+                        (
+                            agora - ultimo_movimento.data_movimento
+                        ).total_seconds()
+                    )
+
+        movimento = cls.objects.create(
+            atendimento=atendimento,
+            etapa_origem=etapa_origem,
+            etapa_destino=etapa_destino,
+            atendente_origem=atendente_origem,
+            atendente_destino=atendente_destino,
+            motivo=motivo,
+            automatico=automatico,
+            duracao_segundos=duracao_segundos,
+        )
+
+        atendimento.etapa_atual = etapa_destino
+
+        if atendente_destino:
+            atendimento.atendente_humano = atendente_destino
+            atendente_destino.data_ultima_atribuicao = timezone.now()
+            atendente_destino.save(update_fields=["data_ultima_atribuicao"])
+
+        atendimento.save(update_fields=["etapa_atual", "atendente_humano"])
+
+        return movimento
 
 
 def inicializar_atendimento_whatsapp(

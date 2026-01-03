@@ -48,18 +48,18 @@ def main():
             return
 
         public_url = f"https://{DOMAIN}"
-        # URL do Webhook (não OAuth)
-        callback_url = f"{public_url}/api/trello_sync/webhook/"
+        # URL base para o webhook (o path com tenant_slug é adicionado pelo código)
+        # Antes salvava o path completo, agora salva apenas a URL base
 
         print(f"\n[OK] Túnel ngrok iniciado.")
         print(f"Porta local: {PORT}")
         print(f"URL pública: {public_url}")
 
-        # 3. Update .env
-        update_env_file(public_url, callback_url)
+        # 3. Update .env com a URL base
+        update_env_file(public_url)
 
         print(f"TRELLO_WEBHOOK_CALLBACK_URL atualizado em .env para:")
-        print(f"{callback_url}")
+        print(f"{public_url}")
         print(
             "CORS_ALLOWED_ORIGINS atualizado para incluir o domínio do ngrok."
         )
@@ -80,7 +80,7 @@ def main():
         print(f"An unexpected error occurred: {e}")
 
 
-def update_env_file(public_url, callback_url):
+def update_env_file(public_url):
     if not ENV_FILE.exists():
         print(f"Warning: {ENV_FILE} not found. Skipping update.")
         return
@@ -94,9 +94,9 @@ def update_env_file(public_url, callback_url):
         cors_updated = False
 
         for line in lines:
-            # Update Webhook URL
+            # Update Webhook URL (agora salva apenas a URL base)
             if line.startswith("TRELLO_WEBHOOK_CALLBACK_URL="):
-                new_lines.append(f"TRELLO_WEBHOOK_CALLBACK_URL={callback_url}")
+                new_lines.append(f"TRELLO_WEBHOOK_CALLBACK_URL={public_url}")
                 trello_updated = True
             # Remove OAuth URL (cleanup)
             elif line.startswith("TRELLO_OAUTH_REDIRECT_URI="):
@@ -118,7 +118,7 @@ def update_env_file(public_url, callback_url):
 
         # Add if missing
         if not trello_updated:
-            new_lines.append(f"TRELLO_WEBHOOK_CALLBACK_URL={callback_url}")
+            new_lines.append(f"TRELLO_WEBHOOK_CALLBACK_URL={public_url}")
 
         if not cors_updated:
             new_lines.append(f"CORS_ALLOWED_ORIGINS={public_url}")

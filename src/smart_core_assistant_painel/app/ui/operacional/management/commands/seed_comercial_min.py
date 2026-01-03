@@ -21,6 +21,7 @@ from django.utils.text import slugify
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
+    MovimentoFluxo,
     StatusAtendimento,
     TipoMensagem,
     TipoRemetente,
@@ -31,7 +32,6 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     Departamento,
     EtapaFluxo,
     FluxoAtendimento,
-    MovimentoFluxo,
     TipoEtapa,
 )
 

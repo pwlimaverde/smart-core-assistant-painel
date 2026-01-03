@@ -1,0 +1,64 @@
+
+======================================================================
+DIAGNOSTICO DE CONFIGURACOES
+======================================================================
+
+[OK] CoreSettings existentes: 24
+[FALTA] CoreSettings faltantes: 1
+[WARN] RuntimeConfig nao mapeados: 0
+[TENANT] Campos TenantConfig: 7
+
+----------------------------------------------------------------------
+[FALTA] CORE SETTINGS FALTANTES (precisam ser criados no banco):
+----------------------------------------------------------------------
+  - valid_entity_types                            (default: None)
+
+----------------------------------------------------------------------
+DETALHES POR TIPO:
+----------------------------------------------------------------------
+
+[API_KEY]
+  HUGGINGFACE_API_KEY                      Core:OK Runtime:OK -> huggingface_api_key
+
+[EMBEDDING]
+  CHUNK_OVERLAP                            Core:OK Runtime:OK -> chunk_overlap
+  CHUNK_SIZE                               Core:OK Runtime:OK -> chunk_size
+  EMBEDDINGS_MODEL                         Core:OK Runtime:OK -> embeddings_model
+  EMBEDDINGS_CLASS                         Core:OK Runtime:OK -> embeddings_class
+
+[LLM]
+  LLM_CLASS                                Core:OK Runtime:OK -> llm_class
+  MODEL                                    Core:OK Runtime:OK -> model
+  LLM_TEMPERATURE                          Core:OK Runtime:OK -> llm_temperature
+
+[MENSAGEM]
+  MSG_FALLBACK_SEM_INFO                    Core:OK Runtime:OK -> msg_fallback_sem_info
+  MSG_FALLBACK_GERAL                       Core:OK Runtime:OK -> msg_fallback_geral
+  MSG_TRANSFERENCIA_GENERICA               Core:OK Runtime:OK -> msg_transferencia_generica
+
+[PROMPT_SISTEMA]
+  PROMPT_SYSTEM_ANALISE_CONTEUDO           Core:OK Runtime:OK -> prompt_system_analise_conteudo
+  PROMPT_HUMAN_ANALISE_CONTEUDO            Core:OK Runtime:OK -> prompt_human_analise_conteudo
+  PROMPT_SYSTEM_MELHORIA_CONTEUDO          Core:OK Runtime:OK -> prompt_system_melhoria_conteudo
+  PROMPT_HUMAN_MELHORIA_CONTEUDO           Core:OK Runtime:OK -> prompt_human_melhoria_conteudo
+  PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM     Core:OK Runtime:OK -> prompt_human_analise_previa_mensagem
+  PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM    Core:OK Runtime:OK -> prompt_system_analise_previa_mensagem
+  PROMPT_SYSTEM_ANALISE_MENSAGEM           Core:OK Runtime:OK -> prompt_system_analise_mensagem
+  PROMPT_INTENT_SYSTEM                     Core:OK Runtime:OK -> prompt_intent_system
+  PROMPT_INTENT_FOOTER                     Core:OK Runtime:OK -> prompt_intent_footer
+  PROMPT_TEMPLATE_USER_RAG                 Core:OK Runtime:OK -> prompt_template_user_rag
+
+[PROMPT_TENANT]
+  PROMPT_SYSTEM_DADOS_EMPRESA              (TenantConfig: dados_empresa)
+  PROMPT_REGRAS_RESPOSTA                   (TenantConfig: regras_resposta)
+  PROMPT_REGRAS_TRANSFERENCIA              (TenantConfig: regras_transferencia)
+
+[THRESHOLD]
+  SIMILARITY_THRESHOLD                     Core:OK Runtime:OK -> similarity_threshold
+  VECTOR_DISTANCE_THRESHOLD                Core:OK Runtime:OK -> vector_distance_threshold
+
+[UTIL]
+  TIME_CACHE                               Core:OK Runtime:OK -> time_cache
+
+[UTIL_TENANT]
+  VALID_ENTITY_TYPES                       Core:FALTA Runtime:OK -> valid_entity_types

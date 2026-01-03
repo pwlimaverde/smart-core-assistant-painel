@@ -6,7 +6,8 @@ from django.db.models import QuerySet
 from .models import EvolutionContact, EvolutionInstance, WhiteList
 
 
-@admin.register(WhiteList)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(WhiteList)
 class WhiteListAdmin(admin.ModelAdmin[WhiteList]):
     list_display = ("name", "phone_number", "active", "created_at")
     search_fields = ("name", "phone_number")
@@ -15,7 +16,8 @@ class WhiteListAdmin(admin.ModelAdmin[WhiteList]):
     readonly_fields = ("created_at",)
 
 
-@admin.register(EvolutionInstance)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(EvolutionInstance)
 class EvolutionInstanceAdmin(admin.ModelAdmin[EvolutionInstance]):
     list_display = (
         "name",
@@ -31,7 +33,8 @@ class EvolutionInstanceAdmin(admin.ModelAdmin[EvolutionInstance]):
     readonly_fields = ("created_at",)
 
 
-@admin.register(EvolutionContact)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(EvolutionContact)
 class EvolutionContactAdmin(admin.ModelAdmin[EvolutionContact]):
     list_display = (
         "contact",

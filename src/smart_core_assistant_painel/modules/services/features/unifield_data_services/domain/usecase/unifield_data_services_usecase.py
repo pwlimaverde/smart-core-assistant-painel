@@ -18,6 +18,7 @@ class UnifieldDataServicesUseCase(UDSUsecase):
 
     Esta classe orquestra o acesso aos serviços de dados unificados.
     """
+
     def __call__(
         self, parameters: UnifieldDataServicesParameters
     ) -> ReturnSuccessOrError[UnifiedDataService]:

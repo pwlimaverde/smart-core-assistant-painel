@@ -13,7 +13,8 @@ from django.http import HttpRequest
 from .models import Documento, QueryCompose, Treinamento
 
 
-@admin.register(Treinamento)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Treinamento)
 class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
     """Admin para o modelo Treinamento."""
 
@@ -181,7 +182,8 @@ class TreinamentoAdmin(admin.ModelAdmin[Treinamento]):
         )
 
 
-@admin.register(Documento)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Documento)
 class DocumentoAdmin(admin.ModelAdmin[Documento]):
     """Admin para o modelo Documento."""
 
@@ -321,7 +323,8 @@ class DocumentoAdmin(admin.ModelAdmin[Documento]):
             return f"Erro: {type(e).__name__}"
 
 
-@admin.register(QueryCompose)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(QueryCompose)
 class QueryComposeAdmin(admin.ModelAdmin[QueryCompose]):
     """Admin para o modelo QueryCompose."""
 

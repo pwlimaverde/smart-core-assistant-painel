@@ -1,0 +1,139 @@
+{% extends "tenants/base_tenants.html" %}
+
+{% block title %}Configuração - Banco de Dados{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; width: 100%;">
+    <div style="margin-bottom: 2rem;">
+        <a href="{% url 'tenants:dashboard' %}"
+            style="display: inline-flex; align-items: center; color: var(--text-secondary); font-size: 0.9rem;">
+            ← Voltar para Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-bottom: 2rem;">Configuração do Banco de Dados</h2>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small style="color: var(--text-secondary); display: block; margin-top: 5px;">{{ field.help_text
+                    }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <div style="display: flex; gap: 10px; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Configurações</button>
+                <a href="{% url 'tenants:dashboard' %}" class="btn btn-ghost"
+                    style="flex: 1; text-align: center;">Cancelar</a>
+            </div>
+        </form>
+
+        <!-- Ações de Teste e Migração -->
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+            <h3 style="margin-bottom: 1rem;">Testar e Aplicar</h3>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <!-- Botão Testar Conexão -->
+                <button type="button" id="btn-test-connection" class="btn btn-ghost" style="flex: 1; min-width: 200px;">
+                    🔌 Testar Conexão
+                </button>
+
+                <!-- Botão Executar Migrations -->
+                <button type="button" id="btn-run-migrations" class="btn btn-primary"
+                    style="flex: 1; min-width: 200px;">
+                    🚀 Executar Migrations
+                </button>
+            </div>
+
+            <!-- Área de Resultado -->
+            <div id="result-area" style="margin-top: 1rem; padding: 1rem; border-radius: 8px; display: none;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const testBtn = document.getElementById('btn-test-connection');
+        const migrateBtn = document.getElementById('btn-run-migrations');
+        const resultArea = document.getElementById('result-area');
+
+        function showResult(success, message) {
+            resultArea.style.display = 'block';
+            resultArea.style.background = success ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+            resultArea.style.color = success ? 'var(--success)' : 'var(--error)';
+            resultArea.textContent = message;
+        }
+
+        testBtn.addEventListener('click', function () {
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Testando...';
+
+            fetch('{% url "tenants:test_connection" "database" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    showResult(data.success, data.message);
+                    testBtn.disabled = false;
+                    testBtn.textContent = '🔌 Testar Conexão';
+                })
+                .catch(err => {
+                    showResult(false, 'Erro ao testar conexão: ' + err);
+                    testBtn.disabled = false;
+                    testBtn.textContent = '🔌 Testar Conexão';
+                });
+        });
+
+        migrateBtn.addEventListener('click', function () {
+            if (!confirm('Isso irá aplicar todas as migrações pendentes no banco de dados. Continuar?')) {
+                return;
+            }
+
+            migrateBtn.disabled = true;
+            migrateBtn.textContent = '⏳ Executando...';
+
+            fetch('{% url "tenants:run_migrations" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    showResult(data.success, data.message);
+                    migrateBtn.disabled = false;
+                    migrateBtn.textContent = '🚀 Executar Migrations';
+                })
+                .catch(err => {
+                    showResult(false, 'Erro ao executar migrations: ' + err);
+                    migrateBtn.disabled = false;
+                    migrateBtn.textContent = '🚀 Executar Migrations';
+                });
+        });
+    });
+</script>
+{% endblock %}

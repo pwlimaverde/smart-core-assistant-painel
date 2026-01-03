@@ -1,0 +1,207 @@
+version: '3.8'
+
+services:
+  # ============================================
+  # PostgreSQL Core (Metadados SaaS)
+  # ============================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: smartcoreassistant_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    ports:
+      - "${POSTGRES_PUBLISH_PORT:-5438}:5432"
+    volumes:
+      - postgres_core_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Redis Core (Cache & Queues)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: smartcoreassistant_redis
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PUBLISH_PORT:-6384}:6379"
+    volumes:
+      - redis_core_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Django App (Aplicação Principal)
+  # ============================================
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartcoreassistant_migrate
+    command: python -m smart_core_assistant_painel.app.ui.manage migrate
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: "no"
+
+  django_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartcoreassistant_app
+    command: >
+      python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000
+    volumes:
+      - static_files:/app/src/smart_core_assistant_painel/app/ui/staticfiles
+      - media_files:/app/src/smart_core_assistant_painel/app/media
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  # ============================================
+  # Celery Worker (Processamento Assíncrono)
+  # ============================================
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartcoreassistant_celery_worker
+    command: >
+      celery -A smart_core_assistant_painel.app.ui.core worker --loglevel=INFO --concurrency=3 --queues=webhooks,ai_processing,default --hostname=worker@%h
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
+    volumes: []
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      django_app:
+        condition: service_started
+    restart: unless-stopped
+    # Limita recursos para evitar OOM
+    deploy:
+      resources:
+        limits:
+          memory: 1536M
+
+  # ============================================
+  # Celery Beat (Scheduler de Tasks Periódicas)
+  # ============================================
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smartcoreassistant_celery_beat
+    command: >
+      celery -A smart_core_assistant_painel.app.ui.core beat --loglevel=INFO --scheduler=django_celery_beat.schedulers:DatabaseScheduler
+    env_file:
+      - .env
+    environment:
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
+    volumes: []
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      django_app:
+        condition: service_started
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # ============================================
+  # Flower (OPCIONAL - Apenas para Debug)
+  # ============================================
+  flower:
+    image: mher/flower:2.0
+    container_name: smartcoreassistant_flower
+    profiles:
+      - debug # Só sobe com: docker compose --profile debug up flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
+      - FLOWER_PURGE_OFFLINE_WORKERS=60
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # ============================================
+  # Cloudflare Tunnel
+  # ============================================
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: smartcoreassistant_tunnel
+    restart: unless-stopped
+    command: tunnel run --protocol ${CLOUDFLARE_TUNNEL_PROTOCOL:-http2}
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    depends_on:
+      django_app:
+        condition: service_started
+
+volumes:
+  postgres_core_data:
+  redis_core_data:
+  static_files:
+  media_files:
+
+

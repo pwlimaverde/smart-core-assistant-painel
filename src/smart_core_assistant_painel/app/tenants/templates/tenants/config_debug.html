@@ -1,0 +1,302 @@
+{% extends "tenants/base_tenants.html" %}
+
+{% block title %}Debug de Configurações - {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+            <h2>🔧 Debug de Configurações</h2>
+            <p style="color: var(--text-secondary);">
+                Visualização das configurações carregadas para o tenant <strong>
+                    {{ tenant.slug }}
+                </strong>
+            </p>
+        </div>
+        <a href="{% url 'tenants:dashboard' %}" class="btn btn-ghost">← Voltar</a>
+    </div>
+</div>
+
+{% if not config_loaded %}
+<div class="card" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--error);">
+    <h3 style="color: var(--error);">❌ Erro</h3>
+    <p>
+        {{ error }}
+    </p>
+</div>
+{% else %}
+
+<!-- =================================================================== -->
+<!-- SEÇÃO 1: CONFIGURAÇÕES DO TENANT (Editáveis pelo Cliente)           -->
+<!-- =================================================================== -->
+
+<div style="margin-bottom: 2rem;">
+    <h2
+        style="color: var(--accent-primary); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--accent-primary);">
+        👤 Configurações do Tenant
+        <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);"> — Editáveis pelo
+            cliente</span>
+    </h2>
+
+    <!-- Prompts do Tenant -->
+    <div class="card" style="margin-bottom: 1.5rem; border: 2px solid var(--accent-primary);">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            ✏️ Prompts Personalizados
+        </h3>
+        {% for key, value in tenant_prompts.items %}
+        <div style="margin-bottom: 1rem;">
+            <label
+                style="display: block; font-family: monospace; color: var(--accent-primary); font-size: 0.85rem; margin-bottom: 0.25rem;">
+                {{ key }}
+            </label>
+            <div
+                style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; white-space: pre-wrap; max-height: 200px; overflow: auto;">
+                {% if value %}
+                {{ value }}
+                {% else %}
+                <em style="color: var(--text-secondary);">(não configurado)</em>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Mensagens do Tenant -->
+    <div class="card" style="margin-bottom: 1.5rem; border: 2px solid var(--accent-primary);">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            💬 Mensagens Automáticas
+        </h3>
+        {% for key, value in tenant_mensagens.items %}
+        <div style="margin-bottom: 1rem;">
+            <label
+                style="display: block; font-family: monospace; color: var(--accent-primary); font-size: 0.85rem; margin-bottom: 0.25rem;">
+                {{ key }}
+            </label>
+            <div style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; font-size: 0.9rem;">
+                {% if value %}
+                {{ value }}
+                {% else %}
+                <em style="color: var(--text-secondary);">(não configurado)</em>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Extração de Entidades do Tenant -->
+    <div class="card" style="margin-bottom: 1.5rem; border: 2px solid var(--accent-primary);">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            🔍 Extração de Entidades
+        </h3>
+        {% for key, value in tenant_entidades.items %}
+        <div style="margin-bottom: 1rem;">
+            <label
+                style="display: block; font-family: monospace; color: var(--accent-primary); font-size: 0.85rem; margin-bottom: 0.25rem;">
+                {{ key }}
+            </label>
+            <div
+                style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; white-space: pre-wrap; max-height: 300px; overflow: auto; font-family: monospace;">
+                {% if value %}
+                {{ value }}
+                {% else %}
+                <em style="color: var(--text-secondary);">(não configurado - defina em Configuração de IA)</em>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Configurações Avançadas de LLM (Admin) -->
+    <div class="card"
+        style="margin-bottom: 1.5rem; border: 2px solid var(--warning); background: rgba(251, 191, 36, 0.05);">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            🔧 Configurações Avançadas (LLM)
+            <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);"> — Configurado via
+                Admin</span>
+        </h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                {% for key, value in tenant_llm_custom.items %}
+                <tr>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace; color: var(--accent-primary); width: 30%;">
+                        {{ key }}
+                    </td>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace;">
+                        {{ value }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--text-secondary);">
+            {% if tenant_has_custom_api_keys %}
+            <span style="color: var(--success);">✓ API Keys personalizadas configuradas</span>
+            {% else %}
+            <span>✗ Usando API Keys globais (CoreSettings)</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- SEÇÃO 2: CONFIGURAÇÕES DO CORE (Globais - Somente Leitura)          -->
+<!-- =================================================================== -->
+
+<div style="margin-bottom: 2rem;">
+    <h2
+        style="color: var(--text-secondary); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">
+        ⚙️ Configurações do Core
+        <span style="font-size: 0.8rem; font-weight: normal;"> — Globais (somente leitura)</span>
+    </h2>
+
+    <!-- API Keys -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            🔑 API Keys
+        </h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05);">
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Chave</th>
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in core_api_keys.items %}
+                <tr>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace; color: var(--text-secondary);">
+                        {{ key }}
+                    </td>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace;">
+                        {{ value }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- LLM Settings -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            🤖 Configurações de LLM
+        </h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05);">
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Configuração
+                    </th>
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in core_llm.items %}
+                <tr>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace; color: var(--text-secondary);">
+                        {{ key }}
+                    </td>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace;">
+                        {{ value|default:"(vazio)" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Embeddings -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            📊 Configurações de Embeddings
+        </h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05);">
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Configuração
+                    </th>
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in core_embeddings.items %}
+                <tr>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace; color: var(--text-secondary);">
+                        {{ key }}
+                    </td>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace;">
+                        {{ value|default:"(vazio)" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Thresholds -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            📏 Limiares e Thresholds
+        </h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: rgba(255,255,255,0.05);">
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Configuração
+                    </th>
+                    <th style="text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border);">Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, value in core_thresholds.items %}
+                <tr>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace; color: var(--text-secondary);">
+                        {{ key }}
+                    </td>
+                    <td
+                        style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); font-family: monospace;">
+                        {{ value }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Prompts do Sistema (Core) -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            📝 Prompts do Sistema
+            <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-secondary);"> — Gerenciados pelo
+                Core</span>
+        </h3>
+        <div style="max-height: 500px; overflow-y: auto;">
+            {% for key, value in core_prompts.items %}
+            <div style="margin-bottom: 1rem;">
+                <label
+                    style="display: block; font-family: monospace; color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 0.25rem;">
+                    {{ key }}
+                </label>
+                <div
+                    style="background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; font-size: 0.85rem; white-space: pre-wrap; max-height: 150px; overflow: auto;">
+                    {% if value %}
+                    {{ value|truncatechars:500 }}
+                    {% else %}
+                    <em style="color: var(--text-secondary);">(não configurado)</em>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

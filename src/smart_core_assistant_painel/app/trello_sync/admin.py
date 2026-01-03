@@ -16,7 +16,8 @@ from .models import (
 )
 
 
-@admin.register(TrelloBoard)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(TrelloBoard)
 class TrelloBoardAdmin(admin.ModelAdmin[TrelloBoard]):
     """Admin para o modelo TrelloBoard."""
 
@@ -36,7 +37,8 @@ class TrelloBoardAdmin(admin.ModelAdmin[TrelloBoard]):
     save_on_top = True
 
 
-@admin.register(TrelloList)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(TrelloList)
 class TrelloListAdmin(admin.ModelAdmin[TrelloList]):
     """Admin para o modelo TrelloList."""
 
@@ -61,7 +63,8 @@ class TrelloListAdmin(admin.ModelAdmin[TrelloList]):
     save_on_top = True
 
 
-@admin.register(TrelloCard)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(TrelloCard)
 class TrelloCardAdmin(admin.ModelAdmin[TrelloCard]):
     """Admin para o modelo TrelloCard."""
 
@@ -88,7 +91,8 @@ class TrelloCardAdmin(admin.ModelAdmin[TrelloCard]):
     save_on_top = True
 
 
-@admin.register(TrelloMember)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(TrelloMember)
 class TrelloMemberAdmin(admin.ModelAdmin[TrelloMember]):
     """Admin para o modelo TrelloMember."""
 
@@ -111,7 +115,8 @@ class TrelloMemberAdmin(admin.ModelAdmin[TrelloMember]):
     save_on_top = True
 
 
-@admin.register(TrelloWebhookEvent)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(TrelloWebhookEvent)
 class TrelloWebhookEventAdmin(admin.ModelAdmin[TrelloWebhookEvent]):
     """Admin para o modelo TrelloWebhookEvent."""
 

@@ -24,7 +24,9 @@ dependencies = [
     "djangorestframework>=3.15.2",
     "djangorestframework-simplejwt>=5.3.1",
     "django-picklefield==3.3",
-    "django-q2==1.8.0",
+    "celery[redis]",
+    "django-celery-beat",
+    "django-celery-results",
     "django-role-permissions==3.2.0",
     "docx2txt>=0.9",
     "pgvector>=0.3.0",
@@ -48,6 +50,7 @@ dependencies = [
     "langchain-text-splitters==1.0.0",
     "langchain-xai==1.0.0",
     "langsmith==0.3.45",
+    "loguru>=0.7.3",
     "markdown>=3.8",
     "marshmallow==3.26.1",
     "multidict==6.4.4",
@@ -97,6 +100,8 @@ dependencies = [
     "notion-py-client>=0.1.14",
     "brazilcep>=7.0.1",
     "django-jazzmin>=3.0.0",
+    "cryptography>=46.0.3",
+    "psycopg2-binary>=2.9.11",
 ]
 
 
@@ -106,7 +111,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "loguru>=0.7.3",
     "pyright>=1.1.380",
     "pytest>=8.4.0",
     "pytest-cov>=6.1.1",
@@ -168,12 +172,14 @@ base = "python scripts/new_feature_script.py --type base"
 call-data = "python scripts/new_feature_script.py --type call_data"
 
 # Servidor Django
+# Servidor Django
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
-cluster = "python -m smart_core_assistant_painel.main qcluster"
-start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task cluster'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-clickup' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-clickup' }\""
+celery-worker = "celery -A smart_core_assistant_painel.app.ui.core worker -l info --pool=solo -Q webhooks,ai_processing,default"
+celery-beat = "celery -A smart_core_assistant_painel.app.ui.core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-worker'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-beat'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-trello' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-worker'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-beat'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-trello' }\""
 makemigrations = "python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
 migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
-migrate-remoto = "python scripts/migrar_remoto.py"
+migrate-all = "python src/smart_core_assistant_painel/app/ui/manage.py migrate_all_tenants"
 createsuperuser = "python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
 shell = "python src/smart_core_assistant_painel/app/ui/manage.py shell"
 
@@ -193,6 +199,13 @@ reset-db = "python scripts/database_reset/reset_database.py"
 
 # Callback do Trello via túnel ngrok
 ngrok-trello = "python scripts/trello/ngrok_trello.py"
+
+# Docker
+start-docker = "docker compose up -d"
+restart-docker = "docker compose up -d --build"
+stop-docker = "docker compose down"
+logs-docker = "docker compose logs -f"
+test-docker = "docker compose exec -T django_app pytest"
 
 # Task Master Visualization
 list-tasks = "python scripts/visualize_tasks.py"

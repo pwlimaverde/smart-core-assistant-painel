@@ -3,7 +3,7 @@ from typing import Any, Optional, cast
 
 import requests
 
-from django.db import transaction
+from django.db import router, transaction
 from django.utils import timezone
 from loguru import logger
 
@@ -58,7 +58,7 @@ class TicketSyncService:
         if not atendimento_id:
             return None
 
-        with transaction.atomic():
+        with transaction.atomic(using=router.db_for_write(Atendimento)):
             atendimento_locked = Atendimento.objects.select_for_update().get(
                 id=atendimento_id
             )
@@ -878,6 +878,35 @@ class TicketSyncService:
                 exc,
             )
 
+    def _sync_status_from_etapa(self, atendimento, etapa) -> None:
+        """Sincroniza o status do atendimento com base no tipo da etapa."""
+        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+            StatusAtendimento,
+        )
+        from smart_core_assistant_painel.app.ui.operacional.models import (
+            TipoEtapa,
+        )
+
+        tipo_etapa = getattr(etapa, "tipo_etapa", None)
+        novo_status = None
+
+        if tipo_etapa == TipoEtapa.FILA:
+            novo_status = StatusAtendimento.FILA
+        elif tipo_etapa == TipoEtapa.TRABALHO:
+            novo_status = StatusAtendimento.EM_ATENDIMENTO
+        elif tipo_etapa == TipoEtapa.ESPERA:
+            novo_status = StatusAtendimento.PENDENCIA
+        # FINALIZACAO é tratado separadamente para chamar finalizar_atendimento
+
+        if novo_status and atendimento.status != novo_status:
+            atendimento.status = novo_status
+            atendimento.save(update_fields=["status"])
+            logger.info(
+                "Status do atendimento {} sincronizado para {} via Trello",
+                atendimento.id,
+                novo_status,
+            )
+
     def process_webhook_card_move(
         self, card_id: str, list_after_id: str, member_creator_id: str
     ) -> None:
@@ -931,16 +960,31 @@ class TicketSyncService:
                 nova_etapa.nome,
             )
 
-            with transaction.atomic():
+            with transaction.atomic(using=router.db_for_write(Atendimento)):
+                # Atualiza referência do card
                 # Atualiza referência do card
                 card.list_sync = nova_lista
                 card.save(update_fields=["list_sync"])
 
-                # Atualiza etapa do atendimento
+                # Atualiza etapa do atendimento usando MovimentoFluxo
+                from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                    MovimentoFluxo,
+                )
+
                 # Flag para indicar origem externa (se necessário nos signals)
                 atendimento._syncing_from_trello = True
-                atendimento.etapa_atual = nova_etapa
-                atendimento.save(update_fields=["etapa_atual"])
+
+                # Criar movimento (atualiza etapa_atual e atendente automaticamente)
+                MovimentoFluxo.criar_movimento(
+                    atendimento=atendimento,
+                    etapa_destino=nova_etapa,
+                    atendente_destino=None,
+                    motivo="Atualização via Trello webhook",
+                    automatico=True,
+                )
+
+                # Sincroniza status baseado na nova etapa
+                self._sync_status_from_etapa(atendimento, nova_etapa)
 
                 # --- Lógica de Atribuição de Atendente (FILA -> TRABALHO) ---
                 if (
@@ -974,15 +1018,29 @@ class TicketSyncService:
                             e,
                         )
 
-                # --- Lógica de Finalização (Qualquer -> FINALIZACAO) ---
-                if nova_etapa.tipo_etapa == TipoEtapa.FINALIZACAO:
-                    # Verifica se o status já não é resolvido para evitar duplicidade de feedback
-                    if atendimento.status != StatusAtendimento.RESOLVIDO:
+                # --- Lógica de Finalização (→ FINALIZACAO) ---
+                elif nova_etapa.tipo_etapa == TipoEtapa.FINALIZACAO:
+                    try:
                         logger.info(
-                            "Movimento para etapa 'Finalização' no Trello. Encerrando atendimento {} e solicitando feedback.",
+                            "Movimento para etapa 'Finalização' detectado no Trello. "
+                            "Encerrando atendimento {}.",
                             atendimento.pk,
                         )
-                        atendimento.finalizar_atendimento()
+                        # Determina se foi cancelado baseado no nome da etapa
+                        nome_etapa_lower = nova_etapa.nome.lower()
+                        foi_cancelado = (
+                            "cancelado" in nome_etapa_lower
+                            or "cancel" in nome_etapa_lower
+                        )
+                        # Chama método de finalização que atualiza status e solicita feedback
+                        atendimento.finalizar_atendimento(
+                            cancelado=foi_cancelado
+                        )
+                    except Exception as e:
+                        logger.error(
+                            "Erro ao finalizar atendimento via movimento Trello: {}",
+                            e,
+                        )
 
         except TrelloCard.DoesNotExist:
             logger.warning(

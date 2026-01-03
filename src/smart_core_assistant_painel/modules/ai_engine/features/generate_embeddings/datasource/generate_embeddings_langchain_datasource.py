@@ -65,8 +65,12 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
 
         if embeddings_class == "OpenAIEmbeddings":
             from langchain_openai import OpenAIEmbeddings
+            from pydantic import SecretStr
 
-            return OpenAIEmbeddings(model=embeddings_model)
+            return OpenAIEmbeddings(
+                model=embeddings_model,
+                api_key=SecretStr(SERVICEHUB.OPENAI_API_KEY),
+            )
 
         elif embeddings_class == "OllamaEmbeddings":
             from langchain_ollama import OllamaEmbeddings
@@ -92,7 +96,9 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
         else:
             # Fallback para OpenAI como padrão
             from langchain_openai import OpenAIEmbeddings
+            from pydantic import SecretStr
 
             return OpenAIEmbeddings(
-                model=embeddings_model or "text-embedding-ada-002"
+                model=embeddings_model or "text-embedding-3-small",
+                api_key=SecretStr(SERVICEHUB.OPENAI_API_KEY),
             )

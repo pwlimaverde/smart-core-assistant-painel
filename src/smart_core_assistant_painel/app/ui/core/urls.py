@@ -19,12 +19,29 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import include, path
 
+
 from . import views
+from smart_core_assistant_painel.app.tenants.admin_client import (
+    tenant_admin_site,
+)
+
+# Importar registros do Tenant Admin (Auto-discovery manual)
+import smart_core_assistant_painel.app.ui.operacional.tenant_admin  # noqa
+import smart_core_assistant_painel.app.evolution_sync.tenant_admin  # noqa
+import smart_core_assistant_painel.app.ui.treinamento.tenant_admin  # noqa
+import smart_core_assistant_painel.app.ui.atendimentos.tenant_admin  # noqa
+import smart_core_assistant_painel.app.ui.clientes.tenant_admin  # noqa
+import smart_core_assistant_painel.app.trello_sync.tenant_admin  # noqa
 
 urlpatterns = [
     path("", views.home, name="home"),
     path("health/", views.health_check, name="health_check"),
     path("admin/", admin.site.urls),
+    path("tenant-admin/", tenant_admin_site.urls),
+    path(
+        "tenants/",
+        include("smart_core_assistant_painel.app.tenants.urls"),
+    ),
     # Integrações
     path(
         "integrations/clickup/callback/",

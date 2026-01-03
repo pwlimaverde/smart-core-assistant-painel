@@ -1,0 +1,18 @@
+Expliquei e documentei isso diretamente nos arquivos docker-compose.yml para que fique claro na infraestrutura. Aqui está como o sistema se comporta nesse cenário de falha:
+
+### 1. O Mecanismo de Segurança (Redis + BullMQ)
+A Evolution API não envia o webhook diretamente "no susto". Ela usa o Redis como uma fila intermediária (usando a biblioteca BullMQ).
+
+- Fluxo Normal: Mensagem Chega -> Salva no Redis -> Worker pega do Redis -> Envia para seu Django -> Django responde 200 OK -> Remove do Redis.
+- Fluxo de Falha (Django Offline): Mensagem Chega -> Salva no Redis -> Worker tenta enviar -> Django dá erro ou Timeout -> Worker marca como falha e agenda uma nova tentativa (Retry).
+### 2. Configurações de Resiliência Adicionadas
+Verifiquei e documentei duas configurações críticas que garantem que isso funcione mesmo nos piores cenários:
+
+1. Persistência em Disco ( appendonly yes ): No serviço redis_evolution , o comando redis-server --appendonly yes garante que cada mensagem que entra na fila seja escrita no disco do servidor.
+   
+   - Cenário: Se a luz acabar e o servidor reiniciar, quando o Redis voltar, a fila de mensagens pendentes estará lá, intacta.
+2. Retentativas Automáticas (Retry Pattern): A Evolution API (via BullMQ) tem um comportamento padrão de retentar o envio se o seu webhook falhar. Ela tentará enviar novamente algumas vezes (geralmente com um intervalo de tempo crescente) antes de desistir definitivamente.
+### Resumo da Proteção
+- Se o Django cair por minutos: A Evolution acumula as mensagens no Redis e as entrega assim que o Django voltar a responder.
+- Se o container da Evolution reiniciar: O Redis (com persistência configurada) restaura a fila e continua o trabalho.
+Dica Adicional: Para que isso funcione perfeitamente, certifique-se apenas de que seu Django, ao receber o webhook, retorne um status HTTP 200 (OK) o mais rápido possível (idealmente antes de processar lógicas pesadas). Se o Django demorar muito para responder (timeout), a Evolution pode achar que falhou e enviar a mesma mensagem duplicada (o que é melhor que perder, mas exige que seu código saiba lidar com duplicidade, se necessário).

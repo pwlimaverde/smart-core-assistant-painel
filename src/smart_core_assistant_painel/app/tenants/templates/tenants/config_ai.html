@@ -1,0 +1,178 @@
+{% extends "tenants/base_tenants.html" %}
+
+{% block title %}Configuração - Inteligência Artificial{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto; width: 100%;">
+    <div style="margin-bottom: 2rem;">
+        <a href="{% url 'tenants:dashboard' %}"
+            style="display: inline-flex; align-items: center; color: var(--text-secondary); font-size: 0.9rem;">
+            ← Voltar para Dashboard
+        </a>
+    </div>
+
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 0.5rem;">🤖 Configuração de Inteligência Artificial</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+            Personalize como o bot irá se comportar e responder aos seus clientes.
+        </p>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 1.5rem;">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Seção: Sobre a Empresa -->
+            <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border-color);">
+                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                    🏢 Sobre a Empresa
+                </h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Forneça informações sobre sua empresa que o bot usará para responder perguntas.
+                </p>
+
+                <div class="form-group">
+                    <label for="{{ form.dados_empresa.id_for_label }}">
+                        {{ form.dados_empresa.label }}
+                    </label>
+                    {{ form.dados_empresa }}
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        {{ form.dados_empresa.help_text }}
+                    </small>
+                    {% for error in form.dados_empresa.errors %}
+                    <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Seção: Persona do Bot -->
+            <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border-color);">
+                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                    💬 Persona do Bot
+                </h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Defina a identidade, tom de voz e estilo de comunicação do assistente virtual.
+                </p>
+
+                <div class="form-group">
+                    <label for="{{ form.persona_bot.id_for_label }}">
+                        {{ form.persona_bot.label }}
+                    </label>
+                    {{ form.persona_bot }}
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        {{ form.persona_bot.help_text }}
+                    </small>
+                    {% for error in form.persona_bot.errors %}
+                    <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Seção: Mensagens Automáticas -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                    ✉️ Mensagens Automáticas
+                </h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Configure as mensagens enviadas automaticamente em situações específicas.
+                </p>
+
+                <div class="form-group">
+                    <label for="{{ form.msg_fallback.id_for_label }}">
+                        {{ form.msg_fallback.label }}
+                    </label>
+                    {{ form.msg_fallback }}
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        {{ form.msg_fallback.help_text }}
+                    </small>
+                    {% for error in form.msg_fallback.errors %}
+                    <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="{{ form.msg_sem_info.id_for_label }}">
+                        {{ form.msg_sem_info.label }}
+                    </label>
+                    {{ form.msg_sem_info }}
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        {{ form.msg_sem_info.help_text }}
+                    </small>
+                    {% for error in form.msg_sem_info.errors %}
+                    <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                    {% endfor %}
+                </div>
+
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="{{ form.msg_transferencia.id_for_label }}">
+                        {{ form.msg_transferencia.label }}
+                    </label>
+                    {{ form.msg_transferencia }}
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        {{ form.msg_transferencia.help_text }}
+                    </small>
+                    {% for error in form.msg_transferencia.errors %}
+                    <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Seção: Extração de Entidades -->
+            <div style="margin-bottom: 2.5rem; padding-bottom: 2rem; border-bottom: 1px solid var(--border-color);">
+                <h3 style="margin-bottom: 0.5rem; display: flex; align-items: center; gap: 8px;">
+                    🔍 Extração de Entidades
+                </h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                    Configure quais tipos de informações o bot deve extrair das mensagens dos clientes.
+                    Este JSON define categorias e campos que serão identificados automaticamente.
+                </p>
+
+                <div class="form-group">
+                    <label for="{{ form.entity_types_json.id_for_label }}">
+                        {{ form.entity_types_json.label }}
+                    </label>
+                    {{ form.entity_types_json }}
+                    <small style="color: var(--text-secondary); display: block; margin-top: 5px;">
+                        {{ form.entity_types_json.help_text }}
+                    </small>
+                    {% for error in form.entity_types_json.errors %}
+                    <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div
+                style="display: flex; gap: 10px; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    💾 Salvar Configurações
+                </button>
+                <a href="{% url 'tenants:dashboard' %}" class="btn btn-ghost" style="flex: 1; text-align: center;">
+                    Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Card de Ajuda -->
+    <div class="card" style="background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3);">
+        <h3 style="margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+            💡 Dicas de Configuração
+        </h3>
+        <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 1.5rem; margin: 0;">
+            <li><strong>Dados da Empresa:</strong> Inclua nome, localização, produtos/serviços principais, missão e
+                contatos.</li>
+            <li><strong>Persona do Bot:</strong> Dê um nome ao bot e defina se ele é formal ou informal, técnico ou
+                amigável.</li>
+            <li><strong>Mensagens Automáticas:</strong> Personalize as respostas padrão para situações específicas
+                como fallback e transferências.</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

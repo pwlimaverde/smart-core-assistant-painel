@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
+from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
     EvolutionWebhookEnvelope,
@@ -15,22 +15,46 @@ from smart_core_assistant_painel.app.evolution_sync.normalizers import (
 from smart_core_assistant_painel.app.evolution_sync.services.webhook import (
     WebhookProcessor,
 )
+from smart_core_assistant_painel.app.tenants.models import Tenant
 
 
 @csrf_exempt
-def webhook(request: HttpRequest) -> JsonResponse:
+def webhook(
+    request: HttpRequest, tenant_slug: str | None = None
+) -> JsonResponse:
     """[EVO-MSG-003] Endpoint para receber webhooks da Evolution API.
 
     Recebimento de Status e Mensagens (Webhooks).
 
     Args:
         request: O objeto HttpRequest do Django.
+        tenant_slug: Slug do tenant (opcional, mas recomendado).
 
     Returns:
         JsonResponse: Resposta com status do processamento.
     """
     if request.method != "POST":
         return JsonResponse({"detail": "method not allowed"}, status=405)
+
+    # Buscar tenant pelo middleware (request.tenant)
+    tenant: Tenant | None = getattr(request, "tenant", None)
+
+    if tenant:
+        # Sanity Check: se tenant_slug veio na URL, deve bater com o tenant do contexto
+        if tenant_slug and tenant.slug != tenant_slug:
+            logger.warning(
+                f"Mismatch de tenant: URL={tenant_slug} vs Context={tenant.slug}"
+            )
+        logger.debug(
+            f"Webhook recebido para tenant: {tenant.name} ({tenant.slug})"
+        )
+    else:
+        logger.warning(
+            "Webhook recebido SEM tenant identificado. "
+            f"URL slug: {tenant_slug}. "
+            "Verifique se o TenantMiddleware está ativo."
+        )
+
     try:
         payload: Dict[str, Any] = json.loads(request.body.decode("utf-8"))
     except Exception:
@@ -49,12 +73,11 @@ def webhook(request: HttpRequest) -> JsonResponse:
     else:
         envelopes = [normalize_evolution_webhook(payload)]
 
-    processor = WebhookProcessor()
+    # Passa tenant para o processador
+    processor = WebhookProcessor(tenant=tenant)
     result = processor.process_webhook(payload, envelopes)
 
     status_code = 200 if result.get("status") == "ok" else 200
-    # Mantendo 200 para ignored_from_me conforme original,
-    # mas accepted geralmente é 202. O original retornava 200 para ignored e 202 para accepted no final.
 
     if result.get("status") == "accepted":
         return JsonResponse(result, status=202)

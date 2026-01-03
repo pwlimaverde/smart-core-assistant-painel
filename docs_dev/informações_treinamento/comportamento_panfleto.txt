@@ -25,7 +25,7 @@ PASSO 1 - Apresentar opções e coletar dados:
 Apresente as grades disponíveis (conforme dados do treinamento) e solicite:
 1. Quantidade desejada
 2. Formato
-3. Impressão frente ou frente e verso
+3. Impressão (4x0 cor) frente ou (4x4 cor) frente e verso
 4. Se já possui arte finalizada
 
 Aguarde a resposta do cliente.

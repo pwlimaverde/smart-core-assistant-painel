@@ -3,9 +3,25 @@ from typing import Any
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
-from django_q.tasks import async_task
 from loguru import logger
 
+from smart_core_assistant_painel.app.trello_sync.tasks import (
+    task_atendente_invite,
+    task_atendente_remove_member,
+    task_atendimento_ensure_card,
+    task_atendimento_move_to_etapa_list,
+    task_atendimento_sync_card_members,
+    task_atendimento_update_card_rich_content,
+    task_etapa_archive_list,
+    task_etapa_ensure_list,
+    task_fluxo_archive_board,
+    task_fluxo_ensure_board,
+    task_reorder_lists_for_fluxo,
+    task_trello_archive_card_by_external_id,
+)
+from smart_core_assistant_painel.app.tenants.tenant_context import (
+    get_current_tenant_slug,
+)
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
@@ -27,13 +43,7 @@ def fluxo_created_sync_trello(
     if not created:
         return
     try:
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_fluxo_ensure_board"
-            ),
-            instance.id,
-        )
+        task_fluxo_ensure_board.delay(get_current_tenant_slug(), instance.id)
     except Exception as exc:
         logger.error("Falha ao criar board Trello: {}", exc)
 
@@ -49,19 +59,11 @@ def etapa_created_sync_trello(
             return
 
         if created:
-            async_task(
-                (
-                    "smart_core_assistant_painel.app.trello_sync.tasks"
-                    ".task_etapa_ensure_list"
-                ),
-                instance.id,
+            task_etapa_ensure_list.delay(
+                get_current_tenant_slug(), instance.id
             )
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_reorder_lists_for_fluxo"
-            ),
-            instance.fluxo_id,
+        task_reorder_lists_for_fluxo.delay(
+            get_current_tenant_slug(), instance.fluxo_id
         )
     except Exception as exc:
         logger.warning("Falha ao operar listas: {}", exc)
@@ -77,13 +79,7 @@ def etapa_deleted_archive_trello(
         if getattr(instance, "_syncing_from_trello", False):
             return
 
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_etapa_archive_list"
-            ),
-            instance.id,
-        )
+        task_etapa_archive_list.delay(get_current_tenant_slug(), instance.id)
     except Exception as exc:
         logger.warning("Falha ao arquivar lista: {}", exc)
 
@@ -94,15 +90,19 @@ def fluxo_deleted_archive_trello(
 ) -> None:
     """Arquiva o Board Trello ao excluir um FluxoAtendimento (imediato)."""
     try:
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_fluxo_archive_board"
-            ),
-            instance.id,
-        )
+        # Tenta recuperar o board associado antes que seja deletado em cascata
+        trello_board = getattr(instance, "trello_board", None)
+        if trello_board and trello_board.external_id:
+            task_fluxo_archive_board.delay(
+                get_current_tenant_slug(), trello_board.external_id
+            )
+        else:
+            logger.warning(
+                "Board Trello não encontrado para arquivamento do fluxo {}",
+                instance.id,
+            )
     except Exception as exc:
-        logger.warning("Falha ao arquivar board: {}", exc)
+        logger.warning("Falha ao agendar arquivamento do board: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)
@@ -113,12 +113,8 @@ def atendimento_created_sync_trello(
     if not created:
         return
     try:
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_ensure_card"
-            ),
-            instance.id,
+        task_atendimento_ensure_card.delay(
+            get_current_tenant_slug(), instance.id
         )
     except Exception as exc:
         logger.warning("Falha ao criar card: {}", exc)
@@ -132,13 +128,7 @@ def atendente_created_invite_trello(
     if not created:
         return
     try:
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendente_invite"
-            ),
-            instance.id,
-        )
+        task_atendente_invite.delay(get_current_tenant_slug(), instance.id)
     except Exception as exc:
         logger.warning("Falha ao convidar atendente: {}", exc)
 
@@ -149,12 +139,8 @@ def atendente_deleted_remove_member_trello(
 ) -> None:
     """Remove o atendente do board Trello ao excluir o registro."""
     try:
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendente_remove_member"
-            ),
-            instance.id,
+        task_atendente_remove_member.delay(
+            get_current_tenant_slug(), instance.id
         )
     except Exception as exc:
         logger.warning("Falha ao remover atendente: {}", exc)
@@ -174,13 +160,8 @@ def atendimento_updated_assign_member_trello(
         return
     try:
         old_id = getattr(instance, "_old_atendente_id", None)
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_sync_card_members"
-            ),
-            instance.id,
-            old_id,
+        task_atendimento_sync_card_members.delay(
+            get_current_tenant_slug(), instance.id, old_id
         )
     except Exception as exc:
         logger.warning("Falha ao atualizar card Trello: {}", exc)
@@ -253,12 +234,8 @@ def atendimento_etapa_updated_move_card(
         if getattr(instance, "_syncing_from_trello", False):
             return
 
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_atendimento_move_to_etapa_list"
-            ),
-            instance.id,
+        task_atendimento_move_to_etapa_list.delay(
+            get_current_tenant_slug(), instance.id
         )
     except Exception as exc:
         logger.warning("Falha ao mover card Trello: {}", exc)
@@ -570,12 +547,8 @@ def atendimento_deleted_archive_card(
             )
 
         # Fallback Assíncrono
-        async_task(
-            (
-                "smart_core_assistant_painel.app.trello_sync.tasks"
-                ".task_trello_archive_card_by_external_id"
-            ),
-            external_id,
+        task_trello_archive_card_by_external_id.delay(
+            get_current_tenant_slug(), external_id
         )
         logger.info("Fallback assíncrono agendado para card {}.", external_id)
 
@@ -604,13 +577,11 @@ def mensagem_created_update_trello_card(
         return
     try:
         at_id: int = instance.atendimento_id  # type: ignore[assignment]
+        # Captura contexto atual para uso no callback
+        current_slug = get_current_tenant_slug()
         transaction.on_commit(
-            lambda: async_task(
-                (
-                    "smart_core_assistant_painel.app.trello_sync.tasks"
-                    ".task_atendimento_update_card_rich_content"
-                ),
-                at_id,
+            lambda: task_atendimento_update_card_rich_content.delay(
+                current_slug, at_id
             )
         )
     except Exception as exc:

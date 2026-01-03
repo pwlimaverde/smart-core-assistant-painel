@@ -1,0 +1,39 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:tenants_tenant_changelist' %}">Tenants</a>
+    &rsaquo; <a href="{% url 'admin:tenants_tenant_change' tenant.pk %}">{{ tenant.name }}</a>
+    &rsaquo; Registrar Pagamento
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Registrar Pagamento para {{ tenant.name }}</h1>
+
+    <form method="post">
+        {% csrf_token %}
+        <fieldset class="module aligned">
+            {% for field in form %}
+            <div class="form-row">
+                <div>
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% if field.help_text %}
+                    <p class="help">{{ field.help_text }}</p>
+                    {% endif %}
+                    {{ field.errors }}
+                </div>
+            </div>
+            {% endfor %}
+        </fieldset>
+
+        <div class="submit-row">
+            <input type="submit" value="Salvar Pagamento" class="default" name="_save">
+        </div>
+    </form>
+</div>
+{% endblock %}

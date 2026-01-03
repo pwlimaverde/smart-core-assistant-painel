@@ -55,7 +55,8 @@ class MensagemInline(admin.TabularInline[Mensagem, Atendimento]):
         return "-"
 
 
-@admin.register(Atendimento)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Atendimento)
 class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
     """Admin para o modelo Atendimento."""
 
@@ -558,7 +559,8 @@ class AtendimentoAdmin(admin.ModelAdmin[Atendimento]):
         js = ("atendimentos/admin_etapas.js",)
 
 
-@admin.register(Mensagem)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Mensagem)
 class MensagemAdmin(admin.ModelAdmin[Mensagem]):
     """Admin para o modelo Mensagem."""
 

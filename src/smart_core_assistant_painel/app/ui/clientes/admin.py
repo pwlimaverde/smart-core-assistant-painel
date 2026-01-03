@@ -14,7 +14,8 @@ from django.http import HttpRequest, HttpResponse
 from .models import Cliente, Contato
 
 
-@admin.register(Contato)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Contato)
 class ContatoAdmin(admin.ModelAdmin[Contato]):
     """Admin para o modelo Contato."""
 
@@ -75,7 +76,8 @@ class ContatoAdmin(admin.ModelAdmin[Contato]):
         return super().get_queryset(request).prefetch_related("clientes")
 
 
-@admin.register(Cliente)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin[Cliente]):
     """Admin para o modelo Cliente."""
 

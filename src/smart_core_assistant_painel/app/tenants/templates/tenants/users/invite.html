@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block content %}
+<div class="col-md-8 mx-auto">
+    <div class="card card-primary">
+        <div class="card-header">
+            <h3 class="card-title">Enviar Convite de Acesso</h3>
+        </div>
+        <form method="POST">
+            {% csrf_token %}
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="name">Nome do Funcionário</label>
+                    <input type="text" class="form-control" id="name" name="name" placeholder="Ex: João Silva" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Endereço de Email</label>
+                    <input type="email" class="form-control" id="email" name="email" placeholder="email@exemplo.com"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Papel (Nível de Acesso)</label>
+                    <select class="form-control" id="role" name="role">
+                        {% for value, label in roles %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Módulos Permitidos</label>
+                    <div class="row">
+                        {% for mod_value, mod_label in modules %}
+                        <div class="col-md-6">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="mod_{{ mod_value }}"
+                                    name="modules" value="{{ mod_value }}" checked>
+                                <label class="custom-control-label" for="mod_{{ mod_value }}">{{ mod_label }}</label>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{% url 'tenant_users:list' %}" class="btn btn-default">Cancelar</a>
+                <button type="submit" class="btn btn-primary">Enviar Convite</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

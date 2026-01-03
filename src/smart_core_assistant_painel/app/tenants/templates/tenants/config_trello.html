@@ -1,0 +1,91 @@
+{% extends "tenants/base_tenants.html" %}
+
+{% block title %}Configuração Trello - Smart Assistant{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; width: 100%;">
+    <div style="margin-bottom: 2rem;">
+        <a href="{% url 'tenants:dashboard' %}"
+            style="display: inline-flex; align-items: center; color: var(--text-secondary); font-size: 0.9rem;">
+            ← Voltar para Dashboard
+        </a>
+    </div>
+
+    <!-- Webhook Status Card -->
+     <div class="card" style="margin-bottom: 2rem;">
+        <h3 style="margin-bottom: 1rem;">Status do Webhook</h3>
+        {% if webhook_registered %}
+            <div class="alert alert-success" style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <strong>Webhook Ativo</strong><br>
+                    <small>{{ callback_url }}</small>
+                </div>
+                <span class="badge badge-success">Conectado</span>
+            </div>
+            <form action="{% url 'tenants:delete_trello_webhook' %}" method="post" style="margin-top: 1rem;" id="deleteWebhookForm">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary" style="width: 100%;" 
+                    onclick="return confirm('Tem certeza que deseja remover o webhook? Você precisará registrá-lo novamente.');">
+                    Remover Webhook (para recriar com URL correta)
+                </button>
+            </form>
+        {% else %}
+            <div class="alert alert-warning" style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <strong>Webhook Não Registrado</strong><br>
+                    <small>O Trello não enviará atualizações para o sistema.</small>
+                </div>
+                <span class="badge badge-warning">Pendente</span>
+            </div>
+            
+            {% if form.instance.api_key and form.instance.token %}
+            <form action="{% url 'tenants:register_trello_webhook' %}" method="post" style="margin-top: 1rem;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                    Registrar Webhook Agora
+                </button>
+            </form>
+            {% else %}
+            <div class="alert alert-info" style="margin-top: 1rem;">
+                Salve as credenciais abaixo para habilitar o registro do webhook.
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2 style="margin-bottom: 2rem;">Credenciais Trello</h2>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small style="color: var(--text-secondary); display: block; margin-top: 5px;">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <div style="display: flex; gap: 10px; margin-top: 2rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">Salvar Credenciais</button>
+                <a href="{% url 'tenants:dashboard' %}" class="btn btn-ghost"
+                    style="flex: 1; text-align: center;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -95,7 +95,7 @@ class LlmParameters(ParametersReturnResult):
         prompt_system (str): O prompt de sistema para o LLM.
         prompt_human (str): O prompt humano para o LLM.
         context (str): O contexto a ser fornecido ao LLM.
-        error (Type[LlmError]): O tipo de erro a ser levantado em caso de falha.
+        error (LlmError): Instância de erro a ser usada em caso de falha.
     """
 
     __slots__ = [
@@ -112,7 +112,7 @@ class LlmParameters(ParametersReturnResult):
         self,
         llm_class: Type[BaseChatModel],
         model: str,
-        error: Type[LlmError],
+        error: LlmError,
         prompt_system: str,
         prompt_human: str,
         context: str,
@@ -123,7 +123,7 @@ class LlmParameters(ParametersReturnResult):
         Args:
             llm_class (Type[BaseChatModel]): A classe do modelo de linguagem.
             model (str): O nome do modelo a ser usado.
-            error (Type[LlmError]): O tipo de erro a ser levantado.
+            error (LlmError): Instância de erro a ser usada.
             prompt_system (str): O prompt de sistema.
             prompt_human (str): O prompt humano.
             context (str): O contexto.

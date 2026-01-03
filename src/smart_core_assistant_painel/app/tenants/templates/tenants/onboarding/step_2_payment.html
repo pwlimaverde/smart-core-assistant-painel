@@ -1,0 +1,71 @@
+{% extends "tenants/onboarding/base.html" %}
+
+{% block wizard_content %}
+<h2>Escolha seu Plano</h2>
+<p class="subtitle">Selecione o melhor plano para o seu negócio.</p>
+
+<form method="post" id="plan-form">
+    {% csrf_token %}
+
+    <div class="plans-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        {% for plan in plans %}
+        <label class="plan-card"
+            style="cursor: pointer; border: 2px solid var(--border); padding: 1.5rem; border-radius: 12px; display: block; position: relative; transition: all 0.2s; background: white;">
+            <input type="radio" name="plan_id" value="{{ plan.id }}" style="position: absolute; opacity: 0;" required>
+
+            <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">{{ plan.name }}</h3>
+            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem;">
+                R$ {{ plan.price|default:"--" }}<span
+                    style="font-size: 0.9rem; font-weight: 400; color: var(--text-muted);">/mês</span>
+            </div>
+            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">{{
+                plan.description|linebreaksbr }}</p>
+
+            <div class="check-icon"
+                style="position: absolute; top: 1rem; right: 1rem; color: var(--primary); display: none;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </div>
+        </label>
+        {% empty %}
+        <p>Nenhum plano disponível.</p>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 2rem; padding: 1rem; background: #e0e7ff; border-radius: 8px; font-size: 0.9rem;">
+        <strong>Nota de Pagamento:</strong> Simulação de gateway de pagamento (Mock). Ao clicar em continuar, o
+        pagamento será considerado confirmado.
+    </div>
+
+</form>
+{% endblock %}
+
+{% block wizard_footer %}
+<div class="wizard-footer">
+    <button type="submit" form="plan-form" class="btn btn-primary">
+        Realizar Pagamento e Continuar &rarr;
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const cards = document.querySelectorAll('.plan-card');
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            // Reset all
+            cards.forEach(c => {
+                c.style.borderColor = 'var(--border)';
+                c.querySelector('.check-icon').style.display = 'none';
+            });
+            // Active current
+            card.style.borderColor = 'var(--primary)';
+            card.querySelector('.check-icon').style.display = 'block';
+            card.querySelector('input').checked = true;
+        });
+    });
+</script>
+{% endblock %}

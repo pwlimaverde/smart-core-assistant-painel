@@ -1,0 +1,81 @@
+{% extends "tenants/onboarding/base.html" %}
+
+{% block wizard_content %}
+<h2>Boas-vindas!</h2>
+<p class="subtitle">Vamos criar o ambiente exclusivo da sua empresa.</p>
+
+<form method="post" id="signup-form">
+    {% csrf_token %}
+
+    {% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}
+        <div class="help-text">{{ field.help_text }}</div>
+        {% endif %}
+        {% if field.errors %}
+        <div class="text-danger help-text">{{ field.errors.0 }}</div>
+        {% endif %}
+
+        {% if field.name == 'slug' %}
+        <div id="slug-feedback" class="help-text" style="font-weight: 600; min-height: 20px; margin-top: 5px;"></div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</form>
+{% endblock %}
+
+{% block wizard_footer %}
+<div class="wizard-footer">
+    <button type="submit" form="signup-form" class="btn btn-primary">
+        Continuar &rarr;
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const slugInput = document.getElementById('id_slug');
+        if (!slugInput) return;
+
+        const feedback = document.getElementById('slug-feedback');
+        // URL hardcoded or from data attribute if form updated
+        const checkUrl = "/tenants/api/onboarding/check-slug/";
+
+        let timeout = null;
+
+        slugInput.addEventListener('input', function (e) {
+            clearTimeout(timeout);
+            const slug = e.target.value;
+            feedback.textContent = "";
+
+            // Remove chars invalidos visualmente (opcional, já tem validação backend)
+
+            if (slug.length < 3) return;
+
+            timeout = setTimeout(async () => {
+                feedback.textContent = "Verificando disponibilidade...";
+                feedback.className = "help-text"; // reset color
+
+                try {
+                    const res = await fetch(`${checkUrl}?slug=${slug}`);
+                    const data = await res.json();
+
+                    if (data.available) {
+                        feedback.textContent = "✓ Subdomínio disponível!";
+                        feedback.className = "help-text text-success";
+                    } else {
+                        feedback.innerHTML = "✕ " + (data.message || data.error || "Indisponível");
+                        feedback.className = "help-text text-danger";
+                    }
+                } catch (err) {
+                    console.error(err);
+                    feedback.textContent = "Erro ao verificar.";
+                }
+            }, 600);
+        });
+    });
+</script>
+{% endblock %}

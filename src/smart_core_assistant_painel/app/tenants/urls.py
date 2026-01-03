@@ -14,6 +14,8 @@ from .views import (
     TrelloConfigView,
 )
 
+from .views import onboarding
+
 from .views.invites import activate_account, invite_user, list_users
 
 from .views.backoffice import BackofficeDashboardView, RegisterPaymentView
@@ -21,6 +23,13 @@ from .views.backoffice import BackofficeDashboardView, RegisterPaymentView
 app_name = "tenants"
 
 urlpatterns = [
+    # Onboarding Wizard (Public)
+    path("onboarding/", onboarding.Step1TenantView.as_view(), name="onboarding_step_1"),
+    path("onboarding/step/2/", onboarding.Step2PaymentView.as_view(), name="onboarding_step_2"),
+    path("onboarding/step/3/", onboarding.Step3ConfigView.as_view(), name="onboarding_step_3"),
+    path("onboarding/step/4/", onboarding.Step4ProvisionView.as_view(), name="onboarding_step_4"),
+    path("api/onboarding/check-slug/", onboarding.CheckSlugView.as_view(), name="api_check_slug"),
+
     # Backoffice (Super Admin)
     path(
         "bo/", BackofficeDashboardView.as_view(), name="backoffice_dashboard"

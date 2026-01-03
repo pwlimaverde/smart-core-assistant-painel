@@ -1,0 +1,238 @@
+{% load i18n static %}
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'pt-br' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ title }} | Smart Core Assistant{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #64748b;
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; }
+        
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                            radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                            radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        .wizard-container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header & Stepper */
+        .wizard-header {
+            padding: 2rem;
+            background: linear-gradient(to right, #f8fafc, #fff);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-top: 1.5rem;
+        }
+        
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--border);
+            z-index: 0;
+            transform: translateY(-50%);
+        }
+
+        .step {
+            position: relative;
+            z-index: 1;
+            background: var(--bg-card);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            border: 2px solid var(--border);
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step.active {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .step.done {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Content */
+        .wizard-content {
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        h2 { font-size: 1.875rem; margin-bottom: 0.5rem; background: linear-gradient(45deg, var(--primary), #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        p.subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+
+        /* Forms */
+        .form-group { margin-bottom: 1.5rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--secondary); font-size: 0.9rem; }
+        
+        .form-control, .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: #f9fafb;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .help-text { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
+
+        /* Buttons */
+        .wizard-footer {
+            padding: 2rem;
+            background: #f8fafc;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--secondary);
+        }
+        
+        .btn-outline:hover { background: #fff; border-color: var(--secondary); }
+
+        /* Utils */
+        .text-danger { color: var(--error); }
+        .text-success { color: var(--success); }
+        .spinner {
+            display: inline-block;
+            width: 1.5rem;
+            height: 1.5rem;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<div class="wizard-container">
+    <div class="wizard-header">
+        <div style="text-align: center; margin-bottom: 1rem; font-weight: 700; font-size: 1.2rem; color: var(--text-main);">
+            Smart Core Assistant
+        </div>
+        
+        <div class="stepper">
+            <div class="step {% if request.resolver_match.url_name == 'onboarding_step_1' or 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_2' in request.path or 'step_3' in request.path %}done{% endif %}">
+                <span>1</span> Empresa
+            </div>
+            <div class="step {% if 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_3' in request.path %}done{% endif %}">
+                <span>2</span> Plano
+            </div>
+            <div class="step {% if 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_4' in request.path %}done{% endif %}">
+                <span>3</span> Config
+            </div>
+            <div class="step {% if 'step_4' in request.path %}active{% endif %}">
+                <span>4</span> Pronto
+            </div>
+        </div>
+    </div>
+
+    <div class="wizard-content">
+        {% block wizard_content %}{% endblock %}
+    </div>
+
+    {% block wizard_footer %}
+    <div class="wizard-footer">
+        <!-- Default Footer Content -->
+    </div>
+    {% endblock %}
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

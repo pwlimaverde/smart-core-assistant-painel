@@ -1,0 +1,28 @@
+{% extends "tenants/onboarding/base.html" %}
+
+{% block wizard_content %}
+<h2>Personalização</h2>
+<p class="subtitle">Ajuste os detalhes visuais e regionais do seu painel.</p>
+
+<form method="post" id="config-form">
+    {% csrf_token %}
+
+    {% for field in form %}
+    <div class="form-group">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}
+        <div class="help-text">{{ field.help_text }}</div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</form>
+{% endblock %}
+
+{% block wizard_footer %}
+<div class="wizard-footer">
+    <button type="submit" form="config-form" class="btn btn-primary">
+        Finalizar Setup &rarr;
+    </button>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@
   "master": {
     "tasks": [
       {
-        "id": 1,
+        "id": "1",
         "title": "Configuração da Infraestrutura Docker e Inicialização do Projeto Django",
         "description": "Configurar o ambiente de desenvolvimento com Docker Compose, incluindo serviços para PostgreSQL (com pgvector), Redis e a aplicação Django. Inicializar a estrutura do projeto.",
         "details": "1. Criar `docker-compose.yml` com serviços: `web` (Django), `db` (PostgreSQL 16+), `redis` (Cache/Queue). \n2. Configurar Dockerfile para Python 3.13+. \n3. Inicializar projeto Django 5.x com estrutura de 'config' separada. \n4. Configurar variáveis de ambiente (.env) para segredos. \n5. Garantir que a extensão `vector` esteja habilitada no init do Postgres.",
@@ -14,7 +14,7 @@
         "updatedAt": "2025-11-28T13:28:02.047Z"
       },
       {
-        "id": 2,
+        "id": "2",
         "title": "Modelagem do Core Database e Migrations",
         "description": "Implementar os modelos de dados fundamentais para o sistema: Clientes, Atendimentos, Mensagens e Departamentos.",
         "details": "Criar apps Django (ex: `core`, `attendance`). Definir models:\n- `Customer`: nome, telefone (chave única), metadados.\n- `Department`: nome, configurações de SLA.\n- `Attendance` (Ticket): fk_customer, fk_department, status (aberto, pendente, fechado), trello_card_id.\n- `Message`: fk_attendance, conteúdo, tipo (texto/mídia), direção (in/out), timestamp.\nUtilizar UUIDs como chaves primárias.",
@@ -28,7 +28,7 @@
         "updatedAt": "2025-11-28T13:28:02.078Z"
       },
       {
-        "id": 3,
+        "id": "3",
         "title": "Implementação do Wrapper da Evolution API (WhatsApp)",
         "description": "Desenvolver a camada de serviço e persistência dentro do app `evolution_sync` para gerenciar instâncias e comunicar com a Evolution API.",
         "status": "done",
@@ -80,7 +80,7 @@
         "updatedAt": "2025-12-02T23:34:51.795Z"
       },
       {
-        "id": 4,
+        "id": "4",
         "title": "Orquestrador de Mensagens e Gestão de Contexto",
         "description": "Criar a lógica central que processa mensagens recebidas, identifica o cliente e decide o roteamento (Novo Atendimento vs Atendimento Existente).",
         "details": "1. Service Layer `MessageProcessor`: Receber payload do webhook. \n2. Buscar `Customer` pelo telefone (criar se não existir). \n3. Buscar `Attendance` ativo. Se não houver, criar novo. \n4. Salvar `Message` no banco. \n5. Implementar lógica de 'Debounce' para agrupar mensagens rápidas (opcional, via Redis).",
@@ -94,7 +94,7 @@
         "updatedAt": "2025-11-28T13:28:02.114Z"
       },
       {
-        "id": 5,
+        "id": "5",
         "title": "Integração com Trello (Adapter e Autenticação)",
         "description": "Implementar o adaptador para a API do Trello, gerenciando autenticação e mapeamento de Departamentos para Boards/Lists.",
         "details": "1. Configurar credenciais do Trello no .env. \n2. Criar serviço `TrelloService`: métodos para `create_card`, `add_comment`, `move_card`. \n3. Implementar lógica de mapeamento: Status do Atendimento -> Lista do Trello (Ex: 'A Fazer', 'Em Andamento'). \n4. Garantir tratamento de Rate Limits.",
@@ -108,7 +108,7 @@
         "updatedAt": "2025-11-28T13:28:02.132Z"
       },
       {
-        "id": 6,
+        "id": "6",
         "title": "Sincronização Bidirecional: Django para Trello (Background Jobs)",
         "description": "Configurar tarefas assíncronas para espelhar atendimentos e mensagens no Trello sem bloquear a thread principal.",
         "details": "1. Configurar `django-q2` com Redis. \n2. Criar tasks: `sync_ticket_to_trello` (cria card se ticket novo), `sync_message_to_trello` (adiciona comentário no card). \n3. Acionar estas tasks a partir do Orquestrador (Task 4) quando necessário (ex: transbordo para humano).",
@@ -123,7 +123,7 @@
         "updatedAt": "2025-11-28T13:28:02.151Z"
       },
       {
-        "id": 7,
+        "id": "7",
         "title": "Sincronização Bidirecional: Trello para Django (Webhooks)",
         "description": "Receber atualizações do Trello (resposta do atendente) e enviar para o WhatsApp do cliente.",
         "details": "1. Endpoint para Webhook do Trello (verificar assinatura de segurança). \n2. Tratar eventos: `commentCard` (resposta do atendente) e `updateCard` (mudança de lista/status). \n3. Se for comentário de atendente: enviar via `EvolutionClient` para o WhatsApp. \n4. Se for mudança de lista: atualizar status do `Attendance` no DB.",
@@ -137,7 +137,7 @@
         "updatedAt": "2025-11-28T13:28:02.168Z"
       },
       {
-        "id": 8,
+        "id": "8",
         "title": "Implementação de RAG: Ingestão e Banco Vetorial",
         "description": "Configurar a infraestrutura de RAG (Retrieval-Augmented Generation) utilizando PostgreSQL com pgvector no app `treinamento` para ingestão e recuperação semântica.",
         "status": "done",
@@ -189,7 +189,7 @@
         "updatedAt": "2025-12-02T23:34:51.849Z"
       },
       {
-        "id": 9,
+        "id": "9",
         "title": "Refatoração de Docstrings e Rastreabilidade PRD",
         "description": "Atualização de docstrings em módulos e apps do projeto para incluir códigos de funcionalidade do PRD (ex: [TRL-CRD-001]) e descrições padronizadas, garantindo rastreabilidade entre código e requisitos.",
         "details": "",
@@ -201,7 +201,7 @@
         "updatedAt": "2025-11-28T18:10:26.697Z"
       },
       {
-        "id": 10,
+        "id": "10",
         "title": "Sync CreateList Trello to EtapaFluxo",
         "description": "Atualizar o app trello_sync para processar o evento 'createList' do webhook do Trello. Quando uma nova lista for criada no Trello, o sistema deve criar automaticamente uma nova EtapaFluxo associada ao FluxoAtendimento do board e vincular via TrelloList.",
         "details": "1. Modificar WebhookProcessingService para aceitar action_type 'createList'.\n2. Implementar lógica para buscar o TrelloBoard associado.\n3. Criar EtapaFluxo no FluxoAtendimento correspondente.\n4. Criar TrelloList vinculando a nova EtapaFluxo e a lista do Trello.\n5. Validar campos obrigatórios da EtapaFluxo.",
@@ -213,7 +213,7 @@
         "updatedAt": "2025-12-01T13:32:54.740Z"
       },
       {
-        "id": 11,
+        "id": "11",
         "title": "Desenvolver Nova Home Page com Dashboard",
         "description": "Desenvolver uma nova página de Home para o sistema, substituindo a view atual. A nova página deve seguir o padrão de design atual (utilizando o template base e Tailwind CSS) e fornecer acesso rápido às funcionalidades principais: Treinar IA, Verificar Treinamentos, Queries e Admin.",
         "details": "1. **Atualizar `src/smart_core_assistant_painel/app/ui/core/views.py`**:\n   - Alterar a view `home` para renderizar um template HTML em vez de retornar HTML inline.\n   - Nome sugerido do template: `core/home.html`.\n\n2. **Criar Template `src/smart_core_assistant_painel/app/ui/core/templates/core/home.html`**:\n   - O template deve estender `base.html`.\n   - Utilizar classes do Tailwind CSS para manter a consistência visual (cards, grid, botões estilizados).\n   - Criar uma seção de \"Acesso Rápido\" ou \"Dashboard\" contendo cards/links para:\n     - **Treinar IA**: URL `{% url 'treinamento:treinar_ia' %}`.\n     - **Verificar Treinamentos**: URL `{% url 'treinamento:verificar_treinamentos_vetorizados' %}`.\n     - **Queries**: URL `{% url 'treinamento:verificar_query_compose' %}` (ou a view principal de queries).\n     - **Admin**: URL `/admin/`.\n\n3. **Design**:\n   - Utilizar um layout responsivo (ex: grid com cards).\n   - Adicionar ícones ou descrições breves para cada funcionalidade para melhorar a UX.\n   - Garantir que o footer e navbar do `base.html` sejam exibidos corretamente.\n\n4. **Verificação**:\n   - Acessar a rota `/` e verificar se a nova página é carregada.\n   - Testar todos os links para garantir que redirecionam para as páginas corretas.",
@@ -225,7 +225,7 @@
         "updatedAt": "2025-12-02T23:28:59.075Z"
       },
       {
-        "id": 12,
+        "id": "12",
         "title": "[ATD] Fluxo de Chatbot com IA (LangChain)",
         "description": "Implementar o fluxo completo de atendimento automatizado utilizando LangChain, integrando o orquestrador de mensagens à lógica de IA generativa (RAG) e gestão de contexto, garantindo a conformidade com os requisitos ATD-LIF-001, ATD-LIF-003 e ATD-CTX-002 do PRD v2.0.",
         "status": "done",
@@ -361,7 +361,7 @@
         "updatedAt": "2025-12-03T12:39:03.187Z"
       },
       {
-        "id": 13,
+        "id": "13",
         "title": "[ADM] Módulo Administrativo e Segurança",
         "description": "Implementar o módulo de administração e segurança conforme PRD v2.0, cobrindo os requisitos de cadastro (ADM-USR-001), autenticação (ADM-USR-002), controle de acesso RBAC (ADM-USR-003), dashboard gerencial (ADM-USR-004) e gestão segura de tokens (ADM-CFG-001).",
         "status": "pending",
@@ -375,7 +375,7 @@
         "subtasks": []
       },
       {
-        "id": 14,
+        "id": "14",
         "title": "[TRN] Implementação UI de Curadoria e Treinamento",
         "description": "Desenvolver interfaces gráficas para gestão de documentos RAG, revisão de chunks vetorizados e configuração de intenções, permitindo curadoria humana do conhecimento da IA.",
         "status": "pending",
@@ -435,7 +435,7 @@
         ]
       },
       {
-        "id": 15,
+        "id": "15",
         "title": "[OPS] Implementação do Módulo de Gestão Operacional e SLAs",
         "description": "Desenvolver a lógica de negócios para gerenciamento de Níveis de Serviço (SLA), configuração de horários de funcionamento por departamento e cálculo de métricas operacionais (TMA/TME), garantindo a conformidade com os códigos OPS-ORG-001, OPS-ORG-002, OPS-FLW-001 e OPS-SLA-001.",
         "status": "pending",
@@ -484,7 +484,7 @@
         ]
       },
       {
-        "id": 16,
+        "id": "16",
         "title": "[CLI] Implementação do Módulo CRM e Gestão de Clientes",
         "description": "Desenvolver as estruturas e interfaces para gestão avançada de relacionamento com o cliente, incluindo enriquecimento de dados, segmentação por tags, histórico unificado e ferramentas de fusão de contatos.",
         "status": "pending",
@@ -533,7 +533,7 @@
         ]
       },
       {
-        "id": 17,
+        "id": "17",
         "title": "Implementação do Módulo de Agendamento Inteligente (AGD)",
         "description": "Desenvolver o sistema de gestão de agendas, incluindo modelos de recursos, tipos de serviço e lógica de cálculo de slots disponíveis (disponibilidade) com foco em clínicas.",
         "details": "Implementar o app `apps/scheduling` para gerenciar o fluxo de reservas e recursos. Este módulo deve consumir as configurações operacionais definidas na Task 13.\n\n1. **Modelagem de Dados (AGD-MOD):**\n   - `ServiceType`: Nome (ex: 'Consulta Geral'), Duração (minutos), Preço, Buffer (tempo de preparação entre consultas).\n   - `Resource` ou `ProfessionalProfile`: Link OneToOne com `User` (Task 10), associado a um ou mais `Departments` (Task 2/13).\n   - `Appointment`: Chaves estrangeiras para `Customer` (Task 2/14), `Resource` e `ServiceType`. Campos: `start_datetime`, `end_datetime`, `status` (PENDING, CONFIRMED, CANCELED, COMPLETED, NO_SHOW).\n\n2. **Motor de Disponibilidade (AGD-ENG):**\n   - Criar service `AvailabilityService`. Função principal: `get_available_slots(date, service_type_id, resource_id=None)`.\n   - Lógica: Intersectar o `DepartmentConfig` (horário de funcionamento da Task 13) com as exceções do profissional (folgas) e subtrair os intervalos já ocupados por `Appointments` existentes.\n   - Algoritmo deve considerar a duração do serviço + buffer time.\n\n3. **Integração e Automação:**\n   - Expor API REST (DRF) para listar slots (usado pelo Frontend ou Bot).\n   - Implementar `AppointmentSerializer` com validação de conflito de horário (race condition check).\n   - Criar sinal (Django Signal) `post_save` em `Appointment`: Se criado, agendar tarefa Celery para envio de lembrete (integração futura com envio de mensagens).",
@@ -549,7 +549,7 @@
         "subtasks": []
       },
       {
-        "id": 18,
+        "id": "18",
         "title": "Implementação do Módulo de Inteligência Multimodal (MMD)",
         "description": "Desenvolver serviços de processamento de mídia (áudio e imagem) para transcrição e análise visual, garantindo acessibilidade e enriquecimento de contexto para a IA.",
         "details": "Implementar o app `apps/multimodal` ou estender `apps/ia` para lidar com inputs não textuais. O objetivo é transformar áudio e imagens em texto processável pelo LLM e legível para operadores humanos.\n\n1. **Serviço de Transcrição (STT - Speech-to-Text):**\n   - Criar interface `AudioTranscriber` para abstrair provedores (ex: OpenAI Whisper API ou Local Whisper).\n   - Implementar lógica para converter áudios (OGG/MP3) recebidos via WhatsApp em texto.\n   - O texto transcrito deve ser salvo no campo `transcription` ou `body` do model `Message` (Task 4) e marcado com uma flag `is_transcribed`.\n\n2. **Serviço de Visão Computacional (Vision):**\n   - Implementar `ImageAnalyzer` utilizando modelos de visão (ex: GPT-4o ou Azure Vision) para gerar descrições textuais de imagens enviadas.\n   - Foco em identificar documentos, produtos ou contexto da cena para alimentar o RAG.\n\n3. **Integração com Pipeline de Mensagens (Task 4):**\n   - Interceptar mensagens do tipo 'audio' ou 'image' no `MessageProcessor`.\n   - Disparar tarefas assíncronas (Celery) para não bloquear o webhook de recebimento.\n   - Atualizar o contexto da conversa (`ConversationHistory`) com o conteúdo processado para que a IA possa 'ler' o áudio ou 'ver' a imagem na próxima resposta.\n\n4. **Acessibilidade:**\n   - Garantir que o painel administrativo exiba a transcrição logo abaixo do player de áudio.",
@@ -563,7 +563,7 @@
         "subtasks": []
       },
       {
-        "id": 19,
+        "id": "19",
         "title": "Implementação do Módulo Omnichannel (Instagram e Web) [OMN]",
         "description": "Desenvolver a integração de canais adicionais (Instagram Direct e Widget Web) para centralizar o atendimento, unificando o fluxo de mensagens no core do sistema.",
         "details": "Esta task visa expandir a capacidade de atendimento para além do WhatsApp. O desenvolvimento deve ocorrer em um novo app `apps/omnichannel` ou estendendo `apps/evolution_sync` para Instagram e criando `apps/webchat` para o widget.\n\n1. **Adaptação do Modelo de Dados (OMN-MOD):**\n   - Alterar o model `Message` (Task 2) ou criar um mixin para suportar o campo `channel_type` (Choices: 'WHATSAPP', 'INSTAGRAM', 'WEB_WIDGET').\n   - Alterar `Customer` para suportar múltiplos identificadores sociais (`instagram_id`, `session_id` para web).\n\n2. **Integração Instagram (Via Evolution API ou Graph API):**\n   - Aproveitar a estrutura da Task 3 (`evolution_sync`) para configurar instâncias do tipo 'instagram'.\n   - Implementar `InstagramWebhookProcessor` que normaliza o payload (Stories mentions, Direct messages) para o formato padrão de `Message` do sistema.\n   - Tratamento de mídias específicas do Instagram (Links efêmeros).\n\n3. **Widget de Chat Web (OMN-WEB):**\n   - Criar API REST em `apps/webchat/api/`: endpoints para `start_conversation` (gerar Guest Token), `send_message` e `get_history`.\n   - Implementar lógica de persistência: Usuários não logados devem ser tratados como `Customer` provisórios até que forneçam dados (nome/email/telefone) para fusão com o módulo CRM (Task 14).\n   - Desenvolver snippet JS básico para embedar o chat em sites externos.",
@@ -578,7 +578,7 @@
         "subtasks": []
       },
       {
-        "id": 20,
+        "id": "20",
         "title": "Implementação do Módulo de Deploy, CI/CD e DevOps (DEP)",
         "description": "Estruturar o pipeline de integração contínua, otimizar a infraestrutura Docker para produção e configurar mecanismos de servimento seguro e monitoramento.",
         "details": "Esta task visa transformar o ambiente de desenvolvimento em um ambiente de produção robusto, seguro e escalável. O foco é na automação e na performance do servidor de aplicação.\n\n1. **Otimização de Imagens (DEP-DOCKER):**\n   - Refatorar o `Dockerfile` para utilizar 'Multi-stage Builds'. Estágio 1: Builder (instalação de compiladores e deps). Estágio 2: Runner (imagem 'slim', apenas runtime, sem cache pip).\n   - Substituir o servidor de desenvolvimento (`runserver`) pelo **Gunicorn** utilizando workers Uvicorn (`uvicorn.workers.UvicornWorker`) para suportar a natureza assíncrona/Django 5.\n\n2. **Integração Contínua (DEP-CI):**\n   - Criar workflow de CI (ex: `.github/workflows/ci.yml`).\n   - **Steps:** Checkout -> Setup Python -> Install Deps -> Linting (Ruff/Flake8) -> Testes (Pytest com report) -> Build Docker Image.\n   - Implementar verificação de segurança de dependências (ex: `safety` ou `pip-audit`).\n\n3. **Servidor Web e Proxy Reverso (DEP-WEB):**\n   - Configurar container **Nginx** para atuar como Proxy Reverso à frente do Django.\n   - Configurar servimento de arquivos estáticos (`collectstatic`) e mídia via volume compartilhado ou Nginx.\n   - Implementar configuração de SSL/TLS (preparação para Let's Encrypt/Certbot).\n\n4. **Scripts de Manutenção (DEP-OPS):**\n   - Criar scripts em `scripts/` para automação de backup do banco de dados PostgreSQL (`pg_dump` com rotação de arquivos).\n   - Configurar `HEALTHCHECK` no Dockerfile para monitoramento de uptime.",
@@ -593,7 +593,7 @@
         "subtasks": []
       },
       {
-        "id": 21,
+        "id": "21",
         "title": "[ATD] Implementação do Handover Ativo e Gestão de Instâncias",
         "description": "Implementar a lógica de 'Active Push' (Saudação Automática) e seleção dinâmica de instância de envio quando um atendente assume um ticket.",
         "details": "Conforme definido no PRD v2.0 (ATD-LIF-003) e no documento 'fluxo_atribuicao_inteligente.md':\\n\\n1. **Service Layer (`AtendimentoHandoverService`)**:\\n   - Criar serviço que orquestra a troca de responsabilidade.\\n   - Implementar lógica de seleção de instância: Se `Atendente` possui `AppInstance` vinculada, usar essa. Caso contrário, usar instância do `Departamento`.\\n\\n2. **Signals**:\\n   - Criar/Escutar signal `atendimento_assigned` (ou `post_save` monitorando mudança de campo `atendente`).\\n   - Ao detectar atribuição, disparar envio de mensagem de saudação (\"Olá, meu nome é X...\") usando a instância correta.\\n   - Garantir que isso ocorra de forma assíncrona (Django-Q2).\\n\\n3. **Prevenção de Duplicidade**:\\n   - Garantir que a saudação só seja enviada na *primeira* atribuição ou quando explicitamente trocado de atendente, evitando spam em mudanças de status internas.\\n\\n4. **Mensageria**:\\n   - Registrar essa mensagem de saudação no banco como `Mensagem` (tipo: `text`, remetente: `agent`).",
@@ -608,7 +608,7 @@
         "subtasks": []
       },
       {
-        "id": 22,
+        "id": "22",
         "title": "Implementar Serviço de Gestão de Logs de Crash (CrashLogService)",
         "description": "Planejar e desenvolver a estrutura base de um serviço de logs unificado (Unified Logger), agnóstico a framework (Pure Python) e desacoplado do Django no núcleo, utilizando interfaces para Datasources. O serviço deve ser reutilizável em outros contextos (ex: FastAPI) e prever a refatoração global dos logs do sistema atual.",
         "status": "pending",
@@ -660,7 +660,7 @@
         ]
       },
       {
-        "id": 23,
+        "id": "23",
         "title": "Implementar Lógica de Registros de Movimento do Fluxo",
         "description": "Implementar a lógica centralizada para registros de movimento do fluxo, garantindo integridade e aplicação de regras de negócio.",
         "details": "1. Criar `FlowMovementService` para centralizar a lógica.\n2. Validar transições baseadas em `EtapaFluxo.regras_transicao`.\n3. Assegurar registro correto de métricas (SLA/duração).\n4. Disparar side-effects (notificações, sync).\n5. Testes abrangentes.",
@@ -722,7 +722,7 @@
         ]
       },
       {
-        "id": 24,
+        "id": "24",
         "title": "[PERF] Investigação de Desempenho do Fluxo de Mensagens e Treinamento",
         "description": "Investigar e otimizar o desempenho do fluxo de resposta do bot e do sistema de treinamento. O treinamento está demorando muito para processar dados, e as mensagens estão com tempo de resposta muito alto (acima de 40 segundos em casos extremos).",
         "details": "## Contexto do Problema:\n1. **Treinamento**: O processamento de treinamento está demorando muito para executar chunking e geração de embeddings.\n2. **Mensagens**: O tempo total de resposta do bot está excedendo 40 segundos em casos extremos.\n\n## Fluxo Esperado de Mensagens:\n- Recebimento de mensagem no webhook (`evolution_sync/services/webhook.py`)\n- Agendamento via buffer (5 + 5 = 10 segundos) (`message_buffer.py`)\n- Pré-processamento: `analyze_message_content` em `message_analyzer.py`\n- Processamento: `_generate_and_register_response` em `attendance_orchestrator.py`\n- Resposta enviada\n\n**Meta de Tempo**: 10s buffer + máximo 30s processamento = 40s total\n\n## Fluxo de Treinamento:\n- Signal `post_save` dispara `async_task(__gerar_documentos)` em `treinamento/signals.py`\n- Chunking via `__processar_conteudo_para_chunks`\n- Criação de documentos via `Documento.criar_documentos_de_chunks`\n- Signal `post_save` em cada Documento dispara `async_task(__gerar_embedding_documento)`\n- Geração de embedding via `FeaturesCompose.generate_embeddings`\n\n## Arquivos Principais:\n- `evolution_sync/services/webhook.py` - Recebimento webhook\n- `evolution_sync/services/message_buffer.py` - Buffer e agendamento\n- `atendimentos/services/attendance_orchestrator.py` - Orquestrador principal\n- `atendimentos/services/message_analyzer.py` - Análise prévia\n- `treinamento/signals.py` - Fluxo de treinamento\n- `ai_engine/features/generate_embeddings/` - Geração de embeddings\n\n## Métricas da LLM (Referência):\n- AnalisePrévia: 2.94s - 18.98s (adequado)\n- AnaliseMensage: 11.18s - 14.33s (adequado)\n\n## Gargalos Potenciais:\n1. Tempo de buffer muito longo (5+5s)\n2. Serialização/deserialização de envelopes\n3. Consultas ao banco de dados não otimizadas\n4. Geração de embeddings individual por documento (N chamadas à API)\n5. Busca vetorial não otimizada\n6. Carregamento de histórico de mensagens",
@@ -833,7 +833,7 @@
         ]
       },
       {
-        "id": 26,
+        "id": "26",
         "title": "Implementar Ciclo de Feedback de Atendimento e Agente de Avaliação",
         "description": "Implementar um ciclo de feedback para atendimentos resolvidos. Quando um atendimento é marcado como 'RESOLVIDO', uma mensagem solicitando avaliação (1-5) é registrada para envio. As respostas do usuário recebidas dentro de 10 minutos após a resolução são interceptadas e processadas por um agente de IA especializado (analise_avaliacao), que extrai nota, sentimento e normaliza os valores conforme regras de negócio.",
         "details": "## Revisão do Usuário Necessária\n> [!IMPORTANT]\n> O envio de mensagens deve ser feito exclusivamente criando um registro no modelo `Mensagem`. O `evolution_sync` capturará o sinal e processará o envio. A classe `Atendimento` não deve invocar serviços de envio diretamente.\n\n## Mudanças Propostas\n\n### AI Engine (`src/smart_core_assistant_painel/modules/ai_engine`)\n[NOVO] `features/analise_avaliacao`\nCriar um novo módulo de feature seguindo rigorosamente o padrão Clean Architecture documentado em `docs_dev/normalizacao/features/prompt_new_feature.md` (Tipo: --type base).\n\n**Arquivos a Criar/Editar:**\n- `utils/erros.py`: Adicionar `AnaliseAvaliacaoError`.\n- `utils/parameters.py`: Adicionar `AnaliseAvaliacaoParameters`.\n- `utils/types.py`: Adicionar `AAUsecase` (UsecaseBase).\n- `features/analise_avaliacao/domain/usecase/analise_avaliacao_usecase.py`: Lógica de chamada ao LLM e extração.\n- `features/features_compose.py`: Método estático `analise_avaliacao`.\n\n**Lógica de Normalização de Nota (no UseCase):**\n- Se nota <= 5: Mantém.\n- Se nota entre 6 e 10: floor(nota / 2).\n- Se nota > 10: Define como 5.\n\n### UI / Lógica Central (`src/smart_core_assistant_painel/app/ui/atendimentos`)\n[MODIFICAR] `models.py`\nEm `Atendimento.finalizar_atendimento` (ou onde o status for alterado para RESOLVIDO):\n- Criar registro de `Mensagem`:\n  - Conteúdo: Texto solicitando avaliação.\n  - Tipo: Texto.\n  - Remetente: Bot/Sistema.\n- O signal do Django cuidará do envio.\n\n[MODIFICAR] `services/attendance_orchestrator.py`\n- Método `processar_feedback_se_elegivel()` (novo ou integrado):\n  - Identificar se existe atendimento resolvido há menos de 10 min e sem avaliação.\n  - Se sim e a mensagem for do cliente:\n    - Chamar `FeaturesCompose.analise_avaliacao(texto_mensagem)`.\n    - Atualizar `Atendimento`: avaliacao, feedback, tags (\"sentimento: X\").\n    - Agendar Mensagem de Agradecimento: Não enviar \"Obrigado\" imediatamente. Criar uma tarefa agendada (Django Q) para enviar após 10 minutos.\n\n## Plano de Verificação\n### Verificação Manual\n1. **Disparo da Avaliação**: Resolver atendimento -> Verificar criação de Mensagem no banco.\n2. **Processamento de Feedback e Normalização**:\n   - Nota 3 -> Salva 3.\n   - Nota 9 -> Salva 4.\n   - Nota 100 -> Salva 5.\n3. **Agradecimento Diferido**: Após feedback, verificar se a mensagem de agradecimento foi agendada (verificar fila do Django Q).",
@@ -915,7 +915,7 @@
         "updatedAt": "2025-12-07T15:14:27.032Z"
       },
       {
-        "id": 27,
+        "id": "27",
         "title": "[FIX] Correção de Sincronização Trello - Arquivamento e Movimentação",
         "description": "Corrigir bugs de sincronização Trello: (1) Cards não arquivados ao apagar atendimento; (2) Cards não movidos ao transferir entre fluxos/boards.",
         "details": "## Contexto e Motivação\nO sistema apresenta falhas na sincronização com o Trello quando um atendimento é transferido para outro setor/fluxo.\n\n## Fluxo de Erro (Investigação Completa)\n1. **IA detecta transferência**: `AnaliseMensage` identifica intenção e retorna `acao_transferencia='Comercial'`\n2. **Orchestrator aplica fluxo**: `AttendanceOrchestrator` chama `atendimento.apply_flow_by_description('Comercial - Comercial')`\n3. **Atendimento muda**: `departamento`, `fluxo_atendimento` e `etapa_atual` são alterados para o novo fluxo\n4. **Signal dispara**: `post_save` aciona `atendimento_etapa_updated_move_card` que agenda `task_atendimento_move_to_etapa_list`\n5. **Lista criada em board diferente**: `move_card_to_etapa` chama `ensure_list_for_etapa` que cria lista no board do NOVO fluxo\n6. **Tentativa de mover falha**: `move_item` usa `PUT /cards/{id}?idList={listId}` que retorna 404\n7. **Razão do 404**: A API do Trello não permite mover card para lista de outro board sem especificar `idBoard`\n\n## Causa Raiz\n- O método `move_item` usa apenas `idList` no payload\n- Para cross-board moves, a API requer `idBoard` + `idList`\n- O card está em Board A mas a lista destino está em Board B\n\n## Evidência do Log\n```\nlista criada: Fila de Atendimento em 6926444ca03671bd4cd4ba9d -> 69343cb7ca69bcf8d9bfcd27\nFalha Trello API: 404 List 69343cb7ca69bcf8d9bfcd27 does not exist on board 692643b5c0c9dfa73f7bca0f\n```\n\n## Solução\n1. Implementar `move_item_to_board` no TrelloAdapter\n2. Em `move_card_to_etapa`, detectar se boards são diferentes\n3. Se diferente, usar `PUT /cards/{id}?idBoard={boardId}&idList={listId}`",
@@ -976,7 +976,7 @@
         "updatedAt": "2025-12-06T15:39:00.000Z"
       },
       {
-        "id": 28,
+        "id": "28",
         "title": "[FIX] Correção de Sincronização Trello - Log e Atribuição de Atendente",
         "description": "Corrigir bugs de sincronização Trello: (1) Erro no método _log() ao mover cards entre boards; (2) Falha na atribuição automática de atendente ao mover card da Fila para Em Atendimento via Trello.",
         "details": "## Contexto e Motivação\nO sistema apresenta dois problemas críticos na integração com o Trello:\n1. Um erro de log `TrelloUnifiedDataService._log() takes 2 positional arguments but 5 were given` ocorre após a transferência de atendimento.\n2. Ao mover um card manualmente no Trello de 'Fila' para 'Em Atendimento', o sistema não atribui o atendente responsável e não envia mensagem de continuidade.\n\n## Bug 1: Erro no método _log()\n### Diagnóstico\nO método `move_item_to_board` em `trello_adapter.py` (linha 303-308) chama `_log()` com argumentos posicionais:\n```python\nself._log(\n    \"card movido entre boards: {} -> board={}, lista={}\",\n    item_id,\n    target_board_id,\n    target_list_id,\n)\n```\nMas a assinatura espera kwargs nomeados: `_log(self, message: str, **kwargs: Any)`\n\n### Solução\nAlterar para usar kwargs nomeados com placeholders:\n```python\nself._log(\n    \"card movido entre boards: {card} -> board={board}, lista={list}\",\n    card=item_id,\n    board=target_board_id,\n    list=target_list_id,\n)\n```\n\n## Bug 2: Atendente não atribuído\n### Diagnóstico\nO método `process_webhook_card_move` em `ticket_sync_service.py` (linha 848-921):\n- Recebe `member_creator_id` (ID do usuário Trello que moveu o card)\n- NÃO utiliza esse parâmetro para resolver o atendente\n- NÃO atribui o atendente ao atendimento\n- NÃO envia mensagem de continuidade\n\n### Solução\n1. Adicionar método `resolve_atendente_by_external_id` em `MemberSyncService`\n2. Modificar `process_webhook_card_move` para:\n   - Detectar transições FILA -> TRABALHO\n   - Resolver atendente pelo external_id\n   - Usar `transferir_para_humano_com_saudacao` (já existente) para atribuir e enviar mensagem\n\n## Arquivos Afetados\n- `modules/services/features/unifield_data_services/datasource/trello_adapter.py`\n- `app/trello_sync/services/member_sync_service.py`\n- `app/trello_sync/services/ticket_sync_service.py`",
@@ -1036,7 +1036,7 @@
         "updatedAt": "2025-12-06T15:58:00.000Z"
       },
       {
-        "id": 29,
+        "id": "29",
         "title": "[FEAT] Controle de Resposta do Bot por AppInstance",
         "description": "Adicionar campo resposta_bot (boolean) no model AppInstance para controlar se o bot pode responder automaticamente às mensagens recebidas por aquela instância, independente da flag bot_pode_atender do Atendimento.",
         "details": "## Contexto e Motivação\n\nAtualmente, a verificação se o bot pode responder a um atendimento é feita exclusivamente pela flag `bot_pode_atender` do model `Atendimento` no método `BotRulesEngine.can_bot_respond()`.\n\n**Problema**: Não há controle granular por instância de comunicação (AppInstance). Se uma instância específica não deve ter respostas automáticas do bot (ex: instância de atendimento humano exclusivo), a única forma atual de bloquear é marcando manualmente cada atendimento.\n\n**Solução**: Adicionar um campo `resposta_bot` (booleano) no model `AppInstance` que, quando `False`, impede o processamento da resposta do bot para qualquer mensagem recebida por aquela instância, mesmo que o atendimento esteja marcado como `bot_pode_atender=True`.\n\n## Requisitos Funcionais\n\n1. Novo campo `resposta_bot` no model `AppInstance` com `default=True`\n2. Verificação no `BotRulesEngine.can_bot_respond` deve considerar a flag da instância\n3. Hierarquia de verificação: `AppInstance.resposta_bot` → `Atendimento.bot_pode_atender`\n\n## Arquitetura e Localização\n\n### [MODIFY] operacional/models.py\n- Adicionar campo `resposta_bot: models.BooleanField[bool]` com `default=True` no model `AppInstance` (após linha 460)\n\n### [NEW] Migração\n- Gerada automaticamente via `uv run task makemigrations`\n\n### [MODIFY] atendimentos/services/bot_rules_engine.py\n- Modificar `can_bot_respond` para aceitar parâmetro `api_key: Optional[str] = None`\n- Adicionar método privado `_is_instance_bot_enabled(api_key: str) -> bool`\n- Implementar verificação da flag antes das regras existentes\n\n### [MODIFY] atendimentos/services/attendance_orchestrator.py\n- Passar `api_key` para `can_bot_respond` no método `_process_message_and_respond` (linha ~267)\n\n### [MODIFY] atendimentos/services/interfaces.py\n- Atualizar assinatura do método abstrato `can_bot_respond` para incluir parâmetro `api_key`\n\n## Regras de Negócio\n\n1. Se `AppInstance.resposta_bot=False` → NÃO responde (ignora demais verificações)\n2. Se `AppInstance.resposta_bot=True` e houve interação humana → NÃO responde\n3. Se `AppInstance.resposta_bot=True` e `Atendimento.bot_pode_atender=True` → RESPONDE\n4. Se `AppInstance.resposta_bot=True` e `Atendimento.bot_pode_atender=False` → NÃO responde\n5. Se instância não encontrada (api_key inválida) → permite por padrão (fail-safe)\n\n## Código de Referência\n\n```python\n# Model AppInstance - novo campo\nresposta_bot: models.BooleanField[bool] = models.BooleanField(\n    default=True,\n    help_text=\"Se True, o bot pode responder automaticamente mensagens desta instância\",\n)\n\n# BotRulesEngine - novo método\ndef _is_instance_bot_enabled(self, api_key: str) -> bool:\n    try:\n        from smart_core_assistant_painel.app.ui.operacional.models import AppInstance\n        instance = AppInstance.objects.filter(api_key=api_key, active=True).first()\n        if not instance:\n            logger.warning(f\"AppInstance não encontrada para api_key={api_key[:8]}...\")\n            return True  # Fail-safe\n        return instance.resposta_bot\n    except Exception as e:\n        logger.error(f\"Erro ao verificar resposta_bot da instância: {e}\")\n        return True\n```",
@@ -1111,7 +1111,7 @@
         "updatedAt": "2025-12-07T12:07:36.018Z"
       },
       {
-        "id": 30,
+        "id": "30",
         "title": "[INFRA] Infraestrutura Docker do Cliente SaaS",
         "description": "Criar imagem Docker completa e documentação para clientes instalarem sua própria infraestrutura (PostgreSQL + pgvector, Redis, Evolution API) com guia passo a passo.",
         "details": "## Contexto e Motivação\nO modelo SaaS Core as a Service requer que cada cliente hospede sua própria infraestrutura de dados para garantir isolamento total e compliance LGPD. Esta task cria os artefatos necessários para onboarding rápido de clientes.\n\n## Requisitos Funcionais\n1. Docker Compose com PostgreSQL (pgvector), Redis e Evolution API\n2. Arquivo .env.example documentado\n3. Scripts de inicialização do banco\n4. Guia completo de instalação\n5. Lista de dados a fornecer ao painel\n\n## Arquitetura e Localização\n- `ambiente_cliente/docker-compose.yml`\n- `ambiente_cliente/.env.example`\n- `ambiente_cliente/init-scripts/`\n- `ambiente_cliente/GUIA_INSTALACAO.md`\n\n## Detalhes de Implementação\n\n### Docker Compose\n- PostgreSQL 16 com ankane/pgvector:v0.7.4-pg16\n- Redis 7 Alpine\n- Evolution API v2.1.1\n- Volumes persistentes\n- Healthchecks configurados\n- Variáveis de ambiente para customização\n\n### Configurações do Cliente\n- POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD\n- EVOLUTION_API_KEY, EVOLUTION_SERVER_URL\n- WEBHOOK_CORE_URL (apontando para smartcoreassistant.com.br)\n- TENANT_SLUG (identificador único)\n\n### Guia de Instalação\n1. Pré-requisitos (VPS 2GB RAM, Docker)\n2. Download dos arquivos\n3. Configuração do .env\n4. Inicialização dos containers\n5. Configuração do Trello\n6. Cadastro no painel\n\n### Dados para Trello\n- API Key: https://trello.com/app-key\n- Token: Link de autorização\n- Workspace ID e Board ID: Extrair da URL\n\n## Referências\n- Plano: docs_dev/planejamento/estrutura_saas/plano_completo_saas.md\n- Etapa 1 do plano",
@@ -1161,7 +1161,7 @@
         ]
       },
       {
-        "id": 31,
+        "id": "31",
         "title": "[INFRA] Painel de Controle SaaS - Core DB e Autenticação",
         "description": "Implementar o app 'tenants' com modelos de dados (Tenant, TenantDatabase, TenantEvolution, TenantTrello, TenantConfig, Subscription), sistema de cadastro/login e estrutura do painel administrativo.",
         "details": "## Contexto e Motivação\nO painel de controle é o núcleo do SaaS, hospedado em smartcoreassistant.com.br (Hostinger KVM 2). Gerencia cadastro de clientes, configurações de integração e controle de assinatura.\n\n## Requisitos Funcionais\n1. Modelo Tenant com slug único e api_key\n2. Modelo TenantDatabase com connection string criptografada\n3. Modelo TenantEvolution com credenciais criptografadas\n4. Modelo TenantTrello com API Key, Secret, Token criptografados\n5. Modelo TenantConfig para prompts e LLM\n6. Modelo Subscription para controle de planos\n7. Sistema de cadastro e login (Django auth)\n8. Views do portal de configuração\n\n## Arquitetura e Localização\n- `src/smart_core_assistant_painel/app/tenants/`\n  - models.py\n  - forms.py\n  - views.py\n  - admin.py\n  - urls.py\n  - templates/tenants/\n\n## Detalhes de Implementação\n\n### Modelo Tenant\n- id: UUIDField (primary_key)\n- name, slug (unique), api_key (unique)\n- email, phone\n- owner: ForeignKey(User)\n- active, setup_completed: BooleanField\n- timestamps\n\n### Modelo TenantDatabase\n- host, port, database, username\n- _password: CharField (criptografado via Fernet)\n- ssl_mode, connection_valid, last_check, schema_version\n\n### Modelo TenantTrello\n- _api_key, _api_secret, _token (criptografados)\n- workspace_id, board_id\n- webhook_id, webhook_callback_url\n- connection_valid\n\n### Modelo Subscription\n- status: TRIAL, ACTIVE, PAST_DUE, SUSPENDED, CANCELLED\n- plan: STARTER, PRO, ENTERPRISE\n- trial_ends_at, current_period_start/end\n- payment_gateway, external_customer_id\n\n### Criptografia\n- Usar cryptography.fernet.Fernet\n- ENCRYPTION_KEY em settings (via env var)\n- Métodos get_connection_params() para descriptografar\n\n## Variáveis de Ambiente\n- ENCRYPTION_KEY: Chave Fernet para criptografia\n\n## Referências\n- Plano: docs_dev/planejamento/estrutura_saas/plano_completo_saas.md\n- Etapa 2 do plano",
@@ -1322,7 +1322,7 @@
         "updatedAt": "2025-12-09T12:42:16.922Z"
       },
       {
-        "id": 32,
+        "id": "32",
         "title": "[REFACTOR] Arquitetura de Configuração SaaS Multi-Tenant",
         "description": "Implementar nova arquitetura de configuração usando ContextVar para injeção dinâmica, modelo CoreSettings para configs globais, e ConfigProvider desacoplado do Django para módulos puros Python.",
         "details": "## Contexto e Motivação\nO sistema atual carrega configs do Firebase Remote Config via variáveis de ambiente. Na arquitetura SaaS multi-tenant, cada requisição pode ter um tenant diferente, impossibilitando o uso de env vars. A nova arquitetura usa:\n\n1. **ContextVar** - variável de contexto nativa do Python que isola configs por requisição\n2. **ConfigProvider** - interface pura Python que módulos usam para acessar configs\n3. **ConfigLoader** - adaptador Django que carrega do banco e injeta no contexto\n4. **CoreSettings** - modelo key-value para configs globais editáveis via Admin\n\n## Decisões Arquiteturais\n- API Keys: compartilhadas entre todos tenants\n- Prompts do Sistema: globais e fixos\n- Storage: banco de dados editável via Django Admin\n\n## Componentes a Criar\n1. App settings_manager com modelo CoreSettings\n2. Módulo modules/services/config/ com ContextVar e ConfigProvider\n3. ConfigLoader em app/tenants/services/\n4. TenantConfigMiddleware\n5. Script de carga com valores do Firebase\n6. Refatoração do ServiceHub\n7. Remoção do set_environ_remote",
@@ -1441,7 +1441,7 @@
         "updatedAt": "2025-12-09T23:53:00.000Z"
       },
       {
-        "id": 33,
+        "id": "33",
         "title": "[REFACTOR] Chaveamento Multi-Tenant e Database Router",
         "description": "Implementar TenantMiddleware para identificação de tenant por requisição e TenantDatabaseRouter para roteamento dinâmico de queries para o banco do tenant.",
         "details": "## Contexto e Motivação\nCom clientes hospedando seus próprios bancos de dados, o sistema precisa rotear queries dinamicamente para o banco correto baseado no tenant identificado na requisição.\n\n## Estado Atual (Análise 13/12/2025)\n\n### Já Implementado (Tasks 31/32):\n- TenantConfigMiddleware carrega RuntimeConfig via ConfigLoader\n- RuntimeConfig + ContextVar para configurações por requisição\n- Rotas com tenant_slug em evolution_sync/urls.py\n- View webhook resolve tenant manualmente pelo slug\n- EvolutionInstance tem FK para Tenant\n- WebhookProcessor associa tenant à instância criada\n\n### Bug Crítico:\nSubscription.is_active() retorna False fixo (linha 353-354 de models.py)\n\n## Arquitetura\n- app/tenants/middleware.py: TenantMiddleware + thread-local context\n- app/tenants/db_router.py: TenantDatabaseRouter (NOVO)\n- app/ui/core/settings.py: DATABASE_ROUTERS e MIDDLEWARE\n\n## Fluxo Esperado\n1. Request chega -> TenantMiddleware identifica tenant\n2. set_current_tenant(tenant) armazena em thread-local\n3. TenantConfigMiddleware carrega RuntimeConfig\n4. Database router usa get_current_tenant() para rotear\n5. Response -> clear_current_tenant()\n\n## CORE_APPS vs TENANT_APPS\n- CORE_APPS (default): tenants, settings_manager, auth, admin, contenttypes, sessions\n- TENANT_APPS (roteados): clientes, atendimentos, operacional, evolution_sync, trello_sync, treinamento",
@@ -1546,7 +1546,7 @@
         ]
       },
       {
-        "id": 34,
+        "id": "34",
         "title": "[FEAT] Licenciamento Manual e Controle de Período",
         "description": "Implementar sistema de licenciamento manual onde o Super Admin registra pagamentos recebidos 'em mãos' e define o período de acesso do tenant sem integração com gateways de pagamento.",
         "details": "## Contexto e Motivação\nO controle de licenciamento será 100% MANUAL:\n1. Super Admin negocia com o cliente (ex: 6 meses de uso)\n2. Recebe pagamento 'em mãos' (Pix, transferência, dinheiro - fora do sistema)\n3. Registra no sistema apenas o PERÍODO LICENCIADO (period_start, period_end)\n4. Sistema libera/bloqueia acesso automaticamente baseado nas datas\n\n**NÃO HÁ INTEGRAÇÃO COM GATEWAYS DE PAGAMENTO (Asaas, Stripe, etc.)**\n\n## Requisitos Funcionais\n1. Modelo PaymentRecord para histórico de pagamentos manuais\n2. Métodos em Subscription: extend_period(), set_manual_period()\n3. Interface no Django Admin para registrar pagamentos\n4. Task Celery para verificação periódica de expirações\n5. Bloqueio automático de tenant com período expirado\n\n## Arquitetura e Localização\n- `app/tenants/models.py` - Modelo PaymentRecord\n- `app/tenants/admin.py` - PaymentRecordAdmin e PaymentRecordInline\n- `app/tenants/tasks.py` - Task check_subscription_expirations\n- `app/tenants/views/backoffice/register_payment.py` - View de registro\n\n## Modelo PaymentRecord\n```python\nclass PaymentRecord(models.Model):\n    class PaymentMethod(models.TextChoices):\n        PIX = 'PIX', 'Pix'\n        TRANSFER = 'TRANSFER', 'Transferência'\n        CASH = 'CASH', 'Dinheiro'\n        BOLETO = 'BOLETO', 'Boleto'\n        OTHER = 'OTHER', 'Outro'\n    \n    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='payments')\n    amount = models.DecimalField(max_digits=10, decimal_places=2)\n    payment_date = models.DateField()\n    payment_method = models.CharField(max_length=20, choices=PaymentMethod.choices)\n    period_start = models.DateField()\n    period_end = models.DateField()\n    notes = models.TextField(blank=True)\n    recorded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)\n    created_at = models.DateTimeField(auto_now_add=True)\n```\n\n## Fluxo de Uso\n1. Super Admin acessa Django Admin > Tenants\n2. Seleciona tenant e clica 'Registrar Pagamento'\n3. Preenche: valor, data, método, meses contratados\n4. Sistema cria PaymentRecord e atualiza Subscription automaticamente\n5. Tenant fica liberado até period_end\n\n## Verificação de Expiração\n- Task Celery diária às 00:00: check_subscription_expirations\n- Se current_period_end < hoje: status = SUSPENDED\n- Log de aviso 7 dias antes da expiração",
@@ -1628,7 +1628,7 @@
         "updatedAt": "2025-12-13T14:22:00.000Z"
       },
       {
-        "id": 35,
+        "id": "35",
         "title": "[FEAT] TenantAdminSite - Painel Administrativo do Cliente (SaaS)",
         "description": "Implementar TenantAdminSite (Django Admin Site dedicado) para clientes gerenciarem seus recursos de negócio com isolamento por tenant, reutilizando a infraestrutura do Django Admin.",
         "details": "## Contexto e Motivação\n\n### Decisão Arquitetural: TenantAdminSite vs Frontend Customizado\n\nApós análise, optou-se por criar um **Django Admin Site dedicado** (`TenantAdminSite`) em vez de um frontend completamente customizado. Esta abordagem:\n\n- ✅ Reutiliza toda infraestrutura existente do Django Admin\n- ✅ Os `ModelAdmin` já estão implementados (`AtendenteAdmin`, `DepartamentoAdmin`, etc.)\n- ✅ Menor tempo de implementação e superfície de bugs\n- ✅ Manutenção unificada\n\n## Requisitos Funcionais\n\n### Modelos Gerenciáveis pelo Cliente\n| App | Modelos | Ações |\n|-----|---------|-------|\n| `operacional` | `Departamento`, `Atendente`, `AppInstance`, `FluxoAtendimento`, `EtapaFluxo` | CRUD |\n| `evolution_sync` | `EvolutionInstance` | Read, Update |\n| `treinamento` | `Documento` | CRUD |\n| `atendimentos` | `Atendimento`, `Mensagem` | Read-only |\n\n### Modelos do Core (Ocultos)\n- `Tenant`, `TenantDatabase`, `TenantConfig`, `Plan`, `Subscription`, `CoreSettings`\n\n## Arquitetura e Localização\n\n### Arquivos Principais\n- `app/tenants/admin_client.py` - TenantAdminSite\n- `app/tenants/mixins.py` - TenantModelAdminMixin\n- `app/ui/operacional/tenant_admin.py` - Registros de modelos operacionais\n- `app/evolution_sync/tenant_admin.py` - Registros de modelos Evolution\n\n### URL Pattern\n- `/tenant-admin/` - Admin do Cliente (TenantAdminSite)\n- `/admin/` - Super Admin / Backoffice (Django Admin padrão)\n\n## Detalhes de Implementação\n\n### 1. TenantAdminSite\n```python\nclass TenantAdminSite(AdminSite):\n    site_header = 'Painel de Configuração'\n    \n    def has_permission(self, request):\n        tenant = getattr(request, 'tenant', None)\n        if tenant is None or not tenant.active:\n            return False\n        return request.user == tenant.owner or hasattr(request.user, 'tenant_memberships')\n```\n\n### 2. TenantModelAdminMixin\n```python\nclass TenantModelAdminMixin:\n    def get_queryset(self, request):\n        # TenantDatabaseRouter já garante banco correto\n        return super().get_queryset(request)\n    \n    def has_add_permission(self, request):\n        tenant = get_current_tenant()\n        return tenant is not None and tenant.active\n```\n\n### 3. Registros no TenantAdminSite\n- Adaptar os ModelAdmin existentes aplicando o Mixin\n- Registrar apenas modelos de negócio (não Core)\n\n## Dependência Crítica\n\n**Task 33 (TenantMiddleware + DBRouter)** é BLOQUEANTE. Sem ela:\n- `get_current_tenant()` não funciona\n- `TenantDatabaseRouter` não roteia queries\n- Isolamento de dados não existe",
@@ -1708,7 +1708,7 @@
         "updatedAt": "2025-12-11T01:47:00.000Z"
       },
       {
-        "id": 36,
+        "id": "36",
         "title": "[ADM] Portal Super Admin - Dashboard e Gestão de Tenants",
         "description": "Implementar painel de Backoffice (Super Admin) para gestão de Tenants, registro de pagamentos manuais e visualização de métricas, utilizando o Django Admin padrão com melhorias.",
         "details": "## Contexto e Motivação\nO dono do SaaS precisa de um painel centralizado para gerenciar os Tenants (Clientes), registrar pagamentos manuais e visualizar métricas globais.\n\n**IMPORTANTE**: O Django Admin padrão (`/admin/`) já serve como backoffice base. Esta task foca em MELHORIAS específicas:\n- Dashboard customizado com métricas\n- Actions bulk para extensão de período\n- View dedicada para registro de pagamentos\n- Filtros e relatórios úteis\n\n## Requisitos Funcionais\n1. **Dashboard de Métricas**: Total de tenants, ativos, expirando, MRR estimado\n2. **Gestão de Tenants**: Listagem com filtros, actions de suspensão/ativação\n3. **Registro de Pagamentos**: View para registrar pagamento manual e estender período\n4. **Actions Rápidas**: Estender 30 dias, 6 meses, 12 meses em lote\n5. **Acesso**: Restrito a Superusers (`is_superuser=True`)\n\n## Arquitetura e Localização\n- `app/tenants/views/backoffice/` - Views customizadas\n- `app/tenants/templates/tenants/backoffice/` - Templates\n- `app/tenants/admin.py` - Actions e melhorias no TenantAdmin\n- `app/tenants/urls.py` - Rotas do backoffice\n\n## Detalhes de Implementação\n\n### Dashboard (/bo/)\n- Cards: Total Tenants, Ativos, Expirando em 30 dias, Suspensos\n- Lista: Últimos 5 tenants criados\n- Lista: Subscriptions expirando em 7 dias\n- Links rápidos para ações comuns\n\n### Actions no TenantAdmin\n```python\n@admin.action(description='Estender +6 meses')\ndef extend_subscription_6_months(self, request, queryset):\n    for tenant in queryset:\n        tenant.subscription.extend_period(months=6)\n    self.message_user(request, f'{queryset.count()} tenants atualizados')\n```\n\n### View de Registro de Pagamento\n- Formulário: valor, data, método, meses\n- Cria PaymentRecord automaticamente\n- Atualiza Subscription.current_period_end\n- Redirect para changelist com mensagem de sucesso\n\n## Dependências\n- Task 34: Modelo PaymentRecord e métodos de Subscription\n- Task 31: Modelos base de Tenant e Subscription",
@@ -1782,7 +1782,7 @@
         "updatedAt": "2025-12-13T14:30:00.000Z"
       },
       {
-        "id": 37,
+        "id": "37",
         "title": "[INFRA] Migração Django Q → Celery + Docker Compose",
         "description": "Migrar sistema de filas de Django Q2 para Celery, otimizado para Hostinger KVM 2 (2 vCPU, 8GB RAM) com suporte a 10 clientes. Inclui Docker Compose para worker/beat e Flower opcional.",
         "details": "## Contexto e Motivação\n\n### Por que migrar?\n| Aspecto | Django Q2 | Celery |\n|---------|-----------|--------|\n| Filas separadas | Limitado | Nativo |\n| Rate limiting | Manual | Decorador |\n| Monitoramento | Django Admin | Flower |\n| Retry policies | Básico | Backoff exponencial |\n| Escala horizontal | Limitado | Excelente |\n\n### Decisão Arquitetural\n**Worker Centralizado** no servidor Core (não distribuído nos clientes).\n- Manutenção única\n- API keys seguras no servidor central\n- Deploy/monitoramento centralizados\n\n## Dimensionamento para Hostinger KVM 2\n\n| Componente | RAM | CPU |\n|------------|-----|-----|\n| Django (Gunicorn 4w) | 800 MB | 0.3 |\n| PostgreSQL Core | 1.5 GB | 0.3 |\n| Redis | 256 MB | 0.1 |\n| Celery Worker (3 procs) | 1.5 GB | 0.8 |\n| Celery Beat | 100 MB | 0.05 |\n| Buffer/Sistema | 3.8 GB | 0.4 |\n\n**Config Celery:**\n- `CELERY_WORKER_CONCURRENCY=3`\n- `CELERY_WORKER_PREFETCH_MULTIPLIER=1`\n- `CELERY_TASK_SOFT_TIME_LIMIT=120`\n- `CELERY_TASK_TIME_LIMIT=300`\n\n## Arquivos a Modificar\n\n### Dependências\n- `pyproject.toml`: Remover django-q2, adicionar celery[redis], django-celery-beat, django-celery-results\n\n### Configuração\n- `app/ui/core/celery.py` [NEW]: Configuração Celery com filas\n- `app/ui/core/__init__.py` [MODIFY]: Exportar celery_app\n- `app/ui/core/settings.py` [MODIFY]: Remover Q_CLUSTER, adicionar CELERY_*\n\n### Docker\n- `docker-compose.yml` [MODIFY]: Adicionar celery_worker, celery_beat, flower (profile debug)\n\n### Tasks (7 arquivos)\n1. `trello_sync/tasks.py`: schedule() → PeriodicTask\n2. `trello_sync/signals.py`: async_task() → task.delay()\n3. `trello_sync/views_api.py`: async_task() → task.delay() (3 usos)\n4. `treinamento/signals.py`: async_task() → task.delay()\n5. `treinamento/tasks.py` [NEW]: Tasks extraídas\n6. `evolution_sync/services/message_buffer.py`: Schedule → ClockedSchedule\n7. `atendimentos/models.py`: schedule() → PeriodicTask\n\n### Scripts\n- `pyproject.toml` tasks: cluster → celery-worker, celery-beat\n\n## Filas Configuradas\n- `webhooks`: Alta prioridade, baixa latência\n- `ai_processing`: Recursos intensivos (embeddings, RAG)\n- `default`: Todo o resto\n\n## Flower (Debug Apenas)\nUsando Docker Profiles - só sobe com `--profile debug`.\nProtegido com Basic Auth.\n\n## Referências\n- [implementation_plan.md](file:///C:/Users/pwlim/.gemini/antigravity/brain/2d74c2df-8baf-41c5-9277-669702a56e1b/implementation_plan.md)\n- [uso_flower.md](file:///c:/PROJETOS/PYTHON/APPS/smart-core-assistant-painel/docs_dev/planejamento/consideracoe_celery.md/uso_flower.md)",
@@ -1942,7 +1942,7 @@
         "updatedAt": "2025-12-11T13:40:00.000Z"
       },
       {
-        "id": 38,
+        "id": "38",
         "title": "[FEAT] Sistema de Gerenciamento de Usuários e Permissões por Tenant",
         "description": "Implementar sistema completo para owner cadastrar funcionários com convite por email, ativação de conta no primeiro acesso, e controle de permissões granulares por módulo do sistema.",
         "details": "## Contexto e Motivação\n\nO sistema atual possui arquitetura SaaS multi-tenant onde:\n- O **owner** do tenant acessa a home e o `tenant-admin`\n- Não existe mecanismo para o owner cadastrar **funcionários**\n- As permissões são globais e não são escopo por tenant\n\n## Fluxo de Implementação\n\n### Fase 1: Owner Cadastra Funcionário\n1. Owner logado no Tenant Admin\n2. Acessa 'Gerenciar Usuários'\n3. Clica 'Convidar Funcionário'\n4. Preenche: Nome, Email, Role, Módulos\n5. Sistema cria TenantInvite com token único\n6. Sistema envia email com link de ativação\n\n### Fase 2: Funcionário Ativa Conta\n1. Funcionário recebe email com link\n2. Clica no link de ativação\n3. Sistema valida token (expira em 7 dias)\n4. Tela: Definir sua senha\n5. Sistema cria User + TenantUser\n6. Marca TenantInvite como usado\n7. Redireciona ao Login\n\n### Fase 3: Acesso Normal\n1. Funcionário faz login com email/senha\n2. Middleware identifica TenantUser\n3. Redireciona ao Tenant Admin\n4. Exibe apenas módulos permitidos\n\n## Modelos de Dados\n\n### TenantInvite\n- id: UUID (PK)\n- tenant: FK → Tenant\n- email: EmailField\n- name: CharField(100)\n- role: CharField(20) [admin|manager|staff|viewer]\n- module_permissions: JSONField\n- token: CharField(64, unique)\n- expires_at: DateTimeField (default: 7 dias)\n- used: BooleanField(default=False)\n- created_at: DateTimeField(auto_now_add=True)\n- created_by: FK → User\n\n### TenantUser\n- id: AutoField (PK)\n- user: OneToOneField → User (1 user = 1 tenant)\n- tenant: FK → Tenant\n- role: CharField(20) [admin|manager|staff|viewer]\n- module_permissions: JSONField\n- is_active: BooleanField(default=True)\n- created_at: DateTimeField(auto_now_add=True)\n- created_by: FK → User\n\n## Módulos do Sistema (Permissões Granulares)\n| Módulo | Modelos |\n|--------|--------|\n| clientes | Cliente, Contato |\n| operacional | Departamento, AppInstance, FluxoAtendimento |\n| treinamento | QueryCompose, Documento |\n| atendimentos | Atendimento, Mensagem |\n| configuracoes | TenantConfig, Integrações |\n\n## Estrutura de Permissões por Módulo\n```json\n{\n  \"clientes\": {\"view\": true, \"edit\": true, \"delete\": false},\n  \"treinamento\": {\"view\": true, \"edit\": false, \"delete\": false}\n}\n```\n\n## Arquivos a Criar/Modificar\n\n### Novos Arquivos\n- `app/tenants/permissions.py`: Enum de módulos\n- `app/tenants/views/invites.py`: Views de convite e ativação\n- `templates/tenants/users/list.html`: Listagem de funcionários\n- `templates/tenants/users/invite.html`: Formulário de convite\n- `templates/tenants/users/activate.html`: Tela de ativação\n- `templates/tenants/users/invite_expired.html`: Link expirado\n\n### Arquivos a Modificar\n- `app/tenants/models.py`: Adicionar TenantInvite e TenantUser\n- `app/tenants/admin_client.py`: Suporte a TenantUser no has_permission\n- `app/tenants/middleware.py`: Resolver TenantUser na request\n- `app/tenants/urls.py`: Rotas para convite/ativação\n- `app/ui/*/tenant_admin.py`: BasePermissionModelAdmin\n\n## Referências\n- [implementation_plan.md](file:///C:/Users/pwlim/.gemini/antigravity/brain/9b574404-b817-48f0-927b-fe2bf9365e59/implementation_plan.md)",
@@ -2097,7 +2097,7 @@
         "updatedAt": "2026-01-02T22:16:57.325Z"
       },
       {
-        "id": 39,
+        "id": "39",
         "title": "[INFRA] Implementar Propagação de Contexto Multi-Tenant no Celery",
         "description": "Implementar a classe base TenantTask e refatorar tarefas assíncronas para garantir que o contexto do tenant (slug) seja propagado do processo web para os workers do Celery, assegurando o roteamento correto do banco de dados.",
         "details": "A implementação visa resolver o isolamento de dados em background tasks. Detalhes técnicos:\n\n1. **Criar Base Class (tenants/celery.py)**:\n   - Implementar classe `TenantTask(Task)` herdando de `celery.Task`.\n   - Sobrescrever o método `__call__`. Este método deve interceptar o primeiro argumento posicional (convenção: `tenant_slug`), carregar as configurações do tenant (usando a lógica da Task 33/31) e configurar a `ContextVar` global antes de executar o `super().__call__`.\n   - Garantir limpeza do contexto (`finally`) após execução.\n\n2. **Helper de Contexto**:\n   - Criar utilitário `get_current_tenant_slug()` em `tenants/utils.py` ou `middleware.py` para recuperar o slug ativo na thread da request, facilitando a passagem de parâmetros nos signals.\n\n3. **Refatoração de Tasks (Adicionar `base=TenantTask`)**:\n   - **treinamento/tasks.py**: Atualizar funções de vetorização (4 funções). Assinatura deve mudar de `def task(id)` para `def task(tenant_slug, id)`.\n   - **trello_sync/tasks.py**: Atualizar as 15 funções de sincronização (cards, lists, boards).\n   - **atendimentos/tasks.py**: Atualizar tarefas de housekeeping e notificações.\n\n4. **Atualização de Triggers (Signals/Views)**:\n   - Refatorar todas as chamadas `.delay()` e `.apply_async()` em `signals.py` (de todos os apps) e `views_api.py` para injetar `get_current_tenant_slug()` como primeiro argumento.\n   - Total estimado de 42 pontos de alteração no código.",
@@ -2211,7 +2211,7 @@
         ]
       },
       {
-        "id": 40,
+        "id": "40",
         "title": "[FIX] Correção Webhook Trello Multi-Tenant e Tela de Configuração",
         "description": "Corrigir a falha de identificação de tenant nos webhooks do Trello alterando a estrutura da URL e corrigir a persistência de dados na tela de configuração do Trello.",
         "details": "Esta tarefa resolve o problema crítico onde o TenantMiddleware não identifica o tenant em callbacks do Trello e a tela de configuração não carrega dados salvos.\n\n1. **Refatoração de Formulário (app/tenants/forms.py)**:\n   - Atualizar `TenantTrelloForm`. Sobrescrever `__init__` para aceitar a instância de configuração atual e preencher `self.fields['field_name'].initial` com os valores salvos no banco (via arquitetura SaaS Config).\n\n2. **Nova Rota de Webhook (app/trello_sync/api_urls.py)**:\n   - Alterar a rota de webhook para aceitar o slug do tenant na URL: `path('webhook/<str:tenant_slug>/', TrelloWebhookView.as_view(), name='trello_webhook')`.\n   - Isso garante que o middleware identifique o tenant antes de processar o payload.\n\n3. **Lógica de Registro Manual (app/trello_sync/views_api.py)**:\n   - Criar `RegisterTrelloWebhookView`. Esta view deve ser acionada via botão no painel.\n   - Deve montar a `callbackURL` completa incluindo o `tenant_slug` e enviar requisição POST para a API do Trello para registrar/atualizar o webhook.\n\n4. **Tela de Configuração (app/tenants/views/legacy_views.py & templates)**:\n   - Atualizar `TrelloConfigView` para usar o novo template `app/tenants/templates/tenants/config_trello.html`.\n   - O template deve exibir: Campos do formulário, Status atual da conexão (se o webhook está ativo no Trello) e um Botão 'Registrar Webhook'.\n\n5. **Limpeza de Automação (app/trello_sync/tasks.py)**:\n   - Remover a função `_ensure_webhook_for_board` ou sua chamada automática, pois ela tenta registrar webhooks sem o contexto explícito da URL do tenant, causando o bug de 'public' tenant.",
@@ -2297,7 +2297,7 @@
         ]
       },
       {
-        "id": 41,
+        "id": "41",
         "title": "[FIX] Correção do Processamento de Webhook Trello (Sincronização de Status e MovimentoFluxo)",
         "description": "Corrigir o processamento de webhook do Trello para que movimentações de cards disparem corretamente: alteração de status do atendimento, registro de MovimentoFluxo e envio de mensagens de saudação.",
         "details": "## Contexto e Motivação\n\nApós a refatoração para multi-tenant, o webhook do Trello é recebido corretamente pelo sistema, mas os eventos de movimentação de cards não estão disparando as ações esperadas. A versão 0.9.0 (MVP funcional) utilizava `WebhookProcessingService` que implementava a sincronização completa. A versão atual delega para `TicketSyncService.process_webhook_card_move`, mas perdeu funcionalidades críticas.\n\n### Funcionalidades Ausentes\n\n1. **Sincronização de Status do Atendimento**\n   - Não atualiza `atendimento.status` baseado no `TipoEtapa` da lista de destino\n   - Resultado: Status permanece desatualizado após mover card no Trello\n\n2. **Registro de MovimentoFluxo**\n   - Não registra histórico de movimentação no modelo `MovimentoFluxo`\n   - Resultado: Falta de rastreabilidade de movimentações via Trello\n\n3. **Sincronização Incompleta para Casos Específicos**\n   - ESPERA: Não muda status para `PENDENCIA`\n   - TRABALHO (sem ser FILA→TRABALHO): Não atualiza status\n\n## Requisitos Funcionais\n\n1. Ao mover um card no Trello, o sistema deve:\n   - Atualizar a `etapa_atual` do atendimento correspondente\n   - **Sincronizar o `status` do atendimento** baseado no `TipoEtapa` da nova etapa:\n     - `TipoEtapa.FILA` → `StatusAtendimento.FILA`\n     - `TipoEtapa.TRABALHO` → `StatusAtendimento.EM_ATENDIMENTO`\n     - `TipoEtapa.ESPERA` → `StatusAtendimento.PENDENCIA`\n     - `TipoEtapa.FINALIZACAO` → `StatusAtendimento.RESOLVIDO` ou `CANCELADO`\n   - **Registrar MovimentoFluxo** para histórico de auditoria\n\n2. Se movimento for FILA → TRABALHO:\n   - Identificar atendente pelo `member_creator_id` do Trello\n   - Atribuir atendente ao atendimento\n   - Enviar saudação automática via `transferir_para_humano_com_saudacao`\n\n3. Se movimento for → FINALIZACAO:\n   - Finalizar atendimento e solicitar feedback via `finalizar_atendimento`\n\n## Arquitetura e Localização\n\n### Abordagem Escolhida: Refatorar para usar `MovimentoFluxo.criar_movimento` como único ponto de atualização\n\nO método `MovimentoFluxo.criar_movimento` já implementa:\n- Atualização de `etapa_atual` no atendimento\n- Atualização de `atendente_humano` (opcional)\n- Cálculo de duração desde último movimento\n- Criação do registro de movimento\n\n**Vantagem**: Centraliza a lógica, evita duplicação de código\n**Observação**: Precisa ajustar `process_webhook_card_move` para não atualizar `etapa_atual` diretamente, delegando para `criar_movimento`\n\n### Arquivos a Modificar\n\n1. `src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py`\n   - Método: `process_webhook_card_move` (linhas 881-998)\n   - Adicionar método auxiliar: `_sync_status_from_etapa`\n\n2. `src/smart_core_assistant_painel/app/ui/operacional/models.py`\n   - Verificar método `MovimentoFluxo.criar_movimento` (já existente)\n\n## Detalhes de Implementação\n\n### Refatoração de `process_webhook_card_move`\n\nSubstituir a atualização direta de `etapa_atual` por chamada ao `MovimentoFluxo.criar_movimento`:\n\n```python\n# ANTES (remover):\natendimento.etapa_atual = nova_etapa\natendimento.save(update_fields=[\"etapa_atual\"])\n\n# DEPOIS (usar):\nfrom smart_core_assistant_painel.app.ui.operacional.models import MovimentoFluxo\n\n# Resolver atendente que moveu (opcional)\natendente = None\nif member_creator_id:\n    atendente = MemberSyncService().resolve_atendente_by_external_id(member_creator_id)\n\n# Criar movimento (atualiza etapa_atual e atendente automaticamente)\nMovimentoFluxo.criar_movimento(\n    atendimento=atendimento,\n    etapa_destino=nova_etapa,\n    atendente_destino=atendente,  # só se FILA→TRABALHO\n    motivo=\"Atualização via Trello webhook\",\n    automatico=True,\n)\n```\n\n### Método Auxiliar: `_sync_status_from_etapa`\n\n```python\ndef _sync_status_from_etapa(self, atendimento: Atendimento, etapa: Any) -> None:\n    \"\"\"Sincroniza o status do atendimento com base no tipo da etapa.\"\"\"\n    from smart_core_assistant_painel.app.ui.atendimentos.models import StatusAtendimento\n\n    tipo_etapa = getattr(etapa, \"tipo_etapa\", None)\n    novo_status = None\n\n    if tipo_etapa == TipoEtapa.FILA:\n        novo_status = StatusAtendimento.FILA\n    elif tipo_etapa == TipoEtapa.TRABALHO:\n        novo_status = StatusAtendimento.EM_ATENDIMENTO\n    elif tipo_etapa == TipoEtapa.ESPERA:\n        novo_status = StatusAtendimento.PENDENCIA\n    elif tipo_etapa == TipoEtapa.FINALIZACAO:\n        nome_lower = etapa.nome.lower()\n        if \"cancelado\" in nome_lower or \"cancel\" in nome_lower:\n            novo_status = StatusAtendimento.CANCELADO\n        else:\n            novo_status = StatusAtendimento.RESOLVIDO\n\n    if novo_status and atendimento.status != novo_status:\n        atendimento.status = novo_status\n        atendimento.save(update_fields=[\"status\"])\n        logger.info(\n            \"Status do atendimento {} sincronizado para {} via Trello\",\n            atendimento.id, novo_status\n        )\n```\n\n### Fluxo de Execução Refatorado\n\n1. Webhook recebido → `views_api.webhook()`\n2. Payload parseado → `task_process_trello_card_move.delay()`\n3. Task Celery executa → `TicketSyncService().process_webhook_card_move()`\n4. Localiza card e lista no banco\n5. Valida se houve mudança real de etapa\n6. **Cria MovimentoFluxo** (atualiza etapa e atendente)\n7. **Sincroniza status** baseado em TipoEtapa\n8. Se FILA→TRABALHO: `transferir_para_humano_com_saudacao`\n9. Se →FINALIZACAO: `finalizar_atendimento`\n\n## Observações e Decisões de Design\n\n- A flag `_syncing_from_trello = True` deve ser mantida para evitar loops com signals do Atendimento\n- O método `criar_movimento` já faz `save()` no atendimento, então não precisamos fazer save duplicado de `etapa_atual`\n- A sincronização de status deve vir APÓS o `criar_movimento` para garantir consistência\n\n## Referências\n\n- Versão 0.9.0: `WebhookProcessingService.process()` (linhas 78-132)\n- PRD: ATD-LIF-003 (Transbordo Ativo)\n- Modelo: `MovimentoFluxo.criar_movimento` em `operacional/models.py`",
@@ -2391,7 +2391,7 @@
         ]
       },
       {
-        "id": 42,
+        "id": "42",
         "title": "[INFRA] Middleware de Resolução de Tenant por Subdomínio",
         "description": "Implementar a identificação dinâmica de tenants com priorização (Subdomínio > Header > Sessão) e configurar hosts permitidos para suporte a Whitelabel SaaS.",
         "status": "done",
@@ -2456,7 +2456,7 @@
         "updatedAt": "2026-01-02T22:34:47.741Z"
       },
       {
-        "id": 43,
+        "id": "43",
         "title": "[FEAT] Sistema de Branding Dinâmico e White Label",
         "description": "Implementar personalização visual por tenant estendendo o TenantConfig com campos de URL de mídia (logo/favicon) e cores, injetando esses dados no TenantAdminSite e templates públicos via Context Processor.",
         "status": "pending",
@@ -2519,7 +2519,7 @@
         ]
       },
       {
-        "id": 44,
+        "id": "44",
         "title": "[FEAT] Templates Dinâmicos com Branding do Tenant",
         "description": "Atualizar os templates base e implementar context processors para injetar variáveis visuais (Logo, Cores, Título) dinamicamente baseadas nas configurações do Tenant.",
         "status": "pending",
@@ -2582,7 +2582,7 @@
         ]
       },
       {
-        "id": 45,
+        "id": "45",
         "title": "[FEAT] Isolamento de Dados por Tenant e Implementação de TenantFilterMixin",
         "description": "Implementar a camada de segurança de dados para garantir que usuários acessem estritamente registros do seu tenant, criando Mixins de filtragem automática para o Django Admin e API ViewSets.",
         "status": "done",
@@ -2661,17 +2661,17 @@
         "updatedAt": "2026-01-02T22:55:53.276Z"
       },
       {
-        "id": 46,
+        "id": "46",
         "title": "[FEAT] Onboarding Multi-Etapas (Wizard) de Tenants",
         "description": "Implementar fluxo de cadastro self-service (Wizard) com 4 etapas para criação automatizada de novos tenants, incluindo dados básicos, seleção de plano, configurações iniciais e provisionamento.",
         "details": "Desenvolver uma `SessionWizardView` (ou fluxo baseado em sessão) que gerencie o estado do cadastro antes da persistência no banco de dados.\n\n### Estrutura do Wizard\n1. **Etapa 1 (Dados Cadastrais)**: Formulário para `nome`, `slug` (com validação AJAX de disponibilidade) e dados do administrador inicial (`email`, `senha`).\n2. **Etapa 2 (Pagamento/Plano)**: Seleção de plano (Basic, Pro, Enterprise). Por ora, implementar apenas a seleção lógica sem gateway real (Mock).\n3. **Etapa 3 (Configuração Inicial)**: Definição de `brand_name`, `timezone` e `language_code` para o `TenantConfig` (Task 32).\n4. **Etapa 4 (Provisionamento)**: View de processamento final.\n\n### Serviço de Provisionamento\nCriar `src/smart_core_assistant_painel/app/tenants/services/provisioning.py`:\n- Encapsular lógica em `transaction.atomic()`.\n- Criar registro `Tenant`.\n- Criar `TenantConfig` associado.\n- Criar `User` inicial com permissões de admin (is_staff=True, is_superuser=False) vinculado ao tenant.\n\n### Redirecionamento\nApós sucesso, utilizar a lógica de subdomínios (Task 42) para gerar a URL de destino: `http://{slug}.{domain}/tenant-admin/` e realizar o redirect, forçando o login automático se possível ou redirecionando para a tela de login do subdomínio.",
         "testStrategy": "1. **Teste de Fluxo**: Simular o preenchimento das 4 etapas via `Client` de testes, verificando se os dados são mantidos na sessão entre os passos.\n2. **Teste de Provisionamento**: Verificar se ao submeter a etapa 4, os registros (Tenant, Config, User) são criados corretamente no banco.\n3. **Teste de Isolamento**: Garantir que o User criado está estritamente vinculado ao novo Tenant.\n4. **Teste de URL**: Validar se a URL de redirecionamento final corresponde ao subdomínio correto configurado no `.env`.",
-        "status": "pending",
+        "status": "done",
         "dependencies": [
-          32,
-          35,
-          42,
-          45
+          "32",
+          "35",
+          "42",
+          "45"
         ],
         "priority": "high",
         "subtasks": [
@@ -2681,8 +2681,10 @@
             "description": "Criar os formulários Django necessários para as 3 primeiras etapas do Wizard de cadastro de tenants.",
             "dependencies": [],
             "details": "Criar o arquivo `src/smart_core_assistant_painel/app/tenants/forms/onboarding.py`. Implementar: 1) `TenantRegistrationForm` (nome, slug, email admin, senha) com validação básica; 2) `PlanSelectionForm` (ChoiceField para Basic, Pro, Enterprise); 3) `TenantConfigForm` (brand_name, timezone, language_code).",
-            "status": "pending",
-            "testStrategy": "Testes unitários instanciando cada form com dados válidos e inválidos, verificando `form.is_valid()` e mensagens de erro."
+            "status": "done",
+            "testStrategy": "Testes unitários instanciando cada form com dados válidos e inválidos, verificando `form.is_valid()` e mensagens de erro.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T20:17:26.756Z"
           },
           {
             "id": 2,
@@ -2692,8 +2694,10 @@
               1
             ],
             "details": "Criar `src/smart_core_assistant_painel/app/tenants/services/provisioning.py`. A classe `TenantProvisioningService` deve ter um método `provision_tenant(data)` decorado com `@transaction.atomic`. Deve criar: `Tenant`, `TenantConfig` (Task 32) e o `User` admin inicial vinculado ao tenant.",
-            "status": "pending",
-            "testStrategy": "Teste de integração invocando o serviço e verificando se os 3 registros (Tenant, Config, User) foram criados no banco de dados e se estão corretamente relacionados."
+            "status": "done",
+            "testStrategy": "Teste de integração invocando o serviço e verificando se os 3 registros (Tenant, Config, User) foram criados no banco de dados e se estão corretamente relacionados.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T20:17:31.827Z"
           },
           {
             "id": 3,
@@ -2703,8 +2707,10 @@
               1
             ],
             "details": "Em `src/smart_core_assistant_painel/app/tenants/views/onboarding.py`, criar a classe `TenantOnboardingWizardView`. Configurar a lista de forms (`FORMS = [('cadastro', ...), ('plano', ...), ('config', ...)]`). Mapear a URL no arquivo de rotas. Garantir persistência dos dados na sessão entre os passos.",
-            "status": "pending",
-            "testStrategy": "Teste de fluxo simulando requisições GET/POST sequenciais para avançar entre as etapas 1 e 2, verificando se o passo atual é atualizado."
+            "status": "done",
+            "testStrategy": "Teste de fluxo simulando requisições GET/POST sequenciais para avançar entre as etapas 1 e 2, verificando se o passo atual é atualizado.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T20:17:41.379Z"
           },
           {
             "id": 4,
@@ -2714,8 +2720,10 @@
               3
             ],
             "details": "Criar templates em `templates/tenants/onboarding/`. Implementar endpoint JSON `/tenants/check-slug/` e script JS no template da Etapa 1 para verificar disponibilidade do slug em tempo real. Adicionar feedback visual (verde/vermelho) no input.",
-            "status": "pending",
-            "testStrategy": "Teste funcional (Selenium ou Cypress) ou teste de view verificando o retorno JSON do endpoint `check-slug` com slugs existentes e inexistentes."
+            "status": "done",
+            "testStrategy": "Teste funcional (Selenium ou Cypress) ou teste de view verificando o retorno JSON do endpoint `check-slug` com slugs existentes e inexistentes.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T20:17:43.064Z"
           },
           {
             "id": 5,
@@ -2726,23 +2734,23 @@
               3
             ],
             "details": "No método `done()` da View, coletar `form_list`, extrair dados limpos e chamar `TenantProvisioningService`. Após sucesso, construir a URL do subdomínio (ex: `http://slug.dominio.com/tenant-admin/`) utilizando a lógica da Task 42 e retornar `HttpResponseRedirect`.",
-            "status": "pending",
-            "testStrategy": "Simular submissão final do wizard. Verificar se o status code é 302 e se o header 'Location' aponta para a URL correta do subdomínio gerado."
+            "status": "done",
+            "testStrategy": "Simular submissão final do wizard. Verificar se o status code é 302 e se o header 'Location' aponta para a URL correta do subdomínio gerado.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-03T20:17:46.179Z"
           }
-        ]
+        ],
+        "updatedAt": "2026-01-03T20:17:46.179Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-02T22:55:53.278Z",
-      "taskCount": 44,
-      "completedCount": 30,
+      "lastModified": "2026-01-03T20:17:46.182Z",
+      "taskCount": 45,
+      "completedCount": 31,
       "tags": [
         "master"
-      ],
-      "created": "2026-01-03T19:18:59.741Z",
-      "description": "Tasks for master context",
-      "updated": "2026-01-03T19:19:26.777Z"
+      ]
     }
   }
 }

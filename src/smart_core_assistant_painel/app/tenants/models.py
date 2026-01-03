@@ -30,6 +30,7 @@ class Tenant(models.Model):
 
     active = models.BooleanField(default=True)
     setup_completed = models.BooleanField(default=False)
+    onboarding_step = models.IntegerField(default=1)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -278,6 +279,18 @@ class TenantConfig(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Branding e Configuração Regional
+    brand_name = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Nome da Marca",
+        help_text="Nome exibido no painel (pode ser diferente da Razão Social)."
+    )
+    primary_color = models.CharField(max_length=7, default="#0d6efd", verbose_name="Cor Primária")
+    secondary_color = models.CharField(max_length=7, default="#6c757d", verbose_name="Cor Secundária")
+    timezone = models.CharField(max_length=50, default="America/Sao_Paulo", verbose_name="Fuso Horário")
+    language_code = models.CharField(max_length=10, default="pt-br", verbose_name="Idioma")
+
     def __str__(self) -> str:
         return f"Config for {self.tenant.slug}"
 
@@ -322,6 +335,8 @@ class Plan(models.Model):
 
 class Subscription(models.Model):
     class Status(models.TextChoices):
+        PENDING_PAYMENT = "PENDING_PAYMENT", "Aguardando Pagamento"
+        PAYMENT_CONFIRMED = "PAYMENT_CONFIRMED", "Pagamento Confirmado"
         ACTIVE = "ACTIVE", "Active"
         PAST_DUE = "PAST_DUE", "Past Due"
         SUSPENDED = "SUSPENDED", "Suspended"

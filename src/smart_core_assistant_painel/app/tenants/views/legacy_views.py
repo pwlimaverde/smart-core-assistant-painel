@@ -96,8 +96,14 @@ class DashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        # Assuming one tenant per user for simplicity as per current requirements
+        # Buscar tenant via owner OU TenantUser
         tenant = Tenant.objects.filter(owner=self.request.user).first()
+        if not tenant:
+            try:
+                tenant_user = self.request.user.tenant_profile
+                tenant = tenant_user.tenant
+            except Exception:
+                pass
         if tenant:
             context["tenant"] = tenant
             context["subscription"] = getattr(tenant, "subscription", None)
@@ -112,13 +118,79 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy("tenants:dashboard")
 
     def get_object(self, queryset=None):
-        # Always return the config object related to the user's tenant
-        tenant = get_object_or_404(Tenant, owner=self.request.user)
-        # Determine which related object to return based on the view class
+        # Tenta encontrar tenant via owner OU via TenantUser
+        tenant = Tenant.objects.filter(owner=self.request.user).first()
+        if not tenant:
+            # Buscar via TenantUser (funcionário)
+            try:
+                tenant_user = self.request.user.tenant_profile
+                tenant = tenant_user.tenant
+            except Exception:
+                pass
+        if not tenant:
+            from django.http import Http404
+            raise Http404("Tenant não encontrado para este usuário.")
         return self.get_config_object(tenant)
 
     def get_config_object(self, tenant):
         raise NotImplementedError
+
+    def get_form(self, form_class=None):
+        form = super().get_form(form_class)
+        # Verificar permissões de edição
+        can_edit = False
+        reason = "Acesso restrito"
+        
+        try:
+            user = self.request.user
+            tenant = self.object.tenant
+            
+            # 1. Se for owner do tenant, pode editar
+            if user == tenant.owner:
+                can_edit = True
+                reason = ""
+            
+            # 2. Se for superuser do Django, sempre pode editar
+            elif user.is_superuser:
+                can_edit = True
+                reason = ""
+            
+            # 3. Verificar TenantUser.role
+            elif hasattr(user, "tenant_profile"):
+                role = user.tenant_profile.role
+                # Apenas Admin e Manager podem editar configurações
+                if role in ["admin", "manager"]:
+                    can_edit = True
+                    reason = ""
+                else:
+                    reason = f"Seu perfil ({user.tenant_profile.get_role_display()}) não permite edição"
+            
+            # 4. Verificar grupos Django como fallback
+            # Grupos permitidos: "gerente", "admin", "administrador"
+            elif user.groups.filter(name__in=["gerente", "admin", "administrador"]).exists():
+                can_edit = True
+                reason = ""
+            
+            else:
+                reason = "Você não é o proprietário e não tem perfil de administrador/gerente"
+
+        except Exception as e:
+            # Fallback seguro - bloqueia edição em caso de erro
+            can_edit = False
+            reason = f"Erro ao verificar permissões: {str(e)}"
+
+        if not can_edit:
+            for field in form.fields.values():
+                field.disabled = True
+            
+            # Adicionar mensagem informativa (apenas GET para não floodar)
+            if self.request.method == "GET":
+                messages.info(
+                    self.request, 
+                    f"Modo de visualização: {reason}."
+                )
+
+        return form
 
     def form_valid(self, form):
         messages.success(self.request, _("Configurações salvas com sucesso."))

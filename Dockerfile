@@ -24,8 +24,8 @@ WORKDIR /app
 # Copiar arquivos de dependência
 COPY pyproject.toml uv.lock ./
 
-# Instalar dependências
-RUN uv sync --frozen --no-install-project --no-dev
+# Instalar dependências (incluindo dev para rodar testes no container)
+RUN uv sync --frozen --no-install-project
 
 # Copiar código fonte
 COPY src ./src
@@ -33,8 +33,7 @@ COPY scripts ./scripts
 COPY README.md ./
 
 # Instalar o projeto
-RUN uv sync --frozen --no-dev
-RUN uv pip install --python /app/.venv/bin/python loguru django-stubs-ext
+RUN uv sync --frozen
 
 # Adicionar .venv ao PATH
 ENV PATH="/app/.venv/bin:$PATH"

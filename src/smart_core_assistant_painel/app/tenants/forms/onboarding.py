@@ -101,9 +101,9 @@ class PlanSelectionForm(forms.Form):
     )
 
 
-class TenantConfigForm(forms.ModelForm):
+class OnboardingConfigForm(forms.ModelForm):
     """
-    Etapa 3: Configuração Inicial.
+    Etapa 3: Configuração Inicial (usado apenas no Onboarding Wizard).
     """
     primary_color = forms.CharField(
         label=_("Cor Primária"),
@@ -127,6 +127,13 @@ class TenantConfigForm(forms.ModelForm):
         fields = ["brand_name", "language_code", "timezone"]
         widgets = {
             "brand_name": forms.TextInput(attrs={"class": "form-control"}),
-            "language_code": forms.Select(attrs={"class": "form-select"}),
-            "timezone": forms.Select(attrs={"class": "form-select"}),
+            "language_code": forms.HiddenInput(),
+            "timezone": forms.HiddenInput(),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Defaults
+        self.fields["language_code"].initial = "pt-br"
+        self.fields["timezone"].initial = "America/Fortaleza"
+

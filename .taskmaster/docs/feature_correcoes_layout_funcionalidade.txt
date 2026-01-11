@@ -1,0 +1,188 @@
+<overview>
+## Problema
+O painel Smart Core Assistant possui inconsistências graves de layout e funcionalidades quebradas:
+1. Templates de tenants não seguem o Design System unificado "Smart Core" (Gold/Stone)
+2. Erro visual no dashboard acima do botão "Sair"
+3. Gestão de usuários (/tenants/users/) não funciona - botões de convite e permissões quebrados
+4. Configuração de IA (/tenants/config/ai/) com campos não editáveis para usuários de tenant
+
+## Usuários Alvo
+- Owners de tenants que precisam gerenciar suas configurações e equipe
+- Funcionários de tenants que acessam o painel
+- Administradores do sistema
+
+## Métricas de Sucesso
+- Todas as páginas internas usam o mesmo Design System (base_dashboard.html)
+- Formulários de convite e permissões funcionam corretamente
+- Campos de configuração de IA são editáveis para usuários autorizados
+- Sem erros visuais no dashboard
+</overview>
+
+<functional-decomposition>
+## Árvore de Capacidades
+
+### Capacidade: Unificação do Design System
+Garantir que todas as páginas internas sigam o padrão Smart Core (Gold #a98f71, Stone backgrounds)
+
+#### Feature: Migrar templates de usuários
+- **Descrição**: Alterar templates users/list.html, users/invite.html para usar base_dashboard.html
+- **Entradas**: Templates atuais usando admin/base_site.html
+- **Saídas**: Templates usando base_dashboard.html com classes Tailwind
+- **Comportamento**: Substituir classes Bootstrap por classes Tailwind do Design System
+
+#### Feature: Migrar templates de configuração
+- **Descrição**: Alterar templates config_ai.html, config_database.html, config_evolution.html, config_trello.html, config_debug.html, dashboard.html para usar base_dashboard.html
+- **Entradas**: Templates atuais usando base_tenants.html
+- **Saídas**: Templates usando base_dashboard.html com classes Tailwind
+- **Comportamento**: Substituir variáveis CSS customizadas por classes Tailwind
+
+#### Feature: Corrigir erro visual no dashboard
+- **Descrição**: Identificar e corrigir elemento quebrado acima do botão "Sair"
+- **Entradas**: Layout atual com erro
+- **Saídas**: Layout corrigido sem erros visuais
+- **Comportamento**: Inspecionar HTML/CSS e corrigir problema
+
+### Capacidade: Correção de Funcionalidades
+Garantir que formulários e botões funcionem corretamente
+
+#### Feature: Corrigir URLs nos templates
+- **Descrição**: Substituir URLs incorretas (tenant_users:list -> tenants:user_list)
+- **Entradas**: URLs antigas/incorretas
+- **Saídas**: URLs corretas usando namespace tenants:*
+- **Comportamento**: Buscar e substituir referências de URL
+
+#### Feature: Verificar permissões de edição IA
+- **Descrição**: Garantir que campos em config_ai são editáveis para usuários autorizados
+- **Entradas**: Formulário atual não editável
+- **Saídas**: Formulário editável para owners e admins
+- **Comportamento**: Verificar views e templates, corrigir lógica de permissão
+</functional-decomposition>
+
+<structural-decomposition>
+## Estrutura de Arquivos
+
+### Módulo: Templates de Usuários
+- **Mapeia para capacidade**: Unificação do Design System + Correção de Funcionalidades
+- **Responsabilidade**: Interface de gestão de usuários do tenant
+- **Arquivos**:
+  - `users/list.html` - Lista de usuários e convites
+  - `users/invite.html` - Formulário de convite
+  - `users/edit_permissions.html` - Edição de permissões
+
+### Módulo: Templates de Configuração
+- **Mapeia para capacidade**: Unificação do Design System
+- **Responsabilidade**: Interfaces de configuração do tenant
+- **Arquivos**:
+  - `config_ai.html` - Configuração de IA
+  - `config_database.html` - Configuração de banco
+  - `config_evolution.html` - Configuração Evolution API
+  - `config_trello.html` - Configuração Trello
+  - `config_debug.html` - Debug de configurações
+  - `dashboard.html` - Dashboard principal
+
+### Módulo: Views de Tenants
+- **Mapeia para capacidade**: Correção de Funcionalidades
+- **Responsabilidade**: Lógica de backend para funcionalidades de tenant
+- **Arquivos**:
+  - `views/invites.py` - Lógica de convites e permissões
+  - `views/legacy_views.py` - Views de configuração
+</structural-decomposition>
+
+<dependency-graph>
+## Cadeia de Dependências
+
+### Camada Fundação (Fase 0)
+- **Templates de Usuários**: Prioridade máxima. Sem dependências. Corrige funcionalidades críticas quebradas.
+
+### Camada Core (Fase 1)
+- **Templates de Configuração**: Depende de [[Fase 0 - URLs corrigidas]]. Unifica visual do sistema.
+
+### Camada Aplicação (Fase 2)
+- **Verificação de Permissões IA**: Depende de [[Fase 1 - Templates migrados]]. Garante edição funcional.
+</dependency-graph>
+
+<implementation-roadmap>
+## Fases de Desenvolvimento
+
+### Fase 0: Templates de Usuários e URLs
+**Objetivo**: Corrigir funcionalidades críticas quebradas na gestão de usuários
+
+**Tasks**:
+- [ ] Migrar users/list.html para base_dashboard.html (depende de: nenhuma)
+  - Critério de aceite: Template usa sidebar e topbar do Smart Core, lista usuários corretamente
+  - Estratégia de teste: Verificar visual no browser, testar listagem
+- [ ] Migrar users/invite.html para base_dashboard.html (depende de: nenhuma)
+  - Critério de aceite: Formulário funciona, URL de cancelar correta (tenants:user_list)
+  - Estratégia de teste: Enviar convite, verificar redirecionamento
+- [ ] Atualizar users/edit_permissions.html para base_dashboard.html (depende de: nenhuma)
+  - Critério de aceite: Formulário salva permissões corretamente
+  - Estratégia de teste: Editar permissões, verificar persistência
+
+**Entrega**: Gestão de usuários 100% funcional
+
+---
+
+### Fase 1: Templates de Dashboard e Configuração
+**Objetivo**: Unificar visual de todas as páginas de configuração
+
+**Entry Criteria**: Fase 0 completa
+
+**Tasks**:
+- [ ] Migrar dashboard.html para base_dashboard.html (depende de: Fase 0)
+  - Critério de aceite: Cards de status exibidos corretamente
+  - Estratégia de teste: Verificar visual e navegação
+- [ ] Migrar config_ai.html para base_dashboard.html (depende de: dashboard.html)
+  - Critério de aceite: Formulário exibido corretamente
+- [ ] Migrar config_database.html, config_evolution.html, config_trello.html, config_debug.html (depende de: dashboard.html)
+  - Critério de aceite: Todos os formulários funcionais com visual Smart Core
+- [ ] Corrigir erro visual no dashboard (depende de: dashboard.html migrado)
+  - Critério de aceite: Sem erros visuais acima do botão Sair
+
+**Entrega**: Todas as páginas com visual unificado
+
+---
+
+### Fase 2: Permissões e Validação
+**Objetivo**: Garantir que configuração de IA funciona para todos os usuários autorizados
+
+**Entry Criteria**: Fase 1 completa
+
+**Tasks**:
+- [ ] Investigar e corrigir campos não editáveis em config_ai (depende de: Fase 1)
+  - Critério de aceite: Owners e admins conseguem editar campos
+  - Estratégia de teste: Logar como owner, logar como admin, verificar edição
+- [ ] Validação final de todos os fluxos (depende de: todas as tasks)
+  - Critério de aceite: Linter passa, type-check passa, todos os formulários funcionam
+
+**Entrega**: Sistema 100% funcional e validado
+</implementation-roadmap>
+
+<test-strategy>
+## Estratégia de Testes
+
+### Gestão de Usuários
+**Caminho feliz**:
+- Acessar /tenants/users/, clicar em "Convidar", preencher formulário, enviar
+- Esperado: Convite criado, mensagem de sucesso, redirecionamento para lista
+
+**Casos de borda**:
+- Tentar convidar email já existente
+- Esperado: Mensagem de erro "Email já cadastrado"
+
+**Casos de erro**:
+- Acessar /tenants/users/ sem estar logado
+- Esperado: Redirecionamento para login
+
+### Configuração de IA
+**Caminho feliz**:
+- Logar como owner, acessar /tenants/config/ai/, editar campos, salvar
+- Esperado: Dados salvos, mensagem de sucesso
+
+**Casos de borda**:
+- Enviar JSON inválido no campo entity_types_json
+- Esperado: Erro de validação "JSON inválido"
+
+**Casos de erro**:
+- Funcionário sem permissão tenta editar
+- Esperado: Campos readonly ou mensagem de acesso negado
+</test-strategy>

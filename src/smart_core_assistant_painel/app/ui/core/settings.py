@@ -49,6 +49,7 @@ TENANT_RESERVED_SUBDOMAINS = [
     "smtp",
     "ftp",
     "backoffice",
+    "app",
 ]
 
 

@@ -106,3 +106,4 @@ handler404 = (
 handler403 = (
     "smart_core_assistant_painel.app.ui.core.views.custom_permission_denied"
 )
+handler500 = "smart_core_assistant_painel.app.ui.core.views.custom_server_error"

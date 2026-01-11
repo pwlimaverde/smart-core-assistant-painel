@@ -1,4 +1,7 @@
+import json
 import os
+from pathlib import Path
+
 from django.core.management.base import BaseCommand
 from smart_core_assistant_painel.app.settings_manager.models import (
     CoreSettings,
@@ -16,7 +19,26 @@ class Command(BaseCommand):
         "Carrega variáveis do Firebase Remote Config e salva no CoreSettings"
     )
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--input",
+            "-i",
+            help="Caminho do JSON exportado com core_settings.",
+        )
+        parser.add_argument(
+            "--encrypt-when-flagged",
+            action="store_true",
+            help="Se encrypted=true, criptografa o value antes de salvar.",
+        )
+
     def handle(self, *args, **options):
+        input_path = options.get("input")
+        if input_path:
+            return self._import_from_json(
+                input_path=input_path,
+                encrypt_when_flagged=bool(options.get("encrypt_when_flagged")),
+            )
+
         self.stdout.write("Iniciando importação do Firebase Remote Config...")
 
         try:
@@ -111,3 +133,55 @@ class Command(BaseCommand):
             import traceback
 
             traceback.print_exc()
+
+    def _import_from_json(self, *, input_path: str, encrypt_when_flagged: bool):
+        path = Path(input_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Arquivo não encontrado: {input_path}")
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+        items = data.get("core_settings", data if isinstance(data, list) else [])
+
+        if not isinstance(items, list):
+            raise ValueError("Formato inválido: esperado lista em core_settings")
+
+        created_count = 0
+        updated_count = 0
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+
+            key = item.get("key")
+            if not key:
+                continue
+
+            encrypted_flag = bool(item.get("encrypted", False))
+            value = item.get("value")
+            description = item.get("description") or ""
+
+            final_value = "" if value is None else str(value)
+            if encrypt_when_flagged and encrypted_flag and final_value:
+                final_value = encrypt_value(final_value)
+
+            _, created = CoreSettings.objects.update_or_create(
+                key=key,
+                defaults={
+                    "value": final_value,
+                    "encrypted": encrypted_flag,
+                    "description": description,
+                },
+            )
+
+            if created:
+                created_count += 1
+                self.stdout.write(f"Criado: {key}")
+            else:
+                updated_count += 1
+                self.stdout.write(f"Atualizado: {key}")
+
+        total = created_count + updated_count
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Processo concluído! {total} configurações importadas."
+            )
+        )

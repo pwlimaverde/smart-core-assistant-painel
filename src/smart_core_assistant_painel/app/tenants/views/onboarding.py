@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 
-from ..forms.onboarding import TenantRegistrationForm, TenantConfigForm
+from ..forms.onboarding import TenantRegistrationForm, OnboardingConfigForm
 from ..services.provisioning import TenantProvisioningService
 from ..models import Tenant, Plan
 
@@ -70,7 +70,7 @@ class Step2PaymentView(OnboardingSessionMixin, TemplateView):
 
 class Step3ConfigView(OnboardingSessionMixin, FormView):
     template_name = "tenants/onboarding/step_3_config.html"
-    form_class = TenantConfigForm
+    form_class = OnboardingConfigForm
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

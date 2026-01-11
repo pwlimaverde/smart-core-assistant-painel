@@ -201,11 +201,52 @@ reset-db = "python scripts/database_reset/reset_database.py"
 ngrok-trello = "python scripts/trello/ngrok_trello.py"
 
 # Docker
-start-docker = "docker compose up -d"
-restart-docker = "docker compose up -d --build"
-stop-docker = "docker compose down"
-logs-docker = "docker compose logs -f"
-test-docker = "docker compose exec -T django_app pytest"
+# Docker - Data Stack
+start-data = "docker compose --env-file .env -f docker-compose-data.yml -p smartcoreassistant-data up -d"
+stop-data = "docker compose --env-file .env -f docker-compose-data.yml -p smartcoreassistant-data down"
+logs-data = "docker compose --env-file .env -f docker-compose-data.yml -p smartcoreassistant-data logs -f"
+
+# Docker - App Stack
+start-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app up -d"
+stop-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app down"
+restart-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app up -d --build"
+logs-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app logs -f"
+test-docker = "docker compose -f docker-compose-app.yml -p smartcoreassistant-app exec -T django_app pytest"
+
+# Docker - Global
+start-docker = "uv run task start-data && uv run task start-app"
+restart-docker = "uv run task restart-app"
+stop-docker = "uv run task stop-app && uv run task stop-data"
+
+
+# ============================================
+# Docker Remoto (via scripts/docker_remoto)
+# ============================================
+remote-status = "python scripts/docker_remoto/manager.py ps all --remote"
+
+# Remoto - Data
+remote-start-data = "python scripts/docker_remoto/manager.py up data --remote"
+remote-stop-data = "python scripts/docker_remoto/manager.py down data --remote"
+remote-logs-data = "python scripts/docker_remoto/manager.py logs data --remote"
+
+# Remoto - App
+remote-start-app = "python scripts/docker_remoto/manager.py up app --remote"
+remote-stop-app = "python scripts/docker_remoto/manager.py down app --remote"
+remote-restart-app = "python scripts/docker_remoto/manager.py restart app --remote"
+remote-logs-app = "python scripts/docker_remoto/manager.py logs app --remote"
+remote-build-app = "python scripts/docker_remoto/manager.py build app --remote"
+
+# Remoto - Global
+remote-start-all = "uv run task remote-start-data && uv run task remote-start-app"
+remote-stop-all = "uv run task remote-stop-app && uv run task remote-stop-data"
+
+# Remoto - Django Management
+remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage migrate"
+remote-createsuperuser = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
+remote-shell = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage shell"
+remote-collectstatic = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
+
+
 
 # Task Master Visualization
 list-tasks = "python scripts/visualize_tasks.py"

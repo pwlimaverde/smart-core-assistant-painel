@@ -16,20 +16,37 @@ User = get_user_model()
 @login_required
 def list_users(request):
     """Lista funcionários e convites pendentes."""
+    # Buscar tenant do request OU da associação do usuário
     tenant = getattr(request, "tenant", None)
     if not tenant:
-        return redirect("admin:index")
+        # Tentar via owner
+        tenant = Tenant.objects.filter(owner=request.user, active=True).first()
+    if not tenant:
+        # Tentar via TenantUser
+        try:
+            tenant_profile = request.user.tenant_profile
+            tenant = tenant_profile.tenant
+        except Exception:
+            pass
+    if not tenant:
+        messages.error(request, "Nenhum tenant encontrado.")
+        return redirect("tenants:dashboard")
 
     # Validação de permissão (apenas owner ou admin do tenant)
-    # Se for owner, ok. Se for tenant_user, verificar role.
-    if request.user != tenant.owner:
+    is_owner = request.user == tenant.owner
+    if not is_owner:
         t_user = getattr(request, "tenant_user", None)
+        if not t_user:
+            try:
+                t_user = request.user.tenant_profile
+            except Exception:
+                pass
         if not t_user or t_user.role != "admin":
             messages.error(
                 request,
                 "Acesso negado. Apenas administradores podem gerenciar usuários.",
             )
-            return redirect("admin:index")
+            return redirect("tenants:dashboard")
 
     users = TenantUser.objects.filter(tenant=tenant).select_related("user")
     invites = TenantInvite.objects.filter(tenant=tenant, used=False)
@@ -41,7 +58,7 @@ def list_users(request):
             "users": users,
             "invites": invites,
             "tenant": tenant,
-            "is_owner": request.user == tenant.owner,
+            "is_owner": is_owner,
         },
     )
 
@@ -51,11 +68,27 @@ def invite_user(request):
     """Owner envia convite para novo funcionário."""
     tenant = getattr(request, "tenant", None)
     if not tenant:
-        return redirect("admin:index")
+        # Tentar via owner
+        tenant = Tenant.objects.filter(owner=request.user, active=True).first()
+    if not tenant:
+        # Tentar via TenantUser
+        try:
+            tenant_profile = request.user.tenant_profile
+            tenant = tenant_profile.tenant
+        except Exception:
+            pass
+
+    if not tenant:
+        return redirect("tenants:dashboard")
 
     # Validação de permissão
     if request.user != tenant.owner:
         t_user = getattr(request, "tenant_user", None)
+        if not t_user:
+            try:
+                t_user = request.user.tenant_profile
+            except Exception:
+                pass
         if not t_user or t_user.role != "admin":
             messages.error(request, "Acesso negado.")
             return redirect("tenants:user_list")
@@ -101,31 +134,12 @@ def invite_user(request):
             created_by=request.user,
         )
 
-        # Enviar email
-        try:
-            activation_url = request.build_absolute_uri(
-                reverse("tenants:activate_account", args=[invite.token])
-            )
-            send_mail(
-                subject=f"Convite para acessar {tenant.name}",
-                message=f"""
-Olá {name},
-
-Você foi convidado para acessar o painel de {tenant.name} como {role}.
-
-Clique no link abaixo para criar sua senha e ativar sua conta:
-{activation_url}
-
-Este link expira em 7 dias.
-                """,
-                from_email=django_settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[email],
-                fail_silently=False,
-            )
+        # Call helper to send email
+        if _send_invite_email(request, invite):
             messages.success(request, f"Convite enviado para {email}!")
-        except Exception as e:
-            messages.error(request, f"Erro ao enviar email: {e}")
-            # Opcional: delete invite if email failed
+        else:
+            # If explicit failure handling is needed beyond the helper's messages
+            pass
 
         return redirect("tenants:user_list")
 
@@ -141,6 +155,118 @@ Este link expira em 7 dias.
         "tenants/users/invite.html",
         {"modules": modules, "roles": roles, "tenant": tenant},
     )
+
+
+@login_required
+def resend_invite(request, invite_id):
+    """Reenvia o convite para um usuário."""
+    # Buscar tenant
+    tenant = getattr(request, "tenant", None)
+    if not tenant:
+        tenant = Tenant.objects.filter(owner=request.user, active=True).first()
+
+    if not tenant:
+        messages.error(request, "Tenant não encontrado.")
+        return redirect("tenants:dashboard")
+
+    # Validar permissão (owner ou admin)
+    is_owner = request.user == tenant.owner
+    if not is_owner:
+        t_user = getattr(request, "tenant_user", None)
+        if not t_user:
+            try:
+                t_user = request.user.tenant_profile
+            except Exception:
+                pass
+        if not t_user or t_user.role != "admin":
+            messages.error(request, "Acesso negado.")
+            return redirect("tenants:user_list")
+
+    invite = get_object_or_404(TenantInvite, id=invite_id, tenant=tenant)
+
+    if invite.used:
+        messages.error(request, "Este convite já foi utilizado.")
+        return redirect("tenants:user_list")
+
+    if _send_invite_email(request, invite):
+        messages.success(request, f"Convite reenviado para {invite.email}!")
+
+    return redirect("tenants:user_list")
+
+
+def _send_invite_email(request, invite):
+    """
+    Helper para enviar email de convite.
+    Tenta envio padrão e, se falhar por SSL em DEBUG, tenta sem verificação.
+    Retorna True se sucesso, False caso contrário.
+    """
+    from django.core.mail import get_connection, EmailMessage
+    import ssl
+
+    activation_url = request.build_absolute_uri(
+        reverse("tenants:activate_account", args=[invite.token])
+    )
+
+    subject = f"Convite para acessar {invite.tenant.name}"
+    message = f"""
+Olá {invite.name},
+
+Você foi convidado para acessar o painel de {invite.tenant.name} como {invite.role}.
+
+Clique no link abaixo para criar sua senha e ativar sua conta:
+{activation_url}
+
+Este link expira em 7 dias.
+    """
+
+    try:
+        # Tentar envio padrão
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invite.email],
+            fail_silently=False,
+        )
+        return True
+
+    except Exception as e:
+        error_str = str(e)
+        # Se for erro de certificado SSL e estivermos em DEBUG, tentar workaround
+        if "CERTIFICATE_VERIFY_FAILED" in error_str and django_settings.DEBUG:
+            try:
+                print(
+                    f"Erro SSL detectado ({e}). Tentando envio sem verificação SSL..."
+                )
+
+                # Criar contexto SSL não verificado
+                context = ssl.create_default_context()
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+
+                # Obter conexão com o contexto customizado
+                connection = get_connection()
+                connection.ssl_context = context
+
+                email_msg = EmailMessage(
+                    subject=subject,
+                    body=message,
+                    from_email=django_settings.DEFAULT_FROM_EMAIL,
+                    to=[invite.email],
+                    connection=connection,
+                )
+                email_msg.send()
+                return True
+
+            except Exception as e2:
+                messages.error(
+                    request,
+                    f"Erro ao reenviar email (tentativa insegura falhou): {e2}",
+                )
+                return False
+        else:
+            messages.error(request, f"Erro ao enviar email: {e}")
+            return False
 
 
 def activate_account(request, token):
@@ -206,7 +332,7 @@ def activate_account(request, token):
                 request,
                 "Conta ativada com sucesso! Faça login para continuar.",
             )
-            return redirect("admin:login")
+            return redirect("login")
 
         except Exception as e:
             messages.error(request, f"Erro ao ativar conta: {e}")
@@ -218,4 +344,98 @@ def activate_account(request, token):
         request,
         "tenants/users/activate.html",
         {"invite": invite, "tenant": invite.tenant},
+    )
+
+
+@login_required
+def edit_permissions(request, user_id):
+    """Edita permissões de módulos para um funcionário do tenant."""
+    # Buscar tenant do request OU da associação do usuário
+    tenant = getattr(request, "tenant", None)
+    if not tenant:
+        tenant = Tenant.objects.filter(owner=request.user, active=True).first()
+    if not tenant:
+        try:
+            tenant_profile = request.user.tenant_profile
+            tenant = tenant_profile.tenant
+        except Exception:
+            pass
+    if not tenant:
+        messages.error(request, "Nenhum tenant encontrado.")
+        return redirect("tenants:dashboard")
+
+    # Validação de permissão (apenas owner ou admin do tenant)
+    is_owner = request.user == tenant.owner
+    if not is_owner:
+        t_user = getattr(request, "tenant_user", None)
+        if not t_user:
+            try:
+                t_user = request.user.tenant_profile
+            except Exception:
+                pass
+        if not t_user or t_user.role != "admin":
+            messages.error(request, "Acesso negado.")
+            return redirect("tenants:user_list")
+
+    # Buscar o TenantUser a ser editado
+    tenant_user = get_object_or_404(TenantUser, id=user_id, tenant=tenant)
+
+    # Não pode editar o próprio owner
+    if tenant_user.user == tenant.owner:
+        messages.error(request, "Não é possível editar permissões do owner.")
+        return redirect("tenants:user_list")
+
+    if request.method == "POST":
+        role = request.POST.get("role", tenant_user.role)
+        modules = request.POST.getlist("modules")
+
+        # Montar permissões: {modulo: {view, edit, delete}}
+        module_perms = {}
+        for mod in TenantModule.all_values():
+            if mod in modules:
+                module_perms[mod] = {
+                    "view": True,
+                    "edit": True,
+                    "delete": False,
+                }
+            else:
+                module_perms[mod] = {
+                    "view": False,
+                    "edit": False,
+                    "delete": False,
+                }
+
+        tenant_user.role = role
+        tenant_user.module_permissions = module_perms
+        tenant_user.save()
+
+        messages.success(
+            request, f"Permissões de {tenant_user.user.email} atualizadas!"
+        )
+        return redirect("tenants:user_list")
+
+    modules = TenantModule.choices()
+    roles = [
+        ("staff", "Funcionário"),
+        ("manager", "Gerente"),
+        ("admin", "Administrador"),
+        ("viewer", "Visualizador"),
+    ]
+    # Módulos atualmente permitidos
+    current_modules = [
+        mod
+        for mod, perms in tenant_user.module_permissions.items()
+        if perms.get("view", False)
+    ]
+
+    return render(
+        request,
+        "tenants/users/edit_permissions.html",
+        {
+            "tenant_user": tenant_user,
+            "modules": modules,
+            "roles": roles,
+            "current_modules": current_modules,
+            "tenant": tenant,
+        },
     )

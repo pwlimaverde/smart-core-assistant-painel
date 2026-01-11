@@ -39,12 +39,12 @@ class TenantProvisioningService:
             onboarding_step=2  # Próximo passo: Pagamento
         )
         
-        # 3. Criar Assinatura (Status Pendente)
-        Subscription.objects.create(
-            tenant=tenant,
-            status=Subscription.Status.PENDING_PAYMENT,
-            plan=None  # Será definido no próximo passo
-        )
+        # 3. Atualizar Assinatura (Criada via Signal)
+        # O signal create_tenant_subscription já cria uma assinatura ao criar o Tenant
+        subscription = Subscription.objects.get(tenant=tenant)
+        subscription.status = Subscription.Status.PENDING_PAYMENT
+        subscription.plan = None
+        subscription.save()
         
         # 4. Criar Configuração Default
         TenantConfig.objects.create(tenant=tenant)
@@ -105,18 +105,30 @@ class TenantProvisioningService:
         user.is_active = True
         user.save()
         
+        # 2.1 Atribuir role Gerente (rolepermissions) para acesso a treinamento
+        from rolepermissions.roles import assign_role
+        assign_role(user, "gerente")
+        
         # 2. Permissão de Admin no Tenant
         if not TenantUser.objects.filter(tenant=tenant, user=user).exists():
             TenantUser.objects.create(
                 user=user,
                 tenant=tenant,
                 role="admin",
-                module_permissions={"all": True}  # Acesso total inicial
+                # Atribuir permissão explícita para todos os módulos disponíveis
+                module_permissions={
+                    "all": True,  # Mantem compatibilidade
+                    "clientes": {"view": True, "edit": True, "delete": True},
+                    "operacional": {"view": True, "edit": True, "delete": True},
+                    "treinamento": {"view": True, "edit": True, "delete": True},
+                    "atendimentos": {"view": True, "edit": True, "delete": True},
+                    "configuracoes": {"view": True, "edit": True, "delete": True},
+                }
             )
             
-        # 3. Gerar URL de Redirecionamento
+        # 3. Gerar URL de Redirecionamento para Login
         domain = getattr(settings, "TENANT_BASE_DOMAIN", "smartcoreassistant.com.br")
         protocol = "https" if not settings.DEBUG else "http"
         
-        # Ex: https://slug.dominio.com/tenant-admin/
-        return f"{protocol}://{tenant.slug}.{domain}/tenant-admin/"
+        # Redireciona para login no subdomínio do tenant
+        return f"{protocol}://{tenant.slug}.{domain}/usuarios/login/"

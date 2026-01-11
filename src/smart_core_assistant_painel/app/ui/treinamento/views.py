@@ -18,16 +18,64 @@ from .models import Documento, QueryCompose, Treinamento
 from .services import TreinamentoService
 
 
+def _can_access_training(user) -> bool:
+    """
+    Verifica se o usuário pode acessar as funcionalidades de treinamento.
+    
+    Retorna True se:
+    - O usuário é superuser
+    - O usuário é Owner de um tenant ATIVO
+    - O usuário tem role Admin/Manager ou permissão de treinamento
+    """
+    if not user.is_authenticated:
+        logger.debug(f"[Permission] User not authenticated")
+        return False
+    if user.is_superuser:
+        logger.debug(f"[Permission] User {user.username} is superuser - ALLOWED")
+        return True
+        
+    # Verificar se é owner de algum tenant ATIVO
+    from smart_core_assistant_painel.app.tenants.models import Tenant
+    if Tenant.objects.filter(owner=user, active=True).exists():
+        logger.debug(f"[Permission] User {user.username} is tenant owner - ALLOWED")
+        return True
+        
+    # Verificar via TenantUser (funcionário)
+    try:
+        tenant_profile = user.tenant_profile
+        # Validar apenas se o profile estiver ativo
+        if tenant_profile.is_active:
+            # Roles administrativas sempre têm acesso
+            if tenant_profile.role in ("admin", "manager"):
+                logger.debug(f"[Permission] User {user.username} has TenantUser role {tenant_profile.role} - ALLOWED")
+                return True
+            # Permissão granular do módulo
+            if tenant_profile.has_module_permission("treinamento", "view"):
+                logger.debug(f"[Permission] User {user.username} has training permission - ALLOWED")
+                return True
+    except Exception:
+        pass
+        
+    # Fallback: verificar via rolepermissions (legado/gerente)
+    from rolepermissions.checkers import has_role
+    if has_role(user, "gerente"):
+        logger.debug(f"[Permission] User {user.username} has role gerente - ALLOWED")
+        return True
+        
+    logger.debug(f"[Permission] User {user.username} - DENIED")
+    return False
+
+
 def treinar_ia(request: HttpRequest) -> HttpResponse:
     """[TRN-CON-001] View para o treinamento da IA.
 
     Interface para envio de arquivos ou inserção de texto livre para treinamento.
     """
-    if not has_permission(request.user, "treinar_ia"):
+    if not _can_access_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
-        return redirect("home")
+        return redirect("dashboard")
 
     if request.method == "GET":
         if request.GET.get("reset"):
@@ -151,11 +199,11 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
 
     Fluxo de revisão e curadoria do conteúdo antes da indexação.
     """
-    if not has_permission(request.user, "treinar_ia"):
+    if not _can_access_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
-        return redirect("treinamento:treinar_ia")
+        return redirect("dashboard")
     if request.method == "GET":
         return _exibir_pre_processamento(request, id)
     if request.method == "POST":
@@ -269,8 +317,11 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
 
     Gestão de treinamentos ativos na base de conhecimento.
     """
-    if not has_permission(request.user, "treinar_ia"):
-        raise PermissionDenied()
+    if not _can_access_training(request.user):
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
+        return redirect("dashboard")
 
     if request.method == "POST":
         acao = request.POST.get("acao")
@@ -341,8 +392,11 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
     - Ação "editar": popula sessão e redireciona para a página de cadastro.
     - Ação "excluir": remove o registro.
     """
-    if not has_permission(request.user, "treinar_ia"):
-        raise PermissionDenied()
+    if not _can_access_training(request.user):
+        messages.error(
+            request, "Você não tem permissão para acessar esta página."
+        )
+        return redirect("dashboard")
 
     if request.method == "POST":
         acao = request.POST.get("acao")
@@ -405,11 +459,11 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
       assíncrona pelo signal post_save (sem bloqueio no request).
     - Suporta modo de edição quando há dados salvos em sessão.
     """
-    if not has_permission(request.user, "treinar_ia"):
+    if not _can_access_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
-        return redirect("home")
+        return redirect("dashboard")
 
     if request.method == "GET":
         if request.GET.get("reset"):

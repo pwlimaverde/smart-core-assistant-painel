@@ -536,5 +536,8 @@ class TenantUser(models.Model):
     def has_module_permission(self, module: str, action: str = "view") -> bool:
         if self.role == "admin":
             return True
+        # Suporte para permissão universal
+        if self.module_permissions.get("all") is True:
+            return True
         perms = self.module_permissions.get(module, {})
         return perms.get(action, False)

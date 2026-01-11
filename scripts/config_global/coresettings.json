@@ -1,0 +1,218 @@
+[
+  {
+    "id": 1,
+    "key": "llm_class",
+    "value": "ChatGroq",
+    "encrypted": false,
+    "description": "Classe do LLM utilizada para geração de texto. Valores: ChatGroq, ChatOpenAI, ChatOllama.",
+    "created_at": "2026-01-11T21:29:32.961032+00:00",
+    "updated_at": "2026-01-11T21:32:51.778418+00:00"
+  },
+  {
+    "id": 2,
+    "key": "model",
+    "value": "openai/gpt-oss-20b",
+    "encrypted": false,
+    "description": "Modelo de linguagem padrão para geração de respostas. Formato: provider/model (ex: openai/gpt-4o).",
+    "created_at": "2026-01-11T21:29:32.997329+00:00",
+    "updated_at": "2026-01-11T21:32:51.785252+00:00"
+  },
+  {
+    "id": 3,
+    "key": "llm_temperature",
+    "value": "0",
+    "encrypted": false,
+    "description": "Temperatura do LLM (0-1). 0 = respostas determinísticas. 1 = respostas criativas.",
+    "created_at": "2026-01-11T21:29:32.99998+00:00",
+    "updated_at": "2026-01-11T21:32:51.787695+00:00"
+  },
+  {
+    "id": 20,
+    "key": "groq_api_key",
+    "value": "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",
+    "encrypted": true,
+    "description": "Chave de API do Groq para acesso a modelos de linguagem rápidos (LPU).",
+    "created_at": "2026-01-11T21:29:33.036941+00:00",
+    "updated_at": "2026-01-11T21:32:51.789646+00:00"
+  },
+  {
+    "id": 21,
+    "key": "openai_api_key",
+    "value": "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",
+    "encrypted": true,
+    "description": "Chave de API da OpenAI para modelos GPT e embeddings.",
+    "created_at": "2026-01-11T21:29:33.038447+00:00",
+    "updated_at": "2026-01-11T21:32:51.791644+00:00"
+  },
+  {
+    "id": 12,
+    "key": "huggingface_api_key",
+    "value": "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",
+    "encrypted": true,
+    "description": "Chave de API do HuggingFace para modelos de embeddings e NLP.",
+    "created_at": "2026-01-11T21:29:33.019285+00:00",
+    "updated_at": "2026-01-11T21:32:51.793534+00:00"
+  },
+  {
+    "id": 13,
+    "key": "embeddings_class",
+    "value": "OpenAIEmbeddings",
+    "encrypted": false,
+    "description": "Classe de embeddings para vetorização de textos. Valores: OpenAIEmbeddings, HuggingFaceEmbeddings.",
+    "created_at": "2026-01-11T21:29:33.021715+00:00",
+    "updated_at": "2026-01-11T21:32:51.795238+00:00"
+  },
+  {
+    "id": 14,
+    "key": "embeddings_model",
+    "value": "text-embedding-3-small",
+    "encrypted": false,
+    "description": "Modelo de embeddings para geração de vetores semânticos (ex: text-embedding-3-small).",
+    "created_at": "2026-01-11T21:29:33.023652+00:00",
+    "updated_at": "2026-01-11T21:32:51.796759+00:00"
+  },
+  {
+    "id": 6,
+    "key": "chunk_size",
+    "value": "1000",
+    "encrypted": false,
+    "description": "Tamanho máximo de cada chunk de texto para processamento RAG (em caracteres).",
+    "created_at": "2026-01-11T21:29:33.007202+00:00",
+    "updated_at": "2026-01-11T21:32:51.798449+00:00"
+  },
+  {
+    "id": 7,
+    "key": "chunk_overlap",
+    "value": "200",
+    "encrypted": false,
+    "description": "Sobreposição entre chunks consecutivos para manter contexto (em caracteres).",
+    "created_at": "2026-01-11T21:29:33.010191+00:00",
+    "updated_at": "2026-01-11T21:32:51.800088+00:00"
+  },
+  {
+    "id": 9,
+    "key": "similarity_threshold",
+    "value": "0.4",
+    "encrypted": false,
+    "description": "Limite mínimo de similaridade (0-1) para considerar documentos relevantes na busca vetorial.",
+    "created_at": "2026-01-11T21:29:33.014824+00:00",
+    "updated_at": "2026-01-11T21:32:51.801666+00:00"
+  },
+  {
+    "id": 10,
+    "key": "vector_distance_threshold",
+    "value": "0.5",
+    "encrypted": false,
+    "description": "Distância máxima para considerar vetores como similares na busca semântica.",
+    "created_at": "2026-01-11T21:29:33.01613+00:00",
+    "updated_at": "2026-01-11T21:32:51.80331+00:00"
+  },
+  {
+    "id": 8,
+    "key": "time_cache",
+    "value": "5",
+    "encrypted": false,
+    "description": "Tempo de cache para armazenamento temporário de dados em memória (em minutos).",
+    "created_at": "2026-01-11T21:29:33.012824+00:00",
+    "updated_at": "2026-01-11T21:32:51.805052+00:00"
+  },
+  {
+    "id": 5,
+    "key": "prompt_human_analise_conteudo",
+    "value": "Analise e organize o conteudo a seguir",
+    "encrypted": false,
+    "description": "Prompt humano padrão para solicitar análise e organização de conteúdo.",
+    "created_at": "2026-01-11T21:29:33.005585+00:00",
+    "updated_at": "2026-01-11T21:32:51.809231+00:00"
+  },
+  {
+    "id": 11,
+    "key": "prompt_human_melhoria_conteudo",
+    "value": "Analise e organize o conteudo a seguir",
+    "encrypted": false,
+    "description": "Prompt humano para solicitar melhoria e reorganização de conteúdo textual.",
+    "created_at": "2026-01-11T21:29:33.017522+00:00",
+    "updated_at": "2026-01-11T21:32:51.812314+00:00"
+  },
+  {
+    "id": 15,
+    "key": "prompt_system_analise_previa_mensagem",
+    "value": "# Prompt System Melhorado para Análise Prévia de Mensagens\r\r\n\r\r\n## 🎯 OBJETIVO PRINCIPAL\r\r\nVocê é um especialista em análise de linguagem natural focado na extração precisa de intenções e entidades de mensagens de usuários em contexto de atendimento ao cliente.\r\r\n\r\r\nAnalise a **MENSAGEM ATUAL** considerando o **HISTÓRICO DE ATENDIMENTO** fornecido e extraia com máxima precisão:\r\r\n- **INTENÇÕES (intent)**: O que o usuário quer fazer ou comunicar\r\r\n- **ENTIDADES (entities)**: Informações específicas mencionadas\r\r\n\r\r\n**PRINCÍPIO FUNDAMENTAL**: Seja conservador e preciso. É perfeitamente normal retornar listas vazias quando não há identificações claras. Prefira precisão à quantidade de identificações.\r\r\n\r\r\n## 📋 METODOLOGIA DE ANÁLISE CONTEXTUAL\r\r\n\r\r\n### PASSO 1: Análise do Histórico Fornecido\r\r\n- Se houver histórico: leia todas as mensagens anteriores cuidadosamente\r\r\n- Identifique padrões, temas recorrentes e contexto geral da conversa  \r\r\n- Note entidades já mencionadas (nomes, produtos, valores, datas, etc.)\r\r\n- Se NÃO houver histórico: prossiga apenas com a mensagem atual\r\r\n\r\r\n### PASSO 2: Leitura da Mensagem Atual\r\r\n- Leia a mensagem atual que aparecerá após \"MENSAGEM ATUAL PARA ANÁLISE:\"\r\r\n- Considere como ela se relaciona com o histórico (se disponível)\r\r\n- Identifique se é continuação, novo assunto ou resposta a algo anterior\r\r\n\r\r\n### PASSO 3: Identificação de Intenções\r\r\n- Determine APENAS as intenções claramente identificáveis\r\r\n- Use o histórico para entender referências vagas (\"isso\", \"aquilo\", \"sim\", \"não\")\r\r\n- Use APENAS tipos de intent da lista válida fornecida\r\r\n- **SE NÃO ENCONTRAR INTENÇÕES CLARAS**: retorne lista vazia []\r\r\n\r\r\n### PASSO 4: Extração de Entidades  \r\r\n- Identifique entidades explícitas na mensagem atual\r\r\n- Use histórico para resolver referências implícitas quando apropriado\r\r\n- Use APENAS tipos de entity da lista válida fornecida\r\r\n- **SE NÃO ENCONTRAR ENTIDADES VÁLIDAS**: retorne lista vazia []\r\r\n\r\r\n### PASSO 5: Validação Final\r\r\n- Confirme que tudo faz sentido no contexto geral\r\r\n- Verifique se todos os tipos estão na lista válida\r\r\n- **EM CASO DE QUALQUER DÚVIDA**: prefira lista vazia\r\r\n\r\r\n## ⚠️ REGRAS CRÍTICAS\r\r\n\r\r\n### FORMATO OBRIGATÓRIO:\r\r\n```json\r\r\n{\r\r\n    \"intent\": [\r\r\n        {\"type\": \"tipo_intent\", \"value\": \"texto_extraído\"}\r\r\n    ],\r\r\n    \"entities\": [\r\r\n        {\"type\": \"tipo_entity\", \"value\": \"valor_extraído\"}  \r\r\n    ]\r\r\n}\r\r\n```\r\r\n\r\r\n**IMPORTANTE**: Ambas as listas podem ser vazias `[]` quando apropriado.\r\r\n\r\r\n### CENÁRIOS DE HISTÓRICO:\r\r\n\r\r\n#### SEM HISTÓRICO:\r\r\n```\r\r\nHISTÓRICO DO ATENDIMENTO:\r\r\nNenhum histórico de mensagens disponível.\r\r\n\r\r\nMENSAGEM ATUAL PARA ANÁLISE: \"Olá, preciso de ajuda\"\r\r\n```\r\r\n**Análise**: Trabalhe apenas com a mensagem atual.\r\r\n\r\r\n#### COM HISTÓRICO:\r\r\n```\r\r\nHISTÓRICO DO ATENDIMENTO:\r\r\n1. [Cliente]: Vocês vendem notebook Dell?\r\r\n2. [Atendente]: Sim, temos vários modelos. Qual sua necessidade?\r\r\n3. [Cliente]: Para trabalho, nada muito avançado\r\r\n\r\r\nMENSAGEM ATUAL PARA ANÁLISE: \"Quanto custa?\"\r\r\n```\r\r\n**Análise**: Use o contexto - \"Quanto custa?\" se refere ao notebook Dell.\r\r\n\r\r\n### EXEMPLOS CONTEXTUAIS:\r\r\n\r\r\n#### Exemplo 1 - Referência Implícita:\r\r\n**Resultado:**\r\r\n```json\r\r\n{\r\r\n    \"intent\": [{\"type\": \"pergunta_preco\", \"value\": \"Quanto custa\"}],\r\r\n    \"entities\": [{\"type\": \"produto\", \"value\": \"notebook Dell\"}]\r\r\n}\r\r\n```\r\r\n\r\r\n#### Exemplo 2 - Confirmação com Contexto:\r\r\n**Histórico**: \"Gostaria de agendar para amanhã às 14h\"\r\r\n**Atual**: \"Perfeito!\"\r\r\n```json\r\r\n{\r\r\n    \"intent\": [{\"type\": \"confirmacao\", \"value\": \"Perfeito\"}],\r\r\n    \"entities\": [\r\r\n        {\"type\": \"data\", \"value\": \"amanhã\"},\r\r\n        {\"type\": \"horario\", \"value\": \"14h\"}\r\r\n    ]\r\r\n}\r\r\n```\r\r\n\r\r\n#### Exemplo 3 - Sem Contexto Claro:\r\r\n**Histórico**: Nenhum histórico disponível\r\r\n**Atual**: \"Isso mesmo\"\r\r\n```json\r\r\n{\r\r\n    \"intent\": [],\r\r\n    \"entities\": []\r\r\n}\r\r\n```\r\r\n\r\r\n#### Exemplo 4 - Mensagem Rica:\r\r\n**Atual**: \"Olá! Meu nome é João e preciso cancelar o pedido #PED123\"\r\r\n```json\r\r\n{\r\r\n    \"intent\": [\r\r\n        {\"type\": \"saudacao\", \"value\": \"Olá\"},\r\r\n        {\"type\": \"apresentacao\", \"value\": \"Meu nome é João\"},\r\r\n        {\"type\": \"cancelamento\", \"value\": \"cancelar o pedido\"}\r\r\n    ],\r\r\n    \"entities\": [\r\r\n        {\"type\": \"cliente\", \"value\": \"João\"},\r\r\n        {\"type\": \"id_pedido\", \"value\": \"PED123\"}\r\r\n    ]\r\r\n}\r\r\n```\r\r\n\r\r\n### VALIDAÇÕES RIGOROSAS:\r\r\n- ✅ Use APENAS tipos das listas válidas fornecidas\r\r\n- ✅ Cada item deve ter EXATAMENTE as chaves \"type\" e \"value\"\r\r\n- ✅ Valores podem vir da mensagem atual OU do histórico quando relevante\r\r\n- ✅ **SEMPRE que em dúvida**: retorne lista vazia []\r\r\n- ❌ NUNCA invente tipos não listados\r\r\n- ❌ NUNCA use chaves diferentes de \"type\" e \"value\"\r\r\n- ❌ NUNCA force identificações sem contexto claro\r\r\n\r\r\n## 🔍 ESTRATÉGIAS AVANÇADAS\r\r\n\r\r\n### Para Mensagens Curtas com Histórico:\r\r\n- \"Sim\" → busque o que está sendo confirmado\r\r\n- \"Não\" → busque o que está sendo negado\r\r\n- \"Quanto?\" → busque produto/serviço mencionado  \r\r\n- \"Quando?\" → busque evento/agendamento no contexto\r\r\n- \"Onde?\" → busque localização relevante\r\r\n\r\r\n### Para Mensagens Ambíguas:\r\r\n- Use apenas o que está claro e explícito\r\r\n- Em dúvida, prefira não identificar\r\r\n- Contexto deve ser óbvio para usar entidades do histórico\r\r\n\r\r\n### Princípio da Conservação:\r\r\n**\"Melhor identificar menos com certeza absoluta do que mais com dúvida\"**\r\r\n\r\r\n## 🎯 OBJETIVO DE EXCELÊNCIA\r\r\nMeta: 100% de precisão. Listas vazias são respostas válidas e corretas quando apropriado. Use o histórico como ferramenta de contexto, mas nunca force identificações.\r\r\n\r\r\nAnalise o histórico fornecido (se houver), depois a mensagem atual, e retorne sua análise seguindo exatamente este protocolo.",
+    "encrypted": false,
+    "description": "Prompt de sistema para análise prévia de mensagens extraindo intenções (intent) e entidades.",
+    "created_at": "2026-01-11T21:29:33.025783+00:00",
+    "updated_at": "2026-01-11T21:32:51.814717+00:00"
+  },
+  {
+    "id": 16,
+    "key": "prompt_human_analise_previa_mensagem",
+    "value": "MENSAGEM ATUAL PARA ANÁLISE",
+    "encrypted": false,
+    "description": "Prefixo do prompt humano que indica a mensagem atual a ser analisada.",
+    "created_at": "2026-01-11T21:29:33.02997+00:00",
+    "updated_at": "2026-01-11T21:32:51.816556+00:00"
+  },
+  {
+    "id": 18,
+    "key": "prompt_intent_system",
+    "value": "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\r\r\nSiga estritamente as orientações abaixo, em português claro e objetivo.\r\r\nAdapte a resposta ao contexto do atendimento atual.\r\r\n\r\r\nIntenções detectadas e orientações:",
+    "encrypted": false,
+    "description": "Cabeçalho do prompt de sistema para processamento de intenções detectadas em mensagens.",
+    "created_at": "2026-01-11T21:29:33.034041+00:00",
+    "updated_at": "2026-01-11T21:32:51.818249+00:00"
+  },
+  {
+    "id": 17,
+    "key": "prompt_intent_footer",
+    "value": "Se houver múltiplas intenções, processe as instruções de CADA UMA delas. Em seguida, combine as respostas em um único texto fluido, coeso e natural, garantindo que todos os pontos foram abordados de forma lógica e concisa.",
+    "encrypted": false,
+    "description": "Rodapé do prompt de intenções para combinar múltiplas respostas em texto coeso.",
+    "created_at": "2026-01-11T21:29:33.031781+00:00",
+    "updated_at": "2026-01-11T21:32:51.820022+00:00"
+  },
+  {
+    "id": 19,
+    "key": "prompt_template_user_rag",
+    "value": "<historico_conversa>\r\r\n(Apenas para referência de contexto, não como fonte factual)\r\r\n{historico_context}\r\r\n</historico_conversa>\r\r\n\r\r\n<contexto_rag>\r\r\n### Apresentação da Empresa:\r\r\n{dados_empresa}\r\r\n\r\r\n### Dados do Treinamento:\r\r\n{dados_treinamento}\r\r\n</contexto_rag>\r\r\n\r\r\n<pergunta_usuario>\r\r\n{context}\r\r\n</pergunta_usuario>\r\r\n\r\r\nCom base apenas nas regras acima, elabore a resposta final ao usuário.",
+    "encrypted": false,
+    "description": "Template de prompt do usuário para geração de respostas com contexto RAG (histórico + treinamento).",
+    "created_at": "2026-01-11T21:29:33.035586+00:00",
+    "updated_at": "2026-01-11T21:32:51.821949+00:00"
+  },
+  {
+    "id": 4,
+    "key": "prompt_system_analise_conteudo",
+    "value": "Você é um assistente especializado em organização e análise de documentos \r\nempresariais. Sua tarefa é analisar o conteúdo completo de um documento e \r\nsegmentá-lo em seções, agrupando os trechos correspondentes a cada tema identificado. \r\nÉ imperativo que o conteúdo original do documento seja preservado sem nenhuma \r\nalteração — nenhuma frase, palavra ou formatação interna deve ser modificada.\r\n\r\nPara cumprir essa tarefa, siga as instruções abaixo:\r\n\r\n1. **Leitura e Compreensão:** Leia atentamente o documento fornecido, identificando \r\ntodos os temas ou assuntos abordados.\r\n\r\n2. **Identificação de Temas:** Reconheça os diferentes tópicos presentes no \r\ndocumento. Se o documento não apresentar títulos ou marcadores evidentes, \r\nutilize pistas contextuais para inferir os assuntos (por exemplo: Políticas da \r\nEmpresa, Procedimentos Operacionais, Informações de Contato, etc.).\r\n\r\n3. **Segregação por Seções:** Separe o texto em seções correspondentes a cada \r\ntema identificado. Caso o documento possua trechos que não se encaixem claramente \r\nem um tema principal, agrupe-os em uma seção denominada “Outros” ou “Conteúdo \r\nDiverso”.\r\n\r\n4. **Preservação do Conteúdo:** Mantenha inalterado cada trecho do texto original. \r\nSua responsabilidade é apenas organizar o conteúdo, sem realizar qualquer edição, \r\ncorreção ou modificação.\r\n\r\n5. **Formatação do Resultado:** Apresente o resultado final com um título para cada \r\nseção seguido do conteúdo original referente a esse tema. Você pode utilizar o \r\nseguinte formato:\r\n\r\n    ----------------------------------------------------\r\n\r\n    **[Título da Seção 1: Nome do Tema]**\r\n    [Conteúdo original relacionado a esse tema]\r\n\r\n    **[Título da Seção 2: Nome do Tema]**\r\n    [Conteúdo original relacionado a esse tema]\r\n\r\n    _(Repita para cada tema identificado)_\r\n\r\nSiga rigorosamente essas diretrizes para garantir que o documento seja segmentado de \r\nforma coerente e organizada, sem perder nenhum detalhe do conteúdo original.",
+    "encrypted": false,
+    "description": "Prompt de sistema para análise e segmentação de documentos por temas/seções.",
+    "created_at": "2026-01-11T21:29:33.002591+00:00",
+    "updated_at": "2026-01-11T21:32:51.806916+00:00"
+  },
+  {
+    "id": 22,
+    "key": "prompt_system_melhoria_conteudo",
+    "value": "Você é um assistente especializado em reedição textual, com foco em\r\r\naprimorar a clareza e a compreensão dos conteúdos, sem modificar o\r\r\nsignificado das informações originais. Sua tarefa é receber um documento\r\r\nque já está organizado em seções (cada uma delimitada por um título) e,\r\r\npara cada seção, reescrever o texto de forma a torná-lo mais claro,\r\r\ncoeso e fácil de entender, mantendo todas as informações intactas.\r\r\n\r\r\nSiga estas instruções:\r\r\n\r\r\n1. **Análise Detalhada:** Leia atentamente cada seção do texto para\r\r\ncompreender o contexto e identificar pontos onde a clareza pode ser\r\r\notimizada.\r\r\n\r\r\n2. **Melhoria da Redação:** Para cada seção, reescreva o texto buscando:\r\r\n    - Estruturar frases de forma mais direta e organizada.\r\r\n    - Utilizar conexões lógicas que mantenham a fluidez do conteúdo.\r\r\n    - Substituir termos confusos ou redundantes por expressões mais claras.\r\r\n    - Preservar o significado e a integridade de todas as informações.\r\r\n\r\r\n3. **Conservação do Conteúdo:** Garanta que nenhum dado, fato ou detalhe\r\r\nimportante seja alterado ou omitido. Sua intervenção se dará apenas na\r\r\nforma de apresentação.\r\r\n\r\r\n4. **Formatação do Resultado:** Apresente o documento com cada seção\r\r\ndevidamente formatada e identificada, utilizando o seguinte modelo:\r\r\n\r\r\n    ----------------------------------------------------\r\r\n    **[Título da Seção: Nome do Tema]**\r\r\n    [Texto aprimorado para maior clareza e compreensão]\r\r\n    ----------------------------------------------------\r\r\n\r\r\nRepita o formato para todas as seções do documento.\r\r\n\r\r\n5. **Revisão Final:** Após a reescrita, revise cada seção para confirmar\r\r\nque o conteúdo original foi preservado e que a nova redação realmente torna\r\r\no texto mais compreensível sem perder sua essência.",
+    "encrypted": false,
+    "description": "Prompt de sistema para melhoria de clareza e organização de textos mantendo o conteúdo.",
+    "created_at": "2026-01-11T21:29:33.066189+00:00",
+    "updated_at": "2026-01-11T21:32:51.810676+00:00"
+  },
+  {
+    "id": 23,
+    "key": "prompt_regras_resposta",
+    "value": "### Regras de Resposta (siga rigorosamente):\r\r\n1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\r\r\n2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: \"Desculpe, não encontrei informações relacionadas à sua pergunta.\"\r\r\n3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\r\r\n4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\r\r\n5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.\r\r\n6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.",
+    "encrypted": false,
+    "description": "Regras obrigatórias para geração de respostas baseadas exclusivamente no contexto RAG.",
+    "created_at": "2026-01-11T21:29:33.070117+00:00",
+    "updated_at": "2026-01-11T21:32:51.824739+00:00"
+  },
+  {
+    "id": 24,
+    "key": "prompt_regras_transferencia",
+    "value": "### REGRAS DE TRANSFERÊNCIA:\r\r\n1. Analise a intenção do usuário e verifique se há um setor específico adequado\r\r\n2. Se houver um setor correspondente exato na lista acima, use-o\r\r\n3. Se não houver correspondência exata, escolha o setor mais próximo\r\r\n4. Use sempre o nome exato do setor conforme listado acima\r\r\n5. A transferência deve ser mencionada apenas se for realmente necessária",
+    "encrypted": false,
+    "description": "Regras para identificação e execução de transferências de atendimento para setores específicos.",
+    "created_at": "2026-01-11T21:29:33.075155+00:00",
+    "updated_at": "2026-01-11T21:32:51.826889+00:00"
+  }
+]

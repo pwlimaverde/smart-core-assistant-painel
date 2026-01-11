@@ -1,0 +1,6 @@
+.git
+.gitignore
+wrangler.jsonc
+DEPLOY_INSTRUCTIONS.md
+task.md
+README.md

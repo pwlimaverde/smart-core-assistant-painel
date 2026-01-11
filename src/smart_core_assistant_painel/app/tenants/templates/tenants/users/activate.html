@@ -1,65 +1,65 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+{% extends "base_public.html" %}
+{% load static %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ativar Conta - {{ tenant.name }}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
-</head>
+{% block content %}
+<div class="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-stone-900 relative">
+    <!-- Background Texture -->
+    <div class="absolute inset-0 z-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
 
-<body class="bg-gray-100 h-screen flex items-center justify-center">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <div class="text-center mb-8">
-            <h1 class="text-2xl font-bold text-gray-800">Seja bem-vindo!</h1>
-            <p class="text-gray-600 mt-2">Você foi convidado para acessar o painel de <strong>{{ tenant.name
-                    }}</strong>.</p>
+    <div class="absolute inset-0 z-0 bg-gradient-to-b from-stone-900 via-stone-800 to-stone-900 opacity-80"></div>
+
+    <div
+        class="w-full max-w-md space-y-8 relative z-10 bg-white/5 backdrop-blur-xl p-8 rounded-2xl border border-white/10 shadow-2xl">
+        <div class="text-center">
+            <img class="mx-auto h-12 w-auto" src="{% static 'img/logo_branca_smart_v2.png' %}" alt="Smart Core">
+            <h2 class="mt-6 text-3xl font-bold tracking-tight text-white">Ativar Conta</h2>
+            <p class="mt-2 text-sm text-stone-400">
+                Você foi convidado para acessar <strong>{{ tenant.name }}</strong>
+            </p>
         </div>
 
         {% if messages %}
-        <div class="mb-4">
+        <div class="space-y-2">
             {% for message in messages %}
             <div
-                class="p-3 rounded-md text-sm {{ message.tags|yesno:'bg-green-100 text-green-700,bg-red-100 text-red-700' }}">
+                class="p-4 rounded-lg text-sm font-medium
+                {% if message.tags == 'error' %}bg-red-500/10 text-red-500 border border-red-500/20{% else %}bg-green-500/10 text-green-500 border border-green-500/20{% endif %}">
                 {{ message }}
             </div>
             {% endfor %}
         </div>
         {% endif %}
 
-        <form method="POST" class="space-y-6">
+        <form class="mt-8 space-y-6" method="POST">
             {% csrf_token %}
 
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Seu Email</label>
-                <input type="text" value="{{ invite.email }}" disabled
-                    class="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-500 shadow-sm sm:text-sm">
+            <div class="-space-y-px rounded-md shadow-sm">
+                <div>
+                    <label for="email" class="sr-only">Seu Email</label>
+                    <input id="email" type="text" value="{{ invite.email }}" disabled
+                        class="relative block w-full rounded-t-md border-0 bg-stone-800/50 py-3 px-4 text-stone-400 ring-1 ring-inset ring-white/10 sm:text-sm sm:leading-6 cursor-not-allowed">
+                </div>
+                <div>
+                    <label for="password" class="sr-only">Defina sua Senha</label>
+                    <input id="password" name="password" type="password" required
+                        class="relative block w-full border-0 bg-stone-800/50 py-3 px-4 text-white ring-1 ring-inset ring-white/10 placeholder:text-stone-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[#a98f71] sm:text-sm sm:leading-6 transition-all"
+                        placeholder="Nova senha (min. 8 caracteres)">
+                </div>
+                <div>
+                    <label for="password_confirm" class="sr-only">Confirme a Senha</label>
+                    <input id="password_confirm" name="password_confirm" type="password" required
+                        class="relative block w-full rounded-b-md border-0 bg-stone-800/50 py-3 px-4 text-white ring-1 ring-inset ring-white/10 placeholder:text-stone-500 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-[#a98f71] sm:text-sm sm:leading-6 transition-all"
+                        placeholder="Confirme a senha">
+                </div>
             </div>
 
             <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">Defina sua Senha</label>
-                <input type="password" name="password" id="password" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                <button type="submit"
+                    class="group relative flex w-full justify-center rounded-lg bg-[#a98f71] py-3 px-4 text-sm font-semibold text-white hover:bg-[#8b7355] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#a98f71] shadow-lg shadow-[#a98f71]/20 transition-all">
+                    Ativar Minha Conta
+                </button>
             </div>
-
-            <div>
-                <label for="password_confirm" class="block text-sm font-medium text-gray-700">Confirme a Senha</label>
-                <input type="password" name="password_confirm" id="password_confirm" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-            </div>
-
-            <button type="submit"
-                class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                Ativar Minha Conta
-            </button>
         </form>
     </div>
-</body>
-
-</html>
+</div>
+{% endblock %}

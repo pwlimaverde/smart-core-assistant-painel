@@ -2935,12 +2935,164 @@
           }
         ],
         "updatedAt": "2026-01-03T22:07:18.121Z"
+      },
+      {
+        "id": "48",
+        "title": "[FEAT] Chat de Teste para Query Compose (Playground)",
+        "description": "Implementar um ambiente de simulação (Playground) para testar o fluxo de respostas do assistente, permitindo input, visualização do raciocínio e resposta final sem persistência de dados.",
+        "details": "Implementar conforme especificado no PRD (.taskmaster/docs/feature_query_compose_test_chat.txt). O objetivo é permitir testes rápidos de prompts e RAG.\n\n### Backend (SimulationService)\n1. **Novo Serviço**: Criar `src/smart_core_assistant_painel/modules/ai_engine/services/simulation_service.py`.\n2. **Lógica de Simulação**: Implementar método `simulate_interaction(text, tenant_slug, ...)` que:\n   - Instancia o pipeline de IA atual (Detecção -> RAG -> Geração).\n   - Executa o fluxo com flag `dry_run=True` para inibir chamadas de `save()` em models como `Attendance` ou `Message`.\n   - Retorna um objeto estruturado contendo: Resposta final, Documentos recuperados (IDs e Scores), Intenção detectada e Prompt construído (para debug).\n3. **API Endpoint**: Criar endpoint protegido para consumir este serviço.\n\n### Frontend (Playground)\n1. **Interface**: Atualizar `verificar_query_compose.html` para incluir um painel lateral ou aba 'Playground'.\n2. **Componente de Chat**: Implementar interface simples de input/output.\n3. **Visualização de Debug**: Ao lado da resposta do bot, exibir metadados técnicos (ex: 'Chunk ID 45 - Score 0.89', 'Prompt Tokens: 150').",
+        "testStrategy": "1. **Teste de Efeito Colateral Zero**: Executar uma bateria de simulações e assertar que a contagem de registros em `Attendance` e `Message` permaneceu inalterada.\n2. **Teste Funcional de RAG**: Simular uma pergunta cujo contexto está no banco vetorial e verificar se o `SimulationService` retorna os chunks corretos no payload de debug.\n3. **Teste de Interface**: Validar o fluxo de envio e renderização da resposta no painel `verificar_query_compose.html`.",
+        "status": "pending",
+        "dependencies": [
+          "2",
+          "8",
+          "33"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Adaptação da Pipeline de IA para Retorno de Metadados",
+            "description": "Modificar os componentes atuais do pipeline de IA (RAGService, PromptBuilder) para permitir o retorno de metadados técnicos (chunks recuperados, scores, prompt bruto construído) necessários para o debug, sem alterar o comportamento em produção.",
+            "dependencies": [
+              33
+            ],
+            "details": "Refatorar métodos de geração para retornar um objeto de resultado composto (ex: `GenerationResult`) contendo `answer`, `source_documents` e `raw_prompt`. Garantir que o fluxo atual de produção continue recebendo apenas a string de resposta, ou adaptar o chamador atual. Isso é pré-requisito para o SimulationService expor o 'raciocínio'.",
+            "status": "pending",
+            "testStrategy": "Testes unitários no pipeline verificando se os metadados estão presentes no objeto de retorno quando solicitados.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 2,
+            "title": "Implementação do Backend SimulationService",
+            "description": "Criar o serviço responsável por orquestrar a simulação da interação, isolando a lógica de 'Dry Run' para evitar persistência no banco de dados.",
+            "dependencies": [
+              1
+            ],
+            "details": "Criar `src/smart_core_assistant_painel/modules/ai_engine/services/simulation_service.py`. Implementar `simulate_interaction(text, tenant_slug)`. O método deve instanciar o pipeline, passar o input, capturar os metadados (definidos na task 1) e garantir explicitamente que nenhuma chamada a `.save()` ou `.create()` seja feita nos models `Attendance` ou `Message`. Retornar dicionário estruturado.",
+            "status": "pending",
+            "testStrategy": "Criar teste de integração que chama o serviço e asserta `Message.objects.count() == 0` antes e depois da execução.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 3,
+            "title": "Criação do Endpoint de API para Simulação",
+            "description": "Expor o serviço de simulação através de um endpoint REST protegido, acessível pelo painel administrativo.",
+            "dependencies": [
+              2
+            ],
+            "details": "Criar View/APIView em `views.py` (ou módulo de API correspondente) mapeada para uma rota como `/api/ai/playground/simulate/`. Validar permissões de admin. Receber JSON `{text, tenant_slug}`. Chamar `SimulationService` e retornar JSON com resposta, prompt, intenção e chunks.",
+            "status": "pending",
+            "testStrategy": "Utilizar APIClient do Django ou Postman para enviar request e validar status 200 e estrutura do JSON de resposta.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Implementação da Interface do Playground (HTML/CSS)",
+            "description": "Atualizar o template Django existente para incluir a estrutura visual do chat de teste e painel de debug lateral.",
+            "dependencies": [],
+            "details": "Editar `verificar_query_compose.html`. Adicionar container de duas colunas: Esquerda para o Chat (Input de texto, área de mensagens scrollável) e Direita para o Painel de Debug (json viewer ou lista de cards para chunks/prompts). Utilizar classes CSS existentes do painel para consistência visual.",
+            "status": "pending",
+            "testStrategy": "Verificar renderização responsiva do template no navegador.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Desenvolvimento da Lógica Frontend (JS) do Playground",
+            "description": "Implementar o script client-side para gerenciar o envio de mensagens, loading state e renderização da resposta e metadados.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "Criar script para interceptar submit do form de chat. Fazer `fetch` para o endpoint criado na task 3. Ao receber resposta: 1) Appendar bolha de fala do bot no chat. 2) Preencher painel lateral com dados técnicos (ex: 'Prompt Tokens: 150', lista de 'Source Documents' com scores). Tratar erros e loading spinners.",
+            "status": "pending",
+            "testStrategy": "Teste manual E2E: Enviar pergunta, verificar se resposta aparece e se os detalhes técnicos (chunks) são renderizados ao lado.",
+            "parentId": "undefined"
+          }
+        ]
+      },
+      {
+        "id": "49",
+        "title": "[FIX] Unificação de Layout e Correções Funcionais (Users/AI Config)",
+        "description": "Padronização de todos os templates internos para o Design System Smart Core (base_dashboard.html), correção de rotas na gestão de usuários e habilitação de edição nas configurações de IA.",
+        "details": "Esta tarefa visa eliminar a fragmentação visual e corrigir bugs críticos de usabilidade no painel do tenant, seguindo o padrão Gold/Stone do Smart Core.\n\n### Fase 0: Gestão de Usuários (Prioridade Crítica)\n1. **Migração de Templates**:\n   - Arquivos alvo: `src/smart_core_assistant_painel/app/tenants/templates/tenants/users/list.html`, `invite.html` e `edit_permissions.html`.\n   - Alterar herança para `{% extends 'tenants/base_dashboard.html' %}`.\n   - Substituir classes Bootstrap/AdminLTE por Tailwind CSS compatíveis com o Design System.\n2. **Correção de Rotas**:\n   - Em `invite.html` (aprox. linha 48), corrigir o `action` do formulário ou link de voltar: alterar de `tenant_users:list` para a rota correta `tenants:user_list` (verificar `urls.py` do app tenants).\n\n### Fase 1: Dashboard e Configurações\n1. **Padronização Visual**:\n   - Migrar `dashboard.html`, `config_ai.html`, `config_database.html`, `config_evolution.html`, `config_trello.html` e `config_debug.html` para estender `base_dashboard.html`.\n   - Garantir que o bloco `content` esteja envolto corretamente nos containers do novo layout.\n2. **Fix Visual (Sidebar)**:\n   - Inspecionar o template da Sidebar (ou o bloco onde ela é renderizada no dashboard) para remover o elemento HTML quebrado/residual posicionado acima do botão 'Sair'.\n\n### Fase 2: Lógica de Configuração de IA\n1. **Habilitar Edição**:\n   - Analisar `AIConfigView` em `src/smart_core_assistant_painel/app/tenants/views.py`.\n   - Verificar se o Form associado está definindo widgets como `disabled` ou se o template está renderizando os campos como 'read-only'.\n   - Assegurar que usuários com role `OWNER` ou `ADMIN` possam editar os campos. Ajustar `get_form_kwargs` ou `form_valid` se necessário.",
+        "testStrategy": "1. **Verificação Visual Global**: Navegar entre Dashboard, Usuários e Configurações. Confirmar que Sidebar e Topbar (Gold/Stone) persistem sem 'piscar' ou mudar de estilo (Dark/Glass azul incorreto).\n2. **Teste de Fluxo de Usuários**: Acessar /tenants/users/, clicar em 'Convidar', verificar se o formulário carrega e se o botão de voltar/salvar redireciona corretamente sem erro 404.\n3. **Teste de Edição de IA**: Logar como Tenant Owner, acessar /tenants/config/ai/, alterar um valor (ex: Model Name ou Temperature) e Salvar. Recarregar a página e confirmar se o valor persistiu.\n4. **Regression Test**: Verificar se o botão 'Sair' na sidebar está clicável e sem obstruções visuais.",
+        "status": "in-progress",
+        "dependencies": [
+          "44",
+          "45",
+          "47"
+        ],
+        "priority": "high",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Migração Visual: Lista de Usuários e Permissões",
+            "description": "Atualizar os templates de listagem de usuários e edição de permissões para utilizar o Design System Smart Core.",
+            "dependencies": [],
+            "details": "Localizar `src/smart_core_assistant_painel/app/tenants/templates/tenants/users/list.html` e `edit_permissions.html`. Alterar a herança para `{% extends 'tenants/base_dashboard.html' %}`. Substituir tabelas e botões Bootstrap/AdminLTE por componentes Tailwind CSS equivalentes (ex: `table-auto`, `w-full`, classes de texto e bordas do tema Gold/Stone).",
+            "status": "done",
+            "testStrategy": "Acessar a rota de lista de usuários e verificar se o layout carrega dentro da estrutura do dashboard (sidebar/topbar corretas) e se a tabela é responsiva.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T13:40:57.309Z"
+          },
+          {
+            "id": 2,
+            "title": "Migração de Convite e Correção de Rota (Bugfix)",
+            "description": "Atualizar o template de convite e corrigir o erro de rota no formulário de envio.",
+            "dependencies": [
+              1
+            ],
+            "details": "Editar `src/smart_core_assistant_painel/app/tenants/templates/tenants/users/invite.html`. Atualizar herança para `base_dashboard.html` e aplicar Tailwind. IMPORTANTE: Localizar a tag `<form>` ou link de voltar e corrigir o atributo `action`/`href`. Alterar de `tenant_users:list` (ou similar incorreto) para `tenants:user_list` (verificar namespace em `urls.py`).",
+            "status": "in-progress",
+            "testStrategy": "Tentar enviar um convite de usuário. Verificar se, ao salvar ou cancelar, o sistema redireciona corretamente para a lista de usuários sem erro 404/500.",
+            "parentId": "undefined",
+            "updatedAt": "2026-01-07T13:41:34.134Z"
+          },
+          {
+            "id": 3,
+            "title": "Padronização de Templates: Dashboard e Configurações Gerais",
+            "description": "Migrar o dashboard principal e as telas de configuração secundárias para o novo layout base.",
+            "dependencies": [
+              2
+            ],
+            "details": "Aplicar `{% extends 'tenants/base_dashboard.html' %}` e ajustes de grid Tailwind nos seguintes arquivos: `dashboard.html`, `config_database.html`, `config_evolution.html`, `config_trello.html` e `config_debug.html`. Garantir que o bloco `content` esteja corretamente encapsulado para evitar quebra de layout na área principal.",
+            "status": "pending",
+            "testStrategy": "Navegar por todas as abas de configuração (exceto IA) e confirmar a consistência visual do header, footer e containers de conteúdo.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 4,
+            "title": "Migração de Configuração de IA e Correção Visual da Sidebar",
+            "description": "Atualizar o template de Configuração de IA e remover artefatos visuais quebrados na Sidebar.",
+            "dependencies": [
+              3
+            ],
+            "details": "1. Migrar `config_ai.html` para o novo layout base. 2. Inspecionar o template da Sidebar (provavelmente incluído em `base_dashboard.html` ou componente separado) e identificar um elemento HTML residual/quebrado posicionado acima do botão 'Sair' (logout). Remover ou corrigir esse elemento.",
+            "status": "pending",
+            "testStrategy": "Verificar se a tela de Configuração de IA renderiza corretamente. Inspecionar a Sidebar visualmente para garantir que não há espaços em branco estranhos ou textos soltos acima do botão de logout.",
+            "parentId": "undefined"
+          },
+          {
+            "id": 5,
+            "title": "Lógica Backend: Habilitar Edição de Configurações de IA",
+            "description": "Corrigir a View ou Form de Configuração de IA para permitir que administradores editem os valores.",
+            "dependencies": [
+              4
+            ],
+            "details": "Analisar `AIConfigView` em `src/smart_core_assistant_painel/app/tenants/views.py`. Verificar se o formulário está sendo instanciado com `disabled=True` ou se os campos no template `config_ai.html` possuem atributo `readonly` hardcoded. Remover restrições para usuários com permissão (Owner/Admin) permitindo o `POST` salvar as alterações.",
+            "status": "pending",
+            "testStrategy": "Logar como Admin/Owner, acessar Configurações de IA, alterar um valor (ex: Nome do Agente ou Modelo) e salvar. Recarregar a página e confirmar se o valor persistiu.",
+            "parentId": "undefined"
+          }
+        ],
+        "updatedAt": "2026-01-07T13:41:34.134Z"
       }
     ],
     "metadata": {
       "version": "1.0.0",
-      "lastModified": "2026-01-03T22:07:18.127Z",
-      "taskCount": 46,
+      "lastModified": "2026-01-07T13:41:34.140Z",
+      "taskCount": 48,
       "completedCount": 29,
       "tags": [
         "master"

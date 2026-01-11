@@ -21,6 +21,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
 from smart_core_assistant_painel.app.ui.operacional.models import (
     Atendente,
 )
+from smart_core_assistant_painel.app.tenants.models import TenantUser
 
 
 def cadastro(request: HttpRequest) -> HttpResponse:
@@ -94,7 +95,21 @@ def login(request: HttpRequest) -> HttpResponse:
             if next_url:
                 return redirect(next_url)
 
-            # Encontrar atendente vinculado ao usuário para redirecionamento
+            # [NOVO] Redirecionamento por Papel (Role-Based Redirect)
+
+            # 1. Superusuário -> Admin do Django
+            if user.is_superuser:
+                return redirect("/admin/")
+
+            # 2. Usuário de Tenant -> Dashboard do Tenant
+            # Verifica se o usuário tem vínculo ativo com algum tenant
+            if hasattr(user, "tenant_users"):
+                # Busca qualquer vínculo ativo, priorizando owners se houver lógica, mas aqui pegamos o primeiro
+                tenant_link = user.tenant_users.filter(is_active=True).first()
+                if tenant_link:
+                    return redirect("tenants:dashboard")
+
+            # 3. Lógica legado (Atendente) - Mantida como fallback
             agente = (
                 Atendente.objects.filter(usuario_sistema=user.username)
                 .select_related("departamento")
@@ -105,8 +120,10 @@ def login(request: HttpRequest) -> HttpResponse:
                     "atendimentos:kanban_departamento",
                     departamento_id=agente.departamento_id,
                 )
-            # Fallback: redireciona para a home
-            return redirect("/")
+
+            # Fallback final: redireciona para a home (que vai redirecionar para dashboard/login novamente se necessário)
+            # Mas para garantir loop infinito, vamos mandar para tenants:dashboard se autenticado
+            return redirect("tenants:dashboard")
         messages.add_message(
             request, constants.ERROR, "Nome de usuário ou senha inválidos."
         )

@@ -3,7 +3,8 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Refactor Ui Design System](./refactor-ui-design-system.md)
+1. [Add Query Compose Playground](./add-query-compose-playground.md)
+2. [Refactor Ui Design System](./refactor-ui-design-system.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

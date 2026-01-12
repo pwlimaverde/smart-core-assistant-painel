@@ -167,86 +167,90 @@ packages = ["src/smart_core_assistant_painel"]
 
 
 [tool.taskipy.tasks]
-# Scripts de automação
-base = "python scripts/new_feature_script.py --type base"
-call-data = "python scripts/new_feature_script.py --type call_data"
+# ============================================
+# Scripts de Automação
+# ============================================
+base = "python scripts/automacao/new_feature_script.py --type base"
+call-data = "python scripts/automacao/new_feature_script.py --type call_data"
 
-# Servidor Django
-# Servidor Django
+# ============================================
+# Django Management (Desenvolvimento Local)
+# ============================================
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
-celery-worker = "celery -A smart_core_assistant_painel.app.ui.core worker -l info --pool=solo -Q webhooks,ai_processing,default"
-celery-beat = "celery -A smart_core_assistant_painel.app.ui.core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
-start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-worker'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-beat'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-trello' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-worker'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-beat'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-trello' }\""
 makemigrations = "python -m smart_core_assistant_painel.app.ui.manage makemigrations"
 migrate = "python -m smart_core_assistant_painel.app.ui.manage migrate"
 migrate-all = "python -m smart_core_assistant_painel.app.ui.manage migrate_all_tenants"
 createsuperuser = "python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
 shell = "python -m smart_core_assistant_painel.app.ui.manage shell"
+collectstatic = "python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
 
-# Desenvolvimento e testes
+# Celery (Desenvolvimento Local)
+celery-worker = "celery -A smart_core_assistant_painel.app.ui.core worker -l info --pool=solo -Q webhooks,ai_processing,default"
+celery-beat = "celery -A smart_core_assistant_painel.app.ui.core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+
+# Iniciar todos os serviços locais em abas separadas (Windows Terminal)
+start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-worker'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-beat'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-trello' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-worker'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-beat'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-trello' }\""
+
+# ============================================
+# Qualidade de Código
+# ============================================
+lint = "ruff check src/"
+format = "ruff format src/"
+type-check = "pyright"
+
+# ============================================
+# Testes
+# ============================================
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"
 test-apps = "pytest src/smart_core_assistant_painel/app/ui -v --cov=src --cov-report=term-missing"
 test-all = "pytest -v --cov=src --cov-report=term-missing"
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"
 
-# Linting
-lint = "ruff check src/"
-format = "ruff format src/"
-type-check = "pyright"
-
-# Reset do banco de dados
+# ============================================
+# Utilitários
+# ============================================
 reset-db = "python scripts/database_reset/reset_database.py"
-
-# Callback do Trello via túnel ngrok
 ngrok-trello = "python scripts/trello/ngrok_trello.py"
-
-# Docker
-# Docker - Data Stack
-start-data = "docker compose --env-file .env -f docker-compose-data.yml -p smartcoreassistant-data up -d"
-stop-data = "docker compose --env-file .env -f docker-compose-data.yml -p smartcoreassistant-data down"
-logs-data = "docker compose --env-file .env -f docker-compose-data.yml -p smartcoreassistant-data logs -f"
-
-# Docker - App Stack
-start-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app up -d"
-stop-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app down"
-restart-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app up -d --build"
-logs-app = "docker compose --env-file .env -f docker-compose-app.yml -p smartcoreassistant-app logs -f"
-test-docker = "docker compose -f docker-compose-app.yml -p smartcoreassistant-app exec -T django_app pytest"
-
-# Docker - Global
-start-docker = "uv run task start-data && uv run task start-app"
-restart-docker = "uv run task restart-app"
-stop-docker = "uv run task stop-app && uv run task stop-data"
-
+list-tasks = "python scripts/visualize_tasks.py"
 
 # ============================================
-# Docker Remoto (via scripts/docker_remoto)
+# Docker Remoto (Produção)
+# Usa SMART_CORE_DOCKER_HOST do .env
 # ============================================
+
+# Status geral
 remote-status = "python scripts/docker_remoto/manager.py ps all --remote"
 
-# Remoto - Data
+# Data Stack (PostgreSQL + Redis)
 remote-start-data = "python scripts/docker_remoto/manager.py up data --remote"
 remote-stop-data = "python scripts/docker_remoto/manager.py down data --remote"
 remote-logs-data = "python scripts/docker_remoto/manager.py logs data --remote"
 
-# Remoto - App
+# App Stack (Django + Migrate)
 remote-start-app = "python scripts/docker_remoto/manager.py up app --remote"
 remote-stop-app = "python scripts/docker_remoto/manager.py down app --remote"
 remote-restart-app = "python scripts/docker_remoto/manager.py restart app --remote"
 remote-logs-app = "python scripts/docker_remoto/manager.py logs app --remote"
 remote-build-app = "python scripts/docker_remoto/manager.py build app --remote"
 
-# Remoto - Global
-remote-start-all = "uv run task remote-start-data && uv run task remote-start-app"
-remote-stop-all = "uv run task remote-stop-app && uv run task remote-stop-data"
+# Workers Stack (Celery Worker + Beat)
+remote-start-workers = "python scripts/docker_remoto/manager.py up workers --remote"
+remote-stop-workers = "python scripts/docker_remoto/manager.py down workers --remote"
+remote-restart-workers = "python scripts/docker_remoto/manager.py restart workers --remote"
+remote-logs-workers = "python scripts/docker_remoto/manager.py logs workers --remote"
+remote-build-workers = "python scripts/docker_remoto/manager.py build workers --remote"
 
-# Remoto - Django Management
+# Infra Stack (Cloudflared + Flower)
+remote-start-infra = "python scripts/docker_remoto/manager.py up infra --remote"
+remote-stop-infra = "python scripts/docker_remoto/manager.py down infra --remote"
+remote-logs-infra = "python scripts/docker_remoto/manager.py logs infra --remote"
+
+# Global (Todos os Stacks - Ordem correta de dependência)
+remote-start-all = "python scripts/docker_remoto/manager.py up all --remote"
+remote-stop-all = "python scripts/docker_remoto/manager.py down all --remote"
+
+# Django Management no Servidor
 remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage migrate"
 remote-createsuperuser = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
 remote-shell = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage shell"
 remote-collectstatic = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
-
-
-
-# Task Master Visualization
-list-tasks = "python scripts/visualize_tasks.py"

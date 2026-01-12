@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""Script para gerenciar containers Docker (Data e App).
+"""Script para gerenciar containers Docker em 4 stacks modulares.
 
-Permite executar comandos docker compose (up, down, logs, restart)
-visando tanto o ambiente local quanto remoto (via DOCKER_HOST).
+Stacks disponíveis:
+- data: PostgreSQL + Redis (dados persistentes)
+- app: Django + Migrate (aplicação principal)
+- workers: Celery Worker + Beat (processamento assíncrono)
+- infra: Cloudflared + Flower (infraestrutura/túnel)
+
+Permite executar comandos docker compose remotamente via DOCKER_HOST.
 """
 
 import os
@@ -12,17 +17,41 @@ import argparse
 from pathlib import Path
 from typing import Dict, List, Optional
 
-# Definição das Stacks
-STACKS = {
+# ============================================
+# Diretório dos compose files (relativo à raiz)
+# ============================================
+COMPOSE_DIR = "docker/compose"
+
+# ============================================
+# Definição das 4 Stacks Modulares
+# ============================================
+STACKS: Dict[str, Dict[str, str]] = {
     "data": {
-        "file": "docker-compose-data.yml",
+        "file": f"{COMPOSE_DIR}/data.yml",
         "project": "smartcoreassistant-data",
+        "description": "PostgreSQL + Redis",
     },
     "app": {
-        "file": "docker-compose-app.yml",
+        "file": f"{COMPOSE_DIR}/app.yml",
         "project": "smartcoreassistant-app",
+        "description": "Django App + Migrate",
+    },
+    "workers": {
+        "file": f"{COMPOSE_DIR}/workers.yml",
+        "project": "smartcoreassistant-workers",
+        "description": "Celery Worker + Beat",
+    },
+    "infra": {
+        "file": f"{COMPOSE_DIR}/infra.yml",
+        "project": "smartcoreassistant-infra",
+        "description": "Cloudflared + Flower",
     },
 }
+
+# Ordem de inicialização (dependências respeitadas)
+STARTUP_ORDER = ["data", "app", "workers", "infra"]
+# Ordem de desligamento (inversa)
+SHUTDOWN_ORDER = ["infra", "workers", "app", "data"]
 
 
 def print_header(title: str) -> None:
@@ -47,19 +76,16 @@ def load_env(env_path: Path) -> Dict[str, str]:
 
 
 def get_docker_host() -> Optional[str]:
-    """Obtém o DOCKER_HOST configurado (se houver).
+    """Obtém o DOCKER_HOST configurado.
 
     Tenta ler:
-    1. Argumento de linha de comando (não implementado aqui, focado em env)
-    2. Variável de ambiente DOCKER_HOST
-    3. Variável de ambiente SMART_CORE_DOCKER_HOST no .env
+    1. Variável de ambiente DOCKER_HOST
+    2. Variável SMART_CORE_DOCKER_HOST no .env
     """
-    # Carrega .env para buscar configuração específica
     project_root = Path(__file__).parent.parent.parent
     env_file = project_root / ".env"
     file_vars = load_env(env_file)
 
-    # Priority: Env Var > .env custom var
     host = os.environ.get("DOCKER_HOST")
     if not host:
         host = file_vars.get("SMART_CORE_DOCKER_HOST")
@@ -73,7 +99,8 @@ def run_compose(
     """Executa comando docker compose."""
     if stack not in STACKS:
         print(
-            f"ERRO: Stack '{stack}' desconhecida. Use: {', '.join(STACKS.keys())}"
+            f"ERRO: Stack '{stack}' desconhecida. "
+            f"Use: {', '.join(STACKS.keys())}"
         )
         return 1
 
@@ -92,19 +119,28 @@ def run_compose(
         command,
     ] + args
 
-    # Prepara ambiente
+    # Prepara ambiente - carrega .env local e adiciona ao ambiente
     env = os.environ.copy()
+
+    # Carrega variáveis do .env local para passá-las ao Docker remoto
+    project_root = Path(__file__).parent.parent.parent
+    env_file = project_root / ".env"
+    local_env_vars = load_env(env_file)
+
+    # Adiciona variáveis do .env ao ambiente (sobrescreve se já existir)
+    for key, value in local_env_vars.items():
+        env[key] = value
+
     if host:
-        print(f"--> Executando em Host Remoto: {host}")
+        print(f"--> Executando em: {host}")
         env["DOCKER_HOST"] = host
     else:
-        print("--> Executando Localmente")
+        print("--> AVISO: Executando localmente (sem DOCKER_HOST)")
 
     print(f"CMD: {' '.join(cmd_list)}")
     print("-" * 48)
 
     try:
-        # Executa
         result = subprocess.run(cmd_list, env=env)
         return result.returncode
     except KeyboardInterrupt:
@@ -115,9 +151,9 @@ def run_compose(
         return 1
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Gerenciador Docker Smart Core"
+        description="Gerenciador Docker Smart Core (4 Stacks)"
     )
     parser.add_argument(
         "command",
@@ -126,13 +162,13 @@ def main():
     )
     parser.add_argument(
         "stack",
-        choices=["data", "app", "all"],
-        help="Stack alvo (data, app ou all)",
+        choices=["data", "app", "workers", "infra", "all"],
+        help="Stack alvo (data, app, workers, infra ou all)",
     )
     parser.add_argument(
         "--remote",
         action="store_true",
-        help="Forçar uso de host remoto configurado",
+        help="Usar host remoto configurado no .env",
     )
     parser.add_argument("--host", help="Sobrescrever DOCKER_HOST")
     parser.add_argument(
@@ -147,13 +183,12 @@ def main():
     docker_cmd = args.command
     docker_args = args.extra_args if args.extra_args else []
 
-    # Correção robusta: Se --remote caiu em extra_args, removemos de lá e ativamos a flag
-    # ISSO PRECISA SER FEITO ANTES DE CHECAR args.remote
+    # Correção: Se --remote caiu em extra_args, removemos
     if "--remote" in docker_args:
         docker_args.remove("--remote")
         args.remote = True
 
-    # Ajuste para visualização limpa no 'ps'
+    # Header
     if args.command == "ps":
         print_header(f"STATUS (PS) {args.stack}")
     else:
@@ -165,49 +200,47 @@ def main():
         host = get_docker_host()
         if not host:
             print(
-                "AVISO: Flag --remote usada mas NENHUM host configurado (SMART_CORE_DOCKER_HOST ou DOCKER_HOST). Executando localmente."
+                "ERRO: Flag --remote usada mas SMART_CORE_DOCKER_HOST "
+                "não está configurado no .env"
             )
+            sys.exit(1)
 
-    stacks_to_run = []
+    # Define stacks a processar
     if args.stack == "all":
-        stacks_to_run = ["data", "app"]
+        if args.command in ["down", "stop"]:
+            stacks_to_run = SHUTDOWN_ORDER
+        else:
+            stacks_to_run = STARTUP_ORDER
     else:
         stacks_to_run = [args.stack]
 
-    # Mapeamento de comandos simplificados
-    docker_cmd = args.command
-    docker_args = args.extra_args if args.extra_args else []
-
-    # Correção robusta: Se --remote caiu em extra_args, removemos de lá e ativamos a flag
-    if "--remote" in docker_args:
-        docker_args.remove("--remote")
-        args.remote = True
-
+    # Ajusta argumentos específicos por comando
     if args.command == "up":
         if "-d" not in docker_args:
             docker_args.append("-d")
     elif args.command == "restart":
-        # Restart geralmente é para app, 'up -d --build' é melhor para rebuild
-        # Mas 'restart' comando nativo apenas reinicia container
         docker_cmd = "restart"
     elif args.command == "build":
         docker_cmd = "up"
         docker_args = ["-d", "--build"]
     elif args.command == "ps":
-        # Adiciona formatação se não tiver args
         if not docker_args:
             docker_args = ["-a"]
     elif args.command == "exec":
-        # Exec precisa do nome do serviço antes dos argumentos
-        # Se não houver serviço especificado, usa django_app como padrão
         if docker_args and docker_args[0] == "--":
-            # Remove o "--" se for o primeiro argumento
             docker_args = docker_args[1:]
-        # Adiciona django_app como serviço padrão
-        docker_args = ["django_app"] + docker_args
+        default_services = {
+            "app": "django_app",
+            "workers": "celery_worker",
+            "data": "postgres",
+            "infra": "cloudflared",
+        }
+        service = default_services.get(args.stack, "django_app")
+        docker_args = [service] + docker_args
 
     for stack in stacks_to_run:
         print(f"\n>>> Processando Stack: {stack.upper()} <<<")
+        print(f"    ({STACKS[stack]['description']})")
         code = run_compose(stack, docker_cmd, docker_args, host)
         if code != 0:
             print(f"Falha ao executar {stack}. Código: {code}")

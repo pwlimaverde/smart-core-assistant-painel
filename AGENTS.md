@@ -240,3 +240,7 @@ Estas regras são específicas para otimizar o seu desempenho como assistente de
 4.  **Contexto**: Ao criar novos arquivos, sempre verifique onde eles se encaixam na arquitetura existente (Django App vs. Módulo de Lógica de Negócio) e siga a estrutura de pastas correspondente.
 5.  **Linguagem**: Toda a comunicação, **planos de implementação, definição de tasks, feedbacks e explicações** devem ser feitos **exclusivamente em Português**. O código (nomes de variáveis, funções, classes) deve permanecer em **Inglês**.
 6.  **Proibição de Testes de Cobertura**: Nunca gere testes unitários ou de integração visando cobertura. Se precisar validar algo pontual, use scripts descartáveis em `teste_debug/`.
+## AI Context References
+- Documentation index: `.context/docs/README.md`
+- Agent playbooks: `.context/agents/README.md`
+

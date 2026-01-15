@@ -1,16 +1,55 @@
-# Collaboration Plans
+# Planos de Implementação
 
-This directory contains plans for coordinating work across documentation and playbooks.
+Este diretório contém planos para coordenar trabalho de documentação, playbooks e implementação de features.
 
-## Plan Queue
-1. [Add Query Compose Playground](./add-query-compose-playground.md)
-2. [Refactor Ui Design System](./refactor-ui-design-system.md)
+## 📋 Planos Ativos
 
-## How To Create Or Update Plans
-- Run "ai-context plan <name>" to scaffold a new plan template.
-- Run "ai-context plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
+| Plano                                                             | Status | Descrição                               |
+| ----------------------------------------------------------------- | ------ | --------------------------------------- |
+| [add-query-compose-playground](./add-query-compose-playground.md) | Ativo  | Adicionar playground para Query Compose |
+| [refactor-ui-design-system](./refactor-ui-design-system.md)       | Ativo  | Refatorar sistema de design UI          |
 
-## Related Resources
+## 📦 Planos Arquivados
+
+| Plano                            | Concluído | OpenSpec |
+| -------------------------------- | --------- | -------- |
+| _(nenhum plano arquivado ainda)_ | -         | -        |
+
+## Como Criar ou Atualizar Planos
+
+### Via Workflow (Recomendado)
+
+Use `/openspec-proposal` que automaticamente:
+
+1. Verifica/inicializa scaffolding AI-Context
+2. Cria plano via `mcp_ai-context_scaffoldPlan`
+3. Solicita aprovação antes de criar proposta OpenSpec
+
+### Via CLI
+
+- `ai-context plan <name>` - cria template de novo plano
+- `ai-context plan <name> --fill` - atualiza plano com contexto do repositório
+
+## Como Arquivar Planos
+
+Use `/openspec-archive` que automaticamente:
+
+1. Move o plano para `archive/`
+2. Atualiza este índice
+3. Preserva links entre artefatos AI-Context e OpenSpec
+
+## Estrutura de Diretórios
+
+```
+.context/plans/
+├── README.md              # Este arquivo
+├── plano-ativo.md         # Planos em andamento
+└── archive/               # Planos concluídos
+    └── plano-concluido.md
+```
+
+## Recursos Relacionados
+
 - [Agent Handbook](../agents/README.md)
 - [Documentation Index](../docs/README.md)
 - [Agent Knowledge Base](../../AGENTS.md)

@@ -1,63 +1,57 @@
-# Documentação do Contexto - Smart Core Assistant Painel
+# Documentation Index
 
-## Sobre Este Diretório
+Welcome to the repository knowledge base. Start with the project overview, then dive into specific guides as needed.
 
-Este diretório `.context` contém documentação estruturada do projeto, gerada via **ai-context MCP** e enriquecida com análise semântica detalhada.
+## Core Guides
+- [Project Overview](./project-overview.md)
+- [Architecture Notes](./architecture.md)
+- [Development Workflow](./development-workflow.md)
+- [Testing Strategy](./testing-strategy.md)
+- [Glossary & Domain Concepts](./glossary.md)
+- [Data Flow & Integrations](./data-flow.md)
+- [Security & Compliance Notes](./security.md)
+- [Tooling & Productivity Guide](./tooling.md)
 
-## Estrutura
+## Repository Snapshot
+- `AGENTS.md/`
+- `ambiente_cliente/`
+- `ambiente_cliente_teste/`
+- `bugs.txt/`
+- `CHANGELOG.md/`
+- `cspell.json/`
+- `diagnostico_output.txt/`
+- `diagnostico_result.txt/`
+- `docker/`
+- `docs/` — Living documentation produced by this tool.
+- `docs_dev/`
+- `GEMINI.md/`
+- `log_cluster.txt/`
+- `log_langsmith.txt/`
+- `log_ngrok.txt/`
+- `log_servidor.txt/`
+- `mkdocs.yml/`
+- `openspec/`
+- `pyproject.toml/`
+- `pytest.ini/`
+- `README.md/`
+- `scripts/`
+- `smartcore-landing/`
+- `src/` — TypeScript source files and CLI entrypoints.
+- `teste_debug/`
+- `tests/` — Automated tests and fixtures.
+- `trace.txt/`
+- `uv.lock/`
+- `verify_fix.py/`
+- `WARP.md/`
 
-```
-.context/
-├── docs/                   # Documentação técnica
-│   ├── project-overview.md # Visão geral do projeto
-│   ├── architecture.md     # Arquitetura do sistema
-│   ├── data-flow.md        # Fluxo de dados e integrações
-│   ├── development-workflow.md # Fluxo de desenvolvimento
-│   ├── tooling.md          # Ferramentas e tecnologias
-│   ├── security.md         # Práticas de segurança
-│   ├── testing-strategy.md # Estratégia de testes
-│   └── glossary.md         # Glossário de termos
-│
-└── agents/                 # Playbooks de agentes IA
-    ├── architect-specialist.md
-    ├── backend-specialist.md
-    ├── feature-developer.md
-    ├── database-specialist.md
-    └── ...
-```
-
-## Documentação Principal
-
-| Documento                                               | Descrição                        |
-| ------------------------------------------------------- | -------------------------------- |
-| [project-overview.md](docs/project-overview.md)         | Resumo executivo e arquitetura   |
-| [architecture.md](docs/architecture.md)                 | Padrões e decisões arquiteturais |
-| [data-flow.md](docs/data-flow.md)                       | Integrações e fluxo de dados     |
-| [development-workflow.md](docs/development-workflow.md) | Comandos e convenções            |
-| [tooling.md](docs/tooling.md)                           | Stack tecnológica                |
-| [security.md](docs/security.md)                         | Práticas de segurança            |
-| [glossary.md](docs/glossary.md)                         | Termos técnicos                  |
-
-## Playbooks de Agentes
-
-Os playbooks guiam agentes de IA especializados em tarefas específicas do projeto.
-
-## Atualização
-
-Esta documentação foi gerada automaticamente e deve ser atualizada quando:
-
-- Novos módulos são adicionados
-- Integrações são modificadas
-- Padrões arquiteturais mudam
-
-Para regenerar, use:
-
-```bash
-# Via MCP ai-context
-mcp_ai-context_initializeContext
-```
-
----
-
-_Última atualização: Janeiro 2026_
-_Gerado via ai-context MCP_
+## Document Map
+| Guide | File | Primary Inputs |
+| --- | --- | --- |
+| Project Overview | `project-overview.md` | Roadmap, README, stakeholder notes |
+| Architecture Notes | `architecture.md` | ADRs, service boundaries, dependency graphs |
+| Development Workflow | `development-workflow.md` | Branching rules, CI config, contributing guide |
+| Testing Strategy | `testing-strategy.md` | Test configs, CI gates, known flaky suites |
+| Glossary & Domain Concepts | `glossary.md` | Business terminology, user personas, domain rules |
+| Data Flow & Integrations | `data-flow.md` | System diagrams, integration specs, queue topics |
+| Security & Compliance Notes | `security.md` | Auth model, secrets management, compliance requirements |
+| Tooling & Productivity Guide | `tooling.md` | CLI scripts, IDE configs, automation workflows |

@@ -4,7 +4,7 @@ services:
   # ============================================
   celery_worker:
     build:
-      context: .
+      context: ../../
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_celery_worker
     command: >
@@ -40,7 +40,7 @@ services:
   # ============================================
   celery_beat:
     build:
-      context: .
+      context: ../../
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_celery_beat
     command: >

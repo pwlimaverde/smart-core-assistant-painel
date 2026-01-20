@@ -1,146 +1,269 @@
 # Mapa de Navegação - Smart Core Assistant Painel
 
-> 📋 **Última Atualização**: 2026-01-15
-> 📁 **Localização**: `docs_dev/planejamento/mapa_navegacao/`
-> 🔗 **Plano AI-Context**: [refactor-ui-design-system-v2.md](../../../.context/plans/refactor-ui-design-system-v2.md)
+> 📋 **Projeto**: Refatoração UI Design System v2  
+> 🔗 **Plano**: `.context/plans/refactor-ui-design-system-v2.md`  
+> 🔗 **OpenSpec**: `.openspec/proposals/refactor-ui-design-system-v2.md`  
+> 📅 **Criado**: 2026-01-16
 
 ## Objetivo
 
-Documentar **todas as páginas navegáveis** do sistema, incluindo:
+Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
-- URLs e views correspondentes
-- Templates utilizados
-- Permissões de acesso
-- Links presentes em cada página
-- Status de conformidade com Design System
+1. ✅ Conformidade com Design System
+2. ✅ Documentação completa de navegação
+3. ✅ Auditoria de permissões
+4. ✅ Validação sequencial página a página
 
-## Estrutura de Arquivos
+## Estrutura de Módulos
 
-| #   | Arquivo                                              | Módulo                   | Status         |
-| --- | ---------------------------------------------------- | ------------------------ | -------------- |
-| 01  | [01_paginas_publicas.md](./01_paginas_publicas.md)   | Páginas Públicas e Erros | ✅ Documentado |
-| 02  | [02_autenticacao.md](./02_autenticacao.md)           | Autenticação             | ✅ Documentado |
-| 03  | [03_onboarding.md](./03_onboarding.md)               | Onboarding Wizard        | ✅ Documentado |
-| 04  | [04_backoffice.md](./04_backoffice.md)               | Backoffice (Super Admin) | ✅ Documentado |
-| 05  | [05_dashboard_tenant.md](./05_dashboard_tenant.md)   | Dashboard Tenant         | ✅ Documentado |
-| 06  | [06_configuracoes.md](./06_configuracoes.md)         | Configurações            | ✅ Documentado |
-| 07  | [07_gestao_usuarios.md](./07_gestao_usuarios.md)     | Gestão de Usuários       | ✅ Documentado |
-| 08  | [08_treinamento_ia.md](./08_treinamento_ia.md)       | Treinamento IA           | ✅ Documentado |
-| 09  | [09_dashboard_gerente.md](./09_dashboard_gerente.md) | Dashboard Gerente        | ✅ Documentado |
+### Módulo 1: Páginas Públicas
+📄 **Arquivo**: `01_paginas_publicas.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 4
 
-## Legenda de Status
-
-| Símbolo | Significado                                 |
-| ------- | ------------------------------------------- |
-| ⏳      | Pendente - Ainda não documentado            |
-| 🔄      | Em Andamento - Mapeamento em progresso      |
-| ✅      | Aprovado - Documentação completa e aprovada |
-| ⚠️      | Revisão Necessária - Aguardando correções   |
-
-## Resumo de Páginas por Módulo
-
-### 1. Páginas Públicas e Erros (4 páginas)
-
-| Página   | URL           | View                       | Template            |
-| -------- | ------------- | -------------------------- | ------------------- |
-| Landing  | `/`           | `LandingPageView`          | `landing_page.html` |
-| Erro 403 | N/A (handler) | `custom_permission_denied` | `403.html`          |
-| Erro 404 | N/A (handler) | `custom_page_not_found`    | `404.html`          |
-| Erro 500 | N/A (handler) | `custom_server_error`      | `500.html`          |
-
-### 2. Autenticação (3 páginas)
-
-| Página   | URL                   | View          | Template        |
-| -------- | --------------------- | ------------- | --------------- |
-| Login    | `/usuarios/login/`    | `login`       | `login.html`    |
-| Cadastro | `/usuarios/cadastro/` | `cadastro`    | `cadastro.html` |
-| Logout   | `/usuarios/logout/`   | `logout_view` | N/A (redirect)  |
-
-### 3. Onboarding (4 páginas)
-
-| Página             | URL                           | View                 | Template                |
-| ------------------ | ----------------------------- | -------------------- | ----------------------- |
-| Step 1 - Tenant    | `/tenants/onboarding/`        | `Step1TenantView`    | `step_1_tenant.html`    |
-| Step 2 - Payment   | `/tenants/onboarding/step/2/` | `Step2PaymentView`   | `step_2_payment.html`   |
-| Step 3 - Config    | `/tenants/onboarding/step/3/` | `Step3ConfigView`    | `step_3_config.html`    |
-| Step 4 - Provision | `/tenants/onboarding/step/4/` | `Step4ProvisionView` | `step_4_provision.html` |
-
-### 4. Backoffice (2 páginas)
-
-| Página           | URL                                           | View                      | Template                           |
-| ---------------- | --------------------------------------------- | ------------------------- | ---------------------------------- |
-| Dashboard        | `/tenants/bo/`                                | `BackofficeDashboardView` | `backoffice/dashboard.html`        |
-| Register Payment | `/tenants/bo/tenant/<uuid>/register-payment/` | `RegisterPaymentView`     | `backoffice/register_payment.html` |
-
-### 5. Dashboard Tenant (1 página)
-
-| Página    | URL                   | View            | Template                 |
-| --------- | --------------------- | --------------- | ------------------------ |
-| Dashboard | `/tenants/dashboard/` | `DashboardView` | `tenants/dashboard.html` |
-
-### 6. Configurações (5 páginas)
-
-| Página    | URL                          | View                  | Template                |
-| --------- | ---------------------------- | --------------------- | ----------------------- |
-| Database  | `/tenants/config/database/`  | `DatabaseConfigView`  | `config_database.html`  |
-| Evolution | `/tenants/config/evolution/` | `EvolutionConfigView` | `config_evolution.html` |
-| Trello    | `/tenants/config/trello/`    | `TrelloConfigView`    | `config_trello.html`    |
-| AI        | `/tenants/config/ai/`        | `AIConfigView`        | `config_ai.html`        |
-| Debug     | `/tenants/config/debug/`     | `ConfigDebugView`     | `config_debug.html`     |
-
-### 7. Gestão de Usuários (5 páginas)
-
-| Página            | URL                                | View               | Template                      |
-| ----------------- | ---------------------------------- | ------------------ | ----------------------------- |
-| Lista de Usuários | `/tenants/users/`                  | `list_users`       | `users/list.html`             |
-| Convidar Usuário  | `/tenants/users/invite/`           | `invite_user`      | `users/invite.html`           |
-| Editar Permissões | `/tenants/users/<id>/permissions/` | `edit_permissions` | `users/edit_permissions.html` |
-| Ativar Conta      | `/tenants/activate/<token>/`       | `activate_account` | `users/activate.html`         |
-| Convite Expirado  | N/A                                | N/A                | `users/invite_expired.html`   |
-
-### 8. Treinamento IA (5 páginas)
-
-| Página                 | URL                                     | View                                 | Template                       |
-| ---------------------- | --------------------------------------- | ------------------------------------ | ------------------------------ |
-| Treinar IA             | `/treinamento/treinar-ia/`              | `treinar_ia`                         | `treinar_ia.html`              |
-| Pré-processamento      | `/treinamento/pre-processamento/<id>/`  | `pre_processamento`                  | `pre_processamento.html`       |
-| Verificar Treinamentos | `/treinamento/verificar-treinamentos/`  | `verificar_treinamentos_vetorizados` | `verificar_treinamentos.html`  |
-| Cadastrar Query        | `/treinamento/cadastrar-query-compose/` | `cadastrar_query_compose`            | `cadastrar_query_compose.html` |
-| Verificar Query        | `/treinamento/verificar-query-compose/` | `verificar_query_compose`            | `verificar_query_compose.html` |
-
-### 9. Dashboard Gerente (2 páginas)
-
-| Página            | URL                            | View                | Template                 |
-| ----------------- | ------------------------------ | ------------------- | ------------------------ |
-| Dashboard Gerente | `/usuarios/dashboard-gerente/` | `dashboard_gerente` | `dashboard_gerente.html` |
-| Permissões        | `/usuarios/permissoes/`        | `permissoes`        | `permissoes.html`        |
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Landing Page | `/` | ⏳ Pendente |
+| 2 | Erro 403 | `/403/` | ⏳ Pendente |
+| 3 | Erro 404 | `/404/` | ⏳ Pendente |
+| 4 | Erro 500 | `/500/` | ⏳ Pendente |
 
 ---
 
-## Total de Páginas: 31
+### Módulo 2: Autenticação
+📄 **Arquivo**: `02_autenticacao.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 3
 
-| Categoria          | Quantidade |
-| ------------------ | ---------- |
-| Páginas Públicas   | 4          |
-| Autenticação       | 3          |
-| Onboarding         | 4          |
-| Backoffice         | 2          |
-| Dashboard Tenant   | 1          |
-| Configurações      | 5          |
-| Gestão de Usuários | 5          |
-| Treinamento IA     | 5          |
-| Dashboard Gerente  | 2          |
-| **TOTAL**          | **31**     |
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Login | `/login/` | ⏳ Pendente |
+| 2 | Cadastro | `/cadastro/` | ⏳ Pendente |
+| 3 | Logout | `/logout/` | ⏳ Pendente |
+
+---
+
+### Módulo 3: Onboarding
+📄 **Arquivo**: `03_onboarding.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 4
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Step 1 - Tenant | `/tenants/onboarding/step1/` | ⏳ Pendente |
+| 2 | Step 2 - Pagamento | `/tenants/onboarding/step2/` | ⏳ Pendente |
+| 3 | Step 3 - Configuração | `/tenants/onboarding/step3/` | ⏳ Pendente |
+| 4 | Step 4 - Provisionamento | `/tenants/onboarding/step4/` | ⏳ Pendente |
+
+---
+
+### Módulo 4: Backoffice
+📄 **Arquivo**: `04_backoffice.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 2
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Dashboard Backoffice | `/tenants/backoffice/` | ⏳ Pendente |
+| 2 | Registrar Pagamento | `/tenants/backoffice/register-payment/` | ⏳ Pendente |
+
+---
+
+### Módulo 5: Dashboard Tenant
+📄 **Arquivo**: `05_dashboard_tenant.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 1
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Dashboard Principal | `/tenants/dashboard/` | ⏳ Pendente |
+
+---
+
+### Módulo 6: Configurações
+📄 **Arquivo**: `06_configuracoes.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 5
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Config Database | `/tenants/config/database/` | ⏳ Pendente |
+| 2 | Config Evolution | `/tenants/config/evolution/` | ⏳ Pendente |
+| 3 | Config Trello | `/tenants/config/trello/` | ⏳ Pendente |
+| 4 | Config IA | `/tenants/config/ai/` | ⏳ Pendente |
+| 5 | Config Debug | `/tenants/config/debug/` | ⏳ Pendente |
+
+---
+
+### Módulo 7: Gestão de Usuários
+📄 **Arquivo**: `07_gestao_usuarios.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 5
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Listar Usuários | `/tenants/users/` | ⏳ Pendente |
+| 2 | Convidar Usuário | `/tenants/users/invite/` | ⏳ Pendente |
+| 3 | Reenviar Convite | `/tenants/users/resend-invite/<token>/` | ⏳ Pendente |
+| 4 | Editar Permissões | `/tenants/users/<id>/permissions/` | ⏳ Pendente |
+| 5 | Ativar Conta | `/tenants/users/activate/<token>/` | ⏳ Pendente |
+
+---
+
+### Módulo 8: Treinamento IA
+📄 **Arquivo**: `08_treinamento_ia.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 5
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Treinar IA | `/treinamento/treinar/` | ⏳ Pendente |
+| 2 | Pré-processamento | `/treinamento/pre-processamento/` | ⏳ Pendente |
+| 3 | Verificar Treinamentos | `/treinamento/verificar/` | ⏳ Pendente |
+| 4 | Query Compose - Verificar | `/treinamento/query-compose/verificar/` | ⏳ Pendente |
+| 5 | Query Compose - Cadastrar | `/treinamento/query-compose/cadastrar/` | ⏳ Pendente |
+
+---
+
+### Módulo 9: Dashboard Gerente
+📄 **Arquivo**: `09_dashboard_gerente.md`  
+📊 **Status**: ⏳ Pendente  
+🔢 **Páginas**: 1
+
+| # | Página | URL | Status |
+|---|--------|-----|--------|
+| 1 | Dashboard Gerente | `/dashboard-gerente/` | ⏳ Pendente |
+
+---
+
+## Progresso Geral
+
+| Módulo | Total Páginas | Mapeadas | Aprovadas | Progresso |
+|--------|--------------|----------|-----------|-----------|
+| 1. Páginas Públicas | 4 | 0 | 0 | ⏳ 0% |
+| 2. Autenticação | 3 | 0 | 0 | ⏳ 0% |
+| 3. Onboarding | 4 | 0 | 0 | ⏳ 0% |
+| 4. Backoffice | 2 | 0 | 0 | ⏳ 0% |
+| 5. Dashboard Tenant | 1 | 0 | 0 | ⏳ 0% |
+| 6. Configurações | 5 | 0 | 0 | ⏳ 0% |
+| 7. Gestão de Usuários | 5 | 0 | 0 | ⏳ 0% |
+| 8. Treinamento IA | 5 | 0 | 0 | ⏳ 0% |
+| 9. Dashboard Gerente | 1 | 0 | 0 | ⏳ 0% |
+| **TOTAL** | **30** | **0** | **0** | **⏳ 0%** |
+
+---
+
+## Legenda de Status
+
+- ⏳ **Pendente** - Ainda não iniciado
+- 🔄 **Em Progresso** - Mapeamento em andamento
+- ✅ **Aprovado** - Auditoria completa e aprovada
+- ❌ **Reprovado** - Necessita correções
 
 ---
 
 ## Processo de Validação
 
-1. **Criar documento** do módulo (ex: `01_paginas_publicas.md`)
-2. **Mapear cada página** com detalhes completos
-3. **Auditar Design System** - verificar templates e componentes
-4. **Mapear links** - documentar destinos
-5. **Verificar permissões** - testar roles
-6. **Solicitar aprovação** antes de avançar
+```mermaid
+flowchart LR
+    A[Selecionar Página] --> B[Mapear Informações]
+    B --> C[Auditar Design System]
+    C --> D[Listar Links]
+    D --> E[Verificar Permissões]
+    E --> F{Aprovado?}
+    F -->|Sim| G[✅ Marcar Aprovado]
+    F -->|Não| H[❌ Solicitar Correções]
+    H --> C
+    G --> I[Próxima Página]
+```
 
-> ⚠️ **REGRA**: Só avançar para o próximo módulo após aprovação do anterior
+---
+
+## Estrutura de Arquivo de Módulo
+
+Cada arquivo de módulo (`01_*.md` a `09_*.md`) contém:
+
+### 1. Cabeçalho do Módulo
+- Nome do módulo
+- Total de páginas
+- Status geral
+
+### 2. Para Cada Página
+
+#### Informações Básicas
+- URL
+- View (classe ou função)
+- Template
+- Template Base
+- App Django
+
+#### Permissões
+- Autenticação necessária
+- Roles autorizados
+- Módulo (TenantModule)
+- Decorators/Mixins
+
+#### Links da Página
+- Tabela com todos os links encontrados
+- URL de destino
+- Resumo do que faz
+
+#### Auditoria Design System
+- [ ] Template base correto
+- [ ] Sidebar visível (se aplicável)
+- [ ] Navegação funcional
+- [ ] Responsividade
+- [ ] Padrões visuais (cards, forms, tables)
+
+---
+
+## Arquivos de Referência
+
+### Hierarquia de Templates
+```
+base.html
+├── base_public.html (páginas públicas)
+│   ├── landing_page.html
+│   ├── 403.html, 404.html, 500.html
+│   ├── login.html, cadastro.html
+│   └── tenants/onboarding/*.html
+│
+└── base_dashboard.html (área autenticada)
+    ├── tenants/dashboard.html
+    ├── tenants/config_*.html
+    ├── tenants/users/*.html
+    ├── tenants/backoffice/*.html
+    └── treinamento/*.html
+```
+
+### Sistema de Permissões
+
+| Role | Descrição | Acesso Típico |
+|------|-----------|---------------|
+| `ADMIN` | Administrador do Tenant | Tudo menos Backoffice |
+| `MANAGER` | Gerente | Dashboard gerente, configurações |
+| `STAFF` | Funcionário | Áreas operacionais |
+| `VIEWER` | Visualizador | Somente leitura |
+| `SUPERUSER` | Super Admin | Backoffice + All |
+
+### Módulos de Permissão (TenantModule)
+- `CLIENTES` - Gestão de clientes
+- `OPERACIONAL` - Área operacional
+- `TREINAMENTO` - Treinamento IA
+- `ATENDIMENTOS` - Central de atendimentos
+- `CONFIGURACOES` - Configurações do tenant
+
+---
+
+## Como Usar Este Índice
+
+1. **Navegação Sequencial**: Comece pelo Módulo 1 e avance em ordem
+2. **Acompanhamento de Progresso**: Atualize este índice conforme avança
+3. **Validação**: Marque páginas como aprovadas após revisão completa
+4. **Referência Rápida**: Use a tabela de progresso geral para overview
+
+---
+
+**Última Atualização**: 2026-01-16  
+**Responsável**: Claude Code  
+**Revisão**: Aguardando primeira validação

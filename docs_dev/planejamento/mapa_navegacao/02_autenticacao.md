@@ -1,7 +1,7 @@
 # Módulo 2 - Autenticação
 
-> 📋 **Status**: ⏳ Pendente Implementação
-> 📅 **Data**: 2026-01-15
+> 📋 **Status**: [/] Em Andamento
+> 📅 **Data**: 2026-01-20
 > 🔗 **Índice**: [00_indice.md](./00_indice.md)
 
 ---
@@ -28,7 +28,7 @@
 | **URL Name**      | `login`                           |
 | **View**          | `login` (Function-Based)          |
 | **Template**      | `login.html`                      |
-| **Template Base** | `base_public.html`                |
+| **Template Base** | `base_public.html` (Override)     |
 | **App**           | `ui.usuarios`                     |
 | **Arquivo View**  | `app/ui/usuarios/views.py:76-131` |
 
@@ -53,26 +53,29 @@
 
 | #   | Nome do Link      | URL de Destino         | URL Name                    | Resumo                          |
 | --- | ----------------- | ---------------------- | --------------------------- | ------------------------------- |
-| 1   | Crie sua conta    | `/tenants/onboarding/` | `tenants:onboarding_step_1` | Wizard de onboarding            |
+| 1   | Crie sua conta    | `/tenants/onboarding/` | `tenants:onboarding_step_1` | Ação principal (Footer)         |
 | 2   | Esqueceu a senha? | `#` (não implementado) | N/A                         | Recuperação de senha (pendente) |
+| 3   | Voltar (Logo)     | `/`                    | `landing`                   | Retorna para Home               |
 
 ### Formulário
 
-| Campo      | Nome          | Tipo     | Obrigatório |
-| ---------- | ------------- | -------- | ----------- |
-| Usuário    | `username`    | text     | ✅          |
-| Senha      | `senha`       | password | ✅          |
-| Lembrar-me | `remember-me` | checkbox | ❌          |
+| Campo      | Nome          | Tipo        | Obrigatório |
+| ---------- | ------------- | ----------- | ----------- |
+| Usuário    | `username`    | text        | ✅          |
+| Senha      | `senha`       | password    | ✅          |
+| Lembrar-me | `remember-me` | checkbox    | ❌          |
+| Mostrar    | (JS Toggle)   | button/icon | N/A         |
 
 ### Auditoria Design System
 
-| Item                  | Status       | Observação                 |
-| --------------------- | ------------ | -------------------------- |
-| Template base correto | ✅ OK        | Usa `base_public.html`     |
-| Sidebar visível       | N/A          | Página pública             |
-| Navegação funcional   | ⏳ Verificar | 2 links                    |
-| Responsividade        | ⏳ Verificar | Classes Tailwind presentes |
-| Padrões visuais       | ⏳ Verificar | Cores `#a98f71`            |
+| Item                  | Status | Observação                            |
+| --------------------- | ------ | ------------------------------------- |
+| Template base correto | ✅ OK  | Usa `base_public.html` com override   |
+| Sidebar visível       | N/A    | Página pública com Navbar Minimalista |
+| Navegação funcional   | ✅ OK  | Links de cadastro e home funcionando  |
+| Responsividade        | ✅ OK  | Mobile-first com Tailwind             |
+| Padrões visuais       | ✅ OK  | Design Premium (Vidro, Gradientes)    |
+| UX/UI Melhorado       | ✅ OK  | Toggle de senha e animação de entrada |
 
 ---
 
@@ -93,11 +96,11 @@
 
 ### Comportamento Especial
 
-| Condição              | Ação                                                  |
-| --------------------- | ----------------------------------------------------- |
-| Cadastro bem-sucedido | Loga o usuário e redireciona para `tenants:dashboard` |
-| Senhas não coincidem  | Exibe mensagem de erro                                |
-| Usuário já existe     | Exibe mensagem de erro                                |
+| Condição              | Ação                                |
+| --------------------- | ----------------------------------- |
+| Cadastro bem-sucedido | Redireciona para `/usuarios/login/` |
+| Senhas não coincidem  | Exibe mensagem de erro              |
+| Usuário já existe     | Exibe mensagem de erro              |
 
 ### Permissões
 
@@ -124,13 +127,14 @@
 
 ### Auditoria Design System
 
-| Item                  | Status       | Observação                 |
-| --------------------- | ------------ | -------------------------- |
-| Template base correto | ✅ OK        | Usa `base_public.html`     |
-| Sidebar visível       | N/A          | Página pública             |
-| Navegação funcional   | ⏳ Verificar | 1 link                     |
-| Responsividade        | ⏳ Verificar | Classes Tailwind presentes |
-| Padrões visuais       | ⏳ Verificar | Cores `#a98f71`            |
+| Item                  | Status | Observação                            |
+| --------------------- | ------ | ------------------------------------- |
+| Template base correto | ✅ OK  | Usa `base_public.html` com override   |
+| Sidebar visível       | N/A    | Página pública com Navbar Minimalista |
+| Navegação funcional   | ✅ OK  | Link para login funcionando           |
+| Responsividade        | ✅ OK  | Mobile-first com Tailwind             |
+| Padrões visuais       | ✅ OK  | Design Premium (Vidro, Gradientes)    |
+| UX/UI Melhorado       | ✅ OK  | Inputs estilizados e animações        |
 
 ---
 
@@ -187,7 +191,7 @@
 | Login (POST sucesso)    | Kanban departamento | Tem atendente      | `login`       |
 | Login (POST sucesso)    | `tenants:dashboard` | Sem atendente      | `login`       |
 | Login (POST sucesso)    | URL em `?next=`     | Parâmetro presente | `login`       |
-| Cadastro (POST sucesso) | `tenants:dashboard` | Cadastro OK        | `cadastro`    |
+| Cadastro (POST sucesso) | `/usuarios/login/`  | Cadastro OK        | `cadastro`    |
 | Logout                  | `/`                 | Sempre             | `logout_view` |
 
 ---
@@ -197,15 +201,14 @@
 ### 🟡 Melhorias Sugeridas
 
 1. **Recuperação de Senha** - Link "Esqueceu a senha?" aponta para `#` (não implementado)
-2. **Validação de Email** - Não há campo de email no cadastro
+2. **Validação de Email** - Não há campo de email no cadastro (item de regra de negócio)
 
 ---
 
 ## Checklist de Validação do Módulo
 
-- [ ] Todas as páginas documentadas
-- [ ] Todos os links mapeados
-- [ ] Permissões verificadas
-- [ ] Template base auditado
+- [x] Login validado e aprovado com novo design
+- [x] Cadastro validado com novo design
+- [ ] Logout validado
+- [x] Template base auditado
 - [ ] Redirecionamentos documentados
-- [ ] **APROVADO PELO USUÁRIO**

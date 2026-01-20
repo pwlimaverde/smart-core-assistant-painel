@@ -1,10 +1,14 @@
 ---
-status: active
+status: archived
 generated: 2026-01-12
-linked-openspec: refactor-ui-design-system
+linked-openspec: changes/archive/2026-01-20-refactor-ui-design-system
 ---
 
 # Refatoração do Sistema de Design UI Plan
+
+> 📋 **Status**: ✅ Concluído e Arquivado
+> 📅 **Data de Conclusão**: 20/01/2026
+> 🔗 **OpenSpec**: [changes/archive/2026-01-20-refactor-ui-design-system](../../openspec/changes/archive/2026-01-20-refactor-ui-design-system/)
 
 > Refatoração do sistema de design da UI do Django Admin, padronizando telas navegáveis, auditando permissões por role e documentando a estrutura final.
 

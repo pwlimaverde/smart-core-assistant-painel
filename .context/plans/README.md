@@ -7,13 +7,12 @@ Este diretório contém planos para coordenar trabalho de documentação, playbo
 | Plano                                                             | Status | Descrição                               |
 | ----------------------------------------------------------------- | ------ | --------------------------------------- |
 | [add-query-compose-playground](./add-query-compose-playground.md) | Ativo  | Adicionar playground para Query Compose |
-| [refactor-ui-design-system](./refactor-ui-design-system.md)       | Ativo  | Refatorar sistema de design UI          |
 
 ## 📦 Planos Arquivados
 
-| Plano                            | Concluído | OpenSpec |
-| -------------------------------- | --------- | -------- |
-| _(nenhum plano arquivado ainda)_ | -         | -        |
+| Plano                                                               | Concluído  | OpenSpec                                                                                                                     |
+| ------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| [refactor-ui-design-system](./archive/refactor-ui-design-system.md) | 20/01/2026 | [changes/archive/2026-01-20-refactor-ui-design-system](../../openspec/changes/archive/2026-01-20-refactor-ui-design-system/) |
 
 ## Como Criar ou Atualizar Planos
 

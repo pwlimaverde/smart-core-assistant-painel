@@ -1,68 +1,57 @@
 {
-	"context_servers": {
-		"task-master-ai": {
-			"command": "npx",
-			"args": ["-y", "task-master-ai"],
-			"env": {
-				"ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
-				"PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
-				"OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
-				"GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
-				"XAI_API_KEY": "YOUR_XAI_KEY_HERE",
-				"OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
-				"MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
-				"AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE",
-				"OLLAMA_API_KEY": "YOUR_OLLAMA_API_KEY_HERE"
-			},
-			"source": "custom"
-		}
-	},
-	"languages": {
-		"Python": {
-			"language_servers": ["pyright"],
-			"formatter": {
-				"external": {
-					"command": "ruff",
-					"arguments": [
-						"format",
-						"--stdin-filename",
-						"{buffer_path}",
-						"-"
-					]
-				}
-			}
-		}
-	},
-	"lsp": {
-		"pyright": {
-			"settings": {
-				"python": {
-					"pythonPath": ".venv/Scripts/python.exe",
-					"analysis": {
-						"autoSearchPaths": true,
-						"diagnosticMode": "workspace",
-						"useLibraryCodeForTypes": true,
-						"typeCheckingMode": "strict"
-					}
-				}
-			}
-		}
-	},
-	"mcpServers": {
-		"task-master-ai": {
-			"command": "npx",
-			"args": ["-y", "task-master-ai"],
-			"env": {
-				"ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_API_KEY_HERE",
-				"PERPLEXITY_API_KEY": "YOUR_PERPLEXITY_API_KEY_HERE",
-				"OPENAI_API_KEY": "YOUR_OPENAI_KEY_HERE",
-				"GOOGLE_API_KEY": "YOUR_GOOGLE_KEY_HERE",
-				"XAI_API_KEY": "YOUR_XAI_KEY_HERE",
-				"OPENROUTER_API_KEY": "YOUR_OPENROUTER_KEY_HERE",
-				"MISTRAL_API_KEY": "YOUR_MISTRAL_KEY_HERE",
-				"AZURE_OPENAI_API_KEY": "YOUR_AZURE_KEY_HERE",
-				"OLLAMA_API_KEY": "YOUR_OLLAMA_API_KEY_HERE"
-			}
-		}
-	}
+  "format_on_save": "on",
+  "languages": {
+    "Python": {
+      "language_servers": ["pyright"],
+      "formatter": {
+        "external": {
+          "command": "ruff",
+          "arguments": ["format", "--stdin-filename", "{buffer_path}", "-"]
+        }
+      }
+    },
+    "JSON": {
+      "format_on_save": "off"
+    }
+  },
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "pythonPath": ".venv/Scripts/python.exe",
+          "analysis": {
+            "autoSearchPaths": true,
+            "diagnosticMode": "workspace",
+            "useLibraryCodeForTypes": true,
+            "typeCheckingMode": "strict"
+          }
+        }
+      }
+    },
+    "basedpyright": {
+      "settings": {
+        "analysis": {
+          "diagnosticMode": "workspace",
+          "inlayHints.callArgumentNames": false
+        }
+      }
+    },
+    "ruff": {
+      "initialization_options": {
+        "settings": {
+          "exclude": ["*"]
+        }
+      }
+    }
+  },
+  "terminal": {
+    "shell": {
+      "with_arguments": {
+        "program": "powershell.exe",
+        "args": []
+      }
+    },
+    "font_family": "CaskaydiaCove Nerd Font",
+    "font_size": 14
+  }
 }

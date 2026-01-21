@@ -114,7 +114,7 @@
   - Arquivos: `app/ui/usuarios/templates/cadastro.html`
   - Critério: Redesign completo para estilo Glassmorphism, links funcionais, validação visual
 
-- [ ] **Task 3.3**: Verificar redirecionamentos pós-login
+- [x] **Task 3.3**: Verificar redirecionamentos pós-login
   - Arquivos: `app/ui/usuarios/views.py:76-131`
   - Critério: Testar fluxo com atendente/sem atendente
 

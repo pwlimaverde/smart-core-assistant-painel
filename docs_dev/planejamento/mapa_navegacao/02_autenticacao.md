@@ -51,11 +51,11 @@
 
 ### Links da Página
 
-| #   | Nome do Link      | URL de Destino         | URL Name                    | Resumo                          |
-| --- | ----------------- | ---------------------- | --------------------------- | ------------------------------- |
-| 1   | Crie sua conta    | `/tenants/onboarding/` | `tenants:onboarding_step_1` | Ação principal (Footer)         |
-| 2   | Esqueceu a senha? | `#` (não implementado) | N/A                         | Recuperação de senha (pendente) |
-| 3   | Voltar (Logo)     | `/`                    | `landing`                   | Retorna para Home               |
+| #   | Nome do Link      | URL de Destino              | URL Name                    | Resumo                        |
+| --- | ----------------- | --------------------------- | --------------------------- | ----------------------------- |
+| 1   | Crie sua conta    | `/tenants/onboarding/`      | `tenants:onboarding_step_1` | Ação principal (Footer)       |
+| 2   | Esqueceu a senha? | `/usuarios/password-reset/` | `password_reset`            | Fluxo de recuperação de senha |
+| 3   | Voltar (Logo)     | `/`                         | `landing`                   | Retorna para Home             |
 
 ### Formulário
 
@@ -184,6 +184,40 @@
 
 ---
 
+---
+
+## Página 4: Recuperação de Senha
+
+### Informações Básicas
+
+| Campo             | Valor                                 |
+| ----------------- | ------------------------------------- |
+| **Nome**          | Password Reset                        |
+| **URL**           | `/usuarios/password-reset/`           |
+| **URL Name**      | `password_reset`                      |
+| **View**          | `auth_views.PasswordResetView`        |
+| **Template**      | `usuarios/password_reset_form.html`   |
+| **Template Base** | `base_public.html` (Override)         |
+| **App**           | `ui.usuarios` + `django.contrib.auth` |
+
+### Fluxo Completo
+
+1.  **Solicitação**: Usuário informa e-mail (`password_reset`).
+2.  **Confirmação de Envio**: Mensagem de e-mail enviado (`password_reset_done`).
+3.  **Link de E-mail**: Usuário clica no link com token.
+4.  **Nova Senha**: Formulário de redefinição (`password_reset_confirm`).
+5.  **Conclusão**: Mensagem de sucesso (`password_reset_complete`).
+
+### Auditoria Design System
+
+| Item                  | Status | Observação                   |
+| --------------------- | ------ | ---------------------------- |
+| Template base correto | ✅ OK  | Usa `base_public.html`       |
+| Responsividade        | ✅ OK  | Mobile-first com Tailwind    |
+| Padrões visuais       | ✅ OK  | Design consistente com Login |
+
+---
+
 ## Redirecionamentos do Módulo
 
 | Origem                  | Destino             | Condição           | View          |
@@ -200,8 +234,7 @@
 
 ### 🟡 Melhorias Sugeridas
 
-1. **Recuperação de Senha** - Link "Esqueceu a senha?" aponta para `#` (não implementado)
-2. **Validação de Email** - Não há campo de email no cadastro (item de regra de negócio)
+1. **Validação de Email** - Não há campo de email no cadastro (item de regra de negócio)
 
 ---
 
@@ -209,6 +242,7 @@
 
 - [x] Login validado e aprovado com novo design
 - [x] Cadastro validado com novo design
-- [ ] Logout validado
+- [x] Logout validado
+- [x] Recuperação de Senha implementada e validada
 - [x] Template base auditado
-- [ ] Redirecionamentos documentados
+- [x] Redirecionamentos documentados

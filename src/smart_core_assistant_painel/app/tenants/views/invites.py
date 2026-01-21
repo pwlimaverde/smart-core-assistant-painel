@@ -200,7 +200,7 @@ def _send_invite_email(request, invite):
     Tenta envio padrão e, se falhar por SSL em DEBUG, tenta sem verificação.
     Retorna True se sucesso, False caso contrário.
     """
-    from django.core.mail import get_connection, EmailMessage
+    from django.core.mail import get_connection, EmailMultiAlternatives
     import ssl
 
     activation_url = request.build_absolute_uri(
@@ -220,14 +220,39 @@ Este link expira em 7 dias.
     """
 
     try:
-        # Tentar envio padrão
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=django_settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[invite.email],
-            fail_silently=False,
+        # Load templates
+        from django.template.loader import render_to_string
+
+        # Get current domain for protocol/domain context
+        from django.contrib.sites.shortcuts import get_current_site
+
+        current_site = get_current_site(request)
+        protocol = "https" if request.is_secure() else "http"
+
+        context = {
+            "invite": invite,
+            "activation_url": activation_url,
+            "protocol": protocol,
+            "domain": current_site.domain,
+        }
+
+        # Render plain text and HTML versions
+        # Simplificação: Usando o corpo do texto original como fallback
+        text_content = message
+        html_content = render_to_string(
+            "tenants/users/invite_email.html", context
         )
+
+        email_msg = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            to=[invite.email],
+        )
+        email_msg.attach_alternative(html_content, "text/html")
+
+        # Tentar envio padrão
+        email_msg.send()
         return True
 
     except Exception as e:
@@ -248,13 +273,9 @@ Este link expira em 7 dias.
                 connection = get_connection()
                 connection.ssl_context = context
 
-                email_msg = EmailMessage(
-                    subject=subject,
-                    body=message,
-                    from_email=django_settings.DEFAULT_FROM_EMAIL,
-                    to=[invite.email],
-                    connection=connection,
-                )
+                # Re-criar a mensagem para usar a nova conexão
+                # Precisamos recriar porque o connection é passado no init ou atribuído
+                email_msg.connection = connection
                 email_msg.send()
                 return True
 

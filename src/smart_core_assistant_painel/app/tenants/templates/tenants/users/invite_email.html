@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redefinição de Senha - Smart Core Assistant</title>
+    <title>Convite - Smart Core Assistant</title>
 </head>
 <body style="background-color: #0c0a09; color: #e7e5e4; font-family: 'Segoe UI', user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi; margin: 0; padding: 0;">
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0c0a09; padding: 40px 0;">
@@ -32,30 +32,35 @@
                     <!-- Content -->
                     <tr>
                         <td style="padding: 40px 50px;">
-                            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 0 0 20px 0; text-align: center;">Recuperação de Senha</h1>
+                            <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 0 0 20px 0; text-align: center;">Convite de Acesso</h1>
                             
                             <p style="color: #a8a29e; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
-                                Olá, {{ user.get_short_name|default:user.username }}.
+                                Olá, <strong>{{ invite.name }}</strong>.
                             </p>
                             
                             <p style="color: #a8a29e; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
-                                Recebemos uma solicitação para redefinir a senha da sua conta no <strong>Smart Core Assistant</strong>. Se foi você, clique no botão abaixo para criar uma nova senha:
+                                Você foi convidado para acessar o painel de <strong>{{ invite.tenant.name }}</strong> como <strong>{{ invite.get_role_display }}</strong>.
+                            </p>
+
+                            <p style="color: #a8a29e; font-size: 16px; line-height: 24px; margin-bottom: 30px;">
+                                Clique no botão abaixo para criar sua senha e ativar sua conta:
                             </p>
 
                             <!-- Button -->
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
                                 <tr>
                                     <td align="center" style="padding-bottom: 30px;">
-                                        <a href="{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}" 
+                                        <a href="{{ activation_url }}" 
                                            style="display: inline-block; background-color: #a98f71; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(169, 143, 113, 0.2);">
-                                            Redefinir Minha Senha
+                                            Aceitar Convite e Criar Senha
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
                             <p style="color: #57534e; font-size: 14px; line-height: 20px; text-align: center; margin-bottom: 0;">
-                                Se você não solicitou essa alteração, pode ignorar este e-mail com segurança. Nenhuma alteração será feita em sua conta.
+                                Este link expira em 7 dias.<br>
+                                Se você não esperava por este convite, pode ignorar este e-mail.
                             </p>
                         </td>
                     </tr>

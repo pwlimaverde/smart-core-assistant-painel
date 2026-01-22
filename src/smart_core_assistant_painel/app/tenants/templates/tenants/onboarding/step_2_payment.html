@@ -7,23 +7,18 @@
 <form method="post" id="plan-form">
     {% csrf_token %}
 
-    <div class="plans-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+    <div class="plans-grid">
         {% for plan in plans %}
-        <label class="plan-card"
-            style="cursor: pointer; border: 2px solid var(--border); padding: 1.5rem; border-radius: 12px; display: block; position: relative; transition: all 0.2s; background: white;">
-            <input type="radio" name="plan_id" value="{{ plan.id }}" style="position: absolute; opacity: 0;" required>
+        <label class="plan-card">
+            <input type="radio" name="plan_id" value="{{ plan.id }}" required>
 
-            <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">{{ plan.name }}</h3>
-            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); margin-bottom: 1rem;">
-                R$ {{ plan.price|default:"--" }}<span
-                    style="font-size: 0.9rem; font-weight: 400; color: var(--text-muted);">/mês</span>
+            <h3>{{ plan.name }}</h3>
+            <div class="plan-price">
+                R$ {{ plan.price|default:"--" }}<span>/mês</span>
             </div>
-            <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">{{
-                plan.description|linebreaksbr }}</p>
+            <p class="plan-desc">{{ plan.description|linebreaksbr }}</p>
 
-            <div class="check-icon"
-                style="position: absolute; top: 1rem; right: 1rem; color: var(--primary); display: none;">
+            <div class="check-icon">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                         stroke-linejoin="round" />
@@ -35,13 +30,85 @@
         {% endfor %}
     </div>
 
-    <div style="margin-top: 2rem; padding: 1rem; background: #e0e7ff; border-radius: 8px; font-size: 0.9rem;">
+    <div class="payment-note">
         <strong>Nota de Pagamento:</strong> Simulação de gateway de pagamento (Mock). Ao clicar em continuar, o
         pagamento será considerado confirmado.
     </div>
 
 </form>
 {% endblock %}
+
+{% block extra_css %}
+<style>
+    .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+
+    .plan-card {
+        cursor: pointer;
+        border: 2px solid var(--border);
+        padding: 1.5rem;
+        border-radius: 12px;
+        display: block;
+        position: relative;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .plan-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .plan-card input {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .plan-card h3 {
+        margin-bottom: 0.5rem;
+        color: var(--text-main);
+        font-size: 1.1rem;
+    }
+
+    .plan-price {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 1rem;
+    }
+
+    .plan-price span {
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: var(--text-muted);
+    }
+
+    .plan-desc {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 1rem;
+    }
+
+    .check-icon {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        color: var(--primary);
+        display: none;
+    }
+    
+    .payment-note {
+        margin-top: 2rem; 
+        padding: 1rem; 
+        background: #e0e7ff; 
+        border-radius: 8px; 
+        font-size: 0.9rem;
+        color: #3730a3;
+    }
+</style>
 
 {% block wizard_footer %}
 <div class="wizard-footer">

@@ -4,122 +4,207 @@ description: Implementa mudança aprovada consultando plano e documentação AI-
 
 <!-- OPENSPEC:START -->
 
-**Guardrails**
+**Regras**
 
-- Favor straightforward, minimal implementations first and add complexity only when it is requested or clearly required.
-- Keep changes tightly scoped to the requested outcome.
-- Refer to `openspec/AGENTS.md` (located inside the `openspec/` directory—run `ls openspec` or `openspec update` if you don't see it) if you need additional OpenSpec conventions or clarifications.
-- **IDIOMA OBRIGATÓRIO**: Comunicações, atualizações de tasks e explicações devem ser em **PORTUGUÊS**.
-
----
-
-**Pré-requisitos Obrigatórios**
-
-Antes de iniciar este workflow, confirme:
-
-1. ✅ Proposta OpenSpec aprovada em `openspec/changes/<change-id>/`
-2. ✅ Plano AI-Context em `.context/plans/<change-id>.md`
-3. ✅ Workflow PREVC em fase "R" (Review) - verifique com `mcp_ai-context_workflowStatus`
-
-Se algum pré-requisito não for atendido, execute `/openspec-proposal` primeiro.
+- Implementações simples primeiro; complexidade apenas quando necessária.
+- Mudanças restritas ao escopo da proposta aprovada.
+- NÃO implemente além do escopo; documente trabalho adicional para futuras tasks.
+- **IDIOMA**: Comunicações e atualizações em **PORTUGUÊS**.
 
 ---
 
-**Steps**
+**Pré-requisitos**
 
-## Etapa 1: Carregar Contexto Completo
+1. ✅ Proposta aprovada em `openspec/changes/<change-id>/`
+2. ✅ Plano em `.context/plans/<change-id>.md`
+3. ✅ Workflow em fase "R" (Review)
 
-1. Execute `mcp_ai-context_buildSemanticContext`:
-
-   - `repoPath`: caminho do repositório
-   - `contextType`: `"compact"`
-
-2. Leia os documentos essenciais:
-
-   - `.context/plans/<change-id>.md` - plano aprovado
-   - `openspec/changes/<change-id>/proposal.md` - proposta aprovada
-   - `openspec/changes/<change-id>/tasks.md` - lista de tasks
-   - `openspec/changes/<change-id>/design.md` - decisões técnicas (se existir)
-
-3. Consulte documentação de apoio:
-
-   - `.context/docs/architecture.md` - padrões arquiteturais
-   - `.context/docs/data-flow.md` - fluxo de dados
-   - `.context/docs/development-workflow.md` - padrões de desenvolvimento
-
-4. Para contexto específico por tipo de trabalho, use `mcp_ai-context_getAgentDocs`:
-   - `agent`: `"backend-specialist"` para trabalho de backend
-   - `agent`: `"frontend-specialist"` para trabalho de frontend
-   - `agent`: `"database-specialist"` para trabalho de banco de dados
-
-## Etapa 2: Avançar para Execução
-
-1. Execute `mcp_ai-context_workflowAdvance` para avançar da fase "R" (Review) para "E" (Execution)
-
-2. Confirme a transição verificando `mcp_ai-context_workflowStatus`
-
-## Etapa 3: Implementar Tasks
-
-1. Trabalhe sequencialmente seguindo `tasks.md`
-2. Para cada task:
-
-   - Leia a descrição e critérios de aceite
-   - Consulte `design.md` para decisões arquiteturais relevantes
-   - Consulte `.context/docs/` para padrões do projeto
-   - Implemente com edits mínimos e focados
-   - Verifique que o critério de aceite foi atendido
-
-3. Mantenha foco no escopo definido:
-   - NÃO implemente funcionalidades além do escopo
-   - NÃO refatore código não relacionado
-   - Se descobrir trabalho adicional necessário, documente para future tasks
-
-## Etapa 4: Atualizar Progresso
-
-1. Após completar cada task, atualize `tasks.md`:
-
-   - Mude `- [ ]` para `- [x]`
-   - Adicione notas se houver desvios do planejado
-
-2. Exemplo de atualização:
-
-   ```markdown
-   - [x] **Task 1**: Criar modelo de dados
-     - Arquivos: `src/models/report.py`
-     - Critério: Modelo validado com pyright
-     - ✅ Concluído: Modelo criado com type hints completos
-   ```
-
-3. Periodicamente verifique `mcp_ai-context_workflowStatus` para confirmar estado
-
-## Etapa 5: Avançar para Validação
-
-1. Após completar TODAS as tasks, execute `mcp_ai-context_workflowAdvance` para avançar da fase "E" (Execution) para "V" (Validation)
-
-## Etapa 6: Validar Implementação
-
-1. Rode verificações de qualidade conforme projeto:
-
-   - `uv run task lint` - verificação de estilo
-   - `uv run task type-check` - verificação de tipos
-   - `uv run task test-docker` - testes (se aplicável)
-
-2. Verifique que TODOS os tasks em `tasks.md` estão marcados como `[x]`
-
-3. Confirme que a implementação atende aos critérios de aceite da proposta
-
-4. Se encontrar problemas:
-   - Documente o problema
-   - Corrija antes de prosseguir
-   - Atualize tasks se necessário
+Se não atendido, execute `/openspec-proposal` primeiro.
 
 ---
 
-**Referência**
+# FASE 1: Preparação
 
-- Use `openspec show <id> --json --deltas-only` se precisar de contexto adicional da proposta durante implementação.
-- Consulte playbooks de agentes em `.context/agents/` para padrões específicos (backend, database, etc.).
-- Use `mcp_ai-context_getAgentDocs` para documentação relevante por tipo de agente.
-- Consulte `.context/docs/` para padrões de código e arquitetura.
+## 1.1: Verificar Status do Workflow
+
+```javascript
+mcp_ai - context_workflow - status();
+```
+
+- Confirme fase "R" (Review) ativa
+- Verifique planos vinculados
+
+## 1.2: Carregar Contexto Focado
+
+**⚠️ NÃO use `buildSemanticContext` - use consultas focadas:**
+
+```javascript
+mcp_ai - context_context({ action: "getMap", section: "architecture" });
+```
+
+Seções conforme necessidade:
+| Seção | Quando |
+|-------|--------|
+| `architecture` | Sempre |
+| `symbols` | Refatoração |
+| `publicAPI` | Integrações |
+
+## 1.3: Carregar Documentos da Proposta
+
+Leia na ordem:
+
+1. `.context/plans/<change-id>.md` - plano aprovado
+2. `openspec/changes/<change-id>/tasks.md` - lista de tasks
+3. `openspec/changes/<change-id>/design.md` - decisões (se existir)
+
+## 1.4: Consultar Agente Especialista (Se Necessário)
+
+```javascript
+mcp_ai -
+  context_agent({
+    action: "getDocs",
+    agent: "<tipo>" // backend-specialist, frontend-specialist, etc.
+  });
+```
+
+---
+
+# FASE 2: Execução
+
+## 2.1: Avançar para Fase de Execução
+
+```javascript
+mcp_ai -
+  context_workflow -
+  advance({
+    outputs: []
+  });
+```
+
+Confirme transição R → E.
+
+## 2.2: Implementar Tasks
+
+Para cada task em `tasks.md`:
+
+1. **Ler** descrição e critérios de aceite
+2. **Consultar** `design.md` para decisões relevantes
+3. **Implementar** com edits mínimos e focados
+4. **Verificar** critério atendido
+5. **Atualizar** `tasks.md`:
+
+```markdown
+- [x] **Task 1**: Criar modelo de dados
+  - Arquivos: `src/models/report.py`
+  - ✅ Concluído
+```
+
+## 2.3: Manter Foco no Escopo
+
+- ❌ NÃO implemente além do escopo
+- ❌ NÃO refatore código não relacionado
+- ✅ Documente trabalho adicional descoberto
+
+## 2.4: Registrar Progresso (Opcional)
+
+```javascript
+mcp_ai -
+  context_plan({
+    action: "updateStep",
+    planSlug: "<change-id>",
+    phaseId: "E",
+    stepIndex: 1,
+    status: "completed",
+    notes: "Modelo criado"
+  });
+```
+
+---
+
+# FASE 3: Validação
+
+## 3.1: Avançar para Fase de Validação
+
+Após TODAS as tasks concluídas:
+
+```javascript
+mcp_ai -
+  context_workflow -
+  advance({
+    outputs: ["<arquivos modificados>"]
+  });
+```
+
+Transição E → V.
+
+## 3.2: Executar Verificações
+
+// turbo
+
+```bash
+uv run task format
+```
+
+// turbo
+
+```bash
+uv run task lint
+```
+
+// turbo
+
+```bash
+uv run task type-check
+```
+
+## 3.3: Validar Implementação
+
+1. ✅ Todos os tasks em `tasks.md` marcados `[x]`
+2. ✅ Critérios de aceite da proposta atendidos
+3. ✅ Lint e type-check passando
+
+## 3.4: Corrigir Problemas (Se Houver)
+
+Se encontrar erros:
+
+1. Corrija imediatamente
+2. Atualize tasks se necessário
+3. Re-execute verificações
+
+---
+
+# FASE 4: Conclusão
+
+## 4.1: Avançar para Fase Completa
+
+```javascript
+mcp_ai -
+  context_workflow -
+  advance({
+    outputs: ["openspec/changes/<change-id>/tasks.md"]
+  });
+```
+
+Transição V → C.
+
+## 4.2: Atualizar Status da Proposta
+
+Em `openspec/changes/<change-id>/proposal.md`:
+
+- Mude status para "✅ Implementado"
+
+## 4.3: 🛑 PARADA
+
+1. Apresente resumo da implementação
+2. Liste arquivos modificados
+3. Aguarde confirmação para `/openspec-archive`
+
+---
+
+**Referências**
+
+- `openspec show <id> --json --deltas-only`
+- `.context/agents/` - playbooks de especialistas
+- `docs_dev/planejamento/fluxo_planejamento_ai_context.md`
 
 <!-- OPENSPEC:END -->

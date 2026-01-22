@@ -118,7 +118,7 @@
   - Arquivos: `app/ui/usuarios/views.py:76-131`
   - Critério: Testar fluxo com atendente/sem atendente
 
-- [ ] **Task 3.4**: Solicitar aprovação do Módulo 2
+- [x] **Task 3.4**: Solicitar aprovação do Módulo 2
   - Critério: ✅ Aprovação do usuário
 
 ---
@@ -127,9 +127,14 @@
 
 > ⚠️ **PRÉ-REQUISITO**: Aprovação do Módulo 2
 
-- [ ] **Task 4.1**: Auditar templates de onboarding
+- [x] **Task 4.1**: Auditar templates de onboarding
   - Arquivos: `app/tenants/templates/tenants/onboarding/*.html`
   - Critério: Verificar wizard standalone, stepper
+  - _Nota: Step 3 usa Bootstrap inexistente; Step 2 usa estilos inline._
+
+- [x] **Task 4.1.1**: Corrigir estilos do Step 2 e Step 3 (Remover Bootstrap, padronizar CSS)
+  - Arquivos: `step_2_payment.html`, `step_3_config.html`
+  - Critério: Usar variáveis do `base.html` e remover dependências externas
 
 - [ ] **Task 4.2**: Testar fluxo completo do wizard
   - Critério: Step 1 → 2 → 3 → 4 funcional
@@ -290,8 +295,8 @@ flowchart TD
 | --------------- | ------ | ---------------- |
 | 1. Planejamento | 14     | ✅ Concluído     |
 | 2. Módulo 1     | 6      | ✅ Concluído     |
-| 3. Módulo 2     | 4      | [/] Em andamento |
-| 4. Módulo 3     | 4      | ⏳ Pendente      |
+| 3. Módulo 2     | 4      | ✅ Concluído     |
+| 4. Módulo 3     | 4      | [/] Em andamento |
 | 5. Módulo 4     | 3      | ⏳ Pendente      |
 | 6. Módulo 5     | 3      | ⏳ Pendente      |
 | 7. Módulo 6     | 4      | ⏳ Pendente      |

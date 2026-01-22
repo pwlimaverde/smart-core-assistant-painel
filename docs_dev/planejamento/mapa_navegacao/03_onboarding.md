@@ -1,6 +1,6 @@
 # Módulo 3 - Onboarding Wizard
 
-> 📋 **Status**: ⏳ Pendente Implementação
+> 📋 **Status**: [/] Em Andamento
 > 📅 **Data**: 2026-01-15
 > 🔗 **Índice**: [00_indice.md](./00_indice.md)
 

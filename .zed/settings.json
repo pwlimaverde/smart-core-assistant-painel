@@ -2,13 +2,8 @@
   "format_on_save": "on",
   "languages": {
     "Python": {
-      "language_servers": ["pyright"],
-      "formatter": {
-        "external": {
-          "command": "ruff",
-          "arguments": ["format", "--stdin-filename", "{buffer_path}", "-"]
-        }
-      }
+      "language_servers": ["pyright", "ruff"],
+      "format_on_save": "on"
     },
     "JSON": {
       "format_on_save": "off"
@@ -18,40 +13,22 @@
     "pyright": {
       "settings": {
         "python": {
-          "pythonPath": ".venv/Scripts/python.exe",
+          "pythonPath": ".venv\\Scripts\\python.exe",
           "analysis": {
             "autoSearchPaths": true,
             "diagnosticMode": "workspace",
             "useLibraryCodeForTypes": true,
-            "typeCheckingMode": "strict"
+            "typeCheckingMode": "standard"
           }
-        }
-      }
-    },
-    "basedpyright": {
-      "settings": {
-        "analysis": {
-          "diagnosticMode": "workspace",
-          "inlayHints.callArgumentNames": false
         }
       }
     },
     "ruff": {
       "initialization_options": {
         "settings": {
-          "exclude": ["*"]
+          "lineLength": 88
         }
       }
     }
-  },
-  "terminal": {
-    "shell": {
-      "with_arguments": {
-        "program": "powershell.exe",
-        "args": []
-      }
-    },
-    "font_family": "CaskaydiaCove Nerd Font",
-    "font_size": 14
   }
 }

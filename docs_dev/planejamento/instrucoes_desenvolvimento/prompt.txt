@@ -1,5 +1,0 @@
-Configure este projeto para usar o fluxo integrado OpenSpec + AI-Context.
-Siga a documentação em docs_dev/planejamento/instrucoes_desenvolvimento/configuracao_fluxo_integrado.md
-Ajuste os comandos de validação para a stack deste projeto:
-- Linguagem: [Python/Node/Go/etc]
-- Gerenciador: [uv/npm/pnpm/etc]

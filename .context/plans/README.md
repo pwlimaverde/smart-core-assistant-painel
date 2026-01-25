@@ -1,55 +1,126 @@
 # Planos de Implementação
 
-Este diretório contém planos para coordenar trabalho de documentação, playbooks e implementação de features.
+Este diretório contém planos de features e refatorações em andamento no projeto Smart Core Assistant Painel.
 
-## 📋 Planos Ativos
+---
 
-| Plano                                                             | Status | Descrição                               |
-| ----------------------------------------------------------------- | ------ | --------------------------------------- |
-| [add-query-compose-playground](./add-query-compose-playground.md) | Ativo  | Adicionar playground para Query Compose |
+## Como Usar
 
-## 📦 Planos Arquivados
+### Criar Novo Plano
 
-| Plano                                                               | Concluído  | OpenSpec                                                                                                                     |
-| ------------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| [refactor-ui-design-system](./archive/refactor-ui-design-system.md) | 20/01/2026 | [changes/archive/2026-01-20-refactor-ui-design-system](../../openspec/changes/archive/2026-01-20-refactor-ui-design-system/) |
+1. Crie um arquivo markdown com nome descritivo
+2. Use o template abaixo
+3. Mantenha atualizado durante a implementação
+4. Mova para `archive/` quando concluído
 
-## Como Criar ou Atualizar Planos
+### Template de Plano
 
-### Via Workflow (Recomendado)
+```markdown
+# [Título do Plano]
 
-Use `/openspec-proposal` que automaticamente:
+## Status
+[Planejado | Em Andamento | Em Revisão | Concluído]
 
-1. Verifica/inicializa scaffolding AI-Context
-2. Cria plano via `mcp_ai-context_scaffoldPlan`
-3. Solicita aprovação antes de criar proposta OpenSpec
+## Resumo
+Breve descrição do que será implementado.
 
-### Via CLI
+## Motivação
+Por que esta mudança é necessária?
 
-- `ai-context plan <name>` - cria template de novo plano
-- `ai-context plan <name> --fill` - atualiza plano com contexto do repositório
+## Escopo
 
-## Como Arquivar Planos
+### Incluído
+- Item 1
+- Item 2
 
-Use `/openspec-archive` que automaticamente:
+### Não Incluído
+- Item A
+- Item B
 
-1. Move o plano para `archive/`
-2. Atualiza este índice
-3. Preserva links entre artefatos AI-Context e OpenSpec
+## Design Técnico
 
-## Estrutura de Diretórios
+### Arquitetura
+[Descrição da arquitetura proposta]
+
+### Mudanças de Código
+[Arquivos e módulos afetados]
+
+### Migrações
+[Se houver mudanças de banco]
+
+## Tarefas
+
+- [ ] Tarefa 1
+- [ ] Tarefa 2
+- [ ] Tarefa 3
+
+## Riscos
+
+| Risco | Probabilidade | Impacto | Mitigação |
+|-------|---------------|---------|-----------|
+| Risco 1 | Alta | Médio | Ação X |
+
+## Timeline
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| Fase 1 | Descrição | Pendente |
+| Fase 2 | Descrição | Pendente |
+
+## Notas
+[Informações adicionais relevantes]
+```
+
+---
+
+## Planos Ativos
+
+| Plano | Status | Responsável |
+|-------|--------|-------------|
+| - | - | - |
+
+---
+
+## Planos Concluídos
+
+Planos concluídos são movidos para o diretório `archive/`.
+
+Ver: [archive/](archive/)
+
+---
+
+## Fluxo de Trabalho
 
 ```
-.context/plans/
-├── README.md              # Este arquivo
-├── plano-ativo.md         # Planos em andamento
-└── archive/               # Planos concluídos
-    └── plano-concluido.md
+1. Criar plano → 2. Revisar → 3. Aprovar → 4. Implementar → 5. Arquivar
 ```
 
-## Recursos Relacionados
+### 1. Criar Plano
 
-- [Agent Handbook](../agents/README.md)
-- [Documentation Index](../docs/README.md)
-- [Agent Knowledge Base](../../AGENTS.md)
-- [Contributor Guidelines](../../CONTRIBUTING.md)
+- Documentar requisitos e design
+- Listar tarefas necessárias
+- Identificar riscos
+
+### 2. Revisar
+
+- Code review do plano
+- Verificar viabilidade técnica
+- Ajustar escopo se necessário
+
+### 3. Aprovar
+
+- Obter aprovação de stakeholders
+- Confirmar prioridade
+- Alocar recursos
+
+### 4. Implementar
+
+- Executar tarefas
+- Manter plano atualizado
+- Criar branches conforme necessário
+
+### 5. Arquivar
+
+- Mover para `archive/` com data
+- Documentar lições aprendidas
+- Atualizar documentação relacionada

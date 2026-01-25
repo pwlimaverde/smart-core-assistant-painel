@@ -1,2 +1,0 @@
-[ ] - acrescentar opção para exclusão de usuarios e convites na tela de usuarios do tenante
-[ ] - revisar fluxo de controle de usuarios e acesso ao sistema dos tenantes

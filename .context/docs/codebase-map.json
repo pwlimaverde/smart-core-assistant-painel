@@ -1,1474 +1,193 @@
 {
-  "version": "1.0.0",
-  "generated": "2026-01-15T23:33:21.576Z",
-  "stack": {
-    "primaryLanguage": "javascript",
-    "languages": [
-      "python",
-      "javascript"
-    ],
-    "frameworks": [],
-    "buildTools": [],
-    "testFrameworks": [
-      "pytest"
-    ],
-    "packageManager": null,
-    "isMonorepo": false,
-    "hasDocker": false,
-    "hasCI": false
+  "project": {
+    "name": "Smart Core Assistant Painel",
+    "version": "0.1.0",
+    "description": "Plataforma SaaS multi-tenant para atendimento inteligente ao cliente via WhatsApp",
+    "python_version": "3.13",
+    "framework": "Django 5.2"
   },
   "structure": {
-    "totalFiles": 1249,
-    "topDirectories": [
-      {
-        "name": "AGENTS.md",
-        "fileCount": 1
-      },
-      {
-        "name": "ambiente_cliente",
-        "fileCount": 5
-      },
-      {
-        "name": "ambiente_cliente_teste",
-        "fileCount": 5
-      },
-      {
-        "name": "bugs.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "CHANGELOG.md",
-        "fileCount": 1
-      },
-      {
-        "name": "cspell.json",
-        "fileCount": 1
-      },
-      {
-        "name": "diagnostico_output.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "diagnostico_result.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "docker",
-        "fileCount": 6
-      },
-      {
-        "name": "docs",
-        "fileCount": 10
-      },
-      {
-        "name": "docs_dev",
-        "fileCount": 76
-      },
-      {
-        "name": "GEMINI.md",
-        "fileCount": 1
-      },
-      {
-        "name": "log_cluster.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "log_langsmith.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "log_ngrok.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "log_servidor.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "mkdocs.yml",
-        "fileCount": 1
-      },
-      {
-        "name": "openspec",
-        "fileCount": 12
-      },
-      {
-        "name": "pyproject.toml",
-        "fileCount": 1
-      },
-      {
-        "name": "pytest.ini",
-        "fileCount": 1
-      },
-      {
-        "name": "README.md",
-        "fileCount": 1
-      },
-      {
-        "name": "scripts",
-        "fileCount": 21
-      },
-      {
-        "name": "smartcore-landing",
-        "fileCount": 9
-      },
-      {
-        "name": "src",
-        "fileCount": 726
-      },
-      {
-        "name": "teste_debug",
-        "fileCount": 16
-      },
-      {
-        "name": "tests",
-        "fileCount": 344
-      },
-      {
-        "name": "trace.txt",
-        "fileCount": 1
-      },
-      {
-        "name": "uv.lock",
-        "fileCount": 1
-      },
-      {
-        "name": "verify_fix.py",
-        "fileCount": 1
-      },
-      {
-        "name": "WARP.md",
-        "fileCount": 1
+    "src": {
+      "path": "src/smart_core_assistant_painel",
+      "description": "Código-fonte principal",
+      "children": {
+        "main.py": "Ponto de entrada da aplicação",
+        "app": {
+          "description": "Aplicações Django e integrações",
+          "children": {
+            "ui": {
+              "description": "Apps Django de interface",
+              "apps": [
+                {
+                  "name": "core",
+                  "path": "app/ui/core",
+                  "description": "Configurações centrais, middleware, views base",
+                  "key_files": ["settings.py", "urls.py", "views.py", "middleware.py"]
+                },
+                {
+                  "name": "atendimentos",
+                  "path": "app/ui/atendimentos",
+                  "description": "Tickets de suporte e mensagens",
+                  "key_files": ["models.py", "admin.py", "services/"]
+                },
+                {
+                  "name": "operacional",
+                  "path": "app/ui/operacional",
+                  "description": "Departamentos, fluxos, atendentes",
+                  "key_files": ["models.py", "views.py", "serializers.py"]
+                },
+                {
+                  "name": "clientes",
+                  "path": "app/ui/clientes",
+                  "description": "Contatos e clientes",
+                  "key_files": ["models.py", "admin.py"]
+                },
+                {
+                  "name": "usuarios",
+                  "path": "app/ui/usuarios",
+                  "description": "Gerenciamento de usuários",
+                  "key_files": ["models.py", "views.py", "forms.py"]
+                },
+                {
+                  "name": "treinamento",
+                  "path": "app/ui/treinamento",
+                  "description": "Treinamento IA e gestão de documentos",
+                  "key_files": ["models.py", "views.py", "services.py", "tasks.py"]
+                },
+                {
+                  "name": "oraculo",
+                  "path": "app/ui/oraculo",
+                  "description": "Interface do motor de IA",
+                  "key_files": []
+                }
+              ]
+            },
+            "tenants": {
+              "path": "app/tenants",
+              "description": "Multi-tenancy e isolamento de banco",
+              "key_files": ["models.py", "db_router.py", "middleware.py"]
+            },
+            "evolution_sync": {
+              "path": "app/evolution_sync",
+              "description": "Integração WhatsApp via Evolution API",
+              "key_files": ["views.py", "signals.py", "services/evolution_api.py", "services/webhook.py"]
+            },
+            "trello_sync": {
+              "path": "app/trello_sync",
+              "description": "Sincronização com Trello",
+              "key_files": ["models.py", "signals.py", "tasks.py"]
+            },
+            "settings_manager": {
+              "path": "app/settings_manager",
+              "description": "Gerenciamento de configurações remotas",
+              "key_files": ["models.py"]
+            }
+          }
+        },
+        "modules": {
+          "description": "Lógica de negócio reutilizável",
+          "children": {
+            "ai_engine": {
+              "path": "modules/ai_engine",
+              "description": "Motor de IA com LangChain",
+              "key_files": ["features_compose.py"],
+              "features": [
+                "analise_mensage",
+                "analise_previa_mensagem",
+                "analise_conteudo",
+                "analise_avaliacao",
+                "generate_embeddings",
+                "generate_chunks",
+                "load_document_file",
+                "load_document_conteudo",
+                "load_mensage_data"
+              ]
+            },
+            "services": {
+              "path": "modules/services",
+              "description": "Serviços gerais e integrações",
+              "key_files": ["start_services.py", "features/service_hub.py"],
+              "features": [
+                "unifield_data_services (Trello/ClickUp/Notion adapters)"
+              ]
+            },
+            "initial_loading": {
+              "path": "modules/initial_loading",
+              "description": "Inicialização Firebase",
+              "key_files": ["start_initial_loading.py"]
+            }
+          }
+        }
       }
-    ],
-    "languageDistribution": [
-      {
-        "extension": ".pyc",
-        "count": 438
-      },
-      {
-        "extension": ".py",
-        "count": 379
-      },
-      {
-        "extension": ".html",
-        "count": 275
-      },
-      {
-        "extension": ".md",
-        "count": 85
-      },
-      {
-        "extension": ".txt",
-        "count": 18
-      },
-      {
-        "extension": ".png",
-        "count": 12
-      },
-      {
-        "extension": ".yml",
-        "count": 7
-      },
-      {
-        "extension": ".json",
-        "count": 6
-      },
-      {
-        "extension": ".css",
-        "count": 6
-      },
-      {
-        "extension": ".mmd",
-        "count": 4
-      }
-    ]
-  },
-  "architecture": {
-    "layers": [
-      {
-        "name": "Services",
-        "description": "Business logic and orchestration",
-        "directories": [
-          "teste_debug",
-          "tests\\modules\\services",
-          "tests\\modules\\services\\features",
-          "src\\smart_core_assistant_painel\\modules\\services",
-          "src\\smart_core_assistant_painel\\modules\\services\\utils",
-          "src\\smart_core_assistant_painel\\modules\\services\\features",
-          "src\\smart_core_assistant_painel\\modules\\services\\config",
-          "src\\smart_core_assistant_painel\\app\\ui\\treinamento",
-          "src\\smart_core_assistant_painel\\app\\trello_sync\\services",
-          "src\\smart_core_assistant_painel\\app\\tenants\\services",
-          "src\\smart_core_assistant_painel\\app\\evolution_sync\\services",
-          "tests\\modules\\services\\features\\unifield_data_services\\datasource",
-          "tests\\modules\\services\\features\\set_environ_remote\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services",
-          "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services",
-          "src\\smart_core_assistant_painel\\app\\evolution_sync\\tests\\services",
-          "tests\\modules\\services\\features\\unifield_data_services\\domain\\usecase",
-          "tests\\modules\\services\\features\\set_environ_remote\\domain\\usecase",
-          "tests\\modules\\initial_loading\\features\\firebase_init\\domain\\usecase",
-          "tests\\modules\\ai_engine\\features\\load_document_file\\domain\\usecase",
-          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\usecase",
-          "tests\\modules\\ai_engine\\features\\load_mensage_data\\domain\\usecase",
-          "tests\\modules\\ai_engine\\features\\load_document_conteudo\\domain\\usecase",
-          "tests\\modules\\ai_engine\\features\\analise_conteudo\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\domain",
-          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\datasource",
-          "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\tests\\services",
-          "src\\smart_core_assistant_painel\\modules\\initial_loading\\features\\firebase_init\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_file\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_chunks\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_conteudo\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_embeddings\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\domain\\usecase",
-          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\domain\\interface"
-        ],
-        "symbolCount": 91,
-        "dependsOn": []
-      },
-      {
-        "name": "Repositories",
-        "description": "Data access and persistence",
-        "directories": [
-          "teste_debug",
-          "scripts\\temp",
-          "scripts\\temp\\database_reset",
-          "tests\\modules\\ai_engine\\features\\load_document_file\\datasource",
-          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource",
-          "tests\\modules\\ai_engine\\features\\generate_embeddings\\datasource",
-          "tests\\modules\\ai_engine\\features\\analise_conteudo\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data",
-          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\langchain_pydantic",
-          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_file\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_embeddings\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\datasource",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\datasource",
-          "src\\smart_core_assistant_painel\\app\\ui\\usuarios\\management\\commands",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\langchain_pydantic",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain"
-        ],
-        "symbolCount": 25,
-        "dependsOn": []
-      },
-      {
-        "name": "Config",
-        "description": "Configuration and constants",
-        "directories": [
-          "scripts\\config_global",
-          "scripts\\temp",
-          "src\\smart_core_assistant_painel\\app\\settings_manager",
-          "src\\smart_core_assistant_painel\\app\\ui\\core",
-          "src\\smart_core_assistant_painel\\app\\tenants\\migrations",
-          "src\\smart_core_assistant_painel\\app\\settings_manager\\migrations",
-          "src\\smart_core_assistant_painel\\app\\settings_manager\\management",
-          "src\\smart_core_assistant_painel\\app\\settings_manager\\management\\commands"
-        ],
-        "symbolCount": 25,
-        "dependsOn": []
-      },
-      {
-        "name": "Controllers",
-        "description": "Request handling and routing",
-        "directories": [
-          "src\\smart_core_assistant_painel\\app\\trello_sync",
-          "src\\smart_core_assistant_painel\\app\\tenants",
-          "src\\smart_core_assistant_painel\\app\\ui\\operacional",
-          "src\\smart_core_assistant_painel\\app\\trello_sync\\tests"
-        ],
-        "symbolCount": 9,
-        "dependsOn": []
-      },
-      {
-        "name": "Models",
-        "description": "Data structures and domain objects",
-        "directories": [
-          "src\\smart_core_assistant_painel\\app\\trello_sync",
-          "src\\smart_core_assistant_painel\\app\\tenants",
-          "src\\smart_core_assistant_painel\\app\\evolution_sync",
-          "src\\smart_core_assistant_painel\\app\\settings_manager",
-          "src\\smart_core_assistant_painel\\app\\ui\\usuarios",
-          "src\\smart_core_assistant_painel\\app\\ui\\treinamento",
-          "src\\smart_core_assistant_painel\\app\\ui\\operacional",
-          "src\\smart_core_assistant_painel\\app\\ui\\atendimentos",
-          "src\\smart_core_assistant_painel\\app\\ui\\clientes",
-          "src\\smart_core_assistant_painel\\app\\trello_sync\\tests",
-          "src\\smart_core_assistant_painel\\app\\evolution_sync\\domain",
-          "tests\\modules\\initial_loading\\features\\firebase_init\\domain",
-          "tests\\modules\\ai_engine\\features\\load_document_file\\domain",
-          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain",
-          "tests\\modules\\ai_engine\\features\\load_document_conteudo\\domain",
-          "tests\\modules\\ai_engine\\features\\analise_conteudo\\domain",
-          "src\\smart_core_assistant_painel\\app\\ui\\treinamento\\tests",
-          "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\tests",
-          "src\\smart_core_assistant_painel\\app\\ui\\clientes\\tests",
-          "src\\smart_core_assistant_painel\\app\\evolution_sync\\tests\\domain",
-          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\langchain_pydantic",
-          "src\\smart_core_assistant_painel\\modules\\initial_loading\\features\\firebase_init\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_file\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_chunks\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_conteudo\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_embeddings\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\domain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data\\domain\\model",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\interface"
-        ],
-        "symbolCount": 97,
-        "dependsOn": []
-      },
-      {
-        "name": "Components",
-        "description": "UI components and views",
-        "directories": [
-          "src\\smart_core_assistant_painel\\app\\evolution_sync",
-          "src\\smart_core_assistant_painel\\app\\settings_manager",
-          "src\\smart_core_assistant_painel\\app\\ui\\usuarios",
-          "src\\smart_core_assistant_painel\\app\\ui\\treinamento",
-          "src\\smart_core_assistant_painel\\app\\ui\\operacional",
-          "src\\smart_core_assistant_painel\\app\\ui\\core",
-          "src\\smart_core_assistant_painel\\app\\ui\\clientes",
-          "src\\smart_core_assistant_painel\\app\\tenants\\views",
-          "src\\smart_core_assistant_painel\\app\\evolution_sync\\tests",
-          "src\\smart_core_assistant_painel\\app\\ui\\usuarios\\tests",
-          "src\\smart_core_assistant_painel\\app\\ui\\treinamento\\tests",
-          "src\\smart_core_assistant_painel\\app\\ui\\operacional\\tests",
-          "src\\smart_core_assistant_painel\\app\\ui\\clientes\\tests",
-          "src\\smart_core_assistant_painel\\app\\tenants\\views\\backoffice"
-        ],
-        "symbolCount": 63,
-        "dependsOn": []
-      },
-      {
-        "name": "Utils",
-        "description": "Shared utilities and helpers",
-        "directories": [
-          "src\\smart_core_assistant_painel\\modules\\initial_loading\\utils",
-          "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils",
-          "src\\smart_core_assistant_painel\\app\\tenants\\utils"
-        ],
-        "symbolCount": 27,
-        "dependsOn": []
-      }
-    ],
-    "patterns": [
-      {
-        "name": "Factory",
-        "confidence": 0.9,
-        "description": "Creates instances of related objects without specifying concrete classes",
-        "occurrences": 1
-      },
-      {
-        "name": "Singleton",
-        "confidence": 0.7,
-        "description": "Ensures a class has only one instance",
-        "occurrences": 6
-      },
-      {
-        "name": "Service Layer",
-        "confidence": 0.85,
-        "description": "Encapsulates business logic in service classes",
-        "occurrences": 15
-      }
-    ],
-    "entryPoints": []
-  },
-  "symbols": {
-    "classes": [
-      {
-        "name": "AdminStaffRequiredMiddleware",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\middleware.py",
-        "line": 8,
-        "exported": true
-      },
-      {
-        "name": "AIConfigView",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\legacy_views.py",
-        "line": 240,
-        "exported": true
-      },
-      {
-        "name": "AMTuple",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\types.py",
-        "line": 107,
-        "exported": true
-      },
-      {
-        "name": "AnaliseAvaliacao",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\types.py",
-        "line": 163,
-        "exported": true
-      },
-      {
-        "name": "AnaliseAvaliacaoDatasource",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\datasource\\analise_avaliacao_datasource.py",
-        "line": 30,
-        "exported": true
-      },
-      {
-        "name": "AnaliseAvaliacaoError",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\erros.py",
-        "line": 88,
-        "exported": true
-      },
-      {
-        "name": "AnaliseAvaliacaoParameters",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\parameters.py",
-        "line": 280,
-        "exported": true
-      },
-      {
-        "name": "AnaliseAvaliacaoUsecase",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\domain\\usecase\\analise_avaliacao_usecase.py",
-        "line": 18,
-        "exported": true
-      },
-      {
-        "name": "AnaliseConteudoLangchainDatasource",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\datasource\\analise_conteudo_langchain_datasource.py",
-        "line": 13,
-        "exported": true
-      },
-      {
-        "name": "AnaliseConteudoUseCase",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\domain\\usecase\\analise_conteudo_usecase.py",
-        "line": 11,
-        "exported": true
-      },
-      {
-        "name": "AnaliseMensageDatasource",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\datasource\\analise_mensage_datasource.py",
-        "line": 19,
-        "exported": true
-      },
-      {
-        "name": "AnaliseMensageError",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\erros.py",
-        "line": 80,
-        "exported": true
-      },
-      {
-        "name": "AnaliseMensageParameters",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\parameters.py",
-        "line": 251,
-        "exported": true
-      },
-      {
-        "name": "AnaliseMensageUseCase",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\domain\\usecase\\analise_mensage_usecase.py",
-        "line": 13,
-        "exported": true
-      },
-      {
-        "name": "AnalisePreviaLangchainDatasource",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain\\analise_previa_langchain_datasource.py",
-        "line": 27,
-        "exported": true
-      },
-      {
-        "name": "AnalisePreviaMensagem",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\interface\\analise_previa_mensagem.py",
-        "line": 16,
-        "exported": true
-      },
-      {
-        "name": "AnalisePreviaMensagemLangchain",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain\\analise_previa_mensagem_langchain.py",
-        "line": 17,
-        "exported": true
-      },
-      {
-        "name": "AnalisePreviaMensagemParameters",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\parameters.py",
-        "line": 170,
-        "exported": true
-      },
-      {
-        "name": "AnalisePreviaMensagemUsecase",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\usecase\\analise_previa_mensagem_usecase.py",
-        "line": 16,
-        "exported": true
-      },
-      {
-        "name": "APMTuple",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\types.py",
-        "line": 46,
-        "exported": true
-      },
-      {
-        "name": "AppInstance",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\models.py",
-        "line": 432,
-        "exported": true
-      },
-      {
-        "name": "AppInstanceAdmin",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\admin.py",
-        "line": 186,
-        "exported": true
-      },
-      {
-        "name": "Atendente",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\models.py",
-        "line": 210,
-        "exported": true
-      },
-      {
-        "name": "AtendenteAdmin",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\admin.py",
-        "line": 25,
-        "exported": true
-      },
-      {
-        "name": "Atendimento",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\models.py",
-        "line": 88,
-        "exported": true
-      },
-      {
-        "name": "AtendimentoAdmin",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\admin.py",
-        "line": 60,
-        "exported": true
-      },
-      {
-        "name": "AtendimentosConfig",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\apps.py",
-        "line": 5,
-        "exported": true
-      },
-      {
-        "name": "AttendanceOrchestrator",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\attendance_orchestrator.py",
-        "line": 34,
-        "exported": true
-      },
-      {
-        "name": "AttendanceOrchestratorInterface",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\interfaces.py",
-        "line": 126,
-        "exported": true
-      },
-      {
-        "name": "AttendanceStructureManager",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\attendance_structure_manager.py",
-        "line": 23,
-        "exported": true
-      },
-      {
-        "name": "AttendanceStructureManagerInterface",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\interfaces.py",
-        "line": 56,
-        "exported": true
-      },
-      {
-        "name": "BackofficeDashboardView",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\backoffice\\dashboard.py",
-        "line": 9,
-        "exported": true
-      },
-      {
-        "name": "BaseTenantConfigView",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\legacy_views.py",
-        "line": 116,
-        "exported": true
-      },
-      {
-        "name": "BaseTenantModelAdmin",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\admin_mixins.py",
-        "line": 107,
-        "exported": true
-      },
-      {
-        "name": "BotRulesEngine",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\bot_rules_engine.py",
-        "line": 19,
-        "exported": true
-      },
-      {
-        "name": "BotRulesEngineInterface",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\interfaces.py",
-        "line": 96,
-        "exported": true
-      },
-      {
-        "name": "CheckSlugView",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\onboarding.py",
-        "line": 118,
-        "exported": true
-      },
-      {
-        "name": "ClicupUnifiedDataService",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\datasource\\clicup_adapter.py",
-        "line": 25,
-        "exported": true
-      },
-      {
-        "name": "Cliente",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\clientes\\models.py",
-        "line": 151,
-        "exported": true
-      },
-      {
-        "name": "ClienteAdmin",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\clientes\\admin.py",
-        "line": 81,
-        "exported": true
-      },
-      {
-        "name": "ClientesConfig",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\clientes\\apps.py",
-        "line": 5,
-        "exported": true
-      },
-      {
-        "name": "ClientesContatoForm",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\clientes\\tests\\test_clientes_forms.py",
-        "line": 10,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\management\\commands\\migrate_tenant.py",
-        "line": 17,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\management\\commands\\migrate_all_tenants.py",
-        "line": 21,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\settings_manager\\management\\commands\\load_core_settings.py",
-        "line": 17,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\settings_manager\\management\\commands\\import_core_settings.py",
-        "line": 15,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\settings_manager\\management\\commands\\export_core_settings.py",
-        "line": 13,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\usuarios\\management\\commands\\seed_dev_data.py",
-        "line": 24,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\usuarios\\management\\commands\\seed_atendentes_users.py",
-        "line": 27,
-        "exported": true
-      },
-      {
-        "name": "Command",
-        "kind": "class",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\management\\commands\\seed_demo_flow.py",
-        "line": 23,
-        "exported": true
-      }
-    ],
-    "interfaces": [],
-    "functions": [
-      {
-        "name": "activate_account",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\invites.py",
-        "line": 272,
-        "exported": true
-      },
-      {
-        "name": "append_text",
-        "kind": "function",
-        "file": "scripts\\automacao\\new_feature_script.py",
-        "line": 61,
-        "exported": true
-      },
-      {
-        "name": "atendente_created_invite_trello",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 124,
-        "exported": true
-      },
-      {
-        "name": "atendente_deleted_remove_member_trello",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 137,
-        "exported": true
-      },
-      {
-        "name": "atendimento_cancelado_move_to_cancelado",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 419,
-        "exported": true
-      },
-      {
-        "name": "atendimento_capture_old_atendente",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 171,
-        "exported": true
-      },
-      {
-        "name": "atendimento_capture_old_etapa",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 194,
-        "exported": true
-      },
-      {
-        "name": "atendimento_created_sync_trello",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 109,
-        "exported": true
-      },
-      {
-        "name": "atendimento_deleted_archive_card",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 504,
-        "exported": true
-      },
-      {
-        "name": "atendimento_etapa_updated_move_card",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 217,
-        "exported": true
-      },
-      {
-        "name": "atendimento_instance",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\tests\\test_models.py",
-        "line": 101,
-        "exported": true
-      },
-      {
-        "name": "atendimento_pendencia_move_to_pendencia",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 335,
-        "exported": true
-      },
-      {
-        "name": "atendimento_resolvido_move_to_resolvido",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 245,
-        "exported": true
-      },
-      {
-        "name": "atendimento_updated_assign_member_trello",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-        "line": 150,
-        "exported": true
-      },
-      {
-        "name": "build_analise_previa_model",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain\\pydantic_model_builder.py",
-        "line": 228,
-        "exported": true
-      },
-      {
-        "name": "build_facade_imports",
-        "kind": "function",
-        "file": "scripts\\automacao\\new_feature_script.py",
-        "line": 172,
-        "exported": true
-      },
-      {
-        "name": "build_facade_method",
-        "kind": "function",
-        "file": "scripts\\automacao\\new_feature_script.py",
-        "line": 202,
-        "exported": true
-      },
-      {
-        "name": "build_fixture_paths",
-        "kind": "function",
-        "file": "scripts\\temp\\loaddata_remoto.py",
-        "line": 113,
-        "exported": true
-      },
-      {
-        "name": "buscar_atendimento_ativo",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\models.py",
-        "line": 1333,
-        "exported": true
-      },
-      {
-        "name": "buscar_atendimento_ativo_por_contato",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\models.py",
-        "line": 1419,
-        "exported": true
-      },
-      {
-        "name": "buscar_e_preencher_endereco",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\clientes\\signals.py",
-        "line": 34,
-        "exported": true
-      },
-      {
-        "name": "cadastrar_query_compose",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\treinamento\\views.py",
-        "line": 452,
-        "exported": true
-      },
-      {
-        "name": "cadastro",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\usuarios\\views.py",
-        "line": 27,
-        "exported": true
-      },
-      {
-        "name": "camel_case",
-        "kind": "function",
-        "file": "scripts\\automacao\\new_feature_script.py",
-        "line": 27,
-        "exported": true
-      },
-      {
-        "name": "can_view_module",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\templatetags\\permission_tags.py",
-        "line": 8,
-        "exported": true
-      },
-      {
-        "name": "categorize_prompts",
-        "kind": "function",
-        "file": "scripts\\temp\\extrair_prompts_remote_config.py",
-        "line": 91,
-        "exported": true
-      },
-      {
-        "name": "check_celery_inspect",
-        "kind": "function",
-        "file": "teste_debug\\check_treinamento_celery.py",
-        "line": 158,
-        "exported": true
-      },
-      {
-        "name": "check_celery_results",
-        "kind": "function",
-        "file": "teste_debug\\check_treinamento_celery.py",
-        "line": 82,
-        "exported": true
-      },
-      {
-        "name": "check_redis_connection",
-        "kind": "function",
-        "file": "teste_debug\\check_treinamento_celery.py",
-        "line": 139,
-        "exported": true
-      },
-      {
-        "name": "check_subscription_expirations",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\tasks.py",
-        "line": 13,
-        "exported": true
-      },
-      {
-        "name": "check_treinamentos",
-        "kind": "function",
-        "file": "teste_debug\\check_treinamento_celery.py",
-        "line": 28,
-        "exported": true
-      },
-      {
-        "name": "clear_buffer_contact",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\evolution_sync\\services\\message_buffer.py",
-        "line": 57,
-        "exported": true
-      },
-      {
-        "name": "clear_current_tenant",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\middleware.py",
-        "line": 25,
-        "exported": true
-      },
-      {
-        "name": "clear_scheduling_lock",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\evolution_sync\\services\\message_buffer.py",
-        "line": 49,
-        "exported": true
-      },
-      {
-        "name": "clickup_callback",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\views.py",
-        "line": 129,
-        "exported": true
-      },
-      {
-        "name": "create_default_etapas_fluxo",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\signals.py",
-        "line": 25,
-        "exported": true
-      },
-      {
-        "name": "create_feature_files",
-        "kind": "function",
-        "file": "scripts\\automacao\\new_feature_script.py",
-        "line": 297,
-        "exported": true
-      },
-      {
-        "name": "create_orchestrator",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\__init__.py",
-        "line": 38,
-        "exported": true
-      },
-      {
-        "name": "create_plans",
-        "kind": "function",
-        "file": "scripts\\temp\\populate_plans.py",
-        "line": 17,
-        "exported": true
-      },
-      {
-        "name": "create_tenant_subscription",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\signals.py",
-        "line": 8,
-        "exported": true
-      },
-      {
-        "name": "custom_page_not_found",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\views.py",
-        "line": 169,
-        "exported": true
-      },
-      {
-        "name": "custom_permission_denied",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\views.py",
-        "line": 176,
-        "exported": true
-      },
-      {
-        "name": "custom_server_error",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\views.py",
-        "line": 183,
-        "exported": true
-      },
-      {
-        "name": "dashboard",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\views.py",
-        "line": 115,
-        "exported": true
-      },
-      {
-        "name": "dashboard_gerente",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\usuarios\\views.py",
-        "line": 168,
-        "exported": true
-      },
-      {
-        "name": "decrypt_value",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\tenants\\utils\\encryption.py",
-        "line": 29,
-        "exported": true
-      },
-      {
-        "name": "delete_webhook",
-        "kind": "function",
-        "file": "teste_debug\\list_webhooks.py",
-        "line": 42,
-        "exported": true
-      },
-      {
-        "name": "departamentos_public",
-        "kind": "function",
-        "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\views_api.py",
-        "line": 25,
-        "exported": true
-      },
-      {
-        "name": "diagnose",
-        "kind": "function",
-        "file": "scripts\\temp\\diagnostico_config.py",
-        "line": 226,
-        "exported": true
-      },
-      {
-        "name": "dump_action",
-        "kind": "function",
-        "file": "scripts\\config_global\\sync_coresettings.py",
-        "line": 71,
-        "exported": true
-      }
-    ],
-    "types": [],
-    "enums": []
-  },
-  "publicAPI": [
-    {
-      "name": "activate_account",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\invites.py",
-      "line": 272,
-      "exported": true
     },
-    {
-      "name": "AdminStaffRequiredMiddleware",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\core\\middleware.py",
-      "line": 8,
-      "exported": true
+    "tests": {
+      "path": "tests",
+      "description": "Testes automatizados",
+      "structure": ["app/ui/*", "modules/*"]
     },
-    {
-      "name": "AIConfigView",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\legacy_views.py",
-      "line": 240,
-      "exported": true
+    "docs": {
+      "path": "docs",
+      "description": "Documentação pública (MkDocs)"
     },
-    {
-      "name": "AMTuple",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\types.py",
-      "line": 107,
-      "exported": true
+    "docs_dev": {
+      "path": "docs_dev",
+      "description": "Documentação de desenvolvimento",
+      "children": ["diagramas/", "planejamento/"]
     },
-    {
-      "name": "AnaliseAvaliacao",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\types.py",
-      "line": 163,
-      "exported": true
+    "docker": {
+      "path": "docker",
+      "description": "Configurações Docker",
+      "children": ["Dockerfile", "compose/"]
     },
-    {
-      "name": "AnaliseAvaliacaoDatasource",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\datasource\\analise_avaliacao_datasource.py",
-      "line": 30,
-      "exported": true
-    },
-    {
-      "name": "AnaliseAvaliacaoError",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\erros.py",
-      "line": 88,
-      "exported": true
-    },
-    {
-      "name": "AnaliseAvaliacaoParameters",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\parameters.py",
-      "line": 280,
-      "exported": true
-    },
-    {
-      "name": "AnaliseAvaliacaoUsecase",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\domain\\usecase\\analise_avaliacao_usecase.py",
-      "line": 18,
-      "exported": true
-    },
-    {
-      "name": "AnaliseConteudoLangchainDatasource",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\datasource\\analise_conteudo_langchain_datasource.py",
-      "line": 13,
-      "exported": true
-    },
-    {
-      "name": "AnaliseConteudoUseCase",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\domain\\usecase\\analise_conteudo_usecase.py",
-      "line": 11,
-      "exported": true
-    },
-    {
-      "name": "AnaliseMensageDatasource",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\datasource\\analise_mensage_datasource.py",
-      "line": 19,
-      "exported": true
-    },
-    {
-      "name": "AnaliseMensageError",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\erros.py",
-      "line": 80,
-      "exported": true
-    },
-    {
-      "name": "AnaliseMensageParameters",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\parameters.py",
-      "line": 251,
-      "exported": true
-    },
-    {
-      "name": "AnaliseMensageUseCase",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\domain\\usecase\\analise_mensage_usecase.py",
-      "line": 13,
-      "exported": true
-    },
-    {
-      "name": "AnalisePreviaLangchainDatasource",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain\\analise_previa_langchain_datasource.py",
-      "line": 27,
-      "exported": true
-    },
-    {
-      "name": "AnalisePreviaMensagem",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\interface\\analise_previa_mensagem.py",
-      "line": 16,
-      "exported": true
-    },
-    {
-      "name": "AnalisePreviaMensagemLangchain",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain\\analise_previa_mensagem_langchain.py",
-      "line": 17,
-      "exported": true
-    },
-    {
-      "name": "AnalisePreviaMensagemParameters",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\parameters.py",
-      "line": 170,
-      "exported": true
-    },
-    {
-      "name": "AnalisePreviaMensagemUsecase",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\usecase\\analise_previa_mensagem_usecase.py",
-      "line": 16,
-      "exported": true
-    },
-    {
-      "name": "APMTuple",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils\\types.py",
-      "line": 46,
-      "exported": true
-    },
-    {
-      "name": "append_text",
-      "kind": "function",
-      "file": "scripts\\automacao\\new_feature_script.py",
-      "line": 61,
-      "exported": true
-    },
-    {
-      "name": "AppInstance",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\models.py",
-      "line": 432,
-      "exported": true
-    },
-    {
-      "name": "AppInstanceAdmin",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\admin.py",
-      "line": 186,
-      "exported": true
-    },
-    {
-      "name": "Atendente",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\models.py",
-      "line": 210,
-      "exported": true
-    },
-    {
-      "name": "atendente_created_invite_trello",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 124,
-      "exported": true
-    },
-    {
-      "name": "atendente_deleted_remove_member_trello",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 137,
-      "exported": true
-    },
-    {
-      "name": "AtendenteAdmin",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\operacional\\admin.py",
-      "line": 25,
-      "exported": true
-    },
-    {
-      "name": "Atendimento",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\models.py",
-      "line": 88,
-      "exported": true
-    },
-    {
-      "name": "atendimento_cancelado_move_to_cancelado",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 419,
-      "exported": true
-    },
-    {
-      "name": "atendimento_capture_old_atendente",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 171,
-      "exported": true
-    },
-    {
-      "name": "atendimento_capture_old_etapa",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 194,
-      "exported": true
-    },
-    {
-      "name": "atendimento_created_sync_trello",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 109,
-      "exported": true
-    },
-    {
-      "name": "atendimento_deleted_archive_card",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 504,
-      "exported": true
-    },
-    {
-      "name": "atendimento_etapa_updated_move_card",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 217,
-      "exported": true
-    },
-    {
-      "name": "atendimento_instance",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\tests\\test_models.py",
-      "line": 101,
-      "exported": true
-    },
-    {
-      "name": "atendimento_pendencia_move_to_pendencia",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 335,
-      "exported": true
-    },
-    {
-      "name": "atendimento_resolvido_move_to_resolvido",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 245,
-      "exported": true
-    },
-    {
-      "name": "atendimento_updated_assign_member_trello",
-      "kind": "function",
-      "file": "src\\smart_core_assistant_painel\\app\\trello_sync\\signals.py",
-      "line": 150,
-      "exported": true
-    },
-    {
-      "name": "AtendimentoAdmin",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\admin.py",
-      "line": 60,
-      "exported": true
-    },
-    {
-      "name": "AtendimentosConfig",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\apps.py",
-      "line": 5,
-      "exported": true
-    },
-    {
-      "name": "AttendanceOrchestrator",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\attendance_orchestrator.py",
-      "line": 34,
-      "exported": true
-    },
-    {
-      "name": "AttendanceOrchestratorInterface",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\interfaces.py",
-      "line": 126,
-      "exported": true
-    },
-    {
-      "name": "AttendanceStructureManager",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\attendance_structure_manager.py",
-      "line": 23,
-      "exported": true
-    },
-    {
-      "name": "AttendanceStructureManagerInterface",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\interfaces.py",
-      "line": 56,
-      "exported": true
-    },
-    {
-      "name": "BackofficeDashboardView",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\backoffice\\dashboard.py",
-      "line": 9,
-      "exported": true
-    },
-    {
-      "name": "BaseTenantConfigView",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\tenants\\views\\legacy_views.py",
-      "line": 116,
-      "exported": true
-    },
-    {
-      "name": "BaseTenantModelAdmin",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\tenants\\admin_mixins.py",
-      "line": 107,
-      "exported": true
-    },
-    {
-      "name": "BotRulesEngine",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\bot_rules_engine.py",
-      "line": 19,
-      "exported": true
-    },
-    {
-      "name": "BotRulesEngineInterface",
-      "kind": "class",
-      "file": "src\\smart_core_assistant_painel\\app\\ui\\atendimentos\\services\\interfaces.py",
-      "line": 96,
-      "exported": true
+    "scripts": {
+      "path": "scripts",
+      "description": "Scripts de automação",
+      "children": ["automacao/", "docker_remoto/"]
     }
-  ],
-  "dependencies": {
-    "mostImported": [
-      {
-        "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync",
-        "importedBy": 1
-      },
-      {
-        "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\ui\\usuarios",
-        "importedBy": 1
-      },
-      {
-        "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\ui\\treinamento",
-        "importedBy": 1
-      },
-      {
-        "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\ui\\core",
-        "importedBy": 1
-      }
-    ]
   },
-  "stats": {
-    "totalSymbols": 611,
-    "exportedSymbols": 567,
-    "analysisTimeMs": 1233
+  "integrations": {
+    "whatsapp": {
+      "provider": "Evolution API",
+      "app": "evolution_sync"
+    },
+    "trello": {
+      "app": "trello_sync"
+    },
+    "clickup": {
+      "status": "planned",
+      "app": "clickup_sync"
+    },
+    "notion": {
+      "status": "planned",
+      "app": "notion_sync"
+    },
+    "firebase": {
+      "service": "Remote Config",
+      "usage": "Gestão de prompts de IA"
+    }
+  },
+  "llm_providers": [
+    {"name": "OpenAI", "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]},
+    {"name": "Groq", "models": ["llama-3.1-70b", "llama-3.1-8b"]},
+    {"name": "Ollama", "models": ["local models"]}
+  ],
+  "key_patterns": {
+    "multi_tenancy": "Database per tenant with TenantDatabaseRouter",
+    "service_layer": "ServiceHub factory with FeaturesCompose",
+    "adapter_pattern": "UnifiedDataService interface for external integrations",
+    "ddd": "datasource/domain/usecase structure in modules",
+    "result_pattern": "py-return-success-or-error for error handling",
+    "signals": "Django signals for integration triggers"
+  },
+  "commands": {
+    "start": "uv run task start",
+    "celery_worker": "uv run task celery-worker",
+    "celery_beat": "uv run task celery-beat",
+    "makemigrations": "uv run task makemigrations",
+    "migrate": "uv run task migrate",
+    "lint": "uv run task lint",
+    "format": "uv run task format",
+    "type_check": "uv run task type-check",
+    "test": "uv run task test-docker"
   }
 }

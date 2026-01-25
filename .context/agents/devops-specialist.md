@@ -1,138 +1,433 @@
+# DevOps Specialist
+
+## Contexto
+
+O DevOps Specialist é responsável por infraestrutura, CI/CD, Docker, deploy e operações do Smart Core Assistant Painel.
+
 ---
-name: Devops Specialist
-description: Design and maintain CI/CD pipelines
-status: unfilled
-generated: 2026-01-15
+
+## Habilidades
+
+- Docker e Docker Compose
+- CI/CD pipelines
+- Monitoramento e logging
+- Gestão de ambientes
+- Automação de deploy
+- Troubleshooting de produção
+
 ---
 
-# Devops Specialist Agent Playbook
+## Stack de Infraestrutura
 
-## Mission
-Describe how the devops specialist agent supports the team and when to engage it.
+| Tecnologia | Uso |
+|------------|-----|
+| Docker | Containerização |
+| Docker Compose | Orquestração local |
+| PostgreSQL 14 | Banco de dados |
+| Redis | Cache e broker |
+| Celery | Workers assíncronos |
+| Nginx | Reverse proxy (prod) |
 
-## Responsibilities
-- Design and maintain CI/CD pipelines
-- Implement infrastructure as code
-- Configure monitoring and alerting systems
-- Manage container orchestration and deployments
-- Optimize cloud resources and cost efficiency
+---
 
-## Best Practices
-- Automate everything that can be automated
-- Implement infrastructure as code for reproducibility
-- Monitor system health proactively
-- Design for failure and implement proper fallbacks
-- Keep security and compliance in every deployment
+## Estrutura Docker
 
-## Key Project Resources
-- Documentation index: [docs/README.md](../docs/README.md)
-- Agent handbook: [agents/README.md](./README.md)
-- Agent knowledge base: [AGENTS.md](../../AGENTS.md)
-- Contributor guide: [CONTRIBUTING.md](../../CONTRIBUTING.md)
+```
+docker/
+├── Dockerfile                  # Imagem principal
+├── compose/
+│   ├── data-stack/            # PostgreSQL + Redis
+│   │   └── docker-compose.yml
+│   ├── app-stack/             # Django app
+│   │   └── docker-compose.yml
+│   ├── workers-stack/         # Celery workers
+│   │   └── docker-compose.yml
+│   └── test/                  # Ambiente de testes
+│       └── docker-compose.yml
+└── README.md
+```
 
-## Repository Starting Points
-- `ambiente_cliente/` — TODO: Describe the purpose of this directory.
-- `ambiente_cliente_teste/` — TODO: Describe the purpose of this directory.
-- `docker/` — TODO: Describe the purpose of this directory.
-- `docs/` — TODO: Describe the purpose of this directory.
-- `docs_dev/` — TODO: Describe the purpose of this directory.
-- `openspec/` — TODO: Describe the purpose of this directory.
-- `scripts/` — TODO: Describe the purpose of this directory.
-- `smartcore-landing/` — TODO: Describe the purpose of this directory.
-- `src/` — TODO: Describe the purpose of this directory.
-- `teste_debug/` — TODO: Describe the purpose of this directory.
-- `tests/` — TODO: Describe the purpose of this directory.
+### Dockerfile
 
-## Key Files
-**Pattern Implementations:**
-- Factory: [`TestPydanticModelFactory`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_pydantic_model_factory.py)
-- Singleton: [`TenantEvolutionInstanceAdmin`](src\smart_core_assistant_painel\app\evolution_sync\tenant_admin.py), [`EvolutionInstance`](src\smart_core_assistant_painel\app\evolution_sync\models.py), [`EvolutionInstanceAdmin`](src\smart_core_assistant_painel\app\evolution_sync\admin.py), [`TenantAppInstanceAdmin`](src\smart_core_assistant_painel\app\ui\operacional\tenant_admin.py), [`AppInstance`](src\smart_core_assistant_painel\app\ui\operacional\models.py), [`AppInstanceAdmin`](src\smart_core_assistant_painel\app\ui\operacional\admin.py)
-- Service Layer: [`TreinamentoService`](src\smart_core_assistant_painel\app\ui\treinamento\services.py), [`TenantProvisioningService`](src\smart_core_assistant_painel\app\tenants\services\provisioning.py), [`WebhookProcessingService`](src\smart_core_assistant_painel\app\trello_sync\services\webhook_processing_service.py), [`TicketSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\ticket_sync_service.py), [`MemberSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\member_sync_service.py), [`FlowSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\flow_sync_service.py), [`EvolutionWhatsAppService`](src\smart_core_assistant_painel\app\evolution_sync\services\evolution_api.py), [`TestInMemoryUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_unifield_data_services_datasource.py), [`TestTrelloUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_trello_adapter.py), [`TestClicupUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_clicup_adapter.py), [`_InMemoryUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\unifield_data_services_datasource.py), [`TrelloUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\trello_adapter.py), [`NotionUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\notion_adapter.py), [`ClicupUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\clicup_adapter.py), [`UnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain\interface\unified_data_service.py)
+```dockerfile
+# docker/Dockerfile
+FROM python:3.13-slim
 
-**Service Files:**
-- [`TreinamentoService`](src\smart_core_assistant_painel\app\ui\treinamento\services.py#L13)
-- [`TenantProvisioningService`](src\smart_core_assistant_painel\app\tenants\services\provisioning.py#L9)
-- [`WebhookProcessingService`](src\smart_core_assistant_painel\app\trello_sync\services\webhook_processing_service.py#L8)
-- [`TicketSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\ticket_sync_service.py#L34)
-- [`MemberSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\member_sync_service.py#L25)
-- [`FlowSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\flow_sync_service.py#L24)
-- [`EvolutionWhatsAppService`](src\smart_core_assistant_painel\app\evolution_sync\services\evolution_api.py#L7)
-- [`TestInMemoryUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_unifield_data_services_datasource.py#L65)
-- [`TestTrelloUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_trello_adapter.py#L16)
-- [`TestClicupUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_clicup_adapter.py#L16)
-- [`TrelloUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\trello_adapter.py#L24)
-- [`NotionUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\notion_adapter.py#L30)
-- [`ClicupUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\clicup_adapter.py#L25)
-- [`UnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain\interface\unified_data_service.py#L14)
+WORKDIR /app
 
-## Architecture Context
+# Instalar dependências do sistema
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-### Services
-Business logic and orchestration
-- **Directories**: `teste_debug`, `tests\modules\services`, `tests\modules\services\features`, `src\smart_core_assistant_painel\modules\services`, `src\smart_core_assistant_painel\modules\services\utils`, `src\smart_core_assistant_painel\modules\services\features`, `src\smart_core_assistant_painel\modules\services\config`, `src\smart_core_assistant_painel\app\ui\treinamento`, `src\smart_core_assistant_painel\app\tenants\services`, `src\smart_core_assistant_painel\app\trello_sync\services`, `src\smart_core_assistant_painel\app\evolution_sync\services`, `tests\modules\services\features\unifield_data_services\datasource`, `tests\modules\services\features\set_environ_remote\datasource`, `src\smart_core_assistant_painel\modules\services\features\unifield_data_services`, `src\smart_core_assistant_painel\app\ui\atendimentos\services`, `src\smart_core_assistant_painel\app\evolution_sync\tests\services`, `tests\modules\services\features\unifield_data_services\domain\usecase`, `tests\modules\services\features\set_environ_remote\domain\usecase`, `tests\modules\initial_loading\features\firebase_init\domain\usecase`, `tests\modules\ai_engine\features\load_mensage_data\domain\usecase`, `tests\modules\ai_engine\features\load_document_file\domain\usecase`, `tests\modules\ai_engine\features\load_document_conteudo\domain\usecase`, `tests\modules\ai_engine\features\analise_conteudo\domain\usecase`, `tests\modules\ai_engine\features\analise_previa_mensagem\domain\usecase`, `src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain`, `src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource`, `src\smart_core_assistant_painel\app\ui\atendimentos\tests\services`, `src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain\interface`, `src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain\usecase`, `src\smart_core_assistant_painel\modules\initial_loading\features\firebase_init\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_document_file\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_mensage_data\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\generate_chunks\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_document_conteudo\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\generate_embeddings\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_mensage\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_conteudo\domain\usecase`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_avaliacao\domain\usecase`
-- **Symbols**: 91 total
-- **Key exports**: [`verify_service_hub`](teste_debug\verify_service_hub.py#L23), [`TestStartServices`](tests\modules\services\test_start_services.py#L18), [`TestServiceHub`](tests\modules\services\features\test_service_hub.py#L8), [`start_services`](src\smart_core_assistant_painel\modules\services\start_services.py#L78), [`SetEnvironRemoteParameters`](src\smart_core_assistant_painel\modules\services\utils\parameters.py#L19), [`UnifieldDataServicesParameters`](src\smart_core_assistant_painel\modules\services\utils\parameters.py#L39), [`SetEnvironRemoteError`](src\smart_core_assistant_painel\modules\services\utils\erros.py#L14), [`UnifieldDataServicesError`](src\smart_core_assistant_painel\modules\services\utils\erros.py#L25), [`ServiceHub`](src\smart_core_assistant_painel\modules\services\features\service_hub.py#L19), [`FeaturesCompose`](src\smart_core_assistant_painel\modules\services\features\features_compose.py#L27), [`ConfigProvider`](src\smart_core_assistant_painel\modules\services\config\provider.py#L4), [`RuntimeConfig`](src\smart_core_assistant_painel\modules\services\config\context.py#L7), [`set_config`](src\smart_core_assistant_painel\modules\services\config\context.py#L68), [`get_config`](src\smart_core_assistant_painel\modules\services\config\context.py#L73), [`get_config_or_default`](src\smart_core_assistant_painel\modules\services\config\context.py#L88), [`TreinamentoService`](src\smart_core_assistant_painel\app\ui\treinamento\services.py#L13), [`TenantProvisioningService`](src\smart_core_assistant_painel\app\tenants\services\provisioning.py#L9), [`ConnectionTester`](src\smart_core_assistant_painel\app\tenants\services\connection_tester.py#L16), [`TenantMigrationRunner`](src\smart_core_assistant_painel\app\tenants\services\connection_tester.py#L135), [`ConfigLoader`](src\smart_core_assistant_painel\app\tenants\services\config_loader.py#L15), [`WebhookProcessingService`](src\smart_core_assistant_painel\app\trello_sync\services\webhook_processing_service.py#L8), [`TicketSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\ticket_sync_service.py#L34), [`MemberSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\member_sync_service.py#L25), [`FlowSyncService`](src\smart_core_assistant_painel\app\trello_sync\services\flow_sync_service.py#L24), [`WebhookProcessor`](src\smart_core_assistant_painel\app\evolution_sync\services\webhook.py#L27), [`set_buffer_contact`](src\smart_core_assistant_painel\app\evolution_sync\services\message_buffer.py#L15), [`get_and_clear_buffer_contact`](src\smart_core_assistant_painel\app\evolution_sync\services\message_buffer.py#L36), [`clear_scheduling_lock`](src\smart_core_assistant_painel\app\evolution_sync\services\message_buffer.py#L49), [`clear_buffer_contact`](src\smart_core_assistant_painel\app\evolution_sync\services\message_buffer.py#L57), [`sched_response_contact`](src\smart_core_assistant_painel\app\evolution_sync\services\message_buffer.py#L64), [`EvolutionWhatsAppService`](src\smart_core_assistant_painel\app\evolution_sync\services\evolution_api.py#L7), [`TestUnifieldDataServicesDatasource`](tests\modules\services\features\unifield_data_services\datasource\test_unifield_data_services_datasource.py#L23), [`TestInMemoryUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_unifield_data_services_datasource.py#L65), [`TestTrelloUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_trello_adapter.py#L16), [`TestClicupUnifiedDataService`](tests\modules\services\features\unifield_data_services\datasource\test_clicup_adapter.py#L16), [`mock_firebase_admin`](tests\modules\services\features\set_environ_remote\datasource\test_set_environ_remote_firebase_datasource.py#L19), [`mock_remote_config`](tests\modules\services\features\set_environ_remote\datasource\test_set_environ_remote_firebase_datasource.py#L24), [`TestSetEnvironRemoteFirebaseDatasource`](tests\modules\services\features\set_environ_remote\datasource\test_set_environ_remote_firebase_datasource.py#L35), [`create_orchestrator`](src\smart_core_assistant_painel\app\ui\atendimentos\services\__init__.py#L38), [`MessageAnalyzer`](src\smart_core_assistant_painel\app\ui\atendimentos\services\message_analyzer.py#L24), [`MessageAnalyzerInterface`](src\smart_core_assistant_painel\app\ui\atendimentos\services\interfaces.py#L22), [`AttendanceStructureManagerInterface`](src\smart_core_assistant_painel\app\ui\atendimentos\services\interfaces.py#L56), [`BotRulesEngineInterface`](src\smart_core_assistant_painel\app\ui\atendimentos\services\interfaces.py#L96), [`AttendanceOrchestratorInterface`](src\smart_core_assistant_painel\app\ui\atendimentos\services\interfaces.py#L126), [`BotRulesEngine`](src\smart_core_assistant_painel\app\ui\atendimentos\services\bot_rules_engine.py#L19), [`AttendanceStructureManager`](src\smart_core_assistant_painel\app\ui\atendimentos\services\attendance_structure_manager.py#L23), [`AttendanceOrchestrator`](src\smart_core_assistant_painel\app\ui\atendimentos\services\attendance_orchestrator.py#L34), [`processor`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_webhook.py#L17), [`mock_envelope`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_webhook.py#L22), [`test_process_webhook_success`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_webhook.py#L47), [`test_process_webhook_ignored_from_me`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_webhook.py#L98), [`test_process_webhook_filters_group_messages`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_webhook.py#L109), [`service`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_evolution_api.py#L12), [`test_send_request_success`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_evolution_api.py#L17), [`test_send_message_success`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_evolution_api.py#L41), [`test_send_message_failure`](src\smart_core_assistant_painel\app\evolution_sync\tests\services\test_evolution_api.py#L81), [`TestUnifieldDataServicesUseCase`](tests\modules\services\features\unifield_data_services\domain\usecase\test_unifield_data_services_usecase.py#L21), [`TestSetEnvironRemoteUseCase`](tests\modules\services\features\set_environ_remote\domain\usecase\test_set_environ_remote_usecase.py#L18), [`TestFirebaseInitUseCase`](tests\modules\initial_loading\features\firebase_init\domain\usecase\test_firebase_init_usecase.py#L18), [`TestLoadMensageDataUseCase`](tests\modules\ai_engine\features\load_mensage_data\domain\usecase\test_load_mensage_data_usecase.py#L15), [`TestLoadDocumentFileUseCase`](tests\modules\ai_engine\features\load_document_file\domain\usecase\test_load_document_file_usecase.py#L20), [`TestLoadDocumentConteudoUseCase`](tests\modules\ai_engine\features\load_document_conteudo\domain\usecase\test_load_document_conteudo_usecase.py#L20), [`TestAnaliseConteudoUseCase`](tests\modules\ai_engine\features\analise_conteudo\domain\usecase\test_analise_conteudo_usecase.py#L18), [`TestAnalisePreviaMensagemUsecase`](tests\modules\ai_engine\features\analise_previa_mensagem\domain\usecase\test_analise_previa_mensagem_usecase.py#L23), [`UnifieldDataServicesDatasource`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\unifield_data_services_datasource.py#L187), [`TrelloUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\trello_adapter.py#L24), [`NotionUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\notion_adapter.py#L30), [`ClicupUnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\datasource\clicup_adapter.py#L25), [`mock_message`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_message_analyzer.py#L20), [`TestMessageAnalyzer`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_message_analyzer.py#L56), [`TestBotRulesEngineFlag`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_bot_rules_engine_flag.py#L20), [`mock_atendimento`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_bot_rules_engine.py#L23), [`TestBotRulesEngine`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_bot_rules_engine.py#L37), [`mock_atendimento_instance`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_attendance_structure_manager.py#L24), [`TestAttendanceStructureManager`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_attendance_structure_manager.py#L38), [`mock_services`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_attendance_orchestrator.py#L19), [`orchestrator_instance`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_attendance_orchestrator.py#L29), [`TestAttendanceOrchestrator`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\services\test_attendance_orchestrator.py#L40), [`UnifiedDataService`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain\interface\unified_data_service.py#L14), [`UnifieldDataServicesUseCase`](src\smart_core_assistant_painel\modules\services\features\unifield_data_services\domain\usecase\unifield_data_services_usecase.py#L16), [`FirebaseInitUseCase`](src\smart_core_assistant_painel\modules\initial_loading\features\firebase_init\domain\usecase\firebase_init_usecase.py#L19), [`LoadDocumentFileUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\load_document_file\domain\usecase\load_document_file_usecase.py#L18), [`LoadMensageDataUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\load_mensage_data\domain\usecase\load_mensage_data_usecase.py#L21), [`GenerateChunksUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\generate_chunks\domain\usecase\generate_chunks_usecase.py#L22), [`LoadDocumentConteudoUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\load_document_conteudo\domain\usecase\load_document_conteudo_usecase.py#L18), [`AnalisePreviaMensagemUsecase`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\domain\usecase\analise_previa_mensagem_usecase.py#L16), [`GenerateEmbeddingsUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\generate_embeddings\domain\usecase\generate_embeddings_usecase.py#L11), [`AnaliseMensageUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_mensage\domain\usecase\analise_mensage_usecase.py#L13), [`AnaliseConteudoUseCase`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_conteudo\domain\usecase\analise_conteudo_usecase.py#L11), [`AnaliseAvaliacaoUsecase`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_avaliacao\domain\usecase\analise_avaliacao_usecase.py#L18)
+# Instalar uv
+RUN pip install uv
 
-### Repositories
-Data access and persistence
-- **Directories**: `teste_debug`, `scripts\temp`, `scripts\temp\database_reset`, `tests\modules\ai_engine\features\load_document_file\datasource`, `tests\modules\ai_engine\features\generate_embeddings\datasource`, `tests\modules\ai_engine\features\analise_conteudo\datasource`, `tests\modules\ai_engine\features\analise_previa_mensagem\datasource`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_mensage_data`, `tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic`, `tests\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_document_file\datasource`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource`, `src\smart_core_assistant_painel\modules\ai_engine\features\generate_embeddings\datasource`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_mensage\datasource`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_conteudo\datasource`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_avaliacao\datasource`, `src\smart_core_assistant_painel\app\ui\usuarios\management\commands`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain`
-- **Symbols**: 25 total
-- **Key exports**: [`test_evolution_metadata_optimization`](teste_debug\verify_evolution_metadata.py#L36), [`print_header`](scripts\temp\loaddata_remoto.py#L20), [`load_env_file`](scripts\temp\loaddata_remoto.py#L28), [`setup_environment`](scripts\temp\loaddata_remoto.py#L48), [`test_connectivity`](scripts\temp\loaddata_remoto.py#L83), [`build_fixture_paths`](scripts\temp\loaddata_remoto.py#L113), [`run_loaddata`](scripts\temp\loaddata_remoto.py#L124), [`show_counts`](scripts\temp\loaddata_remoto.py#L185), [`main`](scripts\temp\loaddata_remoto.py#L225), [`run_command`](scripts\temp\database_reset\reset_database.py#L18), [`main`](scripts\temp\database_reset\reset_database.py#L38), [`TestLoadDocumentFileDatasource`](tests\modules\ai_engine\features\load_document_file\datasource\test_load_document_file_datasource.py#L19), [`TestGenerateEmbeddingsLangchainDatasource`](tests\modules\ai_engine\features\generate_embeddings\datasource\test_generate_embeddings_langchain_datasource.py#L17), [`TestAnaliseConteudoLangchainDatasource`](tests\modules\ai_engine\features\analise_conteudo\datasource\test_analise_conteudo_langchain_datasource.py#L16), [`TestAnalisePreviaMensagemLangchainDatasource`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_analise_previa_mensagem_langchain_datasource.py#L18), [`TestAnalisePreviaMensagemLangchain`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_analise_previa_mensagem_langchain.py#L12), [`TestAnalisePreviaLangchainDatasource`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain\test_analise_previa_langchain_datasource.py#L20), [`LoadDocumentFileDatasource`](src\smart_core_assistant_painel\modules\ai_engine\features\load_document_file\datasource\load_document_file_datasource.py#L17), [`GenerateEmbeddingsLangchainDatasource`](src\smart_core_assistant_painel\modules\ai_engine\features\generate_embeddings\datasource\generate_embeddings_langchain_datasource.py#L18), [`AnaliseMensageDatasource`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_mensage\datasource\analise_mensage_datasource.py#L19), [`AnaliseConteudoLangchainDatasource`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_conteudo\datasource\analise_conteudo_langchain_datasource.py#L13), [`AnaliseAvaliacaoDatasource`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_avaliacao\datasource\analise_avaliacao_datasource.py#L30), [`Command`](src\smart_core_assistant_painel\app\ui\usuarios\management\commands\seed_dev_data.py#L24), [`AnalisePreviaMensagemLangchain`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain\analise_previa_mensagem_langchain.py#L17), [`AnalisePreviaLangchainDatasource`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain\analise_previa_langchain_datasource.py#L27)
+# Copiar arquivos de dependência
+COPY pyproject.toml uv.lock ./
 
-### Config
-Configuration and constants
-- **Directories**: `scripts\temp`, `scripts\config_global`, `src\smart_core_assistant_painel\app\settings_manager`, `src\smart_core_assistant_painel\app\ui\core`, `src\smart_core_assistant_painel\app\tenants\migrations`, `src\smart_core_assistant_painel\app\settings_manager\migrations`, `src\smart_core_assistant_painel\app\settings_manager\management`, `src\smart_core_assistant_painel\app\settings_manager\management\commands`
-- **Symbols**: 25 total
-- **Key exports**: [`load_remote_config`](scripts\temp\extrair_prompts_remote_config.py#L64), [`extract_prompts`](scripts\temp\extrair_prompts_remote_config.py#L79), [`categorize_prompts`](scripts\temp\extrair_prompts_remote_config.py#L91), [`main`](scripts\temp\extrair_prompts_remote_config.py#L143), [`get_core_settings`](scripts\temp\diagnostico_config.py#L201), [`get_runtime_config_fields`](scripts\temp\diagnostico_config.py#L216), [`diagnose`](scripts\temp\diagnostico_config.py#L226), [`print_diagnosis`](scripts\temp\diagnostico_config.py#L282), [`fix_missing_core_settings`](scripts\temp\diagnostico_config.py#L353), [`main`](scripts\temp\diagnostico_config.py#L394), [`load_env`](scripts\config_global\sync_coresettings.py#L27), [`escape_sql`](scripts\config_global\sync_coresettings.py#L43), [`run_ssh_psql`](scripts\config_global\sync_coresettings.py#L50), [`dump_action`](scripts\config_global\sync_coresettings.py#L71), [`restore_action`](scripts\config_global\sync_coresettings.py#L106), [`main`](scripts\config_global\sync_coresettings.py#L157), [`SettingsManagerConfig`](src\smart_core_assistant_painel\app\settings_manager\apps.py#L4), [`CoreSettingsAdmin`](src\smart_core_assistant_painel\app\settings_manager\admin.py#L6), [`Migration`](src\smart_core_assistant_painel\app\tenants\migrations\0002_tenant_onboarding_step_tenantconfig_brand_name_and_more.py#L6), [`Migration`](src\smart_core_assistant_painel\app\settings_manager\migrations\0001_initial.py#L6), [`Command`](src\smart_core_assistant_painel\app\settings_manager\management\commands\load_core_settings.py#L17), [`Command`](src\smart_core_assistant_painel\app\settings_manager\management\commands\import_core_settings.py#L15), [`Command`](src\smart_core_assistant_painel\app\settings_manager\management\commands\export_core_settings.py#L13)
+# Instalar dependências
+RUN uv sync --frozen --no-dev
 
-### Models
-Data structures and domain objects
-- **Directories**: `src\smart_core_assistant_painel\app\tenants`, `src\smart_core_assistant_painel\app\settings_manager`, `src\smart_core_assistant_painel\app\trello_sync`, `src\smart_core_assistant_painel\app\evolution_sync`, `src\smart_core_assistant_painel\app\ui\usuarios`, `src\smart_core_assistant_painel\app\ui\treinamento`, `src\smart_core_assistant_painel\app\ui\operacional`, `src\smart_core_assistant_painel\app\ui\clientes`, `src\smart_core_assistant_painel\app\ui\atendimentos`, `src\smart_core_assistant_painel\app\trello_sync\tests`, `src\smart_core_assistant_painel\app\evolution_sync\domain`, `tests\modules\initial_loading\features\firebase_init\domain`, `tests\modules\ai_engine\features\load_document_file\domain`, `tests\modules\ai_engine\features\load_document_conteudo\domain`, `tests\modules\ai_engine\features\analise_conteudo\domain`, `tests\modules\ai_engine\features\analise_previa_mensagem\domain`, `src\smart_core_assistant_painel\app\ui\treinamento\tests`, `src\smart_core_assistant_painel\app\ui\clientes\tests`, `src\smart_core_assistant_painel\app\ui\atendimentos\tests`, `src\smart_core_assistant_painel\app\evolution_sync\tests\domain`, `tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic`, `src\smart_core_assistant_painel\modules\initial_loading\features\firebase_init\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_document_file\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_mensage_data\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\generate_chunks\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_document_conteudo\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\generate_embeddings\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_mensage\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_conteudo\domain`, `src\smart_core_assistant_painel\modules\ai_engine\features\load_mensage_data\domain\model`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\domain\interface`, `src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain`
-- **Symbols**: 97 total
-- **Key exports**: [`Tenant`](src\smart_core_assistant_painel\app\tenants\models.py#L14), [`TenantDatabase`](src\smart_core_assistant_painel\app\tenants\models.py#L47), [`TenantEvolution`](src\smart_core_assistant_painel\app\tenants\models.py#L85), [`TenantTrello`](src\smart_core_assistant_painel\app\tenants\models.py#L111), [`TenantConfig`](src\smart_core_assistant_painel\app\tenants\models.py#L161), [`Plan`](src\smart_core_assistant_painel\app\tenants\models.py#L311), [`Subscription`](src\smart_core_assistant_painel\app\tenants\models.py#L336), [`PaymentRecord`](src\smart_core_assistant_painel\app\tenants\models.py#L405), [`TenantInvite`](src\smart_core_assistant_painel\app\tenants\models.py#L440), [`TenantUser`](src\smart_core_assistant_painel\app\tenants\models.py#L493), [`CoreSettings`](src\smart_core_assistant_painel\app\settings_manager\models.py#L8), [`TrelloBoard`](src\smart_core_assistant_painel\app\trello_sync\models.py#L7), [`TrelloList`](src\smart_core_assistant_painel\app\trello_sync\models.py#L47), [`TrelloMember`](src\smart_core_assistant_painel\app\trello_sync\models.py#L84), [`TrelloCard`](src\smart_core_assistant_painel\app\trello_sync\models.py#L125), [`TrelloWebhookEvent`](src\smart_core_assistant_painel\app\trello_sync\models.py#L168), [`EvolutionInstance`](src\smart_core_assistant_painel\app\evolution_sync\models.py#L7), [`EvolutionContact`](src\smart_core_assistant_painel\app\evolution_sync\models.py#L57), [`WhiteList`](src\smart_core_assistant_painel\app\evolution_sync\models.py#L123), [`validate_identificador`](src\smart_core_assistant_painel\app\ui\treinamento\models.py#L17), [`Treinamento`](src\smart_core_assistant_painel\app\ui\treinamento\models.py#L35), [`Documento`](src\smart_core_assistant_painel\app\ui\treinamento\models.py#L106), [`QueryCompose`](src\smart_core_assistant_painel\app\ui\treinamento\models.py#L246), [`validate_telefone`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L20), [`validate_api_key`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L33), [`validate_telefone_instancia`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L43), [`Departamento`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L54), [`Atendente`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L210), [`AppInstance`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L432), [`TipoEtapa`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L486), [`FluxoAtendimento`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L495), [`EtapaFluxo`](src\smart_core_assistant_painel\app\ui\operacional\models.py#L559), [`validate_telefone`](src\smart_core_assistant_painel\app\ui\clientes\models.py#L9), [`validate_cnpj`](src\smart_core_assistant_painel\app\ui\clientes\models.py#L22), [`validate_cpf`](src\smart_core_assistant_painel\app\ui\clientes\models.py#L37), [`validate_cep`](src\smart_core_assistant_painel\app\ui\clientes\models.py#L52), [`Contato`](src\smart_core_assistant_painel\app\ui\clientes\models.py#L65), [`Cliente`](src\smart_core_assistant_painel\app\ui\clientes\models.py#L151), [`StatusAtendimento`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L24), [`TipoMensagem`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L39), [`TipoRemetente`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L82), [`Atendimento`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L88), [`Mensagem`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L996), [`MovimentoFluxo`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1122), [`inicializar_atendimento_whatsapp`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1253), [`buscar_atendimento_ativo`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1333), [`processar_mensagem_whatsapp`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1363), [`buscar_atendimento_ativo_por_contato`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1419), [`inicializar_atendimento_por_contato`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1439), [`processar_mensagem_por_contato`](src\smart_core_assistant_painel\app\ui\atendimentos\models.py#L1571), [`ModelsStrTests`](src\smart_core_assistant_painel\app\trello_sync\tests\test_models.py#L6), [`EvolutionMessageData`](src\smart_core_assistant_painel\app\evolution_sync\domain\schemas.py#L6), [`EvolutionContactData`](src\smart_core_assistant_painel\app\evolution_sync\domain\schemas.py#L85), [`EvolutionProfileData`](src\smart_core_assistant_painel\app\evolution_sync\domain\schemas.py#L185), [`EvolutionWebhookEnvelope`](src\smart_core_assistant_painel\app\evolution_sync\domain\schemas.py#L216), [`TestTreinamentoTreinamentos`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_models.py#L20), [`TestTreinamentoValidators`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_models.py#L48), [`TestTreinamentoTreinamentosAdvanced`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_models.py#L70), [`TestQueryCompose`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_models.py#L97), [`TestClientesContato`](src\smart_core_assistant_painel\app\ui\clientes\tests\test_clientes_models.py#L8), [`TestClientesCliente`](src\smart_core_assistant_painel\app\ui\clientes\tests\test_clientes_models.py#L34), [`mock_departamento`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L30), [`mock_fluxo`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L39), [`mock_etapa_fila`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L50), [`mock_etapa_atendimento`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L65), [`mock_contato`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L80), [`mock_atendente`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L90), [`atendimento_instance`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L101), [`TestAtendimentoModel`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L109), [`TestMensagemModel`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L365), [`TestAtendimentoFunctions`](src\smart_core_assistant_painel\app\ui\atendimentos\tests\test_models.py#L410), [`test_evolution_message_data_from_dict_conversation`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L9), [`test_evolution_message_data_from_dict_extended_text`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L29), [`test_evolution_message_data_to_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L43), [`test_evolution_contact_data_from_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L59), [`test_evolution_contact_data_from_dict_lid`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L73), [`test_evolution_contact_data_to_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L86), [`test_evolution_profile_data_from_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L99), [`test_evolution_profile_data_to_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L107), [`test_evolution_webhook_envelope_from_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L115), [`test_evolution_webhook_envelope_from_dict_single`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L145), [`test_evolution_webhook_envelope_from_dict_single_with_list_data`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L160), [`test_evolution_webhook_envelope_from_dict_batch`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L182), [`test_evolution_webhook_envelope_to_dict`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L204), [`test_evolution_contact_data_is_group`](src\smart_core_assistant_painel\app\evolution_sync\tests\domain\test_schemas.py#L221), [`test_pydantic_model_docstring_generated_from_jsons`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_pydantic_model_factory_docs.py#L9), [`test_pydantic_model_schema_unchanged_no_confidence`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_pydantic_model_factory_docs.py#L77), [`TestPydanticModelFactory`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_pydantic_model_factory.py#L14), [`TestCreateDynamicPydanticModel`](tests\modules\ai_engine\features\analise_previa_mensagem\datasource\langchain_pydantic\test_pydantic_model_factory.py#L208), [`MessageData`](src\smart_core_assistant_painel\modules\ai_engine\features\load_mensage_data\domain\model\message_data.py#L15), [`AnalisePreviaMensagem`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\domain\interface\analise_previa_mensagem.py#L16), [`build_analise_previa_model`](src\smart_core_assistant_painel\modules\ai_engine\features\analise_previa_mensagem\datasource\analise_previa_langchain\pydantic_model_builder.py#L228)
+# Copiar código
+COPY src/ ./src/
 
-### Controllers
-Request handling and routing
-- **Directories**: `src\smart_core_assistant_painel\app\tenants`, `src\smart_core_assistant_painel\app\trello_sync`, `src\smart_core_assistant_painel\app\ui\operacional`, `src\smart_core_assistant_painel\app\trello_sync\tests`
-- **Symbols**: 9 total
-- **Key exports**: [`TenantDatabaseRouter`](src\smart_core_assistant_painel\app\tenants\db_router.py#L31), [`tenant_required`](src\smart_core_assistant_painel\app\tenants\api_mixins.py#L10), [`TenantQuerysetMixin`](src\smart_core_assistant_painel\app\tenants\api_mixins.py#L22), [`TenantCreateMixin`](src\smart_core_assistant_painel\app\tenants\api_mixins.py#L54), [`TenantForeignKeyValidator`](src\smart_core_assistant_painel\app\tenants\api_mixins.py#L65), [`webhook`](src\smart_core_assistant_painel\app\trello_sync\views_api.py#L22), [`departamentos_public`](src\smart_core_assistant_painel\app\ui\operacional\views_api.py#L25), [`fluxo_departamento_public`](src\smart_core_assistant_painel\app\ui\operacional\views_api.py#L34), [`WebhookApiTests`](src\smart_core_assistant_painel\app\trello_sync\tests\test_api_public.py#L8)
+# Variáveis de ambiente
+ENV PYTHONPATH=/app/src
+ENV DJANGO_SETTINGS_MODULE=app.ui.core.settings
 
-### Components
-UI components and views
-- **Directories**: `src\smart_core_assistant_painel\app\settings_manager`, `src\smart_core_assistant_painel\app\evolution_sync`, `src\smart_core_assistant_painel\app\ui\usuarios`, `src\smart_core_assistant_painel\app\ui\treinamento`, `src\smart_core_assistant_painel\app\ui\operacional`, `src\smart_core_assistant_painel\app\ui\clientes`, `src\smart_core_assistant_painel\app\ui\core`, `src\smart_core_assistant_painel\app\tenants\views`, `src\smart_core_assistant_painel\app\evolution_sync\tests`, `src\smart_core_assistant_painel\app\ui\usuarios\tests`, `src\smart_core_assistant_painel\app\ui\treinamento\tests`, `src\smart_core_assistant_painel\app\ui\operacional\tests`, `src\smart_core_assistant_painel\app\ui\clientes\tests`, `src\smart_core_assistant_painel\app\tenants\views\backoffice`
-- **Symbols**: 63 total
-- **Key exports**: [`webhook`](src\smart_core_assistant_painel\app\evolution_sync\views.py#L22), [`cadastro`](src\smart_core_assistant_painel\app\ui\usuarios\views.py#L27), [`login`](src\smart_core_assistant_painel\app\ui\usuarios\views.py#L76), [`logout_view`](src\smart_core_assistant_painel\app\ui\usuarios\views.py#L134), [`permissoes`](src\smart_core_assistant_painel\app\ui\usuarios\views.py#L144), [`tornar_gerente`](src\smart_core_assistant_painel\app\ui\usuarios\views.py#L153), [`dashboard_gerente`](src\smart_core_assistant_painel\app\ui\usuarios\views.py#L168), [`treinar_ia`](src\smart_core_assistant_painel\app\ui\treinamento\views.py#L69), [`pre_processamento`](src\smart_core_assistant_painel\app\ui\treinamento\views.py#L197), [`verificar_treinamentos_vetorizados`](src\smart_core_assistant_painel\app\ui\treinamento\views.py#L315), [`verificar_query_compose`](src\smart_core_assistant_painel\app\ui\treinamento\views.py#L385), [`cadastrar_query_compose`](src\smart_core_assistant_painel\app\ui\treinamento\views.py#L452), [`health_check`](src\smart_core_assistant_painel\app\ui\core\views.py#L85), [`LandingPageView`](src\smart_core_assistant_painel\app\ui\core\views.py#L101), [`dashboard`](src\smart_core_assistant_painel\app\ui\core\views.py#L115), [`clickup_callback`](src\smart_core_assistant_painel\app\ui\core\views.py#L129), [`custom_page_not_found`](src\smart_core_assistant_painel\app\ui\core\views.py#L169), [`custom_permission_denied`](src\smart_core_assistant_painel\app\ui\core\views.py#L176), [`custom_server_error`](src\smart_core_assistant_painel\app\ui\core\views.py#L183), [`OnboardingSessionMixin`](src\smart_core_assistant_painel\app\tenants\views\onboarding.py#L13), [`Step1TenantView`](src\smart_core_assistant_painel\app\tenants\views\onboarding.py#L29), [`Step2PaymentView`](src\smart_core_assistant_painel\app\tenants\views\onboarding.py#L46), [`Step3ConfigView`](src\smart_core_assistant_painel\app\tenants\views\onboarding.py#L71), [`Step4ProvisionView`](src\smart_core_assistant_painel\app\tenants\views\onboarding.py#L90), [`CheckSlugView`](src\smart_core_assistant_painel\app\tenants\views\onboarding.py#L118), [`TenantSignupView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L46), [`DashboardView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L94), [`BaseTenantConfigView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L116), [`EvolutionConfigView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L200), [`TrelloConfigView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L211), [`AIConfigView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L240), [`DatabaseConfigView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L252), [`TestConnectionView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L274), [`RunMigrationsView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L324), [`ConfigDebugView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L354), [`RegisterTrelloWebhookView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L535), [`DeleteTrelloWebhookView`](src\smart_core_assistant_painel\app\tenants\views\legacy_views.py#L589), [`list_users`](src\smart_core_assistant_painel\app\tenants\views\invites.py#L17), [`invite_user`](src\smart_core_assistant_painel\app\tenants\views\invites.py#L67), [`resend_invite`](src\smart_core_assistant_painel\app\tenants\views\invites.py#L161), [`activate_account`](src\smart_core_assistant_painel\app\tenants\views\invites.py#L272), [`edit_permissions`](src\smart_core_assistant_painel\app\tenants\views\invites.py#L351), [`factory`](src\smart_core_assistant_painel\app\evolution_sync\tests\test_views.py#L11), [`test_webhook_view_success`](src\smart_core_assistant_painel\app\evolution_sync\tests\test_views.py#L19), [`test_webhook_view_invalid_method`](src\smart_core_assistant_painel\app\evolution_sync\tests\test_views.py#L44), [`test_webhook_view_invalid_json`](src\smart_core_assistant_painel\app\evolution_sync\tests\test_views.py#L52), [`TestUsuariosAppViews`](src\smart_core_assistant_painel\app\ui\usuarios\tests\test_usuarios_views.py#L9), [`TestTreinamentoViews`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_views.py#L16), [`TestPreProcessamentoViews`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_views.py#L257), [`TestVerificarTreinamentosViews`](src\smart_core_assistant_painel\app\ui\treinamento\tests\test_treinamento_views.py#L497), [`TestOperacionalAppViews`](src\smart_core_assistant_painel\app\ui\operacional\tests\test_operacional_views.py#L6), [`TestClientesAppViews`](src\smart_core_assistant_painel\app\ui\clientes\tests\test_clientes_views.py#L6), [`RegisterPaymentView`](src\smart_core_assistant_painel\app\tenants\views\backoffice\register_payment.py#L10), [`BackofficeDashboardView`](src\smart_core_assistant_painel\app\tenants\views\backoffice\dashboard.py#L9)
+# Porta
+EXPOSE 8000
 
-### Utils
-Shared utilities and helpers
-- **Directories**: `src\smart_core_assistant_painel\modules\initial_loading\utils`, `src\smart_core_assistant_painel\modules\ai_engine\utils`, `src\smart_core_assistant_painel\app\tenants\utils`
-- **Symbols**: 27 total
-- **Key exports**: [`FirebaseInitParameters`](src\smart_core_assistant_painel\modules\initial_loading\utils\parameters.py#L18), [`FirebaseInitError`](src\smart_core_assistant_painel\modules\initial_loading\utils\erros.py#L13), [`APMTuple`](src\smart_core_assistant_painel\modules\ai_engine\utils\types.py#L46), [`AMTuple`](src\smart_core_assistant_painel\modules\ai_engine\utils\types.py#L107), [`RespostaBot`](src\smart_core_assistant_painel\modules\ai_engine\utils\types.py#L123), [`AnaliseAvaliacao`](src\smart_core_assistant_painel\modules\ai_engine\utils\types.py#L163), [`DataMensageParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L25), [`LoadDocumentFileParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L42), [`LoadDocumentConteudoParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L65), [`LlmParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L87), [`AnalisePreviaMensagemParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L170), [`GenerateEmbeddingsParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L194), [`SearchSimilarEmbeddingsParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L211), [`GenerateChunksParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L232), [`AnaliseMensageParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L251), [`AnaliseAvaliacaoParameters`](src\smart_core_assistant_painel\modules\ai_engine\utils\parameters.py#L280), [`HtmlStrError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L14), [`LlmError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L25), [`DocumentError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L36), [`DataMessageError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L47), [`EmbeddingError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L58), [`GenerateChunksError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L69), [`AnaliseMensageError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L80), [`AnaliseAvaliacaoError`](src\smart_core_assistant_painel\modules\ai_engine\utils\erros.py#L88), [`get_fernet`](src\smart_core_assistant_painel\app\tenants\utils\encryption.py#L9), [`encrypt_value`](src\smart_core_assistant_painel\app\tenants\utils\encryption.py#L17), [`decrypt_value`](src\smart_core_assistant_painel\app\tenants\utils\encryption.py#L29)
-## Key Symbols for This Agent
-- [`TestStartServices`](tests\modules\services\test_start_services.py#L18) (class)
-- [`TestServiceHub`](tests\modules\services\features\test_service_hub.py#L8) (class)
-- [`TestFeaturesCompose`](tests\modules\ai_engine\features\test_features_compose.py#L17) (class)
-- [`TenantModule`](src\smart_core_assistant_painel\app\tenants\permissions.py#L4) (class)
-- [`TenantRoleType`](src\smart_core_assistant_painel\app\tenants\permissions.py#L22) (class)
+# Comando padrão
+CMD ["uv", "run", "gunicorn", "app.ui.core.wsgi:application", "--bind", "0.0.0.0:8000"]
+```
 
-## Documentation Touchpoints
-- [Documentation Index](../docs/README.md)
-- [Project Overview](../docs/project-overview.md)
-- [Architecture Notes](../docs/architecture.md)
-- [Development Workflow](../docs/development-workflow.md)
-- [Testing Strategy](../docs/testing-strategy.md)
-- [Glossary & Domain Concepts](../docs/glossary.md)
-- [Data Flow & Integrations](../docs/data-flow.md)
-- [Security & Compliance Notes](../docs/security.md)
-- [Tooling & Productivity Guide](../docs/tooling.md)
+### Docker Compose - Data Stack
 
-## Collaboration Checklist
+```yaml
+# docker/compose/data-stack/docker-compose.yml
+version: '3.8'
 
-1. Confirm assumptions with issue reporters or maintainers.
-2. Review open pull requests affecting this area.
-3. Update the relevant doc section listed above.
-4. Capture learnings back in [docs/README.md](../docs/README.md).
+services:
+  postgres:
+    image: pgvector/pgvector:pg14
+    environment:
+      POSTGRES_USER: smartcore
+      POSTGRES_PASSWORD: smartcore
+      POSTGRES_DB: smartcore
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartcore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-## Hand-off Notes
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-Summarize outcomes, remaining risks, and suggested follow-up actions after the agent completes its work.
+volumes:
+  postgres_data:
+  redis_data:
+```
+
+### Docker Compose - App Stack
+
+```yaml
+# docker/compose/app-stack/docker-compose.yml
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ../../..
+      dockerfile: docker/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://smartcore:smartcore@postgres:5432/smartcore
+      - REDIS_URL=redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../../../src:/app/src:ro
+    command: uv run python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
+
+  celery-worker:
+    build:
+      context: ../../..
+      dockerfile: docker/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://smartcore:smartcore@postgres:5432/smartcore
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - web
+    command: uv run celery -A app.ui.core worker -l info
+
+  celery-beat:
+    build:
+      context: ../../..
+      dockerfile: docker/Dockerfile
+    environment:
+      - DATABASE_URL=postgres://smartcore:smartcore@postgres:5432/smartcore
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - web
+    command: uv run celery -A app.ui.core beat -l info
+```
+
+---
+
+## Comandos de Operação
+
+### Desenvolvimento
+
+```bash
+# Iniciar infraestrutura
+docker compose -f docker/compose/data-stack/docker-compose.yml up -d
+
+# Parar infraestrutura
+docker compose -f docker/compose/data-stack/docker-compose.yml down
+
+# Logs
+docker compose -f docker/compose/data-stack/docker-compose.yml logs -f postgres
+```
+
+### Testes
+
+```bash
+# Executar testes em Docker
+uv run task test-docker
+
+# Build da imagem de teste
+docker build -t smartcore-test -f docker/Dockerfile .
+```
+
+### Produção
+
+```bash
+# Build de produção
+docker build -t smartcore:latest -f docker/Dockerfile .
+
+# Deploy com compose
+docker compose -f docker/compose/production/docker-compose.yml up -d
+
+# Rolling update
+docker compose -f docker/compose/production/docker-compose.yml up -d --no-deps web
+```
+
+---
+
+## CI/CD Pipeline
+
+### GitHub Actions Example
+
+```yaml
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v1
+      - run: uv sync
+      - run: uv run task lint
+      - run: uv run task type-check
+
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg14
+        env:
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v1
+      - run: uv sync
+      - run: uv run task test-all
+        env:
+          DATABASE_URL: postgres://postgres:test@localhost:5432/test
+          REDIS_URL: redis://localhost:6379/0
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        run: docker build -t smartcore:${{ github.sha }} .
+```
+
+---
+
+## Monitoramento
+
+### Logging
+
+```python
+# settings.py
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            'class': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+        'file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/app.log',
+            'maxBytes': 10485760,  # 10MB
+            'backupCount': 5,
+            'formatter': 'json',
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
+    },
+}
+```
+
+### Health Checks
+
+```python
+# app/ui/core/views.py
+
+from django.http import JsonResponse
+from django.db import connection
+from django.core.cache import cache
+
+
+def health_check(request):
+    """Endpoint de health check."""
+    checks = {
+        'database': check_database(),
+        'redis': check_redis(),
+    }
+
+    status = 200 if all(checks.values()) else 503
+    return JsonResponse(checks, status=status)
+
+
+def check_database():
+    try:
+        connection.ensure_connection()
+        return True
+    except Exception:
+        return False
+
+
+def check_redis():
+    try:
+        cache.set('health_check', 'ok', 1)
+        return cache.get('health_check') == 'ok'
+    except Exception:
+        return False
+```
+
+---
+
+## Backup e Recuperação
+
+### Backup PostgreSQL
+
+```bash
+# Backup
+pg_dump -h host -U user -d database | gzip > backup_$(date +%Y%m%d).sql.gz
+
+# Restore
+gunzip -c backup.sql.gz | psql -h host -U user -d database
+
+# Backup automatizado (cron)
+0 2 * * * /scripts/backup.sh >> /var/log/backup.log 2>&1
+```
+
+### Script de Backup
+
+```bash
+#!/bin/bash
+# scripts/backup.sh
+
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR=/backups
+
+# Backup PostgreSQL
+pg_dump -h $DB_HOST -U $DB_USER -d $DB_NAME | gzip > $BACKUP_DIR/db_$DATE.sql.gz
+
+# Manter apenas últimos 7 dias
+find $BACKUP_DIR -name "db_*.sql.gz" -mtime +7 -delete
+
+# Upload para S3 (opcional)
+# aws s3 cp $BACKUP_DIR/db_$DATE.sql.gz s3://my-bucket/backups/
+```
+
+---
+
+## Troubleshooting
+
+### Logs
+
+```bash
+# Logs do container
+docker logs -f container_name
+
+# Logs do Django
+tail -f logs/django.log
+
+# Logs do Celery
+tail -f logs/celery.log
+```
+
+### Debug
+
+```bash
+# Shell no container
+docker exec -it container_name bash
+
+# Django shell
+docker exec -it web python manage.py shell
+
+# Verificar connections
+docker exec -it postgres psql -U smartcore -c "SELECT * FROM pg_stat_activity;"
+```
+
+---
+
+## Restrições
+
+- **NUNCA** expor portas de banco diretamente em produção
+- **SEMPRE** usar secrets management para credenciais
+- **SEMPRE** manter backups verificados
+- **NUNCA** fazer deploy sem testes passando
+- **SEMPRE** monitorar recursos (CPU, memória, disco)
+- **NUNCA** ignorar alertas de monitoramento

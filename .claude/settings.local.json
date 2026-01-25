@@ -42,7 +42,17 @@
       "Bash(git clone:*)",
       "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
       "Bash(~/.local/bin/zsh -c 'echo \"\"=== Testando Zsh ===\"\" && zsh --version && echo \"\"\"\" && echo \"\"=== Verificando plugins ===\"\" && [ -n \"\"$ZSH_AUTOSUGGEST_STRATEGY\"\" ] && echo \"\"✓ zsh-autosuggestions carregado\"\" || echo \"\"✗ zsh-autosuggestions não carregado\"\"')",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "mcp__ai-context__context",
+      "Bash(where npx:*)",
+      "Bash(npx @ai-coders/context@latest mcp)",
+      "Bash(Select-Object -First 50)",
+      "Bash(node --version:*)",
+      "Bash(npx:*)",
+      "Bash(npm view:*)",
+      "Bash(grep -l \"status: empty\\\\|TODO\\\\|PLACEHOLDER\" .context/docs/*.md)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
     ]
   }
 }

@@ -1,57 +1,27 @@
-# Documentation Index
+# Documentação do Projeto - Smart Core Assistant Painel
 
-Welcome to the repository knowledge base. Start with the project overview, then dive into specific guides as needed.
+Este diretório contém a documentação técnica e operacional do projeto Smart Core Assistant Painel.
 
-## Core Guides
-- [Project Overview](./project-overview.md)
-- [Architecture Notes](./architecture.md)
-- [Development Workflow](./development-workflow.md)
-- [Testing Strategy](./testing-strategy.md)
-- [Glossary & Domain Concepts](./glossary.md)
-- [Data Flow & Integrations](./data-flow.md)
-- [Security & Compliance Notes](./security.md)
-- [Tooling & Productivity Guide](./tooling.md)
+## Índice de Documentação
 
-## Repository Snapshot
-- `AGENTS.md/`
-- `ambiente_cliente/`
-- `ambiente_cliente_teste/`
-- `bugs.txt/`
-- `CHANGELOG.md/`
-- `cspell.json/`
-- `diagnostico_output.txt/`
-- `diagnostico_result.txt/`
-- `docker/`
-- `docs/` — Living documentation produced by this tool.
-- `docs_dev/`
-- `GEMINI.md/`
-- `log_cluster.txt/`
-- `log_langsmith.txt/`
-- `log_ngrok.txt/`
-- `log_servidor.txt/`
-- `mkdocs.yml/`
-- `openspec/`
-- `pyproject.toml/`
-- `pytest.ini/`
-- `README.md/`
-- `scripts/`
-- `smartcore-landing/`
-- `src/` — TypeScript source files and CLI entrypoints.
-- `teste_debug/`
-- `tests/` — Automated tests and fixtures.
-- `trace.txt/`
-- `uv.lock/`
-- `verify_fix.py/`
-- `WARP.md/`
+| Documento | Descrição |
+|-----------|-----------|
+| [project-overview.md](project-overview.md) | Visão geral do projeto, roadmap e stakeholders |
+| [architecture.md](architecture.md) | Arquitetura, ADRs, limites de serviços e dependências |
+| [data-flow.md](data-flow.md) | Diagramas de fluxo de dados e integrações |
+| [development-workflow.md](development-workflow.md) | Workflow de desenvolvimento, branching e CI/CD |
+| [testing-strategy.md](testing-strategy.md) | Estratégia de testes e configurações |
+| [glossary.md](glossary.md) | Glossário de termos e conceitos de domínio |
+| [security.md](security.md) | Segurança, autenticação e gestão de secrets |
+| [tooling.md](tooling.md) | Ferramentas, scripts e configurações de IDE |
 
-## Document Map
-| Guide | File | Primary Inputs |
-| --- | --- | --- |
-| Project Overview | `project-overview.md` | Roadmap, README, stakeholder notes |
-| Architecture Notes | `architecture.md` | ADRs, service boundaries, dependency graphs |
-| Development Workflow | `development-workflow.md` | Branching rules, CI config, contributing guide |
-| Testing Strategy | `testing-strategy.md` | Test configs, CI gates, known flaky suites |
-| Glossary & Domain Concepts | `glossary.md` | Business terminology, user personas, domain rules |
-| Data Flow & Integrations | `data-flow.md` | System diagrams, integration specs, queue topics |
-| Security & Compliance Notes | `security.md` | Auth model, secrets management, compliance requirements |
-| Tooling & Productivity Guide | `tooling.md` | CLI scripts, IDE configs, automation workflows |
+## Como Usar Esta Documentação
+
+1. **Novos desenvolvedores**: Comece pelo [project-overview.md](project-overview.md) para entender o contexto
+2. **Arquitetura**: Consulte [architecture.md](architecture.md) para decisões técnicas
+3. **Fluxos de dados**: Veja [data-flow.md](data-flow.md) para entender integrações
+4. **Desenvolvimento**: Siga [development-workflow.md](development-workflow.md) para contribuir
+
+## Atualizações
+
+Esta documentação deve ser atualizada sempre que houver mudanças significativas na arquitetura, processos ou ferramentas do projeto.

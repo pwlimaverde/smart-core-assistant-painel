@@ -1,4 +1,0 @@
-{"timestamp":"2026-01-22T14:03:48.291Z","tool":"context","action":"check","status":"success","details":{"params":{"action":"check","repoPath":"c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel"}}}
-{"timestamp":"2026-01-22T14:04:24.485Z","tool":"agent","action":"listTypes","status":"success","details":{"params":{"action":"listTypes"},"result":{"total":14}}}
-{"timestamp":"2026-01-22T14:26:08.491Z","tool":"workflow-status","action":"workflow-status","status":"error","details":{"params":{},"result":{"success":false}},"error":"No workflow found. Initialize a workflow first."}
-{"timestamp":"2026-01-22T14:26:12.740Z","tool":"plan","action":"getLinked","status":"success","details":{"params":{"action":"getLinked"},"result":{"success":true}}}

@@ -26,17 +26,19 @@ Este projeto utiliza o MCP ai-context para organizar documentação e contexto. 
 ### Planos de Implementação
 - [Planos Ativos](.context/plans/README.md) - Planos de features e refatorações em andamento
 
-### Workflows e Slash Commands
+### Workflows PREVC
 
-Os workflows do projeto estão definidos em `.agent/workflows/` e mapeados para slash commands em `.claude/commands/`:
+Os workflows do projeto seguem o sistema PREVC e estão definidos em `.agent/workflows/`, sincronizados via MCP ai-context:
 
-| Slash Command | Workflow | Descrição |
-|---------------|----------|-----------|
-| `/openspec-proposal` | [openspec-proposal.md](.agent/workflows/openspec-proposal.md) | Cria plano AI-Context e proposta OpenSpec com validação em duas etapas |
-| `/openspec-apply` | [openspec-apply.md](.agent/workflows/openspec-apply.md) | Implementa mudança aprovada consultando plano e documentação |
-| `/openspec-archive` | [openspec-archive.md](.agent/workflows/openspec-archive.md) | Arquiva mudança concluída e move plano para histórico |
+| Workflow | Fase | Skills | Descrição |
+|----------|------|--------|-----------|
+| [prevc-planning.md](.agent/workflows/prevc-planning.md) | P | feature-breakdown, api-design | Definir o que construir |
+| [prevc-review.md](.agent/workflows/prevc-review.md) | R | code-review, security-audit | Validar approach e arquitetura |
+| [prevc-execution.md](.agent/workflows/prevc-execution.md) | E | commit-message, refactoring | Construir o que foi planejado |
+| [prevc-validation.md](.agent/workflows/prevc-validation.md) | V | test-generation, pr-review | Verificar que funciona |
+| [prevc-confirmation.md](.agent/workflows/prevc-confirmation.md) | C | documentation, commit-message | Entregar e documentar |
 
-> **Nota**: Os commands em `.claude/commands/` referenciam os workflows em `.agent/workflows/` via `$INCLUDE`. Ao alterar um workflow, o command correspondente refletirá automaticamente as mudanças.
+> **Nota**: A sincronização é gerenciada pelo MCP ai-context. Use `npx @ai-coders/context quick-sync` para sincronizar.
 
 ## Visão Geral do Projeto
 

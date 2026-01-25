@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ai-context": {
+      "command": "npx",
+      "args": ["@ai-coders/context", "mcp"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@anthropics/mcp-context7"]
+    }
+  }
+}

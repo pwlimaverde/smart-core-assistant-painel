@@ -1,0 +1,63 @@
+# Workflow Status - Smart Core Assistant Painel
+# Este arquivo rastreia o estado atual do workflow PREVC
+
+project:
+  name: "smart-core-assistant-painel"
+  scale: LARGE
+  started: "2026-01-25T00:00:00Z"
+  current_phase: P
+
+# PREVC Phases:
+# P - Planning: Definir o que construir, requisitos, specs
+# R - Review: Validar approach, arquitetura, riscos
+# E - Execution: Implementar seguindo specs aprovadas
+# V - Validation: Verificar com testes e code review
+# C - Confirmation: Documentação, deploy, handoff
+
+phases:
+  P:
+    status: pending
+    description: "Planejamento e definição de requisitos"
+    outputs: []
+    # outputs esperados:
+    #   - path: ".context/workflow/docs/prd.md"
+    #   - path: ".context/workflow/docs/technical-spec.md"
+
+  R:
+    status: pending
+    description: "Revisão de arquitetura e design"
+    outputs: []
+    # outputs esperados:
+    #   - path: ".context/workflow/docs/architecture.md"
+    #   - path: ".context/workflow/docs/adr/"
+
+  E:
+    status: pending
+    description: "Execução da implementação"
+    outputs: []
+    # outputs esperados:
+    #   - code changes
+    #   - unit tests
+
+  V:
+    status: pending
+    description: "Validação com testes e review"
+    outputs: []
+    # outputs esperados:
+    #   - path: ".context/workflow/docs/test-report.md"
+    #   - approval
+
+  C:
+    status: pending
+    description: "Confirmação, documentação e deploy"
+    outputs: []
+    # outputs esperados:
+    #   - path: ".context/workflow/docs/changelog.md"
+    #   - documentation updates
+
+# Histórico de transições
+history: []
+  # - phase: P
+  #   status: completed
+  #   timestamp: "2026-01-25T10:00:00Z"
+  #   notes: "PRD aprovado"

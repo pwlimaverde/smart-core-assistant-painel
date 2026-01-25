@@ -52,7 +52,10 @@
       "Bash(npm view:*)",
       "Bash(grep -l \"status: empty\\\\|TODO\\\\|PLACEHOLDER\" .context/docs/*.md)",
       "mcp__context7__resolve-library-id",
-      "mcp__context7__query-docs"
+      "mcp__context7__query-docs",
+      "WebFetch(domain:github.com)",
+      "Bash(del /q \"C:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\.agent\\\\workflows\\\\openspec-*.md\")",
+      "Bash(Remove-Item -Path \"C:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\.agent\\\\workflows\\\\openspec-*.md\" -Force)"
     ]
   }
 }

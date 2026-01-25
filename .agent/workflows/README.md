@@ -1,0 +1,46 @@
+# Antigravity Workflows
+
+Este diretório contém workflows ativos para o Antigravity IDE, sincronizados com o sistema ai-context via MCP.
+
+## Estrutura
+
+```
+.agent/
+├── rules/                    # Regras passivas (constraints)
+│   └── rules-smart-assistant.md
+└── workflows/                # Workflows ativos (procedimentos)
+    ├── README.md             # Este arquivo
+    ├── prevc-planning.md     # Fase P do PREVC
+    ├── prevc-review.md       # Fase R do PREVC
+    ├── prevc-execution.md    # Fase E do PREVC
+    ├── prevc-validation.md   # Fase V do PREVC
+    └── prevc-confirmation.md # Fase C do PREVC
+```
+
+## Workflows PREVC
+
+| Workflow | Fase | Skills Associados |
+|----------|------|-------------------|
+| [prevc-planning](prevc-planning.md) | P | feature-breakdown, api-design |
+| [prevc-review](prevc-review.md) | R | code-review, security-audit |
+| [prevc-execution](prevc-execution.md) | E | commit-message, refactoring |
+| [prevc-validation](prevc-validation.md) | V | test-generation, pr-review |
+| [prevc-confirmation](prevc-confirmation.md) | C | documentation, commit-message |
+
+## Sincronização via MCP ai-context
+
+Este diretório é sincronizado pelo MCP ai-context. Para atualizar:
+
+```bash
+# Sincronizar workflows
+npx @ai-coders/context quick-sync --components workflows
+
+# Exportar para Antigravity
+npx @ai-coders/context export-rules --target antigravity
+```
+
+## Referências
+
+- [Skills PREVC](../../.context/skills/README.md)
+- [Workflow Status](../../.context/workflow/status.yaml)
+- [Documentação](../../.context/docs/README.md)

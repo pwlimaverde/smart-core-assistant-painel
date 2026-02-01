@@ -177,10 +177,6 @@ class TenantProvisioningService:
         user.is_active = True
         user.save()
         
-        # 2.1 Atribuir role Gerente (rolepermissions) para acesso a treinamento
-        from rolepermissions.roles import assign_role
-        assign_role(user, "gerente")
-        
         # 2. Permissão de Admin no Tenant
         if not TenantUser.objects.filter(tenant=tenant, user=user).exists():
             TenantUser.objects.create(

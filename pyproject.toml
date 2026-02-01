@@ -27,7 +27,6 @@ dependencies = [
     "celery[redis]",
     "django-celery-beat",
     "django-celery-results",
-    "django-role-permissions==3.2.0",
     "docx2txt>=0.9",
     "pgvector>=0.3.0",
     "firebase-admin>=6.9.0",
@@ -256,6 +255,7 @@ remote-logs-infra = "python scripts/docker_remoto/manager.py logs infra --remote
 # Global (Todos os Stacks - Ordem correta de dependência)
 remote-start-all = "python scripts/docker_remoto/manager.py up all --remote"
 remote-stop-all = "python scripts/docker_remoto/manager.py down all --remote"
+remote-rebuild-all = "python scripts/docker_remoto/manager.py down all --remote && python scripts/docker_remoto/manager.py up data --remote && python scripts/docker_remoto/manager.py build app --remote && python scripts/docker_remoto/manager.py build workers --remote && python scripts/docker_remoto/manager.py up all --remote"
 
 # Django Management no Servidor
 remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage migrate"

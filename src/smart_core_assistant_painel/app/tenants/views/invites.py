@@ -385,7 +385,8 @@ def activate_account(request, token):
                 first_name=first_name,
                 last_name=last_name,
                 password=make_password(password),
-                is_staff=True,  # Necessário para acessar o admin site
+                # Usuário de tenant não deve ter acesso ao admin global.
+                is_staff=False,
                 is_active=True,
             )
 

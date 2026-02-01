@@ -6,6 +6,17 @@ import re
 
 from ..models import Tenant, Plan, TenantConfig
 
+INPUT_BASE_CLASS = (
+    "block w-full rounded-xl border-0 bg-stone-900/50 py-3.5 px-4 "
+    "text-white ring-1 ring-inset ring-white/10 "
+    "placeholder:text-stone-600 focus:ring-2 focus:ring-inset "
+    "focus:ring-[#a98f71] sm:text-sm sm:leading-6 transition-all shadow-inner"
+)
+COLOR_INPUT_CLASS = (
+    "h-11 w-14 rounded-lg border border-white/10 bg-stone-900/60 "
+    "p-1 text-white"
+)
+
 User = get_user_model()
 
 
@@ -19,16 +30,16 @@ class TenantRegistrationForm(forms.Form):
         max_length=100,
         widget=forms.TextInput(attrs={
             "placeholder": "Ex: Minha Empresa Ltda",
-            "class": "form-control"
+            "class": INPUT_BASE_CLASS,
         })
     )
     slug = forms.SlugField(
         label=_("Subdomínio Desejado"),
         help_text=_("O endereço será https://[slug].smartcoreassistant.com.br"),
         widget=forms.TextInput(attrs={
-            "placeholder": "minhaempresa", 
-            "class": "form-control",
-            "data-slug-check-url": "/api/onboarding/check-slug/"  # Para JS
+            "placeholder": "minhaempresa",
+            "class": INPUT_BASE_CLASS,
+            "data-slug-check-url": "/tenants/api/onboarding/check-slug/"  # Para JS
         })
     )
     
@@ -38,20 +49,20 @@ class TenantRegistrationForm(forms.Form):
         max_length=150,
         widget=forms.TextInput(attrs={
             "placeholder": "Ex: João Silva",
-            "class": "form-control"
+            "class": INPUT_BASE_CLASS,
         })
     )
     admin_email = forms.EmailField(
         label=_("Seu E-mail Corporativo"),
         widget=forms.EmailInput(attrs={
             "placeholder": "joao@empresa.com",
-            "class": "form-control"
+            "class": INPUT_BASE_CLASS,
         })
     )
     admin_password = forms.CharField(
         label=_("Crie sua Senha"),
         min_length=8,
-        widget=forms.PasswordInput(attrs={"class": "form-control"}),
+        widget=forms.PasswordInput(attrs={"class": INPUT_BASE_CLASS}),
         help_text=_("Mínimo de 8 caracteres.")
     )
     admin_phone = forms.CharField(
@@ -59,7 +70,7 @@ class TenantRegistrationForm(forms.Form):
         max_length=20,
         widget=forms.TextInput(attrs={
             "placeholder": "(11) 99999-9999",
-            "class": "form-control phone-mask"
+            "class": f"{INPUT_BASE_CLASS} phone-mask",
         })
     )
 
@@ -109,7 +120,7 @@ class OnboardingConfigForm(forms.ModelForm):
         label=_("Cor Primária"),
         widget=forms.TextInput(attrs={
             "type": "color",
-            "class": "form-control form-control-color"
+            "class": COLOR_INPUT_CLASS,
         }),
         initial="#0d6efd"
     )
@@ -117,7 +128,7 @@ class OnboardingConfigForm(forms.ModelForm):
         label=_("Cor Secundária"),
         widget=forms.TextInput(attrs={
             "type": "color",
-            "class": "form-control form-control-color"
+            "class": COLOR_INPUT_CLASS,
         }),
         initial="#6c757d"
     )
@@ -126,7 +137,7 @@ class OnboardingConfigForm(forms.ModelForm):
         model = TenantConfig
         fields = ["brand_name", "language_code", "timezone"]
         widgets = {
-            "brand_name": forms.TextInput(attrs={"class": "form-control"}),
+            "brand_name": forms.TextInput(attrs={"class": INPUT_BASE_CLASS}),
             "language_code": forms.HiddenInput(),
             "timezone": forms.HiddenInput(),
         }

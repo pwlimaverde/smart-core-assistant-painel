@@ -103,7 +103,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "pgvector.django",
-    "rolepermissions",
     "django_celery_beat",
     "django_celery_results",
     "rest_framework",
@@ -135,8 +134,6 @@ NOTION_SYNC_ENABLED: bool = False
 # Lista de nomes de departamentos permitidos (case-insensitive).
 # Se vazio, aplica a todos os departamentos.
 OPERACIONAL_AUTO_ETAPAS_ALLOWED_DEPARTAMENTOS: list[str] = []
-
-ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -394,18 +391,7 @@ JAZZMIN_SETTINGS = {
     "copyright": "Smart Core Assistant",
     "search_model": ["ui_usuarios.User", "ui_clientes.Cliente"],
     "user_avatar": None,
-    "topmenu_links": [
-        {
-            "name": "Website",
-            "url": "/",
-            "icon": "fas fa-home",
-        },
-        {
-            "name": "Permissões",
-            "url": "permissoes",
-            "permissions": ["auth.view_user"],
-        },
-    ],
+    "topmenu_links": [],
     "show_sidebar": True,
     "navigation_expanded": True,
     "hide_apps": [],

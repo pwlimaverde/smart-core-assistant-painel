@@ -27,7 +27,6 @@ dependencies = [
     "celery[redis]",
     "django-celery-beat",
     "django-celery-results",
-    "django-role-permissions==3.2.0",
     "docx2txt>=0.9",
     "pgvector>=0.3.0",
     "firebase-admin>=6.9.0",
@@ -67,7 +66,6 @@ dependencies = [
     "pydantic-core==2.41.4",
     "pydantic-settings==2.10.1",
     "pypdf==6.0.0",
-    "python-dateutil==2.9.0.post0",
     "python-decouple==3.8",
     "python-dotenv[cli]==1.1.1",
     "pyyaml==6.0.2",
@@ -102,6 +100,7 @@ dependencies = [
     "django-jazzmin>=3.0.0",
     "cryptography>=46.0.3",
     "psycopg2-binary>=2.9.11",
+    "python-dateutil>=2.9.0.post0",
 ]
 
 
@@ -177,6 +176,14 @@ call-data = "python scripts/automacao/new_feature_script.py --type call_data"
 # Django Management (Desenvolvimento Local)
 # ============================================
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
+
+# Desenvolvimento Local com Túnel SSH (conecta ao Docker remoto)
+# 1. Execute 'uv run task tunnel' para iniciar o túnel
+# 2. Execute 'uv run task start-local' para iniciar o Django
+# 3. Execute 'uv run task tunnel-stop' para encerrar o túnel
+tunnel = "powershell -NoProfile -Command \"Start-Process -WindowStyle Hidden -FilePath 'ssh' -ArgumentList '-N','-L','5436:localhost:5438','-L','6382:localhost:6384','pwlim@192.168.3.127'; Write-Host 'Tunel SSH iniciado em background - PostgreSQL: localhost:5436, Redis: localhost:6382'\""
+tunnel-stop = "powershell -NoProfile -Command \"Get-Process -Name ssh -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host 'Tunel SSH encerrado'\""
+start-local = "powershell -NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $env:POSTGRES_HOST='localhost'; $env:REDIS_HOST='localhost'; $env:PYTHONIOENCODING='utf-8'; python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000\""
 makemigrations = "python -m smart_core_assistant_painel.app.ui.manage makemigrations"
 migrate = "python -m smart_core_assistant_painel.app.ui.manage migrate"
 migrate-all = "python -m smart_core_assistant_painel.app.ui.manage migrate_all_tenants"
@@ -248,6 +255,7 @@ remote-logs-infra = "python scripts/docker_remoto/manager.py logs infra --remote
 # Global (Todos os Stacks - Ordem correta de dependência)
 remote-start-all = "python scripts/docker_remoto/manager.py up all --remote"
 remote-stop-all = "python scripts/docker_remoto/manager.py down all --remote"
+remote-rebuild-all = "python scripts/docker_remoto/manager.py down all --remote && python scripts/docker_remoto/manager.py up data --remote && python scripts/docker_remoto/manager.py build app --remote && python scripts/docker_remoto/manager.py build workers --remote && python scripts/docker_remoto/manager.py up all --remote"
 
 # Django Management no Servidor
 remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage migrate"

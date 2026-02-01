@@ -1,24 +1,26 @@
 {% extends "tenants/onboarding/base.html" %}
 
 {% block wizard_content %}
-<div style="text-align: center; padding: 2rem;">
-    <h2>Quase lá!</h2>
-    <p class="subtitle">Estamos preparando seu ambiente exclusivo.</p>
+<div class="text-center space-y-4">
+    <h2 class="text-2xl sm:text-3xl font-semibold text-white">Quase lá!</h2>
+    <p class="text-stone-400 text-sm">Estamos preparando seu ambiente exclusivo.</p>
 
-    <div id="provision-status" style="margin: 2rem 0; font-weight: 500;">
+    <div id="provision-status" class="mt-6 text-sm text-stone-300">
         Iniciando provisionamento...
     </div>
 
-    <div class="checklist"
-        style="text-align: left; max-width: 300px; margin: 0 auto; display: flex; flex-direction: column; gap: 0.5rem;">
-        <div class="checklist-item">
-            <span class="icon">⬜</span> Configurando Banco de Dados
+    <div class="mt-6 space-y-3 text-left max-w-sm mx-auto">
+        <div class="checklist-item flex items-center gap-3 text-stone-500">
+            <span data-icon class="flex h-6 w-6 items-center justify-center rounded-full border border-white/10 text-xs">1</span>
+            <span>Configurando Banco de Dados</span>
         </div>
-        <div class="checklist-item">
-            <span class="icon">⬜</span> Aplicando Permissões
+        <div class="checklist-item flex items-center gap-3 text-stone-500">
+            <span data-icon class="flex h-6 w-6 items-center justify-center rounded-full border border-white/10 text-xs">2</span>
+            <span>Aplicando Permissões</span>
         </div>
-        <div class="checklist-item">
-            <span class="icon">⬜</span> Ativando Acesso
+        <div class="checklist-item flex items-center gap-3 text-stone-500">
+            <span data-icon class="flex h-6 w-6 items-center justify-center rounded-full border border-white/10 text-xs">3</span>
+            <span>Ativando Acesso</span>
         </div>
     </div>
 </div>
@@ -26,81 +28,69 @@
 
 {% block wizard_footer %}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .checklist-item {
-        opacity: 0.5;
-        transition: all 0.5s;
-    }
-
-    .checklist-item.done {
-        opacity: 1;
-        color: var(--success);
-        font-weight: 600;
-    }
-
-    .checklist-item.done .icon::before {
-        content: '✅';
-    }
-
-    .checklist-item .icon {
-        display: inline-block;
-        width: 25px;
-    }
-
-    /* Hack replace icon text */
-    .checklist-item.done .icon {
-        font-size: 0;
-    }
-
-    .checklist-item.done .icon::after {
-        content: '✅';
-        font-size: 1rem;
-    }
-</style>
-{% endblock %}
-
-{% block extra_js %}
+{% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const statusDiv = document.getElementById('provision-status');
         const items = document.querySelectorAll('.checklist-item');
         const sleep = ms => new Promise(r => setTimeout(r, ms));
+        const setDone = (item) => {
+            item.classList.remove('text-stone-500');
+            item.classList.add('text-emerald-400', 'font-semibold');
+            const icon = item.querySelector('[data-icon]');
+            if (icon) {
+                icon.textContent = '✓';
+                icon.classList.add('border-emerald-400/40', 'bg-emerald-500/10', 'text-emerald-300');
+            }
+        };
 
         // Fake progress visuals before API call (or parallel)
         await sleep(800);
-        items[0].classList.add('done');
+        setDone(items[0]);
 
         await sleep(800);
-        items[1].classList.add('done');
+        setDone(items[1]);
         statusDiv.textContent = "Validando ativação...";
 
         try {
+            const getCookie = (name) => {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            };
+            const csrfToken = getCookie("csrftoken");
+
             const res = await fetch(window.location.href, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-CSRFToken': csrfToken || '{{ csrf_token }}',
                     'Content-Type': 'application/json'
-                }
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({})
             });
 
             const data = await res.json();
 
             if (data.redirect_url) {
-                items[2].classList.add('done');
+                setDone(items[2]);
                 statusDiv.textContent = "Ambiente pronto! Redirecionando...";
-                statusDiv.className = "text-success";
+                statusDiv.classList.remove('text-stone-300');
+                statusDiv.classList.add('text-emerald-400');
 
                 await sleep(1000);
                 window.location.href = data.redirect_url;
             } else {
-                statusDiv.innerHTML = "Erro: " + (data.error || "Falha desconhecida");
-                statusDiv.className = "text-danger";
+                statusDiv.textContent = "Erro: " + (data.error || "Falha desconhecida");
+                statusDiv.classList.remove('text-stone-300');
+                statusDiv.classList.add('text-red-400');
             }
         } catch (err) {
             console.error(err);
             statusDiv.textContent = "Erro de conexão com o servidor.";
-            statusDiv.className = "text-danger";
+            statusDiv.classList.remove('text-stone-300');
+            statusDiv.classList.add('text-red-400');
         }
     });
 </script>

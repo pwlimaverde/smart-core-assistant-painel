@@ -12,6 +12,49 @@ from ..permissions import TenantModule
 
 User = get_user_model()
 
+ADMIN_PANEL_MODULES = (
+    TenantModule.CLIENTES.value,
+    TenantModule.OPERACIONAL.value,
+    TenantModule.ATENDIMENTOS.value,
+)
+
+
+def _available_permission_modules() -> list[tuple[str, str]]:
+    return [
+        (TenantModule.PAINEL_ADMIN.value, "Painel Admin (Clientes, Operacional, Atendimentos)"),
+        (TenantModule.TREINAMENTO.value, "Treinamento IA"),
+        (TenantModule.CONFIGURACOES.value, "Configurações"),
+        (TenantModule.USUARIOS.value, "Usuários"),
+    ]
+
+
+def _build_module_permissions(selected_modules: list[str]) -> dict:
+    module_perms: dict[str, dict[str, bool]] = {}
+    for mod in TenantModule.all_values():
+        module_perms[mod] = {
+            "view": False,
+            "edit": False,
+            "delete": False,
+        }
+
+    for mod in selected_modules:
+        if mod in module_perms:
+            module_perms[mod] = {
+                "view": True,
+                "edit": True,
+                "delete": False,
+            }
+
+    if TenantModule.PAINEL_ADMIN.value in selected_modules:
+        for mod in ADMIN_PANEL_MODULES:
+            module_perms[mod] = {
+                "view": True,
+                "edit": True,
+                "delete": False,
+            }
+
+    return module_perms
+
 
 @login_required
 def list_users(request):
@@ -32,7 +75,7 @@ def list_users(request):
         messages.error(request, "Nenhum tenant encontrado.")
         return redirect("tenants:dashboard")
 
-    # Validação de permissão (apenas owner ou admin do tenant)
+    # Validação de permissão (owner ou permissão de usuários)
     is_owner = request.user == tenant.owner
     if not is_owner:
         t_user = getattr(request, "tenant_user", None)
@@ -41,15 +84,24 @@ def list_users(request):
                 t_user = request.user.tenant_profile
             except Exception:
                 pass
-        if not t_user or t_user.role != "admin":
+        if not t_user:
             messages.error(
                 request,
-                "Acesso negado. Apenas administradores podem gerenciar usuários.",
+                "Acesso negado. Permissão insuficiente para gerenciar usuários.",
+            )
+            return redirect("tenants:dashboard")
+        if not t_user.has_module_permission("usuarios", "view"):
+            messages.error(
+                request,
+                "Acesso negado. Você não tem permissão para gerenciar usuários.",
             )
             return redirect("tenants:dashboard")
 
     users = TenantUser.objects.filter(tenant=tenant).select_related("user")
     invites = TenantInvite.objects.filter(tenant=tenant, used=False)
+    can_manage_users = is_owner
+    if not is_owner and "t_user" in locals() and t_user:
+        can_manage_users = t_user.has_module_permission("usuarios", "edit")
 
     return render(
         request,
@@ -59,6 +111,7 @@ def list_users(request):
             "invites": invites,
             "tenant": tenant,
             "is_owner": is_owner,
+            "can_manage_users": can_manage_users,
         },
     )
 
@@ -89,14 +142,16 @@ def invite_user(request):
                 t_user = request.user.tenant_profile
             except Exception:
                 pass
-        if not t_user or t_user.role != "admin":
+        if not t_user:
+            messages.error(request, "Acesso negado.")
+            return redirect("tenants:user_list")
+        if not t_user.has_module_permission("usuarios", "edit"):
             messages.error(request, "Acesso negado.")
             return redirect("tenants:user_list")
 
     if request.method == "POST":
         email = request.POST.get("email")
         name = request.POST.get("name")
-        role = request.POST.get("role", "staff")
         modules = request.POST.getlist("modules")
 
         # Validações Básicas
@@ -119,17 +174,14 @@ def invite_user(request):
             return redirect("tenants:user_invite")
 
         # Montar permissões: {modulo: {view, edit, delete}}
-        # Simplificação: Se selecionou módulo, dá permissão view+edit básico
-        module_perms = {}
-        for mod in modules:
-            module_perms[mod] = {"view": True, "edit": True, "delete": False}
+        module_perms = _build_module_permissions(modules)
 
         # Criar convite
         invite = TenantInvite.objects.create(
             tenant=tenant,
             email=email,
             name=name,
-            role=role,
+            role="staff",
             module_permissions=module_perms,
             created_by=request.user,
         )
@@ -143,17 +195,11 @@ def invite_user(request):
 
         return redirect("tenants:user_list")
 
-    modules = TenantModule.choices()
-    roles = [
-        ("staff", "Funcionário"),
-        ("manager", "Gerente"),
-        ("admin", "Administrador"),
-        ("viewer", "Visualizador"),
-    ]
+    modules = _available_permission_modules()
     return render(
         request,
         "tenants/users/invite.html",
-        {"modules": modules, "roles": roles, "tenant": tenant},
+        {"modules": modules, "tenant": tenant},
     )
 
 
@@ -200,7 +246,7 @@ def _send_invite_email(request, invite):
     Tenta envio padrão e, se falhar por SSL em DEBUG, tenta sem verificação.
     Retorna True se sucesso, False caso contrário.
     """
-    from django.core.mail import get_connection, EmailMessage
+    from django.core.mail import get_connection, EmailMultiAlternatives
     import ssl
 
     activation_url = request.build_absolute_uri(
@@ -220,14 +266,46 @@ Este link expira em 7 dias.
     """
 
     try:
-        # Tentar envio padrão
-        send_mail(
-            subject=subject,
-            message=message,
-            from_email=django_settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[invite.email],
-            fail_silently=False,
+        # Load templates
+        from django.template.loader import render_to_string
+        import os
+
+        # Get current domain for protocol/domain context
+        from django.contrib.sites.shortcuts import get_current_site
+
+        current_site = get_current_site(request)
+        protocol = "https" if request.is_secure() else "http"
+
+        asset_base_url = os.getenv(
+            "PUBLIC_ASSET_BASE_URL", "https://smartcoreassistant.com.br"
+        ).rstrip("/")
+        logo_url = f"{asset_base_url}/static/img/logo_branca_smart_v2.png"
+
+        context = {
+            "invite": invite,
+            "activation_url": activation_url,
+            "protocol": protocol,
+            "domain": current_site.domain,
+            "logo_url": logo_url,
+        }
+
+        # Render plain text and HTML versions
+        # Simplificação: Usando o corpo do texto original como fallback
+        text_content = message
+        html_content = render_to_string(
+            "tenants/users/invite_email.html", context
         )
+
+        email_msg = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            to=[invite.email],
+        )
+        email_msg.attach_alternative(html_content, "text/html")
+
+        # Tentar envio padrão
+        email_msg.send()
         return True
 
     except Exception as e:
@@ -248,13 +326,9 @@ Este link expira em 7 dias.
                 connection = get_connection()
                 connection.ssl_context = context
 
-                email_msg = EmailMessage(
-                    subject=subject,
-                    body=message,
-                    from_email=django_settings.DEFAULT_FROM_EMAIL,
-                    to=[invite.email],
-                    connection=connection,
-                )
+                # Re-criar a mensagem para usar a nova conexão
+                # Precisamos recriar porque o connection é passado no init ou atribuído
+                email_msg.connection = connection
                 email_msg.send()
                 return True
 
@@ -311,7 +385,8 @@ def activate_account(request, token):
                 first_name=first_name,
                 last_name=last_name,
                 password=make_password(password),
-                is_staff=True,  # Necessário para acessar o admin site
+                # Usuário de tenant não deve ter acesso ao admin global.
+                is_staff=False,
                 is_active=True,
             )
 
@@ -364,7 +439,7 @@ def edit_permissions(request, user_id):
         messages.error(request, "Nenhum tenant encontrado.")
         return redirect("tenants:dashboard")
 
-    # Validação de permissão (apenas owner ou admin do tenant)
+    # Validação de permissão (owner ou permissão de usuários)
     is_owner = request.user == tenant.owner
     if not is_owner:
         t_user = getattr(request, "tenant_user", None)
@@ -373,7 +448,10 @@ def edit_permissions(request, user_id):
                 t_user = request.user.tenant_profile
             except Exception:
                 pass
-        if not t_user or t_user.role != "admin":
+        if not t_user:
+            messages.error(request, "Acesso negado.")
+            return redirect("tenants:user_list")
+        if not t_user.has_module_permission("usuarios", "edit"):
             messages.error(request, "Acesso negado.")
             return redirect("tenants:user_list")
 
@@ -386,26 +464,12 @@ def edit_permissions(request, user_id):
         return redirect("tenants:user_list")
 
     if request.method == "POST":
-        role = request.POST.get("role", tenant_user.role)
         modules = request.POST.getlist("modules")
 
         # Montar permissões: {modulo: {view, edit, delete}}
-        module_perms = {}
-        for mod in TenantModule.all_values():
-            if mod in modules:
-                module_perms[mod] = {
-                    "view": True,
-                    "edit": True,
-                    "delete": False,
-                }
-            else:
-                module_perms[mod] = {
-                    "view": False,
-                    "edit": False,
-                    "delete": False,
-                }
+        module_perms = _build_module_permissions(modules)
 
-        tenant_user.role = role
+        tenant_user.role = "staff"
         tenant_user.module_permissions = module_perms
         tenant_user.save()
 
@@ -414,18 +478,22 @@ def edit_permissions(request, user_id):
         )
         return redirect("tenants:user_list")
 
-    modules = TenantModule.choices()
-    roles = [
-        ("staff", "Funcionário"),
-        ("manager", "Gerente"),
-        ("admin", "Administrador"),
-        ("viewer", "Visualizador"),
-    ]
+    modules = _available_permission_modules()
     # Módulos atualmente permitidos
     current_modules = [
         mod
         for mod, perms in tenant_user.module_permissions.items()
         if perms.get("view", False)
+    ]
+    if any(mod in current_modules for mod in ADMIN_PANEL_MODULES):
+        current_modules.append(TenantModule.PAINEL_ADMIN.value)
+    current_set = {
+        mod for mod in current_modules if mod not in ADMIN_PANEL_MODULES
+    }
+    current_modules = [
+        mod_value
+        for mod_value, _label in modules
+        if mod_value in current_set
     ]
 
     return render(
@@ -434,7 +502,6 @@ def edit_permissions(request, user_id):
         {
             "tenant_user": tenant_user,
             "modules": modules,
-            "roles": roles,
             "current_modules": current_modules,
             "tenant": tenant,
         },

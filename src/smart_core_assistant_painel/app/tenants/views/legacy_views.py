@@ -43,6 +43,53 @@ from ..services.connection_tester import (
 from ..services.config_loader import ConfigLoader
 
 
+def _resolve_tenant_and_profile(request):
+    """Resolve tenant e perfil do usuário atual para validação de permissões."""
+    tenant = Tenant.objects.filter(owner=request.user).first()
+    tenant_profile = None
+
+    if not tenant:
+        try:
+            tenant_profile = request.user.tenant_profile
+            tenant = tenant_profile.tenant
+        except Exception:
+            tenant = None
+            tenant_profile = None
+    else:
+        try:
+            profile = request.user.tenant_profile
+            if profile.tenant == tenant and profile.is_active:
+                tenant_profile = profile
+        except Exception:
+            tenant_profile = None
+
+    return tenant, tenant_profile
+
+
+def _can_edit_tenant_configs(request, tenant, tenant_profile=None) -> bool:
+    """Retorna True se o usuário pode editar configurações do tenant."""
+    user = request.user
+
+    if user.is_superuser:
+        return True
+    if tenant and user == tenant.owner:
+        return True
+
+    if tenant_profile is None:
+        try:
+            tenant_profile = user.tenant_profile
+        except Exception:
+            tenant_profile = None
+
+    if not tenant_profile or not tenant_profile.is_active:
+        return False
+
+    if tenant and tenant_profile.tenant != tenant:
+        return False
+
+    return tenant_profile.has_module_permission("configuracoes", "edit")
+
+
 class TenantSignupView(FormView):
     template_name = "tenants/signup.html"
     form_class = TenantSignupForm
@@ -119,14 +166,7 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
 
     def get_object(self, queryset=None):
         # Tenta encontrar tenant via owner OU via TenantUser
-        tenant = Tenant.objects.filter(owner=self.request.user).first()
-        if not tenant:
-            # Buscar via TenantUser (funcionário)
-            try:
-                tenant_user = self.request.user.tenant_profile
-                tenant = tenant_user.tenant
-            except Exception:
-                pass
+        tenant, _tenant_profile = _resolve_tenant_and_profile(self.request)
         if not tenant:
             from django.http import Http404
             raise Http404("Tenant não encontrado para este usuário.")
@@ -155,24 +195,13 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
                 can_edit = True
                 reason = ""
             
-            # 3. Verificar TenantUser.role
-            elif hasattr(user, "tenant_profile"):
-                role = user.tenant_profile.role
-                # Apenas Admin e Manager podem editar configurações
-                if role in ["admin", "manager"]:
-                    can_edit = True
-                    reason = ""
-                else:
-                    reason = f"Seu perfil ({user.tenant_profile.get_role_display()}) não permite edição"
-            
-            # 4. Verificar grupos Django como fallback
-            # Grupos permitidos: "gerente", "admin", "administrador"
-            elif user.groups.filter(name__in=["gerente", "admin", "administrador"]).exists():
+            # 3. Verificar permissão modular (configuracoes)
+            elif _can_edit_tenant_configs(self.request, tenant):
                 can_edit = True
                 reason = ""
-            
+
             else:
-                reason = "Você não é o proprietário e não tem perfil de administrador/gerente"
+                reason = "Seu perfil não possui permissão de edição em Configurações"
 
         except Exception as e:
             # Fallback seguro - bloqueia edição em caso de erro
@@ -193,6 +222,13 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
         return form
 
     def form_valid(self, form):
+        tenant = self.object.tenant
+        if not _can_edit_tenant_configs(self.request, tenant):
+            messages.error(
+                self.request,
+                _("Você não tem permissão para editar configurações."),
+            )
+            return self.form_invalid(form)
         messages.success(self.request, _("Configurações salvas com sucesso."))
         return super().form_valid(form)
 
@@ -275,7 +311,17 @@ class TestConnectionView(LoginRequiredMixin, View):
     """View para testar conexões com serviços de integração."""
 
     def post(self, request, service_type: str) -> JsonResponse:
-        tenant = get_object_or_404(Tenant, owner=request.user)
+        tenant, tenant_profile = _resolve_tenant_and_profile(request)
+        if not tenant:
+            return JsonResponse(
+                {"success": False, "message": "Tenant não encontrado"},
+                status=404,
+            )
+        if not _can_edit_tenant_configs(request, tenant, tenant_profile):
+            return JsonResponse(
+                {"success": False, "message": "Sem permissão para esta ação"},
+                status=403,
+            )
         success = False
         message = "Serviço desconhecido"
 
@@ -325,7 +371,17 @@ class RunMigrationsView(LoginRequiredMixin, View):
     """View para executar migrations no banco do tenant."""
 
     def post(self, request) -> JsonResponse:
-        tenant = get_object_or_404(Tenant, owner=request.user)
+        tenant, tenant_profile = _resolve_tenant_and_profile(request)
+        if not tenant:
+            return JsonResponse(
+                {"success": False, "message": "Tenant não encontrado"},
+                status=404,
+            )
+        if not _can_edit_tenant_configs(request, tenant, tenant_profile):
+            return JsonResponse(
+                {"success": False, "message": "Sem permissão para esta ação"},
+                status=403,
+            )
         config = getattr(tenant, "database_config", None)
 
         if not config:

@@ -1,0 +1,193 @@
+{
+  "project": {
+    "name": "Smart Core Assistant Painel",
+    "version": "0.1.0",
+    "description": "Plataforma SaaS multi-tenant para atendimento inteligente ao cliente via WhatsApp",
+    "python_version": "3.13",
+    "framework": "Django 5.2"
+  },
+  "structure": {
+    "src": {
+      "path": "src/smart_core_assistant_painel",
+      "description": "Código-fonte principal",
+      "children": {
+        "main.py": "Ponto de entrada da aplicação",
+        "app": {
+          "description": "Aplicações Django e integrações",
+          "children": {
+            "ui": {
+              "description": "Apps Django de interface",
+              "apps": [
+                {
+                  "name": "core",
+                  "path": "app/ui/core",
+                  "description": "Configurações centrais, middleware, views base",
+                  "key_files": ["settings.py", "urls.py", "views.py", "middleware.py"]
+                },
+                {
+                  "name": "atendimentos",
+                  "path": "app/ui/atendimentos",
+                  "description": "Tickets de suporte e mensagens",
+                  "key_files": ["models.py", "admin.py", "services/"]
+                },
+                {
+                  "name": "operacional",
+                  "path": "app/ui/operacional",
+                  "description": "Departamentos, fluxos, atendentes",
+                  "key_files": ["models.py", "views.py", "serializers.py"]
+                },
+                {
+                  "name": "clientes",
+                  "path": "app/ui/clientes",
+                  "description": "Contatos e clientes",
+                  "key_files": ["models.py", "admin.py"]
+                },
+                {
+                  "name": "usuarios",
+                  "path": "app/ui/usuarios",
+                  "description": "Gerenciamento de usuários",
+                  "key_files": ["models.py", "views.py", "forms.py"]
+                },
+                {
+                  "name": "treinamento",
+                  "path": "app/ui/treinamento",
+                  "description": "Treinamento IA e gestão de documentos",
+                  "key_files": ["models.py", "views.py", "services.py", "tasks.py"]
+                },
+                {
+                  "name": "oraculo",
+                  "path": "app/ui/oraculo",
+                  "description": "Interface do motor de IA",
+                  "key_files": []
+                }
+              ]
+            },
+            "tenants": {
+              "path": "app/tenants",
+              "description": "Multi-tenancy e isolamento de banco",
+              "key_files": ["models.py", "db_router.py", "middleware.py"]
+            },
+            "evolution_sync": {
+              "path": "app/evolution_sync",
+              "description": "Integração WhatsApp via Evolution API",
+              "key_files": ["views.py", "signals.py", "services/evolution_api.py", "services/webhook.py"]
+            },
+            "trello_sync": {
+              "path": "app/trello_sync",
+              "description": "Sincronização com Trello",
+              "key_files": ["models.py", "signals.py", "tasks.py"]
+            },
+            "settings_manager": {
+              "path": "app/settings_manager",
+              "description": "Gerenciamento de configurações remotas",
+              "key_files": ["models.py"]
+            }
+          }
+        },
+        "modules": {
+          "description": "Lógica de negócio reutilizável",
+          "children": {
+            "ai_engine": {
+              "path": "modules/ai_engine",
+              "description": "Motor de IA com LangChain",
+              "key_files": ["features_compose.py"],
+              "features": [
+                "analise_mensage",
+                "analise_previa_mensagem",
+                "analise_conteudo",
+                "analise_avaliacao",
+                "generate_embeddings",
+                "generate_chunks",
+                "load_document_file",
+                "load_document_conteudo",
+                "load_mensage_data"
+              ]
+            },
+            "services": {
+              "path": "modules/services",
+              "description": "Serviços gerais e integrações",
+              "key_files": ["start_services.py", "features/service_hub.py"],
+              "features": [
+                "unifield_data_services (Trello/ClickUp/Notion adapters)"
+              ]
+            },
+            "initial_loading": {
+              "path": "modules/initial_loading",
+              "description": "Inicialização Firebase",
+              "key_files": ["start_initial_loading.py"]
+            }
+          }
+        }
+      }
+    },
+    "tests": {
+      "path": "tests",
+      "description": "Testes automatizados",
+      "structure": ["app/ui/*", "modules/*"]
+    },
+    "docs": {
+      "path": "docs",
+      "description": "Documentação pública (MkDocs)"
+    },
+    "docs_dev": {
+      "path": "docs_dev",
+      "description": "Documentação de desenvolvimento",
+      "children": ["diagramas/", "planejamento/"]
+    },
+    "docker": {
+      "path": "docker",
+      "description": "Configurações Docker",
+      "children": ["Dockerfile", "compose/"]
+    },
+    "scripts": {
+      "path": "scripts",
+      "description": "Scripts de automação",
+      "children": ["automacao/", "docker_remoto/"]
+    }
+  },
+  "integrations": {
+    "whatsapp": {
+      "provider": "Evolution API",
+      "app": "evolution_sync"
+    },
+    "trello": {
+      "app": "trello_sync"
+    },
+    "clickup": {
+      "status": "planned",
+      "app": "clickup_sync"
+    },
+    "notion": {
+      "status": "planned",
+      "app": "notion_sync"
+    },
+    "firebase": {
+      "service": "Remote Config",
+      "usage": "Gestão de prompts de IA"
+    }
+  },
+  "llm_providers": [
+    {"name": "OpenAI", "models": ["gpt-4", "gpt-4-turbo", "gpt-3.5-turbo"]},
+    {"name": "Groq", "models": ["llama-3.1-70b", "llama-3.1-8b"]},
+    {"name": "Ollama", "models": ["local models"]}
+  ],
+  "key_patterns": {
+    "multi_tenancy": "Database per tenant with TenantDatabaseRouter",
+    "service_layer": "ServiceHub factory with FeaturesCompose",
+    "adapter_pattern": "UnifiedDataService interface for external integrations",
+    "ddd": "datasource/domain/usecase structure in modules",
+    "result_pattern": "py-return-success-or-error for error handling",
+    "signals": "Django signals for integration triggers"
+  },
+  "commands": {
+    "start": "uv run task start",
+    "celery_worker": "uv run task celery-worker",
+    "celery_beat": "uv run task celery-beat",
+    "makemigrations": "uv run task makemigrations",
+    "migrate": "uv run task migrate",
+    "lint": "uv run task lint",
+    "format": "uv run task format",
+    "type_check": "uv run task type-check",
+    "test": "uv run task test-docker"
+  }
+}

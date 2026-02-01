@@ -1,287 +1,143 @@
-{% load i18n static %}
-<!DOCTYPE html>
-<html lang="{{ LANGUAGE_CODE|default:'pt-br' }}">
+{% extends "base_public.html" %}
+{% load static %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ title }} | Smart Core Assistant{% endblock %}</title>
+{% block extra_head %}
+<style>
+    .onboarding-surface input:-webkit-autofill,
+    .onboarding-surface input:-webkit-autofill:hover,
+    .onboarding-surface input:-webkit-autofill:focus,
+    .onboarding-surface textarea:-webkit-autofill,
+    .onboarding-surface textarea:-webkit-autofill:hover,
+    .onboarding-surface textarea:-webkit-autofill:focus,
+    .onboarding-surface select:-webkit-autofill,
+    .onboarding-surface select:-webkit-autofill:hover,
+    .onboarding-surface select:-webkit-autofill:focus {
+        -webkit-text-fill-color: #ffffff;
+        caret-color: #ffffff;
+        transition: background-color 9999s ease-out 0s;
+        box-shadow: 0 0 0px 1000px rgba(28, 25, 23, 0.35) inset;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700&display=swap" rel="stylesheet">
+{% block public_navbar %}
+<!-- Minimal Onboarding Header -->
+<nav class="absolute top-0 left-0 w-full z-50 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
+        <a href="/" class="flex items-center gap-2 group transition-opacity hover:opacity-80">
+            <img src="{% static 'img/logo_branca_smart_v2.png' %}" alt="Smart Core" class="h-10 w-auto">
+            <span class="text-xl font-medium tracking-wide text-white">
+                Smart Core
+            </span>
+        </a>
+    </div>
+</nav>
+{% endblock %}
 
-    <style>
-        :root {
-            --primary: #a98f71;
-            --primary-dark: #8b7355;
-            --secondary: #57534e;
-            --bg-body: #fafaf9;
-            --bg-card: #ffffff;
-            --text-main: #1c1917;
-            --text-muted: #78716c;
-            --border: #e7e5e4;
-            --success: #10b981;
-            --error: #ef4444;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Outfit', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-body);
-            color: var(--text-main);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            background-image: radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
-                radial-gradient(at 50% 0%, hsla(225, 39%, 30%, 1) 0, transparent 50%),
-                radial-gradient(at 100% 0%, hsla(339, 49%, 30%, 1) 0, transparent 50%);
-            background-size: cover;
-            background-attachment: fixed;
-        }
-
-        .wizard-container {
-            width: 100%;
-            max-width: 800px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header & Stepper */
-        .wizard-header {
-            padding: 2rem;
-            background: linear-gradient(to right, #f8fafc, #fff);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .stepper {
-            display: flex;
-            justify-content: space-between;
-            position: relative;
-            margin-top: 1.5rem;
-        }
-
-        .stepper::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--border);
-            z-index: 0;
-            transform: translateY(-50%);
-        }
-
-        .step {
-            position: relative;
-            z-index: 1;
-            background: var(--bg-card);
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            border: 2px solid var(--border);
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--text-muted);
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .step.active {
-            border-color: var(--primary);
-            color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
-
-        .step.done {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-        }
-
-        /* Content */
-        .wizard-content {
-            padding: 3rem 2rem;
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        h2 {
-            font-size: 1.875rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(45deg, var(--primary), #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p.subtitle {
-            color: var(--text-muted);
-            margin-bottom: 2rem;
-        }
-
-        /* Forms */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--secondary);
-            font-size: 0.9rem;
-        }
-
-        .form-control,
-        .form-select {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.2s;
-            background: #f9fafb;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-        }
-
-        .help-text {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-        }
-
-        /* Buttons */
-        .wizard-footer {
-            padding: 2rem;
-            background: #f8fafc;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: flex-end;
-            gap: 1rem;
-        }
-
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--secondary);
-        }
-
-        .btn-outline:hover {
-            background: #fff;
-            border-color: var(--secondary);
-        }
-
-        /* Utils */
-        .text-danger {
-            color: var(--error);
-        }
-
-        .text-success {
-            color: var(--success);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 1.5rem;
-            height: 1.5rem;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
-</head>
-
-<body>
-
-    <div class="wizard-container">
-        <div class="wizard-header">
-            <div
-                style="text-align: center; margin-bottom: 1rem; font-weight: 700; font-size: 1.2rem; color: var(--text-main);">
-                Smart Core Assistant
-            </div>
-
-            <div class="stepper">
-                <div
-                    class="step {% if request.resolver_match.url_name == 'onboarding_step_1' or 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_2' in request.path or 'step_3' in request.path %}done{% endif %}">
-                    <span>1</span> Empresa
-                </div>
-                <div
-                    class="step {% if 'step_2' in request.path or 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_3' in request.path %}done{% endif %}">
-                    <span>2</span> Plano
-                </div>
-                <div
-                    class="step {% if 'step_3' in request.path or 'step_4' in request.path %}active{% endif %} {% if 'step_4' in request.path %}done{% endif %}">
-                    <span>3</span> Config
-                </div>
-                <div class="step {% if 'step_4' in request.path %}active{% endif %}">
-                    <span>4</span> Pronto
-                </div>
-            </div>
-        </div>
-
-        <div class="wizard-content">
-            {% block wizard_content %}{% endblock %}
-        </div>
-
-        {% block wizard_footer %}
-        <div class="wizard-footer">
-            <!-- Default Footer Content -->
-        </div>
-        {% endblock %}
+{% block content %}
+<div class="flex min-h-screen flex-col items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-[#0c0a09] relative overflow-hidden">
+    <!-- Background Effects -->
+    <div class="absolute inset-0 z-0">
+        <div class="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-[#a98f71]/10 rounded-full blur-[120px] mix-blend-screen"></div>
+        <div class="absolute bottom-0 right-0 w-[800px] h-[600px] bg-[#1c1917] rounded-full blur-[100px]"></div>
     </div>
 
-    {% block extra_js %}{% endblock %}
-</body>
+    <div class="w-full max-w-4xl relative z-10">
+        <div class="onboarding-surface bg-[#1c1917]/80 backdrop-blur-xl rounded-3xl border border-white/5 shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
+            <div class="px-8 py-6 border-b border-white/10">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <div class="text-white text-lg font-semibold">Onboarding</div>
+                        <p class="text-stone-400 text-xs">
+                            {% if request.resolver_match.url_name == "onboarding_step_1" %}
+                                Passo 1 de 4
+                            {% elif request.resolver_match.url_name == "onboarding_step_2" %}
+                                Passo 2 de 4
+                            {% elif request.resolver_match.url_name == "onboarding_step_3" %}
+                                Passo 3 de 4
+                            {% elif request.resolver_match.url_name == "onboarding_step_4" %}
+                                Passo 4 de 4
+                            {% else %}
+                                Fluxo de cadastro
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2 text-xs text-stone-500">
+                        <span class="h-2 w-2 rounded-full bg-[#a98f71]"></span>
+                        Smart Core Assistant
+                    </div>
+                </div>
 
-</html>
+                <div class="mt-6 grid grid-cols-4 gap-2 text-[11px] uppercase tracking-wider">
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_1' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% elif request.resolver_match.url_name == 'onboarding_step_2' or request.resolver_match.url_name == 'onboarding_step_3' or request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-transparent bg-[#a98f71] text-white
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            1
+                        </span>
+                        <span class="hidden sm:inline">Empresa</span>
+                        <span class="sm:hidden">1</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_2' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% elif request.resolver_match.url_name == 'onboarding_step_3' or request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-transparent bg-[#a98f71] text-white
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            2
+                        </span>
+                        <span class="hidden sm:inline">Plano</span>
+                        <span class="sm:hidden">2</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_3' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% elif request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-transparent bg-[#a98f71] text-white
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            3
+                        </span>
+                        <span class="hidden sm:inline">Config</span>
+                        <span class="sm:hidden">3</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            4
+                        </span>
+                        <span class="hidden sm:inline">Pronto</span>
+                        <span class="sm:hidden">4</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-8 py-8">
+                {% block wizard_content %}{% endblock %}
+            </div>
+
+            {% block wizard_footer %}
+            <div class="px-8 py-6 border-t border-white/10 bg-[#1c1917]/60 flex justify-end">
+                <!-- Default Footer Content -->
+            </div>
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,7 +4,7 @@ services:
   # ============================================
   migrate:
     build:
-      context: .
+      context: ../../
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_migrate
     command: python -m smart_core_assistant_painel.app.ui.manage migrate
@@ -24,7 +24,7 @@ services:
 
   django_app:
     build:
-      context: .
+      context: ../../
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_app
     command: >

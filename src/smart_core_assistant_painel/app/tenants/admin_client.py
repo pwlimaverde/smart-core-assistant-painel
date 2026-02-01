@@ -87,7 +87,7 @@ class TenantAdminSite(AdminSite):
         if hasattr(request, "tenant_user") and request.tenant_user:
             # Já resolvido anteriormente
             if request.tenant_user.tenant == tenant:
-                return True
+                return self._has_admin_panel_access(request.tenant_user)
 
         # Buscar se não estiver na request
         from smart_core_assistant_painel.app.tenants.models import TenantUser
@@ -98,12 +98,34 @@ class TenantAdminSite(AdminSite):
 
         if t_user:
             request.tenant_user = t_user
-            return True
+            return self._has_admin_panel_access(t_user)
 
         logger.warning(
             f"TenantAdmin: Acesso negado - user {request.user} != owner {tenant.owner}"
         )
         return False
+
+    def _has_admin_panel_access(self, tenant_user) -> bool:
+        """Permite acesso ao tenant-admin com permissão de painel admin."""
+        try:
+            from smart_core_assistant_painel.app.tenants.permissions import (
+                TenantModule,
+            )
+
+            if tenant_user.has_module_permission(
+                TenantModule.PAINEL_ADMIN.value, "view"
+            ):
+                return True
+            for module in (
+                TenantModule.CLIENTES.value,
+                TenantModule.OPERACIONAL.value,
+                TenantModule.ATENDIMENTOS.value,
+            ):
+                if tenant_user.has_module_permission(module, "view"):
+                    return True
+            return False
+        except Exception:
+            return False
 
 
 # Instância global do AdminSite do Cliente

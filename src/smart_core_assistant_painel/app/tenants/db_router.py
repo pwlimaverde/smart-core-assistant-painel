@@ -15,7 +15,6 @@ CORE_APPS = {
     "sessions",
     "django_celery_beat",
     "django_celery_results",
-    "rolepermissions",
 }
 
 TENANT_APPS = {

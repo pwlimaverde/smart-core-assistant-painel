@@ -161,35 +161,3 @@ class TestUsuariosAppViews(TestCase):
             )
         )
 
-    def test_permissoes_view(self) -> None:
-        """Test permissoes view."""
-        # Arrange
-        user1 = User.objects.create_user(username="user1", password="pass123")
-        user2 = User.objects.create_user(username="user2", password="pass123")
-
-        # Act
-        response = self.client.get(reverse("permissoes"))
-
-        # Assert
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "permissoes.html")
-        self.assertIn("users", response.context)
-        users = response.context["users"]
-        self.assertIn(user1, users)
-        self.assertIn(user2, users)
-
-    def test_tornar_gerente_success(self) -> None:
-        """Test successful assignment of manager role."""
-        # Arrange
-        user = User.objects.create_user(
-            username="manager_user", password="testpass123"
-        )
-
-        # Act
-        response = self.client.get(reverse("tornar_gerente", args=[user.id]))
-
-        # Assert
-        self.assertRedirects(response, reverse("permissoes"))
-
-        # Check if role was assigned (this would require mocking rolepermissions)
-        # For now, we just check that the view executed without error

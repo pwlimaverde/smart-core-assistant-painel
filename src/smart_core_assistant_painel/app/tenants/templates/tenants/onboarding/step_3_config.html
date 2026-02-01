@@ -1,57 +1,57 @@
 {% extends "tenants/onboarding/base.html" %}
 
 {% block wizard_content %}
-<h2>Personalização</h2>
-<p class="subtitle">Ajuste os detalhes visuais do seu painel.</p>
-
-<form method="post" id="config-form">
-    {% csrf_token %}
-
-    <div class="form-group mb-4">
-        <label for="{{ form.brand_name.id_for_label }}" class="form-label">
-            {{ form.brand_name.label }}
-        </label>
-        {{ form.brand_name }}
-        {% if form.brand_name.help_text %}
-        <div class="form-text text-muted">{{ form.brand_name.help_text }}</div>
-        {% endif %}
+<div class="space-y-6">
+    <div>
+        <h2 class="text-2xl sm:text-3xl font-semibold text-white">Personalização</h2>
+        <p class="text-stone-400 text-sm mt-2">Ajuste os detalhes visuais do seu painel.</p>
     </div>
 
-    <!-- Hidden Fields -->
-    {{ form.language_code }}
-    {{ form.timezone }}
+    <form method="post" id="config-form" class="space-y-6">
+        {% csrf_token %}
 
-    <div class="row">
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label for="{{ form.primary_color.id_for_label }}" class="form-label">
+        <div class="space-y-2">
+            <label for="{{ form.brand_name.id_for_label }}" class="block text-xs font-medium text-stone-400 uppercase tracking-wider ml-1">
+                {{ form.brand_name.label }}
+            </label>
+            {{ form.brand_name }}
+            {% if form.brand_name.help_text %}
+            <div class="text-xs text-stone-500 ml-1">{{ form.brand_name.help_text }}</div>
+            {% endif %}
+            {% if form.brand_name.errors %}
+            <div class="text-xs text-red-400 ml-1">{{ form.brand_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Hidden Fields -->
+        {{ form.language_code }}
+        {{ form.timezone }}
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+                <label for="{{ form.primary_color.id_for_label }}" class="block text-xs font-medium text-stone-400 uppercase tracking-wider ml-1">
                     {{ form.primary_color.label }}
                 </label>
-                <div class="input-group">
+                <div class="flex items-center gap-3">
                     {{ form.primary_color }}
-                    <span class="input-group-text color-preview" id="preview-primary"
-                        style="background-color: {{ form.primary_color.value|default:'#0d6efd' }}; width: 40px; border: 1px solid #ced4da;"></span>
+                    <span id="preview-primary" class="h-10 w-10 rounded-lg border border-white/10 bg-white/10"></span>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-group mb-3">
-                <label for="{{ form.secondary_color.id_for_label }}" class="form-label">
+            <div class="space-y-2">
+                <label for="{{ form.secondary_color.id_for_label }}" class="block text-xs font-medium text-stone-400 uppercase tracking-wider ml-1">
                     {{ form.secondary_color.label }}
                 </label>
-                <div class="input-group">
+                <div class="flex items-center gap-3">
                     {{ form.secondary_color }}
-                    <span class="input-group-text color-preview" id="preview-secondary"
-                        style="background-color: {{ form.secondary_color.value|default:'#6c757d' }}; width: 40px; border: 1px solid #ced4da;"></span>
+                    <span id="preview-secondary" class="h-10 w-10 rounded-lg border border-white/10 bg-white/10"></span>
                 </div>
             </div>
         </div>
-    </div>
-</form>
+    </form>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // IDs gerados pelo Django geralmente são id_nomecampo
         var primaryId = '{{ form.primary_color.id_for_label }}';
         var secondaryId = '{{ form.secondary_color.id_for_label }}';
 
@@ -64,7 +64,6 @@
             primaryInput.addEventListener('input', function () {
                 primaryPreview.style.backgroundColor = this.value;
             });
-            // Inicializa se já tiver valor
             if (primaryInput.value) {
                 primaryPreview.style.backgroundColor = primaryInput.value;
             }
@@ -74,7 +73,6 @@
             secondaryInput.addEventListener('input', function () {
                 secondaryPreview.style.backgroundColor = this.value;
             });
-            // Inicializa se já tiver valor
             if (secondaryInput.value) {
                 secondaryPreview.style.backgroundColor = secondaryInput.value;
             }
@@ -84,10 +82,10 @@
 {% endblock %}
 
 {% block wizard_footer %}
-<div class="wizard-footer">
-    <!-- Ensure submit button triggers the form by ID -->
-    <button type="submit" form="config-form" class="btn btn-primary d-flex align-items-center gap-2">
-        Finalizar Setup <i class="fas fa-arrow-right"></i>
+<div class="px-8 py-6 border-t border-white/10 bg-[#1c1917]/60 flex justify-end">
+    <button type="submit" form="config-form" class="group relative inline-flex items-center justify-center rounded-xl bg-[#a98f71] px-6 py-3 text-sm font-semibold text-white hover:bg-[#8b7355] shadow-lg shadow-[#a98f71]/20 transition-all">
+        Finalizar Setup
+        <span class="ml-2 transition-transform group-hover:translate-x-0.5">→</span>
     </button>
 </div>
 {% endblock %}

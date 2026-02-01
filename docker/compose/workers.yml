@@ -6,19 +6,19 @@ services:
     build:
       context: ../../
       dockerfile: docker/Dockerfile
-    container_name: smartcoreassistant_celery_worker
+    container_name: smartcore_celery_worker
     command: >
       celery -A smart_core_assistant_painel.app.ui.core worker
-      --loglevel=INFO --concurrency=3
+      --loglevel=INFO --concurrency=${CELERY_CONCURRENCY:-3}
       --queues=webhooks,ai_processing,default --hostname=worker@%h
     env_file:
       - ../../.env
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
-      - POSTGRES_HOST=smartcoreassistant_postgres
+      - POSTGRES_HOST=smartcore_postgres
       - POSTGRES_PORT=5432
-      - REDIS_HOST=smartcoreassistant_redis
+      - REDIS_HOST=smartcore_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     volumes: []
@@ -28,7 +28,7 @@ services:
           path: ./src/smart_core_assistant_painel
           target: /app/src/smart_core_assistant_painel
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
     deploy:
       resources:
@@ -42,7 +42,7 @@ services:
     build:
       context: ../../
       dockerfile: docker/Dockerfile
-    container_name: smartcoreassistant_celery_beat
+    container_name: smartcore_celery_beat
     command: >
       celery -A smart_core_assistant_painel.app.ui.core beat
       --loglevel=INFO --scheduler=django_celery_beat.schedulers:DatabaseScheduler
@@ -51,9 +51,9 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
-      - POSTGRES_HOST=smartcoreassistant_postgres
+      - POSTGRES_HOST=smartcore_postgres
       - POSTGRES_PORT=5432
-      - REDIS_HOST=smartcoreassistant_redis
+      - REDIS_HOST=smartcore_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     volumes: []
@@ -63,7 +63,7 @@ services:
           path: ./src/smart_core_assistant_painel
           target: /app/src/smart_core_assistant_painel
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
     deploy:
       resources:
@@ -71,6 +71,6 @@ services:
           memory: 512M
 
 networks:
-  default:
-    name: smartcore-network
+  shared_network:
+    name: shared_network
     external: true

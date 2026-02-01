@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "0.9.0"
+version = "1.0.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]

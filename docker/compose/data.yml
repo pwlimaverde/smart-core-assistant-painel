@@ -4,7 +4,7 @@ services:
   # ============================================
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: smartcoreassistant_postgres
+    container_name: smartcore_postgres
     env_file:
       - ../../.env
     environment:
@@ -21,7 +21,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - smartcore-network
+      - shared_network
     restart: unless-stopped
 
   # ============================================
@@ -29,7 +29,7 @@ services:
   # ============================================
   redis:
     image: redis:7-alpine
-    container_name: smartcoreassistant_redis
+    container_name: smartcore_redis
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PUBLISH_PORT:-6384}:6379"
@@ -41,16 +41,16 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - smartcore-network
+      - shared_network
     restart: unless-stopped
 
 volumes:
   postgres_core_data:
-    name: smartcoreassistant_postgres_data
+    name: smartcore_postgres_data
   redis_core_data:
-    name: smartcoreassistant_redis_data
+    name: smartcore_redis_data
 
 networks:
-  smartcore-network:
-    name: smartcore-network
+  shared_network:
+    name: shared_network
     driver: bridge

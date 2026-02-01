@@ -6,27 +6,27 @@ services:
     build:
       context: ../../
       dockerfile: docker/Dockerfile
-    container_name: smartcoreassistant_migrate
+    container_name: smartcore_migrate
     command: python -m smart_core_assistant_painel.app.ui.manage migrate
     env_file:
       - ../../.env
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
-      - POSTGRES_HOST=smartcoreassistant_postgres
+      - POSTGRES_HOST=smartcore_postgres
       - POSTGRES_PORT=5432
-      - REDIS_HOST=smartcoreassistant_redis
+      - REDIS_HOST=smartcore_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     networks:
-      - default
+      - shared_network
     restart: "no"
 
   django_app:
     build:
       context: ../../
       dockerfile: docker/Dockerfile
-    container_name: smartcoreassistant_app
+    container_name: smartcore_app
     command: >
       python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000
     volumes:
@@ -39,9 +39,9 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
-      - POSTGRES_HOST=smartcoreassistant_postgres
+      - POSTGRES_HOST=smartcore_postgres
       - POSTGRES_PORT=5432
-      - REDIS_HOST=smartcoreassistant_redis
+      - REDIS_HOST=smartcore_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     develop:
@@ -53,14 +53,16 @@ services:
       migrate:
         condition: service_completed_successfully
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
 
 volumes:
   static_files:
+    name: smartcore_static_files
   media_files:
+    name: smartcore_media_files
 
 networks:
-  default:
-    name: smartcore-network
+  shared_network:
+    name: shared_network
     external: true

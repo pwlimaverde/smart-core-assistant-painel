@@ -1,10 +1,13 @@
 services:
   # ============================================
   # Cloudflare Tunnel (Exposição Segura)
+  # Configurar rotas no Dashboard Cloudflare Zero Trust:
+  # - painel.dominio.com -> http://smartcore_app:8000
+  # - evolution.dominio.com -> http://evolution_api:8080 (futuro)
   # ============================================
   cloudflared:
     image: cloudflare/cloudflared:latest
-    container_name: smartcoreassistant_tunnel
+    container_name: smartcore_tunnel
     restart: unless-stopped
     command: tunnel run --protocol ${CLOUDFLARE_TUNNEL_PROTOCOL:-http2}
     env_file:
@@ -12,7 +15,7 @@ services:
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?Defina CLOUDFLARE_TUNNEL_TOKEN no .env}
     networks:
-      - default
+      - shared_network
 
   # ============================================
   # Flower (OPCIONAL - Monitoramento Celery)
@@ -20,20 +23,20 @@ services:
   # ============================================
   flower:
     image: mher/flower:2.0
-    container_name: smartcoreassistant_flower
+    container_name: smartcore_flower
     profiles:
       - debug
     environment:
-      - CELERY_BROKER_URL=redis://smartcoreassistant_redis:6379/0
+      - CELERY_BROKER_URL=redis://smartcore_redis:6379/0
       - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
       - FLOWER_PURGE_OFFLINE_WORKERS=60
     ports:
       - "${FLOWER_PORT:-5555}:5555"
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
 
 networks:
-  default:
-    name: smartcore-network
+  shared_network:
+    name: shared_network
     external: true

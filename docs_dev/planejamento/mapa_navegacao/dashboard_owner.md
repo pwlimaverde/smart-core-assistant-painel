@@ -13,7 +13,7 @@
 | Template | `tenants/dashboard.html` |
 | Template base | `base_dashboard.html` |
 | App | `tenants` |
-| Publico | Usuarios autenticados com tenant (owner/admin/manager/staff/viewer) |
+| Publico | Usuarios autenticados com tenant (visibilidade varia por permissoes de modulo) |
 
 ---
 
@@ -31,6 +31,12 @@
 - [x] Badge de **status do tenant**
   - Fonte: `tenant.active` (Ativo/Inativo)
   - Objetivo: sinalizar se o tenant esta habilitado
+- [x] **Visibilidade dos cards de configuracao**
+  - Regra: apenas **owner** ou modulo **configuracoes**
+  - Sem permissao: exibir mensagem "Sem acesso as configuracoes"
+- [x] **Acesso limitado**
+  - Regra: usuario sem nenhum modulo marcado
+  - Exibir mensagem "Acesso limitado"
 
 ---
 
@@ -67,7 +73,7 @@
 
 - [x] **Dashboard**
   - Link: `/tenants/dashboard/`
-  - Observacao: item fixo para retorno
+  - Observacao: visivel apenas para **owner** ou modulo **configuracoes**
 
 ### Configuracoes
 
@@ -76,25 +82,29 @@
 - [x] **Trello** — `/tenants/config/trello/`
 - [x] **IA** — `/tenants/config/ai/`
 - [x] **Debug** — `/tenants/config/debug/`
-  - Observacao: visibilidade condicional por modulo
+  - Observacao: visivel apenas para **owner** ou modulo **configuracoes**
 
 ### Operacoes (modulos core do tenant)
 
 - [x] **Painel Admin** — `/tenant-admin/`
-  - Observacao: acesso centralizado para Atendimentos, Clientes e Operacional
+  - Observacao: visivel para **owner** ou modulo **painel_admin**
+  - Dentro do painel: acesso aos modulos **Clientes**, **Operacional** e **Atendimentos**
 
 ### Treinamento IA
 
 - [x] **Treinar IA** — `/treinamento/treinar-ia/`
+  - Observacao: requer modulo **treinamento** (edicao)
 - [x] **Verificar Treinamentos** — `/treinamento/verificar-treinamentos/`
+  - Observacao: liberado para todos os usuarios do tenant (somente leitura)
 - [x] **Cadastrar Query Compose** — `/treinamento/cadastrar-query-compose/`
+  - Observacao: requer modulo **treinamento** (edicao)
 - [x] **Verificar Query Compose** — `/treinamento/verificar-query-compose/`
-  - Observacao: estes atalhos sao opcionais se a tela "Treinar IA" ja centraliza os acessos.
+  - Observacao: liberado para todos os usuarios do tenant (somente leitura)
 
 ### Gestao
 
 - [x] **Usuarios** — `/tenants/users/`
-  - Observacao: edicao de permissoes e convite ja ficam dentro de Usuarios
+  - Observacao: visivel para **owner** ou modulo **usuarios**
 
 ### Perfil do usuario (rodape da sidebar)
 

@@ -2,7 +2,7 @@
 
 **Status**: 🟡 Em Progresso
 **Criado**: 2026-01-31
-**Atualizado**: 2026-01-31
+**Atualizado**: 2026-02-01
 **Responsável**: Claude Code
 **Tipo**: Auditoria e Documentação
 **Prioridade**: Alta
@@ -56,17 +56,17 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 **Arquivo**: `01_paginas_publicas.md`
 
 **Para cada página**:
-1. [ ] Identificar view, template e template base
-2. [ ] Mapear todos os links presentes na página
-3. [ ] Verificar permissões (público vs. autenticado)
-4. [ ] Auditar conformidade com Design System:
-   - [ ] Template base correto (`base_public.html`)
-   - [ ] Navegação funcional
-   - [ ] Responsividade
-   - [ ] Padrões visuais (cards, forms, tables)
-5. [ ] Documentar achados no arquivo do módulo
-6. [ ] Marcar status da página (⏳/🔄/✅/❌)
-7. [ ] Atualizar índice geral
+1. [x] Identificar view, template e template base
+2. [x] Mapear todos os links presentes na página
+3. [x] Verificar permissões (público vs. autenticado)
+4. [x] Auditar conformidade com Design System:
+   - [x] Template base correto (`base_public.html`)
+   - [x] Navegação funcional
+   - [x] Responsividade
+   - [x] Padrões visuais (cards, forms, tables)
+5. [x] Documentar achados no arquivo do módulo
+6. [x] Marcar status da página (⏳/🔄/✅/❌)
+7. [x] Atualizar índice geral
 
 **Critérios de Aprovação**:
 - Todos os links documentados e funcionais
@@ -81,13 +81,13 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 **Arquivo**: `02_autenticacao.md`
 
 **Para cada página**:
-1. [ ] Identificar view, template e template base
-2. [ ] Mapear todos os links presentes na página
-3. [ ] Verificar permissões e redirecionamentos
-4. [ ] Auditar conformidade com Design System
-5. [ ] Documentar achados no arquivo do módulo
-6. [ ] Marcar status da página
-7. [ ] Atualizar índice geral
+1. [x] Identificar view, template e template base
+2. [x] Mapear todos os links presentes na página
+3. [x] Verificar permissões e redirecionamentos
+4. [x] Auditar conformidade com Design System
+5. [x] Documentar achados no arquivo do módulo
+6. [x] Marcar status da página
+7. [x] Atualizar índice geral
 
 **Critérios de Aprovação**:
 - Fluxo de autenticação documentado
@@ -101,13 +101,13 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 **Arquivo**: `03_onboarding.md`
 
 **Para cada página**:
-1. [ ] Identificar view, template e template base
-2. [ ] Mapear todos os links presentes na página
-3. [ ] Verificar fluxo entre steps (navegação sequencial)
-4. [ ] Auditar conformidade com Design System
-5. [ ] Documentar achados no arquivo do módulo
-6. [ ] Marcar status da página
-7. [ ] Atualizar índice geral
+1. [x] Identificar view, template e template base
+2. [x] Mapear todos os links presentes na página
+3. [x] Verificar fluxo entre steps (navegação sequencial)
+4. [x] Auditar conformidade com Design System
+5. [x] Documentar achados no arquivo do módulo
+6. [x] Marcar status da página
+7. [x] Atualizar índice geral
 
 **Critérios de Aprovação**:
 - Fluxo completo de onboarding mapeado
@@ -121,13 +121,13 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 **Arquivo**: `04_backoffice.md`
 
 **Para cada página**:
-1. [ ] Identificar view, template e template base
-2. [ ] Mapear todos os links presentes na página
-3. [ ] Verificar permissões (role `SUPERUSER`)
-4. [ ] Auditar conformidade com Design System
-5. [ ] Documentar achados no arquivo do módulo
-6. [ ] Marcar status da página
-7. [ ] Atualizar índice geral
+1. [x] Identificar view, template e template base
+2. [x] Mapear todos os links presentes na página
+3. [x] Verificar permissões (role `SUPERUSER`)
+4. [x] Auditar conformidade com Design System
+5. [x] Documentar achados no arquivo do módulo
+6. [x] Marcar status da página
+7. [x] Atualizar índice geral
 
 **Critérios de Aprovação**:
 - Restrição a SUPERUSER validada
@@ -141,13 +141,13 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 **Arquivo**: `05_dashboard_tenant.md`
 
 **Para cada página**:
-1. [ ] Identificar view, template e template base
-2. [ ] Mapear todos os links presentes na página
-3. [ ] Verificar permissões (todos os roles autenticados)
-4. [ ] Auditar conformidade com Design System
-5. [ ] Documentar achados no arquivo do módulo
-6. [ ] Marcar status da página
-7. [ ] Atualizar índice geral
+1. [x] Identificar view, template e template base
+2. [x] Mapear todos os links presentes na página
+3. [x] Verificar permissões (baseado em módulos)
+4. [x] Auditar conformidade com Design System
+5. [x] Documentar achados no arquivo do módulo
+6. [x] Marcar status da página
+7. [x] Atualizar índice geral
 
 **Critérios de Aprovação**:
 - Hub central de navegação documentado
@@ -273,10 +273,10 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 ### Status Atual (Início)
 | Métrica | Valor |
 |---------|-------|
-| Módulos Auditados | 0/9 (0%) |
-| Páginas Auditadas | 0/32 (0%) |
-| Links Documentados | 0 |
-| Permissões Validadas | 0 |
+| Módulos Auditados | 5/9 (55.6%) |
+| Páginas Auditadas | 15/32 (46.9%) |
+| Links Documentados | 15 |
+| Permissões Validadas | 15 |
 
 ### Critérios de Sucesso
 - ✅ 100% das 32 páginas auditadas e aprovadas

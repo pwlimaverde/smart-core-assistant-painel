@@ -40,8 +40,7 @@
             </div>
             {% endif %}
 
-            {% can_view_module "database" as can_db %}
-            {% if is_owner or can_db %}
+            {% if is_owner or can_config %}
             <a href="{% url 'tenants:config_database' %}"
                 class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if 'database' in request.path %}bg-[#a98f71]/10 text-[#a98f71]{% else %}text-stone-400 hover:text-stone-100 hover:bg-stone-800{% endif %} group transition-colors">
                 <svg class="mr-3 h-5 w-5 {% if 'database' in request.path %}text-[#a98f71]{% else %}text-stone-500 group-hover:text-stone-300{% endif %}"
@@ -53,8 +52,7 @@
             </a>
             {% endif %}
 
-            {% can_view_module "evolution_api" as can_evo %}
-            {% if is_owner or can_evo %}
+            {% if is_owner or can_config %}
             <a href="{% url 'tenants:config_evolution' %}"
                 class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if 'evolution' in request.path %}bg-[#a98f71]/10 text-[#a98f71]{% else %}text-stone-400 hover:text-stone-100 hover:bg-stone-800{% endif %} group transition-colors">
                 <svg class="mr-3 h-5 w-5 {% if 'evolution' in request.path %}text-[#a98f71]{% else %}text-stone-500 group-hover:text-stone-300{% endif %}"
@@ -66,8 +64,7 @@
             </a>
             {% endif %}
 
-            {% can_view_module "trello" as can_trello %}
-            {% if is_owner or can_trello %}
+            {% if is_owner or can_config %}
             <a href="{% url 'tenants:config_trello' %}"
                 class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if 'trello' in request.path %}bg-[#a98f71]/10 text-[#a98f71]{% else %}text-stone-400 hover:text-stone-100 hover:bg-stone-800{% endif %} group transition-colors">
                 <svg class="mr-3 h-5 w-5 {% if 'trello' in request.path %}text-[#a98f71]{% else %}text-stone-500 group-hover:text-stone-300{% endif %}"
@@ -79,8 +76,7 @@
             </a>
             {% endif %}
 
-            {% can_view_module "ai" as can_ai %}
-            {% if is_owner or can_ai %}
+            {% if is_owner or can_config %}
             <a href="{% url 'tenants:config_ai' %}"
                 class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if 'config/ai' in request.path %}bg-[#a98f71]/10 text-[#a98f71]{% else %}text-stone-400 hover:text-stone-100 hover:bg-stone-800{% endif %} group transition-colors">
                 <svg class="mr-3 h-5 w-5 {% if 'config/ai' in request.path %}text-[#a98f71]{% else %}text-stone-500 group-hover:text-stone-300{% endif %}"
@@ -92,8 +88,7 @@
             </a>
             {% endif %}
 
-            {% can_view_module "debug" as can_debug %}
-            {% if is_owner or can_debug or request.user.is_superuser %}
+            {% if is_owner or can_config or request.user.is_superuser %}
             <a href="{% url 'tenants:config_debug' %}"
                 class="flex items-center px-3 py-2.5 text-sm font-medium rounded-lg {% if 'debug' in request.path %}bg-[#a98f71]/10 text-[#a98f71]{% else %}text-stone-400 hover:text-stone-100 hover:bg-stone-800{% endif %} group transition-colors">
                 <svg class="mr-3 h-5 w-5 {% if 'debug' in request.path %}text-[#a98f71]{% else %}text-stone-500 group-hover:text-stone-300{% endif %}"

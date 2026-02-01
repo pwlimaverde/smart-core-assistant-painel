@@ -1,7 +1,7 @@
 # Módulo 5 - Dashboard Tenant
 
-> 📋 **Status**: ⏳ Pendente Implementação
-> 📅 **Data**: 2026-01-15
+> 📋 **Status**: ✅ Aprovado
+> 📅 **Data**: 2026-02-01
 > 🔗 **Índice**: [00_indice.md](./00_indice.md)
 
 ---
@@ -13,7 +13,7 @@
 | **Total de Páginas** | 1                              |
 | **Template Base**    | `tenants/dashboard.html`       |
 | **Autenticação**     | ✅ Requerida                   |
-| **Permissão**        | Usuário autenticado com tenant |
+| **Permissão**        | Autenticado; cards exigem módulo **configuracoes** |
 | **App**              | `tenants`                      |
 
 ---
@@ -29,18 +29,18 @@
 | **URL Name**      | `tenants:dashboard`                                                        |
 | **View**          | `DashboardView` (Class-Based, TemplateView)                                |
 | **Template**      | `tenants/dashboard.html`                                                   |
-| **Template Base** | ⚠️ A verificar (provavelmente `base_tenants.html` → `base_dashboard.html`) |
+| **Template Base** | `base_dashboard.html`                                                      |
 | **App**           | `tenants`                                                                  |
 | **Arquivo View**  | `app/tenants/views/legacy_views.py:94-113`                                 |
 
 ### Permissões
 
-| Tipo                 | Valor                                                   |
-| -------------------- | ------------------------------------------------------- |
-| **Autenticação**     | ✅ Requerida                                            |
-| **Roles Permitidos** | `ADMIN`, `MANAGER`, `STAFF`, `VIEWER` (todos do tenant) |
-| **Módulo**           | N/A (dashboard geral)                                   |
-| **Decorator/Mixin**  | `LoginRequiredMixin`, `TenantOwnerRequiredMixin`        |
+| Tipo                 | Valor                                                                           |
+| -------------------- | ------------------------------------------------------------------------------- |
+| **Autenticação**     | ✅ Requerida                                                                    |
+| **Roles Permitidos** | Todos os usuários do tenant (conteúdo varia por permissões de módulo)          |
+| **Módulo**           | **configuracoes** controla exibição de cards e menu de configurações            |
+| **Decorator/Mixin**  | `LoginRequiredMixin`                                                            |
 
 ### Contexto Exibido
 
@@ -53,40 +53,36 @@
 
 ### Links da Página (Previstos)
 
-| #   | Nome do Link         | URL de Destino               | URL Name                   | Resumo                |
-| --- | -------------------- | ---------------------------- | -------------------------- | --------------------- |
-| 1   | Configurar Database  | `/tenants/config/database/`  | `tenants:config_database`  | Config PostgreSQL     |
-| 2   | Configurar Evolution | `/tenants/config/evolution/` | `tenants:config_evolution` | Config WhatsApp       |
-| 3   | Configurar Trello    | `/tenants/config/trello/`    | `tenants:config_trello`    | Config Trello         |
-| 4   | Configurar IA        | `/tenants/config/ai/`        | `tenants:config_ai`        | Config IA/Prompts     |
-| 5   | Gerenciar Usuários   | `/tenants/users/`            | `tenants:user_list`        | Lista de funcionários |
-| 6   | Treinamento IA       | `/treinamento/treinar-ia/`   | `treinamento:treinar_ia`   | Treinar IA            |
-| 7   | Debug Config         | `/tenants/config/debug/`     | `tenants:config_debug`     | Verificar configs     |
+| #   | Nome do Link         | URL de Destino               | URL Name                   | Resumo            | Condição |
+| --- | -------------------- | ---------------------------- | -------------------------- | ----------------- | -------- |
+| 1   | Configurar Database  | `/tenants/config/database/`  | `tenants:config_database`  | Config PostgreSQL | owner ou **configuracoes** |
+| 2   | Configurar Evolution | `/tenants/config/evolution/` | `tenants:config_evolution` | Config WhatsApp   | owner ou **configuracoes** |
+| 3   | Configurar Trello    | `/tenants/config/trello/`    | `tenants:config_trello`    | Config Trello     | owner ou **configuracoes** |
+| 4   | Configurar IA        | `/tenants/config/ai/`        | `tenants:config_ai`        | Config IA/Prompts | owner ou **configuracoes** |
+| 5   | Debug Config         | `/tenants/config/debug/`     | `tenants:config_debug`     | Verificar configs | owner ou **configuracoes** |
 
 ### Auditoria Design System
 
 | Item                  | Status       | Observação                               |
 | --------------------- | ------------ | ---------------------------------------- |
-| Template base correto | ⏳ Verificar | Deve usar `base_dashboard.html`          |
-| Sidebar visível       | ⏳ Verificar | **CRÍTICO** - Deve ter navegação lateral |
-| Navegação funcional   | ⏳ Verificar | Links para todas as áreas                |
-| Responsividade        | ⏳ Verificar | Layout adaptável                         |
-| Padrões visuais       | ⏳ Verificar | Cards, métricas, ícones                  |
+| Template base correto | ✅ Verificado | Usa `base_dashboard.html`                |
+| Sidebar visível       | ✅ Verificado | Navegação lateral ativa                  |
+| Navegação funcional   | ✅ Verificado | Links e permissões ajustados             |
+| Responsividade        | ✅ Verificado | Layout adaptável                         |
+| Padrões visuais       | ✅ Verificado | Cards e padrão visual OK                 |
 
 ---
 
 ## Controle de Acesso
 
-### Matriz de Permissões
+### Matriz de Permissões (Resumo)
 
-| Role           | Dashboard                       |
-| -------------- | ------------------------------- |
-| Owner (Tenant) | ✅                              |
-| Admin          | ✅                              |
-| Manager        | ✅                              |
-| Staff          | ✅                              |
-| Viewer         | ✅                              |
-| Superuser      | ❌ (redireciona para `/admin/`) |
+| Perfil                         | Conteúdo exibido |
+| ----------------------------- | ---------------- |
+| Owner                         | Dashboard + cards + menu configurações |
+| Usuário com **configuracoes** | Dashboard + cards + menu configurações |
+| Usuário sem **configuracoes** | Mensagem "Sem acesso às configurações" |
+| Usuário sem módulos           | Mensagem "Acesso limitado" |
 
 ### Comportamento de Redirecionamento
 
@@ -111,24 +107,16 @@
 
 ## Pontos de Atenção Identificados
 
-### 🔴 Issues Críticos
-
-1. **Verificar herança de template** - Confirmar que usa `base_dashboard.html` para ter sidebar
-2. **Mixins de permissão** - Verificar implementação de `TenantOwnerRequiredMixin`
-
-### 🟡 Melhorias Sugeridas
-
-1. **Onboarding incompleto** - Exibir alerta se configurações pendentes
-2. **Status de integração** - Mostrar status de Evolution/Trello no dashboard
+### ✅ Sem issues críticas
 
 ---
 
 ## Checklist de Validação do Módulo
 
-- [ ] Todas as páginas documentadas
-- [ ] Todos os links mapeados
-- [ ] Permissões verificadas
-- [ ] Template base auditado
-- [ ] Sidebar funcional
-- [ ] Redirecionamentos documentados
-- [ ] **APROVADO PELO USUÁRIO**
+- [x] Todas as páginas documentadas
+- [x] Todos os links mapeados
+- [x] Permissões verificadas
+- [x] Template base auditado
+- [x] Sidebar funcional
+- [x] Redirecionamentos documentados
+- [x] **APROVADO PELO USUÁRIO**

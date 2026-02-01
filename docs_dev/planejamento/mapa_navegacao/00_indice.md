@@ -32,52 +32,52 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
 ### Módulo 2: Autenticação
 📄 **Arquivo**: `02_autenticacao.md`  
-📊 **Status**: ⏳ Pendente  
+📊 **Status**: ✅ Aprovado  
 🔢 **Páginas**: 4
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Login | `/usuarios/login/` | ⏳ Pendente |
-| 2 | Cadastro | `/usuarios/cadastro/` | ⏳ Pendente |
-| 3 | Logout | `/usuarios/logout/` | ⏳ Pendente |
-| 4 | Recuperação de Senha | `/usuarios/password-reset/` | ⏳ Pendente |
+| 1 | Login | `/usuarios/login/` | ✅ Aprovado |
+| 2 | Cadastro | `/usuarios/cadastro/` | ✅ Aprovado |
+| 3 | Logout | `/usuarios/logout/` | ✅ Aprovado |
+| 4 | Recuperação de Senha | `/usuarios/password-reset/` | ✅ Aprovado |
 
 ---
 
 ### Módulo 3: Onboarding
 📄 **Arquivo**: `03_onboarding.md`  
-📊 **Status**: ⏳ Pendente  
+📊 **Status**: ✅ Aprovado  
 🔢 **Páginas**: 4
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Step 1 - Tenant | `/tenants/onboarding/` | ⏳ Pendente |
-| 2 | Step 2 - Pagamento | `/tenants/onboarding/step/2/` | ⏳ Pendente |
-| 3 | Step 3 - Configuração | `/tenants/onboarding/step/3/` | ⏳ Pendente |
-| 4 | Step 4 - Provisionamento | `/tenants/onboarding/step/4/` | ⏳ Pendente |
+| 1 | Step 1 - Tenant | `/tenants/onboarding/` | ✅ Aprovado |
+| 2 | Step 2 - Pagamento | `/tenants/onboarding/step/2/` | ✅ Aprovado |
+| 3 | Step 3 - Configuração | `/tenants/onboarding/step/3/` | ✅ Aprovado |
+| 4 | Step 4 - Provisionamento | `/tenants/onboarding/step/4/` | ✅ Aprovado |
 
 ---
 
 ### Módulo 4: Backoffice
 📄 **Arquivo**: `04_backoffice.md`  
-📊 **Status**: ⏳ Pendente  
+📊 **Status**: ✅ Aprovado  
 🔢 **Páginas**: 2
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Dashboard Backoffice | `/tenants/bo/` | ⏳ Pendente |
-| 2 | Registrar Pagamento | `/tenants/bo/tenant/<uuid>/register-payment/` | ⏳ Pendente |
+| 1 | Dashboard Backoffice | `/tenants/bo/` | ✅ Aprovado |
+| 2 | Registrar Pagamento | `/tenants/bo/tenant/<uuid>/register-payment/` | ✅ Aprovado |
 
 ---
 
 ### Módulo 5: Dashboard Tenant
 📄 **Arquivo**: `05_dashboard_tenant.md`  
-📊 **Status**: ⏳ Pendente  
+📊 **Status**: ✅ Aprovado  
 🔢 **Páginas**: 1
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Dashboard Principal | `/tenants/dashboard/` | ⏳ Pendente |
+| 1 | Dashboard Principal | `/tenants/dashboard/` | ✅ Aprovado |
 
 ---
 
@@ -143,15 +143,15 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 | Módulo | Total Páginas | Mapeadas | Aprovadas | Progresso |
 |--------|--------------|----------|-----------|-----------|
 | 1. Páginas Públicas | 4 | 4 | 4 | ✅ 100% |
-| 2. Autenticação | 4 | 0 | 0 | ⏳ 0% |
-| 3. Onboarding | 4 | 0 | 0 | ⏳ 0% |
-| 4. Backoffice | 2 | 0 | 0 | ⏳ 0% |
-| 5. Dashboard Tenant | 1 | 0 | 0 | ⏳ 0% |
+| 2. Autenticação | 4 | 4 | 4 | ✅ 100% |
+| 3. Onboarding | 4 | 4 | 4 | ✅ 100% |
+| 4. Backoffice | 2 | 2 | 2 | ✅ 100% |
+| 5. Dashboard Tenant | 1 | 1 | 1 | ✅ 100% |
 | 6. Configurações | 5 | 0 | 0 | ⏳ 0% |
 | 7. Gestão de Usuários | 5 | 0 | 0 | ⏳ 0% |
 | 8. Treinamento IA | 5 | 0 | 0 | ⏳ 0% |
 | 9. Dashboard Gerente | 2 | 0 | 0 | ⏳ 0% |
-| **TOTAL** | **32** | **4** | **4** | **⏳ 12.5%** |
+| **TOTAL** | **32** | **15** | **15** | **⏳ 46.9%** |
 
 ---
 
@@ -249,11 +249,13 @@ base.html
 | `SUPERUSER` | Super Admin | Backoffice + All |
 
 ### Módulos de Permissão (TenantModule)
-- `CLIENTES` - Gestão de clientes
-- `OPERACIONAL` - Área operacional
+- `PAINEL_ADMIN` - Acesso ao tenant-admin (Clientes/Operacional/Atendimentos)
+- `CLIENTES` - Gestão de clientes (dentro do painel admin)
+- `OPERACIONAL` - Área operacional (dentro do painel admin)
+- `ATENDIMENTOS` - Central de atendimentos (dentro do painel admin)
 - `TREINAMENTO` - Treinamento IA
-- `ATENDIMENTOS` - Central de atendimentos
 - `CONFIGURACOES` - Configurações do tenant
+- `USUARIOS` - Gestão de usuários
 
 ---
 
@@ -266,6 +268,6 @@ base.html
 
 ---
 
-**Última Atualização**: 2026-01-31  
+**Última Atualização**: 2026-02-01  
 **Responsável**: Claude Code  
 **Revisão**: Aguardando primeira validação

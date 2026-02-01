@@ -10,19 +10,24 @@ from ..forms.onboarding import TenantRegistrationForm, OnboardingConfigForm
 from ..services.provisioning import TenantProvisioningService
 from ..models import Tenant, Plan
 
+SESSION_DATA_KEY = "onboarding_data"
+SESSION_PLAN_KEY = "onboarding_plan_id"
+SESSION_CONFIG_KEY = "onboarding_config"
+SESSION_STEP_KEY = "onboarding_step"
+
+
 class OnboardingSessionMixin:
-    """Mixin para gerenciar o contexto do Tenant na sessão durante o Wizard."""
-    def get_tenant(self):
-        tenant_id = self.request.session.get("onboarding_tenant_id")
-        if not tenant_id:
-            return None
-        # Garante que só acessa tenants em setup
-        return Tenant.objects.filter(id=tenant_id, setup_completed=False).first()
+    """Mixin para gerenciar o contexto do onboarding na sessão durante o Wizard."""
+
+    def get_onboarding_data(self):
+        return self.request.session.get(SESSION_DATA_KEY)
 
     def dispatch(self, request, *args, **kwargs):
-        # Se não tem tenant na sessão, volta pro passo 1 (exceto se for o próprio passo 1)
-        if not self.get_tenant() and not isinstance(self, Step1TenantView):
-             return redirect("tenants:onboarding_step_1")
+        # Se não tem dados do onboarding, volta pro passo 1 (exceto o próprio passo 1)
+        if not self.get_onboarding_data() and not isinstance(
+            self, Step1TenantView
+        ):
+            return redirect("tenants:onboarding_step_1")
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -31,15 +36,15 @@ class Step1TenantView(FormView):
     form_class = TenantRegistrationForm
     
     def form_valid(self, form):
-        service = TenantProvisioningService()
         data = form.cleaned_data
-        
-        # Cria o Tenant Inicial
-        tenant = service.create_initial_tenant(data)
-        
-        # Salva na sessão
-        self.request.session["onboarding_tenant_id"] = str(tenant.id)
-        
+
+        # Salva dados na sessão (sem criar tenant ainda)
+        self.request.session[SESSION_DATA_KEY] = data
+        self.request.session[SESSION_STEP_KEY] = 2
+        self.request.session.pop(SESSION_PLAN_KEY, None)
+        self.request.session.pop(SESSION_CONFIG_KEY, None)
+        self.request.session.pop("onboarding_tenant_id", None)
+
         return redirect("tenants:onboarding_step_2")
 
 
@@ -49,20 +54,21 @@ class Step2PaymentView(OnboardingSessionMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['plans'] = Plan.objects.filter(active=True)
-        context['tenant'] = self.get_tenant()
+        context["onboarding_data"] = self.get_onboarding_data()
         return context
 
     def post(self, request, *args, **kwargs):
-        tenant = self.get_tenant()
+        if not self.get_onboarding_data():
+            return redirect("tenants:onboarding_step_1")
+
         plan_id = request.POST.get("plan_id")
-        
+
         if not plan_id:
-            # Erro
             return redirect("tenants:onboarding_step_2")
-            
-        # Atualiza Plano
-        TenantProvisioningService.update_plan(tenant, plan_id)
-        
+
+        request.session[SESSION_PLAN_KEY] = int(plan_id)
+        request.session[SESSION_STEP_KEY] = 3
+
         # Mock: Assume pagamento OK e avança
         # Em produção, aqui redirecionaria para Gateway ou aguardaria webhook
         return redirect("tenants:onboarding_step_3")
@@ -74,16 +80,26 @@ class Step3ConfigView(OnboardingSessionMixin, FormView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['tenant'] = self.get_tenant()
+        context["onboarding_data"] = self.get_onboarding_data()
         return context
 
     def form_valid(self, form):
-        tenant = self.get_tenant()
         data = form.cleaned_data
-        
-        # Atualiza Configurações
-        TenantProvisioningService.update_config(tenant, data)
-        
+
+        if not self.get_onboarding_data():
+            return redirect("tenants:onboarding_step_1")
+        if not self.request.session.get(SESSION_PLAN_KEY):
+            return redirect("tenants:onboarding_step_2")
+
+        self.request.session[SESSION_CONFIG_KEY] = {
+            "brand_name": data.get("brand_name", ""),
+            "primary_color": data.get("primary_color", "#0d6efd"),
+            "secondary_color": data.get("secondary_color", "#6c757d"),
+            "timezone": data.get("timezone", "America/Sao_Paulo"),
+            "language_code": data.get("language_code", "pt-br"),
+        }
+        self.request.session[SESSION_STEP_KEY] = 4
+
         return redirect("tenants:onboarding_step_4")
 
 
@@ -92,23 +108,34 @@ class Step4ProvisionView(OnboardingSessionMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        tenant = self.get_tenant()
-        context['tenant'] = tenant
+        context["onboarding_data"] = self.get_onboarding_data()
         return context
 
     def post(self, request, *args, **kwargs):
         """Action AJAX para finalizar o setup"""
-        tenant = self.get_tenant()
-        if not tenant:
-             return JsonResponse({"error": "Sessão expirada"}, status=400)
-             
+        onboarding_data = self.get_onboarding_data()
+        plan_id = request.session.get(SESSION_PLAN_KEY)
+        config_data = request.session.get(SESSION_CONFIG_KEY)
+        if not onboarding_data or not plan_id or not config_data:
+            return JsonResponse({"error": "Sessão expirada"}, status=400)
+
         try:
-            redirect_url = TenantProvisioningService.activate_tenant(tenant)
-            
+            redirect_url = TenantProvisioningService.create_and_activate_tenant(
+                onboarding_data=onboarding_data,
+                plan_id=plan_id,
+                config_data=config_data,
+            )
+
             # Limpa sessão
-            if "onboarding_tenant_id" in request.session:
-                del request.session["onboarding_tenant_id"]
-                
+            for key in (
+                SESSION_DATA_KEY,
+                SESSION_PLAN_KEY,
+                SESSION_CONFIG_KEY,
+                SESSION_STEP_KEY,
+                "onboarding_tenant_id",
+            ):
+                request.session.pop(key, None)
+
             return JsonResponse({"redirect_url": redirect_url})
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)

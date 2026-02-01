@@ -15,16 +15,13 @@ import sys
 import time
 from pathlib import Path
 
+
 def run_command(cmd):
     """Executa um comando e retorna o resultado."""
     print(f"🔄 Executando: {cmd}")
     try:
         result = subprocess.run(
-            cmd,
-            shell=True,
-            capture_output=True,
-            text=True,
-            check=True
+            cmd, shell=True, capture_output=True, text=True, check=True
         )
         if result.stdout:
             print(result.stdout)
@@ -34,6 +31,7 @@ def run_command(cmd):
         if e.stderr:
             print(f"Erro detalhado: {e.stderr}")
         return False
+
 
 def main():
     """Função principal de reset do banco."""
@@ -47,8 +45,8 @@ def main():
 
     # 2. Remover volumes
     print("\n🗑️ Removendo volumes...")
-    run_command("docker volume rm postgres_django_data 2>/dev/null || true")
-    run_command("docker volume rm redis_data 2>/dev/null || true")
+    run_command("docker volume rm postgres_django_data 2>nul || true")
+    run_command("docker volume rm redis_data 2>nul || true")
     run_command("docker volume prune -f")
     time.sleep(2)
 
@@ -58,12 +56,27 @@ def main():
 
     # Configuração de apps e arquivos a preservar
     apps_clean = [
-        ("src/smart_core_assistant_painel/app/ui/clientes/migrations", ["__init__.py", "0001_initial.py", "0002_enable_pgvector_extension.py"]),
-        ("src/smart_core_assistant_painel/app/notion_sync/migrations", ["__init__.py", "0001_initial.py"]),
-        ("src/smart_core_assistant_painel/app/ui/operacional/migrations", ["__init__.py"]),
-        ("src/smart_core_assistant_painel/app/ui/atendimentos/migrations", ["__init__.py"]),
+        (
+            "src/smart_core_assistant_painel/app/ui/clientes/migrations",
+            ["__init__.py", "0001_initial.py", "0002_enable_pgvector_extension.py"],
+        ),
+        (
+            "src/smart_core_assistant_painel/app/notion_sync/migrations",
+            ["__init__.py", "0001_initial.py"],
+        ),
+        (
+            "src/smart_core_assistant_painel/app/ui/operacional/migrations",
+            ["__init__.py"],
+        ),
+        (
+            "src/smart_core_assistant_painel/app/ui/atendimentos/migrations",
+            ["__init__.py"],
+        ),
         ("src/smart_core_assistant_painel/app/ui/usuarios/migrations", ["__init__.py"]),
-        ("src/smart_core_assistant_painel/app/ui/treinamento/migrations", ["__init__.py"]),
+        (
+            "src/smart_core_assistant_painel/app/ui/treinamento/migrations",
+            ["__init__.py"],
+        ),
         ("src/smart_core_assistant_painel/app/ui/core/migrations", ["__init__.py"]),
     ]
 
@@ -105,6 +118,7 @@ def main():
     print("  - pgvector está habilitado no PostgreSQL")
     print("  - Todas as migrações foram aplicadas corretamente")
     print("  - Os serviços estão rodando sem erros")
+
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@
 
 > 📋 **Status**: ✅ Aprovado  
 > 🔢 **Total de Páginas**: 4  
-> 📅 **Última Atualização**: 2026-01-16  
+> 📅 **Última Atualização**: 2026-01-31  
 > ✅ **Correções Aplicadas**: Templates base padronizados
 
 ---
@@ -93,7 +93,7 @@ Esta rota atua exclusivamente como um **Gatekeeper**, redirecionando o usuário 
 | Nome do Link       | URL de Destino | Resumo                                      |
 | ------------------ | -------------- | ------------------------------------------- |
 | Voltar para a Home | `/`            | Retorna à landing page                      |
-| Fazer Login        | `/login/`      | Link para login (apenas se não autenticado) |
+| Fazer Login        | `/usuarios/login/`      | Link para login (apenas se não autenticado) |
 
 ### Auditoria Design System
 

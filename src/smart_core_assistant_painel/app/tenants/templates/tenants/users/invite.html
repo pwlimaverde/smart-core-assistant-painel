@@ -24,18 +24,6 @@
                         class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-[#a98f71] focus:border-[#a98f71] outline-none transition-colors">
                 </div>
 
-                <!-- Papel -->
-                <div>
-                    <label for="role" class="block text-sm font-medium text-stone-700 mb-1">Papel (Nível de
-                        Acesso)</label>
-                    <select id="role" name="role"
-                        class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-[#a98f71] focus:border-[#a98f71] outline-none transition-colors bg-white">
-                        {% for value, label in roles %}
-                        <option value="{{ value }}">{{ label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-
                 <!-- Módulos -->
                 <div>
                     <label class="block text-sm font-medium text-stone-700 mb-3">Módulos Permitidos</label>
@@ -44,7 +32,7 @@
                         <div
                             class="flex items-center p-3 border border-stone-200 rounded-lg hover:border-[#a98f71]/50 bg-stone-50/50 hover:bg-white transition-all cursor-pointer">
                             <input type="checkbox" id="mod_{{ mod_value }}" name="modules" value="{{ mod_value }}"
-                                checked class="h-4 w-4 text-[#a98f71] focus:ring-[#a98f71] border-stone-300 rounded">
+                                class="h-4 w-4 text-[#a98f71] focus:ring-[#a98f71] border-stone-300 rounded">
                             <label for="mod_{{ mod_value }}"
                                 class="ml-3 block text-sm font-medium text-stone-700 cursor-pointer w-full">
                                 {{ mod_label }}

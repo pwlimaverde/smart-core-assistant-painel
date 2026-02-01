@@ -177,6 +177,14 @@ call-data = "python scripts/automacao/new_feature_script.py --type call_data"
 # Django Management (Desenvolvimento Local)
 # ============================================
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
+
+# Desenvolvimento Local com Túnel SSH (conecta ao Docker remoto)
+# 1. Execute 'uv run task tunnel' para iniciar o túnel
+# 2. Execute 'uv run task start-local' para iniciar o Django
+# 3. Execute 'uv run task tunnel-stop' para encerrar o túnel
+tunnel = "powershell -NoProfile -Command \"Start-Process -WindowStyle Hidden -FilePath 'ssh' -ArgumentList '-N','-L','5436:localhost:5438','-L','6382:localhost:6384','pwlim@192.168.3.127'; Write-Host 'Tunel SSH iniciado em background - PostgreSQL: localhost:5436, Redis: localhost:6382'\""
+tunnel-stop = "powershell -NoProfile -Command \"Get-Process -Name ssh -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host 'Tunel SSH encerrado'\""
+start-local = "powershell -NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $env:POSTGRES_HOST='localhost'; $env:REDIS_HOST='localhost'; $env:PYTHONIOENCODING='utf-8'; python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000\""
 makemigrations = "python -m smart_core_assistant_painel.app.ui.manage makemigrations"
 migrate = "python -m smart_core_assistant_painel.app.ui.manage migrate"
 migrate-all = "python -m smart_core_assistant_painel.app.ui.manage migrate_all_tenants"

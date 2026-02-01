@@ -5,12 +5,10 @@ Views para o aplicativo Treinamento.
 """
 
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from loguru import logger
-from rolepermissions.checkers import has_permission
 
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 
@@ -18,51 +16,53 @@ from .models import Documento, QueryCompose, Treinamento
 from .services import TreinamentoService
 
 
-def _can_access_training(user) -> bool:
-    """
-    Verifica se o usuário pode acessar as funcionalidades de treinamento.
-    
-    Retorna True se:
-    - O usuário é superuser
-    - O usuário é Owner de um tenant ATIVO
-    - O usuário tem role Admin/Manager ou permissão de treinamento
-    """
+def _get_tenant_profile(user):
+    try:
+        return user.tenant_profile
+    except Exception:
+        return None
+
+
+def _has_any_module_permission(tenant_profile) -> bool:
+    for perms in tenant_profile.module_permissions.values():
+        if isinstance(perms, dict) and perms.get("view") is True:
+            return True
+    return False
+
+
+def _can_view_training(user) -> bool:
+    """Permite visualizar telas de treinamento (modo leitura)."""
     if not user.is_authenticated:
-        logger.debug(f"[Permission] User not authenticated")
         return False
     if user.is_superuser:
-        logger.debug(f"[Permission] User {user.username} is superuser - ALLOWED")
         return True
-        
-    # Verificar se é owner de algum tenant ATIVO
+
     from smart_core_assistant_painel.app.tenants.models import Tenant
+
     if Tenant.objects.filter(owner=user, active=True).exists():
-        logger.debug(f"[Permission] User {user.username} is tenant owner - ALLOWED")
         return True
-        
-    # Verificar via TenantUser (funcionário)
-    try:
-        tenant_profile = user.tenant_profile
-        # Validar apenas se o profile estiver ativo
-        if tenant_profile.is_active:
-            # Roles administrativas sempre têm acesso
-            if tenant_profile.role in ("admin", "manager"):
-                logger.debug(f"[Permission] User {user.username} has TenantUser role {tenant_profile.role} - ALLOWED")
-                return True
-            # Permissão granular do módulo
-            if tenant_profile.has_module_permission("treinamento", "view"):
-                logger.debug(f"[Permission] User {user.username} has training permission - ALLOWED")
-                return True
-    except Exception:
-        pass
-        
-    # Fallback: verificar via rolepermissions (legado/gerente)
-    from rolepermissions.checkers import has_role
-    if has_role(user, "gerente"):
-        logger.debug(f"[Permission] User {user.username} has role gerente - ALLOWED")
+
+    tenant_profile = _get_tenant_profile(user)
+    if tenant_profile and tenant_profile.is_active:
         return True
-        
-    logger.debug(f"[Permission] User {user.username} - DENIED")
+    return False
+
+
+def _can_edit_training(user) -> bool:
+    """Permite editar/criar (ações POST) em treinamento."""
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+
+    from smart_core_assistant_painel.app.tenants.models import Tenant
+
+    if Tenant.objects.filter(owner=user, active=True).exists():
+        return True
+
+    tenant_profile = _get_tenant_profile(user)
+    if tenant_profile and tenant_profile.is_active:
+        return tenant_profile.has_module_permission("treinamento", "edit")
     return False
 
 
@@ -71,7 +71,7 @@ def treinar_ia(request: HttpRequest) -> HttpResponse:
 
     Interface para envio de arquivos ou inserção de texto livre para treinamento.
     """
-    if not _can_access_training(request.user):
+    if not _can_edit_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
@@ -199,7 +199,7 @@ def pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
 
     Fluxo de revisão e curadoria do conteúdo antes da indexação.
     """
-    if not _can_access_training(request.user):
+    if not _can_edit_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
@@ -317,13 +317,18 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
 
     Gestão de treinamentos ativos na base de conhecimento.
     """
-    if not _can_access_training(request.user):
+    if not _can_view_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
         return redirect("dashboard")
 
     if request.method == "POST":
+        if not _can_edit_training(request.user):
+            messages.error(
+                request, "Você não tem permissão para editar treinamentos."
+            )
+            return redirect("treinamento:verificar_treinamentos_vetorizados")
         acao = request.POST.get("acao")
         treinamento_id = request.POST.get("treinamento_id")
 
@@ -392,13 +397,18 @@ def verificar_query_compose(request: HttpRequest) -> HttpResponse:
     - Ação "editar": popula sessão e redireciona para a página de cadastro.
     - Ação "excluir": remove o registro.
     """
-    if not _can_access_training(request.user):
+    if not _can_view_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )
         return redirect("dashboard")
 
     if request.method == "POST":
+        if not _can_edit_training(request.user):
+            messages.error(
+                request, "Você não tem permissão para editar intents."
+            )
+            return redirect("treinamento:verificar_query_compose")
         acao = request.POST.get("acao")
         qc_id = request.POST.get("query_compose_id")
 
@@ -459,7 +469,7 @@ def cadastrar_query_compose(request: HttpRequest) -> HttpResponse:
       assíncrona pelo signal post_save (sem bloqueio no request).
     - Suporta modo de edição quando há dados salvos em sessão.
     """
-    if not _can_access_training(request.user):
+    if not _can_edit_training(request.user):
         messages.error(
             request, "Você não tem permissão para acessar esta página."
         )

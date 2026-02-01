@@ -55,7 +55,12 @@
       "mcp__context7__query-docs",
       "WebFetch(domain:github.com)",
       "Bash(del /q \"C:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\.agent\\\\workflows\\\\openspec-*.md\")",
-      "Bash(Remove-Item -Path \"C:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\.agent\\\\workflows\\\\openspec-*.md\" -Force)"
+      "Bash(Remove-Item -Path \"C:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\.agent\\\\workflows\\\\openspec-*.md\" -Force)",
+      "Bash(uv run task:*)",
+      "Bash(where ssh)",
+      "Bash(ssh:*)",
+      "Bash(start /B ssh:*)",
+      "Bash(uv run python:*)"
     ]
   }
 }

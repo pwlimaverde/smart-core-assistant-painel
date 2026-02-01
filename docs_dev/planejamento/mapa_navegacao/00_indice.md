@@ -18,28 +18,29 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
 ### Módulo 1: Páginas Públicas
 📄 **Arquivo**: `01_paginas_publicas.md`  
-📊 **Status**: ⏳ Pendente  
+📊 **Status**: ✅ Aprovado  
 🔢 **Páginas**: 4
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Landing Page | `/` | ⏳ Pendente |
-| 2 | Erro 403 | `/403/` | ⏳ Pendente |
-| 3 | Erro 404 | `/404/` | ⏳ Pendente |
-| 4 | Erro 500 | `/500/` | ⏳ Pendente |
+| 1 | Landing Page | `/` | ✅ Aprovado |
+| 2 | Erro 403 | `/403/` | ✅ Aprovado |
+| 3 | Erro 404 | `/404/` | ✅ Aprovado |
+| 4 | Erro 500 | `/500/` | ✅ Aprovado |
 
 ---
 
 ### Módulo 2: Autenticação
 📄 **Arquivo**: `02_autenticacao.md`  
 📊 **Status**: ⏳ Pendente  
-🔢 **Páginas**: 3
+🔢 **Páginas**: 4
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Login | `/login/` | ⏳ Pendente |
-| 2 | Cadastro | `/cadastro/` | ⏳ Pendente |
-| 3 | Logout | `/logout/` | ⏳ Pendente |
+| 1 | Login | `/usuarios/login/` | ⏳ Pendente |
+| 2 | Cadastro | `/usuarios/cadastro/` | ⏳ Pendente |
+| 3 | Logout | `/usuarios/logout/` | ⏳ Pendente |
+| 4 | Recuperação de Senha | `/usuarios/password-reset/` | ⏳ Pendente |
 
 ---
 
@@ -50,10 +51,10 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Step 1 - Tenant | `/tenants/onboarding/step1/` | ⏳ Pendente |
-| 2 | Step 2 - Pagamento | `/tenants/onboarding/step2/` | ⏳ Pendente |
-| 3 | Step 3 - Configuração | `/tenants/onboarding/step3/` | ⏳ Pendente |
-| 4 | Step 4 - Provisionamento | `/tenants/onboarding/step4/` | ⏳ Pendente |
+| 1 | Step 1 - Tenant | `/tenants/onboarding/` | ⏳ Pendente |
+| 2 | Step 2 - Pagamento | `/tenants/onboarding/step/2/` | ⏳ Pendente |
+| 3 | Step 3 - Configuração | `/tenants/onboarding/step/3/` | ⏳ Pendente |
+| 4 | Step 4 - Provisionamento | `/tenants/onboarding/step/4/` | ⏳ Pendente |
 
 ---
 
@@ -64,8 +65,8 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Dashboard Backoffice | `/tenants/backoffice/` | ⏳ Pendente |
-| 2 | Registrar Pagamento | `/tenants/backoffice/register-payment/` | ⏳ Pendente |
+| 1 | Dashboard Backoffice | `/tenants/bo/` | ⏳ Pendente |
+| 2 | Registrar Pagamento | `/tenants/bo/tenant/<uuid>/register-payment/` | ⏳ Pendente |
 
 ---
 
@@ -104,9 +105,9 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 |---|--------|-----|--------|
 | 1 | Listar Usuários | `/tenants/users/` | ⏳ Pendente |
 | 2 | Convidar Usuário | `/tenants/users/invite/` | ⏳ Pendente |
-| 3 | Reenviar Convite | `/tenants/users/resend-invite/<token>/` | ⏳ Pendente |
+| 3 | Reenviar Convite | `/tenants/users/invite/<uuid>/resend/` | ⏳ Pendente |
 | 4 | Editar Permissões | `/tenants/users/<id>/permissions/` | ⏳ Pendente |
-| 5 | Ativar Conta | `/tenants/users/activate/<token>/` | ⏳ Pendente |
+| 5 | Ativar Conta | `/tenants/activate/<token>/` | ⏳ Pendente |
 
 ---
 
@@ -117,22 +118,23 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Treinar IA | `/treinamento/treinar/` | ⏳ Pendente |
-| 2 | Pré-processamento | `/treinamento/pre-processamento/` | ⏳ Pendente |
-| 3 | Verificar Treinamentos | `/treinamento/verificar/` | ⏳ Pendente |
-| 4 | Query Compose - Verificar | `/treinamento/query-compose/verificar/` | ⏳ Pendente |
-| 5 | Query Compose - Cadastrar | `/treinamento/query-compose/cadastrar/` | ⏳ Pendente |
+| 1 | Treinar IA | `/treinamento/treinar-ia/` | ⏳ Pendente |
+| 2 | Pré-processamento | `/treinamento/pre-processamento/<id>/` | ⏳ Pendente |
+| 3 | Verificar Treinamentos | `/treinamento/verificar-treinamentos/` | ⏳ Pendente |
+| 4 | Query Compose - Verificar | `/treinamento/verificar-query-compose/` | ⏳ Pendente |
+| 5 | Query Compose - Cadastrar | `/treinamento/cadastrar-query-compose/` | ⏳ Pendente |
 
 ---
 
 ### Módulo 9: Dashboard Gerente
 📄 **Arquivo**: `09_dashboard_gerente.md`  
 📊 **Status**: ⏳ Pendente  
-🔢 **Páginas**: 1
+🔢 **Páginas**: 2
 
 | # | Página | URL | Status |
 |---|--------|-----|--------|
-| 1 | Dashboard Gerente | `/dashboard-gerente/` | ⏳ Pendente |
+| 1 | Dashboard Gerente | `/usuarios/dashboard-gerente/` | ⏳ Pendente |
+| 2 | Permissões (Superuser) | `/usuarios/permissoes/` | ⏳ Pendente |
 
 ---
 
@@ -140,16 +142,16 @@ Mapear e auditar **100% das páginas navegáveis** do sistema, garantindo:
 
 | Módulo | Total Páginas | Mapeadas | Aprovadas | Progresso |
 |--------|--------------|----------|-----------|-----------|
-| 1. Páginas Públicas | 4 | 0 | 0 | ⏳ 0% |
-| 2. Autenticação | 3 | 0 | 0 | ⏳ 0% |
+| 1. Páginas Públicas | 4 | 4 | 4 | ✅ 100% |
+| 2. Autenticação | 4 | 0 | 0 | ⏳ 0% |
 | 3. Onboarding | 4 | 0 | 0 | ⏳ 0% |
 | 4. Backoffice | 2 | 0 | 0 | ⏳ 0% |
 | 5. Dashboard Tenant | 1 | 0 | 0 | ⏳ 0% |
 | 6. Configurações | 5 | 0 | 0 | ⏳ 0% |
 | 7. Gestão de Usuários | 5 | 0 | 0 | ⏳ 0% |
 | 8. Treinamento IA | 5 | 0 | 0 | ⏳ 0% |
-| 9. Dashboard Gerente | 1 | 0 | 0 | ⏳ 0% |
-| **TOTAL** | **30** | **0** | **0** | **⏳ 0%** |
+| 9. Dashboard Gerente | 2 | 0 | 0 | ⏳ 0% |
+| **TOTAL** | **32** | **4** | **4** | **⏳ 12.5%** |
 
 ---
 
@@ -264,6 +266,6 @@ base.html
 
 ---
 
-**Última Atualização**: 2026-01-16  
+**Última Atualização**: 2026-01-31  
 **Responsável**: Claude Code  
 **Revisão**: Aguardando primeira validação

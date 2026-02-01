@@ -7,6 +7,78 @@ User = get_user_model()
 
 
 class TenantProvisioningService:
+
+    @staticmethod
+    @transaction.atomic
+    def create_and_activate_tenant(
+        onboarding_data: dict,
+        plan_id: int,
+        config_data: dict,
+    ) -> str:
+        """
+        Fluxo completo: cria usuário/tenant/config/assinatura e ativa.
+        Só deve ser chamado no passo final do onboarding.
+        """
+        required_fields = [
+            "company_name",
+            "slug",
+            "admin_name",
+            "admin_email",
+            "admin_password",
+            "admin_phone",
+        ]
+        missing = [
+            field
+            for field in required_fields
+            if not onboarding_data.get(field)
+        ]
+        if missing:
+            raise ValueError(
+                f"Dados incompletos do onboarding: {', '.join(missing)}"
+            )
+
+        email = onboarding_data["admin_email"]
+        user = User.objects.filter(email=email).first()
+        if user:
+            raise ValueError("Já existe um usuário com este e-mail.")
+
+        user = User.objects.create_user(
+            username=email,
+            email=email,
+            password=onboarding_data["admin_password"],
+            first_name=onboarding_data["admin_name"].split()[0],
+            is_active=False,
+        )
+
+        tenant = Tenant.objects.create(
+            name=onboarding_data["company_name"],
+            slug=onboarding_data["slug"],
+            owner=user,
+            email=email,
+            phone=onboarding_data.get("admin_phone", ""),
+            active=False,
+            setup_completed=False,
+            onboarding_step=4,
+        )
+
+        subscription, _ = Subscription.objects.get_or_create(
+            tenant=tenant,
+            defaults={"status": Subscription.Status.PENDING_PAYMENT},
+        )
+        plan = Plan.objects.get(id=plan_id)
+        subscription.plan = plan
+        subscription.status = Subscription.Status.PENDING_PAYMENT
+        subscription.save()
+
+        config, _ = TenantConfig.objects.get_or_create(tenant=tenant)
+        config.brand_name = config_data.get("brand_name", "")
+        config.primary_color = config_data.get("primary_color", "#0d6efd")
+        config.secondary_color = config_data.get("secondary_color", "#6c757d")
+        config.timezone = config_data.get("timezone", "America/Sao_Paulo")
+        config.language_code = config_data.get("language_code", "pt-br")
+        config.save()
+
+        return TenantProvisioningService.activate_tenant(tenant)
     
     @staticmethod
     @transaction.atomic

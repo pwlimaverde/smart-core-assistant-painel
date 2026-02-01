@@ -1,7 +1,7 @@
 # Módulo 2 - Autenticação
 
-> 📋 **Status**: ✅ Concluído
-> 📅 **Data**: 2026-01-20
+> 📋 **Status**: ⏳ Pendente (Revalidação)
+> 📅 **Data**: 2026-01-31
 > 🔗 **Índice**: [00_indice.md](./00_indice.md)
 
 ---
@@ -10,7 +10,7 @@
 
 | Métrica              | Valor                            |
 | -------------------- | -------------------------------- |
-| **Total de Páginas** | 3                                |
+| **Total de Páginas** | 4                                |
 | **Template Base**    | `base_public.html`               |
 | **Autenticação**     | ❌ Não requerida (exceto logout) |
 | **App**              | `ui.usuarios`                    |
@@ -53,7 +53,7 @@
 
 | #   | Nome do Link      | URL de Destino              | URL Name                    | Resumo                        |
 | --- | ----------------- | --------------------------- | --------------------------- | ----------------------------- |
-| 1   | Crie sua conta    | `/tenants/onboarding/`      | `tenants:onboarding_step_1` | Ação principal (Footer)       |
+| 1   | Cadastre-se       | `/tenants/onboarding/`      | `tenants:onboarding_step_1` | Ação principal (Footer)       |
 | 2   | Esqueceu a senha? | `/usuarios/password-reset/` | `password_reset`            | Fluxo de recuperação de senha |
 | 3   | Voltar (Logo)     | `/`                         | `landing`                   | Retorna para Home             |
 
@@ -240,9 +240,9 @@
 
 ## Checklist de Validação do Módulo
 
-- [x] Login validado e aprovado com novo design
-- [x] Cadastro validado com novo design
-- [x] Logout validado
-- [x] Recuperação de Senha implementada e validada
-- [x] Template base auditado
-- [x] Redirecionamentos documentados
+- [ ] Login validado e aprovado com novo design
+- [ ] Cadastro validado com novo design
+- [ ] Logout validado
+- [ ] Recuperação de Senha implementada e validada
+- [ ] Template base auditado
+- [ ] Redirecionamentos documentados

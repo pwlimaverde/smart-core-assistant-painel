@@ -1,53 +1,57 @@
 {% extends "tenants/onboarding/base.html" %}
 
 {% block wizard_content %}
-<h2>Personalização</h2>
-<p class="subtitle">Ajuste os detalhes visuais do seu painel.</p>
-
-<form method="post" id="config-form">
-    {% csrf_token %}
-
-    <div class="form-group">
-        <label for="{{ form.brand_name.id_for_label }}">
-            {{ form.brand_name.label }}
-        </label>
-        {{ form.brand_name }}
-        {% if form.brand_name.help_text %}
-        <div class="help-text">{{ form.brand_name.help_text }}</div>
-        {% endif %}
+<div class="space-y-6">
+    <div>
+        <h2 class="text-2xl sm:text-3xl font-semibold text-white">Personalização</h2>
+        <p class="text-stone-400 text-sm mt-2">Ajuste os detalhes visuais do seu painel.</p>
     </div>
 
-    <!-- Hidden Fields -->
-    {{ form.language_code }}
-    {{ form.timezone }}
+    <form method="post" id="config-form" class="space-y-6">
+        {% csrf_token %}
 
-    <div class="grid-2">
-        <div class="form-group">
-            <label for="{{ form.primary_color.id_for_label }}">
-                {{ form.primary_color.label }}
+        <div class="space-y-2">
+            <label for="{{ form.brand_name.id_for_label }}" class="block text-xs font-medium text-stone-400 uppercase tracking-wider ml-1">
+                {{ form.brand_name.label }}
             </label>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                {{ form.primary_color }}
-                <span id="preview-primary"
-                    style="background-color: {{ form.primary_color.value|default:'#0d6efd' }}; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 8px; display: inline-block;"></span>
+            {{ form.brand_name }}
+            {% if form.brand_name.help_text %}
+            <div class="text-xs text-stone-500 ml-1">{{ form.brand_name.help_text }}</div>
+            {% endif %}
+            {% if form.brand_name.errors %}
+            <div class="text-xs text-red-400 ml-1">{{ form.brand_name.errors.0 }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Hidden Fields -->
+        {{ form.language_code }}
+        {{ form.timezone }}
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="space-y-2">
+                <label for="{{ form.primary_color.id_for_label }}" class="block text-xs font-medium text-stone-400 uppercase tracking-wider ml-1">
+                    {{ form.primary_color.label }}
+                </label>
+                <div class="flex items-center gap-3">
+                    {{ form.primary_color }}
+                    <span id="preview-primary" class="h-10 w-10 rounded-lg border border-white/10 bg-white/10"></span>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <label for="{{ form.secondary_color.id_for_label }}" class="block text-xs font-medium text-stone-400 uppercase tracking-wider ml-1">
+                    {{ form.secondary_color.label }}
+                </label>
+                <div class="flex items-center gap-3">
+                    {{ form.secondary_color }}
+                    <span id="preview-secondary" class="h-10 w-10 rounded-lg border border-white/10 bg-white/10"></span>
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            <label for="{{ form.secondary_color.id_for_label }}">
-                {{ form.secondary_color.label }}
-            </label>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                {{ form.secondary_color }}
-                <span id="preview-secondary"
-                    style="background-color: {{ form.secondary_color.value|default:'#6c757d' }}; width: 42px; height: 42px; border: 1px solid var(--border); border-radius: 8px; display: inline-block;"></span>
-            </div>
-        </div>
-    </div>
-</form>
+    </form>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // IDs gerados pelo Django geralmente são id_nomecampo
         var primaryId = '{{ form.primary_color.id_for_label }}';
         var secondaryId = '{{ form.secondary_color.id_for_label }}';
 
@@ -60,7 +64,6 @@
             primaryInput.addEventListener('input', function () {
                 primaryPreview.style.backgroundColor = this.value;
             });
-            // Inicializa se já tiver valor
             if (primaryInput.value) {
                 primaryPreview.style.backgroundColor = primaryInput.value;
             }
@@ -70,7 +73,6 @@
             secondaryInput.addEventListener('input', function () {
                 secondaryPreview.style.backgroundColor = this.value;
             });
-            // Inicializa se já tiver valor
             if (secondaryInput.value) {
                 secondaryPreview.style.backgroundColor = secondaryInput.value;
             }
@@ -80,10 +82,10 @@
 {% endblock %}
 
 {% block wizard_footer %}
-<div class="wizard-footer">
-    <!-- Ensure submit button triggers the form by ID -->
-    <button type="submit" form="config-form" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem;">
-        Finalizar Setup &rarr;
+<div class="px-8 py-6 border-t border-white/10 bg-[#1c1917]/60 flex justify-end">
+    <button type="submit" form="config-form" class="group relative inline-flex items-center justify-center rounded-xl bg-[#a98f71] px-6 py-3 text-sm font-semibold text-white hover:bg-[#8b7355] shadow-lg shadow-[#a98f71]/20 transition-all">
+        Finalizar Setup
+        <span class="ml-2 transition-transform group-hover:translate-x-0.5">→</span>
     </button>
 </div>
 {% endblock %}

@@ -39,6 +39,13 @@ def webhook(
     # Buscar tenant pelo middleware (request.tenant)
     tenant: Tenant | None = getattr(request, "tenant", None)
 
+    if not tenant and tenant_slug:
+        tenant = Tenant.objects.filter(slug=tenant_slug).first()
+        if tenant:
+            logger.debug(
+                f"Webhook tenant resolvido por slug da URL: {tenant.slug}"
+            )
+
     if tenant:
         # Sanity Check: se tenant_slug veio na URL, deve bater com o tenant do contexto
         if tenant_slug and tenant.slug != tenant_slug:

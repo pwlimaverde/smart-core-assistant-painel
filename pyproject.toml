@@ -31,6 +31,7 @@ dependencies = [
     "pgvector>=0.3.0",
     "firebase-admin>=6.9.0",
     "frozenlist==1.6.0",
+    "gunicorn>=23.0.0",
     "groq>=0.26.0",
     "h11==0.16.0",
     "httpcore==1.0.9",
@@ -177,13 +178,17 @@ call-data = "python scripts/automacao/new_feature_script.py --type call_data"
 # ============================================
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
 
-# Desenvolvimento Local com Túnel SSH (conecta ao Docker remoto)
-# 1. Execute 'uv run task tunnel' para iniciar o túnel
-# 2. Execute 'uv run task start-local' para iniciar o Django
-# 3. Execute 'uv run task tunnel-stop' para encerrar o túnel
-tunnel = "powershell -NoProfile -Command \"Start-Process -WindowStyle Hidden -FilePath 'ssh' -ArgumentList '-N','-L','5436:localhost:5438','-L','6382:localhost:6384','pwlim@192.168.3.127'; Write-Host 'Tunel SSH iniciado em background - PostgreSQL: localhost:5436, Redis: localhost:6382'\""
-tunnel-stop = "powershell -NoProfile -Command \"Get-Process -Name ssh -ErrorAction SilentlyContinue | Stop-Process -Force; Write-Host 'Tunel SSH encerrado'\""
-start-local = "powershell -NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $env:POSTGRES_HOST='localhost'; $env:REDIS_HOST='localhost'; $env:PYTHONIOENCODING='utf-8'; python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000\""
+# Ambiente dev-local:
+# - Django roda direto na máquina (host)
+# - PostgreSQL/Redis/Celery rodam em Docker local
+dev-local-status = "python scripts/docker_remoto/manager.py ps all --env-file .env"
+dev-local-up-data = "python scripts/docker_remoto/manager.py up data --env-file .env"
+dev-local-down-data = "python scripts/docker_remoto/manager.py down data --env-file .env"
+dev-local-up-workers = "python scripts/docker_remoto/manager.py up workers --env-file .env"
+dev-local-down-workers = "python scripts/docker_remoto/manager.py down workers --env-file .env"
+dev-local-up = "python scripts/docker_remoto/manager.py up data --env-file .env && python scripts/docker_remoto/manager.py up workers --env-file .env"
+dev-local-down = "python scripts/docker_remoto/manager.py down workers --env-file .env && python scripts/docker_remoto/manager.py down data --env-file .env"
+start-local = "powershell -NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $env:POSTGRES_HOST='localhost'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='localhost'; $env:REDIS_PORT='6384'; $env:PYTHONIOENCODING='utf-8'; python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000\""
 makemigrations = "python -m smart_core_assistant_painel.app.ui.manage makemigrations"
 migrate = "python -m smart_core_assistant_painel.app.ui.manage migrate"
 migrate-all = "python -m smart_core_assistant_painel.app.ui.manage migrate_all_tenants"
@@ -195,8 +200,8 @@ collectstatic = "python -m smart_core_assistant_painel.app.ui.manage collectstat
 celery-worker = "celery -A smart_core_assistant_painel.app.ui.core worker -l info --pool=solo -Q webhooks,ai_processing,default"
 celery-beat = "celery -A smart_core_assistant_painel.app.ui.core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler"
 
-# Iniciar todos os serviços locais em abas separadas (Windows Terminal)
-start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-worker'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task celery-beat'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-trello' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-worker'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task celery-beat'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-trello' }\""
+# Inicia stack docker local e depois sobe o Django local
+start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"uv run task dev-local-up; uv run task start-local\""
 
 # ============================================
 # Qualidade de Código
@@ -221,47 +226,47 @@ ngrok-trello = "python scripts/trello/ngrok_trello.py"
 list-tasks = "python scripts/visualize_tasks.py"
 
 # ============================================
-# Docker Remoto (Produção)
-# Usa SMART_CORE_DOCKER_HOST do .env
+# Docker Produção (via DOCKER_HOST remoto)
+# Usa SMART_CORE_DOCKER_HOST do .env.prod
 # ============================================
 
 # Status geral
-remote-status = "python scripts/docker_remoto/manager.py ps all --remote"
+remote-status = "python scripts/docker_remoto/manager.py ps all --remote --env-file .env.prod"
 
 # Data Stack (PostgreSQL + Redis)
-remote-start-data = "python scripts/docker_remoto/manager.py up data --remote"
-remote-stop-data = "python scripts/docker_remoto/manager.py down data --remote"
-remote-logs-data = "python scripts/docker_remoto/manager.py logs data --remote"
+remote-start-data = "python scripts/docker_remoto/manager.py up data --remote --env-file .env.prod"
+remote-stop-data = "python scripts/docker_remoto/manager.py down data --remote --env-file .env.prod"
+remote-logs-data = "python scripts/docker_remoto/manager.py logs data --remote --env-file .env.prod"
 
 # App Stack (Django + Migrate)
-remote-start-app = "python scripts/docker_remoto/manager.py up app --remote"
-remote-stop-app = "python scripts/docker_remoto/manager.py down app --remote"
-remote-restart-app = "python scripts/docker_remoto/manager.py restart app --remote"
-remote-logs-app = "python scripts/docker_remoto/manager.py logs app --remote"
-remote-build-app = "python scripts/docker_remoto/manager.py build app --remote"
+remote-start-app = "python scripts/docker_remoto/manager.py up app --remote --env-file .env.prod"
+remote-stop-app = "python scripts/docker_remoto/manager.py down app --remote --env-file .env.prod"
+remote-restart-app = "python scripts/docker_remoto/manager.py restart app --remote --env-file .env.prod"
+remote-logs-app = "python scripts/docker_remoto/manager.py logs app --remote --env-file .env.prod"
+remote-build-app = "python scripts/docker_remoto/manager.py build app --remote --env-file .env.prod"
 
 # Workers Stack (Celery Worker + Beat)
-remote-start-workers = "python scripts/docker_remoto/manager.py up workers --remote"
-remote-stop-workers = "python scripts/docker_remoto/manager.py down workers --remote"
-remote-restart-workers = "python scripts/docker_remoto/manager.py restart workers --remote"
-remote-logs-workers = "python scripts/docker_remoto/manager.py logs workers --remote"
-remote-build-workers = "python scripts/docker_remoto/manager.py build workers --remote"
+remote-start-workers = "python scripts/docker_remoto/manager.py up workers --remote --env-file .env.prod"
+remote-stop-workers = "python scripts/docker_remoto/manager.py down workers --remote --env-file .env.prod"
+remote-restart-workers = "python scripts/docker_remoto/manager.py restart workers --remote --env-file .env.prod"
+remote-logs-workers = "python scripts/docker_remoto/manager.py logs workers --remote --env-file .env.prod"
+remote-build-workers = "python scripts/docker_remoto/manager.py build workers --remote --env-file .env.prod"
 
 # Infra Stack (Cloudflared + Flower)
-remote-start-infra = "python scripts/docker_remoto/manager.py up infra --remote"
-remote-stop-infra = "python scripts/docker_remoto/manager.py down infra --remote"
-remote-logs-infra = "python scripts/docker_remoto/manager.py logs infra --remote"
+remote-start-infra = "python scripts/docker_remoto/manager.py up infra --remote --env-file .env.prod"
+remote-stop-infra = "python scripts/docker_remoto/manager.py down infra --remote --env-file .env.prod"
+remote-logs-infra = "python scripts/docker_remoto/manager.py logs infra --remote --env-file .env.prod"
 
 # Global (Todos os Stacks - Ordem correta de dependência)
-remote-start-all = "python scripts/docker_remoto/manager.py up all --remote"
-remote-stop-all = "python scripts/docker_remoto/manager.py down all --remote"
-remote-rebuild-all = "python scripts/docker_remoto/manager.py down all --remote && python scripts/docker_remoto/manager.py up data --remote && python scripts/docker_remoto/manager.py build app --remote && python scripts/docker_remoto/manager.py build workers --remote && python scripts/docker_remoto/manager.py up all --remote"
+remote-start-all = "python scripts/docker_remoto/manager.py up all --remote --env-file .env.prod"
+remote-stop-all = "python scripts/docker_remoto/manager.py down all --remote --env-file .env.prod"
+remote-rebuild-all = "python scripts/docker_remoto/manager.py down all --remote --env-file .env.prod && python scripts/docker_remoto/manager.py up data --remote --env-file .env.prod && python scripts/docker_remoto/manager.py build app --remote --env-file .env.prod && python scripts/docker_remoto/manager.py build workers --remote --env-file .env.prod && python scripts/docker_remoto/manager.py up all --remote --env-file .env.prod"
 
 # Django Management no Servidor
-remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage migrate"
-remote-createsuperuser = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
-remote-shell = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage shell"
-remote-collectstatic = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
+remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote --env-file .env.prod -- python -m smart_core_assistant_painel.app.ui.manage migrate"
+remote-createsuperuser = "python scripts/docker_remoto/manager.py exec app --remote --env-file .env.prod -- python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
+remote-shell = "python scripts/docker_remoto/manager.py exec app --remote --env-file .env.prod -- python -m smart_core_assistant_painel.app.ui.manage shell"
+remote-collectstatic = "python scripts/docker_remoto/manager.py exec app --remote --env-file .env.prod -- python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
 
 # ============================================
 # Servidor Hostinger (Produção via SSH)
@@ -318,33 +323,36 @@ server-restart-workers = "ssh hostinger-root 'docker restart smartcoreassistant_
 server-restart-all = "ssh hostinger-root 'docker restart smartcoreassistant_app smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Todos os serviços reiniciados\"'"
 
 # Para todos os containers (mantém dados)
-server-stop-all = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/app.yml stop && docker compose -f docker/compose/workers.yml stop && docker compose -f docker/compose/infra.yml stop && echo \"Serviços parados\"'"
+server-stop-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/infra.yml stop && echo 'Serviços parados'\""
 
 # Inicia todos os containers
-server-start-all = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/data.yml up -d && docker compose -f docker/compose/app.yml up -d && docker compose -f docker/compose/workers.yml up -d && docker compose -f docker/compose/infra.yml up -d && echo \"Serviços iniciados\"'"
+server-start-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/data.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/infra.yml up -d && echo 'Serviços iniciados'\""
 
 # --- Deploy e Atualização ---
 # Faz git pull no servidor para atualizar código
 server-pull = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && git pull && echo \"Código atualizado\"'"
 
+# Sincroniza arquivo de ambiente de produção no servidor
+server-sync-env-prod = "scp .env.prod hostinger-root:~/smart-core-assistant-painel/.env.prod && ssh hostinger-root \"chmod 600 ~/smart-core-assistant-painel/.env.prod && cp ~/smart-core-assistant-painel/.env.prod ~/smart-core-assistant-painel/.env && echo 'Arquivo .env.prod sincronizado e ativado'\""
+
 # Deploy completo: pull + rebuild + restart (sem downtime de dados)
-server-deploy = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && git pull && docker compose -f docker/compose/app.yml build && docker compose -f docker/compose/workers.yml build && docker compose -f docker/compose/app.yml up -d --force-recreate && docker compose -f docker/compose/workers.yml up -d --force-recreate && echo \"Deploy concluído\"'"
+server-deploy = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && test -f .env.prod && git pull && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml up -d --force-recreate && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml up -d --force-recreate && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput && echo 'Deploy concluido'\""
 
 # Rebuild e restart apenas da aplicação Django
-server-rebuild-app = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/app.yml build && docker compose -f docker/compose/app.yml up -d --force-recreate && echo \"App reconstruído\"'"
+server-rebuild-app = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml up -d --force-recreate && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput && echo 'App reconstruido'\""
 
 # Rebuild e restart dos workers Celery
-server-rebuild-workers = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/workers.yml build && docker compose -f docker/compose/workers.yml up -d --force-recreate && echo \"Workers reconstruídos\"'"
+server-rebuild-workers = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml up -d --force-recreate && echo 'Workers reconstruidos'\""
 
 # --- Django Management ---
 # Executa migrações no banco de produção
 server-migrate = "ssh hostinger-root 'docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage migrate'"
 
 # Cria superusuário no servidor
-server-createsuperuser = "ssh hostinger-root 'docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser'"
+server-createsuperuser = "ssh -t hostinger-root \"docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser\""
 
 # Abre shell Django interativo no servidor
-server-django-shell = "ssh hostinger-root 'docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage shell'"
+server-django-shell = "ssh -t hostinger-root \"docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage shell\""
 
 # Coleta arquivos estáticos
 server-collectstatic = "ssh hostinger-root 'docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput'"

@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
     command: tunnel run --protocol ${CLOUDFLARE_TUNNEL_PROTOCOL:-http2}
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?Defina CLOUDFLARE_TUNNEL_TOKEN no .env}
     networks:
@@ -26,12 +26,22 @@ services:
     container_name: smartcoreassistant_flower
     profiles:
       - debug
+    env_file:
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
-      - CELERY_BROKER_URL=redis://smartcoreassistant_redis:6379/0
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
       - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin123}
       - FLOWER_PURGE_OFFLINE_WORKERS=60
+    command: >
+      sh -c 'BROKER_URL="redis://smartcoreassistant_redis:6379/0";
+      if [ -n "$$REDIS_PASSWORD" ]; then
+      BROKER_URL="redis://:$$REDIS_PASSWORD@smartcoreassistant_redis:6379/0";
+      fi;
+      exec celery --broker="$$BROKER_URL" flower --port=5555'
     ports:
-      - "${FLOWER_PORT:-5555}:5555"
+      - target: 5555
+        published: "${FLOWER_PORT:-5555}"
+        host_ip: "${FLOWER_PUBLISH_HOST:-127.0.0.1}"
     networks:
       - shared_network
     restart: unless-stopped

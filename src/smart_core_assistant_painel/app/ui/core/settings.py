@@ -13,9 +13,9 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from decouple import config
 from django.contrib.messages import constants
 from dotenv import load_dotenv
-from decouple import config
 
 try:
     import django_stubs_ext
@@ -33,10 +33,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
+SECRET_KEY = os.getenv("SECRET_KEY_DJANGO", "")
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    """Converte variável de ambiente em booleano."""
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    """Converte variável de ambiente em inteiro com fallback."""
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    try:
+        return int(raw_value)
+    except ValueError:
+        return default
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool("DJANGO_DEBUG", True)
 
 
 # Tenant Configuration
@@ -89,6 +108,21 @@ def _get_allowed_hosts() -> list[str]:
 
 
 ALLOWED_HOSTS = _get_allowed_hosts()
+
+
+# Segurança HTTP/HTTPS (produção)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", not DEBUG)
+SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_HSTS_SECONDS = _env_int(
+    "SECURE_HSTS_SECONDS", 31536000 if not DEBUG else 0
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG
+)
+SECURE_HSTS_PRELOAD = _env_bool("SECURE_HSTS_PRELOAD", not DEBUG)
 
 
 # Application definition
@@ -200,11 +234,17 @@ DATABASE_ROUTERS = [
 
 # Cache configuration
 # https://docs.djangoproject.com/en/5.2/ref/settings/#caches
+_redis_cache_password = os.getenv("REDIS_PASSWORD", "")
+_redis_cache_auth = f":{_redis_cache_password}@" if _redis_cache_password else ""
 
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1",
+        "LOCATION": (
+            "redis://"
+            f"{_redis_cache_auth}"
+            f"{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1"
+        ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -287,18 +327,7 @@ MESSAGE_TAGS = {
 }
 
 ENCRYPTION_KEY = config("ENCRYPTION_KEY", default=None)
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-
-# Configurações de serviços externos (ambiente_chat)
-# Estas variáveis permitem que a aplicação Django consuma Evolution API e Ollama
-# que rodam em outro ambiente Docker separado.
-EVOLUTION_API_URL = os.getenv(
-    "EVOLUTION_API_URL", "http://localhost:8080"
-).strip()
-OLLAMA_BASE_URL = os.getenv(
-    "OLLAMA_BASE_URL", "http://192.168.3.127:11434"
-).strip()
 
 # Configurações DRF e JWT
 REST_FRAMEWORK = {
@@ -360,7 +389,7 @@ if TENANT_BASE_DOMAIN:
     )
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Em desenvolvimento, aceita qualquer origem
+CORS_ALLOW_ALL_ORIGINS = _env_bool("CORS_ALLOW_ALL_ORIGINS", DEBUG)
 
 # Para eventuais POST vindos do frontend
 # Para eventuais POST vindos do frontend e subdomínios

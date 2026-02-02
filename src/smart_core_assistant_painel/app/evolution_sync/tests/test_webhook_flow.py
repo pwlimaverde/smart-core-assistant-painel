@@ -1,7 +1,7 @@
 import json
 from typing import Any, Dict
 
-from django.test import Client, TestCase, override_settings
+from django.test import Client, TestCase
 from django.urls import reverse
 
 from smart_core_assistant_painel.app.evolution_sync.models import (
@@ -195,7 +195,6 @@ class TestEvolutionWebhookFlow(TestCase):
         assert contato is not None
         self.assertEqual(contato.telefone, "5511888888888")
 
-    @override_settings(EVOLUTION_API_URL="http://test-url.com")
     def test_signal_dispatches_on_bot_response(self) -> None:
         instance = EvolutionInstance.objects.create(
             name="inst-name",
@@ -237,6 +236,9 @@ class TestEvolutionWebhookFlow(TestCase):
         from unittest.mock import patch
 
         with patch(
+            "smart_core_assistant_painel.app.evolution_sync.signals._resolve_evolution_base_url",
+            return_value="http://test-url.com",
+        ), patch(
             "smart_core_assistant_painel.app.evolution_sync.services.evolution_api.EvolutionWhatsAppService.send_message"
         ) as mocked_send:
             atendimento.refresh_from_db()

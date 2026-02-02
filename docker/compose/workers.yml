@@ -12,7 +12,7 @@ services:
       --loglevel=INFO --concurrency=${CELERY_CONCURRENCY:-3}
       --queues=webhooks,ai_processing,default --hostname=worker@%h
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
@@ -47,7 +47,7 @@ services:
       celery -A smart_core_assistant_painel.app.ui.core beat
       --loglevel=INFO --scheduler=django_celery_beat.schedulers:DatabaseScheduler
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src

@@ -6,13 +6,15 @@ services:
     image: pgvector/pgvector:pg16
     container_name: smartcoreassistant_postgres
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
     ports:
-      - "${POSTGRES_PUBLISH_PORT:-5438}:5432"
+      - target: 5432
+        published: "${POSTGRES_PUBLISH_PORT:-5438}"
+        host_ip: "${POSTGRES_PUBLISH_HOST:-127.0.0.1}"
     volumes:
       - postgres_core_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,13 +32,26 @@ services:
   redis:
     image: redis:7-alpine
     container_name: smartcoreassistant_redis
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    env_file:
+      - ../../${SMARTCORE_ENV_FILE:-.env}
+    command: >
+      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then
+      exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 256mb --maxmemory-policy allkeys-lru;
+      else
+      exec redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru;
+      fi'
     ports:
-      - "${REDIS_PUBLISH_PORT:-6384}:6379"
+      - target: 6379
+        published: "${REDIS_PUBLISH_PORT:-6384}"
+        host_ip: "${REDIS_PUBLISH_HOST:-127.0.0.1}"
     volumes:
       - redis_core_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test:
+        [
+          "CMD-SHELL",
+          "if [ -n \"$REDIS_PASSWORD\" ]; then redis-cli -a \"$REDIS_PASSWORD\" ping; else redis-cli ping; fi",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -98,24 +98,33 @@ jobs:
             git fetch --tags
             git checkout ${{ github.ref_name }}
 
+            # Garante arquivo de ambiente de produção no servidor
+            if [ ! -f .env.prod ]; then
+              echo "❌ Arquivo .env.prod não encontrado em ~/smart-core-assistant-painel"
+              exit 1
+            fi
+
             # Pull da nova imagem
             echo "Pulling new Docker image..."
             docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.build.outputs.version }}
 
             # Recriar containers com a nova imagem
             echo "Recreating containers..."
-            docker compose -f docker/compose/app.yml pull
-            docker compose -f docker/compose/workers.yml pull
+            SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml pull
+            SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml pull
 
             # Restart dos serviços (sem downtime para data stack)
-            docker compose -f docker/compose/app.yml up -d --force-recreate
-            docker compose -f docker/compose/workers.yml up -d --force-recreate
+            SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml up -d --force-recreate
+            SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml up -d --force-recreate
+
+            # Coletar estáticos para garantir CSS/JS do admin em produção
+            docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput
 
             # Verificar saúde dos containers
             echo "Checking container health..."
             sleep 10
-            docker compose -f docker/compose/app.yml ps
-            docker compose -f docker/compose/workers.yml ps
+            SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/app.yml ps
+            SMARTCORE_ENV_FILE=.env.prod docker compose -f docker/compose/workers.yml ps
 
             echo "=== Deploy completed successfully! ==="
 

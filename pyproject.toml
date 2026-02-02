@@ -262,3 +262,112 @@ remote-migrate = "python scripts/docker_remoto/manager.py exec app --remote -- p
 remote-createsuperuser = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
 remote-shell = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage shell"
 remote-collectstatic = "python scripts/docker_remoto/manager.py exec app --remote -- python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
+
+# ============================================
+# Servidor Hostinger (Produção via SSH)
+# Host: 76.13.229.210 | User: root
+# Alias SSH: hostinger-root
+# ============================================
+
+# --- Status e Monitoramento ---
+# Exibe informações gerais do servidor (uptime, load, memória, disco)
+server-status = "ssh hostinger-root 'echo \"=== UPTIME ===\"; uptime; echo; echo \"=== MEMÓRIA ===\"; free -h; echo; echo \"=== DISCO ===\"; df -h /; echo; echo \"=== CONTAINERS ===\"; docker ps --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+
+# Lista containers Docker em execução com status e portas
+server-ps = "ssh hostinger-root 'docker ps --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+
+# Lista todos os containers (incluindo parados)
+server-ps-all = "ssh hostinger-root 'docker ps -a --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+
+# Exibe uso de recursos dos containers (CPU, memória, rede)
+server-stats = "ssh hostinger-root 'docker stats --no-stream --format \"table {{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}\"'"
+
+# --- Logs dos Containers ---
+# Exibe últimas 50 linhas de logs da aplicação Django
+server-logs-app = "ssh hostinger-root 'docker logs smartcoreassistant_app --tail 50'"
+
+# Exibe logs da aplicação em tempo real (Ctrl+C para sair)
+server-logs-app-follow = "ssh hostinger-root 'docker logs smartcoreassistant_app -f --tail 20'"
+
+# Exibe últimas 50 linhas de logs do Celery Worker
+server-logs-worker = "ssh hostinger-root 'docker logs smartcoreassistant_celery_worker --tail 50'"
+
+# Exibe logs do Celery Worker em tempo real
+server-logs-worker-follow = "ssh hostinger-root 'docker logs smartcoreassistant_celery_worker -f --tail 20'"
+
+# Exibe últimas 50 linhas de logs do Celery Beat
+server-logs-beat = "ssh hostinger-root 'docker logs smartcoreassistant_celery_beat --tail 50'"
+
+# Exibe últimas 50 linhas de logs do túnel Cloudflare
+server-logs-tunnel = "ssh hostinger-root 'docker logs smartcoreassistant_tunnel --tail 50'"
+
+# Exibe últimas 50 linhas de logs do PostgreSQL
+server-logs-postgres = "ssh hostinger-root 'docker logs smartcoreassistant_postgres --tail 50'"
+
+# Exibe últimas 50 linhas de logs do Redis
+server-logs-redis = "ssh hostinger-root 'docker logs smartcoreassistant_redis --tail 50'"
+
+# --- Controle de Containers ---
+# Reinicia o container da aplicação Django
+server-restart-app = "ssh hostinger-root 'docker restart smartcoreassistant_app && echo \"App reiniciado com sucesso\"'"
+
+# Reinicia os containers do Celery (Worker + Beat)
+server-restart-workers = "ssh hostinger-root 'docker restart smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Workers reiniciados com sucesso\"'"
+
+# Reinicia todos os containers da aplicação (app + workers)
+server-restart-all = "ssh hostinger-root 'docker restart smartcoreassistant_app smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Todos os serviços reiniciados\"'"
+
+# Para todos os containers (mantém dados)
+server-stop-all = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/app.yml stop && docker compose -f docker/compose/workers.yml stop && docker compose -f docker/compose/infra.yml stop && echo \"Serviços parados\"'"
+
+# Inicia todos os containers
+server-start-all = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/data.yml up -d && docker compose -f docker/compose/app.yml up -d && docker compose -f docker/compose/workers.yml up -d && docker compose -f docker/compose/infra.yml up -d && echo \"Serviços iniciados\"'"
+
+# --- Deploy e Atualização ---
+# Faz git pull no servidor para atualizar código
+server-pull = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && git pull && echo \"Código atualizado\"'"
+
+# Deploy completo: pull + rebuild + restart (sem downtime de dados)
+server-deploy = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && git pull && docker compose -f docker/compose/app.yml build && docker compose -f docker/compose/workers.yml build && docker compose -f docker/compose/app.yml up -d --force-recreate && docker compose -f docker/compose/workers.yml up -d --force-recreate && echo \"Deploy concluído\"'"
+
+# Rebuild e restart apenas da aplicação Django
+server-rebuild-app = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/app.yml build && docker compose -f docker/compose/app.yml up -d --force-recreate && echo \"App reconstruído\"'"
+
+# Rebuild e restart dos workers Celery
+server-rebuild-workers = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && docker compose -f docker/compose/workers.yml build && docker compose -f docker/compose/workers.yml up -d --force-recreate && echo \"Workers reconstruídos\"'"
+
+# --- Django Management ---
+# Executa migrações no banco de produção
+server-migrate = "ssh hostinger-root 'docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage migrate'"
+
+# Cria superusuário no servidor
+server-createsuperuser = "ssh hostinger-root 'docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser'"
+
+# Abre shell Django interativo no servidor
+server-django-shell = "ssh hostinger-root 'docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage shell'"
+
+# Coleta arquivos estáticos
+server-collectstatic = "ssh hostinger-root 'docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput'"
+
+# --- Acesso Direto ---
+# Abre terminal SSH interativo no servidor
+server-ssh = "ssh hostinger-root"
+
+# Abre bash dentro do container da aplicação
+server-bash-app = "ssh -t hostinger-root 'docker exec -it smartcoreassistant_app bash'"
+
+# Abre bash dentro do container do worker
+server-bash-worker = "ssh -t hostinger-root 'docker exec -it smartcoreassistant_celery_worker bash'"
+
+# --- Manutenção ---
+# Remove containers parados, imagens não utilizadas e volumes órfãos
+server-prune = "ssh hostinger-root 'docker system prune -f && echo \"Limpeza concluída\"'"
+
+# Exibe uso de disco do Docker
+server-docker-disk = "ssh hostinger-root 'docker system df'"
+
+# Backup do banco de dados (salva em ~/backups/)
+server-backup-db = "ssh hostinger-root 'mkdir -p ~/backups && docker exec smartcoreassistant_postgres pg_dump -U postgres smart_core_db > ~/backups/backup_$(date +%Y%m%d_%H%M%S).sql && echo \"Backup criado em ~/backups/\"'"
+
+# Lista backups disponíveis
+server-list-backups = "ssh hostinger-root 'ls -lah ~/backups/ 2>/dev/null || echo \"Nenhum backup encontrado\"'"

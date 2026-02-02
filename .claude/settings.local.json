@@ -68,7 +68,9 @@
       "Bash(git check-ignore:*)",
       "Bash(scp:*)",
       "WebFetch(domain:app.smartcoreassistant.com.br)",
-      "Bash(claude mcp list:*)"
+      "Bash(claude mcp list:*)",
+      "Bash(gh auth:*)",
+      "Bash(python:*)"
     ]
   }
 }

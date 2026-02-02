@@ -63,7 +63,12 @@
       "Bash(uv run python:*)",
       "Bash(ssh-keygen:*)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: configuração deploy produção v1.0.0\n\n- Atualiza versão para 1.0.0 \\(pyproject.toml + __init__.py\\)\n- Adiciona versão dinâmica no rodapé do dashboard\n- Configura rede shared_network para multi-stack\n- Atualiza .env.example com variáveis de produção\n- Adiciona GitHub Actions para deploy via tags\n- Adiciona script de setup do servidor\n- Adiciona documentação DEPLOY.md\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: configuração deploy produção v1.0.0\n\n- Atualiza versão para 1.0.0 \\(pyproject.toml + __init__.py\\)\n- Adiciona versão dinâmica no rodapé do dashboard\n- Configura rede shared_network para multi-stack\n- Atualiza .env.example com variáveis de produção\n- Adiciona GitHub Actions para deploy via tags\n- Adiciona script de setup do servidor\n- Adiciona documentação DEPLOY.md\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(scp:*)",
+      "WebFetch(domain:app.smartcoreassistant.com.br)",
+      "Bash(claude mcp list:*)"
     ]
   }
 }

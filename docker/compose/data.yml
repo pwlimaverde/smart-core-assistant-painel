@@ -4,7 +4,7 @@ services:
   # ============================================
   postgres:
     image: pgvector/pgvector:pg16
-    container_name: smartcore_postgres
+    container_name: smartcoreassistant_postgres
     env_file:
       - ../../.env
     environment:
@@ -29,7 +29,7 @@ services:
   # ============================================
   redis:
     image: redis:7-alpine
-    container_name: smartcore_redis
+    container_name: smartcoreassistant_redis
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "${REDIS_PUBLISH_PORT:-6384}:6379"

@@ -6,16 +6,16 @@ services:
     build:
       context: ../../
       dockerfile: docker/Dockerfile
-    container_name: smartcore_migrate
+    container_name: smartcoreassistant_migrate
     command: python -m smart_core_assistant_painel.app.ui.manage migrate
     env_file:
       - ../../.env
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
-      - POSTGRES_HOST=smartcore_postgres
+      - POSTGRES_HOST=smartcoreassistant_postgres
       - POSTGRES_PORT=5432
-      - REDIS_HOST=smartcore_redis
+      - REDIS_HOST=smartcoreassistant_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     networks:
@@ -26,7 +26,7 @@ services:
     build:
       context: ../../
       dockerfile: docker/Dockerfile
-    container_name: smartcore_app
+    container_name: smartcoreassistant_app
     command: >
       python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000
     volumes:
@@ -39,9 +39,9 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
-      - POSTGRES_HOST=smartcore_postgres
+      - POSTGRES_HOST=smartcoreassistant_postgres
       - POSTGRES_PORT=5432
-      - REDIS_HOST=smartcore_redis
+      - REDIS_HOST=smartcoreassistant_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     develop:

@@ -213,3 +213,6 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+# Arquivos locais de MCP (não versionar)
+/.claude/mcp.json

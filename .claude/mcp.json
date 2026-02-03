@@ -1,0 +1,38 @@
+{
+  "mcpServers": {
+    "ai-context": {
+      "command": "npx",
+      "args": ["@ai-coders/context", "mcp"]
+    },
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {
+        "CONTEXT7_API_KEY": "ctx7sk-b6c122a2-56c7-487b-aa0d-48277a4e05db"
+      }
+    },
+    "github": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "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",
+        "DOCKER_HOST": "ssh://pwlim@192.168.3.127"
+      }
+    },
+    "hostinger-mcp": {
+      "command": "npx",
+      "args": ["-y", "hostinger-api-mcp@latest"],
+      "startup_timeout_sec": 60,
+      "env": {
+        "API_TOKEN": "7PDS9HToxSpuxLUleYSHIbQkdjn9SukrS9QFd4efa5ade431"
+      }
+    }
+  }
+}

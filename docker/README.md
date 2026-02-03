@@ -56,8 +56,15 @@ uv run task remote-stop-all
 
 ## Replicação em Novo Servidor
 
-1. Copiar pasta `docker/` e arquivo `.env`
-2. Atualizar variáveis no `.env`:
+1. Copiar pasta `docker/` e arquivo `.env.prod`
+2. Atualizar variáveis no `.env.prod`:
    - `CLOUDFLARE_TUNNEL_TOKEN` (novo túnel)
    - Credenciais de banco
 3. Executar sequência de inicialização
+
+## Seleção de Ambiente
+
+Os compose files usam `SMARTCORE_ENV_FILE` para selecionar o arquivo de ambiente:
+
+- Dev-local: `SMARTCORE_ENV_FILE=.env`
+- Produção: `SMARTCORE_ENV_FILE=.env.prod`

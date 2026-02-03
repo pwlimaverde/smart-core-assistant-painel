@@ -31,11 +31,14 @@ Get-Content "$env:USERPROFILE\.ssh\id_ed25519.pub"
 .\setup_server.ps1 -PublicKey "ssh-ed25519 AAAA... seu@host"
 ```
 
-### 4. Configurar `.env` (máquina local)
+### 4. Configurar `.env.prod` (máquina local)
 
 ```ini
 SMART_CORE_DOCKER_HOST=ssh://usuario@ip_do_servidor
 ```
+
+> O `manager.py` agora aceita `--env-file` para alternar entre ambientes.
+> Exemplo: `--env-file .env` (dev-local) e `--env-file .env.prod` (produção).
 
 ---
 
@@ -49,7 +52,7 @@ uv run task remote-status
 
 # Iniciar stacks
 uv run task remote-start-data   # PostgreSQL + Redis
-uv run task remote-start-app    # Django + Celery
+uv run task remote-start-app    # Django
 
 # Rebuild da aplicação
 uv run task remote-restart-app

@@ -33,7 +33,11 @@ class Tenant(models.Model):
     onboarding_step = models.IntegerField(default=1)
 
     created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Campo para código de acesso temporário (gerado pelo admin)
+    access_code = models.CharField(max_length=20, blank=True, null=True)
 
     def save(self, *args: Any, **kwargs: Any) -> None:
         if not self.api_key:

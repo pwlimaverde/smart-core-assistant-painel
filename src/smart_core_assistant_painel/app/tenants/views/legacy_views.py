@@ -87,7 +87,11 @@ def _can_edit_tenant_configs(request, tenant, tenant_profile=None) -> bool:
     if tenant and tenant_profile.tenant != tenant:
         return False
 
-    return tenant_profile.has_module_permission("configuracoes", "edit")
+    # Compatibilidade: alguns registros antigos podem ter apenas "view=True"
+    # para configuracoes; nesses casos, tratamos como permissão de edição.
+    return tenant_profile.has_module_permission(
+        "configuracoes", "edit"
+    ) or tenant_profile.has_module_permission("configuracoes", "view")
 
 
 class TenantSignupView(FormView):

@@ -246,7 +246,106 @@ class TenantAdmin(admin.ModelAdmin):
         "extend_subscription_12_months",
         "activate_tenants",
         "suspend_tenants",
+        "generate_access_code",
     ]
+
+    @admin.action(description="Gerar e Enviar Código de Acesso")
+    def generate_access_code(self, request, queryset):
+        import secrets
+        import ssl
+        import os
+        from django.core.mail import get_connection, EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        from django.utils import timezone
+
+        count = 0
+        for tenant in queryset:
+            # Gera código de 6 caracteres (Upper + Digits)
+            # Ex: A3X-9Y2
+            chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+            part1 = "".join(secrets.choice(chars) for _ in range(3))
+            part2 = "".join(secrets.choice(chars) for _ in range(3))
+            code = f"{part1}-{part2}"
+
+            tenant.access_code = code
+            tenant.save()
+
+            # Prepara Contexto do Email
+            asset_base_url = os.getenv(
+                "PUBLIC_ASSET_BASE_URL", "https://smartcoreassistant.com.br"
+            ).rstrip("/")
+            logo_url = f"{asset_base_url}/static/img/logo_branca_smart_v2.png"
+
+            context = {
+                "tenant_name": tenant.name,
+                "access_code": code,
+                "logo_url": logo_url,
+                "current_year": timezone.now().year,
+            }
+
+            # Prepara Mensagem
+            subject = f"Código de Acesso - {tenant.name}"
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [tenant.email or tenant.owner.email]
+
+            # Texto simples (fallback)
+            text_content = f"Olá.\nSeu código de acesso para finalizar o cadastro de {tenant.name} é: {code}\nInforme este código na etapa de seleção de plano."
+
+            # HTML Renderizado
+            html_content = render_to_string(
+                "tenants/onboarding/email_access_code.html", context
+            )
+
+            email = EmailMultiAlternatives(
+                subject,
+                text_content,
+                from_email,
+                recipient_list,
+            )
+            email.attach_alternative(html_content, "text/html")
+
+            try:
+                email.send(fail_silently=False)
+                count += 1
+            except Exception as e:
+                error_str = str(e)
+                # Se for erro de certificado SSL e estivermos em DEBUG
+                if "CERTIFICATE_VERIFY_FAILED" in error_str and settings.DEBUG:
+                    try:
+                        print(
+                            f"Erro SSL detectado no envio para {tenant.name}. Tentando sem verificação SSL..."
+                        )
+                        # Criar contexto SSL não verificado
+                        ctx = ssl.create_default_context()
+                        ctx.check_hostname = False
+                        ctx.verify_mode = ssl.CERT_NONE
+
+                        # Obter conexão com o contexto customizado
+                        connection = get_connection()
+                        connection.ssl_context = ctx
+
+                        # Atribuir nova conexão à mensagem existente
+                        email.connection = connection
+                        email.send()
+                        count += 1
+                    except Exception as inner_e:
+                        self.message_user(
+                            request,
+                            f"Erro ao enviar para {tenant.name}: {inner_e}",
+                            level="error",
+                        )
+                else:
+                    # Se não for erro SSL ou não estiver em DEBUG, loga o erro mas não crasha tudo
+                    self.message_user(
+                        request,
+                        f"Erro ao enviar para {tenant.name}: {e}",
+                        level="error",
+                    )
+
+        self.message_user(
+            request, f"Código gerado e enviado para {count} tenants."
+        )
 
     @admin.action(description="Estender assinatura por 30 dias")
     def extend_subscription_30_days(self, request, queryset):

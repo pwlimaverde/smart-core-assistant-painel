@@ -28,7 +28,7 @@ WORKDIR /app
 # Copiar arquivos de dependência
 COPY pyproject.toml uv.lock ./
 
-# Instalar dependências (incluindo dev para rodar testes no container)
+# Instalar dependências bloqueadas no lockfile
 RUN uv sync --frozen --no-install-project
 
 # Copiar código fonte
@@ -36,7 +36,7 @@ COPY src ./src
 COPY scripts ./scripts
 COPY README.md ./
 
-# Instalar o projeto
+# Instalar o projeto mantendo dependências bloqueadas
 RUN uv sync --frozen
 
 # Adicionar .venv ao PATH

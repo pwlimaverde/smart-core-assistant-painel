@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-from django.conf import settings
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from loguru import logger
@@ -12,6 +11,8 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
 from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
     EvolutionWhatsAppService,
 )
+from smart_core_assistant_painel.app.tenants.middleware import get_current_tenant
+from smart_core_assistant_painel.app.tenants.models import TenantEvolution
 from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
 
 
@@ -27,6 +28,25 @@ def _on_message_pre_save(
                 instance._resposta_bot_changed = True
         except sender.DoesNotExist:
             pass
+
+
+def _resolve_evolution_base_url(inst: EvolutionInstance) -> str:
+    """Resolve URL da Evolution API com base na configuração do tenant."""
+    tenant_id = getattr(inst, "tenant_id", None)
+    if tenant_id:
+        tenant_cfg = TenantEvolution.objects.filter(
+            tenant_id=tenant_id
+        ).first()
+        if tenant_cfg and tenant_cfg.server_url:
+            return str(tenant_cfg.server_url).rstrip("/")
+
+    tenant = get_current_tenant()
+    if tenant:
+        tenant_cfg = TenantEvolution.objects.filter(tenant=tenant).first()
+        if tenant_cfg and tenant_cfg.server_url:
+            return str(tenant_cfg.server_url).rstrip("/")
+
+    return ""
 
 
 @receiver(post_save, sender=Mensagem)
@@ -119,9 +139,14 @@ def _on_message_saved(
             (inst.name or inst.phone_number or inst.instance_id or "")
         )
         api_key: str = str(inst.api_key or "")
-        base_url: str = str(getattr(settings, "EVOLUTION_API_URL", "") or "")
+        base_url: str = _resolve_evolution_base_url(inst)
 
         if not instance_name or not api_key or not base_url:
+            logger.warning(
+                "Envio Evolution ignorado por configuração incompleta: "
+                f"instance={instance_name!r}, api_key={'set' if api_key else 'empty'}, "
+                f"base_url={base_url!r}"
+            )
             return
 
         logger.info(

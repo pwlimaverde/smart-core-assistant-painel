@@ -21,6 +21,7 @@ from typing import Dict, List, Optional
 # Diretório dos compose files (relativo à raiz)
 # ============================================
 COMPOSE_DIR = "docker/compose"
+DEFAULT_ENV_FILE = ".env"
 
 # ============================================
 # Definição das 4 Stacks Modulares
@@ -28,22 +29,22 @@ COMPOSE_DIR = "docker/compose"
 STACKS: Dict[str, Dict[str, str]] = {
     "data": {
         "file": f"{COMPOSE_DIR}/data.yml",
-        "project": "smartcoreassistant-data",
+        "project": "smart-core-data",
         "description": "PostgreSQL + Redis",
     },
     "app": {
         "file": f"{COMPOSE_DIR}/app.yml",
-        "project": "smartcoreassistant-app",
+        "project": "smart-core-app",
         "description": "Django App + Migrate",
     },
     "workers": {
         "file": f"{COMPOSE_DIR}/workers.yml",
-        "project": "smartcoreassistant-workers",
+        "project": "smart-core-workers",
         "description": "Celery Worker + Beat",
     },
     "infra": {
         "file": f"{COMPOSE_DIR}/infra.yml",
-        "project": "smartcoreassistant-infra",
+        "project": "smart-core-infra",
         "description": "Cloudflared + Flower",
     },
 }
@@ -75,16 +76,23 @@ def load_env(env_path: Path) -> Dict[str, str]:
     return env_vars
 
 
-def get_docker_host() -> Optional[str]:
+def resolve_env_path(env_file: str) -> Path:
+    """Resolve caminho absoluto do arquivo de ambiente."""
+    project_root = Path(__file__).parent.parent.parent
+    env_path = Path(env_file)
+    if not env_path.is_absolute():
+        env_path = project_root / env_path
+    return env_path
+
+
+def get_docker_host(env_path: Path) -> Optional[str]:
     """Obtém o DOCKER_HOST configurado.
 
     Tenta ler:
     1. Variável de ambiente DOCKER_HOST
     2. Variável SMART_CORE_DOCKER_HOST no .env
     """
-    project_root = Path(__file__).parent.parent.parent
-    env_file = project_root / ".env"
-    file_vars = load_env(env_file)
+    file_vars = load_env(env_path)
 
     host = os.environ.get("DOCKER_HOST")
     if not host:
@@ -94,7 +102,11 @@ def get_docker_host() -> Optional[str]:
 
 
 def run_compose(
-    stack: str, command: str, args: List[str], host: Optional[str] = None
+    stack: str,
+    command: str,
+    args: List[str],
+    host: Optional[str] = None,
+    env_path: Optional[Path] = None,
 ) -> int:
     """Executa comando docker compose."""
     if stack not in STACKS:
@@ -119,23 +131,26 @@ def run_compose(
         command,
     ] + args
 
-    # Prepara ambiente - carrega .env local e adiciona ao ambiente
+    # Prepara ambiente - carrega arquivo de ambiente e adiciona ao ambiente
     env = os.environ.copy()
 
-    # Carrega variáveis do .env local para passá-las ao Docker remoto
-    project_root = Path(__file__).parent.parent.parent
-    env_file = project_root / ".env"
-    local_env_vars = load_env(env_file)
+    resolved_env_path = env_path or resolve_env_path(DEFAULT_ENV_FILE)
+    local_env_vars = load_env(resolved_env_path)
 
-    # Adiciona variáveis do .env ao ambiente (sobrescreve se já existir)
+    # Adiciona variáveis do arquivo ao ambiente (sobrescreve se já existir)
     for key, value in local_env_vars.items():
         env[key] = value
+
+    # Permite alternar o env_file dos compose files via variável de ambiente.
+    # Exemplo: .env (dev-local) ou .env.prod (produção).
+    env["SMARTCORE_ENV_FILE"] = resolved_env_path.name
 
     if host:
         print(f"--> Executando em: {host}")
         env["DOCKER_HOST"] = host
     else:
         print("--> AVISO: Executando localmente (sem DOCKER_HOST)")
+    print(f"--> Arquivo de ambiente: {resolved_env_path}")
 
     print(f"CMD: {' '.join(cmd_list)}")
     print("-" * 48)
@@ -157,7 +172,16 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=["up", "down", "restart", "logs", "build", "exec", "ps"],
+        choices=[
+            "up",
+            "down",
+            "restart",
+            "logs",
+            "build",
+            "exec",
+            "ps",
+            "run",
+        ],
         help="Comando Docker Compose",
     )
     parser.add_argument(
@@ -169,6 +193,14 @@ def main() -> None:
         "--remote",
         action="store_true",
         help="Usar host remoto configurado no .env",
+    )
+    parser.add_argument(
+        "--env-file",
+        default=DEFAULT_ENV_FILE,
+        help=(
+            "Arquivo de ambiente para carregar variáveis "
+            "(padrão: .env). Ex.: .env.prod"
+        ),
     )
     parser.add_argument("--host", help="Sobrescrever DOCKER_HOST")
     parser.add_argument(
@@ -188,6 +220,10 @@ def main() -> None:
         docker_args.remove("--remote")
         args.remote = True
 
+    # Remove separador -- se presente no início
+    if docker_args and docker_args[0] == "--":
+        docker_args = docker_args[1:]
+
     # Header
     if args.command == "ps":
         print_header(f"STATUS (PS) {args.stack}")
@@ -195,13 +231,15 @@ def main() -> None:
         print_header(f"{args.command} {args.stack}")
 
     # Determina o host
+    env_path = resolve_env_path(args.env_file)
+
     host = args.host
     if not host and args.remote:
-        host = get_docker_host()
+        host = get_docker_host(env_path)
         if not host:
             print(
                 "ERRO: Flag --remote usada mas SMART_CORE_DOCKER_HOST "
-                "não está configurado no .env"
+                "não está configurado no arquivo de ambiente"
             )
             sys.exit(1)
 
@@ -227,8 +265,6 @@ def main() -> None:
         if not docker_args:
             docker_args = ["-a"]
     elif args.command == "exec":
-        if docker_args and docker_args[0] == "--":
-            docker_args = docker_args[1:]
         default_services = {
             "app": "django_app",
             "workers": "celery_worker",
@@ -241,7 +277,9 @@ def main() -> None:
     for stack in stacks_to_run:
         print(f"\n>>> Processando Stack: {stack.upper()} <<<")
         print(f"    ({STACKS[stack]['description']})")
-        code = run_compose(stack, docker_cmd, docker_args, host)
+        code = run_compose(
+            stack, docker_cmd, docker_args, host, env_path=env_path
+        )
         if code != 0:
             print(f"Falha ao executar {stack}. Código: {code}")
             sys.exit(code)

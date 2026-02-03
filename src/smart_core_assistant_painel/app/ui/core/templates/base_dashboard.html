@@ -292,6 +292,14 @@
             <!-- Compatibility block for existing templates -->
             {% block 'conteudo' %}{% endblock %}
         </main>
+
+        <!-- Footer com versão -->
+        <footer class="border-t border-stone-200 bg-white px-6 py-3">
+            <div class="flex items-center justify-between text-xs text-stone-400">
+                <span>&copy; {% now "Y" %} Smart Core Assistant</span>
+                <span>v{{ PROJECT_VERSION }}</span>
+            </div>
+        </footer>
     </div>
 </div>
 {% endblock %}

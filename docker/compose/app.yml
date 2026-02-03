@@ -9,7 +9,7 @@ services:
     container_name: smartcoreassistant_migrate
     command: python -m smart_core_assistant_painel.app.ui.manage migrate
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
@@ -19,7 +19,7 @@ services:
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
     networks:
-      - default
+      - shared_network
     restart: "no"
 
   django_app:
@@ -28,14 +28,17 @@ services:
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_app
     command: >
-      python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000
+      gunicorn smart_core_assistant_painel.app.ui.core.wsgi:application
+      --bind 0.0.0.0:8000
+      --workers=${GUNICORN_WORKERS:-3}
+      --timeout=${GUNICORN_TIMEOUT:-120}
     volumes:
       - static_files:/app/src/smart_core_assistant_painel/app/ui/staticfiles
       - media_files:/app/src/smart_core_assistant_painel/app/media
     ports:
       - "8000:8000"
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
@@ -49,18 +52,17 @@ services:
         - action: sync
           path: ./src/smart_core_assistant_painel
           target: /app/src/smart_core_assistant_painel
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
 
 volumes:
   static_files:
+    name: smartcore_static_files
   media_files:
+    name: smartcore_media_files
 
 networks:
-  default:
-    name: smartcore-network
+  shared_network:
+    name: shared_network
     external: true

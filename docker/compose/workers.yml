@@ -9,10 +9,10 @@ services:
     container_name: smartcoreassistant_celery_worker
     command: >
       celery -A smart_core_assistant_painel.app.ui.core worker
-      --loglevel=INFO --concurrency=3
+      --loglevel=INFO --concurrency=${CELERY_CONCURRENCY:-3}
       --queues=webhooks,ai_processing,default --hostname=worker@%h
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
@@ -28,7 +28,7 @@ services:
           path: ./src/smart_core_assistant_painel
           target: /app/src/smart_core_assistant_painel
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
     deploy:
       resources:
@@ -47,7 +47,7 @@ services:
       celery -A smart_core_assistant_painel.app.ui.core beat
       --loglevel=INFO --scheduler=django_celery_beat.schedulers:DatabaseScheduler
     env_file:
-      - ../../.env
+      - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
       - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
       - PYTHONPATH=/app/src
@@ -63,7 +63,7 @@ services:
           path: ./src/smart_core_assistant_painel
           target: /app/src/smart_core_assistant_painel
     networks:
-      - default
+      - shared_network
     restart: unless-stopped
     deploy:
       resources:
@@ -71,6 +71,6 @@ services:
           memory: 512M
 
 networks:
-  default:
-    name: smartcore-network
+  shared_network:
+    name: shared_network
     external: true

@@ -34,50 +34,111 @@ class OnboardingSessionMixin:
 class Step1TenantView(FormView):
     template_name = "tenants/onboarding/step_1_tenant.html"
     form_class = TenantRegistrationForm
-    
+
     def form_valid(self, form):
         data = form.cleaned_data
 
-        # Salva dados na sessão (sem criar tenant ainda)
+        # Salva dados na sessão (backup)
         self.request.session[SESSION_DATA_KEY] = data
-        self.request.session[SESSION_STEP_KEY] = 2
-        self.request.session.pop(SESSION_PLAN_KEY, None)
-        self.request.session.pop(SESSION_CONFIG_KEY, None)
-        self.request.session.pop("onboarding_tenant_id", None)
 
-        return redirect("tenants:onboarding_step_2")
+        try:
+            # Cria o tenant imediatamente (Step 1)
+            tenant_id = TenantProvisioningService.create_initial_tenant(data)
+            self.request.session["onboarding_tenant_id"] = str(tenant_id)
+            self.request.session[SESSION_STEP_KEY] = 2
+
+            # Limpa chaves futuras para garantir estado limpo
+            self.request.session.pop(SESSION_PLAN_KEY, None)
+            self.request.session.pop(SESSION_CONFIG_KEY, None)
+
+            return redirect("tenants:onboarding_step_2")
+        except Exception as e:
+            form.add_error(None, str(e))
+            return self.form_invalid(form)
 
 
 class Step2PaymentView(OnboardingSessionMixin, TemplateView):
     template_name = "tenants/onboarding/step_2_payment.html"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['plans'] = Plan.objects.filter(active=True)
+        context["plans"] = Plan.objects.filter(active=True)
         context["onboarding_data"] = self.get_onboarding_data()
+
+        # Verifica estado do tenant para decidir o que mostrar
+        tenant_id = self.request.session.get("onboarding_tenant_id")
+        if tenant_id:
+            try:
+                tenant = Tenant.objects.get(id=tenant_id)
+                context["tenant"] = tenant
+
+                if tenant.access_code == "AUTHORIZED":
+                    context["show_plans"] = True
+                elif tenant.access_code:
+                    context["show_code_input"] = True
+                else:
+                    context["show_waiting"] = True
+
+            except Tenant.DoesNotExist:
+                pass
+
         return context
 
     def post(self, request, *args, **kwargs):
-        if not self.get_onboarding_data():
+        tenant_id = request.session.get("onboarding_tenant_id")
+        if not tenant_id:
             return redirect("tenants:onboarding_step_1")
 
-        plan_id = request.POST.get("plan_id")
+        tenant = Tenant.objects.get(id=tenant_id)
 
+        # Se já está autorizado ou usuário enviou plano diretamente (caso front mostre)
+        # mas precisa garantir segurança
+        if tenant.access_code == "AUTHORIZED":
+            # Processa plano normalmente lá embaixo
+            pass
+        elif tenant.access_code:
+            # Validação do código
+            input_code = request.POST.get("access_code", "").strip()
+
+            # Se o post contiver 'plan_id', ignora e pede código (segurança)
+            if "plan_id" in request.POST and not input_code:
+                context = self.get_context_data()
+                context["error"] = "Validação necessária."
+                return render(request, self.template_name, context)
+
+            if input_code == tenant.access_code:
+                # Código válido!
+                tenant.access_code = "AUTHORIZED"
+                tenant.save()
+                # Reload para mostrar planos
+                return redirect("tenants:onboarding_step_2")
+            else:
+                context = self.get_context_data()
+                context["error"] = "Código de acesso inválido."
+                return render(request, self.template_name, context)
+        else:
+            # Tenant access_code is None. Usuário bloqueado.
+            # Se tentar bypassar via Postman:
+            context = self.get_context_data()
+            context["error"] = "Aguardando aprovação do administrador."
+            return render(request, self.template_name, context)
+
+        # ====== Processamento do Plano (Só chega aqui se AUTHORIZED) ======
+        plan_id = request.POST.get("plan_id")
         if not plan_id:
             return redirect("tenants:onboarding_step_2")
 
         request.session[SESSION_PLAN_KEY] = int(plan_id)
+        TenantProvisioningService.update_plan(tenant, int(plan_id))
         request.session[SESSION_STEP_KEY] = 3
 
-        # Mock: Assume pagamento OK e avança
-        # Em produção, aqui redirecionaria para Gateway ou aguardaria webhook
         return redirect("tenants:onboarding_step_3")
 
 
 class Step3ConfigView(OnboardingSessionMixin, FormView):
     template_name = "tenants/onboarding/step_3_config.html"
     form_class = OnboardingConfigForm
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["onboarding_data"] = self.get_onboarding_data()
@@ -120,10 +181,12 @@ class Step4ProvisionView(OnboardingSessionMixin, TemplateView):
             return JsonResponse({"error": "Sessão expirada"}, status=400)
 
         try:
-            redirect_url = TenantProvisioningService.create_and_activate_tenant(
-                onboarding_data=onboarding_data,
-                plan_id=plan_id,
-                config_data=config_data,
+            redirect_url = (
+                TenantProvisioningService.create_and_activate_tenant(
+                    onboarding_data=onboarding_data,
+                    plan_id=plan_id,
+                    config_data=config_data,
+                )
             )
 
             # Limpa sessão
@@ -141,24 +204,30 @@ class Step4ProvisionView(OnboardingSessionMixin, TemplateView):
             return JsonResponse({"error": str(e)}, status=500)
 
 
-@method_decorator(never_cache, name='dispatch')
+@method_decorator(never_cache, name="dispatch")
 class CheckSlugView(View):
     def get(self, request):
         slug = request.GET.get("slug", "").strip().lower()
         if not slug:
             return JsonResponse({"available": False, "error": "Slug vazio"})
-            
+
         reserved = [
-            'admin', 'api', 'www', 'app', 'painel', 'dashboard',
-            'public', 'static', 'media', 'tenant', 'setup'
+            "admin",
+            "api",
+            "www",
+            "app",
+            "painel",
+            "dashboard",
+            "public",
+            "static",
+            "media",
+            "tenant",
+            "setup",
         ]
-        
+
         if slug in reserved:
             return JsonResponse({"available": False, "message": "Reservado"})
 
         is_taken = Tenant.objects.filter(slug=slug).exists()
-        
-        return JsonResponse({
-            "available": not is_taken,
-            "slug": slug
-        })
+
+        return JsonResponse({"available": not is_taken, "slug": slug})

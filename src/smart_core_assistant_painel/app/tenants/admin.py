@@ -246,7 +246,87 @@ class TenantAdmin(admin.ModelAdmin):
         "extend_subscription_12_months",
         "activate_tenants",
         "suspend_tenants",
+        "generate_access_code",
     ]
+
+    @admin.action(description="Gerar e Enviar Código de Acesso")
+    def generate_access_code(self, request, queryset):
+        import secrets
+        import ssl
+        from django.core.mail import send_mail, get_connection
+        from django.core.mail.message import EmailMessage
+        from django.conf import settings
+
+        count = 0
+        for tenant in queryset:
+            # Gera código de 6 caracteres (Upper + Digits)
+            # Ex: A3X-9Y2
+            chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+            part1 = "".join(secrets.choice(chars) for _ in range(3))
+            part2 = "".join(secrets.choice(chars) for _ in range(3))
+            code = f"{part1}-{part2}"
+
+            tenant.access_code = code
+            tenant.save()
+
+            # Prepara E-mail
+            subject = f"Código de Acesso - {tenant.name}"
+            message = f"Olá,\n\nSeu código de acesso para finalizar o cadastro é: {code}\n\nInforme este código na etapa de seleção de plano."
+            from_email = settings.DEFAULT_FROM_EMAIL
+            recipient_list = [tenant.email or tenant.owner.email]
+
+            try:
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=from_email,
+                    recipient_list=recipient_list,
+                    fail_silently=False,
+                )
+                count += 1
+            except Exception as e:
+                error_str = str(e)
+                # Se for erro de certificado SSL e estivermos em DEBUG
+                if "CERTIFICATE_VERIFY_FAILED" in error_str and settings.DEBUG:
+                    try:
+                        print(
+                            f"Erro SSL detectado no envio para {tenant.name}. Tentando sem verificação SSL..."
+                        )
+                        # Criar contexto SSL não verificado
+                        ctx = ssl.create_default_context()
+                        ctx.check_hostname = False
+                        ctx.verify_mode = ssl.CERT_NONE
+
+                        # Obter conexão com o contexto customizado
+                        connection = get_connection()
+                        connection.ssl_context = ctx
+
+                        email = EmailMessage(
+                            subject,
+                            message,
+                            from_email,
+                            recipient_list,
+                            connection=connection,
+                        )
+                        email.send()
+                        count += 1
+                    except Exception as inner_e:
+                        self.message_user(
+                            request,
+                            f"Erro ao enviar para {tenant.name}: {inner_e}",
+                            level="error",
+                        )
+                else:
+                    # Se não for erro SSL ou não estiver em DEBUG, loga o erro mas não crasha tudo
+                    self.message_user(
+                        request,
+                        f"Erro ao enviar para {tenant.name}: {e}",
+                        level="error",
+                    )
+
+        self.message_user(
+            request, f"Código gerado e enviado para {count} tenants."
+        )
 
     @admin.action(description="Estender assinatura por 30 dias")
     def extend_subscription_30_days(self, request, queryset):

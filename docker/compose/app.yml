@@ -52,9 +52,6 @@ services:
         - action: sync
           path: ./src/smart_core_assistant_painel
           target: /app/src/smart_core_assistant_painel
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
     networks:
       - shared_network
     restart: unless-stopped

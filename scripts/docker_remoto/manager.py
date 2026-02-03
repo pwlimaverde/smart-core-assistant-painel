@@ -29,22 +29,22 @@ DEFAULT_ENV_FILE = ".env"
 STACKS: Dict[str, Dict[str, str]] = {
     "data": {
         "file": f"{COMPOSE_DIR}/data.yml",
-        "project": "smartcoreassistant-data",
+        "project": "smart-core-data",
         "description": "PostgreSQL + Redis",
     },
     "app": {
         "file": f"{COMPOSE_DIR}/app.yml",
-        "project": "smartcoreassistant-app",
+        "project": "smart-core-app",
         "description": "Django App + Migrate",
     },
     "workers": {
         "file": f"{COMPOSE_DIR}/workers.yml",
-        "project": "smartcoreassistant-workers",
+        "project": "smart-core-workers",
         "description": "Celery Worker + Beat",
     },
     "infra": {
         "file": f"{COMPOSE_DIR}/infra.yml",
-        "project": "smartcoreassistant-infra",
+        "project": "smart-core-infra",
         "description": "Cloudflared + Flower",
     },
 }
@@ -172,7 +172,16 @@ def main() -> None:
     )
     parser.add_argument(
         "command",
-        choices=["up", "down", "restart", "logs", "build", "exec", "ps"],
+        choices=[
+            "up",
+            "down",
+            "restart",
+            "logs",
+            "build",
+            "exec",
+            "ps",
+            "run",
+        ],
         help="Comando Docker Compose",
     )
     parser.add_argument(
@@ -210,6 +219,10 @@ def main() -> None:
     if "--remote" in docker_args:
         docker_args.remove("--remote")
         args.remote = True
+
+    # Remove separador -- se presente no início
+    if docker_args and docker_args[0] == "--":
+        docker_args = docker_args[1:]
 
     # Header
     if args.command == "ps":
@@ -252,8 +265,6 @@ def main() -> None:
         if not docker_args:
             docker_args = ["-a"]
     elif args.command == "exec":
-        if docker_args and docker_args[0] == "--":
-            docker_args = docker_args[1:]
         default_services = {
             "app": "django_app",
             "workers": "celery_worker",

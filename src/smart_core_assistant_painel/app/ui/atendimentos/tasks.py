@@ -1,4 +1,8 @@
+from celery import shared_task
 from loguru import logger
+
+from smart_core_assistant_painel.app.tenants.celery import TenantTask
+
 from smart_core_assistant_painel.app.ui.atendimentos.models import (
     Atendimento,
     Mensagem,
@@ -7,7 +11,40 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
 )
 
 
-def verificar_feedback_atendimento(atendimento_id: int) -> None:
+@shared_task(base=TenantTask)
+def process_contact_response_task(tenant_slug: str, contact_id: int) -> None:
+    """Tarefa para processar resposta de contato.
+
+    Esta função é o ponto de entrada para o agendamento de tarefas.
+    Ela instancia o orquestrador e delega o processamento.
+
+    Args:
+        contact_id: ID do contato a ser processado.
+    """
+    # Import local para evitar ciclos com o pacote services
+    from smart_core_assistant_painel.app.ui.atendimentos.services import (
+        create_orchestrator,
+    )
+
+    try:
+        logger.info(
+            f"Iniciando task de processamento para contato {contact_id}"
+        )
+        orchestrator = create_orchestrator()
+        orchestrator.process_contact_response(contact_id=contact_id)
+    except Exception as e:
+        logger.error(
+            f"Erro fatal na task de processamento para contato {contact_id}: {e}"
+        )
+        raise
+
+
+@shared_task(
+    base=TenantTask,
+)
+def verificar_feedback_atendimento(
+    tenant_slug: str, atendimento_id: int
+) -> None:
     """
     Verifica se o feedback foi recebido após um tempo determinado.
     Se não houve avaliação, envia mensagem de agradecimento e encerra o ciclo.

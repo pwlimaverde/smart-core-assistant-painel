@@ -1,0 +1,291 @@
+{% extends "base_dashboard.html" %}
+{% load i18n %}
+
+{% block title %}Configuração - Inteligência Artificial{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <a href="{% url 'tenants:dashboard' %}"
+            class="inline-flex items-center text-sm text-stone-500 hover:text-[#a98f71] transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Voltar para Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
+            <h2 class="text-xl font-bold text-stone-800 flex items-center">
+                <span class="p-2 bg-[#a98f71]/10 rounded-lg mr-3 text-[#a98f71]">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                        </path>
+                    </svg>
+                </span>
+                Configuração de Inteligência Artificial
+            </h2>
+            <p class="mt-1 text-stone-500 text-sm ml-11">
+                Personalize como o bot irá se comportar e responder aos seus clientes.
+            </p>
+        </div>
+
+        <form method="post" novalidate class="divide-y divide-stone-100">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="p-6 bg-red-50 border-b border-red-100">
+                {% for error in form.non_field_errors %}
+                <div class="text-sm text-red-600 flex items-start">
+                    <svg class="w-5 h-5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    {{ error }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Seção: Sobre a Empresa -->
+            <div class="p-6 space-y-4">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="p-2 bg-blue-50 rounded-lg text-blue-600 mt-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-stone-800">Sobre a Empresa</h3>
+                        <p class="text-sm text-stone-500">Forneça informações sobre sua empresa que o bot usará para
+                            responder perguntas.</p>
+                    </div>
+                </div>
+
+                <div class="ml-14 space-y-2">
+                    <label for="{{ form.dados_empresa.id_for_label }}" class="block text-sm font-medium text-stone-700">
+                        {{ form.dados_empresa.label }}
+                    </label>
+                    <div class="mt-1">
+                        {{ form.dados_empresa }}
+                    </div>
+                    {% if form.dados_empresa.help_text %}
+                    <p class="text-xs text-stone-500">{{ form.dados_empresa.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.dados_empresa.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Seção: Persona do Bot -->
+            <div class="p-6 space-y-4 bg-stone-50/30">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="p-2 bg-purple-50 rounded-lg text-purple-600 mt-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-stone-800">Persona do Bot</h3>
+                        <p class="text-sm text-stone-500">Defina a identidade, tom de voz e estilo de comunicação.</p>
+                    </div>
+                </div>
+
+                <div class="ml-14 space-y-2">
+                    <label for="{{ form.persona_bot.id_for_label }}" class="block text-sm font-medium text-stone-700">
+                        {{ form.persona_bot.label }}
+                    </label>
+                    <div class="mt-1">
+                        {{ form.persona_bot }}
+                    </div>
+                    {% if form.persona_bot.help_text %}
+                    <p class="text-xs text-stone-500">{{ form.persona_bot.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.persona_bot.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Seção: Mensagens Automáticas -->
+            <div class="p-6 space-y-6">
+                <div class="flex items-start gap-4 mb-2">
+                    <div class="p-2 bg-yellow-50 rounded-lg text-yellow-600 mt-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                            </path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-stone-800">Mensagens Automáticas</h3>
+                        <p class="text-sm text-stone-500">Configure as mensagens padrão para situações específicas.</p>
+                    </div>
+                </div>
+
+                <div class="ml-14 space-y-6">
+                    <!-- Fallback -->
+                    <div class="space-y-2">
+                        <label for="{{ form.msg_fallback.id_for_label }}"
+                            class="block text-sm font-medium text-stone-700">
+                            {{ form.msg_fallback.label }}
+                        </label>
+                        {{ form.msg_fallback }}
+                        {% if form.msg_fallback.help_text %}
+                        <p class="text-xs text-stone-500">{{ form.msg_fallback.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.msg_fallback.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Sem Info -->
+                    <div class="space-y-2">
+                        <label for="{{ form.msg_sem_info.id_for_label }}"
+                            class="block text-sm font-medium text-stone-700">
+                            {{ form.msg_sem_info.label }}
+                        </label>
+                        {{ form.msg_sem_info }}
+                        {% if form.msg_sem_info.help_text %}
+                        <p class="text-xs text-stone-500">{{ form.msg_sem_info.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.msg_sem_info.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Transferência -->
+                    <div class="space-y-2">
+                        <label for="{{ form.msg_transferencia.id_for_label }}"
+                            class="block text-sm font-medium text-stone-700">
+                            {{ form.msg_transferencia.label }}
+                        </label>
+                        {{ form.msg_transferencia }}
+                        {% if form.msg_transferencia.help_text %}
+                        <p class="text-xs text-stone-500">{{ form.msg_transferencia.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.msg_transferencia.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção: Extração de Entidades -->
+            <div class="p-6 space-y-4 bg-stone-50/30">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600 mt-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-semibold text-stone-800">Extração de Entidades</h3>
+                        <p class="text-sm text-stone-500">Defina categorias e campos JSON para identificação automática
+                            no chat.</p>
+                    </div>
+                </div>
+
+                <div class="ml-14 space-y-2">
+                    <label for="{{ form.entity_types_json.id_for_label }}"
+                        class="block text-sm font-medium text-stone-700">
+                        {{ form.entity_types_json.label }}
+                    </label>
+                    <div class="font-mono text-sm">
+                        {{ form.entity_types_json }}
+                    </div>
+                    {% if form.entity_types_json.help_text %}
+                    <p class="text-xs text-stone-500">{{ form.entity_types_json.help_text }}</p>
+                    {% endif %}
+                    {% for error in form.entity_types_json.errors %}
+                    <p class="text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Botões -->
+            <div class="px-6 py-4 bg-stone-50 flex justify-end gap-3">
+                <a href="{% url 'tenants:dashboard' %}"
+                    class="px-4 py-2 border border-stone-300 text-stone-700 font-medium rounded-lg hover:bg-stone-100 transition-colors bg-white shadow-sm">
+                    Cancelar
+                </a>
+                <button type="submit"
+                    class="px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white font-medium rounded-lg shadow-sm transition-colors duration-200 flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
+                        </path>
+                    </svg>
+                    Salvar Configurações
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dicas -->
+    <div class="bg-blue-50 border border-blue-100 rounded-xl p-6">
+        <h3 class="text-sm font-semibold text-blue-800 mb-2 flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Dicas de Configuração
+        </h3>
+        <ul class="text-sm text-blue-700 space-y-1 ml-6 list-disc">
+            <li><strong>Dados da Empresa:</strong> Inclua nome, localização, produtos/serviços principais, missão e
+                contatos.</li>
+            <li><strong>Persona do Bot:</strong> Dê um nome ao bot e defina se ele é formal ou informal, técnico ou
+                amigável.</li>
+            <li><strong>Mensagens Automáticas:</strong> Personalize as respostas padrão para situações específicas como
+                fallback e transferências.</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    /* Ajustes específicos para campos de formulário desta página */
+    textarea {
+        width: 100%;
+        min-height: 120px;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e7e5e4;
+        /* stone-200 */
+        background-color: #fff;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        transition: all 0.2s;
+    }
+
+    textarea:focus {
+        outline: none;
+        border-color: #a98f71;
+        box-shadow: 0 0 0 3px rgba(169, 143, 113, 0.1);
+    }
+
+    input[type="text"] {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #e7e5e4;
+        background-color: #fff;
+        font-size: 0.875rem;
+    }
+
+    input[type="text"]:focus {
+        outline: none;
+        border-color: #a98f71;
+        box-shadow: 0 0 0 3px rgba(169, 143, 113, 0.1);
+    }
+</style>
+{% endblock %}

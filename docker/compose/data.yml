@@ -1,0 +1,71 @@
+services:
+  # ============================================
+  # PostgreSQL Core (Metadados SaaS)
+  # ============================================
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: smartcoreassistant_postgres
+    env_file:
+      - ../../${SMARTCORE_ENV_FILE:-.env}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_core_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
+    ports:
+      - target: 5432
+        published: "${POSTGRES_PUBLISH_PORT:-5438}"
+        host_ip: "${POSTGRES_PUBLISH_HOST:-127.0.0.1}"
+    volumes:
+      - postgres_core_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared_network
+    restart: unless-stopped
+
+  # ============================================
+  # Redis Core (Cache & Queues)
+  # ============================================
+  redis:
+    image: redis:7-alpine
+    container_name: smartcoreassistant_redis
+    env_file:
+      - ../../${SMARTCORE_ENV_FILE:-.env}
+    command: >
+      sh -c 'if [ -n "$$REDIS_PASSWORD" ]; then
+      exec redis-server --requirepass "$$REDIS_PASSWORD" --maxmemory 256mb --maxmemory-policy allkeys-lru;
+      else
+      exec redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru;
+      fi'
+    ports:
+      - target: 6379
+        published: "${REDIS_PUBLISH_PORT:-6384}"
+        host_ip: "${REDIS_PUBLISH_HOST:-127.0.0.1}"
+    volumes:
+      - redis_core_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "if [ -n \"$REDIS_PASSWORD\" ]; then redis-cli -a \"$REDIS_PASSWORD\" ping; else redis-cli ping; fi",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared_network
+    restart: unless-stopped
+
+volumes:
+  postgres_core_data:
+    name: smartcore_postgres_data
+  redis_core_data:
+    name: smartcore_redis_data
+
+networks:
+  shared_network:
+    name: shared_network
+    driver: bridge

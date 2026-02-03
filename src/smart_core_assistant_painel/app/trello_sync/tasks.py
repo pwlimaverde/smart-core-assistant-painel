@@ -1,7 +1,7 @@
-"""Tarefas do Trello executadas via cluster (Django Q).
+"""Tarefas do Trello executadas via Celery.
 
 Estas funções encapsulam operações de sincronização com o Trello para
-serem executadas por workers do cluster, evitando chamadas diretas
+serem executadas por workers do Celery, evitando chamadas diretas
 no contexto dos sinais.
 
 As tarefas são agendadas pelos sinais em
@@ -10,13 +10,11 @@ As tarefas são agendadas pelos sinais em
 
 from __future__ import annotations
 
-from datetime import timedelta
 from typing import Any, Dict, Optional, cast
 
+from celery import shared_task
 from decouple import config
-from django.db import models, transaction
-from django.utils import timezone
-from django_q.tasks import schedule
+from django.db import models, router, transaction
 from loguru import logger
 
 from smart_core_assistant_painel.app.trello_sync.models import (
@@ -38,111 +36,11 @@ from smart_core_assistant_painel.app.ui.operacional.models import (
     TipoEtapa,
 )
 from smart_core_assistant_painel.modules.services import SERVICEHUB
+from smart_core_assistant_painel.app.tenants.celery import TenantTask
 
 
-def _ensure_webhook_for_board(board_id: str, fluxo_id: int) -> None:
-    """Garante que o webhook esteja registrado para o board.
-
-    Lógica:
-    1. Determina URL de callback (prioriza WEBHOOK_CALLBACK_URL, fallback para OAUTH_REDIRECT_URI).
-    2. Verifica se já existe webhook para este board (idempotência).
-    3. Registra se necessário.
-    """
-    try:
-        # 1. Determinar URL de Callback
-        # O usuário confirmou que a comunicação será via túnel ngrok.
-        # Priorizamos a variável específica, mas usamos a de OAuth como fallback robusto.
-        callback_url = config(
-            "TRELLO_WEBHOOK_CALLBACK_URL", default="", cast=str
-        )
-        if not callback_url:
-            # Fallback inteligente: usar a base do redirect URI se disponível
-            oauth_redirect = config(
-                "TRELLO_OAUTH_REDIRECT_URI", default="", cast=str
-            )
-            if oauth_redirect:
-                # Ex: https://...ngrok-free.dev/integrations/trello/callback/
-                # Queremos: https://...ngrok-free.dev/api/trello_sync/webhook/
-                # Simplificação: assumimos que o domínio é o mesmo.
-                from urllib.parse import urlparse
-
-                parsed = urlparse(oauth_redirect)
-                base = f"{parsed.scheme}://{parsed.netloc}"
-                callback_url = f"{base}/api/trello_sync/webhook/"
-
-        if not callback_url:
-            logger.warning(
-                "Impossível registrar webhook: URL de callback não configurada."
-            )
-            return
-
-        # Adiciona secret se configurado (recomendado)
-        secret = config("TRELLO_WEBHOOK_SECRET", default="", cast=str)
-        if secret:
-            if "?" in callback_url:
-                callback_url += f"&secret={secret}"
-            else:
-                callback_url += f"?secret={secret}"
-
-        client = SERVICEHUB.unified_data_service
-        try:
-            from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
-                TrelloUnifiedDataService,
-            )
-
-            trello_client = cast(TrelloUnifiedDataService, client)
-        except Exception:
-            # Se não for o adapter Trello, não podemos prosseguir com métodos específicos
-            logger.warning("Cliente UDS não é TrelloAdapter, pulando webhook.")
-            return
-
-        # 2. Verificar existência (Idempotência)
-        # Listamos os webhooks do token atual para ver se já monitoramos este board
-        try:
-            # Hack: acessamos método privado _request ou usamos endpoint direto se o adapter não expuser listagem
-            # O adapter atual não tem `list_webhooks`. Vamos tentar registrar direto?
-            # A API do Trello retorna erro se já existir? Não necessariamente, pode criar duplicado.
-            # Melhor: vamos assumir que o adapter `register_webhook` é "burro" e tentar listar antes.
-            # Como o adapter não expõe `list_webhooks`, vamos implementar uma verificação manual via _request se possível,
-            # ou confiar no log de erro se duplicado.
-            # Pela robustez solicitada, vamos tentar listar.
-            # O adapter tem `_request` mas é protegido.
-            # Vamos tentar registrar e tratar erro, ou melhor, adicionar `list_webhooks` no adapter seria o ideal,
-            # mas não vamos alterar o adapter agora se pudermos evitar.
-            # Vamos confiar que o usuário quer "garantir". Se duplicar, o Trello manda 2 eventos.
-            # Para evitar duplicação, vamos tentar listar via requests direto se necessário,
-            # mas para manter padrão, vamos apenas registrar e logar.
-            # CORREÇÃO: O usuário pediu robustez. Vamos verificar se já existe.
-            # Como não podemos alterar o adapter facilmente sem sair do escopo da task (talvez?),
-            # vamos usar a `register_webhook` que já existe.
-            pass
-        except Exception:
-            pass
-
-        # 3. Registrar
-        logger.info(
-            "Tentando registrar webhook para board {} em {}",
-            board_id,
-            callback_url,
-        )
-        webhook_id = trello_client.register_webhook(
-            model_id=board_id,
-            callback_url=callback_url,
-            description=f"Webhook Fluxo #{fluxo_id} (Board {board_id})",
-        )
-        logger.warning(
-            "Webhook registrado com sucesso: Board {} -> Webhook {}",
-            board_id,
-            webhook_id,
-        )
-
-    except Exception as exc:
-        logger.error(
-            "Falha ao registrar webhook para board {}: {}", board_id, exc
-        )
-
-
-def task_fluxo_ensure_board(fluxo_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_fluxo_ensure_board(tenant_slug: str, fluxo_id: int) -> None:
     """Garante o board Trello para um fluxo.
 
     Args:
@@ -152,22 +50,34 @@ def task_fluxo_ensure_board(fluxo_id: int) -> None:
         fluxo = FluxoAtendimento.objects.get(id=fluxo_id)
         board = FlowSyncService().ensure_board_for_fluxo(fluxo)
 
-        # Garante o webhook com delay de 10s para estabilidade
-        if board and board.external_id:
-            schedule(
-                "smart_core_assistant_painel.app.trello_sync.tasks._ensure_webhook_for_board",
-                board.external_id,
-                fluxo_id,
-                next_run=timezone.now() + timedelta(seconds=10),
-            )
-
     except FluxoAtendimento.DoesNotExist:
         logger.warning("Fluxo não encontrado para criar board: {}", fluxo_id)
     except Exception as exc:
         logger.error("Falha ao garantir board Trello: {}", exc)
 
 
-def task_etapa_ensure_list(etapa_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_fluxo_archive_board(tenant_slug: str, board_external_id: str) -> None:
+    """Arquiva o board Trello ao excluir um fluxo.
+
+    Args:
+        board_external_id: ID externo do board Trello.
+    """
+    try:
+        client = SERVICEHUB.unified_data_service
+        # Assume que archive_item funciona para boards (closed=True)
+        client.archive_item(board_external_id)
+        logger.info(
+            "Board Trello arquivado com sucesso: {}", board_external_id
+        )
+    except Exception as exc:
+        logger.warning(
+            "Falha ao arquivar board Trello {}: {}", board_external_id, exc
+        )
+
+
+@shared_task(base=TenantTask)
+def task_etapa_ensure_list(tenant_slug: str, etapa_id: int) -> None:
     """Garante a lista Trello para uma etapa de fluxo.
 
     Args:
@@ -187,7 +97,8 @@ def task_etapa_ensure_list(etapa_id: int) -> None:
         logger.error("Falha ao garantir lista Trello: {}", exc)
 
 
-def task_reorder_lists_for_fluxo(fluxo_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_reorder_lists_for_fluxo(tenant_slug: str, fluxo_id: int) -> None:
     """Reordena listas do board de um fluxo.
 
     Args:
@@ -204,7 +115,8 @@ def task_reorder_lists_for_fluxo(fluxo_id: int) -> None:
         logger.warning("Falha ao reordenar listas do fluxo: {}", exc)
 
 
-def task_etapa_archive_list(etapa_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_etapa_archive_list(tenant_slug: str, etapa_id: int) -> None:
     """Arquiva a lista Trello quando a etapa é excluída.
 
     Nota: como a etapa já foi excluída (post_delete) ou está sendo (pre_delete),
@@ -219,7 +131,10 @@ def task_etapa_archive_list(etapa_id: int) -> None:
     pass
 
 
-def task_atendimento_ensure_card(atendimento_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_atendimento_ensure_card(
+    tenant_slug: str, atendimento_id: int
+) -> None:
     """Garante o card Trello para um atendimento.
 
     Args:
@@ -236,7 +151,8 @@ def task_atendimento_ensure_card(atendimento_id: int) -> None:
         logger.error("Falha ao garantir card Trello: {}", exc)
 
 
-def task_atendente_invite(atendente_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_atendente_invite(tenant_slug: str, atendente_id: int) -> None:
     """Envia convite do Trello para um atendente.
 
     Args:
@@ -253,7 +169,8 @@ def task_atendente_invite(atendente_id: int) -> None:
         logger.error("Falha ao convidar atendente: {}", exc)
 
 
-def task_atendente_remove_member(atendente_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_atendente_remove_member(tenant_slug: str, atendente_id: int) -> None:
     """Remove membro do Trello ao excluir atendente.
 
     Args:
@@ -263,8 +180,11 @@ def task_atendente_remove_member(atendente_id: int) -> None:
     pass
 
 
+@shared_task(base=TenantTask)
 def task_atendimento_sync_card_members(
-    atendimento_id: int, old_atendente_id: Optional[int] = None
+    tenant_slug: str,
+    atendimento_id: int,
+    old_atendente_id: Optional[int] = None,
 ) -> None:
     """Sincroniza membros do card Trello conforme atendente responsável.
 
@@ -284,7 +204,10 @@ def task_atendimento_sync_card_members(
         logger.error("Falha ao sincronizar membros do card: {}", exc)
 
 
-def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_atendimento_move_to_etapa_list(
+    tenant_slug: str, atendimento_id: int
+) -> None:
     """Move o card Trello para a lista da etapa atual do atendimento.
 
     Args:
@@ -302,7 +225,10 @@ def task_atendimento_move_to_etapa_list(atendimento_id: int) -> None:
         logger.error("Falha ao mover card Trello: {}", exc)
 
 
-def task_atendimento_update_card_rich_content(atendimento_id: int) -> None:
+@shared_task(base=TenantTask)
+def task_atendimento_update_card_rich_content(
+    tenant_slug: str, atendimento_id: int
+) -> None:
     """Atualiza conteúdo rico do card (descrição/checklist) com histórico.
 
     Args:
@@ -320,7 +246,10 @@ def task_atendimento_update_card_rich_content(atendimento_id: int) -> None:
         logger.error("Falha ao atualizar card rico: {}", exc)
 
 
-def task_trello_archive_card_by_external_id(external_id: str) -> None:
+@shared_task(base=TenantTask)
+def task_trello_archive_card_by_external_id(
+    tenant_slug: str, external_id: str
+) -> None:
     """Arquiva um card Trello diretamente pelo ID externo.
 
     Útil para chamadas `pre_delete` onde o objeto Django já vai sumir.
@@ -336,8 +265,9 @@ def task_trello_archive_card_by_external_id(external_id: str) -> None:
         )
 
 
+@shared_task(base=TenantTask, queue="webhooks")
 def task_process_trello_card_move(
-    card_id: str, list_after_id: str, member_creator_id: str
+    tenant_slug: str, card_id: str, list_after_id: str, member_creator_id: str
 ) -> None:
     """Processa movimentação de card vinda do Webhook Trello.
 
@@ -365,7 +295,6 @@ def task_process_trello_card_move(
 
         try:
             trello_card = TrelloCard.objects.get(external_id=card_id)
-            trello_card = TrelloCard.objects.get(external_id=card_id)
             # atendimento = trello_card.atendimento  # Unused
             lista_dest = TrelloList.objects.filter(
                 external_id=list_after_id
@@ -389,8 +318,9 @@ def task_process_trello_card_move(
         logger.error("Falha ao processar movimento de card Trello: {}", exc)
 
 
+@shared_task(base=TenantTask, queue="webhooks")
 def task_process_trello_list_create(
-    list_id: str, list_name: str, board_id: str
+    tenant_slug: str, list_id: str, list_name: str, board_id: str
 ) -> None:
     """Processa criação de lista no Trello (webhook)."""
     try:
@@ -409,7 +339,7 @@ def task_process_trello_list_create(
         fluxo = trello_board.fluxo
 
         # 3. Cria Etapa e Lista atomicamente
-        with transaction.atomic():
+        with transaction.atomic(using=router.db_for_write(EtapaFluxo)):
             # Lock no fluxo para garantir ordem sequencial correta
             _ = FluxoAtendimento.objects.select_for_update().get(id=fluxo.id)
 
@@ -449,8 +379,9 @@ def task_process_trello_list_create(
         logger.error("Falha ao processar criação de lista Trello: {}", exc)
 
 
+@shared_task(base=TenantTask, queue="webhooks")
 def task_process_trello_list_update(
-    list_id: str, list_name: str | None, closed: bool | None
+    tenant_slug: str, list_id: str, list_name: str | None, closed: bool | None
 ) -> None:
     """Processa atualização de lista no Trello (webhook)."""
     try:

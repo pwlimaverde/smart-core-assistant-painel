@@ -117,7 +117,7 @@ class WebhookProcessingService:
                 )
 
             try:
-                from smart_core_assistant_painel.app.ui.operacional.models import (
+                from smart_core_assistant_painel.app.ui.atendimentos.models import (
                     MovimentoFluxo,
                 )
 
@@ -146,7 +146,7 @@ class WebhookProcessingService:
             logger.warning("Webhook createList incompleto: {}", data)
             return
 
-        from django.db import transaction
+        from django.db import router, transaction
 
         from smart_core_assistant_painel.app.trello_sync.models import (
             TrelloBoard,
@@ -170,7 +170,7 @@ class WebhookProcessingService:
             return
 
         try:
-            with transaction.atomic():
+            with transaction.atomic(using=router.db_for_write(EtapaFluxo)):
                 # Determina nova ordem
                 last_etapa = (
                     EtapaFluxo.objects.filter(fluxo=trello_board.fluxo)

@@ -1,4 +1,0 @@
-1 - investigar alto tempo no processamento dos treinamentos
-2 - investigar alto tempo no pre-processamento e processamento das mensagens
-3 - melhorar a formatação de texto das resposta do bot
-4 - configurar o signal para que ao mudar o card de quadro, altere o fluxo e a etapa do fluxo do atendimento no sistema

@@ -17,14 +17,33 @@ Exemplos:
 
 from django.conf import settings
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
+
 
 from . import views
+from smart_core_assistant_painel.app.tenants.admin_client import (
+    tenant_admin_site,
+)
+
+# Importar registros do Tenant Admin (Auto-discovery manual)
+import smart_core_assistant_painel.app.ui.operacional.tenant_admin  # noqa
+import smart_core_assistant_painel.app.evolution_sync.tenant_admin  # noqa
+import smart_core_assistant_painel.app.ui.treinamento.tenant_admin  # noqa
+import smart_core_assistant_painel.app.ui.atendimentos.tenant_admin  # noqa
+import smart_core_assistant_painel.app.ui.clientes.tenant_admin  # noqa
+import smart_core_assistant_painel.app.trello_sync.tenant_admin  # noqa
 
 urlpatterns = [
-    path("", views.home, name="home"),
+    path("", views.LandingPageView.as_view(), name="landing"),
+    path("dashboard/", views.dashboard, name="dashboard"),
     path("health/", views.health_check, name="health_check"),
     path("admin/", admin.site.urls),
+    path("tenant-admin/", tenant_admin_site.urls),
+    path(
+        "tenants/",
+        include("smart_core_assistant_painel.app.tenants.urls"),
+    ),
     # Integrações
     path(
         "integrations/clickup/callback/",
@@ -82,9 +101,29 @@ urlpatterns += [
     ),
 ]
 
+# Em produção via gunicorn sem Nginx dedicado, servir estáticos/mídia pelo Django
+# evita admin sem CSS/JS após collectstatic.
+if not settings.DEBUG:
+    urlpatterns += [
+        re_path(
+            r"^static/(?P<path>.*)$",
+            serve,
+            {"document_root": settings.STATIC_ROOT},
+        ),
+        re_path(
+            r"^media/(?P<path>.*)$",
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]
+
+
 handler404 = (
     "smart_core_assistant_painel.app.ui.core.views.custom_page_not_found"
 )
 handler403 = (
     "smart_core_assistant_painel.app.ui.core.views.custom_permission_denied"
+)
+handler500 = (
+    "smart_core_assistant_painel.app.ui.core.views.custom_server_error"
 )

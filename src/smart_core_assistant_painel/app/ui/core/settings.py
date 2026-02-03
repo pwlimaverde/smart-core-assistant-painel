@@ -13,11 +13,16 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
-import django_stubs_ext
+from decouple import config
 from django.contrib.messages import constants
 from dotenv import load_dotenv
 
-django_stubs_ext.monkeypatch()
+try:
+    import django_stubs_ext
+except ImportError:
+    django_stubs_ext = None
+else:
+    django_stubs_ext.monkeypatch()
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,35 +33,96 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv("SECRET_KEY_DJANGO")
+SECRET_KEY = os.getenv("SECRET_KEY_DJANGO", "")
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    """Converte variável de ambiente em booleano."""
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    return raw_value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    """Converte variável de ambiente em inteiro com fallback."""
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return default
+    try:
+        return int(raw_value)
+    except ValueError:
+        return default
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool("DJANGO_DEBUG", True)
+
+
+# Tenant Configuration
+TENANT_BASE_DOMAIN = os.getenv("TENANT_BASE_DOMAIN", "").strip()
+TENANT_RESERVED_SUBDOMAINS = [
+    "www",
+    "api",
+    "admin",
+    "mail",
+    "smtp",
+    "ftp",
+    "backoffice",
+    "app",
+]
 
 
 def _get_allowed_hosts() -> list[str]:
     """Determina a lista de hosts permitidos com base no ambiente."""
     django_allowed_hosts = os.getenv("DJANGO_ALLOWED_HOSTS", "").strip()
+    hosts = []
+
     if django_allowed_hosts:
-        return [
-            host.strip()
-            for host in django_allowed_hosts.split(",")
-            if host.strip()
-        ]
+        hosts.extend(
+            [
+                host.strip()
+                for host in django_allowed_hosts.split(",")
+                if host.strip()
+            ]
+        )
 
     if DEBUG:
-        return ["*"]
+        hosts.append("*")
+    else:
+        hosts.extend(
+            [
+                "django-app",
+                "localhost",
+                "127.0.0.1",
+                "0.0.0.0",
+                "host.docker.internal",
+            ]
+        )
 
-    return [
-        "django-app",
-        "localhost",
-        "127.0.0.1",
-        "0.0.0.0",
-        "host.docker.internal",
-    ]
+    # Adicionar wildcard para subdomínios em produção se configurado
+    if TENANT_BASE_DOMAIN:
+        hosts.append(TENANT_BASE_DOMAIN)
+        hosts.append(f".{TENANT_BASE_DOMAIN}")
+
+    return list(set(hosts))  # Remove duplicates
 
 
 ALLOWED_HOSTS = _get_allowed_hosts()
+
+
+# Segurança HTTP/HTTPS (produção)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+SECURE_SSL_REDIRECT = _env_bool("SECURE_SSL_REDIRECT", not DEBUG)
+SESSION_COOKIE_SECURE = _env_bool("SESSION_COOKIE_SECURE", not DEBUG)
+CSRF_COOKIE_SECURE = _env_bool("CSRF_COOKIE_SECURE", not DEBUG)
+SECURE_HSTS_SECONDS = _env_int(
+    "SECURE_HSTS_SECONDS", 31536000 if not DEBUG else 0
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _env_bool(
+    "SECURE_HSTS_INCLUDE_SUBDOMAINS", not DEBUG
+)
+SECURE_HSTS_PRELOAD = _env_bool("SECURE_HSTS_PRELOAD", not DEBUG)
 
 
 # Application definition
@@ -71,8 +137,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
     "pgvector.django",
-    "rolepermissions",
-    "django_q",
+    "django_celery_beat",
+    "django_celery_results",
     "rest_framework",
     "corsheaders",
     "smart_core_assistant_painel.app.ui.core",
@@ -82,6 +148,7 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.ui.clientes",
     "smart_core_assistant_painel.app.ui.atendimentos",
     "smart_core_assistant_painel.app.ui.treinamento",
+    "smart_core_assistant_painel.app.tenants",
     # Integração Trello ativada
     "smart_core_assistant_painel.app.trello_sync",
     # Usa AppConfig explícito para garantir execução do ready() e sinais
@@ -90,6 +157,7 @@ INSTALLED_APPS = [
     # Desabilitado temporariamente: sincronização com Notion e plataformas
     # externas. Removido para evitar conflitos durante nova integração.
     # "smart_core_assistant_painel.app.notion_sync",
+    "smart_core_assistant_painel.app.settings_manager",
 ]
 
 # Flag informativa de habilitação do módulo de sincronização Notion.
@@ -101,8 +169,6 @@ NOTION_SYNC_ENABLED: bool = False
 # Se vazio, aplica a todos os departamentos.
 OPERACIONAL_AUTO_ETAPAS_ALLOWED_DEPARTAMENTOS: list[str] = []
 
-ROLEPERMISSIONS_MODULE = "smart_core_assistant_painel.app.ui.core.roles"
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -113,6 +179,9 @@ MIDDLEWARE = [
     "smart_core_assistant_painel.app.ui.core.middleware.AdminStaffRequiredMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # Middleware Multi-Tenant (SaaS) - ORDEM IMPORTA!
+    "smart_core_assistant_painel.app.tenants.middleware.TenantMiddleware",
+    "smart_core_assistant_painel.app.tenants.middleware.TenantConfigMiddleware",
 ]
 
 ROOT_URLCONF = "smart_core_assistant_painel.app.ui.core.urls"
@@ -158,13 +227,24 @@ DATABASES = {
 }
 
 
+DATABASE_ROUTERS = [
+    "smart_core_assistant_painel.app.tenants.db_router.TenantDatabaseRouter",
+]
+
+
 # Cache configuration
 # https://docs.djangoproject.com/en/5.2/ref/settings/#caches
+_redis_cache_password = os.getenv("REDIS_PASSWORD", "")
+_redis_cache_auth = f":{_redis_cache_password}@" if _redis_cache_password else ""
 
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1",
+        "LOCATION": (
+            "redis://"
+            f"{_redis_cache_auth}"
+            f"{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/1"
+        ),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -190,6 +270,25 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+
+# Email Configuration (SMTP)
+# https://docs.djangoproject.com/en/5.2/topics/email/
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = config("EMAIL_HOST", default="smtp-relay.brevo.com")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="suporte@smartcoreassistant.com.br")
+SERVER_EMAIL = DEFAULT_FROM_EMAIL  # Para erros 500
+
+
+# Auth Redirects
+LOGIN_URL = "/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "/"
 
 
 # Internationalization
@@ -227,34 +326,8 @@ MESSAGE_TAGS = {
     constants.ERROR: "bg-red-50 text-red-700",
 }
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ENCRYPTION_KEY = config("ENCRYPTION_KEY", default=None)
 
-Q_CLUSTER = {
-    "name": "smart_core_cluster",
-    "workers": 2,
-    "timeout": 300,
-    "retry": 300,
-    "queue_limit": 200,
-    "orm": "default",
-    "secret_key": SECRET_KEY,  # Garante que Q Cluster use a mesma SECRET_KEY
-    # Configuração do Redis broker
-    "redis": {
-        "host": os.getenv("REDIS_HOST", "localhost"),
-        "port": int(os.getenv("REDIS_PORT", "6379")),
-        "db": 0,
-        "password": os.getenv("REDIS_PASSWORD", None),
-    },
-}
-
-# Configurações de serviços externos (ambiente_chat)
-# Estas variáveis permitem que a aplicação Django consuma Evolution API e Ollama
-# que rodam em outro ambiente Docker separado.
-EVOLUTION_API_URL = os.getenv(
-    "EVOLUTION_API_URL", "http://localhost:8080"
-).strip()
-OLLAMA_BASE_URL = os.getenv(
-    "OLLAMA_BASE_URL", "http://192.168.3.127:11434"
-).strip()
 
 # Configurações DRF e JWT
 REST_FRAMEWORK = {
@@ -304,13 +377,34 @@ def _get_cors_allowed_origins() -> list[str]:
 
 
 CORS_ALLOWED_ORIGINS = _get_cors_allowed_origins()
+
+# Adiciona domínio base para CORS quando configurado
+if TENANT_BASE_DOMAIN:
+    CORS_ALLOWED_ORIGINS.extend(
+        [
+            f"https://{TENANT_BASE_DOMAIN}",
+            # Nota: CORS não suporta wildcard parcial, subdomínios específicos
+            # devem ser adicionados via CORS_ALLOWED_ORIGINS ou usar regex
+        ]
+    )
+
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = _env_bool("CORS_ALLOW_ALL_ORIGINS", DEBUG)
 
 # Para eventuais POST vindos do frontend
+# Para eventuais POST vindos do frontend e subdomínios
 CSRF_TRUSTED_ORIGINS = [
     o.replace("http://", "https://") if o.startswith("http://") else o
     for o in CORS_ALLOWED_ORIGINS
 ]
+
+if TENANT_BASE_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.extend(
+        [
+            f"https://{TENANT_BASE_DOMAIN}",
+            f"https://*.{TENANT_BASE_DOMAIN}",
+        ]
+    )
 
 
 JAZZMIN_SETTINGS = {
@@ -326,18 +420,7 @@ JAZZMIN_SETTINGS = {
     "copyright": "Smart Core Assistant",
     "search_model": ["ui_usuarios.User", "ui_clientes.Cliente"],
     "user_avatar": None,
-    "topmenu_links": [
-        {
-            "name": "Home",
-            "url": "/",
-            "permissions": ["auth.view_user"],
-        },
-        {
-            "name": "Permissões",
-            "url": "permissoes",
-            "permissions": ["auth.view_user"],
-        },
-    ],
+    "topmenu_links": [],
     "show_sidebar": True,
     "navigation_expanded": True,
     "hide_apps": [],
@@ -357,7 +440,14 @@ JAZZMIN_SETTINGS = {
         "trello_sync.TrelloCard": "fas fa-clipboard-list",
         "trello_sync.TrelloMember": "fas fa-users",
         "trello_sync.TrelloWebhookEvent": "fas fa-satellite-dish",
-        "evolution_sync.EvolutionInstance": "fas fa-server",
+        # Celery & Periodic Tasks
+        "django_celery_beat.PeriodicTask": "fas fa-clock",
+        "django_celery_beat.IntervalSchedule": "fas fa-stopwatch",
+        "django_celery_beat.CrontabSchedule": "fas fa-calendar-alt",
+        "django_celery_beat.SolarSchedule": "fas fa-sun",
+        "django_celery_beat.ClockedSchedule": "fas fa-hourglass-half",
+        "django_celery_results.TaskResult": "fas fa-tasks",
+        "django_celery_results.GroupResult": "fas fa-layer-group",
         "evolution_sync.EvolutionContact": "fas fa-id-card",
         "evolution_sync.WhiteList": "fas fa-list-ul",
         "operacional.Departamento": "fas fa-building",
@@ -365,14 +455,10 @@ JAZZMIN_SETTINGS = {
         "operacional.AppInstance": "fas fa-mobile-alt",
         "operacional.FluxoAtendimento": "fas fa-project-diagram",
         "operacional.EtapaFluxo": "fas fa-step-forward",
-        "operacional.MovimentoFluxo": "fas fa-exchange-alt",
+        "atendimentos.MovimentoFluxo": "fas fa-exchange-alt",
         "treinamento.Treinamento": "fas fa-graduation-cap",
         "treinamento.Documento": "fas fa-file-alt",
         "treinamento.QueryCompose": "fas fa-brain",
-        "django_q.OrmQ": "fas fa-tasks",
-        "django_q.Schedule": "fas fa-clock",
-        "django_q.Failure": "fas fa-times-circle",
-        "django_q.Success": "fas fa-check-circle",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
@@ -414,3 +500,45 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success",
     },
 }
+
+# =============================================================================
+# CELERY - Configuração para SaaS Multi-Tenant
+# Dimensionado para Hostinger KVM 2 (2 vCPU, 8GB RAM, 10 clientes)
+# =============================================================================
+_redis_password = os.getenv("REDIS_PASSWORD", "")
+_redis_auth = f":{_redis_password}@" if _redis_password else ""
+CELERY_BROKER_URL = (
+    f"redis://{_redis_auth}"
+    f"{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/0"
+)
+
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_CACHE_BACKEND = "django-cache"
+
+# Serialização segura (sem pickle)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+
+# Timezone
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = True
+
+# Concorrência otimizada para 2 vCPU
+CELERY_WORKER_CONCURRENCY = int(os.getenv("CELERY_CONCURRENCY", "3"))
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1  # Melhor para tasks longas (IA)
+
+# Timeouts alinhados com processamento de LLM
+CELERY_TASK_SOFT_TIME_LIMIT = 120  # Aviso 2 min antes
+CELERY_TASK_TIME_LIMIT = 300  # Hard kill 5 min
+
+# Robustez
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+
+# Resultados
+CELERY_RESULT_EXPIRES = 3600  # 1 hora
+CELERY_RESULT_EXTENDED = True
+
+# Beat Scheduler
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"

@@ -1,7 +1,7 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "0.9.0"
-description = "Add your description here"
+version = "1.0.0"
+description = "central de atendimento multicanal onde um chatbot realiza a triagem inicial e transfere para atendimento humano quando necessário, com fluxos totalmente personalizáveis por departamento através de uma interface Kanban"
 readme = "README.md"
 authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]
 requires-python = ">=3.13"
@@ -24,12 +24,14 @@ dependencies = [
     "djangorestframework>=3.15.2",
     "djangorestframework-simplejwt>=5.3.1",
     "django-picklefield==3.3",
-    "django-q2==1.8.0",
-    "django-role-permissions==3.2.0",
+    "celery[redis]",
+    "django-celery-beat",
+    "django-celery-results",
     "docx2txt>=0.9",
     "pgvector>=0.3.0",
     "firebase-admin>=6.9.0",
     "frozenlist==1.6.0",
+    "gunicorn>=23.0.0",
     "groq>=0.26.0",
     "h11==0.16.0",
     "httpcore==1.0.9",
@@ -48,6 +50,7 @@ dependencies = [
     "langchain-text-splitters==1.0.0",
     "langchain-xai==1.0.0",
     "langsmith==0.3.45",
+    "loguru>=0.7.3",
     "markdown>=3.8",
     "marshmallow==3.26.1",
     "multidict==6.4.4",
@@ -64,7 +67,6 @@ dependencies = [
     "pydantic-core==2.41.4",
     "pydantic-settings==2.10.1",
     "pypdf==6.0.0",
-    "python-dateutil==2.9.0.post0",
     "python-decouple==3.8",
     "python-dotenv[cli]==1.1.1",
     "pyyaml==6.0.2",
@@ -97,6 +99,9 @@ dependencies = [
     "notion-py-client>=0.1.14",
     "brazilcep>=7.0.1",
     "django-jazzmin>=3.0.0",
+    "cryptography>=46.0.3",
+    "psycopg2-binary>=2.9.11",
+    "python-dateutil>=2.9.0.post0",
 ]
 
 
@@ -106,7 +111,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "loguru>=0.7.3",
     "pyright>=1.1.380",
     "pytest>=8.4.0",
     "pytest-cov>=6.1.1",
@@ -163,36 +167,196 @@ packages = ["src/smart_core_assistant_painel"]
 
 
 [tool.taskipy.tasks]
-# Scripts de automação
-base = "python scripts/new_feature_script.py --type base"
-call-data = "python scripts/new_feature_script.py --type call_data"
+# ============================================
+# Scripts de Automação
+# ============================================
+base = "python scripts/automacao/new_feature_script.py --type base"
+call-data = "python scripts/automacao/new_feature_script.py --type call_data"
 
-# Servidor Django
+# ============================================
+# Django Management (Desenvolvimento Local)
+# ============================================
 start = "python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000"
-cluster = "python -m smart_core_assistant_painel.main qcluster"
-start-all = "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$wt = (Get-Command wt.exe -ErrorAction SilentlyContinue); $proj='C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel'; if ($wt) { wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task start'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task cluster'; wt -w 0 new-tab -d $proj powershell -NoExit -Command 'uv run task ngrok-clickup' } else { Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task start'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task cluster'; Start-Process -FilePath powershell -WorkingDirectory $proj -ArgumentList '-NoExit','-Command','uv run task ngrok-clickup' }\""
-makemigrations = "python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
-migrate-remoto = "python scripts/migrar_remoto.py"
-createsuperuser = "python src/smart_core_assistant_painel/app/ui/manage.py createsuperuser"
-shell = "python src/smart_core_assistant_painel/app/ui/manage.py shell"
 
-# Desenvolvimento e testes
+# Ambiente dev-local:
+# - Django roda direto na máquina (host)
+# - PostgreSQL/Redis/Celery rodam em Docker local
+start-local = "powershell -NoProfile -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; $env:PYTHONIOENCODING='utf-8'; python -m smart_core_assistant_painel.main runserver 0.0.0.0:8000\""
+makemigrations = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.ui.manage makemigrations\""
+migrate = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.ui.manage migrate\""
+migrate-all = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.ui.manage migrate_all_tenants\""
+createsuperuser = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.ui.manage createsuperuser\""
+shell = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.ui.manage shell\""
+collectstatic = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput\""
+
+# ============================================
+# Qualidade de Código
+# ============================================
+lint = "ruff check src/"
+format = "ruff format src/"
+type-check = "pyright"
+
+# ============================================
+# Testes
+# ============================================
 test = "pytest tests/ -v --cov=src --cov-report=term-missing"
 test-apps = "pytest src/smart_core_assistant_painel/app/ui -v --cov=src --cov-report=term-missing"
 test-all = "pytest -v --cov=src --cov-report=term-missing"
 test-coverage = "pytest tests/ -v --cov=src --cov-report=html"
 
-# Linting
-lint = "ruff check src/"
-format = "ruff format src/"
-type-check = "pyright"
-
-# Reset do banco de dados
+# ============================================
+# Utilitários
+# ============================================
 reset-db = "python scripts/database_reset/reset_database.py"
-
-# Callback do Trello via túnel ngrok
 ngrok-trello = "python scripts/trello/ngrok_trello.py"
-
-# Task Master Visualization
 list-tasks = "python scripts/visualize_tasks.py"
+
+# ============================================
+# Docker Produção (via DOCKER_HOST remoto)
+# Usa SMART_CORE_DOCKER_HOST do .env.prod
+# ============================================
+
+# Status geral
+remote-status = "python scripts/docker_remoto/manager.py ps all --remote"
+
+# Data Stack (PostgreSQL + Redis)
+remote-start-data = "python scripts/docker_remoto/manager.py up data --remote"
+remote-stop-data = "python scripts/docker_remoto/manager.py down data --remote"
+remote-logs-data = "python scripts/docker_remoto/manager.py logs data --remote"
+
+# App Stack (Django + Migrate)
+remote-start-app = "python scripts/docker_remoto/manager.py up app --remote"
+remote-stop-app = "python scripts/docker_remoto/manager.py down app --remote"
+remote-restart-app = "python scripts/docker_remoto/manager.py restart app --remote"
+remote-logs-app = "python scripts/docker_remoto/manager.py logs app --remote"
+remote-build-app = "python scripts/docker_remoto/manager.py build app --remote"
+
+# Workers Stack (Celery Worker + Beat)
+remote-start-workers = "python scripts/docker_remoto/manager.py up workers --remote"
+remote-stop-workers = "python scripts/docker_remoto/manager.py down workers --remote"
+remote-restart-workers = "python scripts/docker_remoto/manager.py restart workers --remote"
+remote-logs-workers = "python scripts/docker_remoto/manager.py logs workers --remote"
+remote-build-workers = "python scripts/docker_remoto/manager.py build workers --remote"
+
+# Global (Todos os Stacks - Ordem correta de dependência)
+remote-start-all = "python scripts/docker_remoto/manager.py up all --remote"
+remote-stop-all = "python scripts/docker_remoto/manager.py down all --remote"
+remote-rebuild-all = "python scripts/docker_remoto/manager.py down all --remote && python scripts/docker_remoto/manager.py up data --remote && python scripts/docker_remoto/manager.py build app --remote && python scripts/docker_remoto/manager.py build workers --remote && python scripts/docker_remoto/manager.py up all --remote"
+
+# Django Management no Servidor
+remote-migrate = "python scripts/docker_remoto/manager.py run app --remote -- --rm django_app python -m smart_core_assistant_painel.app.ui.manage migrate"
+remote-createsuperuser = "python scripts/docker_remoto/manager.py run app --remote -- --rm -it django_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser"
+remote-shell = "python scripts/docker_remoto/manager.py run app --remote -- --rm -it django_app python -m smart_core_assistant_painel.app.ui.manage shell"
+remote-collectstatic = "python scripts/docker_remoto/manager.py run app --remote -- --rm django_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput"
+
+# ============================================
+# Servidor Hostinger (Produção via SSH)
+# Host: 76.13.229.210 | User: root
+# Alias SSH: hostinger-root
+# ============================================
+
+# --- Status e Monitoramento ---
+# Exibe informações gerais do servidor (uptime, load, memória, disco)
+server-status = "ssh hostinger-root 'echo \"=== UPTIME ===\"; uptime; echo; echo \"=== MEMÓRIA ===\"; free -h; echo; echo \"=== DISCO ===\"; df -h /; echo; echo \"=== CONTAINERS ===\"; docker ps --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+
+# Lista containers Docker em execução com status e portas
+server-ps = "ssh hostinger-root 'docker ps --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+
+# Lista todos os containers (incluindo parados)
+server-ps-all = "ssh hostinger-root 'docker ps -a --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+
+# Exibe uso de recursos dos containers (CPU, memória, rede)
+server-stats = "ssh hostinger-root 'docker stats --no-stream --format \"table {{.Name}}\\t{{.CPUPerc}}\\t{{.MemUsage}}\\t{{.NetIO}}\"'"
+
+# --- Logs dos Containers ---
+# Exibe últimas 50 linhas de logs da aplicação Django
+server-logs-app = "ssh hostinger-root 'docker logs smartcoreassistant_app --tail 50'"
+
+# Exibe logs da aplicação em tempo real (Ctrl+C para sair)
+server-logs-app-follow = "ssh hostinger-root 'docker logs smartcoreassistant_app -f --tail 20'"
+
+# Exibe últimas 50 linhas de logs do Celery Worker
+server-logs-worker = "ssh hostinger-root 'docker logs smartcoreassistant_celery_worker --tail 50'"
+
+# Exibe logs do Celery Worker em tempo real
+server-logs-worker-follow = "ssh hostinger-root 'docker logs smartcoreassistant_celery_worker -f --tail 20'"
+
+# Exibe últimas 50 linhas de logs do Celery Beat
+server-logs-beat = "ssh hostinger-root 'docker logs smartcoreassistant_celery_beat --tail 50'"
+
+# Exibe últimas 50 linhas de logs do túnel Cloudflare
+server-logs-tunnel = "ssh hostinger-root 'docker logs smartcoreassistant_tunnel --tail 50'"
+
+# Exibe últimas 50 linhas de logs do PostgreSQL
+server-logs-postgres = "ssh hostinger-root 'docker logs smartcoreassistant_postgres --tail 50'"
+
+# Exibe últimas 50 linhas de logs do Redis
+server-logs-redis = "ssh hostinger-root 'docker logs smartcoreassistant_redis --tail 50'"
+
+# --- Controle de Containers ---
+# Reinicia o container da aplicação Django
+server-restart-app = "ssh hostinger-root 'docker restart smartcoreassistant_app && echo \"App reiniciado com sucesso\"'"
+
+# Reinicia os containers do Celery (Worker + Beat)
+server-restart-workers = "ssh hostinger-root 'docker restart smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Workers reiniciados com sucesso\"'"
+
+# Reinicia todos os containers da aplicação (app + workers)
+server-restart-all = "ssh hostinger-root 'docker restart smartcoreassistant_app smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Todos os serviços reiniciados\"'"
+
+# Para todos os containers (mantém dados)
+server-stop-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-infra -f docker/compose/infra.yml stop && echo 'Serviços parados'\""
+
+# Inicia todos os containers
+server-start-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-data -f docker/compose/data.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d django_app && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-infra -f docker/compose/infra.yml up -d && echo 'Serviços iniciados'\""
+
+# --- Deploy e Atualização ---
+# Faz git pull no servidor para atualizar código
+server-pull = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && git pull && echo \"Código atualizado\"'"
+
+# Sincroniza arquivo de ambiente de produção no servidor
+server-sync-env-prod = "scp .env.prod hostinger-root:~/smart-core-assistant-painel/.env.prod && ssh hostinger-root \"chmod 600 ~/smart-core-assistant-painel/.env.prod && cp ~/smart-core-assistant-painel/.env.prod ~/smart-core-assistant-painel/.env && echo 'Arquivo .env.prod sincronizado e ativado'\""
+
+# Deploy completo: pull + rebuild + restart (sem downtime de dados)
+server-deploy = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && test -f .env.prod && git pull && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm migrate && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d --force-recreate django_app && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml up -d --force-recreate && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput && echo 'Deploy concluido'\""
+
+# Rebuild e restart apenas da aplicação Django
+server-rebuild-app = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d --force-recreate django_app && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput && echo 'App reconstruido'\""
+
+# Rebuild e restart dos workers Celery
+server-rebuild-workers = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose -p smart-core-workers -f docker/compose/workers.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose -p smart-core-workers -f docker/compose/workers.yml up -d --force-recreate && echo 'Workers reconstruidos'\""
+
+# --- Django Management ---
+# Executa migrações no banco de produção
+server-migrate = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm migrate\""
+
+# Cria superusuário no servidor
+server-createsuperuser = "ssh -t hostinger-root \"docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser\""
+
+# Abre shell Django interativo no servidor
+server-django-shell = "ssh -t hostinger-root \"docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage shell\""
+
+# Coleta arquivos estáticos
+server-collectstatic = "ssh hostinger-root 'docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput'"
+
+# --- Acesso Direto ---
+# Abre terminal SSH interativo no servidor
+server-ssh = "ssh hostinger-root"
+
+# Abre bash dentro do container da aplicação
+server-bash-app = "ssh -t hostinger-root 'docker exec -it smartcoreassistant_app bash'"
+
+# Abre bash dentro do container do worker
+server-bash-worker = "ssh -t hostinger-root 'docker exec -it smartcoreassistant_celery_worker bash'"
+
+# --- Manutenção ---
+# Remove containers parados, imagens não utilizadas e volumes órfãos
+server-prune = "ssh hostinger-root 'docker system prune -f && echo \"Limpeza concluída\"'"
+
+# Exibe uso de disco do Docker
+server-docker-disk = "ssh hostinger-root 'docker system df'"
+
+# Backup do banco de dados (salva em ~/backups/)
+server-backup-db = "ssh hostinger-root 'mkdir -p ~/backups && docker exec smartcoreassistant_postgres pg_dump -U postgres smart_core_db > ~/backups/backup_$(date +%Y%m%d_%H%M%S).sql && echo \"Backup criado em ~/backups/\"'"
+
+# Lista backups disponíveis
+server-list-backups = "ssh hostinger-root 'ls -lah ~/backups/ 2>/dev/null || echo \"Nenhum backup encontrado\"'"

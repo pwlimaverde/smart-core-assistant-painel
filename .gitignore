@@ -128,6 +128,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.prod
+.env.deploy
 .venv
 env/
 venv/
@@ -213,3 +215,6 @@ node_modules/
 # Task files
 # tasks.json
 # tasks/ 
+
+# Arquivos locais de MCP (não versionar)
+/.claude/mcp.json

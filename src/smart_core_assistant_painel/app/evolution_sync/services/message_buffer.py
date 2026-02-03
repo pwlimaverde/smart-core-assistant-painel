@@ -1,11 +1,15 @@
 from typing import Any, Dict, List
 
 from django.core.cache import cache
-from django.utils import timezone
-from django_q.models import Schedule
 from loguru import logger
 
+from smart_core_assistant_painel.app.ui.atendimentos.tasks import (
+    process_contact_response_task,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
+from smart_core_assistant_painel.app.tenants.tenant_context import (
+    get_current_tenant_slug,
+)
 
 
 def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:
@@ -65,18 +69,12 @@ def sched_response_contact(params: Dict[str, Any]) -> None:
     timer_key = f"evo_timer_{contact_id}"
     if cache.get(timer_key):
         return
-    cache.set(timer_key, True, timeout=(SERVICEHUB.TIME_CACHE or 5) + 5)
-    name = f"process_contact_{contact_id}"
-    next_run = timezone.now() + timezone.timedelta(
-        seconds=SERVICEHUB.TIME_CACHE
-    )
-    Schedule.objects.filter(name=name).delete()
-    Schedule.objects.create(
-        name=name,
-        func=(
-            "smart_core_assistant_painel.app.ui.atendimentos.services.process_contact_response_task"
-        ),
-        args=repr((contact_id,)),
-        schedule_type=Schedule.ONCE,
-        next_run=next_run,
+
+    # Define o lock por um tempo um pouco maior que o delay da task
+    delay_seconds = SERVICEHUB.TIME_CACHE or 5
+    cache.set(timer_key, True, timeout=delay_seconds + 5)
+
+    process_contact_response_task.apply_async(
+        args=[get_current_tenant_slug(), contact_id],
+        countdown=delay_seconds,
     )

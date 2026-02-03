@@ -210,11 +210,14 @@ class FeaturesCompose:
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+            extra_params={
+                "temperature": SERVICEHUB.LLM_TEMPERATURE,
+                "api_key": SERVICEHUB.GROQ_API_KEY,
+            },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
             context=context,
-            error=LlmError,
+            error=LlmError("Erro na pré-análise do conteúdo"),
         )
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
@@ -244,11 +247,14 @@ class FeaturesCompose:
         parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+            extra_params={
+                "temperature": SERVICEHUB.LLM_TEMPERATURE,
+                "api_key": SERVICEHUB.GROQ_API_KEY,
+            },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
             context=context,
-            error=LlmError,
+            error=LlmError("Erro na melhoria do conteúdo"),
         )
         datasource: ACData = AnaliseConteudoLangchainDatasource()
         usecase: ACUsecase = AnaliseConteudoUseCase(datasource)
@@ -283,11 +289,14 @@ class FeaturesCompose:
                 llm_config = LlmParameters(
                     llm_class=SERVICEHUB.LLM_CLASS,
                     model=SERVICEHUB.MODEL,
-                    error=LlmError,
+                    error=LlmError("Erro na análise de avaliação"),
                     prompt_system="",
                     prompt_human="",
                     context="",
-                    extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+                    extra_params={
+                        "temperature": SERVICEHUB.LLM_TEMPERATURE,
+                        "api_key": SERVICEHUB.GROQ_API_KEY,
+                    },
                 )
 
             error_param = AnaliseAvaliacaoError("Erro na análise de avaliação")
@@ -334,11 +343,14 @@ class FeaturesCompose:
         llm_parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+            extra_params={
+                "temperature": SERVICEHUB.LLM_TEMPERATURE,
+                "api_key": SERVICEHUB.GROQ_API_KEY,
+            },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
             context=context,
-            error=LlmError,
+            error=LlmError("Erro na análise prévia da mensagem"),
         )
         parameters = AnalisePreviaMensagemParameters(
             historico_atendimento=historico_atendimento,
@@ -661,11 +673,14 @@ class FeaturesCompose:
         llm_parameters = LlmParameters(
             llm_class=SERVICEHUB.LLM_CLASS,
             model=SERVICEHUB.MODEL,
-            extra_params={"temperature": SERVICEHUB.LLM_TEMPERATURE},
+            extra_params={
+                "temperature": SERVICEHUB.LLM_TEMPERATURE,
+                "api_key": SERVICEHUB.GROQ_API_KEY,
+            },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_MENSAGEM,
             prompt_human=prompt_human,
             context=context,
-            error=LlmError,
+            error=LlmError("Erro na análise de mensagem"),
         )
 
         parameters = AnaliseMensageParameters(
@@ -748,18 +763,46 @@ class FeaturesCompose:
                 "Score de confiabilidade (triádico): %.4f" % final_score
             )
 
-            # Se o score ficar abaixo do limiar, transfere atendimento
+            # Decide se força transferência por baixa confiabilidade.
+            # A decisão considera AMBOS os indicadores:
+            # 1. Score de similaridade (cálculo triádico)
+            # 2. Confiança do LLM (confianca_llm retornada pelo modelo)
+            #
+            # Só força transferência quando:
+            # - O LLM NÃO indicou transferência (acao_transferencia é None)
+            # - E a confiança do LLM está baixa (< 0.5)
+            # - E o score de similaridade está abaixo do threshold
+            #
+            # Se o LLM retornou confiança alta e não indicou transferência,
+            # respeitamos essa decisão mesmo que o score de similaridade
+            # seja baixo (ex: saudação sem dados de treinamento).
             similarity_threshold = SERVICEHUB.SIMILARITY_THRESHOLD
-            if final_score < similarity_threshold:
-                if not transfer_attendance:
-                    transfer_attendance = True
-                    logger.info(
-                        f"Score abaixo do limiar ({similarity_threshold}). "
-                        "transferir_atendimento=True (por baixa confiabilidade)."
-                    )
-                    # Adiciona mensagem de transferência
-                    msg_transferencia = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
-                    response_text = f"{response_text}\n\n{msg_transferencia}"
+            llm_confidence_threshold = 0.5  # Limiar de confiança do LLM
+
+            should_force_transfer = (
+                final_score < similarity_threshold
+                and confianca_llm < llm_confidence_threshold
+                and not transfer_attendance
+            )
+
+            if should_force_transfer:
+                transfer_attendance = True
+                logger.info(
+                    f"Transferência forçada: score={final_score:.4f} < "
+                    f"{similarity_threshold}, confianca_llm={confianca_llm:.2f} < "
+                    f"{llm_confidence_threshold}."
+                )
+                # Adiciona mensagem de transferência
+                msg_transferencia = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                response_text = f"{response_text}\n\n{msg_transferencia}"
+            elif (
+                final_score < similarity_threshold and not transfer_attendance
+            ):
+                # Log informativo: score baixo, mas confiança do LLM está alta
+                logger.info(
+                    f"Score baixo ({final_score:.4f}), mas confianca_llm alta "
+                    f"({confianca_llm:.2f}). Mantendo resposta sem transferência."
+                )
 
             # Se precisa transferir e ainda não tem fluxo, usa o primeiro
             if transfer_attendance and not fluxo_transferencia:

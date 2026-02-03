@@ -1,12 +1,15 @@
----
-trigger: always_on
----
 
 ---
 trigger: always_on
 ---
 
 # Regras e Padrões do Projeto
+
+## 0. Princípios Inegociáveis (CRÍTICO)
+
+*   **IDIOMA OBRIGATÓRIO**: Todas as comunicações, **planos de implementação**, **definições de tasks** (campos `details`, `description`), explicações e decisões de design devem ser feitas **ESTRITAMENTE EM PORTUGUÊS**.
+    *   **Exceção**: Código, nomes de variáveis, classes e funções devem permanecer em **Inglês**.
+    *   **Falha crítica**: Gerar qualquer artefato de planejamento ou task em Inglês é considerado uma falha grave de protocolo.
 
 Este documento define as convenções, ferramentas e melhores práticas a serem seguidas no desenvolvimento deste projeto. A adesão a estas regras é obrigatória para manter a qualidade, consistência e manutenibilidade do código.
 
@@ -156,5 +159,5 @@ Estas regras são específicas para otimizar o seu desempenho como assistente de
 2.  **Consistência de Testes**: Ao depurar ou verificar código, dê preferência ao comando `uv run task test-docker`. Se precisar rodar um teste específico, use `uv run task test-docker -- -k "nome_do_teste"`.
 3.  **Análise de Tipos**: Se encontrar erros de tipo, lembre-se que o projeto usa `pyright` em modo estrito. Não tente suprimir erros cegamente; corrija a causa raiz ou use `# type: ignore` apenas como último recurso e com justificativa.
 4.  **Contexto**: Ao criar novos arquivos, sempre verifique onde eles se encaixam na arquitetura existente (Django App vs. Módulo de Lógica de Negócio) e siga a estrutura de pastas correspondente.
-5.  **Linguagem**: Toda a comunicação, **planos de implementação, definição de tasks, feedbacks e explicações** devem ser feitos **exclusivamente em Português**. O código (nomes de variáveis, funções, classes) deve permanecer em **Inglês**.
+5.  **Linguagem**: (MOVIDO PARA SEÇÃO 0) Falha em usar Português nos artefatos será considerada erro de protocolo.
 6.  **Proibição de Testes de Cobertura**: Nunca gere testes unitários ou de integração visando cobertura. Se precisar validar algo pontual, use scripts descartáveis em `teste_debug/`.

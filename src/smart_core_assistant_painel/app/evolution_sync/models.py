@@ -11,6 +11,8 @@ class EvolutionInstance(models.Model):
 
     Attributes:
         id: Identificador único da instância no banco de dados.
+        tenant_id: UUID do Tenant proprietário (armazenado como campo simples,
+            sem FK, para evitar constraints cross-database).
         name: Nome amigável da instância.
         instance_id: ID da instância na Evolution API.
         api_key: Chave de API para autenticação.
@@ -21,6 +23,15 @@ class EvolutionInstance(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
+    # Nota: Usando UUIDField em vez de FK para evitar constraints cross-database
+    # O Tenant está no banco 'default', mas EvolutionInstance precisa estar
+    # no banco do tenant para manter relação com EvolutionContact->Contato
+    tenant_id: models.UUIDField = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="UUID do Tenant proprietário desta instância Evolution",
+    )
     name: models.CharField[str] = models.CharField(max_length=100)
     instance_id: models.CharField[str | None] = models.CharField(
         max_length=100, unique=True, blank=True, null=True

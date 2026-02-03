@@ -1,12 +1,10 @@
-{% extends "base.html" %}
+{% extends "base_dashboard.html" %}
 {% load static %}
 {% load permission_tags %}
 {% load markdown_extras %}
 
-{% block 'conteudo' %}
-<main class="bg-stone-50 min-h-screen">
-    <header class="bg-white shadow-sm">
-        <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+{% block content %}
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-8">
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-x-4">
                     <img src="{% static 'img/logo_smart.png' %}" alt="Smart Core Logo" class="h-12 w-auto">
@@ -26,10 +24,9 @@
                     </a>
                 </div>
             </div>
-        </div>
-    </header>
+    </div>
 
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-7xl">
         <form action="{% url 'treinamento:pre_processamento' id=treinamento.id %}" method="POST">
             {% csrf_token %}
 
@@ -98,5 +95,5 @@
             </div>
         </form>
     </div>
-</main>
-{% endblock 'conteudo' %}
+
+{% endblock content %}

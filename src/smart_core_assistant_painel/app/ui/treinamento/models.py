@@ -124,7 +124,7 @@ class Documento(models.Model):
         help_text="Metadados do documento (tag, grupo, source, etc.)",
     )
     embedding: VectorField = VectorField(
-        dimensions=1024,
+        dimensions=1536,
         null=True,
         blank=True,
         help_text="Vetor de embeddings do conteúdo do documento",
@@ -282,7 +282,7 @@ class QueryCompose(models.Model):
         help_text="Prompt system que orienta o comportamento da LLM para esse intent",
     )
     embedding: VectorField = VectorField(
-        dimensions=1024,
+        dimensions=1536,
         null=True,
         blank=True,
         help_text="Embedding gerado a partir da description",

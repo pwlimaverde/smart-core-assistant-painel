@@ -11,6 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from decouple import config
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
 
@@ -93,8 +94,26 @@ def health_check(request: HttpRequest) -> HttpResponse:
     return HttpResponse("OK", status=200)
 
 
-def home(request: HttpRequest) -> HttpResponse:
-    """View para página inicial.
+from django.views.generic import TemplateView
+from django.shortcuts import redirect
+
+
+class LandingPageView(TemplateView):
+    template_name = "landing_page.html"
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if request.user.is_superuser:
+                return redirect("/admin/")
+            return redirect("tenants:dashboard")
+        # Como a Landing Page principal agora é externa (Cloudflare Pages),
+        # o acesso à raiz do sistema (app.smartcoreassistant...) deve direcionar ao Login.
+        return redirect("login")
+
+
+@login_required
+def dashboard(request: HttpRequest) -> HttpResponse:
+    """View para painel administrativo.
 
     Args:
         request: Requisição HTTP.
@@ -102,7 +121,9 @@ def home(request: HttpRequest) -> HttpResponse:
     Returns:
         HttpResponse: Resposta HTTP simples.
     """
-    return render(request, "core/home.html")
+    if request.user.is_superuser:
+        return redirect("/admin/")
+    return redirect("tenants:dashboard")
 
 
 def clickup_callback(request: HttpRequest) -> HttpResponse:
@@ -157,3 +178,8 @@ def custom_permission_denied(
 ) -> HttpResponse:
     """View customizada para erro 403."""
     return render(request, "403.html", status=403)
+
+
+def custom_server_error(request: HttpRequest) -> HttpResponse:
+    """View customizada para erro 500."""
+    return render(request, "500.html", status=500)

@@ -1,0 +1,47 @@
+
+# Version Control
+.git
+.gitignore
+
+# Python Environment
+.venv
+__pycache__
+*.py[cod]
+*$py.class
+
+# Temporary & Cache
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+tmp
+
+# IDE / Editor
+.vscode
+.idea
+.cursor
+.zed
+
+# Project Documentation
+docs
+docs_dev
+site
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+# Manter .env.example se necessário, mas .dockerignore bloqueia COPY se for *
+# Mas COPY .env é explicito no docker-compose? Não, é env_file.
+# Se usarmos COPY . ., o .dockerignore filtra.
+
+# Docker
+docker-compose.yml
+Dockerfile

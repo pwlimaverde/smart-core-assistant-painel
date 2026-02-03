@@ -21,6 +21,7 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     processar_mensagem_por_contato,
 )
 from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.tenants.models import Tenant
 
 
 class WebhookProcessor:
@@ -28,7 +29,18 @@ class WebhookProcessor:
 
     Responsável por orquestrar o processamento de mensagens recebidas,
     gerenciamento de instâncias e contatos, e agendamento de respostas.
+
+    Attributes:
+        tenant: Tenant associado ao webhook (opcional).
     """
+
+    def __init__(self, tenant: Tenant | None = None) -> None:
+        """Inicializa o processador com um tenant opcional.
+
+        Args:
+            tenant: Tenant associado às mensagens recebidas.
+        """
+        self.tenant = tenant
 
     def process_webhook(
         self,
@@ -253,6 +265,10 @@ class WebhookProcessor:
             if phone_number_val and instance.phone_number != phone_number_val:
                 instance.phone_number = phone_number_val
                 update_fields.append("phone_number")
+            # Associar tenant_id se ainda não tiver e temos um tenant
+            if self.tenant and not instance.tenant_id:
+                instance.tenant_id = self.tenant.id
+                update_fields.append("tenant_id")
 
             if update_fields:
                 instance.save(update_fields=update_fields)
@@ -264,6 +280,7 @@ class WebhookProcessor:
                     name=name_val,
                     api_key=api_key,
                     phone_number=phone_number_val,
+                    tenant_id=self.tenant.id if self.tenant else None,
                 )
             except IntegrityError:
                 # Se falhar por duplicidade (race condition), tenta buscar novamente

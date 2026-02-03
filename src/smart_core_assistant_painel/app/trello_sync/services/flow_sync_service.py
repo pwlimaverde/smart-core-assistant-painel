@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from decouple import config
-from django.db import transaction
+from django.db import router, transaction
 from loguru import logger
 
 from smart_core_assistant_painel.app.trello_sync.models import (
@@ -38,12 +38,31 @@ class FlowSyncService:
             FeaturesCompose.unifield_data_services()
             self.client = SERVICEHUB.unified_data_service
 
-    def _callback_url(self) -> str:
-        # Comentário: URL pública para receber webhooks
-        return config(
+    def _callback_url(self, tenant_slug: Optional[str] = None) -> str:
+        """Constrói URL de callback para webhook Trello.
+
+        Comentário (PT-BR): URL pública para receber webhooks.
+        Se tenant_slug for fornecido, inclui na URL para garantir
+        que o webhook seja processado no contexto correto do tenant.
+
+        Args:
+            tenant_slug: Slug do tenant para incluir na URL.
+
+        Returns:
+            URL completa com tenant_slug, se fornecido.
+        """
+        base_url: str = config(
             "TRELLO_WEBHOOK_CALLBACK_URL",
             default="http://localhost:8000/api/trello_sync/webhook/",
         )
+
+        # Remove trailing slash para normalização
+        base_url = base_url.rstrip("/")
+
+        if tenant_slug:
+            return f"{base_url}/{tenant_slug}/"
+
+        return f"{base_url}/"
 
     def _should_register_webhook(self, callback_url: str) -> bool:
         """Decide se o webhook deve ser registrado.
@@ -87,7 +106,7 @@ class FlowSyncService:
         if not fluxo_id:
             raise ValueError("Fluxo sem ID")
 
-        with transaction.atomic():
+        with transaction.atomic(using=router.db_for_write(FluxoAtendimento)):
             # Re-busca o fluxo com lock para bloquear outros processos
             # Importante: select_for_update bloqueia a linha até o fim da transação
             fluxo_locked = FluxoAtendimento.objects.select_for_update().get(
@@ -162,7 +181,7 @@ class FlowSyncService:
         if not etapa_id:
             raise ValueError("Etapa sem ID")
 
-        with transaction.atomic():
+        with transaction.atomic(using=router.db_for_write(EtapaFluxo)):
             # Lock na etapa para evitar duplicidade de criação de lista
             etapa_locked = EtapaFluxo.objects.select_for_update().get(
                 id=etapa_id

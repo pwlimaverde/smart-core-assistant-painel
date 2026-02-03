@@ -32,7 +32,6 @@ __all__ = [
     "AttendanceOrchestrator",
     # Tasks/Factories
     "create_orchestrator",
-    "process_contact_response_task",
 ]
 
 
@@ -54,25 +53,3 @@ def create_orchestrator() -> AttendanceOrchestrator:
         structure_manager=structure_manager,
         rules_engine=rules_engine,
     )
-
-
-def process_contact_response_task(contact_id: int) -> None:
-    """Tarefa para processar resposta de contato (usada pelo Django Q).
-
-    Esta função é o ponto de entrada para o agendamento de tarefas.
-    Ela instancia o orquestrador e delega o processamento.
-
-    Args:
-        contact_id: ID do contato a ser processado.
-    """
-    try:
-        logger.info(
-            f"Iniciando task de processamento para contato {contact_id}"
-        )
-        orchestrator = create_orchestrator()
-        orchestrator.process_contact_response(contact_id=contact_id)
-    except Exception as e:
-        logger.error(
-            f"Erro fatal na task de processamento para contato {contact_id}: {e}"
-        )
-        raise

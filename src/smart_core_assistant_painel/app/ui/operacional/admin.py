@@ -9,17 +9,19 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
 
+from smart_core_assistant_painel.app.ui.atendimentos.models import MovimentoFluxo
+
 from .models import (
     AppInstance,
     Atendente,
     Departamento,
     EtapaFluxo,
     FluxoAtendimento,
-    MovimentoFluxo,
 )
 
 
-@admin.register(Atendente)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Atendente)
 class AtendenteAdmin(admin.ModelAdmin[Atendente]):
     """Admin para o modelo Atendente."""
 
@@ -134,7 +136,8 @@ class AtendenteAdmin(admin.ModelAdmin[Atendente]):
 AtendenteHumanoAdmin = AtendenteAdmin
 
 
-@admin.register(Departamento)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(Departamento)
 class DepartamentoAdmin(admin.ModelAdmin[Departamento]):
     """Admin para o modelo Departamento."""
 
@@ -178,7 +181,8 @@ class DepartamentoAdmin(admin.ModelAdmin[Departamento]):
     )
 
 
-@admin.register(AppInstance)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(AppInstance)
 class AppInstanceAdmin(admin.ModelAdmin[AppInstance]):
     list_display = [
         "id",
@@ -202,7 +206,8 @@ class AppInstanceAdmin(admin.ModelAdmin[AppInstance]):
     list_per_page = 25
 
 
-@admin.register(FluxoAtendimento)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(FluxoAtendimento)
 class FluxoAtendimentoAdmin(admin.ModelAdmin[FluxoAtendimento]):
     """Admin para o modelo FluxoAtendimento."""
 
@@ -287,7 +292,8 @@ class FluxoAtendimentoAdmin(admin.ModelAdmin[FluxoAtendimento]):
         )
 
 
-@admin.register(EtapaFluxo)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(EtapaFluxo)
 class EtapaFluxoAdmin(admin.ModelAdmin[EtapaFluxo]):
     """Admin para o modelo EtapaFluxo."""
 
@@ -393,7 +399,8 @@ class EtapaFluxoAdmin(admin.ModelAdmin[EtapaFluxo]):
         )
 
 
-@admin.register(MovimentoFluxo)
+# Desregistrado do admin principal - disponível apenas no tenant_admin
+# @admin.register(MovimentoFluxo)
 class MovimentoFluxoAdmin(admin.ModelAdmin[MovimentoFluxo]):
     """Admin para o modelo MovimentoFluxo."""
 

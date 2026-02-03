@@ -1,0 +1,43 @@
+{% extends "tenants/base_tenants.html" %}
+
+{% block title %}Cadastro - Smart Assistant{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto; width: 100%;">
+    <div class="card">
+        <h2 style="text-align: center; margin-bottom: 2rem;">Crie sua conta</h2>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-error">
+                {% for error in form.non_field_errors %}
+                {{ error }}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}
+                <small style="color: var(--text-secondary); display: block; margin-top: 5px;">{{ field.help_text
+                    }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                <small style="color: var(--error); display: block; margin-top: 5px;">{{ error }}</small>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Criar Conta</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 1.5rem; color: var(--text-secondary);">
+            Já tem uma conta? <a href="/admin/login/" style="color: var(--accent-primary);">Fazer Login</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -2,6 +2,7 @@ import re
 
 from langchain_core.prompts import ChatPromptTemplate
 from langsmith import traceable
+from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LlmParameters,
@@ -45,12 +46,18 @@ class AnaliseConteudoLangchainDatasource(ACData):
 
         chain = messages | llm
 
-        response = chain.invoke(
-            {
-                "prompt_human": parameters.prompt_human,
-                "context": parameters.context,
-            }
-        ).content
+        try:
+            response = chain.invoke(
+                {
+                    "prompt_human": parameters.prompt_human,
+                    "context": parameters.context,
+                }
+            ).content
+        except Exception as e:
+            logger.error(
+                f"[ERRO API LLM] Tipo: {type(e).__name__}, Mensagem: {e}"
+            )
+            raise
 
         if isinstance(response, str):
             # ✅ Filtrar tags <think> e </think>

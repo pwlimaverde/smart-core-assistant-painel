@@ -1,0 +1,32 @@
+project:
+  name: "smart-core-assistant-painel"
+  scale: LARGE
+  started: "2026-01-25T00:00:00Z"
+  current_phase: P
+
+phases:
+  P:
+    status: pending
+  R:
+    status: pending
+  E:
+    status: pending
+  V:
+    status: pending
+  C:
+    status: pending
+
+execution:
+  history:
+    - timestamp: "2026-01-31T17:08:06.936Z"
+      phase: P
+      action: plan_phase_updated
+      plan: "auditoria-navegacao-ui"
+      description: "Plan phase phase-1 updated to in_progress"
+  last_activity: "2026-01-31T17:08:06.936Z"
+  resume_context: "Fase do plano atualizada"
+
+approval:
+  plan_created: true
+  plan_approved: false
+

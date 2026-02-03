@@ -1,0 +1,117 @@
+# Cursor Rules - Smart Core Assistant Painel
+
+## Idioma
+- Comunicação SEMPRE em Português (pt-BR)
+- Código em Inglês (variáveis, funções, classes)
+
+## Projeto
+Smart Core Assistant Painel é uma plataforma SaaS multi-tenant para atendimento inteligente ao cliente via WhatsApp.
+
+### Stack
+- Backend: Django 5.2 + DRF + Celery
+- Banco: PostgreSQL 14 + pgvector
+- IA: LangChain (OpenAI, Groq, Ollama)
+- WhatsApp: Evolution API
+- Admin: Django Jazzmin
+
+## Estrutura
+```
+src/smart_core_assistant_painel/
+├── app/
+│   ├── ui/                    # Apps Django
+│   │   ├── core/              # Configurações, middleware
+│   │   ├── atendimentos/      # Tickets e mensagens
+│   │   ├── operacional/       # Departamentos, fluxos
+│   │   ├── clientes/          # Contatos
+│   │   ├── usuarios/          # Usuários
+│   │   ├── treinamento/       # IA e documentos
+│   │   └── oraculo/           # Motor de IA
+│   ├── tenants/               # Multi-tenancy
+│   ├── evolution_sync/        # WhatsApp
+│   └── trello_sync/           # Trello
+└── modules/
+    ├── ai_engine/             # LangChain features
+    ├── services/              # ServiceHub
+    └── initial_loading/       # Firebase
+```
+
+## Padrões de Código
+
+### Type Hints Obrigatórios
+```python
+def function(param: str, optional: int | None = None) -> Result[Data, Exception]:
+    ...
+```
+
+### Docstrings Google Style
+```python
+def function(param: str) -> str:
+    """Descrição breve.
+
+    Args:
+        param: Descrição do parâmetro.
+
+    Returns:
+        Descrição do retorno.
+    """
+```
+
+### Result Pattern
+```python
+from py_return_success_or_error import Success, Failure, Result
+
+def process() -> Result[Data, Exception]:
+    if error:
+        return Failure(ValueError("Mensagem"))
+    return Success(data)
+```
+
+## Comandos
+
+```bash
+uv run task start              # Servidor Django
+uv run task celery-worker      # Worker Celery
+uv run task lint               # Linting (ruff)
+uv run task type-check         # Type check (pyright)
+uv run task test-docker        # Testes
+uv run task makemigrations     # Migrações
+uv run task migrate            # Aplicar migrações
+```
+
+## Regras
+
+1. **Multi-tenancy**: SEMPRE filtrar por tenant
+   ```python
+   queryset.filter(tenant=request.user.tenant)
+   ```
+
+2. **Queries**: Usar select_related/prefetch_related
+   ```python
+   Atendimento.objects.select_related('cliente', 'departamento')
+   ```
+
+3. **Imports**: Centralizar em `__all__`
+   ```python
+   __all__ = ["ClassName", "function_name"]
+   ```
+
+4. **Commits**: Conventional Commits
+   - `feat:` nova feature
+   - `fix:` correção
+   - `docs:` documentação
+   - `refactor:` refatoração
+
+5. **Branches**: GitFlow
+   - `feature/` novas funcionalidades
+   - `bugfix/` correções
+   - `hotfix/` urgentes
+
+6. **NÃO criar testes** - responsabilidade de agente dedicado
+
+## Contexto AI
+
+- Documentação: `.context/docs/`
+- Agentes: `.context/agents/`
+- Skills: `.context/skills/`
+- Workflow PREVC: `.context/workflow/`
+- Planos: `.context/plans/`

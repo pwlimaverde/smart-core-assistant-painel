@@ -85,11 +85,15 @@ jobs:
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
+          envs: GHCR_USERNAME,GHCR_TOKEN
           script: |
             set -e
 
@@ -107,6 +111,9 @@ jobs:
               echo "❌ Arquivo .env.prod não encontrado em ~/smart-core-assistant-painel"
               exit 1
             fi
+
+            # Login no GHCR para pull de imagens privadas
+            echo "$GHCR_TOKEN" | docker login ${{ env.REGISTRY }} -u "$GHCR_USERNAME" --password-stdin
 
             # Pull da nova imagem
             echo "Pulling new Docker image..."

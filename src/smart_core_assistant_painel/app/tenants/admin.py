@@ -253,9 +253,11 @@ class TenantAdmin(admin.ModelAdmin):
     def generate_access_code(self, request, queryset):
         import secrets
         import ssl
-        from django.core.mail import send_mail, get_connection
-        from django.core.mail.message import EmailMessage
+        import os
+        from django.core.mail import get_connection, EmailMultiAlternatives
+        from django.template.loader import render_to_string
         from django.conf import settings
+        from django.utils import timezone
 
         count = 0
         for tenant in queryset:
@@ -269,20 +271,42 @@ class TenantAdmin(admin.ModelAdmin):
             tenant.access_code = code
             tenant.save()
 
-            # Prepara E-mail
+            # Prepara Contexto do Email
+            asset_base_url = os.getenv(
+                "PUBLIC_ASSET_BASE_URL", "https://smartcoreassistant.com.br"
+            ).rstrip("/")
+            logo_url = f"{asset_base_url}/static/img/logo_branca_smart_v2.png"
+
+            context = {
+                "tenant_name": tenant.name,
+                "access_code": code,
+                "logo_url": logo_url,
+                "current_year": timezone.now().year,
+            }
+
+            # Prepara Mensagem
             subject = f"Código de Acesso - {tenant.name}"
-            message = f"Olá,\n\nSeu código de acesso para finalizar o cadastro é: {code}\n\nInforme este código na etapa de seleção de plano."
             from_email = settings.DEFAULT_FROM_EMAIL
             recipient_list = [tenant.email or tenant.owner.email]
 
+            # Texto simples (fallback)
+            text_content = f"Olá.\nSeu código de acesso para finalizar o cadastro de {tenant.name} é: {code}\nInforme este código na etapa de seleção de plano."
+
+            # HTML Renderizado
+            html_content = render_to_string(
+                "tenants/onboarding/email_access_code.html", context
+            )
+
+            email = EmailMultiAlternatives(
+                subject,
+                text_content,
+                from_email,
+                recipient_list,
+            )
+            email.attach_alternative(html_content, "text/html")
+
             try:
-                send_mail(
-                    subject=subject,
-                    message=message,
-                    from_email=from_email,
-                    recipient_list=recipient_list,
-                    fail_silently=False,
-                )
+                email.send(fail_silently=False)
                 count += 1
             except Exception as e:
                 error_str = str(e)
@@ -301,13 +325,8 @@ class TenantAdmin(admin.ModelAdmin):
                         connection = get_connection()
                         connection.ssl_context = ctx
 
-                        email = EmailMessage(
-                            subject,
-                            message,
-                            from_email,
-                            recipient_list,
-                            connection=connection,
-                        )
+                        # Atribuir nova conexão à mensagem existente
+                        email.connection = connection
                         email.send()
                         count += 1
                     except Exception as inner_e:

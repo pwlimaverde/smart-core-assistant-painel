@@ -129,8 +129,8 @@ jobs:
             SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p ${{ env.COMPOSE_PROJECT_WORKERS }} -f docker/compose/workers.yml pull
 
             # Migrações como job efêmero (não deixa container "exited" no stack)
-            # --no-build garante uso da imagem GHCR (não rebuild local)
-            SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p ${{ env.COMPOSE_PROJECT_APP }} -f docker/compose/app.yml run --no-build --rm migrate
+            # Imagem GHCR já disponível via pull acima
+            SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p ${{ env.COMPOSE_PROJECT_APP }} -f docker/compose/app.yml run --rm migrate
 
             # Restart dos serviços (sem downtime para data stack)
             # --no-build impede rebuild local, forçando uso da imagem GHCR pullada

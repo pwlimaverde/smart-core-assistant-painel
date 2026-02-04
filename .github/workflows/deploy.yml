@@ -102,8 +102,8 @@ jobs:
             # Navegar para o diretório do projeto
             cd ~/smart-core-assistant-painel
 
-            # Pull das últimas alterações
-            git fetch --tags
+            # Pull das últimas alterações (--force sobrescreve tags locais)
+            git fetch --tags --force
             git checkout ${{ github.ref_name }}
 
             # Define imagem/tag para o Docker Compose

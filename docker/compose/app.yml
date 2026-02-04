@@ -3,6 +3,7 @@ services:
   # Django App (Aplicação Principal)
   # ============================================
   migrate:
+    image: "${SMARTCORE_IMAGE:-ghcr.io/pwlimaverde/smart-core-assistant-painel}:${SMARTCORE_IMAGE_TAG:-latest}"
     build:
       context: ../../
       dockerfile: docker/Dockerfile
@@ -23,6 +24,7 @@ services:
     restart: "no"
 
   django_app:
+    image: "${SMARTCORE_IMAGE:-ghcr.io/pwlimaverde/smart-core-assistant-painel}:${SMARTCORE_IMAGE_TAG:-latest}"
     build:
       context: ../../
       dockerfile: docker/Dockerfile

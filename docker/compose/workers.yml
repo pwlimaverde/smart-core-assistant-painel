@@ -3,6 +3,7 @@ services:
   # Celery Worker (Processamento Assíncrono)
   # ============================================
   celery_worker:
+    image: "${SMARTCORE_IMAGE:-ghcr.io/pwlimaverde/smart-core-assistant-painel}:${SMARTCORE_IMAGE_TAG:-latest}"
     build:
       context: ../../
       dockerfile: docker/Dockerfile
@@ -39,6 +40,7 @@ services:
   # Celery Beat (Scheduler de Tasks Periódicas)
   # ============================================
   celery_beat:
+    image: "${SMARTCORE_IMAGE:-ghcr.io/pwlimaverde/smart-core-assistant-painel}:${SMARTCORE_IMAGE_TAG:-latest}"
     build:
       context: ../../
       dockerfile: docker/Dockerfile

@@ -98,7 +98,12 @@ class Step2PaymentView(OnboardingSessionMixin, TemplateView):
             pass
         elif tenant.access_code:
             # Validação do código
-            input_code = request.POST.get("access_code", "").strip()
+            input_code = (
+                request.POST.get("access_code", "")
+                .strip()
+                .replace("-", "")
+                .upper()
+            )
 
             # Se o post contiver 'plan_id', ignora e pede código (segurança)
             if "plan_id" in request.POST and not input_code:
@@ -106,7 +111,8 @@ class Step2PaymentView(OnboardingSessionMixin, TemplateView):
                 context["error"] = "Validação necessária."
                 return render(request, self.template_name, context)
 
-            if input_code == tenant.access_code:
+            stored_code = tenant.access_code.replace("-", "").upper()
+            if input_code == stored_code:
                 # Código válido!
                 tenant.access_code = "AUTHORIZED"
                 tenant.save()

@@ -143,7 +143,7 @@ def run_migrations() -> bool:
         
         # Executa showmigrations para verificar o status
         show_result = subprocess.run(
-            ["uv", "run", "python", "src/smart_core_assistant_painel/app/ui/manage.py", "showmigrations"],
+            ["uv", "run", "python", "src/smart_core_assistant_painel/app/manage.py", "showmigrations"],
             capture_output=False,
             text=True
         )

@@ -18,8 +18,8 @@ graph TD
 ### Componentes Afetados
 | Componente | Mudança | Arquivos |
 |------------|---------|----------|
-| Models | Novo model X | `app/ui/module/models.py` |
-| Views | Novo endpoint | `app/ui/module/views.py` |
+| Models | Novo model X | `app/module/models.py` |
+| Views | Novo endpoint | `app/module/views.py` |
 | Services | Novo service | `modules/services/...` |
 
 ## Design Detalhado

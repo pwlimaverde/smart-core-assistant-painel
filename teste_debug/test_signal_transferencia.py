@@ -12,8 +12,8 @@ Uso:
     >>> exec(open('teste_debug/test_signal_transferencia.py').read())
 """
 
-from smart_core_assistant_painel.app.ui.atendimentos.models import Atendimento
-from smart_core_assistant_painel.app.ui.operacional.models import Atendente
+from smart_core_assistant_painel.app.atendimentos.models import Atendimento
+from smart_core_assistant_painel.app.operacional.models import Atendente
 
 
 def test_signal_transferencia_humano() -> None:

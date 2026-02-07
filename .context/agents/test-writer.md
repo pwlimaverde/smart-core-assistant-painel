@@ -64,12 +64,12 @@ tests/
 ### Teste de Model
 
 ```python
-# tests/app/ui/atendimentos/test_models.py
+# tests/app/atendimentos/test_models.py
 
 import pytest
 from django.utils import timezone
 
-from app.ui.atendimentos.models import Atendimento, Mensagem
+from app.atendimentos.models import Atendimento, Mensagem
 
 
 @pytest.mark.django_db
@@ -111,7 +111,7 @@ class TestAtendimentoModel:
 ### Teste de View
 
 ```python
-# tests/app/ui/atendimentos/test_views.py
+# tests/app/atendimentos/test_views.py
 
 import pytest
 from django.urls import reverse
@@ -163,7 +163,7 @@ class TestAtendimentoViews:
 ### Teste de API
 
 ```python
-# tests/app/ui/atendimentos/test_api.py
+# tests/app/atendimentos/test_api.py
 
 import pytest
 from rest_framework import status
@@ -313,7 +313,7 @@ def tenant(db):
 ### Fixtures Específicas
 
 ```python
-# tests/app/ui/atendimentos/conftest.py
+# tests/app/atendimentos/conftest.py
 
 import pytest
 
@@ -321,7 +321,7 @@ import pytest
 @pytest.fixture
 def cliente(db, tenant):
     """Cria cliente para testes."""
-    from app.ui.clientes.models import Cliente
+    from app.clientes.models import Cliente
     return Cliente.objects.create(
         tenant=tenant,
         nome="Cliente Teste",
@@ -332,7 +332,7 @@ def cliente(db, tenant):
 @pytest.fixture
 def departamento(db, tenant):
     """Cria departamento para testes."""
-    from app.ui.operacional.models import Departamento
+    from app.operacional.models import Departamento
     return Departamento.objects.create(
         tenant=tenant,
         nome="Suporte",
@@ -342,7 +342,7 @@ def departamento(db, tenant):
 @pytest.fixture
 def atendimento(db, cliente, departamento):
     """Cria atendimento para testes."""
-    from app.ui.atendimentos.models import Atendimento
+    from app.atendimentos.models import Atendimento
     return Atendimento.objects.create(
         cliente=cliente,
         departamento=departamento,
@@ -372,10 +372,10 @@ def test_send_message(mock_send, atendimento):
 ### Mock de Celery Task
 
 ```python
-@patch("app.ui.atendimentos.tasks.process_atendimento_async.delay")
+@patch("app.atendimentos.tasks.process_atendimento_async.delay")
 def test_signal_triggers_task(mock_delay, cliente, departamento):
     """Testa que signal dispara task."""
-    from app.ui.atendimentos.models import Atendimento
+    from app.atendimentos.models import Atendimento
 
     atendimento = Atendimento.objects.create(
         cliente=cliente,

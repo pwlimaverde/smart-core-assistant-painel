@@ -24,7 +24,7 @@ sys.path.insert(0, str(src_path))
 # Configurar Django antes de qualquer import Django
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 
 import django

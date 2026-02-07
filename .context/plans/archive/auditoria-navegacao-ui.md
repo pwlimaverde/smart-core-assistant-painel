@@ -34,7 +34,7 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 #### Etapa 1.1: Revisar Estrutura Atual
 - [ ] Ler todos os arquivos de módulo (01 a 09)
 - [ ] Identificar páginas já mapeadas vs. pendentes
-- [ ] Verificar hierarquia de templates em `app/ui/core/templates/`
+- [ ] Verificar hierarquia de templates em `app/core/templates/`
 - [ ] Revisar sistema de permissões em `app/tenants/permissions.py`
 
 #### Etapa 1.2: Definir Critérios de Aprovação
@@ -310,9 +310,9 @@ Auditar **100% das páginas navegáveis** do Smart Core Assistant Painel, valida
 - `app/tenants/models.py` - Roles e TenantModule
 
 ### Templates Base
-- `app/ui/core/templates/base.html` - Base raiz
-- `app/ui/core/templates/base_public.html` - Páginas públicas
-- `app/ui/core/templates/base_dashboard.html` - Área autenticada
+- `app/core/templates/base.html` - Base raiz
+- `app/core/templates/base_public.html` - Páginas públicas
+- `app/core/templates/base_dashboard.html` - Área autenticada
 
 ---
 
@@ -353,7 +353,7 @@ Ao completar cada etapa, marque o checkbox correspondente com `[x]` e atualize a
 5. **Manter índice atualizado** - Atualize `00_indice.md` a cada página concluída
 
 ### Dependências
-- Acesso ao código-fonte em `app/ui/`
+- Acesso ao código-fonte em `app/`
 - Conhecimento do sistema de permissões Django
 - Familiaridade com templates base do projeto
 - Servidor local rodando (opcional, para validação visual)

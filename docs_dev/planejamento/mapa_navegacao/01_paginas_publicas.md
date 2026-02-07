@@ -18,7 +18,7 @@
 | **Template**      | `landing_page.html`                                        |
 | **Template Base** | `base_public.html` → `base.html`                           |
 | **App**           | `core`                                                     |
-| **Arquivo View**  | `src/smart_core_assistant_painel/app/ui/core/views.py:101` |
+| **Arquivo View**  | `src/smart_core_assistant_painel/app/core/views.py:101` |
 
 ### Permissões
 
@@ -76,7 +76,7 @@ Esta rota atua exclusivamente como um **Gatekeeper**, redirecionando o usuário 
 | **Template**      | `403.html`                                                 |
 | **Template Base** | `base_public.html` → `base.html`                           |
 | **App**           | `core`                                                     |
-| **Arquivo View**  | `src/smart_core_assistant_painel/app/ui/core/views.py:176` |
+| **Arquivo View**  | `src/smart_core_assistant_painel/app/core/views.py:176` |
 | **Handler**       | Registrado como `handler403` em `urls.py:107`              |
 
 ### Permissões
@@ -126,7 +126,7 @@ Esta rota atua exclusivamente como um **Gatekeeper**, redirecionando o usuário 
 | **Template**      | `404.html`                                                 |
 | **Template Base** | `base_public.html` → `base.html`                           |
 | **App**           | `core`                                                     |
-| **Arquivo View**  | `src/smart_core_assistant_painel/app/ui/core/views.py:169` |
+| **Arquivo View**  | `src/smart_core_assistant_painel/app/core/views.py:169` |
 | **Handler**       | Registrado como `handler404` em `urls.py:104`              |
 
 ### Permissões
@@ -175,7 +175,7 @@ Esta rota atua exclusivamente como um **Gatekeeper**, redirecionando o usuário 
 | **Template**      | `500.html`                                                 |
 | **Template Base** | `base_public.html` → `base.html`                           |
 | **App**           | `core`                                                     |
-| **Arquivo View**  | `src/smart_core_assistant_painel/app/ui/core/views.py:183` |
+| **Arquivo View**  | `src/smart_core_assistant_painel/app/core/views.py:183` |
 | **Handler**       | Registrado como `handler500` em `urls.py:109`              |
 
 ### Permissões

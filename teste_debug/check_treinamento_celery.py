@@ -6,7 +6,7 @@ import sys
 # Configura o ambiente Django
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 
 import django
@@ -17,7 +17,7 @@ from django_celery_results.models import TaskResult
 from rich.console import Console
 from rich.table import Table
 
-from smart_core_assistant_painel.app.ui.treinamento.models import (
+from smart_core_assistant_painel.app.treinamento.models import (
     Documento,
     Treinamento,
 )
@@ -159,7 +159,7 @@ def check_celery_inspect() -> None:
     """Inspeciona estado do worker Celery."""
     console.print("\n[bold cyan]👷 Estado do Worker Celery[/bold cyan]")
     try:
-        from smart_core_assistant_painel.app.ui.core.celery import app
+        from smart_core_assistant_painel.app.core.celery import app
 
         inspect = app.control.inspect()
 

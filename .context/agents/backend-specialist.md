@@ -59,7 +59,7 @@ O Backend Specialist é especializado em desenvolvimento Django, APIs REST, inte
 ### Estrutura de Model
 
 ```python
-# app/ui/atendimentos/models.py
+# app/atendimentos/models.py
 
 from django.db import models
 from app.tenants.models import TenantAwareModel
@@ -106,7 +106,7 @@ class Atendimento(TenantAwareModel):
 ### Estrutura de Serializer
 
 ```python
-# app/ui/atendimentos/serializers.py
+# app/atendimentos/serializers.py
 
 from rest_framework import serializers
 from .models import Atendimento
@@ -147,7 +147,7 @@ class AtendimentoSerializer(serializers.ModelSerializer):
 ### Estrutura de ViewSet
 
 ```python
-# app/ui/atendimentos/views_api.py
+# app/atendimentos/views_api.py
 
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -190,7 +190,7 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
 ### Estrutura de Task Celery
 
 ```python
-# app/ui/atendimentos/tasks.py
+# app/atendimentos/tasks.py
 
 from celery import shared_task
 from django.db import transaction
@@ -276,10 +276,10 @@ Atendimento.objects.filter(status="aberto").update(
 
 ```bash
 # Shell Django
-uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
+uv run python src/smart_core_assistant_painel/app/manage.py shell
 
 # Debug queries
-uv run python src/smart_core_assistant_painel/app/ui/manage.py shell_plus --print-sql
+uv run python src/smart_core_assistant_painel/app/manage.py shell_plus --print-sql
 
 # Criar migration
 uv run task makemigrations

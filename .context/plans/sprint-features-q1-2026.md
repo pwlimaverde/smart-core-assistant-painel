@@ -1,8 +1,9 @@
 # Plano: Sprint Features Q1/2026 - Teste de Treinamento, Refatoração Apps e Whitelist UI
 
-**Status**: Em Planejamento
+**Status**: Concluído (Feature 1 e 3 implementadas; Feature 2 adiada)
 **Criado**: 2026-02-07
 **Atualizado**: 2026-02-07
+**Concluído**: 2026-02-07
 **Responsável**: Claude Code
 **Tipo**: Feature Development + Refactoring
 **Prioridade**: Alta
@@ -31,12 +32,12 @@ Adicionar uma seção de chat interativo na página `verificar_query_compose` (o
 ### Análise do Estado Atual
 
 **Arquivos Envolvidos:**
-- `app/ui/treinamento/views.py` - Views do treinamento (verificar_query_compose na linha 390)
-- `app/ui/treinamento/urls.py` - URLs do treinamento
-- `app/ui/treinamento/templates/treinamento/verificar_query_compose.html` - Template atual (somente lista intents)
+- `app/treinamento/views.py` - Views do treinamento (verificar_query_compose na linha 390)
+- `app/treinamento/urls.py` - URLs do treinamento
+- `app/treinamento/templates/treinamento/verificar_query_compose.html` - Template atual (somente lista intents)
 - `modules/ai_engine/features/features_compose.py` - Facade `FeaturesCompose` com `analise_mensage()`
 - `modules/ai_engine/features/analise_previa_mensagem/` - Feature de análise prévia (extrai entidades/intents)
-- `app/ui/treinamento/models.py` - Models `Treinamento`, `Documento`, `QueryCompose`
+- `app/treinamento/models.py` - Models `Treinamento`, `Documento`, `QueryCompose`
 
 **API de IA Disponível:**
 - `FeaturesCompose.analise_mensage()` - Retorna `AMTuple(resposta_bot, confiabilidade, transferir_atendimento, fluxo_transferencia)`
@@ -48,7 +49,7 @@ Adicionar uma seção de chat interativo na página `verificar_query_compose` (o
 ### Etapas de Implementação
 
 #### Etapa 1.1: Criar View de Teste de Resposta (Backend)
-**Arquivo:** `app/ui/treinamento/views.py`
+**Arquivo:** `app/treinamento/views.py`
 
 Criar nova view `testar_resposta_query` que:
 1. Recebe mensagem via POST (AJAX/JSON)
@@ -77,7 +78,7 @@ def testar_resposta_query(request: HttpRequest) -> HttpResponse:
 ```
 
 #### Etapa 1.2: Criar View de Feedback da Resposta (Backend)
-**Arquivo:** `app/ui/treinamento/views.py`
+**Arquivo:** `app/treinamento/views.py`
 
 Criar view `feedback_resposta_query` que:
 1. Recebe avaliação (bom/ruim) via POST
@@ -92,7 +93,7 @@ def feedback_resposta_query(request: HttpRequest) -> HttpResponse:
 ```
 
 #### Etapa 1.3: Criar Model de Feedback (Opcional)
-**Arquivo:** `app/ui/treinamento/models.py`
+**Arquivo:** `app/treinamento/models.py`
 
 Novo model `QueryTestFeedback`:
 ```python
@@ -112,7 +113,7 @@ class QueryTestFeedback(models.Model):
 ```
 
 #### Etapa 1.4: Registrar URLs
-**Arquivo:** `app/ui/treinamento/urls.py`
+**Arquivo:** `app/treinamento/urls.py`
 
 Adicionar:
 ```python
@@ -121,7 +122,7 @@ path("feedback-resposta/", views.feedback_resposta_query, name="feedback_respost
 ```
 
 #### Etapa 1.5: Criar Template de Teste
-**Arquivo:** `app/ui/treinamento/templates/treinamento/testar_query.html`
+**Arquivo:** `app/treinamento/templates/treinamento/testar_query.html`
 
 Nova página dedicada com:
 1. **Área de Chat** - Input de mensagem + histórico de conversa
@@ -138,7 +139,7 @@ Nova página dedicada com:
 **Design System:** Extender `base_dashboard.html`, usar Tailwind CSS conforme padrão do projeto (stone colors, rounded-xl, shadow-sm)
 
 #### Etapa 1.6: JavaScript para Interatividade
-**Arquivo:** `app/ui/core/static/js/testar_query.js` (ou inline no template)
+**Arquivo:** `app/core/static/js/testar_query.js` (ou inline no template)
 
 - Fetch API para chamadas AJAX
 - Loading state durante processamento (spinner)
@@ -147,7 +148,7 @@ Nova página dedicada com:
 - Toggle da área de correção
 
 #### Etapa 1.7: Adicionar Link de Navegação
-**Arquivo:** `app/ui/treinamento/templates/treinamento/verificar_query_compose.html`
+**Arquivo:** `app/treinamento/templates/treinamento/verificar_query_compose.html`
 
 Adicionar botão "Testar Respostas" ao lado de "Nova Intent" no header.
 
@@ -206,7 +207,7 @@ src/smart_core_assistant_painel/
 
 ### Problemas Identificados
 
-1. **Apps misturados em dois níveis**: Alguns apps estão em `app/` (evolution_sync, settings_manager, tenants, trello_sync) e outros em `app/ui/` (atendimentos, clientes, operacional, treinamento, usuarios)
+1. **Apps misturados em dois níveis**: Alguns apps estão em `app/` (evolution_sync, settings_manager, tenants, trello_sync) e outros em `app/` (atendimentos, clientes, operacional, treinamento, usuarios)
 2. **`core` não é um app Django real**: É onde settings, urls e middleware ficam, mas é registrado como app
 3. **Ausência de `oraculo` como app**: Referenciado na documentação mas não existe como app separado
 4. **clickup_sync e notion_sync**: Comentados em `INSTALLED_APPS` mas pastas podem ainda existir
@@ -275,7 +276,7 @@ src/smart_core_assistant_painel/
 #### Etapa 2.2: Mover Apps de `ui/` para `app/` (um por vez)
 Para cada app (`usuarios`, `clientes`, `operacional`, `atendimentos`, `treinamento`):
 
-1. Mover diretório de `app/ui/<nome>/` para `app/<nome>/`
+1. Mover diretório de `app/<nome>/` para `app/<nome>/`
 2. Atualizar `apps.py` → `name = "smart_core_assistant_painel.app.<nome>"`
 3. Atualizar `INSTALLED_APPS` em `settings.py`
 4. Atualizar todos os imports no codebase (grep + replace)
@@ -286,7 +287,7 @@ Para cada app (`usuarios`, `clientes`, `operacional`, `atendimentos`, `treinamen
 9. Commit individual
 
 #### Etapa 2.3: Renomear `core` para `config`
-1. Mover `app/ui/core/` para `app/config/`
+1. Mover `app/core/` para `app/config/`
 2. Atualizar `ROOT_URLCONF`, `WSGI_APPLICATION`, `ASGI_APPLICATION` em settings
 3. Atualizar todos os imports de middleware, context_processors
 4. Atualizar `MIDDLEWARE` em settings
@@ -300,8 +301,8 @@ Para cada app (`usuarios`, `clientes`, `operacional`, `atendimentos`, `treinamen
 4. Rodar testes
 
 #### Etapa 2.5: Limpeza Final
-1. Remover diretório `app/ui/` (agora vazio)
-2. Remover `app/ui/manage.py` (se não for usado)
+1. Remover diretório `app/` (agora vazio)
+2. Remover `app/manage.py` (se não for usado)
 3. Limpar `__pycache__` residuais
 4. Atualizar documentação (CLAUDE.md, .context/docs/)
 
@@ -381,7 +382,7 @@ urlpatterns = [
 ```
 
 #### Etapa 3.3: Registrar URLs no Core
-**Arquivo:** `app/ui/core/urls.py`
+**Arquivo:** `app/core/urls.py`
 
 Adicionar:
 ```python
@@ -438,7 +439,7 @@ Views necessárias:
 **Permissões:** Verificar se usuário é ADMIN do tenant ou owner
 
 #### Etapa 3.8: Adicionar Link na Sidebar/Navegação
-**Arquivo:** `app/ui/core/templates/base_dashboard.html`
+**Arquivo:** `app/core/templates/base_dashboard.html`
 
 Adicionar link "Configurações" na sidebar do dashboard, com ícone de engrenagem.
 
@@ -502,15 +503,15 @@ def _can_manage_settings(user) -> bool:
 ## Arquivos Relacionados
 
 ### Feature 1
-- [views.py](../../src/smart_core_assistant_painel/app/ui/treinamento/views.py)
-- [urls.py](../../src/smart_core_assistant_painel/app/ui/treinamento/urls.py)
-- [models.py](../../src/smart_core_assistant_painel/app/ui/treinamento/models.py)
+- [views.py](../../src/smart_core_assistant_painel/app/treinamento/views.py)
+- [urls.py](../../src/smart_core_assistant_painel/app/treinamento/urls.py)
+- [models.py](../../src/smart_core_assistant_painel/app/treinamento/models.py)
 - [features_compose.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py)
-- [verificar_query_compose.html](../../src/smart_core_assistant_painel/app/ui/treinamento/templates/treinamento/verificar_query_compose.html)
+- [verificar_query_compose.html](../../src/smart_core_assistant_painel/app/treinamento/templates/treinamento/verificar_query_compose.html)
 
 ### Feature 2
-- [settings.py](../../src/smart_core_assistant_painel/app/ui/core/settings.py)
-- [urls.py (core)](../../src/smart_core_assistant_painel/app/ui/core/urls.py)
+- [settings.py](../../src/smart_core_assistant_painel/app/core/settings.py)
+- [urls.py (core)](../../src/smart_core_assistant_painel/app/core/urls.py)
 
 ### Feature 3
 - [models.py (evolution)](../../src/smart_core_assistant_painel/app/evolution_sync/models.py)

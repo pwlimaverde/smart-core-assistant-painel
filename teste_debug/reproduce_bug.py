@@ -10,12 +10,12 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 # Setup Django
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 
 from smart_core_assistant_painel.app.evolution_sync.views import webhook
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
 )

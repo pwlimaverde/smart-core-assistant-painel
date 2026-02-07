@@ -148,7 +148,7 @@ docker logs -f smartcore_postgres
 ## Criar Superusuário
 
 ```bash
-docker exec -it smartcore_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser
+docker exec -it smartcore_app python -m smart_core_assistant_painel.app.manage createsuperuser
 ```
 
 ---

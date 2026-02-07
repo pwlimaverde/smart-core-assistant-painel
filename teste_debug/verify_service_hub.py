@@ -7,7 +7,7 @@ from django.conf import settings
 sys.path.append("c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src")
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 

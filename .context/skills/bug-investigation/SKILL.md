@@ -49,7 +49,7 @@ Crie script em `teste_debug/`:
 import django
 django.setup()
 
-from app.ui.atendimentos.models import Atendimento
+from app.atendimentos.models import Atendimento
 
 def reproduce():
     """Reproduz o bug."""
@@ -96,7 +96,7 @@ uv run python manage.py shell
 uv run python manage.py shell_plus --print-sql
 
 # Logs do Celery
-celery -A app.ui.core inspect active
+celery -A app.core inspect active
 ```
 
 ### 4. Diagnóstico

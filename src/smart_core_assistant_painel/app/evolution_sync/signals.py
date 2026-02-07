@@ -11,9 +11,11 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
 from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
     EvolutionWhatsAppService,
 )
-from smart_core_assistant_painel.app.tenants.middleware import get_current_tenant
+from smart_core_assistant_painel.app.tenants.middleware import (
+    get_current_tenant,
+)
 from smart_core_assistant_painel.app.tenants.models import TenantEvolution
-from smart_core_assistant_painel.app.ui.atendimentos.models import Mensagem
+from smart_core_assistant_painel.app.atendimentos.models import Mensagem
 
 
 @receiver(pre_save, sender=Mensagem)

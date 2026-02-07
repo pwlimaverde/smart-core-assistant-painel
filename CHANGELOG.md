@@ -64,8 +64,8 @@
 
 ### Fixed
 - Resolvidos conflitos de merge priorizando a branch `bugfix/fix-apps-django` nos arquivos:
-  - `src/smart_core_assistant_painel/app/ui/oraculo/admin.py`
-  - `src/smart_core_assistant_painel/app/ui/oraculo/signals.py`
+  - `src/smart_core_assistant_painel/app/oraculo/admin.py`
+  - `src/smart_core_assistant_painel/app/oraculo/signals.py`
 
 ### Tests
 - Removido o teste obsoleto `test_vetor_storage_not_set`, que referenciava a

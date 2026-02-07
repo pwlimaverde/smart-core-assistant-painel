@@ -4,28 +4,62 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='CoreSettings',
+            name="CoreSettings",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('key', models.CharField(help_text='Chave identificadora da configuração (ex: OPENAI_API_KEY).', max_length=255, unique=True, verbose_name='Chave')),
-                ('value', models.TextField(help_text='Valor da configuração.', verbose_name='Valor')),
-                ('encrypted', models.BooleanField(default=False, help_text='Se marcado, o valor será descriptografado ao ser acessado via get_value().', verbose_name='Criptografado')),
-                ('description', models.TextField(blank=True, help_text='Descrição para documentação.', verbose_name='Descrição')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "key",
+                    models.CharField(
+                        help_text="Chave identificadora da configuração (ex: OPENAI_API_KEY).",
+                        max_length=255,
+                        unique=True,
+                        verbose_name="Chave",
+                    ),
+                ),
+                (
+                    "value",
+                    models.TextField(
+                        help_text="Valor da configuração.",
+                        verbose_name="Valor",
+                    ),
+                ),
+                (
+                    "encrypted",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Se marcado, o valor será descriptografado ao ser acessado via get_value().",
+                        verbose_name="Criptografado",
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Descrição para documentação.",
+                        verbose_name="Descrição",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Configuração Global',
-                'verbose_name_plural': 'Configurações Globais',
-                'ordering': ['key'],
+                "verbose_name": "Configuração Global",
+                "verbose_name_plural": "Configurações Globais",
+                "ordering": ["key"],
             },
         ),
     ]

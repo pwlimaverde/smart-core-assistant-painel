@@ -8,7 +8,7 @@ from dateutil.relativedelta import relativedelta
 sys.path.append(os.path.join(os.getcwd(), "src"))
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 

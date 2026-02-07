@@ -57,7 +57,7 @@ def main():
     # Configuração de apps e arquivos a preservar
     apps_clean = [
         (
-            "src/smart_core_assistant_painel/app/ui/clientes/migrations",
+            "src/smart_core_assistant_painel/app/clientes/migrations",
             ["__init__.py", "0001_initial.py", "0002_enable_pgvector_extension.py"],
         ),
         (
@@ -65,19 +65,19 @@ def main():
             ["__init__.py", "0001_initial.py"],
         ),
         (
-            "src/smart_core_assistant_painel/app/ui/operacional/migrations",
+            "src/smart_core_assistant_painel/app/operacional/migrations",
             ["__init__.py"],
         ),
         (
-            "src/smart_core_assistant_painel/app/ui/atendimentos/migrations",
+            "src/smart_core_assistant_painel/app/atendimentos/migrations",
             ["__init__.py"],
         ),
-        ("src/smart_core_assistant_painel/app/ui/usuarios/migrations", ["__init__.py"]),
+        ("src/smart_core_assistant_painel/app/usuarios/migrations", ["__init__.py"]),
         (
-            "src/smart_core_assistant_painel/app/ui/treinamento/migrations",
+            "src/smart_core_assistant_painel/app/treinamento/migrations",
             ["__init__.py"],
         ),
-        ("src/smart_core_assistant_painel/app/ui/core/migrations", ["__init__.py"]),
+        ("src/smart_core_assistant_painel/app/core/migrations", ["__init__.py"]),
     ]
 
     total_removed = 0

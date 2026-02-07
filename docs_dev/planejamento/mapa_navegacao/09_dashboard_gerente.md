@@ -31,7 +31,7 @@
 | **Template**      | `dashboard_gerente.html`             |
 | **Template Base** | ⚠️ A verificar                       |
 | **App**           | `ui.usuarios`                        |
-| **Arquivo View**  | `app/ui/usuarios/views.py:168-224`   |
+| **Arquivo View**  | `app/usuarios/views.py:168-224`   |
 
 ### Permissões
 
@@ -84,7 +84,7 @@
 | **Template**      | `permissoes.html`                  |
 | **Template Base** | ⚠️ A verificar                     |
 | **App**           | `ui.usuarios`                      |
-| **Arquivo View**  | `app/ui/usuarios/views.py:143-150` |
+| **Arquivo View**  | `app/usuarios/views.py:143-150` |
 
 ### Permissões
 
@@ -130,7 +130,7 @@
 | **URL Name**     | `tornar_gerente`                   |
 | **View**         | `tornar_gerente` (Function-Based)  |
 | **Método**       | GET (redireciona após ação)        |
-| **Arquivo View** | `app/ui/usuarios/views.py:153-165` |
+| **Arquivo View** | `app/usuarios/views.py:153-165` |
 
 ### Parâmetros
 

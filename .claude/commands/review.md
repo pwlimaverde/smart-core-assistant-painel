@@ -29,7 +29,7 @@ Realiza code review seguindo os padrões do projeto e skills PREVC.
 ## Exemplo de Uso
 
 ```
-/review src/smart_core_assistant_painel/app/ui/atendimentos/views.py
+/review src/smart_core_assistant_painel/app/atendimentos/views.py
 /review PR #123
 ```
 

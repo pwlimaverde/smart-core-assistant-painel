@@ -20,7 +20,7 @@ from smart_core_assistant_painel.app.trello_sync.services.member_sync_service im
 from smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service import (
     TicketSyncService,
 )
-from smart_core_assistant_painel.app.ui.operacional.models import TipoEtapa
+from smart_core_assistant_painel.app.operacional.models import TipoEtapa
 from smart_core_assistant_painel.app.trello_sync.models import TrelloMember
 
 

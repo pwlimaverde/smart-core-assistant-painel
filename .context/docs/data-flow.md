@@ -80,11 +80,11 @@ Este documento descreve os principais fluxos de dados do sistema Smart Core Assi
 
 | Etapa | Componente | Arquivo |
 |-------|------------|---------|
-| Upload Document | `treinamento.views` | `app/ui/treinamento/views.py` |
+| Upload Document | `treinamento.views` | `app/treinamento/views.py` |
 | Load Document | `ai_engine.features.load_document_file` | `modules/ai_engine/features/load_document_file/` |
 | Generate Chunks | `ai_engine.features.generate_chunks` | `modules/ai_engine/features/generate_chunks/` |
 | Generate Embeddings | `ai_engine.features.generate_embeddings` | `modules/ai_engine/features/generate_embeddings/` |
-| Store to pgvector | `treinamento.services` | `app/ui/treinamento/services.py` |
+| Store to pgvector | `treinamento.services` | `app/treinamento/services.py` |
 
 ### Tipos de Documento Suportados
 

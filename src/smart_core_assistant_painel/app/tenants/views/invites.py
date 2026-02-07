@@ -21,7 +21,10 @@ ADMIN_PANEL_MODULES = (
 
 def _available_permission_modules() -> list[tuple[str, str]]:
     return [
-        (TenantModule.PAINEL_ADMIN.value, "Painel Admin (Clientes, Operacional, Atendimentos)"),
+        (
+            TenantModule.PAINEL_ADMIN.value,
+            "Painel Admin (Clientes, Operacional, Atendimentos)",
+        ),
         (TenantModule.TREINAMENTO.value, "Treinamento IA"),
         (TenantModule.CONFIGURACOES.value, "Configurações"),
         (TenantModule.USUARIOS.value, "Usuários"),
@@ -491,9 +494,7 @@ def edit_permissions(request, user_id):
         mod for mod in current_modules if mod not in ADMIN_PANEL_MODULES
     }
     current_modules = [
-        mod_value
-        for mod_value, _label in modules
-        if mod_value in current_set
+        mod_value for mod_value, _label in modules if mod_value in current_set
     ]
 
     return render(

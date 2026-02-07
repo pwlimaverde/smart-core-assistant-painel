@@ -10,7 +10,7 @@ from loguru import logger
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 os.environ["DISABLE_APP_SERVICES_INIT"] = (
     "1"  # Bypass service initialization (Firebase)
@@ -31,12 +31,12 @@ from smart_core_assistant_painel.app.evolution_sync.views import (
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Contato,
     Mensagem,
     Atendimento,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services import (
+from smart_core_assistant_painel.app.atendimentos.services import (
     process_contact_response_task,
 )
 from django_q.models import Schedule

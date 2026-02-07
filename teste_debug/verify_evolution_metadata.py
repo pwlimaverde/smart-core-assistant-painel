@@ -7,27 +7,27 @@ os.environ.setdefault(
 )
 django.setup()
 
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
     TipoMensagem,
     TipoRemetente,
 )
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionInstance,
     EvolutionContact,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator import (
+from smart_core_assistant_painel.app.atendimentos.services.attendance_orchestrator import (
     AttendanceOrchestrator,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer import (
+from smart_core_assistant_painel.app.atendimentos.services.message_analyzer import (
     MessageAnalyzer,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager import (
+from smart_core_assistant_painel.app.atendimentos.services.attendance_structure_manager import (
     AttendanceStructureManager,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.bot_rules_engine import (
+from smart_core_assistant_painel.app.atendimentos.services.bot_rules_engine import (
     BotRulesEngine,
 )
 from unittest.mock import MagicMock, patch

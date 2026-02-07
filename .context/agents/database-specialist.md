@@ -82,7 +82,7 @@ DATABASE_ROUTERS = ["app.tenants.db_router.TenantDatabaseRouter"]
 ### Model com Índices
 
 ```python
-# app/ui/atendimentos/models.py
+# app/atendimentos/models.py
 
 class Mensagem(models.Model):
     """Mensagem de um atendimento."""

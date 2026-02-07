@@ -6,7 +6,7 @@ import django
 sys.path.append(r"c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src")
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 
 try:
@@ -17,7 +17,7 @@ except Exception as e:
 
 from django.test import Client
 from django.contrib.auth.models import User
-from smart_core_assistant_painel.app.ui.operacional.models import (
+from smart_core_assistant_painel.app.operacional.models import (
     Atendente,
     Departamento,
     FluxoAtendimento,

@@ -32,7 +32,7 @@ O Frontend Specialist é responsável por templates Django, CSS, JavaScript e in
 ## Estrutura de Templates
 
 ```
-app/ui/core/templates/
+app/core/templates/
 ├── base.html                   # Template base principal
 ├── base_dashboard.html         # Base para dashboard
 ├── base_public.html            # Base para páginas públicas
@@ -45,7 +45,7 @@ app/ui/core/templates/
 ├── 404.html
 └── 500.html
 
-app/ui/<app>/templates/<app>/
+app/<app>/templates/<app>/
 ├── list.html
 ├── detail.html
 ├── form.html

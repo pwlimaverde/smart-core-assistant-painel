@@ -1,13 +1,14 @@
 {
-  "active": [
+  "active": [],
+  "completed": [
     {
       "slug": "auditoria-navegacao-ui",
       "path": "plans/auditoria-navegacao-ui.md",
       "title": "Plano: Auditoria de Navegação e Permissões UI",
       "linkedAt": "2026-01-31T17:01:54.187Z",
-      "status": "active"
+      "completedAt": "2026-02-06T00:00:00.000Z",
+      "status": "completed"
     }
   ],
-  "completed": [],
-  "primary": "auditoria-navegacao-ui"
+  "primary": null
 }

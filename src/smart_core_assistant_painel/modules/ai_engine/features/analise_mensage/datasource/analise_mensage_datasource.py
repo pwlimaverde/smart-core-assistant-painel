@@ -265,7 +265,9 @@ class AnaliseMensageDatasource(AMData):
             llm = parameters.llm_parameters.create_llm
 
             # Usa Structured Output para extrair resposta estruturada
-            structured_llm = llm.with_structured_output(RespostaBot)
+            structured_llm = llm.with_structured_output(
+                RespostaBot, method="json_schema"
+            )
             chain = messages | structured_llm
 
             # Invoca com histórico estruturado

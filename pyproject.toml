@@ -257,10 +257,10 @@ remote-collectstatic = "python scripts/docker_remoto/manager.py run app --remote
 
 # --- Status e Monitoramento ---
 # Exibe informações gerais do servidor (uptime, load, memória, disco)
-server-status = "ssh hostinger-root 'echo \"=== UPTIME ===\"; uptime; echo; echo \"=== MEMÓRIA ===\"; free -h; echo; echo \"=== DISCO ===\"; df -h /; echo; echo \"=== CONTAINERS ===\"; docker ps --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+server-status = "ssh hostinger-root \"echo '=== UPTIME ==='; uptime; echo; echo '=== MEMORIA ==='; free -h; echo; echo '=== DISCO ==='; df -h /; echo; echo '=== CONTAINERS ==='; docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'\""
 
 # Lista containers Docker em execução com status e portas
-server-ps = "ssh hostinger-root 'docker ps --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
+server-ps = "ssh hostinger-root \"docker ps --format 'table {{.Names}}\\t{{.Status}}\\t{{.Ports}}'\""
 
 # Lista todos os containers (incluindo parados)
 server-ps-all = "ssh hostinger-root 'docker ps -a --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\"'"
@@ -311,7 +311,7 @@ server-start-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMA
 
 # --- Deploy e Atualização ---
 # Faz git pull no servidor para atualizar código
-server-pull = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && git pull && echo \"Código atualizado\"'"
+server-pull = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && git pull && echo 'Codigo atualizado'\""
 
 # Sincroniza arquivo de ambiente de produção no servidor
 server-sync-env-prod = "scp .env.prod hostinger-root:~/smart-core-assistant-painel/.env.prod && ssh hostinger-root \"chmod 600 ~/smart-core-assistant-painel/.env.prod && cp ~/smart-core-assistant-painel/.env.prod ~/smart-core-assistant-painel/.env && echo 'Arquivo .env.prod sincronizado e ativado'\""
@@ -350,13 +350,13 @@ server-bash-worker = "ssh -t hostinger-root 'docker exec -it smartcoreassistant_
 
 # --- Manutenção ---
 # Remove containers parados, imagens não utilizadas e volumes órfãos
-server-prune = "ssh hostinger-root 'docker system prune -f && echo \"Limpeza concluída\"'"
+server-prune = "ssh hostinger-root \"docker system prune -f && echo 'Limpeza concluida'\""
 
 # Exibe uso de disco do Docker
 server-docker-disk = "ssh hostinger-root 'docker system df'"
 
 # Backup do banco de dados (salva em ~/backups/)
-server-backup-db = "ssh hostinger-root 'mkdir -p ~/backups && docker exec smartcoreassistant_postgres pg_dump -U postgres smart_core_db > ~/backups/backup_$(date +%Y%m%d_%H%M%S).sql && echo \"Backup criado em ~/backups/\"'"
+server-backup-db = "ssh hostinger-root \"mkdir -p ~/backups && docker exec smartcoreassistant_postgres pg_dump -U postgres smart_core_db > ~/backups/backup_\\$(date +%Y%m%d_%H%M%S).sql && echo 'Backup criado em ~/backups/'\""
 
 # Lista backups disponíveis
-server-list-backups = "ssh hostinger-root 'ls -lah ~/backups/ 2>/dev/null || echo \"Nenhum backup encontrado\"'"
+server-list-backups = "ssh hostinger-root \"ls -lah ~/backups/ 2>/dev/null || echo 'Nenhum backup encontrado'\""

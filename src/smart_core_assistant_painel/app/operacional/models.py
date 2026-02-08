@@ -261,12 +261,18 @@ class Atendente(models.Model):
     email: models.EmailField[str | None] = models.EmailField(
         blank=False, null=True, help_text="E-mail corporativo do atendente"
     )
+    # Observação:
+    # Este app é migrado em bancos de tenant (DBs separados). O modelo User fica no
+    # banco "default" (CORE_APPS via router). Portanto, não podemos ter constraint
+    # de FK real no banco do tenant apontando para `auth_user`, pois a tabela não
+    # existe lá. Mantemos a relação no ORM, mas sem `db_constraint`.
     usuario: models.OneToOneField[User | None] = models.OneToOneField(
         User,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,
         related_name="atendente_humano",
+        db_constraint=False,
         help_text="Usuario do Django associado ao atendente (opcional)",
     )
     usuario_sistema: models.CharField[str | None] = models.CharField(

@@ -4,13 +4,16 @@ import json
 from typing import Any
 
 from django.contrib import messages
+from django.db import router
 from django.db import transaction
+from django.db.utils import ProgrammingError
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
 
 from .models import Documento, QueryCompose, QueryTestFeedback, Treinamento
 from .services import TreinamentoService
@@ -260,11 +263,17 @@ def _aceitar_treinamento(id: int) -> None:
             )
             return
 
-        conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-            conteudo_atual
-        )
-        treinamento.conteudo = conteudo_melhorado
-        treinamento.save(update_fields=["conteudo"])
+        try:
+            conteudo_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+                conteudo_atual
+            )
+            treinamento.conteudo = conteudo_melhorado
+            treinamento.save(update_fields=["conteudo"])
+        except LlmError as e:
+            # Não bloqueia o fluxo: mantém o conteúdo atual e finaliza.
+            logger.warning(
+                f"Falha ao melhorar treinamento {id} via LLM (aceitar): {e}"
+            )
         treinamento.treinamento_finalizado = True
         treinamento.save()
         logger.info(
@@ -291,9 +300,22 @@ def _exibir_pre_processamento(request: HttpRequest, id: int) -> HttpResponse:
             )
             return redirect("treinamento:treinar_ia")
 
-        texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
-            conteudo_unificado
-        )
+        try:
+            texto_melhorado = FeaturesCompose.melhoria_ia_treinamento(
+                conteudo_unificado
+            )
+        except LlmError as e:
+            # Fallback: exibe a tela mesmo sem sugestão de melhoria.
+            logger.warning(
+                f"Falha ao gerar sugestão de melhoria via LLM no pré-processamento "
+                f"(treinamento_id={id}): {e}"
+            )
+            messages.warning(
+                request,
+                "Não foi possível gerar a sugestão de melhoria automática agora. "
+                "Você ainda pode manter ou aceitar o conteúdo atual.",
+            )
+            texto_melhorado = ""
         return render(
             request,
             "treinamento/pre_processamento.html",
@@ -368,13 +390,36 @@ def verificar_treinamentos_vetorizados(request: HttpRequest) -> HttpResponse:
 
         return redirect("treinamento:verificar_treinamentos_vetorizados")
 
-    treinamentos_vetorizados = Treinamento.objects.filter(
-        treinamento_finalizado=True, treinamento_vetorizado=True
-    ).order_by("-data_criacao")
+    # Observação importante:
+    # O app `treinamento` é roteado pelo TenantDatabaseRouter (TENANT_APPS),
+    # então este queryset pode apontar para o banco do tenant (alias `tenant_<slug>`).
+    # Se o banco do tenant ainda não recebeu migrations, a tabela pode não existir.
+    try:
+        treinamentos_vetorizados = Treinamento.objects.filter(
+            treinamento_finalizado=True, treinamento_vetorizado=True
+        ).order_by("-data_criacao")
 
-    treinamentos_com_erro = Treinamento.objects.filter(
-        treinamento_finalizado=True, treinamento_vetorizado=False
-    ).order_by("-data_criacao")
+        treinamentos_com_erro = Treinamento.objects.filter(
+            treinamento_finalizado=True, treinamento_vetorizado=False
+        ).order_by("-data_criacao")
+    except ProgrammingError as e:
+        msg = str(e)
+        db_alias = router.db_for_read(Treinamento)
+        if "oraculo_treinamento" in msg and "does not exist" in msg:
+            logger.warning(
+                "Tabela ausente para Treinamento. "
+                f"db_alias={db_alias} err={msg}"
+            )
+            messages.error(
+                request,
+                "O banco de dados deste tenant ainda não foi migrado para o módulo "
+                "de Treinamentos (tabela ausente: oraculo_treinamento). "
+                "Execute as migrações do tenant e tente novamente.",
+            )
+            treinamentos_vetorizados = Treinamento.objects.none()
+            treinamentos_com_erro = Treinamento.objects.none()
+        else:
+            raise
 
     return render(
         request,

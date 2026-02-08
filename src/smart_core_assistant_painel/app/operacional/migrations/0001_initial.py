@@ -369,6 +369,7 @@ class Migration(migrations.Migration):
                     "usuario",
                     models.OneToOneField(
                         blank=True,
+                        db_constraint=False,
                         help_text="Usuario do Django associado ao atendente (opcional)",
                         null=True,
                         on_delete=django.db.models.deletion.SET_NULL,

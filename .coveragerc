@@ -12,9 +12,9 @@ omit =
     src/smart_core_assistant_painel/app/clickup_sync/*
     src/smart_core_assistant_painel/app/trello_sync/*
     src/smart_core_assistant_painel/app/notion_sync/*
-    src/smart_core_assistant_painel/app/ui/manage.py
-    src/smart_core_assistant_painel/app/ui/core/wsgi.py
-    src/smart_core_assistant_painel/app/ui/core/asgi.py
+    src/smart_core_assistant_painel/app/manage.py
+    src/smart_core_assistant_painel/app/core/wsgi.py
+    src/smart_core_assistant_painel/app/core/asgi.py
 
 [report]
 # Linhas a serem excluídas do relatório de cobertura
@@ -31,6 +31,6 @@ omit =
     src/smart_core_assistant_painel/app/clickup_sync/*
     src/smart_core_assistant_painel/app/trello_sync/*
     src/smart_core_assistant_painel/app/notion_sync/*
-    src/smart_core_assistant_painel/app/ui/manage.py
-    src/smart_core_assistant_painel/app/ui/core/wsgi.py
-    src/smart_core_assistant_painel/app/ui/core/asgi.py
+    src/smart_core_assistant_painel/app/manage.py
+    src/smart_core_assistant_painel/app/core/wsgi.py
+    src/smart_core_assistant_painel/app/core/asgi.py

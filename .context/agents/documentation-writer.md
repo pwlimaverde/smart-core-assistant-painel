@@ -83,7 +83,7 @@ __all__ = ["AnaliseMensageUsecase"]
 ### 3. Documentação de API (OpenAPI)
 
 ```python
-# app/ui/atendimentos/views_api.py
+# app/atendimentos/views_api.py
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 

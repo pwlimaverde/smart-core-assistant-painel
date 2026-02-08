@@ -70,7 +70,14 @@
       "WebFetch(domain:app.smartcoreassistant.com.br)",
       "Bash(claude mcp list:*)",
       "Bash(gh auth:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(uv run ruff check:*)",
+      "Bash(git mv:*)",
+      "Bash(git mv src/smart_core_assistant_painel/app/ui/operacional src/smart_core_assistant_painel/app/operacional)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

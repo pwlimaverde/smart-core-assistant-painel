@@ -1,6 +1,7 @@
 import logging
 import socket
 from io import StringIO
+from pathlib import Path
 from typing import Tuple
 
 import psycopg2
@@ -231,4 +232,35 @@ class TenantMigrationRunner:
                 f"Erro ao executar migrations para "
                 f"{config.tenant.slug}: {error_msg}"
             )
+
+            # Ajuda de diagnóstico: esse erro costuma acontecer quando alguma migration
+            # tenta criar FK para `auth_user` dentro do banco do tenant (que não
+            # possui o app `auth` migrado). Ex.: operacional.Atendente.usuario.
+            if "auth_user" in error_msg and "does not exist" in error_msg:
+                try:
+                    op_migration = (
+                        Path(__file__).resolve().parents[2]
+                        / "operacional"
+                        / "migrations"
+                        / "0001_initial.py"
+                    )
+                    op_has_fix = (
+                        op_migration.exists()
+                        and "db_constraint=False"
+                        in op_migration.read_text(encoding="utf-8")
+                    )
+                    fix_hint = (
+                        "Correção detectada no código atual (db_constraint=False). "
+                        if op_has_fix
+                        else "Correção NÃO detectada no código atual (db_constraint=False ausente). "
+                    )
+                except Exception:
+                    fix_hint = ""
+
+                return (
+                    False,
+                    "Erro ao aplicar migrações: relation \"auth_user\" does not exist. "
+                    "Isso indica que alguma migration está tentando criar FK para auth_user no banco do tenant. "
+                    f"{fix_hint}Reinicie o servidor/app após atualizar o código e execute novamente.",
+                )
             return (False, f"Erro ao aplicar migrações: {error_msg}")

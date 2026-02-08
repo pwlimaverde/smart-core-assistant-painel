@@ -173,6 +173,7 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
         tenant, _tenant_profile = _resolve_tenant_and_profile(self.request)
         if not tenant:
             from django.http import Http404
+
             raise Http404("Tenant não encontrado para este usuário.")
         return self.get_config_object(tenant)
 
@@ -184,21 +185,21 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
         # Verificar permissões de edição
         can_edit = False
         reason = "Acesso restrito"
-        
+
         try:
             user = self.request.user
             tenant = self.object.tenant
-            
+
             # 1. Se for owner do tenant, pode editar
             if user == tenant.owner:
                 can_edit = True
                 reason = ""
-            
+
             # 2. Se for superuser do Django, sempre pode editar
             elif user.is_superuser:
                 can_edit = True
                 reason = ""
-            
+
             # 3. Verificar permissão modular (configuracoes)
             elif _can_edit_tenant_configs(self.request, tenant):
                 can_edit = True
@@ -215,13 +216,10 @@ class BaseTenantConfigView(LoginRequiredMixin, UpdateView):
         if not can_edit:
             for field in form.fields.values():
                 field.disabled = True
-            
+
             # Adicionar mensagem informativa (apenas GET para não floodar)
             if self.request.method == "GET":
-                messages.info(
-                    self.request, 
-                    f"Modo de visualização: {reason}."
-                )
+                messages.info(self.request, f"Modo de visualização: {reason}.")
 
         return form
 

@@ -30,7 +30,7 @@ Refatora código existente seguindo boas práticas e mantendo comportamento.
 ## Exemplo de Uso
 
 ```
-/refactor src/smart_core_assistant_painel/app/ui/atendimentos/services/
+/refactor src/smart_core_assistant_painel/app/atendimentos/services/
 /refactor modules/ai_engine/features/analise_mensage/
 ```
 

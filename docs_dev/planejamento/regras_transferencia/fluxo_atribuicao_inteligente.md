@@ -125,6 +125,6 @@ Para garantir o registro auditável de todas as interações:
 ## 6. Próximos Passos para Implementação
 
 1.  Criar o `AtendimentoHandoverService`.
-2.  Implementar o Signal em `src/smart_core_assistant_painel/app/ui/atendimentos/signals.py` (criar se não existir).
+2.  Implementar o Signal em `src/smart_core_assistant_painel/app/atendimentos/signals.py` (criar se não existir).
 3.  Configurar task assíncrona no Django Q.
 4.  Testar com instâncias reais para validar a abertura do chat no dispositivo do atendente.

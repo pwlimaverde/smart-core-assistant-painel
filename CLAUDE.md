@@ -174,7 +174,7 @@ __all__ = ["FeatureClass", "helper_function"]
 ## Configurações Importantes
 
 - Segredos vão no `.env` (nunca hardcode)
-- Configurações Django: `src/smart_core_assistant_painel/app/ui/core/settings.py`
+- Configurações Django: `src/smart_core_assistant_painel/app/core/settings.py`
 - Template de ambiente: `.env.example`
 
 ## Integrações Externas

@@ -134,16 +134,22 @@ class Command(BaseCommand):
 
             traceback.print_exc()
 
-    def _import_from_json(self, *, input_path: str, encrypt_when_flagged: bool):
+    def _import_from_json(
+        self, *, input_path: str, encrypt_when_flagged: bool
+    ):
         path = Path(input_path)
         if not path.exists():
             raise FileNotFoundError(f"Arquivo não encontrado: {input_path}")
 
         data = json.loads(path.read_text(encoding="utf-8"))
-        items = data.get("core_settings", data if isinstance(data, list) else [])
+        items = data.get(
+            "core_settings", data if isinstance(data, list) else []
+        )
 
         if not isinstance(items, list):
-            raise ValueError("Formato inválido: esperado lista em core_settings")
+            raise ValueError(
+                "Formato inválido: esperado lista em core_settings"
+            )
 
         created_count = 0
         updated_count = 0

@@ -37,7 +37,7 @@ Realiza auditoria de segurança seguindo OWASP Top 10.
 
 ```
 /security                        # Auditoria completa
-/security app/ui/atendimentos    # Audita módulo específico
+/security app/atendimentos    # Audita módulo específico
 /security dependencies           # Verifica dependências
 ```
 

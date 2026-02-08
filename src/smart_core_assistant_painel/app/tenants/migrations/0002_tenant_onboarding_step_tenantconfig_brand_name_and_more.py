@@ -4,45 +4,70 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('tenants', '0001_initial'),
+        ("tenants", "0001_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='tenant',
-            name='onboarding_step',
+            model_name="tenant",
+            name="onboarding_step",
             field=models.IntegerField(default=1),
         ),
         migrations.AddField(
-            model_name='tenantconfig',
-            name='brand_name',
-            field=models.CharField(blank=True, help_text='Nome exibido no painel (pode ser diferente da Razão Social).', max_length=100, verbose_name='Nome da Marca'),
+            model_name="tenantconfig",
+            name="brand_name",
+            field=models.CharField(
+                blank=True,
+                help_text="Nome exibido no painel (pode ser diferente da Razão Social).",
+                max_length=100,
+                verbose_name="Nome da Marca",
+            ),
         ),
         migrations.AddField(
-            model_name='tenantconfig',
-            name='language_code',
-            field=models.CharField(default='pt-br', max_length=10, verbose_name='Idioma'),
+            model_name="tenantconfig",
+            name="language_code",
+            field=models.CharField(
+                default="pt-br", max_length=10, verbose_name="Idioma"
+            ),
         ),
         migrations.AddField(
-            model_name='tenantconfig',
-            name='primary_color',
-            field=models.CharField(default='#0d6efd', max_length=7, verbose_name='Cor Primária'),
+            model_name="tenantconfig",
+            name="primary_color",
+            field=models.CharField(
+                default="#0d6efd", max_length=7, verbose_name="Cor Primária"
+            ),
         ),
         migrations.AddField(
-            model_name='tenantconfig',
-            name='secondary_color',
-            field=models.CharField(default='#6c757d', max_length=7, verbose_name='Cor Secundária'),
+            model_name="tenantconfig",
+            name="secondary_color",
+            field=models.CharField(
+                default="#6c757d", max_length=7, verbose_name="Cor Secundária"
+            ),
         ),
         migrations.AddField(
-            model_name='tenantconfig',
-            name='timezone',
-            field=models.CharField(default='America/Sao_Paulo', max_length=50, verbose_name='Fuso Horário'),
+            model_name="tenantconfig",
+            name="timezone",
+            field=models.CharField(
+                default="America/Sao_Paulo",
+                max_length=50,
+                verbose_name="Fuso Horário",
+            ),
         ),
         migrations.AlterField(
-            model_name='subscription',
-            name='status',
-            field=models.CharField(choices=[('PENDING_PAYMENT', 'Aguardando Pagamento'), ('PAYMENT_CONFIRMED', 'Pagamento Confirmado'), ('ACTIVE', 'Active'), ('PAST_DUE', 'Past Due'), ('SUSPENDED', 'Suspended'), ('CANCELLED', 'Cancelled')], default='ACTIVE', max_length=20),
+            model_name="subscription",
+            name="status",
+            field=models.CharField(
+                choices=[
+                    ("PENDING_PAYMENT", "Aguardando Pagamento"),
+                    ("PAYMENT_CONFIRMED", "Pagamento Confirmado"),
+                    ("ACTIVE", "Active"),
+                    ("PAST_DUE", "Past Due"),
+                    ("SUSPENDED", "Suspended"),
+                    ("CANCELLED", "Cancelled"),
+                ],
+                default="ACTIVE",
+                max_length=20,
+            ),
         ),
     ]

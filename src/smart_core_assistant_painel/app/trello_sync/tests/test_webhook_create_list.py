@@ -6,7 +6,7 @@ from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloBoard,
     TrelloList,
 )
-from smart_core_assistant_painel.app.ui.operacional.models import (
+from smart_core_assistant_painel.app.operacional.models import (
     FluxoAtendimento,
     EtapaFluxo,
     Departamento,

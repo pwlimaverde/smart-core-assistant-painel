@@ -6,10 +6,10 @@ Este documento detalha a arquitetura, regras de negócio, lógica de automação
 
 A transferência envolve a interação entre as seguintes entidades do sistema:
 
-*   **Atendimento** (`src/smart_core_assistant_painel/app/ui/atendimentos/models.py`): A entidade central.
+*   **Atendimento** (`src/smart_core_assistant_painel/app/atendimentos/models.py`): A entidade central.
     *   Mantém ponteiros para `Departamento`, `FluxoAtendimento`, `EtapaFluxo` e `Atendente`.
     *   Estado gerido por campo `status` (enum) e `etapa_atual` (fk).
-*   **Departamento** (`src/smart_core_assistant_painel/app/ui/operacional/models.py`): Unidade lógica (ex: Comercial). Possui configurações de API e instâncias.
+*   **Departamento** (`src/smart_core_assistant_painel/app/operacional/models.py`): Unidade lógica (ex: Comercial). Possui configurações de API e instâncias.
 *   **FluxoAtendimento**: Quadro Kanban que pertence a um Departamento. Define a sequência de Etapas.
 *   **EtapaFluxo**: Estado granular dentro de um Fluxo (ex: "Aguardando Pagamento"). Possui um `tipo_etapa` (FILA, TRABALHO, etc.).
 *   **MovimentoFluxo**: Log de auditoria que registra cada transição de etapa, calculando tempos de permanência.

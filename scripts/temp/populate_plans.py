@@ -7,7 +7,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(os.path.join(PROJECT_ROOT, "src"))
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 

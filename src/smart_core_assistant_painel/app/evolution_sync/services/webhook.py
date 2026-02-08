@@ -17,10 +17,10 @@ from smart_core_assistant_painel.app.evolution_sync.services import (
     sched_response_contact,
     set_buffer_contact,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     processar_mensagem_por_contato,
 )
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.tenants.models import Tenant
 
 

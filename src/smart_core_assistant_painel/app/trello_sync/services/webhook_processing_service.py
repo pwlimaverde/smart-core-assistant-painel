@@ -77,10 +77,10 @@ class WebhookProcessingService:
 
             # Sincroniza status para etapas padrão
             try:
-                from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                from smart_core_assistant_painel.app.atendimentos.models import (
                     StatusAtendimento,
                 )
-                from smart_core_assistant_painel.app.ui.operacional.models import (
+                from smart_core_assistant_painel.app.operacional.models import (
                     TipoEtapa,
                 )
 
@@ -117,7 +117,7 @@ class WebhookProcessingService:
                 )
 
             try:
-                from smart_core_assistant_painel.app.ui.atendimentos.models import (
+                from smart_core_assistant_painel.app.atendimentos.models import (
                     MovimentoFluxo,
                 )
 
@@ -152,7 +152,7 @@ class WebhookProcessingService:
             TrelloBoard,
             TrelloList,
         )
-        from smart_core_assistant_painel.app.ui.operacional.models import (
+        from smart_core_assistant_painel.app.operacional.models import (
             EtapaFluxo,
         )
 

@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
+from loguru import logger
 from py_return_success_or_error import ParametersReturnResult
 
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
@@ -146,7 +147,23 @@ class LlmParameters(ParametersReturnResult):
             BaseChatModel: Uma instância do modelo de linguagem.
         """
         params = self.__get_params()
-        return self.__llm_class(**params)
+        try:
+            return self.__llm_class(**params)
+        except Exception as e:
+            # Log seguro: nunca exibe o valor de nenhuma chave/token.
+            safe_params: Dict[str, Any] = {}
+            for k, v in params.items():
+                if "key" in k.lower() or "token" in k.lower():
+                    safe_params[k] = "***"
+                else:
+                    safe_params[k] = v
+            logger.error(
+                "Falha ao criar LLM "
+                f"(class={getattr(self.__llm_class, '__name__', str(self.__llm_class))}, "
+                f"params={safe_params}). "
+                f"Tipo={type(e).__name__}, Mensagem={e}"
+            )
+            raise
 
     def __get_params(self) -> Dict[str, Any]:
         """Retorna os parâmetros como um dicionário.

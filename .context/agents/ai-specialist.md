@@ -181,7 +181,7 @@ class GenerateEmbeddingsUsecase:
 from pgvector.django import CosineDistance
 from py_return_success_or_error import Success, Failure, Result
 
-from app.ui.treinamento.models import DocumentoChunk
+from app.treinamento.models import DocumentoChunk
 
 
 class RAGSearchUsecase:

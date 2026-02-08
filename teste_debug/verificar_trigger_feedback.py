@@ -8,19 +8,19 @@ import logging
 sys.path.append(os.path.join(os.getcwd(), "src"))
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
     StatusAtendimento,
     TipoMensagem,
     TipoRemetente,
 )
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
-from smart_core_assistant_painel.app.ui.operacional.models import (
+from smart_core_assistant_painel.app.clientes.models import Contato
+from smart_core_assistant_painel.app.operacional.models import (
     Departamento,
     FluxoAtendimento,
     EtapaFluxo,

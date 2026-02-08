@@ -31,7 +31,7 @@
 | **Template**      | `treinamento/treinar_ia.html`        |
 | **Template Base** | ⚠️ A verificar                       |
 | **App**           | `ui.treinamento`                     |
-| **Arquivo View**  | `app/ui/treinamento/views.py:69-110` |
+| **Arquivo View**  | `app/treinamento/views.py:69-110` |
 
 ### Permissões
 
@@ -92,7 +92,7 @@ Retorna `True` se:
 | **Template**      | `treinamento/pre_processamento.html`   |
 | **Template Base** | ⚠️ A verificar                         |
 | **App**           | `ui.treinamento`                       |
-| **Arquivo View**  | `app/ui/treinamento/views.py:197-211`  |
+| **Arquivo View**  | `app/treinamento/views.py:197-211`  |
 
 ### Parâmetros de URL
 
@@ -147,7 +147,7 @@ Retorna `True` se:
 | **Template**      | `treinamento/verificar_treinamentos.html`             |
 | **Template Base** | ⚠️ A verificar                                        |
 | **App**           | `ui.treinamento`                                      |
-| **Arquivo View**  | `app/ui/treinamento/views.py:315-381`                 |
+| **Arquivo View**  | `app/treinamento/views.py:315-381`                 |
 
 ### Permissões
 
@@ -195,7 +195,7 @@ Retorna `True` se:
 | **Template**      | `treinamento/cadastrar_query_compose.html` |
 | **Template Base** | ⚠️ A verificar                             |
 | **App**           | `ui.treinamento`                           |
-| **Arquivo View**  | `app/ui/treinamento/views.py:452-593`      |
+| **Arquivo View**  | `app/treinamento/views.py:452-593`      |
 
 ### Permissões
 
@@ -251,7 +251,7 @@ Retorna `True` se:
 | **Template**      | `treinamento/verificar_query_compose.html` |
 | **Template Base** | ⚠️ A verificar                             |
 | **App**           | `ui.treinamento`                           |
-| **Arquivo View**  | `app/ui/treinamento/views.py:385-449`      |
+| **Arquivo View**  | `app/treinamento/views.py:385-449`      |
 
 ### Permissões
 

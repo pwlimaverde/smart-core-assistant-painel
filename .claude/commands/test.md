@@ -23,7 +23,7 @@ Executa testes ou gera novos testes para código existente.
    ```
 
 4. **Estrutura de Testes**
-   - `tests/app/ui/` - Testes de apps Django
+   - `tests/app/` - Testes de apps Django
    - `tests/modules/` - Testes de módulos
 
 ## Parâmetros
@@ -35,7 +35,7 @@ Executa testes ou gera novos testes para código existente.
 ```
 /test                                    # Executa todos
 /test atendimentos                       # Testes de atendimentos
-/test generate app/ui/clientes/views.py  # Gera testes para arquivo
+/test generate app/clientes/views.py  # Gera testes para arquivo
 ```
 
 ## Tipos de Teste

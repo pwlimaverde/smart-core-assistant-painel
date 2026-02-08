@@ -997,7 +997,7 @@ app/tenants/
 ├── admin_client.py          # TenantAdminSite
 ├── mixins.py                 # TenantModelAdminMixin
 
-app/ui/operacional/
+app/operacional/
 ├── tenant_admin.py           # Registros para tenant admin
 
 app/evolution_sync/
@@ -1065,7 +1065,7 @@ class TenantModelAdminMixin:
 
 ### Exemplo de Registro
 ```python
-# app/ui/operacional/tenant_admin.py
+# app/operacional/tenant_admin.py
 
 from django.contrib import admin
 from smart_core_assistant_painel.app.tenants.admin_client import tenant_admin_site
@@ -1227,7 +1227,7 @@ CELERY_TASK_ACKS_LATE = True       # Não perde task em crash
 services:
   celery_worker:
     build: .
-    command: celery -A smart_core_assistant_painel.app.ui.core worker
+    command: celery -A smart_core_assistant_painel.app.core worker
              --concurrency=3 --queues=webhooks,ai_processing,default
     depends_on: [postgres, redis]
     deploy:
@@ -1237,7 +1237,7 @@ services:
 
   celery_beat:
     build: .
-    command: celery -A smart_core_assistant_painel.app.ui.core beat
+    command: celery -A smart_core_assistant_painel.app.core beat
              --scheduler=django_celery_beat.schedulers:DatabaseScheduler
     deploy:
       resources:

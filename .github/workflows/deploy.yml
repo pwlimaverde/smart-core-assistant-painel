@@ -138,7 +138,7 @@ jobs:
             SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p ${{ env.COMPOSE_PROJECT_WORKERS }} -f docker/compose/workers.yml up -d --force-recreate --no-build
 
             # Coletar estáticos para garantir CSS/JS do admin em produção
-            docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.ui.manage collectstatic --noinput
+            docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage collectstatic --noinput
 
             # Verificar saúde dos containers
             echo "Checking container health..."

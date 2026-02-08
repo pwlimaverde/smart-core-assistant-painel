@@ -61,13 +61,13 @@ def main() -> None:
     sys.path.insert(0, str(SRC_DIR))
     os.environ.setdefault(
         "DJANGO_SETTINGS_MODULE",
-        "smart_core_assistant_painel.app.ui.core.settings",
+        "smart_core_assistant_painel.app.core.settings",
     )
     try:
         import django  # type: ignore
 
         django.setup()
-        from smart_core_assistant_painel.app.ui.treinamento.models import (  # type: ignore
+        from smart_core_assistant_painel.app.treinamento.models import (  # type: ignore
             QueryCompose,
         )
     except Exception as e:  # noqa: BLE001

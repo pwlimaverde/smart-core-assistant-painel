@@ -22,12 +22,12 @@ from smart_core_assistant_painel.app.trello_sync.tasks import (
 from smart_core_assistant_painel.app.tenants.tenant_context import (
     get_current_tenant_slug,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
     StatusAtendimento,
 )
-from smart_core_assistant_painel.app.ui.operacional.models import (
+from smart_core_assistant_painel.app.operacional.models import (
     Atendente,
     EtapaFluxo,
     FluxoAtendimento,

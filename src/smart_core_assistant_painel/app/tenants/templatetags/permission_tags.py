@@ -103,7 +103,9 @@ def has_full_module_permissions(context) -> bool:
     if tenant_user is None:
         return False
 
-    from smart_core_assistant_painel.app.tenants.permissions import TenantModule
+    from smart_core_assistant_painel.app.tenants.permissions import (
+        TenantModule,
+    )
 
     for module in TenantModule.all_values():
         if module == TenantModule.PAINEL_ADMIN.value:
@@ -133,9 +135,13 @@ def can_access_admin_panel(context) -> bool:
     if tenant_user is None:
         return False
 
-    from smart_core_assistant_painel.app.tenants.permissions import TenantModule
+    from smart_core_assistant_painel.app.tenants.permissions import (
+        TenantModule,
+    )
 
-    if tenant_user.has_module_permission(TenantModule.PAINEL_ADMIN.value, "view"):
+    if tenant_user.has_module_permission(
+        TenantModule.PAINEL_ADMIN.value, "view"
+    ):
         return True
 
     for module in (

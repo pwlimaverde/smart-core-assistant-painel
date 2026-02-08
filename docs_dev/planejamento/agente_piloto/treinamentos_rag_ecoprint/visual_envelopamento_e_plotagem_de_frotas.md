@@ -14,8 +14,8 @@ Palavras-chave: envelopamento, plotagem, frota, vinil automotivo, cast vinyl, ca
 Para veiculos, especialmente em curvas, relevos e vincos, o material precisa conformar sem levantar ou encolher de forma problematica.
 
 No mercado, e comum:
-- Cast vinyl: melhor estabilidade dimensional e conformabilidade, indicado para envelopamento e superficies complexas. citeturn2search1
-- Calendered vinyl: mais economico, comum em aplicacoes planas; pode ser menos indicado para curvas profundas e uso prolongado (depende do produto). citeturn2search1
+- Cast vinyl: melhor estabilidade dimensional e conformabilidade, indicado para envelopamento e superficies complexas.
+- Calendered vinyl: mais economico, comum em aplicacoes planas; pode ser menos indicado para curvas profundas e uso prolongado (depende do produto).
 
 ## 3) Preparacao e aplicacao (fatores tecnicos que afetam resultado)
 
@@ -50,4 +50,3 @@ Fatores principais:
 - Objetivo (branding, promocao, identificacao).
 - Material (cast vs calendered, laminacao).
 - Arte (logo/identidade, fotos) e layout.
-

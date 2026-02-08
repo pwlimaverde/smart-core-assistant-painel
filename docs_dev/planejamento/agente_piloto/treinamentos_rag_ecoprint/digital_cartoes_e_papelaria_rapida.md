@@ -19,9 +19,9 @@ Limites operacionais definidos para este segmento:
 O parque digital utiliza uma impressora Konica Minolta de ultima geracao (linha de prensas digitais/production press).
 
 Caracteristicas tecnicas comuns nessa classe de equipamento:
-- resolucao de impressao tipica de 1200 x 1200 dpi em prensas digitais Konica Minolta (dependendo do modelo). citeturn0search0turn0search2
-- recursos de estabilidade e controle de densidade/cor e registro (front-to-back) existem em linhas AccurioPress, inclusive com otimizadores como IQ-501 em alguns setups. citeturn0search1turn0search2
-- ampla compatibilidade de midias, frequentemente chegando a 350 g/m2 ou mais em modelos de producao (a Ecoprint pratica ate 300 g neste segmento). citeturn0search0turn0search2
+- resolucao de impressao tipica de 1200 x 1200 dpi em prensas digitais Konica Minolta (dependendo do modelo).
+- recursos de estabilidade e controle de densidade/cor e registro (front-to-back) existem em linhas AccurioPress, inclusive com otimizadores como IQ-501 em alguns setups.
+- ampla compatibilidade de midias, frequentemente chegando a 350 g/m2 ou mais em modelos de producao (a Ecoprint pratica ate 300 g neste segmento).
 
 Por ser digital, e comum viabilizar:
 - tiragens pequenas e reimpressao frequente;

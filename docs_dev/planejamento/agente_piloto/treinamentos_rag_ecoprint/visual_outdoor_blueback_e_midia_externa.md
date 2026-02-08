@@ -10,7 +10,7 @@ Outdoor e uma midia de grande formato instalada em pontos de alto fluxo (ruas/ro
 
 ## 2) Blueback: o que e e por que existe
 
-Blueback e um tipo de papel para poster/outdoor com verso azul. A funcao do verso azul e aumentar opacidade e reduzir transparencia ("show-through"), ajudando a nao aparecer o que esta por tras quando aplicado sobre outras pecas ou sob certas condicoes. citeturn1search2
+Blueback e um tipo de papel para poster/outdoor com verso azul. A funcao do verso azul e aumentar opacidade e reduzir transparencia ("show-through"), ajudando a nao aparecer o que esta por tras quando aplicado sobre outras pecas ou sob certas condicoes.
 
 Uso tipico:
 - campanhas temporarias com colagem em painéis de outdoor.
@@ -33,7 +33,7 @@ Outdoor e visto a distancia e em movimento. Em termos tecnicos:
 
 ## 5) Resolucao (DPI) e distancia de visualizacao
 
-Em grandes formatos vistos de longe (billboard/outdoor), a resolucao necessaria no tamanho final pode ser bem menor do que 300 DPI, porque o olho nao resolve detalhes finos a longa distancia. Isso e uma pratica comum em impressao de billboard. citeturn2search4
+Em grandes formatos vistos de longe (billboard/outdoor), a resolucao necessaria no tamanho final pode ser bem menor do que 300 DPI, porque o olho nao resolve detalhes finos a longa distancia. Isso e uma pratica comum em impressao de billboard.
 
 ## 6) Dados tecnicos que definem outdoor
 
@@ -42,4 +42,3 @@ Em grandes formatos vistos de longe (billboard/outdoor), a resolucao necessaria 
 - Medida final e se precisa painelizacao (quantas partes).
 - Periodo de veiculacao (tempo de exposicao).
 - Arquivo final e criterio de leitura a distancia (layout adequado).
-

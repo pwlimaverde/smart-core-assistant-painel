@@ -15,11 +15,11 @@ Material mais comum para banners e faixas, pensado para ser visto com luz vindo 
 
 ### 2.2 Backlit (para caixa de luz)
 
-Material que permite melhor passagem e difusao de luz quando a iluminacao vem por tras (lightbox/caixa iluminada). citeturn1search3
+Material que permite melhor passagem e difusao de luz quando a iluminacao vem por tras (lightbox/caixa iluminada).
 
 ### 2.3 Mesh (perfurada, para vento)
 
-Lona perfurada que reduz o "efeito vela" em locais com vento, diminuindo esforco nos ilhos e na estrutura. citeturn1search1
+Lona perfurada que reduz o "efeito vela" em locais com vento, diminuindo esforco nos ilhos e na estrutura.
 
 Impacto visual:
 - boa para texto grande e elementos simples;
@@ -54,7 +54,7 @@ Durabilidade depende de:
 - tipo de material e tinta,
 - forma de instalacao (tensao e distribuicao de carga).
 
-Mesh e recomendado em locais com vento para reduzir rasgos e deformacao. citeturn1search1
+Mesh e recomendado em locais com vento para reduzir rasgos e deformacao.
 
 ## 5) Arquivo e legibilidade
 
@@ -73,4 +73,3 @@ Resolucao:
 - Local: interno/externo e condicoes (vento, sol, chuva).
 - Material: frontlit, backlit, mesh.
 - Acabamento: ilhos/bainha/pocket/selagem.
-

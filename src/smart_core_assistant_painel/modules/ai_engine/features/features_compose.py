@@ -31,15 +31,15 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 from ..utils.erros import (
-    AnaliseMensageError,
     AnaliseAvaliacaoError,
+    AnaliseMensageError,
     DataMessageError,
     DocumentError,
     LlmError,
 )
 from ..utils.parameters import (
-    AnaliseMensageParameters,
     AnaliseAvaliacaoParameters,
+    AnaliseMensageParameters,
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
     GenerateChunksParameters,
@@ -53,20 +53,23 @@ from ..utils.types import (
     AMData,
     AMTuple,
     AMUsecase,
+    AnaliseAvaliacao,
     APMData,
     APMTuple,
     APMUsecase,
     GCUsecase,
     GEData,
-    GEUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
     LMDUsecase,
-    AAData,
-    AAUsecase,
-    AnaliseAvaliacao,
     RespostaBot,
+)
+from .analise_avaliacao.datasource.analise_avaliacao_datasource import (
+    AnaliseAvaliacaoDatasource,
+)
+from .analise_avaliacao.domain.usecase.analise_avaliacao_usecase import (
+    AnaliseAvaliacaoUsecase,
 )
 from .analise_conteudo.datasource.analise_conteudo_langchain_datasource import (
     AnaliseConteudoLangchainDatasource,
@@ -80,12 +83,6 @@ from .analise_mensage.datasource.analise_mensage_datasource import (
 from .analise_mensage.domain.usecase.analise_mensage_usecase import (
     AnaliseMensageUseCase,
 )
-from .analise_avaliacao.datasource.analise_avaliacao_datasource import (
-    AnaliseAvaliacaoDatasource,
-)
-from .analise_avaliacao.domain.usecase.analise_avaliacao_usecase import (
-    AnaliseAvaliacaoUsecase,
-)
 
 # REMOVIDO: import legado AnalisePreviaMensagemLangchainDatasource
 # from .analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
@@ -96,9 +93,6 @@ from .analise_previa_mensagem.domain.usecase.analise_previa_mensagem_usecase imp
 )
 from .generate_embeddings.datasource.generate_embeddings_langchain_datasource import (
     GenerateEmbeddingsLangchainDatasource,
-)
-from .generate_embeddings.domain.usecase.generate_embeddings_usecase import (
-    GenerateEmbeddingsUseCase,
 )
 from .load_document_conteudo.domain.usecase.load_document_conteudo_usecase import (
     LoadDocumentConteudoUseCase,
@@ -447,22 +441,20 @@ class FeaturesCompose:
 
         Raises:
             EmbeddingError: Se ocorrer um erro durante a geração.
-            ValueError: Se o tipo de retorno do caso de uso for inesperado.
         """
-        error: EmbeddingError = EmbeddingError("Erro ao gerar embeddings!")
         parameters: GenerateEmbeddingsParameters = (
-            GenerateEmbeddingsParameters(text=text, error=error)
+            GenerateEmbeddingsParameters(
+                text=text,
+                error=EmbeddingError("Erro ao gerar embeddings!"),
+            )
         )
         datasource: GEData = GenerateEmbeddingsLangchainDatasource()
-        usecase: GEUsecase = GenerateEmbeddingsUseCase(datasource)
-        data: ReturnSuccessOrError[list[float]] = usecase(parameters)
-
-        if isinstance(data, SuccessReturn):
-            return data.result
-        elif isinstance(data, ErrorReturn):
-            raise data.result
-        else:
-            raise ValueError("Unexpected return type from usecase")
+        try:
+            return datasource(parameters)
+        except Exception as e:
+            raise EmbeddingError(
+                f"Erro ao gerar embeddings: {e}"
+            ) from e
 
     @staticmethod
     def _calculate_embedding_similarity(
@@ -614,8 +606,8 @@ class FeaturesCompose:
         Returns:
             str: Chave do fluxo correspondente ou string vazia se não encontrar
         """
-        import warnings
         import re
+        import warnings
 
         warnings.warn(
             "_extrair_fluxo_transferencia está deprecated. "

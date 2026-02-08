@@ -31,13 +31,13 @@ Material perfurado para aplicacao em vidros, permitindo:
 Uso tipico:
 - vidros de lojas e veiculos.
 
-Fonte tecnica (conceito): materiais one-way vision usam perfuracoes para combinar visibilidade e grafismo. citeturn2search2
+Fonte tecnica (conceito): materiais one-way vision usam perfuracoes para combinar visibilidade e grafismo.
 
 ## 2) Cast vs calendared (por que importa para durabilidade e curvas)
 
 No mercado, existe uma distincao tecnica relevante em filmes de vinil:
-- Cast vinyl: produzido para maior estabilidade dimensional e melhor conformidade em curvas e relevos. Muito usado em envelopamento e aplicacoes exigentes. citeturn2search1
-- Calendered vinyl: costuma ser mais economico, comum em aplicacoes planas e de menor exigencia; pode ter mais "memoria" e encolhimento com tempo/calor comparado a cast (depende do produto). citeturn2search1
+- Cast vinyl: produzido para maior estabilidade dimensional e melhor conformidade em curvas e relevos. Muito usado em envelopamento e aplicacoes exigentes.
+- Calendered vinyl: costuma ser mais economico, comum em aplicacoes planas e de menor exigencia; pode ter mais "memoria" e encolhimento com tempo/calor comparado a cast (depende do produto).
 
 ## 3) Adesivo (cola) e superficie
 
@@ -86,4 +86,3 @@ Efeitos:
 - Tempo de uso (temporario vs longo).
 - Necessidade de laminacao.
 - Se ha curvas/relevos (pode exigir cast).
-

@@ -4,8 +4,7 @@ import json
 from typing import Any
 
 from django.contrib import messages
-from django.db import router
-from django.db import transaction
+from django.db import router, transaction
 from django.db.utils import ProgrammingError
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
@@ -13,7 +12,10 @@ from django.views.decorators.http import require_POST
 from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import LlmError
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    EmbeddingError,
+    LlmError,
+)
 
 from .models import Documento, QueryCompose, QueryTestFeedback, Treinamento
 from .services import TreinamentoService
@@ -662,6 +664,96 @@ def testar_query_page(request: HttpRequest) -> HttpResponse:
     return render(request, "treinamento/testar_query.html")
 
 
+def _build_test_intent_prompt(
+    intents: list[dict[str, str]],
+) -> tuple[str, str]:
+    """Constrói prompt de intents para teste, replicando _build_intent_prompt.
+
+    Segue a mesma lógica do attendance_orchestrator._build_intent_prompt(),
+    usando PROMPT_INTENT_SYSTEM + comportamentos do QueryCompose +
+    PROMPT_INTENT_FOOTER.
+
+    Args:
+        intents: Lista de intents detectados (ex: [{"saudacao": "oi"}]).
+
+    Returns:
+        Tupla (prompt_completo, tag_match) onde tag_match é a primeira
+        tag de QueryCompose encontrada (para exibição no painel).
+    """
+    from smart_core_assistant_painel.modules.services import SERVICEHUB
+
+    prompt_intent_system = SERVICEHUB.PROMPT_INTENT_SYSTEM
+    if not prompt_intent_system:
+        prompt_intent_system = (
+            "INSTRUÇÕES DO SISTEMA - CONTEXTO PARA RESPOSTA\n"
+            "Siga estritamente as orientações abaixo, em "
+            "português claro e objetivo.\n"
+            "Adapte a resposta ao contexto do atendimento atual."
+        )
+
+    prompt_lines: list[str] = [
+        prompt_intent_system,
+        "Intenções detectadas e orientações:",
+    ]
+
+    seen_tags: set[str] = set()
+    first_match: str = ""
+    index = 0
+
+    for intent in intents:
+        if not isinstance(intent, dict):
+            continue
+
+        tag: str = list(intent.keys())[0] if intent else ""
+        if not tag or tag in seen_tags:
+            continue
+
+        seen_tags.add(tag)
+        index += 1
+
+        # Busca comportamento exato (mesmo que orchestrator)
+        qc = QueryCompose.objects.filter(tag=tag).first()
+
+        if qc:
+            if not first_match:
+                first_match = tag
+            behavior: str = " ".join(
+                str(qc.comportamento).split()
+            ).strip()
+            prompt_lines.append(f"{index}. [{tag}] {behavior}")
+        else:
+            # Busca comportamento similar por embedding do intent
+            try:
+                intent_text = f"{tag}: {intent.get(tag, '')}"
+                intent_vector: list[float] = (
+                    FeaturesCompose.generate_embeddings(intent_text)
+                )
+                comportamento: str | None = (
+                    QueryCompose.buscar_comportamento_similar(
+                        intent_vector
+                    )
+                )
+                if comportamento:
+                    prompt_lines.append(
+                        f"{index}. [{tag}] {comportamento}"
+                    )
+            except Exception:
+                logger.debug(
+                    f"Embedding para intent '{tag}' indisponível."
+                )
+
+    prompt_intent_footer = SERVICEHUB.PROMPT_INTENT_FOOTER
+    if not prompt_intent_footer:
+        prompt_intent_footer = (
+            "Se houver múltiplas intenções, processe as instruções de "
+            "CADA UMA delas. Em seguida, combine as respostas em um "
+            "texto organizado."
+        )
+    prompt_lines.append(prompt_intent_footer)
+
+    return "\n".join(prompt_lines), first_match
+
+
 @require_POST
 def testar_resposta_query(request: HttpRequest) -> JsonResponse:
     """[TRN-TEST-001] Endpoint AJAX para testar resposta do bot.
@@ -682,20 +774,9 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
         return JsonResponse({"error": "Mensagem é obrigatória."}, status=400)
 
     try:
-        # 1. Gerar embedding da mensagem
-        vector_mensagem = FeaturesCompose.generate_embeddings(mensagem)
 
-        # 2. Buscar documentos similares (RAG)
-        dados_treinamento, doc_ids = Documento.buscar_documentos_similares(
-            vector_mensagem
-        )
-
-        # 3. Buscar comportamento similar (QueryCompose)
-        query_compose_match = QueryCompose.buscar_comportamento_similar(
-            vector_mensagem
-        )
-
-        # 4. Análise prévia: extrair entidades e intents
+        # 1. Análise prévia: extrair entidades e intents (mesmo que
+        #    MessageAnalyzer.analyze_message_content no fluxo real)
         intent_types_config = QueryCompose.build_intent_types_config()
         historico_vazio: dict[str, Any] = {"chat_history": []}
         apm_result = FeaturesCompose.analise_previa_mensagem(
@@ -703,12 +784,25 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
             context=mensagem,
             valid_intent_types=intent_types_config,
         )
-        entidades = apm_result.entidades_extraidas
-        intents = apm_result.intents_detectados
+        entidades = apm_result.entity_types
+        intents = apm_result.intent_types
 
-        # 5. Análise de mensagem principal
-        from smart_core_assistant_painel.modules.services import SERVICEHUB
+        # 2. Construir prompt de intents (mesmo que
+        #    _build_intent_prompt no attendance_orchestrator)
+        prompt_human, query_compose_match = _build_test_intent_prompt(
+            intents
+        )
 
+        # 3. Gerar embedding da mensagem para busca RAG
+        vector_mensagem = FeaturesCompose.generate_embeddings(mensagem)
+
+        # 4. Buscar documentos similares (RAG)
+        dados_treinamento, doc_ids = Documento.buscar_documentos_similares(
+            query_vec=vector_mensagem
+        )
+
+        # 5. Análise de mensagem principal (mesmo que
+        #    _call_ai_and_register no attendance_orchestrator)
         am_result = FeaturesCompose.analise_mensage(
             fluxos_disponiveis={},
             context=mensagem,
@@ -718,7 +812,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
                 "intents_detectados": intents,
                 "historico_atendimentos": [],
             },
-            prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_MENSAGEM,
+            prompt_human=prompt_human,
             dados_treinamento=dados_treinamento,
         )
 
@@ -735,9 +829,38 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
             }
         )
 
+    except EmbeddingError as e:
+        logger.error(f"Erro de embeddings ao testar resposta: {e}")
+        return JsonResponse(
+            {
+                "error": (
+                    "Erro no serviço de embeddings. "
+                    "Verifique se as API keys e o modelo de "
+                    "embeddings estão configurados corretamente."
+                ),
+                "detail": str(e),
+            },
+            status=500,
+        )
+
+    except LlmError as e:
+        logger.error(f"Erro de LLM ao testar resposta: {e}")
+        return JsonResponse(
+            {
+                "error": (
+                    "Erro no serviço de IA. "
+                    "Verifique se o LLM está configurado."
+                ),
+                "detail": str(e),
+            },
+            status=500,
+        )
+
     except Exception as e:
         logger.error(f"Erro ao testar resposta: {e}")
-        return JsonResponse({"error": f"Erro ao processar: {e!s}"}, status=500)
+        return JsonResponse(
+            {"error": f"Erro ao processar: {e!s}"}, status=500
+        )
 
 
 @require_POST

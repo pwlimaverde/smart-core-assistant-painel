@@ -311,7 +311,11 @@ chatForm.addEventListener('submit', async (e) => {
         const data = await resp.json();
 
         if (data.error) {
-            addMessage('Erro: ' + data.error, false);
+            let errorMsg = 'Erro: ' + data.error;
+            if (data.detail) {
+                errorMsg += '\n\nDetalhe: ' + data.detail;
+            }
+            addMessage(errorMsg, false);
         } else {
             addMessage(data.resposta_bot, false);
             lastResponse = data;

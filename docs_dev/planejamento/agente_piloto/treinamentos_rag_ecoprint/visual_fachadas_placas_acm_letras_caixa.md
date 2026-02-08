@@ -20,7 +20,7 @@ ACM e um painel composto por duas laminas de aluminio com um nucleo interno. E m
 
 O termo "Dibond" e uma marca comum associada a painéis compostos de aluminio (o mercado usa como referencia para ACP/ACM).
 
-Fonte tecnica (descricao geral): painel composto de aluminio e usado em sinalizacao e fachadas por ser rigido e leve. citeturn1search0
+Fonte tecnica (descricao geral): painel composto de aluminio e usado em sinalizacao e fachadas por ser rigido e leve.
 
 ## 3) Outras bases rigidas (visao tecnica)
 
@@ -88,4 +88,3 @@ Orcamento e especificacao tecnica dependem de:
 - Forma de fixacao (parede, estrutura, distanciadores).
 - Condicoes do ambiente (sol/chuva/vento).
 - Arquivo vetorial e cores de marca.
-

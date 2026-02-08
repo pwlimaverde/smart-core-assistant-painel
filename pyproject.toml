@@ -295,13 +295,13 @@ server-logs-redis = "ssh hostinger-root 'docker logs smartcoreassistant_redis --
 
 # --- Controle de Containers ---
 # Reinicia o container da aplicação Django
-server-restart-app = "ssh hostinger-root 'docker restart smartcoreassistant_app && echo \"App reiniciado com sucesso\"'"
+server-restart-app = "ssh hostinger-root 'docker restart smartcoreassistant_app && echo App reiniciado com sucesso'"
 
 # Reinicia os containers do Celery (Worker + Beat)
-server-restart-workers = "ssh hostinger-root 'docker restart smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Workers reiniciados com sucesso\"'"
+server-restart-workers = "ssh hostinger-root 'docker restart smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo Workers reiniciados com sucesso'"
 
 # Reinicia todos os containers da aplicação (app + workers)
-server-restart-all = "ssh hostinger-root 'docker restart smartcoreassistant_app smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo \"Todos os serviços reiniciados\"'"
+server-restart-all = "ssh hostinger-root 'docker restart smartcoreassistant_app smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo Todos os servicos reiniciados'"
 
 # Para todos os containers (mantém dados)
 server-stop-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-infra -f docker/compose/infra.yml stop && echo 'Serviços parados'\""

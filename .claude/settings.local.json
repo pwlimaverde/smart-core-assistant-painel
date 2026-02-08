@@ -77,7 +77,14 @@
       "Bash(git rm:*)",
       "Bash(git commit:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(echo:*)",
+      "Bash(claude config list:*)",
+      "Bash(set)",
+      "Bash(powershell.exe:*)",
+      "Bash(git pull:*)",
+      "Bash(git tag:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

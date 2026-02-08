@@ -1,5 +1,11 @@
 # Guia Tecnico: Banners, Faixas e Lonas (Comunicacao Visual)
 
+## Tag
+`banners_faixas_e_lonas`
+
+## Grupo
+`visual`
+
 Palavras-chave: banner, faixa, lona, frontlit, backlit, mesh, ilhos, bainha, bolso para vareta, pocket, acabamento, vento, evento, promocao.
 
 ## 1) O que sao banners e faixas

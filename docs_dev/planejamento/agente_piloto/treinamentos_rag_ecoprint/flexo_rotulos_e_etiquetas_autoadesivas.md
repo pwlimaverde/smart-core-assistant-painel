@@ -1,5 +1,11 @@
 # Guia Tecnico: Rotulos e Etiquetas Autoadesivas (Flexografia)
 
+## Tag
+`rotulos_e_etiquetas_autoadesivas`
+
+## Grupo
+`flexo`
+
 Palavras-chave: flexografia, rotulo, etiqueta, bobina, autoadesivo, BOPP, papel, adesivo permanente, removivel, alta aderencia, tubete 3" ou 1.5", sentido de enrolamento, gap, aplicadora, CMYK, Pantone, inspeção por camera.
 
 ## 1) O que e flexografia (em rotulos e etiquetas)

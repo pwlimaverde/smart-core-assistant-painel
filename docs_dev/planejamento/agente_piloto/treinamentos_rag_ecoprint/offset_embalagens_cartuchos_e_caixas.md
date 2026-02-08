@@ -1,5 +1,11 @@
 # Guia Tecnico de Producao: Embalagens (Cartuchos, Caixas e Projetos em Cartao) - Offset Industrial
 
+## Tag
+`embalagens_cartuchos_e_caixas`
+
+## Grupo
+`offset`
+
 Palavras-chave: embalagem, cartucho, caixa, faca, die cut, vinco, cola, reserva de cola, gabarito, cartao duplex, cartao triplex, kraft, microondulado, laminacao, verniz, hot stamping, relevo, janela, berco, encaixe.
 
 ## 1) O que sao embalagens em cartao (offset)

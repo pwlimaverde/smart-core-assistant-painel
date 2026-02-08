@@ -1,5 +1,11 @@
 # Guia Tecnico de Producao: Catalogos, Revistas, Livros e Apostilas (Offset)
 
+## Tag
+`catalogos_revistas_livros`
+
+## Grupo
+`offset`
+
 Palavras-chave: catalogo, revista, livro, apostila, miolo, capa, lombada, grampo canoa, lombada quadrada, cola, encadernacao, imposicao, multiplos de 4, papel miolo, papel capa, laminacao, ISBN (quando aplicavel).
 
 ## 1) Conceitos essenciais

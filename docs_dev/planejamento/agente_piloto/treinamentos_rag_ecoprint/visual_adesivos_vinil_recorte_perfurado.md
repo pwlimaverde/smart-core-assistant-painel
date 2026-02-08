@@ -1,5 +1,11 @@
 # Guia Tecnico: Adesivos (Vinil Impresso, Recorte e Perfurado) - Comunicacao Visual
 
+## Tag
+`adesivos_vinil_recorte_perfurado`
+
+## Grupo
+`visual`
+
 Palavras-chave: adesivo vinil, vinil impresso, vinil recorte, plotter, recorte eletronico, laminação, one-way vision, perfurado, vitrine, parede, vidro, aplicacao, bolha, cast, calendared, envelopamento.
 
 ## 1) Tipos de adesivo (o que muda na pratica)

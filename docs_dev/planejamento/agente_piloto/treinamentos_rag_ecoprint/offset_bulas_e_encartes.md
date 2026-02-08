@@ -1,5 +1,11 @@
 # Guia Tecnico de Producao: Bulas, Encartes e Folhetos Dobrado (Offset)
 
+## Tag
+`bulas_e_encartes`
+
+## Grupo
+`offset`
+
 Palavras-chave: bula, encarte, folheto dobrado, papel fino, offset, legibilidade, fonte pequena, dobras multiplas, vinco, registro, 1x1, 1x0, 4x4.
 
 ## 1) O que sao bulas e encartes

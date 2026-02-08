@@ -1,5 +1,11 @@
 # Guia Tecnico: Fachadas, Placas, ACM e Letras Caixa (Comunicacao Visual)
 
+## Tag
+`fachadas_placas_acm_letras_caixa`
+
+## Grupo
+`visual`
+
 Palavras-chave: fachada, placa, ACM, aluminium composite panel, dibond, letra caixa, letreiro, caixa de luz, acrilico, PVC expandido, estrutura, instalacao, ventania, fixacao, iluminacao.
 
 ## 1) O que entra em "fachada" (categorias)

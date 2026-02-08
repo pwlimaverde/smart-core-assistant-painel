@@ -1,5 +1,11 @@
 # Guia Tecnico: Envelopamento e Plotagem de Frotas (Comunicacao Visual)
 
+## Tag
+`envelopamento_e_plotagem_de_frotas`
+
+## Grupo
+`visual`
+
 Palavras-chave: envelopamento, plotagem, frota, vinil automotivo, cast vinyl, calendared, conformabilidade, curvas, recortes, aplicacao, durabilidade, lavagem, sol.
 
 ## 1) O que e envelopamento (e diferenca para plotagem)

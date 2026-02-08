@@ -1,5 +1,11 @@
 # Guia Tecnico de Producao: Folders e Dobras (Offset)
 
+## Tag
+`folders_e_dobras`
+
+## Grupo
+`offset`
+
 Palavras-chave: folder, brochure, dobra, vinco, bi-fold, tri-fold, sanfona, tamanho aberto, tamanho fechado, imposicao, sangria, margem de seguranca, vinco, trinca, papel.
 
 ## 1) O que e um folder (e diferenca para panfleto)

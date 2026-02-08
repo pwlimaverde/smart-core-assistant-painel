@@ -1,5 +1,11 @@
 # Guia Tecnico de Producao: Panfletos (Offset em Grade)
 
+## Tag
+`panfletos_em_grade`
+
+## Grupo
+`offset`
+
 Palavras-chave: panfleto, flyer, grade, offset industrial, 10x15, 15x21, A5, 1/4 de oficio, tiragem, 4x0, 4x4, couche 90g, sangria, 300 DPI, CMYK.
 
 ## 1) O que e um panfleto e para que serve

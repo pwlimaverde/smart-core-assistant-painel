@@ -1,5 +1,11 @@
 # Guia Tecnico: Outdoor, Blueback e Midia Externa (OOH)
 
+## Tag
+`outdoor_blueback_e_midia_externa`
+
+## Grupo
+`visual`
+
 Palavras-chave: outdoor, OOH, blueback, papel para outdoor, colagem, emenda, painelizacao, visibilidade a distancia, DPI billboard.
 
 ## 1) O que e outdoor (midia externa)

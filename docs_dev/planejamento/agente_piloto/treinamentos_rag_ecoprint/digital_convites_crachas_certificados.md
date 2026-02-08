@@ -1,5 +1,11 @@
 # Guia Tecnico: Convites, Cracha, Certificados e Itens de Pequena Tiragem (Digital)
 
+## Tag
+`convites_crachas_certificados`
+
+## Grupo
+`digital`
+
 Palavras-chave: convite, cracha, certificado, credencial, papel premium, couchê, supremo, laminacao, furo, cordao, PVC, dados variaveis, QR code, numeracao.
 
 ## 1) Convites (eventos, aniversarios, corporativo)

@@ -1,5 +1,11 @@
 # Guia Tecnico de Producao: Cartazes e Impressos Promocionais (Offset)
 
+## Tag
+`cartazes_e_impressos_promocionais`
+
+## Grupo
+`offset`
+
 Palavras-chave: cartaz, poster, A3, A2, A1, A0, offset, CMYK, sangria, 300 DPI, couche, offset, verniz, laminacao.
 
 ## 1) O que sao cartazes (posters) e usos tipicos

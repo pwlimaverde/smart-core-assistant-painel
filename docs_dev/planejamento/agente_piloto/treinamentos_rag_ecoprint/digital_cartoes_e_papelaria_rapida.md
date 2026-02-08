@@ -1,5 +1,11 @@
 # Guia Tecnico: Cartoes e Papelaria (Digital) - Ecoprint
 
+## Tag
+`cartoes_e_papelaria_rapida`
+
+## Grupo
+`digital`
+
 Palavras-chave: digital, grafica rapida, pequena tiragem, Konica Minolta, 66x33 cm, 330x660 mm, ate 300g, CMYK, PDF, BOPP, laminacao, dobra, furacao, apostila, catalogo, cartao, voucher.
 
 ## 1) O que e o segmento Digital na Ecoprint (escopo real)

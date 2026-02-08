@@ -178,6 +178,31 @@ const loadingIcon = document.getElementById('loading-icon');
 let lastResponse = null;
 let lastMensagem = '';
 
+// Mantem estado de conversa no frontend para o endpoint de teste ser realmente multi-turn.
+// Isso evita perguntas repetidas e permite ao LLM enxergar o contexto anterior.
+let chatHistory = []; // [{ role: "user"|"assistant", content: string }]
+let contextState = { entidades_extraidas: [], intents_detectados: [] };
+
+function _dedupeJsonItems(items) {
+    // Remove duplicados por igualdade de JSON (ordem de chaves consistente).
+    const seen = new Set();
+    const out = [];
+    for (const it of (items || [])) {
+        let key = '';
+        try {
+            if (typeof it === 'string') key = it;
+            else key = JSON.stringify(it, Object.keys(it).sort());
+        } catch (e) {
+            key = String(it);
+        }
+        if (!seen.has(key)) {
+            seen.add(key);
+            out.push(it);
+        }
+    }
+    return out;
+}
+
 function getCsrf() {
     const el = document.querySelector('[name=csrfmiddlewaretoken]');
     return el ? el.value : '{{ csrf_token }}';
@@ -305,7 +330,11 @@ chatForm.addEventListener('submit', async (e) => {
                 'X-CSRFToken': getCsrf(),
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ mensagem: msg }),
+            body: JSON.stringify({
+                mensagem: msg,
+                chat_history: chatHistory,
+                context_state: contextState,
+            }),
         });
 
         const data = await resp.json();
@@ -316,10 +345,30 @@ chatForm.addEventListener('submit', async (e) => {
                 errorMsg += '\n\nDetalhe: ' + data.detail;
             }
             addMessage(errorMsg, false);
+
+            // Mesmo em erro, registramos o turno para manter previsibilidade no teste.
+            chatHistory.push({ role: 'user', content: msg });
+            chatHistory.push({ role: 'assistant', content: errorMsg });
         } else {
             addMessage(data.resposta_bot, false);
             lastResponse = data;
             updateDetails(data);
+
+            // Atualiza estado multi-turn
+            chatHistory.push({ role: 'user', content: msg });
+            chatHistory.push({ role: 'assistant', content: data.resposta_bot || '' });
+
+            // Backend pode devolver acumulado; se nao devolver, acumulamos localmente.
+            if (data.entidades_extraidas) {
+                contextState.entidades_extraidas = _dedupeJsonItems(
+                    (contextState.entidades_extraidas || []).concat(data.entidades_extraidas)
+                );
+            }
+            if (data.intents_detectados) {
+                contextState.intents_detectados = _dedupeJsonItems(
+                    (contextState.intents_detectados || []).concat(data.intents_detectados)
+                );
+            }
         }
     } catch (err) {
         addMessage('Erro de conexão: ' + err.message, false);

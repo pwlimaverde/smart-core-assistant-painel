@@ -83,7 +83,8 @@
       "Bash(set)",
       "Bash(powershell.exe:*)",
       "Bash(git pull:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

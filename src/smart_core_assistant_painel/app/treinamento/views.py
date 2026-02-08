@@ -767,25 +767,84 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
     try:
         body: dict[str, Any] = json.loads(request.body)
         mensagem: str = body.get("mensagem", "").strip()
+        chat_history_in: list[dict[str, Any]] = body.get("chat_history", []) or []
+        context_state_in: dict[str, Any] = body.get("context_state", {}) or {}
     except (json.JSONDecodeError, AttributeError):
         mensagem = request.POST.get("mensagem", "").strip()
+        chat_history_in = []
+        context_state_in = {}
 
     if not mensagem:
         return JsonResponse({"error": "Mensagem é obrigatória."}, status=400)
 
     try:
+        from langchain_core.messages import AIMessage, HumanMessage
+
+        def _to_lc_messages(
+            items: list[dict[str, Any]],
+        ) -> list[HumanMessage | AIMessage]:
+            msgs: list[HumanMessage | AIMessage] = []
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                role = str(it.get("role", "")).strip().lower()
+                content = str(it.get("content", "")).strip()
+                if not content:
+                    continue
+                if role in {"user", "human", "cliente"}:
+                    msgs.append(HumanMessage(content=content))
+                elif role in {"assistant", "ai", "bot"}:
+                    msgs.append(AIMessage(content=content))
+            return msgs
+
+        def _dedupe_dict_list(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+            seen: set[str] = set()
+            out: list[dict[str, Any]] = []
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                key = json.dumps(it, sort_keys=True, ensure_ascii=False)
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append(it)
+            return out
+
+        lc_chat_history = _to_lc_messages(chat_history_in)
+
+        # Historico "legivel" para AnalisePrevia (ele nao usa BaseMessage diretamente).
+        conteudo_mensagens: list[str] = []
+        for it in chat_history_in:
+            if isinstance(it, dict) and str(it.get("content", "")).strip():
+                conteudo_mensagens.append(str(it.get("content", "")).strip())
+
+        prev_entidades: list[dict[str, Any]] = []
+        if isinstance(context_state_in.get("entidades_extraidas"), list):
+            prev_entidades = context_state_in.get("entidades_extraidas", [])
+        prev_intents: list[dict[str, Any]] = []
+        if isinstance(context_state_in.get("intents_detectados"), list):
+            prev_intents = context_state_in.get("intents_detectados", [])
 
         # 1. Análise prévia: extrair entidades e intents (mesmo que
         #    MessageAnalyzer.analyze_message_content no fluxo real)
         intent_types_config = QueryCompose.build_intent_types_config()
-        historico_vazio: dict[str, Any] = {"chat_history": []}
         apm_result = FeaturesCompose.analise_previa_mensagem(
-            historico_atendimento=historico_vazio,
+            historico_atendimento={
+                "conteudo_mensagens": conteudo_mensagens,
+                "entidades_extraidas": prev_entidades,
+                "intents_detectados": prev_intents,
+                "historico_atendimentos": [],
+            },
             context=mensagem,
             valid_intent_types=intent_types_config,
         )
-        entidades = apm_result.entity_types
-        intents = apm_result.intent_types
+        entidades_novas = apm_result.entity_types
+        intents_novas = apm_result.intent_types
+
+        entidades = _dedupe_dict_list(
+            [*(prev_entidades or []), *(entidades_novas or [])]
+        )
+        intents = _dedupe_dict_list([*(prev_intents or []), *(intents_novas or [])])
 
         # 2. Construir prompt de intents (mesmo que
         #    _build_intent_prompt no attendance_orchestrator)
@@ -807,7 +866,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
             fluxos_disponiveis={},
             context=mensagem,
             historico_atendimento={
-                "chat_history": [],
+                "chat_history": lc_chat_history,
                 "entidades_extraidas": entidades,
                 "intents_detectados": intents,
                 "historico_atendimentos": [],

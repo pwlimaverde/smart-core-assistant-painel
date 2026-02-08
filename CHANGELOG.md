@@ -1,3 +1,17 @@
+## 1.0.2 - 2026-02-08
+
+### Added
+- Treinamentos RAG para o piloto Ecoprint (documentos e intents).
+- Interface para testar queries e registrar feedback no app de treinamento.
+- Bootstrap de `CoreSettings` via management command (`bootstrap_core_settings`).
+
+### Changed
+- Refactor: apps Django movidos de `src/smart_core_assistant_painel/app/ui/` para `src/smart_core_assistant_painel/app/`.
+- Deploy/Docker: `DJANGO_SETTINGS_MODULE` e entrypoints atualizados para `smart_core_assistant_painel.app.core.settings` e `smart_core_assistant_painel.app.manage`.
+
+### Notes
+- Antes do deploy: rodar `migrate` (inclui migrações iniciais dos apps movidos) e executar `bootstrap_core_settings` quando aplicável.
+
 ## 0.9.0
 
 ### Added

@@ -51,8 +51,8 @@ class GenerateEmbeddingsLangchainDatasource(GEData):
 
             return embedding_vector
 
-        except Exception as e:
-            raise Exception(f"Erro ao gerar embeddings: {str(e)}")
+        except Exception:
+            raise
 
     def _create_embeddings_instance(self) -> Embeddings:
         """Cria uma instância de embeddings baseada na configuração do ServiceHub.

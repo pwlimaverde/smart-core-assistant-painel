@@ -39,7 +39,7 @@ O sistema utiliza autenticação baseada em sessões Django com as seguintes car
 O projeto utiliza **django-role-permissions** para controle de acesso:
 
 ```python
-# Definição de roles em app/ui/core/roles.py
+# Definição de roles em app/core/roles.py
 
 from rolepermissions.roles import AbstractUserRole
 

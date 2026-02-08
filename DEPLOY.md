@@ -107,6 +107,10 @@ sleep 30
 # 2. Aplicação (Django + Migrations)
 docker compose -f docker/compose/app.yml up -d
 
+# (Recomendado) Bootstrap de CoreSettings (idempotente por padrão)
+docker compose -f docker/compose/app.yml run --rm django_app \
+  python -m smart_core_assistant_painel.app.manage bootstrap_core_settings
+
 # 3. Workers (Celery)
 docker compose -f docker/compose/workers.yml up -d
 
@@ -134,13 +138,13 @@ docker compose \
 docker ps
 
 # Logs da aplicação
-docker logs -f smartcore_app
+docker logs -f smartcoreassistant_app
 
 # Logs do Celery
-docker logs -f smartcore_celery_worker
+docker logs -f smartcoreassistant_celery_worker
 
 # Logs do PostgreSQL
-docker logs -f smartcore_postgres
+docker logs -f smartcoreassistant_postgres
 ```
 
 ---
@@ -148,7 +152,7 @@ docker logs -f smartcore_postgres
 ## Criar Superusuário
 
 ```bash
-docker exec -it smartcore_app python -m smart_core_assistant_painel.app.ui.manage createsuperuser
+docker exec -it smartcoreassistant_app python -m smart_core_assistant_painel.app.manage createsuperuser
 ```
 
 ---
@@ -162,7 +166,7 @@ docker exec -it smartcore_app python -m smart_core_assistant_painel.app.ui.manag
 
 | Hostname | Service |
 |----------|---------|
-| painel.seudominio.com | http://smartcore_app:8000 |
+| painel.seudominio.com | http://smartcoreassistant_app:8000 |
 | evolution.seudominio.com | http://evolution_api:8080 (futuro) |
 
 5. Copie o **Tunnel Token** para o `.env`
@@ -223,9 +227,9 @@ A rede `shared_network` permite comunicação entre diferentes stacks Docker:
 │                                                     │
 │  Smart Core Stack          Evolution Stack          │
 │  ─────────────────         ──────────────          │
-│  • smartcore_app           • evolution_api          │
-│  • smartcore_postgres      • evolution_postgres     │
-│  • smartcore_redis         • evolution_redis        │
+│  • smartcoreassistant_app           • evolution_api          │
+│  • smartcoreassistant_postgres      • evolution_postgres     │
+│  • smartcoreassistant_redis         • evolution_redis        │
 │  • smartcore_celery_*      │                        │
 │  • smartcore_tunnel        │                        │
 │                                                     │
@@ -248,22 +252,22 @@ networks:
 
 ### Container não inicia
 ```bash
-docker logs smartcore_app
+docker logs smartcoreassistant_app
 docker compose -f docker/compose/app.yml logs
 ```
 
 ### Erro de conexão com PostgreSQL
 ```bash
 # Verificar se PostgreSQL está rodando
-docker exec smartcore_postgres pg_isready
+docker exec smartcoreassistant_postgres pg_isready
 
 # Testar conexão
-docker exec -it smartcore_app python -c "from django.db import connection; connection.ensure_connection(); print('OK')"
+docker exec -it smartcoreassistant_app python -c "from django.db import connection; connection.ensure_connection(); print('OK')"
 ```
 
 ### Erro de conexão com Redis
 ```bash
-docker exec smartcore_redis redis-cli ping
+docker exec smartcoreassistant_redis redis-cli ping
 ```
 
 ### Reiniciar serviços
@@ -284,12 +288,12 @@ docker compose -f docker/compose/app.yml up -d --force-recreate
 
 ### PostgreSQL
 ```bash
-docker exec smartcore_postgres pg_dump -U postgres smart_core_db > backup_$(date +%Y%m%d).sql
+docker exec smartcoreassistant_postgres pg_dump -U postgres smart_core_db > backup_$(date +%Y%m%d).sql
 ```
 
 ### Restore
 ```bash
-cat backup.sql | docker exec -i smartcore_postgres psql -U postgres smart_core_db
+cat backup.sql | docker exec -i smartcoreassistant_postgres psql -U postgres smart_core_db
 ```
 
 ---

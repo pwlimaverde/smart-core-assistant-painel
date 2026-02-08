@@ -89,7 +89,7 @@ chmod +x ambiente_misto/setup.sh
 3. Em um novo terminal, inicie a aplicação Django:
 
 ```bash
-python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
+python src/smart_core_assistant_painel/app/manage.py runserver 0.0.0.0:8000
 ```
 
 Veja [ambiente_misto/README.md](ambiente_misto/README.md) para detalhes completos.
@@ -189,7 +189,7 @@ A integração com o WhatsApp é gerenciada pelo app dedicado `evolution_sync`, 
 A arquitetura elimina serviços genéricos, focando em modelos Django nativos e tarefas assíncronas para alta performance.
 
 ### Integração Notion (notion_sync)
-- Habilitado via `INSTALLED_APPS` em `src/smart_core_assistant_painel/app/ui/core/settings.py`.
+- Habilitado via `INSTALLED_APPS` em `src/smart_core_assistant_painel/app/core/settings.py`.
 - Configure `NOTION_TOKEN` e `NOTION_PAGE_ID` em `.env` (veja `.env.example`).
 - Aplique migrações e inicialize as configurações das databases.
 
@@ -202,7 +202,7 @@ A arquitetura elimina serviços genéricos, focando em modelos Django nativos e 
   - `uv run task migrate`
 - Opcional: use comandos para preparar schemas iniciais:
   - Departamentos/Atendentes:
-    `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_notion_databases --update`
+    `uv run python src/smart_core_assistant_painel/app/manage.py setup_notion_databases --update`
 
 ### Integração ClickUp (clickup_sync)
 - Aplicação já inclui `clickup_sync` em `INSTALLED_APPS`.
@@ -228,9 +228,9 @@ CLICKUP_APP_ESPACO=smart-core-assistant
 – O disparo é exclusivamente via signals do Django, como no Trello;
   não há controle adicional por variável de ambiente.
   - Atendimentos/Mensagens:
-    `uv run python src/smart_core_assistant_painel/app/ui/manage.py setup_atendimento_database`
+    `uv run python src/smart_core_assistant_painel/app/manage.py setup_atendimento_database`
 - Para criar databases diretamente no Notion com relacionamentos, use o script:
-  - `uv run python src/smart_core_assistant_painel/app/ui/manage.py shell < src/smart_core_assistant_painel/app/notion_sync/scripts/script_constructor_notion.py`
+  - `uv run python src/smart_core_assistant_painel/app/manage.py shell < src/smart_core_assistant_painel/app/notion_sync/scripts/script_constructor_notion.py`
 
 #### Verificação
 - No Django Admin: verifique `NotionDatabaseConfig` e confirme:

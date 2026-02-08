@@ -26,7 +26,7 @@ Antes de gerar testes, analise:
 ### 2. Estrutura de Teste
 
 ```python
-# tests/app/ui/<app>/test_<module>.py
+# tests/app/<app>/test_<module>.py
 
 import pytest
 from unittest.mock import Mock, patch

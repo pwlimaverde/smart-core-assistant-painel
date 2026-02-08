@@ -26,10 +26,10 @@ from smart_core_assistant_painel.app.trello_sync.services import (
     MemberSyncService,
     TicketSyncService,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
 )
-from smart_core_assistant_painel.app.ui.operacional.models import (
+from smart_core_assistant_painel.app.operacional.models import (
     Atendente,
     EtapaFluxo,
     FluxoAtendimento,

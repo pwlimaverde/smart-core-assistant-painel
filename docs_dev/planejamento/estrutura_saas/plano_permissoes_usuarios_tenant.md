@@ -523,7 +523,7 @@ class TenantPermissionMixin:
 | `app/tenants/admin_mixins.py` | NEW | TenantPermissionMixin |
 | `app/tenants/views/invites.py` | NEW | Views de convite e ativação |
 | `app/tenants/urls.py` | MODIFY | Rotas novas |
-| `app/ui/*/tenant_admin.py` | MODIFY | Usar TenantPermissionMixin |
+| `app/*/tenant_admin.py` | MODIFY | Usar TenantPermissionMixin |
 | Templates | NEW | list, invite, activate, expired |
 
 ---

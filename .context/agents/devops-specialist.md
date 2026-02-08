@@ -75,13 +75,13 @@ COPY src/ ./src/
 
 # Variáveis de ambiente
 ENV PYTHONPATH=/app/src
-ENV DJANGO_SETTINGS_MODULE=app.ui.core.settings
+ENV DJANGO_SETTINGS_MODULE=app.core.settings
 
 # Porta
 EXPOSE 8000
 
 # Comando padrão
-CMD ["uv", "run", "gunicorn", "app.ui.core.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["uv", "run", "gunicorn", "app.core.wsgi:application", "--bind", "0.0.0.0:8000"]
 ```
 
 ### Docker Compose - Data Stack
@@ -147,7 +147,7 @@ services:
         condition: service_healthy
     volumes:
       - ../../../src:/app/src:ro
-    command: uv run python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000
+    command: uv run python src/smart_core_assistant_painel/app/manage.py runserver 0.0.0.0:8000
 
   celery-worker:
     build:
@@ -158,7 +158,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - web
-    command: uv run celery -A app.ui.core worker -l info
+    command: uv run celery -A app.core worker -l info
 
   celery-beat:
     build:
@@ -169,7 +169,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
     depends_on:
       - web
-    command: uv run celery -A app.ui.core beat -l info
+    command: uv run celery -A app.core beat -l info
 ```
 
 ---
@@ -321,7 +321,7 @@ LOGGING = {
 ### Health Checks
 
 ```python
-# app/ui/core/views.py
+# app/core/views.py
 
 from django.http import JsonResponse
 from django.db import connection

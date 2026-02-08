@@ -30,7 +30,7 @@
 | **Template**      | `login.html`                      |
 | **Template Base** | `base_public.html` (Override)     |
 | **App**           | `ui.usuarios`                     |
-| **Arquivo View**  | `app/ui/usuarios/views.py:76-131` |
+| **Arquivo View**  | `app/usuarios/views.py:76-131` |
 
 ### Comportamento Especial
 
@@ -92,7 +92,7 @@
 | **Template**      | `cadastro.html`                  |
 | **Template Base** | `base_public.html`               |
 | **App**           | `ui.usuarios`                    |
-| **Arquivo View**  | `app/ui/usuarios/views.py:27-73` |
+| **Arquivo View**  | `app/usuarios/views.py:27-73` |
 
 ### Comportamento Especial
 
@@ -151,7 +151,7 @@
 | **Template**      | N/A (apenas redirecionamento)      |
 | **Template Base** | N/A                                |
 | **App**           | `ui.usuarios`                      |
-| **Arquivo View**  | `app/ui/usuarios/views.py:134-140` |
+| **Arquivo View**  | `app/usuarios/views.py:134-140` |
 
 ### Comportamento
 

@@ -75,7 +75,7 @@ tail -f logs/django.log
 tail -f logs/celery.log
 
 # Shell Django para investigação
-uv run python src/smart_core_assistant_painel/app/ui/manage.py shell
+uv run python src/smart_core_assistant_painel/app/manage.py shell
 
 # Executar script de reprodução
 python teste_debug/reproduce_bug.py
@@ -103,13 +103,13 @@ print(f"DEBUG: {variable}")  # REMOVER ANTES DE COMMIT
 
 ```bash
 # Verificar filas
-celery -A app.ui.core inspect active
+celery -A app.core inspect active
 
 # Verificar tasks pendentes
-celery -A app.ui.core inspect reserved
+celery -A app.core inspect reserved
 
 # Logs de worker específico
-celery -A app.ui.core worker -l debug
+celery -A app.core worker -l debug
 ```
 
 ---
@@ -123,7 +123,7 @@ celery -A app.ui.core worker -l debug
 **Investigação**:
 ```python
 # Verificar view
-# app/ui/atendimentos/views.py
+# app/atendimentos/views.py
 
 def atendimento_detail(request, pk):
     # Bug: não tratava caso de atendimento inexistente
@@ -178,7 +178,7 @@ def sync_to_trello(sender, instance, created, **kwargs):
 
 **Investigação**:
 ```python
-# app/ui/treinamento/tasks.py
+# app/treinamento/tasks.py
 
 @shared_task
 def process_document(document_id):

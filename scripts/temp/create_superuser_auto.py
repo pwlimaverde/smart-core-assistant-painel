@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 # Configura o ambiente Django
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 

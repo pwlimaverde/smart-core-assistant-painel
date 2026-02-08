@@ -4,7 +4,7 @@ import sys
 
 # Setup do Django
 sys.path.append(r"c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src")
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.ui.core.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.core.settings")
 django.setup()
 
 from smart_core_assistant_painel.app.tenants.models import Tenant, TenantUser

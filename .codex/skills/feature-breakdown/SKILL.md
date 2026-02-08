@@ -70,8 +70,8 @@ Use este skill quando:
 **Descrição:** [O que fazer]
 
 **Arquivos:**
-- `app/ui/module/models.py`
-- `app/ui/module/views.py`
+- `app/module/models.py`
+- `app/module/views.py`
 
 **Dependências:**
 - Tarefa X deve estar completa
@@ -108,7 +108,7 @@ Enviar emails de notificação quando status de atendimento mudar.
 ## Tarefas
 
 ### 1. Criar Model de Configuração de Email
-- **Arquivo:** `app/ui/core/models.py`
+- **Arquivo:** `app/core/models.py`
 - **Dependências:** Nenhuma
 - **Aceite:** Model EmailConfig com campos template, subject, active
 
@@ -118,7 +118,7 @@ Enviar emails de notificação quando status de atendimento mudar.
 - **Aceite:** Migration gerada e aplicada
 
 ### 3. Configurar Admin
-- **Arquivo:** `app/ui/core/admin.py`
+- **Arquivo:** `app/core/admin.py`
 - **Dependências:** Tarefa 2
 - **Aceite:** Pode gerenciar templates no admin
 
@@ -128,17 +128,17 @@ Enviar emails de notificação quando status de atendimento mudar.
 - **Aceite:** Service envia email com template
 
 ### 5. Criar Signal para Status Change
-- **Arquivo:** `app/ui/atendimentos/signals.py`
+- **Arquivo:** `app/atendimentos/signals.py`
 - **Dependências:** Tarefa 4
 - **Aceite:** Email enviado quando status muda
 
 ### 6. Criar Task Celery
-- **Arquivo:** `app/ui/core/tasks.py`
+- **Arquivo:** `app/core/tasks.py`
 - **Dependências:** Tarefa 4
 - **Aceite:** Email é enviado assincronamente
 
 ### 7. Testes
-- **Arquivo:** `tests/app/ui/core/test_email.py`
+- **Arquivo:** `tests/app/core/test_email.py`
 - **Dependências:** Tarefas 1-6
 - **Aceite:** Cobertura > 80%
 

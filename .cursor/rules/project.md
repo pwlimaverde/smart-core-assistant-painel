@@ -25,7 +25,7 @@ Plataforma SaaS multi-tenant para atendimento inteligente via WhatsApp.
 
 ```
 src/smart_core_assistant_painel/
-├── app/ui/           # Apps Django
+├── app/           # Apps Django
 ├── app/tenants/      # Multi-tenancy
 ├── app/*_sync/       # Integrações
 └── modules/          # Lógica de negócio

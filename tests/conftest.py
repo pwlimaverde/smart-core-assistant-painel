@@ -38,7 +38,7 @@ except Exception:
 # Set the Django settings module
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings_test"
+    "smart_core_assistant_painel.app.core.settings_test"
 )
 
 # Initialize Django

@@ -5,108 +5,175 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('atendimentos', '0001_initial'),
-        ('operacional', '0001_initial'),
+        ("atendimentos", "0001_initial"),
+        ("operacional", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='TrelloBoard',
+            name="TrelloBoard",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('external_id', models.CharField(max_length=64, unique=True)),
-                ('name', models.CharField(max_length=200)),
-                ('url', models.URLField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('fluxo', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='trello_board', to='operacional.fluxoatendimento')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("external_id", models.CharField(max_length=64, unique=True)),
+                ("name", models.CharField(max_length=200)),
+                ("url", models.URLField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                (
+                    "fluxo",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="trello_board",
+                        to="operacional.fluxoatendimento",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'trello_board_sync',
+                "db_table": "trello_board_sync",
             },
         ),
         migrations.CreateModel(
-            name='TrelloList',
+            name="TrelloList",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('external_id', models.CharField(max_length=64, unique=True)),
-                ('name', models.CharField(max_length=200)),
-                ('position', models.FloatField(default=0.0)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('board', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lists', to='trello_sync.trelloboard')),
-                ('etapa', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='trello_list', to='operacional.etapafluxo')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("external_id", models.CharField(max_length=64, unique=True)),
+                ("name", models.CharField(max_length=200)),
+                ("position", models.FloatField(default=0.0)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                (
+                    "board",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="lists",
+                        to="trello_sync.trelloboard",
+                    ),
+                ),
+                (
+                    "etapa",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="trello_list",
+                        to="operacional.etapafluxo",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'trello_list_sync',
+                "db_table": "trello_list_sync",
             },
         ),
         migrations.CreateModel(
-            name='TrelloCard',
+            name="TrelloCard",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('external_id', models.CharField(max_length=64, unique=True)),
-                ('name', models.CharField(max_length=200)),
-                ('url', models.URLField(blank=True, null=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('atendimento', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='trello_card', to='atendimentos.atendimento')),
-                ('list_sync', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='cards', to='trello_sync.trellolist')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("external_id", models.CharField(max_length=64, unique=True)),
+                ("name", models.CharField(max_length=200)),
+                ("url", models.URLField(blank=True, null=True)),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "atendimento",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="trello_card",
+                        to="atendimentos.atendimento",
+                    ),
+                ),
+                (
+                    "list_sync",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="cards",
+                        to="trello_sync.trellolist",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'trello_card_sync',
+                "db_table": "trello_card_sync",
             },
         ),
         migrations.CreateModel(
-            name='TrelloMember',
+            name="TrelloMember",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('external_id', models.CharField(blank=True, max_length=64, null=True, unique=True)),
-                ('username', models.CharField(blank=True, max_length=100)),
-                ('full_name', models.CharField(max_length=200)),
-                ('email', models.EmailField(blank=True, max_length=254, null=True)),
-                ('metadata', models.JSONField(blank=True, default=dict)),
-                ('is_invited', models.BooleanField(default=False)),
-                ('invite_sent_at', models.DateTimeField(blank=True, null=True)),
-                ('atendente', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='trello_member', to='operacional.atendente')),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                (
+                    "external_id",
+                    models.CharField(
+                        blank=True, max_length=64, null=True, unique=True
+                    ),
+                ),
+                ("username", models.CharField(blank=True, max_length=100)),
+                ("full_name", models.CharField(max_length=200)),
+                (
+                    "email",
+                    models.EmailField(blank=True, max_length=254, null=True),
+                ),
+                ("metadata", models.JSONField(blank=True, default=dict)),
+                ("is_invited", models.BooleanField(default=False)),
+                (
+                    "invite_sent_at",
+                    models.DateTimeField(blank=True, null=True),
+                ),
+                (
+                    "atendente",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="trello_member",
+                        to="operacional.atendente",
+                    ),
+                ),
             ],
             options={
-                'db_table': 'trello_member_sync',
+                "db_table": "trello_member_sync",
             },
         ),
         migrations.CreateModel(
-            name='TrelloWebhookEvent',
+            name="TrelloWebhookEvent",
             fields=[
-                ('id', models.AutoField(primary_key=True, serialize=False)),
-                ('action_id', models.CharField(max_length=64)),
-                ('model_type', models.CharField(max_length=32)),
-                ('payload', models.JSONField(default=dict)),
-                ('received_at', models.DateTimeField(auto_now_add=True)),
+                ("id", models.AutoField(primary_key=True, serialize=False)),
+                ("action_id", models.CharField(max_length=64)),
+                ("model_type", models.CharField(max_length=32)),
+                ("payload", models.JSONField(default=dict)),
+                ("received_at", models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'db_table': 'trello_webhook_event',
-                'indexes': [models.Index(fields=['action_id', 'model_type'], name='trello_webh_action__3bdb76_idx')],
+                "db_table": "trello_webhook_event",
+                "indexes": [
+                    models.Index(
+                        fields=["action_id", "model_type"],
+                        name="trello_webh_action__3bdb76_idx",
+                    )
+                ],
             },
         ),
         migrations.AddIndex(
-            model_name='trelloboard',
-            index=models.Index(fields=['external_id'], name='trello_boar_externa_4389ec_idx'),
+            model_name="trelloboard",
+            index=models.Index(
+                fields=["external_id"], name="trello_boar_externa_4389ec_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='trellolist',
-            index=models.Index(fields=['external_id', 'board'], name='trello_list_externa_ad426b_idx'),
+            model_name="trellolist",
+            index=models.Index(
+                fields=["external_id", "board"],
+                name="trello_list_externa_ad426b_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='trellocard',
-            index=models.Index(fields=['external_id', 'list_sync'], name='trello_card_externa_8611c2_idx'),
+            model_name="trellocard",
+            index=models.Index(
+                fields=["external_id", "list_sync"],
+                name="trello_card_externa_8611c2_idx",
+            ),
         ),
         migrations.AddIndex(
-            model_name='trellomember',
-            index=models.Index(fields=['external_id'], name='trello_memb_externa_ff2468_idx'),
+            model_name="trellomember",
+            index=models.Index(
+                fields=["external_id"], name="trello_memb_externa_ff2468_idx"
+            ),
         ),
     ]

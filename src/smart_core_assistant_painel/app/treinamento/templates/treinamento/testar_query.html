@@ -1,0 +1,378 @@
+{% extends "base_dashboard.html" %}
+{% load static %}
+
+{% block content %}
+<div class="bg-white rounded-xl shadow-sm border border-stone-200 p-6 mb-8">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center gap-x-4">
+            <span class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                </svg>
+            </span>
+            <div>
+                <h1 class="text-2xl font-bold tracking-tight text-stone-900">
+                    Testar Respostas do Bot
+                </h1>
+                <p class="text-sm text-stone-500">
+                    Envie mensagens simuladas e avalie as respostas da IA
+                </p>
+            </div>
+        </div>
+        <div class="flex gap-x-3">
+            <a href="{% url 'treinamento:verificar_query_compose' %}"
+                class="inline-flex items-center rounded-md border border-stone-300 px-3 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50">
+                <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="mx-auto max-w-5xl">
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+        <!-- Chat Area (3 cols) -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-xl shadow-sm border border-stone-200 flex flex-col" style="min-height: 500px;">
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="flex-1 p-4 space-y-4 overflow-y-auto" style="max-height: 400px;">
+                    <div class="text-center text-sm text-stone-400 py-8">
+                        Envie uma mensagem para testar a resposta do bot
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div class="border-t border-stone-200 p-4">
+                    <form id="chat-form" class="flex gap-3">
+                        <input type="text" id="chat-input" placeholder="Digite uma mensagem..."
+                            class="flex-1 rounded-lg border border-stone-300 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:border-[#a98f71] focus:outline-none focus:ring-1 focus:ring-[#a98f71]"
+                            autocomplete="off">
+                        <button type="submit" id="send-btn"
+                            class="inline-flex items-center rounded-lg bg-[#a98f71] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#8c735a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg id="send-icon" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                            <svg id="loading-icon" class="h-4 w-4 animate-spin hidden" fill="none"
+                                viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                            </svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Panel (2 cols) -->
+        <div class="lg:col-span-2">
+            <div id="details-panel"
+                class="bg-white rounded-xl shadow-sm border border-stone-200 p-4 space-y-4 sticky top-20">
+                <h3 class="text-sm font-semibold text-stone-900 uppercase tracking-wider">Detalhes da Resposta</h3>
+
+                <!-- Placeholder -->
+                <div id="details-placeholder" class="text-sm text-stone-400 text-center py-8">
+                    Envie uma mensagem para ver os detalhes
+                </div>
+
+                <!-- Confiabilidade -->
+                <div id="detail-confiabilidade" class="hidden">
+                    <label class="text-xs font-medium text-stone-500 uppercase">Confiabilidade</label>
+                    <div class="mt-1 flex items-center gap-3">
+                        <div class="flex-1 bg-stone-200 rounded-full h-2.5">
+                            <div id="conf-bar" class="h-2.5 rounded-full transition-all duration-500"
+                                style="width: 0%"></div>
+                        </div>
+                        <span id="conf-value" class="text-sm font-bold text-stone-900">0%</span>
+                    </div>
+                </div>
+
+                <!-- Transferência -->
+                <div id="detail-transferencia" class="hidden">
+                    <label class="text-xs font-medium text-stone-500 uppercase">Transferência</label>
+                    <div id="transfer-badge" class="mt-1"></div>
+                </div>
+
+                <!-- Entidades -->
+                <div id="detail-entidades" class="hidden">
+                    <label class="text-xs font-medium text-stone-500 uppercase">Entidades Extraídas</label>
+                    <div id="entidades-list" class="mt-1 flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- Intents -->
+                <div id="detail-intents" class="hidden">
+                    <label class="text-xs font-medium text-stone-500 uppercase">Intents Detectados</label>
+                    <div id="intents-list" class="mt-1 flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- Documentos RAG -->
+                <div id="detail-docs" class="hidden">
+                    <label class="text-xs font-medium text-stone-500 uppercase">Documentos RAG</label>
+                    <p id="docs-info" class="mt-1 text-xs text-stone-600"></p>
+                </div>
+
+                <!-- QueryCompose Match -->
+                <div id="detail-qc-match" class="hidden">
+                    <label class="text-xs font-medium text-stone-500 uppercase">QueryCompose Match</label>
+                    <p id="qc-match-text" class="mt-1 text-xs text-stone-600 bg-stone-50 p-2 rounded-lg"></p>
+                </div>
+
+                <!-- Avaliação -->
+                <div id="detail-avaliacao" class="hidden border-t border-stone-100 pt-4">
+                    <label class="text-xs font-medium text-stone-500 uppercase mb-2 block">Avaliar Resposta</label>
+                    <div class="flex gap-2">
+                        <button onclick="avaliar('bom')"
+                            class="flex-1 inline-flex justify-center items-center rounded-lg border border-emerald-300 px-3 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 transition-colors">
+                            <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                            </svg>
+                            Boa
+                        </button>
+                        <button onclick="avaliar('ruim')"
+                            class="flex-1 inline-flex justify-center items-center rounded-lg border border-rose-300 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 transition-colors">
+                            <svg class="mr-1.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                            </svg>
+                            Ruim
+                        </button>
+                    </div>
+
+                    <!-- Correção (só aparece ao clicar Ruim) -->
+                    <div id="correcao-area" class="hidden mt-3">
+                        <textarea id="correcao-text" rows="3" placeholder="Digite a resposta correta..."
+                            class="w-full rounded-lg border border-stone-300 px-3 py-2 text-sm text-stone-900 placeholder-stone-400 focus:border-[#a98f71] focus:outline-none focus:ring-1 focus:ring-[#a98f71]"></textarea>
+                        <button onclick="enviarCorrecao()"
+                            class="mt-2 w-full inline-flex justify-center items-center rounded-lg bg-stone-800 px-3 py-2 text-sm font-semibold text-white hover:bg-stone-700 transition-colors">
+                            Enviar Correção
+                        </button>
+                    </div>
+
+                    <!-- Feedback enviado -->
+                    <div id="feedback-enviado" class="hidden mt-3">
+                        <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg p-3 text-sm">
+                            Feedback registrado com sucesso!
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const chatMessages = document.getElementById('chat-messages');
+const chatForm = document.getElementById('chat-form');
+const chatInput = document.getElementById('chat-input');
+const sendBtn = document.getElementById('send-btn');
+const sendIcon = document.getElementById('send-icon');
+const loadingIcon = document.getElementById('loading-icon');
+
+let lastResponse = null;
+let lastMensagem = '';
+
+function getCsrf() {
+    const el = document.querySelector('[name=csrfmiddlewaretoken]');
+    return el ? el.value : '{{ csrf_token }}';
+}
+
+function addMessage(text, isUser) {
+    const placeholder = chatMessages.querySelector('.text-center');
+    if (placeholder) placeholder.remove();
+
+    const div = document.createElement('div');
+    div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+    div.innerHTML = `
+        <div class="max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${
+            isUser
+                ? 'bg-[#a98f71] text-white rounded-br-sm'
+                : 'bg-stone-100 text-stone-900 rounded-bl-sm'
+        }">
+            <div class="whitespace-pre-wrap">${escapeHtml(text)}</div>
+        </div>
+    `;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function setLoading(loading) {
+    sendBtn.disabled = loading;
+    chatInput.disabled = loading;
+    sendIcon.classList.toggle('hidden', loading);
+    loadingIcon.classList.toggle('hidden', !loading);
+}
+
+function updateDetails(data) {
+    document.getElementById('details-placeholder').classList.add('hidden');
+
+    // Confiabilidade
+    const confSection = document.getElementById('detail-confiabilidade');
+    confSection.classList.remove('hidden');
+    const pct = Math.round(data.confiabilidade * 100);
+    document.getElementById('conf-value').textContent = pct + '%';
+    const bar = document.getElementById('conf-bar');
+    bar.style.width = pct + '%';
+    if (pct >= 70) bar.className = 'h-2.5 rounded-full transition-all duration-500 bg-emerald-500';
+    else if (pct >= 40) bar.className = 'h-2.5 rounded-full transition-all duration-500 bg-amber-500';
+    else bar.className = 'h-2.5 rounded-full transition-all duration-500 bg-rose-500';
+
+    // Transferência
+    const transSection = document.getElementById('detail-transferencia');
+    transSection.classList.remove('hidden');
+    const badge = document.getElementById('transfer-badge');
+    if (data.transferir_atendimento) {
+        badge.innerHTML = `<span class="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-medium text-amber-700">Sim - ${escapeHtml(data.fluxo_transferencia || 'Padrão')}</span>`;
+    } else {
+        badge.innerHTML = `<span class="inline-flex items-center rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-xs font-medium text-emerald-700">Não</span>`;
+    }
+
+    // Entidades
+    const entSection = document.getElementById('detail-entidades');
+    const entList = document.getElementById('entidades-list');
+    if (data.entidades_extraidas && data.entidades_extraidas.length > 0) {
+        entSection.classList.remove('hidden');
+        entList.innerHTML = data.entidades_extraidas.map(e =>
+            `<span class="inline-flex items-center rounded-full bg-blue-50 border border-blue-200 px-2.5 py-0.5 text-xs font-medium text-blue-700">${escapeHtml(typeof e === 'string' ? e : JSON.stringify(e))}</span>`
+        ).join('');
+    } else {
+        entSection.classList.add('hidden');
+    }
+
+    // Intents
+    const intSection = document.getElementById('detail-intents');
+    const intList = document.getElementById('intents-list');
+    if (data.intents_detectados && data.intents_detectados.length > 0) {
+        intSection.classList.remove('hidden');
+        intList.innerHTML = data.intents_detectados.map(i =>
+            `<span class="inline-flex items-center rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-xs font-medium text-purple-700">${escapeHtml(typeof i === 'string' ? i : JSON.stringify(i))}</span>`
+        ).join('');
+    } else {
+        intSection.classList.add('hidden');
+    }
+
+    // Documentos RAG
+    const docsSection = document.getElementById('detail-docs');
+    if (data.documentos_utilizados && data.documentos_utilizados.length > 0) {
+        docsSection.classList.remove('hidden');
+        document.getElementById('docs-info').textContent = `${data.documentos_utilizados.length} documento(s) usado(s): IDs ${data.documentos_utilizados.join(', ')}`;
+    } else {
+        docsSection.classList.remove('hidden');
+        document.getElementById('docs-info').textContent = 'Nenhum documento RAG utilizado';
+    }
+
+    // QueryCompose Match
+    const qcSection = document.getElementById('detail-qc-match');
+    if (data.query_compose_match) {
+        qcSection.classList.remove('hidden');
+        document.getElementById('qc-match-text').textContent = data.query_compose_match;
+    } else {
+        qcSection.classList.add('hidden');
+    }
+
+    // Avaliação
+    document.getElementById('detail-avaliacao').classList.remove('hidden');
+    document.getElementById('correcao-area').classList.add('hidden');
+    document.getElementById('feedback-enviado').classList.add('hidden');
+}
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = chatInput.value.trim();
+    if (!msg) return;
+
+    lastMensagem = msg;
+    addMessage(msg, true);
+    chatInput.value = '';
+    setLoading(true);
+
+    try {
+        const resp = await fetch('{% url "treinamento:testar_resposta_query" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrf(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ mensagem: msg }),
+        });
+
+        const data = await resp.json();
+
+        if (data.error) {
+            let errorMsg = 'Erro: ' + data.error;
+            if (data.detail) {
+                errorMsg += '\n\nDetalhe: ' + data.detail;
+            }
+            addMessage(errorMsg, false);
+        } else {
+            addMessage(data.resposta_bot, false);
+            lastResponse = data;
+            updateDetails(data);
+        }
+    } catch (err) {
+        addMessage('Erro de conexão: ' + err.message, false);
+    } finally {
+        setLoading(false);
+        chatInput.focus();
+    }
+});
+
+function avaliar(tipo) {
+    if (tipo === 'ruim') {
+        document.getElementById('correcao-area').classList.remove('hidden');
+    } else {
+        enviarFeedback(tipo, '');
+    }
+}
+
+function enviarCorrecao() {
+    const correcao = document.getElementById('correcao-text').value.trim();
+    enviarFeedback('ruim', correcao);
+}
+
+async function enviarFeedback(avaliacao, correcao) {
+    if (!lastResponse || !lastMensagem) return;
+
+    try {
+        const resp = await fetch('{% url "treinamento:feedback_resposta_query" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrf(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mensagem_original: lastMensagem,
+                resposta_bot: lastResponse.resposta_bot,
+                avaliacao: avaliacao,
+                resposta_corrigida: correcao,
+                confiabilidade: lastResponse.confiabilidade,
+                entidades_json: lastResponse.entidades_extraidas || {},
+                intents_json: lastResponse.intents_detectados || {},
+                documentos_ids: lastResponse.documentos_utilizados || [],
+            }),
+        });
+
+        const data = await resp.json();
+        if (data.success) {
+            document.getElementById('correcao-area').classList.add('hidden');
+            document.getElementById('feedback-enviado').classList.remove('hidden');
+            document.getElementById('detail-avaliacao').querySelector('.flex.gap-2').classList.add('hidden');
+        }
+    } catch (err) {
+        console.error('Erro ao enviar feedback:', err);
+    }
+}
+</script>
+{% endblock content %}

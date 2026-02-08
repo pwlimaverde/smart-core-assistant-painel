@@ -55,13 +55,13 @@ Taskipy gerencia scripts de execução via `uv run task <nome>`.
 # pyproject.toml
 [tool.taskipy.tasks]
 # Servidor
-start = "python src/smart_core_assistant_painel/app/ui/manage.py runserver 0.0.0.0:8000"
-celery-worker = "celery -A app.ui.core worker -l info"
-celery-beat = "celery -A app.ui.core beat -l info"
+start = "python src/smart_core_assistant_painel/app/manage.py runserver 0.0.0.0:8000"
+celery-worker = "celery -A app.core worker -l info"
+celery-beat = "celery -A app.core beat -l info"
 
 # Banco de dados
-makemigrations = "python src/smart_core_assistant_painel/app/ui/manage.py makemigrations"
-migrate = "python src/smart_core_assistant_painel/app/ui/manage.py migrate"
+makemigrations = "python src/smart_core_assistant_painel/app/manage.py makemigrations"
+migrate = "python src/smart_core_assistant_painel/app/manage.py migrate"
 
 # Qualidade
 lint = "ruff check src tests"
@@ -157,7 +157,7 @@ uv run pyright src --verbose
 ```ini
 # pytest.ini
 [pytest]
-DJANGO_SETTINGS_MODULE = app.ui.core.settings_test
+DJANGO_SETTINGS_MODULE = app.core.settings_test
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*

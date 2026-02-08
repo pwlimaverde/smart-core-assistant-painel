@@ -205,11 +205,11 @@ def show_counts() -> None:
             "shell",
             "-c",
             (
-                "from smart_core_assistant_painel.app.ui.operacional.models "
+                "from smart_core_assistant_painel.app.operacional.models "
                 "import Departamento, Atendente; "
-                "from smart_core_assistant_painel.app.ui.clientes.models "
+                "from smart_core_assistant_painel.app.clientes.models "
                 "import Contato; "
-                "from smart_core_assistant_painel.app.ui.atendimentos.models "
+                "from smart_core_assistant_painel.app.atendimentos.models "
                 "import Atendimento; "
                 "print('Departamentos:', Departamento.objects.count()); "
                 "print('Atendentes:', Atendente.objects.count()); "

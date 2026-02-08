@@ -73,7 +73,7 @@ uv run task test-all
 uv run task test-docker -- -k "test_create_atendimento"
 
 # Por arquivo
-uv run task test-docker -- tests/app/ui/atendimentos/test_models.py
+uv run task test-docker -- tests/app/atendimentos/test_models.py
 
 # Por diretório
 uv run task test-docker -- tests/app/evolution_sync/
@@ -129,12 +129,12 @@ def tenant(db):
 Cada app pode ter seu próprio `conftest.py` com fixtures específicas:
 
 ```python
-# tests/app/ui/atendimentos/conftest.py
+# tests/app/atendimentos/conftest.py
 
 @pytest.fixture
 def atendimento(db, cliente, departamento):
     """Cria atendimento para testes."""
-    from app.ui.atendimentos.models import Atendimento
+    from app.atendimentos.models import Atendimento
     return Atendimento.objects.create(
         cliente=cliente,
         departamento=departamento,
@@ -184,7 +184,7 @@ def test_webhook_creates_atendimento(client, tenant):
 Testam models Django.
 
 ```python
-# tests/app/ui/atendimentos/test_models.py
+# tests/app/atendimentos/test_models.py
 
 @pytest.mark.django_db
 class TestAtendimentoModel:
@@ -207,7 +207,7 @@ class TestAtendimentoModel:
 Testam endpoints HTTP.
 
 ```python
-# tests/app/ui/clientes/test_views.py
+# tests/app/clientes/test_views.py
 
 @pytest.mark.django_db
 class TestClienteViews:
@@ -229,7 +229,7 @@ class TestClienteViews:
 
 ```ini
 [pytest]
-DJANGO_SETTINGS_MODULE = app.ui.core.settings_test
+DJANGO_SETTINGS_MODULE = app.core.settings_test
 python_files = test_*.py
 python_classes = Test*
 python_functions = test_*

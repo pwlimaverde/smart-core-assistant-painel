@@ -8,11 +8,11 @@ services:
       context: ../../
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_migrate
-    command: python -m smart_core_assistant_painel.app.ui.manage migrate
+    command: python -m smart_core_assistant_painel.app.manage migrate
     env_file:
       - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
-      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.core.settings
       - PYTHONPATH=/app/src
       - POSTGRES_HOST=smartcoreassistant_postgres
       - POSTGRES_PORT=5432
@@ -30,19 +30,19 @@ services:
       dockerfile: docker/Dockerfile
     container_name: smartcoreassistant_app
     command: >
-      gunicorn smart_core_assistant_painel.app.ui.core.wsgi:application
+      gunicorn smart_core_assistant_painel.app.core.wsgi:application
       --bind 0.0.0.0:8000
       --workers=${GUNICORN_WORKERS:-3}
       --timeout=${GUNICORN_TIMEOUT:-120}
     volumes:
-      - static_files:/app/src/smart_core_assistant_painel/app/ui/staticfiles
+      - static_files:/app/src/smart_core_assistant_painel/app/staticfiles
       - media_files:/app/src/smart_core_assistant_painel/app/media
     ports:
       - "8000:8000"
     env_file:
       - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
-      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.ui.core.settings
+      - DJANGO_SETTINGS_MODULE=smart_core_assistant_painel.app.core.settings
       - PYTHONPATH=/app/src
       - POSTGRES_HOST=smartcoreassistant_postgres
       - POSTGRES_PORT=5432

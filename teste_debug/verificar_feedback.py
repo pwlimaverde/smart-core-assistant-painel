@@ -9,11 +9,11 @@ import logging
 sys.path.append(os.path.join(os.getcwd(), "src"))
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.ui.core.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 django.setup()
 
-from smart_core_assistant_painel.app.ui.atendimentos.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
     Contato,
@@ -21,16 +21,16 @@ from smart_core_assistant_painel.app.ui.atendimentos.models import (
     TipoMensagem,
     OrigemMensagem,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_orchestrator import (
+from smart_core_assistant_painel.app.atendimentos.services.attendance_orchestrator import (
     AttendanceOrchestrator,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.message_analyzer import (
+from smart_core_assistant_painel.app.atendimentos.services.message_analyzer import (
     MessageAnalyzer,
 )
-from smart_core_assistant_painel.app.ui.atendimentos.services.attendance_structure_manager import (
+from smart_core_assistant_painel.app.atendimentos.services.attendance_structure_manager import (
     AttendanceStructureManager,
 )
-from smart_core_assistant_painel.app.ui.bot.services.bot_rules_engine import (
+from smart_core_assistant_painel.app.bot.services.bot_rules_engine import (
     BotRulesEngine,
 )
 

@@ -95,7 +95,7 @@ modules/ai_engine/features/nova_feature/
 ### Estrutura de App Django
 
 ```
-app/ui/nova_app/
+app/nova_app/
 ├── __init__.py
 ├── admin.py                    # Admin interface
 ├── apps.py                     # Configuração da app
@@ -161,7 +161,7 @@ class AnaliseSentimentoUsecase:
 **Tarefa**: Criar endpoint para listar atendimentos filtrados
 
 ```python
-# app/ui/atendimentos/views_api.py
+# app/atendimentos/views_api.py
 
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
@@ -197,7 +197,7 @@ class AtendimentoViewSet(viewsets.ModelViewSet):
 **Tarefa**: Processar documento em background
 
 ```python
-# app/ui/treinamento/tasks.py
+# app/treinamento/tasks.py
 
 from celery import shared_task
 

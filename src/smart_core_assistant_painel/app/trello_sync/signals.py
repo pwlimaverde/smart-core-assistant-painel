@@ -5,6 +5,20 @@ from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from loguru import logger
 
+from smart_core_assistant_painel.app.atendimentos.models import (
+    Atendimento,
+    Mensagem,
+    StatusAtendimento,
+)
+from smart_core_assistant_painel.app.operacional.models import (
+    Atendente,
+    EtapaFluxo,
+    FluxoAtendimento,
+    TipoEtapa,
+)
+from smart_core_assistant_painel.app.tenants.tenant_context import (
+    get_current_tenant_slug,
+)
 from smart_core_assistant_painel.app.trello_sync.tasks import (
     task_atendente_invite,
     task_atendente_remove_member,
@@ -18,20 +32,6 @@ from smart_core_assistant_painel.app.trello_sync.tasks import (
     task_fluxo_ensure_board,
     task_reorder_lists_for_fluxo,
     task_trello_archive_card_by_external_id,
-)
-from smart_core_assistant_painel.app.tenants.tenant_context import (
-    get_current_tenant_slug,
-)
-from smart_core_assistant_painel.app.atendimentos.models import (
-    Atendimento,
-    Mensagem,
-    StatusAtendimento,
-)
-from smart_core_assistant_painel.app.operacional.models import (
-    Atendente,
-    EtapaFluxo,
-    FluxoAtendimento,
-    TipoEtapa,
 )
 
 

@@ -2,26 +2,22 @@ from datetime import timedelta
 from typing import Any, Optional, cast
 
 import requests
-
 from django.db import router, transaction
 from django.utils import timezone
 from loguru import logger
 
-from smart_core_assistant_painel.app.trello_sync.models import (
-    TrelloCard,
-    TrelloList,
-)
-from smart_core_assistant_painel.app.trello_sync.services.flow_sync_service import (
-    FlowSyncService,
-)
-from smart_core_assistant_painel.app.trello_sync.services.member_sync_service import (
-    MemberSyncService,
-)
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     StatusAtendimento,
 )
 from smart_core_assistant_painel.app.operacional.models import TipoEtapa
+from smart_core_assistant_painel.app.trello_sync.models import (
+    TrelloCard,
+    TrelloList,
+)
+from smart_core_assistant_painel.app.trello_sync.services.member_sync_service import (
+    MemberSyncService,
+)
 from smart_core_assistant_painel.modules.services import (
     SERVICEHUB,
     FeaturesCompose,
@@ -38,13 +34,10 @@ class TicketSyncService:
     """
 
     def __init__(self) -> None:
-        # Comentário (PT-BR): Obtém o UDS do SERVICEHUB. Se necessário,
-        # inicializa via FeaturesCompose para registrar a instância.
-        try:
-            self.client: UnifiedDataService = SERVICEHUB.unified_data_service
-        except Exception:
-            FeaturesCompose.unifield_data_services()
-            self.client = SERVICEHUB.unified_data_service
+        # Comentário (PT-BR): Inicializa o UDS via FeaturesCompose.
+        # Sempre recria para garantir credenciais corretas do tenant atual.
+        FeaturesCompose.unifield_data_services()
+        self.client: UnifiedDataService = SERVICEHUB.unified_data_service
 
     def ensure_card_for_atendimento(
         self, atendimento: Any
@@ -880,9 +873,6 @@ class TicketSyncService:
 
     def _sync_status_from_etapa(self, atendimento, etapa) -> None:
         """Sincroniza o status do atendimento com base no tipo da etapa."""
-        from smart_core_assistant_painel.app.atendimentos.models import (
-            StatusAtendimento,
-        )
         from smart_core_assistant_painel.app.operacional.models import (
             TipoEtapa,
         )

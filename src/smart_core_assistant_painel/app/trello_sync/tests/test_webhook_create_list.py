@@ -1,15 +1,16 @@
 from django.test import TestCase
-from smart_core_assistant_painel.app.trello_sync.services.webhook_processing_service import (
-    WebhookProcessingService,
+
+from smart_core_assistant_painel.app.operacional.models import (
+    Departamento,
+    EtapaFluxo,
+    FluxoAtendimento,
 )
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloBoard,
     TrelloList,
 )
-from smart_core_assistant_painel.app.operacional.models import (
-    FluxoAtendimento,
-    EtapaFluxo,
-    Departamento,
+from smart_core_assistant_painel.app.trello_sync.services.webhook_processing_service import (
+    WebhookProcessingService,
 )
 
 

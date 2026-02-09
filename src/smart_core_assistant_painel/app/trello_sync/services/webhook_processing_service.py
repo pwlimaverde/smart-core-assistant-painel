@@ -148,12 +148,12 @@ class WebhookProcessingService:
 
         from django.db import router, transaction
 
+        from smart_core_assistant_painel.app.operacional.models import (
+            EtapaFluxo,
+        )
         from smart_core_assistant_painel.app.trello_sync.models import (
             TrelloBoard,
             TrelloList,
-        )
-        from smart_core_assistant_painel.app.operacional.models import (
-            EtapaFluxo,
         )
 
         try:

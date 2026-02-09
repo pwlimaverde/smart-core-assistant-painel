@@ -40,11 +40,19 @@ class TrelloUnifiedDataService(UnifiedDataService):
         self._default_data_source_id: str = params.data_source_id
 
         # Configura credenciais de API
-        self._api_key: str = config("TRELLO_API_KEY", default="")
-        self._token: str = config("TRELLO_TOKEN", default="")
+        # Prioridade: TenantTrello (BD) > variáveis de ambiente (.env)
+        api_key, token = self._load_tenant_credentials()
+        if not api_key:
+            api_key = config("TRELLO_API_KEY", default="")
+        if not token:
+            token = config("TRELLO_TOKEN", default="")
+
+        self._api_key: str = api_key
+        self._token: str = token
         if not self._api_key or not self._token:
             raise ValueError(
-                "TRELLO_API_KEY/TRELLO_TOKEN não configurados no ambiente"
+                "TRELLO_API_KEY/TRELLO_TOKEN não configurados "
+                "(nem no TenantTrello, nem no ambiente)"
             )
 
         # Base URL da API do Trello
@@ -52,6 +60,29 @@ class TrelloUnifiedDataService(UnifiedDataService):
 
         if self._observability:
             logger.info("TrelloUnifiedDataService inicializado")
+
+    # -------------------- Resolução de Credenciais -------------------------
+    @staticmethod
+    def _load_tenant_credentials() -> tuple[str, str]:
+        """Tenta carregar credenciais do TenantTrello do tenant atual.
+
+        Returns:
+            Tupla (api_key, token). Strings vazias se indisponível.
+        """
+        try:
+            from smart_core_assistant_painel.app.tenants.middleware import (
+                get_current_tenant,
+            )
+
+            tenant = get_current_tenant()
+            if tenant is None:
+                return ("", "")
+            trello_cfg = getattr(tenant, "trello_config", None)
+            if trello_cfg is None:
+                return ("", "")
+            return (trello_cfg.api_key, trello_cfg.token)
+        except Exception:
+            return ("", "")
 
     # -------------------------- Utilitários HTTP ---------------------------
     def _auth_params(self) -> Dict[str, str]:

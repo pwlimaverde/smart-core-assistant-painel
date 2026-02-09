@@ -4,18 +4,18 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
 
+from smart_core_assistant_painel.app.tenants.middleware import (
+    set_current_tenant,
+)
+from smart_core_assistant_painel.app.tenants.models import Tenant
+from smart_core_assistant_painel.app.tenants.tenant_context import (
+    get_current_tenant_slug,
+)
 from smart_core_assistant_painel.app.trello_sync.tasks import (
     task_process_trello_card_move,
     task_process_trello_list_create,
     task_process_trello_list_update,
 )
-from smart_core_assistant_painel.app.tenants.tenant_context import (
-    get_current_tenant_slug,
-)
-from smart_core_assistant_painel.app.tenants.middleware import (
-    set_current_tenant,
-)
-from smart_core_assistant_painel.app.tenants.models import Tenant
 
 
 @csrf_exempt

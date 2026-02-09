@@ -338,6 +338,9 @@ server-django-shell = "ssh -t hostinger-root \"docker exec -it smartcoreassistan
 # Coleta arquivos estáticos
 server-collectstatic = "ssh hostinger-root 'docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage collectstatic --noinput'"
 
+# Executa migrações do banco principal + todos os bancos de tenants
+server-migrate-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm migrate && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage migrate_all_tenants\""
+
 # --- Acesso Direto ---
 # Abre terminal SSH interativo no servidor
 server-ssh = "ssh hostinger-root"

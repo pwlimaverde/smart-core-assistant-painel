@@ -76,5 +76,4 @@ def sched_response_contact(params: Dict[str, Any]) -> None:
 
     process_contact_response_task.apply_async(
         args=[get_current_tenant_slug(), contact_id],
-        countdown=delay_seconds,
     )

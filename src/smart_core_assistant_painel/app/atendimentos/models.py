@@ -704,6 +704,7 @@ class Atendimento(models.Model):
         self.departamento = fluxo.departamento
         self.fluxo_atendimento = fluxo
         self.etapa_atual = etapa_inicial
+        self.bot_pode_atender = False
 
         # Se a etapa inicial for FILA, alinhar status de atendimento
         status_alterado = False
@@ -712,7 +713,12 @@ class Atendimento(models.Model):
                 self.status = StatusAtendimento.FILA
                 status_alterado = True
 
-        campos = ["departamento", "fluxo_atendimento", "etapa_atual"]
+        campos = [
+            "departamento",
+            "fluxo_atendimento",
+            "etapa_atual",
+            "bot_pode_atender",
+        ]
         if status_alterado:
             campos.append("status")
         self.save(update_fields=campos)

@@ -443,16 +443,12 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     "não possui fluxo ativo."
                 )
 
-            # Garante que o bot pode responder
-            attendance.bot_pode_atender = True
-
             attendance.save(
                 update_fields=[
                     "departamento",
                     "atendente_humano",
                     "fluxo_atendimento",
                     "etapa_atual",
-                    "bot_pode_atender",
                 ]
             )
 
@@ -587,6 +583,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             critical_intents = {
                 "falar_com_humano",
                 "transferir_atendimento",
+                "transferencia_atendente",
                 "atendente_humano",
                 "suporte_humano",
             }

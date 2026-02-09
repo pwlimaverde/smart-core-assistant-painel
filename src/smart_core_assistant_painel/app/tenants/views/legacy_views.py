@@ -1,10 +1,8 @@
 from dataclasses import asdict
 from typing import Any
+
 import requests
-
 from decouple import config as decouple_config
-
-
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -36,11 +34,11 @@ from ..models import (
     TenantEvolution,
     TenantTrello,
 )
+from ..services.config_loader import ConfigLoader
 from ..services.connection_tester import (
     ConnectionTester,
     TenantMigrationRunner,
 )
-from ..services.config_loader import ConfigLoader
 
 
 def _resolve_tenant_and_profile(request):

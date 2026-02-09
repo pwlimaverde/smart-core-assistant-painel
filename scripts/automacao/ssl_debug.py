@@ -1,6 +1,6 @@
-import ssl
-import socket
 import os
+import socket
+import ssl
 import sys
 
 

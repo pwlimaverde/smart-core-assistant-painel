@@ -3,14 +3,14 @@ from typing import Any
 from django.contrib import admin
 from django.http import HttpRequest
 
+from smart_core_assistant_painel.app.atendimentos.models import (
+    MovimentoFluxo,
+)
 from smart_core_assistant_painel.app.tenants.admin_client import (
     tenant_admin_site,
 )
 from smart_core_assistant_painel.app.tenants.admin_mixins import (
     BaseTenantModelAdmin,
-)
-from smart_core_assistant_painel.app.atendimentos.models import (
-    MovimentoFluxo,
 )
 
 from .models import (

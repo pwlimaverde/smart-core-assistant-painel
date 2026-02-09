@@ -5,6 +5,10 @@ from django.db import IntegrityError
 from django.db.models import Q
 from loguru import logger
 
+from smart_core_assistant_painel.app.atendimentos.models import (
+    processar_mensagem_por_contato,
+)
+from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
     EvolutionWebhookEnvelope,
 )
@@ -17,10 +21,6 @@ from smart_core_assistant_painel.app.evolution_sync.services import (
     sched_response_contact,
     set_buffer_contact,
 )
-from smart_core_assistant_painel.app.atendimentos.models import (
-    processar_mensagem_por_contato,
-)
-from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.tenants.models import Tenant
 
 

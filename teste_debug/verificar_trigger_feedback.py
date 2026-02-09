@@ -1,8 +1,8 @@
+import logging
 import os
 import sys
+
 import django
-from django.utils import timezone
-import logging
 
 # Configure path and django
 sys.path.append(os.path.join(os.getcwd(), "src"))
@@ -16,14 +16,13 @@ from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
     StatusAtendimento,
-    TipoMensagem,
     TipoRemetente,
 )
 from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.operacional.models import (
     Departamento,
-    FluxoAtendimento,
     EtapaFluxo,
+    FluxoAtendimento,
     TipoEtapa,
 )
 from smart_core_assistant_painel.app.trello_sync.models import (

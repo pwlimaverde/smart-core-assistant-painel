@@ -1,9 +1,10 @@
 from datetime import timedelta
-from django.views.generic import TemplateView
+
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.utils import timezone
-from django.db.models import Count, Q
-from smart_core_assistant_painel.app.tenants.models import Tenant, Subscription
+from django.views.generic import TemplateView
+
+from smart_core_assistant_painel.app.tenants.models import Subscription, Tenant
 
 
 class BackofficeDashboardView(UserPassesTestMixin, TemplateView):

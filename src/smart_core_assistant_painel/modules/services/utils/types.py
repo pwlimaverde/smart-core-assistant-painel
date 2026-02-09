@@ -7,7 +7,7 @@ relacionados à configuração de ambiente, armazenamento de vetores e serviços
 de WhatsApp.
 """
 
-from typing import Any, TypeAlias
+from typing import TypeAlias
 
 from py_return_success_or_error import (
     Datasource,

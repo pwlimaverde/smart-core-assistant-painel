@@ -6,15 +6,16 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 from loguru import logger
 
+from smart_core_assistant_painel.app.tenants.tenant_context import (
+    get_current_tenant_slug,
+)
+
 from .models import Documento, QueryCompose, Treinamento
 from .tasks import (
     remover_treinamento_ia_sync,
     task_gerar_documentos_treinamento,
     task_gerar_embedding_documento,
     task_gerar_embedding_query_compose,
-)
-from smart_core_assistant_painel.app.tenants.tenant_context import (
-    get_current_tenant_slug,
 )
 
 

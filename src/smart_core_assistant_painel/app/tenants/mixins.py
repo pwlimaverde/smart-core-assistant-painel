@@ -1,7 +1,9 @@
 from typing import Any, Optional
+
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from loguru import logger
+
 from .middleware import get_current_tenant, set_current_tenant
 
 

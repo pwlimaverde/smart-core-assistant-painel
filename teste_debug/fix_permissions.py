@@ -1,16 +1,18 @@
 import os
-import django
 import sys
+
+import django
 
 # Setup do Django
 sys.path.append(r"c:\PROJETOS\PYTHON\APPS\smart-core-assistant-painel\src")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.app.core.settings")
 django.setup()
 
-from smart_core_assistant_painel.app.tenants.models import Tenant, TenantUser
-from smart_core_assistant_painel.app.tenants.permissions import TenantModule
-from rolepermissions.roles import assign_role
 from django.contrib.auth import get_user_model
+from rolepermissions.roles import assign_role
+
+from smart_core_assistant_painel.app.tenants.models import Tenant, TenantUser
+
 
 def fix_permissions():
     """
@@ -75,7 +77,7 @@ def fix_permissions():
                 else:
                     print(f"[TenantUser] OK para {user.email} @ {tenant.slug}")
 
-    print(f"\n--- Concluído ---")
+    print("\n--- Concluído ---")
     print(f"Novos TenantUsers criados: {count_created}")
     print(f"TenantUsers atualizados: {count_updated}")
 

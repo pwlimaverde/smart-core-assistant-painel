@@ -1,9 +1,10 @@
+import logging
 import os
 import sys
+from datetime import timedelta
+
 import django
 from django.utils import timezone
-from datetime import timedelta
-import logging
 
 # Configure path and django
 sys.path.append(os.path.join(os.getcwd(), "src"))
@@ -13,25 +14,26 @@ os.environ.setdefault(
 )
 django.setup()
 
+from smart_core_assistant_painel.app.bot.services.bot_rules_engine import (
+    BotRulesEngine,
+)
+
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
-    Mensagem,
     Contato,
+    Mensagem,
+    OrigemMensagem,
     StatusAtendimento,
     TipoMensagem,
-    OrigemMensagem,
 )
 from smart_core_assistant_painel.app.atendimentos.services.attendance_orchestrator import (
     AttendanceOrchestrator,
 )
-from smart_core_assistant_painel.app.atendimentos.services.message_analyzer import (
-    MessageAnalyzer,
-)
 from smart_core_assistant_painel.app.atendimentos.services.attendance_structure_manager import (
     AttendanceStructureManager,
 )
-from smart_core_assistant_painel.app.bot.services.bot_rules_engine import (
-    BotRulesEngine,
+from smart_core_assistant_painel.app.atendimentos.services.message_analyzer import (
+    MessageAnalyzer,
 )
 
 # Configure Logging to console

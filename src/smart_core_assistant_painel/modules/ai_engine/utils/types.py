@@ -9,12 +9,12 @@ de dados específicas.
 from typing import Any, NamedTuple, Optional, TypeAlias
 
 from langchain_core.documents import Document
-from pydantic import BaseModel, Field
 from py_return_success_or_error import (
     Datasource,
     UsecaseBase,
     UsecaseBaseCallData,
 )
+from pydantic import BaseModel, Field
 
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem,

@@ -7,14 +7,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.indexes import Index
 from django.db.models.signals import post_save  # noqa: F401
-from django.utils import timezone
 from loguru import logger
 
 if TYPE_CHECKING:
     # Import apenas para tipagem, evitando dependencias em tempo de execucao
-    from smart_core_assistant_painel.app.atendimentos.models import (
-        Atendimento as AtendimentoModel,
-    )
+    pass
 
 
 def validate_telefone(value: str) -> None:

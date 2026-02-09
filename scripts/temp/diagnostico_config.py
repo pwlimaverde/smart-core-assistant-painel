@@ -215,10 +215,11 @@ def get_core_settings() -> dict[str, str]:
 
 def get_runtime_config_fields() -> set[str]:
     """Retorna os campos definidos no RuntimeConfig."""
+    from dataclasses import fields
+
     from smart_core_assistant_painel.modules.services.config.context import (
         RuntimeConfig,
     )
-    from dataclasses import fields
 
     return {f.name for f in fields(RuntimeConfig)}
 

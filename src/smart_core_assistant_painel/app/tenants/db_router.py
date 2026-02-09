@@ -1,9 +1,11 @@
 """Database Router para roteamento dinâmico multi-tenant."""
 
 from typing import Any, Optional, Type
+
 from django.db import connections
 from django.db.models import Model
 from loguru import logger
+
 from .models import Tenant
 
 CORE_APPS = {

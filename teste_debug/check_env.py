@@ -1,5 +1,4 @@
 import sys
-import os
 
 print(f"Python Executable: {sys.executable}")
 print("Sys Path:")

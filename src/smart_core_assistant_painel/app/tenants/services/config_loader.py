@@ -2,14 +2,14 @@ import json
 import time
 from typing import Dict, Optional
 
-from smart_core_assistant_painel.modules.services.config.context import (
-    RuntimeConfig,
-    set_config,
-)
 from smart_core_assistant_painel.app.settings_manager.models import (
     CoreSettings,
 )
 from smart_core_assistant_painel.app.tenants.models import Tenant, TenantConfig
+from smart_core_assistant_painel.modules.services.config.context import (
+    RuntimeConfig,
+    set_config,
+)
 
 
 class ConfigLoader:

@@ -1,4 +1,4 @@
-from .context import get_config, RuntimeConfig
+from .context import RuntimeConfig, get_config
 
 
 class ConfigProvider:

@@ -14,7 +14,7 @@ name: Deploy Production
 on:
   push:
     tags:
-      - 'v*'  # Dispara em tags como v1.0.0, v1.0.1, etc.
+      - "v*" # Dispara em tags como v1.0.0, v1.0.1, etc.
 
 env:
   REGISTRY: ghcr.io
@@ -139,6 +139,10 @@ jobs:
             # --no-build impede rebuild local, forçando uso da imagem GHCR pullada
             SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p ${{ env.COMPOSE_PROJECT_APP }} -f docker/compose/app.yml up -d --force-recreate --no-build django_app
             SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p ${{ env.COMPOSE_PROJECT_WORKERS }} -f docker/compose/workers.yml up -d --force-recreate --no-build
+
+            # Migração de todos os bancos de tenants cadastrados
+            echo "Running tenant migrations..."
+            docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage migrate_all_tenants --skip-invalid
 
             # Coletar estáticos para garantir CSS/JS do admin em produção
             docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage collectstatic --noinput

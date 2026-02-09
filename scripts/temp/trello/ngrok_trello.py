@@ -1,4 +1,3 @@
-import os
 import subprocess
 import sys
 import time
@@ -51,14 +50,14 @@ def main():
         # URL base para o webhook (o path com tenant_slug é adicionado pelo código)
         # Antes salvava o path completo, agora salva apenas a URL base
 
-        print(f"\n[OK] Túnel ngrok iniciado.")
+        print("\n[OK] Túnel ngrok iniciado.")
         print(f"Porta local: {PORT}")
         print(f"URL pública: {public_url}")
 
         # 3. Update .env com a URL base
         update_env_file(public_url)
 
-        print(f"TRELLO_WEBHOOK_CALLBACK_URL atualizado em .env para:")
+        print("TRELLO_WEBHOOK_CALLBACK_URL atualizado em .env para:")
         print(f"{public_url}")
         print(
             "CORS_ALLOWED_ORIGINS atualizado para incluir o domínio do ngrok."

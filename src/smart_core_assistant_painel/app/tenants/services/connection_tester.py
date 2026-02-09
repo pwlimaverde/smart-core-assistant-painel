@@ -259,7 +259,7 @@ class TenantMigrationRunner:
 
                 return (
                     False,
-                    "Erro ao aplicar migrações: relation \"auth_user\" does not exist. "
+                    'Erro ao aplicar migrações: relation "auth_user" does not exist. '
                     "Isso indica que alguma migration está tentando criar FK para auth_user no banco do tenant. "
                     f"{fix_hint}Reinicie o servidor/app após atualizar o código e execute novamente.",
                 )

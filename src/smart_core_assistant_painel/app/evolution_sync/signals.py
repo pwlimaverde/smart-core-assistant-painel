@@ -4,6 +4,7 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from loguru import logger
 
+from smart_core_assistant_painel.app.atendimentos.models import Mensagem
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
@@ -15,7 +16,6 @@ from smart_core_assistant_painel.app.tenants.middleware import (
     get_current_tenant,
 )
 from smart_core_assistant_painel.app.tenants.models import TenantEvolution
-from smart_core_assistant_painel.app.atendimentos.models import Mensagem
 
 
 @receiver(pre_save, sender=Mensagem)

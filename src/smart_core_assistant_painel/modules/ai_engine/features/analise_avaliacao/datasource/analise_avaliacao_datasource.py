@@ -1,5 +1,5 @@
 from langchain_core.prompts import ChatPromptTemplate
-from py_return_success_or_error import ErrorReturn, SuccessReturn
+from py_return_success_or_error import ErrorReturn
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     AnaliseAvaliacaoParameters,

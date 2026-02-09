@@ -2,8 +2,8 @@ import math
 
 from py_return_success_or_error import (
     ErrorReturn,
-    SuccessReturn,
     ReturnSuccessOrError,
+    SuccessReturn,
 )
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (

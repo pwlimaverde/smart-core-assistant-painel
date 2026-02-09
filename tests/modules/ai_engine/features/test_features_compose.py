@@ -11,7 +11,6 @@ from smart_core_assistant_painel.modules.ai_engine.features.features_compose imp
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DocumentError,
 )
-from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class TestFeaturesCompose(unittest.TestCase):

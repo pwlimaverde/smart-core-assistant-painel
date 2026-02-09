@@ -4,7 +4,6 @@ import json
 
 import pytest
 from pydantic import BaseModel
-
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.pydantic_model_factory import (
     PydanticModelFactory,
     create_dynamic_pydantic_model,

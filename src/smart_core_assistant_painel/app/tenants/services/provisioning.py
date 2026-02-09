@@ -1,7 +1,8 @@
-from django.db import transaction
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.utils import timezone
-from ..models import Tenant, TenantConfig, TenantUser, Subscription, Plan
+
+from ..models import Plan, Subscription, Tenant, TenantConfig, TenantUser
 
 User = get_user_model()
 

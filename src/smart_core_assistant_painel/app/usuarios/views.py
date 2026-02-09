@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from django.contrib.messages import constants
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
+
 from smart_core_assistant_painel.app.operacional.models import Atendente
 
 

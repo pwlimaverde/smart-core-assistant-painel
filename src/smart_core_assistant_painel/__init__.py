@@ -1,6 +1,6 @@
 """Smart Core Assistant Painel - SaaS Multi-tenant."""
 
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("smart-core-assistant-painel")

@@ -3,10 +3,10 @@
 from unittest.mock import MagicMock
 
 from py_return_success_or_error import EMPTY, ErrorReturn, SuccessReturn
-
 from smart_core_assistant_painel.modules.services.features.set_environ_remote.domain.usecase.set_environ_remote_usecase import (
     SetEnvironRemoteUseCase,
 )
+
 from smart_core_assistant_painel.modules.services.utils.erros import (
     SetEnvironRemoteError,
 )

@@ -20,19 +20,19 @@ from django.contrib import admin
 from django.urls import include, path, re_path
 from django.views.static import serve
 
+import smart_core_assistant_painel.app.atendimentos.tenant_admin  # noqa
+import smart_core_assistant_painel.app.clientes.tenant_admin  # noqa
+import smart_core_assistant_painel.app.evolution_sync.tenant_admin  # noqa
 
-from . import views
+# Importar registros do Tenant Admin (Auto-discovery manual)
+import smart_core_assistant_painel.app.operacional.tenant_admin  # noqa
+import smart_core_assistant_painel.app.treinamento.tenant_admin  # noqa
+import smart_core_assistant_painel.app.trello_sync.tenant_admin  # noqa
 from smart_core_assistant_painel.app.tenants.admin_client import (
     tenant_admin_site,
 )
 
-# Importar registros do Tenant Admin (Auto-discovery manual)
-import smart_core_assistant_painel.app.operacional.tenant_admin  # noqa
-import smart_core_assistant_painel.app.evolution_sync.tenant_admin  # noqa
-import smart_core_assistant_painel.app.treinamento.tenant_admin  # noqa
-import smart_core_assistant_painel.app.atendimentos.tenant_admin  # noqa
-import smart_core_assistant_painel.app.clientes.tenant_admin  # noqa
-import smart_core_assistant_painel.app.trello_sync.tenant_admin  # noqa
+from . import views
 
 urlpatterns = [
     path("", views.LandingPageView.as_view(), name="landing"),

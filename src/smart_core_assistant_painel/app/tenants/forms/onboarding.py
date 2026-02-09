@@ -1,10 +1,11 @@
+import re
+
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-import re
 
-from ..models import Tenant, Plan, TenantConfig
+from ..models import Plan, Tenant, TenantConfig
 
 INPUT_BASE_CLASS = (
     "block w-full rounded-xl border-0 bg-stone-900/50 py-3.5 px-4 "

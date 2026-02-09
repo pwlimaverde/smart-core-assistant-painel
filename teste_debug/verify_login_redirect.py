@@ -1,5 +1,6 @@
 import os
 import sys
+
 import django
 
 # Setup path
@@ -15,8 +16,9 @@ except Exception as e:
     print(f"Setup Error: {e}")
     sys.exit(1)
 
-from django.test import Client
 from django.contrib.auth.models import User
+from django.test import Client
+
 from smart_core_assistant_painel.app.operacional.models import (
     Atendente,
     Departamento,

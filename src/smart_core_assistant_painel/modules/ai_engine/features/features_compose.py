@@ -452,9 +452,7 @@ class FeaturesCompose:
         try:
             return datasource(parameters)
         except Exception as e:
-            raise EmbeddingError(
-                f"Erro ao gerar embeddings: {e}"
-            ) from e
+            raise EmbeddingError(f"Erro ao gerar embeddings: {e}") from e
 
     @staticmethod
     def _calculate_embedding_similarity(

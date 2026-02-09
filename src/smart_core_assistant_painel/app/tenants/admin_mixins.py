@@ -5,7 +5,7 @@ Este módulo fornece mixins reutilizáveis para ModelAdmins que precisam
 verificar permissões granulares por módulo e tenant.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from django.contrib import admin
 from django.http import HttpRequest

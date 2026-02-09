@@ -6,10 +6,10 @@ from loguru import logger
 from smart_core_assistant_painel.app.atendimentos.tasks import (
     process_contact_response_task,
 )
-from smart_core_assistant_painel.modules.services import SERVICEHUB
 from smart_core_assistant_painel.app.tenants.tenant_context import (
     get_current_tenant_slug,
 )
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 def set_buffer_contact(contact_id: int, envelope: Dict[str, Any]) -> None:

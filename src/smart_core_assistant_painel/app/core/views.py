@@ -12,8 +12,8 @@ from urllib.request import Request, urlopen
 
 from decouple import config
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
 from django.http import HttpRequest, HttpResponse
+from django.shortcuts import render
 
 API_TOKEN_URL: str = "https://api.clickup.com/api/v2/oauth/token"
 
@@ -94,8 +94,8 @@ def health_check(request: HttpRequest) -> HttpResponse:
     return HttpResponse("OK", status=200)
 
 
-from django.views.generic import TemplateView
 from django.shortcuts import redirect
+from django.views.generic import TemplateView
 
 
 class LandingPageView(TemplateView):

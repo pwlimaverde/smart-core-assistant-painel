@@ -19,6 +19,7 @@ from smart_core_assistant_painel.app.operacional.models import (
 from smart_core_assistant_painel.app.tenants.tenant_context import (
     get_current_tenant_slug,
 )
+from smart_core_assistant_painel.app.trello_sync.models import TrelloCard
 from smart_core_assistant_painel.app.trello_sync.tasks import (
     task_atendente_invite,
     task_atendente_remove_member,
@@ -208,9 +209,12 @@ def atendimento_capture_old_etapa(
                 )
             else:
                 instance._old_etapa_id = None  # type: ignore[attr-defined]
-    except Exception:
-        # Comentário: falhas de captura não devem bloquear o fluxo
-        pass
+    except Exception as exc:
+        logger.warning(
+            "Falha ao capturar etapa anterior do atendimento {}: {}",
+            getattr(instance, "pk", "?"),
+            exc,
+        )
 
 
 @receiver(post_save, sender=Atendimento)
@@ -238,19 +242,35 @@ def atendimento_etapa_updated_move_card(
         if getattr(instance, "_syncing_from_trello", False):
             return
 
-        # Comentário (PT-BR): se a etapa foi definida pela primeira vez
-        # (era None e agora tem valor), o card pode não existir ainda.
-        # Neste caso, garantimos a criação do card antes de mover.
         if old_etapa_id is None and new_etapa_id is not None:
-            # Etapa foi definida pela primeira vez - garantir criação do card
-            task_atendimento_ensure_card.delay(
-                get_current_tenant_slug(), instance.id
-            )
-            logger.info(
-                "Etapa definida pela primeira vez para atendimento {}. "
-                "Agendando criação de card.",
-                instance.id,
-            )
+            # old_etapa_id=None pode significar:
+            # a) etapa realmente definida pela primeira vez (card não existe)
+            # b) falha na captura do pre_save (card já existe)
+            try:
+                has_card = TrelloCard.objects.filter(
+                    atendimento_id=instance.id
+                ).exists()
+            except Exception:
+                has_card = False
+
+            if has_card:
+                task_atendimento_move_to_etapa_list.delay(
+                    get_current_tenant_slug(), instance.id
+                )
+                logger.info(
+                    "Card existente para atendimento {}. "
+                    "Agendando movimento (etapa anterior não capturada).",
+                    instance.id,
+                )
+            else:
+                task_atendimento_ensure_card.delay(
+                    get_current_tenant_slug(), instance.id
+                )
+                logger.info(
+                    "Primeira etapa para atendimento {}. "
+                    "Agendando criação de card.",
+                    instance.id,
+                )
         else:
             # Etapa mudou (já existia) - apenas mover o card
             task_atendimento_move_to_etapa_list.delay(

@@ -71,7 +71,6 @@ class WebhookProcessingService:
             # Atualiza etapa atual no atendimento e registra movimento
             atendimento = trello_card.atendimento
             etapa_dest = dest_list.etapa
-            etapa_origem = getattr(atendimento, "etapa_atual", None)
             atendimento.etapa_atual = etapa_dest
             atendimento.save(update_fields=["etapa_atual"])
 
@@ -84,16 +83,18 @@ class WebhookProcessingService:
                     TipoEtapa,
                 )
 
+                # Comentário (PT-BR): tipo_etapa retorna string do banco.
+                # Comparamos com .value para garantir compatibilidade.
                 tipo_etapa = getattr(etapa_dest, "tipo_etapa", None)
                 novo_status = None
 
-                if tipo_etapa == TipoEtapa.FILA:
+                if tipo_etapa == TipoEtapa.FILA.value:
                     novo_status = StatusAtendimento.FILA
-                elif tipo_etapa == TipoEtapa.TRABALHO:
+                elif tipo_etapa == TipoEtapa.TRABALHO.value:
                     novo_status = StatusAtendimento.EM_ATENDIMENTO
-                elif tipo_etapa == TipoEtapa.ESPERA:
+                elif tipo_etapa == TipoEtapa.ESPERA.value:
                     novo_status = StatusAtendimento.PENDENCIA
-                elif tipo_etapa == TipoEtapa.FINALIZACAO:
+                elif tipo_etapa == TipoEtapa.FINALIZACAO.value:
                     # Distinguir entre resolvido e cancelado pelo nome da etapa
                     nome_lower = etapa_dest.nome.lower()
                     if "cancelado" in nome_lower or "cancel" in nome_lower:

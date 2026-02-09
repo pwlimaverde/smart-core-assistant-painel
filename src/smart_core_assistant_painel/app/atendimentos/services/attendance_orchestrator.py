@@ -614,8 +614,13 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 if fluxos_disponiveis:
                     fluxo = next(iter(fluxos_disponiveis.keys()))
                     logger.info(f"FAST-PATH: Transferindo para fluxo {fluxo}")
-                    # Usa método do modelo Atendimento para transferência
-                    attendance.apply_flow_by_description(fluxo)
+                    try:
+                        attendance.apply_flow_by_description(fluxo)
+                    except Exception as exc:
+                        logger.error(
+                            f"FAST-PATH: Falha ao transferir "
+                            f"para '{fluxo}': {exc}"
+                        )
                 else:
                     # Atualiza status sem transferência
                     self._structure_manager._update_attendance_status_ongoing(
@@ -816,12 +821,26 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             f"len={len(result.resposta_bot or '')}"
         )
 
-        # Atualiza status
-        self._structure_manager._update_attendance_status_ongoing(attendance)
-
-        # Transfere se necessário
+        # Transfere PRIMEIRO se necessário (evita mudança dupla de etapa)
         if result.transferir_atendimento and result.fluxo_transferencia:
-            attendance.apply_flow_by_description(result.fluxo_transferencia)
+            try:
+                attendance.apply_flow_by_description(
+                    result.fluxo_transferencia
+                )
+                logger.info(
+                    f"Atendimento {attendance.id} transferido para "
+                    f"fluxo '{result.fluxo_transferencia}'"
+                )
+            except Exception as exc:
+                logger.error(
+                    f"Falha ao transferir atendimento {attendance.id} "
+                    f"para '{result.fluxo_transferencia}': {exc}"
+                )
+        else:
+            # Só atualiza status para "Em Atendimento" se NÃO transferiu
+            self._structure_manager._update_attendance_status_ongoing(
+                attendance
+            )
 
     def _register_fallback_response(
         self, message: "Mensagem", attendance: "Atendimento"

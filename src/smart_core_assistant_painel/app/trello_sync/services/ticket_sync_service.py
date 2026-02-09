@@ -38,13 +38,10 @@ class TicketSyncService:
     """
 
     def __init__(self) -> None:
-        # Comentário (PT-BR): Obtém o UDS do SERVICEHUB. Se necessário,
-        # inicializa via FeaturesCompose para registrar a instância.
-        try:
-            self.client: UnifiedDataService = SERVICEHUB.unified_data_service
-        except Exception:
-            FeaturesCompose.unifield_data_services()
-            self.client = SERVICEHUB.unified_data_service
+        # Comentário (PT-BR): Inicializa o UDS via FeaturesCompose.
+        # Sempre recria para garantir credenciais corretas do tenant atual.
+        FeaturesCompose.unifield_data_services()
+        self.client: UnifiedDataService = SERVICEHUB.unified_data_service
 
     def ensure_card_for_atendimento(
         self, atendimento: Any

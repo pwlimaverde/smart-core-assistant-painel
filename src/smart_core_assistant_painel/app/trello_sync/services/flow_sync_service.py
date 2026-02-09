@@ -30,13 +30,10 @@ class FlowSyncService:
     """
 
     def __init__(self) -> None:
-        # Comentário (PT-BR): Obtém o UDS do SERVICEHUB. Se não estiver
-        # inicializado, executa o compose para registrar a instância.
-        try:
-            self.client: UnifiedDataService = SERVICEHUB.unified_data_service
-        except Exception:
-            FeaturesCompose.unifield_data_services()
-            self.client = SERVICEHUB.unified_data_service
+        # Comentário (PT-BR): Inicializa o UDS via FeaturesCompose.
+        # Sempre recria para garantir credenciais corretas do tenant atual.
+        FeaturesCompose.unifield_data_services()
+        self.client: UnifiedDataService = SERVICEHUB.unified_data_service
 
     def _callback_url(self, tenant_slug: Optional[str] = None) -> str:
         """Constrói URL de callback para webhook Trello.

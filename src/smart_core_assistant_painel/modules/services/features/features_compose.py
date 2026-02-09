@@ -46,15 +46,12 @@ class FeaturesCompose:
 
         Levanta erro padronizado em caso de falha na construção/registro.
         """
-        error = UnifieldDataServicesError(
-            "Erro ao executar unifield_data_services!"
-        )
         parameters = UnifieldDataServicesParameters(
             data_source_id="",
             provider="trello",
             root_container_name="Unified Data Root",
-            enable_observability=True,  # Habilitando observabilidade para debug
-            error=error,
+            enable_observability=True,
+            error=UnifieldDataServicesError,
         )
         datasource: UDSData = UnifieldDataServicesDatasource()
         usecase: UDSUsecase = UnifieldDataServicesUseCase(

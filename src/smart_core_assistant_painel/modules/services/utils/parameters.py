@@ -55,7 +55,7 @@ class UnifieldDataServicesParameters(ParametersReturnResult):
     provider: str = "trello"
     root_container_name: str = "Unified Data Root"
     enable_observability: bool = False
-    error: UnifieldDataServicesError
+    error: type[UnifieldDataServicesError]
 
     def __str__(self) -> str:
         """Retorna uma representação simplificada em string dos parâmetros."""

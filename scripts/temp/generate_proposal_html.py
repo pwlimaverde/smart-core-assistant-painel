@@ -1,7 +1,8 @@
-import markdown
 import base64
 import os
 from pathlib import Path
+
+import markdown
 
 # Configurações de caminhos
 BASE_DIR = Path("c:/PROJETOS/PYTHON/APPS/smart-core-assistant-painel")

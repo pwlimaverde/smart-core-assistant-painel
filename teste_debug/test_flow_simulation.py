@@ -1,9 +1,10 @@
+import json
 import os
 import sys
-import django
-from unittest.mock import patch, MagicMock
-import json
 import traceback
+from unittest.mock import MagicMock, patch
+
+import django
 from loguru import logger
 
 # Setup Django environment
@@ -24,23 +25,23 @@ except Exception as e:
     sys.exit(1)
 
 # Now import app modules
+from django.core.cache import cache
 from django.test import RequestFactory
-from smart_core_assistant_painel.app.evolution_sync.views import (
-    webhook as evolution_webhook,
-)
-from smart_core_assistant_painel.app.evolution_sync.models import (
-    EvolutionContact,
-)
+from django_q.models import Schedule
+
 from smart_core_assistant_painel.app.atendimentos.models import (
-    Contato,
-    Mensagem,
     Atendimento,
+    Mensagem,
 )
 from smart_core_assistant_painel.app.atendimentos.services import (
     process_contact_response_task,
 )
-from django_q.models import Schedule
-from django.core.cache import cache
+from smart_core_assistant_painel.app.evolution_sync.models import (
+    EvolutionContact,
+)
+from smart_core_assistant_painel.app.evolution_sync.views import (
+    webhook as evolution_webhook,
+)
 
 # Configure logger
 logger.add("teste_debug/test_log.log", rotation="1 MB")

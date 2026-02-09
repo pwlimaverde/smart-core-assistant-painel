@@ -3,14 +3,15 @@ import os
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
+
 from smart_core_assistant_painel.app.settings_manager.models import (
     CoreSettings,
 )
-from smart_core_assistant_painel.modules.services.features.features_compose import (
-    FeaturesCompose,
-)
 from smart_core_assistant_painel.app.tenants.utils.encryption import (
     encrypt_value,
+)
+from smart_core_assistant_painel.modules.services.features.features_compose import (
+    FeaturesCompose,
 )
 
 

@@ -1,14 +1,13 @@
-from django.shortcuts import render, redirect
-from django.views import View
-from django.views.generic import FormView, TemplateView
 from django.http import JsonResponse
-from django.urls import reverse
+from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.cache import never_cache
+from django.views.generic import FormView, TemplateView
 
-from ..forms.onboarding import TenantRegistrationForm, OnboardingConfigForm
+from ..forms.onboarding import OnboardingConfigForm, TenantRegistrationForm
+from ..models import Plan, Tenant
 from ..services.provisioning import TenantProvisioningService
-from ..models import Tenant, Plan
 
 SESSION_DATA_KEY = "onboarding_data"
 SESSION_PLAN_KEY = "onboarding_plan_id"

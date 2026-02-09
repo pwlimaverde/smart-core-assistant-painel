@@ -717,9 +717,7 @@ def _build_test_intent_prompt(
         if qc:
             if not first_match:
                 first_match = tag
-            behavior: str = " ".join(
-                str(qc.comportamento).split()
-            ).strip()
+            behavior: str = " ".join(str(qc.comportamento).split()).strip()
             prompt_lines.append(f"{index}. [{tag}] {behavior}")
         else:
             # Busca comportamento similar por embedding do intent
@@ -729,18 +727,12 @@ def _build_test_intent_prompt(
                     FeaturesCompose.generate_embeddings(intent_text)
                 )
                 comportamento: str | None = (
-                    QueryCompose.buscar_comportamento_similar(
-                        intent_vector
-                    )
+                    QueryCompose.buscar_comportamento_similar(intent_vector)
                 )
                 if comportamento:
-                    prompt_lines.append(
-                        f"{index}. [{tag}] {comportamento}"
-                    )
+                    prompt_lines.append(f"{index}. [{tag}] {comportamento}")
             except Exception:
-                logger.debug(
-                    f"Embedding para intent '{tag}' indisponível."
-                )
+                logger.debug(f"Embedding para intent '{tag}' indisponível.")
 
     prompt_intent_footer = SERVICEHUB.PROMPT_INTENT_FOOTER
     if not prompt_intent_footer:
@@ -767,7 +759,9 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
     try:
         body: dict[str, Any] = json.loads(request.body)
         mensagem: str = body.get("mensagem", "").strip()
-        chat_history_in: list[dict[str, Any]] = body.get("chat_history", []) or []
+        chat_history_in: list[dict[str, Any]] = (
+            body.get("chat_history", []) or []
+        )
         context_state_in: dict[str, Any] = body.get("context_state", {}) or {}
     except (json.JSONDecodeError, AttributeError):
         mensagem = request.POST.get("mensagem", "").strip()
@@ -797,7 +791,9 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
                     msgs.append(AIMessage(content=content))
             return msgs
 
-        def _dedupe_dict_list(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        def _dedupe_dict_list(
+            items: list[dict[str, Any]],
+        ) -> list[dict[str, Any]]:
             seen: set[str] = set()
             out: list[dict[str, Any]] = []
             for it in items:
@@ -844,13 +840,13 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
         entidades = _dedupe_dict_list(
             [*(prev_entidades or []), *(entidades_novas or [])]
         )
-        intents = _dedupe_dict_list([*(prev_intents or []), *(intents_novas or [])])
+        intents = _dedupe_dict_list(
+            [*(prev_intents or []), *(intents_novas or [])]
+        )
 
         # 2. Construir prompt de intents (mesmo que
         #    _build_intent_prompt no attendance_orchestrator)
-        prompt_human, query_compose_match = _build_test_intent_prompt(
-            intents
-        )
+        prompt_human, query_compose_match = _build_test_intent_prompt(intents)
 
         # 3. Gerar embedding da mensagem para busca RAG
         vector_mensagem = FeaturesCompose.generate_embeddings(mensagem)
@@ -917,9 +913,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
 
     except Exception as e:
         logger.error(f"Erro ao testar resposta: {e}")
-        return JsonResponse(
-            {"error": f"Erro ao processar: {e!s}"}, status=500
-        )
+        return JsonResponse({"error": f"Erro ao processar: {e!s}"}, status=500)
 
 
 @require_POST

@@ -1,4 +1,5 @@
 from django import template
+
 from smart_core_assistant_painel.app.tenants.models import Tenant, TenantUser
 
 register = template.Library()

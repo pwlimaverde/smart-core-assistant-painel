@@ -1,7 +1,7 @@
 import os
 import sys
+
 import django
-from django.conf import settings
 
 # Setup Django environment
 sys.path.append("c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src")
@@ -11,13 +11,13 @@ os.environ.setdefault(
 )
 django.setup()
 
+from smart_core_assistant_painel.modules.services import FeaturesCompose
 from smart_core_assistant_painel.modules.services.features.service_hub import (
     SERVICEHUB,
 )
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.domain.interface.unified_data_service import (
     UnifiedDataService,
 )
-from smart_core_assistant_painel.modules.services import FeaturesCompose
 
 
 def verify_service_hub():

@@ -1,13 +1,12 @@
-from django.contrib.auth import get_user_model
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.core.mail import send_mail
-from django.urls import reverse
 from django.conf import settings as django_settings
+from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.hashers import make_password
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
-from ..models import TenantUser, TenantInvite, Tenant
+from ..models import Tenant, TenantInvite, TenantUser
 from ..permissions import TenantModule
 
 User = get_user_model()
@@ -249,8 +248,9 @@ def _send_invite_email(request, invite):
     Tenta envio padrão e, se falhar por SSL em DEBUG, tenta sem verificação.
     Retorna True se sucesso, False caso contrário.
     """
-    from django.core.mail import get_connection, EmailMultiAlternatives
     import ssl
+
+    from django.core.mail import EmailMultiAlternatives, get_connection
 
     activation_url = request.build_absolute_uri(
         reverse("tenants:activate_account", args=[invite.token])
@@ -270,11 +270,11 @@ Este link expira em 7 dias.
 
     try:
         # Load templates
-        from django.template.loader import render_to_string
         import os
 
         # Get current domain for protocol/domain context
         from django.contrib.sites.shortcuts import get_current_site
+        from django.template.loader import render_to_string
 
         current_site = get_current_site(request)
         protocol = "https" if request.is_secure() else "http"

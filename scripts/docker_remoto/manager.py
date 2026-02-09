@@ -10,10 +10,10 @@ Stacks disponíveis:
 Permite executar comandos docker compose remotamente via DOCKER_HOST.
 """
 
+import argparse
 import os
 import subprocess
 import sys
-import argparse
 from pathlib import Path
 from typing import Dict, List, Optional
 

@@ -1,7 +1,8 @@
 import os
 import sys
+from unittest.mock import MagicMock
+
 import django
-from unittest.mock import MagicMock, patch
 
 # Configuração do Django
 sys.path.append("src")
@@ -11,17 +12,16 @@ os.environ.setdefault(
 django.setup()
 
 from loguru import logger
-from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
-    TrelloUnifiedDataService,
-)
+
 from smart_core_assistant_painel.app.trello_sync.services.member_sync_service import (
     MemberSyncService,
 )
 from smart_core_assistant_painel.app.trello_sync.services.ticket_sync_service import (
     TicketSyncService,
 )
-from smart_core_assistant_painel.app.operacional.models import TipoEtapa
-from smart_core_assistant_painel.app.trello_sync.models import TrelloMember
+from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
+    TrelloUnifiedDataService,
+)
 
 
 def test_verify_trello_adapter_log_correction():

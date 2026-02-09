@@ -198,7 +198,7 @@ def main() -> None:
         json.dump(output, f, ensure_ascii=False, indent=2)
 
     print(f"\n✅ Arquivo salvo em: {output_path}")
-    print(f"\n📁 Resumo:")
+    print("\n📁 Resumo:")
     print(f"  - Editáveis pelo cliente: {editaveis}")
     print(f"  - Gerenciados pelo sistema: {sistema}")
 

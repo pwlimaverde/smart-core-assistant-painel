@@ -4,15 +4,15 @@ from typing import Any, Dict
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from smart_core_assistant_painel.app.evolution_sync.models import (
-    EvolutionContact,
-    EvolutionInstance,
-)
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
 )
 from smart_core_assistant_painel.app.clientes.models import Contato
+from smart_core_assistant_painel.app.evolution_sync.models import (
+    EvolutionContact,
+    EvolutionInstance,
+)
 
 
 class TestEvolutionWebhookFlow(TestCase):

@@ -482,6 +482,7 @@ class Atendimento(models.Model):
             try:
                 # 5 minutos = 300 segundos
                 from datetime import timedelta
+
                 from django.utils import timezone
 
                 from smart_core_assistant_painel.app.atendimentos.tasks import (

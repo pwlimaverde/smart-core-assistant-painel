@@ -1,5 +1,6 @@
 import os
 import sys
+
 import django
 
 # Setup environment

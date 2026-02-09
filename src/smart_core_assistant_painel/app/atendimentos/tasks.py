@@ -1,14 +1,13 @@
 from celery import shared_task
 from loguru import logger
 
-from smart_core_assistant_painel.app.tenants.celery import TenantTask
-
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
     Mensagem,
     TipoMensagem,
     TipoRemetente,
 )
+from smart_core_assistant_painel.app.tenants.celery import TenantTask
 
 
 @shared_task(base=TenantTask)
@@ -27,12 +26,11 @@ def process_contact_response_task(tenant_slug: str, contact_id: int) -> None:
     """
     import time
 
-    from smart_core_assistant_painel.modules.services import SERVICEHUB
-
     # Import local para evitar ciclos com o pacote services
     from smart_core_assistant_painel.app.atendimentos.services import (
         create_orchestrator,
     )
+    from smart_core_assistant_painel.modules.services import SERVICEHUB
 
     try:
         # Aguarda acumulação de mensagens no buffer antes de processar

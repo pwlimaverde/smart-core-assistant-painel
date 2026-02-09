@@ -5,7 +5,9 @@ from unittest.mock import MagicMock, patch
 from smart_core_assistant_painel.modules.ai_engine.features.generate_embeddings.datasource.generate_embeddings_langchain_datasource import (
     GenerateEmbeddingsLangchainDatasource,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.erros import EmbeddingError
+from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
+    EmbeddingError,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     GenerateEmbeddingsParameters,
 )

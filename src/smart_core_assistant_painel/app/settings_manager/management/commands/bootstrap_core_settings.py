@@ -102,7 +102,9 @@ class Command(BaseCommand):
         encrypt_when_flagged: bool = not bool(
             options.get("no_encrypt_when_flagged", False)
         )
-        use_env_override: bool = not bool(options.get("no_env_override", False))
+        use_env_override: bool = not bool(
+            options.get("no_env_override", False)
+        )
 
         repo_root = _find_repo_root(Path(__file__).resolve())
         default_path = (
@@ -120,7 +122,9 @@ class Command(BaseCommand):
             raise CommandError(f"JSON inválido: {e}") from e
 
         if not isinstance(data, list):
-            raise CommandError("Formato inválido: esperado uma lista de itens.")
+            raise CommandError(
+                "Formato inválido: esperado uma lista de itens."
+            )
 
         created = 0
         updated = 0
@@ -197,4 +201,3 @@ class Command(BaseCommand):
             f"{updated} atualizados, {skipped} ignorados."
         )
         self.stdout.write(self.style.SUCCESS(msg))
-

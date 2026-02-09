@@ -8,9 +8,11 @@ from pathlib import Path
 from typing import Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
+
 from smart_core_assistant_painel.modules.services.config.provider import (
     ConfigProvider,
 )
+
 from .unifield_data_services.domain.interface.unified_data_service import (
     UnifiedDataService,
 )

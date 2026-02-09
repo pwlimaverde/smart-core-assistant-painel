@@ -1,7 +1,6 @@
 """Script de debug para verificar estado de vetorização e Celery."""
 
 import os
-import sys
 
 # Configura o ambiente Django
 os.environ.setdefault(

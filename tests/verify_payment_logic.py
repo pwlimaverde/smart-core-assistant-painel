@@ -7,9 +7,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = BASE_DIR / "src"
 sys.path.append(str(SRC_DIR))
 
-import django
 from datetime import date
 from decimal import Decimal
+
+import django
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.config.settings"
@@ -18,11 +19,12 @@ django.setup()
 
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+
 from smart_core_assistant_painel.app.tenants.models import (
-    Tenant,
-    Subscription,
     PaymentRecord,
     Plan,
+    Subscription,
+    Tenant,
 )
 
 

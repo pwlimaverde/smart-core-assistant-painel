@@ -1,9 +1,9 @@
+import json
 import os
 import sys
-import json
+
 import django
 from django.test import RequestFactory
-from django.conf import settings
 
 sys.path.append(os.path.join(os.path.dirname(__file__), "../src"))
 
@@ -14,11 +14,11 @@ os.environ.setdefault(
 )
 django.setup()
 
-from smart_core_assistant_painel.app.evolution_sync.views import webhook
 from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
 )
+from smart_core_assistant_painel.app.evolution_sync.views import webhook
 
 
 def run_test():

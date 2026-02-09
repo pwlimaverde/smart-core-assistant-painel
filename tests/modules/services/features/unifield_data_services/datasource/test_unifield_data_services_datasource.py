@@ -1,13 +1,7 @@
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.clicup_adapter import (
-    ClicupUnifiedDataService,
-)
-from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.trello_adapter import (
-    TrelloUnifiedDataService,
-)
 from smart_core_assistant_painel.modules.services.features.unifield_data_services.datasource.unifield_data_services_datasource import (
     UnifieldDataServicesDatasource,
     _InMemoryUnifiedDataService,

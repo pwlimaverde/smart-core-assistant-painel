@@ -1,8 +1,9 @@
 import os
 import sys
+
 import django
-from django.utils import timezone
 from dateutil.relativedelta import relativedelta
+from django.utils import timezone
 
 # Setup Django
 sys.path.append(os.path.join(os.getcwd(), "src"))
@@ -12,15 +13,16 @@ os.environ.setdefault(
 )
 django.setup()
 
+from django.contrib.auth import get_user_model
+
 from smart_core_assistant_painel.app.tenants.models import (
-    Tenant,
-    Subscription,
     PaymentRecord,
+    Subscription,
+    Tenant,
 )
 from smart_core_assistant_painel.app.tenants.tasks import (
     check_subscription_expirations,
 )
-from django.contrib.auth import get_user_model
 
 User = get_user_model()
 

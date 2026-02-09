@@ -1,8 +1,6 @@
 from django.contrib import admin
 from django.urls import path
 
-from .views.backoffice import RegisterPaymentView
-
 from .models import (
     PaymentRecord,
     Plan,
@@ -13,6 +11,7 @@ from .models import (
     TenantEvolution,
     TenantTrello,
 )
+from .views.backoffice import RegisterPaymentView
 
 
 class PaymentRecordInline(admin.TabularInline):
@@ -251,12 +250,13 @@ class TenantAdmin(admin.ModelAdmin):
 
     @admin.action(description="Gerar e Enviar Código de Acesso")
     def generate_access_code(self, request, queryset):
+        import os
         import secrets
         import ssl
-        import os
-        from django.core.mail import get_connection, EmailMultiAlternatives
-        from django.template.loader import render_to_string
+
         from django.conf import settings
+        from django.core.mail import EmailMultiAlternatives, get_connection
+        from django.template.loader import render_to_string
         from django.utils import timezone
 
         count = 0

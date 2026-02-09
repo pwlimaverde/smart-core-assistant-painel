@@ -1,15 +1,15 @@
 """Tasks para processamento de IA e Embeddings (Treinamento)."""
 
 from celery import shared_task
-from loguru import logger
 from langchain_core.documents import Document
+from loguru import logger
 
+from smart_core_assistant_painel.app.tenants.celery import TenantTask
 from smart_core_assistant_painel.app.treinamento.models import (
     Documento,
     QueryCompose,
     Treinamento,
 )
-from smart_core_assistant_painel.app.tenants.celery import TenantTask
 
 
 def _processar_conteudo_para_chunks(

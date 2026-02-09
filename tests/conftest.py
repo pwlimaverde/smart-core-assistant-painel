@@ -3,10 +3,10 @@
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 import django
 import pytest
-from typing import Any
 
 # Ensure the src directory is in the path
 repo_root = Path(__file__).resolve().parents[1]

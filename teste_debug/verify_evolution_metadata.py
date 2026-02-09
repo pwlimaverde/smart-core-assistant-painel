@@ -1,11 +1,13 @@
 import os
+
 import django
-from django.conf import settings
 
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE", "smart_core_assistant_painel.config.settings"
 )
 django.setup()
+
+from unittest.mock import patch
 
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
@@ -13,16 +15,8 @@ from smart_core_assistant_painel.app.atendimentos.models import (
     TipoMensagem,
     TipoRemetente,
 )
-from smart_core_assistant_painel.app.clientes.models import Contato
-from smart_core_assistant_painel.app.evolution_sync.models import (
-    EvolutionInstance,
-    EvolutionContact,
-)
 from smart_core_assistant_painel.app.atendimentos.services.attendance_orchestrator import (
     AttendanceOrchestrator,
-)
-from smart_core_assistant_painel.app.atendimentos.services.message_analyzer import (
-    MessageAnalyzer,
 )
 from smart_core_assistant_painel.app.atendimentos.services.attendance_structure_manager import (
     AttendanceStructureManager,
@@ -30,7 +24,14 @@ from smart_core_assistant_painel.app.atendimentos.services.attendance_structure_
 from smart_core_assistant_painel.app.atendimentos.services.bot_rules_engine import (
     BotRulesEngine,
 )
-from unittest.mock import MagicMock, patch
+from smart_core_assistant_painel.app.atendimentos.services.message_analyzer import (
+    MessageAnalyzer,
+)
+from smart_core_assistant_painel.app.clientes.models import Contato
+from smart_core_assistant_painel.app.evolution_sync.models import (
+    EvolutionContact,
+    EvolutionInstance,
+)
 
 
 def test_evolution_metadata_optimization():

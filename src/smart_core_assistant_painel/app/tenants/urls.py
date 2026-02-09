@@ -12,10 +12,9 @@ from .views import (
     TenantSignupView,
     TestConnectionView,
     TrelloConfigView,
+    onboarding,
 )
-
-from .views import onboarding
-
+from .views.backoffice import BackofficeDashboardView, RegisterPaymentView
 from .views.invites import (
     activate_account,
     edit_permissions,
@@ -23,8 +22,6 @@ from .views.invites import (
     list_users,
     resend_invite,
 )
-
-from .views.backoffice import BackofficeDashboardView, RegisterPaymentView
 
 app_name = "tenants"
 

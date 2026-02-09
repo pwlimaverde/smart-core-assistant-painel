@@ -2,13 +2,13 @@ from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
+from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
+    AnalisePreviaMensagemLangchainDatasource,
+)
 
 from smart_core_assistant_painel.modules.ai_engine import (
     AnalisePreviaMensagemParameters,
     LlmError,
-)
-from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.datasource.langchain_pydantic.analise_previa_mensagem_langchain_datasource import (
-    AnalisePreviaMensagemLangchainDatasource,
 )
 from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensagem.domain.interface.analise_previa_mensagem import (
     AnalisePreviaMensagem,

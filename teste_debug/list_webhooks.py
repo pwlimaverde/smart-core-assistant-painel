@@ -9,6 +9,7 @@ Após deletar, você pode registrar novamente via painel de configuração.
 """
 
 import sys
+
 import requests
 from decouple import config
 

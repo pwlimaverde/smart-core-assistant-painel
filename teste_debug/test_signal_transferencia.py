@@ -85,7 +85,7 @@ def test_signal_transferencia_humano() -> None:
         # Verifica a última mensagem criada
         ultima_mensagem = atendimento.mensagens.order_by("-timestamp").first()
         if ultima_mensagem and ultima_mensagem.resposta_bot:
-            print(f"\n✅ Mensagem de saudação criada:")
+            print("\n✅ Mensagem de saudação criada:")
             print(f'   "{ultima_mensagem.resposta_bot}"')
 
     except Exception as e:

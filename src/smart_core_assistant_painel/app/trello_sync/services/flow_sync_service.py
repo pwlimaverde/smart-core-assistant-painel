@@ -4,13 +4,13 @@ from decouple import config
 from django.db import router, transaction
 from loguru import logger
 
+from smart_core_assistant_painel.app.operacional.models import (
+    EtapaFluxo,
+    FluxoAtendimento,
+)
 from smart_core_assistant_painel.app.trello_sync.models import (
     TrelloBoard,
     TrelloList,
-)
-from smart_core_assistant_painel.app.operacional.models import (
-    FluxoAtendimento,
-    EtapaFluxo,
 )
 from smart_core_assistant_painel.modules.services import (
     SERVICEHUB,

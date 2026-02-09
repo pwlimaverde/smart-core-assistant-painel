@@ -10,22 +10,12 @@ As tarefas são agendadas pelos sinais em
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, cast
+from typing import Optional
 
 from celery import shared_task
-from decouple import config
 from django.db import models, router, transaction
 from loguru import logger
 
-from smart_core_assistant_painel.app.trello_sync.models import (
-    TrelloBoard,
-    TrelloList,
-)
-from smart_core_assistant_painel.app.trello_sync.services import (
-    FlowSyncService,
-    MemberSyncService,
-    TicketSyncService,
-)
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
 )
@@ -35,20 +25,36 @@ from smart_core_assistant_painel.app.operacional.models import (
     FluxoAtendimento,
     TipoEtapa,
 )
-from smart_core_assistant_painel.modules.services import SERVICEHUB
 from smart_core_assistant_painel.app.tenants.celery import TenantTask
+from smart_core_assistant_painel.app.trello_sync.models import (
+    TrelloBoard,
+    TrelloList,
+)
+from smart_core_assistant_painel.app.trello_sync.services import (
+    FlowSyncService,
+    MemberSyncService,
+    TicketSyncService,
+)
+from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 @shared_task(base=TenantTask)
 def task_fluxo_ensure_board(tenant_slug: str, fluxo_id: int) -> None:
-    """Garante o board Trello para um fluxo.
+    """Garante o board Trello para um fluxo e registra webhook.
 
     Args:
+        tenant_slug: Slug do tenant atual.
         fluxo_id: ID do ``FluxoAtendimento``.
     """
     try:
         fluxo = FluxoAtendimento.objects.get(id=fluxo_id)
         board = FlowSyncService().ensure_board_for_fluxo(fluxo)
+
+        # Comentário: Após criar/garantir o board, registrar webhook se ausente
+        # O webhook precisa ser registrado por BOARD, não por workspace,
+        # para receber eventos de movimentação de cards.
+        if board and not board.webhook_id:
+            _ensure_board_webhook(tenant_slug, board)
 
     except FluxoAtendimento.DoesNotExist:
         logger.warning("Fluxo não encontrado para criar board: {}", fluxo_id)
@@ -294,7 +300,7 @@ def task_process_trello_card_move(
         )
 
         try:
-            trello_card = TrelloCard.objects.get(external_id=card_id)
+            _trello_card = TrelloCard.objects.get(external_id=card_id)
             # atendimento = trello_card.atendimento  # Unused
             lista_dest = TrelloList.objects.filter(
                 external_id=list_after_id
@@ -426,3 +432,108 @@ def task_process_trello_list_update(
 
     except Exception as exc:
         logger.error("Falha ao processar atualização de lista Trello: {}", exc)
+
+
+def _ensure_board_webhook(tenant_slug: str, board: TrelloBoard) -> None:
+    """Registra webhook do Trello para um board específico.
+
+    Comentário: Esta função é chamada após a criação de um board para garantir
+    que o Trello envie eventos de movimentação de cards para o sistema.
+    O webhook é registrado por BOARD (não por workspace) para receber
+    os eventos corretos.
+
+    Args:
+        tenant_slug: Slug do tenant para montar a URL de callback.
+        board: Instância do TrelloBoard para o qual registrar o webhook.
+    """
+    import requests
+    from decouple import config as decouple_config
+
+    from smart_core_assistant_painel.app.tenants.middleware import (
+        get_current_tenant,
+    )
+
+    try:
+        # Obtém configuração do Trello do tenant atual
+        tenant = get_current_tenant()
+        if not tenant:
+            logger.warning(
+                "Tenant não encontrado para registrar webhook do board {}",
+                board.external_id,
+            )
+            return
+
+        trello_config = getattr(tenant, "trello_config", None)
+        if not trello_config or not trello_config.api_key:
+            logger.warning(
+                "Configuração do Trello não encontrada para tenant {}",
+                tenant_slug,
+            )
+            return
+
+        # Monta URL de callback com tenant_slug
+        # Prioridade: variável de ambiente > fallback vazio (não registra)
+        base_url: str = str(
+            decouple_config("TRELLO_WEBHOOK_CALLBACK_URL", default="")
+        ).rstrip("/")
+
+        if not base_url:
+            logger.warning(
+                "TRELLO_WEBHOOK_CALLBACK_URL não configurada. "
+                "Webhook do board {} não será registrado.",
+                board.external_id,
+            )
+            return
+
+        callback_url = f"{base_url}/api/trello_sync/webhook/{tenant_slug}/"
+
+        # Registra webhook na API do Trello
+        # Comentário: O Trello faz um HEAD request para validar a URL antes
+        # de aceitar o registro do webhook.
+        register_url = (
+            f"https://api.trello.com/1/tokens/{trello_config.token}/webhooks/"
+        )
+        payload = {
+            "key": trello_config.api_key,
+            "callbackURL": callback_url,
+            "idModel": board.external_id,  # Registra por BOARD, não workspace!
+            "description": (
+                f"Smart Assistant Webhook (Board) - {tenant_slug} - {board.name}"
+            ),
+        }
+
+        response = requests.post(register_url, json=payload, timeout=30)
+
+        if response.status_code == 200:
+            data = response.json()
+            webhook_id = data.get("id", "")
+
+            # Salva o webhook_id no board
+            board.webhook_id = webhook_id
+            board.save(update_fields=["webhook_id"])
+
+            logger.info(
+                "Webhook registrado para board {}: webhook_id={}",
+                board.external_id,
+                webhook_id,
+            )
+        else:
+            # Log do erro para diagnóstico
+            try:
+                error_detail = response.json()
+            except Exception:
+                error_detail = response.text
+
+            logger.error(
+                "Falha ao registrar webhook do Trello para board {}: {} - {}",
+                board.external_id,
+                response.status_code,
+                error_detail,
+            )
+
+    except Exception as exc:
+        logger.error(
+            "Erro ao registrar webhook para board {}: {}",
+            board.external_id,
+            exc,
+        )

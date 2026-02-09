@@ -1,7 +1,17 @@
 from datetime import datetime
-from typing import Any, override
+from typing import TYPE_CHECKING, Any, override
 
 from django.db import models
+
+if TYPE_CHECKING:
+    from smart_core_assistant_painel.app.atendimentos.models import (
+        Atendimento,
+    )
+    from smart_core_assistant_painel.app.operacional.models import (
+        Atendente,
+        EtapaFluxo,
+        FluxoAtendimento,
+    )
 
 
 class TrelloBoard(models.Model):
@@ -13,12 +23,10 @@ class TrelloBoard(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    fluxo: models.OneToOneField["ui.operacional.FluxoAtendimento"] = (
-        models.OneToOneField(
-            "operacional.FluxoAtendimento",
-            on_delete=models.CASCADE,
-            related_name="trello_board",
-        )
+    fluxo: models.OneToOneField["FluxoAtendimento"] = models.OneToOneField(
+        "operacional.FluxoAtendimento",
+        on_delete=models.CASCADE,
+        related_name="trello_board",
     )
     external_id: models.CharField[str] = models.CharField(
         max_length=64, unique=True
@@ -33,6 +41,12 @@ class TrelloBoard(models.Model):
     )
     metadata: models.JSONField[dict[str, Any]] = models.JSONField(
         default=dict, blank=True
+    )
+    # Webhook registrado para este board específico
+    # Comentário: Armazena o ID do webhook do Trello para receber eventos
+    # de movimentação de cards. Cada board tem seu próprio webhook.
+    webhook_id: models.CharField[str] = models.CharField(
+        max_length=64, blank=True, default=""
     )
 
     class Meta:
@@ -51,12 +65,10 @@ class TrelloList(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    etapa: models.OneToOneField["ui.operacional.EtapaFluxo"] = (
-        models.OneToOneField(
-            "operacional.EtapaFluxo",
-            on_delete=models.CASCADE,
-            related_name="trello_list",
-        )
+    etapa: models.OneToOneField["EtapaFluxo"] = models.OneToOneField(
+        "operacional.EtapaFluxo",
+        on_delete=models.CASCADE,
+        related_name="trello_list",
     )
     board: models.ForeignKey[TrelloBoard] = models.ForeignKey(
         TrelloBoard,
@@ -88,12 +100,10 @@ class TrelloMember(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    atendente: models.OneToOneField["ui.operacional.Atendente"] = (
-        models.OneToOneField(
-            "operacional.Atendente",
-            on_delete=models.CASCADE,
-            related_name="trello_member",
-        )
+    atendente: models.OneToOneField["Atendente"] = models.OneToOneField(
+        "operacional.Atendente",
+        on_delete=models.CASCADE,
+        related_name="trello_member",
     )
     external_id: models.CharField[str | None] = models.CharField(
         max_length=64, unique=True, blank=True, null=True
@@ -129,12 +139,10 @@ class TrelloCard(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    atendimento: models.OneToOneField["ui.atendimentos.Atendimento"] = (
-        models.OneToOneField(
-            "atendimentos.Atendimento",
-            on_delete=models.CASCADE,
-            related_name="trello_card",
-        )
+    atendimento: models.OneToOneField["Atendimento"] = models.OneToOneField(
+        "atendimentos.Atendimento",
+        on_delete=models.CASCADE,
+        related_name="trello_card",
     )
     list_sync: models.ForeignKey[TrelloList] = models.ForeignKey(
         TrelloList,

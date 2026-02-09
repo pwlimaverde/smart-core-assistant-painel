@@ -18,15 +18,31 @@ def process_contact_response_task(tenant_slug: str, contact_id: int) -> None:
     Esta função é o ponto de entrada para o agendamento de tarefas.
     Ela instancia o orquestrador e delega o processamento.
 
+    O delay de buffer (TIME_CACHE) é feito via time.sleep() ao invés
+    de countdown do Celery, pois countdown + acks_late + Redis causa
+    tasks travadas no scheduler ETA do worker.
+
     Args:
         contact_id: ID do contato a ser processado.
     """
+    import time
+
+    from smart_core_assistant_painel.modules.services import SERVICEHUB
+
     # Import local para evitar ciclos com o pacote services
     from smart_core_assistant_painel.app.atendimentos.services import (
         create_orchestrator,
     )
 
     try:
+        # Aguarda acumulação de mensagens no buffer antes de processar
+        buffer_delay = SERVICEHUB.TIME_CACHE or 5
+        logger.info(
+            f"Aguardando {buffer_delay}s para acumular mensagens "
+            f"do contato {contact_id}"
+        )
+        time.sleep(buffer_delay)
+
         logger.info(
             f"Iniciando task de processamento para contato {contact_id}"
         )

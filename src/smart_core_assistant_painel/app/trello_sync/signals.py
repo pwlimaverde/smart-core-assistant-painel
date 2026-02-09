@@ -219,14 +219,18 @@ def atendimento_etapa_updated_move_card(
 ) -> None:
     """Move o card para a lista da etapa quando a etapa muda.
 
-    Comentário: sempre agenda a task de movimento pós-update; a task
-    valida se há mudança efetiva de lista antes de chamar a API.
+    Comentário: se a etapa foi definida pela primeira vez (old_etapa_id era
+    None e agora tem valor), garante a criação do card. Caso contrário,
+    agenda a task de movimento; a task valida se há mudança efetiva de lista
+    antes de chamar a API.
     """
     if created:
         return
     try:
         old_etapa_id = getattr(instance, "_old_etapa_id", None)
-        if old_etapa_id == getattr(instance, "etapa_atual_id", None):
+        new_etapa_id = getattr(instance, "etapa_atual_id", None)
+
+        if old_etapa_id == new_etapa_id:
             # Comentário: sem alteração efetiva de etapa, evita agendar.
             return
 
@@ -234,11 +238,26 @@ def atendimento_etapa_updated_move_card(
         if getattr(instance, "_syncing_from_trello", False):
             return
 
-        task_atendimento_move_to_etapa_list.delay(
-            get_current_tenant_slug(), instance.id
-        )
+        # Comentário (PT-BR): se a etapa foi definida pela primeira vez
+        # (era None e agora tem valor), o card pode não existir ainda.
+        # Neste caso, garantimos a criação do card antes de mover.
+        if old_etapa_id is None and new_etapa_id is not None:
+            # Etapa foi definida pela primeira vez - garantir criação do card
+            task_atendimento_ensure_card.delay(
+                get_current_tenant_slug(), instance.id
+            )
+            logger.info(
+                "Etapa definida pela primeira vez para atendimento {}. "
+                "Agendando criação de card.",
+                instance.id,
+            )
+        else:
+            # Etapa mudou (já existia) - apenas mover o card
+            task_atendimento_move_to_etapa_list.delay(
+                get_current_tenant_slug(), instance.id
+            )
     except Exception as exc:
-        logger.warning("Falha ao mover card Trello: {}", exc)
+        logger.warning("Falha ao mover/criar card Trello: {}", exc)
 
 
 @receiver(post_save, sender=Atendimento)

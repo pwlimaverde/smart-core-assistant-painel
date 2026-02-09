@@ -707,7 +707,7 @@ class Atendimento(models.Model):
 
         # Se a etapa inicial for FILA, alinhar status de atendimento
         status_alterado = False
-        if getattr(etapa_inicial, "tipo_etapa", None) == TipoEtapa.FILA:
+        if getattr(etapa_inicial, "tipo_etapa", None) == TipoEtapa.FILA.value:
             if self.status != StatusAtendimento.FILA:
                 self.status = StatusAtendimento.FILA
                 status_alterado = True

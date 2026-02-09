@@ -309,7 +309,7 @@ def task_process_trello_card_move(
             if lista_dest and lista_dest.etapa:
                 etapa = lista_dest.etapa
                 # Se for etapa de finalização, marcar check no card?
-                if etapa.tipo_etapa == TipoEtapa.FINALIZACAO:
+                if etapa.tipo_etapa == TipoEtapa.FINALIZACAO.value:
                     service.client.update_item(
                         data_source_id=lista_dest.external_id,
                         item_id=card_id,

@@ -880,11 +880,11 @@ class TicketSyncService:
         tipo_etapa = getattr(etapa, "tipo_etapa", None)
         novo_status = None
 
-        if tipo_etapa == TipoEtapa.FILA:
+        if tipo_etapa == TipoEtapa.FILA.value:
             novo_status = StatusAtendimento.FILA
-        elif tipo_etapa == TipoEtapa.TRABALHO:
+        elif tipo_etapa == TipoEtapa.TRABALHO.value:
             novo_status = StatusAtendimento.EM_ATENDIMENTO
-        elif tipo_etapa == TipoEtapa.ESPERA:
+        elif tipo_etapa == TipoEtapa.ESPERA.value:
             novo_status = StatusAtendimento.PENDENCIA
         # FINALIZACAO é tratado separadamente para chamar finalizar_atendimento
 
@@ -979,8 +979,8 @@ class TicketSyncService:
                 # --- Lógica de Atribuição de Atendente (FILA -> TRABALHO) ---
                 if (
                     etapa_anterior
-                    and etapa_anterior.tipo_etapa == TipoEtapa.FILA
-                    and nova_etapa.tipo_etapa == TipoEtapa.TRABALHO
+                    and etapa_anterior.tipo_etapa == TipoEtapa.FILA.value
+                    and nova_etapa.tipo_etapa == TipoEtapa.TRABALHO.value
                     and member_creator_id
                 ):
                     try:
@@ -1009,7 +1009,7 @@ class TicketSyncService:
                         )
 
                 # --- Lógica de Finalização (→ FINALIZACAO) ---
-                elif nova_etapa.tipo_etapa == TipoEtapa.FINALIZACAO:
+                elif nova_etapa.tipo_etapa == TipoEtapa.FINALIZACAO.value:
                     try:
                         logger.info(
                             "Movimento para etapa 'Finalização' detectado no Trello. "

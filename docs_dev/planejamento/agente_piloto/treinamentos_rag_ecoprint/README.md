@@ -4,8 +4,15 @@ Esta pasta contem guias tecnicos segmentados por produto/servico da Ecoprint, pe
 
 Regras de conteudo:
 - Foco em conhecimento do produto: definicoes, variacoes, materiais, acabamentos, especificacoes de arquivo e termos tecnicos.
-- Sem instrucoes de comportamento do agente (sem "o agente deve...").
+- Evitar instrucoes longas de comportamento do agente (sem "questionarios" e sem fluxos que incentivem insistencia).
 - Sempre que existir dependencia de instalacao/visita tecnica/maquina aplicadora, o texto descreve a dependencia como caracteristica do produto/servico.
+
+Observacao:
+- Os arquivos em `intents/` podem conter "Comportamento" para orientar roteamento/coleta, mas devem respeitar:
+  - pergunta unica para coleta
+  - follow-up unico
+  - nao pedir telefone do cliente
+  - transferir assim que tiver o minimo
 
 ## Indice
 

@@ -443,12 +443,18 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     "não possui fluxo ativo."
                 )
 
+            # Reabilita o bot ao trocar de contexto de instância,
+            # permitindo que processe a interação e detecte
+            # transferência
+            attendance.bot_pode_atender = True
+
             attendance.save(
                 update_fields=[
                     "departamento",
                     "atendente_humano",
                     "fluxo_atendimento",
                     "etapa_atual",
+                    "bot_pode_atender",
                 ]
             )
 
@@ -573,58 +579,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
 
             logger.info(
-                f"DEBUG: message_id={message.id}, has_known_intent={has_known_intent}"
+                f"message_id={message.id}, "
+                f"has_known_intent={has_known_intent}, "
+                f"intent_detectado={message.intent_detectado}"
             )
-            logger.info(f"DEBUG: intent_detectado={message.intent_detectado}")
-
-            # --- FAST-PATH: Roteamento Proativo ---
-            # Se detectou intent crítico (falar_com_humano, etc), transfere
-            # imediatamente sem chamar RAG/LLM para economizar tokens.
-            critical_intents = {
-                "falar_com_humano",
-                "transferir_atendimento",
-                "transferencia_atendente",
-                "atendente_humano",
-                "suporte_humano",
-            }
-            detected_tags = {
-                list(intent.keys())[0].lower()
-                for intent in (message.intent_detectado or [])
-            }
-            critical_match = detected_tags & critical_intents
-
-            if critical_match:
-                logger.info(
-                    f"FAST-PATH: Intent crítico detectado: {critical_match}. "
-                    "Transferindo imediatamente."
-                )
-                # Resposta de fast-path
-                fast_path_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
-                message.registrar_resposta_bot(
-                    resposta=fast_path_msg,
-                    confianca=1.0,  # Alta confiança - intent explícito
-                )
-                # Obtém fluxos e inicia transferência
-                fluxos_disponiveis = (
-                    self._structure_manager.get_available_flows()
-                )
-                if fluxos_disponiveis:
-                    fluxo = next(iter(fluxos_disponiveis.keys()))
-                    logger.info(f"FAST-PATH: Transferindo para fluxo {fluxo}")
-                    try:
-                        attendance.apply_flow_by_description(fluxo)
-                    except Exception as exc:
-                        logger.error(
-                            f"FAST-PATH: Falha ao transferir "
-                            f"para '{fluxo}': {exc}"
-                        )
-                else:
-                    # Atualiza status sem transferência
-                    self._structure_manager._update_attendance_status_ongoing(
-                        attendance
-                    )
-                return  # Sai sem chamar LLM
-            # --- FIM FAST-PATH ---
 
             # Carrega histórico
             historico_atendimento = attendance.carregar_historico_mensagens(
@@ -818,7 +776,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             f"len={len(result.resposta_bot or '')}"
         )
 
-        # Transfere PRIMEIRO se necessário (evita mudança dupla de etapa)
+        # Transfere se necessário — apply_flow_by_description já
+        # desabilita bot_pode_atender e seta etapa inicial do fluxo
         if result.transferir_atendimento and result.fluxo_transferencia:
             try:
                 attendance.apply_flow_by_description(
@@ -828,16 +787,17 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     f"Atendimento {attendance.id} transferido para "
                     f"fluxo '{result.fluxo_transferencia}'"
                 )
+                return  # Transferência concluída, não atualizar status
             except Exception as exc:
                 logger.error(
                     f"Falha ao transferir atendimento {attendance.id} "
                     f"para '{result.fluxo_transferencia}': {exc}"
                 )
-        else:
-            # Só atualiza status para "Em Atendimento" se NÃO transferiu
-            self._structure_manager._update_attendance_status_ongoing(
-                attendance
-            )
+
+        # Fallback: atualiza status se NÃO transferiu ou se falhou
+        self._structure_manager._update_attendance_status_ongoing(
+            attendance
+        )
 
     def _register_fallback_response(
         self, message: "Mensagem", attendance: "Atendimento"

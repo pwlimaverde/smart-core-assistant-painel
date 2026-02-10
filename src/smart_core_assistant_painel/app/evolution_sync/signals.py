@@ -18,6 +18,49 @@ from smart_core_assistant_painel.app.tenants.middleware import (
 from smart_core_assistant_painel.app.tenants.models import TenantEvolution
 
 
+def _sanitize_bot_agent_name(value: str) -> str:
+    """Normaliza o nome do agente do bot para uso no prefixo do WhatsApp."""
+    name = str(value or "")
+    name = name.replace("\r", " ").replace("\n", " ").strip()
+    name = name.replace("*", "")
+    name = name.rstrip(":").strip()
+    name = " ".join(name.split())
+    return name
+
+
+def _resolve_bot_agent_name(inst: EvolutionInstance) -> str:
+    """Resolve o nome do agente do bot a partir do tenant associado."""
+    try:
+        # Import local para evitar custo/ciclos no import-time.
+        from smart_core_assistant_painel.app.tenants.models import (  # noqa: PLC0415
+            TenantConfig,
+        )
+
+        tenant_id = getattr(inst, "tenant_id", None)
+        if tenant_id:
+            name = (
+                TenantConfig.objects.filter(tenant_id=tenant_id)
+                .values_list("bot_agent_name", flat=True)
+                .first()
+                or ""
+            )
+            return _sanitize_bot_agent_name(str(name))
+
+        tenant = get_current_tenant()
+        if tenant:
+            name = (
+                TenantConfig.objects.filter(tenant=tenant)
+                .values_list("bot_agent_name", flat=True)
+                .first()
+                or ""
+            )
+            return _sanitize_bot_agent_name(str(name))
+
+        return ""
+    except Exception:
+        return ""
+
+
 @receiver(pre_save, sender=Mensagem)
 def _on_message_pre_save(
     sender: type[Mensagem], instance: Mensagem, **kwargs: Any
@@ -136,6 +179,18 @@ def _on_message_saved(
 
         if not inst:
             return
+
+        # Prefixo identificador do bot (por tenant) em negrito.
+        agent_name = _resolve_bot_agent_name(inst)
+        if agent_name:
+            prefix = f"*{agent_name}:* "
+            if text.startswith(prefix) or text.startswith(f"*{agent_name}:*"):
+                pass
+            elif text.startswith(f"{agent_name}:"):
+                remainder = text[len(f"{agent_name}:") :].lstrip()
+                text = f"{prefix}{remainder}"
+            else:
+                text = f"{prefix}{text}"
 
         instance_name: str = str(
             (inst.name or inst.phone_number or inst.instance_id or "")

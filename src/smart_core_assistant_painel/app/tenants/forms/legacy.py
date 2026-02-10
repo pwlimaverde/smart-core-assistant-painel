@@ -157,6 +157,7 @@ class TenantConfigForm(forms.ModelForm):
         fields = [
             "dados_empresa",
             "persona_bot",
+            "bot_agent_name",
             "msg_fallback",
             "msg_sem_info",
             "msg_transferencia",
@@ -180,6 +181,11 @@ class TenantConfigForm(forms.ModelForm):
                         "Seu tom é profissional mas amigável. Você responde "
                         "com clareza e objetividade..."
                     ),
+                }
+            ),
+            "bot_agent_name": forms.TextInput(
+                attrs={
+                    "placeholder": "Íris",
                 }
             ),
             "msg_fallback": forms.TextInput(
@@ -224,6 +230,18 @@ class TenantConfigForm(forms.ModelForm):
             raise forms.ValidationError(
                 f"JSON inválido: {e}. Verifique a sintaxe do JSON."
             )
+
+    def clean_bot_agent_name(self) -> str:
+        """Normaliza o nome do agente do bot para uso em prefixo do WhatsApp."""
+        value = str(self.cleaned_data.get("bot_agent_name", "") or "")
+        value = value.replace("\r", " ").replace("\n", " ").strip()
+        # Evita quebrar formatação do WhatsApp (*negrito*)
+        value = value.replace("*", "")
+        # Evita duplicar ':' no prefixo se o usuário digitar "Íris:"
+        value = value.rstrip(":").strip()
+        # Normaliza múltiplos espaços
+        value = " ".join(value.split())
+        return value
 
     def save(self, commit=True):
         instance = super().save(commit=False)

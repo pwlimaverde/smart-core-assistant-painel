@@ -3,11 +3,7 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-(vazio)
-
-## Archived
-1. [Auditoria Navegacao Ui](./archive/auditoria-navegacao-ui.md)
-2. [Sprint Features Q1/2026 - Teste Treinamento, Refatoração, Whitelist](./archive/sprint-features-q1-2026.md)
+1. [Nome do Agente do Bot no WhatsApp (Por Tenant)](./nome-agente-bot-whatsapp.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

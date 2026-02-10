@@ -100,19 +100,36 @@
                     </div>
                 </div>
 
-                <div class="ml-14 space-y-2">
-                    <label for="{{ form.persona_bot.id_for_label }}" class="block text-sm font-medium text-stone-700">
-                        {{ form.persona_bot.label }}
-                    </label>
-                    <div class="mt-1">
-                        {{ form.persona_bot }}
+                <div class="ml-14 space-y-6">
+                    <div class="space-y-2">
+                        <label for="{{ form.persona_bot.id_for_label }}"
+                            class="block text-sm font-medium text-stone-700">
+                            {{ form.persona_bot.label }}
+                        </label>
+                        <div class="mt-1">
+                            {{ form.persona_bot }}
+                        </div>
+                        {% if form.persona_bot.help_text %}
+                        <p class="text-xs text-stone-500">{{ form.persona_bot.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.persona_bot.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
                     </div>
-                    {% if form.persona_bot.help_text %}
-                    <p class="text-xs text-stone-500">{{ form.persona_bot.help_text }}</p>
-                    {% endif %}
-                    {% for error in form.persona_bot.errors %}
-                    <p class="text-xs text-red-600">{{ error }}</p>
-                    {% endfor %}
+
+                    <div class="space-y-2">
+                        <label for="{{ form.bot_agent_name.id_for_label }}"
+                            class="block text-sm font-medium text-stone-700">
+                            {{ form.bot_agent_name.label }}
+                        </label>
+                        {{ form.bot_agent_name }}
+                        {% if form.bot_agent_name.help_text %}
+                        <p class="text-xs text-stone-500">{{ form.bot_agent_name.help_text }}</p>
+                        {% endif %}
+                        {% for error in form.bot_agent_name.errors %}
+                        <p class="text-xs text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
 

@@ -195,6 +195,18 @@ class TenantConfig(models.Model):
         ),
     )
 
+    # Nome do agente exibido no WhatsApp (apresentação do bot)
+    bot_agent_name = models.CharField(
+        max_length=80,
+        blank=True,
+        default="",
+        verbose_name="Nome do Agente do Bot",
+        help_text=(
+            "Nome exibido no WhatsApp antes das mensagens do bot. "
+            "Ex: *Íris:* Olá, como posso ajudar hoje?"
+        ),
+    )
+
     # ===== MENSAGENS AUTOMÁTICAS =====
 
     msg_fallback = models.CharField(

@@ -655,15 +655,12 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     resposta=fast_msg,
                     confianca=1.0,
                 )
-                try:
-                    attendance.apply_flow_by_description(fluxo)
-                    logger.info(
-                        f"Atendimento {attendance.id} "
-                        f"transferido para '{fluxo}'"
-                    )
-                except Exception as exc:
+                ok = self._structure_manager.apply_transfer_flow(
+                    attendance, fluxo
+                )
+                if not ok:
                     logger.error(
-                        f"Falha na transferência direta para '{fluxo}': {exc}"
+                        f"Falha na transferência direta para '{fluxo}'"
                     )
                     self._structure_manager._update_attendance_status_ongoing(
                         attendance
@@ -721,22 +718,22 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     "suporte_humano",
                 }
                 if detected & fallback_intents:
-                    fluxos = self._structure_manager.get_available_flows()
-                    if fluxos:
-                        fluxo = next(iter(fluxos.keys()))
-                        logger.info(
-                            f"Fallback: tentando transferir para '{fluxo}'"
-                        )
-                        fast_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
-                        message.registrar_resposta_bot(
-                            resposta=fast_msg,
-                            confianca=0.8,
-                        )
-                        attendance.apply_flow_by_description(fluxo)
+                    fast_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                    message.registrar_resposta_bot(
+                        resposta=fast_msg,
+                        confianca=0.8,
+                    )
+                    ok = self._structure_manager.apply_transfer_flow(
+                        attendance
+                    )
+                    if ok:
                         logger.info(
                             f"Fallback: atendimento "
-                            f"{attendance.id} transferido"
+                            f"{attendance.id} "
+                            f"transferido"
                         )
+                    else:
+                        logger.error("Fallback: nenhum fluxo disponível")
             except Exception as fallback_err:
                 logger.error(
                     f"Fallback de transferência também falhou: {fallback_err}"
@@ -855,25 +852,28 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             f"len={len(result.resposta_bot or '')}"
         )
 
-        # Transfere se necessário — apply_flow_by_description já
-        # desabilita bot_pode_atender e seta etapa inicial do fluxo
+        # Transfere se necessário — apply_transfer_flow já
+        # desabilita bot_pode_atender e seta etapa inicial
         if result.transferir_atendimento and result.fluxo_transferencia:
-            try:
-                attendance.apply_flow_by_description(
-                    result.fluxo_transferencia
-                )
+            ok = self._structure_manager.apply_transfer_flow(
+                attendance,
+                result.fluxo_transferencia,
+            )
+            if ok:
                 logger.info(
-                    f"Atendimento {attendance.id} transferido para "
-                    f"fluxo '{result.fluxo_transferencia}'"
+                    f"Atendimento {attendance.id} "
+                    f"transferido para "
+                    f"'{result.fluxo_transferencia}'"
                 )
-                return  # Transferência concluída, não atualizar status
-            except Exception as exc:
+                return  # Transferência concluída
+            else:
                 logger.error(
-                    f"Falha ao transferir atendimento {attendance.id} "
-                    f"para '{result.fluxo_transferencia}': {exc}"
+                    f"Falha ao transferir "
+                    f"{attendance.id} para "
+                    f"'{result.fluxo_transferencia}'"
                 )
 
-        # Fallback: atualiza status se NÃO transferiu ou se falhou
+        # Fallback: atualiza status se NÃO transferiu
         self._structure_manager._update_attendance_status_ongoing(attendance)
 
     def _register_fallback_response(

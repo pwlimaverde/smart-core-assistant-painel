@@ -143,6 +143,102 @@ class AttendanceStructureManager(AttendanceStructureManagerInterface):
             )
             return {}
 
+    def apply_transfer_flow(
+        self,
+        attendance: "Atendimento",
+        flow_description: str | None = None,
+    ) -> bool:
+        """Aplica transferência de fluxo diretamente no atendimento.
+
+        Busca o fluxo correspondente e aplica diretamente,
+        sem depender do parsing de strings com hifens.
+        Se flow_description for None, usa o primeiro fluxo
+        disponível.
+
+        Args:
+            attendance: Atendimento a ser transferido.
+            flow_description: Descrição do fluxo no formato
+                "nome_fluxo - nome_departamento" (opcional).
+
+        Returns:
+            True se a transferência foi aplicada com sucesso.
+        """
+        from smart_core_assistant_painel.app.atendimentos.models import (
+            StatusAtendimento,
+        )
+        from smart_core_assistant_painel.app.operacional.models import (
+            FluxoAtendimento,
+            TipoEtapa,
+        )
+
+        # Busca fluxos disponíveis (exceto o padrão)
+        fluxos_queryset = (
+            FluxoAtendimento.objects.filter(ativo=True)
+            .exclude(
+                nome="Atendimento Inicial",
+                departamento__nome="Atendimento",
+            )
+            .select_related("departamento")
+            .order_by("departamento__nome", "nome")
+        )
+
+        fluxo = None
+        if flow_description:
+            # Tenta localizar pelo nome composto
+            for f in fluxos_queryset:
+                chave = f"{f.nome} - {f.departamento.nome}"
+                if chave == flow_description:
+                    fluxo = f
+                    break
+
+        # Se não encontrou por descrição, usa o primeiro
+        if not fluxo:
+            fluxo = fluxos_queryset.first()
+
+        if not fluxo:
+            logger.warning("Nenhum fluxo disponível para transferência")
+            return False
+
+        # Busca etapa inicial (prioriza FILA)
+        etapa_inicial = (
+            fluxo.get_etapa_inicial() or fluxo.etapas.order_by("ordem").first()
+        )
+
+        if not etapa_inicial:
+            logger.error(
+                f"Fluxo '{fluxo.nome}' não possui etapas configuradas"
+            )
+            return False
+
+        # Aplica transferência diretamente
+        attendance.departamento = fluxo.departamento
+        attendance.fluxo_atendimento = fluxo
+        attendance.etapa_atual = etapa_inicial
+        attendance.bot_pode_atender = False
+
+        # Se a etapa inicial for FILA, ajusta o status
+        campos = [
+            "departamento",
+            "fluxo_atendimento",
+            "etapa_atual",
+            "bot_pode_atender",
+        ]
+
+        tipo_etapa = getattr(etapa_inicial, "tipo_etapa", None)
+        if tipo_etapa == TipoEtapa.FILA.value:
+            if attendance.status != StatusAtendimento.FILA:
+                attendance.status = StatusAtendimento.FILA
+                campos.append("status")
+
+        attendance.save(update_fields=campos)
+
+        logger.info(
+            f"Atendimento {attendance.id} transferido "
+            f"para fluxo '{fluxo.nome}' no "
+            f"departamento '{fluxo.departamento.nome}'"
+        )
+        return True
+
     def configure_default_attendance(self, attendance: "Atendimento") -> None:
         """Configura um atendimento para usar a estrutura padrão.
 

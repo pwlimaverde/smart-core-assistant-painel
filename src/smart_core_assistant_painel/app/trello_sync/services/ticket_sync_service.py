@@ -886,11 +886,31 @@ class TicketSyncService:
             novo_status = StatusAtendimento.EM_ATENDIMENTO
         elif tipo_etapa == TipoEtapa.ESPERA.value:
             novo_status = StatusAtendimento.PENDENCIA
-        # FINALIZACAO é tratado separadamente para chamar finalizar_atendimento
+        elif tipo_etapa == TipoEtapa.FINALIZACAO.value:
+            # Lógica para distinguir Resolvido/Cancelado pelo nome da etapa
+            nome_lower = etapa.nome.lower()
+            if "cancel" in nome_lower:
+                novo_status = StatusAtendimento.CANCELADO
+            else:
+                novo_status = StatusAtendimento.RESOLVIDO
 
         if novo_status and atendimento.status != novo_status:
-            atendimento.status = novo_status
-            atendimento.save(update_fields=["status"])
+            # Se for status finalizador, usar método específico para garantir data_fim
+            if novo_status in (
+                StatusAtendimento.RESOLVIDO,
+                StatusAtendimento.CANCELADO,
+            ):
+                # Não solicitar feedback automático via Trello move
+                atendimento.finalizar_atendimento(
+                    novo_status=novo_status, solicitar_feedback=False
+                )
+            else:
+                # Usa change_status para manter histórico e consistência
+                atendimento.change_status(
+                    novo_status=novo_status,
+                    observacao="Sincronização automática via Trello",
+                )
+
             logger.info(
                 "Status do atendimento {} sincronizado para {} via Trello",
                 atendimento.id,

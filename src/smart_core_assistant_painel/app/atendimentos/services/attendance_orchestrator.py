@@ -584,6 +584,21 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 f"intent_detectado={message.intent_detectado}"
             )
 
+            # Detecta intents de transferência já identificados
+            # pela análise prévia (antes de chamar a LLM)
+            transfer_intents = {
+                "falar_com_humano",
+                "transferir_atendimento",
+                "transferencia_atendente",
+                "atendente_humano",
+                "suporte_humano",
+            }
+            detected_tags = {
+                list(intent.keys())[0].lower()
+                for intent in (message.intent_detectado or [])
+            }
+            is_transfer = bool(detected_tags & transfer_intents)
+
             # Carrega histórico
             historico_atendimento = attendance.carregar_historico_mensagens(
                 excluir_mensagem_id=message.id
@@ -612,18 +627,51 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 message.metadados["rag_sources"] = rag_doc_ids
                 message.save(update_fields=["metadados"])
                 logger.info(
-                    f"RAG: rag_sources={rag_doc_ids} salvos em mensagem {message.id}"
+                    f"RAG: rag_sources={rag_doc_ids} "
+                    f"salvos em mensagem {message.id}"
                 )
 
             logger.info(
-                f"DEBUG: dados_treinamento len={len(dados_treinamento)}, "
+                f"dados_treinamento len="
+                f"{len(dados_treinamento)}, "
                 f"rag_doc_ids={rag_doc_ids}"
             )
 
             # Obtém fluxos disponíveis
             fluxos_disponiveis = self._structure_manager.get_available_flows()
 
-            # Verifica se há histórico de conversa (diálogo em andamento)
+            # --- Transferência direta (sem LLM) ---
+            # Se o intent de transferência já foi detectado e há
+            # apenas 1 fluxo disponível, executa diretamente sem
+            # depender da LLM para determinar o fluxo.
+            if is_transfer and len(fluxos_disponiveis) == 1:
+                fluxo = next(iter(fluxos_disponiveis.keys()))
+                logger.info(
+                    f"Transferência direta: intent "
+                    f"detectado, fluxo único '{fluxo}'"
+                )
+                fast_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                message.registrar_resposta_bot(
+                    resposta=fast_msg,
+                    confianca=1.0,
+                )
+                try:
+                    attendance.apply_flow_by_description(fluxo)
+                    logger.info(
+                        f"Atendimento {attendance.id} "
+                        f"transferido para '{fluxo}'"
+                    )
+                except Exception as exc:
+                    logger.error(
+                        f"Falha na transferência direta para '{fluxo}': {exc}"
+                    )
+                    self._structure_manager._update_attendance_status_ongoing(
+                        attendance
+                    )
+                return
+            # --- Fim transferência direta ---
+
+            # Verifica se há histórico de conversa
             has_active_history = (
                 len(historico_atendimento.get("chat_history", [])) > 0
             )
@@ -631,17 +679,14 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Decide se deve chamar IA
             has_training_data = len(dados_treinamento.strip()) > 0
 
-            # A IA deve ser chamada se:
-            # 1. Há uma intenção conhecida detectada OU
-            # 2. Há dados de treinamento relevantes (RAG) OU
-            # 3. Há um histórico de conversa ativo (diálogo em andamento)
             should_call_ai = (
                 has_active_history or has_known_intent or has_training_data
             )
 
             logger.info(
-                f"DEBUG: should_call_ai={should_call_ai} "
-                f"(history={has_active_history}, intent={has_known_intent}, "
+                f"should_call_ai={should_call_ai} "
+                f"(history={has_active_history}, "
+                f"intent={has_known_intent}, "
                 f"rag={has_training_data})"
             )
 
@@ -655,13 +700,47 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     fluxos_disponiveis,
                 )
             else:
-                logger.warning(
-                    f"DEBUG: Fallback triggered for message {message.id}"
-                )
+                logger.warning(f"Fallback triggered for message {message.id}")
                 self._register_fallback_response(message, attendance)
 
         except Exception as e:
             logger.error(f"Erro ao gerar resposta: {e}")
+
+            # Fallback: se a LLM falhou mas o intent de
+            # transferência já foi detectado, tenta transferir
+            try:
+                detected = {
+                    list(i.keys())[0].lower()
+                    for i in (message.intent_detectado or [])
+                }
+                fallback_intents = {
+                    "falar_com_humano",
+                    "transferir_atendimento",
+                    "transferencia_atendente",
+                    "atendente_humano",
+                    "suporte_humano",
+                }
+                if detected & fallback_intents:
+                    fluxos = self._structure_manager.get_available_flows()
+                    if fluxos:
+                        fluxo = next(iter(fluxos.keys()))
+                        logger.info(
+                            f"Fallback: tentando transferir para '{fluxo}'"
+                        )
+                        fast_msg = SERVICEHUB.MSG_TRANSFERENCIA_GENERICA
+                        message.registrar_resposta_bot(
+                            resposta=fast_msg,
+                            confianca=0.8,
+                        )
+                        attendance.apply_flow_by_description(fluxo)
+                        logger.info(
+                            f"Fallback: atendimento "
+                            f"{attendance.id} transferido"
+                        )
+            except Exception as fallback_err:
+                logger.error(
+                    f"Fallback de transferência também falhou: {fallback_err}"
+                )
 
     def _build_intent_prompt(self, message: "Mensagem") -> tuple[str, bool]:
         """Constrói prompt baseado em intenções detectadas.
@@ -795,9 +874,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 )
 
         # Fallback: atualiza status se NÃO transferiu ou se falhou
-        self._structure_manager._update_attendance_status_ongoing(
-            attendance
-        )
+        self._structure_manager._update_attendance_status_ongoing(attendance)
 
     def _register_fallback_response(
         self, message: "Mensagem", attendance: "Atendimento"

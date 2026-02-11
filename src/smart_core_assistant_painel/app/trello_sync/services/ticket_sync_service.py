@@ -932,9 +932,9 @@ class TicketSyncService:
             card = TrelloCard.objects.select_related("atendimento").get(
                 external_id=card_id
             )
-            nova_lista = TrelloList.objects.select_related("etapa").get(
-                external_id=list_after_id
-            )
+            nova_lista = TrelloList.objects.select_related(
+                "etapa__fluxo__departamento"
+            ).get(external_id=list_after_id)
 
             atendimento = card.atendimento
             nova_etapa = nova_lista.etapa
@@ -983,6 +983,28 @@ class TicketSyncService:
 
                 # Flag para indicar origem externa (se necessário nos signals)
                 atendimento._syncing_from_trello = True
+
+                # Comentário (PT-BR): em movimentação entre quadros, além da
+                # etapa, o atendimento precisa refletir também o novo fluxo e
+                # departamento para manter consistência de domínio.
+                novo_fluxo = nova_etapa.fluxo
+                novo_departamento = novo_fluxo.departamento
+                if (
+                    atendimento.fluxo_atendimento_id != novo_fluxo.id
+                    or atendimento.departamento_id != novo_departamento.id
+                ):
+                    Atendimento.objects.filter(id=atendimento.id).update(
+                        fluxo_atendimento_id=novo_fluxo.id,
+                        departamento_id=novo_departamento.id,
+                    )
+                    atendimento.fluxo_atendimento_id = novo_fluxo.id
+                    atendimento.departamento_id = novo_departamento.id
+                    logger.info(
+                        "Atendimento {} realinhado para fluxo {} e departamento {} via Trello.",
+                        atendimento.id,
+                        novo_fluxo.id,
+                        novo_departamento.id,
+                    )
 
                 # Criar movimento (atualiza etapa_atual e atendente automaticamente)
                 MovimentoFluxo.criar_movimento(
@@ -1042,10 +1064,17 @@ class TicketSyncService:
                             "cancelado" in nome_etapa_lower
                             or "cancel" in nome_etapa_lower
                         )
-                        # Chama método de finalização que atualiza status e solicita feedback
-                        atendimento.finalizar_atendimento(
-                            cancelado=foi_cancelado
+                        # Chama método de finalização com assinatura atual.
+                        novo_status = (
+                            StatusAtendimento.CANCELADO
+                            if foi_cancelado
+                            else StatusAtendimento.RESOLVIDO
                         )
+                        if atendimento.status != novo_status:
+                            atendimento.finalizar_atendimento(
+                                novo_status=novo_status,
+                                solicitar_feedback=False,
+                            )
                     except Exception as e:
                         logger.error(
                             "Erro ao finalizar atendimento via movimento Trello: {}",

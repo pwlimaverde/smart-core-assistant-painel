@@ -84,7 +84,10 @@
       "Bash(powershell.exe:*)",
       "Bash(git pull:*)",
       "Bash(git tag:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(nslookup:*)",
+      "Bash(ping:*)",
+      "Bash(tracert:*)"
     ]
   }
 }

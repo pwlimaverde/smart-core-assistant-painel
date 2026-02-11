@@ -73,7 +73,7 @@ class EvolutionContact(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
-    contact: models.ForeignKey["clientes.Contato"] = models.ForeignKey(
+    contact: models.ForeignKey[Any] = models.ForeignKey(
         "clientes.Contato",
         on_delete=models.SET_NULL,
         related_name="evolution_links",
@@ -127,6 +127,7 @@ class WhiteList(models.Model):
 
     Attributes:
         id: Identificador único.
+        contact: Vínculo opcional com contato já cadastrado no sistema.
         name: Nome da pessoa ou entidade.
         phone_number: Número de telefone (normalizado).
         active: Indica se o registro está ativo.
@@ -134,6 +135,13 @@ class WhiteList(models.Model):
     """
 
     id: models.AutoField = models.AutoField(primary_key=True)
+    contact: models.ForeignKey[Any] = models.ForeignKey(
+        "clientes.Contato",
+        on_delete=models.SET_NULL,
+        related_name="whitelist_entries",
+        blank=True,
+        null=True,
+    )
     name: models.CharField[str] = models.CharField(max_length=100)
     phone_number: models.CharField[str] = models.CharField(
         max_length=20, unique=True

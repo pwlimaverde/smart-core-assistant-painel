@@ -5,6 +5,7 @@ import re
 from django import forms
 from django.db.models import Q
 
+from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.models import WhiteList
 
 
@@ -13,8 +14,9 @@ class WhiteListForm(forms.ModelForm[WhiteList]):
 
     class Meta:
         model = WhiteList
-        fields = ["name", "phone_number", "active"]
+        fields = ["contact", "name", "phone_number", "active"]
         widgets = {
+            "contact": forms.HiddenInput(),
             "name": forms.TextInput(
                 attrs={
                     "placeholder": "Nome do contato",
@@ -30,6 +32,7 @@ class WhiteListForm(forms.ModelForm[WhiteList]):
             "active": forms.CheckboxInput(),
         }
         labels = {
+            "contact": "Contato",
             "name": "Nome",
             "phone_number": "Telefone",
             "active": "Ativo",
@@ -38,11 +41,38 @@ class WhiteListForm(forms.ModelForm[WhiteList]):
             "phone_number": "Formato: código do país + DDD + número (ex: 5588999141275)",
         }
 
+    def __init__(self, *args: object, **kwargs: object) -> None:
+        super().__init__(*args, **kwargs)
+        contact_field = self.fields.get("contact")
+        if isinstance(contact_field, forms.ModelChoiceField):
+            contact_field.queryset = (
+                Contato.objects.filter(telefone__isnull=False)
+                .exclude(telefone="")
+                .order_by("nome_contato", "telefone")
+            )
+
+    def clean_name(self) -> str:
+        """Garante um nome válido, preferindo o nome do contato vinculado."""
+        raw_name = str(self.cleaned_data.get("name", "") or "").strip()
+        if raw_name:
+            return raw_name
+
+        contact = self._resolve_selected_contact()
+        if contact:
+            return self._resolve_contact_label(contact)
+
+        raise forms.ValidationError("Nome é obrigatório.")
+
     def clean_phone_number(self) -> str:
         """Normaliza e valida o número de telefone."""
-        phone: str = self.cleaned_data.get("phone_number", "")
+        contact = self._resolve_selected_contact()
+        raw_phone: str = str(self.cleaned_data.get("phone_number", "") or "")
+
+        if contact and contact.telefone:
+            raw_phone = str(contact.telefone)
+
         # Remove caracteres não-numéricos
-        phone = re.sub(r"\D", "", phone)
+        phone = re.sub(r"\D", "", raw_phone)
 
         if not phone:
             raise forms.ValidationError("Número de telefone é obrigatório.")
@@ -58,11 +88,6 @@ class WhiteListForm(forms.ModelForm[WhiteList]):
                 "Número brasileiro deve ter 12 ou 13 dígitos "
                 "(55 + DDD + número)."
             )
-
-        # Verifica duplicata (exceto no caso de edição do mesmo registro)
-        qs = WhiteList.objects.filter(phone_number=phone)
-        if self.instance and self.instance.pk:
-            qs = qs.exclude(pk=self.instance.pk)
 
         # Verifica variações do número (com/sem 9º dígito)
         variations = self._get_phone_variations(phone)
@@ -82,6 +107,31 @@ class WhiteListForm(forms.ModelForm[WhiteList]):
             )
 
         return phone
+
+    def clean(self) -> dict[str, object]:
+        """Sincroniza os dados quando houver contato vinculado."""
+        cleaned_data = super().clean()
+        contact = cleaned_data.get("contact")
+        if isinstance(contact, Contato):
+            if not str(cleaned_data.get("name", "") or "").strip():
+                cleaned_data["name"] = self._resolve_contact_label(contact)
+        return cleaned_data
+
+    def _resolve_selected_contact(self) -> Contato | None:
+        """Retorna o contato selecionado no formulário, quando existir."""
+        contact = self.cleaned_data.get("contact")
+        if isinstance(contact, Contato):
+            return contact
+        return None
+
+    def _resolve_contact_label(self, contact: Contato) -> str:
+        """Retorna um nome amigável para exibição/salvamento."""
+        return (
+            str(contact.nome_contato or "").strip()
+            or str(contact.nome_perfil_whatsapp or "").strip()
+            or str(contact.telefone or "").strip()
+            or "Contato sem nome"
+        )
 
     def _get_phone_variations(self, phone: str) -> list[str]:
         """Gera variações de telefone (com e sem 9 dígito)."""

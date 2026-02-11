@@ -84,6 +84,23 @@ class AttendanceStructureManagerInterface(ABC):
         pass
 
     @abstractmethod
+    def apply_transfer_flow(
+        self,
+        attendance: "Atendimento",
+        flow_description: str | None = None,
+    ) -> bool:
+        """Aplica transferência de fluxo no atendimento.
+
+        Args:
+            attendance: Atendimento a ser transferido.
+            flow_description: Descrição do fluxo (opcional).
+
+        Returns:
+            True se a transferência foi aplicada.
+        """
+        pass
+
+    @abstractmethod
     def configure_default_attendance(self, attendance: "Atendimento") -> None:
         """Configura um atendimento para usar a estrutura padrão.
 

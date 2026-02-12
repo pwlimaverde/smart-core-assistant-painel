@@ -31,7 +31,7 @@ uv sync
 # pyproject.toml
 [project]
 name = "smart-core-assistant-painel"
-version = "0.1.0"
+version = "1.0.3"
 requires-python = ">=3.13"
 
 [tool.uv]

@@ -1,3 +1,16 @@
+## 1.0.3 - 2026-02-12
+
+### Added
+- Feature `transcribe_audio` no AI Engine para transcrição de mensagens de áudio.
+- Configuração de transcrição por provider/model no runtime com override por tenant.
+- Integração da transcrição no orquestrador de atendimento antes da análise da mensagem.
+
+### Changed
+- Pipeline de atendimento atualizado para preservar metadados de áudio e usar texto transcrito no fluxo de análise.
+
+### Fixed
+- Correção do descarte silencioso de `audioMessage` no fluxo webhook -> buffer -> processamento.
+
 ## 1.0.2 - 2026-02-08
 
 ### Added

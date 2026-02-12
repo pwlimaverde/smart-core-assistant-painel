@@ -29,7 +29,7 @@
   {
     "id": 25,
     "key": "transcription_provider",
-    "value": "openai",
+    "value": "groq",
     "encrypted": false,
     "description": "Provedor de transcrição de áudio (openai, groq).",
     "created_at": "2026-02-12T00:00:00.000000+00:00",
@@ -38,7 +38,7 @@
   {
     "id": 26,
     "key": "transcription_model",
-    "value": "whisper-1",
+    "value": "whisper-large-v3-turbo",
     "encrypted": false,
     "description": "Modelo de transcrição de áudio para o provedor configurado.",
     "created_at": "2026-02-12T00:00:00.000000+00:00",

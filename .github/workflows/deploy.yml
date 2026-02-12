@@ -116,6 +116,13 @@ jobs:
               exit 1
             fi
 
+            # Persiste SMARTCORE_IMAGE_TAG no .env.prod e .env
+            # para que restarts manuais usem a mesma versão
+            sed -i '/^SMARTCORE_IMAGE_TAG=/d' .env.prod .env 2>/dev/null
+            echo "SMARTCORE_IMAGE_TAG=$SMARTCORE_IMAGE_TAG" >> .env.prod
+            echo "SMARTCORE_IMAGE_TAG=$SMARTCORE_IMAGE_TAG" >> .env 2>/dev/null
+            echo "Image tag persisted: $SMARTCORE_IMAGE_TAG"
+
             # Login no GHCR para pull de imagens privadas
             echo "$GHCR_TOKEN" | docker login ${{ env.REGISTRY }} -u "$GHCR_USERNAME" --password-stdin
 

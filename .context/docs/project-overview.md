@@ -103,9 +103,10 @@ src/smart_core_assistant_painel/
 
 ## Notas de Release
 
-### v0.1.0 (Atual)
+### v1.0.3 (Atual)
 - Sistema base de atendimentos
 - Integração WhatsApp via Evolution API
 - Motor de IA com LangChain
 - Sincronização básica com Trello
 - Admin interface customizada com Jazzmin
+- Transcrição de áudio integrada ao pipeline de atendimento

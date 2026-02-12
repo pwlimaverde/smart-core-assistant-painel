@@ -33,6 +33,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
     SearchSimilarEmbeddingsParameters,
+    TranscribeAudioParameters,
 )
 
 ACUsecase: TypeAlias = UsecaseBaseCallData[
@@ -180,3 +181,11 @@ AAUsecase: TypeAlias = UsecaseBaseCallData[
     AnaliseAvaliacaoParameters,
 ]
 AAData: TypeAlias = Datasource[AnaliseAvaliacao, AnaliseAvaliacaoParameters]
+
+# Aliases para Transcribe Audio
+TAData: TypeAlias = Datasource[str, TranscribeAudioParameters]
+TAUsecase: TypeAlias = UsecaseBaseCallData[
+    str,
+    str,
+    TranscribeAudioParameters,
+]

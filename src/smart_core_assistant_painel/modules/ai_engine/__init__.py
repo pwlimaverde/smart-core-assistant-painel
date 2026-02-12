@@ -17,6 +17,7 @@ from .utils.erros import (
     DocumentError,
     HtmlStrError,
     LlmError,
+    TranscribeAudioError,
 )
 from .utils.parameters import (
     AnalisePreviaMensagemParameters,
@@ -24,6 +25,7 @@ from .utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
+    TranscribeAudioParameters,
 )
 from .utils.types import (
     ACData,
@@ -36,6 +38,8 @@ from .utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
+    TAData,
+    TAUsecase,
 )
 
 __all__ = [
@@ -46,12 +50,14 @@ __all__ = [
     "DocumentError",
     "HtmlStrError",
     "LlmError",
+    "TranscribeAudioError",
     # Parameters
     "AnalisePreviaMensagemParameters",
     "DataMensageParameters",
     "LlmParameters",
     "LoadDocumentConteudoParameters",
     "LoadDocumentFileParameters",
+    "TranscribeAudioParameters",
     "MessageData",
     # Types
     "ACData",
@@ -64,4 +70,6 @@ __all__ = [
     "LDFData",
     "LDFUsecase",
     "LMDUsecase",
+    "TAData",
+    "TAUsecase",
 ]

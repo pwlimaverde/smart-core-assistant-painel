@@ -1,23 +1,14 @@
 {
-  "active": [],
-  "completed": [
+  "active": [
     {
-      "slug": "auditoria-navegacao-ui",
-      "path": "plans/auditoria-navegacao-ui.md",
-      "title": "Plano: Auditoria de Navegação e Permissões UI",
-      "linkedAt": "2026-01-31T17:01:54.187Z",
-      "completedAt": "2026-02-06T00:00:00.000Z",
-      "status": "completed"
-    },
-    {
-      "slug": "sprint-features-q1-2026",
-      "path": "plans/archive/sprint-features-q1-2026.md",
-      "title": "Plano: Sprint Features Q1/2026 - Teste de Treinamento, Refatoração Apps e Whitelist UI",
-      "summary": "**NOTA IMPORTANTE:** Esta refatoração é de alto risco e deve ser feita com muito cuidado. Cada etapa deve ser um commit separado e testada antes de avançar.",
-      "linkedAt": "2026-02-08T13:43:52.105Z",
-      "completedAt": "2026-02-08T13:44:34.3693253Z",
-      "status": "completed"
+      "slug": "feature-transcribe-audio",
+      "path": "plans/feature-transcribe-audio.md",
+      "title": "Plano: Feature de Transcrição de Áudio (transcribe_audio)",
+      "summary": "**Nenhuma dependência nova precisa ser adicionada.**",
+      "linkedAt": "2026-02-12T17:17:53.241Z",
+      "status": "active"
     }
   ],
-  "primary": null
+  "completed": [],
+  "primary": "feature-transcribe-audio"
 }

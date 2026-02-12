@@ -1,7 +1,7 @@
 {
   "project": {
     "name": "Smart Core Assistant Painel",
-    "version": "0.1.0",
+    "version": "1.0.3",
     "description": "Plataforma SaaS multi-tenant para atendimento inteligente ao cliente via WhatsApp",
     "python_version": "3.13",
     "framework": "Django 5.2"
@@ -100,7 +100,8 @@
                 "generate_chunks",
                 "load_document_file",
                 "load_document_conteudo",
-                "load_mensage_data"
+                "load_mensage_data",
+                "transcribe_audio"
               ]
             },
             "services": {

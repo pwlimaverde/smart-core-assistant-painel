@@ -1,4 +1,27 @@
-# Changelog - Sprint Features Q1/2026
+# Changelog
+
+## [v1.0.3] - 2026-02-12
+
+### Adicionado
+- Feature `transcribe_audio` no `ai_engine` para transcrição de áudios via WhatsApp.
+- Nova configuração de transcrição no runtime (`transcription_provider`, `transcription_model`), com suporte a override por tenant.
+- Integração da transcrição no orquestrador de atendimento antes da análise de mensagem.
+- Novos parâmetros/tipos/erros da feature de transcrição e exports no módulo `ai_engine`.
+
+### Corrigido
+- Correção do fluxo de webhook para evitar descarte silencioso de `audioMessage`.
+- Propagação de metadados de áudio (`url`, `mimetype`, `seconds`, `ptt`) no pipeline de atendimento.
+
+### Alterado
+- Persistência do texto transcrito no conteúdo da mensagem para alimentar `analise_previa_mensagem` e `analise_mensage`.
+- Campos de configuração de transcrição adicionados ao domínio de tenant e admin.
+- Migração aplicada para `TenantConfig` (`0005_tenantconfig_transcription_model_and_more.py`).
+
+### Workflow
+- Workflow PREVC do plano `feature-transcribe-audio` finalizado no MCP (`P`, `R`, `E`, `V` concluídas; `C` não exigida para escala `MEDIUM`).
+- Documentação de release atualizada para publicação da versão `v1.0.3`.
+
+---
 
 ## [2026-02-06] - Whitelist UI + Teste de Treinamento
 

@@ -252,6 +252,16 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Obtém mensagem
             mensagem: Mensagem = Mensagem.objects.get(id=message_id)
 
+            # Conversão de mídia antes da análise de IA
+            _MEDIA_TYPES = (
+                "audioMessage",
+                "imageMessage",
+                "videoMessage",
+                "documentMessage",
+            )
+            if mensagem.tipo in _MEDIA_TYPES:
+                self._convert_media_context(mensagem)
+
             # --- Feedback Loop Check ---
             if self._check_and_process_feedback(mensagem, contact_id):
                 logger.info(
@@ -296,6 +306,59 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {message_id}: {e}")
+
+    def _convert_media_context(self, mensagem: "Mensagem") -> None:
+        """Converte metadados de mídia em texto contextual.
+
+        Centraliza a conversão de conteúdo multimídia (áudio, imagem,
+        vídeo, documento) em texto para análise de IA via
+        FeaturesCompose.converter_contexto.
+
+        Args:
+            mensagem: Mensagem com metadados de mídia.
+        """
+        try:
+            metadados = mensagem.metadados or {}
+
+            if not metadados.get("url"):
+                logger.warning(
+                    f"Mensagem {mensagem.id}: {mensagem.tipo} sem URL. "
+                    "Mantendo placeholder."
+                )
+                return
+
+            logger.info(
+                f"Convertendo mídia da mensagem {mensagem.id} "
+                f"(tipo={mensagem.tipo})"
+            )
+
+            texto_convertido = FeaturesCompose.converter_contexto(
+                metadados=metadados,
+                message_type=mensagem.tipo,
+            )
+
+            if texto_convertido and texto_convertido.strip():
+                texto_final = texto_convertido.strip()
+                mensagem.conteudo = texto_final
+                meta = dict(metadados)
+                meta["contexto_convertido"] = texto_final
+                mensagem.metadados = meta
+                mensagem.save(update_fields=["conteudo", "metadados"])
+
+                logger.info(
+                    f"Mídia convertida com sucesso para mensagem {mensagem.id} "
+                    f"(len={len(texto_final)})"
+                )
+            else:
+                logger.warning(
+                    f"Conversão vazia para mensagem {mensagem.id}. "
+                    "Mantendo placeholder."
+                )
+        except Exception as e:
+            logger.error(
+                f"Erro ao converter mídia da mensagem {mensagem.id}: {e}. "
+                "Continuando com placeholder."
+            )
 
     def _configure_attendance(
         self,

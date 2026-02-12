@@ -23,6 +23,11 @@ urlpatterns = [
         name="whitelist_adicionar",
     ),
     path(
+        "whitelist/contatos/buscar/",
+        views.whitelist_contact_search,
+        name="whitelist_contact_search",
+    ),
+    path(
         "whitelist/<int:pk>/editar/",
         views.whitelist_editar,
         name="whitelist_editar",

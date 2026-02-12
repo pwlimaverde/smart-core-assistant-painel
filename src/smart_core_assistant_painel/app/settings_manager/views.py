@@ -2,9 +2,11 @@
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
+from smart_core_assistant_painel.app.clientes.models import Contato
 from smart_core_assistant_painel.app.evolution_sync.models import WhiteList
 
 from .forms import WhiteListForm
@@ -62,17 +64,64 @@ def configuracoes_whitelist(request: HttpRequest) -> HttpResponse:
         return redirect("dashboard")
 
     search = request.GET.get("q", "").strip()
-    whitelist = WhiteList.objects.all()
+    whitelist = WhiteList.objects.select_related("contact").all()
     if search:
         whitelist = whitelist.filter(
-            name__icontains=search
-        ) | whitelist.filter(phone_number__icontains=search)
+            Q(name__icontains=search)
+            | Q(phone_number__icontains=search)
+            | Q(contact__nome_contato__icontains=search)
+            | Q(contact__telefone__icontains=search)
+        )
 
     context = {
         "whitelist": whitelist,
         "search": search,
     }
     return render(request, "configuracoes/whitelist.html", context)
+
+
+@login_required
+def whitelist_contact_search(request: HttpRequest) -> JsonResponse:
+    """Busca contatos por nome/telefone para seleção no formulário."""
+    if not _can_manage_settings(request.user):
+        return JsonResponse({"error": "Sem permissão"}, status=403)
+
+    if request.method != "GET":
+        return JsonResponse({"error": "Método não permitido"}, status=405)
+
+    term = str(request.GET.get("q", "") or "").strip()
+    if len(term) < 2:
+        return JsonResponse({"results": []})
+
+    contacts = (
+        Contato.objects.filter(telefone__isnull=False, ativo=True)
+        .exclude(telefone="")
+        .filter(
+            Q(nome_contato__icontains=term)
+            | Q(nome_perfil_whatsapp__icontains=term)
+            | Q(telefone__icontains=term)
+        )
+        .order_by("nome_contato", "telefone")[:20]
+    )
+
+    results: list[dict[str, object]] = []
+    for contact in contacts:
+        phone = str(contact.telefone or "")
+        name = (
+            str(contact.nome_contato or "").strip()
+            or str(contact.nome_perfil_whatsapp or "").strip()
+            or phone
+        )
+        results.append(
+            {
+                "id": contact.id,
+                "name": name,
+                "phone_number": phone,
+                "label": f"{name} ({phone})",
+            }
+        )
+
+    return JsonResponse({"results": results})
 
 
 @login_required

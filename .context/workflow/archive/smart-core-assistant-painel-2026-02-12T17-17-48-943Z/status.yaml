@@ -1,0 +1,42 @@
+project:
+  name: "smart-core-assistant-painel"
+  scale: LARGE
+  started: "2026-02-06T00:00:00Z"
+  current_phase: C
+
+phases:
+  P:
+    status: completed
+    started_at: "2026-02-06T00:00:00Z"
+    completed_at: "2026-02-06T00:00:00Z"
+  R:
+    status: completed
+    started_at: "2026-02-06T00:00:00Z"
+    completed_at: "2026-02-06T00:00:00Z"
+  E:
+    status: completed
+    started_at: "2026-02-06T00:00:00Z"
+    completed_at: "2026-02-07T00:00:00Z"
+  V:
+    status: completed
+    started_at: "2026-02-07T00:00:00Z"
+    completed_at: "2026-02-07T00:00:00Z"
+  C:
+    status: completed
+    started_at: "2026-02-07T00:00:00Z"
+    completed_at: "2026-02-07T00:00:00Z"
+
+execution:
+  history:
+    - timestamp: "2026-02-12T13:36:41.406Z"
+      phase: C
+      action: plan_phase_updated
+      plan: "nome-agente-bot-whatsapp"
+      description: "Plan phase phase-3 updated to completed"
+  last_activity: "2026-02-12T13:36:41.406Z"
+  resume_context: "Fase do plano atualizada"
+
+approval:
+  plan_created: true
+  plan_approved: true
+

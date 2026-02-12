@@ -69,10 +69,16 @@ class TenantEvolutionContactAdmin(
 class TenantWhiteListAdmin(TenantModelAdminMixin, admin.ModelAdmin[WhiteList]):
     """Admin para gestão de Whitelist de números bloqueados."""
 
-    list_display = ("name", "phone_number", "active", "created_at")
+    list_display = ("name", "contact", "phone_number", "active", "created_at")
     list_filter = ("active",)
-    search_fields = ("name", "phone_number")
+    search_fields = (
+        "name",
+        "phone_number",
+        "contact__nome_contato",
+        "contact__telefone",
+    )
     readonly_fields = ("created_at",)
+    list_select_related = ("contact",)
 
 
 # Registro no tenant_admin_site

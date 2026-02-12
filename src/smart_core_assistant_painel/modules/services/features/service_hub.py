@@ -80,6 +80,15 @@ class ServiceHub:
     def LLM_TEMPERATURE(self) -> int:
         return ConfigProvider.get().llm_temperature
 
+    # === Transcrição ===
+    @property
+    def TRANSCRIPTION_PROVIDER(self) -> str:
+        return ConfigProvider.get().transcription_provider
+
+    @property
+    def TRANSCRIPTION_MODEL(self) -> str:
+        return ConfigProvider.get().transcription_model
+
     # === Prompts ===
     @property
     def PROMPT_SYSTEM_DADOS_EMPRESA(self) -> str:

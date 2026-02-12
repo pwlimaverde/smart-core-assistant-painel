@@ -51,20 +51,56 @@ class EvolutionMessageData:
                     message_type = keys[0]
 
         text: str = ""
+        metadata: Dict[str, Any] = {}
         if message_type == "conversation":
             val = message.get("conversation")
             text = val if isinstance(val, str) else str(val)
         elif message_type == "extendedTextMessage":
             text = message.get("extendedTextMessage", {}).get("text", "")
-
-        # Metadados vazios - removidos campos não utilizados
-        md: Dict[str, Any] = {}
+        elif message_type == "audioMessage":
+            msg_data = message.get("audioMessage", {})
+            text = "[audio]"
+            metadata = {
+                "mimetype": msg_data.get("mimetype"),
+                "url": msg_data.get("url"),
+                "seconds": msg_data.get("seconds"),
+                "ptt": msg_data.get("ptt", False),
+            }
+        elif message_type == "imageMessage":
+            msg_data = message.get("imageMessage", {})
+            caption = msg_data.get("caption")
+            text = caption if isinstance(caption, str) and caption else "[imagem]"
+            metadata = {
+                "mimetype": msg_data.get("mimetype"),
+                "url": msg_data.get("url"),
+            }
+        elif message_type == "videoMessage":
+            msg_data = message.get("videoMessage", {})
+            caption = msg_data.get("caption")
+            text = caption if isinstance(caption, str) and caption else "[video]"
+            metadata = {
+                "mimetype": msg_data.get("mimetype"),
+                "url": msg_data.get("url"),
+                "seconds": msg_data.get("seconds"),
+            }
+        elif message_type == "documentMessage":
+            msg_data = message.get("documentMessage", {})
+            file_name = msg_data.get("fileName")
+            text = (
+                file_name
+                if isinstance(file_name, str) and file_name
+                else "[documento]"
+            )
+            metadata = {
+                "mimetype": msg_data.get("mimetype"),
+                "url": msg_data.get("url"),
+            }
 
         return cls(
             id=key.get("id"),
             type=message_type,
             text=text,
-            metadata=md,
+            metadata=metadata,
         )
 
     def to_dict(self) -> Dict[str, Any]:

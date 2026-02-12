@@ -19,6 +19,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DocumentError,
     EmbeddingError,
     LlmError,
+    TranscribeAudioError,
 )
 
 
@@ -261,6 +262,26 @@ class GenerateChunksParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class TranscribeAudioParameters(ParametersReturnResult):
+    """Parâmetros para transcrição de áudio.
+
+    Attributes:
+        audio_url: URL do arquivo de áudio.
+        mimetype: Tipo MIME do áudio.
+        language: Código do idioma para transcrição.
+        error: Erro a ser levantado em caso de falha.
+    """
+
+    audio_url: str
+    mimetype: str
+    error: TranscribeAudioError
+    language: str = "pt"
+
+    def __str__(self) -> str:
         return self.__repr__()
 
 

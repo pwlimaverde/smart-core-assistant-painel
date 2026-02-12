@@ -252,6 +252,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Obtém mensagem
             mensagem: Mensagem = Mensagem.objects.get(id=message_id)
 
+            # Transcrição de áudio antes da análise de IA
+            if mensagem.tipo == "audioMessage":
+                self._transcribe_audio_message(mensagem)
+
             # --- Feedback Loop Check ---
             if self._check_and_process_feedback(mensagem, contact_id):
                 logger.info(
@@ -296,6 +300,57 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {message_id}: {e}")
+
+    def _transcribe_audio_message(self, mensagem: "Mensagem") -> None:
+        """Transcreve áudio e atualiza o conteúdo da mensagem.
+
+        Args:
+            mensagem: Mensagem do tipo audioMessage.
+        """
+        try:
+            metadados = mensagem.metadados or {}
+            audio_url = metadados.get("url")
+            mimetype = metadados.get("mimetype", "audio/ogg")
+
+            if not audio_url:
+                logger.warning(
+                    f"Mensagem {mensagem.id}: audioMessage sem URL. "
+                    "Mantendo placeholder."
+                )
+                return
+
+            logger.info(
+                f"Transcrevendo áudio da mensagem {mensagem.id} "
+                f"(mimetype={mimetype})"
+            )
+
+            texto_transcrito = FeaturesCompose.transcribe_audio(
+                audio_url=audio_url,
+                mimetype=mimetype,
+            )
+
+            if texto_transcrito and texto_transcrito.strip():
+                texto_final = texto_transcrito.strip()
+                mensagem.conteudo = texto_final
+                meta = dict(metadados)
+                meta["transcription"] = texto_final
+                mensagem.metadados = meta
+                mensagem.save(update_fields=["conteudo", "metadados"])
+
+                logger.info(
+                    f"Áudio transcrito com sucesso para mensagem {mensagem.id} "
+                    f"(len={len(texto_final)})"
+                )
+            else:
+                logger.warning(
+                    f"Transcrição vazia para mensagem {mensagem.id}. "
+                    "Mantendo placeholder."
+                )
+        except Exception as e:
+            logger.error(
+                f"Erro ao transcrever áudio da mensagem {mensagem.id}: {e}. "
+                "Continuando com placeholder."
+            )
 
     def _configure_attendance(
         self,

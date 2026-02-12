@@ -36,6 +36,7 @@ from ..utils.erros import (
     DataMessageError,
     DocumentError,
     LlmError,
+    TranscribeAudioError,
 )
 from ..utils.parameters import (
     AnaliseAvaliacaoParameters,
@@ -46,6 +47,7 @@ from ..utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
+    TranscribeAudioParameters,
 )
 from ..utils.types import (
     ACData,
@@ -64,6 +66,8 @@ from ..utils.types import (
     LDFUsecase,
     LMDUsecase,
     RespostaBot,
+    TAData,
+    TAUsecase,
 )
 from .analise_avaliacao.datasource.analise_avaliacao_datasource import (
     AnaliseAvaliacaoDatasource,
@@ -106,6 +110,12 @@ from .load_document_file.domain.usecase.load_document_file_usecase import (
 from .load_mensage_data.domain.model.message_data import MessageData
 from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
+)
+from .transcribe_audio.datasource.transcribe_audio_datasource import (
+    TranscribeAudioDatasource,
+)
+from .transcribe_audio.domain.usecase.transcribe_audio_usecase import (
+    TranscribeAudioUseCase,
 )
 
 # Compatibilidade com testes legados:
@@ -411,6 +421,44 @@ class FeaturesCompose:
             return result
         elif isinstance(message_data, ErrorReturn):
             raise message_data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def transcribe_audio(
+        audio_url: str,
+        mimetype: str,
+        language: str = "pt",
+    ) -> str:
+        """Transcreve um áudio a partir de sua URL.
+
+        Args:
+            audio_url: URL do arquivo de áudio.
+            mimetype: Tipo MIME do áudio.
+            language: Código do idioma para transcrição.
+
+        Returns:
+            str: Texto transcrito do áudio.
+
+        Raises:
+            TranscribeAudioError: Se ocorrer erro na transcrição.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error = TranscribeAudioError("Erro ao transcrever áudio!")
+        parameters = TranscribeAudioParameters(
+            audio_url=audio_url,
+            mimetype=mimetype,
+            language=language,
+            error=error,
+        )
+        datasource: TAData = TranscribeAudioDatasource()
+        usecase: TAUsecase = TranscribeAudioUseCase(datasource)
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
 

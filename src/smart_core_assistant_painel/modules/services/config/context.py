@@ -22,6 +22,10 @@ class RuntimeConfig:
     model: str = "openai/gpt-oss-20b"
     llm_temperature: int = 0
 
+    # === Transcrição de Áudio ===
+    transcription_provider: str = "openai"
+    transcription_model: str = "whisper-1"
+
     # === Prompts do Sistema ===
     prompt_system_analise_mensagem: str = ""
     prompt_system_analise_previa_mensagem: str = ""

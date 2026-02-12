@@ -36,6 +36,7 @@ from ..utils.erros import (
     DataMessageError,
     DocumentError,
     LlmError,
+    TranscribeAudioError,
 )
 from ..utils.parameters import (
     AnaliseAvaliacaoParameters,
@@ -46,6 +47,7 @@ from ..utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
+    TranscribeAudioParameters,
 )
 from ..utils.types import (
     ACData,
@@ -64,6 +66,8 @@ from ..utils.types import (
     LDFUsecase,
     LMDUsecase,
     RespostaBot,
+    TAData,
+    TAUsecase,
 )
 from .analise_avaliacao.datasource.analise_avaliacao_datasource import (
     AnaliseAvaliacaoDatasource,
@@ -106,6 +110,12 @@ from .load_document_file.domain.usecase.load_document_file_usecase import (
 from .load_mensage_data.domain.model.message_data import MessageData
 from .load_mensage_data.domain.usecase.load_mensage_data_usecase import (
     LoadMensageDataUseCase,
+)
+from .transcribe_audio.datasource.transcribe_audio_datasource import (
+    TranscribeAudioDatasource,
+)
+from .transcribe_audio.domain.usecase.transcribe_audio_usecase import (
+    TranscribeAudioUseCase,
 )
 
 # Compatibilidade com testes legados:
@@ -366,20 +376,41 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def converter_contexto(metadados: dict[str, Any]) -> str:
+    def converter_contexto(
+        metadados: dict[str, Any],
+        message_type: str,
+    ) -> str:
         """Converte metadados de mensagens multimídia para texto.
 
+        Ponto central de conversão de conteúdo multimídia em contexto
+        textual para análise de IA. Despacha para o handler específico
+        de cada tipo de mídia.
+
         Args:
-            metadados (dict[str, Any]): Dicionário com os metadados da mensagem.
+            metadados: Dicionário com os metadados da mensagem.
+            message_type: Tipo da mensagem (audioMessage, imageMessage, etc.).
 
         Returns:
-            str: Texto formatado representando o contexto da mensagem.
+            Texto convertido ou string vazia se não houver conversão.
         """
-        try:
-            return "contexto"
-        except Exception as e:
-            logger.error(f"Erro ao converter contexto: {e}")
-            raise e
+        if not metadados:
+            return ""
+
+        if message_type == "audioMessage":
+            audio_url = metadados.get("url")
+            mimetype = metadados.get("mimetype", "audio/ogg")
+            if not audio_url:
+                return ""
+            return FeaturesCompose._transcribe_audio(
+                audio_url=str(audio_url),
+                mimetype=str(mimetype),
+            )
+
+        # TODO: imageMessage — interpretação de imagem via Vision API
+        # TODO: videoMessage — extração de frames + interpretação
+        # TODO: documentMessage — extração de texto do documento
+
+        return ""
 
     @staticmethod
     def load_message_data(data: dict[str, Any]) -> MessageData:
@@ -404,13 +435,54 @@ class FeaturesCompose:
             result: MessageData = message_data.result
             if result.metadados:
                 conteudo_media: str = FeaturesCompose.converter_contexto(
-                    result.metadados
+                    result.metadados,
+                    result.message_type,
                 )
-                if conteudo_media and conteudo_media != "contexto":
+                if conteudo_media:
                     result.conteudo = f"{result.conteudo}\n{conteudo_media}"
             return result
         elif isinstance(message_data, ErrorReturn):
             raise message_data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
+
+    @staticmethod
+    def _transcribe_audio(
+        audio_url: str,
+        mimetype: str,
+        language: str = "pt",
+    ) -> str:
+        """Transcreve um áudio a partir de sua URL.
+
+        Método interno — use ``converter_contexto`` como ponto de entrada.
+
+        Args:
+            audio_url: URL do arquivo de áudio.
+            mimetype: Tipo MIME do áudio.
+            language: Código do idioma para transcrição.
+
+        Returns:
+            str: Texto transcrito do áudio.
+
+        Raises:
+            TranscribeAudioError: Se ocorrer erro na transcrição.
+            ValueError: Se o tipo de retorno do caso de uso for inesperado.
+        """
+        error = TranscribeAudioError("Erro ao transcrever áudio!")
+        parameters = TranscribeAudioParameters(
+            audio_url=audio_url,
+            mimetype=mimetype,
+            language=language,
+            error=error,
+        )
+        datasource: TAData = TranscribeAudioDatasource()
+        usecase: TAUsecase = TranscribeAudioUseCase(datasource)
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
         else:
             raise ValueError("Unexpected return type from usecase")
 

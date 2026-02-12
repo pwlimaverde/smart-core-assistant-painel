@@ -9,11 +9,17 @@ from .models import EvolutionContact, EvolutionInstance, WhiteList
 # Desregistrado do admin principal - disponível apenas no tenant_admin
 # @admin.register(WhiteList)
 class WhiteListAdmin(admin.ModelAdmin[WhiteList]):
-    list_display = ("name", "phone_number", "active", "created_at")
-    search_fields = ("name", "phone_number")
+    list_display = ("name", "contact", "phone_number", "active", "created_at")
+    search_fields = (
+        "name",
+        "phone_number",
+        "contact__nome_contato",
+        "contact__telefone",
+    )
     list_filter = ("active",)
     ordering = ("name",)
     readonly_fields = ("created_at",)
+    list_select_related = ("contact",)
 
 
 # Desregistrado do admin principal - disponível apenas no tenant_admin

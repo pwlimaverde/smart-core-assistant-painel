@@ -38,6 +38,8 @@ _ENV_BY_CORE_KEY: dict[str, str] = {
     "llm_class": "LLM_CLASS",
     "model": "MODEL",
     "llm_temperature": "LLM_TEMPERATURE",
+    "transcription_provider": "TRANSCRIPTION_PROVIDER",
+    "transcription_model": "TRANSCRIPTION_MODEL",
     "embeddings_class": "EMBEDDINGS_CLASS",
     "embeddings_model": "EMBEDDINGS_MODEL",
     "chunk_size": "CHUNK_SIZE",

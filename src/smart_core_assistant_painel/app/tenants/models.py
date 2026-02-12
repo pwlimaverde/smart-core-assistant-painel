@@ -281,6 +281,28 @@ class TenantConfig(models.Model):
         ),
     )
 
+    transcription_provider = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="Provedor de Transcrição",
+        help_text=(
+            "Provedor de transcrição (openai, groq). "
+            "Se vazio, usa a configuração global."
+        ),
+    )
+
+    transcription_model = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="Modelo de Transcrição",
+        help_text=(
+            "Modelo de transcrição (ex: whisper-1). "
+            "Se vazio, usa a configuração global."
+        ),
+    )
+
     # API Keys do tenant (sobrescrevem CoreSettings se preenchidas)
     api_keys = models.JSONField(
         default=dict,

@@ -96,7 +96,12 @@
                     {% for item in whitelist %}
                     <tr class="hover:bg-stone-50 transition-colors">
                         <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-stone-900 sm:pl-6">
-                            {{ item.name }}
+                            <div>{{ item.name }}</div>
+                            {% if item.contact_id %}
+                            <div class="text-xs font-normal text-stone-500">
+                                Vinculado: {{ item.contact.nome_contato|default:item.contact.telefone }}
+                            </div>
+                            {% endif %}
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500 font-mono">
                             {{ item.phone_number }}

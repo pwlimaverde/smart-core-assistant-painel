@@ -1,7 +1,8 @@
 ---
-status: filled
+status: completed
 generated: 2026-02-10
-updated: 2026-02-10
+updated: 2026-02-12
+completed: 2026-02-12
 agents:
   - type: "code-reviewer"
     role: "Review code changes for quality, style, and best practices"
@@ -54,8 +55,9 @@ phases:
 
 # Plano: Nome do Agente do Bot no WhatsApp (Por Tenant)
 
-**Status**: Em planejamento
+**Status**: ✅ Finalizado
 **Criado**: 2026-02-10
+**Finalizado**: 2026-02-12
 **Responsável**: Time Produto/Engenharia
 **Tipo**: Feature (UX/Identificação do Bot)
 **Prioridade**: Alta
@@ -99,17 +101,17 @@ Exemplo esperado (WhatsApp markdown):
 ## Componentes Necessários (Feature Breakdown)
 
 ### Backend
-- [ ] Campo novo no `TenantConfig` (ex: `bot_agent_name`)
-- [ ] Migração Django para o novo campo
-- [ ] Ajuste no signal de envio (`evolution_sync/signals.py`) para prefixar o texto
-- [ ] (Opcional) Helper utilitário para formatar prefixo e garantir idempotência
+- [x] Campo novo no `TenantConfig` (ex: `bot_agent_name`)
+- [x] Migração Django para o novo campo
+- [x] Ajuste no signal de envio (`evolution_sync/signals.py`) para prefixar o texto
+- [x] Helper utilitário para formatar prefixo e garantir idempotência
 
 ### Frontend
-- [ ] Adicionar campo no `TenantConfigForm`
-- [ ] Renderizar campo na página `tenants/config_ai.html` com help text claro
+- [x] Adicionar campo no `TenantConfigForm`
+- [x] Renderizar campo na página `tenants/config_ai.html` com help text claro
 
 ### Integrações
-- [ ] Confirmar que o markdown do WhatsApp via Evolution suporta `*negrito*` (esperado: sim)
+- [x] Confirmar que o markdown do WhatsApp via Evolution suporta `*negrito*` (esperado: sim)
 
 ## Tarefas
 
@@ -123,7 +125,7 @@ Exemplo esperado (WhatsApp markdown):
 - Sanitização: `strip()`, substituir `\\r`/`\\n` por espaço, remover `*`
 
 **Critérios de aceite**:
-- [ ] Especificação registrada no plano e alinhada com Produto
+- [x] Especificação registrada no plano e alinhada com Produto
 
 **Estimativa**: P
 
@@ -139,7 +141,7 @@ Exemplo esperado (WhatsApp markdown):
 - Tarefa 1
 
 **Critérios de aceite**:
-- [ ] Migração criada e aplicável em ambiente de dev
+- [x] Migração criada e aplicável em ambiente de dev
 
 **Estimativa**: P
 
@@ -155,9 +157,9 @@ Exemplo esperado (WhatsApp markdown):
 - Tarefa 2
 
 **Critérios de aceite**:
-- [ ] Campo aparece com label e help text explicando que será exibido no WhatsApp
-- [ ] Placeholder sugerido (ex: `Íris`)
-- [ ] Validação básica (max_length) funcionando
+- [x] Campo aparece com label e help text explicando que será exibido no WhatsApp
+- [x] Placeholder sugerido (ex: `Íris`)
+- [x] Validação básica (max_length) funcionando
 
 **Estimativa**: P
 
@@ -178,9 +180,9 @@ Exemplo esperado (WhatsApp markdown):
 - Idempotência: se `text` já começa com `*{nome}:*` (ou variações sanitizadas), nao prefixar novamente.
 
 **Critérios de aceite**:
-- [ ] Mensagem enviada vira `*Nome:* {mensagem}` quando configurado
-- [ ] Sem nome configurado: comportamento inalterado
-- [ ] Sem duplicação do prefixo
+- [x] Mensagem enviada vira `*Nome:* {mensagem}` quando configurado
+- [x] Sem nome configurado: comportamento inalterado
+- [x] Sem duplicação do prefixo
 
 **Estimativa**: M
 
@@ -193,8 +195,8 @@ Exemplo esperado (WhatsApp markdown):
 - Ao disparar um fluxo que gera `resposta_bot`, a mensagem chega no WhatsApp com o prefixo em negrito.
 
 **Evidências**:
-- [ ] Print/registro do payload enviado (log) contendo `text` prefixado
-- [ ] Print no WhatsApp mostrando o negrito
+- [ ] Print/registro do payload enviado (log) contendo `text` prefixado (fora do repositório)
+- [ ] Print no WhatsApp mostrando o negrito (fora do repositório)
 
 **Estimativa**: P
 
@@ -221,3 +223,11 @@ graph TD
 
 - Reverter o commit da migração e do código do prefixo.
 - Se a migração já foi aplicada em produção, manter o campo (inofensivo) e apenas desativar o comportamento removendo o prefixo no signal.
+
+## Evidências (código)
+
+- Campo no model: `src/smart_core_assistant_painel/app/tenants/models.py` (`bot_agent_name` em `TenantConfig`).
+- Migração: `src/smart_core_assistant_painel/app/tenants/migrations/0004_tenantconfig_bot_agent_name.py`.
+- Sanitização/validação no form: `src/smart_core_assistant_painel/app/tenants/forms/legacy.py` (`clean_bot_agent_name`).
+- Campo exibido na UI: `src/smart_core_assistant_painel/app/tenants/templates/tenants/config_ai.html`.
+- Prefixo no envio WhatsApp (Evolution): `src/smart_core_assistant_painel/app/evolution_sync/signals.py`.

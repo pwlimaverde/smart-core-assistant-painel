@@ -116,31 +116,42 @@ def webhook(
         action_type = action.get("type")
         data = action.get("data", {})
 
-        # Detecta movimentação de card entre listas
-        if action_type == "updateCard":
-            list_before = data.get("listBefore")
-            list_after = data.get("listAfter")
+        # Detecta movimentação de card entre listas (mesmo board e cross-board)
+        if action_type in {"updateCard", "moveCardToBoard", "moveCardToList"}:
             card = data.get("card", {})
+            card_id = card.get("id")
+            # Extrai ID do membro que realizou a ação
+            member_creator_id = action.get("idMemberCreator") or ""
 
-            if list_before and list_after and card:
-                card_id = card.get("id")
-                list_after_id = list_after.get("id")
-                # Extrai ID do membro que realizou a ação
-                member_creator_id = action.get("idMemberCreator")
+            list_after_id: str | None = None
+            if action_type == "updateCard":
+                list_before = data.get("listBefore")
+                list_after = data.get("listAfter")
+                if list_before and list_after:
+                    list_after_id = list_after.get("id")
+            elif action_type == "moveCardToBoard":
+                # Comentário: no cross-board, a lista destino vem em `data.list`.
+                list_after_id = data.get("list", {}).get("id")
+            elif action_type == "moveCardToList":
+                # Compatibilidade com variações de payload.
+                list_after_id = data.get("listAfter", {}).get(
+                    "id"
+                ) or data.get("list", {}).get("id")
 
-                if card_id and list_after_id:
-                    logger.info(
-                        "Detectada movimentação de card Trello: {} -> {} (por {})",
-                        card_id,
-                        list_after_id,
-                        member_creator_id,
-                    )
-                    task_process_trello_card_move.delay(
-                        tenant_slug,
-                        card_id,
-                        list_after_id,
-                        member_creator_id,
-                    )
+            if card_id and list_after_id:
+                logger.info(
+                    "Detectada movimentação de card Trello ({}) : {} -> {} (por {})",
+                    action_type,
+                    card_id,
+                    list_after_id,
+                    member_creator_id,
+                )
+                task_process_trello_card_move.delay(
+                    tenant_slug,
+                    card_id,
+                    list_after_id,
+                    member_creator_id,
+                )
 
         # Detecta criação de lista
         elif action_type == "createList":

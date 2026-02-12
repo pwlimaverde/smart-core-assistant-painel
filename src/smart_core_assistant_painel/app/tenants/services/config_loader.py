@@ -75,6 +75,11 @@ class ConfigLoader:
             model=tenant_cfg.get("model")
             or core.get("model", "llama-3.1-70b-versatile"),
             llm_temperature=int(core.get("llm_temperature", "0")),
+            # === Transcrição ===
+            transcription_provider=tenant_cfg.get("transcription_provider")
+            or core.get("transcription_provider", "openai"),
+            transcription_model=tenant_cfg.get("transcription_model")
+            or core.get("transcription_model", "whisper-1"),
             # === Prompts do Sistema ===
             prompt_system_analise_previa_mensagem=core.get(
                 "prompt_system_analise_previa_mensagem", ""
@@ -179,6 +184,15 @@ class ConfigLoader:
                 # LLM (campos explícitos, sobrescrevem Core se preenchidos)
                 "llm_class": cfg.llm_class if cfg.llm_class else "",
                 "model": cfg.model if cfg.model else "",
+                # Transcrição
+                "transcription_provider": (
+                    cfg.transcription_provider
+                    if cfg.transcription_provider
+                    else ""
+                ),
+                "transcription_model": (
+                    cfg.transcription_model if cfg.transcription_model else ""
+                ),
                 # Entidades
                 "entity_types": entity_types_str,
             }

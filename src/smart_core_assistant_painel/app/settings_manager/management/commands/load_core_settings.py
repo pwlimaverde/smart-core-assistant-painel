@@ -56,6 +56,8 @@ class Command(BaseCommand):
                 "llm_class": "LLM_CLASS",
                 "model": "MODEL",
                 "llm_temperature": "LLM_TEMPERATURE",
+                "transcription_provider": "TRANSCRIPTION_PROVIDER",
+                "transcription_model": "TRANSCRIPTION_MODEL",
                 # === Prompts do Sistema ===
                 "prompt_system_analise_mensagem": "PROMPT_SYSTEM_ANALISE_MENSAGEM",
                 "prompt_system_analise_previa_mensagem": "PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM",

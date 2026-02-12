@@ -79,7 +79,12 @@ class TenantConfigInline(admin.StackedInline):
         (
             "Configurações de LLM",
             {
-                "fields": ("llm_class", "model"),
+                "fields": (
+                    "llm_class",
+                    "model",
+                    "transcription_provider",
+                    "transcription_model",
+                ),
                 "description": (
                     "Configurações avançadas de LLM. Se preenchidas, "
                     "sobrescrevem as configurações globais (CoreSettings)."

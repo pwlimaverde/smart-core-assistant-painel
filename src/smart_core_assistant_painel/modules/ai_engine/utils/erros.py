@@ -90,3 +90,11 @@ class AnaliseAvaliacaoError(AppError):
 
     def __str__(self) -> str:
         return f"AnaliseAvaliacaoError - {self.message}"
+
+
+@dataclass
+class TranscribeAudioError(AppError):
+    message: str
+
+    def __str__(self) -> str:
+        return f"TranscribeAudioError - {self.message}"

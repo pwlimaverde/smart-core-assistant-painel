@@ -4,6 +4,7 @@ This directory contains plans for coordinating work across documentation and pla
 
 ## Plan Queue
 1. [Nome do Agente do Bot no WhatsApp (Por Tenant)](./nome-agente-bot-whatsapp.md)
+2. [Feature de Transcrição de Áudio (transcribe_audio)](./feature-transcribe-audio.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

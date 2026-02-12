@@ -252,9 +252,15 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # Obtém mensagem
             mensagem: Mensagem = Mensagem.objects.get(id=message_id)
 
-            # Transcrição de áudio antes da análise de IA
-            if mensagem.tipo == "audioMessage":
-                self._transcribe_audio_message(mensagem)
+            # Conversão de mídia antes da análise de IA
+            _MEDIA_TYPES = (
+                "audioMessage",
+                "imageMessage",
+                "videoMessage",
+                "documentMessage",
+            )
+            if mensagem.tipo in _MEDIA_TYPES:
+                self._convert_media_context(mensagem)
 
             # --- Feedback Loop Check ---
             if self._check_and_process_feedback(mensagem, contact_id):
@@ -301,54 +307,56 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {message_id}: {e}")
 
-    def _transcribe_audio_message(self, mensagem: "Mensagem") -> None:
-        """Transcreve áudio e atualiza o conteúdo da mensagem.
+    def _convert_media_context(self, mensagem: "Mensagem") -> None:
+        """Converte metadados de mídia em texto contextual.
+
+        Centraliza a conversão de conteúdo multimídia (áudio, imagem,
+        vídeo, documento) em texto para análise de IA via
+        FeaturesCompose.converter_contexto.
 
         Args:
-            mensagem: Mensagem do tipo audioMessage.
+            mensagem: Mensagem com metadados de mídia.
         """
         try:
             metadados = mensagem.metadados or {}
-            audio_url = metadados.get("url")
-            mimetype = metadados.get("mimetype", "audio/ogg")
 
-            if not audio_url:
+            if not metadados.get("url"):
                 logger.warning(
-                    f"Mensagem {mensagem.id}: audioMessage sem URL. "
+                    f"Mensagem {mensagem.id}: {mensagem.tipo} sem URL. "
                     "Mantendo placeholder."
                 )
                 return
 
             logger.info(
-                f"Transcrevendo áudio da mensagem {mensagem.id} "
-                f"(mimetype={mimetype})"
+                f"Convertendo mídia da mensagem {mensagem.id} "
+                f"(tipo={mensagem.tipo})"
             )
 
-            texto_transcrito = FeaturesCompose.transcribe_audio(
-                audio_url=audio_url,
-                mimetype=mimetype,
+            texto_convertido = FeaturesCompose.converter_contexto(
+                metadados=metadados,
+                message_type=mensagem.tipo,
             )
 
-            if texto_transcrito and texto_transcrito.strip():
-                texto_final = texto_transcrito.strip()
+            if texto_convertido and texto_convertido.strip():
+                texto_final = texto_convertido.strip()
                 mensagem.conteudo = texto_final
                 meta = dict(metadados)
-                meta["transcription"] = texto_final
+                meta["contexto_convertido"] = texto_final
                 mensagem.metadados = meta
                 mensagem.save(update_fields=["conteudo", "metadados"])
 
                 logger.info(
-                    f"Áudio transcrito com sucesso para mensagem {mensagem.id} "
+                    f"Mídia convertida com sucesso para mensagem {mensagem.id} "
                     f"(len={len(texto_final)})"
                 )
             else:
                 logger.warning(
-                    f"Transcrição vazia para mensagem {mensagem.id}. "
+                    f"Conversão vazia para mensagem {mensagem.id}. "
                     "Mantendo placeholder."
                 )
         except Exception as e:
             logger.error(
-                f"Erro ao transcrever áudio da mensagem {mensagem.id}: {e}. "
+                f"Erro ao converter mídia da mensagem {mensagem.id}: {e}. "
                 "Continuando com placeholder."
             )
 

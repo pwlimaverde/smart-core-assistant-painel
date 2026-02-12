@@ -376,20 +376,41 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def converter_contexto(metadados: dict[str, Any]) -> str:
+    def converter_contexto(
+        metadados: dict[str, Any],
+        message_type: str,
+    ) -> str:
         """Converte metadados de mensagens multimídia para texto.
 
+        Ponto central de conversão de conteúdo multimídia em contexto
+        textual para análise de IA. Despacha para o handler específico
+        de cada tipo de mídia.
+
         Args:
-            metadados (dict[str, Any]): Dicionário com os metadados da mensagem.
+            metadados: Dicionário com os metadados da mensagem.
+            message_type: Tipo da mensagem (audioMessage, imageMessage, etc.).
 
         Returns:
-            str: Texto formatado representando o contexto da mensagem.
+            Texto convertido ou string vazia se não houver conversão.
         """
-        try:
-            return "contexto"
-        except Exception as e:
-            logger.error(f"Erro ao converter contexto: {e}")
-            raise e
+        if not metadados:
+            return ""
+
+        if message_type == "audioMessage":
+            audio_url = metadados.get("url")
+            mimetype = metadados.get("mimetype", "audio/ogg")
+            if not audio_url:
+                return ""
+            return FeaturesCompose._transcribe_audio(
+                audio_url=str(audio_url),
+                mimetype=str(mimetype),
+            )
+
+        # TODO: imageMessage — interpretação de imagem via Vision API
+        # TODO: videoMessage — extração de frames + interpretação
+        # TODO: documentMessage — extração de texto do documento
+
+        return ""
 
     @staticmethod
     def load_message_data(data: dict[str, Any]) -> MessageData:
@@ -414,9 +435,10 @@ class FeaturesCompose:
             result: MessageData = message_data.result
             if result.metadados:
                 conteudo_media: str = FeaturesCompose.converter_contexto(
-                    result.metadados
+                    result.metadados,
+                    result.message_type,
                 )
-                if conteudo_media and conteudo_media != "contexto":
+                if conteudo_media:
                     result.conteudo = f"{result.conteudo}\n{conteudo_media}"
             return result
         elif isinstance(message_data, ErrorReturn):
@@ -425,12 +447,14 @@ class FeaturesCompose:
             raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
-    def transcribe_audio(
+    def _transcribe_audio(
         audio_url: str,
         mimetype: str,
         language: str = "pt",
     ) -> str:
         """Transcreve um áudio a partir de sua URL.
+
+        Método interno — use ``converter_contexto`` como ponto de entrada.
 
         Args:
             audio_url: URL do arquivo de áudio.

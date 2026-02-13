@@ -26,7 +26,7 @@ class TranscribeAudioDatasource(TAData):
         language = (parameters.language or "pt").strip() or "pt"
 
         if parameters.audio_base64:
-            audio_bytes = base64.b64decode(parameters.audio_base64)
+            audio_bytes = self._decode_base64_audio(parameters.audio_base64)
         else:
             audio_bytes = self._download_audio(parameters.audio_url)
         if len(audio_bytes) > self._MAX_AUDIO_SIZE_BYTES:
@@ -64,6 +64,22 @@ class TranscribeAudioDatasource(TAData):
             if not response.content:
                 raise ValueError("Download de áudio retornou conteúdo vazio.")
             return response.content
+
+    @staticmethod
+    def _decode_base64_audio(audio_base64: str) -> bytes:
+        value = (audio_base64 or "").strip()
+        if not value:
+            raise ValueError("Base64 do áudio vazio.")
+
+        # Aceita payload no formato data URI:
+        # data:audio/ogg;base64,AAA...
+        if "," in value and value.lower().startswith("data:"):
+            value = value.split(",", 1)[1]
+
+        try:
+            return base64.b64decode(value, validate=False)
+        except Exception as exc:
+            raise ValueError("Base64 do áudio inválido.") from exc
 
     def _transcribe_openai(
         self,

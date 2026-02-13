@@ -65,6 +65,7 @@ class EvolutionMessageData:
                 "url": msg_data.get("url"),
                 "seconds": msg_data.get("seconds"),
                 "ptt": msg_data.get("ptt", False),
+                "base64": msg_data.get("base64", ""),
             }
         elif message_type == "imageMessage":
             msg_data = message.get("imageMessage", {})

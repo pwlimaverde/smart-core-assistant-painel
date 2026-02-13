@@ -280,6 +280,7 @@ class TranscribeAudioParameters(ParametersReturnResult):
     mimetype: str
     error: TranscribeAudioError
     language: str = "pt"
+    audio_base64: str = ""
 
     def __str__(self) -> str:
         return self.__repr__()

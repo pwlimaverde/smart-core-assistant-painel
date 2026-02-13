@@ -342,6 +342,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 mensagem.conteudo = texto_final
                 meta = dict(metadados)
                 meta["contexto_convertido"] = texto_final
+                meta.pop("base64", None)
                 mensagem.metadados = meta
                 mensagem.save(update_fields=["conteudo", "metadados"])
 

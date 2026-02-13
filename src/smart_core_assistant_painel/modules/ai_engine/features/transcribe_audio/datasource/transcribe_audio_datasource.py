@@ -1,5 +1,6 @@
 """Datasource para transcrição de áudio via provedores externos."""
 
+import base64
 import os
 import tempfile
 from typing import Any
@@ -24,7 +25,10 @@ class TranscribeAudioDatasource(TAData):
         model = (SERVICEHUB.TRANSCRIPTION_MODEL or "whisper-1").strip()
         language = (parameters.language or "pt").strip() or "pt"
 
-        audio_bytes = self._download_audio(parameters.audio_url)
+        if parameters.audio_base64:
+            audio_bytes = base64.b64decode(parameters.audio_base64)
+        else:
+            audio_bytes = self._download_audio(parameters.audio_url)
         if len(audio_bytes) > self._MAX_AUDIO_SIZE_BYTES:
             raise ValueError("Áudio excede o limite de 25MB para transcrição.")
 

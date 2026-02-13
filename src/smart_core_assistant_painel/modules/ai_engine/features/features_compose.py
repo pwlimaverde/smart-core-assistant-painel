@@ -397,13 +397,15 @@ class FeaturesCompose:
             return ""
 
         if message_type == "audioMessage":
-            audio_url = metadados.get("url")
+            audio_url = metadados.get("url", "")
             mimetype = metadados.get("mimetype", "audio/ogg")
-            if not audio_url:
+            audio_base64 = metadados.get("base64", "")
+            if not audio_url and not audio_base64:
                 return ""
             return FeaturesCompose._transcribe_audio(
-                audio_url=str(audio_url),
+                audio_url=str(audio_url or ""),
                 mimetype=str(mimetype),
+                audio_base64=str(audio_base64 or ""),
             )
 
         # TODO: imageMessage — interpretação de imagem via Vision API
@@ -451,15 +453,17 @@ class FeaturesCompose:
         audio_url: str,
         mimetype: str,
         language: str = "pt",
+        audio_base64: str = "",
     ) -> str:
-        """Transcreve um áudio a partir de sua URL.
+        """Transcreve um áudio a partir de base64 ou URL.
 
         Método interno — use ``converter_contexto`` como ponto de entrada.
 
         Args:
-            audio_url: URL do arquivo de áudio.
+            audio_url: URL do arquivo de áudio (fallback).
             mimetype: Tipo MIME do áudio.
             language: Código do idioma para transcrição.
+            audio_base64: Conteúdo do áudio em base64 (preferencial).
 
         Returns:
             str: Texto transcrito do áudio.
@@ -474,6 +478,7 @@ class FeaturesCompose:
             mimetype=mimetype,
             language=language,
             error=error,
+            audio_base64=audio_base64,
         )
         datasource: TAData = TranscribeAudioDatasource()
         usecase: TAUsecase = TranscribeAudioUseCase(datasource)

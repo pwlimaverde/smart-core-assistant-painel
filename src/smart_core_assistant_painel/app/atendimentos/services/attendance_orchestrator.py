@@ -319,10 +319,12 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         """
         try:
             metadados = mensagem.metadados or {}
+            has_url = bool(metadados.get("url"))
+            has_base64 = bool(metadados.get("base64"))
 
-            if not metadados.get("url"):
+            if not has_url and not has_base64:
                 logger.warning(
-                    f"Mensagem {mensagem.id}: {mensagem.tipo} sem URL. "
+                    f"Mensagem {mensagem.id}: {mensagem.tipo} sem URL/base64. "
                     "Mantendo placeholder."
                 )
                 return

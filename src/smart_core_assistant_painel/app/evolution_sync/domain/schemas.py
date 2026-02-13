@@ -59,13 +59,25 @@ class EvolutionMessageData:
             text = message.get("extendedTextMessage", {}).get("text", "")
         elif message_type == "audioMessage":
             msg_data = message.get("audioMessage", {})
+            # A Evolution pode enviar o base64 em chaves diferentes
+            # dependendo da versão/configuração do webhook.
+            base64_data = (
+                msg_data.get("base64")
+                or message.get("base64")
+                or data.get("base64")
+                or ""
+            )
             text = "[audio]"
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
                 "seconds": msg_data.get("seconds"),
                 "ptt": msg_data.get("ptt", False),
-                "base64": msg_data.get("base64", ""),
+                "base64": (
+                    base64_data
+                    if isinstance(base64_data, str)
+                    else str(base64_data)
+                ),
             }
         elif message_type == "imageMessage":
             msg_data = message.get("imageMessage", {})

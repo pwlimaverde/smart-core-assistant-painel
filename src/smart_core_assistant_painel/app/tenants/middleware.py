@@ -32,6 +32,7 @@ class TenantMiddleware:
     """Middleware para identificação e validação de tenant por requisição."""
 
     EXEMPT_PATTERNS = [
+        r"^/$",
         r"^/admin/",
         r"^/backoffice/",
         r"^/cadastro/",

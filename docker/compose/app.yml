@@ -37,8 +37,8 @@ services:
     volumes:
       - static_files:/app/src/smart_core_assistant_painel/app/staticfiles
       - media_files:/app/src/smart_core_assistant_painel/app/media
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     env_file:
       - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:

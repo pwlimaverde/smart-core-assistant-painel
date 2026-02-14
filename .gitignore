@@ -216,5 +216,8 @@ node_modules/
 # tasks.json
 # tasks/ 
 
+# Credenciais Cloudflare para Certbot (contém API token)
+docker/certbot/cloudflare.ini
+
 # Arquivos locais de MCP (não versionar)
 /.claude/mcp.json

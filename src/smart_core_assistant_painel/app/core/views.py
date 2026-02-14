@@ -106,9 +106,8 @@ class LandingPageView(TemplateView):
             if request.user.is_superuser:
                 return redirect("/admin/")
             return redirect("tenants:dashboard")
-        # Como a Landing Page principal agora é externa (Cloudflare Pages),
-        # o acesso à raiz do sistema (app.smartcoreassistant...) deve direcionar ao Login.
-        return redirect("login")
+        # Renderiza a landing page para visitantes não autenticados
+        return super().get(request, *args, **kwargs)
 
 
 @login_required

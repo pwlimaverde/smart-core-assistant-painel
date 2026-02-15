@@ -23,6 +23,7 @@ echo ">>> Passo 1: Criando certificado temporário..."
 docker run --rm \
     -v smartcore_ssl_certs:/etc/letsencrypt \
     alpine sh -c "
+        apk add --no-cache openssl > /dev/null 2>&1 &&
         mkdir -p /etc/letsencrypt/live/$DOMAIN &&
         openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
             -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem \

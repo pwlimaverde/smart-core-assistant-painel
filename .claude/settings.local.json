@@ -87,7 +87,28 @@
       "Bash(taskkill:*)",
       "Bash(nslookup:*)",
       "Bash(ping:*)",
-      "Bash(tracert:*)"
+      "Bash(tracert:*)",
+      "Bash(git log:*)",
+      "WebFetch(domain:downforeveryoneorjustme.com)",
+      "WebFetch(domain:www.isitdownrightnow.com)",
+      "WebFetch(domain:check-host.net)",
+      "WebFetch(domain:www.whatsmydns.net)",
+      "Bash(ipconfig:*)",
+      "WebFetch(domain:www.cloudflarestatus.com)",
+      "WebFetch(domain:smartcoreassistant.com.br)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" status --short)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" log --oneline -10)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" branch --show-current)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" rm -r:*)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" branch -m feature/interpretacao-imagem feature/nginx-ssl-migration)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" diff --cached --stat)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" diff --stat)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" add smartcore-landing/ docker/nginx/snippets/ssl-params.conf docker/scripts/init-ssl.sh)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" add docker/nginx/snippets/ssl-params.conf docker/scripts/init-ssl.sh)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" commit -m \"$\\(cat <<''EOF''\nchore: remove smartcore-landing \\(Cloudflare Pages\\) e corrigir configs SSL\n\nLanding page agora é servida pelo Django \\(LandingPageView\\).\nA pasta smartcore-landing/ com Wrangler/Cloudflare Pages não é mais necessária.\n\nCorreções aplicadas durante deploy:\n- ssl-params.conf: desabilitar OCSP stapling \\(incompatível com Let''s Encrypt\\)\n- init-ssl.sh: adicionar `apk add openssl` no container Alpine\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" push origin --delete feature/interpretacao-imagem)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" push -u origin feature/nginx-ssl-migration)",
+      "Bash(git -C \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\" log --oneline -3)"
     ]
   }
 }

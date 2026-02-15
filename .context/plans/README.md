@@ -4,6 +4,7 @@ This directory contains plans for coordinating work across documentation and pla
 
 ## Plan Queue
 1. [Feature de Transcrição de Áudio (transcribe_audio)](./feature-transcribe-audio.md)
+2. [Contexto Multimídia no WhatsApp com OpenAI + Groq](./multimodal-whatsapp-context-openai-groq.md)
 
 ## Archived
 1. [Nome do Agente do Bot no WhatsApp (Por Tenant)](./archive/nome-agente-bot-whatsapp.md)

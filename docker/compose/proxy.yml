@@ -16,6 +16,12 @@ services:
       - certbot_www:/var/www/certbot:ro
       - static_files:/var/www/static:ro
       - media_files:/var/www/media:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
     networks:
       - shared_network
     restart: unless-stopped

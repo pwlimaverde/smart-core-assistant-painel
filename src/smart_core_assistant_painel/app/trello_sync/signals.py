@@ -40,11 +40,15 @@ from smart_core_assistant_painel.app.trello_sync.tasks import (
 def fluxo_created_sync_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Cria Board Trello ao criar FluxoAtendimento (execução imediata)."""
+    """Cria Board Trello ao criar FluxoAtendimento (após commit)."""
     if not created:
         return
     try:
-        task_fluxo_ensure_board.delay(get_current_tenant_slug(), instance.id)
+        slug = get_current_tenant_slug()
+        fluxo_id = instance.id
+        transaction.on_commit(
+            lambda: task_fluxo_ensure_board.delay(slug, fluxo_id)
+        )
     except Exception as exc:
         logger.error("Falha ao criar board Trello: {}", exc)
 
@@ -53,18 +57,22 @@ def fluxo_created_sync_trello(
 def etapa_created_sync_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Cria List Trello quando nova etapa e reordena listas (imediato)."""
+    """Cria List Trello quando nova etapa e reordena listas (após commit)."""
     try:
         # Prevenção de loop: se a criação veio do Trello, não enviar de volta
         if getattr(instance, "_syncing_from_trello", False):
             return
 
+        slug = get_current_tenant_slug()
+        etapa_id = instance.id
+        fluxo_id = instance.fluxo_id
+
         if created:
-            task_etapa_ensure_list.delay(
-                get_current_tenant_slug(), instance.id
+            transaction.on_commit(
+                lambda: task_etapa_ensure_list.delay(slug, etapa_id)
             )
-        task_reorder_lists_for_fluxo.delay(
-            get_current_tenant_slug(), instance.fluxo_id
+        transaction.on_commit(
+            lambda: task_reorder_lists_for_fluxo.delay(slug, fluxo_id)
         )
     except Exception as exc:
         logger.warning("Falha ao operar listas: {}", exc)
@@ -110,12 +118,16 @@ def fluxo_deleted_archive_trello(
 def atendimento_created_sync_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Cria Card Trello ao criar Atendimento (execução imediata)."""
+    """Cria Card Trello ao criar Atendimento (após commit)."""
     if not created:
         return
     try:
-        task_atendimento_ensure_card.delay(
-            get_current_tenant_slug(), instance.id
+        slug = get_current_tenant_slug()
+        atendimento_id = instance.id
+        transaction.on_commit(
+            lambda: task_atendimento_ensure_card.delay(
+                slug, atendimento_id
+            )
         )
     except Exception as exc:
         logger.warning("Falha ao criar card: {}", exc)
@@ -125,11 +137,15 @@ def atendimento_created_sync_trello(
 def atendente_created_invite_trello(
     sender: Any, instance: Any, created: bool, **kwargs: Any
 ) -> None:
-    """Envia convite para o board do fluxo ao cadastrar Atendente."""
+    """Envia convite para o board do fluxo ao cadastrar Atendente (após commit)."""
     if not created:
         return
     try:
-        task_atendente_invite.delay(get_current_tenant_slug(), instance.id)
+        slug = get_current_tenant_slug()
+        atendente_id = instance.id
+        transaction.on_commit(
+            lambda: task_atendente_invite.delay(slug, atendente_id)
+        )
     except Exception as exc:
         logger.warning("Falha ao convidar atendente: {}", exc)
 
@@ -160,9 +176,13 @@ def atendimento_updated_assign_member_trello(
     if created:
         return
     try:
+        slug = get_current_tenant_slug()
+        atendimento_id = instance.id
         old_id = getattr(instance, "_old_atendente_id", None)
-        task_atendimento_sync_card_members.delay(
-            get_current_tenant_slug(), instance.id, old_id
+        transaction.on_commit(
+            lambda: task_atendimento_sync_card_members.delay(
+                slug, atendimento_id, old_id
+            )
         )
     except Exception as exc:
         logger.warning("Falha ao atualizar card Trello: {}", exc)
@@ -242,6 +262,9 @@ def atendimento_etapa_updated_move_card(
         if getattr(instance, "_syncing_from_trello", False):
             return
 
+        slug = get_current_tenant_slug()
+        atendimento_id = instance.id
+
         if old_etapa_id is None and new_etapa_id is not None:
             # old_etapa_id=None pode significar:
             # a) etapa realmente definida pela primeira vez (card não existe)
@@ -254,8 +277,10 @@ def atendimento_etapa_updated_move_card(
                 has_card = False
 
             if has_card:
-                task_atendimento_move_to_etapa_list.delay(
-                    get_current_tenant_slug(), instance.id
+                transaction.on_commit(
+                    lambda: task_atendimento_move_to_etapa_list.delay(
+                        slug, atendimento_id
+                    )
                 )
                 logger.info(
                     "Card existente para atendimento {}. "
@@ -263,8 +288,10 @@ def atendimento_etapa_updated_move_card(
                     instance.id,
                 )
             else:
-                task_atendimento_ensure_card.delay(
-                    get_current_tenant_slug(), instance.id
+                transaction.on_commit(
+                    lambda: task_atendimento_ensure_card.delay(
+                        slug, atendimento_id
+                    )
                 )
                 logger.info(
                     "Primeira etapa para atendimento {}. "
@@ -273,8 +300,10 @@ def atendimento_etapa_updated_move_card(
                 )
         else:
             # Etapa mudou (já existia) - apenas mover o card
-            task_atendimento_move_to_etapa_list.delay(
-                get_current_tenant_slug(), instance.id
+            transaction.on_commit(
+                lambda: task_atendimento_move_to_etapa_list.delay(
+                    slug, atendimento_id
+                )
             )
     except Exception as exc:
         logger.warning("Falha ao mover/criar card Trello: {}", exc)

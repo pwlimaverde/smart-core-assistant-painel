@@ -219,7 +219,7 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
 
         return JsonResponse(
             {
-                "code": result.get("code", ""),
+                "base64": result.get("base64", ""),
                 "pairingCode": result.get("pairingCode", ""),
                 "count": result.get("count", 0),
             }

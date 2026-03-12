@@ -102,7 +102,7 @@
                         </div>
 
                         <div x-show="qrCode" class="space-y-4">
-                            <img :src="'data:image/png;base64,' + qrCode"
+                            <img :src="qrCode"
                                 class="w-64 h-64 mx-auto border-2 border-stone-200 rounded-lg shadow-sm"
                                 alt="QR Code WhatsApp">
 
@@ -251,9 +251,9 @@ function qrcodeManager() {
             try {
                 const resp = await fetch('{% url "evolution_instance_qrcode" instance.pk %}');
                 const data = await resp.json();
-                if (data.code) this.qrCode = data.code;
+                if (data.base64) this.qrCode = data.base64;
                 if (data.pairingCode) this.pairingCode = data.pairingCode;
-                if (!data.code && data.message) this.qrError = data.message;
+                if (!data.base64 && data.message) this.qrError = data.message;
             } catch (err) {
                 this.qrError = 'Erro ao gerar QR Code.';
             }

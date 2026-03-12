@@ -125,9 +125,7 @@ def atendimento_created_sync_trello(
         slug = get_current_tenant_slug()
         atendimento_id = instance.id
         transaction.on_commit(
-            lambda: task_atendimento_ensure_card.delay(
-                slug, atendimento_id
-            )
+            lambda: task_atendimento_ensure_card.delay(slug, atendimento_id)
         )
     except Exception as exc:
         logger.warning("Falha ao criar card: {}", exc)

@@ -82,7 +82,9 @@ class EvolutionMessageData:
         elif message_type == "imageMessage":
             msg_data = message.get("imageMessage", {})
             caption = msg_data.get("caption")
-            text = caption if isinstance(caption, str) and caption else "[imagem]"
+            text = (
+                caption if isinstance(caption, str) and caption else "[imagem]"
+            )
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
@@ -90,7 +92,9 @@ class EvolutionMessageData:
         elif message_type == "videoMessage":
             msg_data = message.get("videoMessage", {})
             caption = msg_data.get("caption")
-            text = caption if isinstance(caption, str) and caption else "[video]"
+            text = (
+                caption if isinstance(caption, str) and caption else "[video]"
+            )
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),

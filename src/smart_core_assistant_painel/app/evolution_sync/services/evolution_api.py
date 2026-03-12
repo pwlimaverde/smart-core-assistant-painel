@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -8,6 +8,7 @@ class EvolutionWhatsAppService:
     """[EVO-MSG-001] Serviço para interagir com a API Evolution.
 
     Conexão Multi-Instância e gerenciamento de requisições.
+    Inclui métodos de mensageria e gerenciamento de instâncias.
     """
 
     def _send_request(
@@ -192,5 +193,248 @@ class EvolutionWhatsAppService:
         if not response.ok:
             raise Exception(
                 "Erro ao definir status de digitação: "
+                f"{response.status_code} - {response.text}"
+            )
+
+    # =========================================================
+    # Gerenciamento de Instâncias
+    # =========================================================
+
+    def fetch_instances(
+        self,
+        base_url: str,
+        api_key: str,
+    ) -> List[Dict[str, Any]]:
+        """Lista todas as instâncias no servidor Evolution.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+
+        Returns:
+            Lista de dicts com dados das instâncias.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        response = self._send_request(
+            base_url, "/instance/fetchInstances", api_key=api_key
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao listar instâncias: "
+                f"{response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    def create_instance(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+        webhook_url: str,
+    ) -> Dict[str, Any]:
+        """Cria uma nova instância na Evolution API.
+
+        Configura webhook automaticamente com apenas MESSAGES_UPSERT.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+            instance_name: Nome da nova instância.
+            webhook_url: URL do webhook para receber mensagens.
+
+        Returns:
+            Dict com dados da instância criada (instance, hash, etc).
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        body: Dict[str, Any] = {
+            "instanceName": instance_name,
+            "integration": "WHATSAPP-BAILEYS",
+            "qrcode": True,
+            "webhook": {
+                "url": webhook_url,
+                "events": ["MESSAGES_UPSERT"],
+                "webhook_by_events": False,
+                "webhook_base64": False,
+            },
+        }
+        response = self._send_request(
+            base_url,
+            "/instance/create",
+            api_key=api_key,
+            method="POST",
+            body=body,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao criar instância: "
+                f"{response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    def delete_instance(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+    ) -> None:
+        """Remove uma instância da Evolution API.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+            instance_name: Nome da instância a remover.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        response = self._send_request(
+            base_url,
+            f"/instance/delete/{instance_name}",
+            api_key=api_key,
+            method="DELETE",
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao deletar instância: "
+                f"{response.status_code} - {response.text}"
+            )
+
+    def connect_instance(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+    ) -> Dict[str, Any]:
+        """Gera QR Code para conectar instância ao WhatsApp.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+            instance_name: Nome da instância a conectar.
+
+        Returns:
+            Dict com pairingCode, code (base64 QR) e count.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        response = self._send_request(
+            base_url,
+            f"/instance/connect/{instance_name}",
+            api_key=api_key,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao conectar instância: "
+                f"{response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    def get_connection_state(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+    ) -> Dict[str, Any]:
+        """Verifica estado de conexão de uma instância.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+            instance_name: Nome da instância.
+
+        Returns:
+            Dict com instance: {instanceName, state}.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        response = self._send_request(
+            base_url,
+            f"/instance/connectionState/{instance_name}",
+            api_key=api_key,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao verificar estado: "
+                f"{response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    def set_webhook(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+        webhook_url: str,
+    ) -> Dict[str, Any]:
+        """Configura webhook para uma instância.
+
+        Registra apenas o evento MESSAGES_UPSERT com base64 desabilitado.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+            instance_name: Nome da instância.
+            webhook_url: URL do webhook para receber mensagens.
+
+        Returns:
+            Dict com dados do webhook configurado.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        body: Dict[str, Any] = {
+            "url": webhook_url,
+            "enabled": True,
+            "webhook_by_events": False,
+            "webhook_base64": False,
+            "events": ["MESSAGES_UPSERT"],
+        }
+        response = self._send_request(
+            base_url,
+            f"/webhook/set/{instance_name}",
+            api_key=api_key,
+            method="POST",
+            body=body,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao configurar webhook: "
+                f"{response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    def logout_instance(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+    ) -> None:
+        """Desconecta instância do WhatsApp (logout).
+
+        Remove a sessão sem deletar a instância.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API global do servidor.
+            instance_name: Nome da instância.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        response = self._send_request(
+            base_url,
+            f"/instance/logout/{instance_name}",
+            api_key=api_key,
+            method="DELETE",
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao desconectar instância: "
                 f"{response.status_code} - {response.text}"
             )

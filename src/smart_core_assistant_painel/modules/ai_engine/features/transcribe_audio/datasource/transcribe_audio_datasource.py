@@ -21,7 +21,9 @@ class TranscribeAudioDatasource(TAData):
     _MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024
 
     def __call__(self, parameters: TranscribeAudioParameters) -> str:
-        provider = (SERVICEHUB.TRANSCRIPTION_PROVIDER or "openai").strip().lower()
+        provider = (
+            (SERVICEHUB.TRANSCRIPTION_PROVIDER or "openai").strip().lower()
+        )
         model = (SERVICEHUB.TRANSCRIPTION_MODEL or "whisper-1").strip()
         language = (parameters.language or "pt").strip() or "pt"
 
@@ -91,7 +93,9 @@ class TranscribeAudioDatasource(TAData):
     ) -> str:
         api_key = (SERVICEHUB.OPENAI_API_KEY or "").strip()
         if not api_key:
-            raise ValueError("OPENAI_API_KEY não configurada para transcrição.")
+            raise ValueError(
+                "OPENAI_API_KEY não configurada para transcrição."
+            )
 
         from openai import OpenAI
 
@@ -170,7 +174,9 @@ class TranscribeAudioDatasource(TAData):
 
     @staticmethod
     def _write_temp_file(audio_bytes: bytes, extension: str) -> str:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=extension) as tmp:
+        with tempfile.NamedTemporaryFile(
+            delete=False, suffix=extension
+        ) as tmp:
             tmp.write(audio_bytes)
             return tmp.name
 
@@ -180,4 +186,3 @@ class TranscribeAudioDatasource(TAData):
             os.unlink(path)
         except OSError:
             pass
-

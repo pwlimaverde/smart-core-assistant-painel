@@ -16,7 +16,9 @@ class TranscribeAudioUseCase(TAUsecase):
     ) -> ReturnSuccessOrError[str]:
         if not parameters.audio_url or not parameters.audio_url.strip():
             return ErrorReturn(
-                parameters.error.__class__(message="URL do áudio não fornecida")
+                parameters.error.__class__(
+                    message="URL do áudio não fornecida"
+                )
             )
 
         if not parameters.audio_url.startswith(("http://", "https://")):
@@ -29,4 +31,3 @@ class TranscribeAudioUseCase(TAUsecase):
         return self._resultDatasource(
             parameters=parameters, datasource=self._datasource
         )
-

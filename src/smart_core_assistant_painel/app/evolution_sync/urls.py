@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import webhook
+from .views import contact_data_api, webhook
 from .views_instances import (
     InstanceConnectionStateView,
     InstanceCreateView,
@@ -59,6 +59,12 @@ urlpatterns = [
         "evolution/instances/<int:pk>/logout/",
         InstanceLogoutView.as_view(),
         name="evolution_instance_logout",
+    ),
+    # === API Interna ===
+    path(
+        "api/evolution/contact-data/<int:contact_id>/",
+        contact_data_api,
+        name="evolution_contact_data_api",
     ),
     # === Webhooks (recebimento de mensagens) ===
     path(

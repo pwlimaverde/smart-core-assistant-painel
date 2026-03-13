@@ -1,6 +1,7 @@
 import json
 from typing import Any, Dict, List
 
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
@@ -90,3 +91,40 @@ def webhook(
         return JsonResponse(result, status=202)
 
     return JsonResponse(result, status=status_code)
+
+
+@login_required
+def contact_data_api(
+    request: HttpRequest, contact_id: int
+) -> JsonResponse:
+    """[EVO-WL-001] Retorna nome e telefone de um Contato para auto-preenchimento.
+
+    Endpoint interno usado pelo formulário de White List para preencher
+    automaticamente os campos ``name`` e ``phone_number`` quando um
+    contato é selecionado.
+
+    Args:
+        request: O objeto HttpRequest do Django.
+        contact_id: PK do Contato a ser consultado.
+
+    Returns:
+        JsonResponse com ``{name, phone_number}`` ou 404 se não encontrado.
+    """
+    from smart_core_assistant_painel.app.clientes.models import Contato
+    from smart_core_assistant_painel.app.tenants.mixins import (
+        _get_tenant_from_request,
+    )
+
+    # Garante que o contexto de tenant está configurado para roteamento de BD
+    _get_tenant_from_request(request)
+
+    try:
+        contato = Contato.objects.get(pk=contact_id)
+        return JsonResponse(
+            {
+                "name": contato.nome_contato or "",
+                "phone_number": contato.telefone or "",
+            }
+        )
+    except Contato.DoesNotExist:
+        return JsonResponse({"error": "Contact not found"}, status=404)

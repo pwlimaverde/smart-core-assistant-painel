@@ -17,6 +17,7 @@ from smart_core_assistant_painel.app.tenants.mixins import (
     TenantModelAdminMixin,
 )
 
+from .forms import WhiteListAdminForm
 from .models import EvolutionContact, EvolutionInstance, WhiteList
 
 
@@ -67,8 +68,14 @@ class TenantEvolutionContactAdmin(
 
 
 class TenantWhiteListAdmin(TenantModelAdminMixin, admin.ModelAdmin[WhiteList]):
-    """Admin para gestão de Whitelist de números bloqueados."""
+    """Admin para gestão de Whitelist de números bloqueados.
 
+    Quando um contato é selecionado, os campos ``name`` e ``phone_number``
+    são preenchidos automaticamente com os dados do contato via JavaScript
+    (AJAX) e também pelo ``save_model`` como fallback de segurança.
+    """
+
+    form = WhiteListAdminForm
     list_display = ("name", "contact", "phone_number", "active", "created_at")
     list_filter = ("active",)
     search_fields = (
@@ -79,6 +86,25 @@ class TenantWhiteListAdmin(TenantModelAdminMixin, admin.ModelAdmin[WhiteList]):
     )
     readonly_fields = ("created_at",)
     list_select_related = ("contact",)
+
+    def save_model(
+        self,
+        request: HttpRequest,
+        obj: WhiteList,
+        form: Any,
+        change: bool,
+    ) -> None:
+        """Garante que name e phone_number são populados do contato.
+
+        Funciona como camada de segurança caso o JavaScript não tenha
+        preenchido os campos automaticamente.
+        """
+        if obj.contact:
+            if not obj.name and obj.contact.nome_contato:
+                obj.name = obj.contact.nome_contato
+            if not obj.phone_number and obj.contact.telefone:
+                obj.phone_number = obj.contact.telefone
+        super().save_model(request, obj, form, change)  # type: ignore[misc]
 
 
 # Registro no tenant_admin_site

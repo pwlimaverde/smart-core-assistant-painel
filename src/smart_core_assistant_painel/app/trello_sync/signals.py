@@ -1,6 +1,6 @@
 from typing import Any
 
-from django.db import transaction
+from django.db import router, transaction
 from django.db.models.signals import post_save, pre_delete, pre_save
 from django.dispatch import receiver
 from loguru import logger
@@ -46,8 +46,10 @@ def fluxo_created_sync_trello(
     try:
         slug = get_current_tenant_slug()
         fluxo_id = instance.id
+        db = router.db_for_write(FluxoAtendimento)
         transaction.on_commit(
-            lambda: task_fluxo_ensure_board.delay(slug, fluxo_id)
+            lambda: task_fluxo_ensure_board.delay(slug, fluxo_id),
+            using=db,
         )
     except Exception as exc:
         logger.error("Falha ao criar board Trello: {}", exc)
@@ -66,13 +68,16 @@ def etapa_created_sync_trello(
         slug = get_current_tenant_slug()
         etapa_id = instance.id
         fluxo_id = instance.fluxo_id
+        db = router.db_for_write(EtapaFluxo)
 
         if created:
             transaction.on_commit(
-                lambda: task_etapa_ensure_list.delay(slug, etapa_id)
+                lambda: task_etapa_ensure_list.delay(slug, etapa_id),
+                using=db,
             )
         transaction.on_commit(
-            lambda: task_reorder_lists_for_fluxo.delay(slug, fluxo_id)
+            lambda: task_reorder_lists_for_fluxo.delay(slug, fluxo_id),
+            using=db,
         )
     except Exception as exc:
         logger.warning("Falha ao operar listas: {}", exc)
@@ -124,8 +129,10 @@ def atendimento_created_sync_trello(
     try:
         slug = get_current_tenant_slug()
         atendimento_id = instance.id
+        db = router.db_for_write(Atendimento)
         transaction.on_commit(
-            lambda: task_atendimento_ensure_card.delay(slug, atendimento_id)
+            lambda: task_atendimento_ensure_card.delay(slug, atendimento_id),
+            using=db,
         )
     except Exception as exc:
         logger.warning("Falha ao criar card: {}", exc)
@@ -141,8 +148,10 @@ def atendente_created_invite_trello(
     try:
         slug = get_current_tenant_slug()
         atendente_id = instance.id
+        db = router.db_for_write(Atendente)
         transaction.on_commit(
-            lambda: task_atendente_invite.delay(slug, atendente_id)
+            lambda: task_atendente_invite.delay(slug, atendente_id),
+            using=db,
         )
     except Exception as exc:
         logger.warning("Falha ao convidar atendente: {}", exc)
@@ -177,10 +186,12 @@ def atendimento_updated_assign_member_trello(
         slug = get_current_tenant_slug()
         atendimento_id = instance.id
         old_id = getattr(instance, "_old_atendente_id", None)
+        db = router.db_for_write(Atendimento)
         transaction.on_commit(
             lambda: task_atendimento_sync_card_members.delay(
                 slug, atendimento_id, old_id
-            )
+            ),
+            using=db,
         )
     except Exception as exc:
         logger.warning("Falha ao atualizar card Trello: {}", exc)
@@ -262,6 +273,7 @@ def atendimento_etapa_updated_move_card(
 
         slug = get_current_tenant_slug()
         atendimento_id = instance.id
+        db = router.db_for_write(Atendimento)
 
         if old_etapa_id is None and new_etapa_id is not None:
             # old_etapa_id=None pode significar:
@@ -278,7 +290,8 @@ def atendimento_etapa_updated_move_card(
                 transaction.on_commit(
                     lambda: task_atendimento_move_to_etapa_list.delay(
                         slug, atendimento_id
-                    )
+                    ),
+                    using=db,
                 )
                 logger.info(
                     "Card existente para atendimento {}. "
@@ -289,7 +302,8 @@ def atendimento_etapa_updated_move_card(
                 transaction.on_commit(
                     lambda: task_atendimento_ensure_card.delay(
                         slug, atendimento_id
-                    )
+                    ),
+                    using=db,
                 )
                 logger.info(
                     "Primeira etapa para atendimento {}. "
@@ -301,7 +315,8 @@ def atendimento_etapa_updated_move_card(
             transaction.on_commit(
                 lambda: task_atendimento_move_to_etapa_list.delay(
                     slug, atendimento_id
-                )
+                ),
+                using=db,
             )
     except Exception as exc:
         logger.warning("Falha ao mover/criar card Trello: {}", exc)
@@ -645,10 +660,12 @@ def mensagem_created_update_trello_card(
         at_id: int = instance.atendimento_id  # type: ignore[assignment]
         # Captura contexto atual para uso no callback
         current_slug = get_current_tenant_slug()
+        db = router.db_for_write(Mensagem)
         transaction.on_commit(
             lambda: task_atendimento_update_card_rich_content.delay(
                 current_slug, at_id
-            )
+            ),
+            using=db,
         )
     except Exception as exc:
         logger.warning(

@@ -409,6 +409,55 @@ class EvolutionWhatsAppService:
             )
         return response.json()
 
+    def get_base64_from_media(
+        self,
+        base_url: str,
+        api_key: str,
+        instance_name: str,
+        message_key: Dict[str, Any],
+        message_content: Dict[str, Any],
+    ) -> str:
+        """Obtém base64 de mídia descriptografada via Evolution API.
+
+        Usa o endpoint ``getBase64FromMediaMessage`` para descriptografar
+        e retornar o conteúdo de mídia em base64.
+
+        Args:
+            base_url: URL base da API Evolution.
+            api_key: Chave de API da instância.
+            instance_name: Nome da instância.
+            message_key: Chave da mensagem (remoteJid, fromMe, id).
+            message_content: Conteúdo da mensagem (audioMessage, etc.).
+
+        Returns:
+            String base64 do conteúdo de mídia descriptografado.
+
+        Raises:
+            Exception: Se a API retornar erro.
+        """
+        path = f"/chat/getBase64FromMediaMessage/{instance_name}"
+        body: Dict[str, Any] = {
+            "message": {
+                "key": message_key,
+                "message": message_content,
+            },
+            "convertToMp4": False,
+        }
+        response = self._send_request(
+            base_url,
+            path,
+            api_key=api_key,
+            method="POST",
+            body=body,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao obter base64 de mídia: "
+                f"{response.status_code} - {response.text}"
+            )
+        data: Dict[str, Any] = response.json()
+        return str(data.get("base64", ""))
+
     def logout_instance(
         self,
         base_url: str,

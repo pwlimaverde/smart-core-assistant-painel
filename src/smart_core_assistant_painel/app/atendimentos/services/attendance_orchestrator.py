@@ -312,6 +312,111 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {message_id}: {e}")
 
+    def _fetch_media_base64_from_evolution(
+        self, mensagem: "Mensagem"
+    ) -> str:
+        """Busca base64 de mídia descriptografada via Evolution API.
+
+        Quando ``webhookBase64`` está desabilitado, a URL no metadata
+        aponta para o CDN do WhatsApp (arquivo encriptado). Este método
+        usa o endpoint ``getBase64FromMediaMessage`` da Evolution API
+        para obter o conteúdo descriptografado.
+
+        Args:
+            mensagem: Mensagem com metadados contendo info da Evolution.
+
+        Returns:
+            String base64 do conteúdo de mídia, ou string vazia se falhar.
+        """
+        from smart_core_assistant_painel.app.evolution_sync.models import (
+            EvolutionInstance,
+        )
+        from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
+            EvolutionWhatsAppService,
+        )
+        from smart_core_assistant_painel.app.tenants.models import (
+            TenantEvolution,
+        )
+
+        meta = mensagem.metadados or {}
+        evo = meta.get("evolution", {}) or {}
+        api_key = evo.get("api_key", "")
+        if not api_key:
+            return ""
+
+        inst = EvolutionInstance.objects.filter(
+            api_key=str(api_key), active=True
+        ).first()
+        if not inst:
+            return ""
+
+        # Resolver base_url via TenantEvolution
+        base_url = ""
+        tenant_id = getattr(inst, "tenant_id", None)
+        if tenant_id:
+            tenant_cfg = TenantEvolution.objects.filter(
+                tenant_id=tenant_id
+            ).first()
+            if tenant_cfg and tenant_cfg.server_url:
+                base_url = str(tenant_cfg.server_url).rstrip("/")
+        if not base_url:
+            return ""
+
+        # Construir key da mensagem WhatsApp
+        contato = getattr(mensagem.atendimento, "contato", None)
+        phone = str(getattr(contato, "telefone", "") or "").strip()
+        if not phone:
+            return ""
+
+        message_key = {
+            "remoteJid": f"{phone}@s.whatsapp.net",
+            "fromMe": False,
+            "id": mensagem.message_id_whatsapp or "",
+        }
+
+        # Campos comuns de encriptação do WhatsApp
+        crypto_fields = {
+            "url": meta.get("url", ""),
+            "mimetype": meta.get("mimetype", ""),
+            "mediaKey": meta.get("mediaKey", ""),
+            "directPath": meta.get("directPath", ""),
+            "fileSha256": meta.get("fileSha256", ""),
+            "fileEncSha256": meta.get("fileEncSha256", ""),
+        }
+        if meta.get("fileLength"):
+            crypto_fields["fileLength"] = meta["fileLength"]
+        if meta.get("mediaKeyTimestamp"):
+            crypto_fields["mediaKeyTimestamp"] = meta[
+                "mediaKeyTimestamp"
+            ]
+
+        # Campos específicos por tipo de mídia
+        if mensagem.tipo == "audioMessage":
+            crypto_fields["seconds"] = meta.get("seconds", 0)
+            crypto_fields["ptt"] = meta.get("ptt", False)
+        elif mensagem.tipo == "videoMessage":
+            crypto_fields["seconds"] = meta.get("seconds", 0)
+
+        message_content = {mensagem.tipo: crypto_fields}
+
+        if not meta.get("mediaKey"):
+            logger.warning(
+                f"Mensagem {mensagem.id}: sem mediaKey nos "
+                "metadados. Evolution API não conseguirá "
+                "descriptografar a mídia."
+            )
+            return ""
+
+        service = EvolutionWhatsAppService()
+        result = service.get_base64_from_media(
+            base_url=base_url,
+            api_key=str(api_key),
+            instance_name=inst.name,
+            message_key=message_key,
+            message_content=message_content,
+        )
+        return result
+
     def _convert_media_context(self, mensagem: "Mensagem") -> None:
         """Converte metadados de mídia em texto contextual.
 
@@ -333,6 +438,28 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     "Mantendo placeholder."
                 )
                 return
+
+            # Se não tem base64, busca via Evolution API
+            # (a URL do webhook aponta para o CDN do WhatsApp,
+            # que é um arquivo encriptado).
+            if not has_base64 and has_url:
+                try:
+                    base64_data = (
+                        self._fetch_media_base64_from_evolution(mensagem)
+                    )
+                    if base64_data:
+                        metadados = dict(metadados)
+                        metadados["base64"] = base64_data
+                        has_base64 = True
+                        logger.info(
+                            f"Base64 obtido via Evolution API "
+                            f"para mensagem {mensagem.id}"
+                        )
+                except Exception as e:
+                    logger.warning(
+                        f"Falha ao buscar base64 via Evolution API "
+                        f"para mensagem {mensagem.id}: {e}"
+                    )
 
             logger.info(
                 f"Convertendo mídia da mensagem {mensagem.id} "

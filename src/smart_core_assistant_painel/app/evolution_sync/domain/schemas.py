@@ -78,6 +78,17 @@ class EvolutionMessageData:
                     if isinstance(base64_data, str)
                     else str(base64_data)
                 ),
+                # Campos de encriptação do WhatsApp necessários
+                # para descriptografar mídia via Evolution API
+                # (getBase64FromMediaMessage).
+                "mediaKey": msg_data.get("mediaKey", ""),
+                "directPath": msg_data.get("directPath", ""),
+                "fileSha256": msg_data.get("fileSha256", ""),
+                "fileEncSha256": msg_data.get("fileEncSha256", ""),
+                "fileLength": msg_data.get("fileLength"),
+                "mediaKeyTimestamp": msg_data.get(
+                    "mediaKeyTimestamp"
+                ),
             }
         elif message_type == "imageMessage":
             msg_data = message.get("imageMessage", {})
@@ -88,6 +99,14 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "mediaKey": msg_data.get("mediaKey", ""),
+                "directPath": msg_data.get("directPath", ""),
+                "fileSha256": msg_data.get("fileSha256", ""),
+                "fileEncSha256": msg_data.get("fileEncSha256", ""),
+                "fileLength": msg_data.get("fileLength"),
+                "mediaKeyTimestamp": msg_data.get(
+                    "mediaKeyTimestamp"
+                ),
             }
         elif message_type == "videoMessage":
             msg_data = message.get("videoMessage", {})
@@ -99,6 +118,14 @@ class EvolutionMessageData:
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
                 "seconds": msg_data.get("seconds"),
+                "mediaKey": msg_data.get("mediaKey", ""),
+                "directPath": msg_data.get("directPath", ""),
+                "fileSha256": msg_data.get("fileSha256", ""),
+                "fileEncSha256": msg_data.get("fileEncSha256", ""),
+                "fileLength": msg_data.get("fileLength"),
+                "mediaKeyTimestamp": msg_data.get(
+                    "mediaKeyTimestamp"
+                ),
             }
         elif message_type == "documentMessage":
             msg_data = message.get("documentMessage", {})
@@ -111,6 +138,14 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "mediaKey": msg_data.get("mediaKey", ""),
+                "directPath": msg_data.get("directPath", ""),
+                "fileSha256": msg_data.get("fileSha256", ""),
+                "fileEncSha256": msg_data.get("fileEncSha256", ""),
+                "fileLength": msg_data.get("fileLength"),
+                "mediaKeyTimestamp": msg_data.get(
+                    "mediaKeyTimestamp"
+                ),
             }
 
         return cls(

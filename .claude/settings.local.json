@@ -121,7 +121,10 @@
       "Bash(gh run list:*)",
       "Bash(gh api:*)",
       "Bash(del \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\scripts\\\\temp\\\\fix_health.py\")",
-      "Bash(uv run pyright:*)"
+      "Bash(uv run pyright:*)",
+      "Bash(find C:PROJETOSPYTHONAPPSsmart-core-assistant-painelsrc -type f -name *.py -exec grep -l \"download\\\\|fetch.*media\\\\|media.*download\\\\|\\\\.get.*url\" {})",
+      "Bash(2)",
+      "Bash(grep -r TenantEvolution C:PROJETOSPYTHONAPPSsmart-core-assistant-painelsrcsmart_core_assistant_painelappevolution_sync --include=*.py)"
     ]
   }
 }

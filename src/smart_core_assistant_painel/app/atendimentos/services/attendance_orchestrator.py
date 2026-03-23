@@ -90,9 +90,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # 3. Determina API key
             final_api_key = api_key or content_data.get("api_key")
-            logger.debug(
-                f"Processando mensagem para contato {contact_id} - {content_data['content']}"
-            )
+
             # 4. Cria mensagem no sistema
             message_id = self._create_message(
                 contact_id=contact_id,

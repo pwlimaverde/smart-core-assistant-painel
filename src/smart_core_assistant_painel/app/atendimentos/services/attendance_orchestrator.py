@@ -260,7 +260,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 "documentMessage",
             )
             if mensagem.tipo in _MEDIA_TYPES:
-                self._convert_media_context(mensagem)
+                self._convert_media_context(mensagem, api_key=api_key)
 
             # --- Feedback Loop Check ---
             if self._check_and_process_feedback(mensagem, contact_id):
@@ -313,7 +313,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             logger.error(f"Erro ao processar mensagem {message_id}: {e}")
 
     def _fetch_media_base64_from_evolution(
-        self, mensagem: "Mensagem"
+        self,
+        mensagem: "Mensagem",
+        api_key: str = "",
     ) -> str:
         """Busca base64 de mídia descriptografada via Evolution API.
 
@@ -339,8 +341,12 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         )
 
         meta = mensagem.metadados or {}
-        evo = meta.get("evolution", {}) or {}
-        api_key = evo.get("api_key", "")
+
+        # api_key vem do parâmetro (passado pelo orchestrator)
+        # ou fallback para metadados (compatibilidade)
+        if not api_key:
+            evo = meta.get("evolution", {}) or {}
+            api_key = evo.get("api_key", "")
         if not api_key:
             logger.debug(
                 f"Mensagem {mensagem.id}: sem api_key Evolution."
@@ -432,7 +438,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         )
         return result
 
-    def _convert_media_context(self, mensagem: "Mensagem") -> None:
+    def _convert_media_context(
+        self,
+        mensagem: "Mensagem",
+        api_key: str = "",
+    ) -> None:
         """Converte metadados de mídia em texto contextual.
 
         Centraliza a conversão de conteúdo multimídia (áudio, imagem,
@@ -441,6 +451,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
         Args:
             mensagem: Mensagem com metadados de mídia.
+            api_key: Chave da API Evolution para buscar mídia.
         """
         try:
             metadados = mensagem.metadados or {}
@@ -460,7 +471,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             if not has_base64 and has_url:
                 try:
                     base64_data = (
-                        self._fetch_media_base64_from_evolution(mensagem)
+                        self._fetch_media_base64_from_evolution(
+                            mensagem, api_key=api_key
+                        )
                     )
                     if base64_data:
                         metadados = dict(metadados)

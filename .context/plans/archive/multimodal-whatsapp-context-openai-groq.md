@@ -1,6 +1,7 @@
 ---
-status: ready
+status: completed
 generated: 2026-02-14
+updated: 2026-03-23
 title: "Contexto Multimídia no WhatsApp com OpenAI + Groq"
 owners:
   - "backend-specialist"

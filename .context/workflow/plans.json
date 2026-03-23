@@ -9,6 +9,16 @@
       "status": "active"
     }
   ],
-  "completed": [],
+  "completed": [
+    {
+      "slug": "multimodal-whatsapp-context-openai-groq",
+      "path": "plans/archive/multimodal-whatsapp-context-openai-groq.md",
+      "title": "Contexto Multimídia no WhatsApp com OpenAI + Groq",
+      "summary": "Pipeline de transcrição de áudio via Evolution API + Groq Whisper implementado com sucesso.",
+      "linkedAt": "2026-02-14T00:00:00.000Z",
+      "completedAt": "2026-03-23T00:00:00.000Z",
+      "status": "completed"
+    }
+  ],
   "primary": "feature-transcribe-audio"
 }

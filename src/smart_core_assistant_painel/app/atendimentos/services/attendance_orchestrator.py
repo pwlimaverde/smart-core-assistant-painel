@@ -342,12 +342,19 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         evo = meta.get("evolution", {}) or {}
         api_key = evo.get("api_key", "")
         if not api_key:
+            logger.debug(
+                f"Mensagem {mensagem.id}: sem api_key Evolution."
+            )
             return ""
 
         inst = EvolutionInstance.objects.filter(
             api_key=str(api_key), active=True
         ).first()
         if not inst:
+            logger.debug(
+                f"Mensagem {mensagem.id}: EvolutionInstance "
+                f"não encontrada para api_key={api_key[:8]}..."
+            )
             return ""
 
         # Resolver base_url via TenantEvolution
@@ -360,12 +367,20 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             if tenant_cfg and tenant_cfg.server_url:
                 base_url = str(tenant_cfg.server_url).rstrip("/")
         if not base_url:
+            logger.debug(
+                f"Mensagem {mensagem.id}: base_url da Evolution "
+                f"não encontrada (tenant_id={tenant_id})."
+            )
             return ""
 
         # Construir key da mensagem WhatsApp
         contato = getattr(mensagem.atendimento, "contato", None)
         phone = str(getattr(contato, "telefone", "") or "").strip()
         if not phone:
+            logger.debug(
+                f"Mensagem {mensagem.id}: telefone do contato "
+                "não disponível."
+            )
             return ""
 
         message_key = {

@@ -120,7 +120,8 @@
       "Bash(exit 1\"]\n      interval: 60s\n      timeout: 15s\n      retries: 3\n      start_period: 60s''''''\n    parts[last_idx - 1] = parts[last_idx - 1] + healthcheck\n    content = ''''.join\\(parts[:-1]\\) + parts[-1]\n\nwith open\\(''/opt/smartcore/paulo-ecoprint/docker-compose.yml'', ''w''\\) as f:\n    f.write\\(content\\)\nprint\\(''OK''\\)\nPYEOF\npython3 /tmp/fix_compose.py\")",
       "Bash(gh run list:*)",
       "Bash(gh api:*)",
-      "Bash(del \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\scripts\\\\temp\\\\fix_health.py\")"
+      "Bash(del \"c:\\\\PROJETOS\\\\PYTHON\\\\APPS\\\\smart-core-assistant-painel\\\\scripts\\\\temp\\\\fix_health.py\")",
+      "Bash(uv run pyright:*)"
     ]
   }
 }

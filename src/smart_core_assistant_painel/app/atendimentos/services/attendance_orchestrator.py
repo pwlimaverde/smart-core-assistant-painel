@@ -280,6 +280,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # Configura atendimento
             atendimento = mensagem.atendimento
+
+            # Preenche assunto e tags automaticamente
+            self._auto_fill_subject(atendimento, mensagem)
+            self._sync_intent_tags(atendimento, mensagem)
+
             self._configure_attendance(
                 atendimento, api_key, env_list, message=mensagem
             )
@@ -965,6 +970,95 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         )
 
         self._structure_manager._update_attendance_status_ongoing(attendance)
+
+    def _auto_fill_subject(
+        self,
+        attendance: "Atendimento",
+        message: "Mensagem",
+    ) -> None:
+        """Preenche assunto automaticamente se vazio.
+
+        Usa intents e entidades da mensagem para gerar
+        um resumo curto como assunto do atendimento.
+
+        Args:
+            attendance: Atendimento a atualizar.
+            message: Mensagem com intents/entidades.
+        """
+        if attendance.assunto:
+            return
+
+        parts: list[str] = []
+
+        # Usa entidades como base do assunto
+        for entity_dict in (message.entidades_extraidas or []):
+            for key, value in entity_dict.items():
+                if key.lower() == "nome_contato":
+                    continue
+                val = str(value).strip()
+                if val and len(val) <= 50 and val not in parts:
+                    parts.append(val)
+                if len(parts) >= 3:
+                    break
+            if len(parts) >= 3:
+                break
+
+        # Complementa com intents se não tem entidades
+        if not parts:
+            for intent_dict in (message.intent_detectado or []):
+                for tag in intent_dict.keys():
+                    label = tag.replace("_", " ").capitalize()
+                    if label not in parts:
+                        parts.append(label)
+                    if len(parts) >= 2:
+                        break
+                if len(parts) >= 2:
+                    break
+
+        if parts:
+            assunto = " - ".join(parts)
+            attendance.assunto = assunto[:200]
+            attendance.save(update_fields=["assunto"])
+            logger.info(
+                f"Assunto auto-preenchido para "
+                f"atendimento {attendance.id}: "
+                f"{assunto}"
+            )
+
+    def _sync_intent_tags(
+        self,
+        attendance: "Atendimento",
+        message: "Mensagem",
+    ) -> None:
+        """Sincroniza intents detectados como tags.
+
+        Adiciona tags de intent (prefixadas com 'intent:')
+        ao atendimento, evitando duplicatas.
+
+        Args:
+            attendance: Atendimento a atualizar.
+            message: Mensagem com intents detectados.
+        """
+        if not message.intent_detectado:
+            return
+
+        tags: list[str] = list(attendance.tags or [])
+        updated = False
+
+        for intent_dict in message.intent_detectado:
+            for tag_name in intent_dict.keys():
+                tag = f"intent:{tag_name}"
+                if tag not in tags:
+                    tags.append(tag)
+                    updated = True
+
+        if updated:
+            attendance.tags = tags
+            attendance.save(update_fields=["tags"])
+            logger.info(
+                f"Tags atualizadas no atendimento "
+                f"{attendance.id}: {tags}"
+            )
 
     def _check_and_process_feedback(
         self, message: "Mensagem", contact_id: int

@@ -793,6 +793,18 @@ class FeaturesCompose:
             transfer_attendance: bool = acao_transferencia is not None
             fluxo_transferencia: str = ""
 
+            # Safety net: detecta transferência no texto
+            if not transfer_attendance and response_text:
+                if FeaturesCompose._detect_transfer_in_text(
+                    response_text
+                ):
+                    transfer_attendance = True
+                    logger.warning(
+                        "Safety net: transferência detectada "
+                        "no texto mas acao_transferencia=None."
+                        " Forçando transferência."
+                    )
+
             # Mapeia acao_transferencia para fluxo_disponiveis
             if transfer_attendance and acao_transferencia:
                 fluxo_transferencia = FeaturesCompose._mapear_acao_para_fluxo(
@@ -926,3 +938,33 @@ class FeaturesCompose:
             return primeira_key
 
         return ""
+
+    @staticmethod
+    def _detect_transfer_in_text(response_text: str) -> bool:
+        """Detecta keywords de transferência no texto da resposta.
+
+        Safety net para quando o LLM menciona transferência no
+        texto mas não preenche acao_transferencia no structured
+        output.
+
+        Args:
+            response_text: Texto da resposta do bot.
+
+        Returns:
+            True se o texto indica transferência ativa.
+        """
+        import re
+
+        text_lower = response_text.lower()
+        transfer_patterns = [
+            r"vou\s+(encaminhar|transferir|direcionar)",
+            r"encaminhando\s+(voc[eê]|seu|sua)",
+            r"transferindo\s+(voc[eê]|seu|sua)",
+            r"direcionando\s+(voc[eê]|seu|sua)",
+            r"vou\s+te\s+(encaminhar|transferir)",
+            r"(encaminhar|transferir)\s+(voc[eê]|seu|sua)"
+            r"\s+(solicita|atendimento|chamado)",
+        ]
+        return any(
+            re.search(p, text_lower) for p in transfer_patterns
+        )

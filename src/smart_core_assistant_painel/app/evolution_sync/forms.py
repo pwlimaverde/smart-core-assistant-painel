@@ -64,8 +64,6 @@ class WhiteListAdminForm(forms.ModelForm[WhiteList]):
             if contact and contact.telefone:
                 cleaned_data["phone_number"] = contact.telefone
             else:
-                self.add_error(
-                    "phone_number", _("This field is required.")
-                )
+                self.add_error("phone_number", _("This field is required."))
 
         return cleaned_data

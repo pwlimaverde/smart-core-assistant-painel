@@ -86,9 +86,7 @@ class EvolutionMessageData:
                 "fileSha256": msg_data.get("fileSha256", ""),
                 "fileEncSha256": msg_data.get("fileEncSha256", ""),
                 "fileLength": msg_data.get("fileLength"),
-                "mediaKeyTimestamp": msg_data.get(
-                    "mediaKeyTimestamp"
-                ),
+                "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
             }
         elif message_type == "imageMessage":
             msg_data = message.get("imageMessage", {})
@@ -104,9 +102,7 @@ class EvolutionMessageData:
                 "fileSha256": msg_data.get("fileSha256", ""),
                 "fileEncSha256": msg_data.get("fileEncSha256", ""),
                 "fileLength": msg_data.get("fileLength"),
-                "mediaKeyTimestamp": msg_data.get(
-                    "mediaKeyTimestamp"
-                ),
+                "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
             }
         elif message_type == "videoMessage":
             msg_data = message.get("videoMessage", {})
@@ -123,9 +119,7 @@ class EvolutionMessageData:
                 "fileSha256": msg_data.get("fileSha256", ""),
                 "fileEncSha256": msg_data.get("fileEncSha256", ""),
                 "fileLength": msg_data.get("fileLength"),
-                "mediaKeyTimestamp": msg_data.get(
-                    "mediaKeyTimestamp"
-                ),
+                "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
             }
         elif message_type == "documentMessage":
             msg_data = message.get("documentMessage", {})
@@ -143,9 +137,7 @@ class EvolutionMessageData:
                 "fileSha256": msg_data.get("fileSha256", ""),
                 "fileEncSha256": msg_data.get("fileEncSha256", ""),
                 "fileLength": msg_data.get("fileLength"),
-                "mediaKeyTimestamp": msg_data.get(
-                    "mediaKeyTimestamp"
-                ),
+                "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
             }
 
         return cls(

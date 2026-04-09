@@ -94,9 +94,7 @@ def webhook(
 
 
 @login_required
-def contact_data_api(
-    request: HttpRequest, contact_id: int
-) -> JsonResponse:
+def contact_data_api(request: HttpRequest, contact_id: int) -> JsonResponse:
     """[EVO-WL-001] Retorna nome e telefone de um Contato para auto-preenchimento.
 
     Endpoint interno usado pelo formulário de White List para preencher

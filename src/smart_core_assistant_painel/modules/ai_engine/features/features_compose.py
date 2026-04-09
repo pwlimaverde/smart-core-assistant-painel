@@ -795,9 +795,7 @@ class FeaturesCompose:
 
             # Safety net: detecta transferência no texto
             if not transfer_attendance and response_text:
-                if FeaturesCompose._detect_transfer_in_text(
-                    response_text
-                ):
+                if FeaturesCompose._detect_transfer_in_text(response_text):
                     transfer_attendance = True
                     logger.warning(
                         "Safety net: transferência detectada "
@@ -965,6 +963,4 @@ class FeaturesCompose:
             r"(encaminhar|transferir)\s+(voc[eê]|seu|sua)"
             r"\s+(solicita|atendimento|chamado)",
         ]
-        return any(
-            re.search(p, text_lower) for p in transfer_patterns
-        )
+        return any(re.search(p, text_lower) for p in transfer_patterns)

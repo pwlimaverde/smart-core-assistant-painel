@@ -346,9 +346,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             evo = meta.get("evolution", {}) or {}
             api_key = evo.get("api_key", "")
         if not api_key:
-            logger.debug(
-                f"Mensagem {mensagem.id}: sem api_key Evolution."
-            )
+            logger.debug(f"Mensagem {mensagem.id}: sem api_key Evolution.")
             return ""
 
         inst = EvolutionInstance.objects.filter(
@@ -382,8 +380,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         phone = str(getattr(contato, "telefone", "") or "").strip()
         if not phone:
             logger.debug(
-                f"Mensagem {mensagem.id}: telefone do contato "
-                "não disponível."
+                f"Mensagem {mensagem.id}: telefone do contato não disponível."
             )
             return ""
 
@@ -405,9 +402,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         if meta.get("fileLength"):
             crypto_fields["fileLength"] = meta["fileLength"]
         if meta.get("mediaKeyTimestamp"):
-            crypto_fields["mediaKeyTimestamp"] = meta[
-                "mediaKeyTimestamp"
-            ]
+            crypto_fields["mediaKeyTimestamp"] = meta["mediaKeyTimestamp"]
 
         # Campos específicos por tipo de mídia
         if mensagem.tipo == "audioMessage":
@@ -468,10 +463,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             # que é um arquivo encriptado).
             if not has_base64 and has_url:
                 try:
-                    base64_data = (
-                        self._fetch_media_base64_from_evolution(
-                            mensagem, api_key=api_key
-                        )
+                    base64_data = self._fetch_media_base64_from_evolution(
+                        mensagem, api_key=api_key
                     )
                     if base64_data:
                         metadados = dict(metadados)
@@ -1144,7 +1137,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         parts: list[str] = []
 
         # Usa entidades como base do assunto
-        for entity_dict in (message.entidades_extraidas or []):
+        for entity_dict in message.entidades_extraidas or []:
             for key, value in entity_dict.items():
                 if key.lower() == "nome_contato":
                     continue
@@ -1158,7 +1151,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
         # Complementa com intents se não tem entidades
         if not parts:
-            for intent_dict in (message.intent_detectado or []):
+            for intent_dict in message.intent_detectado or []:
                 for tag in intent_dict.keys():
                     label = tag.replace("_", " ").capitalize()
                     if label not in parts:
@@ -1209,8 +1202,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             attendance.tags = tags
             attendance.save(update_fields=["tags"])
             logger.info(
-                f"Tags atualizadas no atendimento "
-                f"{attendance.id}: {tags}"
+                f"Tags atualizadas no atendimento {attendance.id}: {tags}"
             )
 
     def _check_and_process_feedback(

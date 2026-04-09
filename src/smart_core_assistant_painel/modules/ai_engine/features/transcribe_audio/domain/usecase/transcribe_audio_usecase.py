@@ -14,9 +14,7 @@ class TranscribeAudioUseCase(TAUsecase):
     def __call__(
         self, parameters: TranscribeAudioParameters
     ) -> ReturnSuccessOrError[str]:
-        has_url = bool(
-            parameters.audio_url and parameters.audio_url.strip()
-        )
+        has_url = bool(parameters.audio_url and parameters.audio_url.strip())
         has_base64 = bool(
             parameters.audio_base64 and parameters.audio_base64.strip()
         )

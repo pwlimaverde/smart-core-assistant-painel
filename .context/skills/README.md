@@ -1,65 +1,73 @@
-# Skills - Expertise On-Demand
+# Skills
 
-Este diretório contém skills que representam procedimentos específicos de tarefas que os agentes de IA podem ativar conforme necessário.
+On-demand expertise for AI agents. Skills are task-specific procedures that get activated when relevant.
 
-## Skills Disponíveis
+> Project: smart-core-assistant-painel
 
-| Skill | Descrição | Fases PREVC |
-|-------|-----------|-------------|
-| [commit-message](commit-message/SKILL.md) | Gera mensagens de commit convencionais | E, C |
-| [pr-review](pr-review/SKILL.md) | Revisa Pull Requests | R, V |
-| [code-review](code-review/SKILL.md) | Verifica qualidade de código | R, V |
-| [test-generation](test-generation/SKILL.md) | Gera casos de teste | E, V |
-| [documentation](documentation/SKILL.md) | Gera/atualiza documentação | E, C |
-| [refactoring](refactoring/SKILL.md) | Refatoração segura de código | E, V |
-| [bug-investigation](bug-investigation/SKILL.md) | Fluxo de debugging | P, E |
-| [feature-breakdown](feature-breakdown/SKILL.md) | Decomposição de features em tarefas | P, R |
-| [api-design](api-design/SKILL.md) | Design de APIs RESTful | P, R |
-| [security-audit](security-audit/SKILL.md) | Auditoria de segurança | R, V |
+## How Skills Work
 
-## Fases PREVC
+1. **Discovery**: AI agents discover available skills
+2. **Matching**: When a task matches a skill's description, it's activated
+3. **Execution**: The skill's instructions guide the AI's behavior
 
-- **P** (Planning): Planejamento, requisitos, especificações
-- **R** (Review): Validação de approach, arquitetura, riscos
-- **E** (Execution): Implementação seguindo specs aprovadas
-- **V** (Validation): Verificação com testes e code review
-- **C** (Confirmation): Documentação, deploy, handoff
+## Available Skills
 
-## Estrutura de Skill
+### Built-in Skills
 
-Cada skill é definido em um arquivo `SKILL.md` dentro de sua pasta:
+| Skill | Description | Phases |
+|-------|-------------|--------|
+| [commit-message](./commit-message/SKILL.md) | Gera mensagens de commit seguindo Conventional Commits | E, C |
+| [pr-review](./pr-review/SKILL.md) | Revisa Pull Requests de forma estruturada | R, V |
+| [code-review](./code-review/SKILL.md) | Verifica qualidade de código contra padrões | R, V |
+| [test-generation](./test-generation/SKILL.md) | Gera casos de teste automatizados | E, V |
+| [documentation](./documentation/SKILL.md) | Gera e atualiza documentação técnica | E, C |
+| [refactoring](./refactoring/SKILL.md) | Refatoração segura de código | E, V |
+| [bug-investigation](./bug-investigation/SKILL.md) | Fluxo estruturado de debugging | P, E |
+| [feature-breakdown](./feature-breakdown/SKILL.md) | Decomposição de features em tarefas | P, R |
+| [api-design](./api-design/SKILL.md) | Design de APIs RESTful | P, R |
+| [security-audit](./security-audit/SKILL.md) | Auditoria de segurança e vulnerabilidades | R, V |
 
-```markdown
----
-name: skill-name
-description: Descrição breve
-phases: [E, V]
----
+## Creating Custom Skills
 
-# Skill Name
+Create a new skill by adding a directory with a `SKILL.md` file:
 
-## Quando Usar
-...
-
-## Instruções
-...
-
-## Exemplos
-...
+```
+.context/skills/
+└── my-skill/
+    ├── SKILL.md          # Required: skill definition
+    └── templates/        # Optional: helper resources
+        └── checklist.md
 ```
 
-## Comandos CLI
+### SKILL.md Format
 
-```bash
-# Inicializar skills
-npx @ai-coders/context skill init
+```yaml
+---
+name: my-skill
+description: When to use this skill
+phases: [P, E, V]  # Optional: PREVC phases
+mode: false        # Optional: mode command?
+---
 
-# Preencher skills com conteúdo do projeto
-npx @ai-coders/context skill fill .
+# My Skill
 
-# Listar skills disponíveis
-npx @ai-coders/context skill list
+## When to Use
+[Description of when this skill applies]
 
-# Exportar para ferramentas de IA
-npx @ai-coders/context skill export --preset claude
+## Instructions
+1. Step one
+2. Step two
+
+## Examples
+[Usage examples]
 ```
+
+## PREVC Phase Mapping
+
+| Phase | Name | Skills |
+|-------|------|--------|
+| P | Planning | feature-breakdown, documentation, api-design |
+| R | Review | pr-review, code-review, api-design, security-audit |
+| E | Execution | commit-message, test-generation, refactoring, bug-investigation |
+| V | Validation | pr-review, code-review, test-generation, security-audit |
+| C | Confirmation | commit-message, documentation |

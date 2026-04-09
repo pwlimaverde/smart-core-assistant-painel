@@ -1,9 +1,3 @@
-# Project Rules and Guidelines
-
-> Auto-generated from .context/docs on 2026-01-31T16:57:59.430Z
-
-## README
-
 # Documentação do Projeto - Smart Core Assistant Painel
 
 Este diretório contém a documentação técnica e operacional do projeto Smart Core Assistant Painel.
@@ -31,4 +25,3 @@ Este diretório contém a documentação técnica e operacional do projeto Smart
 ## Atualizações
 
 Esta documentação deve ser atualizada sempre que houver mudanças significativas na arquitetura, processos ou ferramentas do projeto.
-

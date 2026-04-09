@@ -1,0 +1,45 @@
+Usage: ai-context [options] [command]
+
+Scaffold documentation and agent playbooks for your repository
+
+Options:
+  -V, --version                        output the version number
+  -l, --lang <locale>                  Language for CLI output (en or pt-BR)
+                                       (default: "en")
+  -h, --help                           display help for command
+
+Commands:
+  init [options] <repo-path> [type]    Generate docs and agent scaffolding for a
+                                       repository
+  fill [options] <repo-path>           Use an LLM to fill generated docs and
+                                       agent playbooks with the latest repo
+                                       context
+  update [options] [repo-path]         Analyze code changes and update affected
+                                       documentation
+  plan [options] <plan-name>           Create a development plan that links
+                                       documentation and agent playbooks
+  sync-agents [options]                Sync agent playbooks to AI tool
+                                       directories (.claude, .github, etc.)
+  import-rules [options] [repo-path]   Import cursor rules and AI assistant
+                                       rules to .context/docs
+  import-agents [options] [repo-path]  Import agents from AI tool directories to
+                                       .context/agents
+  reverse-sync [options] [repo-path]   Import rules, agents, and skills from AI
+                                       tool directories into .context/
+  serve [options]                      Start passthrough server for external AI
+                                       agents (stdin/stdout JSON)
+  mcp [options]                        Start MCP (Model Context Protocol) server
+                                       for Claude Code integration
+  mcp:install [options] [tool]         Install MCP server configuration for AI
+                                       tools (Claude Code, Cursor, etc.)
+  start [options] [feature-name]       Smart start: initialize, fill, and start
+                                       workflow in one command
+  export-rules [options] [repo-path]   Export rules from .context to AI tool
+                                       directories
+  report [options] [repo-path]         Generate workflow progress report
+  skill                                Manage skills (on-demand expertise for AI
+                                       agents)
+  workflow                             PREVC workflow management (Planning,
+                                       Review, Execution, Validation,
+                                       Confirmation)
+  help [command]                       display help for command

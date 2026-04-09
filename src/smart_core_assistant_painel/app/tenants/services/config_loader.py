@@ -63,18 +63,28 @@ class ConfigLoader:
         huggingface_api_key = tenant_cfg.get(
             "huggingface_api_key"
         ) or core.get("huggingface_api_key", "")
+        google_api_key = core.get("google_api_key", "")
 
         config = RuntimeConfig(
             # === API Keys (tenant sobrescreve core) ===
             groq_api_key=groq_api_key,
             openai_api_key=openai_api_key,
             huggingface_api_key=huggingface_api_key,
+            google_api_key=google_api_key,
             # === LLM ===
             llm_class=tenant_cfg.get("llm_class")
             or core.get("llm_class", "ChatGroq"),
             model=tenant_cfg.get("model")
             or core.get("model", "llama-3.1-70b-versatile"),
-            llm_temperature=int(core.get("llm_temperature", "0")),
+            llm_temperature=int(
+                tenant_cfg.get("llm_temperature")
+                or core.get("llm_temperature", "0")
+            ),
+            # === Interpretação de Mídia ===
+            vision_provider=tenant_cfg.get("vision_provider")
+            or core.get("vision_provider", "google"),
+            vision_model=tenant_cfg.get("vision_model")
+            or core.get("vision_model", "gemini-2.5-flash"),
             # === Transcrição ===
             transcription_provider=tenant_cfg.get("transcription_provider")
             or core.get("transcription_provider", "openai"),

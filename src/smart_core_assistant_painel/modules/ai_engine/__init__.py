@@ -16,6 +16,7 @@ from .utils.erros import (
     DataMessageError,
     DocumentError,
     HtmlStrError,
+    InterpretMediaError,
     LlmError,
     TranscribeAudioError,
 )
@@ -25,6 +26,7 @@ from .utils.parameters import (
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
+    InterpretMediaParameters,
     TranscribeAudioParameters,
 )
 from .utils.types import (
@@ -38,6 +40,8 @@ from .utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
+    IMData,
+    IMUsecase,
     TAData,
     TAUsecase,
 )
@@ -49,6 +53,7 @@ __all__ = [
     "DataMessageError",
     "DocumentError",
     "HtmlStrError",
+    "InterpretMediaError",
     "LlmError",
     "TranscribeAudioError",
     # Parameters
@@ -57,6 +62,7 @@ __all__ = [
     "LlmParameters",
     "LoadDocumentConteudoParameters",
     "LoadDocumentFileParameters",
+    "InterpretMediaParameters",
     "TranscribeAudioParameters",
     "MessageData",
     # Types
@@ -70,6 +76,8 @@ __all__ = [
     "LDFData",
     "LDFUsecase",
     "LMDUsecase",
+    "IMData",
+    "IMUsecase",
     "TAData",
     "TAUsecase",
 ]

@@ -19,6 +19,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DocumentError,
     EmbeddingError,
     LlmError,
+    InterpretMediaError,
     TranscribeAudioError,
 )
 
@@ -262,6 +263,30 @@ class GenerateChunksParameters(ParametersReturnResult):
 
     def __str__(self) -> str:
         """Retorna uma representação em string do objeto."""
+        return self.__repr__()
+
+
+@dataclass
+class InterpretMediaParameters(ParametersReturnResult):
+    """Parâmetros para interpretação de mídia (imagem/vídeo/documento).
+
+    Attributes:
+        media_url: URL do arquivo de mídia.
+        mimetype: Tipo MIME da mídia.
+        media_type: Tipo da mensagem (imageMessage, videoMessage, etc.).
+        error: Erro a ser levantado em caso de falha.
+        media_base64: Conteúdo da mídia em base64 (preferencial).
+        file_name: Nome do arquivo (documentos).
+    """
+
+    media_url: str
+    mimetype: str
+    media_type: str
+    error: InterpretMediaError
+    media_base64: str = ""
+    file_name: str = ""
+
+    def __str__(self) -> str:
         return self.__repr__()
 
 

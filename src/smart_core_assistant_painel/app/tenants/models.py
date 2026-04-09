@@ -303,6 +303,29 @@ class TenantConfig(models.Model):
         ),
     )
 
+    vision_provider = models.CharField(
+        max_length=50,
+        blank=True,
+        default="",
+        verbose_name="Provedor de Visão",
+        help_text=(
+            "Provedor de interpretação visual (google, openai). "
+            "Se vazio, usa configuração global."
+        ),
+    )
+
+    vision_model = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name="Modelo de Visão",
+        help_text=(
+            "Modelo para interpretação de mídias "
+            "(ex: gemini-2.5-flash). "
+            "Se vazio, usa configuração global."
+        ),
+    )
+
     # API Keys do tenant (sobrescrevem CoreSettings se preenchidas)
     api_keys = models.JSONField(
         default=dict,

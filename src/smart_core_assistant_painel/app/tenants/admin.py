@@ -84,6 +84,9 @@ class TenantConfigInline(admin.StackedInline):
                     "model",
                     "transcription_provider",
                     "transcription_model",
+                    "vision_provider",
+                    "vision_model",
+                    "llm_temperature",
                 ),
                 "description": (
                     "Configurações avançadas de LLM. Se preenchidas, "

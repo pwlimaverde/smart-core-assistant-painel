@@ -58,6 +58,9 @@ _ENV_BY_CORE_KEY: dict[str, str] = {
     "prompt_template_user_rag": "PROMPT_TEMPLATE_USER_RAG",
     "prompt_regras_resposta": "PROMPT_REGRAS_RESPOSTA",
     "prompt_regras_transferencia": "PROMPT_REGRAS_TRANSFERENCIA",
+    "vision_provider": "VISION_PROVIDER",
+    "vision_model": "VISION_MODEL",
+    "google_api_key": "GOOGLE_API_KEY",
 }
 
 

@@ -1,0 +1,24 @@
+{
+  "active": [
+    {
+      "slug": "feature-transcribe-audio",
+      "path": "plans/feature-transcribe-audio.md",
+      "title": "Plano: Feature de Transcrição de Áudio (transcribe_audio)",
+      "summary": "**Nenhuma dependência nova precisa ser adicionada.**",
+      "linkedAt": "2026-02-12T17:17:53.241Z",
+      "status": "active"
+    }
+  ],
+  "completed": [
+    {
+      "slug": "multimodal-whatsapp-context-openai-groq",
+      "path": "plans/archive/multimodal-whatsapp-context-openai-groq.md",
+      "title": "Contexto Multimídia no WhatsApp com OpenAI + Groq",
+      "summary": "Pipeline de transcrição de áudio via Evolution API + Groq Whisper implementado com sucesso.",
+      "linkedAt": "2026-02-14T00:00:00.000Z",
+      "completedAt": "2026-03-23T00:00:00.000Z",
+      "status": "completed"
+    }
+  ],
+  "primary": "feature-transcribe-audio"
+}

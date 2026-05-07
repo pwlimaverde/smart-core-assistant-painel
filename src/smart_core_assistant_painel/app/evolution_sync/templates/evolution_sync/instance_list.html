@@ -87,7 +87,7 @@
                             <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nome</th>
                             <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
                             <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Telefone</th>
-                            <th class="text-center py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Bot</th>
+
                             <th class="text-right py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Ações</th>
                         </tr>
                     </thead>
@@ -118,24 +118,7 @@
                             <td class="py-3 px-4 text-sm text-stone-600">
                                 {{ inst.phone_number|default:"—" }}
                             </td>
-                            <td class="py-3 px-4 text-center">
-                                {% if can_edit %}
-                                <button @click="toggleBotInline({{ inst.pk }}, $el)"
-                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer"
-                                    :class="botActive ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'"
-                                    :title="botActive ? 'Bot ativo — clique para desativar' : 'Bot inativo — clique para ativar'">
-                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                    </svg>
-                                    <span x-text="botActive ? 'Ativo' : 'Inativo'"></span>
-                                </button>
-                                {% else %}
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
-                                    :class="botActive ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-500'">
-                                    <span x-text="botActive ? 'Ativo' : 'Inativo'"></span>
-                                </span>
-                                {% endif %}
-                            </td>
+
                             <td class="py-3 px-4 text-right">
                                 <div class="flex items-center justify-end gap-2">
                                     <a href="{% url 'evolution_instance_detail' inst.pk %}"
@@ -196,14 +179,7 @@
                         <p class="mt-1 text-xs text-stone-400">Alfanumérico e hífen, 3-50 caracteres.</p>
                     </div>
 
-                    <div class="flex items-center mt-4">
-                        <input type="checkbox" id="respostaBotCheckbox" x-model="newRespostaBot"
-                            class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2">
-                        <label for="respostaBotCheckbox" class="ml-2 text-sm font-medium text-stone-700">
-                            Bot ativo
-                        </label>
-                    </div>
-                    <p class="mt-1 text-xs text-stone-400">Se ativo, o bot poderá responder automaticamente às mensagens recebidas por esta instância.</p>
+
 
                     <div x-show="createError" class="p-3 bg-red-50 border border-red-200 rounded-lg">
                         <p class="text-sm text-red-700" x-text="createError"></p>
@@ -336,30 +312,7 @@ function instanceManager() {
             }
         },
 
-        async toggleBotInline(pk, el) {
-            const row = el.closest('tr');
-            const rowData = Alpine.$data(row);
-            const newValue = !rowData.botActive;
-            try {
-                const resp = await fetch(`/evolution/instances/${pk}/toggle-bot/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': this.getCSRF(),
-                    },
-                    body: JSON.stringify({ resposta_bot: newValue }),
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    rowData.botActive = data.resposta_bot;
-                    this.showToast(data.message, 'success');
-                } else {
-                    this.showToast(data.message || 'Erro ao alterar bot.', 'error');
-                }
-            } catch (err) {
-                this.showToast('Erro de conexão.', 'error');
-            }
-        }
+
     }
 }
 </script>

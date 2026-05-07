@@ -103,6 +103,7 @@ class TranscribeAudioError(AppError):
 @dataclass
 class InterpretMediaError(AppError):
     """Erro na interpretação de mídia (imagem/vídeo/documento)."""
+
     message: str
 
     def __str__(self) -> str:

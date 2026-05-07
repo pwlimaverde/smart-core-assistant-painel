@@ -203,6 +203,11 @@ class ConfigLoader:
                 "transcription_model": (
                     cfg.transcription_model if cfg.transcription_model else ""
                 ),
+                # Interpretação de Mídia Visual
+                "vision_provider": (
+                    cfg.vision_provider if cfg.vision_provider else ""
+                ),
+                "vision_model": (cfg.vision_model if cfg.vision_model else ""),
                 # Entidades
                 "entity_types": entity_types_str,
             }

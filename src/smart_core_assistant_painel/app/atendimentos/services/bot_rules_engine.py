@@ -88,21 +88,33 @@ class BotRulesEngine(BotRulesEngineInterface):
             False se bloqueado explicitamente.
         """
         try:
+            from smart_core_assistant_painel.app.evolution_sync.models import (
+                EvolutionInstance,
+            )
             from smart_core_assistant_painel.app.operacional.models import (
                 AppInstance,
             )
 
-            instance = AppInstance.objects.filter(
+            # Verifica primeiro na EvolutionInstance (interface principal)
+            evo_instance = EvolutionInstance.objects.filter(
                 api_key=api_key, active=True
             ).first()
 
-            if not instance:
-                logger.warning(
-                    f"AppInstance não encontrada para api_key={api_key[:8]}..."
-                )
-                return True  # Fail-safe: permite se não encontrar instância
+            if evo_instance:
+                return evo_instance.resposta_bot
 
-            return instance.resposta_bot
+            # Fallback para AppInstance (legado)
+            app_instance = AppInstance.objects.filter(
+                api_key=api_key, active=True
+            ).first()
+
+            if app_instance:
+                return app_instance.resposta_bot
+
+            logger.warning(
+                f"Nenhuma instância encontrada para api_key={api_key[:8]}..."
+            )
+            return True  # Fail-safe: permite se não encontrar instância
 
         except Exception as e:
             logger.error(f"Erro ao verificar resposta_bot da instância: {e}")

@@ -303,7 +303,45 @@ class WebhookProcessor:
                     )
                     raise
 
+        # Sincroniza AppInstance para manter paridade operacional
+        self._sync_app_instance(instance)
+
         return instance
+
+    def _sync_app_instance(
+        self, instance: EvolutionInstance
+    ) -> None:
+        """Sincroniza AppInstance com a EvolutionInstance.
+
+        Garante que exista um AppInstance correspondente para
+        manter paridade operacional (roteamento de departamento,
+        atendente, resposta_bot, etc.).
+
+        Args:
+            instance: EvolutionInstance a sincronizar.
+        """
+        try:
+            from smart_core_assistant_painel.app.operacional.models import (
+                AppInstance,
+            )
+
+            if not instance.api_key:
+                return
+
+            AppInstance.objects.update_or_create(
+                api_key=instance.api_key,
+                defaults={
+                    "channel": "evolution_api",
+                    "display_name": instance.name,
+                    "resposta_bot": instance.resposta_bot,
+                    "active": instance.active,
+                },
+            )
+        except Exception as e:
+            logger.warning(
+                f"Falha ao sincronizar AppInstance "
+                f"para {instance.name}: {e}"
+            )
 
     def _resolve_contact(
         self, instance: EvolutionInstance, envelope: EvolutionWebhookEnvelope

@@ -35,20 +35,14 @@ class InterpretMediaUseCase(IMUsecase):
             SuccessReturn com texto descritivo ou
             ErrorReturn em caso de falha.
         """
-        has_url = bool(
-            parameters.media_url
-            and parameters.media_url.strip()
-        )
+        has_url = bool(parameters.media_url and parameters.media_url.strip())
         has_base64 = bool(
-            parameters.media_base64
-            and parameters.media_base64.strip()
+            parameters.media_base64 and parameters.media_base64.strip()
         )
 
         if not has_url and not has_base64:
             return ErrorReturn(
-                InterpretMediaError(
-                    "URL ou base64 da mídia não fornecida."
-                )
+                InterpretMediaError("URL ou base64 da mídia não fornecida.")
             )
 
         # Validar tipos de mídia suportados
@@ -60,8 +54,7 @@ class InterpretMediaUseCase(IMUsecase):
         if parameters.media_type not in supported_types:
             return ErrorReturn(
                 InterpretMediaError(
-                    f"Tipo de mídia não suportado: "
-                    f"{parameters.media_type}"
+                    f"Tipo de mídia não suportado: {parameters.media_type}"
                 )
             )
 

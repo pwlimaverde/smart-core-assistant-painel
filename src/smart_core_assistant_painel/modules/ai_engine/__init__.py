@@ -23,10 +23,10 @@ from .utils.erros import (
 from .utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
+    InterpretMediaParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
-    InterpretMediaParameters,
     TranscribeAudioParameters,
 )
 from .utils.types import (
@@ -36,12 +36,12 @@ from .utils.types import (
     APMData,
     APMTuple,
     APMUsecase,
+    IMData,
+    IMUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
     LMDUsecase,
-    IMData,
-    IMUsecase,
     TAData,
     TAUsecase,
 )

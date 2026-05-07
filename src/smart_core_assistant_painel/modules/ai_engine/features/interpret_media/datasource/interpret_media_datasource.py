@@ -51,9 +51,7 @@ class InterpretMediaDatasource(IMData):
         ),
     }
 
-    def __call__(
-        self, parameters: InterpretMediaParameters
-    ) -> str:
+    def __call__(self, parameters: InterpretMediaParameters) -> str:
         """Executa interpretação da mídia via Gemini.
 
         Args:
@@ -68,13 +66,9 @@ class InterpretMediaDatasource(IMData):
         """
         # 1. Obter bytes da mídia
         if parameters.media_base64:
-            media_bytes = self._decode_base64(
-                parameters.media_base64
-            )
+            media_bytes = self._decode_base64(parameters.media_base64)
         else:
-            media_bytes = self._download_media(
-                parameters.media_url
-            )
+            media_bytes = self._download_media(parameters.media_url)
 
         if len(media_bytes) > self._MAX_MEDIA_SIZE_BYTES:
             raise ValueError(
@@ -95,14 +89,8 @@ class InterpretMediaDatasource(IMData):
         )
 
         # Adicionar nome do arquivo ao prompt de documentos
-        if (
-            parameters.media_type == "documentMessage"
-            and parameters.file_name
-        ):
-            prompt = (
-                f"{prompt}\n\nNome do arquivo: "
-                f"{parameters.file_name}"
-            )
+        if parameters.media_type == "documentMessage" and parameters.file_name:
+            prompt = f"{prompt}\n\nNome do arquivo: {parameters.file_name}"
 
         # 4. Instanciar LLM multimodal via ServiceHub
         llm = self._build_vision_llm()
@@ -114,10 +102,14 @@ class InterpretMediaDatasource(IMData):
         ]
 
         if parameters.media_type == "imageMessage":
-            content.append({
-                "type": "image_url",
-                "image_url": {"url": f"data:{mimetype};base64,{media_b64}"},
-            })
+            content.append(
+                {
+                    "type": "image_url",
+                    "image_url": {
+                        "url": f"data:{mimetype};base64,{media_b64}"
+                    },
+                }
+            )
         else:
             # Para vídeo e documentos, o Gemini via langchain suporta o tipo 'media'
             # ou 'image_url' com data URI para alguns casos, mas a forma correta
@@ -125,38 +117,45 @@ class InterpretMediaDatasource(IMData):
             # Como fallback ou se o provedor for OpenAI, usamos a estrutura deles
             provider = (SERVICEHUB.VISION_PROVIDER or "google").strip().lower()
             if provider == "google":
-                content.append({
-                    "type": "media",
-                    "media_category": "video" if "video" in mimetype else "document",
-                    "data": media_b64,
-                    "mime_type": mimetype,
-                })
+                content.append(
+                    {
+                        "type": "media",
+                        "media_category": "video"
+                        if "video" in mimetype
+                        else "document",
+                        "data": media_b64,
+                        "mime_type": mimetype,
+                    }
+                )
             else:
                 # Fallback para provedores que usam image_url para tudo (como vision de imagens)
-                content.append({
-                    "type": "image_url",
-                    "image_url": {"url": f"data:{mimetype};base64,{media_b64}"},
-                })
+                content.append(
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:{mimetype};base64,{media_b64}"
+                        },
+                    }
+                )
 
         message = HumanMessage(content=cast(Any, content))
 
         response: BaseMessage = llm.invoke([message])
-        # Lida com o conteúdo que pode ser string ou lista (multimodal)
-        raw_content = response.content
+        # O LangChain retorna content como str ou list — cast para
+        # evitar warnings de tipo parcialmente desconhecido.
+        raw_content: Any = cast(Any, response.content)
         if isinstance(raw_content, list):
-            texts = [
-                str(c.get("text", ""))
-                for c in raw_content
-                if isinstance(c, dict)
-            ]
-            result = " ".join(texts).strip()
+            text_parts: list[str] = []
+            for part in cast(list[Any], raw_content):
+                if isinstance(part, dict):
+                    typed_part = cast(dict[str, Any], part)
+                    text_parts.append(str(typed_part.get("text", "")))
+            result = " ".join(text_parts).strip()
         else:
             result = str(raw_content).strip()
 
         if not result:
-            raise ValueError(
-                "LLM retornou resposta vazia para a mídia."
-            )
+            raise ValueError("LLM retornou resposta vazia para a mídia.")
 
         return result
 
@@ -167,12 +166,8 @@ class InterpretMediaDatasource(IMData):
             Instância do ChatGoogleGenerativeAI (ou outro
             provedor configurado).
         """
-        provider = (
-            SERVICEHUB.VISION_PROVIDER or "google"
-        ).strip().lower()
-        model = (
-            SERVICEHUB.VISION_MODEL or "gemini-2.5-flash"
-        ).strip()
+        provider = (SERVICEHUB.VISION_PROVIDER or "google").strip().lower()
+        model = (SERVICEHUB.VISION_MODEL or "gemini-2.5-flash").strip()
         api_key = (SERVICEHUB.GOOGLE_API_KEY or "").strip()
 
         if provider == "google":
@@ -197,9 +192,7 @@ class InterpretMediaDatasource(IMData):
                 temperature=0,
             )
 
-        raise ValueError(
-            f"Provedor de visão não suportado: {provider}"
-        )
+        raise ValueError(f"Provedor de visão não suportado: {provider}")
 
     def _download_media(self, url: str) -> bytes:
         """Faz download da mídia a partir de uma URL.
@@ -220,9 +213,7 @@ class InterpretMediaDatasource(IMData):
             response = client.get(url)
             response.raise_for_status()
             if not response.content:
-                raise ValueError(
-                    "Download de mídia retornou conteúdo vazio."
-                )
+                raise ValueError("Download de mídia retornou conteúdo vazio.")
             return response.content
 
     @staticmethod

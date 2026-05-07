@@ -105,6 +105,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
             return _json_error("Body inválido.")
 
         instance_name = str(data.get("instance_name", "")).strip()
+        resposta_bot = bool(data.get("resposta_bot", True))
         if not INSTANCE_NAME_RE.match(instance_name):
             return _json_error(
                 "Nome inválido. Use 3-50 caracteres alfanuméricos "
@@ -134,6 +135,21 @@ class InstanceCreateView(LoginRequiredMixin, View):
             instance_id=instance_data.get("instanceId", ""),
             api_key=hash_data.get("apikey", ""),
             connection_state="close",
+            resposta_bot=resposta_bot,
+        )
+
+        from smart_core_assistant_painel.app.operacional.models import (
+            AppInstance,
+        )
+
+        AppInstance.objects.update_or_create(
+            api_key=instance.api_key,
+            defaults={
+                "channel": "evolution_api",
+                "display_name": instance.name,
+                "resposta_bot": instance.resposta_bot,
+                "active": True,
+            },
         )
 
         return JsonResponse(
@@ -334,6 +350,14 @@ class InstanceDeleteView(LoginRequiredMixin, View):
         instance.active = False
         instance.save(update_fields=["active"])
 
+        from smart_core_assistant_painel.app.operacional.models import (
+            AppInstance,
+        )
+
+        AppInstance.objects.filter(api_key=instance.api_key).update(
+            active=False
+        )
+
         return JsonResponse(
             {
                 "success": True,
@@ -382,6 +406,51 @@ class InstanceLogoutView(LoginRequiredMixin, View):
         )
 
 
+class InstanceToggleBotView(LoginRequiredMixin, View):
+    """Ativa ou desativa a resposta automática do bot na instância."""
+
+    def post(self, request: HttpRequest, pk: int) -> JsonResponse:
+        tenant, evo_config, can_edit = _get_tenant_and_config(request)
+
+        if not tenant or not evo_config:
+            return _json_error("Config Evolution não encontrada.", 404)
+        if not can_edit:
+            return _json_error("Sem permissão para esta ação.", 403)
+
+        try:
+            instance = EvolutionInstance.objects.get(pk=pk, active=True)
+        except EvolutionInstance.DoesNotExist:
+            return _json_error("Instância não encontrada.", 404)
+
+        import json
+
+        try:
+            data = json.loads(request.body)
+            resposta_bot = bool(data.get("resposta_bot", True))
+        except (json.JSONDecodeError, ValueError):
+            return _json_error("Body inválido.")
+
+        instance.resposta_bot = resposta_bot
+        instance.save(update_fields=["resposta_bot"])
+
+        from smart_core_assistant_painel.app.operacional.models import (
+            AppInstance,
+        )
+
+        AppInstance.objects.filter(api_key=instance.api_key).update(
+            resposta_bot=resposta_bot
+        )
+
+        status_text = "ativado" if resposta_bot else "desativado"
+        return JsonResponse(
+            {
+                "success": True,
+                "message": f"Bot {status_text} para a instância.",
+                "resposta_bot": resposta_bot,
+            }
+        )
+
+
 class RefreshAllStatusView(LoginRequiredMixin, View):
     """Atualiza status de todas as instâncias do tenant em batch."""
 
@@ -396,7 +465,33 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
         instances = list(EvolutionInstance.objects.filter(active=True))
         updated: list[dict[str, Any]] = []
 
+        from smart_core_assistant_painel.app.operacional.models import (
+            AppInstance,
+            Departamento,
+        )
+
+        # Busca departamento principal para vínculo automático
+        dept_atendimento = Departamento.objects.filter(
+            nome__icontains="atendimento", ativo=True
+        ).first()
+
         for instance in instances:
+            app_inst, created = AppInstance.objects.update_or_create(
+                api_key=instance.api_key,
+                defaults={
+                    "channel": "evolution_api",
+                    "display_name": instance.name,
+                    "resposta_bot": instance.resposta_bot,
+                    "active": True,
+                },
+            )
+            # Vincula ao departamento principal se recém-criado
+            # ou sem departamento
+            if dept_atendimento and not app_inst.departamento:
+                app_inst.departamento = dept_atendimento
+                app_inst.save(
+                    update_fields=["departamento"]
+                )
             try:
                 state_data = service.get_connection_state(
                     base_url=evo_config.server_url,

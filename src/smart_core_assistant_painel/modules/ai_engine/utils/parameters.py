@@ -18,8 +18,8 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DataMessageError,
     DocumentError,
     EmbeddingError,
-    LlmError,
     InterpretMediaError,
+    LlmError,
     TranscribeAudioError,
 )
 

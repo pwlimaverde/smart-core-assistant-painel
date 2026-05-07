@@ -22,6 +22,12 @@ from smart_core_assistant_painel.modules.ai_engine.features.analise_previa_mensa
 from smart_core_assistant_painel.modules.ai_engine.features.generate_chunks.domain.usecase.generate_chunks_usecase import (
     GenerateChunksUseCase,
 )
+from smart_core_assistant_painel.modules.ai_engine.features.interpret_media.datasource.interpret_media_datasource import (
+    InterpretMediaDatasource,
+)
+from smart_core_assistant_painel.modules.ai_engine.features.interpret_media.domain.usecase.interpret_media_usecase import (
+    InterpretMediaUseCase,
+)
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     EmbeddingError,
 )
@@ -35,6 +41,7 @@ from ..utils.erros import (
     AnaliseMensageError,
     DataMessageError,
     DocumentError,
+    InterpretMediaError,
     LlmError,
     TranscribeAudioError,
 )
@@ -44,6 +51,7 @@ from ..utils.parameters import (
     AnalisePreviaMensagemParameters,
     DataMensageParameters,
     GenerateChunksParameters,
+    InterpretMediaParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -61,6 +69,8 @@ from ..utils.types import (
     APMUsecase,
     GCUsecase,
     GEData,
+    IMData,
+    IMUsecase,
     LDCUsecase,
     LDFData,
     LDFUsecase,
@@ -408,11 +418,96 @@ class FeaturesCompose:
                 audio_base64=str(audio_base64 or ""),
             )
 
-        # TODO: imageMessage — interpretação de imagem via Vision API
-        # TODO: videoMessage — extração de frames + interpretação
-        # TODO: documentMessage — extração de texto do documento
+        if message_type == "imageMessage":
+            media_url = metadados.get("url", "")
+            mimetype = metadados.get("mimetype", "image/jpeg")
+            media_base64 = metadados.get("base64", "")
+            if not media_url and not media_base64:
+                return ""
+            return FeaturesCompose._interpret_media(
+                media_url=str(media_url or ""),
+                mimetype=str(mimetype),
+                media_type="imageMessage",
+                media_base64=str(media_base64 or ""),
+            )
+
+        if message_type == "videoMessage":
+            media_url = metadados.get("url", "")
+            mimetype = metadados.get("mimetype", "video/mp4")
+            media_base64 = metadados.get("base64", "")
+            if not media_url and not media_base64:
+                return ""
+            return FeaturesCompose._interpret_media(
+                media_url=str(media_url or ""),
+                mimetype=str(mimetype),
+                media_type="videoMessage",
+                media_base64=str(media_base64 or ""),
+            )
+
+        if message_type == "documentMessage":
+            doc_url = metadados.get("url", "")
+            mimetype = metadados.get("mimetype", "application/pdf")
+            file_name = metadados.get("fileName", "documento")
+            doc_base64 = metadados.get("base64", "")
+            if not doc_url and not doc_base64:
+                return ""
+            return FeaturesCompose._interpret_media(
+                media_url=str(doc_url or ""),
+                mimetype=str(mimetype),
+                media_type="documentMessage",
+                media_base64=str(doc_base64 or ""),
+                file_name=str(file_name or "documento"),
+            )
 
         return ""
+
+    @staticmethod
+    def _interpret_media(
+        media_url: str,
+        mimetype: str,
+        media_type: str,
+        media_base64: str = "",
+        file_name: str = "",
+    ) -> str:
+        """Interpreta mídia (imagem/vídeo/documento) via LLM multimodal.
+
+        Método interno — use ``converter_contexto`` como ponto
+        de entrada.
+
+        Args:
+            media_url: URL do arquivo (fallback).
+            mimetype: Tipo MIME da mídia.
+            media_type: Tipo da mensagem WhatsApp.
+            media_base64: Conteúdo em base64 (preferencial).
+            file_name: Nome do arquivo (documentos).
+
+        Returns:
+            Descrição textual do conteúdo da mídia.
+
+        Raises:
+            InterpretMediaError: Se ocorrer erro na interpretação.
+            ValueError: Se o tipo de retorno do caso de uso
+                for inesperado.
+        """
+        error = InterpretMediaError("Erro ao interpretar mídia!")
+        parameters = InterpretMediaParameters(
+            media_url=media_url,
+            mimetype=mimetype,
+            media_type=media_type,
+            error=error,
+            media_base64=media_base64,
+            file_name=file_name,
+        )
+        datasource: IMData = InterpretMediaDatasource()
+        usecase: IMUsecase = InterpretMediaUseCase(datasource)
+        data = usecase(parameters)
+
+        if isinstance(data, SuccessReturn):
+            return data.result
+        elif isinstance(data, ErrorReturn):
+            raise data.result
+        else:
+            raise ValueError("Unexpected return type from usecase")
 
     @staticmethod
     def load_message_data(data: dict[str, Any]) -> MessageData:

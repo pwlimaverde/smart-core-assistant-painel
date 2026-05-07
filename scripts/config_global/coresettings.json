@@ -45,6 +45,33 @@
     "updated_at": "2026-02-12T00:00:00.000000+00:00"
   },
   {
+    "id": 27,
+    "key": "vision_provider",
+    "value": "google",
+    "encrypted": false,
+    "description": "Provedor de interpretação visual de mídia (google, openai).",
+    "created_at": "2026-04-09T00:00:00.000000+00:00",
+    "updated_at": "2026-04-09T00:00:00.000000+00:00"
+  },
+  {
+    "id": 28,
+    "key": "vision_model",
+    "value": "gemini-2.5-flash",
+    "encrypted": false,
+    "description": "Modelo multimodal para interpretação de imagens, vídeos e documentos.",
+    "created_at": "2026-04-09T00:00:00.000000+00:00",
+    "updated_at": "2026-04-09T00:00:00.000000+00:00"
+  },
+  {
+    "id": 29,
+    "key": "google_api_key",
+    "value": "",
+    "encrypted": true,
+    "description": "Chave de API do Google para acesso ao Gemini e outros serviços Google AI.",
+    "created_at": "2026-04-09T00:00:00.000000+00:00",
+    "updated_at": "2026-04-09T00:00:00.000000+00:00"
+  },
+  {
     "id": 20,
     "key": "groq_api_key",
     "value": "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",

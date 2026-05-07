@@ -9,6 +9,7 @@ from .views_instances import (
     InstanceListView,
     InstanceLogoutView,
     InstanceQRCodeView,
+    InstanceToggleBotView,
     InstanceWebhookView,
     RefreshAllStatusView,
 )
@@ -54,6 +55,11 @@ urlpatterns = [
         "evolution/instances/<int:pk>/delete/",
         InstanceDeleteView.as_view(),
         name="evolution_instance_delete",
+    ),
+    path(
+        "evolution/instances/<int:pk>/toggle-bot/",
+        InstanceToggleBotView.as_view(),
+        name="evolution_instance_toggle_bot",
     ),
     path(
         "evolution/instances/<int:pk>/logout/",

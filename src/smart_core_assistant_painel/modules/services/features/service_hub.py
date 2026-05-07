@@ -73,6 +73,30 @@ class ServiceHub:
         return self._resolve_llm_class(class_name)
 
     @property
+    def LLM_INSTANCE(self) -> BaseChatModel:
+        """Retorna uma instância configurada do modelo de linguagem."""
+        return self.LLM_CLASS(
+            model=ConfigProvider.get().model,
+            temperature=ConfigProvider.get().llm_temperature,
+        )
+
+    # === Interpretação de Mídia (Gemini Vision) ===
+    @property
+    def VISION_PROVIDER(self) -> str:
+        """Provedor de interpretação visual (google, openai)."""
+        return ConfigProvider.get().vision_provider
+
+    @property
+    def VISION_MODEL(self) -> str:
+        """Modelo para interpretação de mídias."""
+        return ConfigProvider.get().vision_model
+
+    @property
+    def GOOGLE_API_KEY(self) -> str:
+        """Chave de API do Google para Gemini."""
+        return ConfigProvider.get().google_api_key
+
+    @property
     def MODEL(self) -> str:
         return ConfigProvider.get().model
 
@@ -203,6 +227,10 @@ class ServiceHub:
             from langchain_ollama import ChatOllama
 
             return ChatOllama
+        elif class_name == "ChatGoogleGenerativeAI":
+            from langchain_google_genai import ChatGoogleGenerativeAI
+
+            return ChatGoogleGenerativeAI
         else:
             # Fallback padrão
             from langchain_groq import ChatGroq

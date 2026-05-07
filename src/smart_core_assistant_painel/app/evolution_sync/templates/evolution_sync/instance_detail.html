@@ -354,7 +354,7 @@ function webhookManager() {
 
 function botManager() {
     return {
-        resposta_bot: {{ instance.resposta_bot|yesno:"true,false" }},
+        resposta_bot: {{ instance.bot_active|yesno:"true,false" }},
         botResult: '',
         botSuccess: false,
         saving: false,

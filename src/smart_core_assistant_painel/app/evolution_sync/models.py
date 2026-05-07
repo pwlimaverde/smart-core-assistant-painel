@@ -44,10 +44,6 @@ class EvolutionInstance(models.Model):
         max_length=20, blank=True, null=True
     )
     active: models.BooleanField[bool] = models.BooleanField(default=True)
-    resposta_bot: models.BooleanField[bool] = models.BooleanField(
-        default=True,
-        help_text="Se True, o bot pode responder automaticamente a mensagens desta instância",
-    )
     connection_state: models.CharField[str] = models.CharField(
         max_length=20,
         default="unknown",

@@ -88,22 +88,11 @@ class BotRulesEngine(BotRulesEngineInterface):
             False se bloqueado explicitamente.
         """
         try:
-            from smart_core_assistant_painel.app.evolution_sync.models import (
-                EvolutionInstance,
-            )
             from smart_core_assistant_painel.app.operacional.models import (
                 AppInstance,
             )
 
-            # Verifica primeiro na EvolutionInstance (interface principal)
-            evo_instance = EvolutionInstance.objects.filter(
-                api_key=api_key, active=True
-            ).first()
-
-            if evo_instance:
-                return evo_instance.resposta_bot
-
-            # Fallback para AppInstance (legado)
+            # AppInstance é a fonte da verdade para resposta_bot
             app_instance = AppInstance.objects.filter(
                 api_key=api_key, active=True
             ).first()

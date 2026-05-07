@@ -75,10 +75,30 @@ class InstanceListView(LoginRequiredMixin, TemplateView):
         context["instances"] = []
 
         if tenant and evo_config:
-            context["instances"] = list(
+            from smart_core_assistant_painel.app.operacional.models import (
+                AppInstance,
+            )
+
+            instances = list(
                 EvolutionInstance.objects.filter(active=True)
             )
-            context["webhook_url"] = _build_webhook_url(self.request, tenant)
+
+            # Busca resposta_bot do AppInstance vinculado por api_key
+            api_keys = [i.api_key for i in instances]
+            bot_map: dict[str, bool] = dict(
+                AppInstance.objects.filter(
+                    api_key__in=api_keys, active=True
+                ).values_list("api_key", "resposta_bot")
+            )
+            for inst in instances:
+                inst.bot_active = bot_map.get(
+                    inst.api_key, True
+                )
+
+            context["instances"] = instances
+            context["webhook_url"] = _build_webhook_url(
+                self.request, tenant
+            )
         return context
 
 
@@ -135,22 +155,31 @@ class InstanceCreateView(LoginRequiredMixin, View):
             instance_id=instance_data.get("instanceId", ""),
             api_key=hash_data.get("apikey", ""),
             connection_state="close",
-            resposta_bot=resposta_bot,
         )
 
         from smart_core_assistant_painel.app.operacional.models import (
             AppInstance,
+            Departamento,
         )
 
-        AppInstance.objects.update_or_create(
+        app_inst, _ = AppInstance.objects.update_or_create(
             api_key=instance.api_key,
             defaults={
                 "channel": "evolution_api",
                 "display_name": instance.name,
-                "resposta_bot": instance.resposta_bot,
+                "resposta_bot": resposta_bot,
                 "active": True,
             },
         )
+
+        # Sincronização simplificada: vincula ao departamento principal
+        dept_atendimento = Departamento.objects.filter(
+            nome__icontains="atendimento", ativo=True
+        ).first()
+        
+        if dept_atendimento and not app_inst.departamento:
+            app_inst.departamento = dept_atendimento
+            app_inst.save(update_fields=["departamento"])
 
         return JsonResponse(
             {
@@ -203,9 +232,23 @@ class InstanceDetailView(LoginRequiredMixin, TemplateView):
             except Exception as e:
                 logger.warning(f"Erro ao verificar estado: {e}")
 
+        # Busca resposta_bot do AppInstance vinculado
+        from smart_core_assistant_painel.app.operacional.models import (
+            AppInstance,
+        )
+
+        app_inst = AppInstance.objects.filter(
+            api_key=instance.api_key, active=True
+        ).first()
+        instance.bot_active = (
+            app_inst.resposta_bot if app_inst else True
+        )
+
         context["instance"] = instance
         if tenant:
-            context["webhook_url"] = _build_webhook_url(self.request, tenant)
+            context["webhook_url"] = _build_webhook_url(
+                self.request, tenant
+            )
         return context
 
 
@@ -430,16 +473,20 @@ class InstanceToggleBotView(LoginRequiredMixin, View):
         except (json.JSONDecodeError, ValueError):
             return _json_error("Body inválido.")
 
-        instance.resposta_bot = resposta_bot
-        instance.save(update_fields=["resposta_bot"])
-
+        # Atualiza somente o AppInstance (fonte da verdade)
         from smart_core_assistant_painel.app.operacional.models import (
             AppInstance,
         )
 
-        AppInstance.objects.filter(api_key=instance.api_key).update(
-            resposta_bot=resposta_bot
-        )
+        updated = AppInstance.objects.filter(
+            api_key=instance.api_key
+        ).update(resposta_bot=resposta_bot)
+
+        if not updated:
+            return _json_error(
+                "AppInstance não encontrado para esta instância.",
+                404,
+            )
 
         status_text = "ativado" if resposta_bot else "desativado"
         return JsonResponse(
@@ -481,7 +528,6 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
                 defaults={
                     "channel": "evolution_api",
                     "display_name": instance.name,
-                    "resposta_bot": instance.resposta_bot,
                     "active": True,
                 },
             )

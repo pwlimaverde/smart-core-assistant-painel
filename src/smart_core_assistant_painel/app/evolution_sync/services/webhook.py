@@ -315,7 +315,8 @@ class WebhookProcessor:
 
         Garante que exista um AppInstance correspondente para
         manter paridade operacional (roteamento de departamento,
-        atendente, resposta_bot, etc.).
+        atendente, etc.). O campo resposta_bot NÃO é
+        sobrescrito — é controlado exclusivamente pelo painel.
 
         Args:
             instance: EvolutionInstance a sincronizar.
@@ -333,7 +334,6 @@ class WebhookProcessor:
                 defaults={
                     "channel": "evolution_api",
                     "display_name": instance.name,
-                    "resposta_bot": instance.resposta_bot,
                     "active": instance.active,
                 },
             )

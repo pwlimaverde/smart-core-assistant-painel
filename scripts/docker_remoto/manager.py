@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Script para gerenciar containers Docker em 4 stacks modulares.
+"""Script para gerenciar containers Docker em 5 stacks modulares.
 
 Stacks disponíveis:
 - data: PostgreSQL + Redis (dados persistentes)
 - app: Django + Migrate (aplicação principal)
 - workers: Celery Worker + Beat (processamento assíncrono)
-- infra: Cloudflared + Flower (infraestrutura/túnel)
+- infra: Cloudflared (deprecated) + Flower (infraestrutura/túnel)
+- proxy: Nginx + Certbot (reverse proxy + SSL)
 
 Permite executar comandos docker compose remotamente via DOCKER_HOST.
 """
@@ -24,7 +25,7 @@ COMPOSE_DIR = "docker/compose"
 DEFAULT_ENV_FILE = ".env"
 
 # ============================================
-# Definição das 4 Stacks Modulares
+# Definição das 5 Stacks Modulares
 # ============================================
 STACKS: Dict[str, Dict[str, str]] = {
     "data": {
@@ -45,14 +46,19 @@ STACKS: Dict[str, Dict[str, str]] = {
     "infra": {
         "file": f"{COMPOSE_DIR}/infra.yml",
         "project": "smart-core-infra",
-        "description": "Cloudflared + Flower",
+        "description": "Cloudflared (deprecated) + Flower",
+    },
+    "proxy": {
+        "file": f"{COMPOSE_DIR}/proxy.yml",
+        "project": "smart-core-proxy",
+        "description": "Nginx + Certbot (SSL)",
     },
 }
 
 # Ordem de inicialização (dependências respeitadas)
-STARTUP_ORDER = ["data", "app", "workers", "infra"]
+STARTUP_ORDER = ["data", "app", "workers", "proxy"]
 # Ordem de desligamento (inversa)
-SHUTDOWN_ORDER = ["infra", "workers", "app", "data"]
+SHUTDOWN_ORDER = ["proxy", "workers", "app", "data"]
 
 
 def print_header(title: str) -> None:
@@ -186,8 +192,8 @@ def main() -> None:
     )
     parser.add_argument(
         "stack",
-        choices=["data", "app", "workers", "infra", "all"],
-        help="Stack alvo (data, app, workers, infra ou all)",
+        choices=["data", "app", "workers", "infra", "proxy", "all"],
+        help="Stack alvo (data, app, workers, infra, proxy ou all)",
     )
     parser.add_argument(
         "--remote",
@@ -270,6 +276,7 @@ def main() -> None:
             "workers": "celery_worker",
             "data": "postgres",
             "infra": "cloudflared",
+            "proxy": "nginx",
         }
         service = default_services.get(args.stack, "django_app")
         docker_args = [service] + docker_args

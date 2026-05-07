@@ -1,0 +1,17 @@
+{
+  "phases": {
+    "phase-1": {
+      "status": "completed",
+      "updatedAt": "2026-02-14T21:40:58.504Z"
+    },
+    "phase-2": {
+      "status": "completed",
+      "updatedAt": "2026-02-14T21:41:02.711Z"
+    },
+    "phase-3": {
+      "status": "completed",
+      "updatedAt": "2026-02-14T21:41:03.154Z"
+    }
+  },
+  "progress": 100
+}

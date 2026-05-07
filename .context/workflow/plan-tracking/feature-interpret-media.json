@@ -1,0 +1,44 @@
+{
+  "phases": {
+    "phase-1": {
+      "status": "completed",
+      "updatedAt": "2026-04-09T14:34:11.267Z"
+    },
+    "phase-2": {
+      "status": "completed",
+      "updatedAt": "2026-04-09T14:40:18.892Z"
+    },
+    "phase-3": {
+      "status": "completed",
+      "updatedAt": "2026-04-09T14:40:19.442Z"
+    }
+  },
+  "progress": 100,
+  "decisions": [
+    {
+      "title": "Escolha do Gemini 2.5 Flash como modelo multimodal unificado",
+      "description": "Gemini 2.5 Flash via langchain-google-genai é o único modelo que suporta envio de vídeo completo nativamente (sem extração de frames), além de interpretar imagens e PDFs. Custo: $0.30/1M input, $2.50/1M output. Integração via ChatGoogleGenerativeAI no padrão LangChain existente.",
+      "phase": "P",
+      "alternatives": [
+        "GPT-4o-mini (OpenAI) — não suporta vídeo completo, apenas frames",
+        "Groq (Llama) — não suporta vision/imagens",
+        "Ollama — suporte variável, não garantido em produção"
+      ],
+      "status": "accepted",
+      "id": "dec-1775744838343",
+      "decidedAt": "2026-04-09T14:27:18.344Z"
+    },
+    {
+      "title": "Feature unificada para todos os tipos de mídia",
+      "description": "Uma única feature interpret_media trata os 3 tipos de mídia (imageMessage, videoMessage, documentMessage) de forma unificada. O datasource adapta o prompt conforme o tipo, mas usa o mesmo pipeline LLM. Reduz duplicação e simplifica manutenção.",
+      "phase": "P",
+      "alternatives": [
+        "Duas features separadas (interpret_media + extract_document_text)",
+        "Três features separadas (uma para cada tipo de mídia)"
+      ],
+      "status": "accepted",
+      "id": "dec-1775744847729",
+      "decidedAt": "2026-04-09T14:27:27.729Z"
+    }
+  ]
+}

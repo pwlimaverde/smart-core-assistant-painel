@@ -90,9 +90,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # 3. Determina API key
             final_api_key = api_key or content_data.get("api_key")
-            logger.debug(
-                f"Processando mensagem para contato {contact_id} - {content_data['content']}"
-            )
+
             # 4. Cria mensagem no sistema
             message_id = self._create_message(
                 contact_id=contact_id,
@@ -260,7 +258,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 "documentMessage",
             )
             if mensagem.tipo in _MEDIA_TYPES:
-                self._convert_media_context(mensagem)
+                self._convert_media_context(mensagem, api_key=api_key)
 
             # --- Feedback Loop Check ---
             if self._check_and_process_feedback(mensagem, contact_id):
@@ -280,6 +278,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             # Configura atendimento
             atendimento = mensagem.atendimento
+
+            # Preenche assunto e tags automaticamente
+            self._auto_fill_subject(atendimento, mensagem)
+            self._sync_intent_tags(atendimento, mensagem)
+
             self._configure_attendance(
                 atendimento, api_key, env_list, message=mensagem
             )
@@ -307,7 +310,132 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         except Exception as e:
             logger.error(f"Erro ao processar mensagem {message_id}: {e}")
 
-    def _convert_media_context(self, mensagem: "Mensagem") -> None:
+    def _fetch_media_base64_from_evolution(
+        self,
+        mensagem: "Mensagem",
+        api_key: str = "",
+    ) -> str:
+        """Busca base64 de mídia descriptografada via Evolution API.
+
+        Quando ``webhookBase64`` está desabilitado, a URL no metadata
+        aponta para o CDN do WhatsApp (arquivo encriptado). Este método
+        usa o endpoint ``getBase64FromMediaMessage`` da Evolution API
+        para obter o conteúdo descriptografado.
+
+        Args:
+            mensagem: Mensagem com metadados contendo info da Evolution.
+
+        Returns:
+            String base64 do conteúdo de mídia, ou string vazia se falhar.
+        """
+        from smart_core_assistant_painel.app.evolution_sync.models import (
+            EvolutionInstance,
+        )
+        from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
+            EvolutionWhatsAppService,
+        )
+        from smart_core_assistant_painel.app.tenants.models import (
+            TenantEvolution,
+        )
+
+        meta = mensagem.metadados or {}
+
+        # api_key vem do parâmetro (passado pelo orchestrator)
+        # ou fallback para metadados (compatibilidade)
+        if not api_key:
+            evo = meta.get("evolution", {}) or {}
+            api_key = evo.get("api_key", "")
+        if not api_key:
+            logger.debug(f"Mensagem {mensagem.id}: sem api_key Evolution.")
+            return ""
+
+        inst = EvolutionInstance.objects.filter(
+            api_key=str(api_key), active=True
+        ).first()
+        if not inst:
+            logger.debug(
+                f"Mensagem {mensagem.id}: EvolutionInstance "
+                f"não encontrada para api_key={api_key[:8]}..."
+            )
+            return ""
+
+        # Resolver base_url via TenantEvolution
+        base_url = ""
+        tenant_id = getattr(inst, "tenant_id", None)
+        if tenant_id:
+            tenant_cfg = TenantEvolution.objects.filter(
+                tenant_id=tenant_id
+            ).first()
+            if tenant_cfg and tenant_cfg.server_url:
+                base_url = str(tenant_cfg.server_url).rstrip("/")
+        if not base_url:
+            logger.debug(
+                f"Mensagem {mensagem.id}: base_url da Evolution "
+                f"não encontrada (tenant_id={tenant_id})."
+            )
+            return ""
+
+        # Construir key da mensagem WhatsApp
+        contato = getattr(mensagem.atendimento, "contato", None)
+        phone = str(getattr(contato, "telefone", "") or "").strip()
+        if not phone:
+            logger.debug(
+                f"Mensagem {mensagem.id}: telefone do contato não disponível."
+            )
+            return ""
+
+        message_key = {
+            "remoteJid": f"{phone}@s.whatsapp.net",
+            "fromMe": False,
+            "id": mensagem.message_id_whatsapp or "",
+        }
+
+        # Campos comuns de encriptação do WhatsApp
+        crypto_fields = {
+            "url": meta.get("url", ""),
+            "mimetype": meta.get("mimetype", ""),
+            "mediaKey": meta.get("mediaKey", ""),
+            "directPath": meta.get("directPath", ""),
+            "fileSha256": meta.get("fileSha256", ""),
+            "fileEncSha256": meta.get("fileEncSha256", ""),
+        }
+        if meta.get("fileLength"):
+            crypto_fields["fileLength"] = meta["fileLength"]
+        if meta.get("mediaKeyTimestamp"):
+            crypto_fields["mediaKeyTimestamp"] = meta["mediaKeyTimestamp"]
+
+        # Campos específicos por tipo de mídia
+        if mensagem.tipo == "audioMessage":
+            crypto_fields["seconds"] = meta.get("seconds", 0)
+            crypto_fields["ptt"] = meta.get("ptt", False)
+        elif mensagem.tipo == "videoMessage":
+            crypto_fields["seconds"] = meta.get("seconds", 0)
+
+        message_content = {mensagem.tipo: crypto_fields}
+
+        if not meta.get("mediaKey"):
+            logger.warning(
+                f"Mensagem {mensagem.id}: sem mediaKey nos "
+                "metadados. Evolution API não conseguirá "
+                "descriptografar a mídia."
+            )
+            return ""
+
+        service = EvolutionWhatsAppService()
+        result = service.get_base64_from_media(
+            base_url=base_url,
+            api_key=str(api_key),
+            instance_name=inst.name,
+            message_key=message_key,
+            message_content=message_content,
+        )
+        return result
+
+    def _convert_media_context(
+        self,
+        mensagem: "Mensagem",
+        api_key: str = "",
+    ) -> None:
         """Converte metadados de mídia em texto contextual.
 
         Centraliza a conversão de conteúdo multimídia (áudio, imagem,
@@ -316,6 +444,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
         Args:
             mensagem: Mensagem com metadados de mídia.
+            api_key: Chave da API Evolution para buscar mídia.
         """
         try:
             metadados = mensagem.metadados or {}
@@ -328,6 +457,28 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                     "Mantendo placeholder."
                 )
                 return
+
+            # Se não tem base64, busca via Evolution API
+            # (a URL do webhook aponta para o CDN do WhatsApp,
+            # que é um arquivo encriptado).
+            if not has_base64 and has_url:
+                try:
+                    base64_data = self._fetch_media_base64_from_evolution(
+                        mensagem, api_key=api_key
+                    )
+                    if base64_data:
+                        metadados = dict(metadados)
+                        metadados["base64"] = base64_data
+                        has_base64 = True
+                        logger.info(
+                            f"Base64 obtido via Evolution API "
+                            f"para mensagem {mensagem.id}"
+                        )
+                except Exception as e:
+                    logger.warning(
+                        f"Falha ao buscar base64 via Evolution API "
+                        f"para mensagem {mensagem.id}: {e}"
+                    )
 
             logger.info(
                 f"Convertendo mídia da mensagem {mensagem.id} "
@@ -965,6 +1116,94 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         )
 
         self._structure_manager._update_attendance_status_ongoing(attendance)
+
+    def _auto_fill_subject(
+        self,
+        attendance: "Atendimento",
+        message: "Mensagem",
+    ) -> None:
+        """Preenche assunto automaticamente se vazio.
+
+        Usa intents e entidades da mensagem para gerar
+        um resumo curto como assunto do atendimento.
+
+        Args:
+            attendance: Atendimento a atualizar.
+            message: Mensagem com intents/entidades.
+        """
+        if attendance.assunto:
+            return
+
+        parts: list[str] = []
+
+        # Usa entidades como base do assunto
+        for entity_dict in message.entidades_extraidas or []:
+            for key, value in entity_dict.items():
+                if key.lower() == "nome_contato":
+                    continue
+                val = str(value).strip()
+                if val and len(val) <= 50 and val not in parts:
+                    parts.append(val)
+                if len(parts) >= 3:
+                    break
+            if len(parts) >= 3:
+                break
+
+        # Complementa com intents se não tem entidades
+        if not parts:
+            for intent_dict in message.intent_detectado or []:
+                for tag in intent_dict.keys():
+                    label = tag.replace("_", " ").capitalize()
+                    if label not in parts:
+                        parts.append(label)
+                    if len(parts) >= 2:
+                        break
+                if len(parts) >= 2:
+                    break
+
+        if parts:
+            assunto = " - ".join(parts)
+            attendance.assunto = assunto[:200]
+            attendance.save(update_fields=["assunto"])
+            logger.info(
+                f"Assunto auto-preenchido para "
+                f"atendimento {attendance.id}: "
+                f"{assunto}"
+            )
+
+    def _sync_intent_tags(
+        self,
+        attendance: "Atendimento",
+        message: "Mensagem",
+    ) -> None:
+        """Sincroniza intents detectados como tags.
+
+        Adiciona tags de intent (prefixadas com 'intent:')
+        ao atendimento, evitando duplicatas.
+
+        Args:
+            attendance: Atendimento a atualizar.
+            message: Mensagem com intents detectados.
+        """
+        if not message.intent_detectado:
+            return
+
+        tags: list[str] = list(attendance.tags or [])
+        updated = False
+
+        for intent_dict in message.intent_detectado:
+            for tag_name in intent_dict.keys():
+                tag = f"intent:{tag_name}"
+                if tag not in tags:
+                    tags.append(tag)
+                    updated = True
+
+        if updated:
+            attendance.tags = tags
+            attendance.save(update_fields=["tags"])
+            logger.info(
+                f"Tags atualizadas no atendimento {attendance.id}: {tags}"
+            )
 
     def _check_and_process_feedback(
         self, message: "Mensagem", contact_id: int

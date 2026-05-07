@@ -19,6 +19,8 @@ class EvolutionInstance(models.Model):
         server_url: URL do servidor da Evolution API.
         phone_number: Número de telefone associado à instância.
         active: Indica se a instância está ativa.
+        connection_state: Estado da conexão WhatsApp (open, close, unknown).
+        last_state_check: Data/hora da última verificação de estado.
         created_at: Data e hora de criação do registro.
     """
 
@@ -42,6 +44,18 @@ class EvolutionInstance(models.Model):
         max_length=20, blank=True, null=True
     )
     active: models.BooleanField[bool] = models.BooleanField(default=True)
+    resposta_bot: models.BooleanField[bool] = models.BooleanField(
+        default=True,
+        help_text="Se True, o bot pode responder automaticamente a mensagens desta instância",
+    )
+    connection_state: models.CharField[str] = models.CharField(
+        max_length=20,
+        default="unknown",
+        help_text="Estado da conexão: open, close, unknown",
+    )
+    last_state_check: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(null=True, blank=True)
+    )
     created_at: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True
     )

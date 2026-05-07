@@ -1,0 +1,60 @@
+services:
+  # ============================================
+  # Nginx (Reverse Proxy + SSL Termination)
+  # ============================================
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: smartcoreassistant_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../nginx/snippets:/etc/nginx/snippets:ro
+      - ssl_certs:/etc/letsencrypt:ro
+      - certbot_www:/var/www/certbot:ro
+      - static_files:/var/www/static:ro
+      - media_files:/var/www/media:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - shared_network
+    restart: unless-stopped
+
+  # ============================================
+  # Certbot (Gerenciamento de Certificados SSL)
+  # Uso: docker compose -p smart-core-proxy --profile ssl run --rm certbot renew
+  # ============================================
+  certbot:
+    image: certbot/dns-cloudflare
+    container_name: smartcoreassistant_certbot
+    profiles:
+      - ssl
+    volumes:
+      - ssl_certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+      - ../certbot/cloudflare.ini:/etc/cloudflare/cloudflare.ini:ro
+    networks:
+      - shared_network
+
+volumes:
+  ssl_certs:
+    name: smartcore_ssl_certs
+  certbot_www:
+    name: smartcore_certbot_www
+  static_files:
+    name: smartcore_static_files
+    external: true
+  media_files:
+    name: smartcore_media_files
+    external: true
+
+networks:
+  shared_network:
+    name: shared_network
+    external: true

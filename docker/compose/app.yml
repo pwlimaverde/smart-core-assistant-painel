@@ -37,8 +37,8 @@ services:
     volumes:
       - static_files:/app/src/smart_core_assistant_painel/app/staticfiles
       - media_files:/app/src/smart_core_assistant_painel/app/media
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     env_file:
       - ../../${SMARTCORE_ENV_FILE:-.env}
     environment:
@@ -49,6 +49,12 @@ services:
       - REDIS_HOST=smartcoreassistant_redis
       - REDIS_PORT=6379
       - TENANT_BASE_DOMAIN=${TENANT_BASE_DOMAIN:-smartcoreassistant.com.br}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     develop:
       watch:
         - action: sync

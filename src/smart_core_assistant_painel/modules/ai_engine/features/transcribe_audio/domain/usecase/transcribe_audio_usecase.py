@@ -14,19 +14,27 @@ class TranscribeAudioUseCase(TAUsecase):
     def __call__(
         self, parameters: TranscribeAudioParameters
     ) -> ReturnSuccessOrError[str]:
-        if not parameters.audio_url or not parameters.audio_url.strip():
-            return ErrorReturn(
-                parameters.error.__class__(message="URL do áudio não fornecida")
-            )
+        has_url = bool(parameters.audio_url and parameters.audio_url.strip())
+        has_base64 = bool(
+            parameters.audio_base64 and parameters.audio_base64.strip()
+        )
 
-        if not parameters.audio_url.startswith(("http://", "https://")):
+        if not has_url and not has_base64:
             return ErrorReturn(
                 parameters.error.__class__(
-                    message="URL do áudio inválida. Use http:// ou https://."
+                    "URL ou base64 do áudio não fornecida."
+                )
+            )
+
+        if has_url and not parameters.audio_url.startswith(
+            ("http://", "https://")
+        ):
+            return ErrorReturn(
+                parameters.error.__class__(
+                    "URL do áudio inválida. Use http:// ou https://."
                 )
             )
 
         return self._resultDatasource(
             parameters=parameters, datasource=self._datasource
         )
-

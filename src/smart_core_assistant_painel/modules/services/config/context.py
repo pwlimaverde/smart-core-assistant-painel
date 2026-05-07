@@ -19,8 +19,13 @@ class RuntimeConfig:
 
     # === LLM ===
     llm_class: str = "ChatGroq"
-    model: str = "openai/gpt-oss-20b"
+    model: str = "llama-3.3-70b-versatile"
     llm_temperature: int = 0
+
+    # === Interpretação de Mídia (Gemini Vision) ===
+    vision_provider: str = "google"
+    vision_model: str = "gemini-2.5-flash"
+    google_api_key: str = ""
 
     # === Transcrição de Áudio ===
     transcription_provider: str = "openai"

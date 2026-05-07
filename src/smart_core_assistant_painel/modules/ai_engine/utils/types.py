@@ -29,6 +29,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     DataMensageParameters,
     GenerateChunksParameters,
     GenerateEmbeddingsParameters,
+    InterpretMediaParameters,
     LlmParameters,
     LoadDocumentConteudoParameters,
     LoadDocumentFileParameters,
@@ -181,6 +182,15 @@ AAUsecase: TypeAlias = UsecaseBaseCallData[
     AnaliseAvaliacaoParameters,
 ]
 AAData: TypeAlias = Datasource[AnaliseAvaliacao, AnaliseAvaliacaoParameters]
+
+# Aliases para Interpret Media (imagem/vídeo/documento)
+IMData: TypeAlias = Datasource[str, InterpretMediaParameters]
+IMUsecase: TypeAlias = UsecaseBaseCallData[
+    str,
+    str,
+    InterpretMediaParameters,
+]
+
 
 # Aliases para Transcribe Audio
 TAData: TypeAlias = Datasource[str, TranscribeAudioParameters]

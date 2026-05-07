@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "1.0.3"
+version = "1.0.6"
 description = "central de atendimento multicanal onde um chatbot realiza a triagem inicial e transfere para atendimento humano quando necessário, com fluxos totalmente personalizáveis por departamento através de uma interface Kanban"
 readme = "README.md"
 authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]
@@ -102,6 +102,7 @@ dependencies = [
     "cryptography>=46.0.3",
     "psycopg2-binary>=2.9.11",
     "python-dateutil>=2.9.0.post0",
+    "langchain-google-genai>=2.1.0",
 ]
 
 
@@ -293,6 +294,31 @@ server-logs-postgres = "ssh hostinger-root 'docker logs smartcoreassistant_postg
 # Exibe últimas 50 linhas de logs do Redis
 server-logs-redis = "ssh hostinger-root 'docker logs smartcoreassistant_redis --tail 50'"
 
+# Exibe últimas 50 linhas de logs do Nginx
+server-logs-nginx = "ssh hostinger-root 'docker logs smartcoreassistant_nginx --tail 50'"
+
+# Exibe logs do Nginx em tempo real
+server-logs-nginx-follow = "ssh hostinger-root 'docker logs smartcoreassistant_nginx -f --tail 20'"
+
+# --- Nginx e SSL ---
+# Testa configuração do Nginx (sem reiniciar)
+server-nginx-test = "ssh hostinger-root 'docker exec smartcoreassistant_nginx nginx -t'"
+
+# Recarrega configuração do Nginx (sem downtime)
+server-nginx-reload = "ssh hostinger-root 'docker exec smartcoreassistant_nginx nginx -s reload && echo Nginx recarregado'"
+
+# Reinicia container do Nginx
+server-restart-nginx = "ssh hostinger-root 'docker restart smartcoreassistant_nginx && echo Nginx reiniciado'"
+
+# Verifica expiração do certificado SSL
+server-ssl-check = "ssh hostinger-root 'docker run --rm -v smartcore_ssl_certs:/etc/letsencrypt alpine sh -c \"cat /etc/letsencrypt/live/smartcoreassistant.com.br/fullchain.pem | openssl x509 -noout -dates -subject\"'"
+
+# Renova certificado SSL manualmente
+server-ssl-renew = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && bash docker/scripts/renew-ssl.sh'"
+
+# Inicializa SSL (primeiro uso - gera certificado)
+server-ssl-init = "ssh hostinger-root 'cd ~/smart-core-assistant-painel && bash docker/scripts/init-ssl.sh'"
+
 # --- Controle de Containers ---
 # Reinicia o container da aplicação Django
 server-restart-app = "ssh hostinger-root 'docker restart smartcoreassistant_app && echo App reiniciado com sucesso'"
@@ -304,10 +330,10 @@ server-restart-workers = "ssh hostinger-root 'docker restart smartcoreassistant_
 server-restart-all = "ssh hostinger-root 'docker restart smartcoreassistant_app smartcoreassistant_celery_worker smartcoreassistant_celery_beat && echo Todos os servicos reiniciados'"
 
 # Para todos os containers (mantém dados)
-server-stop-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-infra -f docker/compose/infra.yml stop && echo 'Serviços parados'\""
+server-stop-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-proxy -f docker/compose/proxy.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml stop && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml stop && echo 'Serviços parados'\""
 
 # Inicia todos os containers
-server-start-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-data -f docker/compose/data.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d django_app && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-infra -f docker/compose/infra.yml up -d && echo 'Serviços iniciados'\""
+server-start-all = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-data -f docker/compose/data.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d django_app && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml up -d && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-proxy -f docker/compose/proxy.yml up -d && echo 'Serviços iniciados'\""
 
 # --- Deploy e Atualização ---
 # Faz git pull no servidor para atualizar código
@@ -319,7 +345,7 @@ server-sync-env-prod = "scp .env.prod hostinger-root:~/smart-core-assistant-pain
 # Deploy completo: pull + resolve tag + rebuild + restart (sem downtime de dados)
 # Resolve automaticamente a última tag git como SMARTCORE_IMAGE_TAG
 # Inclui migração automática de todos os bancos de tenants após a migração principal
-server-deploy = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && test -f .env.prod && git pull && bash docker/scripts/resolve-image-tag.sh && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm migrate && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm django_app python -m smart_core_assistant_painel.app.manage bootstrap_core_settings && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d --force-recreate django_app && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml up -d --force-recreate && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage migrate_all_tenants --skip-invalid && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage collectstatic --noinput && echo 'Deploy concluido'\""
+server-deploy = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && test -f .env.prod && git pull && bash docker/scripts/resolve-image-tag.sh && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm migrate && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml run --rm django_app python -m smart_core_assistant_painel.app.manage bootstrap_core_settings && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d --force-recreate django_app && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-workers -f docker/compose/workers.yml up -d --force-recreate && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage migrate_all_tenants --skip-invalid && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage collectstatic --noinput && docker exec smartcoreassistant_nginx nginx -s reload && echo 'Deploy concluido'\""
 
 # Rebuild e restart apenas da aplicação Django (resolve tag automaticamente)
 server-rebuild-app = "ssh hostinger-root \"cd ~/smart-core-assistant-painel && bash docker/scripts/resolve-image-tag.sh && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml build && SMARTCORE_ENV_FILE=.env.prod docker compose --env-file .env.prod -p smart-core-app -f docker/compose/app.yml up -d --force-recreate django_app && docker exec smartcoreassistant_app python -m smart_core_assistant_painel.app.manage collectstatic --noinput && echo 'App reconstruido'\""

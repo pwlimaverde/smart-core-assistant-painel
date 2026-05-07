@@ -1,0 +1,11 @@
+# Cloudflare API Token para Certbot DNS-01
+# Criar em: https://dash.cloudflare.com/profile/api-tokens
+# Permissão necessária: Zone → DNS → Edit (apenas smartcoreassistant.com.br)
+#
+# IMPORTANTE: Copie este arquivo para cloudflare.ini e preencha o token
+#   cp cloudflare.ini.example cloudflare.ini
+#   chmod 600 cloudflare.ini
+#
+# NUNCA commite o arquivo cloudflare.ini (está no .gitignore)
+
+dns_cloudflare_api_token = SEU_TOKEN_AQUI

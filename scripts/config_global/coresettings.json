@@ -45,6 +45,33 @@
     "updated_at": "2026-02-12T00:00:00.000000+00:00"
   },
   {
+    "id": 27,
+    "key": "vision_provider",
+    "value": "google",
+    "encrypted": false,
+    "description": "Provedor de interpretação visual de mídia (google, openai).",
+    "created_at": "2026-04-09T00:00:00.000000+00:00",
+    "updated_at": "2026-04-09T00:00:00.000000+00:00"
+  },
+  {
+    "id": 28,
+    "key": "vision_model",
+    "value": "gemini-2.5-flash",
+    "encrypted": false,
+    "description": "Modelo multimodal para interpretação de imagens, vídeos e documentos.",
+    "created_at": "2026-04-09T00:00:00.000000+00:00",
+    "updated_at": "2026-04-09T00:00:00.000000+00:00"
+  },
+  {
+    "id": 29,
+    "key": "google_api_key",
+    "value": "",
+    "encrypted": true,
+    "description": "Chave de API do Google para acesso ao Gemini e outros serviços Google AI.",
+    "created_at": "2026-04-09T00:00:00.000000+00:00",
+    "updated_at": "2026-04-09T00:00:00.000000+00:00"
+  },
+  {
     "id": 20,
     "key": "groq_api_key",
     "value": "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",
@@ -218,7 +245,7 @@
   {
     "id": 23,
     "key": "prompt_regras_resposta",
-    "value": "### Regras de Resposta (siga rigorosamente):\r\r\n1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\r\r\n2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: \"Desculpe, não encontrei informações relacionadas à sua pergunta.\"\r\r\n3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\r\r\n4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\r\r\n5. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.\r\r\n6. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.",
+    "value": "### Regras de Resposta (siga rigorosamente):\r\r\n1. **Fonte da Resposta:** Baseie sua resposta exclusivamente nas informações contidas no bloco <contexto_rag>. O <historico_conversa> pode ser usado apenas para compreender a intenção do usuário, mas nunca como fonte de informação factual.\r\r\n2. **Informação Incorreta:** Se o <contexto_rag> não contiver informações relacionadas a <pergunta_usuario>, responda exatamente: \"Desculpe, não encontrei informações relacionadas à sua pergunta.\"\r\r\n3. **Linguagem e Estilo:** Responda sempre em português. A resposta deve ser concisa (máximo de 5 frases), objetiva e educada.\r\r\n4. **Fidelidade ao Contexto:** Não invente, deduza ou adicione informações que não estejam explicitamente presentes no <contexto_rag>.\r\r\n5. **Coleta de Informações e Transbordo:** Se faltarem informações essenciais, solicite-as em UMA ÚNICA pergunta. Se após perguntar o usuário não preencher as informações, NÃO INSISTA, e transfira imediatamente o atendimento.\r\r\n6. **Análise de Transferência:** Analise se o usuário precisa ser transferido para um setor específico com base nos setores disponíveis listados abaixo.\r\r\n7. **Regra de Transferência:** Se identificar que uma transferência é necessária, responda exatamente: 'Estarei transferindo seu atendimento para [NOME EXATO DO SETOR]'.",
     "encrypted": false,
     "description": "Regras obrigatórias para geração de respostas baseadas exclusivamente no contexto RAG.",
     "created_at": "2026-01-11T21:29:33.070117+00:00",

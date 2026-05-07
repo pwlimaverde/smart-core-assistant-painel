@@ -1639,6 +1639,9 @@ def processar_mensagem_por_contato(
             metadados=metadados or {},
         )
 
+        # Atualiza timestamp para SLA/ordenação
+        atendimento.touch_last_message()
+
         if remetente == TipoRemetente.CONTATO:
             contato.ultima_interacao = timezone.now()
             contato.save()

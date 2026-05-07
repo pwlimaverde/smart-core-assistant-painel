@@ -140,8 +140,7 @@ class TrelloUnifiedDataService(UnifiedDataService):
 
         resp = req(url, params=all_params, json=json, timeout=30)
         if not resp.ok:
-            # Comentário: log detalhado para diagnóstico
-            logger.error(
+            logger.warning(
                 "Falha Trello API: {status} {text}",
                 status=resp.status_code,
                 text=resp.text,

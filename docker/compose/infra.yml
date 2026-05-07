@@ -8,6 +8,8 @@ services:
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: smartcoreassistant_tunnel
+    profiles:
+      - deprecated
     restart: unless-stopped
     command: tunnel run --protocol ${CLOUDFLARE_TUNNEL_PROTOCOL:-http2}
     env_file:

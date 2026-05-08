@@ -2,6 +2,9 @@ from django.urls import path
 
 from .views import contact_data_api, webhook
 from .views_instances import (
+    AttendantListView,
+    DepartmentCreateView,
+    DepartmentListView,
     InstanceConnectionStateView,
     InstanceCreateView,
     InstanceDeleteView,
@@ -10,6 +13,7 @@ from .views_instances import (
     InstanceLogoutView,
     InstanceQRCodeView,
     InstanceToggleBotView,
+    InstanceUpdateView,
     InstanceWebhookView,
     RefreshAllStatusView,
 )
@@ -35,6 +39,11 @@ urlpatterns = [
         "evolution/instances/<int:pk>/",
         InstanceDetailView.as_view(),
         name="evolution_instance_detail",
+    ),
+    path(
+        "evolution/instances/<int:pk>/update/",
+        InstanceUpdateView.as_view(),
+        name="evolution_instance_update",
     ),
     path(
         "evolution/instances/<int:pk>/qrcode/",
@@ -65,6 +74,22 @@ urlpatterns = [
         "evolution/instances/<int:pk>/logout/",
         InstanceLogoutView.as_view(),
         name="evolution_instance_logout",
+    ),
+    # === Endpoints AJAX para modal de criação ===
+    path(
+        "evolution/instances/departments/",
+        DepartmentListView.as_view(),
+        name="evolution_department_list",
+    ),
+    path(
+        "evolution/instances/departments/create/",
+        DepartmentCreateView.as_view(),
+        name="evolution_department_create",
+    ),
+    path(
+        "evolution/instances/attendants/",
+        AttendantListView.as_view(),
+        name="evolution_attendant_list",
     ),
     # === API Interna ===
     path(

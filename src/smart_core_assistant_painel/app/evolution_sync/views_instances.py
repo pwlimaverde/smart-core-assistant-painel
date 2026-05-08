@@ -77,33 +77,61 @@ class InstanceListView(LoginRequiredMixin, TemplateView):
         if tenant and evo_config:
             from smart_core_assistant_painel.app.operacional.models import (
                 AppInstance,
+                Departamento,
             )
 
             instances = list(
                 EvolutionInstance.objects.filter(active=True)
             )
 
-            # Busca resposta_bot do AppInstance vinculado por api_key
+            # Busca resposta_bot e departamento do AppInstance
             api_keys = [i.api_key for i in instances]
-            bot_map: dict[str, bool] = dict(
-                AppInstance.objects.filter(
-                    api_key__in=api_keys, active=True
-                ).values_list("api_key", "resposta_bot")
-            )
+            app_instances = AppInstance.objects.filter(
+                api_key__in=api_keys, active=True
+            ).select_related("departamento", "owner")
+            app_map: dict[str, AppInstance] = {
+                ai.api_key: ai for ai in app_instances
+            }
             for inst in instances:
-                inst.bot_active = bot_map.get(
-                    inst.api_key, True
+                app_inst = app_map.get(inst.api_key)
+                inst.bot_active = (  # type: ignore # atributo dinâmico
+                    app_inst.resposta_bot if app_inst else True
                 )
+                if app_inst and app_inst.departamento:
+                    inst.departamento_nome = app_inst.departamento.nome  # type: ignore # dinâmico
+                    inst.departamento_id = app_inst.departamento.id  # type: ignore # dinâmico
+                else:
+                    inst.departamento_nome = None  # type: ignore
+                    inst.departamento_id = None  # type: ignore
+                    
+                if app_inst and app_inst.owner:
+                    inst.owner_id = app_inst.owner.id  # type: ignore
+                else:
+                    inst.owner_id = None  # type: ignore
 
             context["instances"] = instances
             context["webhook_url"] = _build_webhook_url(
                 self.request, tenant
             )
+
+            # Dados para o modal de criação
+            context["departamentos"] = list(
+                Departamento.objects.filter(
+                    ativo=True
+                ).values("id", "nome")
+            )
         return context
 
 
 class InstanceCreateView(LoginRequiredMixin, View):
-    """Cria instância na Evolution API e salva no banco do tenant."""
+    """Cria instância na Evolution API e salva no banco do tenant.
+
+    Recebe no body JSON:
+        - instance_name: Nome da instância (obrigatório)
+        - resposta_bot: Se o bot deve responder (default: True)
+        - departamento_id: ID do departamento para vincular (opcional)
+        - owner_id: ID do atendente responsável (opcional)
+    """
 
     def post(self, request: HttpRequest) -> JsonResponse:
         tenant, evo_config, can_edit = _get_tenant_and_config(request)
@@ -126,11 +154,25 @@ class InstanceCreateView(LoginRequiredMixin, View):
 
         instance_name = str(data.get("instance_name", "")).strip()
         resposta_bot = bool(data.get("resposta_bot", True))
+        departamento_id = data.get("departamento_id")
+        owner_id = data.get("owner_id")
+
         if not INSTANCE_NAME_RE.match(instance_name):
             return _json_error(
                 "Nome inválido. Use 3-50 caracteres alfanuméricos "
                 "ou hífen (não pode iniciar/terminar com hífen)."
             )
+
+        # Log de diagnóstico para rastreamento de problemas de API
+        api_key_preview = evo_config.api_key[:6] if evo_config.api_key else "VAZIO"
+        logger.info(
+            "Criando instância '%s' no servidor '%s' "
+            "(api_key: %s..., len=%d)",
+            instance_name,
+            evo_config.server_url,
+            api_key_preview,
+            len(evo_config.api_key),
+        )
 
         webhook_url = _build_webhook_url(request, tenant)
         service = EvolutionWhatsAppService()
@@ -143,8 +185,23 @@ class InstanceCreateView(LoginRequiredMixin, View):
                 webhook_url=webhook_url,
             )
         except Exception as e:
-            logger.error(f"Erro ao criar instância: {e}")
-            return _json_error(f"Erro na API Evolution: {e}", 502)
+            error_msg = str(e)
+            logger.error(
+                "Falha ao criar instância '%s': %s",
+                instance_name,
+                error_msg,
+            )
+            # Mensagem amigável para erro 401
+            if "401" in error_msg or "Unauthorized" in error_msg:
+                return _json_error(
+                    "API Key inválida ou expirada. Verifique a "
+                    "configuração da Evolution API em "
+                    "Configurações > Evolution.",
+                    502,
+                )
+            return _json_error(
+                f"Erro na API Evolution: {error_msg}", 502
+            )
 
         instance_data = result.get("instance", {})
         hash_data = result.get("hash", {})
@@ -159,27 +216,45 @@ class InstanceCreateView(LoginRequiredMixin, View):
 
         from smart_core_assistant_painel.app.operacional.models import (
             AppInstance,
+            Atendente,
             Departamento,
         )
 
+        # Monta defaults para o AppInstance
+        app_defaults: dict[str, Any] = {
+            "channel": "evolution_api",
+            "display_name": instance.name,
+            "resposta_bot": resposta_bot,
+            "active": True,
+        }
+
+        # Vincula departamento se fornecido
+        if departamento_id:
+            dept = Departamento.objects.filter(
+                id=departamento_id, ativo=True
+            ).first()
+            if dept:
+                app_defaults["departamento"] = dept
+
+        # Vincula owner se fornecido
+        if owner_id:
+            owner = Atendente.objects.filter(
+                id=owner_id, ativo=True
+            ).first()
+            if owner:
+                app_defaults["owner"] = owner
+
         app_inst, _ = AppInstance.objects.update_or_create(
             api_key=instance.api_key,
-            defaults={
-                "channel": "evolution_api",
-                "display_name": instance.name,
-                "resposta_bot": resposta_bot,
-                "active": True,
-            },
+            defaults=app_defaults,
         )
 
-        # Sincronização simplificada: vincula ao departamento principal
-        dept_atendimento = Departamento.objects.filter(
-            nome__icontains="atendimento", ativo=True
-        ).first()
-        
-        if dept_atendimento and not app_inst.departamento:
-            app_inst.departamento = dept_atendimento
-            app_inst.save(update_fields=["departamento"])
+        logger.info(
+            "Instância '%s' criada com sucesso (dept=%s, owner=%s)",
+            instance.name,
+            getattr(app_inst.departamento, "nome", None),
+            getattr(app_inst.owner, "nome", None),
+        )
 
         return JsonResponse(
             {
@@ -256,7 +331,7 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
     """Retorna QR Code (base64) para conexão via AJAX."""
 
     def get(self, request: HttpRequest, pk: int) -> JsonResponse:
-        tenant, evo_config, _ = _get_tenant_and_config(request)
+        _, evo_config, _ = _get_tenant_and_config(request)
         if not evo_config or not evo_config.server_url:
             return _json_error("Config Evolution não encontrada.", 404)
 
@@ -289,7 +364,7 @@ class InstanceConnectionStateView(LoginRequiredMixin, View):
     """Retorna estado de conexão da instância via AJAX."""
 
     def get(self, request: HttpRequest, pk: int) -> JsonResponse:
-        tenant, evo_config, _ = _get_tenant_and_config(request)
+        _, evo_config, _ = _get_tenant_and_config(request)
         if not evo_config or not evo_config.server_url:
             return _json_error("Config Evolution não encontrada.", 404)
 
@@ -514,16 +589,12 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
 
         from smart_core_assistant_painel.app.operacional.models import (
             AppInstance,
-            Departamento,
         )
 
-        # Busca departamento principal para vínculo automático
-        dept_atendimento = Departamento.objects.filter(
-            nome__icontains="atendimento", ativo=True
-        ).first()
-
         for instance in instances:
-            app_inst, created = AppInstance.objects.update_or_create(
+            # Garante que o AppInstance existe, mas não sobrescreve
+            # vínculos de departamento/owner já definidos
+            AppInstance.objects.update_or_create(
                 api_key=instance.api_key,
                 defaults={
                     "channel": "evolution_api",
@@ -531,20 +602,15 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
                     "active": True,
                 },
             )
-            # Vincula ao departamento principal se recém-criado
-            # ou sem departamento
-            if dept_atendimento and not app_inst.departamento:
-                app_inst.departamento = dept_atendimento
-                app_inst.save(
-                    update_fields=["departamento"]
-                )
             try:
                 state_data = service.get_connection_state(
                     base_url=evo_config.server_url,
                     api_key=evo_config.api_key,
                     instance_name=instance.name,
                 )
-                state = state_data.get("instance", {}).get("state", "unknown")
+                state = state_data.get(
+                    "instance", {}
+                ).get("state", "unknown")
             except Exception:
                 state = "unknown"
 
@@ -567,3 +633,172 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
                 "instances": updated,
             }
         )
+
+
+class DepartmentListView(LoginRequiredMixin, View):
+    """Retorna departamentos ativos em JSON para uso no modal."""
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        tenant, _, _ = _get_tenant_and_config(request)
+        if not tenant:
+            return _json_error("Tenant não encontrado.", 404)
+
+        from smart_core_assistant_painel.app.operacional.models import (
+            Departamento,
+        )
+
+        departments = list(
+            Departamento.objects.filter(ativo=True)
+            .order_by("nome")
+            .values("id", "nome", "descricao")
+        )
+        return JsonResponse({"departments": departments})
+
+
+class DepartmentCreateView(LoginRequiredMixin, View):
+    """Cria um novo departamento via AJAX para uso inline no modal."""
+
+    def post(self, request: HttpRequest) -> JsonResponse:
+        tenant, _, can_edit = _get_tenant_and_config(request)
+        if not tenant:
+            return _json_error("Tenant não encontrado.", 404)
+        if not can_edit:
+            return _json_error("Sem permissão para esta ação.", 403)
+
+        import json
+
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return _json_error("Body inválido.")
+
+        nome = str(data.get("nome", "")).strip()
+        descricao = str(data.get("descricao", "")).strip()
+
+        if not nome or len(nome) < 2:
+            return _json_error(
+                "Nome do departamento deve ter pelo menos "
+                "2 caracteres."
+            )
+
+        from smart_core_assistant_painel.app.operacional.models import (
+            Departamento,
+        )
+
+        # Verifica duplicidade
+        if Departamento.objects.filter(nome__iexact=nome).exists():
+            return _json_error(
+                f"Departamento '{nome}' já existe."
+            )
+
+        dept = Departamento.objects.create(
+            nome=nome,
+            descricao=descricao or None,
+            ativo=True,
+        )
+
+        logger.info(
+            "Departamento '%s' criado via modal de instância",
+            dept.nome,
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "department": {
+                    "id": dept.pk,
+                    "nome": dept.nome,
+                    "descricao": dept.descricao or "",
+                },
+            },
+            status=201,
+        )
+
+
+class AttendantListView(LoginRequiredMixin, View):
+    """Retorna atendentes ativos filtrados por departamento."""
+
+    def get(self, request: HttpRequest) -> JsonResponse:
+        tenant, _, _ = _get_tenant_and_config(request)
+        if not tenant:
+            return _json_error("Tenant não encontrado.", 404)
+
+        from smart_core_assistant_painel.app.operacional.models import (
+            Atendente,
+        )
+
+        dept_id = request.GET.get("department_id")
+        qs = Atendente.objects.filter(ativo=True).order_by("nome")
+
+        if dept_id:
+            qs = qs.filter(departamento_id=dept_id)
+
+        attendants = list(
+            qs.values("id", "nome", "cargo")
+        )
+        return JsonResponse({"attendants": attendants})
+
+
+class InstanceUpdateView(LoginRequiredMixin, View):
+    """Atualiza as configurações de uma instância (departamento, owner e bot)."""
+
+    def post(self, request: HttpRequest, pk: int) -> JsonResponse:
+        tenant, _, can_edit = _get_tenant_and_config(request)
+
+        if not tenant:
+            return _json_error("Configuração não encontrada.", 404)
+        if not can_edit:
+            return _json_error("Sem permissão para esta ação.", 403)
+
+        try:
+            instance = EvolutionInstance.objects.get(pk=pk, tenant_id=tenant.id, active=True)
+        except EvolutionInstance.DoesNotExist:
+            return _json_error("Instância não encontrada.", 404)
+
+        import json
+
+        try:
+            data = json.loads(request.body)
+        except (json.JSONDecodeError, ValueError):
+            return _json_error("Body inválido.")
+
+        resposta_bot = bool(data.get("resposta_bot", True))
+        departamento_id = data.get("departamento_id")
+        owner_id = data.get("owner_id")
+
+        from smart_core_assistant_painel.app.operacional.models import (
+            AppInstance,
+            Atendente,
+            Departamento,
+        )
+
+        app_inst = AppInstance.objects.filter(api_key=instance.api_key).first()
+        if not app_inst:
+            return _json_error("Configuração operacional da instância não encontrada.", 404)
+
+        app_inst.resposta_bot = resposta_bot
+
+        # Atualiza departamento
+        if departamento_id:
+            dept = Departamento.objects.filter(id=departamento_id, ativo=True).first()
+            app_inst.departamento = dept if dept else None
+        else:
+            app_inst.departamento = None
+
+        # Atualiza owner
+        if owner_id:
+            owner = Atendente.objects.filter(id=owner_id, ativo=True).first()
+            app_inst.owner = owner if owner else None
+        else:
+            app_inst.owner = None
+
+        app_inst.save(update_fields=["resposta_bot", "departamento", "owner"])
+
+        logger.info(
+            "Instância '%s' atualizada com sucesso (dept=%s, owner=%s)",
+            instance.name,
+            getattr(app_inst.departamento, "nome", None),
+            getattr(app_inst.owner, "nome", None),
+        )
+
+        return JsonResponse({"success": True})

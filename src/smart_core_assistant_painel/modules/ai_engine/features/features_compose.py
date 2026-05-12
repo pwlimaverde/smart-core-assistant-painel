@@ -404,7 +404,20 @@ class FeaturesCompose:
             Texto convertido ou string vazia se não houver conversão.
         """
         if not metadados:
+            logger.info(
+                "[MIDIA-CTX] converter_contexto chamado sem metadados | "
+                f"message_type={message_type}"
+            )
             return ""
+
+        mimetype_log = metadados.get("mimetype")
+        url_present = bool(metadados.get("url"))
+        base64_len = len(metadados.get("base64") or "")
+        logger.info(
+            f"[MIDIA-CTX] converter_contexto | message_type={message_type} | "
+            f"mimetype={mimetype_log} | url_present={url_present} | "
+            f"base64_len={base64_len}"
+        )
 
         if message_type == "audioMessage":
             audio_url = metadados.get("url", "")
@@ -459,6 +472,10 @@ class FeaturesCompose:
                 file_name=str(file_name or "documento"),
             )
 
+        logger.info(
+            f"[MIDIA-CTX] message_type sem handler de conversão: "
+            f"{message_type}"
+        )
         return ""
 
     @staticmethod
@@ -498,12 +515,25 @@ class FeaturesCompose:
             media_base64=media_base64,
             file_name=file_name,
         )
+        logger.info(
+            f"[MIDIA-CTX] _interpret_media INPUT | media_type={media_type} | "
+            f"mimetype={mimetype} | url_present={bool(media_url)} | "
+            f"base64_len={len(media_base64 or '')} | file_name={file_name!r}"
+        )
         datasource: IMData = InterpretMediaDatasource()
         usecase: IMUsecase = InterpretMediaUseCase(datasource)
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            result_text = data.result
+            logger.info(
+                f"[MIDIA-CTX] _interpret_media OUTPUT | "
+                f"media_type={media_type} | len={len(result_text)}\n"
+                f"---[MIDIA-CTX] LLM RESPONSE]---\n"
+                f"{result_text}\n"
+                f"---[MIDIA-CTX] FIM LLM RESPONSE]---"
+            )
+            return result_text
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:

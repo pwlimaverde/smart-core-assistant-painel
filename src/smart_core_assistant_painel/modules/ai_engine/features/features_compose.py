@@ -226,7 +226,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
@@ -263,7 +263,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
@@ -309,7 +309,7 @@ class FeaturesCompose:
                     context="",
                     extra_params={
                         "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                        "api_key": SERVICEHUB.GROQ_API_KEY,
+                        "api_key": SERVICEHUB.LLM_API_KEY,
                     },
                 )
 
@@ -359,7 +359,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
@@ -867,7 +867,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_MENSAGEM,
             prompt_human=prompt_human,

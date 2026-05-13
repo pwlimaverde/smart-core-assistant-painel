@@ -80,6 +80,17 @@ class ServiceHub:
             temperature=ConfigProvider.get().llm_temperature,
         )
 
+    @property
+    def LLM_API_KEY(self) -> str:
+        """Retorna a API key correta conforme o llm_class configurado."""
+        class_name = ConfigProvider.get().llm_class
+        if class_name == "ChatGoogleGenerativeAI":
+            return self.GOOGLE_API_KEY
+        elif class_name == "ChatOpenAI":
+            return self.OPENAI_API_KEY
+        else:
+            return self.GROQ_API_KEY
+
     # === Interpretação de Mídia (Gemini Vision) ===
     @property
     def VISION_PROVIDER(self) -> str:

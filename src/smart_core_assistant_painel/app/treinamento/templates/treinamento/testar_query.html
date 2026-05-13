@@ -47,8 +47,38 @@
 
                 <!-- Input Area -->
                 <div class="border-t border-stone-200 p-4">
-                    <form id="chat-form" class="flex gap-3">
-                        <input type="text" id="chat-input" placeholder="Digite uma mensagem..."
+                    <!-- Pré-visualização do arquivo selecionado -->
+                    <div id="media-preview" class="hidden mb-2 flex items-center justify-between bg-stone-50 border border-stone-200 rounded-lg px-3 py-2 text-xs text-stone-700">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <svg class="h-4 w-4 flex-shrink-0 text-stone-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                            <span id="media-preview-name" class="truncate"></span>
+                            <span id="media-preview-size" class="text-stone-400 flex-shrink-0"></span>
+                        </div>
+                        <button type="button" id="media-remove-btn"
+                            class="ml-2 flex-shrink-0 text-stone-400 hover:text-rose-500 transition-colors"
+                            aria-label="Remover arquivo">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="chat-form" class="flex gap-2">
+                        <input type="file" id="media-input" class="hidden"
+                            accept="audio/*,image/*,video/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt">
+                        <button type="button" id="attach-btn"
+                            class="inline-flex items-center justify-center rounded-lg border border-stone-300 px-3 py-2.5 text-stone-600 hover:bg-stone-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Anexar arquivo">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                        </button>
+                        <input type="text" id="chat-input" placeholder="Digite uma mensagem ou anexe mídia..."
                             class="flex-1 rounded-lg border border-stone-300 px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:border-[#a98f71] focus:outline-none focus:ring-1 focus:ring-[#a98f71]"
                             autocomplete="off">
                         <button type="submit" id="send-btn"
@@ -174,9 +204,19 @@ const chatInput = document.getElementById('chat-input');
 const sendBtn = document.getElementById('send-btn');
 const sendIcon = document.getElementById('send-icon');
 const loadingIcon = document.getElementById('loading-icon');
+const attachBtn = document.getElementById('attach-btn');
+const mediaInput = document.getElementById('media-input');
+const mediaPreview = document.getElementById('media-preview');
+const mediaPreviewName = document.getElementById('media-preview-name');
+const mediaPreviewSize = document.getElementById('media-preview-size');
+const mediaRemoveBtn = document.getElementById('media-remove-btn');
+
+// Limite alinhado ao Gunicorn/Evolution em produção (~50MB).
+const MAX_MEDIA_BYTES = 50 * 1024 * 1024;
 
 let lastResponse = null;
 let lastMensagem = '';
+let selectedMedia = null; // File selecionado para envio
 
 // Mantem estado de conversa no frontend para o endpoint de teste ser realmente multi-turn.
 // Isso evita perguntas repetidas e permite ao LLM enxergar o contexto anterior.
@@ -208,23 +248,79 @@ function getCsrf() {
     return el ? el.value : '{{ csrf_token }}';
 }
 
-function addMessage(text, isUser) {
+function addMessage(text, isUser, mediaInfo) {
     const placeholder = chatMessages.querySelector('.text-center');
     if (placeholder) placeholder.remove();
+
+    const bubbleClasses = isUser
+        ? 'bg-[#a98f71] text-white rounded-br-sm'
+        : 'bg-stone-100 text-stone-900 rounded-bl-sm';
+
+    let mediaHtml = '';
+    if (mediaInfo) {
+        const kindLabel = {
+            audio: 'Áudio',
+            image: 'Imagem',
+            video: 'Vídeo',
+            document: 'Documento',
+        }[mediaInfo.kind] || 'Arquivo';
+        const previewBg = isUser ? 'bg-white/15 border-white/25' : 'bg-stone-200 border-stone-300';
+        mediaHtml = `
+            <div class="mb-1 flex items-center gap-2 rounded-md border ${previewBg} px-2 py-1.5 text-xs">
+                <svg class="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                </svg>
+                <div class="min-w-0">
+                    <div class="font-medium">${escapeHtml(kindLabel)}</div>
+                    <div class="truncate opacity-80">${escapeHtml(mediaInfo.name)}</div>
+                </div>
+            </div>
+        `;
+    }
 
     const div = document.createElement('div');
     div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
     div.innerHTML = `
-        <div class="max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${
-            isUser
-                ? 'bg-[#a98f71] text-white rounded-br-sm'
-                : 'bg-stone-100 text-stone-900 rounded-bl-sm'
-        }">
+        <div class="max-w-[80%] rounded-xl px-4 py-2.5 text-sm ${bubbleClasses}">
+            ${mediaHtml}
             <div class="whitespace-pre-wrap">${escapeHtml(text)}</div>
         </div>
     `;
     chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function detectMediaKind(mimetype) {
+    const mt = (mimetype || '').toLowerCase();
+    if (mt.startsWith('audio/')) return 'audio';
+    if (mt.startsWith('image/')) return 'image';
+    if (mt.startsWith('video/')) return 'video';
+    return 'document';
+}
+
+function formatFileSize(bytes) {
+    if (!bytes) return '';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function clearSelectedMedia() {
+    selectedMedia = null;
+    mediaInput.value = '';
+    mediaPreview.classList.add('hidden');
+    mediaPreviewName.textContent = '';
+    mediaPreviewSize.textContent = '';
+    chatInput.placeholder = 'Digite uma mensagem ou anexe mídia...';
+}
+
+function showSelectedMedia(file) {
+    selectedMedia = file;
+    mediaPreviewName.textContent = file.name;
+    mediaPreviewSize.textContent = formatFileSize(file.size);
+    mediaPreview.classList.remove('hidden');
+    chatInput.placeholder = 'Legenda opcional (caption)...';
 }
 
 function escapeHtml(text) {
@@ -236,9 +332,26 @@ function escapeHtml(text) {
 function setLoading(loading) {
     sendBtn.disabled = loading;
     chatInput.disabled = loading;
+    attachBtn.disabled = loading;
     sendIcon.classList.toggle('hidden', loading);
     loadingIcon.classList.toggle('hidden', !loading);
 }
+
+attachBtn.addEventListener('click', () => mediaInput.click());
+mediaRemoveBtn.addEventListener('click', clearSelectedMedia);
+mediaInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
+        clearSelectedMedia();
+        return;
+    }
+    if (file.size > MAX_MEDIA_BYTES) {
+        alert(`Arquivo excede o limite de ${formatFileSize(MAX_MEDIA_BYTES)}.`);
+        clearSelectedMedia();
+        return;
+    }
+    showSelectedMedia(file);
+});
 
 function updateDetails(data) {
     document.getElementById('details-placeholder').classList.add('hidden');
@@ -315,28 +428,57 @@ function updateDetails(data) {
 
 chatForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const msg = chatInput.value.trim();
-    if (!msg) return;
+    const caption = chatInput.value.trim();
+    const file = selectedMedia;
 
-    lastMensagem = msg;
-    addMessage(msg, true);
+    if (!caption && !file) return;
+
+    // Texto exibido no balão do usuário: caption ou rótulo padrão do arquivo.
+    const displayText = caption || (file
+        ? ({
+            audio: 'Áudio enviado',
+            image: 'Imagem enviada',
+            video: 'Vídeo enviado',
+            document: file.name,
+        }[detectMediaKind(file.type)] || file.name)
+        : '');
+
+    const mediaInfo = file ? { name: file.name, kind: detectMediaKind(file.type) } : null;
+
+    lastMensagem = displayText;
+    addMessage(displayText, true, mediaInfo);
     chatInput.value = '';
     setLoading(true);
 
     try {
-        const resp = await fetch('{% url "treinamento:testar_resposta_query" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCsrf(),
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mensagem: msg,
-                chat_history: chatHistory,
-                context_state: contextState,
-            }),
-        });
+        let fetchOptions;
+        if (file) {
+            const fd = new FormData();
+            fd.append('mensagem', caption);
+            fd.append('chat_history', JSON.stringify(chatHistory));
+            fd.append('context_state', JSON.stringify(contextState));
+            fd.append('media_file', file);
+            fetchOptions = {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCsrf() },
+                body: fd,
+            };
+        } else {
+            fetchOptions = {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCsrf(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mensagem: caption,
+                    chat_history: chatHistory,
+                    context_state: contextState,
+                }),
+            };
+        }
 
+        const resp = await fetch('{% url "treinamento:testar_resposta_query" %}', fetchOptions);
         const data = await resp.json();
 
         if (data.error) {
@@ -347,15 +489,18 @@ chatForm.addEventListener('submit', async (e) => {
             addMessage(errorMsg, false);
 
             // Mesmo em erro, registramos o turno para manter previsibilidade no teste.
-            chatHistory.push({ role: 'user', content: msg });
+            chatHistory.push({ role: 'user', content: displayText });
             chatHistory.push({ role: 'assistant', content: errorMsg });
         } else {
             addMessage(data.resposta_bot, false);
             lastResponse = data;
             updateDetails(data);
 
-            // Atualiza estado multi-turn
-            chatHistory.push({ role: 'user', content: msg });
+            // Registramos no histórico o texto efetivo (caption + transcrição/descrição
+            // da mídia quando o backend retorna), para que turnos seguintes vejam o
+            // contexto real — não apenas "Áudio enviado".
+            const effectiveUserText = data.mensagem_processada || displayText;
+            chatHistory.push({ role: 'user', content: effectiveUserText });
             chatHistory.push({ role: 'assistant', content: data.resposta_bot || '' });
 
             // Backend pode devolver acumulado; se nao devolver, acumulamos localmente.
@@ -373,6 +518,7 @@ chatForm.addEventListener('submit', async (e) => {
     } catch (err) {
         addMessage('Erro de conexão: ' + err.message, false);
     } finally {
+        clearSelectedMedia();
         setLoading(false);
         chatInput.focus();
     }

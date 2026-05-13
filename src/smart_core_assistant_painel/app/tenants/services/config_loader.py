@@ -64,6 +64,7 @@ class ConfigLoader:
             "huggingface_api_key"
         ) or core.get("huggingface_api_key", "")
         google_api_key = core.get("google_api_key", "")
+        google_api_key_free = core.get("google_api_key_free", "")
 
         config = RuntimeConfig(
             # === API Keys (tenant sobrescreve core) ===
@@ -71,6 +72,7 @@ class ConfigLoader:
             openai_api_key=openai_api_key,
             huggingface_api_key=huggingface_api_key,
             google_api_key=google_api_key,
+            google_api_key_free=google_api_key_free,
             # === LLM ===
             llm_class=tenant_cfg.get("llm_class")
             or core.get("llm_class", "ChatGroq"),

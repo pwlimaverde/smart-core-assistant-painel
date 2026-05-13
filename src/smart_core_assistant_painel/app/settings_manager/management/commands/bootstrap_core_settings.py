@@ -61,6 +61,7 @@ _ENV_BY_CORE_KEY: dict[str, str] = {
     "vision_provider": "VISION_PROVIDER",
     "vision_model": "VISION_MODEL",
     "google_api_key": "GOOGLE_API_KEY",
+    "google_api_key_free": "GOOGLE_API_KEY_FREE",
 }
 
 

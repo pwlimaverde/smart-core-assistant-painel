@@ -1,0 +1,654 @@
+{
+  "version": "2.0.0",
+  "generated": "2026-05-14T18:19:29.897Z",
+  "meta": {
+    "schemaVersion": "2.0.0",
+    "generatedAt": "2026-05-14T18:19:29.897Z",
+    "repoFingerprint": "ab84007b21fd7837a79b6fdad823ca57319b5b6e",
+    "analyzer": {
+      "useLSP": false,
+      "includesSymbolPayload": false
+    }
+  },
+  "stack": {
+    "primaryLanguage": "javascript",
+    "languages": [
+      "python",
+      "javascript"
+    ],
+    "frameworks": [],
+    "buildTools": [],
+    "testFrameworks": [
+      "pytest"
+    ],
+    "packageManager": null,
+    "isMonorepo": false,
+    "hasDocker": false,
+    "hasCI": true,
+    "hasBinField": false,
+    "hasMainExport": false,
+    "hasTypesField": false
+  },
+  "structure": {
+    "totalFiles": 899,
+    "rootPath": ".",
+    "topDirectories": [
+      {
+        "name": "docker",
+        "fileCount": 17,
+        "description": "Module directory"
+      },
+      {
+        "name": "docs",
+        "fileCount": 10,
+        "description": "Documentation files"
+      },
+      {
+        "name": "docs_dev",
+        "fileCount": 110,
+        "description": "Documentation files"
+      },
+      {
+        "name": "scripts",
+        "fileCount": 28,
+        "description": "Build and utility scripts"
+      },
+      {
+        "name": "src",
+        "fileCount": 651,
+        "description": "Source code root"
+      },
+      {
+        "name": "teste_debug",
+        "fileCount": 21,
+        "description": "Test files"
+      },
+      {
+        "name": "tests",
+        "fileCount": 50,
+        "description": "Test files and fixtures"
+      }
+    ],
+    "languageDistribution": [
+      {
+        "extension": ".py",
+        "count": 422
+      },
+      {
+        "extension": ".pyc",
+        "count": 258
+      },
+      {
+        "extension": ".md",
+        "count": 113
+      },
+      {
+        "extension": ".html",
+        "count": 56
+      },
+      {
+        "extension": ".png",
+        "count": 7
+      },
+      {
+        "extension": ".yml",
+        "count": 6
+      },
+      {
+        "extension": ".txt",
+        "count": 5
+      },
+      {
+        "extension": ".sh",
+        "count": 5
+      },
+      {
+        "extension": ".conf",
+        "count": 5
+      },
+      {
+        "extension": ".mmd",
+        "count": 4
+      }
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Services",
+        "description": "Business logic and orchestration",
+        "directories": [
+          "teste_debug",
+          "tests\\modules\\services",
+          "tests\\modules\\services\\features",
+          "src\\smart_core_assistant_painel\\modules\\services",
+          "src\\smart_core_assistant_painel\\app\\treinamento",
+          "src\\smart_core_assistant_painel\\modules\\services\\utils",
+          "src\\smart_core_assistant_painel\\modules\\services\\llm",
+          "src\\smart_core_assistant_painel\\modules\\services\\features",
+          "src\\smart_core_assistant_painel\\modules\\services\\config",
+          "src\\smart_core_assistant_painel\\app\\trello_sync\\services",
+          "src\\smart_core_assistant_painel\\app\\tenants\\services",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync\\services",
+          "src\\smart_core_assistant_painel\\app\\atendimentos\\services",
+          "tests\\modules\\services\\features\\unifield_data_services\\datasource",
+          "tests\\modules\\services\\features\\set_environ_remote\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync\\tests\\services",
+          "src\\smart_core_assistant_painel\\app\\atendimentos\\tests\\services",
+          "tests\\modules\\services\\features\\unifield_data_services\\domain\\usecase",
+          "tests\\modules\\services\\features\\set_environ_remote\\domain\\usecase",
+          "tests\\modules\\initial_loading\\features\\firebase_init\\domain\\usecase",
+          "tests\\modules\\ai_engine\\features\\load_mensage_data\\domain\\usecase",
+          "tests\\modules\\ai_engine\\features\\load_document_file\\domain\\usecase",
+          "tests\\modules\\ai_engine\\features\\load_document_conteudo\\domain\\usecase",
+          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\usecase",
+          "tests\\modules\\ai_engine\\features\\analise_conteudo\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\domain",
+          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\services\\features\\unifield_data_services\\domain\\interface",
+          "src\\smart_core_assistant_painel\\modules\\initial_loading\\features\\firebase_init\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\transcribe_audio\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_file\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_conteudo\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\interpret_media\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_embeddings\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_chunks\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\domain\\usecase",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\domain\\usecase"
+        ],
+        "symbolCount": 100,
+        "dependsOn": []
+      },
+      {
+        "name": "Repositories",
+        "description": "Data access and persistence",
+        "directories": [
+          "teste_debug",
+          "scripts\\temp",
+          "scripts\\temp\\database_reset",
+          "tests\\modules\\ai_engine\\features\\load_document_file\\datasource",
+          "tests\\modules\\ai_engine\\features\\generate_embeddings\\datasource",
+          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource",
+          "tests\\modules\\ai_engine\\features\\analise_conteudo\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data",
+          "src\\smart_core_assistant_painel\\app\\usuarios\\management\\commands",
+          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\langchain_pydantic",
+          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\transcribe_audio\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_file\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\interpret_media\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_embeddings\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_avaliacao\\datasource",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\langchain_pydantic",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain"
+        ],
+        "symbolCount": 27,
+        "dependsOn": []
+      },
+      {
+        "name": "Config",
+        "description": "Configuration and constants",
+        "directories": [
+          "scripts\\temp",
+          "scripts\\config_global",
+          "src\\smart_core_assistant_painel\\app\\settings_manager",
+          "src\\smart_core_assistant_painel\\app\\core",
+          "src\\smart_core_assistant_painel\\app\\tenants\\migrations",
+          "src\\smart_core_assistant_painel\\app\\settings_manager\\migrations",
+          "src\\smart_core_assistant_painel\\app\\settings_manager\\management",
+          "src\\smart_core_assistant_painel\\app\\settings_manager\\management\\commands"
+        ],
+        "symbolCount": 40,
+        "dependsOn": []
+      },
+      {
+        "name": "Components",
+        "description": "UI components and views",
+        "directories": [
+          "src\\smart_core_assistant_painel\\app\\usuarios",
+          "src\\smart_core_assistant_painel\\app\\treinamento",
+          "src\\smart_core_assistant_painel\\app\\settings_manager",
+          "src\\smart_core_assistant_painel\\app\\operacional",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync",
+          "src\\smart_core_assistant_painel\\app\\core",
+          "src\\smart_core_assistant_painel\\app\\clientes",
+          "src\\smart_core_assistant_painel\\app\\usuarios\\tests",
+          "src\\smart_core_assistant_painel\\app\\treinamento\\tests",
+          "src\\smart_core_assistant_painel\\app\\tenants\\views",
+          "src\\smart_core_assistant_painel\\app\\operacional\\tests",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync\\tests",
+          "src\\smart_core_assistant_painel\\app\\clientes\\tests",
+          "src\\smart_core_assistant_painel\\app\\tenants\\views\\backoffice"
+        ],
+        "symbolCount": 100,
+        "dependsOn": []
+      },
+      {
+        "name": "Models",
+        "description": "Data structures and domain objects",
+        "directories": [
+          "src\\smart_core_assistant_painel\\app\\usuarios",
+          "src\\smart_core_assistant_painel\\app\\trello_sync",
+          "src\\smart_core_assistant_painel\\app\\treinamento",
+          "src\\smart_core_assistant_painel\\app\\tenants",
+          "src\\smart_core_assistant_painel\\app\\settings_manager",
+          "src\\smart_core_assistant_painel\\app\\operacional",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync",
+          "src\\smart_core_assistant_painel\\app\\clientes",
+          "src\\smart_core_assistant_painel\\app\\atendimentos",
+          "src\\smart_core_assistant_painel\\app\\trello_sync\\tests",
+          "src\\smart_core_assistant_painel\\app\\treinamento\\tests",
+          "src\\smart_core_assistant_painel\\app\\tenants\\migrations",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync\\domain",
+          "src\\smart_core_assistant_painel\\app\\clientes\\tests",
+          "src\\smart_core_assistant_painel\\app\\atendimentos\\tests",
+          "tests\\modules\\initial_loading\\features\\firebase_init\\domain",
+          "tests\\modules\\ai_engine\\features\\load_document_file\\domain",
+          "tests\\modules\\ai_engine\\features\\load_document_conteudo\\domain",
+          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain",
+          "tests\\modules\\ai_engine\\features\\analise_conteudo\\domain",
+          "src\\smart_core_assistant_painel\\app\\evolution_sync\\tests\\domain",
+          "tests\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\langchain_pydantic",
+          "src\\smart_core_assistant_painel\\modules\\initial_loading\\features\\firebase_init\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\transcribe_audio\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_file\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_document_conteudo\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\interpret_media\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_embeddings\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\generate_chunks\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_mensage\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_conteudo\\domain",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\load_mensage_data\\domain\\model",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\domain\\interface",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\features\\analise_previa_mensagem\\datasource\\analise_previa_langchain"
+        ],
+        "symbolCount": 100,
+        "dependsOn": []
+      },
+      {
+        "name": "Controllers",
+        "description": "Request handling and routing",
+        "directories": [
+          "src\\smart_core_assistant_painel\\app\\trello_sync",
+          "src\\smart_core_assistant_painel\\app\\tenants",
+          "src\\smart_core_assistant_painel\\app\\operacional",
+          "src\\smart_core_assistant_painel\\app\\trello_sync\\tests"
+        ],
+        "symbolCount": 9,
+        "dependsOn": []
+      },
+      {
+        "name": "Utils",
+        "description": "Shared utilities and helpers",
+        "directories": [
+          "src\\smart_core_assistant_painel\\modules\\initial_loading\\utils",
+          "src\\smart_core_assistant_painel\\modules\\ai_engine\\utils",
+          "src\\smart_core_assistant_painel\\app\\tenants\\utils"
+        ],
+        "symbolCount": 31,
+        "dependsOn": []
+      }
+    ],
+    "patterns": [
+      {
+        "name": "Factory",
+        "confidence": 0.9,
+        "description": "Creates instances of related objects without specifying concrete classes",
+        "occurrences": 1
+      },
+      {
+        "name": "Singleton",
+        "confidence": 0.7,
+        "description": "Ensures a class has only one instance",
+        "occurrences": 16
+      },
+      {
+        "name": "Service Layer",
+        "confidence": 0.85,
+        "description": "Encapsulates business logic in service classes",
+        "occurrences": 15
+      }
+    ],
+    "entryPoints": [],
+    "mainEntryPoints": [],
+    "moduleExports": []
+  },
+  "functionalPatterns": {
+    "hasAuthPattern": true,
+    "hasDatabasePattern": true,
+    "hasApiPattern": true,
+    "hasCachePattern": false,
+    "hasQueuePattern": true,
+    "hasWebSocketPattern": false,
+    "hasLoggingPattern": true,
+    "hasValidationPattern": true,
+    "hasErrorHandlingPattern": false,
+    "hasTestingPattern": false,
+    "patterns": [
+      {
+        "type": "auth",
+        "confidence": 0.6,
+        "indicators": [
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\tests\\verify_payment_logic.py",
+            "symbol": "verify_payment_logic",
+            "line": 31,
+            "reason": "Auth-related symbol: verify_payment_logic"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\verify_service_hub.py",
+            "symbol": "verify_service_hub",
+            "line": 23,
+            "reason": "Auth-related symbol: verify_service_hub"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+            "symbol": "login",
+            "line": 65,
+            "reason": "Auth-related symbol: login"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+            "symbol": "logout_view",
+            "line": 123,
+            "reason": "Auth-related symbol: logout_view"
+          }
+        ],
+        "description": "Authentication and authorization functionality"
+      },
+      {
+        "type": "database",
+        "confidence": 1,
+        "indicators": [
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\models.py",
+            "symbol": "QueryTestFeedback",
+            "line": 246,
+            "reason": "Database-related symbol: QueryTestFeedback"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\models.py",
+            "symbol": "QueryCompose",
+            "line": 304,
+            "reason": "Database-related symbol: QueryCompose"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\admin.py",
+            "symbol": "QueryComposeAdmin",
+            "line": 328,
+            "reason": "Database-related symbol: QueryComposeAdmin"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tests\\test_models.py",
+            "symbol": "ModelsStrTests",
+            "line": 6,
+            "reason": "Database-related symbol: ModelsStrTests"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\migrations\\0002_trelloboard_webhook_id.py",
+            "symbol": "Migration",
+            "line": 6,
+            "reason": "Database-related symbol: Migration"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\migrations\\0001_initial.py",
+            "symbol": "Migration",
+            "line": 7,
+            "reason": "Database-related symbol: Migration"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\migrations\\0002_create_query_test_feedback.py",
+            "symbol": "Migration",
+            "line": 6,
+            "reason": "Database-related symbol: Migration"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\migrations\\0001_initial.py",
+            "symbol": "Migration",
+            "line": 11,
+            "reason": "Database-related symbol: Migration"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\settings_manager\\migrations\\0001_initial.py",
+            "symbol": "Migration",
+            "line": 6,
+            "reason": "Database-related symbol: Migration"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\tenants\\views\\legacy_views.py",
+            "symbol": "DatabaseConfigView",
+            "line": 288,
+            "reason": "Database-related symbol: DatabaseConfigView"
+          }
+        ],
+        "description": "Database access and ORM functionality"
+      },
+      {
+        "type": "api",
+        "confidence": 0.3,
+        "indicators": [
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\config_global\\sync_coresettings_prod.py",
+            "symbol": "restore_action",
+            "line": 164,
+            "reason": "API-related symbol: restore_action"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\config_global\\sync_coresettings.py",
+            "symbol": "restore_action",
+            "line": 106,
+            "reason": "API-related symbol: restore_action"
+          }
+        ],
+        "description": "API endpoints and routing"
+      },
+      {
+        "type": "queue",
+        "confidence": 1,
+        "indicators": [
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_fluxo_ensure_board",
+            "line": 42,
+            "reason": "Queue-related symbol: task_fluxo_ensure_board"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_fluxo_archive_board",
+            "line": 66,
+            "reason": "Queue-related symbol: task_fluxo_archive_board"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_etapa_ensure_list",
+            "line": 86,
+            "reason": "Queue-related symbol: task_etapa_ensure_list"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_reorder_lists_for_fluxo",
+            "line": 107,
+            "reason": "Queue-related symbol: task_reorder_lists_for_fluxo"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_etapa_archive_list",
+            "line": 125,
+            "reason": "Queue-related symbol: task_etapa_archive_list"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_atendimento_ensure_card",
+            "line": 141,
+            "reason": "Queue-related symbol: task_atendimento_ensure_card"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_atendente_invite",
+            "line": 161,
+            "reason": "Queue-related symbol: task_atendente_invite"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_atendente_remove_member",
+            "line": 179,
+            "reason": "Queue-related symbol: task_atendente_remove_member"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_atendimento_sync_card_members",
+            "line": 190,
+            "reason": "Queue-related symbol: task_atendimento_sync_card_members"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+            "symbol": "task_atendimento_move_to_etapa_list",
+            "line": 214,
+            "reason": "Queue-related symbol: task_atendimento_move_to_etapa_list"
+          }
+        ],
+        "description": "Message queues and background jobs"
+      },
+      {
+        "type": "logging",
+        "confidence": 0.4,
+        "indicators": [
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+            "symbol": "login",
+            "line": 65,
+            "reason": "Logging-related symbol: login"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+            "symbol": "logout_view",
+            "line": 123,
+            "reason": "Logging-related symbol: logout_view"
+          }
+        ],
+        "description": "Logging and observability"
+      },
+      {
+        "type": "validation",
+        "confidence": 1,
+        "indicators": [
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+            "symbol": "check_treinamentos",
+            "line": 27,
+            "reason": "Validation-related symbol: check_treinamentos"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+            "symbol": "check_celery_results",
+            "line": 81,
+            "reason": "Validation-related symbol: check_celery_results"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+            "symbol": "check_redis_connection",
+            "line": 138,
+            "reason": "Validation-related symbol: check_redis_connection"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+            "symbol": "check_celery_inspect",
+            "line": 157,
+            "reason": "Validation-related symbol: check_celery_inspect"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\automacao\\ssl_debug.py",
+            "symbol": "check_ssl",
+            "line": 7,
+            "reason": "Validation-related symbol: check_ssl"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\automacao\\new_feature_script.py",
+            "symbol": "sanitize_name",
+            "line": 22,
+            "reason": "Validation-related symbol: sanitize_name"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\models.py",
+            "symbol": "validate_identificador",
+            "line": 17,
+            "reason": "Validation-related symbol: validate_identificador"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\tenants\\tasks.py",
+            "symbol": "check_subscription_expirations",
+            "line": 13,
+            "reason": "Validation-related symbol: check_subscription_expirations"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\operacional\\models.py",
+            "symbol": "validate_telefone",
+            "line": 17,
+            "reason": "Validation-related symbol: validate_telefone"
+          },
+          {
+            "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\operacional\\models.py",
+            "symbol": "validate_api_key",
+            "line": 30,
+            "reason": "Validation-related symbol: validate_api_key"
+          }
+        ],
+        "description": "Input validation and schema enforcement"
+      }
+    ]
+  },
+  "dependencies": {
+    "mostImported": [
+      {
+        "file": "src\\smart_core_assistant_painel\\app\\usuarios",
+        "importedBy": 1,
+        "description": "Application entry (Next.js app router)"
+      },
+      {
+        "file": "src\\smart_core_assistant_painel\\app\\trello_sync",
+        "importedBy": 1,
+        "description": "Application entry (Next.js app router)"
+      },
+      {
+        "file": "src\\smart_core_assistant_painel\\app\\treinamento",
+        "importedBy": 1,
+        "description": "Application entry (Next.js app router)"
+      },
+      {
+        "file": "src\\smart_core_assistant_painel\\app\\settings_manager",
+        "importedBy": 1,
+        "description": "Application entry (Next.js app router)"
+      },
+      {
+        "file": "src\\smart_core_assistant_painel\\app\\core",
+        "importedBy": 1,
+        "description": "Application entry (Next.js app router)"
+      }
+    ]
+  },
+  "stats": {
+    "totalFiles": 423,
+    "totalSymbols": 714,
+    "exportedSymbols": 653,
+    "analysisTimeMs": 709
+  },
+  "keyFiles": [],
+  "navigation": {
+    "tests": "src/**/*.test.ts",
+    "config": [],
+    "types": [],
+    "mainLogic": [
+      "src"
+    ]
+  }
+}

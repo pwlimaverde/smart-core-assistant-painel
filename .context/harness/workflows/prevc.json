@@ -1,0 +1,109 @@
+{
+  "version": 2,
+  "workflowType": "prevc",
+  "updatedAt": "2026-05-14T18:35:21.876Z",
+  "status": {
+    "project": {
+      "name": "feature-interpret-media",
+      "scale": 2,
+      "started": "2026-04-09T14:26:27.036Z",
+      "current_phase": "V",
+      "settings": {
+        "autonomous_mode": true,
+        "require_plan": true,
+        "require_approval": true
+      }
+    },
+    "phases": {
+      "P": {
+        "status": "filled",
+        "started_at": "2026-04-09T14:26:27.036Z",
+        "completed_at": "2026-04-09T14:27:27.756Z"
+      },
+      "R": {
+        "status": "filled",
+        "started_at": "2026-04-09T14:27:27.767Z",
+        "completed_at": "2026-04-09T14:27:37.487Z"
+      },
+      "E": {
+        "status": "filled",
+        "started_at": "2026-04-09T14:27:37.499Z",
+        "completed_at": "2026-04-09T14:40:19.569Z"
+      },
+      "V": {
+        "status": "completed",
+        "started_at": "2026-04-09T14:40:19.585Z",
+        "completed_at": "2026-05-14T17:56:40.919Z",
+        "outputs": [
+          {
+            "path": "modules/ai_engine/features/interpret_media/",
+            "status": "filled"
+          },
+          {
+            "path": "modules/ai_engine/utils/erros.py",
+            "status": "filled"
+          },
+          {
+            "path": "modules/ai_engine/utils/parameters.py",
+            "status": "filled"
+          },
+          {
+            "path": "modules/ai_engine/utils/types.py",
+            "status": "filled"
+          },
+          {
+            "path": "modules/ai_engine/features/features_compose.py",
+            "status": "filled"
+          },
+          {
+            "path": "modules/services/config/context.py",
+            "status": "filled"
+          },
+          {
+            "path": "modules/services/features/service_hub.py",
+            "status": "filled"
+          },
+          {
+            "path": "app/tenants/models.py",
+            "status": "filled"
+          },
+          {
+            "path": "app/tenants/services/config_loader.py",
+            "status": "filled"
+          },
+          {
+            "path": "pyproject.toml",
+            "status": "filled"
+          }
+        ]
+      },
+      "C": {
+        "status": "skipped",
+        "reason": "Not required for scale MEDIUM"
+      }
+    },
+    "agents": {},
+    "roles": {},
+    "execution": {
+      "history": [
+        {
+          "timestamp": "2026-05-14T17:56:40.919Z",
+          "phase": "V",
+          "action": "completed"
+        }
+      ],
+      "last_activity": "2026-05-14T17:56:40.919Z",
+      "resume_context": "Fase V (Validação) concluída"
+    },
+    "approval": {
+      "plan_created": true,
+      "plan_approved": false
+    }
+  },
+  "binding": {
+    "workflowName": "feature-interpret-media",
+    "sessionId": "59e21c2d-030a-46c7-8f0a-c6f3debdb182",
+    "createdAt": "2026-05-14T14:41:33.607Z",
+    "updatedAt": "2026-05-14T17:56:41.172Z"
+  }
+}

@@ -3,7 +3,11 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Feature Interpret Media](./feature-interpret-media.md)
+
+_Nenhum plano ativo no momento._
+
+## Arquivo
+- [Feature Interpret Media](./archive/feature-interpret-media.md) — concluído em 2026-05-14
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

@@ -1,0 +1,18 @@
+{
+  "id": "59e21c2d-030a-46c7-8f0a-c6f3debdb182",
+  "name": "feature-interpret-media",
+  "status": "completed",
+  "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
+  "createdAt": "2026-05-14T14:41:33.582Z",
+  "updatedAt": "2026-05-14T18:35:21.892Z",
+  "startedAt": "2026-05-14T14:41:33.582Z",
+  "traceCount": 9,
+  "artifactCount": 0,
+  "checkpointCount": 0,
+  "checkpoints": [],
+  "metadata": {
+    "workflow": true
+  },
+  "lastTraceAt": "2026-05-14T18:35:21.892Z",
+  "completedAt": "2026-05-14T17:56:41.172Z"
+}

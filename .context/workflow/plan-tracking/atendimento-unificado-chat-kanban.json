@@ -1,0 +1,17 @@
+{
+  "decisions": [
+    {
+      "title": "Kanban interno deve ter paridade funcional total com Trello",
+      "description": "O Kanban do Workspace não é só visualização: precisa replicar TODA a lógica que hoje só existe no `trello_sync`. Decisões: (1) Cada `FluxoAtendimento` é um quadro independente (não cada departamento). O seletor é por fluxo. (2) Cross-board move atualiza `atendimento.fluxo_atendimento_id` E `departamento_id`. (3) Mover card aplica regras `tipo_etapa` automaticamente: FILA→nada, TRABALHO→`transferir_para_humano_com_saudacao(atendente_id)` (atribui o atendente que moveu E envia saudação), ESPERA→status PENDENCIA, FINALIZACAO→`finalizar_atendimento` (RESOLVIDO ou CANCELADO conforme nome contém 'cancel'). (4) Card visual espelha `_build_card_name` (contato - cliente - assunto - intents) + métricas + label de prioridade + atendente + preview da última mensagem. (5) Clicar em qualquer card abre drawer/modal de chat sobre o kanban (opção A — recomendada). (6) Mudanças via Workspace propagam ao Trello via signals existentes; mudanças no Trello propagam ao Workspace via novo signal SSE em `Atendimento`/`MovimentoFluxo`. (7) Atendimento de personalização do card: campos visuais fixos na E.1; `CampoPersonalizado.mostrar_no_card` na E.2 adiciona badges custom.",
+      "phase": "P",
+      "alternatives": [
+        "Manter Kanban apenas como visualização passiva (refletindo Trello via SSE) — REJEITADA: usuário perde funcionalidade ao usar painel interno em vez de Trello.",
+        "Quadro por departamento (não por fluxo) — REJEITADA: contradiz o modelo de dados onde cada FluxoAtendimento é 1:1 com TrelloBoard.",
+        "Mudar para modo Conversas ao clicar em card (opção B) — Alternativa válida mas inferior em UX: perde contexto visual do kanban."
+      ],
+      "status": "accepted",
+      "id": "dec-1778786397411",
+      "decidedAt": "2026-05-14T19:19:57.413Z"
+    }
+  ]
+}

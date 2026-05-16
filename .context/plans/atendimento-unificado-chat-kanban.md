@@ -640,19 +640,20 @@ extracao_campos/
 
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| E.2.1 | Criar models `CampoPersonalizado` + `ValorCampoAtendimento` + migration | `database-specialist` | pending | Migration aplicada |
-| E.2.2 | Criar `CampoPersonalizadoAdmin` em `tenant_admin.py` | `backend-specialist` | pending | Admin filtra por escopo/fluxo |
-| E.2.3 | Criar `ExtracaoCamposError` e `ExtracaoCamposParameters` | `feature-developer` | pending | Tipos exportados |
-| E.2.4 | Implementar `extracao_campos_datasource.py` com `with_structured_output` + schema dinâmico | `feature-developer` | pending | Usecase retorna `list[CampoExtraido]` |
-| E.2.5 | Adicionar `FeaturesCompose.extracao_campos(parameters)` | `feature-developer` | pending | Método exposto na facade |
-| E.2.6 | Criar Celery task `extract_custom_fields_async` com `select_for_update` e regra de idempotência | `feature-developer` | pending | Task respeita "nunca sobrescrever MANUAL" |
-| E.2.7 | **Disparar `extract_custom_fields_async` via signal próprio** — adicionar receiver `post_save Mensagem` em `atendimento_unificado/signals.py` que dispara a task quando `remetente=ASSISTENTE_VIRTUAL` e a resposta foi gravada (substitui edição em `attendance_orchestrator`). Mantém princípio de independência cross-app. | `feature-developer` | pending | Signal em `atendimento_unificado/signals.py` dispara task sem editar `atendimentos` |
-| E.2.8 | Adicionar `campos_coletados`/`campos_pendentes` em `AnaliseMensageParameters` | `feature-developer` | pending | Parameters atualizado |
-| E.2.9 | Modificar `analise_mensage_datasource` para injetar seção `### CAMPOS COLETADOS DO ATENDIMENTO` e `### CAMPOS PENDENTES` no system prompt (revalidar offsets — plano original cita linhas 241-250) | `feature-developer` | pending | Próxima resposta do bot referencia campos coletados |
-| ~~E.2.10~~ | **DROPADA** — Campos personalizados ficam visíveis APENAS no Workspace (painel direito + badges no card kanban interno). Trello permanece como espelho passivo do que `_build_rich_description` já mostra hoje. Zero alteração em `trello_sync`. | — | dropped | — |
-| E.2.11 | Implementar painel `partials/custom_fields_panel.html` com form Alpine auto-save por campo | `frontend-specialist` | pending | Edição manual funciona |
-| E.2.12 | Endpoints `GET /custom-fields/definitions/`, `GET /conversations/<id>/custom-fields/`, `PATCH .../custom-fields/<slug>/` | `backend-specialist` | pending | CRUD via API |
-| E.2.13 | Adicionar evento SSE `custom_field.updated` ao `realtime_publisher` | `backend-specialist` | pending | Painel sincroniza ao vivo |
+| E.2.1 | Criar models `CampoPersonalizado` + `ValorCampoAtendimento` + migration | `database-specialist` | ✅ done | Migration `0002_campos_personalizados` aplicada |
+| E.2.2 | Criar `CampoPersonalizadoAdmin` em `tenant_admin.py` | `backend-specialist` | ✅ done | `CampoPersonalizadoAdmin` + `ValorCampoAtendimentoAdmin` |
+| E.2.3 | Criar `ExtracaoCamposError` e `ExtracaoCamposParameters` | `feature-developer` | ✅ done | `erros.py` + `parameters.py` + `CampoDefinicao` |
+| E.2.4 | Implementar `extracao_campos_datasource.py` com `with_structured_output` + schema dinâmico | `feature-developer` | ✅ done | `pydantic.create_model` dinâmico; threshold 0.6; bug do prefixo de remetente corrigido em `b3686f0` |
+| E.2.5 | Adicionar `FeaturesCompose.extracao_campos(parameters)` | `feature-developer` | ✅ done | `temperature=0.0`; retorna `list[CampoExtraido]` |
+| E.2.6 | Criar Celery task `extract_custom_fields_async` com `select_for_update` e regra de idempotência | `feature-developer` | ✅ done | Task idempotente; usa `time.sleep(1)` (não `countdown` — bug Celery+Redis); skip BOT≥0.9 |
+| E.2.7 | **Disparar `extract_custom_fields_async` via signal próprio** | `feature-developer` | ✅ done | `_on_mensagem_bot_extrair_campos` em `signals.py` — usa `TipoRemetente.BOT` |
+| E.2.8 | Adicionar `campos_coletados`/`campos_pendentes` em `AnaliseMensageParameters` | `feature-developer` | ✅ done | Campos opcionais via `field(default_factory=list)` |
+| E.2.9 | Modificar `analise_mensage_datasource` para injetar seção no system prompt | `feature-developer` | ✅ done | `_formatar_campos_personalizados` integrado entre `contexto_adicional` e `dados_empresa` |
+| E.2.9b | **NOVO** — Ponte real: `attendance_orchestrator.py` (no app `atendimentos`) passar `campos_coletados`/`campos_pendentes` para `AnaliseMensageParameters` usando `selectors.get_campos_for_prompt(atendimento_id, fluxo_id)` | `backend-specialist` | ⏳ pending (E.3) | A integração end-to-end exige tocar `attendance_orchestrator.py` — fora do princípio E.2. Helper `get_campos_for_prompt` já pronto em `atendimento_unificado/selectors.py` |
+| ~~E.2.10~~ | **DROPADA** | — | dropped | — |
+| E.2.11 | Implementar painel `partials/custom_fields_panel.html` com form Alpine auto-save por campo | `frontend-specialist` | ✅ done | Edição inline; barra de confiança colorida (verde/âmbar/vermelho); badges BOT/IMPORT/MANUAL |
+| E.2.12 | Endpoints API (definitions/values/PATCH) | `backend-specialist` | ✅ done | `CustomFieldPatchView` em `views_api.py`; valores expostos via `get_atendimento_detail.campos` |
+| E.2.13 | Evento SSE `custom_field.updated` | `backend-specialist` | ✅ done | Publicado em `tasks.py` após persistência; handler em `workspace_alpine.js` |
 
 **Riscos E.2 e mitigações**
 1. **Custo LLM extra por mensagem** → modelo barato; skip se todos campos têm `confianca≥0.9`; skip se não há campo `extrair_automaticamente=True` aplicável.

@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false
+# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false, reportMissingTypeArgument=false
 """Modelos do app Workspace de Atendimento Unificado.
 
 Princípio de independência (não-negociável conforme plano):

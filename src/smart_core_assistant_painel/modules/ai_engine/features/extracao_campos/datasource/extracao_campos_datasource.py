@@ -1,4 +1,4 @@
-# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false
+# pyright: reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
 """Datasource para extração de campos personalizados via LLM com Structured Output.
 
 Monta dinamicamente um schema Pydantic a partir dos campos configurados no
@@ -75,9 +75,9 @@ def _formatar_historico(historico: list[dict[str, Any]]) -> str:
         if not conteudo:
             continue
         prefixo = {
-            "CONTATO": "Cliente",
-            "ASSISTENTE_VIRTUAL": "Bot",
-            "ATENDENTE_HUMANO": "Atendente",
+            "contato": "Cliente",
+            "bot": "Bot",
+            "atendente_humano": "Atendente",
         }.get(remetente, remetente)
         linhas.append(f"{prefixo}: {conteudo}")
     return "\n".join(linhas) or "Sem histórico."

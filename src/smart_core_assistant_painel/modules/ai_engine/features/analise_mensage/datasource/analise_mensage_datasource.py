@@ -1,4 +1,4 @@
-# pyright: reportArgumentType=false, reportCallIssue=false, reportReturnType=false
+# pyright: reportArgumentType=false, reportCallIssue=false, reportReturnType=false, reportIncompatibleMethodOverride=false, reportUnknownArgumentType=false, reportAssignmentType=false
 from datetime import datetime
 from typing import Any
 

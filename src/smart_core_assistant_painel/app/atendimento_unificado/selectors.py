@@ -29,7 +29,12 @@ from smart_core_assistant_painel.app.operacional.models import (
     FluxoAtendimento,
 )
 
-from .models import LeituraAtendimento, ValorCampoAtendimento
+from .models import (
+    CampoPersonalizado,
+    LeituraAtendimento,
+    OrigemValor,
+    ValorCampoAtendimento,
+)
 
 
 def list_fluxos_acessiveis(
@@ -316,6 +321,67 @@ def get_atendimento_detail(atendimento_id: int) -> Optional[dict[str, Any]]:
         "bot_pode_atender": atend.bot_pode_atender,
         "campos": _get_campos(atendimento_id),
     }
+
+
+def get_campos_for_prompt(
+    atendimento_id: int,
+    fluxo_id: Optional[int] = None,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Retorna (campos_coletados, campos_pendentes) para injetar no prompt do bot.
+
+    Helper exposto para integrações externas (ex.: orchestrator de atendimentos)
+    que queiram passar campos para `AnaliseMensageParameters.campos_coletados`
+    e `campos_pendentes`. Mantém princípio de independência: a integração
+    chama este helper sem importar models de `atendimento_unificado`.
+
+    Args:
+        atendimento_id: ID do atendimento ativo.
+        fluxo_id: Se fornecido, restringe a campos do fluxo (além dos GLOBAL).
+
+    Returns:
+        Tupla (coletados, pendentes), cada lista com dicts contendo
+        `slug`, `nome`, `valor`/`descricao`, `hint`.
+    """
+    valores_map: dict[int, ValorCampoAtendimento] = {
+        v.campo_id: v
+        for v in ValorCampoAtendimento.objects.filter(
+            atendimento_id=atendimento_id
+        ).select_related("campo")
+    }
+
+    campos_qs = CampoPersonalizado.objects.filter(
+        ativo=True, extrair_automaticamente=True
+    )
+    if fluxo_id is not None:
+        from django.db.models import Q
+
+        campos_qs = campos_qs.filter(
+            Q(escopo="GLOBAL") | Q(escopo="FLUXO", fluxo_id=fluxo_id)
+        )
+    else:
+        campos_qs = campos_qs.filter(escopo="GLOBAL")
+
+    coletados: list[dict[str, Any]] = []
+    pendentes: list[dict[str, Any]] = []
+    for campo in campos_qs.order_by("ordem", "nome"):
+        v = valores_map.get(campo.pk)
+        is_coletado = v is not None and (
+            v.origem != OrigemValor.BOT or (v.confianca or 0) >= 0.6
+        )
+        if is_coletado and v is not None:
+            coletados.append(
+                {"slug": campo.slug, "nome": campo.nome, "valor": v.valor}
+            )
+        else:
+            pendentes.append(
+                {
+                    "slug": campo.slug,
+                    "nome": campo.nome,
+                    "descricao": campo.descricao or campo.nome,
+                    "hint": campo.extrair_hint or "",
+                }
+            )
+    return coletados, pendentes
 
 
 def _get_campos(atendimento_id: int) -> list[dict[str, Any]]:

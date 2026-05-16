@@ -16,7 +16,8 @@
             boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
             boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
             sse: '{% url 'atendimento_unificado:workspace_events' %}',
-            customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}'
+            customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+            export: '{% url 'atendimento_unificado:atendimento_unificado_api:export' %}'
         }
     })"
     x-init="init()"
@@ -46,6 +47,11 @@
         </div>
 
         <div class="ml-auto flex items-center gap-2">
+            <a :href="endpoints.export + '?fluxo=' + (fluxoId || '') + '&formato=csv'"
+                class="px-3 py-1 text-xs font-medium border border-stone-300 rounded-lg hover:bg-stone-50 text-stone-600 transition-colors"
+                title="Exportar conversas ativas em CSV">
+                ↓ CSV
+            </a>
             <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
                 :class="sseConnected ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-600'">
                 <span class="w-1.5 h-1.5 rounded-full mr-1.5"
@@ -110,6 +116,13 @@
                     </div>
                     <footer class="bg-white border-t border-stone-200 p-3">
                         <form @submit.prevent="sendMessage()" class="flex gap-2">
+                            <label class="flex items-center justify-center px-2 cursor-pointer text-stone-400 hover:text-stone-600 transition-colors" title="Enviar mídia">
+                                <input type="file" class="hidden" @change="uploadMedia($event, activeConv.atendimento_id)">
+                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                                </svg>
+                            </label>
                             <textarea x-model="composer"
                                 @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); sendMessage(); }"
                                 rows="1"
@@ -157,5 +170,6 @@
     {% include "atendimento_unificado/partials/chat_drawer.html" %}
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script src="{% static 'atendimento_unificado/js/workspace_alpine.js' %}" defer></script>
 {% endblock %}

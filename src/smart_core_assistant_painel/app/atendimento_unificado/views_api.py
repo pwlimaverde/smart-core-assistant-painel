@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false
+# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false, reportReturnType=false
 """Endpoints JSON do Workspace (consumidos pelo store Alpine).
 
 Toda rota:
@@ -129,6 +129,7 @@ class ConversationsListView(View):
         atendente = _resolve_atendente(request)
         fluxo_id = _get_int(request.GET.get("fluxo"))
         q = (request.GET.get("q") or "").strip() or None
+        tag = (request.GET.get("tag") or "").strip() or None
         limit = min(_get_int(request.GET.get("limit")) or 100, 200)
         cursor = _get_datetime(request.GET.get("cursor"))
         items = list_conversations(
@@ -136,6 +137,7 @@ class ConversationsListView(View):
             atendente=atendente,
             is_owner=_is_owner_user(request),
             q=q,
+            tag=tag,
             limit=limit,
             cursor=cursor,
         )
@@ -356,6 +358,165 @@ class CustomFieldPatchView(View):
                 "origem": obj.origem,
             }
         )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ConversationUploadView(View):
+    """E.3.9 — Upload de mídia outbound (multipart/form-data, ≤10 MB)."""
+
+    @_require_workspace
+    def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        from .services.media_dispatch_service import upload_and_send_media
+
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return _err("Campo `file` obrigatório.", "validation", 400)
+        if uploaded.size > 10 * 1024 * 1024:
+            return _err("Arquivo excede limite de 10 MB.", "validation", 400)
+        file_bytes = uploaded.read()
+        filename = uploaded.name or "arquivo"
+        content_type = uploaded.content_type or "application/octet-stream"
+        caption = (request.POST.get("caption") or "").strip()
+        atendente = _resolve_atendente(request)
+        try:
+            msg = upload_and_send_media(
+                atendimento_id=atendimento_id,
+                file_bytes=file_bytes,
+                filename=filename,
+                content_type=content_type,
+                atendente=atendente,
+                caption=caption,
+            )
+        except ValueError as exc:
+            return _err(str(exc), "validation", 400)
+        except Exception as exc:
+            logger.exception("Falha ao fazer upload de mídia: {}", exc)
+            return _err("Falha ao enviar mídia.", "internal", 500)
+        return JsonResponse(
+            {
+                "id": msg.id,
+                "atendimento_id": msg.atendimento_id,
+                "tipo": msg.tipo,
+                "respondida": msg.respondida,
+                "timestamp": (
+                    msg.timestamp.isoformat() if msg.timestamp else None
+                ),
+            },
+            status=201,
+        )
+
+
+class ExportView(View):
+    """E.3.10 — Export de conversas ativas em CSV (StreamingHttpResponse)."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest) -> HttpResponse:
+        import csv
+
+        from django.http import StreamingHttpResponse
+
+        from smart_core_assistant_painel.app.atendimentos.models import (
+            Atendimento,
+            StatusAtendimento,
+        )
+
+        fluxo_id = _get_int(request.GET.get("fluxo"))
+        atendente = _resolve_atendente(request)
+        is_owner = _is_owner_user(request)
+
+        qs = (
+            Atendimento.objects.select_related(
+                "contato",
+                "atendente_humano",
+                "etapa_atual",
+                "fluxo_atendimento",
+            )
+            .exclude(
+                status__in=[
+                    StatusAtendimento.RESOLVIDO,
+                    StatusAtendimento.CANCELADO,
+                ]
+            )
+            .order_by("-data_ultima_mensagem")
+        )
+        if fluxo_id is not None:
+            qs = qs.filter(fluxo_atendimento_id=fluxo_id)
+        if not is_owner and atendente is not None:
+            from django.db.models import Q
+
+            qs = qs.filter(
+                Q(atendente_humano=atendente)
+                | Q(
+                    atendente_humano__isnull=True,
+                    departamento_id=atendente.departamento_id,
+                )
+            )
+
+        class _Echo:
+            def write(self, value: str) -> str:
+                return value
+
+        def _rows():
+            writer = csv.writer(_Echo())
+            yield writer.writerow(
+                [
+                    "id",
+                    "contato_nome",
+                    "telefone",
+                    "assunto",
+                    "status",
+                    "prioridade",
+                    "etapa",
+                    "atendente",
+                    "fluxo",
+                    "data_inicio",
+                    "data_ultima_mensagem",
+                ]
+            )
+            for atend in qs.iterator(chunk_size=500):
+                contato = getattr(atend, "contato", None)
+                nome = (
+                    (
+                        getattr(contato, "nome_contato", None)
+                        or getattr(contato, "nome_perfil_whatsapp", None)
+                        or getattr(contato, "telefone", "")
+                    )
+                    if contato
+                    else ""
+                )
+                yield writer.writerow(
+                    [
+                        atend.id,
+                        nome,
+                        getattr(contato, "telefone", "") if contato else "",
+                        atend.assunto or "",
+                        atend.status,
+                        atend.prioridade,
+                        getattr(atend.etapa_atual, "nome", "")
+                        if getattr(atend, "etapa_atual", None)
+                        else "",
+                        getattr(atend.atendente_humano, "nome", "")
+                        if getattr(atend, "atendente_humano", None)
+                        else "",
+                        getattr(atend.fluxo_atendimento, "nome", "")
+                        if getattr(atend, "fluxo_atendimento", None)
+                        else "",
+                        atend.data_inicio.isoformat()
+                        if atend.data_inicio
+                        else "",
+                        atend.data_ultima_mensagem.isoformat()
+                        if atend.data_ultima_mensagem
+                        else "",
+                    ]
+                )
+
+        response = StreamingHttpResponse(
+            _rows(), content_type="text/csv; charset=utf-8"
+        )
+        response["Content-Disposition"] = (
+            'attachment; filename="atendimentos.csv"'
+        )
+        return response
 
 
 def _get_int(value: Any) -> Optional[int]:

@@ -93,12 +93,17 @@
             activeDetail: null,
             composer: '',
             search: '',
+            filterTag: '',
             sending: false,
+            uploading: false,
             chatDrawerOpen: false,
             sseConnected: false,
             sse: null,
             _sseRetryDelay: 2000,
             _sseReconnectTimer: null,
+            _sortableInstances: [],
+            _boardSnapshot: null,
+            isDragging: false,
             endpoints: init.endpoints,
             customFieldsSaving: {},
             tenantSlug: init.tenantSlug,
@@ -141,6 +146,7 @@
                 const params = new URLSearchParams();
                 if (this.fluxoId != null) params.set('fluxo', this.fluxoId);
                 if (this.search) params.set('q', this.search);
+                if (this.filterTag) params.set('tag', this.filterTag);
                 const url = this.endpoints.conversations + '?' + params.toString();
                 return jsonFetch(url).then((data) => {
                     this.conversations = data.conversations || [];
@@ -155,6 +161,52 @@
                 const url = this.endpoints.board + '?fluxo=' + this.fluxoId;
                 return jsonFetch(url).then((data) => {
                     this.board = data || { etapas: [], cards: {} };
+                    this.$nextTick(() => this.initSortable());
+                });
+            },
+
+            initSortable: function () {
+                this._sortableInstances.forEach(function (s) {
+                    try { s.destroy(); } catch (_) {}
+                });
+                this._sortableInstances = [];
+                if (typeof Sortable === 'undefined') return;
+                const self = this;
+                document.querySelectorAll('.kanban-col-body').forEach(function (el) {
+                    const instance = Sortable.create(el, {
+                        group: 'kanban-cards',
+                        animation: 150,
+                        ghostClass: 'opacity-40',
+                        dragClass: 'ring-2 ring-[#a98f71] shadow-xl',
+                        onStart: function () {
+                            self.isDragging = true;
+                            self._boardSnapshot = JSON.parse(JSON.stringify(self.board.cards));
+                        },
+                        onEnd: function (evt) {
+                            self.isDragging = false;
+                            const atendimentoId = parseInt(evt.item.dataset.atendId, 10);
+                            const fromEtapaId = parseInt(evt.from.dataset.etapaId, 10);
+                            const toEtapaId = parseInt(evt.to.dataset.etapaId, 10);
+                            if (!atendimentoId || !toEtapaId || fromEtapaId === toEtapaId) {
+                                return;
+                            }
+                            jsonFetch(self.endpoints.boardMove, {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    atendimento_id: atendimentoId,
+                                    etapa_destino_id: toEtapaId,
+                                }),
+                            }).then(function () {
+                                self.loadBoard();
+                            }).catch(function (exc) {
+                                console.error('Falha ao mover card via drag', exc);
+                                self.board.cards = self._boardSnapshot;
+                                self.$nextTick(function () { self.initSortable(); });
+                                alert((exc && exc.message) || 'Falha ao mover card.');
+                            });
+                        },
+                    });
+                    self._sortableInstances.push(instance);
                 });
             },
 
@@ -330,8 +382,7 @@
                     case 'board.moved':
                     case 'atendimento.updated':
                     case 'atendimento.created':
-                        // Recarrega snapshot do board
-                        if (this.mode === 'kanban') this.loadBoard();
+                        if (!this.isDragging && this.mode === 'kanban') this.loadBoard();
                         this.loadConversations();
                         break;
                     case 'custom_field.updated':
@@ -342,6 +393,39 @@
                         }
                         break;
                 }
+            },
+
+            uploadMedia: function (event, atendimentoId) {
+                const file = event.target.files && event.target.files[0];
+                if (!file || !atendimentoId) return;
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('Arquivo muito grande. Limite: 10 MB.');
+                    event.target.value = '';
+                    return;
+                }
+                this.uploading = true;
+                const url = buildConvUrl(this.endpoints.conversationsBase, atendimentoId, 'upload');
+                const formData = new FormData();
+                formData.append('file', file);
+                fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: formData,
+                }).then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                }).then(() => {
+                    this.loadMessages(atendimentoId).then(() => {
+                        this.$nextTick(() => this.scrollMessagesBottom());
+                    });
+                }).catch(function (exc) {
+                    console.error('Falha ao enviar mídia', exc);
+                    alert((exc && exc.message) || 'Falha ao enviar mídia.');
+                }).finally(() => {
+                    this.uploading = false;
+                    event.target.value = '';
+                });
             },
 
             salvarCampo: function (campo, novoValor, onDone) {

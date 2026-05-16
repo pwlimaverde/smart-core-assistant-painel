@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false
+# pyright: reportAttributeAccessIssue=false, reportUnknownArgumentType=false, reportUnknownMemberType=false
 """Renderização do payload visual do card kanban.
 
 Espelha a estrutura do card Trello (`_build_card_name` +
@@ -152,6 +152,26 @@ def build_card_title(atendimento: Any) -> str:
     return " - ".join(partes) if partes else assunto
 
 
+_SLA_THRESHOLD_SECONDS = 8 * 3600  # 8 horas na etapa atual = SLA estourado
+
+
+def _get_tempo_na_etapa_seconds(atendimento: Any) -> int:
+    """Segundos desde a última movimentação de etapa (= tempo na etapa atual)."""
+    try:
+        ultimo = atendimento.movimentos_fluxo.order_by(
+            "-data_movimento"
+        ).first()
+        if ultimo is not None and ultimo.data_movimento is not None:
+            delta = timezone.now() - ultimo.data_movimento
+            return max(0, int(delta.total_seconds()))
+    except Exception:
+        pass
+    if atendimento.data_inicio is not None:
+        delta = timezone.now() - atendimento.data_inicio
+        return max(0, int(delta.total_seconds()))
+    return 0
+
+
 def render_card(atendimento: Any) -> dict[str, Any]:
     """Payload do card kanban (formato `cards["<etapa_id>"][i]`).
 
@@ -183,6 +203,7 @@ def render_card(atendimento: Any) -> dict[str, Any]:
         canal = ctx.get("canal", "") if isinstance(ctx, dict) else ""
 
     atendente = getattr(atendimento, "atendente_humano", None)
+    tempo_na_etapa = _get_tempo_na_etapa_seconds(atendimento)
 
     return {
         "atendimento_id": atendimento.id,
@@ -211,5 +232,7 @@ def render_card(atendimento: Any) -> dict[str, Any]:
         ),
         "canal_emoji": get_canal_emoji(canal),
         "tags": list(getattr(atendimento, "tags", []) or []),
-        "campos_custom_card": [],  # populado em E.2
+        "campos_custom_card": [],
+        "tempo_na_etapa_segundos": tempo_na_etapa,
+        "sla_estourado": tempo_na_etapa >= _SLA_THRESHOLD_SECONDS,
     }

@@ -75,6 +75,7 @@ def list_conversations(
     atendente: Optional[Atendente] = None,
     is_owner: bool = False,
     q: Optional[str] = None,
+    tag: Optional[str] = None,
     limit: int = 100,
     cursor: Optional[datetime] = None,
 ) -> list[dict[str, Any]]:
@@ -115,6 +116,9 @@ def list_conversations(
             | Q(contato__telefone__icontains=q)
             | Q(assunto__icontains=q)
         )
+
+    if tag:
+        qs = qs.filter(tags__contains=[tag])
 
     if cursor:
         qs = qs.filter(data_ultima_mensagem__lt=cursor)

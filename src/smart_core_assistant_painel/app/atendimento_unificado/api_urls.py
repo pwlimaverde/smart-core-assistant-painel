@@ -57,4 +57,14 @@ urlpatterns = [
         views_api.CustomFieldPatchView.as_view(),
         name="custom_field_patch",
     ),
+    path(
+        "conversations/<int:atendimento_id>/upload/",
+        views_api.ConversationUploadView.as_view(),
+        name="conversation_upload",
+    ),
+    path(
+        "export/",
+        views_api.ExportView.as_view(),
+        name="export",
+    ),
 ]

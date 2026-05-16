@@ -310,6 +310,54 @@ class BoardAssignView(View):
         )
 
 
+@method_decorator(csrf_protect, name="dispatch")
+class CustomFieldPatchView(View):
+    @_require_workspace
+    def patch(
+        self, request: HttpRequest, atendimento_id: int, slug: str
+    ) -> HttpResponse:
+        body = _load_body(request)
+        if "valor" not in body:
+            return _err("Campo `valor` obrigatório.", "validation", 400)
+        valor = body["valor"]
+        try:
+            from .models import (
+                CampoPersonalizado,
+                OrigemValor,
+                ValorCampoAtendimento,
+            )
+
+            campo = CampoPersonalizado.objects.filter(
+                slug=slug, ativo=True
+            ).first()
+            if campo is None:
+                return _err("Campo não encontrado.", "not_found", 404)
+            atendente = _resolve_atendente(request)
+            atendente_id = atendente.id if atendente else None
+            obj, _ = ValorCampoAtendimento.objects.update_or_create(
+                atendimento_id=atendimento_id,
+                campo=campo,
+                defaults={
+                    "valor": valor,
+                    "origem": OrigemValor.MANUAL,
+                    "confianca": None,
+                    "mensagem_origem_id": None,
+                    "editado_por_id": atendente_id,
+                },
+            )
+        except Exception as exc:
+            logger.exception("Falha ao salvar campo personalizado: {}", exc)
+            return _err("Falha ao salvar campo.", "internal", 500)
+        return JsonResponse(
+            {
+                "slug": slug,
+                "atendimento_id": atendimento_id,
+                "valor": obj.valor,
+                "origem": obj.origem,
+            }
+        )
+
+
 def _get_int(value: Any) -> Optional[int]:
     try:
         return int(value) if value is not None and value != "" else None

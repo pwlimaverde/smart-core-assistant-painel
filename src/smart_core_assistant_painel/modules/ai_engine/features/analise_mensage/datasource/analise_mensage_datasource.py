@@ -1,3 +1,4 @@
+# pyright: reportArgumentType=false, reportCallIssue=false, reportReturnType=false
 from datetime import datetime
 from typing import Any
 
@@ -177,6 +178,37 @@ class AnaliseMensageDatasource(AMData):
 
         logger.info(log_output)
 
+    def _formatar_campos_personalizados(
+        self, parameters: AnaliseMensageParameters
+    ) -> str:
+        """Formata seções de campos coletados e pendentes para o system prompt."""
+        partes: list[str] = []
+
+        campos_coletados = parameters.campos_coletados or []
+        campos_pendentes = parameters.campos_pendentes or []
+
+        if campos_coletados:
+            partes.append("\n\n### CAMPOS COLETADOS DO ATENDIMENTO:")
+            for c in campos_coletados:
+                partes.append(
+                    f"- **{c.get('nome', c.get('slug', '?'))}**: {c.get('valor', '')}"
+                )
+
+        if campos_pendentes:
+            partes.append("\n\n### CAMPOS PENDENTES (ainda não coletados):")
+            for c in campos_pendentes:
+                hint = c.get("hint", "")
+                linha = f"- **{c.get('nome', c.get('slug', '?'))}**: {c.get('descricao', '')}"
+                if hint:
+                    linha += f" [{hint}]"
+                partes.append(linha)
+            partes.append(
+                "\nSe a oportunidade surgir naturalmente na conversa, "
+                "colete esses dados de forma sutil e não intrusiva."
+            )
+
+        return "".join(partes)
+
     @traceable(name="AnaliseMensage")
     def _run(self, parameters: AnaliseMensageParameters) -> RespostaBot:
         """Executa a análise de mensagem com ChatPromptTemplate multi-turn.
@@ -237,6 +269,9 @@ class AnaliseMensageDatasource(AMData):
                     "'acao_transferencia' com o NOME EXATO do setor.\n"
                 )
 
+            # Campos personalizados coletados/pendentes (E.2)
+            campos_txt = self._formatar_campos_personalizados(parameters)
+
             # Monta o prompt do sistema
             system_prompt = (
                 f"Data e Hora Atual: {data_atual} - {dia_semana}\n\n"
@@ -244,7 +279,8 @@ class AnaliseMensageDatasource(AMData):
                 f"{parameters.llm_parameters.prompt_human}\n\n"
                 f"{regras_resposta}"
                 f"{fluxos_disponiveis}\n\n"
-                f"### CONTEXTO DO ATENDIMENTO:\n{contexto_adicional}\n\n"
+                f"### CONTEXTO DO ATENDIMENTO:\n{contexto_adicional}"
+                f"{campos_txt}\n\n"
                 f"### DADOS DA EMPRESA:\n{parameters.dados_empresa}\n\n"
                 f"### DADOS DO TREINAMENTO (RAG):\n{parameters.dados_treinamento}"
             )

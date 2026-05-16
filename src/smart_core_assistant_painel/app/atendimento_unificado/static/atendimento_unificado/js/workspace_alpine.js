@@ -100,6 +100,7 @@
             _sseRetryDelay: 2000,
             _sseReconnectTimer: null,
             endpoints: init.endpoints,
+            customFieldsSaving: {},
             tenantSlug: init.tenantSlug,
             atendenteId: init.atendenteId,
             atendenteNome: init.atendenteNome,
@@ -289,6 +290,7 @@
                 this.sse.addEventListener('board.moved', handle('board.moved'));
                 this.sse.addEventListener('atendimento.created', handle('atendimento.created'));
                 this.sse.addEventListener('atendimento.updated', handle('atendimento.updated'));
+                this.sse.addEventListener('custom_field.updated', handle('custom_field.updated'));
             },
 
             _scheduleSSEReconnect: function () {
@@ -332,7 +334,46 @@
                         if (this.mode === 'kanban') this.loadBoard();
                         this.loadConversations();
                         break;
+                    case 'custom_field.updated':
+                        // Recarrega detail para atualizar painel de campos
+                        if (this.activeConv &&
+                            this.activeConv.atendimento_id === data.atendimento_id) {
+                            this.loadDetail(data.atendimento_id);
+                        }
+                        break;
                 }
+            },
+
+            salvarCampo: function (campo, novoValor, onDone) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                // URL: /workspace/api/conversations/<id>/custom-fields/<slug>/
+                const safeBase = (this.endpoints.customFieldsBase || '').replace(/\/+$/, '');
+                const url = safeBase + '/' + id + '/custom-fields/' + campo.slug + '/';
+                this.customFieldsSaving[campo.slug] = true;
+                jsonFetch(url, {
+                    method: 'PATCH',
+                    body: JSON.stringify({ valor: novoValor }),
+                }).then(() => {
+                    // Atualiza valor no activeDetail sem reload
+                    if (this.activeDetail && Array.isArray(this.activeDetail.campos)) {
+                        const c = this.activeDetail.campos.find((x) => x.slug === campo.slug);
+                        if (c) {
+                            c.valor_raw = novoValor;
+                            c.valor_display = Array.isArray(novoValor)
+                                ? novoValor.join(', ')
+                                : String(novoValor ?? '');
+                            c.origem = 'MANUAL';
+                            c.confianca = null;
+                        }
+                    }
+                    if (typeof onDone === 'function') onDone();
+                }).catch((exc) => {
+                    console.error('Falha ao salvar campo', campo.slug, exc);
+                    alert((exc && exc.message) || 'Falha ao salvar campo.');
+                }).finally(() => {
+                    this.customFieldsSaving[campo.slug] = false;
+                });
             },
 
             prioridadeClass: prioridadeClass,

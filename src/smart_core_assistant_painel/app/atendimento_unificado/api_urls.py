@@ -52,4 +52,9 @@ urlpatterns = [
         views_api.BoardAssignView.as_view(),
         name="board_assign",
     ),
+    path(
+        "conversations/<int:atendimento_id>/custom-fields/<slug:slug>/",
+        views_api.CustomFieldPatchView.as_view(),
+        name="custom_field_patch",
+    ),
 ]

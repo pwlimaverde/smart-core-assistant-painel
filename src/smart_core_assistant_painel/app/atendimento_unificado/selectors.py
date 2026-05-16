@@ -29,7 +29,7 @@ from smart_core_assistant_painel.app.operacional.models import (
     FluxoAtendimento,
 )
 
-from .models import LeituraAtendimento
+from .models import LeituraAtendimento, ValorCampoAtendimento
 
 
 def list_fluxos_acessiveis(
@@ -314,7 +314,39 @@ def get_atendimento_detail(atendimento_id: int) -> Optional[dict[str, Any]]:
         "intents": hist.get("intents_detectados", []),
         "entidades": hist.get("entidades_extraidas", []),
         "bot_pode_atender": atend.bot_pode_atender,
+        "campos": _get_campos(atendimento_id),
     }
+
+
+def _get_campos(atendimento_id: int) -> list[dict[str, Any]]:
+    """Retorna campos personalizados com valores para o painel direito."""
+    valores = (
+        ValorCampoAtendimento.objects.filter(atendimento_id=atendimento_id)
+        .select_related("campo")
+        .order_by("campo__ordem", "campo__nome")
+    )
+    result: list[dict[str, Any]] = []
+    for v in valores:
+        campo = v.campo
+        valor_raw = v.valor
+        if isinstance(valor_raw, list):
+            valor_display = ", ".join(str(x) for x in valor_raw)
+        elif valor_raw is None:
+            valor_display = ""
+        else:
+            valor_display = str(valor_raw)
+        result.append(
+            {
+                "slug": campo.slug,
+                "nome": campo.nome,
+                "tipo": campo.tipo,
+                "valor_raw": valor_raw,
+                "valor_display": valor_display,
+                "origem": v.origem,
+                "confianca": v.confianca,
+            }
+        )
+    return result
 
 
 def _contar_nao_lidos(

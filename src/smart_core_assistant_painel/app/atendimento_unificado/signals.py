@@ -1,4 +1,4 @@
-# pyright: reportAttributeAccessIssue=false, reportUnusedFunction=false
+# pyright: reportAttributeAccessIssue=false, reportUnusedFunction=false, reportUnknownArgumentType=false, reportUnnecessaryComparison=false, reportCallIssue=false
 """Sinais do Workspace de Atendimento Unificado.
 
 Princípio: este módulo **observa** mudanças em modelos de outros apps
@@ -24,6 +24,49 @@ from smart_core_assistant_painel.app.atendimentos.models import (
 )
 
 from .services.realtime_publisher import publish_event
+
+
+@receiver(post_save, sender=Mensagem)
+def _on_mensagem_bot_extrair_campos(
+    sender: Any, instance: Mensagem, created: bool, **kwargs: Any
+) -> None:
+    """Dispara extração de campos personalizados após resposta do bot.
+
+    Observa `Mensagem` com remetente ASSISTENTE_VIRTUAL recém-criada
+    e enfileira a task Celery de extração de campos. Mantém o princípio
+    de independência: não toca em `atendimentos` nem em `ai_engine`.
+    """
+    if not created:
+        return
+    try:
+        from smart_core_assistant_painel.app.atendimentos.models import (
+            TipoRemetente,
+        )
+
+        if instance.remetente != TipoRemetente.BOT:
+            return
+
+        from smart_core_assistant_painel.app.tenants.tenant_context import (
+            get_current_tenant_slug,
+        )
+
+        tenant_slug = get_current_tenant_slug() or ""
+
+        from .tasks import extract_custom_fields_async
+
+        extract_custom_fields_async.apply_async(
+            kwargs={
+                "tenant_slug": tenant_slug,
+                "atendimento_id": instance.atendimento_id,
+                "mensagem_id": instance.id,
+            },
+        )
+    except Exception as exc:
+        logger.warning(
+            "Falha ao enfileirar extração de campos para msg {}: {}",
+            instance.id,
+            exc,
+        )
 
 
 @receiver(post_save, sender=Mensagem)

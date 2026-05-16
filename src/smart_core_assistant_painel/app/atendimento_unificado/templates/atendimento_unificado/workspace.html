@@ -15,7 +15,8 @@
             board: '{% url 'atendimento_unificado:atendimento_unificado_api:board_snapshot' %}',
             boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
             boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
-            sse: '{% url 'atendimento_unificado:workspace_events' %}'
+            sse: '{% url 'atendimento_unificado:workspace_events' %}',
+            customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}'
         }
     })"
     x-init="init()"

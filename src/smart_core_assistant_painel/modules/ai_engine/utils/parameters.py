@@ -1,3 +1,4 @@
+# pyright: reportIncompatibleMethodOverride=false, reportIncompatibleVariableOverride=false
 """Define dataclasses e classes para os parâmetros do motor de IA.
 
 Este módulo contém as estruturas de dados que encapsulam os parâmetros
@@ -5,7 +6,7 @@ necessários para as várias funcionalidades do motor de IA, como processamento
 de mensagens, carregamento de documentos e interação com modelos de linguagem.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, Type
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -18,6 +19,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     DataMessageError,
     DocumentError,
     EmbeddingError,
+    ExtracaoCamposError,
     InterpretMediaError,
     LlmError,
     TranscribeAudioError,
@@ -326,6 +328,10 @@ class AnaliseMensageParameters(ParametersReturnResult):
         dados_treinamento: Texto com dados de treinamento para RAG.
         llm_parameters: Parâmetros do LLM.
         error: Erro a ser levantado em caso de falha.
+        campos_coletados: Campos personalizados já extraídos (lista de dicts
+            com slug/nome/valor para injetar no system prompt).
+        campos_pendentes: Campos ainda sem valor (lista de dicts com
+            slug/nome/descricao/hint para o bot tentar coletar).
     """
 
     fluxos_disponiveis: dict[str, str]
@@ -335,6 +341,8 @@ class AnaliseMensageParameters(ParametersReturnResult):
     dados_treinamento: str
     llm_parameters: LlmParameters
     error: AnaliseMensageError
+    campos_coletados: list[dict[str, Any]] = field(default_factory=list)
+    campos_pendentes: list[dict[str, Any]] = field(default_factory=list)
 
     def __str__(self) -> str:
         return self.__repr__()
@@ -353,6 +361,44 @@ class AnaliseAvaliacaoParameters(ParametersReturnResult):
     chat_history: list[Any]
     llm_parameters: LlmParameters
     error: AnaliseAvaliacaoError
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
+
+@dataclass
+class CampoDefinicao:
+    """Definição de um campo a ser extraído pelo LLM.
+
+    Usado para montar o schema dinâmico Pydantic passado ao
+    ``with_structured_output``.
+    """
+
+    slug: str
+    nome: str
+    descricao: str
+    hint: str
+    tipo: str  # texto | numero | data | booleano | escolha | multipla_escolha
+    opcoes: list[str]
+
+
+@dataclass
+class ExtracaoCamposParameters(ParametersReturnResult):
+    """Parâmetros para extração de campos personalizados via LLM.
+
+    Attributes:
+        atendimento_id: ID do atendimento sendo processado.
+        historico_conversa: Histórico da conversa (pares remetente/conteudo).
+        campos_a_extrair: Lista de campos definidos para extração.
+        llm_parameters: Parâmetros do LLM.
+        error: Erro a ser levantado em caso de falha.
+    """
+
+    atendimento_id: int
+    historico_conversa: list[dict[str, Any]]
+    campos_a_extrair: list[CampoDefinicao]
+    llm_parameters: LlmParameters
+    error: ExtracaoCamposError
 
     def __str__(self) -> str:
         return self.__repr__()

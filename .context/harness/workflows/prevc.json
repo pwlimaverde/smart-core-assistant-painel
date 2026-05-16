@@ -1,15 +1,15 @@
 {
   "version": 2,
   "workflowType": "prevc",
-  "updatedAt": "2026-05-14T19:19:57.828Z",
+  "updatedAt": "2026-05-16T15:16:09.651Z",
   "status": {
     "project": {
       "name": "atendimento-unificado-chat-kanban",
       "scale": 3,
       "started": "2026-05-14T18:36:22.536Z",
-      "current_phase": "P",
+      "current_phase": "E",
       "settings": {
-        "autonomous_mode": false,
+        "autonomous_mode": true,
         "require_plan": true,
         "require_approval": true
       },
@@ -17,14 +17,30 @@
     },
     "phases": {
       "P": {
-        "status": "in_progress",
-        "started_at": "2026-05-14T18:36:22.536Z"
+        "status": "completed",
+        "started_at": "2026-05-14T18:36:22.536Z",
+        "completed_at": "2026-05-15T14:07:00.838Z",
+        "outputs": [
+          {
+            "path": "plans/atendimento-unificado-chat-kanban.md",
+            "status": "filled"
+          }
+        ]
       },
       "R": {
-        "status": "pending"
+        "status": "completed",
+        "started_at": "2026-05-15T14:07:00.891Z",
+        "completed_at": "2026-05-15T14:07:05.506Z",
+        "outputs": [
+          {
+            "path": "Aprovação consolidada R.1-R.8 conforme plano consolidado",
+            "status": "filled"
+          }
+        ]
       },
       "E": {
-        "status": "pending"
+        "status": "in_progress",
+        "started_at": "2026-05-15T14:07:05.529Z"
       },
       "V": {
         "status": "pending"
@@ -37,7 +53,10 @@
     "roles": {},
     "approval": {
       "plan_created": true,
-      "plan_approved": false
+      "plan_approved": true,
+      "approved_by": "solo-dev",
+      "approved_at": "2026-05-15T14:07:00.417Z",
+      "approval_notes": "Plano aprovado para execução autônoma de E.1 conforme solicitado pelo usuário"
     },
     "execution": {
       "history": [
@@ -58,9 +77,105 @@
           "plan": "atendimento-unificado-chat-kanban",
           "description": "Decision recorded: Kanban interno deve ter paridade funcional total com Trello",
           "timestamp": "2026-05-14T19:19:57.808Z"
+        },
+        {
+          "phase": "P",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Estrutura do app espelhando trello_sync com apps.py.ready() carregando signals",
+          "timestamp": "2026-05-15T12:15:31.123Z"
+        },
+        {
+          "phase": "P",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Princípio de independência cross-app: signals e tasks moram dentro de atendimento_unificado",
+          "timestamp": "2026-05-15T12:15:38.575Z"
+        },
+        {
+          "phase": "P",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Reescrever E.2.7 e E.2.10 para usar signals em vez de editar apps externos",
+          "timestamp": "2026-05-15T12:15:48.536Z"
+        },
+        {
+          "phase": "P",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Não-lidos via model próprio LeituraAtendimento (zero alteração em atendimentos)",
+          "timestamp": "2026-05-15T12:35:16.348Z"
+        },
+        {
+          "phase": "P",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Não espelhar campos personalizados no card Trello (drop E.2.10)",
+          "timestamp": "2026-05-15T12:35:24.537Z"
+        },
+        {
+          "phase": "P",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Release via tag git em master + deploy automático em produção + teste direto em produção (sem ambiente de teste)",
+          "timestamp": "2026-05-15T12:35:38.092Z"
+        },
+        {
+          "timestamp": "2026-05-15T14:07:00.417Z",
+          "phase": "P",
+          "action": "plan_approved",
+          "approved_by": "solo-dev"
+        },
+        {
+          "timestamp": "2026-05-15T14:07:00.838Z",
+          "phase": "P",
+          "action": "completed"
+        },
+        {
+          "timestamp": "2026-05-15T14:07:00.891Z",
+          "phase": "R",
+          "action": "started"
+        },
+        {
+          "timestamp": "2026-05-15T14:07:05.506Z",
+          "phase": "R",
+          "action": "completed"
+        },
+        {
+          "timestamp": "2026-05-15T14:07:05.529Z",
+          "phase": "E",
+          "action": "started"
+        },
+        {
+          "phase": "E",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Feature flag via Django settings (sem migration em tabela legada)",
+          "timestamp": "2026-05-15T19:24:20.813Z"
+        },
+        {
+          "phase": "E",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: Card click abre drawer/modal de chat (Opção A do R.7)",
+          "timestamp": "2026-05-15T19:24:23.802Z"
+        },
+        {
+          "phase": "E",
+          "action": "plan_phase_updated",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Plan phase phase-2 updated to in_progress",
+          "timestamp": "2026-05-16T15:16:02.744Z"
+        },
+        {
+          "phase": "E",
+          "action": "decision_recorded",
+          "plan": "atendimento-unificado-chat-kanban",
+          "description": "Decision recorded: E.1 implementada — MVP Chat + Kanban com paridade Trello",
+          "timestamp": "2026-05-16T15:16:09.629Z"
         }
       ],
-      "last_activity": "2026-05-14T19:19:57.808Z",
+      "last_activity": "2026-05-16T15:16:09.629Z",
       "resume_context": "Decisão registrada"
     }
   },
@@ -68,6 +183,6 @@
     "workflowName": "atendimento-unificado-chat-kanban",
     "sessionId": "6abcfefe-dc4b-4831-b97d-abcf4f4d734c",
     "createdAt": "2026-05-14T18:36:22.601Z",
-    "updatedAt": "2026-05-14T18:36:22.578Z"
+    "updatedAt": "2026-05-15T19:24:30.311Z"
   }
 }

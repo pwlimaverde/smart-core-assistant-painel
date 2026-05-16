@@ -37,7 +37,7 @@ Hoje o operador alterna entre **Trello** (gestão Kanban) e **WhatsApp Web** (re
 |---|---|---|---|
 | 1 | "Roteamento ASGI dedicado, resto continua WSGI/Gunicorn" | **Usar Django async views nativas com `StreamingHttpResponse`** — não precisa de ASGI dedicado. | Django 4.1+ suporta async views diretamente. Reduz complexidade operacional; basta Gunicorn com worker async (`uvicorn.workers.UvicornWorker`) ou Uvicorn dedicado. |
 | 2 | "Mídia outbound — se Evolution não tem `send_media`, adiar para Fase 3" | **Confirmado: [`EvolutionWhatsAppService.send_message`](../../src/smart_core_assistant_painel/app/evolution_sync/services/evolution_api.py#L94) tem APENAS texto (`/message/sendText`).** Mídia outbound fica formalmente na Fase 3 e requer implementar `send_media` chamando `/message/sendMedia`. | Validado no código — não há método de mídia outbound hoje. |
-| 3 | "Não-lido usa `mensagens.filter(remetente=CONTATO, respondida=False).count()`" | **Adicionar `Atendimento.data_ultima_leitura_atendente DateTimeField(null=True, db_index=True)` JÁ NA FASE 1.** | `respondida` muda quando bot/atendente responde, não reflete "atendente leu". Migration na Fase 1 evita refactor na Fase 3. Custo desprezível. |
+| 3 | "Não-lido usa `mensagens.filter(remetente=CONTATO, respondida=False).count()`" | **Criar model próprio `LeituraAtendimento(atendimento_id, atendente_id, ultima_leitura_at)` em `atendimento_unificado/models.py` JÁ NA FASE 1** (tabela `atu_leitura_atendimento`). Não-lidos calculados via JOIN. | `respondida` muda quando bot/atendente responde, não reflete "atendente leu". Zero alteração em `Atendimento` (decisão D4) — schema do `atendimentos` 100% intocado. |
 | 4 | "Fase 2 modifica linhas 241-250 de `analise_mensage_datasource.py`" | Revalidar offsets durante a Fase 2 — arquivo pode ter mudado após `feature-interpret-media`. | Plano original é de 2026-04. Code review da Fase 2 revalida. |
 | 5 | Sem menção a Design System | **Seção dedicada adicionada** (abaixo) seguindo padrões de `base_dashboard.html`. | Consistência visual com resto do painel. |
 | 6 | Sem menção a permissões | **Toda rota verifica permissões via `permission_tags`**. Criar módulo `atendimento` na permissão. | Padrão multi-tenant do projeto. |
@@ -254,23 +254,28 @@ Adicionar item ao [base_dashboard.html](../../src/smart_core_assistant_painel/ap
 
 ### Estrutura do app novo
 
-Criar [atendimento_unificado/](../../src/smart_core_assistant_painel/app/atendimento_unificado/):
+Criar [atendimento_unificado/](../../src/smart_core_assistant_painel/app/atendimento_unificado/) espelhando o layout de [trello_sync/](../../src/smart_core_assistant_painel/app/trello_sync/):
 
 ```
 atendimento_unificado/
-  apps.py                            # AppConfig
+  __init__.py
+  apps.py                            # AtendimentoUnificadoConfig com ready() carregando signals (padrão TrelloSyncConfig)
+  admin.py                           # admin global (placeholder na fase 1)
+  tenant_admin.py                    # admin por tenant (fase 2: CampoPersonalizadoAdmin)
   urls.py                            # rotas HTML
   api_urls.py                        # rotas JSON + SSE
   views.py                           # WorkspaceView (HTML shell)
   views_api.py                       # endpoints JSON
   views_sse.py                       # async view → StreamingHttpResponse
   selectors.py                       # queries (lista conversas, kanban por fluxo, fluxos acessíveis)
+  models.py                          # fase 1 vazio; fase 2 CampoPersonalizado + ValorCampoAtendimento
+  signals.py                         # TODOS os receivers do app (publish SSE + orquestração cross-app)
+  tasks.py                           # Celery tasks do app (fase 2: extract_custom_fields_async)
   services/
     board_service.py                 # mover atendimento entre etapas (com regras tipo_etapa)
     message_dispatch_service.py      # criar Mensagem do atendente
     realtime_publisher.py            # publica eventos no Redis pub/sub
     card_renderer.py                 # payload visual do card (espelha _build_card_name + preview)
-  signals.py                         # post_save Mensagem/MovimentoFluxo/Atendimento → publish
   templates/atendimento_unificado/
     workspace.html                   # estende core/templates/base_dashboard.html
     partials/conversation_item.html
@@ -284,21 +289,56 @@ atendimento_unificado/
     js/workspace_alpine.js           # store Alpine + EventSource
     css/workspace.css
   migrations/
-    0001_initial.py                  # add Atendimento.data_ultima_leitura_atendente
+    0001_initial.py                  # cria tabela atu_leitura_atendimento (model próprio LeituraAtendimento)
 ```
+
+**Convenção de `apps.py`** (espelha [trello_sync/apps.py](../../src/smart_core_assistant_painel/app/trello_sync/apps.py)):
+
+```python
+from django.apps import AppConfig
+
+
+class AtendimentoUnificadoConfig(AppConfig):
+    name: str = "smart_core_assistant_painel.app.atendimento_unificado"
+    label: str = "atendimento_unificado"
+    verbose_name: str = "Atendimento Unificado"
+
+    def ready(self) -> None:
+        # Comentário (PT-BR): Carrega sinais ao iniciar a app
+        try:
+            from . import signals as _signals  # noqa: F401
+        except Exception as exc:
+            # Evita falha de inicialização caso models ainda não migrados
+            from loguru import logger
+
+            logger.warning("Falha ao carregar sinais do atendimento_unificado: {}", exc)
+```
+
+**Princípio de independência (não-negociável):** toda integração entre `atendimento_unificado` e outros apps (`atendimentos`, `trello_sync`, `ai_engine`, `evolution_sync`) acontece **via signals e Celery tasks dentro de `atendimento_unificado/`**. Não é permitido editar lógica de negócio em outros apps. A única exceção é criar métodos **públicos e genéricos** em outros apps que `atendimento_unificado` consuma (sem que esses outros apps mencionem `atendimento_unificado` em seu código). Mesma direção de acoplamento adotada pelo `trello_sync` hoje.
 
 Registrar em:
 - [core/settings.py](../../src/smart_core_assistant_painel/app/core/settings.py) `INSTALLED_APPS`
 - [tenants/db_router.py](../../src/smart_core_assistant_painel/app/tenants/db_router.py) — adicionar `"atendimento_unificado"` ao `TENANT_APPS`
 - Criar permissão de módulo `atendimento` (similar a `treinamento`, `configuracoes`)
 
-### Models — alterações mínimas em models existentes
+### Models — ZERO alteração em apps de produção (decisão D4)
 
-Tudo principal é reaproveitado. Única alteração: adicionar campo a `Atendimento`:
+Tudo é reaproveitado por leitura. O único dado novo necessário na Fase 1 (rastrear "última leitura do atendente") é modelado em **tabela própria** do `atendimento_unificado`, sem tocar `Atendimento`:
 
-- `data_ultima_leitura_atendente = DateTimeField(null=True, blank=True, db_index=True)` — usado para badge de não-lidos na Fase 1 (evita refactor na Fase 3).
+```python
+# atendimento_unificado/models.py
+class LeituraAtendimento(models.Model):
+    atendimento_id = models.BigIntegerField()  # FK lógica, sem constraint cross-app
+    atendente_id = models.BigIntegerField()    # FK lógica, sem constraint cross-app
+    ultima_leitura_at = models.DateTimeField(db_index=True)
 
-| Necessidade | Reuso |
+    class Meta:
+        db_table = "atu_leitura_atendimento"
+        unique_together = [("atendimento_id", "atendente_id")]
+        indexes = [models.Index(fields=["atendimento_id", "ultima_leitura_at"])]
+```
+
+| Necessidade | Reuso / Origem |
 |---|---|
 | Quadro kanban | [`FluxoAtendimento`](../../src/smart_core_assistant_painel/app/operacional/models.py#L498) (1:1 com `TrelloBoard`) |
 | Coluna kanban | [`EtapaFluxo`](../../src/smart_core_assistant_painel/app/operacional/models.py#L562) (já tem `cor`, `ordem`, `tipo_etapa`) |
@@ -307,7 +347,7 @@ Tudo principal é reaproveitado. Única alteração: adicionar campo a `Atendime
 | Mensagens chat | [`Mensagem`](../../src/smart_core_assistant_painel/app/atendimentos/models.py#L1003) |
 | Envio WhatsApp | Signal `_on_message_saved` em [evolution_sync/signals.py:216](../../src/smart_core_assistant_painel/app/evolution_sync/signals.py#L216) |
 | Lista conversas | `Atendimento` ordenado por `data_ultima_mensagem` (já indexado) |
-| Não-lido | `mensagens.filter(remetente=CONTATO, timestamp__gt=atendimento.data_ultima_leitura_atendente).count()` |
+| Não-lido | JOIN: `Mensagem.objects.filter(atendimento_id=..., remetente=CONTATO, timestamp__gt=LeituraAtendimento.objects.get(atendimento_id=..., atendente_id=...).ultima_leitura_at).count()` (model próprio em `atendimento_unificado`) |
 
 ### Layout (3 colunas Conversas, full-width Kanban, drawer ao clicar em card)
 
@@ -339,7 +379,7 @@ A coluna direita é **a mesma nos dois modos**.
 | `/conversations/<id>/messages/` | GET | Histórico paginado |
 | `/conversations/<id>/send/` | POST | Cria `Mensagem(ATENDENTE_HUMANO)` — signal envia via Evolution |
 | `/conversations/<id>/upload/` | POST | Multipart → `Mensagem` com mídia (Fase 3 se Evolution não suportar) |
-| `/conversations/<id>/mark-read/` | POST | Atualiza `data_ultima_leitura_atendente=now()` |
+| `/conversations/<id>/mark-read/` | POST | Upsert em `LeituraAtendimento(atendimento_id=<id>, atendente_id=<request.atendente.id>, ultima_leitura_at=now())` |
 | `/conversations/<id>/detail/` | GET | Bloco rico (intents, entidades, métricas, tags) |
 | `/board/?fluxo=<id>` | GET | Snapshot Kanban (etapas + cards com payload de render) |
 | `/board/move/` | POST | `{atendimento_id, etapa_destino_id}` → `board_service.move_atendimento` |
@@ -527,7 +567,7 @@ extracao_campos/
 - **Datasource** usa `with_structured_output` com **schema Pydantic dinâmico** construído via `pydantic.create_model` a partir de `campos_definidos` (apenas campos sem valor ou com `confianca<0.9`).
 - **Prompt**: "Analise a conversa e extraia APENAS os campos abaixo cujos valores aparecem explicitamente. Não invente. Retorne `null` se ausente."
 - **Threshold de confiança**: ≥0.6 para gravar.
-- **Quando rodar**: integrar em [`AttendanceOrchestrator._process_message_and_respond`](../../src/smart_core_assistant_painel/app/atendimentos/services/attendance_orchestrator.py) **após** resposta gravada. Disparar via Celery task `extract_custom_fields_async(tenant_slug, atendimento_id, mensagem_id)`.
+- **Quando rodar — via signal próprio (princípio de independência cross-app)**: adicionar receiver `post_save Mensagem` em [atendimento_unificado/signals.py](../../src/smart_core_assistant_painel/app/atendimento_unificado/signals.py) que dispara a Celery task `extract_custom_fields_async(tenant_slug, atendimento_id, mensagem_id)` (definida em [atendimento_unificado/tasks.py](../../src/smart_core_assistant_painel/app/atendimento_unificado/tasks.py)) quando `remetente=ASSISTENTE_VIRTUAL` e a resposta foi efetivamente gravada. **Não editar `attendance_orchestrator`** — o disparo nasce do signal, mantendo `atendimentos` ignorante da existência de `atendimento_unificado`.
 - **Idempotência**: `select_for_update` no atendimento; só sobrescreve `origem=BOT` se `confianca_nova > confianca_atual`. **Nunca sobrescreve `origem=MANUAL`**.
 - **Exposição**: adicionar `FeaturesCompose.extracao_campos(parameters)` em [features_compose.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py).
 
@@ -556,18 +596,11 @@ Modificar [analise_mensage_datasource.py](../../src/smart_core_assistant_painel/
 
 4. Construção dos `parameters` (em `bot_rules_engine` ou onde aplicável) busca `ValorCampoAtendimento.objects.filter(atendimento=...)` + definições aplicáveis (globais ∪ do fluxo).
 
-### Sincronização Trello (estender)
+### Sincronização Trello — DROPADA (decisão D6)
 
-Em [`ticket_sync_service.py`](../../src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py), estender `_build_rich_description` para appendar:
-
-```
----
-**Campos coletados:**
-- CNPJ: 12.345.678/0001-99
-- Tipo de produto: Banner
-```
-
-Trigger: signal `post_save` de `ValorCampoAtendimento` → task Celery `trello_sync.tasks.update_card_description(atendimento_id)` com **debounce 5s** (key Redis `update_card:<id>`) para evitar spam quando o bot extrai vários campos seguidos.
+> **Decisão**: campos personalizados ficam visíveis APENAS no Workspace (painel direito do chat + badges com `mostrar_no_card=True` no card do kanban interno). Trello permanece como **espelho passivo** do que `_build_card_name` e `_build_rich_description` já mostram hoje (intents, entidades, mensagens recentes, métricas).
+>
+> **Motivo**: respeito estrito a "sem alterações em apps de produção" — zero modificação em `trello_sync`. Coerente com a posição estratégica do Trello como espelho secundário.
 
 ### UI Fase 2
 
@@ -601,7 +634,7 @@ Trigger: signal `post_save` de `ValorCampoAtendimento` → task Celery `trello_s
 
 ### 3.3 SLA e badges avançados
 - Badge SLA estourado usando `MovimentoFluxo.duracao_segundos`.
-- Badge não-lido (já usa `data_ultima_leitura_atendente` adicionado na Fase 1).
+- Badge não-lido (usa `LeituraAtendimento` criado na Fase 1).
 
 ### 3.4 Mídia outbound
 - Implementar `EvolutionWhatsAppService.send_media(...)` chamando `/message/sendMedia` da Evolution API.
@@ -642,16 +675,21 @@ Trigger: signal `post_save` de `ValorCampoAtendimento` → task Celery `trello_s
 
 **Fase 2** (criar):
 - [atendimento_unificado/models.py](../../src/smart_core_assistant_painel/app/atendimento_unificado/models.py) — `CampoPersonalizado`, `ValorCampoAtendimento`
+- [atendimento_unificado/tasks.py](../../src/smart_core_assistant_painel/app/atendimento_unificado/tasks.py) — `extract_custom_fields_async`
+- [atendimento_unificado/tenant_admin.py](../../src/smart_core_assistant_painel/app/atendimento_unificado/tenant_admin.py) — `CampoPersonalizadoAdmin`
 - [modules/ai_engine/features/extracao_campos/](../../src/smart_core_assistant_painel/modules/ai_engine/features/extracao_campos/) — feature DDD completa
 - Migration `atendimento_unificado/migrations/0002_campos_personalizados.py`
 
-**Fase 2** (editar):
-- [analise_mensage_datasource.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py) — injeção dos campos (revalidar offsets)
-- [modules/ai_engine/utils/parameters.py](../../src/smart_core_assistant_painel/modules/ai_engine/utils/parameters.py) — `campos_coletados` em `AnaliseMensageParameters`
+**Fase 2** (editar) — apenas no `ai_engine` e adicionando método público em `trello_sync`:
+- [atendimento_unificado/signals.py](../../src/smart_core_assistant_painel/app/atendimento_unificado/signals.py) — adicionar receiver `post_save Mensagem` (dispara `extract_custom_fields_async` quando `remetente=ASSISTENTE_VIRTUAL`)
+- [analise_mensage_datasource.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py) — injeção dos campos **lendo de `AnaliseMensageParameters.campos_coletados`** (sem que `analise_mensage` saiba sobre `CampoPersonalizado`)
+- [modules/ai_engine/utils/parameters.py](../../src/smart_core_assistant_painel/modules/ai_engine/utils/parameters.py) — `campos_coletados`/`campos_pendentes` em `AnaliseMensageParameters` + `ExtracaoCamposParameters`
 - [modules/ai_engine/utils/erros.py](../../src/smart_core_assistant_painel/modules/ai_engine/utils/erros.py) — `ExtracaoCamposError`
 - [modules/ai_engine/features/features_compose.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py) — método `extracao_campos`
-- [atendimentos/services/attendance_orchestrator.py](../../src/smart_core_assistant_painel/app/atendimentos/services/attendance_orchestrator.py) — disparar Celery task pós-resposta
-- [trello_sync/services/ticket_sync_service.py](../../src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py) — `_build_rich_description` estendido com campos coletados
+**NÃO editar nenhum app de produção em `src/smart_core_assistant_painel/app/`** (princípio reforçado pela decisão D6):
+- ~~[atendimentos/services/attendance_orchestrator.py](../../src/smart_core_assistant_painel/app/atendimentos/services/attendance_orchestrator.py)~~ — disparo da task vem de signal `post_save Mensagem` em `atendimento_unificado/signals.py`
+- ~~[atendimentos/models.py](../../src/smart_core_assistant_painel/app/atendimentos/models.py)~~ — não-lidos via model próprio `LeituraAtendimento` (decisão D4)
+- ~~[trello_sync/services/ticket_sync_service.py](../../src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py)~~ — espelhamento de campos no Trello DROPADO (decisão D5). Workspace é a única fonte de visualização.
 
 ---
 
@@ -718,3 +756,84 @@ Trigger: signal `post_save` de `ValorCampoAtendimento` → task Celery `trello_s
 - **Paridade Trello 100%**: todos os comportamentos do roteiro V.1.b passam (assumir, finalização auto, cross-board, status sync, saudação)
 - Extração de campo do bot tem `confianca≥0.6` em ≥80% dos casos de teste manual
 - Nenhum vazamento cross-tenant em teste com 2 tenants simultâneos
+
+---
+
+## Release e Deploy em Produção (decisão D6)
+
+> Sem ambiente de teste, validações rodam direto em produção. Estratégia obrigatória: **feature flag global por tenant** + **rollout gradual** + **rollback por revert da tag**.
+
+### Pipeline existente
+
+O workflow [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml) já está configurado para disparar em `push: tags: v*` e executa:
+
+1. Build da imagem Docker via `docker/Dockerfile`
+2. Push para GHCR (`ghcr.io/<owner>/<repo>`)
+3. SSH no servidor (`SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`)
+4. `docker compose pull` para os projetos `smart-core-app` e `smart-core-workers`
+5. Migration via job efêmero (`docker compose run --rm migrate`)
+6. `bootstrap_core_settings` para garantir CoreSettings globais
+7. `up -d --force-recreate --no-build` nos containers
+8. `migrate_all_tenants --skip-invalid` para todos os tenants cadastrados
+9. `collectstatic --noinput`
+10. Healthcheck (`docker compose ps`, sleep 10)
+
+### Fluxo de release ao final do desenvolvimento
+
+```bash
+# 1. Merge da feature branch em master (após todas E.1-E.3 verdes)
+git checkout master
+git pull
+git merge --no-ff feature/new-front-user
+git push
+
+# 2. Bump semver MINOR em pyproject.toml + atualizar CHANGELOG.md
+#    (ex: 1.3.0 → 1.4.0 — feature nova)
+
+# 3. Commit do bump + push
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore(release): bump v1.4.0 - atendimento_unificado"
+git push
+
+# 4. Criar tag anotada e push (DISPARA deploy automático)
+git tag -a v1.4.0 -m "Release atendimento_unificado: chat + kanban + campos personalizados"
+git push origin v1.4.0
+
+# 5. Acompanhar workflow em https://github.com/<owner>/<repo>/actions
+#    Esperar todos os 2 jobs (build + deploy) ficarem verdes.
+```
+
+### Feature flag e rollout
+
+1. **Feature flag** `ATENDIMENTO_UNIFICADO_ENABLED` em `TenantConfig`/`RuntimeConfig` (default `False`).
+   - Sidebar não mostra item "Atendimento → Workspace" enquanto flag está `False`.
+   - Rotas `/workspace/*` retornam 404 enquanto flag está `False`.
+2. **Smoke test em 1 tenant piloto** (24h mínimas):
+   ```python
+   # shell Django no container app em produção
+   from smart_core_assistant_painel.app.tenants.models import TenantConfig
+   TenantConfig.update_config("paulo-ecoprint", "ATENDIMENTO_UNIFICADO_ENABLED", True)
+   ```
+3. **Rollout gradual**: 1 tenant por vez, intervalo 4h entre cada, monitorando:
+   - Logs do GHA (deploys subsequentes se houver hotfix)
+   - `/var/log/smartcore-health.log` (cron 5min)
+   - Loguru INFO no container app/workers
+
+### Rollback
+
+| Cenário | Ação | Tempo |
+|---|---|---|
+| Erro fatal no boot | `TenantConfig` global flag OFF; ou `git push --delete origin v1.4.0` + `git tag -d v1.4.0` + `git push origin v1.3.0` redispara workflow. | ~5min |
+| Bug em 1 tenant | `TenantConfig.update_config(<slug>, "ATENDIMENTO_UNIFICADO_ENABLED", False)` | ~30s |
+| Migration falha | Workflow aborta em `set -e`; containers antigos seguem ativos. Investigar antes de retentar push da tag. | Imediato |
+| Performance ruim | Flag OFF em todos os tenants; investigar offline. | ~2min |
+
+### Migrations seguras (princípio D6)
+
+TODAS as migrations do `atendimento_unificado` criam apenas tabelas novas:
+
+- `atu_leitura_atendimento` (Fase 1)
+- `atu_campo_personalizado` (Fase 2)
+- `atu_valor_campo` (Fase 2)
+
+Nenhuma `ALTER`/`DROP` em tabelas legadas. Migration reversa simplesmente drop dessas tabelas, sem perda de dados de produção.

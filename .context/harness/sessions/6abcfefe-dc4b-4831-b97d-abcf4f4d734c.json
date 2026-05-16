@@ -4,15 +4,49 @@
   "status": "active",
   "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
   "createdAt": "2026-05-14T18:36:22.578Z",
-  "updatedAt": "2026-05-14T19:19:58.021Z",
+  "updatedAt": "2026-05-16T15:16:09.966Z",
   "startedAt": "2026-05-14T18:36:22.578Z",
-  "traceCount": 5,
+  "traceCount": 32,
   "artifactCount": 0,
-  "checkpointCount": 0,
-  "checkpoints": [],
+  "checkpointCount": 3,
+  "checkpoints": [
+    {
+      "id": "cd8d6c14-f649-4739-ae0c-b6fcb382fece",
+      "note": "Advanced workflow phase P -> R",
+      "data": {
+        "from": "P",
+        "to": "R",
+        "outputs": [
+          "plans/atendimento-unificado-chat-kanban.md"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-15T14:07:00.971Z"
+    },
+    {
+      "id": "fd9af317-39f7-40ce-8cfe-4c93caf67b5b",
+      "note": "Advanced workflow phase R -> E",
+      "data": {
+        "from": "R",
+        "to": "E",
+        "outputs": [
+          "Aprovação consolidada R.1-R.8 conforme plano consolidado"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-15T14:07:05.580Z"
+    },
+    {
+      "id": "dcba8d0d-e43d-4318-a272-5546e21c3421",
+      "note": "E.1 (MVP Chat + Kanban) implementado: app atendimento_unificado completo com models, services (board/message_dispatch/realtime_publisher/card_renderer), selectors, signals, views (HTML + API + SSE async), templates Tailwind+Alpine (workspace.html + 7 partials), workspace_alpine.js, feature flag via settings, entrada no sidebar, doc Nginx/Uvicorn. Django check passa; ruff format/check passam; pyright zero erros.",
+      "artifactIds": [],
+      "createdAt": "2026-05-15T19:24:30.311Z"
+    }
+  ],
   "metadata": {
     "workflow": true,
     "description": "Construir módulo atendimento_unificado com chat WhatsApp + Kanban + campos personalizados extraídos por IA. Real-time via SSE/Redis. Entrega faseada em 3 fases sobre modelos existentes (EtapaFluxo/Atendimento/Mensagem). Toca camadas: app Django novo, models, signals, ASGI, feature LLM com structured output, sync Trello, design system Tailwind+Alpine."
   },
-  "lastTraceAt": "2026-05-14T19:19:58.021Z"
+  "lastTraceAt": "2026-05-16T15:16:09.966Z",
+  "lastCheckpointAt": "2026-05-15T19:24:30.311Z"
 }

@@ -6,7 +6,10 @@
       "title": "Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados",
       "summary": "Construir o módulo `atendimento_unificado`: tela única com chat estilo WhatsApp Web e modo Kanban sobre `EtapaFluxo`/`Atendimento`, com campos personalizados híbridos (globais por tenant + por fluxo) extraídos automaticamente pela IA e reinjetados no system prompt do bot. Real-time via SSE sobre Redis pub/sub. Trello permanece como espelho passivo. Entrega faseada em 3 sub-fases de execução (MVP → Campos+IA → Refinamentos).",
       "linkedAt": "2026-05-14T18:46:09.784Z",
-      "status": "active"
+      "status": "active",
+      "approval_status": "approved",
+      "approved_at": "2026-05-15T14:07:00.417Z",
+      "approved_by": "solo-dev"
     }
   ],
   "completed": [],

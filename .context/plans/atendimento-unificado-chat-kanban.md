@@ -1,5 +1,6 @@
 ---
 status: ready
+progress: 0
 generated: 2026-05-14
 source: "docs_dev/planejamento/atendimento_unificado/a-usabilidade-do-sistema-stateful-allen.md"
 workflow: "atendimento-unificado-chat-kanban"
@@ -19,6 +20,8 @@ agents:
     role: "Revisar aderência ao padrão arquitetural, type hints e segurança multi-tenant"
   - type: "security-auditor"
     role: "Auditar autorização nas rotas, isolamento tenant em SSE e tratamento de uploads"
+  - type: "devops-specialist"
+    role: "Configurar Uvicorn worker, criar tag/release e acompanhar deploy automático via GitHub Actions"
 docs:
   - "architecture.md"
   - "data-flow.md"
@@ -62,13 +65,18 @@ phases:
       - "Validar isolamento multi-tenant em SSE (2 tenants simultâneos)"
       - "Testar carga: 50 conversas + 1000 mensagens < 500ms"
   - id: "phase-C"
-    name: "Encerramento e Documentação"
+    name: "Encerramento, Release e Deploy em Produção"
     prevc: "C"
     agent: "documentation-writer"
     steps:
-      - "Documentar configuração Nginx (proxy_buffering off, proxy_read_timeout alto)"
-      - "Atualizar architecture.md e data-flow.md com novo app"
+      - "Atualizar architecture.md, data-flow.md, glossary.md e Nginx (proxy_buffering off)"
+      - "Merge feature branch em master + bump semver MINOR + CHANGELOG"
+      - "Criar tag v<X.Y.Z> e push para disparar .github/workflows/deploy.yml automaticamente"
+      - "Healthcheck pós-deploy: containers Up, logs limpos no GHA"
+      - "Habilitar feature flag ATENDIMENTO_UNIFICADO_ENABLED em 1 tenant piloto, observar 24h"
+      - "Rollout gradual nos demais tenants (1 a 1, intervalo 4h)"
       - "Arquivar plano e registrar lessons learned"
+lastUpdated: "2026-05-15T14:07:00.417Z"
 ---
 
 # Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados
@@ -113,13 +121,16 @@ phases:
 - `atendimento_unificado/models.py` — `CampoPersonalizado`, `ValorCampoAtendimento`
 - `src/smart_core_assistant_painel/modules/ai_engine/features/extracao_campos/` (feature DDD)
 
-**Editar (E.2)**:
-- [analise_mensage_datasource.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py) — injetar campos no system prompt
-- [ai_engine/utils/parameters.py](../../src/smart_core_assistant_painel/modules/ai_engine/utils/parameters.py) — adicionar `campos_coletados` em `AnaliseMensageParameters` e criar `ExtracaoCamposParameters`
+**Editar (E.2)** — APENAS no `modules/ai_engine` (infra compartilhada de IA, fora dos `app/`):
+- [analise_mensage_datasource.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py) — injetar campos no system prompt **lendo de `AnaliseMensageParameters.campos_coletados`** (sem que `analise_mensage` saiba sobre `CampoPersonalizado`)
+- [ai_engine/utils/parameters.py](../../src/smart_core_assistant_painel/modules/ai_engine/utils/parameters.py) — adicionar `campos_coletados`/`campos_pendentes` em `AnaliseMensageParameters` e criar `ExtracaoCamposParameters`
 - [ai_engine/utils/erros.py](../../src/smart_core_assistant_painel/modules/ai_engine/utils/erros.py) — `ExtracaoCamposError`
 - [ai_engine/features/features_compose.py](../../src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py) — método `extracao_campos`
-- [attendance_orchestrator.py](../../src/smart_core_assistant_painel/app/atendimentos/services/attendance_orchestrator.py) — disparar Celery task pós-resposta
-- [trello_sync/services/ticket_sync_service.py](../../src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py) — estender `_build_card_description`
+
+**NÃO editar nenhum app de produção em `app/`** (substituído por signals/tasks em `atendimento_unificado/`):
+- ~~[atendimentos/services/attendance_orchestrator.py](../../src/smart_core_assistant_painel/app/atendimentos/services/attendance_orchestrator.py)~~ — disparo da task de extração vem de signal `post_save Mensagem` em `atendimento_unificado/signals.py` (E.2.7).
+- ~~[trello_sync/services/ticket_sync_service.py](../../src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py)~~ — espelhamento de campos no Trello foi **DROPADO** (decisão D5). Workspace é a única fonte de visualização de campos personalizados.
+- ~~[atendimentos/models.py](../../src/smart_core_assistant_painel/app/atendimentos/models.py)~~ — não-lidos via model próprio `LeituraAtendimento` em `atendimento_unificado/models.py` (decisão D4). Zero alteração em `Atendimento`.
 
 ## Decisões Arquiteturais Consolidadas
 
@@ -396,21 +407,27 @@ Adicionar item ao [base_dashboard.html](../../src/smart_core_assistant_painel/ap
 
 **Objective:** Tela única onde o atendente atende conversas estilo WhatsApp Web E gerencia o pipeline em modo Kanban com **paridade funcional completa com o Trello**: board por `FluxoAtendimento`, status automático por `tipo_etapa`, assumir atendimento (FILA→TRABALHO + saudação), finalização (→FINALIZACAO), cross-board move, card visualmente equivalente ao card do Trello. Clicar em qualquer card abre o chat completo sem sair do kanban.
 
-**Estrutura do app novo**
+**Estrutura do app novo** (espelha layout de [trello_sync/](../../src/smart_core_assistant_painel/app/trello_sync/))
 ```
 src/smart_core_assistant_painel/app/atendimento_unificado/
-  apps.py
+  __init__.py
+  apps.py                            # AtendimentoUnificadoConfig com ready() que importa signals (padrão TrelloSyncConfig)
+  admin.py                           # admin global (placeholder na E.1)
+  tenant_admin.py                    # admin por tenant (E.2: CampoPersonalizadoAdmin)
   urls.py                            # rotas HTML
   api_urls.py                        # rotas JSON + SSE
   views.py                           # WorkspaceView (HTML shell)
   views_api.py                       # endpoints JSON
   views_sse.py                       # async view → StreamingHttpResponse
   selectors.py                       # queries (lista conversas, kanban snapshot)
+  models.py                          # E.1 vazio; E.2 CampoPersonalizado + ValorCampoAtendimento
+  signals.py                         # TODOS os receivers do app (publish SSE + orquestração cross-app)
+  tasks.py                           # Celery tasks do app (E.2: extract_custom_fields_async)
   services/
     board_service.py                 # mover atendimento entre etapas
     message_dispatch_service.py      # criar Mensagem do atendente
     realtime_publisher.py            # publica eventos no Redis pub/sub
-  signals.py                         # post_save Mensagem/MovimentoFluxo → publish
+    card_renderer.py                 # payload visual do card (E.1.11)
   templates/atendimento_unificado/
     workspace.html                   # estende base_dashboard.html
     partials/conversation_item.html
@@ -418,6 +435,7 @@ src/smart_core_assistant_painel/app/atendimento_unificado/
     partials/kanban_column.html
     partials/kanban_card.html
     partials/detail_panel.html
+    partials/chat_drawer.html        # drawer de chat sobre o kanban
     partials/custom_fields_panel.html  # placeholder na E.1
   static/atendimento_unificado/
     js/workspace_alpine.js           # store Alpine + EventSource
@@ -426,14 +444,75 @@ src/smart_core_assistant_painel/app/atendimento_unificado/
     0001_initial.py                  # migration vazia + add data_ultima_leitura_atendente
 ```
 
-**Models — alterações mínimas em models existentes**
-- **Adicionar** a [`Atendimento`](../../src/smart_core_assistant_painel/app/atendimentos/models.py): `data_ultima_leitura_atendente = DateTimeField(null=True, blank=True, db_index=True)`. Migration cross-app via `--app atendimento_unificado` referenciando model do `atendimentos` (ou migration própria em `atendimentos/`).
+**Convenção de `apps.py`** (espelha [trello_sync/apps.py](../../src/smart_core_assistant_painel/app/trello_sync/apps.py)):
+```python
+from django.apps import AppConfig
+
+
+class AtendimentoUnificadoConfig(AppConfig):
+    name: str = "smart_core_assistant_painel.app.atendimento_unificado"
+    label: str = "atendimento_unificado"
+    verbose_name: str = "Atendimento Unificado"
+
+    def ready(self) -> None:
+        # Comentário (PT-BR): Carrega sinais ao iniciar a app
+        try:
+            from . import signals as _signals  # noqa: F401
+        except Exception as exc:
+            # Evita falha de inicialização caso models ainda não migrados
+            from loguru import logger
+
+            logger.warning("Falha ao carregar sinais do atendimento_unificado: {}", exc)
+```
+
+**Princípio de independência total (não-negociável)** — refinado conforme decisão D4/D5/D6:
+
+> **Nenhum app de produção em `src/smart_core_assistant_painel/app/` pode ser editado.** Toda integração acontece via signals e Celery tasks dentro de `atendimento_unificado/`.
+
+**Exceções autorizadas (integrações inevitáveis, NÃO são lógica de negócio):**
+
+| Arquivo | Motivo |
+|---|---|
+| [core/settings.py](../../src/smart_core_assistant_painel/app/core/settings.py) | Registro do app em `INSTALLED_APPS` (Django requer). |
+| [tenants/db_router.py](../../src/smart_core_assistant_painel/app/tenants/db_router.py) | Registro do app em `TENANT_APPS` (multi-tenant requer). |
+| [core/templates/base_dashboard.html](../../src/smart_core_assistant_painel/app/core/templates/base_dashboard.html) | Adicionar item de menu "Atendimento → Workspace" no sidebar global. É template compartilhado, não lógica. Explicitamente pedido pelo usuário. |
+| [core/urls.py](../../src/smart_core_assistant_painel/app/core/urls.py) (ou raiz equivalente) | Incluir `path("workspace/", include("...atendimento_unificado.urls"))`. Registro de rotas. |
+
+**Módulos fora de `app/` (autorizados a editar):**
+
+| Módulo | Motivo |
+|---|---|
+| [modules/ai_engine/](../../src/smart_core_assistant_painel/modules/ai_engine/) | Infraestrutura compartilhada de IA, não é "app em produção" no sentido da regra. Edições controladas e isoladas em `parameters.py`, `erros.py`, `features_compose.py` e nova feature `extracao_campos/`. |
+
+**Modelagem de dados que afeta tabelas legadas: PROIBIDA.** O que precisaria de campo em `Atendimento` (não-lidos) virou model próprio `LeituraAtendimento` em `atendimento_unificado/models.py` (decisão D4). O que precisaria de append no card Trello foi dropado (decisão D5). Todas as migrations do app criam apenas tabelas `atu_*` novas — nenhum `ALTER`/`DROP` em tabelas legadas.
+
+Mesma direção de acoplamento adotada pelo `trello_sync` hoje (escuta signals de `Atendimento`/`Mensagem` sem que `atendimentos` saiba da existência do Trello). Decisões registradas via `plan recordDecision` na fase P.
+
+**Models — ZERO alteração em apps de produção**
+
+Em vez de adicionar campo a `Atendimento`, criar model próprio em [`atendimento_unificado/models.py`](../../src/smart_core_assistant_painel/app/atendimento_unificado/models.py) já na E.1:
+
+```python
+class LeituraAtendimento(models.Model):
+    atendimento_id = models.BigIntegerField()  # FK lógica para Atendimento, sem constraint cross-app
+    atendente_id = models.BigIntegerField()    # FK lógica para Atendente, sem constraint cross-app
+    ultima_leitura_at = models.DateTimeField(db_index=True)
+
+    class Meta:
+        db_table = "atu_leitura_atendimento"
+        unique_together = [("atendimento_id", "atendente_id")]
+        indexes = [
+            models.Index(fields=["atendimento_id", "ultima_leitura_at"]),
+        ]
+```
+
+Cálculo de não-lidos em `selectors.py`: para cada atendimento, conta `Mensagem.objects.filter(atendimento_id=..., remetente=CONTATO, timestamp__gt=LeituraAtendimento.ultima_leitura_at).count()`. O app `atendimentos` permanece 100% intocado.
 
 **Tasks**
 
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| E.1.1 | Criar app `atendimento_unificado` (apps.py, registrar em INSTALLED_APPS e TENANT_APPS) + permissão de módulo `atendimento` | `backend-specialist` | pending | App registrado e Django check passando |
+| E.1.1 | Criar app `atendimento_unificado` (apps.py com `ready()` carregando signals, registrar em INSTALLED_APPS e TENANT_APPS) + permissão de módulo `atendimento` + **feature flag `ATENDIMENTO_UNIFICADO_ENABLED`** em `TenantConfig`/`RuntimeConfig` (default OFF). Sidebar e rotas `/workspace/*` só renderizam/respondem se flag True para o tenant. | `backend-specialist` | pending | App registrado, Django check passa, feature flag desligada por padrão |
 | E.1.2 | Implementar `selectors.py`: `list_conversations`, `get_messages`, `board_snapshot_by_fluxo(fluxo_id)`, `list_fluxos_acessiveis(atendente)` | `backend-specialist` | pending | Funções tipadas com `pyright --strict` |
 | E.1.3 | Implementar `services/message_dispatch_service.py` (cria Mensagem ATENDENTE_HUMANO seguindo padrão de `transferir_para_humano_com_saudacao`) | `backend-specialist` | pending | Service + teste manual: msg chega no WhatsApp |
 | E.1.4 | Implementar `services/board_service.py::move_atendimento` espelhando lógica do Trello: `select_for_update`, `MovimentoFluxo.criar_movimento`, detectar cross-board (atualizar `fluxo_atendimento_id` + `departamento_id`), aplicar regra `tipo_etapa` (FILA→nada, TRABALHO→`transferir_para_humano_com_saudacao(atendente_id=request.user.atendente.id)`, ESPERA→nada, FINALIZACAO→`finalizar_atendimento`) | `backend-specialist` | pending | Mover entre quadros funciona; assumir da fila dispara saudação; finalização encerra |
@@ -442,7 +521,7 @@ src/smart_core_assistant_painel/app/atendimento_unificado/
 | E.1.7 | Implementar `views_api.py` (endpoints JSON da tabela abaixo) com autorização por `LoginRequiredMixin` + `permission_tags` por rota | `backend-specialist` | pending | Endpoints retornam 200 com payload esperado; 403 sem permissão |
 | E.1.8 | Implementar `views_sse.py` async view (`StreamingHttpResponse` async + heartbeat 25s + Redis `aioredis` subscribe), filtrando eventos por `tenant_slug` da request | `backend-specialist` | pending | EventSource conecta e recebe eventos do tenant correto |
 | E.1.9 | Configurar Gunicorn com `uvicorn.workers.UvicornWorker` (ou processo Uvicorn dedicado) para suportar async views — atualizar Dockerfile/compose | `devops-specialist` | pending | Worker não trava em conexões longas; smoke test em prod |
-| E.1.10 | Migration: adicionar `Atendimento.data_ultima_leitura_atendente DateTimeField(null=True, db_index=True)` | `database-specialist` | pending | Migration aplicada em dev e teste |
+| E.1.10 | **Criar model `LeituraAtendimento` em `atendimento_unificado/models.py` + migration `0001_initial.py`** (tabela própria `atu_leitura_atendimento` com `atendimento_id`/`atendente_id` BigIntegerField sem FK cross-app). ZERO alteração em `atendimentos`. | `database-specialist` | pending | Migration aplicada em produção; tabela `atu_leitura_atendimento` criada |
 | E.1.11 | Implementar `services/card_renderer.py` que produz o **payload visual do card kanban** espelhando `_build_card_name` + dados de preview (título composto, prioridade, atendente, última msg preview, tempo humanizado, métricas, status emoji). Reutilizar helpers de [ticket_sync_service.py:180-244](../../src/smart_core_assistant_painel/app/trello_sync/services/ticket_sync_service.py#L180) (`_get_status_emoji`, `_get_prioridade_emoji`, `_get_canal_emoji`, `_format_time_delta`) — mover para módulo compartilhado em `app/core/utils/` ou duplicar em `card_renderer.py` | `backend-specialist` | pending | Renderer testado com 3 cenários (sem atendente, com mídia, com intents) |
 | E.1.12 | Implementar `WorkspaceView` + template `workspace.html` com **seletor de Fluxo** (combo no topbar) + tabs Alpine `Conversas`/`Kanban`. Layout: Conversas = 3 colunas (sidebar/chat/detalhes); Kanban = colunas horizontais full-width | `frontend-specialist` | pending | Layout renderiza dentro de base_dashboard, seletor de fluxo popula colunas |
 | E.1.13 | Implementar partials seguindo Design System: `conversation_item.html`, `chat_message.html` (variantes contato/bot/atendente, mídia), `kanban_column.html` (barra de cor da etapa, contador, header com nome), `kanban_card.html` (espelha visual do card Trello: título, label de prioridade, avatar atendente, preview msg, tempo, badges custom da E.2), `detail_panel.html`, `chat_drawer.html` (drawer/modal de chat acionado ao clicar em card no Kanban) | `frontend-specialist` | pending | Partials seguem Design System; comparar visual com card Trello |
@@ -567,10 +646,10 @@ extracao_campos/
 | E.2.4 | Implementar `extracao_campos_datasource.py` com `with_structured_output` + schema dinâmico | `feature-developer` | pending | Usecase retorna `list[CampoExtraido]` |
 | E.2.5 | Adicionar `FeaturesCompose.extracao_campos(parameters)` | `feature-developer` | pending | Método exposto na facade |
 | E.2.6 | Criar Celery task `extract_custom_fields_async` com `select_for_update` e regra de idempotência | `feature-developer` | pending | Task respeita "nunca sobrescrever MANUAL" |
-| E.2.7 | Integrar disparo da task em `attendance_orchestrator._process_message_and_respond` (pós-resposta) | `feature-developer` | pending | Task dispara após gravar resposta |
+| E.2.7 | **Disparar `extract_custom_fields_async` via signal próprio** — adicionar receiver `post_save Mensagem` em `atendimento_unificado/signals.py` que dispara a task quando `remetente=ASSISTENTE_VIRTUAL` e a resposta foi gravada (substitui edição em `attendance_orchestrator`). Mantém princípio de independência cross-app. | `feature-developer` | pending | Signal em `atendimento_unificado/signals.py` dispara task sem editar `atendimentos` |
 | E.2.8 | Adicionar `campos_coletados`/`campos_pendentes` em `AnaliseMensageParameters` | `feature-developer` | pending | Parameters atualizado |
 | E.2.9 | Modificar `analise_mensage_datasource` para injetar seção `### CAMPOS COLETADOS DO ATENDIMENTO` e `### CAMPOS PENDENTES` no system prompt (revalidar offsets — plano original cita linhas 241-250) | `feature-developer` | pending | Próxima resposta do bot referencia campos coletados |
-| E.2.10 | Estender `ticket_sync_service._build_card_description` para appendar "Campos coletados:" + signal `post_save ValorCampoAtendimento` → task com debounce 5s (key Redis `update_card:<id>`) | `backend-specialist` | pending | Card do Trello mostra campos |
+| ~~E.2.10~~ | **DROPADA** — Campos personalizados ficam visíveis APENAS no Workspace (painel direito + badges no card kanban interno). Trello permanece como espelho passivo do que `_build_rich_description` já mostra hoje. Zero alteração em `trello_sync`. | — | dropped | — |
 | E.2.11 | Implementar painel `partials/custom_fields_panel.html` com form Alpine auto-save por campo | `frontend-specialist` | pending | Edição manual funciona |
 | E.2.12 | Endpoints `GET /custom-fields/definitions/`, `GET /conversations/<id>/custom-fields/`, `PATCH .../custom-fields/<slug>/` | `backend-specialist` | pending | CRUD via API |
 | E.2.13 | Adicionar evento SSE `custom_field.updated` ao `realtime_publisher` | `backend-specialist` | pending | Painel sincroniza ao vivo |
@@ -594,7 +673,7 @@ extracao_campos/
 | E.3.2 | Flag `isDragging` no store Alpine ignora updates SSE da etapa em movimento por 2s | `frontend-specialist` | pending | Sem conflito SortableJS+SSE |
 | E.3.3 | Filtros: `/conversations/?q=&depto=&atendente=&tag=&campo_<slug>=` | `backend-specialist` | pending | Filtros funcionam |
 | E.3.4 | Index GIN em `ValorCampoAtendimento.valor` para filtro por campo | `database-specialist` | pending | Query plan usa index |
-| E.3.5 | Badge não-lido baseado em `data_ultima_leitura_atendente` (campo já adicionado na E.1) | `frontend-specialist` | pending | Badge decrementa ao abrir |
+| E.3.5 | Badge não-lido baseado em `LeituraAtendimento.ultima_leitura_at` (model criado na E.1.10). Endpoint `mark-read` faz upsert em `LeituraAtendimento` | `frontend-specialist` | pending | Badge decrementa ao abrir |
 | E.3.6 | Badge SLA estourado usando `MovimentoFluxo.duracao_segundos` | `frontend-specialist` | pending | Visualização clara de SLA |
 | E.3.7 | Implementar `EvolutionWhatsAppService.send_media(...)` chamando `/message/sendMedia` da Evolution API | `backend-specialist` | pending | Mídia outbound funcional |
 | E.3.8 | Signal Evolution detecta `Mensagem.tipo in (IMAGEM,AUDIO,DOCUMENTO)` e usa `send_media` | `backend-specialist` | pending | Atendente envia mídia |
@@ -629,23 +708,61 @@ extracao_campos/
 
 ---
 
-### Phase C — Encerramento e Documentação
+### Phase C — Encerramento, Release e Deploy em Produção
 > **Primary Agent:** `documentation-writer` — [Playbook](../agents/documentation-writer.md)
 
-**Objective:** Documentação final, arquivamento, lessons learned.
+**Objective:** Documentação final + release versionada + deploy automático via tag git + rollout controlado em produção (sem ambiente de teste, conforme decisão D6).
 
 **Tasks**
 
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| C.1 | Atualizar [architecture.md](../docs/architecture.md) com novo app e SSE | `documentation-writer` | pending | Seção adicionada |
+| C.1 | Atualizar [architecture.md](../docs/architecture.md) com novo app, SSE e princípio de independência cross-app | `documentation-writer` | pending | Seção adicionada |
 | C.2 | Atualizar [data-flow.md](../docs/data-flow.md) com fluxo de extração e SSE | `documentation-writer` | pending | Diagrama atualizado |
-| C.3 | Atualizar [glossary.md](../docs/glossary.md) com termos (Workspace, Campo Personalizado, etc.) | `documentation-writer` | pending | Termos novos |
-| C.4 | Documentar configuração Nginx em [security.md](../docs/security.md) ou doc dedicado | `documentation-writer` | pending | Config Nginx publicada |
-| C.5 | Arquivar este plano em `.context/plans/archive/` e atualizar README | `documentation-writer` | pending | Plano arquivado |
-| C.6 | Registrar lessons learned (especialmente sobre SSE async views) | `documentation-writer` | pending | Lessons no plano arquivado |
+| C.3 | Atualizar [glossary.md](../docs/glossary.md) (Workspace, Campo Personalizado, `LeituraAtendimento`, feature flag, etc.) | `documentation-writer` | pending | Termos novos |
+| C.4 | Documentar configuração Nginx (`proxy_buffering off`, `proxy_read_timeout 1h` em `/workspace/events/`) em [security.md](../docs/security.md) ou doc dedicado | `documentation-writer` | pending | Config Nginx publicada |
+| C.5 | **Merge da branch `feature/new-front-user` em `master`** após todas E.1–E.3 verdes. PR review obrigatório. | `backend-specialist` | pending | Merge concluído em master |
+| C.6 | **Bump de versão semver MINOR** (feature nova) em `pyproject.toml` + `CHANGELOG.md` resumindo entregas E.1, E.2, E.3 | `backend-specialist` | pending | Versão bumpada, CHANGELOG atualizado |
+| C.7 | **Criar tag e disparar deploy automático**: `git tag -a v<MAJOR>.<MINOR>.<PATCH> -m "Release atendimento_unificado v..."` + `git push origin v<MAJOR>.<MINOR>.<PATCH>`. O [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml) dispara em `push: tags: v*` — build Docker, push GHCR, SSH no servidor, `docker compose pull`, `migrate`, `bootstrap_core_settings`, `migrate_all_tenants`, `collectstatic`, healthcheck. | `devops-specialist` | pending | Tag criada; workflow GitHub Actions verde; containers `Up (healthy)` |
+| C.8 | **Verificar healthcheck pós-deploy**: logs do GHA, `docker compose ps` no servidor, acesso a `/healthz` (se existir) ou raiz autenticada | `devops-specialist` | pending | Containers healthy, sem `Restarting` |
+| C.9 | **Habilitar feature flag em 1 tenant piloto**: `TenantConfig.update_config(slug, key="ATENDIMENTO_UNIFICADO_ENABLED", value=True)` no shell Django. Smoke test manual (V.1.a, V.1.b crítico, V.1.c) com esse tenant — duração mínima 24h observando logs Loguru. | `backend-specialist` | pending | 1 tenant rodando 24h sem erros |
+| C.10 | **Rollout gradual**: habilitar feature flag nos demais tenants, 1 por vez, intervalo mínimo de 4h entre cada. Monitorar `/var/log/smartcore-health.log` e logs do GHA. | `backend-specialist` | pending | Todos os tenants ligados, sem incidentes |
+| C.11 | Arquivar plano em `.context/plans/archive/` e atualizar README | `documentation-writer` | pending | Plano arquivado |
+| C.12 | Registrar lessons learned (SSE async views, princípio de independência cross-app, deploy direto em prod com feature flag) | `documentation-writer` | pending | Lessons no plano arquivado |
 
-**Commit Checkpoint**: `chore(plan): encerrar plano atendimento_unificado`
+**Commit Checkpoint**: `chore(plan): encerrar plano atendimento_unificado v<MAJOR>.<MINOR>.<PATCH>`
+
+---
+
+#### Estratégia de Teste em Produção (sem ambiente de teste — decisão D6)
+
+**Risco fundamental**: validações V.1–V.6 rodam em produção. Mitigações obrigatórias antes do tag push (C.7):
+
+1. **Feature flag global por tenant** (`ATENDIMENTO_UNIFICADO_ENABLED`) — default OFF. Sidebar não mostra item; rotas `/workspace/*` retornam 404. Liga manualmente por tenant após smoke test.
+2. **Migrations seguras**: TODAS as migrations do `atendimento_unificado` criam apenas tabelas novas (`atu_leitura_atendimento`, `atu_campo_personalizado`, `atu_valor_campo`). Nenhuma `ALTER`/`DROP` em tabelas legadas. Migration reversa simplesmente drop dessas tabelas, sem perda de dados de produção.
+3. **Loguru level INFO em produção** no primeiro mês — visibilidade dos receivers de signals, disparos de Celery tasks, eventos SSE publicados.
+4. **Health monitoring existente**: `/opt/smartcore/scripts/health-monitor.sh` (cron 5min) + `/var/log/smartcore-health.log` (logrotate semanal) cobrem reinício de containers.
+5. **Smoke test em 1 tenant piloto antes de rollout** (C.9) — 24h mínimas de observação.
+
+#### Rollback Plan (release em produção)
+
+| Cenário | Ação | Reversibilidade |
+|---|---|---|
+| Erro fatal no boot do app | (a) `TenantConfig` global OFF da feature flag via shell; (b) revert imediato: `git push --delete origin <tag>` + `git tag -d <tag>` + `git push origin <tag-anterior>` redispara workflow com versão anterior. | Total, ~5min |
+| Bug funcional em 1 tenant | Desligar feature flag só nesse tenant. App continua rodando para os demais. | Total, ~30s |
+| Migration falha | Workflow `deploy.yml` aborta em `migrate` (`set -e` no script SSH). Containers antigos seguem ativos. Investigar e corrigir antes de retentar push da tag. | Total, sem impacto |
+| Performance ruim de SSE | Desligar feature flag em todos os tenants; investigar offline. App segue Up. | Total, ~2min |
+
+#### Como o usuário cria a release
+
+```bash
+# em master, após merge da feature branch e bump de versão
+git checkout master
+git pull
+git tag -a v1.4.0 -m "Release atendimento_unificado: chat + kanban + campos personalizados"
+git push origin v1.4.0
+# acompanhar workflow em https://github.com/<owner>/<repo>/actions
+```
 
 ---
 
@@ -662,7 +779,7 @@ extracao_campos/
 | Custo LLM extra por mensagem | Média | Médio | Skip campos com `confianca≥0.9`; modelo barato; skip se nada a extrair | `feature-developer` |
 | Race bot vs atendente em campo | Média | Médio | `select_for_update` + nunca sobrescrever MANUAL | `feature-developer` |
 | Schema Pydantic dinâmico falha | Baixa | Médio | Validar com `with_structured_output` (já usado em `RespostaBot`) | `feature-developer` |
-| Trello reflete antes de campos estarem prontos | Baixa | Baixo | Debounce 5s em `update_card_description` | `backend-specialist` |
+| ~~Trello reflete antes de campos estarem prontos~~ | — | — | **DROPADO** — espelhamento de campos no Trello removido (D5). Workspace é a única fonte. | — |
 | Mídia outbound não suportada hoje | **Confirmado** | Médio | E.3 implementa `send_media` (endpoint Evolution `/message/sendMedia`) | `backend-specialist` |
 
 ## Dependencies
@@ -686,20 +803,6 @@ extracao_campos/
 | E.2 | Reverter PRs, manter tabelas `atu_*` no banco (ou rodar migration reversa). Desativar Celery task. | Campos extraídos pelo bot persistem mas não são exibidos. Não afeta WhatsApp/Trello. | <2h |
 | E.3 | Reverter PRs. Mídia outbound desabilitada (volta a só texto). | Nenhum | <1h |
 
-## Evidence & Follow-up
+## Execution History
 
-### Artifacts to Collect
-- Capturas de tela do workspace em modo Conversas e Kanban
-- Log de eventos SSE em 2 abas simultâneas
-- Output do `pyright --strict` e `ruff check` sem erros
-- Card do Trello com seção "Campos coletados:"
-- Log do system prompt com seção `### CAMPOS COLETADOS DO ATENDIMENTO`
-
-### Success Metrics
-- Sidebar de conversas carrega em <500ms com 50 conversas + 1000 mensagens
-- Snapshot Kanban com 30 cards × 6 colunas em <800ms
-- Movimentação de card no Workspace reflete no Trello em <5s (signal + task existentes)
-- Movimentação de card no Trello reflete no Workspace em <5s (webhook + signal SSE)
-- **Paridade Trello 100%**: todos os comportamentos do roteiro V.1.b passam (assumir, finalização auto, cross-board, status sync, saudação)
-- Extração de campo do bot tem `confianca≥0.6` em ≥80% dos casos de teste manual
-- Nenhum vazamento cross-tenant em teste com 2 tenants simultâneos
+> Last updated: 2026-05-15T14:07:00.417Z | Progress: 0%

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import base64
 import mimetypes
-from typing import Any, Optional
+from typing import Optional
 
 import requests
 from django.db import transaction
@@ -41,7 +41,7 @@ _MIME_TO_TIPO: dict[str, TipoMensagem] = {
 }
 
 
-def _detect_tipo(filename: str, content_type: str) -> TipoMensagem:
+def _detect_tipo(content_type: str) -> TipoMensagem:
     """Determina TipoMensagem a partir do MIME type."""
     main = (content_type or "").split("/")[0].lower()
     return _MIME_TO_TIPO.get(main, TipoMensagem.DOCUMENTO)
@@ -50,9 +50,21 @@ def _detect_tipo(filename: str, content_type: str) -> TipoMensagem:
 def _resolve_evolution_params(
     atend: Atendimento, atendente: Optional[Atendente]
 ) -> Optional[dict[str, str]]:
-    """Retorna {base_url, api_key, instance_name, numero} ou None."""
-    app_instance: Optional[AppInstance] = None
+    """Retorna {base_url, api_key, instance_name, numero} ou None.
 
+    Replica o pattern de `evolution_sync.signals._on_message_saved`:
+    - `AppInstance` (operacional) fornece o `api_key` por roteamento
+      (owner=atendente → departamento do atendente → departamento do atend).
+    - `EvolutionInstance` (evolution_sync) fornece `instance_name` via
+      lookup pelo `api_key`.
+    - `base_url` vem de `TenantEvolution.server_url` do tenant da instância.
+    """
+    contato = getattr(atend, "contato", None)
+    numero = getattr(contato, "telefone", None) if contato else None
+    if not numero:
+        return None
+
+    app_instance: Optional[AppInstance] = None
     if atendente is not None:
         app_instance = (
             AppInstance.objects.filter(owner=atendente, active=True)
@@ -80,35 +92,55 @@ def _resolve_evolution_params(
     if app_instance is None:
         return None
 
-    contato = getattr(atend, "contato", None)
-    numero = getattr(contato, "telefone", None) if contato else None
-    if not numero:
+    api_key = str(app_instance.api_key or "")
+    if not api_key:
         return None
 
-    ultima = atend.mensagens.order_by("-timestamp").first()
-    meta: dict[str, Any] = {}
-    if ultima and ultima.metadados:
-        try:
-            meta = dict(ultima.metadados)
-        except Exception:
-            pass
-    evo_meta = meta.get("evolution", {}) or {}
-    base_url = str(
-        evo_meta.get("base_url") or getattr(app_instance, "base_url", "") or ""
+    # Lookup leitura-pura em models de evolution_sync e tenants
+    # (princípio de independência permite ler, proíbe escrever).
+    from smart_core_assistant_painel.app.evolution_sync.models import (
+        EvolutionInstance,
     )
+    from smart_core_assistant_painel.app.tenants.models import TenantEvolution
+
+    inst: Optional[EvolutionInstance] = EvolutionInstance.objects.filter(
+        api_key=api_key, active=True
+    ).first()
+    if inst is None:
+        return None
+
     instance_name = str(
-        evo_meta.get("instance_name")
-        or getattr(app_instance, "name", "")
-        or ""
+        inst.name or inst.phone_number or inst.instance_id or ""
     )
-    if not base_url or not instance_name:
+    if not instance_name:
+        return None
+
+    base_url = ""
+    tenant_id = getattr(inst, "tenant_id", None)
+    if tenant_id:
+        tenant_cfg = TenantEvolution.objects.filter(
+            tenant_id=tenant_id
+        ).first()
+        if tenant_cfg and tenant_cfg.server_url:
+            base_url = str(tenant_cfg.server_url).rstrip("/")
+    if not base_url:
+        from smart_core_assistant_painel.app.tenants.middleware import (
+            get_current_tenant,
+        )
+
+        tenant = get_current_tenant()
+        if tenant:
+            tenant_cfg = TenantEvolution.objects.filter(tenant=tenant).first()
+            if tenant_cfg and tenant_cfg.server_url:
+                base_url = str(tenant_cfg.server_url).rstrip("/")
+    if not base_url:
         return None
 
     return {
-        "base_url": base_url.rstrip("/"),
-        "api_key": str(app_instance.api_key),
+        "base_url": base_url,
+        "api_key": api_key,
         "instance_name": instance_name,
-        "numero": numero,
+        "numero": str(numero),
     }
 
 
@@ -169,19 +201,23 @@ def upload_and_send_media(
 
     guessed = mimetypes.guess_type(filename)[0]
     effective_ct = content_type or guessed or "application/octet-stream"
-    tipo = _detect_tipo(filename, effective_ct)
+    tipo = _detect_tipo(effective_ct)
     mediatype = _MEDIA_TIPO_MAP.get(tipo, "document")
     media_b64 = base64.b64encode(file_bytes).decode()
 
     with transaction.atomic():
         atend = Atendimento.objects.select_for_update().get(id=atendimento_id)
 
+        # IMPORTANTE: deixar `resposta_bot` vazio para não disparar o signal
+        # `_on_message_saved` em evolution_sync (que enviaria um texto solto
+        # com a caption e marcaria respondida=True antes do envio da mídia).
+        # A caption é exibida via conteudo (fallback no template chat_message).
         mensagem = Mensagem.objects.create(
             atendimento=atend,
             tipo=tipo,
-            conteudo="",
+            conteudo=caption or f"[{filename}]",
             remetente=TipoRemetente.ATENDENTE_HUMANO,
-            resposta_bot=caption or f"[{filename}]",
+            resposta_bot="",
             metadados={
                 "media": {
                     "filename": filename,

@@ -77,11 +77,15 @@
     <div x-show="mode === 'conversas'" class="flex-1 flex overflow-hidden">
         <!-- Sidebar de conversas -->
         <aside class="w-80 bg-white border-r border-stone-200 flex flex-col overflow-hidden">
-            <div class="p-3 border-b border-stone-200">
+            <div class="p-3 border-b border-stone-200 space-y-2">
                 <input type="text" x-model.debounce.300ms="search"
                     @input="loadConversations()"
                     placeholder="Buscar contato, telefone ou assunto…"
                     class="w-full text-sm border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none">
+                <input type="text" x-model.debounce.300ms="filterTag"
+                    @input="loadConversations()"
+                    placeholder="Filtrar por tag…"
+                    class="w-full text-xs border border-stone-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none">
             </div>
             <div class="flex-1 overflow-y-auto divide-y divide-stone-100">
                 <template x-for="c in conversations" :key="c.atendimento_id">

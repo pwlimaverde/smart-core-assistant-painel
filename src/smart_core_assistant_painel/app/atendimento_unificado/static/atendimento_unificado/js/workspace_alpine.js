@@ -102,7 +102,6 @@
             _sseRetryDelay: 2000,
             _sseReconnectTimer: null,
             _sortableInstances: [],
-            _boardSnapshot: null,
             isDragging: false,
             endpoints: init.endpoints,
             customFieldsSaving: {},
@@ -180,7 +179,6 @@
                         dragClass: 'ring-2 ring-[#a98f71] shadow-xl',
                         onStart: function () {
                             self.isDragging = true;
-                            self._boardSnapshot = JSON.parse(JSON.stringify(self.board.cards));
                         },
                         onEnd: function (evt) {
                             self.isDragging = false;
@@ -188,6 +186,9 @@
                             const fromEtapaId = parseInt(evt.from.dataset.etapaId, 10);
                             const toEtapaId = parseInt(evt.to.dataset.etapaId, 10);
                             if (!atendimentoId || !toEtapaId || fromEtapaId === toEtapaId) {
+                                // Drop na mesma coluna ou sem destino válido — apenas garante
+                                // que o estado Alpine fique consistente com o DOM.
+                                self.loadBoard();
                                 return;
                             }
                             jsonFetch(self.endpoints.boardMove, {
@@ -197,11 +198,13 @@
                                     etapa_destino_id: toEtapaId,
                                 }),
                             }).then(function () {
+                                // Recarrega do servidor (estado autoritativo) — re-renderiza
+                                // o board e re-inicializa SortableJS limpando o DOM movido.
                                 self.loadBoard();
                             }).catch(function (exc) {
                                 console.error('Falha ao mover card via drag', exc);
-                                self.board.cards = self._boardSnapshot;
-                                self.$nextTick(function () { self.initSortable(); });
+                                // Rollback robusto: recarrega do servidor (DOM e estado).
+                                self.loadBoard();
                                 alert((exc && exc.message) || 'Falha ao mover card.');
                             });
                         },

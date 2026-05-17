@@ -109,6 +109,7 @@
             atendenteId: init.atendenteId,
             atendenteNome: init.atendenteNome,
             sseEnabled: init.sseEnabled === true,
+            detailDrawerOpen: false,
 
             init: async function () {
                 try {
@@ -173,21 +174,27 @@
                 const self = this;
                 document.querySelectorAll('.kanban-col-body').forEach(function (el) {
                     const instance = Sortable.create(el, {
-                        group: 'kanban-cards',
-                        animation: 150,
-                        ghostClass: 'opacity-40',
-                        dragClass: 'ring-2 ring-[#a98f71] shadow-xl',
+                        group: { name: 'kanban-cards', pull: true, put: true },
+                        draggable: '.kanban-card',
+                        animation: 180,
+                        ghostClass: 'kanban-ghost',
+                        chosenClass: 'kanban-chosen',
+                        dragClass: 'kanban-drag',
+                        forceFallback: true,
+                        fallbackTolerance: 5,
+                        delay: 80,
+                        delayOnTouchOnly: true,
                         onStart: function () {
                             self.isDragging = true;
                         },
                         onEnd: function (evt) {
-                            self.isDragging = false;
+                            // Pequeno atraso para o navegador não disparar
+                            // o `click` no card logo após o drop.
+                            setTimeout(function () { self.isDragging = false; }, 50);
                             const atendimentoId = parseInt(evt.item.dataset.atendId, 10);
                             const fromEtapaId = parseInt(evt.from.dataset.etapaId, 10);
                             const toEtapaId = parseInt(evt.to.dataset.etapaId, 10);
                             if (!atendimentoId || !toEtapaId || fromEtapaId === toEtapaId) {
-                                // Drop na mesma coluna ou sem destino válido — apenas garante
-                                // que o estado Alpine fique consistente com o DOM.
                                 self.loadBoard();
                                 return;
                             }
@@ -198,12 +205,9 @@
                                     etapa_destino_id: toEtapaId,
                                 }),
                             }).then(function () {
-                                // Recarrega do servidor (estado autoritativo) — re-renderiza
-                                // o board e re-inicializa SortableJS limpando o DOM movido.
                                 self.loadBoard();
                             }).catch(function (exc) {
                                 console.error('Falha ao mover card via drag', exc);
-                                // Rollback robusto: recarrega do servidor (DOM e estado).
                                 self.loadBoard();
                                 alert((exc && exc.message) || 'Falha ao mover card.');
                             });
@@ -211,6 +215,11 @@
                     });
                     self._sortableInstances.push(instance);
                 });
+            },
+
+            onCardClick: function (id) {
+                if (this.isDragging) return;
+                return this.openChat(id);
             },
 
             openConversation: function (id) {

@@ -449,5 +449,55 @@ def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
         "timestamp": m.timestamp.isoformat() if m.timestamp else None,
         "respondida": m.respondida,
         "message_id_whatsapp": m.message_id_whatsapp or "",
+        "media": _extract_media(m),
         "metadados": dict(m.metadados or {}),
+    }
+
+
+_MEDIA_KIND_BY_TIPO: dict[str, str] = {
+    "imageMessage": "image",
+    "stickerMessage": "image",
+    "audioMessage": "audio",
+    "videoMessage": "video",
+    "documentMessage": "document",
+}
+
+
+def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
+    """Extrai info de mídia consumível pelo frontend.
+
+    Lida com dois formatos:
+    - Outbound (atendente humano): metadados.media.{b64, mimetype, filename}
+    - Inbound (contato via Evolution): metadados.{base64, url, mimetype, ...}
+
+    Retorna dict {kind, src (data: ou http), mimetype, filename, seconds}
+    ou None se a mensagem não for mídia.
+    """
+    kind = _MEDIA_KIND_BY_TIPO.get(m.tipo or "")
+    if not kind:
+        return None
+
+    meta: dict[str, Any] = dict(m.metadados or {})
+    nested = (
+        meta.get("media") if isinstance(meta.get("media"), dict) else None
+    )
+
+    mimetype = (nested or {}).get("mimetype") or meta.get("mimetype") or ""
+    filename = (nested or {}).get("filename") or meta.get("fileName") or ""
+    seconds = meta.get("seconds")
+    b64 = (nested or {}).get("b64") or meta.get("base64") or ""
+    remote_url = meta.get("url") or ""
+
+    src: Optional[str] = None
+    if b64 and isinstance(b64, str) and len(b64) > 10:
+        # data URI quando temos base64 (renderizável inline)
+        src = f"data:{mimetype or 'application/octet-stream'};base64,{b64}"
+
+    return {
+        "kind": kind,
+        "src": src,
+        "remote_url": remote_url if isinstance(remote_url, str) else "",
+        "mimetype": mimetype,
+        "filename": filename,
+        "seconds": seconds,
     }

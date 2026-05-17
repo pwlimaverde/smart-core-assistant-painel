@@ -182,6 +182,12 @@ ATENDIMENTO_UNIFICADO_TENANT_SLUGS: list[str] = [
 ]
 # Canal Redis pub/sub usado pelo SSE do Workspace (sufixo após o slug do tenant)
 ATENDIMENTO_UNIFICADO_SSE_CHANNEL: str = "sse:{tenant_slug}:events"
+# SSE habilitado? Requer worker ASGI (Uvicorn). Sob Gunicorn sync, a view
+# async trava o worker até timeout/SIGKILL, derrubando o app inteiro.
+# Mantenha False enquanto o Gunicorn estiver em worker sync (WSGI).
+ATENDIMENTO_UNIFICADO_SSE_ENABLED: bool = _env_bool(
+    "ATENDIMENTO_UNIFICADO_SSE_ENABLED", False
+)
 
 # Controle do filtro do signal de criação de etapas padrão.
 # Lista de nomes de departamentos permitidos (case-insensitive).
@@ -309,7 +315,7 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL  # Para erros 500
 
 
 # Auth Redirects
-LOGIN_URL = "/login/"
+LOGIN_URL = "/usuarios/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 

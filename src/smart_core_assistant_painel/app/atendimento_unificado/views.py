@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
@@ -63,6 +64,9 @@ class WorkspaceView(View):
             "tenant_slug": get_current_tenant_slug(),
             "atendente_id": getattr(atendente, "id", None),
             "atendente_nome": getattr(atendente, "nome", ""),
+            "sse_enabled": bool(
+                getattr(settings, "ATENDIMENTO_UNIFICADO_SSE_ENABLED", False)
+            ),
         }
         return render(request, self.template_name, contexto)
 

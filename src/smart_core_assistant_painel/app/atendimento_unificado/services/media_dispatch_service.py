@@ -13,7 +13,7 @@ import mimetypes
 from typing import Optional
 
 import requests
-from django.db import transaction
+from django.db import router, transaction
 from loguru import logger
 
 from smart_core_assistant_painel.app.atendimentos.models import (
@@ -205,7 +205,7 @@ def upload_and_send_media(
     mediatype = _MEDIA_TIPO_MAP.get(tipo, "document")
     media_b64 = base64.b64encode(file_bytes).decode()
 
-    with transaction.atomic():
+    with transaction.atomic(using=router.db_for_write(Atendimento)):
         atend = Atendimento.objects.select_for_update().get(id=atendimento_id)
 
         # IMPORTANTE: deixar `resposta_bot` vazio para não disparar o signal

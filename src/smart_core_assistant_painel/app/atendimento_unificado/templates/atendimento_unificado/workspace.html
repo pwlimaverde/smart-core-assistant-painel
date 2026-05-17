@@ -1,165 +1,101 @@
-{% extends "base_dashboard.html" %}
+{% extends "atendimento_unificado/base_workspace.html" %}
 {% load static %}
+{% load workspace_assets %}
 
-{% block content %}
-<div id="workspace-root"
-    x-data="workspaceStore({
-        fluxoId: {{ fluxo_id|default:'null' }},
-        tenantSlug: '{{ tenant_slug|escapejs }}',
-        atendenteId: {{ atendente_id|default:'null' }},
-        atendenteNome: '{{ atendente_nome|escapejs }}',
-        endpoints: {
-            fluxos: '{% url 'atendimento_unificado:atendimento_unificado_api:fluxos_list' %}',
-            conversations: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-            conversationsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-            board: '{% url 'atendimento_unificado:atendimento_unificado_api:board_snapshot' %}',
-            boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
-            boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
-            sse: '{% url 'atendimento_unificado:workspace_events' %}',
-            customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-            export: '{% url 'atendimento_unificado:atendimento_unificado_api:export' %}'
-        }
-    })"
-    x-init="init()"
-    class="flex flex-col h-[calc(100vh-7rem)] -m-6">
+{% block extra_head %}
+<style>
+    /* Kanban drag-and-drop styling (SortableJS) */
+    .kanban-ghost {
+        opacity: 0.35;
+        background: #f5f5f4 !important;
+        border: 2px dashed #a98f71 !important;
+    }
+    .kanban-ghost > * { visibility: hidden; }
+    .kanban-chosen {
+        cursor: grabbing !important;
+    }
+    .kanban-drag {
+        transform: rotate(2deg);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.18) !important;
+        border-color: #a98f71 !important;
+    }
+    .kanban-card { will-change: transform; }
+    .kanban-col-body { min-height: 50px; }
+    /* line-clamp fallback (Tailwind 4 já fornece, mas garantimos) */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}
 
-    <!-- Topbar do Workspace -->
-    <div class="bg-white border-b border-stone-200 px-6 py-3 flex items-center gap-4">
-        <h1 class="text-lg font-bold text-stone-800 flex items-center">
-            <span class="p-1.5 bg-[#a98f71]/10 rounded-lg mr-2 text-[#a98f71]">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                </svg>
-            </span>
-            Workspace
-        </h1>
+{% block workspace_x_data %}x-data="workspaceStore({
+    fluxoId: {{ fluxo_id|default:'null' }},
+    tenantSlug: '{{ tenant_slug|escapejs }}',
+    atendenteId: {{ atendente_id|default:'null' }},
+    atendenteNome: '{{ atendente_nome|escapejs }}',
+    sseEnabled: {% if sse_enabled %}true{% else %}false{% endif %},
+    endpoints: {
+        fluxos: '{% url 'atendimento_unificado:atendimento_unificado_api:fluxos_list' %}',
+        conversations: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+        conversationsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+        board: '{% url 'atendimento_unificado:atendimento_unificado_api:board_snapshot' %}',
+        boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
+        boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
+        sse: '{% url 'atendimento_unificado:workspace_events' %}',
+        customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+        export: '{% url 'atendimento_unificado:atendimento_unificado_api:export' %}'
+    }
+})"{% endblock %}
+{% block workspace_x_init %}x-init="init()"{% endblock %}
 
-        <div class="flex items-center gap-2 ml-4">
-            <label class="text-xs text-stone-500 uppercase tracking-wider">Fluxo</label>
-            <select x-model.number="fluxoId" @change="onFluxoChange()"
-                class="text-sm border border-stone-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none bg-white">
-                <template x-for="f in fluxos" :key="f.id">
-                    <option :value="f.id" x-text="f.nome + ' — ' + f.departamento_nome"></option>
-                </template>
-                <option x-show="fluxos.length === 0" disabled selected>Sem fluxos disponíveis</option>
-            </select>
-        </div>
+{% block workspace_topbar %}
+<header class="bg-[#1c1917] text-stone-100 h-12 flex items-center px-4 gap-4 border-b border-stone-800 shrink-0">
+    <a href="{% url 'tenants:dashboard' %}"
+        class="flex items-center gap-2 text-stone-300 hover:text-white transition-colors"
+        title="Voltar ao painel">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <img src="{% static 'img/logo_branca_smart_v2.png' %}" alt="Logo" class="h-6 w-auto">
+        <span class="text-sm font-semibold tracking-wide">Workspace</span>
+    </a>
 
-        <div class="ml-auto flex items-center gap-2">
-            <a :href="endpoints.export + '?fluxo=' + (fluxoId || '') + '&formato=csv'"
-                class="px-3 py-1 text-xs font-medium border border-stone-300 rounded-lg hover:bg-stone-50 text-stone-600 transition-colors"
-                title="Exportar conversas ativas em CSV">
-                ↓ CSV
-            </a>
-            <div class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium"
-                :class="sseConnected ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-600'">
-                <span class="w-1.5 h-1.5 rounded-full mr-1.5"
-                    :class="sseConnected ? 'bg-green-500 animate-pulse' : 'bg-stone-400'"></span>
-                <span x-text="sseConnected ? 'Tempo real' : 'Desconectado'"></span>
-            </div>
-            <div class="bg-stone-100 rounded-lg p-0.5 inline-flex">
-                <button @click="mode = 'conversas'"
-                    class="px-3 py-1 text-xs font-semibold rounded-md transition-colors"
-                    :class="mode === 'conversas' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'">
-                    Conversas
-                </button>
-                <button @click="mode = 'kanban'"
-                    class="px-3 py-1 text-xs font-semibold rounded-md transition-colors"
-                    :class="mode === 'kanban' ? 'bg-white text-stone-800 shadow-sm' : 'text-stone-500 hover:text-stone-700'">
-                    Kanban
-                </button>
-            </div>
-        </div>
+    <div class="flex items-center gap-2 ml-4">
+        <label class="text-[10px] text-stone-500 uppercase tracking-wider">Fluxo</label>
+        <select x-model.number="fluxoId" @change="onFluxoChange()"
+            class="text-xs bg-stone-800 border border-stone-700 rounded px-2 py-1 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none text-stone-100">
+            <template x-for="f in fluxos" :key="f.id">
+                <option :value="f.id" x-text="f.nome + ' — ' + f.departamento_nome"></option>
+            </template>
+            <option x-show="fluxos.length === 0" disabled selected>Sem fluxos disponíveis</option>
+        </select>
     </div>
 
-    <!-- Modo Conversas -->
-    <div x-show="mode === 'conversas'" class="flex-1 flex overflow-hidden">
-        <!-- Sidebar de conversas -->
-        <aside class="w-80 bg-white border-r border-stone-200 flex flex-col overflow-hidden">
-            <div class="p-3 border-b border-stone-200 space-y-2">
-                <input type="text" x-model.debounce.300ms="search"
-                    @input="loadConversations()"
-                    placeholder="Buscar contato, telefone ou assunto…"
-                    class="w-full text-sm border border-stone-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none">
-                <input type="text" x-model.debounce.300ms="filterTag"
-                    @input="loadConversations()"
-                    placeholder="Filtrar por tag…"
-                    class="w-full text-xs border border-stone-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none">
-            </div>
-            <div class="flex-1 overflow-y-auto divide-y divide-stone-100">
-                <template x-for="c in conversations" :key="c.atendimento_id">
-                    {% include "atendimento_unificado/partials/conversation_item.html" %}
-                </template>
-                <div x-show="conversations.length === 0" class="p-6 text-center text-stone-400 text-sm">
-                    Nenhuma conversa.
-                </div>
-            </div>
-        </aside>
-
-        <!-- Chat -->
-        <section class="flex-1 flex flex-col bg-stone-50">
-            <template x-if="activeConv">
-                <div class="flex flex-col h-full">
-                    <header class="bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-3">
-                        <div class="h-9 w-9 rounded-full bg-[#a98f71] flex items-center justify-center text-white font-bold text-xs"
-                            x-text="(activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-sm font-semibold text-stone-800 truncate" x-text="activeConv.contato_nome"></div>
-                            <div class="text-xs text-stone-500 truncate" x-text="activeConv.telefone"></div>
-                        </div>
-                        <div class="text-xs text-stone-400" x-text="activeConv.etapa_nome || '—'"></div>
-                    </header>
-                    <div class="flex-1 overflow-y-auto p-4 space-y-2" x-ref="messagesContainer">
-                        <template x-for="m in messages" :key="m.id">
-                            {% include "atendimento_unificado/partials/chat_message.html" %}
-                        </template>
-                        <div x-show="messages.length === 0" class="text-center text-stone-400 text-sm py-8">
-                            Nenhuma mensagem ainda.
-                        </div>
-                    </div>
-                    <footer class="bg-white border-t border-stone-200 p-3">
-                        <form @submit.prevent="sendMessage()" class="flex gap-2">
-                            <label class="flex items-center justify-center px-2 cursor-pointer text-stone-400 hover:text-stone-600 transition-colors" title="Enviar mídia">
-                                <input type="file" class="hidden" @change="uploadMedia($event, activeConv.atendimento_id)">
-                                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                                </svg>
-                            </label>
-                            <textarea x-model="composer"
-                                @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); sendMessage(); }"
-                                rows="1"
-                                placeholder="Digite sua mensagem… (Shift+Enter quebra linha)"
-                                class="flex-1 text-sm border border-stone-300 rounded-lg px-3 py-2 resize-none focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none"></textarea>
-                            <button type="submit" :disabled="sending"
-                                class="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center disabled:opacity-50">
-                                <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 12h14M12 5l7 7-7 7"/>
-                                </svg>
-                                Enviar
-                            </button>
-                        </form>
-                    </footer>
-                </div>
-            </template>
-            <template x-if="!activeConv">
-                <div class="flex-1 flex items-center justify-center text-stone-400 text-sm">
-                    Selecione uma conversa para visualizar.
-                </div>
-            </template>
-        </section>
-
-        <!-- Painel direito (detalhes) -->
-        <aside class="w-80 bg-stone-50 border-l border-stone-200 overflow-y-auto"
-            x-show="activeConv">
-            {% include "atendimento_unificado/partials/detail_panel.html" %}
-        </aside>
+    <div class="ml-auto flex items-center gap-3">
+        <a :href="endpoints.export + '?fluxo=' + (fluxoId || '') + '&formato=csv'"
+            class="px-2 py-1 text-[11px] font-medium border border-stone-700 rounded hover:bg-stone-800 text-stone-300 transition-colors"
+            title="Exportar conversas ativas em CSV">↓ CSV</a>
+        <div class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium"
+            :class="sseConnected ? 'bg-green-900/40 text-green-300' : 'bg-stone-800 text-stone-400'">
+            <span class="w-1.5 h-1.5 rounded-full mr-1.5"
+                :class="sseConnected ? 'bg-green-400 animate-pulse' : 'bg-stone-500'"></span>
+            <span x-text="sseConnected ? 'Tempo real' : 'Desconectado'"></span>
+        </div>
+        <span class="text-[11px] text-stone-400" x-text="atendenteNome || ''"></span>
+        <a href="{% url 'logout' %}" class="text-[11px] text-stone-400 hover:text-stone-200">Sair</a>
     </div>
+</header>
+{% endblock %}
 
-    <!-- Modo Kanban -->
-    <div x-show="mode === 'kanban'" class="flex-1 overflow-x-auto overflow-y-hidden bg-stone-50 p-4">
+{% block workspace_content %}
+<div id="workspace-root" class="flex-1 min-w-0 flex">
+
+    {# ==================== KANBAN (3/4 da tela) ==================== #}
+    <section class="flex-1 min-w-0 overflow-x-auto overflow-y-hidden bg-stone-50 p-3">
         <div class="flex gap-3 h-full">
             <template x-for="etapa in board.etapas" :key="etapa.id">
                 {% include "atendimento_unificado/partials/kanban_column.html" %}
@@ -168,12 +104,121 @@
                 Selecione um fluxo para exibir o kanban.
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Chat Drawer (sobre o kanban) -->
-    {% include "atendimento_unificado/partials/chat_drawer.html" %}
+    {# ==================== CHAT LATERAL (1/4 da tela) ==================== #}
+    <aside class="w-1/4 min-w-[320px] max-w-[480px] bg-white border-l border-stone-200 flex flex-col shrink-0">
+        <template x-if="!activeConv">
+            <div class="flex-1 flex flex-col items-center justify-center text-stone-400 text-sm p-6 text-center">
+                <svg class="w-12 h-12 mb-3 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+                <div>Clique em um atendimento</div>
+                <div class="text-xs text-stone-400 mt-1">para abrir a conversa aqui</div>
+            </div>
+        </template>
+        <template x-if="activeConv">
+            <div class="flex flex-col h-full min-h-0">
+                <header class="bg-[#ede9e0] border-b border-stone-200 px-3 py-2 flex items-center gap-2 shrink-0">
+                    <div class="h-9 w-9 rounded-full bg-[#a98f71] flex items-center justify-center text-white font-bold text-xs shrink-0"
+                        x-text="(activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-sm font-semibold text-stone-800 truncate" x-text="activeConv.contato_nome || 'Conversa'"></div>
+                        <div class="text-[11px] text-stone-500 truncate">
+                            <span x-text="activeConv.telefone || ''"></span>
+                            <span x-show="activeConv.etapa_nome"> · </span>
+                            <span x-text="activeConv.etapa_nome || ''"></span>
+                        </div>
+                    </div>
+                    <button @click="detailDrawerOpen = true"
+                        class="p-1.5 rounded text-stone-500 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+                        title="Detalhes do atendimento">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                    <button @click="activeConv = null; messages = []; activeDetail = null"
+                        class="p-1.5 rounded text-stone-500 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+                        title="Fechar conversa">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </header>
+
+                <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-[#efeae2]" x-ref="messagesContainer"
+                    style="background-image: linear-gradient(rgba(239,234,226,0.92), rgba(239,234,226,0.92)), url('data:image/svg+xml;utf8,<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;80&quot; height=&quot;80&quot; viewBox=&quot;0 0 80 80&quot;><circle cx=&quot;10&quot; cy=&quot;10&quot; r=&quot;1&quot; fill=&quot;%23c8b89c&quot;/><circle cx=&quot;40&quot; cy=&quot;40&quot; r=&quot;1&quot; fill=&quot;%23c8b89c&quot;/></svg>');">
+                    <template x-for="m in messages" :key="m.id">
+                        {% include "atendimento_unificado/partials/chat_message.html" %}
+                    </template>
+                    <div x-show="messages.length === 0" class="text-center text-stone-400 text-xs py-8">
+                        Nenhuma mensagem ainda.
+                    </div>
+                </div>
+
+                <footer class="bg-stone-50 border-t border-stone-200 px-3 py-2 shrink-0">
+                    <form @submit.prevent="sendMessage()" class="flex gap-2 items-end">
+                        <label class="flex items-center justify-center p-1.5 cursor-pointer text-stone-500 hover:bg-stone-200 hover:text-stone-700 rounded transition-colors shrink-0" title="Anexar mídia">
+                            <input type="file" class="hidden" accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" @change="uploadMedia($event, activeConv.atendimento_id)">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
+                        </label>
+                        <textarea x-model="composer"
+                            @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); sendMessage(); }"
+                            rows="1"
+                            placeholder="Mensagem… (Shift+Enter quebra linha)"
+                            class="flex-1 text-sm border border-stone-300 bg-white rounded-2xl px-3 py-2 resize-none focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none"></textarea>
+                        <button type="submit" :disabled="sending"
+                            class="w-9 h-9 bg-green-600 text-white rounded-full hover:bg-green-700 transition-colors flex items-center justify-center disabled:opacity-50 shrink-0"
+                            title="Enviar">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                        </button>
+                    </form>
+                </footer>
+            </div>
+        </template>
+    </aside>
+
+    {# ==================== DRAWER DE DETALHES (overlay) ==================== #}
+    <div x-show="detailDrawerOpen" x-transition.opacity
+        class="fixed inset-0 z-40 bg-stone-900/40"
+        @click.self="detailDrawerOpen = false"
+        style="display: none;"></div>
+    <aside x-show="detailDrawerOpen"
+        x-transition:enter="transition transform ease-out duration-200"
+        x-transition:enter-start="translate-x-full"
+        x-transition:enter-end="translate-x-0"
+        x-transition:leave="transition transform ease-in duration-150"
+        x-transition:leave-start="translate-x-0"
+        x-transition:leave-end="translate-x-full"
+        class="fixed top-0 right-0 bottom-0 w-full md:w-[400px] bg-stone-50 shadow-2xl z-50 flex flex-col overflow-hidden"
+        style="display: none;">
+        <header class="bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between shrink-0">
+            <h3 class="text-sm font-bold text-stone-800">Detalhes do Atendimento</h3>
+            <button @click="detailDrawerOpen = false"
+                class="p-1 rounded text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors"
+                title="Fechar">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </header>
+        <div class="flex-1 overflow-y-auto">
+            {% include "atendimento_unificado/partials/detail_panel.html" %}
+        </div>
+    </aside>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
-<script src="{% static 'atendimento_unificado/js/workspace_alpine.js' %}" defer></script>
+{# IMPORTANT: sem defer — precisa rodar antes do Alpine (defer no head). #}
+<script src="{% static_versioned 'atendimento_unificado/js/workspace_alpine.js' %}"></script>
 {% endblock %}

@@ -1,10 +1,10 @@
 {# Partial usado dentro de <template x-for="etapa in board.etapas">. Recebe `etapa`. #}
-<div class="w-72 shrink-0 bg-stone-100 rounded-xl flex flex-col overflow-hidden">
-    <div class="px-3 pt-2 pb-2 border-b border-stone-200 bg-white"
+<div class="w-72 shrink-0 bg-stone-100 rounded-xl flex flex-col overflow-hidden max-h-full shadow-sm">
+    <div class="px-3 pt-2.5 pb-2 border-b border-stone-200 bg-white"
         :style="'border-top: 3px solid ' + etapa.cor">
         <div class="flex items-center justify-between">
-            <div class="text-xs font-bold uppercase tracking-wider text-stone-700" x-text="etapa.nome"></div>
-            <div class="text-[10px] text-stone-500 bg-stone-100 rounded-full px-2 py-0.5" x-text="etapa.count"></div>
+            <div class="text-xs font-bold uppercase tracking-wider text-stone-700 truncate" x-text="etapa.nome"></div>
+            <div class="text-[10px] text-stone-600 bg-stone-100 rounded-full px-2 py-0.5 font-semibold shrink-0" x-text="etapa.count"></div>
         </div>
         <div class="text-[10px] text-stone-400 uppercase tracking-widest mt-0.5"
             x-text="etapa.tipo_etapa"></div>
@@ -13,5 +13,9 @@
         <template x-for="card in (board.cards[etapa.id] || [])" :key="card.atendimento_id">
             {% include "atendimento_unificado/partials/kanban_card.html" %}
         </template>
+        <div x-show="(board.cards[etapa.id] || []).length === 0"
+            class="text-center text-stone-300 text-[10px] py-4 italic select-none">
+            Solte cards aqui
+        </div>
     </div>
 </div>

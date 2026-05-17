@@ -5,12 +5,14 @@
  * - Consome endpoints JSON declarados em workspace.html
  * - Conecta-se ao stream SSE para atualizações ao vivo
  *
+ * Layout fixo: Kanban à esquerda + Chat lateral fixo à direita (1/4 da tela).
+ * Clicar em um card abre a conversa no painel direito.
+ *
  * Convenções:
- *  - `mode`: 'conversas' | 'kanban'
- *  - `conversations`: lista da sidebar (modo conversas)
+ *  - `conversations`: lista (usada apenas como cache de preview para SSE)
  *  - `board`: { etapas: [...], cards: { '<etapa_id>': [...] } }
- *  - `activeConv`: conversa atualmente aberta (chat ativo ou drawer)
- *  - `activeDetail`: payload de /detail/ para o painel direito
+ *  - `activeConv`: conversa atualmente aberta no chat lateral
+ *  - `activeDetail`: payload de /detail/ (campos personalizados, etc.)
  */
 (function () {
     'use strict';
@@ -83,7 +85,6 @@
 
     window.workspaceStore = function (init) {
         return {
-            mode: 'conversas',
             fluxoId: init.fluxoId || null,
             fluxos: [],
             conversations: [],
@@ -96,7 +97,6 @@
             filterTag: '',
             sending: false,
             uploading: false,
-            chatDrawerOpen: false,
             sseConnected: false,
             sse: null,
             _sseRetryDelay: 2000,
@@ -108,6 +108,8 @@
             tenantSlug: init.tenantSlug,
             atendenteId: init.atendenteId,
             atendenteNome: init.atendenteNome,
+            sseEnabled: init.sseEnabled === true,
+            detailDrawerOpen: false,
 
             init: async function () {
                 try {
@@ -119,13 +121,12 @@
                         this.loadConversations(),
                         this.loadBoard(),
                     ]);
-                    this.connectSSE();
+                    if (this.sseEnabled) {
+                        this.connectSSE();
+                    }
                 } catch (exc) {
                     console.error('Falha ao inicializar Workspace', exc);
                 }
-                this.$watch && this.$watch('mode', (m) => {
-                    if (m === 'kanban') this.loadBoard();
-                });
             },
 
             onFluxoChange: function () {
@@ -169,26 +170,44 @@
                     try { s.destroy(); } catch (_) {}
                 });
                 this._sortableInstances = [];
-                if (typeof Sortable === 'undefined') return;
+                if (typeof Sortable === 'undefined') {
+                    console.warn('[workspace] SortableJS não carregado');
+                    return;
+                }
                 const self = this;
-                document.querySelectorAll('.kanban-col-body').forEach(function (el) {
+                const cols = document.querySelectorAll('.kanban-col-body');
+                console.log('[workspace] initSortable: ' + cols.length + ' columns');
+                cols.forEach(function (el) {
                     const instance = Sortable.create(el, {
                         group: 'kanban-cards',
-                        animation: 150,
-                        ghostClass: 'opacity-40',
-                        dragClass: 'ring-2 ring-[#a98f71] shadow-xl',
-                        onStart: function () {
+                        draggable: '.kanban-card',
+                        animation: 180,
+                        ghostClass: 'kanban-ghost',
+                        chosenClass: 'kanban-chosen',
+                        dragClass: 'kanban-drag',
+                        // Ignora cliques em botões dentro do card (ex.: ícone "Detalhes")
+                        filter: '.kanban-no-drag, .kanban-no-drag *',
+                        preventOnFilter: false,
+                        onStart: function (evt) {
                             self.isDragging = true;
                         },
                         onEnd: function (evt) {
-                            self.isDragging = false;
-                            const atendimentoId = parseInt(evt.item.dataset.atendId, 10);
-                            const fromEtapaId = parseInt(evt.from.dataset.etapaId, 10);
-                            const toEtapaId = parseInt(evt.to.dataset.etapaId, 10);
-                            if (!atendimentoId || !toEtapaId || fromEtapaId === toEtapaId) {
-                                // Drop na mesma coluna ou sem destino válido — apenas garante
-                                // que o estado Alpine fique consistente com o DOM.
+                            // O click só dispara se mousedown+mouseup no mesmo elemento sem move;
+                            // ainda assim mantemos timeout pequeno como defense-in-depth.
+                            setTimeout(function () { self.isDragging = false; }, 50);
+
+                            const atendimentoId = parseInt(evt.item.getAttribute('data-atend-id'), 10);
+                            const fromEtapaId = parseInt(evt.from.getAttribute('data-etapa-id'), 10);
+                            const toEtapaId = parseInt(evt.to.getAttribute('data-etapa-id'), 10);
+                            console.log('[workspace] onEnd', { atendimentoId, fromEtapaId, toEtapaId });
+
+                            if (!atendimentoId || !toEtapaId) {
+                                console.warn('[workspace] move cancelado: ids invalidos');
                                 self.loadBoard();
+                                return;
+                            }
+                            if (fromEtapaId === toEtapaId) {
+                                // Reordenacao na mesma coluna - apenas refresh local
                                 return;
                             }
                             jsonFetch(self.endpoints.boardMove, {
@@ -198,18 +217,34 @@
                                     etapa_destino_id: toEtapaId,
                                 }),
                             }).then(function () {
-                                // Recarrega do servidor (estado autoritativo) — re-renderiza
-                                // o board e re-inicializa SortableJS limpando o DOM movido.
                                 self.loadBoard();
                             }).catch(function (exc) {
-                                console.error('Falha ao mover card via drag', exc);
-                                // Rollback robusto: recarrega do servidor (DOM e estado).
+                                console.error('[workspace] Falha no boardMove', exc);
                                 self.loadBoard();
                                 alert((exc && exc.message) || 'Falha ao mover card.');
                             });
                         },
                     });
                     self._sortableInstances.push(instance);
+                });
+            },
+
+            onCardClick: function (id, event) {
+                // Sortable cancela `click` quando o item foi arrastado.
+                // Mesmo assim, defense-in-depth: ignora se estamos em meio a drag.
+                if (this.isDragging) return;
+                return this.openChat(id);
+            },
+
+            onCardDetail: function (id, event) {
+                if (event) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+                if (this.isDragging) return;
+                const self = this;
+                return this.openChat(id).then(function () {
+                    self.detailDrawerOpen = true;
                 });
             },
 
@@ -225,12 +260,11 @@
                 });
             },
 
-            openChatDrawer: function (id) {
-                this.chatDrawerOpen = true;
-                // Sintetiza conversa rasa a partir do card kanban
+            openChat: function (id) {
+                // Sintetiza conversa rasa a partir do card kanban quando
+                // não houver entrada correspondente na lista de conversations.
                 let conv = this.conversations.find((c) => c.atendimento_id === id);
                 if (!conv) {
-                    // Procura entre os cards do board
                     for (const [etapaId, cards] of Object.entries(this.board.cards || {})) {
                         const card = (cards || []).find((c) => c.atendimento_id === id);
                         if (card) {
@@ -252,6 +286,11 @@
                 ]).then(() => {
                     this.$nextTick(() => this.scrollMessagesBottom());
                 });
+            },
+
+            // Compat: kanban_card.html ainda chama openChatDrawer.
+            openChatDrawer: function (id) {
+                return this.openChat(id);
             },
 
             loadMessages: function (id) {
@@ -312,7 +351,7 @@
 
             scrollMessagesBottom: function () {
                 const refs = this.$refs || {};
-                const el = refs.messagesContainer || refs.drawerMessages;
+                const el = refs.messagesContainer;
                 if (el) el.scrollTop = el.scrollHeight;
             },
 
@@ -385,7 +424,7 @@
                     case 'board.moved':
                     case 'atendimento.updated':
                     case 'atendimento.created':
-                        if (!this.isDragging && this.mode === 'kanban') this.loadBoard();
+                        if (!this.isDragging) this.loadBoard();
                         this.loadConversations();
                         break;
                     case 'custom_field.updated':

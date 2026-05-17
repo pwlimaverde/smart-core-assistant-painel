@@ -1,7 +1,8 @@
 ---
-status: in_progress
-progress: 80
+status: archived
+progress: 100
 generated: 2026-05-14
+archived_at: 2026-05-17
 source: "docs_dev/planejamento/atendimento_unificado/a-usabilidade-do-sistema-stateful-allen.md"
 workflow: "atendimento-unificado-chat-kanban"
 scale: "Large"
@@ -76,7 +77,7 @@ phases:
       - "Habilitar feature flag ATENDIMENTO_UNIFICADO_ENABLED em 1 tenant piloto, observar 24h"
       - "Rollout gradual nos demais tenants (1 a 1, intervalo 4h)"
       - "Arquivar plano e registrar lessons learned"
-lastUpdated: "2026-05-16T23:15:00.000Z"
+lastUpdated: "2026-05-17T00:00:00.000Z"
 ---
 
 # Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados
@@ -820,7 +821,7 @@ git push origin v1.4.0
 
 ## Execution History
 
-> Last updated: 2026-05-16T23:15:00Z | Progress: 80% (Fase C em andamento)
+> Last updated: 2026-05-17T00:00:00Z | Progress: 100% (Plano arquivado — pendente apenas execução de deploy pelo usuário)
 
 ### Marcos concluídos
 
@@ -833,6 +834,8 @@ git push origin v1.4.0
 | 2026-05-16 | V.4 | Lint + type-check 0 erros em todos os arquivos | — |
 | 2026-05-16 | E.3 | Refinamentos: drag-drop, SLA, mídia, export, filtro | `d7d3d98`, `08e02d4` |
 | 2026-05-16 | C.6 | Bump v1.0.7 → v1.1.0 + CHANGELOG | `521e5d0` |
+| 2026-05-17 | C.1-C.4 | Documentação técnica (architecture/data-flow/glossary/Nginx) atualizada | _este commit_ |
+| 2026-05-17 | C.11-C.12 | Plano arquivado + lessons learned consolidadas | _este commit_ |
 
 ### Bugs críticos descobertos e corrigidos durante a revisão pós-implementação
 
@@ -860,3 +863,88 @@ git push origin v1.4.0
 
 **Pendência arquitetural separada (não bloqueia release)**:
 - E.2.9b — wire `selectors.get_campos_for_prompt()` ao `attendance_orchestrator.py` para que `AnaliseMensageParameters.campos_coletados/pendentes` recebam os valores reais. Requer tocar app de produção (`atendimentos`) → criar tarefa/plano separado para preservar princípio de independência.
+
+---
+
+## Lessons Learned (C.12)
+
+Consolidação de aprendizados do ciclo completo (P → R → E.1/E.2/E.3 → V → C):
+
+### 1. Princípio de independência cross-app vale o custo de duplicar helpers
+
+A diretriz **"nenhum app de produção é editado para servir o Workspace"** (ADR-005)
+foi a melhor decisão arquitetural do plano:
+
+- Rollback ficou trivial: remover `atendimento_unificado` de `INSTALLED_APPS` e
+  dropar tabelas `atu_*`. Zero impacto em dados de produção.
+- Permitiu paralelizar trabalho: enquanto o `atendimento_unificado` evoluía em
+  feature branch, hotfixes em `trello_sync`/`evolution_sync` continuaram em master.
+- Forçou criar abstrações limpas (ex.: `selectors.get_campos_for_prompt` retorna
+  tuplas prontas, em vez de o orchestrator importar models do Workspace).
+- A única exceção justificada (`analise_mensage_datasource._formatar_campos_personalizados`)
+  fica documentada explicitamente na decisão `dec-1778847348520`. Toda exceção
+  deve ter ADR.
+
+### 2. Signal cross-app pode causar double-send silencioso
+
+O bug do **double-send de mídia** (`08e02d4`) ensinou:
+
+- Quando o app A escreve em modelos do app B, e o app B tem signals que disparam
+  comportamento (envio HTTP, side-effects), é fácil acionar comportamento
+  duplicado sem perceber.
+- Solução: identificar o **guarda** que o signal usa (no caso, `resposta_bot`
+  vazio em `evolution_sync._on_message_saved` linha 115) e respeitar a
+  convenção em vez de bypass.
+- Regra prática: ao escrever em modelo de outro app, leia o signal handler do
+  app dono antes — ele define o contrato de "quando disparar".
+
+### 3. Drag-drop + SSE exige flag de bloqueio + rollback autoritativo
+
+Combinar **SortableJS** (manipula DOM diretamente) com **Alpine reactivity** +
+**SSE updates** gerou inconsistência ao falhar um drop:
+
+- Tentar reconciliar via snapshot (`_boardSnapshot`) deixou o DOM divergente do
+  estado Alpine após SortableJS já ter mexido nos nodes.
+- Padrão correto (commit `08e02d4`): em qualquer erro, chamar `loadBoard()`
+  para reconstruir o estado a partir do servidor — fonte de verdade.
+- Flag `isDragging` no store bloqueia atualizações SSE enquanto o arraste está
+  em andamento; sem ela, eventos podem reorganizar colunas no meio do drop.
+
+### 4. Deploy direto em produção é viável **com** feature flag por tenant
+
+Sem ambiente de teste (decisão `dec-1778848538078`), a única forma segura de
+liberar o feature foi:
+
+- Feature flag em `settings.py` + allowlist `ATENDIMENTO_UNIFICADO_TENANT_SLUGS`.
+- Migrations criam **apenas tabelas novas** (`atu_*`), nunca `ALTER`/`DROP` em
+  tabela legada. Migration reversa = drop puro.
+- Rollback do deploy = `git push --delete origin <tag>` + redeploy da tag
+  anterior pelo workflow do GitHub Actions.
+- Smoke test em 1 tenant piloto antes do rollout gradual.
+
+### 5. SSE via async view nativa do Django ≠ Channels
+
+Confirmou-se que **não é necessário Django Channels** para SSE:
+
+- `StreamingHttpResponse` + iterator `async` (Django 4.1+) + `redis.asyncio`
+  bastam para a maioria dos casos de tempo real read-only (server → client).
+- Channels só seria necessário se houvesse WebSockets (bidirecional).
+- Trade-off: precisa worker Uvicorn (não Gunicorn sync), e Nginx precisa
+  `proxy_buffering off`. Tudo documentado em `.context/docs/workspace-sse-nginx.md`.
+
+### 6. Celery + Redis + `countdown=N` + `acks_late=True` tem bug conhecido
+
+Reaprendido durante E.2: agendar tasks via `apply_async(countdown=N)` com
+`acks_late=True` em Redis causa tasks travadas no ETA scheduler. Solução
+adotada: `time.sleep(N)` dentro da própria task (registrado também em
+`MEMORY.md`).
+
+### 7. Pyright em código Django tem limites conhecidos
+
+Models do Django + `BigIntegerField` lógico (sem FK) geram muitos warnings
+"partially unknown type" sem oferecer valor real. Pragma `# pyright: reportXxxx=false`
+no topo dos arquivos é aceitável quando:
+
+- O arquivo está testado;
+- Os warnings são apenas de inferência sobre Django attributes;
+- Não há erro real (apenas `0 errors, N warnings`).

@@ -76,6 +76,57 @@ Caso de uso que encapsula uma operação de negócio específica. Coordena datas
 ### Webhook
 Callback HTTP que permite receber notificações de eventos externos. Usado para receber mensagens do WhatsApp via Evolution API.
 
+### Workspace (Atendimento Unificado)
+Tela única do operador (`/workspace/`) que combina chat estilo WhatsApp
+Web e Kanban sobre `EtapaFluxo`/`Atendimento`. Entregue pelo app
+`atendimento_unificado` e disparada por um item dedicado no sidebar do
+`base_dashboard.html`. Atualização em tempo real via Server-Sent Events
+sobre Redis pub/sub. Trello permanece como espelho passivo.
+
+### Campo Personalizado
+Definição configurável por tenant (`CampoPersonalizado`) que descreve um
+dado estruturado a ser coletado durante o atendimento — por exemplo
+"CNPJ do cliente" ou "data preferida de visita". Cada campo tem escopo
+`GLOBAL` (todos os fluxos) ou `FLUXO` (vinculado a um
+`FluxoAtendimento`), tipo (`texto`/`numero`/`data`/`escolha`/`booleano`)
+e flag `extrair_automaticamente` que indica se o bot deve tentar extrair
+o valor da conversa via LLM.
+
+### Valor de Campo (`ValorCampoAtendimento`)
+Valor concreto de um `CampoPersonalizado` para um `Atendimento`
+específico. Persiste origem (`MANUAL`/`BOT`/`IMPORT`), confiança
+(quando origem é BOT) e o ID lógico da mensagem que originou a extração.
+Garante idempotência: nunca sobrescreve `MANUAL` e só sobrescreve `BOT`
+quando nova confiança é maior.
+
+### LeituraAtendimento
+Tabela própria do app `atendimento_unificado` (`atu_leitura_atendimento`)
+que registra a última leitura de um atendimento por um atendente
+específico. Substitui campo `data_ultima_leitura_atendente` em
+`Atendimento` para preservar o princípio de independência cross-app.
+Cálculo de não-lidos via JOIN com `Mensagem`.
+
+### SSE (Server-Sent Events)
+Mecanismo HTTP unidirecional usado para enviar atualizações em tempo
+real do servidor para o navegador. O Workspace usa SSE no endpoint
+`/workspace/events/` (async view) sobre canal Redis pub/sub
+`sse:{tenant_slug}:events` — sem necessidade de Django Channels.
+
+### Feature Flag `ATENDIMENTO_UNIFICADO_ENABLED`
+Configuração global em `settings.py` (env vars) que habilita o Workspace.
+Allowlist por tenant via `ATENDIMENTO_UNIFICADO_TENANT_SLUGS`. Default
+`OFF` — rotas `/workspace/*` retornam 200 com tela "indisponível" e o
+item de sidebar fica oculto. Permite rollout gradual por tenant sem
+deploy.
+
+### Princípio de Independência Cross-App
+Diretriz arquitetural: todo app utilitário ou de visualização (como
+`atendimento_unificado` e `trello_sync`) integra-se aos apps de produção
+exclusivamente via Django signals e Celery tasks **dentro** do próprio
+app. FKs cross-app são lógicas (`BigIntegerField`). Apps de produção
+nunca são editados para servir consumidores. Permite rollback simples
+(remover de `INSTALLED_APPS`) sem afetar dados existentes.
+
 ---
 
 ## Siglas
@@ -94,6 +145,7 @@ Callback HTTP que permite receber notificações de eventos externos. Usado para
 | REST | Representational State Transfer |
 | SaaS | Software as a Service |
 | SDK | Software Development Kit |
+| SSE | Server-Sent Events |
 | UI | User Interface |
 | UX | User Experience |
 

@@ -3,9 +3,10 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados](./atendimento-unificado-chat-kanban.md) — ativo (workflow PREVC `Large`, fase **P**)
+(vazio — nenhum plano ativo)
 
 ## Arquivo
+- [Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados](./archive/atendimento-unificado-chat-kanban.md) — arquivado em 2026-05-17 (v1.1.0)
 - [Feature Interpret Media](./archive/feature-interpret-media.md) — concluído em 2026-05-14
 
 ## How To Create Or Update Plans

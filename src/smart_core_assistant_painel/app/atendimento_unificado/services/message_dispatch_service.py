@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from django.db import transaction
+from django.db import router, transaction
 from loguru import logger
 
 from smart_core_assistant_painel.app.atendimentos.models import (
@@ -50,7 +50,7 @@ def send_text_message(
     if not texto:
         raise ValueError("Texto da mensagem não pode ser vazio.")
 
-    with transaction.atomic():
+    with transaction.atomic(using=router.db_for_write(Atendimento)):
         atend = Atendimento.objects.select_for_update().get(id=atendimento_id)
 
         metadados = _build_metadados(atend, atendente)

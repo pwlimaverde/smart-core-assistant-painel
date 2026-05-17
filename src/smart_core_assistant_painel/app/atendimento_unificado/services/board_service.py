@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from django.db import transaction
+from django.db import router, transaction
 from loguru import logger
 
 from smart_core_assistant_painel.app.atendimentos.models import (
@@ -77,7 +77,13 @@ def move_atendimento(
     Returns:
         ``BoardMoveResult`` com flags úteis para publicar SSE.
     """
-    with transaction.atomic():
+    # IMPORTANTE: passar `using=router.db_for_write(Atendimento)` no
+    # transaction.atomic() é obrigatório em ambiente multi-tenant. Sem ele,
+    # `transaction.atomic()` abre a transação no banco DEFAULT, mas o
+    # `select_for_update()` é roteado para o banco do tenant — que não está
+    # em transação — disparando `TransactionManagementError`. Mesmo padrão
+    # usado em trello_sync.ticket_sync_service.process_webhook_card_move.
+    with transaction.atomic(using=router.db_for_write(Atendimento)):
         atend = (
             Atendimento.objects.select_for_update()
             .select_related("fluxo_atendimento", "etapa_atual")
@@ -148,7 +154,7 @@ def assign_atendimento(
     com_saudacao: bool = True,
 ) -> Atendimento:
     """Atribui atendente a um atendimento (override manual)."""
-    with transaction.atomic():
+    with transaction.atomic(using=router.db_for_write(Atendimento)):
         atend = Atendimento.objects.select_for_update().get(id=atendimento_id)
         if com_saudacao:
             atend.transferir_para_humano_com_saudacao(

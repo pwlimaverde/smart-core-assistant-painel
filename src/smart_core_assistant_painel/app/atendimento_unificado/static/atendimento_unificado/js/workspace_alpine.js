@@ -5,12 +5,14 @@
  * - Consome endpoints JSON declarados em workspace.html
  * - Conecta-se ao stream SSE para atualizações ao vivo
  *
+ * Layout fixo: Kanban à esquerda + Chat lateral fixo à direita (1/4 da tela).
+ * Clicar em um card abre a conversa no painel direito.
+ *
  * Convenções:
- *  - `mode`: 'conversas' | 'kanban'
- *  - `conversations`: lista da sidebar (modo conversas)
+ *  - `conversations`: lista (usada apenas como cache de preview para SSE)
  *  - `board`: { etapas: [...], cards: { '<etapa_id>': [...] } }
- *  - `activeConv`: conversa atualmente aberta (chat ativo ou drawer)
- *  - `activeDetail`: payload de /detail/ para o painel direito
+ *  - `activeConv`: conversa atualmente aberta no chat lateral
+ *  - `activeDetail`: payload de /detail/ (campos personalizados, etc.)
  */
 (function () {
     'use strict';
@@ -83,7 +85,6 @@
 
     window.workspaceStore = function (init) {
         return {
-            mode: 'conversas',
             fluxoId: init.fluxoId || null,
             fluxos: [],
             conversations: [],
@@ -96,7 +97,6 @@
             filterTag: '',
             sending: false,
             uploading: false,
-            chatDrawerOpen: false,
             sseConnected: false,
             sse: null,
             _sseRetryDelay: 2000,
@@ -123,9 +123,6 @@
                 } catch (exc) {
                     console.error('Falha ao inicializar Workspace', exc);
                 }
-                this.$watch && this.$watch('mode', (m) => {
-                    if (m === 'kanban') this.loadBoard();
-                });
             },
 
             onFluxoChange: function () {
@@ -225,12 +222,11 @@
                 });
             },
 
-            openChatDrawer: function (id) {
-                this.chatDrawerOpen = true;
-                // Sintetiza conversa rasa a partir do card kanban
+            openChat: function (id) {
+                // Sintetiza conversa rasa a partir do card kanban quando
+                // não houver entrada correspondente na lista de conversations.
                 let conv = this.conversations.find((c) => c.atendimento_id === id);
                 if (!conv) {
-                    // Procura entre os cards do board
                     for (const [etapaId, cards] of Object.entries(this.board.cards || {})) {
                         const card = (cards || []).find((c) => c.atendimento_id === id);
                         if (card) {
@@ -252,6 +248,11 @@
                 ]).then(() => {
                     this.$nextTick(() => this.scrollMessagesBottom());
                 });
+            },
+
+            // Compat: kanban_card.html ainda chama openChatDrawer.
+            openChatDrawer: function (id) {
+                return this.openChat(id);
             },
 
             loadMessages: function (id) {
@@ -312,7 +313,7 @@
 
             scrollMessagesBottom: function () {
                 const refs = this.$refs || {};
-                const el = refs.messagesContainer || refs.drawerMessages;
+                const el = refs.messagesContainer;
                 if (el) el.scrollTop = el.scrollHeight;
             },
 
@@ -385,7 +386,7 @@
                     case 'board.moved':
                     case 'atendimento.updated':
                     case 'atendimento.created':
-                        if (!this.isDragging && this.mode === 'kanban') this.loadBoard();
+                        if (!this.isDragging) this.loadBoard();
                         this.loadConversations();
                         break;
                     case 'custom_field.updated':

@@ -1,0 +1,141 @@
+{
+  "planSlug": "atendimento-unificado-chat-kanban",
+  "progress": 0,
+  "phases": {
+    "phase-2": {
+      "status": "in_progress",
+      "updatedAt": "2026-05-16T15:16:02.715Z"
+    }
+  },
+  "decisions": [
+    {
+      "title": "Kanban interno deve ter paridade funcional total com Trello",
+      "description": "O Kanban do Workspace não é só visualização: precisa replicar TODA a lógica que hoje só existe no `trello_sync`. Decisões: (1) Cada `FluxoAtendimento` é um quadro independente (não cada departamento). O seletor é por fluxo. (2) Cross-board move atualiza `atendimento.fluxo_atendimento_id` E `departamento_id`. (3) Mover card aplica regras `tipo_etapa` automaticamente: FILA→nada, TRABALHO→`transferir_para_humano_com_saudacao(atendente_id)` (atribui o atendente que moveu E envia saudação), ESPERA→status PENDENCIA, FINALIZACAO→`finalizar_atendimento` (RESOLVIDO ou CANCELADO conforme nome contém 'cancel'). (4) Card visual espelha `_build_card_name` (contato - cliente - assunto - intents) + métricas + label de prioridade + atendente + preview da última mensagem. (5) Clicar em qualquer card abre drawer/modal de chat sobre o kanban (opção A — recomendada). (6) Mudanças via Workspace propagam ao Trello via signals existentes; mudanças no Trello propagam ao Workspace via novo signal SSE em `Atendimento`/`MovimentoFluxo`. (7) Atendimento de personalização do card: campos visuais fixos na E.1; `CampoPersonalizado.mostrar_no_card` na E.2 adiciona badges custom.",
+      "phase": "P",
+      "alternatives": [
+        "Manter Kanban apenas como visualização passiva (refletindo Trello via SSE) — REJEITADA: usuário perde funcionalidade ao usar painel interno em vez de Trello.",
+        "Quadro por departamento (não por fluxo) — REJEITADA: contradiz o modelo de dados onde cada FluxoAtendimento é 1:1 com TrelloBoard.",
+        "Mudar para modo Conversas ao clicar em card (opção B) — Alternativa válida mas inferior em UX: perde contexto visual do kanban."
+      ],
+      "status": "accepted",
+      "id": "dec-1778786397411",
+      "decidedAt": "2026-05-14T19:19:57.413Z"
+    },
+    {
+      "title": "Estrutura do app espelhando trello_sync com apps.py.ready() carregando signals",
+      "description": "O app `atendimento_unificado` adota a mesma estrutura de arquivos do app `trello_sync`: __init__.py, apps.py, admin.py, tenant_admin.py, urls.py, api_urls.py, views.py, views_api.py, views_sse.py, selectors.py, models.py, signals.py, tasks.py, services/ (com card_renderer.py incluso), templates/, static/, migrations/. O `apps.py` define `AtendimentoUnificadoConfig` com método `ready()` que importa `signals` dentro de try/except (espelhando TrelloSyncConfig em src/smart_core_assistant_painel/app/trello_sync/apps.py linhas 9-17), garantindo que os receivers fiquem registrados no boot do Django mesmo se houver falha em models ainda não migrados.",
+      "phase": "P",
+      "alternatives": [
+        "Estrutura ad-hoc sem espelhar trello_sync (rejeitada — quebra convenção do projeto)",
+        "Carregar signals em __init__.py (rejeitada — padrão Django recomenda AppConfig.ready())",
+        "Omitir tasks.py do app e deixar Celery tasks soltas em outro lugar (rejeitada — viola independência)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778847331113",
+      "decidedAt": "2026-05-15T12:15:31.113Z"
+    },
+    {
+      "title": "Princípio de independência cross-app: signals e tasks moram dentro de atendimento_unificado",
+      "description": "Toda integração entre `atendimento_unificado` e outros apps (`atendimentos`, `trello_sync`, `ai_engine`, `evolution_sync`) acontece via signals e Celery tasks DENTRO de `atendimento_unificado/`. Não é permitido editar lógica de negócio nos outros apps. A única exceção é criar métodos públicos e genéricos em outros apps que `atendimento_unificado` consuma — sem que esses outros apps mencionem `atendimento_unificado` em seu código. Mesma direção de acoplamento adotada pelo `trello_sync` hoje (escuta signals de `Atendimento`/`Mensagem` sem que `atendimentos` saiba da existência do Trello).",
+      "phase": "P",
+      "alternatives": [
+        "Editar attendance_orchestrator e ticket_sync_service diretamente (rejeitada — gera acoplamento bidirecional)",
+        "Criar app utility compartilhado entre os módulos (rejeitada — adiciona indireção sem benefício)",
+        "Usar Django signals customizados expostos pelos outros apps (considerada — viável apenas como complemento, não substitui o princípio)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778847338561",
+      "decidedAt": "2026-05-15T12:15:38.561Z"
+    },
+    {
+      "title": "Reescrever E.2.7 e E.2.10 para usar signals em vez de editar apps externos",
+      "description": "E.2.7 original editava attendance_orchestrator._process_message_and_respond para disparar extract_custom_fields_async. Substituído por: signal `post_save Mensagem` em `atendimento_unificado/signals.py` que dispara a task quando `remetente=ASSISTENTE_VIRTUAL` e a mensagem corresponde a uma resposta gravada. E.2.10 original editava ticket_sync_service._build_card_description para appendar 'Campos coletados:'. Substituído por: signal `post_save ValorCampoAtendimento` em `atendimento_unificado/signals.py` com debounce de 5s (chave Redis update_card:<id>) que dispara task `sync_campos_to_trello_card(atendimento_id)` em `atendimento_unificado/tasks.py`. Essa task chama método público `TicketSyncService.update_card_description(atendimento_id, extra_sections=[...])` — criado em `trello_sync` aceitando seções extras genéricas, sem mencionar campos personalizados nem `atendimento_unificado`. E.2.9 (injeção de campos no system prompt do analise_mensage_datasource) permanece como edição direta, pois construção de prompt acontece em request-time síncrono e não pode ser modelada via signal — o acoplamento é controlado via AnaliseMensageParameters.campos_coletados (E.2.8), sem que analise_mensage saiba sobre CampoPersonalizado.",
+      "phase": "P",
+      "alternatives": [
+        "Manter edições diretas em attendance_orchestrator e ticket_sync_service (rejeitada — viola princípio de independência)",
+        "Usar Django signals customizados expostos por atendimentos e trello_sync (considerada — adiciona complexidade desnecessária)",
+        "Substituir E.2.9 também por hook (rejeitada — request-time síncrono, signals não se aplicam)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778847348520",
+      "decidedAt": "2026-05-15T12:15:48.520Z"
+    },
+    {
+      "title": "Não-lidos via model próprio LeituraAtendimento (zero alteração em atendimentos)",
+      "description": "Substituir a adição do campo `Atendimento.data_ultima_leitura_atendente` (E.1.10 original) pela criação de model próprio `LeituraAtendimento(atendimento_id: BigIntegerField, atendente_id: BigIntegerField, ultima_leitura_at: DateTimeField)` em `atendimento_unificado/models.py` na fase E.1. Tabela própria `atu_leitura_atendimento` com `unique_together=[(\"atendimento_id\",\"atendente_id\")]` e `db_index=True` em `ultima_leitura_at`. Atendimento e atendente referenciados por ID (não FK) para evitar relação cruzada com schema de outros apps. Cálculo de não-lidos via JOIN em selectors.py do app novo. Mantém o app `atendimentos` 100% intocado.",
+      "phase": "P",
+      "alternatives": [
+        "Migration cross-app adicionando campo a Atendimento (rejeitada — altera schema de app em produção)",
+        "Pular não-lidos no MVP (rejeitada — usuário quer badge no lançamento)",
+        "Armazenar leitura em RuntimeConfig (rejeitada — não é persistente e não suporta por-atendente)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778848516332",
+      "decidedAt": "2026-05-15T12:35:16.332Z"
+    },
+    {
+      "title": "Não espelhar campos personalizados no card Trello (drop E.2.10)",
+      "description": "Remover completamente a tarefa de espelhar \"Campos coletados\" no card do Trello. Workspace é a única fonte de verdade para visualização de campos personalizados (painel direito + badges no card kanban interno). Trello continua sendo espelho passivo do que `_build_card_name` e `_build_rich_description` já mostram hoje (intents, entidades, mensagens recentes, métricas). Justificativa: respeita estritamente \"sem alterações em apps de produção\" — zero modificação em `trello_sync`. Coerente com a posição estratégica do Trello como espelho secundário (decisão arquitetural 6 do plano).",
+      "phase": "P",
+      "alternatives": [
+        "Adicionar método público update_card_description em trello_sync (rejeitada — ainda é alteração)",
+        "Editar _build_rich_description diretamente (rejeitada — viola princípio)",
+        "Usar Django signal customizado em trello_sync para hook genérico (rejeitada — exige editar trello_sync)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778848524522",
+      "decidedAt": "2026-05-15T12:35:24.522Z"
+    },
+    {
+      "title": "Release via tag git em master + deploy automático em produção + teste direto em produção (sem ambiente de teste)",
+      "description": "Encerramento (fase C) inclui: (1) criar tag `v<MAJOR>.<MINOR>.<PATCH>` em master após merge de todas as E.1-E.3 (semver: feature nova → MINOR bump). (2) `git push origin <tag>` dispara `.github/workflows/deploy.yml` automaticamente — build Docker, push GHCR, SSH no servidor, pull, migrate, restart containers, collectstatic, healthcheck. (3) Sem ambiente de teste, validações V.1-V.6 rodam em produção após deploy. Mitigações obrigatórias: (a) feature flag global `ATENDIMENTO_UNIFICADO_ENABLED` via TenantConfig/RuntimeConfig — botão do sidebar e rotas /workspace/* só ativam se True. Default OFF. Liga manualmente por tenant após deploy. (b) Migrations criam apenas tabelas novas (atu_*) que podem ser dropadas via migration reversa sem afetar dados existentes. Nenhuma migration ALTER/DROP em tabelas legadas. (c) Rollback: `git push --delete origin <tag>` + `git tag -d <tag>` + redeploy da tag anterior (`git push origin <tag-anterior>` re-dispara workflow). (d) Healthcheck do workflow valida containers após deploy (linhas 158-161 do deploy.yml). (e) Loguru com level INFO em produção para visibilidade de signals/tasks no primeiro período. (f) Smoke test manual em 1 tenant antes de ligar feature flag em outros.",
+      "phase": "P",
+      "alternatives": [
+        "Aguardar ambiente de teste antes de liberar (rejeitada — usuário pediu deploy direto em prod)",
+        "Deploy manual via SSH sem tag (rejeitada — workflow automático já existe e é mais seguro)",
+        "Sem feature flag (rejeitada — risco alto sem ambiente de teste)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778848538078",
+      "decidedAt": "2026-05-15T12:35:38.078Z"
+    },
+    {
+      "title": "Feature flag via Django settings (sem migration em tabela legada)",
+      "description": "A flag ATENDIMENTO_UNIFICADO_ENABLED foi implementada como settings.py (env vars), evitando alterar TenantConfig (CORE_APPS, default DB) e mantendo o princípio de independência. Allowlist por slug via ATENDIMENTO_UNIFICADO_TENANT_SLUGS. Helper `is_workspace_enabled_for_tenant(slug)` consultado nas views/SSE.",
+      "phase": "E",
+      "alternatives": [
+        "Adicionar BooleanField em TenantConfig (requer migration default DB)",
+        "Usar JSONField TenantConfig.api_keys como guarda (mistura de responsabilidade)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778873060771",
+      "decidedAt": "2026-05-15T19:24:20.771Z"
+    },
+    {
+      "title": "Card click abre drawer/modal de chat (Opção A do R.7)",
+      "description": "Drawer sobreposto ao Kanban via partial `chat_drawer.html` controlado por `chatDrawerOpen`. Mantém contexto visual do kanban; reusa o mesmo composer/histórico do Modo Conversas.",
+      "phase": "E",
+      "alternatives": [
+        "Opção B: mudar para Modo Conversas com aquela conversa selecionada"
+      ],
+      "status": "accepted",
+      "id": "dec-1778873063788",
+      "decidedAt": "2026-05-15T19:24:23.789Z"
+    },
+    {
+      "title": "E.1 implementada — MVP Chat + Kanban com paridade Trello",
+      "description": "E.1.1 a E.1.16 entregues: app atendimento_unificado completo (models, migration, selectors, services [board/card_renderer/message_dispatch/realtime_publisher], signals, views [HTML/API/SSE async], templates Tailwind+Alpine, workspace_alpine.js, feature flag via settings, entrada no sidebar, doc Nginx/Uvicorn). Bug crítico corrigido: URLs do template usavam slice(0,-3) matematicamente errado — refatorado para usar conversationsBase + ID + '/<suffix>/'. Idempotência adicionada em move_atendimento (early-return quando etapa == destino). SSE reconnect com backoff exponencial 2s→30s. Shift+Enter habilitado para nova linha no composer. Django check passa; ruff format/check zero erros; pyright zero erros; URL reverse + imports validados.",
+      "phase": "E",
+      "alternatives": [
+        "Aguardar E.2/E.3 antes de commit (não)"
+      ],
+      "status": "accepted",
+      "id": "dec-1778944569565",
+      "decidedAt": "2026-05-16T15:16:09.565Z"
+    }
+  ],
+  "lastUpdated": "2026-05-15T14:07:00.417Z",
+  "approvalStatus": "approved",
+  "approvedAt": "2026-05-15T14:07:00.417Z",
+  "approvedBy": "solo-dev"
+}

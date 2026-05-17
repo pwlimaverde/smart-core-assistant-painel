@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "1.0.7"
+version = "1.1.0"
 description = "central de atendimento multicanal onde um chatbot realiza a triagem inicial e transfere para atendimento humano quando necessário, com fluxos totalmente personalizáveis por departamento através de uma interface Kanban"
 readme = "README.md"
 authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]

@@ -451,10 +451,22 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             has_url = bool(metadados.get("url"))
             has_base64 = bool(metadados.get("base64"))
 
+            logger.info(
+                f"[MIDIA-CTX] >>> Iniciando processamento de mídia | "
+                f"msg_id={mensagem.id} | tipo={mensagem.tipo} | "
+                f"mimetype={metadados.get('mimetype')} | "
+                f"fileLength={metadados.get('fileLength')} | "
+                f"seconds={metadados.get('seconds')} | "
+                f"fileName={metadados.get('fileName')} | "
+                f"has_url={has_url} | has_base64={has_base64} | "
+                f"base64_len={len(metadados.get('base64') or '')} | "
+                f"meta_keys={sorted(metadados.keys())}"
+            )
+
             if not has_url and not has_base64:
                 logger.warning(
-                    f"Mensagem {mensagem.id}: {mensagem.tipo} sem URL/base64. "
-                    "Mantendo placeholder."
+                    f"[MIDIA-CTX] Mensagem {mensagem.id}: "
+                    f"{mensagem.tipo} sem URL/base64. Mantendo placeholder."
                 )
                 return
 
@@ -471,18 +483,19 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                         metadados["base64"] = base64_data
                         has_base64 = True
                         logger.info(
-                            f"Base64 obtido via Evolution API "
-                            f"para mensagem {mensagem.id}"
+                            f"[MIDIA-CTX] Base64 obtido via Evolution API | "
+                            f"msg_id={mensagem.id} | "
+                            f"base64_len={len(base64_data)}"
                         )
                 except Exception as e:
                     logger.warning(
-                        f"Falha ao buscar base64 via Evolution API "
-                        f"para mensagem {mensagem.id}: {e}"
+                        f"[MIDIA-CTX] Falha ao buscar base64 via Evolution API "
+                        f"para msg_id={mensagem.id}: {e}"
                     )
 
             logger.info(
-                f"Convertendo mídia da mensagem {mensagem.id} "
-                f"(tipo={mensagem.tipo})"
+                f"[MIDIA-CTX] Chamando converter_contexto | "
+                f"msg_id={mensagem.id} | tipo={mensagem.tipo}"
             )
 
             texto_convertido = FeaturesCompose.converter_contexto(
@@ -492,6 +505,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
             if texto_convertido and texto_convertido.strip():
                 texto_final = texto_convertido.strip()
+                conteudo_original = mensagem.conteudo
                 mensagem.conteudo = texto_final
                 meta = dict(metadados)
                 meta["contexto_convertido"] = texto_final
@@ -500,18 +514,23 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 mensagem.save(update_fields=["conteudo", "metadados"])
 
                 logger.info(
-                    f"Mídia convertida com sucesso para mensagem {mensagem.id} "
-                    f"(len={len(texto_final)})"
+                    f"[MIDIA-CTX] <<< Conteúdo inserido na mensagem | "
+                    f"msg_id={mensagem.id} | tipo={mensagem.tipo} | "
+                    f"len_convertido={len(texto_final)} | "
+                    f"placeholder_anterior={conteudo_original!r}\n"
+                    f"---[MIDIA-CTX] TEXTO INTERPRETADO]---\n"
+                    f"{texto_final}\n"
+                    f"---[MIDIA-CTX] FIM TEXTO INTERPRETADO]---"
                 )
             else:
                 logger.warning(
-                    f"Conversão vazia para mensagem {mensagem.id}. "
+                    f"[MIDIA-CTX] Conversão vazia para msg_id={mensagem.id}. "
                     "Mantendo placeholder."
                 )
         except Exception as e:
             logger.error(
-                f"Erro ao converter mídia da mensagem {mensagem.id}: {e}. "
-                "Continuando com placeholder."
+                f"[MIDIA-CTX] Erro ao converter mídia da msg_id={mensagem.id}: "
+                f"{e}. Continuando com placeholder."
             )
 
     def _configure_attendance(

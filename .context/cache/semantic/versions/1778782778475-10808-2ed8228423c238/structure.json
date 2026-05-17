@@ -1,0 +1,83 @@
+{
+  "totalFiles": 899,
+  "rootPath": ".",
+  "topDirectories": [
+    {
+      "name": "docker",
+      "fileCount": 17,
+      "description": "Module directory"
+    },
+    {
+      "name": "docs",
+      "fileCount": 10,
+      "description": "Documentation files"
+    },
+    {
+      "name": "docs_dev",
+      "fileCount": 110,
+      "description": "Documentation files"
+    },
+    {
+      "name": "scripts",
+      "fileCount": 28,
+      "description": "Build and utility scripts"
+    },
+    {
+      "name": "src",
+      "fileCount": 651,
+      "description": "Source code root"
+    },
+    {
+      "name": "teste_debug",
+      "fileCount": 21,
+      "description": "Test files"
+    },
+    {
+      "name": "tests",
+      "fileCount": 50,
+      "description": "Test files and fixtures"
+    }
+  ],
+  "languageDistribution": [
+    {
+      "extension": ".py",
+      "count": 422
+    },
+    {
+      "extension": ".pyc",
+      "count": 258
+    },
+    {
+      "extension": ".md",
+      "count": 113
+    },
+    {
+      "extension": ".html",
+      "count": 56
+    },
+    {
+      "extension": ".png",
+      "count": 7
+    },
+    {
+      "extension": ".yml",
+      "count": 6
+    },
+    {
+      "extension": ".txt",
+      "count": 5
+    },
+    {
+      "extension": ".sh",
+      "count": 5
+    },
+    {
+      "extension": ".conf",
+      "count": 5
+    },
+    {
+      "extension": ".mmd",
+      "count": 4
+    }
+  ]
+}

@@ -20,9 +20,10 @@ O Smart Core Assistant Painel segue uma arquitetura **monolítica modular** com 
 │  │  ┌─────────┐ ┌─────────────┐ ┌───────────┐ ┌─────────────┐ │ │
 │  │  │  core   │ │ atendimentos│ │ operacional│ │   clientes  │ │ │
 │  │  └─────────┘ └─────────────┘ └───────────┘ └─────────────┘ │ │
-│  │  ┌─────────┐ ┌─────────────┐ ┌───────────┐                 │ │
-│  │  │usuarios │ │ treinamento │ │  oraculo  │                 │ │
-│  │  └─────────┘ └─────────────┘ └───────────┘                 │ │
+│  │  ┌─────────┐ ┌─────────────┐ ┌───────────┐ ┌─────────────┐ │ │
+│  │  │usuarios │ │ treinamento │ │  oraculo  │ │ atendimento_│ │ │
+│  │  └─────────┘ └─────────────┘ └───────────┘ │  unificado  │ │ │
+│  │                                            └─────────────┘ │ │
 │  └────────────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │                    Sync Apps (Integrations)                 │ │
@@ -227,6 +228,53 @@ def process_message(msg: str) -> Result[AnalysisResult, Error]:
 - (+) Totalmente customizável via settings
 - (-) Limitações de UX comparado a frontend dedicado
 
+### ADR-005: Independência cross-app no `atendimento_unificado`
+
+**Contexto:** O Workspace combina dados de `atendimentos`, `operacional`,
+`trello_sync`, `evolution_sync` e `ai_engine`. Editar essas apps para
+atender necessidades do Workspace criaria acoplamento bidirecional e
+risco em apps de produção já em uso.
+
+**Decisão:** Toda integração do `atendimento_unificado` com os demais apps
+acontece via signals e Celery tasks **dentro** de `atendimento_unificado/`.
+Nenhum app de produção é editado para servir o Workspace. FKs cross-app
+ficam como `BigIntegerField` lógico (não `ForeignKey`).
+
+**Consequências:**
+- (+) Rollback do Workspace = remover app de `INSTALLED_APPS`. Nenhuma
+  migration em tabela legada.
+- (+) Tabelas próprias `atu_*` (`atu_leitura_atendimento`,
+  `atu_campo_personalizado`, `atu_valor_campo`) podem ser dropadas sem
+  efeito colateral.
+- (+) Princípio é o mesmo já adotado por `trello_sync` (escuta signals de
+  `Atendimento`/`Mensagem` sem que `atendimentos` saiba do Trello).
+- (-) Exige criar helpers locais (ex.: `selectors.get_campos_for_prompt`)
+  para evitar imports cruzados.
+- (-) Única exceção justificada: `analise_mensage_datasource.py` recebeu
+  o helper `_formatar_campos_personalizados` porque a construção do
+  prompt é síncrona em request-time — signals não se aplicam.
+
+### ADR-006: SSE via Django async view + Redis pub/sub
+
+**Contexto:** O Workspace precisa atualização em tempo real (mensagens,
+movimentos no Kanban, edição de campos personalizados) sem polling.
+
+**Decisão:** Usar `StreamingHttpResponse` com iterator `async` (Django
+4.1+) ouvindo `redis.asyncio` em canal por tenant
+(`sse:{tenant_slug}:events`). Worker Uvicorn substitui Gunicorn sync
+para evitar travamento de processo. Sem dependência de Django Channels.
+
+**Consequências:**
+- (+) Stack já existente (Redis broker do Celery + Django) — sem novos
+  serviços.
+- (+) Isolamento multi-tenant pelo nome do canal + filtro defense-in-depth
+  no consumidor.
+- (+) Mantém o mesmo asgi.py do projeto (sem rota dedicada).
+- (-) Exige worker Uvicorn (config documentada em
+  `.context/docs/workspace-sse-nginx.md`).
+- (-) Nginx precisa `proxy_buffering off` + `proxy_read_timeout 1h` na
+  rota `/workspace/events/`.
+
 ---
 
 ## Dependências Entre Módulos
@@ -293,3 +341,17 @@ def process_message(msg: str) -> Result[AnalysisResult, Error]:
 - **Domínio:** Isolamento e gestão de tenants
 - **Apps:** tenants
 - **Integrações:** -
+
+### Contexto: Workspace (Atendimento Unificado)
+- **Domínio:** Tela única operacional combinando chat estilo WhatsApp Web
+  e Kanban sobre `EtapaFluxo`/`Atendimento`, com campos personalizados
+  híbridos extraídos pela IA.
+- **Apps:** atendimento_unificado
+- **Modules:** ai_engine.features.extracao_campos
+- **Integrações:** Redis (SSE pub/sub), Evolution API (envio outbound de
+  mídia), LLM provider (extração de campos)
+- **Princípio:** Independência cross-app (ADR-005). Observa via signals
+  os apps `atendimentos`, `operacional`, `evolution_sync`, `trello_sync`
+  sem editá-los.
+- **Feature flag:** `ATENDIMENTO_UNIFICADO_ENABLED` em `settings.py` +
+  allowlist por tenant via `ATENDIMENTO_UNIFICADO_TENANT_SLUGS`.

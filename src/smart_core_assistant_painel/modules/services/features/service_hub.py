@@ -80,6 +80,17 @@ class ServiceHub:
             temperature=ConfigProvider.get().llm_temperature,
         )
 
+    @property
+    def LLM_API_KEY(self) -> str:
+        """Retorna a API key correta conforme o llm_class configurado."""
+        class_name = ConfigProvider.get().llm_class
+        if class_name == "ChatGoogleGenerativeAI":
+            return self.GOOGLE_API_KEY
+        elif class_name == "ChatOpenAI":
+            return self.OPENAI_API_KEY
+        else:
+            return self.GROQ_API_KEY
+
     # === Interpretação de Mídia (Gemini Vision) ===
     @property
     def VISION_PROVIDER(self) -> str:
@@ -93,8 +104,14 @@ class ServiceHub:
 
     @property
     def GOOGLE_API_KEY(self) -> str:
-        """Chave de API do Google para Gemini."""
+        """Chave de API do Google para Gemini (Tier 1 / paga)."""
         return ConfigProvider.get().google_api_key
+
+    @property
+    def GOOGLE_API_KEY_FREE(self) -> str:
+        """Chave de API do Google (Free Tier). Usada por padrão pelo
+        ChatGoogleGenerativeAIWithFallback; cai para GOOGLE_API_KEY em 429."""
+        return ConfigProvider.get().google_api_key_free
 
     @property
     def MODEL(self) -> str:
@@ -228,6 +245,12 @@ class ServiceHub:
 
             return ChatOllama
         elif class_name == "ChatGoogleGenerativeAI":
+            if (ConfigProvider.get().google_api_key_free or "").strip():
+                from smart_core_assistant_painel.modules.services.llm.gemini_with_fallback import (
+                    ChatGoogleGenerativeAIWithFallback,
+                )
+
+                return ChatGoogleGenerativeAIWithFallback
             from langchain_google_genai import ChatGoogleGenerativeAI
 
             return ChatGoogleGenerativeAI

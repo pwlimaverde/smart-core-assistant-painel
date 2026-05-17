@@ -1,7 +1,7 @@
 """Views para o aplicativo Treinamento."""
 
 import json
-from typing import Any
+from typing import Any, cast
 
 from django.contrib import messages
 from django.db import router, transaction
@@ -14,7 +14,9 @@ from loguru import logger
 from smart_core_assistant_painel.modules.ai_engine import FeaturesCompose
 from smart_core_assistant_painel.modules.ai_engine.utils.erros import (
     EmbeddingError,
+    InterpretMediaError,
     LlmError,
+    TranscribeAudioError,
 )
 
 from .models import Documento, QueryCompose, QueryTestFeedback, Treinamento
@@ -746,27 +748,149 @@ def _build_test_intent_prompt(
     return "\n".join(prompt_lines), first_match
 
 
+def _detect_message_type_from_mimetype(mimetype: str) -> str:
+    """Mapeia mimetype do navegador para o message_type esperado pelo pipeline.
+
+    Replica a normalização do payload Evolution em
+    ``LoadMensageDataUseCase`` (audio/image/video/documentMessage).
+    """
+    mt = (mimetype or "").lower().strip()
+    if mt.startswith("audio/"):
+        return "audioMessage"
+    if mt.startswith("image/"):
+        return "imageMessage"
+    if mt.startswith("video/"):
+        return "videoMessage"
+    return "documentMessage"
+
+
+def _default_conteudo_for_media(message_type: str, file_name: str) -> str:
+    """Texto base equivalente ao gerado por ``LoadMensageDataUseCase``."""
+    if message_type == "imageMessage":
+        return "Imagem recebida"
+    if message_type == "videoMessage":
+        return "Vídeo recebido"
+    if message_type == "audioMessage":
+        return "Áudio recebido"
+    if message_type == "documentMessage":
+        return file_name or "Documento recebido"
+    return ""
+
+
+def _process_test_media_upload(
+    media_file: Any,
+    caption: str,
+) -> str:
+    """Converte upload de mídia em texto contextual, igual ao fluxo real.
+
+    Lê o arquivo enviado, codifica em base64 e delega a
+    ``FeaturesCompose.converter_contexto`` — o mesmo ponto usado por
+    ``load_message_data`` em produção — para gerar transcrição (áudio)
+    ou descrição multimodal (imagem/vídeo/documento). Concatena o
+    resultado ao texto base / caption seguindo a regra do pipeline real:
+    ``f"{result.conteudo}\\n{conteudo_media}"``.
+    """
+    import base64
+
+    raw = media_file.read()
+    media_base64 = base64.b64encode(raw).decode("ascii")
+    mimetype = getattr(media_file, "content_type", "") or ""
+    file_name = getattr(media_file, "name", "") or "arquivo"
+    message_type = _detect_message_type_from_mimetype(mimetype)
+
+    metadados: dict[str, Any] = {
+        "mimetype": mimetype,
+        "url": "",
+        "base64": media_base64,
+        "fileName": file_name,
+    }
+
+    conteudo_media = FeaturesCompose.converter_contexto(
+        metadados, message_type
+    )
+
+    base_text = (caption or "").strip() or _default_conteudo_for_media(
+        message_type, file_name
+    )
+    if conteudo_media:
+        return f"{base_text}\n{conteudo_media}"
+    return base_text
+
+
 @require_POST
 def testar_resposta_query(request: HttpRequest) -> JsonResponse:
     """[TRN-TEST-001] Endpoint AJAX para testar resposta do bot.
 
-    Recebe mensagem simulada e retorna análise completa com
-    resposta, confiabilidade, entidades e intents.
+    Aceita dois content-types:
+      * ``application/json`` — mensagem de texto pura (fluxo original).
+      * ``multipart/form-data`` — mensagem com arquivo de mídia
+        (áudio/imagem/vídeo/documento). A mídia é processada pelo mesmo
+        pipeline de produção (``converter_contexto``) e seu conteúdo
+        textual é injetado na ``mensagem`` antes da análise.
     """
     if not _can_view_training(request.user):
         return JsonResponse({"error": "Sem permissão"}, status=403)
 
-    try:
-        body: dict[str, Any] = json.loads(request.body)
-        mensagem: str = body.get("mensagem", "").strip()
-        chat_history_in: list[dict[str, Any]] = (
-            body.get("chat_history", []) or []
-        )
-        context_state_in: dict[str, Any] = body.get("context_state", {}) or {}
-    except (json.JSONDecodeError, AttributeError):
+    mensagem: str = ""
+    chat_history_in: list[dict[str, Any]] = []
+    context_state_in: dict[str, Any] = {}
+
+    media_file = request.FILES.get("media_file")
+    if media_file is not None:
         mensagem = request.POST.get("mensagem", "").strip()
-        chat_history_in = []
-        context_state_in = {}
+        try:
+            parsed_history = json.loads(
+                request.POST.get("chat_history", "[]") or "[]"
+            )
+            if isinstance(parsed_history, list):
+                chat_history_in = cast(
+                    list[dict[str, Any]], parsed_history
+                )
+        except (json.JSONDecodeError, TypeError):
+            pass
+        try:
+            parsed_state = json.loads(
+                request.POST.get("context_state", "{}") or "{}"
+            )
+            if isinstance(parsed_state, dict):
+                context_state_in = cast(dict[str, Any], parsed_state)
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+        try:
+            mensagem = _process_test_media_upload(media_file, mensagem)
+        except (InterpretMediaError, TranscribeAudioError) as e:
+            logger.error(f"Erro ao processar mídia de teste: {e}")
+            return JsonResponse(
+                {
+                    "error": "Falha ao interpretar mídia.",
+                    "detail": str(e),
+                },
+                status=500,
+            )
+        except Exception as e:
+            logger.error(f"Erro inesperado ao processar mídia de teste: {e}")
+            return JsonResponse(
+                {
+                    "error": "Erro ao processar arquivo de mídia.",
+                    "detail": str(e),
+                },
+                status=500,
+            )
+    else:
+        try:
+            body: dict[str, Any] = json.loads(request.body)
+            mensagem = body.get("mensagem", "").strip()
+            parsed_history_b: Any = body.get("chat_history", []) or []
+            if isinstance(parsed_history_b, list):
+                chat_history_in = cast(
+                    list[dict[str, Any]], parsed_history_b
+                )
+            parsed_state_b: Any = body.get("context_state", {}) or {}
+            if isinstance(parsed_state_b, dict):
+                context_state_in = cast(dict[str, Any], parsed_state_b)
+        except (json.JSONDecodeError, AttributeError):
+            mensagem = request.POST.get("mensagem", "").strip()
 
     if not mensagem:
         return JsonResponse({"error": "Mensagem é obrigatória."}, status=400)
@@ -881,6 +1005,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
                 "intents_detectados": intents,
                 "documentos_utilizados": doc_ids,
                 "query_compose_match": query_compose_match or "",
+                "mensagem_processada": mensagem,
             }
         )
 

@@ -9,6 +9,7 @@ class TenantModule(str, Enum):
     OPERACIONAL = "operacional"
     TREINAMENTO = "treinamento"
     ATENDIMENTOS = "atendimentos"
+    ATENDIMENTO = "atendimento"
     CONFIGURACOES = "configuracoes"
     USUARIOS = "usuarios"
 
@@ -20,6 +21,7 @@ class TenantModule(str, Enum):
             cls.OPERACIONAL.value: "Operacional",
             cls.TREINAMENTO.value: "Treinamento",
             cls.ATENDIMENTOS.value: "Atendimentos",
+            cls.ATENDIMENTO.value: "Workspace de Atendimento",
             cls.CONFIGURACOES.value: "Configurações",
             cls.USUARIOS.value: "Usuários",
         }

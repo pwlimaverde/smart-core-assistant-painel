@@ -1,3 +1,41 @@
+## 1.1.0 - 2026-05-16
+
+### Added
+- **Workspace de Atendimento Unificado** (`atendimento_unificado`): tela única com
+  chat estilo WhatsApp Web e Kanban sobre `EtapaFluxo`/`Atendimento`. Acessível em
+  `/workspace/` (feature flag `ATENDIMENTO_UNIFICADO_ENABLED` por tenant).
+- **Chat em tempo real via SSE**: updates de mensagens, board e campos chegam sem
+  polling. Reconexão automática com backoff exponencial.
+- **Kanban drag-drop** (SortableJS): mover cards entre colunas chama `POST /board/move/`
+  com rollback automático; flag `isDragging` bloqueia updates SSE durante o arrastar.
+- **Campos Personalizados** (`CampoPersonalizado` / `ValorCampoAtendimento`): campos
+  globais ou por fluxo, extraídos automaticamente pelo LLM via `ExtracaoCamposDatasource`
+  (Pydantic `create_model` + `with_structured_output`). Badge de confiança no painel.
+- **Badge SLA**: card do Kanban exibe ⚠️ SLA quando atendimento passa >8h na etapa atual
+  (baseado em `MovimentoFluxo.data_movimento`).
+- **Mídia outbound**: endpoint `POST /conversations/<id>/upload/` aceita multipart ≤10 MB
+  e envia via Evolution API `/message/sendMedia` (serviço `media_dispatch_service`).
+- **Export CSV**: `GET /workspace/api/export/?fluxo=<id>` retorna `StreamingHttpResponse`
+  com `csv.writer` e `iterator(chunk_size=500)` para grandes volumes.
+- **Filtro por tag**: `GET /conversations/?tag=<tag>` filtra conversas ativas.
+- **GIN index** em `atu_valor_campo.valor` (jsonb_path_ops) para queries de filtro por campo.
+- Helpers `get_campos_for_prompt(atendimento_id, fluxo_id)` em `selectors.py` para
+  integração futura com o pipeline do bot (E.2.9b).
+
+### Changed
+- `card_renderer.render_card` inclui `tempo_na_etapa_segundos` e `sla_estourado`.
+- `list_conversations` aceita parâmetro `tag` para filtragem adicional.
+- `workspace_alpine.js` expandido com `initSortable`, `uploadMedia`, `filterTag` e
+  handler SSE `custom_field.updated`.
+
+### Technical
+- Tabelas novas: `atu_leitura_atendimento`, `atu_campo_personalizado`, `atu_valor_campo`.
+- Zero alterações em tabelas legadas (princípio de independência).
+- Migrations: 0001 (LeituraAtendimento), 0002 (CampoPersonalizado/ValorCampoAtendimento),
+  0003 (GIN index em valor).
+- Bug corrigido: `_formatar_historico` em `extracao_campos_datasource` usava prefixos
+  uppercase (`CONTATO`) mas `TipoRemetente` é lowercase (`contato`).
+
 ## 1.0.3 - 2026-02-12
 
 ### Added

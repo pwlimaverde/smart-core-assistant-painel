@@ -41,6 +41,7 @@ from ..utils.erros import (
     AnaliseMensageError,
     DataMessageError,
     DocumentError,
+    ExtracaoCamposError,
     InterpretMediaError,
     LlmError,
     TranscribeAudioError,
@@ -49,7 +50,9 @@ from ..utils.parameters import (
     AnaliseAvaliacaoParameters,
     AnaliseMensageParameters,
     AnalisePreviaMensagemParameters,
+    CampoDefinicao,
     DataMensageParameters,
+    ExtracaoCamposParameters,
     GenerateChunksParameters,
     InterpretMediaParameters,
     LlmParameters,
@@ -226,7 +229,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_CONTEUDO,
@@ -263,7 +266,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_MELHORIA_CONTEUDO,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_MELHORIA_CONTEUDO,
@@ -309,7 +312,7 @@ class FeaturesCompose:
                     context="",
                     extra_params={
                         "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                        "api_key": SERVICEHUB.GROQ_API_KEY,
+                        "api_key": SERVICEHUB.LLM_API_KEY,
                     },
                 )
 
@@ -359,7 +362,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_PREVIA_MENSAGEM,
             prompt_human=SERVICEHUB.PROMPT_HUMAN_ANALISE_PREVIA_MENSAGEM,
@@ -404,7 +407,20 @@ class FeaturesCompose:
             Texto convertido ou string vazia se não houver conversão.
         """
         if not metadados:
+            logger.info(
+                "[MIDIA-CTX] converter_contexto chamado sem metadados | "
+                f"message_type={message_type}"
+            )
             return ""
+
+        mimetype_log = metadados.get("mimetype")
+        url_present = bool(metadados.get("url"))
+        base64_len = len(metadados.get("base64") or "")
+        logger.info(
+            f"[MIDIA-CTX] converter_contexto | message_type={message_type} | "
+            f"mimetype={mimetype_log} | url_present={url_present} | "
+            f"base64_len={base64_len}"
+        )
 
         if message_type == "audioMessage":
             audio_url = metadados.get("url", "")
@@ -459,6 +475,10 @@ class FeaturesCompose:
                 file_name=str(file_name or "documento"),
             )
 
+        logger.info(
+            f"[MIDIA-CTX] message_type sem handler de conversão: "
+            f"{message_type}"
+        )
         return ""
 
     @staticmethod
@@ -498,12 +518,25 @@ class FeaturesCompose:
             media_base64=media_base64,
             file_name=file_name,
         )
+        logger.info(
+            f"[MIDIA-CTX] _interpret_media INPUT | media_type={media_type} | "
+            f"mimetype={mimetype} | url_present={bool(media_url)} | "
+            f"base64_len={len(media_base64 or '')} | file_name={file_name!r}"
+        )
         datasource: IMData = InterpretMediaDatasource()
         usecase: IMUsecase = InterpretMediaUseCase(datasource)
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            return data.result
+            result_text = data.result
+            logger.info(
+                f"[MIDIA-CTX] _interpret_media OUTPUT | "
+                f"media_type={media_type} | len={len(result_text)}\n"
+                f"---[MIDIA-CTX] LLM RESPONSE]---\n"
+                f"{result_text}\n"
+                f"---[MIDIA-CTX] FIM LLM RESPONSE]---"
+            )
+            return result_text
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -732,6 +765,65 @@ class FeaturesCompose:
         return final_score
 
     @staticmethod
+    def extracao_campos(
+        atendimento_id: int,
+        historico_conversa: list[dict[str, Any]],
+        campos_a_extrair: list[CampoDefinicao],
+    ) -> list[Any]:
+        """Extrai campos personalizados da conversa via LLM com Structured Output.
+
+        Retorna lista de `CampoExtraido` com slug, valor e confiança.
+        Retorna lista vazia se não há campos ou histórico.
+
+        Args:
+            atendimento_id: ID do atendimento.
+            historico_conversa: Lista de dicts com remetente/conteudo.
+            campos_a_extrair: Campos configurados pelo tenant para extração.
+
+        Returns:
+            list[CampoExtraido]: Campos extraídos com confiança >= 0.6.
+        """
+        from smart_core_assistant_painel.modules.ai_engine.features.extracao_campos.domain.usecase.extracao_campos_usecase import (
+            ExtracaoCamposUsecase,
+        )
+
+        if not campos_a_extrair or not historico_conversa:
+            return []
+
+        llm_parameters = LlmParameters(
+            llm_class=SERVICEHUB.LLM_CLASS,
+            model=SERVICEHUB.MODEL,
+            extra_params={
+                "temperature": 0.0,
+                "api_key": SERVICEHUB.LLM_API_KEY,
+            },
+            prompt_system="",
+            prompt_human="",
+            context="",
+            error=LlmError("Erro na extração de campos"),
+        )
+        parameters = ExtracaoCamposParameters(
+            atendimento_id=atendimento_id,
+            historico_conversa=historico_conversa,
+            campos_a_extrair=campos_a_extrair,
+            llm_parameters=llm_parameters,
+            error=ExtracaoCamposError("Erro ao extrair campos personalizados"),
+        )
+        usecase = ExtracaoCamposUsecase()
+        result = usecase(parameters)
+
+        if isinstance(result, SuccessReturn):
+            return result.result
+        elif isinstance(result, ErrorReturn):
+            logger.warning(
+                "extracao_campos falhou para atendimento {}: {}",
+                atendimento_id,
+                result.result,
+            )
+            return []
+        return []
+
+    @staticmethod
     def generate_chunks(
         conteudo: str, metadata: dict[str, Any]
     ) -> list[Document]:
@@ -837,7 +929,7 @@ class FeaturesCompose:
             model=SERVICEHUB.MODEL,
             extra_params={
                 "temperature": SERVICEHUB.LLM_TEMPERATURE,
-                "api_key": SERVICEHUB.GROQ_API_KEY,
+                "api_key": SERVICEHUB.LLM_API_KEY,
             },
             prompt_system=SERVICEHUB.PROMPT_SYSTEM_ANALISE_MENSAGEM,
             prompt_human=prompt_human,

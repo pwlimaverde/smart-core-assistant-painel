@@ -134,6 +134,119 @@ Este documento descreve os principais fluxos de dados do sistema Smart Core Assi
 
 ---
 
+## 3.b Workspace de Atendimento Unificado — SSE + Extração de Campos
+
+### Fluxo de tempo real (Server-Sent Events)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│            FLUXO SSE — sse:{tenant_slug}:events (Redis pub/sub)              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   Signal     │──▶│   Service    │──▶│    Redis     │──▶│  async view  │
+│  post_save   │   │   publish_   │   │  PUBLISH     │   │ /workspace/  │
+│  (Mensagem,  │   │   event()    │   │ sse:<slug>:..│   │  events/     │
+│  Atendimento,│   └──────────────┘   └──────────────┘   └──────┬───────┘
+│ MovimentoFl.)│                                                  │
+└──────────────┘                                                  ▼
+                                                          ┌──────────────┐
+                                                          │ EventSource  │
+                                                          │ (Alpine.js)  │
+                                                          │ atualiza UI  │
+                                                          └──────────────┘
+```
+
+### Componentes
+
+| Etapa | Componente | Arquivo |
+|---|---|---|
+| Signal receivers | `atendimento_unificado.signals` | `app/atendimento_unificado/signals.py` |
+| Realtime publisher | `services.realtime_publisher.publish_event` | `app/atendimento_unificado/services/realtime_publisher.py` |
+| Async stream | `views_sse.workspace_events` | `app/atendimento_unificado/views_sse.py` |
+| Feature flag / canal | `feature_flags.get_sse_channel` | `app/atendimento_unificado/feature_flags.py` |
+
+### Tipos de evento publicados
+
+| Evento | Origem | Payload |
+|---|---|---|
+| `message.new` / `message.updated` | `post_save Mensagem` | `atendimento_id`, `mensagem_id`, `remetente`, `tipo`, `preview`, `respondida`, `timestamp` |
+| `board.moved` | `post_save MovimentoFluxo` | `atendimento_id`, `etapa_origem_id`, `etapa_destino_id`, `automatico` |
+| `atendimento.created` / `atendimento.updated` | `post_save Atendimento` | `atendimento_id`, `status`, `prioridade`, `etapa_id`, `fluxo_id`, `atendente_id` |
+| `custom_field.updated` | task `extract_custom_fields_async` + PATCH manual | `atendimento_id`, `slug`, `valor`, `origem`, `confianca` |
+
+### Isolamento multi-tenant
+
+- Canal Redis exclusivo por tenant: `sse:{tenant_slug}:events`.
+- `views_sse.workspace_events` valida `tenant_slug` da request e filtra
+  defense-in-depth no consumidor (descarta payload se `tenant_slug` no
+  evento não bate).
+- Heartbeat `: ping` a cada 25s evita timeouts intermediários.
+
+---
+
+## 3.c Extração de Campos Personalizados (LLM)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│              FLUXO DE EXTRAÇÃO DE CAMPOS POR RESPOSTA DO BOT                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────┐   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
+│   Mensagem   │──▶│   Signal     │──▶│   Celery     │──▶│  ai_engine.  │
+│  (TipoRem.   │   │ _on_mensagem │   │   task       │   │  extracao_   │
+│   BOT)       │   │  _bot_       │   │ extract_     │   │  campos      │
+│  post_save   │   │  extrair_    │   │ custom_      │   │ (with_struct.│
+│              │   │  campos      │   │ fields_async │   │  _output)    │
+└──────────────┘   └──────────────┘   └──────┬───────┘   └──────┬───────┘
+                                              │                  │
+                                              ▼                  ▼
+                                      ┌──────────────┐   ┌──────────────┐
+                                      │ select_for_  │   │ pydantic.    │
+                                      │ update +     │   │ create_model │
+                                      │ idempotência │   │ dinâmico     │
+                                      │ (nunca       │   │ (schema dos  │
+                                      │  sobrescreve │   │  campos      │
+                                      │  MANUAL;     │   │  ativos)     │
+                                      │  BOT só se   │   └──────────────┘
+                                      │  conf maior) │
+                                      └──────┬───────┘
+                                             │
+                                             ▼
+                                      ┌──────────────┐    ┌──────────────┐
+                                      │  Valor       │───▶│   publish    │
+                                      │ Campo        │    │ custom_field.│
+                                      │ Atendimento  │    │   updated    │
+                                      └──────────────┘    └──────────────┘
+                                             │
+                                             ▼
+                                  Próxima resposta do bot
+                                  (analise_mensage_datasource):
+                                  injeta `### CAMPOS COLETADOS`
+                                  e `### CAMPOS PENDENTES` no
+                                  system prompt
+```
+
+### Componentes
+
+| Etapa | Componente | Arquivo |
+|---|---|---|
+| Signal de extração | `atendimento_unificado.signals._on_mensagem_bot_extrair_campos` | `app/atendimento_unificado/signals.py` |
+| Celery task | `tasks.extract_custom_fields_async` | `app/atendimento_unificado/tasks.py` |
+| Feature LLM | `ai_engine.features.extracao_campos` | `modules/ai_engine/features/extracao_campos/` |
+| Helper para prompt | `selectors.get_campos_for_prompt` | `app/atendimento_unificado/selectors.py` |
+| Injeção no prompt | `_formatar_campos_personalizados` | `modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py` |
+
+### Regras de idempotência
+
+1. `confianca>=0.9` no BOT → skip nova extração para o slug.
+2. Valor existente com `origem=MANUAL` → nunca sobrescreve.
+3. Valor existente com `origem=BOT` → sobrescreve apenas se nova
+   confiança for **maior**.
+4. Idempotência protegida por `select_for_update` na transação.
+
+---
+
 ## 4. Fluxo de Autenticação e Multi-Tenancy
 
 ```

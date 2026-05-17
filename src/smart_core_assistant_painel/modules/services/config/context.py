@@ -26,6 +26,7 @@ class RuntimeConfig:
     vision_provider: str = "google"
     vision_model: str = "gemini-2.5-flash"
     google_api_key: str = ""
+    google_api_key_free: str = ""
 
     # === Transcrição de Áudio ===
     transcription_provider: str = "openai"

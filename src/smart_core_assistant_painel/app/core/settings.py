@@ -152,6 +152,8 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.tenants",
     # Integração Trello ativada
     "smart_core_assistant_painel.app.trello_sync",
+    # Workspace unificado (Chat + Kanban)
+    "smart_core_assistant_painel.app.atendimento_unificado.apps.AtendimentoUnificadoConfig",
     # Usa AppConfig explícito para garantir execução do ready() e sinais
     # "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
     "smart_core_assistant_painel.app.evolution_sync.apps.EvolutionSyncConfig",
@@ -164,6 +166,22 @@ INSTALLED_APPS = [
 # Flag informativa de habilitação do módulo de sincronização Notion.
 # Observação: usada apenas como documentação; verifique configs por app.
 NOTION_SYNC_ENABLED: bool = False
+
+# Feature flag do módulo Workspace (Atendimento Unificado).
+# Default desligado (rollout gradual). Pode ser ligado globalmente via env var
+# ou restringido a slugs específicos via ATENDIMENTO_UNIFICADO_TENANT_SLUGS
+# (lista CSV). Consultado por
+# `atendimento_unificado.feature_flags.is_workspace_enabled_for_tenant`.
+ATENDIMENTO_UNIFICADO_ENABLED: bool = _env_bool(
+    "ATENDIMENTO_UNIFICADO_ENABLED", False
+)
+ATENDIMENTO_UNIFICADO_TENANT_SLUGS: list[str] = [
+    s.strip()
+    for s in os.getenv("ATENDIMENTO_UNIFICADO_TENANT_SLUGS", "").split(",")
+    if s.strip()
+]
+# Canal Redis pub/sub usado pelo SSE do Workspace (sufixo após o slug do tenant)
+ATENDIMENTO_UNIFICADO_SSE_CHANNEL: str = "sse:{tenant_slug}:events"
 
 # Controle do filtro do signal de criação de etapas padrão.
 # Lista de nomes de departamentos permitidos (case-insensitive).

@@ -1,6 +1,7 @@
 ---
-status: active
+status: archived
 generated: 2026-04-09
+completed: 2026-05-14
 agents:
   - type: "feature-developer"
     role: "Implementar a feature interpret_media seguindo o padrão transcribe_audio"

@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "feature-interpret-media",
+      "path": "plans/feature-interpret-media.md",
+      "title": "Implementação de Interpretação de Mídias (Imagem, Vídeo e Documento)",
+      "summary": "Implementar o processamento de `imageMessage`, `videoMessage` e `documentMessage` no `FeaturesCompose.converter_contexto` usando **Gemini 2.5 Flash** como modelo multimodal unificado via `langchain-google-genai`.",
+      "linkedAt": "2026-04-09T14:27:07.614Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "feature-interpret-media"
+}

@@ -1,0 +1,19 @@
+{
+  "primaryLanguage": "javascript",
+  "languages": [
+    "python",
+    "javascript"
+  ],
+  "frameworks": [],
+  "buildTools": [],
+  "testFrameworks": [
+    "pytest"
+  ],
+  "packageManager": null,
+  "isMonorepo": false,
+  "hasDocker": false,
+  "hasCI": true,
+  "hasBinField": false,
+  "hasMainExport": false,
+  "hasTypesField": false
+}

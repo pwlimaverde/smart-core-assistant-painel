@@ -1,0 +1,284 @@
+{
+  "hasAuthPattern": true,
+  "hasDatabasePattern": true,
+  "hasApiPattern": true,
+  "hasCachePattern": false,
+  "hasQueuePattern": true,
+  "hasWebSocketPattern": false,
+  "hasLoggingPattern": true,
+  "hasValidationPattern": true,
+  "hasErrorHandlingPattern": false,
+  "hasTestingPattern": false,
+  "patterns": [
+    {
+      "type": "auth",
+      "confidence": 0.6,
+      "indicators": [
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\tests\\verify_payment_logic.py",
+          "symbol": "verify_payment_logic",
+          "line": 31,
+          "reason": "Auth-related symbol: verify_payment_logic"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\verify_service_hub.py",
+          "symbol": "verify_service_hub",
+          "line": 23,
+          "reason": "Auth-related symbol: verify_service_hub"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+          "symbol": "login",
+          "line": 65,
+          "reason": "Auth-related symbol: login"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+          "symbol": "logout_view",
+          "line": 123,
+          "reason": "Auth-related symbol: logout_view"
+        }
+      ],
+      "description": "Authentication and authorization functionality"
+    },
+    {
+      "type": "database",
+      "confidence": 1,
+      "indicators": [
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\models.py",
+          "symbol": "QueryTestFeedback",
+          "line": 246,
+          "reason": "Database-related symbol: QueryTestFeedback"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\models.py",
+          "symbol": "QueryCompose",
+          "line": 304,
+          "reason": "Database-related symbol: QueryCompose"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\admin.py",
+          "symbol": "QueryComposeAdmin",
+          "line": 328,
+          "reason": "Database-related symbol: QueryComposeAdmin"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tests\\test_models.py",
+          "symbol": "ModelsStrTests",
+          "line": 6,
+          "reason": "Database-related symbol: ModelsStrTests"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\migrations\\0002_trelloboard_webhook_id.py",
+          "symbol": "Migration",
+          "line": 6,
+          "reason": "Database-related symbol: Migration"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\migrations\\0001_initial.py",
+          "symbol": "Migration",
+          "line": 7,
+          "reason": "Database-related symbol: Migration"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\migrations\\0002_create_query_test_feedback.py",
+          "symbol": "Migration",
+          "line": 6,
+          "reason": "Database-related symbol: Migration"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\migrations\\0001_initial.py",
+          "symbol": "Migration",
+          "line": 11,
+          "reason": "Database-related symbol: Migration"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\settings_manager\\migrations\\0001_initial.py",
+          "symbol": "Migration",
+          "line": 6,
+          "reason": "Database-related symbol: Migration"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\tenants\\views\\legacy_views.py",
+          "symbol": "DatabaseConfigView",
+          "line": 288,
+          "reason": "Database-related symbol: DatabaseConfigView"
+        }
+      ],
+      "description": "Database access and ORM functionality"
+    },
+    {
+      "type": "api",
+      "confidence": 0.3,
+      "indicators": [
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\config_global\\sync_coresettings_prod.py",
+          "symbol": "restore_action",
+          "line": 164,
+          "reason": "API-related symbol: restore_action"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\config_global\\sync_coresettings.py",
+          "symbol": "restore_action",
+          "line": 106,
+          "reason": "API-related symbol: restore_action"
+        }
+      ],
+      "description": "API endpoints and routing"
+    },
+    {
+      "type": "queue",
+      "confidence": 1,
+      "indicators": [
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_fluxo_ensure_board",
+          "line": 42,
+          "reason": "Queue-related symbol: task_fluxo_ensure_board"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_fluxo_archive_board",
+          "line": 66,
+          "reason": "Queue-related symbol: task_fluxo_archive_board"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_etapa_ensure_list",
+          "line": 86,
+          "reason": "Queue-related symbol: task_etapa_ensure_list"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_reorder_lists_for_fluxo",
+          "line": 107,
+          "reason": "Queue-related symbol: task_reorder_lists_for_fluxo"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_etapa_archive_list",
+          "line": 125,
+          "reason": "Queue-related symbol: task_etapa_archive_list"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_atendimento_ensure_card",
+          "line": 141,
+          "reason": "Queue-related symbol: task_atendimento_ensure_card"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_atendente_invite",
+          "line": 161,
+          "reason": "Queue-related symbol: task_atendente_invite"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_atendente_remove_member",
+          "line": 179,
+          "reason": "Queue-related symbol: task_atendente_remove_member"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_atendimento_sync_card_members",
+          "line": 190,
+          "reason": "Queue-related symbol: task_atendimento_sync_card_members"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\trello_sync\\tasks.py",
+          "symbol": "task_atendimento_move_to_etapa_list",
+          "line": 214,
+          "reason": "Queue-related symbol: task_atendimento_move_to_etapa_list"
+        }
+      ],
+      "description": "Message queues and background jobs"
+    },
+    {
+      "type": "logging",
+      "confidence": 0.4,
+      "indicators": [
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+          "symbol": "login",
+          "line": 65,
+          "reason": "Logging-related symbol: login"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\usuarios\\views.py",
+          "symbol": "logout_view",
+          "line": 123,
+          "reason": "Logging-related symbol: logout_view"
+        }
+      ],
+      "description": "Logging and observability"
+    },
+    {
+      "type": "validation",
+      "confidence": 1,
+      "indicators": [
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+          "symbol": "check_treinamentos",
+          "line": 27,
+          "reason": "Validation-related symbol: check_treinamentos"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+          "symbol": "check_celery_results",
+          "line": 81,
+          "reason": "Validation-related symbol: check_celery_results"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+          "symbol": "check_redis_connection",
+          "line": 138,
+          "reason": "Validation-related symbol: check_redis_connection"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\teste_debug\\check_treinamento_celery.py",
+          "symbol": "check_celery_inspect",
+          "line": 157,
+          "reason": "Validation-related symbol: check_celery_inspect"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\automacao\\ssl_debug.py",
+          "symbol": "check_ssl",
+          "line": 7,
+          "reason": "Validation-related symbol: check_ssl"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\scripts\\automacao\\new_feature_script.py",
+          "symbol": "sanitize_name",
+          "line": 22,
+          "reason": "Validation-related symbol: sanitize_name"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\treinamento\\models.py",
+          "symbol": "validate_identificador",
+          "line": 17,
+          "reason": "Validation-related symbol: validate_identificador"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\tenants\\tasks.py",
+          "symbol": "check_subscription_expirations",
+          "line": 13,
+          "reason": "Validation-related symbol: check_subscription_expirations"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\operacional\\models.py",
+          "symbol": "validate_telefone",
+          "line": 17,
+          "reason": "Validation-related symbol: validate_telefone"
+        },
+        {
+          "file": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel\\src\\smart_core_assistant_painel\\app\\operacional\\models.py",
+          "symbol": "validate_api_key",
+          "line": 30,
+          "reason": "Validation-related symbol: validate_api_key"
+        }
+      ],
+      "description": "Input validation and schema enforcement"
+    }
+  ]
+}

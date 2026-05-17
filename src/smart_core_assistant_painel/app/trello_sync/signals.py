@@ -649,12 +649,18 @@ def mensagem_created_update_trello_card(
 
     Comentário: agenda atualização de descrição/custom fields do card
     associado ao ``Atendimento`` para refletir mensagens recentes.
-    """
-    # Verifica se é uma atualização de resposta do bot
-    update_fields = kwargs.get("update_fields") or []
-    is_bot_response = update_fields and "resposta_bot" in update_fields
 
-    if not created and not is_bot_response:
+    Re-dispara em updates quando ``conteudo`` muda (caso típico:
+    ``AttendanceOrchestrator._convert_media_context`` substitui o
+    placeholder de mídia pelo texto interpretado pela LLM) ou quando
+    ``resposta_bot`` é populado.
+    """
+    update_fields = kwargs.get("update_fields") or []
+    is_relevant_update = update_fields and (
+        "resposta_bot" in update_fields or "conteudo" in update_fields
+    )
+
+    if not created and not is_relevant_update:
         return
     try:
         at_id: int = instance.atendimento_id  # type: ignore[assignment]

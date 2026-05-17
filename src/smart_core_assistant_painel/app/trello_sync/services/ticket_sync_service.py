@@ -489,11 +489,21 @@ class TicketSyncService:
                 TipoRemetente,
             )
 
-            # Buscar últimas 10 mensagens de qualquer remetente
+            # Buscar últimas 10 mensagens de qualquer remetente e tipo
+            # (inclui mídias: o conteúdo de áudio/imagem/vídeo/documento é
+            # substituído pelo texto interpretado em
+            # AttendanceOrchestrator._convert_media_context)
             msgs_qs = Mensagem.objects.filter(
                 atendimento=atendimento,
-                tipo=TipoMensagem.TEXTO_FORMATADO,
             ).order_by("-timestamp")[:10]
+
+            # Ícones e rótulos por tipo de mídia
+            midia_info: dict[str, tuple[str, str]] = {
+                TipoMensagem.AUDIO.value: ("🎤", "Áudio"),
+                TipoMensagem.IMAGEM.value: ("🖼️", "Imagem"),
+                TipoMensagem.VIDEO.value: ("🎬", "Vídeo"),
+                TipoMensagem.DOCUMENTO.value: ("📄", "Documento"),
+            }
 
             if msgs_qs.exists():
                 # Reordenar para cronológico (mais antigo -> mais novo) para leitura natural
@@ -519,20 +529,35 @@ class TicketSyncService:
                         icone_remetente = "👨‍💻"
                         label_remetente = "Atendente"
 
+                    # Indicador de mídia (caso a mensagem seja áudio/imagem/vídeo/documento)
+                    midia_tag = ""
+                    if m.tipo in midia_info:
+                        icone_midia, label_midia = midia_info[m.tipo]
+                        midia_tag = f" {icone_midia} *{label_midia}*"
+
                     linhas.append(
-                        f"**{icone_remetente} {label_remetente}** - {tempo_msg}"
+                        f"**{icone_remetente} {label_remetente}**{midia_tag} - {tempo_msg}"
                     )
 
                     if conteudo:
-                        # Preserva quebras de linha e adiciona > em cada linha
-                        quoted_content = "\n".join(
-                            f"> {line}" for line in conteudo.splitlines()
-                        )
-                        linhas.append(quoted_content)
+                        if m.tipo in midia_info:
+                            # Para mídia, exibe apenas a primeira linha como resumo
+                            # (evita 414 - Request-URI Too Large na API do Trello)
+                            primeira_linha = conteudo.splitlines()[0][:200]
+                            if len(conteudo) > len(primeira_linha):
+                                primeira_linha += "..."
+                            linhas.append(f"> {primeira_linha}")
+                        else:
+                            quoted_content = "\n".join(
+                                f"> {line}" for line in conteudo.splitlines()
+                            )
+                            linhas.append(quoted_content)
 
                     # Mostrar resposta do bot se existir (para mensagens de contato que tiveram resposta)
                     if getattr(m, "resposta_bot", None):
-                        resp: str = str(m.resposta_bot)
+                        resp: str = m.resposta_bot[:300]
+                        if len(m.resposta_bot) > 300:
+                            resp += "..."
                         if resp:
                             quoted_resp = "\n".join(
                                 f"> {line}" for line in resp.splitlines()

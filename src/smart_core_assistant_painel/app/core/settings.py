@@ -309,7 +309,7 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL  # Para erros 500
 
 
 # Auth Redirects
-LOGIN_URL = "/login/"
+LOGIN_URL = "/usuarios/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 

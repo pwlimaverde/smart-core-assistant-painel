@@ -149,5 +149,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
-<script src="{% static 'atendimento_unificado/js/workspace_alpine.js' %}" defer></script>
+{# IMPORTANT: sem defer. Precisa rodar ANTES do Alpine (head, defer) processar o
+   x-data, senão `workspaceStore` fica undefined e init() não dispara. #}
+<script src="{% static 'atendimento_unificado/js/workspace_alpine.js' %}"></script>
 {% endblock %}

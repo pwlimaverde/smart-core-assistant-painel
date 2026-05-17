@@ -170,32 +170,44 @@
                     try { s.destroy(); } catch (_) {}
                 });
                 this._sortableInstances = [];
-                if (typeof Sortable === 'undefined') return;
+                if (typeof Sortable === 'undefined') {
+                    console.warn('[workspace] SortableJS não carregado');
+                    return;
+                }
                 const self = this;
-                document.querySelectorAll('.kanban-col-body').forEach(function (el) {
+                const cols = document.querySelectorAll('.kanban-col-body');
+                console.log('[workspace] initSortable: ' + cols.length + ' columns');
+                cols.forEach(function (el) {
                     const instance = Sortable.create(el, {
-                        group: { name: 'kanban-cards', pull: true, put: true },
+                        group: 'kanban-cards',
                         draggable: '.kanban-card',
                         animation: 180,
                         ghostClass: 'kanban-ghost',
                         chosenClass: 'kanban-chosen',
                         dragClass: 'kanban-drag',
-                        forceFallback: true,
-                        fallbackTolerance: 5,
-                        delay: 80,
-                        delayOnTouchOnly: true,
-                        onStart: function () {
+                        // Ignora cliques em botões dentro do card (ex.: ícone "Detalhes")
+                        filter: '.kanban-no-drag, .kanban-no-drag *',
+                        preventOnFilter: false,
+                        onStart: function (evt) {
                             self.isDragging = true;
                         },
                         onEnd: function (evt) {
-                            // Pequeno atraso para o navegador não disparar
-                            // o `click` no card logo após o drop.
+                            // O click só dispara se mousedown+mouseup no mesmo elemento sem move;
+                            // ainda assim mantemos timeout pequeno como defense-in-depth.
                             setTimeout(function () { self.isDragging = false; }, 50);
-                            const atendimentoId = parseInt(evt.item.dataset.atendId, 10);
-                            const fromEtapaId = parseInt(evt.from.dataset.etapaId, 10);
-                            const toEtapaId = parseInt(evt.to.dataset.etapaId, 10);
-                            if (!atendimentoId || !toEtapaId || fromEtapaId === toEtapaId) {
+
+                            const atendimentoId = parseInt(evt.item.getAttribute('data-atend-id'), 10);
+                            const fromEtapaId = parseInt(evt.from.getAttribute('data-etapa-id'), 10);
+                            const toEtapaId = parseInt(evt.to.getAttribute('data-etapa-id'), 10);
+                            console.log('[workspace] onEnd', { atendimentoId, fromEtapaId, toEtapaId });
+
+                            if (!atendimentoId || !toEtapaId) {
+                                console.warn('[workspace] move cancelado: ids invalidos');
                                 self.loadBoard();
+                                return;
+                            }
+                            if (fromEtapaId === toEtapaId) {
+                                // Reordenacao na mesma coluna - apenas refresh local
                                 return;
                             }
                             jsonFetch(self.endpoints.boardMove, {
@@ -207,7 +219,7 @@
                             }).then(function () {
                                 self.loadBoard();
                             }).catch(function (exc) {
-                                console.error('Falha ao mover card via drag', exc);
+                                console.error('[workspace] Falha no boardMove', exc);
                                 self.loadBoard();
                                 alert((exc && exc.message) || 'Falha ao mover card.');
                             });
@@ -217,9 +229,23 @@
                 });
             },
 
-            onCardClick: function (id) {
+            onCardClick: function (id, event) {
+                // Sortable cancela `click` quando o item foi arrastado.
+                // Mesmo assim, defense-in-depth: ignora se estamos em meio a drag.
                 if (this.isDragging) return;
                 return this.openChat(id);
+            },
+
+            onCardDetail: function (id, event) {
+                if (event) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                }
+                if (this.isDragging) return;
+                const self = this;
+                return this.openChat(id).then(function () {
+                    self.detailDrawerOpen = true;
+                });
             },
 
             openConversation: function (id) {

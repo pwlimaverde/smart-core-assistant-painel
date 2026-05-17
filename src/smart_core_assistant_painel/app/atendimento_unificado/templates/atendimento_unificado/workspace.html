@@ -1,6 +1,26 @@
 {% extends "atendimento_unificado/base_workspace.html" %}
 {% load static %}
 
+{% block workspace_x_data %}x-data="workspaceStore({
+    fluxoId: {{ fluxo_id|default:'null' }},
+    tenantSlug: '{{ tenant_slug|escapejs }}',
+    atendenteId: {{ atendente_id|default:'null' }},
+    atendenteNome: '{{ atendente_nome|escapejs }}',
+    sseEnabled: {% if sse_enabled %}true{% else %}false{% endif %},
+    endpoints: {
+        fluxos: '{% url 'atendimento_unificado:atendimento_unificado_api:fluxos_list' %}',
+        conversations: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+        conversationsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+        board: '{% url 'atendimento_unificado:atendimento_unificado_api:board_snapshot' %}',
+        boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
+        boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
+        sse: '{% url 'atendimento_unificado:workspace_events' %}',
+        customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
+        export: '{% url 'atendimento_unificado:atendimento_unificado_api:export' %}'
+    }
+})"{% endblock %}
+{% block workspace_x_init %}x-init="init()"{% endblock %}
+
 {% block workspace_topbar %}
 <header class="bg-[#1c1917] text-stone-100 h-12 flex items-center px-4 gap-4 border-b border-stone-800 shrink-0">
     <a href="{% url 'tenants:dashboard' %}"
@@ -42,27 +62,7 @@
 {% endblock %}
 
 {% block workspace_content %}
-<div id="workspace-root"
-    x-data="workspaceStore({
-        fluxoId: {{ fluxo_id|default:'null' }},
-        tenantSlug: '{{ tenant_slug|escapejs }}',
-        atendenteId: {{ atendente_id|default:'null' }},
-        atendenteNome: '{{ atendente_nome|escapejs }}',
-        sseEnabled: {% if sse_enabled %}true{% else %}false{% endif %},
-        endpoints: {
-            fluxos: '{% url 'atendimento_unificado:atendimento_unificado_api:fluxos_list' %}',
-            conversations: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-            conversationsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-            board: '{% url 'atendimento_unificado:atendimento_unificado_api:board_snapshot' %}',
-            boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
-            boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
-            sse: '{% url 'atendimento_unificado:workspace_events' %}',
-            customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-            export: '{% url 'atendimento_unificado:atendimento_unificado_api:export' %}'
-        }
-    })"
-    x-init="init()"
-    class="flex-1 min-w-0 flex">
+<div id="workspace-root" class="flex-1 min-w-0 flex">
 
     {# ==================== KANBAN (3/4 da tela) ==================== #}
     <section class="flex-1 min-w-0 overflow-x-auto overflow-y-hidden bg-stone-50 p-3">

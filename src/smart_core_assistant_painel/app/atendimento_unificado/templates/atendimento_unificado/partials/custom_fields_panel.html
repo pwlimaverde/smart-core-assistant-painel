@@ -1,0 +1,91 @@
+{# Painel de Campos Personalizados — E.2 #}
+{# Exibido no detail_panel quando activeConv está aberto. #}
+{# Alpine lê `activeDetail.campos` e `endpoints.customFields`. #}
+<div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden"
+    x-show="activeDetail && activeDetail.campos && activeDetail.campos.length > 0"
+    x-cloak>
+    <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
+        <div class="text-xs font-semibold uppercase tracking-wider text-stone-500">
+            Campos Personalizados
+        </div>
+        <div class="text-xs text-stone-400"
+            x-text="(activeDetail.campos || []).length + ' campo(s)'"></div>
+    </div>
+    <div class="divide-y divide-stone-50">
+        <template x-for="campo in (activeDetail.campos || [])" :key="campo.slug">
+            <div class="px-4 py-3"
+                x-data="{ editando: false, valorEdit: campo.valor_display, salvando: false }">
+                <div class="flex items-start justify-between gap-2">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="text-xs font-medium text-stone-700 truncate"
+                                x-text="campo.nome"></span>
+                            <span class="text-xs px-1.5 py-0.5 rounded-full font-medium"
+                                :class="campo.origem === 'BOT'
+                                    ? 'bg-blue-50 text-blue-700'
+                                    : campo.origem === 'IMPORT'
+                                        ? 'bg-purple-50 text-purple-700'
+                                        : 'bg-stone-100 text-stone-600'"
+                                x-text="campo.origem === 'BOT' ? 'BOT' : campo.origem === 'IMPORT' ? 'IMPORT' : 'MANUAL'">
+                            </span>
+                        </div>
+
+                        <template x-if="!editando">
+                            <div>
+                                <span class="text-sm text-stone-800"
+                                    x-text="campo.valor_display || '—'"></span>
+                                <template x-if="campo.confianca !== null && campo.origem === 'BOT'">
+                                    <div class="mt-1 flex items-center gap-1">
+                                        <div class="h-1 w-16 bg-stone-200 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full transition-all"
+                                                :class="campo.confianca >= 0.9
+                                                    ? 'bg-green-500'
+                                                    : campo.confianca >= 0.6
+                                                        ? 'bg-amber-500'
+                                                        : 'bg-red-500'"
+                                                :style="'width:' + Math.round(campo.confianca * 100) + '%'">
+                                            </div>
+                                        </div>
+                                        <span class="text-xs text-stone-400"
+                                            x-text="Math.round(campo.confianca * 100) + '%'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template x-if="editando">
+                            <div class="mt-1 flex gap-1">
+                                <input type="text"
+                                    x-model="valorEdit"
+                                    @keydown.enter.prevent="salvarCampo(campo, valorEdit, () => { editando = false })"
+                                    @keydown.escape="editando = false; valorEdit = campo.valor_display"
+                                    class="flex-1 text-sm border border-stone-300 rounded px-2 py-1 focus:ring-2 focus:ring-[#a98f71]/30 focus:outline-none"
+                                    :placeholder="campo.nome">
+                                <button @click="salvarCampo(campo, valorEdit, () => { editando = false })"
+                                    :disabled="salvando"
+                                    class="px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors disabled:opacity-50">
+                                    <span x-show="!salvando">✓</span>
+                                    <span x-show="salvando">…</span>
+                                </button>
+                                <button @click="editando = false; valorEdit = campo.valor_display"
+                                    class="px-2 py-1 text-xs border border-stone-300 text-stone-600 rounded hover:bg-stone-50">
+                                    ✕
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    <button x-show="!editando"
+                        @click="editando = true; valorEdit = campo.valor_display"
+                        class="text-stone-300 hover:text-stone-600 transition-colors flex-shrink-0 mt-0.5"
+                        title="Editar">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>

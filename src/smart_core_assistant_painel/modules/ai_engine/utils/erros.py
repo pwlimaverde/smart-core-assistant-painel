@@ -108,3 +108,13 @@ class InterpretMediaError(AppError):
 
     def __str__(self) -> str:
         return f"InterpretMediaError - {self.message}"
+
+
+@dataclass
+class ExtracaoCamposError(AppError):
+    """Erro na extração de campos personalizados via LLM."""
+
+    message: str
+
+    def __str__(self) -> str:
+        return f"ExtracaoCamposError - {self.message}"

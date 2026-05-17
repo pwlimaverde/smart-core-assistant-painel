@@ -1,14 +1,17 @@
 {
   "active": [
     {
-      "slug": "feature-interpret-media",
-      "path": "plans/feature-interpret-media.md",
-      "title": "Implementação de Interpretação de Mídias (Imagem, Vídeo e Documento)",
-      "summary": "Implementar o processamento de `imageMessage`, `videoMessage` e `documentMessage` no `FeaturesCompose.converter_contexto` usando **Gemini 2.5 Flash** como modelo multimodal unificado via `langchain-google-genai`.",
-      "linkedAt": "2026-04-09T14:27:07.614Z",
-      "status": "active"
+      "slug": "atendimento-unificado-chat-kanban",
+      "path": "plans/atendimento-unificado-chat-kanban.md",
+      "title": "Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados",
+      "summary": "Construir o módulo `atendimento_unificado`: tela única com chat estilo WhatsApp Web e modo Kanban sobre `EtapaFluxo`/`Atendimento`, com campos personalizados híbridos (globais por tenant + por fluxo) extraídos automaticamente pela IA e reinjetados no system prompt do bot. Real-time via SSE sobre Redis pub/sub. Trello permanece como espelho passivo. Entrega faseada em 3 sub-fases de execução (MVP → Campos+IA → Refinamentos).",
+      "linkedAt": "2026-05-14T18:46:09.784Z",
+      "status": "active",
+      "approval_status": "approved",
+      "approved_at": "2026-05-15T14:07:00.417Z",
+      "approved_by": "solo-dev"
     }
   ],
   "completed": [],
-  "primary": "feature-interpret-media"
+  "primary": "atendimento-unificado-chat-kanban"
 }

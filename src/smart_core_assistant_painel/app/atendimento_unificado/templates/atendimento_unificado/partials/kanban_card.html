@@ -1,0 +1,36 @@
+{# Partial usado dentro de <template x-for="card in (board.cards[etapa.id] || [])">. Recebe `card`. #}
+<button @click="openChatDrawer(card.atendimento_id)"
+    :data-atend-id="card.atendimento_id"
+    class="w-full text-left bg-white rounded-lg shadow-sm border border-stone-200 p-3 hover:shadow transition-shadow cursor-pointer">
+    <div class="flex items-start justify-between gap-2 mb-1">
+        <div class="text-xs font-semibold text-stone-800 line-clamp-2" x-text="card.titulo"></div>
+        <span class="text-xs shrink-0" x-text="card.canal_emoji"></span>
+    </div>
+    <div class="flex items-center gap-1 mb-2">
+        <span class="text-[10px] px-1.5 py-0.5 rounded font-medium"
+            :class="card.prioridade_label_class" x-text="card.prioridade"></span>
+        <span class="text-[10px] text-stone-500" x-text="card.status_emoji + ' ' + card.status"></span>
+    </div>
+    <template x-if="card.preview_msg">
+        <div class="text-[11px] text-stone-500 truncate mb-1"
+            x-text="(card.preview_remetente === 'contato' ? '' : '↳ ') + card.preview_msg"></div>
+    </template>
+    <div class="flex items-center justify-between mt-2">
+        <template x-if="card.atendente">
+            <div class="flex items-center gap-1">
+                <div class="h-5 w-5 rounded-full bg-[#a98f71] text-white flex items-center justify-center text-[9px] font-bold"
+                    x-text="card.atendente.nome.slice(0,2).toUpperCase()"></div>
+                <span class="text-[10px] text-stone-600 truncate max-w-[8rem]" x-text="card.atendente.nome"></span>
+            </div>
+        </template>
+        <template x-if="!card.atendente">
+            <div class="text-[10px] text-stone-400 italic">Sem atendente</div>
+        </template>
+        <div class="flex items-center gap-1">
+            <template x-if="card.sla_estourado">
+                <span class="text-[10px] bg-red-100 text-red-700 font-semibold px-1.5 py-0.5 rounded" title="SLA estourado (>8h na etapa)">⚠️ SLA</span>
+            </template>
+            <span class="text-[10px] text-stone-400" x-text="card.tempo_ultima_msg"></span>
+        </div>
+    </div>
+</button>

@@ -26,6 +26,7 @@ TENANT_APPS = {
     "evolution_sync",  # Precisa estar junto com clientes (FK Contato)
     "trello_sync",
     "treinamento",
+    "atendimento_unificado",
 }
 
 

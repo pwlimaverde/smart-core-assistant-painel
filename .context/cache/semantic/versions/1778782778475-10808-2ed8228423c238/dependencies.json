@@ -1,0 +1,29 @@
+{
+  "mostImported": [
+    {
+      "file": "src\\smart_core_assistant_painel\\app\\usuarios",
+      "importedBy": 1,
+      "description": "Application entry (Next.js app router)"
+    },
+    {
+      "file": "src\\smart_core_assistant_painel\\app\\trello_sync",
+      "importedBy": 1,
+      "description": "Application entry (Next.js app router)"
+    },
+    {
+      "file": "src\\smart_core_assistant_painel\\app\\treinamento",
+      "importedBy": 1,
+      "description": "Application entry (Next.js app router)"
+    },
+    {
+      "file": "src\\smart_core_assistant_painel\\app\\settings_manager",
+      "importedBy": 1,
+      "description": "Application entry (Next.js app router)"
+    },
+    {
+      "file": "src\\smart_core_assistant_painel\\app\\core",
+      "importedBy": 1,
+      "description": "Application entry (Next.js app router)"
+    }
+  ]
+}

@@ -3,11 +3,15 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Feature Interpret Media](./feature-interpret-media.md)
+(vazio — nenhum plano ativo)
+
+## Arquivo
+- [Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados](./archive/atendimento-unificado-chat-kanban.md) — arquivado em 2026-05-17 (v1.1.0)
+- [Feature Interpret Media](./archive/feature-interpret-media.md) — concluído em 2026-05-14
 
 ## How To Create Or Update Plans
-- Run "ai-context plan <name>" to scaffold a new plan template.
-- Run "ai-context plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
+- Run "dotcontext plan <name>" to scaffold a new plan template.
+- Run "dotcontext plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
 
 ## Related Resources
 - [Agent Handbook](../agents/README.md)

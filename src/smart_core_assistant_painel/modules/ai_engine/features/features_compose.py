@@ -41,6 +41,7 @@ from ..utils.erros import (
     AnaliseMensageError,
     DataMessageError,
     DocumentError,
+    ExtracaoCamposError,
     InterpretMediaError,
     LlmError,
     TranscribeAudioError,
@@ -49,7 +50,9 @@ from ..utils.parameters import (
     AnaliseAvaliacaoParameters,
     AnaliseMensageParameters,
     AnalisePreviaMensagemParameters,
+    CampoDefinicao,
     DataMensageParameters,
+    ExtracaoCamposParameters,
     GenerateChunksParameters,
     InterpretMediaParameters,
     LlmParameters,
@@ -760,6 +763,65 @@ class FeaturesCompose:
         # Garantir faixa [0, 1]
         final_score = max(0.0, min(1.0, base_score))
         return final_score
+
+    @staticmethod
+    def extracao_campos(
+        atendimento_id: int,
+        historico_conversa: list[dict[str, Any]],
+        campos_a_extrair: list[CampoDefinicao],
+    ) -> list[Any]:
+        """Extrai campos personalizados da conversa via LLM com Structured Output.
+
+        Retorna lista de `CampoExtraido` com slug, valor e confiança.
+        Retorna lista vazia se não há campos ou histórico.
+
+        Args:
+            atendimento_id: ID do atendimento.
+            historico_conversa: Lista de dicts com remetente/conteudo.
+            campos_a_extrair: Campos configurados pelo tenant para extração.
+
+        Returns:
+            list[CampoExtraido]: Campos extraídos com confiança >= 0.6.
+        """
+        from smart_core_assistant_painel.modules.ai_engine.features.extracao_campos.domain.usecase.extracao_campos_usecase import (
+            ExtracaoCamposUsecase,
+        )
+
+        if not campos_a_extrair or not historico_conversa:
+            return []
+
+        llm_parameters = LlmParameters(
+            llm_class=SERVICEHUB.LLM_CLASS,
+            model=SERVICEHUB.MODEL,
+            extra_params={
+                "temperature": 0.0,
+                "api_key": SERVICEHUB.LLM_API_KEY,
+            },
+            prompt_system="",
+            prompt_human="",
+            context="",
+            error=LlmError("Erro na extração de campos"),
+        )
+        parameters = ExtracaoCamposParameters(
+            atendimento_id=atendimento_id,
+            historico_conversa=historico_conversa,
+            campos_a_extrair=campos_a_extrair,
+            llm_parameters=llm_parameters,
+            error=ExtracaoCamposError("Erro ao extrair campos personalizados"),
+        )
+        usecase = ExtracaoCamposUsecase()
+        result = usecase(parameters)
+
+        if isinstance(result, SuccessReturn):
+            return result.result
+        elif isinstance(result, ErrorReturn):
+            logger.warning(
+                "extracao_campos falhou para atendimento {}: {}",
+                atendimento_id,
+                result.result,
+            )
+            return []
+        return []
 
     @staticmethod
     def generate_chunks(

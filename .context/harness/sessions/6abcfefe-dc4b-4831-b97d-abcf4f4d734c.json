@@ -1,0 +1,92 @@
+{
+  "id": "6abcfefe-dc4b-4831-b97d-abcf4f4d734c",
+  "name": "atendimento-unificado-chat-kanban",
+  "status": "active",
+  "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
+  "createdAt": "2026-05-14T18:36:22.578Z",
+  "updatedAt": "2026-05-16T16:51:32.353Z",
+  "startedAt": "2026-05-14T18:36:22.578Z",
+  "traceCount": 40,
+  "artifactCount": 0,
+  "checkpointCount": 6,
+  "checkpoints": [
+    {
+      "id": "cd8d6c14-f649-4739-ae0c-b6fcb382fece",
+      "note": "Advanced workflow phase P -> R",
+      "data": {
+        "from": "P",
+        "to": "R",
+        "outputs": [
+          "plans/atendimento-unificado-chat-kanban.md"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-15T14:07:00.971Z"
+    },
+    {
+      "id": "fd9af317-39f7-40ce-8cfe-4c93caf67b5b",
+      "note": "Advanced workflow phase R -> E",
+      "data": {
+        "from": "R",
+        "to": "E",
+        "outputs": [
+          "Aprovação consolidada R.1-R.8 conforme plano consolidado"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-15T14:07:05.580Z"
+    },
+    {
+      "id": "dcba8d0d-e43d-4318-a272-5546e21c3421",
+      "note": "E.1 (MVP Chat + Kanban) implementado: app atendimento_unificado completo com models, services (board/message_dispatch/realtime_publisher/card_renderer), selectors, signals, views (HTML + API + SSE async), templates Tailwind+Alpine (workspace.html + 7 partials), workspace_alpine.js, feature flag via settings, entrada no sidebar, doc Nginx/Uvicorn. Django check passa; ruff format/check passam; pyright zero erros.",
+      "artifactIds": [],
+      "createdAt": "2026-05-15T19:24:30.311Z"
+    },
+    {
+      "id": "457e724a-edb1-4af3-9439-90aa456f6695",
+      "note": "E.1 (MVP Chat + Kanban) commitada em b1c512e. Bugs corrigidos: URLs do template (refatorado para conversationsBase + ID + suffix); idempotência em move_atendimento; SSE reconnect exponencial; Shift+Enter no composer. Validação: django check, ruff format/check e pyright sem erros. Próximas etapas: E.2 (campos personalizados + IA) e E.3 (drag-drop, mídia outbound, export).",
+      "artifactIds": [],
+      "createdAt": "2026-05-16T15:17:07.289Z"
+    },
+    {
+      "id": "7579defc-a8c1-4e3a-9630-92a72c422e3b",
+      "note": "Advanced workflow phase E -> V",
+      "data": {
+        "from": "E",
+        "to": "V",
+        "outputs": [
+          "src/smart_core_assistant_painel/app/atendimento_unificado/models.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/migrations/0002_campos_personalizados.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/tenant_admin.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/tasks.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/signals.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/selectors.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/views_api.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/api_urls.py",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/templates/atendimento_unificado/partials/custom_fields_panel.html",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/templates/atendimento_unificado/workspace.html",
+          "src/smart_core_assistant_painel/app/atendimento_unificado/static/atendimento_unificado/js/workspace_alpine.js",
+          "src/smart_core_assistant_painel/modules/ai_engine/features/extracao_campos/",
+          "src/smart_core_assistant_painel/modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py",
+          "src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py",
+          "src/smart_core_assistant_painel/modules/ai_engine/utils/parameters.py",
+          "src/smart_core_assistant_painel/modules/ai_engine/utils/erros.py"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-16T16:16:46.388Z"
+    },
+    {
+      "id": "e29a430e-cffb-4272-a80d-8aa5c12d6f38",
+      "note": "E.2 validado e bugs corrigidos (commit b3686f0). Correções: (1) extracao_campos_datasource — prefixos remetente eram uppercase (CONTATO/ASSISTENTE_VIRTUAL) mas TipoRemetente é lowercase (contato/bot/atendente_humano), bot nunca aparecia no histórico formatado; (2) selectors — novo helper get_campos_for_prompt(atendimento_id, fluxo_id) retorna (coletados, pendentes) prontos para AnaliseMensageParameters — permite integração sem ferir princípio de independência (chamadores externos não importam models de atendimento_unificado); (3) pragmas pyright em models.py, analise_mensage e extracao_campos. Resultado validação: django check OK, ruff check OK em arquivos E.2, ruff format OK, pyright 0 erros em todos arquivos E.2 (148 warnings residuais aceitáveis). Pendência conhecida: ponte get_campos_for_prompt → AnaliseMensageParameters precisa ser acionada por attendance_orchestrator.py em E.3 ou tarefa separada (não tocado para preservar princípio de independência). Workflow na fase V (60%).",
+      "artifactIds": [],
+      "createdAt": "2026-05-16T16:51:32.311Z"
+    }
+  ],
+  "metadata": {
+    "workflow": true,
+    "description": "Construir módulo atendimento_unificado com chat WhatsApp + Kanban + campos personalizados extraídos por IA. Real-time via SSE/Redis. Entrega faseada em 3 fases sobre modelos existentes (EtapaFluxo/Atendimento/Mensagem). Toca camadas: app Django novo, models, signals, ASGI, feature LLM com structured output, sync Trello, design system Tailwind+Alpine."
+  },
+  "lastTraceAt": "2026-05-16T16:51:32.353Z",
+  "lastCheckpointAt": "2026-05-16T16:51:32.311Z"
+}

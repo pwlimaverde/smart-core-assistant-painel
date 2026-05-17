@@ -1,0 +1,84 @@
+{# Painel direito (detalhes da conversa ativa). Usa store: `activeDetail`. #}
+<div class="p-4 space-y-3" x-show="activeDetail">
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
+            <div class="text-xs font-semibold uppercase tracking-wider text-stone-500">Contato</div>
+        </div>
+        <div class="p-4 space-y-1 text-sm">
+            <div class="font-semibold text-stone-800" x-text="activeDetail?.contato?.nome || '—'"></div>
+            <div class="text-stone-500" x-text="activeDetail?.contato?.telefone || ''"></div>
+            <div class="text-stone-500" x-text="activeDetail?.contato?.email || ''"></div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+        <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
+            <div class="text-xs font-semibold uppercase tracking-wider text-stone-500">Atendimento</div>
+        </div>
+        <div class="p-4 space-y-2 text-sm">
+            <div class="flex items-center justify-between">
+                <span class="text-stone-500">Status</span>
+                <span class="font-medium text-stone-800" x-text="activeDetail?.status || ''"></span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-stone-500">Prioridade</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded font-medium"
+                    :class="prioridadeClass(activeDetail?.prioridade)"
+                    x-text="activeDetail?.prioridade || ''"></span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-stone-500">Atendente</span>
+                <span class="font-medium text-stone-800"
+                    x-text="activeDetail?.atendente?.nome || '—'"></span>
+            </div>
+            <div class="flex items-center justify-between">
+                <span class="text-stone-500">Assunto</span>
+                <span class="text-stone-800 truncate ml-2 max-w-[10rem]"
+                    x-text="activeDetail?.assunto || ''"></span>
+            </div>
+            <template x-if="(activeDetail?.tags || []).length">
+                <div>
+                    <div class="text-stone-500 mb-1">Tags</div>
+                    <div class="flex flex-wrap gap-1">
+                        <template x-for="t in (activeDetail.tags || [])" :key="t">
+                            <span class="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-700"
+                                x-text="t"></span>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <template x-if="(activeDetail?.intents || []).length">
+        <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+            <div class="px-4 py-3 border-b border-stone-100 bg-stone-50/50">
+                <div class="text-xs font-semibold uppercase tracking-wider text-stone-500">Análise IA</div>
+            </div>
+            <div class="p-4 space-y-2 text-xs">
+                <div>
+                    <div class="text-stone-500 mb-1">Intents</div>
+                    <div class="flex flex-wrap gap-1">
+                        <template x-for="(it, idx) in (activeDetail.intents || []).slice(0,5)" :key="idx">
+                            <span class="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700"
+                                x-text="intentLabel(it)"></span>
+                        </template>
+                    </div>
+                </div>
+                <template x-if="(activeDetail?.entidades || []).length">
+                    <div>
+                        <div class="text-stone-500 mb-1">Entidades</div>
+                        <div class="flex flex-wrap gap-1">
+                            <template x-for="(e, idx) in (activeDetail.entidades || []).slice(0,5)" :key="idx">
+                                <span class="px-1.5 py-0.5 rounded bg-stone-100 text-stone-700"
+                                    x-text="intentLabel(e)"></span>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    {% include "atendimento_unificado/partials/custom_fields_panel.html" %}
+</div>

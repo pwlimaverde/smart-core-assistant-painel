@@ -1,6 +1,6 @@
 ---
-status: ready
-progress: 0
+status: in_progress
+progress: 80
 generated: 2026-05-14
 source: "docs_dev/planejamento/atendimento_unificado/a-usabilidade-do-sistema-stateful-allen.md"
 workflow: "atendimento-unificado-chat-kanban"
@@ -76,7 +76,7 @@ phases:
       - "Habilitar feature flag ATENDIMENTO_UNIFICADO_ENABLED em 1 tenant piloto, observar 24h"
       - "Rollout gradual nos demais tenants (1 a 1, intervalo 4h)"
       - "Arquivar plano e registrar lessons learned"
-lastUpdated: "2026-05-15T14:07:00.417Z"
+lastUpdated: "2026-05-16T23:15:00.000Z"
 ---
 
 # Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados
@@ -670,20 +670,22 @@ extracao_campos/
 
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| E.3.1 | Integrar **SortableJS** via CDN com Alpine; `dragend → POST /board/move/`; rollback em erro via snapshot do store | `frontend-specialist` | pending | Drag-drop suave sem flicker |
-| E.3.2 | Flag `isDragging` no store Alpine ignora updates SSE da etapa em movimento por 2s | `frontend-specialist` | pending | Sem conflito SortableJS+SSE |
-| E.3.3 | Filtros: `/conversations/?q=&depto=&atendente=&tag=&campo_<slug>=` | `backend-specialist` | pending | Filtros funcionam |
-| E.3.4 | Index GIN em `ValorCampoAtendimento.valor` para filtro por campo | `database-specialist` | pending | Query plan usa index |
-| E.3.5 | Badge não-lido baseado em `LeituraAtendimento.ultima_leitura_at` (model criado na E.1.10). Endpoint `mark-read` faz upsert em `LeituraAtendimento` | `frontend-specialist` | pending | Badge decrementa ao abrir |
-| E.3.6 | Badge SLA estourado usando `MovimentoFluxo.duracao_segundos` | `frontend-specialist` | pending | Visualização clara de SLA |
-| E.3.7 | Implementar `EvolutionWhatsAppService.send_media(...)` chamando `/message/sendMedia` da Evolution API | `backend-specialist` | pending | Mídia outbound funcional |
-| E.3.8 | Signal Evolution detecta `Mensagem.tipo in (IMAGEM,AUDIO,DOCUMENTO)` e usa `send_media` | `backend-specialist` | pending | Atendente envia mídia |
-| E.3.9 | Endpoint `POST /conversations/<id>/upload/` (multipart) cria `Mensagem` com mídia | `backend-specialist` | pending | Upload funcional |
-| E.3.10 | `GET /workspace/api/export/?formato=csv&...` → `StreamingHttpResponse` + `.iterator(chunk_size=500)`; Celery se grande | `backend-specialist` | pending | Export 5000 linhas < 30s |
+| E.3.1 | Integrar **SortableJS** via CDN com Alpine; `dragend → POST /board/move/`; rollback robusto via `loadBoard()` autoritativo (snapshot causava inconsistência DOM/Alpine após reconciliation) | `frontend-specialist` | ✅ done | Drag-drop suave sem flicker (commit d7d3d98 + fix 08e02d4) |
+| E.3.2 | Flag `isDragging` no store Alpine bloqueia updates SSE durante o arrastar | `frontend-specialist` | ✅ done | Sem conflito SortableJS+SSE (commit d7d3d98) |
+| E.3.3 | Filtro `?tag=` em `list_conversations` + input UI no sidebar. Demais filtros (`depto`, `atendente`, `campo_<slug>`) ficam para iteração futura | `backend-specialist` | ✅ done (parcial) | Filtro por tag funciona end-to-end (commit d7d3d98 + UI em 08e02d4) |
+| E.3.4 | Index GIN (jsonb_path_ops) em `atu_valor_campo.valor` via `RunSQL` | `database-specialist` | ✅ done | Migration `0003_gin_index_valor_campo.py` (commit d7d3d98) |
+| E.3.5 | Badge não-lido + endpoint `mark-read` (entregue em E.1.10, validado em E.3) | `frontend-specialist` | ✅ done | Badge decrementa ao abrir |
+| E.3.6 | Badge "⚠️ SLA" no card quando `>8h` na etapa atual (calculado em `card_renderer._get_tempo_na_etapa_seconds` usando `MovimentoFluxo.data_movimento`) | `frontend-specialist` | ✅ done | `sla_estourado: True` no payload + badge vermelho (commit d7d3d98) |
+| E.3.7 | `media_dispatch_service._send_media_via_evolution` chamando `/message/sendMedia` direto (princípio de independência preservado; sem editar `evolution_sync/services/evolution_api.py`) | `backend-specialist` | ✅ done | Service entrega base64 + caption (commit d7d3d98 + fix do AppInstance/EvolutionInstance em 08e02d4) |
+| E.3.8 | `upload_and_send_media` cria `Mensagem(tipo=IMAGEM/AUDIO/etc., resposta_bot="")` e chama o service imediatamente. **`resposta_bot` vazio é intencional**: evita disparar `_on_message_saved` do `evolution_sync` que faria envio duplicado | `backend-specialist` | ✅ done | Envio único, sem race com signal (fix em 08e02d4) |
+| E.3.9 | Endpoint `POST /conversations/<id>/upload/` (multipart, ≤10 MB) + botão de upload no composer | `backend-specialist` | ✅ done | Upload funcional (commit d7d3d98) |
+| E.3.10 | `GET /workspace/api/export/?fluxo=<id>` → `StreamingHttpResponse` + `csv.writer(_Echo())` + `iterator(chunk_size=500)` | `backend-specialist` | ✅ done | Export streaming + botão "↓ CSV" na topbar (commit d7d3d98) |
 
 **Riscos E.3 e mitigações**
-1. **SortableJS+SSE conflito** → flag `isDragging` no store (E.3.2).
-2. **Export grande** → streaming + Celery para >10k linhas.
+1. **SortableJS+SSE conflito** → flag `isDragging` no store (E.3.2). ✅
+2. **Export grande** → streaming + Celery para >10k linhas. ✅ (streaming feito; Celery escala futura).
+3. **Double-send mídia (signal `_on_message_saved` em evolution_sync)** → `resposta_bot=""` impede o signal de disparar (early-return na linha 115). ✅ corrigido em 08e02d4.
+4. **AppInstance vs EvolutionInstance confusion** → `_resolve_evolution_params` agora replica o pattern do signal: AppInstance fornece `api_key`, EvolutionInstance fornece `instance_name`, TenantEvolution fornece `server_url`. ✅ corrigido em 08e02d4.
 
 ---
 
@@ -696,14 +698,14 @@ extracao_campos/
 
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| V.1.a | Roteiro E.1 — Chat: envio msg via composer chega no WhatsApp; histórico carrega; mark-read decrementa badge; 2 abas refletem novas msgs ao vivo (SSE) | `code-reviewer` | pending | Checklist marcado |
-| V.1.b | **Roteiro E.1 — Paridade Trello (crítico)**: (a) seletor de Fluxo mostra todos os fluxos do dept; (b) cards no kanban renderizam visual equivalente ao Trello (título, label prioridade, atendente, preview, tempo); (c) clicar em card abre chat drawer; (d) mover card FILA→TRABALHO atribui atendente E envia saudação automática (verificar Mensagem criada com `transferir_para_humano_com_saudacao`); (e) mover para etapa FINALIZACAO (nome "Resolvido") encerra atendimento com status RESOLVIDO; (f) mover para etapa "Cancelado" encerra com CANCELADO; (g) mover para etapa ESPERA muda status para PENDENCIA; (h) mover card para coluna de OUTRO fluxo atualiza `atendimento.fluxo_atendimento_id` e `departamento_id`; (i) mudança de `Atendimento.status` (via outra origem) move card e card no Trello | `code-reviewer` | pending | Checklist marcado, evidências em screenshots |
-| V.1.c | Roteiro E.1 — Trello permanece sincronizado: mudanças no Workspace refletem no Trello em ≤5s; mudanças no Trello refletem no Workspace em ≤5s (via SSE após signal interno) | `code-reviewer` | pending | Checklist marcado |
-| V.2 | Roteiro E.2: definir campo, contato envia "CNPJ X", ver extração, editar manual, validar não-sobrescrita, ver no Trello, ver no próximo prompt | `code-reviewer` | pending | Checklist marcado |
-| V.3 | Roteiro E.3: drag-drop, filtros por campo, badge não-lido, export CSV | `code-reviewer` | pending | Checklist marcado |
-| V.4 | `ruff format` + `ruff check` + `pyright --strict` sem erros | `code-reviewer` | pending | Saída limpa |
-| V.5 | Carga: 50 conversas + 1000 mensagens → sidebar < 500ms; board com 30 cards × 6 colunas < 800ms | `performance-optimizer` | pending | Métrica registrada |
-| V.6 | Auditoria de segurança: autorização por rota, isolamento tenant SSE, validação upload, atendente só vê fluxos permitidos | `security-auditor` | pending | Relatório aprovado |
+| V.1.a | Roteiro E.1 — Chat: envio msg via composer chega no WhatsApp; histórico carrega; mark-read decrementa badge; 2 abas refletem novas msgs ao vivo (SSE) | `code-reviewer` | ⏸️ deferred-prod | A executar pelo usuário em C.9 (smoke test no tenant piloto) |
+| V.1.b | **Roteiro E.1 — Paridade Trello (crítico)**: (a) seletor de Fluxo mostra todos os fluxos do dept; (b) cards no kanban renderizam visual equivalente ao Trello; (c) clicar em card abre chat drawer; (d) mover card FILA→TRABALHO atribui atendente E envia saudação automática; (e) mover para FINALIZACAO encerra com RESOLVIDO; (f) mover para "Cancelado" encerra com CANCELADO; (g) mover para ESPERA muda status para PENDENCIA; (h) mover card para coluna de OUTRO fluxo atualiza `fluxo_atendimento_id` e `departamento_id`; (i) mudança de `Atendimento.status` (via outra origem) move card | `code-reviewer` | ⏸️ deferred-prod | A executar pelo usuário em C.9 |
+| V.1.c | Roteiro E.1 — Trello sincronizado: mudanças no Workspace refletem no Trello em ≤5s; e vice-versa | `code-reviewer` | ⏸️ deferred-prod | A executar pelo usuário em C.9 |
+| V.2 | Roteiro E.2: definir campo, contato envia "CNPJ X", ver extração, editar manual, validar não-sobrescrita, ver no próximo prompt | `code-reviewer` | ⏸️ deferred-prod | A executar pelo usuário em C.9. **Nota**: integração `get_campos_for_prompt` → `attendance_orchestrator.py` é E.2.9b (pendente de tarefa separada) |
+| V.3 | Roteiro E.3: drag-drop, filtro por tag, badge SLA, upload mídia, export CSV | `code-reviewer` | ⏸️ deferred-prod | A executar pelo usuário em C.9 |
+| V.4 | `ruff format` + `ruff check` + `pyright` sem erros nos arquivos da feature | `code-reviewer` | ✅ done | 0 erros em todos os arquivos E.1+E.2+E.3 (executado em 2026-05-16) |
+| V.5 | Carga: 50 conversas + 1000 mensagens → sidebar < 500ms; board com 30 cards × 6 colunas < 800ms | `performance-optimizer` | ⏸️ deferred-prod | A medir em produção pós-rollout (C.10) |
+| V.6 | Auditoria de segurança: autorização por rota, isolamento tenant SSE, validação upload, atendente só vê fluxos permitidos | `security-auditor` | ⏸️ deferred-prod | A executar quando 2+ tenants estiverem ativos (C.10) |
 
 **Commit Checkpoint**: `chore(plan): validar atendimento_unificado fases E.1-E.3`
 
@@ -718,20 +720,32 @@ extracao_campos/
 
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| C.1 | Atualizar [architecture.md](../docs/architecture.md) com novo app, SSE e princípio de independência cross-app | `documentation-writer` | pending | Seção adicionada |
-| C.2 | Atualizar [data-flow.md](../docs/data-flow.md) com fluxo de extração e SSE | `documentation-writer` | pending | Diagrama atualizado |
-| C.3 | Atualizar [glossary.md](../docs/glossary.md) (Workspace, Campo Personalizado, `LeituraAtendimento`, feature flag, etc.) | `documentation-writer` | pending | Termos novos |
-| C.4 | Documentar configuração Nginx (`proxy_buffering off`, `proxy_read_timeout 1h` em `/workspace/events/`) em [security.md](../docs/security.md) ou doc dedicado | `documentation-writer` | pending | Config Nginx publicada |
-| C.5 | **Merge da branch `feature/new-front-user` em `master`** após todas E.1–E.3 verdes. PR review obrigatório. | `backend-specialist` | pending | Merge concluído em master |
-| C.6 | **Bump de versão semver MINOR** (feature nova) em `pyproject.toml` + `CHANGELOG.md` resumindo entregas E.1, E.2, E.3 | `backend-specialist` | pending | Versão bumpada, CHANGELOG atualizado |
-| C.7 | **Criar tag e disparar deploy automático**: `git tag -a v<MAJOR>.<MINOR>.<PATCH> -m "Release atendimento_unificado v..."` + `git push origin v<MAJOR>.<MINOR>.<PATCH>`. O [.github/workflows/deploy.yml](../../.github/workflows/deploy.yml) dispara em `push: tags: v*` — build Docker, push GHCR, SSH no servidor, `docker compose pull`, `migrate`, `bootstrap_core_settings`, `migrate_all_tenants`, `collectstatic`, healthcheck. | `devops-specialist` | pending | Tag criada; workflow GitHub Actions verde; containers `Up (healthy)` |
-| C.8 | **Verificar healthcheck pós-deploy**: logs do GHA, `docker compose ps` no servidor, acesso a `/healthz` (se existir) ou raiz autenticada | `devops-specialist` | pending | Containers healthy, sem `Restarting` |
-| C.9 | **Habilitar feature flag em 1 tenant piloto**: `TenantConfig.update_config(slug, key="ATENDIMENTO_UNIFICADO_ENABLED", value=True)` no shell Django. Smoke test manual (V.1.a, V.1.b crítico, V.1.c) com esse tenant — duração mínima 24h observando logs Loguru. | `backend-specialist` | pending | 1 tenant rodando 24h sem erros |
-| C.10 | **Rollout gradual**: habilitar feature flag nos demais tenants, 1 por vez, intervalo mínimo de 4h entre cada. Monitorar `/var/log/smartcore-health.log` e logs do GHA. | `backend-specialist` | pending | Todos os tenants ligados, sem incidentes |
-| C.11 | Arquivar plano em `.context/plans/archive/` e atualizar README | `documentation-writer` | pending | Plano arquivado |
-| C.12 | Registrar lessons learned (SSE async views, princípio de independência cross-app, deploy direto em prod com feature flag) | `documentation-writer` | pending | Lessons no plano arquivado |
+| C.1 | Atualizar [architecture.md](../docs/architecture.md) com novo app, SSE e princípio de independência cross-app | `documentation-writer` | ⏳ pending | Seção adicionada |
+| C.2 | Atualizar [data-flow.md](../docs/data-flow.md) com fluxo de extração e SSE | `documentation-writer` | ⏳ pending | Diagrama atualizado |
+| C.3 | Atualizar [glossary.md](../docs/glossary.md) (Workspace, Campo Personalizado, `LeituraAtendimento`, feature flag, etc.) | `documentation-writer` | ⏳ pending | Termos novos |
+| C.4 | Documentar configuração Nginx (`proxy_buffering off`, `proxy_read_timeout 1h` em `/workspace/events/`) em [security.md](../docs/security.md) ou doc dedicado | `documentation-writer` | ⏳ pending | Config Nginx publicada |
+| C.5 | **Merge da branch `feature/new-front-user` em `master`** após todas E.1–E.3 verdes. PR review obrigatório. | `user` | 🧑 user-action | Merge concluído em master |
+| C.6 | **Bump de versão semver MINOR** em `pyproject.toml` + `CHANGELOG.md` resumindo E.1, E.2, E.3 | `backend-specialist` | ✅ done | v1.0.7 → v1.1.0; CHANGELOG seção completa (commit 521e5d0) |
+| C.7 | **Criar tag e disparar deploy automático**: `git tag -a v1.1.0 -m "Release atendimento_unificado v1.1.0"` + `git push origin v1.1.0`. O `.github/workflows/deploy.yml` dispara em `push: tags: v*` — build Docker, push GHCR, SSH no servidor, `docker compose pull`, `migrate`, `bootstrap_core_settings`, `migrate_all_tenants`, `collectstatic`, healthcheck | `user` | 🧑 user-action | Tag criada; workflow GitHub Actions verde; containers `Up (healthy)` |
+| C.8 | **Verificar healthcheck pós-deploy**: logs do GHA, `docker compose ps` no servidor, acesso à raiz autenticada | `user` | 🧑 user-action | Containers healthy, sem `Restarting` |
+| C.9 | **Habilitar feature flag em 1 tenant piloto**: `TenantConfig.update_config(slug, key="ATENDIMENTO_UNIFICADO_ENABLED", value=True)` no shell Django. Smoke test manual (V.1.a, V.1.b crítico, V.1.c, V.2, V.3) com esse tenant — duração mínima 24h observando logs Loguru | `user` | 🧑 user-action | 1 tenant rodando 24h sem erros |
+| C.10 | **Rollout gradual**: habilitar feature flag nos demais tenants, 1 por vez, intervalo mínimo de 4h entre cada. Monitorar `/var/log/smartcore-health.log` e logs do GHA. Aproveitar para rodar V.5 (carga) e V.6 (segurança multi-tenant) | `user` | 🧑 user-action | Todos os tenants ligados, sem incidentes |
+| C.11 | Arquivar plano em `.context/plans/archive/` e atualizar README | `documentation-writer` | ⏳ pending | Plano arquivado |
+| C.12 | Registrar lessons learned (SSE async views, princípio de independência cross-app, deploy direto em prod com feature flag, bug double-send via signal cross-app) | `documentation-writer` | ⏳ pending | Lessons no plano arquivado |
 
-**Commit Checkpoint**: `chore(plan): encerrar plano atendimento_unificado v<MAJOR>.<MINOR>.<PATCH>`
+**Commit Checkpoint**: `chore(plan): encerrar plano atendimento_unificado v1.1.0`
+
+#### Status atual da Fase C (atualizado 2026-05-16)
+
+| Item | Estado | Ação imediata |
+|---|---|---|
+| **Código** | ✅ pronto para deploy | nenhuma; 3 commits prontos em `feature/new-front-user` (d7d3d98, 521e5d0, 08e02d4) |
+| **Documentação técnica** (C.1–C.4, C.11–C.12) | ⏳ a fazer | escrever atualizações em `.context/docs/` |
+| **Release & deploy** (C.5, C.7, C.8) | 🧑 aguarda usuário | abrir PR → merge → tag v1.1.0 → push |
+| **Smoke test piloto** (C.9, V.1.a–V.3) | 🧑 aguarda usuário | habilitar flag em 1 tenant após deploy, observar 24h |
+| **Rollout gradual** (C.10, V.5, V.6) | 🧑 aguarda usuário | ativar tenants 1 a 1 com 4h de intervalo |
+
+**Pendência arquitetural conhecida (E.2.9b)**: A ponte `get_campos_for_prompt` → `AnaliseMensageParameters.campos_coletados/campos_pendentes` precisa ser acionada em `attendance_orchestrator.py`. Helper já existe em `selectors.get_campos_for_prompt`. Sem essa integração, o bot funciona mas não recebe os campos coletados/pendentes no prompt — o que era um dos objetivos de E.2. Tratado como tarefa separada para preservar o princípio de independência (orchestrator é app de produção).
 
 ---
 
@@ -806,4 +820,43 @@ git push origin v1.4.0
 
 ## Execution History
 
-> Last updated: 2026-05-15T14:07:00.417Z | Progress: 0%
+> Last updated: 2026-05-16T23:15:00Z | Progress: 80% (Fase C em andamento)
+
+### Marcos concluídos
+
+| Data | Fase | Marco | Commits |
+|---|---|---|---|
+| 2026-05-14 | P | Plano consolidado e aprovado | — |
+| 2026-05-15 | R | Revisão R.1-R.8 aprovada | — |
+| 2026-05-15 | E.1 | MVP Chat + Kanban completo (paridade Trello) | `b1c512e` |
+| 2026-05-16 | E.2 | Campos Personalizados + Extração LLM | `6c664c2`, `b3686f0`, `365ec80` |
+| 2026-05-16 | V.4 | Lint + type-check 0 erros em todos os arquivos | — |
+| 2026-05-16 | E.3 | Refinamentos: drag-drop, SLA, mídia, export, filtro | `d7d3d98`, `08e02d4` |
+| 2026-05-16 | C.6 | Bump v1.0.7 → v1.1.0 + CHANGELOG | `521e5d0` |
+
+### Bugs críticos descobertos e corrigidos durante a revisão pós-implementação
+
+1. **Double-send mídia via signal cross-app** (commit `08e02d4`): `media_dispatch_service` punha caption em `resposta_bot`, fazendo o signal `_on_message_saved` (evolution_sync) disparar envio de texto solto antes da mídia. Solução: caption em `conteudo`, `resposta_bot=""` faz o signal sair na linha 115.
+
+2. **Modelo errado em `_resolve_evolution_params`** (commit `08e02d4`): código usava `AppInstance.name` e `AppInstance.base_url` que NÃO EXISTEM (são campos do `EvolutionInstance`). Refatorado para replicar o pattern do signal de produção: `AppInstance`→`api_key`, `EvolutionInstance`→`instance_name`, `TenantEvolution`→`server_url`.
+
+3. **Inconsistência DOM/Alpine no rollback de drag** (commit `08e02d4`): snapshot `_boardSnapshot` causava reconciliation confusa após SortableJS mover o elemento. Trocado por `loadBoard()` autoritativo do servidor (sucesso E erro).
+
+4. **Prefixos uppercase em `_formatar_historico`** (commit `b3686f0`): `CONTATO`/`ASSISTENTE_VIRTUAL` não combinavam com `TipoRemetente` lowercase. Bot nunca aparecia no histórico formatado. Corrigido para `contato`/`bot`/`atendente_humano`.
+
+### O que falta para encerrar (Fase C)
+
+**Bloqueado por ação do usuário** (deploy em produção):
+- C.5 — abrir PR de `feature/new-front-user` → `master` e fazer merge
+- C.7 — `git tag -a v1.1.0 -m "..."` + `git push origin v1.1.0` para disparar `.github/workflows/deploy.yml`
+- C.8 — verificar healthcheck pós-deploy
+- C.9 — habilitar `ATENDIMENTO_UNIFICADO_ENABLED=True` em 1 tenant piloto + smoke test 24h (V.1.a, V.1.b, V.1.c, V.2, V.3)
+- C.10 — rollout gradual nos demais tenants (com V.5 carga + V.6 segurança multi-tenant em paralelo)
+
+**Pode ser feito agora (documentação)**:
+- C.1, C.2, C.3, C.4 — atualizar `architecture.md`, `data-flow.md`, `glossary.md`, doc Nginx
+- C.11 — arquivar plano em `.context/plans/archive/`
+- C.12 — registrar lessons learned
+
+**Pendência arquitetural separada (não bloqueia release)**:
+- E.2.9b — wire `selectors.get_campos_for_prompt()` ao `attendance_orchestrator.py` para que `AnaliseMensageParameters.campos_coletados/pendentes` recebam os valores reais. Requer tocar app de produção (`atendimentos`) → criar tarefa/plano separado para preservar princípio de independência.

@@ -48,6 +48,7 @@
         tenantSlug: '{{ tenant_slug|escapejs }}',
         atendenteId: {{ atendente_id|default:'null' }},
         atendenteNome: '{{ atendente_nome|escapejs }}',
+        sseEnabled: {% if sse_enabled %}true{% else %}false{% endif %},
         endpoints: {
             fluxos: '{% url 'atendimento_unificado:atendimento_unificado_api:fluxos_list' %}',
             conversations: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',

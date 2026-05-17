@@ -108,6 +108,7 @@
             tenantSlug: init.tenantSlug,
             atendenteId: init.atendenteId,
             atendenteNome: init.atendenteNome,
+            sseEnabled: init.sseEnabled === true,
 
             init: async function () {
                 try {
@@ -119,7 +120,9 @@
                         this.loadConversations(),
                         this.loadBoard(),
                     ]);
-                    this.connectSSE();
+                    if (this.sseEnabled) {
+                        this.connectSSE();
+                    }
                 } catch (exc) {
                     console.error('Falha ao inicializar Workspace', exc);
                 }

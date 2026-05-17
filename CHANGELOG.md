@@ -1,3 +1,15 @@
+## 1.1.1 - 2026-05-17
+
+### Fixed
+- **SSL renewal cron quebrado**: scripts em `docker/scripts/*.sh` estavam
+  commitados sem bit de execução (`100644`), fazendo o cron de renovação
+  diária falhar silenciosamente com `Permission denied`. Resultado: o
+  certificado Let's Encrypt expirou em 15 May 2026 e o site retornou
+  `NET::ERR_CERT_DATE_INVALID`. Permissões corrigidas para `100755` no
+  Git (`renew-ssl.sh`, `init-ssl.sh`, `health-monitor.sh`,
+  `resolve-image-tag.sh`). Cert renovado manualmente — válido até
+  15 Aug 2026.
+
 ## 1.1.0 - 2026-05-16
 
 ### Added

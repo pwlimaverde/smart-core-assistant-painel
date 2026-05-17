@@ -1,5 +1,6 @@
 {% extends "atendimento_unificado/base_workspace.html" %}
 {% load static %}
+{% load workspace_assets %}
 
 {% block extra_head %}
 <style>
@@ -219,5 +220,5 @@
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 {# IMPORTANT: sem defer — precisa rodar antes do Alpine (defer no head). #}
-<script src="{% static 'atendimento_unificado/js/workspace_alpine.js' %}?v={{ PROJECT_VERSION }}"></script>
+<script src="{% static_versioned 'atendimento_unificado/js/workspace_alpine.js' %}"></script>
 {% endblock %}

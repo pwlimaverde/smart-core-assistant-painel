@@ -67,4 +67,54 @@ urlpatterns = [
         views_api.ExportView.as_view(),
         name="export",
     ),
+    # ─── Notificações / sino ───────────────────────────────────────────
+    path(
+        "notifications/unread-count/",
+        views_api.NotificationsUnreadCountView.as_view(),
+        name="notifications_unread_count",
+    ),
+    # ─── Etiquetas ─────────────────────────────────────────────────────
+    path(
+        "etiquetas/",
+        views_api.EtiquetasListView.as_view(),
+        name="etiquetas_list",
+    ),
+    path(
+        "conversations/<int:atendimento_id>/etiquetas/",
+        views_api.ConversationEtiquetasView.as_view(),
+        name="conversation_etiquetas",
+    ),
+    path(
+        "conversations/<int:atendimento_id>/etiquetas/<int:etiqueta_id>/toggle/",
+        views_api.ConversationEtiquetaToggleView.as_view(),
+        name="conversation_etiqueta_toggle",
+    ),
+    # ─── Notas internas ────────────────────────────────────────────────
+    path(
+        "conversations/<int:atendimento_id>/notas/",
+        views_api.ConversationNotasView.as_view(),
+        name="conversation_notas",
+    ),
+    path(
+        "conversations/<int:atendimento_id>/notas/<int:nota_id>/",
+        views_api.ConversationNotaDeleteView.as_view(),
+        name="conversation_nota_delete",
+    ),
+    # ─── Mídias e Timeline (sidebar de detalhes) ────────────────────────
+    path(
+        "conversations/<int:atendimento_id>/medias/",
+        views_api.ConversationMediasView.as_view(),
+        name="conversation_medias",
+    ),
+    path(
+        "conversations/<int:atendimento_id>/timeline/",
+        views_api.ConversationTimelineView.as_view(),
+        name="conversation_timeline",
+    ),
+    # ─── Transferência entre fluxos ────────────────────────────────────
+    path(
+        "board/transfer-fluxo/",
+        views_api.BoardTransferFluxoView.as_view(),
+        name="board_transfer_fluxo",
+    ),
 ]

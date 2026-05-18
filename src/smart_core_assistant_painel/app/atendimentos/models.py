@@ -1045,6 +1045,15 @@ class Mensagem(models.Model):
     respondida: models.BooleanField[bool] = models.BooleanField(
         default=False, help_text="Indica se a mensagem foi respondida"
     )
+    lido: models.BooleanField[bool] = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text=(
+            "Indica se a mensagem (recebida do contato) já foi lida por algum "
+            "atendente humano via workspace. Não se aplica a mensagens do bot "
+            "ou do próprio atendente."
+        ),
+    )
     resposta_bot: models.TextField[str | None] = models.TextField(
         blank=True, null=True, help_text="Resposta gerada pelo bot"
     )

@@ -5,8 +5,16 @@
  * - Consome endpoints JSON declarados em workspace.html
  * - Conecta-se ao stream SSE para atualizações ao vivo
  *
- * Layout fixo: Kanban à esquerda + Chat lateral fixo à direita (1/4 da tela).
- * Clicar em um card abre a conversa no painel direito.
+ * MODOS DE FOCO:
+ *  - `focusMode`: 'board' | 'split' | 'chat'  (persistido em localStorage)
+ *  - 'board': Kanban toma a tela; chat minimizado em mini-bar flutuante
+ *  - 'split': layout dividido (padrão) — kanban + chat + info drawer opcional
+ *  - 'chat' : kanban colapsa em trilha de avatares; chat fica grande
+ *
+ * Atalhos de teclado (em base_workspace.html):
+ *  - Alt+1 / Alt+2 / Alt+3 → board / split / chat
+ *  - Esc                   → reduz o foco gradualmente
+ *  - i                     → toggle do detail drawer
  *
  * Convenções:
  *  - `conversations`: lista (usada apenas como cache de preview para SSE)
@@ -17,11 +25,22 @@
 (function () {
     'use strict';
 
+    var LS_FOCUS = 'workspace.focusMode';
+    var LS_THEME = 'workspace.theme';
+    var LS_DENSITY = 'workspace.density';
+
     function getCookie(name) {
         const match = document.cookie.match(
             new RegExp('(?:^|; )' + name.replace(/[.$?*|{}()[\]\\\/+^]/g, '\\$&') + '=([^;]*)')
         );
         return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function readLS(key, fallback) {
+        try { return localStorage.getItem(key) || fallback; } catch (_) { return fallback; }
+    }
+    function writeLS(key, value) {
+        try { localStorage.setItem(key, value); } catch (_) { /* ignore */ }
     }
 
     function jsonFetch(url, init) {
@@ -49,8 +68,6 @@
     }
 
     function buildConvUrl(base, atendimentoId, suffix) {
-        // base é a URL de listagem de conversations e termina com '/'.
-        // Ex.: '/workspace/api/conversations/' + 42 + '/messages/'
         const safeBase = base.endsWith('/') ? base : base + '/';
         return safeBase + atendimentoId + '/' + suffix + '/';
     }
@@ -111,6 +128,38 @@
             sseEnabled: init.sseEnabled === true,
             detailDrawerOpen: false,
 
+            // ─────────────────────────────────────────────────────────
+            // NOVO: Modos de foco + tema/densidade
+            // ─────────────────────────────────────────────────────────
+            focusMode: readLS(LS_FOCUS, 'split'),     // 'board' | 'split' | 'chat'
+            theme:     readLS(LS_THEME, 'light'),     // 'light' | 'dark'
+            density:   readLS(LS_DENSITY, 'normal'),  // 'compact' | 'normal' | 'confortable'
+            showKbdHint: false,
+            _hintTimer: null,
+
+            // ─────────────────────────────────────────────────────────
+            // Etiquetas, Notas, Mídias, Timeline, Notificações, Filtros
+            // ─────────────────────────────────────────────────────────
+            etiquetas: [],                  // catálogo de etiquetas disponíveis
+            etiquetasAplicadas: [],         // etiquetas do atendimento ativo
+            notas: [],                      // notas do atendimento ativo
+            medias: [],                     // mídias/arquivos do atendimento ativo
+            timeline: [],                   // eventos do atendimento ativo
+            unreadCount: 0,                 // total geral para o sino
+            etiquetaPopoverOpen: false,
+            transferirPopoverOpen: false,
+            filterPopoverOpen: false,
+            filters: {
+                q: '',
+                prioridade: '',
+                atendente_id: '',
+                etiqueta_id: '',
+                apenas_nao_lidos: false,
+            },
+            notaComposer: '',
+            notaSaving: false,
+            _unreadDebounce: null,
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -120,15 +169,76 @@
                     await Promise.all([
                         this.loadConversations(),
                         this.loadBoard(),
+                        this.loadEtiquetas(),
+                        this.loadUnreadCount(),
                     ]);
                     if (this.sseEnabled) {
                         this.connectSSE();
                     }
+                    // Mostra hint de atalhos por 5s na primeira carga.
+                    this.showKbdHint = true;
+                    this._hintTimer = setTimeout(() => { this.showKbdHint = false; }, 5000);
                 } catch (exc) {
                     console.error('Falha ao inicializar Workspace', exc);
                 }
             },
 
+            // ─────────────────────────────────────────────────────────
+            // NOVO: Controle de foco
+            // ─────────────────────────────────────────────────────────
+            setFocus: function (mode) {
+                if (['board', 'split', 'chat'].indexOf(mode) === -1) return;
+                this.focusMode = mode;
+                writeLS(LS_FOCUS, mode);
+            },
+
+            minimizeChat: function () { this.setFocus('board'); },
+
+            // openChat(id?) — se vier um id, abre a conversa e expande pra split.
+            openChat: function (id) {
+                if (id != null) {
+                    // Reusa o openChat original (renomeado para _doOpenChat abaixo).
+                    return this._doOpenChat(id).then(() => this.setFocus('split'));
+                }
+                this.setFocus('split');
+                return Promise.resolve();
+            },
+
+            // Handler do Esc — reduz foco gradualmente. Ignorado se digitando.
+            onEscape: function ($event) {
+                if (this.isTypingTarget($event)) return;
+                if (this.detailDrawerOpen) { this.detailDrawerOpen = false; return; }
+                if (this.focusMode === 'chat')  { this.setFocus('split'); return; }
+                if (this.focusMode === 'split') { this.setFocus('board'); return; }
+                // já está em 'board' — não faz nada
+            },
+
+            onToggleInfo: function ($event) {
+                if (this.isTypingTarget($event)) return;
+                this.detailDrawerOpen = !this.detailDrawerOpen;
+            },
+
+            isTypingTarget: function ($event) {
+                if (!$event || !$event.target) return false;
+                const tag = ($event.target.tagName || '').toUpperCase();
+                return tag === 'INPUT' || tag === 'TEXTAREA' || $event.target.isContentEditable;
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Tema + densidade (persistidos)
+            // ─────────────────────────────────────────────────────────
+            setTheme: function (t) {
+                this.theme = t;
+                writeLS(LS_THEME, t);
+            },
+            setDensity: function (d) {
+                this.density = d;
+                writeLS(LS_DENSITY, d);
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Fluxos / Board / Conversas (igual ao original)
+            // ─────────────────────────────────────────────────────────
             onFluxoChange: function () {
                 return Promise.all([
                     this.loadConversations(),
@@ -142,11 +252,29 @@
                 });
             },
 
-            loadConversations: function () {
+            // Constrói query string com filtros + busca livre.
+            // `extraParams` permite forçar overrides (ex.: ?fluxo=X).
+            _buildFiltersParams: function (extraParams) {
                 const params = new URLSearchParams();
-                if (this.fluxoId != null) params.set('fluxo', this.fluxoId);
                 if (this.search) params.set('q', this.search);
+                else if (this.filters.q) params.set('q', this.filters.q);
                 if (this.filterTag) params.set('tag', this.filterTag);
+                if (this.filters.prioridade) params.set('prioridade', this.filters.prioridade);
+                if (this.filters.atendente_id) params.set('atendente_id', this.filters.atendente_id);
+                if (this.filters.etiqueta_id) params.set('etiqueta_id', this.filters.etiqueta_id);
+                if (this.filters.apenas_nao_lidos) params.set('apenas_nao_lidos', '1');
+                if (extraParams) {
+                    Object.keys(extraParams).forEach((k) => {
+                        if (extraParams[k] != null) params.set(k, extraParams[k]);
+                    });
+                }
+                return params;
+            },
+
+            loadConversations: function () {
+                const params = this._buildFiltersParams(
+                    this.fluxoId != null ? { fluxo: this.fluxoId } : null
+                );
                 const url = this.endpoints.conversations + '?' + params.toString();
                 return jsonFetch(url).then((data) => {
                     this.conversations = data.conversations || [];
@@ -158,7 +286,8 @@
                     this.board = { etapas: [], cards: {} };
                     return Promise.resolve();
                 }
-                const url = this.endpoints.board + '?fluxo=' + this.fluxoId;
+                const params = this._buildFiltersParams({ fluxo: this.fluxoId });
+                const url = this.endpoints.board + '?' + params.toString();
                 return jsonFetch(url).then((data) => {
                     this.board = data || { etapas: [], cards: {} };
                     this.$nextTick(() => this.initSortable());
@@ -176,7 +305,6 @@
                 }
                 const self = this;
                 const cols = document.querySelectorAll('.kanban-col-body');
-                console.log('[workspace] initSortable: ' + cols.length + ' columns');
                 cols.forEach(function (el) {
                     const instance = Sortable.create(el, {
                         group: 'kanban-cards',
@@ -185,31 +313,22 @@
                         ghostClass: 'kanban-ghost',
                         chosenClass: 'kanban-chosen',
                         dragClass: 'kanban-drag',
-                        // Ignora cliques em botões dentro do card (ex.: ícone "Detalhes")
                         filter: '.kanban-no-drag, .kanban-no-drag *',
                         preventOnFilter: false,
-                        onStart: function (evt) {
-                            self.isDragging = true;
-                        },
+                        onStart: function () { self.isDragging = true; },
                         onEnd: function (evt) {
-                            // O click só dispara se mousedown+mouseup no mesmo elemento sem move;
-                            // ainda assim mantemos timeout pequeno como defense-in-depth.
                             setTimeout(function () { self.isDragging = false; }, 50);
 
                             const atendimentoId = parseInt(evt.item.getAttribute('data-atend-id'), 10);
                             const fromEtapaId = parseInt(evt.from.getAttribute('data-etapa-id'), 10);
                             const toEtapaId = parseInt(evt.to.getAttribute('data-etapa-id'), 10);
-                            console.log('[workspace] onEnd', { atendimentoId, fromEtapaId, toEtapaId });
 
                             if (!atendimentoId || !toEtapaId) {
-                                console.warn('[workspace] move cancelado: ids invalidos');
                                 self.loadBoard();
                                 return;
                             }
-                            if (fromEtapaId === toEtapaId) {
-                                // Reordenacao na mesma coluna - apenas refresh local
-                                return;
-                            }
+                            if (fromEtapaId === toEtapaId) return;
+
                             jsonFetch(self.endpoints.boardMove, {
                                 method: 'POST',
                                 body: JSON.stringify({
@@ -229,22 +348,23 @@
                 });
             },
 
+            // ─────────────────────────────────────────────────────────
+            // Clique em card do kanban
+            // - Em modo 'board': abre conversa mas NÃO expande (mini-bar)
+            // - Em outros modos: comportamento original (abre painel direito)
+            // ─────────────────────────────────────────────────────────
             onCardClick: function (id, event) {
-                // Sortable cancela `click` quando o item foi arrastado.
-                // Mesmo assim, defense-in-depth: ignora se estamos em meio a drag.
                 if (this.isDragging) return;
-                return this.openChat(id);
+                return this._doOpenChat(id);
             },
 
             onCardDetail: function (id, event) {
-                if (event) {
-                    event.stopPropagation();
-                    event.preventDefault();
-                }
+                if (event) { event.stopPropagation(); event.preventDefault(); }
                 if (this.isDragging) return;
                 const self = this;
-                return this.openChat(id).then(function () {
+                return this._doOpenChat(id).then(function () {
                     self.detailDrawerOpen = true;
+                    if (self.focusMode === 'board') self.setFocus('split');
                 });
             },
 
@@ -260,9 +380,9 @@
                 });
             },
 
-            openChat: function (id) {
-                // Sintetiza conversa rasa a partir do card kanban quando
-                // não houver entrada correspondente na lista de conversations.
+            // _doOpenChat = lógica de "abrir conversa" sem mexer em focusMode.
+            // Use openChat(id) externamente — ele orquestra foco + abertura.
+            _doOpenChat: function (id) {
                 let conv = this.conversations.find((c) => c.atendimento_id === id);
                 if (!conv) {
                     for (const [etapaId, cards] of Object.entries(this.board.cards || {})) {
@@ -279,19 +399,27 @@
                     }
                 }
                 this.activeConv = conv || { atendimento_id: id };
+                // Limpa estado anterior das seções do info drawer para evitar
+                // mostrar dados de outra conversa enquanto carrega.
+                this.etiquetasAplicadas = [];
+                this.notas = [];
+                this.medias = [];
+                this.timeline = [];
                 return Promise.all([
                     this.loadMessages(id),
                     this.loadDetail(id),
                     this.markRead(id),
+                    this.loadConversationEtiquetas(id),
+                    this.loadNotas(id),
+                    this.loadMedias(id),
+                    this.loadTimeline(id),
                 ]).then(() => {
                     this.$nextTick(() => this.scrollMessagesBottom());
                 });
             },
 
-            // Compat: kanban_card.html ainda chama openChatDrawer.
-            openChatDrawer: function (id) {
-                return this.openChat(id);
-            },
+            // Compat: kanban_card.html ainda chama openChatDrawer em alguns lugares.
+            openChatDrawer: function (id) { return this._doOpenChat(id); },
 
             loadMessages: function (id) {
                 const url = buildConvUrl(this.endpoints.conversationsBase, id, 'messages');
@@ -315,6 +443,12 @@
                 return jsonFetch(url, { method: 'POST' }).then(() => {
                     const conv = this.conversations.find((c) => c.atendimento_id === id);
                     if (conv) conv.nao_lidos = 0;
+                    // Zera não-lidas no card do board correspondente
+                    for (const cards of Object.values(this.board.cards || {})) {
+                        const card = (cards || []).find((c) => c.atendimento_id === id);
+                        if (card) card.nao_lidos = 0;
+                    }
+                    this._scheduleUnreadRefresh();
                 }).catch(() => { /* não-fatal */ });
             },
 
@@ -372,7 +506,7 @@
                 };
                 this.sse.addEventListener('open', () => {
                     this.sseConnected = true;
-                    this._sseRetryDelay = 2000;  // reset backoff
+                    this._sseRetryDelay = 2000;
                 });
                 this.sse.addEventListener('error', () => {
                     this.sseConnected = false;
@@ -402,7 +536,6 @@
                 switch (eventType) {
                     case 'message.new':
                     case 'message.updated':
-                        // Atualiza preview na sidebar
                         const conv = this.conversations.find((c) => c.atendimento_id === data.atendimento_id);
                         if (conv) {
                             conv.preview_msg = data.preview || conv.preview_msg;
@@ -413,12 +546,13 @@
                                 conv.nao_lidos = (conv.nao_lidos || 0) + 1;
                             }
                         }
-                        // Se for a conversa ativa, append mensagem (refetch leve)
                         if (this.activeConv && this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadMessages(data.atendimento_id).then(() => {
                                 this.$nextTick(() => this.scrollMessagesBottom());
                                 this.markRead(data.atendimento_id);
                             });
+                        } else if (data.remetente === 'contato') {
+                            this._scheduleUnreadRefresh();
                         }
                         break;
                     case 'board.moved':
@@ -428,7 +562,6 @@
                         this.loadConversations();
                         break;
                     case 'custom_field.updated':
-                        // Recarrega detail para atualizar painel de campos
                         if (this.activeConv &&
                             this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadDetail(data.atendimento_id);
@@ -473,7 +606,6 @@
             salvarCampo: function (campo, novoValor, onDone) {
                 if (!this.activeConv) return;
                 const id = this.activeConv.atendimento_id;
-                // URL: /workspace/api/conversations/<id>/custom-fields/<slug>/
                 const safeBase = (this.endpoints.customFieldsBase || '').replace(/\/+$/, '');
                 const url = safeBase + '/' + id + '/custom-fields/' + campo.slug + '/';
                 this.customFieldsSaving[campo.slug] = true;
@@ -481,7 +613,6 @@
                     method: 'PATCH',
                     body: JSON.stringify({ valor: novoValor }),
                 }).then(() => {
-                    // Atualiza valor no activeDetail sem reload
                     if (this.activeDetail && Array.isArray(this.activeDetail.campos)) {
                         const c = this.activeDetail.campos.find((x) => x.slug === campo.slug);
                         if (c) {
@@ -500,6 +631,207 @@
                 }).finally(() => {
                     this.customFieldsSaving[campo.slug] = false;
                 });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Etiquetas
+            // ─────────────────────────────────────────────────────────
+            loadEtiquetas: function () {
+                const url = (this.endpoints.etiquetas || '/workspace/api/etiquetas/');
+                return jsonFetch(url).then((data) => {
+                    this.etiquetas = data.etiquetas || [];
+                }).catch(() => { this.etiquetas = []; });
+            },
+
+            loadConversationEtiquetas: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'etiquetas');
+                return jsonFetch(url).then((data) => {
+                    this.etiquetasAplicadas = data.etiquetas || [];
+                }).catch(() => { this.etiquetasAplicadas = []; });
+            },
+
+            isEtiquetaAplicada: function (etiquetaId) {
+                return (this.etiquetasAplicadas || []).some((e) => e.id === etiquetaId);
+            },
+
+            toggleEtiqueta: function (etiquetaId) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(
+                    this.endpoints.conversationsBase, id, 'etiquetas/' + etiquetaId + '/toggle'
+                );
+                return jsonFetch(url, { method: 'POST' }).then((result) => {
+                    if (result.ativa) {
+                        const et = this.etiquetas.find((e) => e.id === etiquetaId);
+                        if (et && !this.isEtiquetaAplicada(etiquetaId)) {
+                            this.etiquetasAplicadas.push({ ...et });
+                        }
+                    } else {
+                        this.etiquetasAplicadas = this.etiquetasAplicadas.filter(
+                            (e) => e.id !== etiquetaId
+                        );
+                    }
+                }).catch((exc) => {
+                    console.error('Falha ao alternar etiqueta', exc);
+                    alert((exc && exc.message) || 'Falha ao alternar etiqueta.');
+                });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Notas
+            // ─────────────────────────────────────────────────────────
+            loadNotas: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'notas');
+                return jsonFetch(url).then((data) => {
+                    this.notas = data.notas || [];
+                }).catch(() => { this.notas = []; });
+            },
+
+            criarNota: function () {
+                if (!this.activeConv) return;
+                const texto = (this.notaComposer || '').trim();
+                if (!texto || this.notaSaving) return;
+                this.notaSaving = true;
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'notas');
+                return jsonFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({ texto: texto }),
+                }).then((nota) => {
+                    this.notas.unshift(nota);
+                    this.notaComposer = '';
+                }).catch((exc) => {
+                    console.error('Falha ao criar nota', exc);
+                    alert((exc && exc.message) || 'Falha ao criar nota.');
+                }).finally(() => {
+                    this.notaSaving = false;
+                });
+            },
+
+            deletarNota: function (notaId) {
+                if (!this.activeConv) return;
+                if (!confirm('Remover esta nota?')) return;
+                const id = this.activeConv.atendimento_id;
+                const safeBase = (this.endpoints.conversationsBase || '').replace(/\/+$/, '');
+                const url = safeBase + '/' + id + '/notas/' + notaId + '/';
+                return jsonFetch(url, { method: 'DELETE' }).then(() => {
+                    this.notas = this.notas.filter((n) => n.id !== notaId);
+                }).catch((exc) => {
+                    console.error('Falha ao remover nota', exc);
+                    alert((exc && exc.message) || 'Falha ao remover nota.');
+                });
+            },
+
+            abrirComposerNota: function () {
+                this.detailDrawerOpen = true;
+                if (this.focusMode === 'board') this.setFocus('split');
+                this.$nextTick(() => {
+                    const ta = document.querySelector('.ws-info__nota-form textarea');
+                    if (ta) ta.focus();
+                });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Mídias e Timeline
+            // ─────────────────────────────────────────────────────────
+            loadMedias: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'medias');
+                return jsonFetch(url).then((data) => {
+                    this.medias = data.medias || [];
+                }).catch(() => { this.medias = []; });
+            },
+
+            loadTimeline: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'timeline');
+                return jsonFetch(url).then((data) => {
+                    this.timeline = data.timeline || [];
+                }).catch(() => { this.timeline = []; });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Notificações (sino)
+            // ─────────────────────────────────────────────────────────
+            loadUnreadCount: function () {
+                const url = (this.endpoints.unreadCount || '/workspace/api/notifications/unread-count/');
+                return jsonFetch(url).then((data) => {
+                    this.unreadCount = data.total || 0;
+                }).catch(() => { /* não-fatal */ });
+            },
+
+            _scheduleUnreadRefresh: function () {
+                if (this._unreadDebounce) clearTimeout(this._unreadDebounce);
+                this._unreadDebounce = setTimeout(() => {
+                    this._unreadDebounce = null;
+                    this.loadUnreadCount();
+                }, 500);
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Transferência entre fluxos
+            // ─────────────────────────────────────────────────────────
+            transferirFluxo: function (fluxoDestinoId) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                const url = (this.endpoints.boardTransferFluxo || '/workspace/api/board/transfer-fluxo/');
+                this.transferirPopoverOpen = false;
+                return jsonFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        atendimento_id: id,
+                        fluxo_destino_id: fluxoDestinoId,
+                    }),
+                }).then(() => {
+                    // Recarrega tudo — o atendimento pode ter saído da visão atual.
+                    this.loadConversations();
+                    this.loadBoard();
+                    this.activeConv = null;
+                    this.messages = [];
+                    this.activeDetail = null;
+                }).catch((exc) => {
+                    console.error('Falha ao transferir fluxo', exc);
+                    alert((exc && exc.message) || 'Falha ao transferir atendimento.');
+                });
+            },
+
+            fluxosParaTransferir: function () {
+                const atualId = this.activeConv && this.activeConv.fluxo_id;
+                const atualDetailId = this.activeDetail && this.activeDetail.fluxo_id;
+                const excluirId = atualId || atualDetailId || null;
+                return (this.fluxos || []).filter((f) => f.id !== excluirId);
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Filtros (popover)
+            // ─────────────────────────────────────────────────────────
+            applyFilters: function () {
+                this.filterPopoverOpen = false;
+                return Promise.all([
+                    this.loadConversations(),
+                    this.loadBoard(),
+                ]);
+            },
+
+            clearFilters: function () {
+                this.filters = {
+                    q: '',
+                    prioridade: '',
+                    atendente_id: '',
+                    etiqueta_id: '',
+                    apenas_nao_lidos: false,
+                };
+                this.search = '';
+                return this.applyFilters();
+            },
+
+            // Helper: número de filtros ativos (badge no botão funil)
+            activeFiltersCount: function () {
+                let n = 0;
+                if (this.filters.q) n++;
+                if (this.filters.prioridade) n++;
+                if (this.filters.atendente_id) n++;
+                if (this.filters.etiqueta_id) n++;
+                if (this.filters.apenas_nao_lidos) n++;
+                return n;
             },
 
             prioridadeClass: prioridadeClass,

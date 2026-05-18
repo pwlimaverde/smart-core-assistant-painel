@@ -1,20 +1,24 @@
 {# Partial usado dentro de <template x-for="etapa in board.etapas">. Recebe `etapa`. #}
-<div class="w-72 shrink-0 bg-stone-100 rounded-xl flex flex-col overflow-hidden max-h-full shadow-sm">
-    <div class="px-3 pt-2.5 pb-2 border-b border-stone-200 bg-white"
-        :style="'border-top: 3px solid ' + etapa.cor">
-        <div class="flex items-center justify-between">
-            <div class="text-xs font-bold uppercase tracking-wider text-stone-700 truncate" x-text="etapa.nome"></div>
-            <div class="text-[10px] text-stone-600 bg-stone-100 rounded-full px-2 py-0.5 font-semibold shrink-0" x-text="etapa.count"></div>
-        </div>
-        <div class="text-[10px] text-stone-400 uppercase tracking-widest mt-0.5"
-            x-text="etapa.tipo_etapa"></div>
-    </div>
-    <div class="flex-1 overflow-y-auto p-2 space-y-2 kanban-col-body" :data-etapa-id="etapa.id">
+<div class="ws-col" :data-etapa-tipo="etapa.tipo_etapa">
+    <header class="ws-col__head">
+        <span class="ws-col__dot" :style="'background: ' + (etapa.dot_color || etapa.cor || '#a8a29e')"></span>
+        <span class="ws-col__title" x-text="etapa.nome"></span>
+        <span class="ws-col__count" x-text="etapa.count"></span>
+        <button type="button" class="ws-col__menu ws-disabled"
+            title="Opções da coluna (em breve)" aria-label="Opções da coluna"
+            aria-disabled="true" disabled>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <circle cx="5" cy="12" r="1.4"/>
+                <circle cx="12" cy="12" r="1.4"/>
+                <circle cx="19" cy="12" r="1.4"/>
+            </svg>
+        </button>
+    </header>
+    <div class="ws-col__body kanban-col-body" :data-etapa-id="etapa.id">
         <template x-for="card in (board.cards[etapa.id] || [])" :key="card.atendimento_id">
             {% include "atendimento_unificado/partials/kanban_card.html" %}
         </template>
-        <div x-show="(board.cards[etapa.id] || []).length === 0"
-            class="text-center text-stone-300 text-[10px] py-4 italic select-none">
+        <div x-show="(board.cards[etapa.id] || []).length === 0" class="ws-col__empty">
             Solte cards aqui
         </div>
     </div>

@@ -1141,18 +1141,15 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         attendance: "Atendimento",
         message: "Mensagem",
     ) -> None:
-        """Preenche assunto automaticamente se vazio.
+        """Atualiza assunto do atendimento a cada mensagem analisada.
 
-        Usa intents e entidades da mensagem para gerar
-        um resumo curto como assunto do atendimento.
+        Usa intents e entidades da mensagem para gerar um resumo curto.
+        O assunto é sempre reavaliado para refletir o contexto atual.
 
         Args:
             attendance: Atendimento a atualizar.
             message: Mensagem com intents/entidades.
         """
-        if attendance.assunto:
-            return
-
         parts: list[str] = []
 
         # Usa entidades como base do assunto

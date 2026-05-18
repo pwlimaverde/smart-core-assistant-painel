@@ -27,6 +27,7 @@ class StatusAtendimento(models.TextChoices):
     PENDENCIA = "pendencia", "Pendência"
     RESOLVIDO = "resolvido", "Resolvido"
     CANCELADO = "cancelado", "Cancelado"
+    ARQUIVADO = "arquivado", "Arquivado"
 
 
 # Aliases de compatibilidade esperados pelos testes
@@ -246,10 +247,11 @@ class Atendimento(models.Model):
             models.Index(fields=["bot_pode_atender"]),
         ]
 
-    # Removido override de save com full_clean para evitar quebra em fluxos
-    # que salvam o atendimento de forma incremental. A validação completa
-    # permanece disponível via clean() e pode ser acionada explicitamente
-    # quando necessário.
+    @override
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        if self.pk is None and not self.historico_status:
+            self.adicionar_historico_status(self.status, "Status inicial")
+        super().save(*args, **kwargs)
 
     @override
     def clean(self) -> None:
@@ -527,6 +529,7 @@ class Atendimento(models.Model):
         if novo_status in (
             StatusAtendimento.RESOLVIDO,
             StatusAtendimento.CANCELADO,
+            StatusAtendimento.ARQUIVADO,
         ):
             self.data_fim = timezone.now()
         self.adicionar_historico_status(novo_status.value, observacao)
@@ -1118,6 +1121,17 @@ class Mensagem(models.Model):
         # REMOVIDO: self.respondida = True
         # A mensagem só será marcada como respondida após envio bem-sucedido
         self.save(update_fields=["resposta_bot", "confianca_resposta"])
+
+        try:
+            atendimento = self.atendimento
+            if not atendimento.data_primeira_resposta:
+                atendimento.data_primeira_resposta = timezone.now()
+                atendimento.save(update_fields=["data_primeira_resposta"])
+        except Exception as _err:
+            logger.warning(
+                f"Erro ao definir data_primeira_resposta para "
+                f"atendimento {self.atendimento_id}: {_err}"
+            )
 
         logger.info(
             f"Resposta do bot registrada na mensagem {self.id} "

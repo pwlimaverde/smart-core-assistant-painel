@@ -172,12 +172,19 @@ def _get_tempo_na_etapa_seconds(atendimento: Any) -> int:
     return 0
 
 
-def render_card(atendimento: Any) -> dict[str, Any]:
+def render_card(
+    atendimento: Any, *, nao_lidos: int = 0
+) -> dict[str, Any]:
     """Payload do card kanban (formato `cards["<etapa_id>"][i]`).
 
     Mantém superset de chaves para reaproveitamento na sidebar de
     conversas e no modal de detalhes; consumidores ignoram chaves que
     não usam.
+
+    O contador ``nao_lidos`` é calculado fora (em ``board_snapshot``)
+    via batch-fetch de leituras do atendente corrente, para evitar
+    N+1 queries. Padrão 0 quando não há atendente autenticado ou a
+    contagem não se aplica.
     """
     ultima_msg = None
     try:
@@ -235,4 +242,5 @@ def render_card(atendimento: Any) -> dict[str, Any]:
         "campos_custom_card": [],
         "tempo_na_etapa_segundos": tempo_na_etapa,
         "sla_estourado": tempo_na_etapa >= _SLA_THRESHOLD_SECONDS,
+        "nao_lidos": nao_lidos,
     }

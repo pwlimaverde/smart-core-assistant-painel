@@ -1,61 +1,67 @@
-{# Partial usado dentro de <template x-for="m in messages">. Recebe `m`. #}
-<div class="flex" :class="m.remetente === 'contato' ? 'justify-start' : 'justify-end'">
-    <div class="max-w-[88%]">
-        <div class="px-3 py-2 rounded-2xl text-sm whitespace-pre-wrap break-words shadow-sm"
-            :class="m.remetente === 'contato'
-                ? 'bg-white text-stone-800 rounded-tl-sm'
-                : 'bg-[#dcf8c6] text-stone-800 rounded-tr-sm'">
+{# Partial usado dentro de <template x-for="m in messages">. Recebe `m`.
+   Bolhas WhatsApp-style com tokens do design system + suporte a mídia. #}
+<div :class="m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out'">
 
-            {# ============ MÍDIA INLINE ============ #}
-            <template x-if="m.media && m.media.kind === 'image' && m.media.src">
-                <a :href="m.media.src" target="_blank" rel="noopener" class="block mb-1">
-                    <img :src="m.media.src" :alt="m.media.filename || 'imagem'"
-                        class="rounded-lg max-h-72 w-auto object-contain bg-stone-100" />
-                </a>
-            </template>
+    {# ============ IMAGEM ============ #}
+    <template x-if="m.media && m.media.kind === 'image' && m.media.src">
+        <a :href="m.media.src" target="_blank" rel="noopener" class="ws-img">
+            <img :src="m.media.src" :alt="m.media.filename || 'imagem'" />
+        </a>
+    </template>
 
-            <template x-if="m.media && m.media.kind === 'audio' && m.media.src">
-                <audio controls preload="metadata" :src="m.media.src"
-                    class="w-full mb-1" style="max-width: 320px;"></audio>
-            </template>
-
-            <template x-if="m.media && m.media.kind === 'video' && m.media.src">
-                <video controls preload="metadata" :src="m.media.src"
-                    class="rounded-lg max-h-72 w-full mb-1" style="max-width: 320px;"></video>
-            </template>
-
-            <template x-if="m.media && m.media.kind === 'document'">
-                <a :href="m.media.src || '#'" :download="m.media.filename"
-                    class="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-lg px-2 py-1.5 mb-1 hover:bg-stone-100 transition-colors"
-                    :class="m.media.src ? '' : 'pointer-events-none opacity-70'">
-                    <svg class="w-5 h-5 text-stone-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M9 12h6m-6 4h6m-6-8h6m2 12H7a2 2 0 01-2-2V7a2 2 0 012-2h6l5 5v9a2 2 0 01-2 2z" />
-                    </svg>
-                    <span class="text-xs truncate" x-text="m.media.filename || 'documento'"></span>
-                </a>
-            </template>
-
-            {# ============ FALLBACK: mídia sem src (sem base64 disponível) ============ #}
-            <template x-if="m.media && !m.media.src && m.media.kind !== 'document'">
-                <div class="text-[11px] italic text-stone-500 mb-1">
-                    <span x-text="tipoMidiaLabel(m.tipo)"></span>
-                    <span class="text-stone-400">— pré-visualização indisponível</span>
-                </div>
-            </template>
-
-            {# ============ TEXTO / CAPTION ============ #}
-            <template x-if="(m.remetente === 'contato' ? m.conteudo : (m.resposta_bot || m.conteudo))">
-                <div x-text="m.remetente === 'contato' ? m.conteudo : (m.resposta_bot || m.conteudo)"></div>
-            </template>
+    {# ============ ÁUDIO ============ #}
+    {# Mantemos a tag nativa <audio> — confiável e acessível. Para um waveform
+       custom, substitua este bloco por um componente Alpine. #}
+    <template x-if="m.media && m.media.kind === 'audio' && m.media.src">
+        <div :class="m.remetente === 'contato' ? 'ws-aud' : 'ws-aud ws-aud--out'">
+            <audio controls preload="metadata" :src="m.media.src" style="max-width:240px; width:100%;"></audio>
         </div>
-        <div class="text-[10px] text-stone-400 mt-1 px-1"
-            :class="m.remetente === 'contato' ? 'text-left' : 'text-right'">
-            <span x-text="m.timestamp ? new Date(m.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''"></span>
-            <template x-if="m.remetente !== 'contato'">
-                <span class="ml-1" :class="m.respondida ? 'text-blue-500' : 'text-stone-400'"
-                    x-text="m.respondida ? '✓✓' : '✓'"></span>
-            </template>
+    </template>
+
+    {# ============ VÍDEO ============ #}
+    <template x-if="m.media && m.media.kind === 'video' && m.media.src">
+        <video controls preload="metadata" :src="m.media.src"
+            class="ws-img" style="max-width: 280px;"></video>
+    </template>
+
+    {# ============ DOCUMENTO ============ #}
+    <template x-if="m.media && m.media.kind === 'document'">
+        <a :href="m.media.src || '#'" :download="m.media.filename" class="ws-doc"
+            :class="m.media.src ? '' : 'pointer-events-none opacity-70'">
+            <div class="ws-doc__ico"
+                x-text="(m.media.filename || 'PDF').split('.').pop().toUpperCase().slice(0, 4)"></div>
+            <div class="ws-doc__info">
+                <div class="ws-doc__name" x-text="m.media.filename || 'documento'"></div>
+                <div class="ws-doc__size" x-text="m.media.size_label || ''"></div>
+            </div>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6"
+                style="color: var(--ws-fg-muted);">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/>
+            </svg>
+        </a>
+    </template>
+
+    {# ============ FALLBACK: mídia sem src (sem base64 disponível) ============ #}
+    <template x-if="m.media && !m.media.src && m.media.kind !== 'document'">
+        <div style="font-size: 11px; font-style: italic; color: var(--ws-fg-muted); margin-bottom: 4px;">
+            <span x-text="tipoMidiaLabel(m.tipo)"></span>
+            <span style="color: var(--ws-fg-subtle);">— pré-visualização indisponível</span>
         </div>
+    </template>
+
+    {# ============ TEXTO / CAPTION ============ #}
+    <template x-if="(m.remetente === 'contato' ? m.conteudo : (m.resposta_bot || m.conteudo))">
+        <div class="ws-bub__txt"
+            x-text="m.remetente === 'contato' ? m.conteudo : (m.resposta_bot || m.conteudo)"></div>
+    </template>
+
+    {# ============ RODAPÉ (timestamp + status) ============ #}
+    <div class="ws-bub__foot">
+        <span x-text="m.timestamp ? new Date(m.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''"></span>
+        <template x-if="m.remetente !== 'contato'">
+            <span class="ws-bub__check"
+                :class="m.respondida ? 'ws-bub__check--read' : ''"
+                x-text="m.respondida ? '✓✓' : '✓'"></span>
+        </template>
     </div>
 </div>

@@ -27,6 +27,7 @@ from smart_core_assistant_painel.app.operacional.models import (
     Atendente,
     EtapaFluxo,
     FluxoAtendimento,
+    TipoEtapa,
 )
 
 from .models import (
@@ -196,6 +197,28 @@ def get_messages(
     return [_serialize_mensagem(m) for m in msgs]
 
 
+_DOT_COLOR_BY_TIPO: dict[str, str] = {
+    TipoEtapa.FILA: "#a8a29e",          # stone-400 (cinza neutro)
+    TipoEtapa.TRABALHO: "#d97706",      # amber-600 (em andamento)
+    TipoEtapa.ESPERA: "#f59e0b",        # amber-500 (aguardando)
+    TipoEtapa.FINALIZACAO: "#16a34a",   # green-600 (concluído)
+}
+_DEFAULT_ETAPA_COR = "#6B7280"
+
+
+def _resolve_dot_color(etapa: EtapaFluxo) -> str:
+    """Cor do bullet da coluna kanban.
+
+    Usa ``etapa.cor`` quando o operador configurou explicitamente (i.e.,
+    diferente do default ``#6B7280``); caso contrário, deriva por
+    ``tipo_etapa``.
+    """
+    cor = (etapa.cor or "").strip()
+    if cor and cor.lower() != _DEFAULT_ETAPA_COR.lower():
+        return cor
+    return _DOT_COLOR_BY_TIPO.get(etapa.tipo_etapa, "#a8a29e")
+
+
 def board_snapshot_by_fluxo(
     fluxo_id: int,
     atendente: Optional[Atendente] = None,
@@ -205,7 +228,7 @@ def board_snapshot_by_fluxo(
 
     Estrutura:
         {
-            "etapas": [{id, nome, cor, tipo_etapa, ordem, count}],
+            "etapas": [{id, nome, cor, dot_color, tipo_etapa, ordem, count}],
             "cards": {"<etapa_id>": [<card_payload>, ...]}
         }
 
@@ -239,12 +262,28 @@ def board_snapshot_by_fluxo(
             Q(atendente_humano=atendente) | Q(atendente_humano__isnull=True)
         )
 
+    atendimentos = list(atendimentos_qs)
+
+    leituras_map: dict[int, datetime] = {}
+    if atendente is not None and atendimentos:
+        ids = [a.id for a in atendimentos]
+        for leit in LeituraAtendimento.objects.filter(
+            atendimento_id__in=ids, atendente_id=atendente.id
+        ):
+            leituras_map[leit.atendimento_id] = leit.ultima_leitura_at
+
     cards_por_etapa: dict[int, list[dict[str, Any]]] = {}
-    for atend in atendimentos_qs:
+    for atend in atendimentos:
         if atend.etapa_atual_id is None:
             continue
+        leitura_at = leituras_map.get(atend.id)
+        nao_lidos = (
+            _contar_nao_lidos(atend.id, leitura_at)
+            if atendente is not None
+            else 0
+        )
         cards_por_etapa.setdefault(atend.etapa_atual_id, []).append(
-            render_card(atend)
+            render_card(atend, nao_lidos=nao_lidos)
         )
 
     etapas_payload = []
@@ -256,6 +295,7 @@ def board_snapshot_by_fluxo(
                 "id": etapa.id,
                 "nome": etapa.nome,
                 "cor": etapa.cor,
+                "dot_color": _resolve_dot_color(etapa),
                 "tipo_etapa": etapa.tipo_etapa,
                 "ordem": etapa.ordem,
                 "count": len(cards_dessa),

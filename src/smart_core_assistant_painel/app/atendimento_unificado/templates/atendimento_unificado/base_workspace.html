@@ -3,12 +3,27 @@
 
 {% block title %}Workspace · Smart Core{% endblock %}
 
+{% block extra_head %}
+{# Carrega o design system + componentes do Workspace.
+   workspace.css já @import dos tokens, mas listamos os dois aqui pra
+   ficar explícito no <head> e facilitar override por <link> próprio. #}
+<link rel="stylesheet" href="{% static 'atendimento_unificado/css/workspace-tokens.css' %}?v=1">
+<link rel="stylesheet" href="{% static 'atendimento_unificado/css/workspace.css' %}?v=1">
+{% endblock %}
+
 {% block layout %}
-<div class="h-screen w-screen flex flex-col bg-stone-50 overflow-hidden"
+<div class="ws-app"
     {% block workspace_x_data %}{% endblock %}
-    {% block workspace_x_init %}{% endblock %}>
+    {% block workspace_x_init %}{% endblock %}
+    @keydown.window.alt.1.prevent="setFocus('board')"
+    @keydown.window.alt.2.prevent="setFocus('split')"
+    @keydown.window.alt.3.prevent="setFocus('chat')"
+    @keydown.window.escape="onEscape($event)"
+    @keydown.window.i="if (!isTypingTarget($event)) onToggleInfo($event)"
+    :data-theme="theme || 'light'"
+    :data-ws-density="density || 'normal'">
     {% block workspace_topbar %}{% endblock %}
-    <main class="flex-1 min-h-0 flex overflow-hidden">
+    <main class="ws-main" :data-focus="focusMode || 'split'">
         {% block workspace_content %}{% endblock %}
     </main>
 </div>

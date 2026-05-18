@@ -5,8 +5,16 @@
  * - Consome endpoints JSON declarados em workspace.html
  * - Conecta-se ao stream SSE para atualizações ao vivo
  *
- * Layout fixo: Kanban à esquerda + Chat lateral fixo à direita (1/4 da tela).
- * Clicar em um card abre a conversa no painel direito.
+ * MODOS DE FOCO:
+ *  - `focusMode`: 'board' | 'split' | 'chat'  (persistido em localStorage)
+ *  - 'board': Kanban toma a tela; chat minimizado em mini-bar flutuante
+ *  - 'split': layout dividido (padrão) — kanban + chat + info drawer opcional
+ *  - 'chat' : kanban colapsa em trilha de avatares; chat fica grande
+ *
+ * Atalhos de teclado (em base_workspace.html):
+ *  - Alt+1 / Alt+2 / Alt+3 → board / split / chat
+ *  - Esc                   → reduz o foco gradualmente
+ *  - i                     → toggle do detail drawer
  *
  * Convenções:
  *  - `conversations`: lista (usada apenas como cache de preview para SSE)
@@ -17,11 +25,22 @@
 (function () {
     'use strict';
 
+    var LS_FOCUS = 'workspace.focusMode';
+    var LS_THEME = 'workspace.theme';
+    var LS_DENSITY = 'workspace.density';
+
     function getCookie(name) {
         const match = document.cookie.match(
             new RegExp('(?:^|; )' + name.replace(/[.$?*|{}()[\]\\\/+^]/g, '\\$&') + '=([^;]*)')
         );
         return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function readLS(key, fallback) {
+        try { return localStorage.getItem(key) || fallback; } catch (_) { return fallback; }
+    }
+    function writeLS(key, value) {
+        try { localStorage.setItem(key, value); } catch (_) { /* ignore */ }
     }
 
     function jsonFetch(url, init) {
@@ -49,8 +68,6 @@
     }
 
     function buildConvUrl(base, atendimentoId, suffix) {
-        // base é a URL de listagem de conversations e termina com '/'.
-        // Ex.: '/workspace/api/conversations/' + 42 + '/messages/'
         const safeBase = base.endsWith('/') ? base : base + '/';
         return safeBase + atendimentoId + '/' + suffix + '/';
     }
@@ -111,6 +128,15 @@
             sseEnabled: init.sseEnabled === true,
             detailDrawerOpen: false,
 
+            // ─────────────────────────────────────────────────────────
+            // NOVO: Modos de foco + tema/densidade
+            // ─────────────────────────────────────────────────────────
+            focusMode: readLS(LS_FOCUS, 'split'),     // 'board' | 'split' | 'chat'
+            theme:     readLS(LS_THEME, 'light'),     // 'light' | 'dark'
+            density:   readLS(LS_DENSITY, 'normal'),  // 'compact' | 'normal' | 'confortable'
+            showKbdHint: false,
+            _hintTimer: null,
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -124,11 +150,70 @@
                     if (this.sseEnabled) {
                         this.connectSSE();
                     }
+                    // Mostra hint de atalhos por 5s na primeira carga.
+                    this.showKbdHint = true;
+                    this._hintTimer = setTimeout(() => { this.showKbdHint = false; }, 5000);
                 } catch (exc) {
                     console.error('Falha ao inicializar Workspace', exc);
                 }
             },
 
+            // ─────────────────────────────────────────────────────────
+            // NOVO: Controle de foco
+            // ─────────────────────────────────────────────────────────
+            setFocus: function (mode) {
+                if (['board', 'split', 'chat'].indexOf(mode) === -1) return;
+                this.focusMode = mode;
+                writeLS(LS_FOCUS, mode);
+            },
+
+            minimizeChat: function () { this.setFocus('board'); },
+
+            // openChat(id?) — se vier um id, abre a conversa e expande pra split.
+            openChat: function (id) {
+                if (id != null) {
+                    // Reusa o openChat original (renomeado para _doOpenChat abaixo).
+                    return this._doOpenChat(id).then(() => this.setFocus('split'));
+                }
+                this.setFocus('split');
+                return Promise.resolve();
+            },
+
+            // Handler do Esc — reduz foco gradualmente. Ignorado se digitando.
+            onEscape: function ($event) {
+                if (this.isTypingTarget($event)) return;
+                if (this.detailDrawerOpen) { this.detailDrawerOpen = false; return; }
+                if (this.focusMode === 'chat')  { this.setFocus('split'); return; }
+                if (this.focusMode === 'split') { this.setFocus('board'); return; }
+                // já está em 'board' — não faz nada
+            },
+
+            onToggleInfo: function ($event) {
+                if (this.isTypingTarget($event)) return;
+                this.detailDrawerOpen = !this.detailDrawerOpen;
+            },
+
+            isTypingTarget: function ($event) {
+                if (!$event || !$event.target) return false;
+                const tag = ($event.target.tagName || '').toUpperCase();
+                return tag === 'INPUT' || tag === 'TEXTAREA' || $event.target.isContentEditable;
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Tema + densidade (persistidos)
+            // ─────────────────────────────────────────────────────────
+            setTheme: function (t) {
+                this.theme = t;
+                writeLS(LS_THEME, t);
+            },
+            setDensity: function (d) {
+                this.density = d;
+                writeLS(LS_DENSITY, d);
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Fluxos / Board / Conversas (igual ao original)
+            // ─────────────────────────────────────────────────────────
             onFluxoChange: function () {
                 return Promise.all([
                     this.loadConversations(),
@@ -176,7 +261,6 @@
                 }
                 const self = this;
                 const cols = document.querySelectorAll('.kanban-col-body');
-                console.log('[workspace] initSortable: ' + cols.length + ' columns');
                 cols.forEach(function (el) {
                     const instance = Sortable.create(el, {
                         group: 'kanban-cards',
@@ -185,31 +269,22 @@
                         ghostClass: 'kanban-ghost',
                         chosenClass: 'kanban-chosen',
                         dragClass: 'kanban-drag',
-                        // Ignora cliques em botões dentro do card (ex.: ícone "Detalhes")
                         filter: '.kanban-no-drag, .kanban-no-drag *',
                         preventOnFilter: false,
-                        onStart: function (evt) {
-                            self.isDragging = true;
-                        },
+                        onStart: function () { self.isDragging = true; },
                         onEnd: function (evt) {
-                            // O click só dispara se mousedown+mouseup no mesmo elemento sem move;
-                            // ainda assim mantemos timeout pequeno como defense-in-depth.
                             setTimeout(function () { self.isDragging = false; }, 50);
 
                             const atendimentoId = parseInt(evt.item.getAttribute('data-atend-id'), 10);
                             const fromEtapaId = parseInt(evt.from.getAttribute('data-etapa-id'), 10);
                             const toEtapaId = parseInt(evt.to.getAttribute('data-etapa-id'), 10);
-                            console.log('[workspace] onEnd', { atendimentoId, fromEtapaId, toEtapaId });
 
                             if (!atendimentoId || !toEtapaId) {
-                                console.warn('[workspace] move cancelado: ids invalidos');
                                 self.loadBoard();
                                 return;
                             }
-                            if (fromEtapaId === toEtapaId) {
-                                // Reordenacao na mesma coluna - apenas refresh local
-                                return;
-                            }
+                            if (fromEtapaId === toEtapaId) return;
+
                             jsonFetch(self.endpoints.boardMove, {
                                 method: 'POST',
                                 body: JSON.stringify({
@@ -229,22 +304,23 @@
                 });
             },
 
+            // ─────────────────────────────────────────────────────────
+            // Clique em card do kanban
+            // - Em modo 'board': abre conversa mas NÃO expande (mini-bar)
+            // - Em outros modos: comportamento original (abre painel direito)
+            // ─────────────────────────────────────────────────────────
             onCardClick: function (id, event) {
-                // Sortable cancela `click` quando o item foi arrastado.
-                // Mesmo assim, defense-in-depth: ignora se estamos em meio a drag.
                 if (this.isDragging) return;
-                return this.openChat(id);
+                return this._doOpenChat(id);
             },
 
             onCardDetail: function (id, event) {
-                if (event) {
-                    event.stopPropagation();
-                    event.preventDefault();
-                }
+                if (event) { event.stopPropagation(); event.preventDefault(); }
                 if (this.isDragging) return;
                 const self = this;
-                return this.openChat(id).then(function () {
+                return this._doOpenChat(id).then(function () {
                     self.detailDrawerOpen = true;
+                    if (self.focusMode === 'board') self.setFocus('split');
                 });
             },
 
@@ -260,9 +336,9 @@
                 });
             },
 
-            openChat: function (id) {
-                // Sintetiza conversa rasa a partir do card kanban quando
-                // não houver entrada correspondente na lista de conversations.
+            // _doOpenChat = lógica de "abrir conversa" sem mexer em focusMode.
+            // Use openChat(id) externamente — ele orquestra foco + abertura.
+            _doOpenChat: function (id) {
                 let conv = this.conversations.find((c) => c.atendimento_id === id);
                 if (!conv) {
                     for (const [etapaId, cards] of Object.entries(this.board.cards || {})) {
@@ -288,10 +364,8 @@
                 });
             },
 
-            // Compat: kanban_card.html ainda chama openChatDrawer.
-            openChatDrawer: function (id) {
-                return this.openChat(id);
-            },
+            // Compat: kanban_card.html ainda chama openChatDrawer em alguns lugares.
+            openChatDrawer: function (id) { return this._doOpenChat(id); },
 
             loadMessages: function (id) {
                 const url = buildConvUrl(this.endpoints.conversationsBase, id, 'messages');
@@ -372,7 +446,7 @@
                 };
                 this.sse.addEventListener('open', () => {
                     this.sseConnected = true;
-                    this._sseRetryDelay = 2000;  // reset backoff
+                    this._sseRetryDelay = 2000;
                 });
                 this.sse.addEventListener('error', () => {
                     this.sseConnected = false;
@@ -402,7 +476,6 @@
                 switch (eventType) {
                     case 'message.new':
                     case 'message.updated':
-                        // Atualiza preview na sidebar
                         const conv = this.conversations.find((c) => c.atendimento_id === data.atendimento_id);
                         if (conv) {
                             conv.preview_msg = data.preview || conv.preview_msg;
@@ -413,7 +486,6 @@
                                 conv.nao_lidos = (conv.nao_lidos || 0) + 1;
                             }
                         }
-                        // Se for a conversa ativa, append mensagem (refetch leve)
                         if (this.activeConv && this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadMessages(data.atendimento_id).then(() => {
                                 this.$nextTick(() => this.scrollMessagesBottom());
@@ -428,7 +500,6 @@
                         this.loadConversations();
                         break;
                     case 'custom_field.updated':
-                        // Recarrega detail para atualizar painel de campos
                         if (this.activeConv &&
                             this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadDetail(data.atendimento_id);
@@ -473,7 +544,6 @@
             salvarCampo: function (campo, novoValor, onDone) {
                 if (!this.activeConv) return;
                 const id = this.activeConv.atendimento_id;
-                // URL: /workspace/api/conversations/<id>/custom-fields/<slug>/
                 const safeBase = (this.endpoints.customFieldsBase || '').replace(/\/+$/, '');
                 const url = safeBase + '/' + id + '/custom-fields/' + campo.slug + '/';
                 this.customFieldsSaving[campo.slug] = true;
@@ -481,7 +551,6 @@
                     method: 'PATCH',
                     body: JSON.stringify({ valor: novoValor }),
                 }).then(() => {
-                    // Atualiza valor no activeDetail sem reload
                     if (this.activeDetail && Array.isArray(this.activeDetail.campos)) {
                         const c = this.activeDetail.campos.find((x) => x.slug === campo.slug);
                         if (c) {

@@ -173,8 +173,25 @@ def mark_read(
     atendimento_id: int,
     atendente_id: int,
 ) -> Any:
-    """Cria/atualiza ``LeituraAtendimento`` para o atendente atual."""
+    """Marca todas as mensagens não lidas do contato como lidas.
+
+    Faz duas coisas:
+    1. Atualiza em massa ``Mensagem.lido=True`` para mensagens vindas do
+       contato — fonte da verdade do contador do sino e dos cards.
+    2. Cria/atualiza ``LeituraAtendimento`` (audit log de quem leu por último).
+    """
+    from smart_core_assistant_painel.app.atendimentos.models import (
+        Mensagem,
+        TipoRemetente,
+    )
+
     from ..models import LeituraAtendimento
+
+    Mensagem.objects.filter(
+        atendimento_id=atendimento_id,
+        remetente=TipoRemetente.CONTATO,
+        lido=False,
+    ).update(lido=True)
 
     obj, _created = LeituraAtendimento.objects.update_or_create(
         atendimento_id=atendimento_id,

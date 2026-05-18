@@ -32,7 +32,9 @@ from smart_core_assistant_painel.app.operacional.models import (
 
 from .models import (
     CampoPersonalizado,
-    LeituraAtendimento,
+    Etiqueta,
+    EtiquetaAtendimento,
+    Nota,
     OrigemValor,
     ValorCampoAtendimento,
 )
@@ -79,11 +81,18 @@ def list_conversations(
     tag: Optional[str] = None,
     limit: int = 100,
     cursor: Optional[datetime] = None,
+    prioridade: Optional[str] = None,
+    atendente_id_filtro: Optional[int] = None,
+    etiqueta_id: Optional[int] = None,
+    apenas_nao_lidos: bool = False,
 ) -> list[dict[str, Any]]:
     """Lista conversas para a sidebar do Modo Conversas.
 
     Ordenada por `data_ultima_mensagem desc`; usa cursor (datetime) para
     paginação simples.
+
+    Filtros opcionais (popover de filtro): prioridade, atendente humano,
+    etiqueta aplicada, apenas com mensagens não lidas.
     """
     qs = Atendimento.objects.select_related(
         "contato",
@@ -121,24 +130,36 @@ def list_conversations(
     if tag:
         qs = qs.filter(tags__contains=[tag])
 
+    if prioridade:
+        qs = qs.filter(prioridade=prioridade)
+
+    if atendente_id_filtro is not None:
+        qs = qs.filter(atendente_humano_id=atendente_id_filtro)
+
+    if etiqueta_id is not None:
+        ids_com_etiqueta = EtiquetaAtendimento.objects.filter(
+            etiqueta_id=etiqueta_id
+        ).values_list("atendimento_id", flat=True)
+        qs = qs.filter(id__in=list(ids_com_etiqueta))
+
+    if apenas_nao_lidos:
+        ids_com_nao_lidos = (
+            Mensagem.objects.filter(
+                remetente=TipoRemetente.CONTATO, lido=False
+            )
+            .values_list("atendimento_id", flat=True)
+            .distinct()
+        )
+        qs = qs.filter(id__in=list(ids_com_nao_lidos))
+
     if cursor:
         qs = qs.filter(data_ultima_mensagem__lt=cursor)
 
     qs = qs.order_by("-data_ultima_mensagem", "-data_inicio")[:limit]
 
-    # Pré-busca de leituras para o atendente atual (se houver)
-    leituras_map: dict[int, datetime] = {}
-    if atendente is not None:
-        ids = [a.id for a in qs]
-        for leit in LeituraAtendimento.objects.filter(
-            atendimento_id__in=ids, atendente_id=atendente.id
-        ):
-            leituras_map[leit.atendimento_id] = leit.ultima_leitura_at
-
     resultado: list[dict[str, Any]] = []
     for atend in qs:
-        leitura_at = leituras_map.get(atend.id)
-        nao_lidos = _contar_nao_lidos(atend.id, leitura_at)
+        nao_lidos = _contar_nao_lidos(atend.id)
         ultima = atend.mensagens.order_by("-timestamp").first()
         contato = atend.contato
         nome_contato = (
@@ -223,6 +244,11 @@ def board_snapshot_by_fluxo(
     fluxo_id: int,
     atendente: Optional[Atendente] = None,
     is_owner: bool = False,
+    q: Optional[str] = None,
+    prioridade: Optional[str] = None,
+    atendente_id_filtro: Optional[int] = None,
+    etiqueta_id: Optional[int] = None,
+    apenas_nao_lidos: bool = False,
 ) -> dict[str, Any]:
     """Snapshot completo do board kanban para um fluxo.
 
@@ -262,26 +288,47 @@ def board_snapshot_by_fluxo(
             Q(atendente_humano=atendente) | Q(atendente_humano__isnull=True)
         )
 
-    atendimentos = list(atendimentos_qs)
+    if q:
+        atendimentos_qs = atendimentos_qs.filter(
+            Q(contato__nome_contato__icontains=q)
+            | Q(contato__nome_perfil_whatsapp__icontains=q)
+            | Q(contato__telefone__icontains=q)
+            | Q(assunto__icontains=q)
+        )
 
-    leituras_map: dict[int, datetime] = {}
-    if atendente is not None and atendimentos:
-        ids = [a.id for a in atendimentos]
-        for leit in LeituraAtendimento.objects.filter(
-            atendimento_id__in=ids, atendente_id=atendente.id
-        ):
-            leituras_map[leit.atendimento_id] = leit.ultima_leitura_at
+    if prioridade:
+        atendimentos_qs = atendimentos_qs.filter(prioridade=prioridade)
+
+    if atendente_id_filtro is not None:
+        atendimentos_qs = atendimentos_qs.filter(
+            atendente_humano_id=atendente_id_filtro
+        )
+
+    if etiqueta_id is not None:
+        ids_com_etiqueta = EtiquetaAtendimento.objects.filter(
+            etiqueta_id=etiqueta_id
+        ).values_list("atendimento_id", flat=True)
+        atendimentos_qs = atendimentos_qs.filter(id__in=list(ids_com_etiqueta))
+
+    if apenas_nao_lidos:
+        ids_com_nao_lidos = (
+            Mensagem.objects.filter(
+                remetente=TipoRemetente.CONTATO, lido=False
+            )
+            .values_list("atendimento_id", flat=True)
+            .distinct()
+        )
+        atendimentos_qs = atendimentos_qs.filter(
+            id__in=list(ids_com_nao_lidos)
+        )
+
+    atendimentos = list(atendimentos_qs)
 
     cards_por_etapa: dict[int, list[dict[str, Any]]] = {}
     for atend in atendimentos:
         if atend.etapa_atual_id is None:
             continue
-        leitura_at = leituras_map.get(atend.id)
-        nao_lidos = (
-            _contar_nao_lidos(atend.id, leitura_at)
-            if atendente is not None
-            else 0
-        )
+        nao_lidos = _contar_nao_lidos(atend.id)
         cards_por_etapa.setdefault(atend.etapa_atual_id, []).append(
             render_card(atend, nao_lidos=nao_lidos)
         )
@@ -459,15 +506,18 @@ def _get_campos(atendimento_id: int) -> list[dict[str, Any]]:
     return result
 
 
-def _contar_nao_lidos(
-    atendimento_id: int, leitura_at: Optional[datetime]
-) -> int:
-    qs = Mensagem.objects.filter(
-        atendimento_id=atendimento_id, remetente=TipoRemetente.CONTATO
-    )
-    if leitura_at:
-        qs = qs.filter(timestamp__gt=leitura_at)
-    return qs.count()
+def _contar_nao_lidos(atendimento_id: int) -> int:
+    """Conta mensagens não lidas (vindas do contato) em um atendimento.
+
+    Fonte da verdade: campo `Mensagem.lido` (atualizado em massa por
+    ``board_service.mark_read``). LeituraAtendimento permanece como audit
+    log mas não é mais consultado aqui.
+    """
+    return Mensagem.objects.filter(
+        atendimento_id=atendimento_id,
+        remetente=TipoRemetente.CONTATO,
+        lido=False,
+    ).count()
 
 
 def _preview_msg(mensagem: Optional[Mensagem]) -> str:
@@ -541,3 +591,239 @@ def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
         "filename": filename,
         "seconds": seconds,
     }
+
+
+# ---------------------------------------------------------------------------
+# E.3 — Etiquetas, Notas, Mídias, Timeline, Notificações
+# ---------------------------------------------------------------------------
+
+
+def _serialize_etiqueta(e: Etiqueta) -> dict[str, Any]:
+    return {
+        "id": e.id,
+        "nome": e.nome,
+        "cor": e.cor,
+        "descricao": e.descricao or "",
+        "ativo": e.ativo,
+    }
+
+
+def list_etiquetas() -> list[dict[str, Any]]:
+    """Lista todas as etiquetas ativas para o popover."""
+    return [_serialize_etiqueta(e) for e in Etiqueta.objects.filter(ativo=True)]
+
+
+def list_etiquetas_do_atendimento(atendimento_id: int) -> list[dict[str, Any]]:
+    """Etiquetas atualmente aplicadas a um atendimento."""
+    qs = EtiquetaAtendimento.objects.filter(
+        atendimento_id=atendimento_id
+    ).select_related("etiqueta")
+    return [
+        {
+            **_serialize_etiqueta(ea.etiqueta),
+            "aplicada_em": ea.aplicada_em.isoformat(),
+        }
+        for ea in qs
+    ]
+
+
+def list_notas(atendimento_id: int) -> list[dict[str, Any]]:
+    """Lista todas as notas de um atendimento (mais recentes primeiro)."""
+    from smart_core_assistant_painel.app.operacional.models import Atendente
+
+    notas = list(Nota.objects.filter(atendimento_id=atendimento_id))
+    autores_ids = [n.criado_por_id for n in notas if n.criado_por_id]
+    autores_map: dict[int, str] = {}
+    if autores_ids:
+        autores_map = {
+            a.id: a.nome
+            for a in Atendente.objects.filter(id__in=autores_ids)
+        }
+    return [
+        {
+            "id": n.id,
+            "texto": n.texto,
+            "criado_em": n.criado_em.isoformat(),
+            "criado_por_id": n.criado_por_id,
+            "criado_por_nome": (
+                autores_map.get(n.criado_por_id, "")
+                if n.criado_por_id
+                else ""
+            ),
+        }
+        for n in notas
+    ]
+
+
+def list_medias(atendimento_id: int) -> list[dict[str, Any]]:
+    """Lista mídias e documentos de um atendimento (mais recentes primeiro)."""
+    tipos_midia = list(_MEDIA_KIND_BY_TIPO.keys())
+    qs = (
+        Mensagem.objects.filter(
+            atendimento_id=atendimento_id, tipo__in=tipos_midia
+        )
+        .order_by("-timestamp")
+    )
+    resultado: list[dict[str, Any]] = []
+    for m in qs:
+        info = _extract_media(m)
+        if info is None:
+            continue
+        resultado.append(
+            {
+                "mensagem_id": m.id,
+                "kind": info["kind"],
+                "src": info["src"],
+                "remote_url": info["remote_url"],
+                "mimetype": info["mimetype"],
+                "filename": info["filename"],
+                "timestamp": m.timestamp.isoformat(),
+                "remetente": m.remetente,
+            }
+        )
+    return resultado
+
+
+def build_timeline(atendimento_id: int) -> list[dict[str, Any]]:
+    """Linha do tempo cronológica de eventos do atendimento.
+
+    Agrega:
+    - Criação do atendimento (data_inicio)
+    - Itens de `historico_status` (JSONField já existente)
+    - Movimentos de fluxo (`MovimentoFluxo` em operacional)
+    - Notas criadas
+    - data_primeira_resposta (quando IA respondeu)
+
+    Limitado a 50 eventos, ordem decrescente (mais recente primeiro).
+    """
+    atend = Atendimento.objects.filter(id=atendimento_id).first()
+    if atend is None:
+        return []
+
+    eventos: list[dict[str, Any]] = []
+
+    if atend.data_inicio:
+        eventos.append(
+            {
+                "tipo": "criacao",
+                "label": "Atendimento criado",
+                "descricao": "",
+                "autor": "",
+                "timestamp": atend.data_inicio.isoformat(),
+                "icone": "plus",
+            }
+        )
+
+    if atend.data_primeira_resposta:
+        eventos.append(
+            {
+                "tipo": "primeira_resposta",
+                "label": "IA respondeu pela primeira vez",
+                "descricao": "",
+                "autor": "IA",
+                "timestamp": atend.data_primeira_resposta.isoformat(),
+                "icone": "bot",
+            }
+        )
+
+    # JSONField — em runtime pode vir como lista, dict ou outro.
+    historico: Any = atend.historico_status or []
+    if isinstance(historico, list):  # pyright: ignore[reportUnnecessaryIsInstance]
+        for item in historico:
+            if not isinstance(item, dict):  # pyright: ignore[reportUnnecessaryIsInstance]
+                continue
+            quando = item.get("data") or item.get("timestamp")
+            if not quando:
+                continue
+            eventos.append(
+                {
+                    "tipo": "status",
+                    "label": f"Status: {item.get('status', '?')}",
+                    "descricao": str(item.get("observacao") or ""),
+                    "autor": str(item.get("autor") or ""),
+                    "timestamp": (
+                        quando if isinstance(quando, str) else str(quando)
+                    ),
+                    "icone": "flag",
+                }
+            )
+
+    try:
+        movimentos_rel: Any = getattr(atend, "movimentos_fluxo", None)
+        if movimentos_rel is not None:
+            movimentos = movimentos_rel.select_related(
+                "etapa_destino", "atendente_origem"
+            ).order_by("-data_movimento")[:30]
+            for mv in movimentos:
+                destino_nome = (
+                    mv.etapa_destino.nome
+                    if getattr(mv, "etapa_destino_id", None)
+                    else "?"
+                )
+                autor_nome = (
+                    mv.atendente_origem.nome
+                    if getattr(mv, "atendente_origem_id", None)
+                    else ""
+                )
+                eventos.append(
+                    {
+                        "tipo": "movimento",
+                        "label": f"Movido para {destino_nome}",
+                        "descricao": str(getattr(mv, "motivo", "") or ""),
+                        "autor": autor_nome,
+                        "timestamp": mv.data_movimento.isoformat(),
+                        "icone": "arrow",
+                    }
+                )
+    except Exception as exc:
+        logger.warning("Falha ao carregar movimentos de fluxo: {}", exc)
+
+    notas = Nota.objects.filter(atendimento_id=atendimento_id).order_by(
+        "-criado_em"
+    )[:30]
+    for n in notas:
+        eventos.append(
+            {
+                "tipo": "nota",
+                "label": "Nota interna adicionada",
+                "descricao": (
+                    n.texto[:80] + ("…" if len(n.texto) > 80 else "")
+                ),
+                "autor": "",
+                "timestamp": n.criado_em.isoformat(),
+                "icone": "note",
+            }
+        )
+
+    eventos.sort(key=lambda e: e["timestamp"], reverse=True)
+    return eventos[:50]
+
+
+def contar_nao_lidos_global(
+    atendente: Optional[Atendente] = None,
+    is_owner: bool = False,
+) -> int:
+    """Total de mensagens não lidas visíveis ao atendente para o sino.
+
+    Usa o mesmo escopo de `list_conversations` (fila do departamento +
+    atendimentos próprios), aplicado em Mensagem via `atendimento__`.
+    """
+    qs = Mensagem.objects.filter(
+        remetente=TipoRemetente.CONTATO, lido=False
+    ).exclude(
+        atendimento__status__in=[
+            StatusAtendimento.RESOLVIDO,
+            StatusAtendimento.CANCELADO,
+        ]
+    )
+
+    if not is_owner and atendente is not None:
+        qs = qs.filter(
+            Q(atendimento__atendente_humano=atendente)
+            | Q(
+                atendimento__atendente_humano__isnull=True,
+                atendimento__departamento_id=atendente.departamento_id,
+            )
+        )
+
+    return qs.count()

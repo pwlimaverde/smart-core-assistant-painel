@@ -137,6 +137,29 @@
             showKbdHint: false,
             _hintTimer: null,
 
+            // ─────────────────────────────────────────────────────────
+            // Etiquetas, Notas, Mídias, Timeline, Notificações, Filtros
+            // ─────────────────────────────────────────────────────────
+            etiquetas: [],                  // catálogo de etiquetas disponíveis
+            etiquetasAplicadas: [],         // etiquetas do atendimento ativo
+            notas: [],                      // notas do atendimento ativo
+            medias: [],                     // mídias/arquivos do atendimento ativo
+            timeline: [],                   // eventos do atendimento ativo
+            unreadCount: 0,                 // total geral para o sino
+            etiquetaPopoverOpen: false,
+            transferirPopoverOpen: false,
+            filterPopoverOpen: false,
+            filters: {
+                q: '',
+                prioridade: '',
+                atendente_id: '',
+                etiqueta_id: '',
+                apenas_nao_lidos: false,
+            },
+            notaComposer: '',
+            notaSaving: false,
+            _unreadDebounce: null,
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -146,6 +169,8 @@
                     await Promise.all([
                         this.loadConversations(),
                         this.loadBoard(),
+                        this.loadEtiquetas(),
+                        this.loadUnreadCount(),
                     ]);
                     if (this.sseEnabled) {
                         this.connectSSE();
@@ -227,11 +252,29 @@
                 });
             },
 
-            loadConversations: function () {
+            // Constrói query string com filtros + busca livre.
+            // `extraParams` permite forçar overrides (ex.: ?fluxo=X).
+            _buildFiltersParams: function (extraParams) {
                 const params = new URLSearchParams();
-                if (this.fluxoId != null) params.set('fluxo', this.fluxoId);
                 if (this.search) params.set('q', this.search);
+                else if (this.filters.q) params.set('q', this.filters.q);
                 if (this.filterTag) params.set('tag', this.filterTag);
+                if (this.filters.prioridade) params.set('prioridade', this.filters.prioridade);
+                if (this.filters.atendente_id) params.set('atendente_id', this.filters.atendente_id);
+                if (this.filters.etiqueta_id) params.set('etiqueta_id', this.filters.etiqueta_id);
+                if (this.filters.apenas_nao_lidos) params.set('apenas_nao_lidos', '1');
+                if (extraParams) {
+                    Object.keys(extraParams).forEach((k) => {
+                        if (extraParams[k] != null) params.set(k, extraParams[k]);
+                    });
+                }
+                return params;
+            },
+
+            loadConversations: function () {
+                const params = this._buildFiltersParams(
+                    this.fluxoId != null ? { fluxo: this.fluxoId } : null
+                );
                 const url = this.endpoints.conversations + '?' + params.toString();
                 return jsonFetch(url).then((data) => {
                     this.conversations = data.conversations || [];
@@ -243,7 +286,8 @@
                     this.board = { etapas: [], cards: {} };
                     return Promise.resolve();
                 }
-                const url = this.endpoints.board + '?fluxo=' + this.fluxoId;
+                const params = this._buildFiltersParams({ fluxo: this.fluxoId });
+                const url = this.endpoints.board + '?' + params.toString();
                 return jsonFetch(url).then((data) => {
                     this.board = data || { etapas: [], cards: {} };
                     this.$nextTick(() => this.initSortable());
@@ -355,10 +399,20 @@
                     }
                 }
                 this.activeConv = conv || { atendimento_id: id };
+                // Limpa estado anterior das seções do info drawer para evitar
+                // mostrar dados de outra conversa enquanto carrega.
+                this.etiquetasAplicadas = [];
+                this.notas = [];
+                this.medias = [];
+                this.timeline = [];
                 return Promise.all([
                     this.loadMessages(id),
                     this.loadDetail(id),
                     this.markRead(id),
+                    this.loadConversationEtiquetas(id),
+                    this.loadNotas(id),
+                    this.loadMedias(id),
+                    this.loadTimeline(id),
                 ]).then(() => {
                     this.$nextTick(() => this.scrollMessagesBottom());
                 });
@@ -389,6 +443,12 @@
                 return jsonFetch(url, { method: 'POST' }).then(() => {
                     const conv = this.conversations.find((c) => c.atendimento_id === id);
                     if (conv) conv.nao_lidos = 0;
+                    // Zera não-lidas no card do board correspondente
+                    for (const cards of Object.values(this.board.cards || {})) {
+                        const card = (cards || []).find((c) => c.atendimento_id === id);
+                        if (card) card.nao_lidos = 0;
+                    }
+                    this._scheduleUnreadRefresh();
                 }).catch(() => { /* não-fatal */ });
             },
 
@@ -491,6 +551,8 @@
                                 this.$nextTick(() => this.scrollMessagesBottom());
                                 this.markRead(data.atendimento_id);
                             });
+                        } else if (data.remetente === 'contato') {
+                            this._scheduleUnreadRefresh();
                         }
                         break;
                     case 'board.moved':
@@ -569,6 +631,207 @@
                 }).finally(() => {
                     this.customFieldsSaving[campo.slug] = false;
                 });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Etiquetas
+            // ─────────────────────────────────────────────────────────
+            loadEtiquetas: function () {
+                const url = (this.endpoints.etiquetas || '/workspace/api/etiquetas/');
+                return jsonFetch(url).then((data) => {
+                    this.etiquetas = data.etiquetas || [];
+                }).catch(() => { this.etiquetas = []; });
+            },
+
+            loadConversationEtiquetas: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'etiquetas');
+                return jsonFetch(url).then((data) => {
+                    this.etiquetasAplicadas = data.etiquetas || [];
+                }).catch(() => { this.etiquetasAplicadas = []; });
+            },
+
+            isEtiquetaAplicada: function (etiquetaId) {
+                return (this.etiquetasAplicadas || []).some((e) => e.id === etiquetaId);
+            },
+
+            toggleEtiqueta: function (etiquetaId) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(
+                    this.endpoints.conversationsBase, id, 'etiquetas/' + etiquetaId + '/toggle'
+                );
+                return jsonFetch(url, { method: 'POST' }).then((result) => {
+                    if (result.ativa) {
+                        const et = this.etiquetas.find((e) => e.id === etiquetaId);
+                        if (et && !this.isEtiquetaAplicada(etiquetaId)) {
+                            this.etiquetasAplicadas.push({ ...et });
+                        }
+                    } else {
+                        this.etiquetasAplicadas = this.etiquetasAplicadas.filter(
+                            (e) => e.id !== etiquetaId
+                        );
+                    }
+                }).catch((exc) => {
+                    console.error('Falha ao alternar etiqueta', exc);
+                    alert((exc && exc.message) || 'Falha ao alternar etiqueta.');
+                });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Notas
+            // ─────────────────────────────────────────────────────────
+            loadNotas: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'notas');
+                return jsonFetch(url).then((data) => {
+                    this.notas = data.notas || [];
+                }).catch(() => { this.notas = []; });
+            },
+
+            criarNota: function () {
+                if (!this.activeConv) return;
+                const texto = (this.notaComposer || '').trim();
+                if (!texto || this.notaSaving) return;
+                this.notaSaving = true;
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'notas');
+                return jsonFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({ texto: texto }),
+                }).then((nota) => {
+                    this.notas.unshift(nota);
+                    this.notaComposer = '';
+                }).catch((exc) => {
+                    console.error('Falha ao criar nota', exc);
+                    alert((exc && exc.message) || 'Falha ao criar nota.');
+                }).finally(() => {
+                    this.notaSaving = false;
+                });
+            },
+
+            deletarNota: function (notaId) {
+                if (!this.activeConv) return;
+                if (!confirm('Remover esta nota?')) return;
+                const id = this.activeConv.atendimento_id;
+                const safeBase = (this.endpoints.conversationsBase || '').replace(/\/+$/, '');
+                const url = safeBase + '/' + id + '/notas/' + notaId + '/';
+                return jsonFetch(url, { method: 'DELETE' }).then(() => {
+                    this.notas = this.notas.filter((n) => n.id !== notaId);
+                }).catch((exc) => {
+                    console.error('Falha ao remover nota', exc);
+                    alert((exc && exc.message) || 'Falha ao remover nota.');
+                });
+            },
+
+            abrirComposerNota: function () {
+                this.detailDrawerOpen = true;
+                if (this.focusMode === 'board') this.setFocus('split');
+                this.$nextTick(() => {
+                    const ta = document.querySelector('.ws-info__nota-form textarea');
+                    if (ta) ta.focus();
+                });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Mídias e Timeline
+            // ─────────────────────────────────────────────────────────
+            loadMedias: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'medias');
+                return jsonFetch(url).then((data) => {
+                    this.medias = data.medias || [];
+                }).catch(() => { this.medias = []; });
+            },
+
+            loadTimeline: function (id) {
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'timeline');
+                return jsonFetch(url).then((data) => {
+                    this.timeline = data.timeline || [];
+                }).catch(() => { this.timeline = []; });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Notificações (sino)
+            // ─────────────────────────────────────────────────────────
+            loadUnreadCount: function () {
+                const url = (this.endpoints.unreadCount || '/workspace/api/notifications/unread-count/');
+                return jsonFetch(url).then((data) => {
+                    this.unreadCount = data.total || 0;
+                }).catch(() => { /* não-fatal */ });
+            },
+
+            _scheduleUnreadRefresh: function () {
+                if (this._unreadDebounce) clearTimeout(this._unreadDebounce);
+                this._unreadDebounce = setTimeout(() => {
+                    this._unreadDebounce = null;
+                    this.loadUnreadCount();
+                }, 500);
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Transferência entre fluxos
+            // ─────────────────────────────────────────────────────────
+            transferirFluxo: function (fluxoDestinoId) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                const url = (this.endpoints.boardTransferFluxo || '/workspace/api/board/transfer-fluxo/');
+                this.transferirPopoverOpen = false;
+                return jsonFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        atendimento_id: id,
+                        fluxo_destino_id: fluxoDestinoId,
+                    }),
+                }).then(() => {
+                    // Recarrega tudo — o atendimento pode ter saído da visão atual.
+                    this.loadConversations();
+                    this.loadBoard();
+                    this.activeConv = null;
+                    this.messages = [];
+                    this.activeDetail = null;
+                }).catch((exc) => {
+                    console.error('Falha ao transferir fluxo', exc);
+                    alert((exc && exc.message) || 'Falha ao transferir atendimento.');
+                });
+            },
+
+            fluxosParaTransferir: function () {
+                const atualId = this.activeConv && this.activeConv.fluxo_id;
+                const atualDetailId = this.activeDetail && this.activeDetail.fluxo_id;
+                const excluirId = atualId || atualDetailId || null;
+                return (this.fluxos || []).filter((f) => f.id !== excluirId);
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Filtros (popover)
+            // ─────────────────────────────────────────────────────────
+            applyFilters: function () {
+                this.filterPopoverOpen = false;
+                return Promise.all([
+                    this.loadConversations(),
+                    this.loadBoard(),
+                ]);
+            },
+
+            clearFilters: function () {
+                this.filters = {
+                    q: '',
+                    prioridade: '',
+                    atendente_id: '',
+                    etiqueta_id: '',
+                    apenas_nao_lidos: false,
+                };
+                this.search = '';
+                return this.applyFilters();
+            },
+
+            // Helper: número de filtros ativos (badge no botão funil)
+            activeFiltersCount: function () {
+                let n = 0;
+                if (this.filters.q) n++;
+                if (this.filters.prioridade) n++;
+                if (this.filters.atendente_id) n++;
+                if (this.filters.etiqueta_id) n++;
+                if (this.filters.apenas_nao_lidos) n++;
+                return n;
             },
 
             prioridadeClass: prioridadeClass,

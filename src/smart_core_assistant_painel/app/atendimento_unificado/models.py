@@ -247,3 +247,135 @@ class ValorCampoAtendimento(models.Model):
             f"ValorCampoAtendimento(atendimento={self.atendimento_id}, "
             f"campo={self.campo_id}, origem={self.origem})"
         )
+
+
+# ---------------------------------------------------------------------------
+# E.3 — Etiquetas e Notas
+# ---------------------------------------------------------------------------
+
+
+class Etiqueta(models.Model):
+    """Cadastro de etiquetas (tags coloridas) aplicáveis a atendimentos.
+
+    Diferente do campo legado `Atendimento.tags` (JSONField de strings
+    soltas, mantido por compatibilidade), `Etiqueta` permite gerenciar um
+    catálogo com nome, cor e descrição. Aplicação em atendimentos é feita
+    via `EtiquetaAtendimento` (M2M manual com FK lógica).
+    """
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    nome: models.CharField[str] = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Nome curto da etiqueta (ex: 'Urgente', 'VIP').",
+    )
+    cor: models.CharField[str] = models.CharField(
+        max_length=7,
+        default="#a98f71",
+        help_text="Cor hexadecimal usada no chip (ex: '#dc2626').",
+    )
+    descricao: models.CharField[str] = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Descrição exibida no tooltip ao passar o mouse.",
+    )
+    ativo: models.BooleanField[bool] = models.BooleanField(default=True)
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "Etiqueta"
+        verbose_name_plural = "Etiquetas"
+        db_table = "atu_etiqueta"
+        ordering = ["nome"]
+
+    @override
+    def __str__(self) -> str:
+        return f"Etiqueta({self.nome})"
+
+
+class EtiquetaAtendimento(models.Model):
+    """Associação M2M manual entre Atendimento e Etiqueta.
+
+    `atendimento_id` é FK lógica (BigIntegerField) seguindo o padrão do app.
+    """
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    atendimento_id: models.BigIntegerField[int] = models.BigIntegerField(
+        db_index=True,
+        help_text="ID lógico de atendimentos.Atendimento.",
+    )
+    etiqueta: models.ForeignKey["Etiqueta"] = models.ForeignKey(
+        Etiqueta,
+        on_delete=models.CASCADE,
+        related_name="aplicacoes",
+    )
+    aplicada_em: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+    aplicada_por_id: models.BigIntegerField[int | None] = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID lógico de operacional.Atendente que aplicou.",
+    )
+
+    class Meta:
+        verbose_name = "Etiqueta do Atendimento"
+        verbose_name_plural = "Etiquetas dos Atendimentos"
+        db_table = "atu_etiqueta_atendimento"
+        unique_together = [("atendimento_id", "etiqueta")]
+        indexes = [
+            models.Index(
+                fields=["atendimento_id"],
+                name="atu_etiq_atend_idx",
+            ),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"EtiquetaAtendimento(atendimento={self.atendimento_id}, "
+            f"etiqueta={self.etiqueta_id})"
+        )
+
+
+class Nota(models.Model):
+    """Nota interna do atendente vinculada a um atendimento.
+
+    Cada nota pertence a UM atendimento (relação 1:N — atendimento tem
+    várias notas). Exibida na sidebar de detalhes após a linha do tempo.
+    """
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    atendimento_id: models.BigIntegerField[int] = models.BigIntegerField(
+        db_index=True,
+        help_text="ID lógico de atendimentos.Atendimento.",
+    )
+    texto: models.TextField[str] = models.TextField(
+        help_text="Conteúdo livre da nota.",
+    )
+    criado_por_id: models.BigIntegerField[int | None] = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID lógico de operacional.Atendente que criou a nota.",
+    )
+    criado_em: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "Nota"
+        verbose_name_plural = "Notas"
+        db_table = "atu_nota"
+        ordering = ["-criado_em"]
+        indexes = [
+            models.Index(
+                fields=["atendimento_id", "-criado_em"],
+                name="atu_nota_atend_idx",
+            ),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return f"Nota(atendimento={self.atendimento_id}, id={self.pk})"

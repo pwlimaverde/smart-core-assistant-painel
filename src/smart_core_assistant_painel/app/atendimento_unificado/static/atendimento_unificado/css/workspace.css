@@ -936,3 +936,342 @@
 .ws-main *::-webkit-scrollbar-track { background: transparent; }
 .ws-main *::-webkit-scrollbar-thumb { background: var(--ws-border-strong); border-radius: 4px; }
 .ws-main *::-webkit-scrollbar-thumb:hover { background: var(--ws-fg-subtle); }
+
+/* ==========================================================================
+   10. POPOVERS (etiqueta, transferir, filtro)
+   ========================================================================== */
+.ws-pop-anchor { position: relative; display: inline-flex; }
+.ws-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 60;
+  min-width: 240px;
+  max-width: 360px;
+  max-height: 360px;
+  overflow-y: auto;
+  background: var(--ws-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-col);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ws-popover--right { right: 0; }
+.ws-popover--left  { left: 0; }
+.ws-popover__hdr {
+  padding: 6px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ws-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.ws-popover__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--ws-radius-md);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ws-fg);
+  background: transparent;
+  border: 1px solid transparent;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+  transition: background var(--ws-dur-fast) var(--ws-ease);
+}
+.ws-popover__item:hover { background: var(--ws-chip); }
+.ws-popover__item--active {
+  background: var(--ws-success-soft);
+  color: var(--ws-success);
+  border-color: rgba(34, 197, 94, 0.30);
+}
+.ws-popover__item--active:hover { background: rgba(34, 197, 94, 0.18); }
+.ws-popover__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: 0 0 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.ws-popover__check {
+  margin-left: auto;
+  color: var(--ws-success);
+  flex: 0 0 14px;
+}
+.ws-popover__empty {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--ws-fg-muted);
+  text-align: center;
+}
+.ws-popover__form { display: flex; flex-direction: column; gap: 8px; padding: 6px; }
+.ws-popover__field { display: flex; flex-direction: column; gap: 4px; }
+.ws-popover__field label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--ws-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ws-popover__field input,
+.ws-popover__field select {
+  padding: 6px 8px;
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-md);
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--ws-fg);
+  background: var(--ws-card);
+}
+.ws-popover__actions { display: flex; gap: 6px; padding: 6px; }
+.ws-popover__btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: var(--ws-radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--ws-border);
+  background: var(--ws-chip);
+  color: var(--ws-fg);
+  font-family: inherit;
+}
+.ws-popover__btn--primary {
+  background: var(--ws-accent);
+  color: #fff;
+  border-color: var(--ws-accent);
+}
+.ws-popover__btn--primary:hover { background: var(--ws-accent-hover); }
+
+/* ==========================================================================
+   11. INFO DRAWER — seções específicas
+   ========================================================================== */
+.ws-info__sec__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.ws-info__sec__link {
+  font-size: 11px;
+  color: var(--ws-accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+.ws-info__sec__link:hover { text-decoration: underline; }
+
+/* Mídia & Arquivos — grid 3x2 de thumbs */
+.ws-info__medias {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.ws-info__media {
+  aspect-ratio: 1;
+  border-radius: var(--ws-radius-sm);
+  overflow: hidden;
+  background: var(--ws-chip);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid var(--ws-border);
+}
+.ws-info__media img,
+.ws-info__media video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ws-info__media__doc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--ws-fg-muted);
+  font-size: 9px;
+  padding: 4px;
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.2;
+}
+
+/* Linha do Tempo */
+.ws-info__timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.ws-info__timeline::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--ws-border);
+  z-index: 0;
+}
+.ws-info__event {
+  display: grid;
+  grid-template-columns: 12px 1fr;
+  gap: 10px;
+  align-items: flex-start;
+  position: relative;
+  z-index: 1;
+}
+.ws-info__event__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ws-fg-muted);
+  margin-top: 4px;
+  border: 2px solid var(--ws-panel);
+  box-sizing: content-box;
+}
+.ws-info__event--criacao .ws-info__event__dot { background: var(--ws-accent); }
+.ws-info__event--movimento .ws-info__event__dot { background: var(--ws-info); }
+.ws-info__event--nota .ws-info__event__dot { background: var(--ws-warning); }
+.ws-info__event--status .ws-info__event__dot { background: var(--ws-success); }
+.ws-info__event__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  min-width: 0;
+}
+.ws-info__event__label {
+  color: var(--ws-fg-strong);
+  font-weight: 500;
+}
+.ws-info__event__label strong { font-weight: 600; }
+.ws-info__event__meta {
+  font-size: 10px;
+  color: var(--ws-fg-muted);
+}
+.ws-info__event__desc {
+  font-size: 11px;
+  color: var(--ws-fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Notas */
+.ws-info__notas { display: flex; flex-direction: column; gap: 8px; }
+.ws-info__nota {
+  padding: 10px 12px;
+  background: var(--ws-chip);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-md);
+  font-size: 12px;
+  position: relative;
+}
+.ws-info__nota__txt {
+  color: var(--ws-fg);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ws-info__nota__meta {
+  font-size: 10px;
+  color: var(--ws-fg-muted);
+  margin-top: 6px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ws-info__nota__del {
+  background: transparent;
+  border: none;
+  color: var(--ws-danger);
+  cursor: pointer;
+  padding: 0;
+  font-size: 10px;
+  font-family: inherit;
+}
+.ws-info__nota__del:hover { text-decoration: underline; }
+.ws-info__nota-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+}
+.ws-info__nota-form textarea {
+  resize: vertical;
+  min-height: 60px;
+  max-height: 200px;
+  padding: 8px 10px;
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-md);
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--ws-fg);
+  background: var(--ws-card);
+}
+.ws-info__nota-form textarea:focus {
+  outline: none;
+  border-color: var(--ws-accent);
+  box-shadow: 0 0 0 3px var(--ws-accent-ring);
+}
+.ws-info__nota-form button {
+  align-self: flex-end;
+  padding: 6px 12px;
+  border-radius: var(--ws-radius-md);
+  background: var(--ws-accent);
+  color: #fff;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ws-info__nota-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Chips de etiquetas no header do chat / no body */
+.ws-etiqueta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 2px 4px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ws-fg);
+  background: var(--ws-chip);
+  border: 1px solid var(--ws-border);
+}
+.ws-etiqueta-chip__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* ==========================================================================
+   12. BADGE NÃO-LIDAS NO RODAPÉ DO CARD (visível em modo board)
+   ========================================================================== */
+.ws-card__unread {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--ws-success);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  margin-left: auto;
+}

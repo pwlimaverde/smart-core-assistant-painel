@@ -25,10 +25,16 @@ from smart_core_assistant_painel.app.operacional.models import Atendente
 from .feature_flags import is_workspace_enabled_for_tenant
 from .selectors import (
     board_snapshot_by_fluxo,
+    build_timeline,
+    contar_nao_lidos_global,
     get_atendimento_detail,
     get_messages,
     list_conversations,
+    list_etiquetas,
+    list_etiquetas_do_atendimento,
     list_fluxos_acessiveis,
+    list_medias,
+    list_notas,
 )
 from .services.board_service import (
     BoardMoveError,
@@ -36,7 +42,10 @@ from .services.board_service import (
     mark_read,
     move_atendimento,
 )
+from .services.etiquetas_service import toggle_etiqueta
 from .services.message_dispatch_service import send_text_message
+from .services.notas_service import criar_nota, deletar_nota
+from .services.transfer_fluxo_service import transferir_fluxo
 
 
 def _err(msg: str, code: str = "error", status: int = 400) -> JsonResponse:
@@ -132,6 +141,12 @@ class ConversationsListView(View):
         tag = (request.GET.get("tag") or "").strip() or None
         limit = min(_get_int(request.GET.get("limit")) or 100, 200)
         cursor = _get_datetime(request.GET.get("cursor"))
+        prioridade = (request.GET.get("prioridade") or "").strip() or None
+        atendente_id_filtro = _get_int(request.GET.get("atendente_id"))
+        etiqueta_id = _get_int(request.GET.get("etiqueta_id"))
+        apenas_nao_lidos = (
+            request.GET.get("apenas_nao_lidos") or ""
+        ).lower() in ("1", "true", "yes")
         items = list_conversations(
             fluxo_id=fluxo_id,
             atendente=atendente,
@@ -140,6 +155,10 @@ class ConversationsListView(View):
             tag=tag,
             limit=limit,
             cursor=cursor,
+            prioridade=prioridade,
+            atendente_id_filtro=atendente_id_filtro,
+            etiqueta_id=etiqueta_id,
+            apenas_nao_lidos=apenas_nao_lidos,
         )
         return JsonResponse({"conversations": items})
 
@@ -229,10 +248,22 @@ class BoardSnapshotView(View):
         if fluxo_id is None:
             return _err("Parâmetro `fluxo` obrigatório.", "validation", 400)
         atendente = _resolve_atendente(request)
+        q = (request.GET.get("q") or "").strip() or None
+        prioridade = (request.GET.get("prioridade") or "").strip() or None
+        atendente_id_filtro = _get_int(request.GET.get("atendente_id"))
+        etiqueta_id = _get_int(request.GET.get("etiqueta_id"))
+        apenas_nao_lidos = (
+            request.GET.get("apenas_nao_lidos") or ""
+        ).lower() in ("1", "true", "yes")
         data = board_snapshot_by_fluxo(
             fluxo_id=fluxo_id,
             atendente=atendente,
             is_owner=_is_owner_user(request),
+            q=q,
+            prioridade=prioridade,
+            atendente_id_filtro=atendente_id_filtro,
+            etiqueta_id=etiqueta_id,
+            apenas_nao_lidos=apenas_nao_lidos,
         )
         return JsonResponse(data)
 
@@ -517,6 +548,164 @@ class ExportView(View):
             'attachment; filename="atendimentos.csv"'
         )
         return response
+
+
+class NotificationsUnreadCountView(View):
+    """Total de mensagens não lidas para o sino da topbar."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest) -> HttpResponse:
+        atendente = _resolve_atendente(request)
+        total = contar_nao_lidos_global(
+            atendente=atendente, is_owner=_is_owner_user(request)
+        )
+        return JsonResponse({"total": int(total)})
+
+
+class EtiquetasListView(View):
+    """Catálogo de etiquetas disponíveis."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest) -> HttpResponse:
+        return JsonResponse({"etiquetas": list_etiquetas()})
+
+
+class ConversationEtiquetasView(View):
+    """Etiquetas aplicadas a um atendimento."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        return JsonResponse(
+            {"etiquetas": list_etiquetas_do_atendimento(int(atendimento_id))}
+        )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ConversationEtiquetaToggleView(View):
+    """Adiciona ou remove etiqueta de um atendimento."""
+
+    @_require_workspace
+    def post(
+        self,
+        request: HttpRequest,
+        atendimento_id: int,
+        etiqueta_id: int,
+    ) -> HttpResponse:
+        atendente = _resolve_atendente(request)
+        atendente_id = atendente.id if atendente else None
+        try:
+            result = toggle_etiqueta(
+                atendimento_id=int(atendimento_id),
+                etiqueta_id=int(etiqueta_id),
+                atendente_id=atendente_id,
+            )
+        except Exception as exc:
+            return _err(str(exc), "validation", 400)
+        return JsonResponse(result)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ConversationNotasView(View):
+    """Lista e cria notas de um atendimento."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        return JsonResponse({"notas": list_notas(int(atendimento_id))})
+
+    @_require_workspace
+    def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        body = _load_body(request)
+        texto = (body.get("texto") or "").strip()
+        if not texto:
+            return _err("Texto vazio.", "validation", 400)
+        atendente = _resolve_atendente(request)
+        atendente_id = atendente.id if atendente else None
+        try:
+            nota = criar_nota(
+                atendimento_id=int(atendimento_id),
+                texto=texto,
+                atendente_id=atendente_id,
+            )
+        except Exception as exc:
+            return _err(str(exc), "validation", 400)
+        if atendente is not None:
+            nota["criado_por_nome"] = atendente.nome
+        return JsonResponse(nota, status=201)
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ConversationNotaDeleteView(View):
+    """Remove nota (apenas o autor pode)."""
+
+    @_require_workspace
+    def delete(
+        self,
+        request: HttpRequest,
+        atendimento_id: int,
+        nota_id: int,
+    ) -> HttpResponse:
+        atendente = _resolve_atendente(request)
+        atendente_id = atendente.id if atendente else None
+        ok = deletar_nota(nota_id=int(nota_id), atendente_id=atendente_id)
+        if not ok:
+            return _err(
+                "Nota não encontrada ou sem permissão.", "not_found", 404
+            )
+        return JsonResponse({"deleted": True})
+
+
+class ConversationMediasView(View):
+    """Lista mídias e arquivos do atendimento."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        return JsonResponse({"medias": list_medias(int(atendimento_id))})
+
+
+class ConversationTimelineView(View):
+    """Linha do tempo agregada do atendimento."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        return JsonResponse({"timeline": build_timeline(int(atendimento_id))})
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class BoardTransferFluxoView(View):
+    """Transfere atendimento entre Fluxos de Atendimento."""
+
+    @_require_workspace
+    def post(self, request: HttpRequest) -> HttpResponse:
+        body = _load_body(request)
+        atendimento_id = _get_int(body.get("atendimento_id"))
+        fluxo_destino_id = _get_int(body.get("fluxo_destino_id"))
+        if atendimento_id is None or fluxo_destino_id is None:
+            return _err(
+                "Campos `atendimento_id` e `fluxo_destino_id` obrigatórios.",
+                "validation",
+                400,
+            )
+        atendente = _resolve_atendente(request)
+        try:
+            result = transferir_fluxo(
+                atendimento_id=atendimento_id,
+                fluxo_destino_id=fluxo_destino_id,
+                atendente_actor=atendente,
+                motivo=(body.get("motivo") or None),
+            )
+        except BoardMoveError as exc:
+            return _err(str(exc), "board_move", 400)
+        except Exception as exc:
+            logger.exception("Falha ao transferir fluxo: {}", exc)
+            return _err(str(exc), "validation", 400)
+        return JsonResponse(
+            {
+                "atendimento_id": result.atendimento.id,
+                "etapa_id": result.atendimento.etapa_atual_id,
+                "fluxo_id": result.atendimento.fluxo_atendimento_id,
+                "cross_board": result.cross_board,
+            }
+        )
 
 
 def _get_int(value: Any) -> Optional[int]:

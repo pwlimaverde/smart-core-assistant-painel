@@ -76,13 +76,54 @@
 
     <div class="ws-topbar__spacer"></div>
 
-    {# Filtros — em breve #}
-    <button type="button" class="ws-topbar__iconbtn ws-disabled"
-        title="Filtros (em breve)" aria-disabled="true" disabled>
-        <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M6 12h12M10 19h4"/>
-        </svg>
-    </button>
+    {# Filtros — popover com busca + prioridade + atendente + etiqueta + apenas não lidos #}
+    <span class="ws-pop-anchor" @click.outside="filterPopoverOpen = false">
+        <button type="button" class="ws-topbar__iconbtn"
+            @click="filterPopoverOpen = !filterPopoverOpen"
+            :title="activeFiltersCount() ? 'Filtros (' + activeFiltersCount() + ' ativos)' : 'Filtros'"
+            style="position: relative;">
+            <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 5h18M6 12h12M10 19h4"/>
+            </svg>
+            <span class="badge" x-show="activeFiltersCount() > 0" x-text="activeFiltersCount()"></span>
+        </button>
+        <div class="ws-popover ws-popover--right" x-show="filterPopoverOpen" x-transition.opacity style="display: none; width: 280px;">
+            <div class="ws-popover__hdr">Filtros</div>
+            <div class="ws-popover__form">
+                <div class="ws-popover__field">
+                    <label>Busca</label>
+                    <input type="text" x-model="filters.q" placeholder="Nome, telefone, assunto…" />
+                </div>
+                <div class="ws-popover__field">
+                    <label>Prioridade</label>
+                    <select x-model="filters.prioridade">
+                        <option value="">Todas</option>
+                        <option value="baixa">Baixa</option>
+                        <option value="normal">Normal</option>
+                        <option value="alta">Alta</option>
+                        <option value="urgente">Urgente</option>
+                    </select>
+                </div>
+                <div class="ws-popover__field">
+                    <label>Etiqueta</label>
+                    <select x-model="filters.etiqueta_id">
+                        <option value="">Todas</option>
+                        <template x-for="et in etiquetas" :key="et.id">
+                            <option :value="et.id" x-text="et.nome"></option>
+                        </template>
+                    </select>
+                </div>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ws-fg);">
+                    <input type="checkbox" x-model="filters.apenas_nao_lidos" />
+                    <span>Apenas com mensagens não lidas</span>
+                </label>
+            </div>
+            <div class="ws-popover__actions">
+                <button type="button" class="ws-popover__btn" @click="clearFilters()">Limpar</button>
+                <button type="button" class="ws-popover__btn ws-popover__btn--primary" @click="applyFilters()">Aplicar</button>
+            </div>
+        </div>
+    </span>
 
     <a :href="endpoints.export + '?fluxo=' + (fluxoId || '') + '&formato=csv'"
         class="ws-topbar__iconbtn" title="Exportar CSV">
@@ -91,14 +132,15 @@
         </svg>
     </a>
 
-    {# Notificações — em breve #}
-    <button type="button" class="ws-topbar__iconbtn ws-disabled"
-        title="Notificações (em breve)" aria-disabled="true" disabled
+    {# Notificações — contador dinâmico (Mensagem.lido=False) #}
+    <button type="button" class="ws-topbar__iconbtn"
+        :title="unreadCount + ' mensagens não lidas'"
+        @click="filters.apenas_nao_lidos = true; applyFilters()"
         style="position: relative;">
         <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
             <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .53-.21 1.04-.6 1.4L4 17h5m6 0a3 3 0 11-6 0"/>
         </svg>
-        <span class="badge">7</span>
+        <span class="badge" x-show="unreadCount > 0" x-text="unreadCount"></span>
     </button>
 
     <span class="ws-topbar__pill"
@@ -197,44 +239,87 @@
                 </div>
             </header>
 
-            {# Quick actions strip — visualmente fiel ao design; ações em breve. #}
+            {# Quick actions strip — Pendência e Resolver removidos (redundantes com etapa do fluxo). #}
             <div class="ws-chat__qstrip">
-                <button type="button" class="ws-qa ws-qa--gold ws-disabled"
-                    title="Transferir atendimento (em breve)" aria-disabled="true" disabled>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16 3l5 5-5 5M3 13V8a3 3 0 013-3h15M8 21l-5-5 5-5M21 11v5a3 3 0 01-3 3H3"/>
-                    </svg>
-                    Transferir
-                </button>
-                <button type="button" class="ws-qa ws-qa--success ws-disabled"
-                    title="Resolver atendimento (em breve)" aria-disabled="true" disabled>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
-                    </svg>
-                    Resolver
-                </button>
-                <button type="button" class="ws-qa ws-disabled"
-                    title="Marcar pendência (em breve)" aria-disabled="true" disabled>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 7v5l3 2"/>
-                    </svg>
-                    Pendência
-                </button>
-                <button type="button" class="ws-qa ws-disabled"
-                    title="Adicionar nota interna (em breve)" aria-disabled="true" disabled>
+                {# Transferir — popover com fluxos disponíveis #}
+                <span class="ws-pop-anchor" @click.outside="transferirPopoverOpen = false">
+                    <button type="button" class="ws-qa ws-qa--gold"
+                        @click="transferirPopoverOpen = !transferirPopoverOpen; etiquetaPopoverOpen = false"
+                        title="Transferir atendimento para outro fluxo">
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 3l5 5-5 5M3 13V8a3 3 0 013-3h15M8 21l-5-5 5-5M21 11v5a3 3 0 01-3 3H3"/>
+                        </svg>
+                        Transferir
+                    </button>
+                    <div class="ws-popover ws-popover--left"
+                        x-show="transferirPopoverOpen" x-transition.opacity
+                        style="display: none;">
+                        <div class="ws-popover__hdr">Transferir para fluxo</div>
+                        <template x-for="f in fluxosParaTransferir()" :key="f.id">
+                            <button type="button" class="ws-popover__item"
+                                @click="transferirFluxo(f.id)">
+                                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13V8a3 3 0 013-3h15M16 3l5 5-5 5"/>
+                                </svg>
+                                <span x-text="f.nome"></span>
+                            </button>
+                        </template>
+                        <template x-if="fluxosParaTransferir().length === 0">
+                            <div class="ws-popover__empty">Nenhum outro fluxo disponível.</div>
+                        </template>
+                    </div>
+                </span>
+
+                {# Adicionar nota — abre seção Notas no info drawer e foca textarea #}
+                <button type="button" class="ws-qa"
+                    @click="abrirComposerNota()"
+                    title="Adicionar nota interna">
                     <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4h12l4 4v12a2 2 0 01-2 2H4V4z M14 4v6h6"/>
                     </svg>
                     Nota
                 </button>
-                <button type="button" class="ws-qa ws-disabled"
-                    title="Etiquetas (em breve)" aria-disabled="true" disabled>
-                    <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M3 12V5a2 2 0 012-2h7l9 9-9 9-9-9z"/>
-                    </svg>
-                    Etiqueta
-                </button>
+
+                {# Etiqueta — popover com catálogo de etiquetas #}
+                <span class="ws-pop-anchor" @click.outside="etiquetaPopoverOpen = false">
+                    <button type="button" class="ws-qa"
+                        @click="etiquetaPopoverOpen = !etiquetaPopoverOpen; transferirPopoverOpen = false"
+                        title="Aplicar/remover etiquetas">
+                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M3 12V5a2 2 0 012-2h7l9 9-9 9-9-9z"/>
+                        </svg>
+                        Etiqueta
+                        <template x-if="(etiquetasAplicadas || []).length > 0">
+                            <span style="font-size: 9px; padding: 1px 5px; border-radius: 9999px; background: var(--ws-success); color: #fff; font-weight: 700;"
+                                x-text="etiquetasAplicadas.length"></span>
+                        </template>
+                    </button>
+                    <div class="ws-popover ws-popover--left"
+                        x-show="etiquetaPopoverOpen" x-transition.opacity
+                        style="display: none;">
+                        <div class="ws-popover__hdr">Etiquetas</div>
+                        <template x-for="et in etiquetas" :key="et.id">
+                            <button type="button"
+                                :class="isEtiquetaAplicada(et.id) ? 'ws-popover__item ws-popover__item--active' : 'ws-popover__item'"
+                                :title="et.descricao || et.nome"
+                                @click="toggleEtiqueta(et.id)">
+                                <span class="ws-popover__dot" :style="'background: ' + et.cor"></span>
+                                <span x-text="et.nome"></span>
+                                <template x-if="isEtiquetaAplicada(et.id)">
+                                    <svg class="ws-popover__check" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
+                                    </svg>
+                                </template>
+                            </button>
+                        </template>
+                        <template x-if="etiquetas.length === 0">
+                            <div class="ws-popover__empty">
+                                Nenhuma etiqueta cadastrada.<br>
+                                <span style="font-size: 10px;">Cadastre em /admin/atendimento_unificado/etiqueta/</span>
+                            </div>
+                        </template>
+                    </div>
+                </span>
             </div>
 
             {# Mensagens #}
@@ -285,35 +370,15 @@
     </template>
 </aside>
 
-{# ==================== DRAWER DE DETALHES ==================== #}
-{# Mantém o drawer overlay original — abre via botão "info" na chat header
-   ou via mini-bar > botão de detalhes. #}
-<div x-show="detailDrawerOpen" x-transition.opacity
-    class="fixed inset-0 z-40 bg-stone-900/40"
-    @click.self="detailDrawerOpen = false"
-    style="display: none;"></div>
-<aside x-show="detailDrawerOpen"
-    x-transition:enter="transition transform ease-out duration-200"
-    x-transition:enter-start="translate-x-full"
-    x-transition:enter-end="translate-x-0"
-    x-transition:leave="transition transform ease-in duration-150"
-    x-transition:leave-start="translate-x-0"
-    x-transition:leave-end="translate-x-full"
-    class="fixed top-0 right-0 bottom-0 w-full md:w-[400px] bg-stone-50 shadow-2xl z-50 flex flex-col overflow-hidden"
+{# ==================== INFO DRAWER (sidebar lateral, parte do layout) ====================
+   Substitui o antigo overlay z-50 pelo .ws-info do design system —
+   layout flex (kanban + chat + info), com CSS de focusMode já escondendo
+   em modo 'board'. #}
+<aside class="ws-info"
+    x-show="detailDrawerOpen && activeConv"
+    x-transition.opacity
     style="display: none;">
-    <header class="bg-white border-b border-stone-200 px-4 py-3 flex items-center justify-between shrink-0">
-        <h3 class="text-sm font-bold text-stone-800">Detalhes do Atendimento</h3>
-        <button @click="detailDrawerOpen = false"
-            class="p-1 rounded text-stone-400 hover:bg-stone-100 hover:text-stone-700 transition-colors"
-            title="Fechar">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-        </button>
-    </header>
-    <div class="flex-1 overflow-y-auto">
-        {% include "atendimento_unificado/partials/detail_panel.html" %}
-    </div>
+    {% include "atendimento_unificado/partials/detail_panel.html" %}
 </aside>
 
 {# ==================== MINI-BAR (focus=board) ==================== #}

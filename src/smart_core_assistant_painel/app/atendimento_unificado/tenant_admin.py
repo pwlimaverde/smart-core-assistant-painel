@@ -8,6 +8,9 @@ from django.utils.html import format_html
 from smart_core_assistant_painel.app.tenants.admin_client import (
     tenant_admin_site,
 )
+from smart_core_assistant_painel.app.tenants.admin_mixins import (
+    BaseTenantModelAdmin,
+)
 
 from .models import (
     CampoPersonalizado,
@@ -110,7 +113,8 @@ class ValorCampoAtendimentoAdmin(admin.ModelAdmin[ValorCampoAtendimento]):
 
 
 @admin.register(Etiqueta, site=tenant_admin_site)
-class EtiquetaAdmin(admin.ModelAdmin[Etiqueta]):
+class EtiquetaAdmin(BaseTenantModelAdmin, admin.ModelAdmin[Etiqueta]):
+    module_name = "atendimento"
     list_display = ("swatch", "nome", "cor", "descricao", "ativo")
     list_filter = ("ativo",)
     search_fields = ("nome", "descricao")
@@ -127,7 +131,10 @@ class EtiquetaAdmin(admin.ModelAdmin[Etiqueta]):
 
 
 @admin.register(EtiquetaAtendimento, site=tenant_admin_site)
-class EtiquetaAtendimentoAdmin(admin.ModelAdmin[EtiquetaAtendimento]):
+class EtiquetaAtendimentoAdmin(
+    BaseTenantModelAdmin, admin.ModelAdmin[EtiquetaAtendimento]
+):
+    module_name = "atendimento"
     list_display = (
         "id",
         "atendimento_id",
@@ -142,8 +149,15 @@ class EtiquetaAtendimentoAdmin(admin.ModelAdmin[EtiquetaAtendimento]):
 
 
 @admin.register(Nota, site=tenant_admin_site)
-class NotaAdmin(admin.ModelAdmin[Nota]):
-    list_display = ("id", "atendimento_id", "texto_curto", "criado_por_id", "criado_em")
+class NotaAdmin(BaseTenantModelAdmin, admin.ModelAdmin[Nota]):
+    module_name = "atendimento"
+    list_display = (
+        "id",
+        "atendimento_id",
+        "texto_curto",
+        "criado_por_id",
+        "criado_em",
+    )
     list_filter = ("criado_em",)
     search_fields = ("atendimento_id", "texto")
     readonly_fields = ("criado_em",)

@@ -1,6 +1,6 @@
-{# Partial usado dentro de <template x-for="card in (board.cards[etapa.id] || [])">. Recebe `card`.
-   Mantém SortableJS funcionando: classes `.kanban-card` e atributo `data-atend-id` preservados.
-   Adiciona `ws-card` para o styling do design system novo. #}
+{% comment %}Partial usado dentro de <template x-for="card in (board.cards[etapa.id] || [])">. Recebe `card`.
+Mantém SortableJS funcionando: classes `.kanban-card` e atributo `data-atend-id` preservados.
+Adiciona `ws-card` para o styling do design system novo.{% endcomment %}
 <div @click="onCardClick(card.atendimento_id, $event)"
     :data-atend-id="card.atendimento_id"
     :class="(activeConv && activeConv.atendimento_id === card.atendimento_id) ? 'ws-card ws-card--active kanban-card' : 'ws-card kanban-card'"

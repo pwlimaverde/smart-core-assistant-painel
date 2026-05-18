@@ -1,5 +1,5 @@
-{# Partial usado dentro de <template x-for="m in messages">. Recebe `m`.
-   Bolhas WhatsApp-style com tokens do design system + suporte a mídia. #}
+{% comment %}Partial usado dentro de <template x-for="m in messages">. Recebe `m`.
+Bolhas WhatsApp-style com tokens do design system + suporte a mídia.{% endcomment %}
 <div :class="m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out'">
 
     {# ============ IMAGEM ============ #}
@@ -10,8 +10,8 @@
     </template>
 
     {# ============ ÁUDIO ============ #}
-    {# Mantemos a tag nativa <audio> — confiável e acessível. Para um waveform
-       custom, substitua este bloco por um componente Alpine. #}
+    {% comment %}Mantemos a tag nativa <audio> — confiável e acessível.
+Para um waveform custom, substitua este bloco por um componente Alpine.{% endcomment %}
     <template x-if="m.media && m.media.kind === 'audio' && m.media.src">
         <div :class="m.remetente === 'contato' ? 'ws-aud' : 'ws-aud ws-aud--out'">
             <audio controls preload="metadata" :src="m.media.src" style="max-width:240px; width:100%;"></audio>

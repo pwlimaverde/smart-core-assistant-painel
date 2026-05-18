@@ -1,12 +1,10 @@
-{# Painel direito (sidebar de detalhes do atendimento ativo).
-
+{% comment %}Painel direito (sidebar de detalhes do atendimento ativo).
 Estrutura adotada do design system .ws-info:
 - Header com avatar 76px + nome + telefone + close
 - Seções: Dados do Contato, Campos Personalizados, Mídia & Arquivos,
   Linha do Tempo, Notas internas
-Usa store Alpine: `activeDetail`, `notas`, `medias`, `timeline`,
-`etiquetasAplicadas`.
-#}
+Usa store Alpine: `activeDetail`, `notas`, `medias`, `timeline`, `etiquetasAplicadas`.
+{% endcomment %}
 <template x-if="activeDetail">
 <div class="ws-info__inner" style="display: contents;">
 

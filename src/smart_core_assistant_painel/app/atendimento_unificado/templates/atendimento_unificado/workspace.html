@@ -370,10 +370,10 @@
     </template>
 </aside>
 
-{# ==================== INFO DRAWER (sidebar lateral, parte do layout) ====================
-   Substitui o antigo overlay z-50 pelo .ws-info do design system —
-   layout flex (kanban + chat + info), com CSS de focusMode já escondendo
-   em modo 'board'. #}
+{% comment %}INFO DRAWER (sidebar lateral, parte do layout).
+Substitui o antigo overlay z-50 pelo .ws-info do design system —
+layout flex (kanban + chat + info), com CSS de focusMode já escondendo
+em modo 'board'.{% endcomment %}
 <aside class="ws-info"
     x-show="detailDrawerOpen && activeConv"
     x-transition.opacity

@@ -1,5 +1,5 @@
-{# Mini-bar flutuante mostrada quando o chat está minimizado (focusMode === 'board')
-   e há atendimento ativo. Mantém o contexto sem ocupar a tela. #}
+{% comment %}Mini-bar flutuante mostrada quando o chat está minimizado (focusMode === 'board')
+e há atendimento ativo. Mantém o contexto sem ocupar a tela.{% endcomment %}
 <div class="ws-mini" role="dialog" aria-label="Atendimento ativo minimizado"
     x-show="focusMode === 'board' && activeConv"
     x-transition.opacity

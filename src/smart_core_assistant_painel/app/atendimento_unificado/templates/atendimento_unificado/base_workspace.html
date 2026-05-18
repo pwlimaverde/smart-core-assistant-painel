@@ -4,9 +4,9 @@
 {% block title %}Workspace · Smart Core{% endblock %}
 
 {% block extra_head %}
-{# Carrega o design system + componentes do Workspace.
-   workspace.css já @import dos tokens, mas listamos os dois aqui pra
-   ficar explícito no <head> e facilitar override por <link> próprio. #}
+{% comment %}Carrega o design system + componentes do Workspace.
+workspace.css já @import dos tokens, mas listamos os dois aqui pra
+ficar explícito no <head> e facilitar override por <link> próprio.{% endcomment %}
 <link rel="stylesheet" href="{% static 'atendimento_unificado/css/workspace-tokens.css' %}?v=1">
 <link rel="stylesheet" href="{% static 'atendimento_unificado/css/workspace.css' %}?v=1">
 {% endblock %}

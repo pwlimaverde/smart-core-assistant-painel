@@ -10,7 +10,7 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionInstance,
 )
 from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-    EvolutionWhatsAppService,
+    get_evolution_adapter,
 )
 from smart_core_assistant_painel.app.tenants.middleware import (
     get_current_tenant,
@@ -211,9 +211,12 @@ def _on_message_saved(
             f"para {number}"
         )
 
+        # Seleciona adapter correto via api_version da instância
+        adapter = get_evolution_adapter(getattr(inst, "api_version", "v2"))
+
         # Tenta enviar a mensagem
         try:
-            EvolutionWhatsAppService().send_message(
+            adapter.send_text(
                 instance=instance_name,
                 api_key=api_key,
                 number=number,

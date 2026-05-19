@@ -335,7 +335,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             EvolutionInstance,
         )
         from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-            EvolutionWhatsAppService,
+            get_evolution_adapter,
         )
         from smart_core_assistant_painel.app.tenants.models import (
             TenantEvolution,
@@ -416,6 +416,47 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
 
         message_content = {mensagem.tipo: crypto_fields}
 
+        # Seleciona adapter correto via api_version da instância
+        api_version = getattr(inst, "api_version", "v2")
+        adapter = get_evolution_adapter(api_version)
+
+        # Evolution Go: tenta mediaUrl do payload primeiro (sem custo de CPU)
+        media_url_remote = meta.get("media_url", "")
+        if media_url_remote and api_version == "go":
+            logger.info(
+                f"[MIDIA-CTX] Usando mediaUrl remota (Go S3) | "
+                f"msg_id={mensagem.id} | url={media_url_remote[:60]}..."
+            )
+            # Retorna flag especial para o caller usar mediaUrl ao invés de base64
+            # O caller (_convert_media_context) deve verificar media_url nos metadados
+            return ""
+
+        # Evolution Go: tenta download via endpoint dedicado (mais eficiente que getBase64)
+        if api_version == "go":
+            message_id_wa = mensagem.message_id_whatsapp or ""
+            if message_id_wa:
+                try:
+                    dl_result = adapter.download_media(
+                        base_url=base_url,
+                        api_key=str(api_key),
+                        instance=inst.name,
+                        message_id=message_id_wa,
+                        number=phone,
+                    )
+                    b64 = dl_result.get("base64", "")
+                    if b64:
+                        logger.info(
+                            f"[MIDIA-CTX] Base64 obtido via downloadmedia (Go) | "
+                            f"msg_id={mensagem.id} | len={len(b64)}"
+                        )
+                        return str(b64)
+                except Exception as dl_err:
+                    logger.warning(
+                        f"[MIDIA-CTX] downloadmedia falhou (Go), "
+                        f"tentando fallback v2: {dl_err}"
+                    )
+
+        # Fallback v2: getBase64FromMediaMessage (CPU-intensivo)
         if not meta.get("mediaKey"):
             logger.warning(
                 f"Mensagem {mensagem.id}: sem mediaKey nos "
@@ -424,8 +465,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        service = EvolutionWhatsAppService()
-        result = service.get_base64_from_media(
+        result = adapter.get_base64_from_media(
             base_url=base_url,
             api_key=str(api_key),
             instance_name=inst.name,

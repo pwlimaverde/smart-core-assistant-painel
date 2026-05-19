@@ -112,6 +112,76 @@ def _resolve_atendente(request: HttpRequest) -> Optional[Atendente]:
         return None
 
 
+def _resolve_tenant_user(request: HttpRequest) -> Any:
+    """Retorna o TenantUser do request, se houver."""
+    tu = getattr(request, "tenant_user", None)
+    if tu is not None:
+        return tu
+    try:
+        return request.user.tenant_profile
+    except Exception:
+        return None
+
+
+def _allowed_flow_ids(request: HttpRequest) -> Optional[set[int]]:
+    """Conjunto de IDs de fluxo permitidos ao usuário.
+
+    Retorna ``None`` quando o usuário tem acesso irrestrito (owner ou
+    superuser) — neste caso o chamador não deve filtrar.
+    """
+    if _is_owner_user(request):
+        return None
+    tenant_user = _resolve_tenant_user(request)
+    atendente = _resolve_atendente(request)
+    fluxos = list_fluxos_acessiveis(
+        atendente=atendente,
+        is_owner=False,
+        tenant_user=tenant_user,
+    )
+    return {int(f["id"]) for f in fluxos}
+
+
+def _can_access_fluxo(request: HttpRequest, fluxo_id: Optional[int]) -> bool:
+    """True se o usuário pode operar sobre ``fluxo_id``.
+
+    ``fluxo_id`` ``None`` é considerado válido (rotas que aceitam "todos
+    os fluxos do usuário"); o filtro real é aplicado downstream.
+    """
+    if fluxo_id is None:
+        return True
+    allowed = _allowed_flow_ids(request)
+    if allowed is None:
+        return True
+    return int(fluxo_id) in allowed
+
+
+def _can_access_atendimento(
+    request: HttpRequest, atendimento_id: int
+) -> bool:
+    """True se o usuário tem acesso ao fluxo do atendimento informado.
+
+    Owner/superuser ⇒ sempre True. Caso contrário consulta o
+    ``fluxo_atendimento_id`` do registro e checa contra os fluxos
+    permitidos. Atendimento inexistente ⇒ False (delegamos 404 ao
+    chamador apenas se ele consultar a entidade).
+    """
+    allowed = _allowed_flow_ids(request)
+    if allowed is None:
+        return True
+    from smart_core_assistant_painel.app.atendimentos.models import (
+        Atendimento,
+    )
+
+    fluxo_id = (
+        Atendimento.objects.filter(id=atendimento_id)
+        .values_list("fluxo_atendimento_id", flat=True)
+        .first()
+    )
+    if fluxo_id is None:
+        return False
+    return int(fluxo_id) in allowed
+
+
 def _load_body(request: HttpRequest) -> dict[str, Any]:
     try:
         return json.loads(request.body.decode("utf-8") or "{}")
@@ -126,7 +196,9 @@ class FluxosListView(View):
         return JsonResponse(
             {
                 "fluxos": list_fluxos_acessiveis(
-                    atendente=atendente, is_owner=_is_owner_user(request)
+                    atendente=atendente,
+                    is_owner=_is_owner_user(request),
+                    tenant_user=_resolve_tenant_user(request),
                 )
             }
         )
@@ -137,6 +209,8 @@ class ConversationsListView(View):
     def get(self, request: HttpRequest) -> HttpResponse:
         atendente = _resolve_atendente(request)
         fluxo_id = _get_int(request.GET.get("fluxo"))
+        if not _can_access_fluxo(request, fluxo_id):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         q = (request.GET.get("q") or "").strip() or None
         tag = (request.GET.get("tag") or "").strip() or None
         limit = min(_get_int(request.GET.get("limit")) or 100, 200)
@@ -166,6 +240,8 @@ class ConversationsListView(View):
 class ConversationMessagesView(View):
     @_require_workspace
     def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         limit = min(_get_int(request.GET.get("limit")) or 50, 200)
         before_id = _get_int(request.GET.get("before_id"))
         msgs = get_messages(
@@ -179,6 +255,8 @@ class ConversationMessagesView(View):
 class ConversationDetailView(View):
     @_require_workspace
     def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         data = get_atendimento_detail(int(atendimento_id))
         if data is None:
             return _err("Atendimento não encontrado.", "not_found", 404)
@@ -189,6 +267,8 @@ class ConversationDetailView(View):
 class ConversationSendView(View):
     @_require_workspace
     def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         body = _load_body(request)
         texto = (body.get("texto") or "").strip()
         if not texto:
@@ -222,6 +302,8 @@ class ConversationSendView(View):
 class ConversationMarkReadView(View):
     @_require_workspace
     def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = _resolve_atendente(request)
         if atendente is None:
             return _err(
@@ -247,6 +329,8 @@ class BoardSnapshotView(View):
         fluxo_id = _get_int(request.GET.get("fluxo"))
         if fluxo_id is None:
             return _err("Parâmetro `fluxo` obrigatório.", "validation", 400)
+        if not _can_access_fluxo(request, fluxo_id):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = _resolve_atendente(request)
         q = (request.GET.get("q") or "").strip() or None
         prioridade = (request.GET.get("prioridade") or "").strip() or None
@@ -281,6 +365,8 @@ class BoardMoveView(View):
                 "validation",
                 400,
             )
+        if not _can_access_atendimento(request, atendimento_id):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = _resolve_atendente(request)
         try:
             result = move_atendimento(
@@ -320,6 +406,8 @@ class BoardAssignView(View):
                 "validation",
                 400,
             )
+        if not _can_access_atendimento(request, atendimento_id):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = Atendente.objects.filter(
             id=atendente_id, ativo=True
         ).first()
@@ -349,6 +437,8 @@ class CustomFieldPatchView(View):
     def patch(
         self, request: HttpRequest, atendimento_id: int, slug: str
     ) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         body = _load_body(request)
         if "valor" not in body:
             return _err("Campo `valor` obrigatório.", "validation", 400)
@@ -397,6 +487,8 @@ class ConversationUploadView(View):
 
     @_require_workspace
     def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         from .services.media_dispatch_service import upload_and_send_media
 
         uploaded = request.FILES.get("file")
@@ -452,8 +544,11 @@ class ExportView(View):
         )
 
         fluxo_id = _get_int(request.GET.get("fluxo"))
+        if not _can_access_fluxo(request, fluxo_id):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = _resolve_atendente(request)
         is_owner = _is_owner_user(request)
+        allowed_flow_ids = _allowed_flow_ids(request)
 
         qs = (
             Atendimento.objects.select_related(
@@ -472,6 +567,8 @@ class ExportView(View):
         )
         if fluxo_id is not None:
             qs = qs.filter(fluxo_atendimento_id=fluxo_id)
+        elif allowed_flow_ids is not None:
+            qs = qs.filter(fluxo_atendimento_id__in=allowed_flow_ids)
         if not is_owner and atendente is not None:
             from django.db.models import Q
 
@@ -575,6 +672,8 @@ class ConversationEtiquetasView(View):
 
     @_require_workspace
     def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         return JsonResponse(
             {"etiquetas": list_etiquetas_do_atendimento(int(atendimento_id))}
         )
@@ -591,6 +690,8 @@ class ConversationEtiquetaToggleView(View):
         atendimento_id: int,
         etiqueta_id: int,
     ) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = _resolve_atendente(request)
         atendente_id = atendente.id if atendente else None
         try:
@@ -610,10 +711,14 @@ class ConversationNotasView(View):
 
     @_require_workspace
     def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         return JsonResponse({"notas": list_notas(int(atendimento_id))})
 
     @_require_workspace
     def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         body = _load_body(request)
         texto = (body.get("texto") or "").strip()
         if not texto:
@@ -644,6 +749,8 @@ class ConversationNotaDeleteView(View):
         atendimento_id: int,
         nota_id: int,
     ) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         atendente = _resolve_atendente(request)
         atendente_id = atendente.id if atendente else None
         ok = deletar_nota(nota_id=int(nota_id), atendente_id=atendente_id)
@@ -659,6 +766,8 @@ class ConversationMediasView(View):
 
     @_require_workspace
     def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         return JsonResponse({"medias": list_medias(int(atendimento_id))})
 
 
@@ -667,6 +776,8 @@ class ConversationTimelineView(View):
 
     @_require_workspace
     def get(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
         return JsonResponse({"timeline": build_timeline(int(atendimento_id))})
 
 
@@ -684,6 +795,18 @@ class BoardTransferFluxoView(View):
                 "Campos `atendimento_id` e `fluxo_destino_id` obrigatórios.",
                 "validation",
                 400,
+            )
+        if not _can_access_atendimento(request, atendimento_id):
+            return _err(
+                "Sem permissão sobre o fluxo de origem.",
+                "forbidden_flow",
+                403,
+            )
+        if not _can_access_fluxo(request, fluxo_destino_id):
+            return _err(
+                "Sem permissão sobre o fluxo de destino.",
+                "forbidden_flow",
+                403,
             )
         atendente = _resolve_atendente(request)
         try:

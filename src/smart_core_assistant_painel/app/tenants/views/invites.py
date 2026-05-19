@@ -8,6 +8,11 @@ from django.urls import reverse
 
 from ..models import Tenant, TenantInvite, TenantUser
 from ..permissions import TenantModule
+from ..services.flow_listing import (
+    group_fluxos_by_departamento,
+    list_tenant_fluxos,
+    sanitize_flow_ids,
+)
 
 User = get_user_model()
 
@@ -155,6 +160,7 @@ def invite_user(request):
         email = request.POST.get("email")
         name = request.POST.get("name")
         modules = request.POST.getlist("modules")
+        raw_flow_ids = request.POST.getlist("flow_ids")
 
         # Validações Básicas
         if not email or not name:
@@ -177,6 +183,11 @@ def invite_user(request):
 
         # Montar permissões: {modulo: {view, edit, delete}}
         module_perms = _build_module_permissions(modules)
+        # Só persistir IDs de fluxo se o módulo atendimento estiver liberado.
+        if TenantModule.ATENDIMENTO.value in modules:
+            flow_ids = sanitize_flow_ids(raw_flow_ids, tenant)
+        else:
+            flow_ids = []
 
         # Criar convite
         invite = TenantInvite.objects.create(
@@ -185,6 +196,7 @@ def invite_user(request):
             name=name,
             role="staff",
             module_permissions=module_perms,
+            flow_permissions=flow_ids,
             created_by=request.user,
         )
 
@@ -198,10 +210,16 @@ def invite_user(request):
         return redirect("tenants:user_list")
 
     modules = _available_permission_modules()
+    fluxos_grupos = group_fluxos_by_departamento(list_tenant_fluxos(tenant))
     return render(
         request,
         "tenants/users/invite.html",
-        {"modules": modules, "tenant": tenant},
+        {
+            "modules": modules,
+            "tenant": tenant,
+            "fluxos_grupos": fluxos_grupos,
+            "atendimento_module": TenantModule.ATENDIMENTO.value,
+        },
     )
 
 
@@ -399,6 +417,7 @@ def activate_account(request, token):
                 tenant=invite.tenant,
                 role=invite.role,
                 module_permissions=invite.module_permissions,
+                flow_permissions=list(invite.flow_permissions or []),
                 created_by=invite.created_by,
             )
 
@@ -468,12 +487,18 @@ def edit_permissions(request, user_id):
 
     if request.method == "POST":
         modules = request.POST.getlist("modules")
+        raw_flow_ids = request.POST.getlist("flow_ids")
 
         # Montar permissões: {modulo: {view, edit, delete}}
         module_perms = _build_module_permissions(modules)
+        if TenantModule.ATENDIMENTO.value in modules:
+            flow_ids = sanitize_flow_ids(raw_flow_ids, tenant)
+        else:
+            flow_ids = []
 
         tenant_user.role = "staff"
         tenant_user.module_permissions = module_perms
+        tenant_user.flow_permissions = flow_ids
         tenant_user.save()
 
         messages.success(
@@ -497,6 +522,9 @@ def edit_permissions(request, user_id):
         mod_value for mod_value, _label in modules if mod_value in current_set
     ]
 
+    fluxos_grupos = group_fluxos_by_departamento(list_tenant_fluxos(tenant))
+    current_flow_ids = tenant_user.allowed_flow_ids()
+
     return render(
         request,
         "tenants/users/edit_permissions.html",
@@ -505,5 +533,8 @@ def edit_permissions(request, user_id):
             "modules": modules,
             "current_modules": current_modules,
             "tenant": tenant,
+            "fluxos_grupos": fluxos_grupos,
+            "current_flow_ids": current_flow_ids,
+            "atendimento_module": TenantModule.ATENDIMENTO.value,
         },
     )

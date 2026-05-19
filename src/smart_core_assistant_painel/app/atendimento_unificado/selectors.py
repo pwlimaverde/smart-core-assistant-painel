@@ -43,22 +43,40 @@ from .models import (
 def list_fluxos_acessiveis(
     atendente: Optional[Atendente] = None,
     is_owner: bool = False,
+    tenant_user: Any = None,
 ) -> list[dict[str, Any]]:
     """Retorna os fluxos visíveis para o usuário/atendente atual.
 
-    Regras:
+    Regras de visibilidade (avaliadas em ordem):
     - Owner do tenant ou superuser vê todos os fluxos ativos.
-    - Atendente regular vê apenas o fluxo ao qual está vinculado e os do
-      mesmo departamento.
+    - Se ``tenant_user`` informado, `flow_permissions` (lista de IDs em
+      TenantUser) é a fonte de verdade: o usuário vê apenas os fluxos
+      explicitamente liberados. Lista vazia ⇒ nenhum fluxo.
+    - Fallback (sem tenant_user, com atendente): comportamento legado por
+      vínculo operacional (Atendente.fluxo + departamento).
     """
     qs = FluxoAtendimento.objects.filter(ativo=True).select_related(
         "departamento"
     )
-    if not is_owner and atendente is not None:
-        condicao = Q(atendentes=atendente)
-        if atendente.departamento_id:
-            condicao = condicao | Q(departamento_id=atendente.departamento_id)
-        qs = qs.filter(condicao).distinct()
+    if not is_owner:
+        if tenant_user is not None:
+            allowed_ids = (
+                tenant_user.allowed_flow_ids()
+                if hasattr(tenant_user, "allowed_flow_ids")
+                else list(getattr(tenant_user, "flow_permissions", []) or [])
+            )
+            if not allowed_ids:
+                return []
+            qs = qs.filter(id__in=allowed_ids)
+        elif atendente is not None:
+            condicao = Q(atendentes=atendente)
+            if atendente.departamento_id:
+                condicao = condicao | Q(
+                    departamento_id=atendente.departamento_id
+                )
+            qs = qs.filter(condicao).distinct()
+        else:
+            return []
 
     return [
         {

@@ -519,6 +519,7 @@
                             conv = {
                                 atendimento_id: id,
                                 contato_nome: card.contato_nome || card.titulo || 'Contato',
+                                contato_avatar_url: card.contato_avatar_url || '',
                                 assunto: card.assunto || '',
                                 telefone: '',
                                 etapa_nome: '',

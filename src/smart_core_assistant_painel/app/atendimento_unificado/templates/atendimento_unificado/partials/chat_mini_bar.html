@@ -7,7 +7,17 @@ e há atendimento ativo. Mantém o contexto sem ocupar a tela.{% endcomment %}
 
     <header class="ws-mini__head" @click="openChat(activeConv.atendimento_id)">
         <div class="ws-mini__av"
-            x-text="(activeConv && activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></div>
+            :class="(activeConv && activeConv.contato_avatar_url) ? 'ws-mini__av ws-mini__av--img' : 'ws-mini__av'">
+            <template x-if="activeConv && activeConv.contato_avatar_url">
+                <img :src="activeConv.contato_avatar_url"
+                    :alt="(activeConv && activeConv.contato_nome) || ''"
+                    loading="lazy"
+                    @error="activeConv.contato_avatar_url = ''">
+            </template>
+            <template x-if="!(activeConv && activeConv.contato_avatar_url)">
+                <span x-text="(activeConv && activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></span>
+            </template>
+        </div>
         <div class="ws-mini__info">
             <div class="ws-mini__name" x-text="activeConv && activeConv.contato_nome || 'Atendimento'"></div>
             <div class="ws-mini__sub" x-text="activeConv && (activeConv.telefone || activeConv.etapa_nome || '')"></div>

@@ -74,6 +74,13 @@ class WebhookProcessor:
                 except Exception as exc:
                     logger.warning(f"Erro ao processar PRESENCE: {exc}")
                 return {"status": "ok", "event": "PRESENCE"}
+            # CONTACTS → baixa profilePictureUrl para Contato.foto_perfil
+            if event_raw == "CONTACTS":
+                try:
+                    self._handle_contacts(payload)
+                except Exception as exc:
+                    logger.warning(f"Erro ao processar CONTACTS: {exc}")
+                return {"status": "ok", "event": "CONTACTS"}
 
         valid_envelopes = []
 
@@ -772,3 +779,86 @@ class WebhookProcessor:
             logger.debug(
                 f"PRESENCE: atendimento={atend.id}, jid={jid!r}, state={state!r}"
             )
+
+    def _handle_contacts(self, payload: Dict[str, Any]) -> None:
+        """Processa evento CONTACTS (Go) / CONTACTS_UPDATE (v2) e sincroniza avatar.
+
+        Para cada contato vindo no payload, localiza o ``Contato`` pelo
+        telefone (extraído do ``id``/``remoteJid``) e baixa a imagem de
+        ``profilePictureUrl`` para ``Contato.foto_perfil`` quando a URL
+        for diferente da última sincronizada (``foto_perfil_url_origem``).
+
+        Formatos suportados:
+            - Evolution Go: ``payload["data"]`` é dict único ou lista de dicts
+              ``{id, profilePictureUrl, pushName?, name?}``.
+            - Evolution v2: ``payload["data"]`` é lista de dicts com
+              ``{remoteJid, profilePicUrl, pushName?}``.
+        """
+        import re
+        from urllib.parse import urlparse
+
+        import requests
+        from django.core.files.base import ContentFile
+
+        data_obj: Any = payload.get("data")
+        if isinstance(data_obj, dict):
+            contacts_raw: List[Dict[str, Any]] = [data_obj]
+        elif isinstance(data_obj, list):
+            contacts_raw = [c for c in data_obj if isinstance(c, dict)]
+        else:
+            return
+
+        for contact_data in contacts_raw:
+            jid = str(
+                contact_data.get("id")
+                or contact_data.get("remoteJid")
+                or ""
+            )
+            profile_url = str(
+                contact_data.get("profilePictureUrl")
+                or contact_data.get("profilePicUrl")
+                or ""
+            ).strip()
+            if not jid or not profile_url:
+                continue
+
+            telefone = re.sub(r"\D", "", jid.split("@")[0])
+            if not telefone:
+                continue
+
+            contato = Contato.objects.filter(telefone=telefone).first()
+            if not contato:
+                continue
+
+            if contato.foto_perfil_url_origem == profile_url and contato.foto_perfil:
+                continue
+
+            try:
+                resp = requests.get(profile_url, timeout=15)
+                if not resp.ok or not resp.content:
+                    logger.debug(
+                        f"CONTACTS: download avatar falhou jid={jid!r} "
+                        f"status={resp.status_code}"
+                    )
+                    continue
+
+                ext = (urlparse(profile_url).path.rsplit(".", 1)[-1] or "jpg").lower()
+                if ext not in {"jpg", "jpeg", "png", "webp"}:
+                    ext = "jpg"
+                filename = f"{telefone}.{ext}"
+
+                contato.foto_perfil.save(
+                    filename, ContentFile(resp.content), save=False
+                )
+                contato.foto_perfil_url_origem = profile_url
+                contato.save(
+                    update_fields=["foto_perfil", "foto_perfil_url_origem"]
+                )
+                logger.info(
+                    f"CONTACTS: avatar atualizado contato_id={contato.pk} "
+                    f"telefone={telefone}"
+                )
+            except requests.RequestException as exc:
+                logger.warning(
+                    f"CONTACTS: erro baixando avatar jid={jid!r}: {exc}"
+                )

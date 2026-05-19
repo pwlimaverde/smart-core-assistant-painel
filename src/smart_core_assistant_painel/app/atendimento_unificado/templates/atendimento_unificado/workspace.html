@@ -209,7 +209,17 @@
                     </svg>
                 </button>
                 <div class="ws-chat__av"
-                    x-text="(activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></div>
+                    :class="activeConv.contato_avatar_url ? 'ws-chat__av ws-chat__av--img' : 'ws-chat__av'">
+                    <template x-if="activeConv.contato_avatar_url">
+                        <img :src="activeConv.contato_avatar_url"
+                            :alt="activeConv.contato_nome || ''"
+                            loading="lazy"
+                            @error="activeConv.contato_avatar_url = ''">
+                    </template>
+                    <template x-if="!activeConv.contato_avatar_url">
+                        <span x-text="(activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></span>
+                    </template>
+                </div>
                 <div class="ws-chat__who">
                     <div class="ws-chat__name" x-text="activeConv.contato_nome || 'Conversa'"></div>
                     {# Presença do contato: digitando / gravando #}

@@ -186,10 +186,18 @@ def list_conversations(
             or getattr(contato, "telefone", "")
             or "(sem nome)"
         )
+        avatar_url = ""
+        foto = getattr(contato, "foto_perfil", None)
+        try:
+            if foto and getattr(foto, "name", ""):
+                avatar_url = foto.url
+        except Exception:
+            avatar_url = ""
         resultado.append(
             {
                 "atendimento_id": atend.id,
                 "contato_nome": nome_contato,
+                "contato_avatar_url": avatar_url,
                 "telefone": getattr(contato, "telefone", ""),
                 "assunto": atend.assunto or "",
                 "status": atend.status,

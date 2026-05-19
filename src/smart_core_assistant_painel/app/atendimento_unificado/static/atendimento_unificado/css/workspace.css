@@ -333,7 +333,14 @@
   flex-shrink: 0;
   position: relative;
   background: var(--ws-accent);
+  overflow: hidden;
 }
+.ws-card__av--img { background: var(--ws-bg-muted, #e5e7eb); }
+.ws-card__av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ws-chat__av--img { background: var(--ws-bg-muted, #e5e7eb); overflow: hidden; }
+.ws-chat__av img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.ws-mini__av--img { background: rgba(255, 255, 255, 0.20); overflow: hidden; }
+.ws-mini__av img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
 .ws-card__id { flex: 1; min-width: 0; }
 .ws-card__name {
   font-size: 12.5px; font-weight: 600;

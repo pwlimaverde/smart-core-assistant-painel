@@ -56,6 +56,18 @@ class WebhookProcessor:
         Returns:
             Dict[str, Any]: Resultado do processamento.
         """
+        # Despacha eventos especiais antes de processar mensagens inbound
+        if envelopes:
+            first = envelopes[0]
+            event_raw = first.event or ""
+            # MESSAGE_UPDATE → atualiza status_envio das mensagens
+            if event_raw == "MESSAGE_UPDATE":
+                try:
+                    self._handle_message_update(payload)
+                except Exception as exc:
+                    logger.error(f"Erro ao processar MESSAGE_UPDATE: {exc}")
+                return {"status": "ok", "event": "MESSAGE_UPDATE"}
+
         valid_envelopes = []
 
         for e in envelopes:
@@ -575,3 +587,103 @@ class WebhookProcessor:
                 from_me=True,
                 api_key=envelope.apikey,
             )
+
+    def _handle_message_update(self, payload: Dict[str, Any]) -> None:
+        """Processa evento MESSAGE_UPDATE do Evolution Go para atualizar status_envio.
+
+        O Evolution Go emite este evento quando o WhatsApp confirma entrega
+        (✓✓) ou leitura (✓✓ azul) de uma mensagem enviada.
+
+        Payload esperado (Evolution Go)::
+
+            {
+                "event": "MESSAGE_UPDATE",
+                "instance": "atendimento",
+                "data": {
+                    "key": {"id": "MSGID...", "fromMe": true, "remoteJid": "..."},
+                    "update": {"status": "DELIVERY_ACK" | "READ"}
+                }
+            }
+
+        Status Evolution Go → status_envio do modelo:
+        - ``SERVER_ACK``   → ``"sent"``
+        - ``DELIVERY_ACK`` → ``"delivered"``
+        - ``READ``         → ``"read"``
+
+        Args:
+            payload: Payload bruto do webhook.
+        """
+
+
+        data = payload.get("data", {})
+        if isinstance(data, list):
+            # batch: processa cada item
+            for item in data:
+                if isinstance(item, dict):
+                    self._process_single_message_update(item)
+            return
+
+        if isinstance(data, dict):
+            self._process_single_message_update(data)
+
+    def _process_single_message_update(self, data: Dict[str, Any]) -> None:
+        """Processa um único item de MESSAGE_UPDATE.
+
+        Args:
+            data: Um dict dentro de ``payload["data"]``.
+        """
+        from django.utils import timezone
+
+        from smart_core_assistant_painel.app.atendimentos.models import (
+            Mensagem,
+        )
+
+        key = data.get("key", {})
+        update = data.get("update", {})
+        message_id = key.get("id", "")
+        status_raw = update.get("status", "")
+
+        if not message_id or not status_raw:
+            return
+
+        # Mapeamento Evolution Go status → choices do modelo
+        _STATUS_MAP: dict[str, str] = {
+            "SERVER_ACK": "sent",
+            "DELIVERY_ACK": "delivered",
+            "READ": "read",
+            "PLAYED": "read",  # áudios ouvidos
+        }
+        novo_status = _STATUS_MAP.get(status_raw.upper(), "")
+        if not novo_status:
+            logger.debug(f"MESSAGE_UPDATE: status desconhecido {status_raw!r}")
+            return
+
+        # Busca a Mensagem pelo message_id_whatsapp
+        mensagem = Mensagem.objects.filter(
+            message_id_whatsapp=message_id
+        ).first()
+
+        if not mensagem:
+            logger.debug(
+                f"MESSAGE_UPDATE: mensagem {message_id!r} não encontrada no banco"
+            )
+            return
+
+        update_fields: list[str] = ["status_envio"]
+        mensagem.status_envio = novo_status
+
+        now = timezone.now()
+        if novo_status == "delivered" and not mensagem.data_entregue:
+            mensagem.data_entregue = now
+            update_fields.append("data_entregue")
+        elif novo_status == "read" and not mensagem.data_lida:
+            mensagem.data_lida = now
+            update_fields.append("data_lida")
+            if not mensagem.data_entregue:
+                mensagem.data_entregue = now
+                update_fields.append("data_entregue")
+
+        mensagem.save(update_fields=list(set(update_fields)))
+        logger.info(
+            f"MESSAGE_UPDATE: msg_id={message_id} → status_envio={novo_status}"
+        )

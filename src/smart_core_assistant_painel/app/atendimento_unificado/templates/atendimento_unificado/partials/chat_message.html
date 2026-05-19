@@ -122,8 +122,14 @@ Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% en
         <span x-text="m.timestamp ? new Date(m.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''"></span>
         <template x-if="m.remetente !== 'contato'">
             <span class="ws-bub__check"
-                :class="m.respondida ? 'ws-bub__check--read' : ''"
-                x-text="m.respondida ? '✓✓' : '✓'"></span>
+                :class="{
+                    'ws-bub__check--pending':   m.status_envio === 'pending',
+                    'ws-bub__check--sent':      m.status_envio === 'sent',
+                    'ws-bub__check--delivered': m.status_envio === 'delivered',
+                    'ws-bub__check--read':      m.status_envio === 'read' || m.respondida,
+                    'ws-bub__check--failed':    m.status_envio === 'failed',
+                }"
+                x-text="statusEnvioIcon(m.status_envio, m.respondida)"></span>
         </template>
     </div>
 </div>

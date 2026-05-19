@@ -561,8 +561,17 @@
   font-size: 10px;
   color: var(--ws-fg-muted);
 }
-.ws-bub__check { color: var(--ws-fg-subtle); }
-.ws-bub__check--read { color: #34b7f1; }
+.ws-bub__check             { color: var(--ws-fg-subtle); font-size: 11px; }
+/* pending: ● quase invisível — aguardando entrega ao servidor */
+.ws-bub__check--pending    { color: var(--ws-fg-subtle); opacity: .45; }
+/* sent: ✓ cinza claro — servidor recebeu */
+.ws-bub__check--sent       { color: var(--ws-fg-subtle); }
+/* delivered: ✓✓ cinza — entregue ao dispositivo */
+.ws-bub__check--delivered  { color: var(--ws-fg-muted); }
+/* read: ✓✓ azul WhatsApp — mensagem lida */
+.ws-bub__check--read       { color: #34b7f1; }
+/* failed: ✗ vermelho — falha no envio */
+.ws-bub__check--failed     { color: #e53935; }
 .ws-bub--in  { align-self: flex-start; border-top-left-radius: 2px; }
 .ws-bub--out {
   align-self: flex-end;

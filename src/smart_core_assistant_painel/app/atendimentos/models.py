@@ -1095,6 +1095,37 @@ class Mensagem(models.Model):
         ),
     )
 
+    # ------------------------------------------------------------------ #
+    # Campos de Read Receipts (Phase 2)
+    # ------------------------------------------------------------------ #
+    status_envio: models.CharField[str] = models.CharField(
+        max_length=15,
+        choices=[
+            ("pending", "Pendente"),
+            ("sent", "Enviada (✓)"),
+            ("delivered", "Entregue (✓✓)"),
+            ("read", "Lida (✓✓ azul)"),
+            ("failed", "Falhou"),
+        ],
+        default="pending",
+        db_index=True,
+        help_text=(
+            "Status de entrega/leitura da mensagem enviada pelo bot/atendente. "
+            "Atualizado via evento MESSAGE_UPDATE do webhook Evolution. "
+            "Não se aplica a mensagens inbound (do contato)."
+        ),
+    )
+    data_entregue: models.DateTimeField[datetime | None] = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora em que o WhatsApp confirmou entrega ao dispositivo do contato.",
+    )
+    data_lida: models.DateTimeField[datetime | None] = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora em que o contato visualizou a mensagem no WhatsApp.",
+    )
+
     class Meta:
         verbose_name = "Mensagem"
         verbose_name_plural = "Mensagens"

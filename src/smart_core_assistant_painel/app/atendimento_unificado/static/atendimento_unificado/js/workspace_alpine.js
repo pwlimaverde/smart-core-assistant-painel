@@ -275,6 +275,25 @@
                 return map[tipo] || 'Mídia';
             },
 
+            // Ícone de status de entrega da mensagem (read receipts).
+            // Mapeia status_envio → símbolo Unicode exibido no rodapé do balão.
+            // pending  → ● (cinza claro — aguardando servidor)
+            // sent     → ✓  (cinza — entregue ao servidor)
+            // delivered→ ✓✓ (cinza — entregue ao dispositivo)
+            // read     → ✓✓ (azul — lida)
+            // failed   → ✗  (vermelho — falhou)
+            // fallback → usa m.respondida para retrocompat
+            statusEnvioIcon: function (status, respondida) {
+                switch (status) {
+                    case 'pending':   return '●';
+                    case 'sent':      return '✓';
+                    case 'delivered': return '✓✓';
+                    case 'read':      return '✓✓';
+                    case 'failed':    return '✗';
+                    default:          return respondida ? '✓✓' : '✓';
+                }
+            },
+
             // Formata segundos em mm:ss (para duração de áudio/vídeo)
             formatDuration: function (seconds) {
                 if (!seconds || seconds <= 0) return '';

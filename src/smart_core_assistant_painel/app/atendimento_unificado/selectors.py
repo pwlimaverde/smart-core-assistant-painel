@@ -557,6 +557,17 @@ def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
         "remetente": m.remetente,
         "timestamp": m.timestamp.isoformat() if m.timestamp else None,
         "respondida": m.respondida,
+        "status_envio": getattr(m, "status_envio", "sent") or "sent",
+        "data_entregue": (
+            m.data_entregue.isoformat()  # type: ignore[union-attr]
+            if getattr(m, "data_entregue", None)
+            else None
+        ),
+        "data_lida": (
+            m.data_lida.isoformat()  # type: ignore[union-attr]
+            if getattr(m, "data_lida", None)
+            else None
+        ),
         "message_id_whatsapp": m.message_id_whatsapp or "",
         "media": _extract_media(m),
         "metadados": dict(m.metadados or {}),

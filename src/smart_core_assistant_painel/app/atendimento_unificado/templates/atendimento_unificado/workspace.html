@@ -212,13 +212,20 @@
                     x-text="(activeConv.contato_nome || '?').slice(0,2).toUpperCase()"></div>
                 <div class="ws-chat__who">
                     <div class="ws-chat__name" x-text="activeConv.contato_nome || 'Conversa'"></div>
-                    <div class="ws-chat__sub">
-                        <span x-text="activeConv.telefone || ''"></span>
-                        <template x-if="activeConv.etapa_nome">
-                            <span class="sep"></span>
-                        </template>
-                        <span x-text="activeConv.etapa_nome || ''"></span>
-                    </div>
+                    {# Presença do contato: digitando / gravando #}
+                    <template x-if="contactPresence">
+                        <div class="ws-chat__presence"
+                            x-text="contactPresence === 'recording' ? '🎤 gravando…' : '✍️ digitando…'"></div>
+                    </template>
+                    <template x-if="!contactPresence">
+                        <div class="ws-chat__sub">
+                            <span x-text="activeConv.telefone || ''"></span>
+                            <template x-if="activeConv.etapa_nome">
+                                <span class="sep"></span>
+                            </template>
+                            <span x-text="activeConv.etapa_nome || ''"></span>
+                        </div>
+                    </template>
                 </div>
                 <div class="ws-chat__actions">
                     <button type="button" class="ws-chat__iconbtn"
@@ -369,7 +376,27 @@
                         </svg>
                     </button>
                 </div>
-                <form @submit.prevent="sendMessage()" class="ws-composer__row">
+                {# Modo gravação de voz #}
+                <div class="ws-composer__recording" x-show="isRecording" x-cloak>
+                    <button type="button" class="ws-composer__rec-cancel"
+                        @click="cancelRecording()" title="Cancelar gravação">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <span class="ws-composer__rec-dot" aria-hidden="true">●</span>
+                    <span class="ws-composer__rec-timer"
+                        x-text="Math.floor(recordingSeconds/60).toString().padStart(2,'0') + ':' + (recordingSeconds%60).toString().padStart(2,'0')"></span>
+                    <button type="button" class="ws-composer__rec-send"
+                        @click="stopRecording()" title="Enviar áudio">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                        </svg>
+                    </button>
+                </div>
+                <form @submit.prevent="sendMessage()" class="ws-composer__row" x-show="!isRecording">
                     <label class="ws-composer__btn" title="Anexar mídia" style="cursor:pointer;">
                         <input type="file" style="display:none;"
                             accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx"
@@ -382,22 +409,25 @@
                         class="ws-composer__input"
                         rows="1"
                         placeholder="Mensagem… (Shift+Enter quebra linha)"
+                        @input="onComposerInput()"
                         @keydown.enter="if (!$event.shiftKey) { $event.preventDefault(); sendMessage(); }"></textarea>
-                    <button type="submit" :disabled="sending || !composer.trim()"
-                        :class="composer.trim() ? 'ws-composer__send' : 'ws-composer__send ws-composer__send--mic'"
-                        :title="composer.trim() ? 'Enviar' : 'Gravar áudio (em breve)'">
-                        <template x-if="composer.trim()">
+                    <template x-if="composer.trim()">
+                        <button type="submit" :disabled="sending"
+                            class="ws-composer__send" title="Enviar">
                             <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                             </svg>
-                        </template>
-                        <template x-if="!composer.trim()">
+                        </button>
+                    </template>
+                    <template x-if="!composer.trim()">
+                        <button type="button" class="ws-composer__send ws-composer__send--mic"
+                            title="Gravar áudio" @click="startRecording()">
                             <svg width="17" height="17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
                                 <rect x="9" y="3" width="6" height="11" rx="3"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 11a7 7 0 0014 0M12 18v3M9 21h6"/>
                             </svg>
-                        </template>
-                    </button>
+                        </button>
+                    </template>
                 </form>
             </footer>
         </div>

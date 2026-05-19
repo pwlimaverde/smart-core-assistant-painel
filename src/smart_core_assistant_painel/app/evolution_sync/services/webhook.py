@@ -67,6 +67,13 @@ class WebhookProcessor:
                 except Exception as exc:
                     logger.error(f"Erro ao processar MESSAGE_UPDATE: {exc}")
                 return {"status": "ok", "event": "MESSAGE_UPDATE"}
+            # PRESENCE → notifica presença do contato via SSE (best-effort)
+            if event_raw == "PRESENCE":
+                try:
+                    self._handle_presence(payload)
+                except Exception as exc:
+                    logger.warning(f"Erro ao processar PRESENCE: {exc}")
+                return {"status": "ok", "event": "PRESENCE"}
 
         valid_envelopes = []
 
@@ -687,3 +694,81 @@ class WebhookProcessor:
         logger.info(
             f"MESSAGE_UPDATE: msg_id={message_id} → status_envio={novo_status}"
         )
+
+    def _handle_presence(self, payload: Dict[str, Any]) -> None:
+        """Processa evento PRESENCE do Evolution Go e publica SSE ``presence.update``.
+
+        Payload Evolution Go::
+
+            {
+                "event": "PRESENCE",
+                "instance": "atendimento",
+                "data": {
+                    "id": "5511999999999@s.whatsapp.net",
+                    "presences": {
+                        "5511999999999@s.whatsapp.net": {
+                            "lastKnownPresence": "composing" | "recording" | "available" | "paused"
+                        }
+                    }
+                }
+            }
+
+        O JID do contato é usado para localizar o ``Atendimento`` ativo
+        e publicar SSE ``presence.update`` com o estado.
+        """
+        from smart_core_assistant_painel.app.atendimento_unificado.services.realtime_publisher import (
+            publish_event,
+        )
+        from smart_core_assistant_painel.app.evolution_sync.models import (
+            EvolutionContact,
+        )
+
+        data = payload.get("data", {}) or {}
+        presences: dict = data.get("presences", {}) or {}
+
+        for jid, presence_info in presences.items():
+            state = str(
+                (presence_info or {}).get("lastKnownPresence", "available")
+            ).lower()
+
+            # Busca contato pelo JID
+            evo_contact = (
+                EvolutionContact.objects.select_related("contact")
+                .filter(jid=jid, active=True)
+                .first()
+            )
+            if not evo_contact or not evo_contact.contact_id:
+                continue
+
+            # Busca atendimento ativo do contato
+            from smart_core_assistant_painel.app.atendimentos.models import (
+                Atendimento,
+                StatusAtendimento,
+            )
+            atend = (
+                Atendimento.objects.filter(
+                    contato_id=evo_contact.contact_id,
+                )
+                .exclude(
+                    status__in=[
+                        StatusAtendimento.RESOLVIDO,
+                        StatusAtendimento.CANCELADO,
+                    ]
+                )
+                .order_by("-data_inicio")
+                .first()
+            )
+            if not atend:
+                continue
+
+            publish_event(
+                "presence.update",
+                {
+                    "atendimento_id": atend.id,
+                    "jid": jid,
+                    "state": state,
+                },
+            )
+            logger.debug(
+                f"PRESENCE: atendimento={atend.id}, jid={jid!r}, state={state!r}"
+            )

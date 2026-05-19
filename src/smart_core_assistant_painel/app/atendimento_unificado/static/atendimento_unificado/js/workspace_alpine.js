@@ -184,6 +184,22 @@
             // ─────────────────────────────────────────────────────────
             replyTo: null,                 // {id, remetente, conteudo, resposta_bot}
 
+            // ─────────────────────────────────────────────────────────
+            // Presence bidirecional
+            // ─────────────────────────────────────────────────────────
+            contactPresence: null,         // 'composing' | 'recording' | null
+            _presenceTimer: null,          // setTimeout para limpar presença
+            _presenceSendTimer: null,      // debounce para enviar presence outbound
+
+            // ─────────────────────────────────────────────────────────
+            // Voice Recording
+            // ─────────────────────────────────────────────────────────
+            isRecording: false,            // true enquanto grava
+            _mediaRecorder: null,          // instância MediaRecorder
+            _audioChunks: [],              // chunks de áudio gravados
+            recordingSeconds: 0,           // contador de segundos
+            _recordingTimer: null,         // setInterval do contador
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -646,6 +662,134 @@
 
             clearReplyTo: function () { this.replyTo = null; },
 
+            // ─────────────────────────────────────────────────────────
+            // Presence outbound (atendente → contato)
+            // Chamado pelo evento @input do textarea com debounce de 1.5s.
+            // Envia "composing" imediatamente e "paused" após silêncio.
+            // ─────────────────────────────────────────────────────────
+            onComposerInput: function () {
+                if (!this.activeConv) return;
+                // Debounce: cancela envio anterior e agenda novo
+                if (this._presenceSendTimer) clearTimeout(this._presenceSendTimer);
+                this._presenceSendTimer = setTimeout(() => {
+                    this._sendPresence('composing');
+                    // Após 8s sem digitar → paused
+                    if (this._presenceSendTimer) clearTimeout(this._presenceSendTimer);
+                    this._presenceSendTimer = setTimeout(() => {
+                        this._sendPresence('paused');
+                    }, 8000);
+                }, 300);
+            },
+
+            _sendPresence: function (state, isAudio) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'presence');
+                jsonFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({ state: state, is_audio: !!isAudio }),
+                }).catch(function () { /* best-effort — ignora erros */ });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Presence inbound (contato → atendente) via SSE
+            // Chamado por handleSSE('presence.update', data).
+            // ─────────────────────────────────────────────────────────
+            handlePresenceUpdate: function (data) {
+                if (!this.activeConv) return;
+                if (data.atendimento_id !== this.activeConv.atendimento_id) return;
+                const state = data.state || 'available';
+                this.contactPresence = (state === 'composing' || state === 'recording')
+                    ? state : null;
+                // Auto-limpa após 8s (contato parou de digitar sem mandar PRESENCE paused)
+                if (this._presenceTimer) clearTimeout(this._presenceTimer);
+                if (this.contactPresence) {
+                    this._presenceTimer = setTimeout(() => {
+                        this.contactPresence = null;
+                    }, 8000);
+                }
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Voice Recording
+            // ─────────────────────────────────────────────────────────
+            startRecording: async function () {
+                if (this.isRecording || !this.activeConv) return;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mime = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+                        ? 'audio/ogg;codecs=opus'
+                        : 'audio/webm;codecs=opus';
+                    this._mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+                    this._audioChunks = [];
+                    this._mediaRecorder.ondataavailable = (ev) => {
+                        if (ev.data && ev.data.size > 0) this._audioChunks.push(ev.data);
+                    };
+                    this._mediaRecorder.onstop = () => {
+                        stream.getTracks().forEach((t) => t.stop());
+                        this._uploadAudioBlob(mime);
+                    };
+                    this._mediaRecorder.start(250); // chunks a cada 250ms
+                    this.isRecording = true;
+                    this.recordingSeconds = 0;
+                    this._recordingTimer = setInterval(() => { this.recordingSeconds++; }, 1000);
+                    // Sinaliza "gravando" ao contato
+                    this._sendPresence('recording', true);
+                } catch (err) {
+                    alert('Não foi possível acessar o microfone: ' + (err.message || err));
+                }
+            },
+
+            stopRecording: function () {
+                if (!this.isRecording || !this._mediaRecorder) return;
+                this._mediaRecorder.stop();
+                this.isRecording = false;
+                clearInterval(this._recordingTimer);
+                this.recordingSeconds = 0;
+                this._sendPresence('paused');
+            },
+
+            cancelRecording: function () {
+                if (!this._mediaRecorder) return;
+                // Remove o handler de onstop para não fazer upload
+                this._mediaRecorder.onstop = null;
+                try { this._mediaRecorder.stop(); } catch (_) {}
+                this.isRecording = false;
+                clearInterval(this._recordingTimer);
+                this.recordingSeconds = 0;
+                this._audioChunks = [];
+                this._sendPresence('paused');
+            },
+
+            _uploadAudioBlob: function (mime) {
+                if (!this._audioChunks.length || !this.activeConv) return;
+                const ext = mime.includes('ogg') ? 'ogg' : 'webm';
+                const blob = new Blob(this._audioChunks, { type: mime });
+                this._audioChunks = [];
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'upload');
+                const fd = new FormData();
+                fd.append('file', blob, `audio_${Date.now()}.${ext}`);
+                this.uploading = true;
+                fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: fd,
+                }).then(function (r) {
+                    return r.json();
+                }).then(() => {
+                    return this.loadMessages(id);
+                }).then(() => {
+                    this.$nextTick(() => this.scrollMessagesBottom());
+                }).catch(function (err) {
+                    console.error('Falha ao enviar áudio', err);
+                    alert('Falha ao enviar áudio gravado.');
+                }).finally(() => {
+                    this.uploading = false;
+                });
+            },
+
             // Atualiza visibilidade do botão scroll-to-bottom.
             onChatScroll: function () {
                 const el = (this.$refs || {}).messagesContainer;
@@ -744,6 +888,7 @@
                 this.sse.addEventListener('atendimento.created', handle('atendimento.created'));
                 this.sse.addEventListener('atendimento.updated', handle('atendimento.updated'));
                 this.sse.addEventListener('custom_field.updated', handle('custom_field.updated'));
+                this.sse.addEventListener('presence.update', handle('presence.update'));
             },
 
             _scheduleSSEReconnect: function () {
@@ -791,6 +936,9 @@
                             this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadDetail(data.atendimento_id);
                         }
+                        break;
+                    case 'presence.update':
+                        this.handlePresenceUpdate(data);
                         break;
                 }
             },

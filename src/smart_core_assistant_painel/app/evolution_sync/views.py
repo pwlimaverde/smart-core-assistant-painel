@@ -78,6 +78,7 @@ def webhook(
         EvolutionEventName.CONTACTS,
         EvolutionEventName.CONNECTION,
         EvolutionEventName.QRCODE,
+        EvolutionEventName.PRESENCE,
     }
     event = payload.get("event", "")
     parsed_event = EvolutionEventName.from_raw(event)

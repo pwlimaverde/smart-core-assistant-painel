@@ -1,7 +1,23 @@
-{% comment %}Partial usado dentro de <template x-for="m in messages">. Recebe `m`.
+{% comment %}Partial usado dentro de <template x-for="m in enrichedMessages">. Recebe `m`
+enriquecido com _showDateSep, _dateLabel, _stacked, _isFirstUnread.
 Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% endcomment %}
+
+{# ============ SEPARADOR DE DATA ============ #}
+<template x-if="m._showDateSep">
+    <div class="ws-chat__day-sep" aria-hidden="true">
+        <span class="ws-chat__day-sep__label" x-text="m._dateLabel"></span>
+    </div>
+</template>
+
+{# ============ DIVISOR "NOVAS MENSAGENS" ============ #}
+<template x-if="m._isFirstUnread">
+    <div class="ws-chat__new-sep" aria-label="Novas mensagens">
+        <span>novas mensagens</span>
+    </div>
+</template>
+
 <div x-data="{ showAnalise: false }"
-    :class="m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out'">
+    :class="(m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out') + (m._stacked ? ' ws-bub--stacked' : '')">
 
     {# ============ IMAGEM ============ #}
     <template x-if="m.media && m.media.kind === 'image' && m.media.src">

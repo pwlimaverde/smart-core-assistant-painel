@@ -322,15 +322,30 @@
                 </span>
             </div>
 
-            {# Mensagens #}
-            <div class="ws-chat__body" x-ref="messagesContainer">
-                <template x-for="m in messages" :key="m.id">
-                    {% include "atendimento_unificado/partials/chat_message.html" %}
-                </template>
-                <div x-show="messages.length === 0"
-                    style="text-align: center; color: var(--ws-fg-subtle); font-size: 12px; padding: 32px;">
-                    Nenhuma mensagem ainda.
+            {# Mensagens + botão scroll-to-bottom #}
+            <div class="ws-chat__body-wrap" style="position:relative; display:flex; flex-direction:column; flex:1; min-height:0;">
+                <div class="ws-chat__body" x-ref="messagesContainer"
+                    @scroll.passive="onChatScroll()">
+                    <template x-for="m in enrichedMessages" :key="m.id">
+                        {% include "atendimento_unificado/partials/chat_message.html" %}
+                    </template>
+                    <div x-show="messages.length === 0"
+                        style="text-align: center; color: var(--ws-fg-subtle); font-size: 12px; padding: 32px;">
+                        Nenhuma mensagem ainda.
+                    </div>
                 </div>
+                {# Botão flutuante scroll-to-bottom #}
+                <button type="button" class="ws-chat__scroll-btn"
+                    x-show="showScrollBtn" x-cloak
+                    x-transition.opacity
+                    @click="scrollMessagesBottom()"
+                    title="Ir para o fim da conversa">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
             </div>
 
             {# Composer #}

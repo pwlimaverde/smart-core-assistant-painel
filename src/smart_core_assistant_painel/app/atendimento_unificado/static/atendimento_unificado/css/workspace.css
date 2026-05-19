@@ -572,6 +572,57 @@
 .ws-bub__check--read       { color: #34b7f1; }
 /* failed: ✗ vermelho — falha no envio */
 .ws-bub__check--failed     { color: #e53935; }
+/* Separador de data — "Hoje / Ontem / DD/MM/AAAA" */
+.ws-chat__day-sep {
+  display: flex; align-items: center; justify-content: center;
+  margin: 10px 0 6px;
+  gap: 8px;
+}
+.ws-chat__day-sep::before,
+.ws-chat__day-sep::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--ws-border);
+}
+.ws-chat__day-sep__label {
+  font-size: 11px; font-weight: 500;
+  color: var(--ws-fg-muted);
+  background: var(--ws-bg-panel);
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--ws-border);
+}
+
+/* Divisor "novas mensagens" */
+.ws-chat__new-sep {
+  display: flex; align-items: center; gap: 8px;
+  margin: 10px 0 6px;
+  font-size: 11px; color: #1a73e8;
+}
+.ws-chat__new-sep::before,
+.ws-chat__new-sep::after {
+  content: ''; flex: 1; height: 1px; background: #1a73e8; opacity: .35;
+}
+.ws-chat__new-sep span { white-space: nowrap; font-weight: 500; }
+
+/* Bolha agrupada: mesmo remetente → reduz gap superior */
+.ws-bub--stacked { margin-top: 2px !important; }
+
+/* Botão flutuante scroll-to-bottom */
+.ws-chat__scroll-btn {
+  position: absolute; bottom: 12px; right: 12px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--ws-border);
+  background: var(--ws-bg-panel);
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  color: var(--ws-fg);
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity .15s, transform .15s;
+}
+.ws-chat__scroll-btn:hover { background: var(--ws-bg-hover); transform: translateY(-2px); }
+
 .ws-bub--in  { align-self: flex-start; border-top-left-radius: 2px; }
 .ws-bub--out {
   align-self: flex-end;

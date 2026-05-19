@@ -172,6 +172,13 @@
             notaSaving: false,
             _unreadDebounce: null,
 
+            // ─────────────────────────────────────────────────────────
+            // UX: scroll-to-bottom button + estado de novas mensagens
+            // ─────────────────────────────────────────────────────────
+            showScrollBtn: false,          // botão flutuante "↓"
+            _firstUnreadId: null,          // id da primeira msg não lida ao abrir
+            _scrollBtnThreshold: 120,      // px da borda inferior para mostrar botão
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -500,12 +507,17 @@
                     }
                 }
                 this.activeConv = conv || { atendimento_id: id };
+                // Captura quantas mensagens não lidas existem antes de marcar
+                // como lidas — usada para exibir o divisor "N novas mensagens".
+                const naoLidos = (conv && conv.nao_lidos) || 0;
                 // Limpa estado anterior das seções do info drawer para evitar
                 // mostrar dados de outra conversa enquanto carrega.
                 this.etiquetasAplicadas = [];
                 this.notas = [];
                 this.medias = [];
                 this.timeline = [];
+                this._firstUnreadId = null;
+                this.showScrollBtn = false;
                 return Promise.all([
                     this.loadMessages(id),
                     this.loadDetail(id),
@@ -515,6 +527,11 @@
                     this.loadMedias(id),
                     this.loadTimeline(id),
                 ]).then(() => {
+                    // Marca a primeira mensagem não lida para exibir o divisor.
+                    if (naoLidos > 0 && this.messages.length >= naoLidos) {
+                        const firstUnread = this.messages[this.messages.length - naoLidos];
+                        this._firstUnreadId = firstUnread ? firstUnread.id : null;
+                    }
                     this.$nextTick(() => this.scrollMessagesBottom());
                 });
             },
@@ -588,6 +605,75 @@
                 const refs = this.$refs || {};
                 const el = refs.messagesContainer;
                 if (el) el.scrollTop = el.scrollHeight;
+                this.showScrollBtn = false;
+            },
+
+            // Atualiza visibilidade do botão scroll-to-bottom.
+            onChatScroll: function () {
+                const el = (this.$refs || {}).messagesContainer;
+                if (!el) return;
+                const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+                this.showScrollBtn = distFromBottom > this._scrollBtnThreshold;
+            },
+
+            // Computa lista enriquecida de mensagens para o template.
+            // Injeta metadados extras em cada item (sem objetos sentinela
+            // separados) para que chat_message.html continue usando `m`:
+            //   _showDateSep : boolean — mostra separador de data antes deste balão
+            //   _dateLabel   : string  — "Hoje", "Ontem" ou "DD/MM/AAAA"
+            //   _stacked     : boolean — mesmo remetente que anterior (< 5 min)
+            //   _isFirstUnread: boolean — primeira mensagem não lida (banner "N novas")
+            get enrichedMessages() {
+                const msgs = this.messages || [];
+                const firstUnreadId = this._firstUnreadId;
+                const now = new Date();
+                const todayStr  = now.toDateString();
+                const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+                const yestStr   = yesterday.toDateString();
+
+                const result = [];
+                let prevDateStr = null;
+                let prevRemetente = null;
+                let prevTs = null;
+
+                for (let i = 0; i < msgs.length; i++) {
+                    const m = msgs[i];
+                    const ts = m.timestamp ? new Date(m.timestamp) : null;
+                    const dateStr = ts ? ts.toDateString() : null;
+
+                    // Separador de data
+                    const showDateSep = !!dateStr && dateStr !== prevDateStr;
+                    let dateLabel = '';
+                    if (showDateSep) {
+                        if (dateStr === todayStr)      dateLabel = 'Hoje';
+                        else if (dateStr === yestStr)  dateLabel = 'Ontem';
+                        else if (ts) {
+                            const d = ts.getDate().toString().padStart(2, '0');
+                            const mo = (ts.getMonth() + 1).toString().padStart(2, '0');
+                            const yr = ts.getFullYear();
+                            dateLabel = d + '/' + mo + '/' + yr;
+                        }
+                    }
+
+                    // Agrupamento: mesmo remetente + dentro de 5 min
+                    const MIN5 = 5 * 60 * 1000;
+                    const stacked = !showDateSep
+                        && prevRemetente === m.remetente
+                        && !!ts && !!prevTs
+                        && (ts - prevTs) < MIN5;
+
+                    result.push(Object.assign({}, m, {
+                        _showDateSep: showDateSep,
+                        _dateLabel: dateLabel,
+                        _stacked: stacked,
+                        _isFirstUnread: firstUnreadId != null && m.id === firstUnreadId,
+                    }));
+
+                    prevDateStr = dateStr;
+                    prevRemetente = m.remetente;
+                    prevTs = ts;
+                }
+                return result;
             },
 
             connectSSE: function () {

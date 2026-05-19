@@ -214,6 +214,21 @@ def _on_message_saved(
         # Seleciona adapter correto via api_version da instância
         adapter = get_evolution_adapter(getattr(inst, "api_version", "v2"))
 
+        # Quoted (reply): constrói o payload de citação para o Evolution Go.
+        # v2 ignora silenciosamente o parâmetro quoted.
+        quoted_payload: Optional[dict] = None
+        quoted_whatsapp_id: str = str(meta.get("quoted_whatsapp_id") or "").strip()
+        if quoted_whatsapp_id:
+            # Evolution Go espera: {"key": {"id": "<stanzaId>", "remoteJid": "...", "fromMe": false}}
+            jid = evo_contact.jid if evo_contact else (f"{number}@s.whatsapp.net" if number else "")
+            quoted_payload = {
+                "key": {
+                    "id": quoted_whatsapp_id,
+                    "remoteJid": jid or f"{number}@s.whatsapp.net",
+                    "fromMe": False,
+                }
+            }
+
         # Tenta enviar a mensagem
         try:
             adapter.send_text(
@@ -222,6 +237,7 @@ def _on_message_saved(
                 number=number,
                 text=text,
                 base_url=base_url,
+                quoted=quoted_payload,
             )
 
             # Marca como respondida APENAS após sucesso do envio

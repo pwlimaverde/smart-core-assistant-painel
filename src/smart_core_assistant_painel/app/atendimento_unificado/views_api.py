@@ -273,12 +273,14 @@ class ConversationSendView(View):
         texto = (body.get("texto") or "").strip()
         if not texto:
             return _err("Texto vazio.", "validation", 400)
+        quoted_message_id = _get_int(body.get("quoted_message_id"))
         atendente = _resolve_atendente(request)
         try:
             msg = send_text_message(
                 atendimento_id=int(atendimento_id),
                 texto=texto,
                 atendente=atendente,
+                quoted_message_id=quoted_message_id,
             )
         except ValueError as exc:
             return _err(str(exc), "validation", 400)

@@ -179,6 +179,11 @@
             _firstUnreadId: null,          // id da primeira msg não lida ao abrir
             _scrollBtnThreshold: 120,      // px da borda inferior para mostrar botão
 
+            // ─────────────────────────────────────────────────────────
+            // Reply / Mensagem Citada
+            // ─────────────────────────────────────────────────────────
+            replyTo: null,                 // {id, remetente, conteudo, resposta_bot}
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -577,11 +582,18 @@
                 this.sending = true;
                 const id = this.activeConv.atendimento_id;
                 const url = buildConvUrl(this.endpoints.conversationsBase, id, 'send');
+                const body = { texto: texto };
+                // Inclui quoted_message_id quando há reply selecionado
+                if (this.replyTo && this.replyTo.id) {
+                    body.quoted_message_id = this.replyTo.id;
+                }
+                const pendingReply = this.replyTo;
                 return jsonFetch(url, {
                     method: 'POST',
-                    body: JSON.stringify({ texto: texto }),
+                    body: JSON.stringify(body),
                 }).then((msg) => {
                     this.composer = '';
+                    this.replyTo = null;
                     this.messages.push({
                         id: msg.id,
                         atendimento_id: msg.atendimento_id,
@@ -591,6 +603,12 @@
                         remetente: 'atendente_humano',
                         timestamp: msg.timestamp,
                         respondida: false,
+                        status_envio: 'pending',
+                        quoted: pendingReply ? {
+                            id: pendingReply.id,
+                            remetente: pendingReply.remetente,
+                            conteudo_preview: (pendingReply.conteudo || pendingReply.resposta_bot || '').slice(0, 200),
+                        } : null,
                     });
                     this.$nextTick(() => this.scrollMessagesBottom());
                 }).catch((exc) => {
@@ -607,6 +625,26 @@
                 if (el) el.scrollTop = el.scrollHeight;
                 this.showScrollBtn = false;
             },
+
+            // Seleciona uma mensagem para responder (reply).
+            // Chamado por duplo-clique no balão via @dblclick="setReplyTo(m)".
+            setReplyTo: function (msg) {
+                this.replyTo = msg ? {
+                    id: msg.id,
+                    remetente: msg.remetente,
+                    conteudo: msg.conteudo || '',
+                    resposta_bot: msg.resposta_bot || '',
+                } : null;
+                // Foca o composer automaticamente
+                this.$nextTick(() => {
+                    const el = this.$el && this.$el.querySelector
+                        ? this.$el.querySelector('.ws-composer__input')
+                        : null;
+                    if (el) el.focus();
+                });
+            },
+
+            clearReplyTo: function () { this.replyTo = null; },
 
             // Atualiza visibilidade do botão scroll-to-bottom.
             onChatScroll: function () {

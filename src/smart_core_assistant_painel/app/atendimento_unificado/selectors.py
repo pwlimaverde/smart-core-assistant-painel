@@ -228,7 +228,9 @@ def get_messages(
     Retorna ordem cronológica (mais antigas primeiro), mas a paginação
     é "para trás": `before_id` corta o cursor.
     """
-    qs = Mensagem.objects.filter(atendimento_id=atendimento_id)
+    qs = Mensagem.objects.filter(atendimento_id=atendimento_id).select_related(
+        "mensagem_citada"
+    )
     if before_id:
         qs = qs.filter(id__lt=before_id)
     msgs = list(qs.order_by("-timestamp")[:limit])
@@ -546,6 +548,43 @@ def _preview_msg(mensagem: Optional[Mensagem]) -> str:
     return raw[:80] + ("…" if len(raw) > 80 else "")
 
 
+def _serialize_quoted(m: Mensagem) -> dict[str, Any] | None:
+    """Serializa o bloco de mensagem citada (reply) para o frontend.
+
+    Prioridade:
+    1. FK ``mensagem_citada`` resolvida — usa dados reais da msg original.
+    2. ``quoted_preview`` — preview embutido quando FK não foi resolvido.
+
+    Returns:
+        Dict com ``{remetente, conteudo_preview, tipo}`` ou ``None`` se a
+        mensagem não é um reply.
+    """
+    citada = getattr(m, "mensagem_citada", None)
+    if citada is not None:
+        conteudo = (
+            getattr(citada, "resposta_bot", None)
+            or getattr(citada, "conteudo", "")
+            or ""
+        )
+        return {
+            "id": getattr(citada, "id", None),
+            "remetente": getattr(citada, "remetente", ""),
+            "tipo": getattr(citada, "tipo", "extendedTextMessage"),
+            "conteudo_preview": conteudo[:200],
+        }
+
+    preview = getattr(m, "quoted_preview", None)
+    if preview and isinstance(preview, dict):
+        return {
+            "id": None,
+            "remetente": preview.get("remetente", ""),
+            "tipo": preview.get("tipo", "extendedTextMessage"),
+            "conteudo_preview": preview.get("conteudo_preview", ""),
+        }
+
+    return None
+
+
 def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
     return {
         "id": m.id,
@@ -557,6 +596,7 @@ def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
         "remetente": m.remetente,
         "timestamp": m.timestamp.isoformat() if m.timestamp else None,
         "respondida": m.respondida,
+        "quoted": _serialize_quoted(m),
         "status_envio": getattr(m, "status_envio", "sent") or "sent",
         "data_entregue": (
             m.data_entregue.isoformat()  # type: ignore[union-attr]

@@ -17,7 +17,22 @@ Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% en
 </template>
 
 <div x-data="{ showAnalise: false }"
-    :class="(m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out') + (m._stacked ? ' ws-bub--stacked' : '')">
+    :class="(m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out') + (m._stacked ? ' ws-bub--stacked' : '')"
+    @dblclick="setReplyTo(m)">
+
+    {# ============ BLOCO CITADO (REPLY) ============ #}
+    <template x-if="m.quoted">
+        <div class="ws-bub__quoted"
+            :class="m.remetente === 'contato' ? 'ws-bub__quoted--in' : 'ws-bub__quoted--out'">
+            <div class="ws-bub__quoted-bar"></div>
+            <div class="ws-bub__quoted-body">
+                <span class="ws-bub__quoted-who"
+                    x-text="m.quoted.remetente === 'contato' ? 'Contato' : 'Atendente'"></span>
+                <span class="ws-bub__quoted-txt"
+                    x-text="m.quoted.conteudo_preview || '[mídia]'"></span>
+            </div>
+        </div>
+    </template>
 
     {# ============ IMAGEM ============ #}
     <template x-if="m.media && m.media.kind === 'image' && m.media.src">

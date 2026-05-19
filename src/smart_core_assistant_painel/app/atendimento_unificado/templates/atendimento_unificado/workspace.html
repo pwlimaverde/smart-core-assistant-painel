@@ -350,6 +350,25 @@
 
             {# Composer #}
             <footer class="ws-composer">
+                {# Banner de reply — aparece quando o usuário deu duplo-clique em um balão #}
+                <div class="ws-composer__reply" x-show="replyTo" x-cloak x-transition.opacity>
+                    <div class="ws-composer__reply-bar"></div>
+                    <div class="ws-composer__reply-body">
+                        <span class="ws-composer__reply-who"
+                            x-text="replyTo && replyTo.remetente === 'contato' ? 'Contato' : 'Atendente'"></span>
+                        <span class="ws-composer__reply-txt"
+                            x-text="replyTo ? (replyTo.conteudo || replyTo.resposta_bot || '[mídia]') : ''"></span>
+                    </div>
+                    <button type="button" class="ws-composer__reply-close"
+                        @click="clearReplyTo()" title="Cancelar resposta"
+                        aria-label="Cancelar resposta">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
                 <form @submit.prevent="sendMessage()" class="ws-composer__row">
                     <label class="ws-composer__btn" title="Anexar mídia" style="cursor:pointer;">
                         <input type="file" style="display:none;"

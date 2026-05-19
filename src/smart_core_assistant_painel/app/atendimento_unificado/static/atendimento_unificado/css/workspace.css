@@ -737,6 +737,53 @@
 /* ==========================================================================
    6. COMPOSER
    ==========================================================================*/
+
+/* ── Bloco citado dentro do balão ── */
+.ws-bub__quoted {
+  display: flex; gap: 6px;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  background: rgba(0,0,0,.06);
+  max-width: 100%;
+  overflow: hidden;
+}
+.ws-bub__quoted--out  { background: rgba(0,0,0,.09); }
+[data-theme="dark"] .ws-bub__quoted { background: rgba(255,255,255,.08); }
+.ws-bub__quoted-bar {
+  flex-shrink: 0; width: 3px; border-radius: 2px;
+  background: var(--ws-accent);
+}
+.ws-bub__quoted-body  { display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+.ws-bub__quoted-who   { font-weight: 600; color: var(--ws-accent); font-size: 11px; }
+.ws-bub__quoted-txt   { color: var(--ws-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Banner de reply no composer ── */
+.ws-composer__reply {
+  display: flex; align-items: stretch; gap: 0;
+  border-bottom: 1px solid var(--ws-border);
+  padding: 5px 8px 5px 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.ws-composer__reply-bar {
+  flex-shrink: 0; width: 3px; border-radius: 2px;
+  background: var(--ws-accent);
+  margin-right: 8px;
+}
+.ws-composer__reply-body { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+.ws-composer__reply-who  { font-weight: 600; color: var(--ws-accent); font-size: 11px; }
+.ws-composer__reply-txt  { color: var(--ws-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-composer__reply-close {
+  flex-shrink: 0; padding: 4px; border-radius: 50%;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--ws-fg-muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--ws-dur-base);
+}
+.ws-composer__reply-close:hover { background: var(--ws-chip); }
+
 .ws-composer {
   background: var(--ws-chat-foot);
   border-top: 1px solid var(--ws-border);

@@ -129,6 +129,18 @@
             detailDrawerOpen: false,
 
             // ─────────────────────────────────────────────────────────
+            // Lightbox para mídia (imagem/vídeo/PDF) em tela cheia
+            // ─────────────────────────────────────────────────────────
+            mediaLightbox: {
+                open: false,
+                kind: '',       // 'image' | 'video' | 'document'
+                src: '',
+                mimetype: '',
+                filename: '',
+                isPdf: false,
+            },
+
+            // ─────────────────────────────────────────────────────────
             // NOVO: Modos de foco + tema/densidade
             // ─────────────────────────────────────────────────────────
             focusMode: readLS(LS_FOCUS, 'split'),     // 'board' | 'split' | 'chat'
@@ -207,6 +219,7 @@
             // Handler do Esc — reduz foco gradualmente. Ignorado se digitando.
             onEscape: function ($event) {
                 if (this.isTypingTarget($event)) return;
+                if (this.mediaLightbox.open) { this.closeLightbox(); return; }
                 if (this.detailDrawerOpen) { this.detailDrawerOpen = false; return; }
                 if (this.focusMode === 'chat')  { this.setFocus('split'); return; }
                 if (this.focusMode === 'split') { this.setFocus('board'); return; }
@@ -216,6 +229,74 @@
             onToggleInfo: function ($event) {
                 if (this.isTypingTarget($event)) return;
                 this.detailDrawerOpen = !this.detailDrawerOpen;
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Lightbox de mídia
+            // ─────────────────────────────────────────────────────────
+            openLightbox: function (media) {
+                if (!media || !media.src) return;
+                // Documentos não-PDF baixam direto, sem modal
+                if (media.kind === 'document' && !media.is_pdf) {
+                    const a = document.createElement('a');
+                    a.href = media.src;
+                    a.download = media.filename || 'documento';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    return;
+                }
+                this.mediaLightbox = {
+                    open: true,
+                    kind: media.kind || '',
+                    src: media.src,
+                    mimetype: media.mimetype || '',
+                    filename: media.filename || '',
+                    isPdf: !!media.is_pdf,
+                };
+            },
+
+            closeLightbox: function () {
+                this.mediaLightbox = {
+                    open: false, kind: '', src: '',
+                    mimetype: '', filename: '', isPdf: false,
+                };
+            },
+
+            // Label legível para tipo de mídia (usado no fallback do balão)
+            tipoMidiaLabel: function (tipo) {
+                const map = {
+                    imageMessage: 'Imagem',
+                    stickerMessage: 'Figurinha',
+                    audioMessage: 'Áudio',
+                    videoMessage: 'Vídeo',
+                    documentMessage: 'Documento',
+                };
+                return map[tipo] || 'Mídia';
+            },
+
+            // Formata segundos em mm:ss (para duração de áudio/vídeo)
+            formatDuration: function (seconds) {
+                if (!seconds || seconds <= 0) return '';
+                const s = Math.floor(seconds);
+                const mm = Math.floor(s / 60);
+                const ss = s % 60;
+                return mm + ':' + (ss < 10 ? '0' : '') + ss;
+            },
+
+            // Texto a exibir no balão. Suprime placeholders sintéticos
+            // ("[imagem]", "[audio]" etc.) quando a mensagem é de mídia —
+            // a mídia já está representada visualmente.
+            bubbleText: function (m) {
+                if (!m) return '';
+                const base = m.remetente === 'contato'
+                    ? (m.conteudo || '')
+                    : (m.resposta_bot || m.conteudo || '');
+                const trimmed = (base || '').trim();
+                if (m.media && /^\[(imagem|audio|áudio|video|vídeo|documento|figurinha|sticker)\]$/i.test(trimmed)) {
+                    return '';
+                }
+                return base;
             },
 
             isTypingTarget: function ($event) {
@@ -390,7 +471,8 @@
                         if (card) {
                             conv = {
                                 atendimento_id: id,
-                                contato_nome: (card.titulo || '').split(' - ')[0] || 'Contato',
+                                contato_nome: card.contato_nome || card.titulo || 'Contato',
+                                assunto: card.assunto || '',
                                 telefone: '',
                                 etapa_nome: '',
                             };

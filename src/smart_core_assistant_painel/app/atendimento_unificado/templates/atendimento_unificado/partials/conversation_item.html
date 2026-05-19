@@ -10,6 +10,9 @@
             <span class="text-[10px] text-stone-400 whitespace-nowrap"
                 x-text="c.data_ultima_mensagem ? new Date(c.data_ultima_mensagem).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''"></span>
         </div>
+        <div class="text-[11px] text-stone-600 truncate mt-0.5"
+            :class="c.assunto ? '' : 'italic text-stone-400'"
+            x-text="c.assunto || 'Sem assunto'"></div>
         <div class="flex items-center justify-between gap-2 mt-0.5">
             <span class="text-xs text-stone-500 truncate"
                 x-text="c.preview_remetente === 'contato' ? c.preview_msg : (c.preview_remetente ? '↳ ' + c.preview_msg : c.preview_msg)"></span>

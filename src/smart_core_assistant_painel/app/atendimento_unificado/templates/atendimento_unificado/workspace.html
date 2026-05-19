@@ -384,6 +384,37 @@ em modo 'board'.{% endcomment %}
 {# ==================== MINI-BAR (focus=board) ==================== #}
 {% include "atendimento_unificado/partials/chat_mini_bar.html" %}
 
+{# ==================== LIGHTBOX DE MÍDIA ==================== #}
+<div class="ws-lightbox" x-show="mediaLightbox.open" x-cloak
+    @click.self="closeLightbox()"
+    x-transition.opacity
+    style="display: none;">
+    <button type="button" class="ws-lightbox__close"
+        @click="closeLightbox()" aria-label="Fechar">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+    </button>
+    <div class="ws-lightbox__content" @click.stop>
+        <template x-if="mediaLightbox.kind === 'image'">
+            <img class="ws-lightbox__media" :src="mediaLightbox.src"
+                :alt="mediaLightbox.filename" />
+        </template>
+        <template x-if="mediaLightbox.kind === 'video'">
+            <video class="ws-lightbox__media" :src="mediaLightbox.src"
+                controls autoplay></video>
+        </template>
+        <template x-if="mediaLightbox.kind === 'document' && mediaLightbox.isPdf">
+            <iframe class="ws-lightbox__pdf" :src="mediaLightbox.src"
+                :title="mediaLightbox.filename"></iframe>
+        </template>
+        <div class="ws-lightbox__caption"
+            x-show="mediaLightbox.filename"
+            x-text="mediaLightbox.filename"></div>
+    </div>
+</div>
+
 {# Hint de atalhos (aparece nos primeiros 5s) #}
 <div class="ws-kbd-hint" :class="showKbdHint ? 'show' : ''">
     <span>Atalhos:</span>

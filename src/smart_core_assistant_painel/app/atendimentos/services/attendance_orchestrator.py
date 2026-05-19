@@ -4,8 +4,11 @@ Este módulo contém a lógica principal para processar mensagens agendadas,
 coordenar serviços e gerar respostas do bot.
 """
 
+import base64 as _b64
+import mimetypes
 from typing import TYPE_CHECKING, Any, Optional
 
+from django.core.files.base import ContentFile
 from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.services import (
@@ -438,9 +441,13 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
     ) -> None:
         """Converte metadados de mídia em texto contextual.
 
-        Centraliza a conversão de conteúdo multimídia (áudio, imagem,
-        vídeo, documento) em texto para análise de IA via
-        FeaturesCompose.converter_contexto.
+        Fluxo:
+            1. Garante base64 (busca via Evolution API se necessário).
+            2. Persiste binário em ``mensagem.arquivo_midia`` (FileField).
+            3. Chama IA para gerar análise (transcrição/resumo).
+            4. Salva análise em ``mensagem.analise_midia`` SEM sobrescrever
+               ``mensagem.conteudo`` — o conteúdo do balão fica reservado
+               para a caption original (texto livre que veio com a mídia).
 
         Args:
             mensagem: Mensagem com metadados de mídia.
@@ -488,8 +495,21 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                             f"base64_len={len(base64_data)}"
                         )
                 except Exception as e:
-                    logger.warning(
+                    logger.error(
                         f"[MIDIA-CTX] Falha ao buscar base64 via Evolution API "
+                        f"para msg_id={mensagem.id}: {e}"
+                    )
+
+            # Persiste binário em FileField antes da análise IA, para que o
+            # frontend consiga renderizar mesmo se a análise falhar depois.
+            file_saved = False
+            if has_base64 and not mensagem.arquivo_midia:
+                try:
+                    self._persist_media_file(mensagem, metadados)
+                    file_saved = True
+                except Exception as e:
+                    logger.error(
+                        f"[MIDIA-CTX] Falha ao persistir mídia em FileField "
                         f"para msg_id={mensagem.id}: {e}"
                     )
 
@@ -503,35 +523,108 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 message_type=mensagem.tipo,
             )
 
+            update_fields: list[str] = []
+            if file_saved:
+                update_fields.append("arquivo_midia")
+
             if texto_convertido and texto_convertido.strip():
                 texto_final = texto_convertido.strip()
-                conteudo_original = mensagem.conteudo
-                mensagem.conteudo = texto_final
+                mensagem.analise_midia = texto_final
                 meta = dict(metadados)
                 meta["contexto_convertido"] = texto_final
+                # Remove base64 dos metadados após persistir em disco
                 meta.pop("base64", None)
                 mensagem.metadados = meta
-                mensagem.save(update_fields=["conteudo", "metadados"])
+                update_fields.extend(["analise_midia", "metadados"])
 
                 logger.info(
-                    f"[MIDIA-CTX] <<< Conteúdo inserido na mensagem | "
+                    f"[MIDIA-CTX] <<< Análise IA registrada | "
                     f"msg_id={mensagem.id} | tipo={mensagem.tipo} | "
-                    f"len_convertido={len(texto_final)} | "
-                    f"placeholder_anterior={conteudo_original!r}\n"
+                    f"len_analise={len(texto_final)}\n"
                     f"---[MIDIA-CTX] TEXTO INTERPRETADO]---\n"
                     f"{texto_final}\n"
                     f"---[MIDIA-CTX] FIM TEXTO INTERPRETADO]---"
                 )
             else:
+                # Mesmo sem análise IA, limpa base64 do metadados se o
+                # binário já foi persistido em disco.
+                if file_saved and metadados.get("base64"):
+                    meta = dict(metadados)
+                    meta.pop("base64", None)
+                    mensagem.metadados = meta
+                    update_fields.append("metadados")
                 logger.warning(
                     f"[MIDIA-CTX] Conversão vazia para msg_id={mensagem.id}. "
-                    "Mantendo placeholder."
+                    "Sem análise IA."
                 )
+
+            if update_fields:
+                mensagem.save(update_fields=list(set(update_fields)))
         except Exception as e:
             logger.error(
                 f"[MIDIA-CTX] Erro ao converter mídia da msg_id={mensagem.id}: "
                 f"{e}. Continuando com placeholder."
             )
+
+    @staticmethod
+    def _persist_media_file(
+        mensagem: "Mensagem",
+        metadados: dict[str, Any],
+    ) -> None:
+        """Decodifica base64 e salva binário em ``mensagem.arquivo_midia``.
+
+        Args:
+            mensagem: Mensagem que receberá o arquivo.
+            metadados: Dicionário com 'base64', 'mimetype', 'fileName'.
+
+        Raises:
+            ValueError: Se base64 for inválido.
+        """
+        b64_data = metadados.get("base64") or ""
+        if not b64_data or not isinstance(b64_data, str):
+            return
+
+        try:
+            raw_bytes = _b64.b64decode(b64_data, validate=False)
+        except Exception as e:
+            raise ValueError(f"base64 inválido: {e}") from e
+
+        if not raw_bytes:
+            return
+
+        mimetype = str(metadados.get("mimetype") or "").lower()
+        file_name = str(metadados.get("fileName") or "").strip()
+
+        if not file_name:
+            ext = mimetypes.guess_extension(mimetype) if mimetype else None
+            # Fallback por tipo de mensagem do WhatsApp
+            if not ext:
+                ext_by_tipo = {
+                    "audioMessage": ".ogg",
+                    "imageMessage": ".jpg",
+                    "videoMessage": ".mp4",
+                    "documentMessage": ".bin",
+                    "stickerMessage": ".webp",
+                }
+                ext = ext_by_tipo.get(mensagem.tipo or "", ".bin")
+            base_name = (
+                mensagem.message_id_whatsapp
+                or f"msg_{mensagem.id or 'novo'}"
+            )
+            # Sanitiza para evitar caracteres problemáticos em filesystem
+            base_name = "".join(
+                c if c.isalnum() or c in ("-", "_") else "_"
+                for c in base_name
+            )[:80]
+            file_name = f"{base_name}{ext}"
+
+        mensagem.arquivo_midia.save(
+            file_name, ContentFile(raw_bytes), save=False
+        )
+        logger.info(
+            f"[MIDIA-CTX] Arquivo persistido | msg_id={mensagem.id} | "
+            f"name={file_name} | bytes={len(raw_bytes)}"
+        )
 
     def _configure_attendance(
         self,

@@ -8,12 +8,12 @@ Adiciona `ws-card` para o styling do design system novo.{% endcomment %}
     tabindex="0"
     @keydown.enter.prevent="onCardClick(card.atendimento_id)">
 
-    {# Linha 1: avatar + nome/telefone + tempo #}
+    {# Linha 1: avatar + nome do contato + tempo #}
     <div class="ws-card__row1">
         <div class="ws-card__av"
-            x-text="(card.titulo || '?').slice(0, 2).toUpperCase()"></div>
+            x-text="(card.contato_nome || '?').slice(0, 2).toUpperCase()"></div>
         <div class="ws-card__id">
-            <div class="ws-card__name" x-text="card.titulo"></div>
+            <div class="ws-card__name" x-text="card.contato_nome"></div>
             <div class="ws-card__phone" x-show="card.canal_emoji || card.status">
                 <span x-text="card.canal_emoji || ''"></span>
                 <span x-text="card.status_emoji + ' ' + card.status"></span>
@@ -25,6 +25,11 @@ Adiciona `ws-card` para o styling do design system novo.{% endcomment %}
             x-show="card.nao_lidos && card.nao_lidos > 0"
             x-text="card.nao_lidos"></span>
     </div>
+
+    {# Linha 2: assunto do atendimento #}
+    <p class="ws-card__subject"
+        :class="card.assunto ? '' : 'ws-card__subject--empty'"
+        x-text="card.assunto || 'Sem assunto'"></p>
 
     {# Preview de mensagem #}
     <template x-if="card.preview_msg">

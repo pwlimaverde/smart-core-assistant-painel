@@ -4,9 +4,9 @@
   "status": "active",
   "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
   "createdAt": "2026-05-14T18:36:22.578Z",
-  "updatedAt": "2026-05-16T16:51:32.353Z",
+  "updatedAt": "2026-05-19T12:16:24.870Z",
   "startedAt": "2026-05-14T18:36:22.578Z",
-  "traceCount": 40,
+  "traceCount": 42,
   "artifactCount": 0,
   "checkpointCount": 6,
   "checkpoints": [
@@ -87,6 +87,6 @@
     "workflow": true,
     "description": "Construir módulo atendimento_unificado com chat WhatsApp + Kanban + campos personalizados extraídos por IA. Real-time via SSE/Redis. Entrega faseada em 3 fases sobre modelos existentes (EtapaFluxo/Atendimento/Mensagem). Toca camadas: app Django novo, models, signals, ASGI, feature LLM com structured output, sync Trello, design system Tailwind+Alpine."
   },
-  "lastTraceAt": "2026-05-16T16:51:32.353Z",
+  "lastTraceAt": "2026-05-19T12:16:24.870Z",
   "lastCheckpointAt": "2026-05-16T16:51:32.311Z"
 }

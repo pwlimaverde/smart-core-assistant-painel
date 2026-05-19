@@ -1275,3 +1275,235 @@
   padding: 0 5px;
   margin-left: auto;
 }
+
+/* ==========================================================================
+   13. ASSUNTO NO CARD (linha 2)
+   ========================================================================== */
+.ws-card__subject {
+  font-size: 11.5px;
+  color: var(--ws-fg-muted);
+  line-height: 1.3;
+  margin: 2px 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ws-card__subject--empty {
+  font-style: italic;
+  color: var(--ws-fg-subtle);
+}
+
+/* ==========================================================================
+   14. MÍDIA NO BALÃO: botão wrapper, vídeo, áudio nativo, fallback
+   ========================================================================== */
+.ws-bub__media-btn {
+  display: block;
+  width: 100%;
+  margin: 0 0 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--ws-radius-sm);
+  overflow: hidden;
+  position: relative;
+}
+.ws-bub__media-btn:hover { filter: brightness(0.97); }
+
+.ws-bub__media-fallback {
+  font-size: 11px;
+  font-style: italic;
+  color: var(--ws-fg-muted);
+  margin-bottom: 4px;
+}
+.ws-bub__media-fallback-hint { color: var(--ws-fg-subtle); }
+
+/* Áudio: ícone microfone + player nativo + duração */
+.ws-aud {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 0;
+  min-width: 220px;
+}
+.ws-aud__ico {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--ws-success);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ws-aud__player {
+  flex: 1;
+  height: 32px;
+  max-width: 220px;
+}
+.ws-aud__player::-webkit-media-controls-panel {
+  background: transparent;
+}
+.ws-aud__dur {
+  font-size: 10px;
+  color: var(--ws-fg-muted);
+  flex-shrink: 0;
+}
+.ws-aud--voice .ws-aud__ico { background: var(--ws-accent); }
+.ws-aud--out .ws-aud__ico { background: rgba(11, 61, 32, 0.65); }
+
+/* Vídeo: thumb com ícone play overlay */
+.ws-vid {
+  position: relative;
+  display: block;
+  max-width: 280px;
+  background: #000;
+  border-radius: var(--ws-radius-sm);
+  overflow: hidden;
+}
+.ws-vid__thumb {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 280px;
+  object-fit: cover;
+}
+.ws-vid__play {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+  transition: background 0.15s ease;
+}
+.ws-vid:hover .ws-vid__play { background: rgba(0, 0, 0, 0.75); }
+.ws-vid__dur {
+  position: absolute;
+  right: 6px; bottom: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* Documento: ações inline */
+.ws-doc__actions {
+  display: flex; align-items: center; gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.ws-doc__btn {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ws-fg-strong);
+  border: none;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.ws-doc__btn:hover { background: rgba(0, 0, 0, 0.12); }
+[data-theme="dark"] .ws-doc__btn { background: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .ws-doc__btn:hover { background: rgba(255, 255, 255, 0.15); }
+.ws-doc--pdf .ws-doc__ico { background: #d93025; }
+
+/* Análise IA: toggle + corpo expansível */
+.ws-bub__analise {
+  margin-top: 4px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+  padding-top: 4px;
+}
+[data-theme="dark"] .ws-bub__analise { border-top-color: rgba(255, 255, 255, 0.08); }
+.ws-bub__analise-toggle {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 10.5px;
+  color: var(--ws-fg-muted);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.ws-bub__analise-toggle:hover {
+  color: var(--ws-fg-strong);
+  background: rgba(0, 0, 0, 0.04);
+}
+[data-theme="dark"] .ws-bub__analise-toggle:hover { background: rgba(255, 255, 255, 0.06); }
+.ws-bub__analise-body {
+  margin-top: 4px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--ws-fg-muted);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: var(--ws-radius-sm);
+  white-space: pre-wrap;
+  line-height: 1.4;
+}
+[data-theme="dark"] .ws-bub__analise-body { background: rgba(255, 255, 255, 0.05); }
+
+/* ==========================================================================
+   15. LIGHTBOX DE MÍDIA (overlay full-screen)
+   ========================================================================== */
+.ws-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.ws-lightbox__close {
+  position: absolute;
+  top: 16px; right: 20px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.ws-lightbox__close:hover { background: rgba(255, 255, 255, 0.25); }
+.ws-lightbox__content {
+  position: relative;
+  max-width: 92vw;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.ws-lightbox__media {
+  max-width: 92vw;
+  max-height: 88vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.ws-lightbox__pdf {
+  width: 90vw;
+  height: 88vh;
+  border: none;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.ws-lightbox__caption {
+  color: #fff;
+  font-size: 12px;
+  opacity: 0.7;
+  max-width: 90vw;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[x-cloak] { display: none !important; }

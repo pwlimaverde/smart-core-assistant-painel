@@ -1,0 +1,30 @@
+{
+  "id": "0430123b-debe-4fa5-8d86-d76ebe82e3a6",
+  "title": "Chat Integrado WhatsApp + Adaptação do cliente para Evolution Go",
+  "description": "Transformar o painel num substituto fluido do WhatsApp Web (chat + kanban integrados) e adaptar o cliente Django (app evolution_sync) para consumir o Evolution Go já em produção nos servidores dos tenants. Deploy/operação do servidor Evolution Go é responsabilidade do devops do tenant (fora do escopo). Planejamento detalhado em docs_dev/planejamento/chat_integrado/.",
+  "sessionId": "0411608f-864e-4ce1-8162-4194afd428a9",
+  "status": "ready",
+  "inputs": [],
+  "expectedOutputs": [
+    "EvolutionV2Adapter + EvolutionGoAdapter em services/ (cliente Django)",
+    "Migration api_version + media_storage_backend em EvolutionInstance",
+    "Modelo Mensagem com status_envio + respondendo_a + MensagemReacao",
+    "7 novos endpoints Django (/mark-read /typing /react /send-audio /send-reply /messages/search /forward)",
+    "UI Alpine: date separators, scroll-to-bottom, reply, reactions, voice recording",
+    "Cutover por instancia com api_version no banco (sem alterar servidor)"
+  ],
+  "acceptanceCriteria": [
+    "Atendente opera 100% no painel sem precisar abrir WhatsApp Web em paralelo",
+    "evolution_sync 100% falando Evolution Go nas instancias migradas com adapter v2 removido apos 2 semanas estavel",
+    "checkmark azul disparado em 95%+ das mensagens abertas",
+    "CPU do worker Celery durante recebimento de midia reduzida >50% (sem getBase64FromMediaMessage)",
+    "Latencia typing > digitando no cliente <500ms",
+    "pyright zero erros novos nos arquivos tocados",
+    "Tests de regressao do evolution_sync passam com api_version=go",
+    "Checklist do companion paragrafo 8 validado com devops do tenant antes de cada cutover"
+  ],
+  "requiredSensors": [],
+  "requiredArtifacts": [],
+  "createdAt": "2026-05-19T12:32:31.365Z",
+  "updatedAt": "2026-05-19T12:32:31.365Z"
+}

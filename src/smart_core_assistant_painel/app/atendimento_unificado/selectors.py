@@ -553,6 +553,7 @@ def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
         "tipo": m.tipo,
         "conteudo": m.conteudo or "",
         "resposta_bot": m.resposta_bot or "",
+        "analise_midia": m.analise_midia or "",
         "remetente": m.remetente,
         "timestamp": m.timestamp.isoformat() if m.timestamp else None,
         "respondida": m.respondida,
@@ -571,15 +572,32 @@ _MEDIA_KIND_BY_TIPO: dict[str, str] = {
 }
 
 
+def _format_size_label(size_bytes: Optional[int]) -> str:
+    """Formata bytes em label humano (KB/MB)."""
+    if not size_bytes or size_bytes <= 0:
+        return ""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    if size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    return f"{size_bytes / (1024 * 1024):.1f} MB"
+
+
 def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
     """Extrai info de mídia consumível pelo frontend.
 
-    Lida com dois formatos:
-    - Outbound (atendente humano): metadados.media.{b64, mimetype, filename}
-    - Inbound (contato via Evolution): metadados.{base64, url, mimetype, ...}
+    Prioridade de ``src``:
+        1. ``m.arquivo_midia.url`` — URL servida pelo Django/Nginx (preferido).
+        2. ``data:`` URI a partir de ``metadados['base64']`` — legado/back-compat.
+        3. ``None`` — frontend mostra fallback.
 
-    Retorna dict {kind, src (data: ou http), mimetype, filename, seconds}
-    ou None se a mensagem não for mídia.
+    Lida com dois formatos legados de metadados:
+        - Outbound (atendente humano): metadados.media.{b64, mimetype, filename}
+        - Inbound (contato via Evolution): metadados.{base64, url, mimetype, ...}
+
+    Returns:
+        Dict {kind, src, remote_url, mimetype, filename, seconds, size_label,
+        is_pdf, ptt} ou ``None`` se a mensagem não for de mídia.
     """
     kind = _MEDIA_KIND_BY_TIPO.get(m.tipo or "")
     if not kind:
@@ -593,13 +611,38 @@ def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
     mimetype = (nested or {}).get("mimetype") or meta.get("mimetype") or ""
     filename = (nested or {}).get("filename") or meta.get("fileName") or ""
     seconds = meta.get("seconds")
-    b64 = (nested or {}).get("b64") or meta.get("base64") or ""
     remote_url = meta.get("url") or ""
 
     src: Optional[str] = None
-    if b64 and isinstance(b64, str) and len(b64) > 10:
-        # data URI quando temos base64 (renderizável inline)
-        src = f"data:{mimetype or 'application/octet-stream'};base64,{b64}"
+    size_label = ""
+
+    # Prioridade 1: arquivo persistido em FileField
+    arquivo = getattr(m, "arquivo_midia", None)
+    if arquivo:
+        try:
+            if arquivo.name:
+                src = arquivo.url
+                try:
+                    size_label = _format_size_label(arquivo.size)
+                except Exception:
+                    size_label = ""
+                if not filename:
+                    filename = arquivo.name.rsplit("/", 1)[-1]
+        except Exception:
+            src = None
+
+    # Prioridade 2: data URI legacy via base64 em metadados
+    if not src:
+        b64 = (nested or {}).get("b64") or meta.get("base64") or ""
+        if b64 and isinstance(b64, str) and len(b64) > 10:
+            src = (
+                f"data:{mimetype or 'application/octet-stream'};base64,{b64}"
+            )
+
+    is_pdf = kind == "document" and (
+        (mimetype or "").lower() == "application/pdf"
+        or (filename or "").lower().endswith(".pdf")
+    )
 
     return {
         "kind": kind,
@@ -608,6 +651,9 @@ def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
         "mimetype": mimetype,
         "filename": filename,
         "seconds": seconds,
+        "size_label": size_label,
+        "is_pdf": is_pdf,
+        "ptt": bool(meta.get("ptt", False)),
     }
 
 

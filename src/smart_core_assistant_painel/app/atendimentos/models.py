@@ -1076,6 +1076,24 @@ class Mensagem(models.Model):
         null=True,
         help_text="Nível de confiança da resposta do bot (0-1)",
     )
+    arquivo_midia: models.FileField = models.FileField(
+        upload_to="midias_atendimento/%Y/%m/",
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text=(
+            "Arquivo binário da mídia decodificada (imagem, áudio, vídeo, "
+            "documento). Substitui o uso de metadados['base64'] para mídia nova."
+        ),
+    )
+    analise_midia: models.TextField[str | None] = models.TextField(
+        blank=True,
+        null=True,
+        help_text=(
+            "Análise gerada pela IA para mídias: transcrição de áudio, resumo "
+            "de imagem/vídeo, descrição de documento. Separada de 'conteudo'."
+        ),
+    )
 
     class Meta:
         verbose_name = "Mensagem"

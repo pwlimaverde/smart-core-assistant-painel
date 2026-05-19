@@ -1,0 +1,44 @@
+{
+  "id": "0411608f-864e-4ce1-8162-4194afd428a9",
+  "name": "chat-integrado-evolution-go",
+  "status": "active",
+  "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
+  "createdAt": "2026-05-19T12:18:14.512Z",
+  "updatedAt": "2026-05-19T13:29:36.900Z",
+  "startedAt": "2026-05-19T12:18:14.512Z",
+  "traceCount": 16,
+  "artifactCount": 0,
+  "checkpointCount": 4,
+  "checkpoints": [
+    {
+      "id": "927aa6e4-dfaa-4340-a9f0-a2afb1877ba0",
+      "note": "Workflow chat-integrado-evolution-go inicializado (LARGE/PREVC) e plano linkado. Documentação organizada em docs_dev/planejamento/chat_integrado/ com 3 arquivos sem duplicação: README (índice), chat_whatsapp_experiencia_completa.md (UX/produto), evolution_go_migracao.md (técnico de migração). Plano canônico em .context/plans/chat-integrado-evolution-go.md com 6 fases mapeadas (Migração Go → Read Receipts → UX Quick Wins → Reply → Presence+Voice → Validação/Cutover). Branch base feature/chat-whatsapp-redesign já entregou piso da experiência (mídia inline, lightbox, toggle análise IA, card refatorado, push_name normalizado). Gates ativados: require_plan + require_approval.</notes>\n</invoke>\n<invoke name=\"mcp__dotcontext__workflow-status\">\n</invoke>",
+      "artifactIds": [],
+      "createdAt": "2026-05-19T12:20:21.019Z"
+    },
+    {
+      "id": "02bf3fe8-95e0-4ebb-8665-00dd9ae7dee6",
+      "note": "Escopo refinado: este plano e apenas o cliente Django (app evolution_sync). Servidor Evolution Go ja roda em producao no docker do tenant (Hostinger, container paulo-ecoprint-evolution) e e responsabilidade do devops. Atualizados: companion paragrafo 1 e 8 (checklist com devops em vez de configuracao), plano canonico (escopo + tasks 1.9, 6.3, 6.4 ajustadas), README (aviso de escopo), task-contract no harness redefinido com titulo \"Adaptacao do cliente para Evolution Go\". Mantida toda a substancia tecnica.",
+      "artifactIds": [],
+      "createdAt": "2026-05-19T12:32:48.595Z"
+    },
+    {
+      "id": "fe14d0bc-b55e-4031-a3d0-b9bfda55a7fa",
+      "note": "Servidor real auditado (2026-05-19). Confirmacoes via SSH hostinger-root + logs Gin do container paulo-ecoprint-evolution:\n\nENDPOINTS CONFIRMADOS (Evolution Go):\n- Instance: create / all / info / connect / qr / pair / status / disconnect / reconnect / forcereconnect / logout / delete / proxy / logs / advanced-settings\n- Send (caminho correto eh /send/* nao /message/sendText): text, link, media, poll, sticker, location, contact, button, list, carousel, status/text, status/media\n- Message: react, presence, markread, downloadmedia, status, delete, edit\n- Chat: pin, unpin, archive, unarchive, mute, unmute, history-sync\n- Outros: /group/*, /community/*, /label/*, /newsletter/*, /polls/*, /ws\n\nBLOQUEADOR CRITICO: servidor retorna LICENSE_REQUIRED em todas as chamadas. Devops precisa ativar via http://76.13.229.210:8080/manager/login antes do cliente Django funcionar.\n\nINCONSISTENCIAS NO SETUP_INFO do paulo-ecoprint-server:\n1. Diz POST /message/sendText e /message/sendMedia mas o real eh POST /send/text e /send/media\n2. Lista POST /webhook/set e GET /webhook/find que NAO EXISTEM no servidor (webhook eh configurado via subscribe[] no /instance/connect)\n3. Exemplo de payload tem event=messages.upsert (formato v2) - precisa validar com webhook real recebido\n\nCLIENTE Django ainda chama endpoint v2 inexistente: GET /instance/connectionState/atendimento -> 503\n\nCompanion atualizado com endpoints reais validados. Plano canonico atualizado com fluxo de provisioning automatico (tenant nao toca no servidor). Task 1.8 reescrita para deixar claro o automatismo. Task 1.10 adicionada para reportar correcoes ao devops. README com aviso de licenca pendente.",
+      "artifactIds": [],
+      "createdAt": "2026-05-19T13:14:06.474Z"
+    },
+    {
+      "id": "ecb3e74d-98aa-4537-92fd-49bfa18d6cc5",
+      "note": "Licenca do Evolution Go ativada em 2026-05-19 10:27 UTC. Key f65f53d0...4072. GET /instance/all retornando 200 OK com lista vazia (pronto para primeiro provisioning automatico). Bloqueador critico §8.2.1 resolvido. Pendencias restantes para o devops do servidor (correcao do SETUP_INFO sobre /send vs /message/sendText, remocao das secoes /webhook/set inexistentes, validacao do formato real do payload do webhook) seguem listadas na Task 1.10 mas NAO BLOQUEIAM o desenvolvimento - sao melhorias de documentacao do repo paulo-ecoprint-server. Plano pronto para avancar de P para R/E.",
+      "artifactIds": [],
+      "createdAt": "2026-05-19T13:29:36.860Z"
+    }
+  ],
+  "metadata": {
+    "workflow": true,
+    "description": "Implementar a experiência completa do chat integrado estilo WhatsApp Web (read receipts, reply, presença bidirecional, gravação de áudio, reações) e migrar o app evolution_sync da Evolution API v2 para Evolution Go. Planos de produto e infra ficam em docs_dev/planejamento/chat_integrado/."
+  },
+  "lastTraceAt": "2026-05-19T13:29:36.900Z",
+  "lastCheckpointAt": "2026-05-19T13:29:36.860Z"
+}

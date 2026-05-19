@@ -134,15 +134,27 @@ class WebhookProcessor:
         return False
 
     def _is_group_message(self, envelope: EvolutionWebhookEnvelope) -> bool:
-        """Verifica se é mensagem de grupo."""
+        """Verifica se é mensagem de grupo.
+
+        Mensagens de grupo NÃO devem virar atendimentos individuais (o
+        ``push_name`` nesses eventos é do remetente do grupo, não do contato
+        no sentido individual — vinculá-lo a um Contato corromperia o nome
+        do contato real). Logamos com warning para visibilidade.
+        """
         if envelope.contact.is_group():
-            logger.info(f"Ignoring group message from {envelope.contact.jid}")
+            logger.warning(
+                f"[group-skip] Ignorando mensagem de grupo "
+                f"jid={envelope.contact.jid!r} "
+                f"push_name={envelope.profile.push_name!r}"
+            )
             return True
 
-        # Verificação extra por JID
+        # Verificação extra por JID (fallback se ``is_group()`` falhar)
         jid = envelope.contact.jid or ""
         if jid.endswith("@g.us"):
-            logger.debug(f"Ignoring event for group JID {jid}")
+            logger.warning(
+                f"[group-skip] Ignorando evento por JID de grupo {jid!r}"
+            )
             return True
 
         return False
@@ -402,20 +414,51 @@ class WebhookProcessor:
 
         return evo_contact
 
+    @staticmethod
+    def _normalize_push_name(raw: str | None) -> str:
+        """Normaliza o ``push_name`` vindo da Evolution.
+
+        - Strip whitespace.
+        - Descarta se ficar vazio.
+        - Descarta se contiver apenas dígitos/espaços/símbolos de telefone
+          (parece um número, não um nome real).
+        - Trunca em 100 caracteres.
+        """
+        if not raw:
+            return ""
+        cleaned = raw.strip()
+        if not cleaned:
+            return ""
+        # "parece telefone": só dígitos/espaços/+ - ()
+        only_phone_chars = all(c.isdigit() or c in " +-()" for c in cleaned)
+        if only_phone_chars:
+            return ""
+        return cleaned[:100]
+
     def _link_contact(
         self,
         evo_contact: EvolutionContact,
         envelope: EvolutionWebhookEnvelope,
         from_me: bool = False,
     ) -> None:
-        """Vincula ou cria um Contato do sistema principal."""
-        push_name = envelope.profile.push_name
+        """Vincula ou cria um Contato do sistema principal.
+
+        Regras de nome:
+            - ``nome_contato`` é fonte da verdade *manual* — só é gravado na
+              criação se o push_name normalizado vier não-vazio; NUNCA é
+              sobrescrito depois.
+            - ``nome_perfil_whatsapp`` reflete o último push_name visto e é
+              atualizado a cada webhook (quando diferente do atual).
+        """
+        push_name_raw = envelope.profile.push_name
+        push_name = "" if from_me else self._normalize_push_name(push_name_raw)
         phone = envelope.contact.phone
 
         # Bug 2: Não criar contatos sem telefone
         if not phone:
             logger.debug(
-                f"Skipping contact creation: no phone available (push_name={push_name})"
+                f"Skipping contact creation: no phone available "
+                f"(push_name_raw={push_name_raw!r})"
             )
             return
 
@@ -428,31 +471,26 @@ class WebhookProcessor:
             )
             return
 
-        contato: Contato | None = None
-        use_push_name = push_name if not from_me else None
+        contato, created_contact = Contato.objects.get_or_create(
+            telefone=str(phone),
+            defaults={
+                "nome_contato": push_name,
+                "nome_perfil_whatsapp": push_name,
+                "ativo": True,
+                "metadados": {},
+            },
+        )
 
-        if phone:
-            contato, created_contact = Contato.objects.get_or_create(
-                telefone=str(phone),
-                defaults={
-                    "nome_contato": str(use_push_name or ""),
-                    "nome_perfil_whatsapp": str(use_push_name or ""),
-                    "ativo": True,
-                    "metadados": {},
-                },
-            )
-        else:
-            return
+        if not created_contact and push_name:
+            # Atualiza nome_perfil_whatsapp sempre que mudar (último push_name
+            # visto). NÃO toca em nome_contato — esse é manual.
+            if (contato.nome_perfil_whatsapp or "") != push_name:
+                contato.nome_perfil_whatsapp = push_name
+                contato.save(update_fields=["nome_perfil_whatsapp"])
 
-        if contato:
-            if not created_contact and use_push_name:
-                if not contato.nome_perfil_whatsapp:
-                    contato.nome_perfil_whatsapp = str(use_push_name)
-                    contato.save(update_fields=["nome_perfil_whatsapp"])
-
-            if evo_contact.contact != contato:
-                evo_contact.contact = contato
-                evo_contact.save(update_fields=["contact"])
+        if evo_contact.contact != contato:
+            evo_contact.contact = contato
+            evo_contact.save(update_fields=["contact"])
 
     def _schedule_response(
         self,

@@ -3,11 +3,7 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-(vazio — nenhum plano ativo)
-
-## Arquivo
-- [Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados](./archive/atendimento-unificado-chat-kanban.md) — arquivado em 2026-05-17 (v1.1.0)
-- [Feature Interpret Media](./archive/feature-interpret-media.md) — concluído em 2026-05-14
+1. [Chat Integrado Evolution Go](./chat-integrado-evolution-go.md)
 
 ## How To Create Or Update Plans
 - Run "dotcontext plan <name>" to scaffold a new plan template.

@@ -91,65 +91,44 @@ def format_time_delta(dt: Optional[datetime]) -> str:
         return ""
 
 
-def build_card_title(atendimento: Any) -> str:
-    """Constrói título composto: contato - cliente - assunto - intents."""
+def _get_contato_nome(atendimento: Any) -> str:
+    """Resolve nome do contato com fallback consistente.
+
+    Prioridade: ``nome_contato`` (manual) → ``nome_perfil_whatsapp``
+    (push_name) → ``telefone`` → ``"(sem nome)"``.
+    """
     contato = getattr(atendimento, "contato", None)
-    nome_contato: str = ""
-    if contato is not None:
-        nome_contato = (
-            getattr(contato, "nome_contato", None)
-            or getattr(contato, "nome_perfil_whatsapp", None)
-            or getattr(contato, "telefone", "")
-        ) or ""
-    if len(nome_contato) > 40:
-        nome_contato = nome_contato[:40] + "..."
+    if contato is None:
+        return "(sem nome)"
 
-    nome_fantasia: str = ""
-    try:
-        cliente_rel = getattr(atendimento, "cliente", None)
-        if cliente_rel is not None:
-            nome_fantasia = getattr(cliente_rel, "nome_fantasia", "") or ""
-    except Exception:
-        nome_fantasia = ""
-
-    assunto: str = (
-        getattr(atendimento, "assunto", None)
-        or f"Atendimento #{getattr(atendimento, 'pk', '')}"
+    nome = (
+        (getattr(contato, "nome_contato", None) or "").strip()
+        or (getattr(contato, "nome_perfil_whatsapp", None) or "").strip()
+        or (getattr(contato, "telefone", None) or "").strip()
+        or "(sem nome)"
     )
+    if len(nome) > 60:
+        nome = nome[:60] + "…"
+    return nome
 
-    intents_resumo: str = ""
-    try:
-        hist = atendimento.carregar_historico_mensagens()
-        intents_raw = hist.get("intents_detectados", []) or []
-        nomes: list[str] = []
-        for it in intents_raw:
-            if isinstance(it, dict):
-                nome = (
-                    str(it.get("type", ""))
-                    or str(it.get("nome", ""))
-                    or str(it.get("name", ""))
-                )
-                if nome:
-                    nomes.append(nome)
-            elif isinstance(it, str) and it:
-                nomes.append(it)
-            if len(nomes) >= 3:
-                break
-        if nomes:
-            intents_resumo = " | ".join(nomes)
-    except Exception:
-        intents_resumo = ""
 
-    partes: list[str] = []
-    if nome_contato:
-        partes.append(nome_contato)
-    if nome_fantasia:
-        partes.append(nome_fantasia)
-    if assunto:
-        partes.append(assunto)
-    if intents_resumo:
-        partes.append(intents_resumo)
-    return " - ".join(partes) if partes else assunto
+def _get_assunto(atendimento: Any) -> str:
+    """Retorna o assunto do atendimento (ou string vazia)."""
+    assunto = (getattr(atendimento, "assunto", None) or "").strip()
+    if len(assunto) > 80:
+        assunto = assunto[:80] + "…"
+    return assunto
+
+
+def build_card_title(atendimento: Any) -> str:
+    """[DEPRECATED] Retorna apenas o nome do contato.
+
+    Mantido por compatibilidade. Novos consumidores devem usar
+    ``_get_contato_nome`` + ``_get_assunto`` diretamente, ou ler
+    ``card["contato_nome"]`` / ``card["assunto"]`` do payload de
+    ``render_card``.
+    """
+    return _get_contato_nome(atendimento)
 
 
 _SLA_THRESHOLD_SECONDS = 8 * 3600  # 8 horas na etapa atual = SLA estourado
@@ -212,9 +191,14 @@ def render_card(
     atendente = getattr(atendimento, "atendente_humano", None)
     tempo_na_etapa = _get_tempo_na_etapa_seconds(atendimento)
 
+    contato_nome = _get_contato_nome(atendimento)
+    assunto = _get_assunto(atendimento)
+
     return {
         "atendimento_id": atendimento.id,
-        "titulo": build_card_title(atendimento),
+        "titulo": contato_nome,
+        "contato_nome": contato_nome,
+        "assunto": assunto,
         "status": atendimento.status,
         "status_emoji": get_status_emoji(atendimento.status),
         "prioridade": atendimento.prioridade,

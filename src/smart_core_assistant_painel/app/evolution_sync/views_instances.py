@@ -174,15 +174,13 @@ class InstanceCreateView(LoginRequiredMixin, View):
             len(evo_config.api_key),
         )
 
-        webhook_url = _build_webhook_url(request, tenant)
         service = EvolutionWhatsAppService()
 
         try:
             result = service.create_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
-                instance_name=instance_name,
-                webhook_url=webhook_url,
+                name=instance_name,
             )
         except Exception as e:
             error_msg = str(e)
@@ -315,7 +313,7 @@ class InstanceDetailView(LoginRequiredMixin, TemplateView):
         app_inst = AppInstance.objects.filter(
             api_key=instance.api_key, active=True
         ).first()
-        instance.bot_active = (
+        instance.bot_active = (  # type: ignore[attr-defined]
             app_inst.resposta_bot if app_inst else True
         )
 
@@ -331,8 +329,8 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
     """Retorna QR Code (base64) para conexão via AJAX."""
 
     def get(self, request: HttpRequest, pk: int) -> JsonResponse:
-        _, evo_config, _ = _get_tenant_and_config(request)
-        if not evo_config or not evo_config.server_url:
+        tenant, evo_config, _ = _get_tenant_and_config(request)
+        if not tenant or not evo_config or not evo_config.server_url:
             return _json_error("Config Evolution não encontrada.", 404)
 
         try:
@@ -340,12 +338,22 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
+        webhook_url = _build_webhook_url(request, tenant)
         service = EvolutionWhatsAppService()
         try:
             result = service.connect_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
-                instance_name=instance.name,
+                name=instance.name,
+                webhook_url=webhook_url,
+                subscribe=[
+                    "MESSAGES_UPSERT",
+                    "MESSAGES_UPDATE",
+                    "PRESENCE_UPDATE",
+                    "CONNECTION_UPDATE",
+                    "CONTACTS_UPDATE",
+                    "QRCODE_UPDATED",
+                ],
             )
         except Exception as e:
             logger.error(f"Erro ao gerar QR code: {e}")
@@ -460,7 +468,7 @@ class InstanceDeleteView(LoginRequiredMixin, View):
             service.delete_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
-                instance_name=instance.name,
+                name=instance.name,
             )
         except Exception as e:
             logger.warning(f"Erro ao deletar na API (continuando): {e}")
@@ -506,7 +514,7 @@ class InstanceLogoutView(LoginRequiredMixin, View):
             service.logout_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
-                instance_name=instance.name,
+                name=instance.name,
             )
         except Exception as e:
             logger.error(f"Erro ao desconectar: {e}")

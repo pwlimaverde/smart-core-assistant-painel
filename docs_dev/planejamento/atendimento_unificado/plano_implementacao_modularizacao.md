@@ -79,7 +79,7 @@ phases:
 | 1.1 | Criar pasta `modules/design_system/` | `frontend-specialist` | completed | Pasta com `core.css` criada |
 | 1.2 | Configurar Django (settings) | `backend-specialist` | completed | Adicionado TEMPLATES/STATICFILES |
 | 1.3 | Migrar CSS base e tokens | `frontend-specialist` | completed | `workspace-tokens.css` copiado |
-| 1.4 | Mover componentes HTML parciais genéricos | `frontend-specialist` | pending | HTMLs globais em components/ |
+| 1.4 | Mover componentes HTML parciais genéricos | `frontend-specialist` | completed | HTMLs globais em components/ |
 
 **Commit Checkpoint**
 `git commit -m "chore(ui): implement base design system agnostic structure"`
@@ -94,10 +94,10 @@ phases:
 **Tasks**
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| 2.1 | Criar os dois novos apps e registrá-los | `backend-specialist` | pending | Apps no `INSTALLED_APPS` |
-| 2.2 | Criar models proxies e services do Kanban | `backend-specialist` | pending | `db_table="atu_*"` e `managed=False` |
-| 2.3 | Criar models proxies e services do Chat | `backend-specialist` | pending | `db_table="atu_*"` e `managed=False` |
-| 2.4 | Isolar rotas sob prefixos `/chat/api` e `/kanban/api` | `backend-specialist` | pending | `urls.py` criados em cada app |
+| 2.1 | Criar os dois novos apps e registrá-los | `backend-specialist` | completed | Apps no `INSTALLED_APPS` |
+| 2.2 | Criar models proxies e services do Kanban | `backend-specialist` | completed | `db_table="atu_*"` e `managed=False` |
+| 2.3 | Criar models proxies e services do Chat | `backend-specialist` | completed | `db_table="atu_*"` e `managed=False` |
+| 2.4 | Isolar rotas sob prefixos `/chat/api` e `/kanban/api` | `backend-specialist` | completed | `urls.py` criados em cada app |
 
 **Commit Checkpoint**
 `git commit -m "refactor(backend): separate chat and kanban django apps"`
@@ -112,9 +112,9 @@ phases:
 **Tasks**
 | # | Task | Agent | Status | Deliverable |
 |---|------|-------|--------|-------------|
-| 3.1 | Mover templates parciais de domínio para seus apps | `frontend-specialist` | pending | `chat_evolution/templates` |
-| 3.2 | Refatorar `workspace_alpine.js` quebrando em módulos | `frontend-specialist` | pending | Scopes reduzidos para `x-data` |
-| 3.3 | Atualizar chamadas `fetch` do JS para os novos prefixos | `frontend-specialist` | pending | URLs consertadas |
+| 3.1 | Mover templates parciais de domínio para seus apps | `frontend-specialist` | completed | `chat_evolution/templates` |
+| 3.2 | Refatorar `workspace_alpine.js` quebrando em módulos | `frontend-specialist` | completed | Scopes reduzidos para `x-data` |
+| 3.3 | Atualizar chamadas `fetch` do JS para os novos prefixos | `frontend-specialist` | completed | URLs consertadas |
 
 **Commit Checkpoint**
 `git commit -m "refactor(frontend): decouple alpinejs modules and domain partials"`

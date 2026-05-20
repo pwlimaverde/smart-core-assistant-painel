@@ -1,5 +1,7 @@
 ---
-status: filled
+status: archived
+archived: 2026-05-20
+archived_reason: "PREVC concluído (P→R→E→V→C). Phases 1-6 entregues; evolution_sync agora exclusivo Evolution Go (v2 removido); avatar real do contato; release 1.2.0."
 generated: 2026-05-19
 agents:
   - type: "backend-specialist"

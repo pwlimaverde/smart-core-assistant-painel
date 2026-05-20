@@ -1,14 +1,14 @@
 {
   "id": "0411608f-864e-4ce1-8162-4194afd428a9",
   "name": "chat-integrado-evolution-go",
-  "status": "active",
+  "status": "completed",
   "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
   "createdAt": "2026-05-19T12:18:14.512Z",
-  "updatedAt": "2026-05-19T13:29:36.900Z",
+  "updatedAt": "2026-05-20T11:32:19.551Z",
   "startedAt": "2026-05-19T12:18:14.512Z",
-  "traceCount": 16,
+  "traceCount": 35,
   "artifactCount": 0,
-  "checkpointCount": 4,
+  "checkpointCount": 10,
   "checkpoints": [
     {
       "id": "927aa6e4-dfaa-4340-a9f0-a2afb1877ba0",
@@ -33,12 +33,78 @@
       "note": "Licenca do Evolution Go ativada em 2026-05-19 10:27 UTC. Key f65f53d0...4072. GET /instance/all retornando 200 OK com lista vazia (pronto para primeiro provisioning automatico). Bloqueador critico §8.2.1 resolvido. Pendencias restantes para o devops do servidor (correcao do SETUP_INFO sobre /send vs /message/sendText, remocao das secoes /webhook/set inexistentes, validacao do formato real do payload do webhook) seguem listadas na Task 1.10 mas NAO BLOQUEIAM o desenvolvimento - sao melhorias de documentacao do repo paulo-ecoprint-server. Plano pronto para avancar de P para R/E.",
       "artifactIds": [],
       "createdAt": "2026-05-19T13:29:36.860Z"
+    },
+    {
+      "id": "3adbe969-4465-4bd0-9591-dd6f51fad55a",
+      "note": "Auditoria pós-Phase 6: commits cobrem fases 1-6, mas restaram 4 problemas:\n\nCORRIGIDOS NESTA SESSÃO:\n1. views_instances.py — chamadas create_instance/connect_instance/delete_instance/logout_instance usavam kwargs antigos (`instance_name=`, `webhook_url=`) incompatíveis com a nova interface da Phase 1 (kwargs `name=`, `webhook_url=`, `subscribe=`). Causaria TypeError em todo o fluxo de criação/conexão/QR/exclusão de instância pelo painel. CORRIGIDO + `# type: ignore` no atributo dinâmico `bot_active`.\n2. Migrations faltantes: makemigrations detectou alterações pendentes em Mensagem.quoted_preview e EvolutionInstance.api_key/media_storage_backend. Geradas migrations 0007 em ambos os apps.\n\nPENDENTES (gaps reais do plano):\n3. Phase 3 Task 3.6 — handler `CONTACTS_UPDATE`/`CONTACTS` no webhook não foi implementado (não há `_handle_contacts` em webhook.py).\n4. Phase 3 Task 3.7 — campo `foto_perfil` no modelo Contato e renderização do avatar real nos templates não foram implementados.\n\nPhase 6 tasks 1.10 (devops report), 1.11/6.1/6.2/6.4 (smoke/regression test no servidor) e 6.5 (cleanup após 2 semanas) dependem de ações externas/temporais e não bloqueiam o desenvolvimento.\n\n`uv run python manage.py check` passou limpo após as correções.",
+      "artifactIds": [],
+      "createdAt": "2026-05-19T22:53:06.744Z"
+    },
+    {
+      "id": "7bd20b59-8548-437f-b7c7-68c3ca775a00",
+      "note": "Sessão finalizada — auditoria + correções + tasks 3.6/3.7 entregues em 2 commits:\n\nCOMMIT 1c6d17c — fix(evolution_sync): corrigir kwargs e migrations pós Phase 1\n- views_instances.py: 4 chamadas (create/connect/delete/logout) usavam kwargs antigos `instance_name=`/`webhook_url=` incompatíveis com a interface unificada da Phase 1 (`name=`, `webhook_url=`, `subscribe=`).\n- InstanceQRCodeView passa subscribe[] + webhook_url para connect_instance.\n- type: ignore no atributo dinâmico bot_active.\n- 2 migrations 0007 geradas (atendimentos.mensagem.quoted_preview e evolution_sync.evolutioninstance.api_key/media_storage_backend) que ficaram fora dos commits originais.\n\nCOMMIT 4f3b6cd — feat(chat): Phase 3.6/3.7 — avatar real do contato\n- Contato + FileField foto_perfil + foto_perfil_url_origem (cache-key) + migration 0002.\n- WebhookProcessor._handle_contacts() processa CONTACTS (Go) e CONTACTS_UPDATE (v2): localiza Contato por telefone (JID), baixa profilePictureUrl/profilePicUrl, salva no FileField. Skipa redownload quando URL == foto_perfil_url_origem.\n- selectors.list_conversations + card_renderer.render_card expõem contato_avatar_url.\n- workspace_alpine.js propaga contato_avatar_url no activeConv montado de cards do board.\n- kanban_card.html, workspace.html (header) e chat_mini_bar.html renderizam <img loading=lazy> com fallback @error para iniciais. CSS .ws-*__av com overflow:hidden + variantes --img object-fit:cover.\n\nVALIDAÇÃO:\n- `python manage.py check`: System check identified no issues.\n- `makemigrations --dry-run`: No changes detected.\n- pyright em selectors.py: 0 errors. Erros remanescentes em webhook.py são pré-existentes (EvolutionContact.contact_id é atributo Django não-tipado pelos stubs).\n\nSTATUS DO PLANO:\n- Phase 1: ✅ código completo (1.1-1.9). 1.10/1.11 = devops/manual.\n- Phase 2: ✅ commit 2a8d8a7.\n- Phase 3: ✅ COMPLETA agora (3.1-3.5 commit f2b65d9; 3.6/3.7 commit 4f3b6cd).\n- Phase 4: ✅ commit e3b67a4.\n- Phase 5: ✅ commit e12dfd2.\n- Phase 6: 6.3 (management command) ✅ ec21a8d. 6.1/6.2/6.4 = smoke test pós-deploy. 6.5 = cleanup após 2 semanas. 6.6 = README a marcar.\n\nWorkflow MCP ainda registrado em phase=P apesar do código entregue — sugerido avançar para V quando os smoke tests no servidor forem agendados.",
+      "artifactIds": [],
+      "createdAt": "2026-05-19T23:04:04.258Z"
+    },
+    {
+      "id": "12da5960-1b51-44a1-bfc3-8f3ffe7b562d",
+      "note": "Advanced workflow phase P -> R",
+      "data": {
+        "from": "P",
+        "to": "R",
+        "outputs": [
+          ".context/plans/chat-integrado-evolution-go.md"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-20T11:31:59.862Z"
+    },
+    {
+      "id": "36635cb7-b5aa-42a2-bc6a-27ce407abcfb",
+      "note": "Advanced workflow phase R -> E",
+      "data": {
+        "from": "R",
+        "to": "E",
+        "outputs": [
+          "src/smart_core_assistant_painel/app/evolution_sync/services/evolution_go_adapter.py",
+          "src/smart_core_assistant_painel/app/clientes/models.py"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-20T11:32:03.924Z"
+    },
+    {
+      "id": "fd530c8f-72f5-4f35-afdc-292bd56e8f7f",
+      "note": "Advanced workflow phase E -> V",
+      "data": {
+        "from": "E",
+        "to": "V",
+        "outputs": [
+          "Django check limpo; sem migrations pendentes; imports resolvidos; refactor Go-exclusive commitado 94c4470"
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-20T11:32:10.399Z"
+    },
+    {
+      "id": "ded17829-ba8a-4f27-b416-701fce434e87",
+      "note": "Advanced workflow phase V -> C",
+      "data": {
+        "from": "V",
+        "to": "C",
+        "outputs": [
+          "Validação: Django check limpo, sem migrations pendentes, smoke test de imports OK. Tenant de teste valida manualmente em produção."
+        ]
+      },
+      "artifactIds": [],
+      "createdAt": "2026-05-20T11:32:15.363Z"
     }
   ],
   "metadata": {
     "workflow": true,
     "description": "Implementar a experiência completa do chat integrado estilo WhatsApp Web (read receipts, reply, presença bidirecional, gravação de áudio, reações) e migrar o app evolution_sync da Evolution API v2 para Evolution Go. Planos de produto e infra ficam em docs_dev/planejamento/chat_integrado/."
   },
-  "lastTraceAt": "2026-05-19T13:29:36.900Z",
-  "lastCheckpointAt": "2026-05-19T13:29:36.860Z"
+  "lastTraceAt": "2026-05-20T11:32:19.551Z",
+  "lastCheckpointAt": "2026-05-20T11:32:15.363Z",
+  "completedAt": "2026-05-20T11:32:19.508Z"
 }

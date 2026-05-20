@@ -6,7 +6,10 @@
       "title": "Chat Integrado WhatsApp + Migração Evolution Go",
       "summary": "**Não duplica conteúdo.** Este plano é o **mapa de execução** que referencia os dois documentos de planejamento:",
       "linkedAt": "2026-05-19T12:20:03.916Z",
-      "status": "active"
+      "status": "active",
+      "approval_status": "approved",
+      "approved_at": "2026-05-20T11:31:55.704Z",
+      "approved_by": "solo-dev"
     }
   ],
   "completed": [],

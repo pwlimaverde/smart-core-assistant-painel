@@ -63,9 +63,18 @@ def _json_error(message: str, status: int = 400) -> JsonResponse:
 def _parse_state(state_data: dict[str, Any]) -> str:
     """Extrai o estado de conexão da resposta do Evolution Go.
 
-    O Go retorna ``{"state": "open"}`` direto; aceita também o formato
-    aninhado ``{"instance": {"state": ...}}`` por robustez.
+    O ``GET /instance/status`` do Go retorna o formato aninhado
+    ``{"data": {"Connected": bool, "LoggedIn": bool, "Name": str}}``:
+    - ``LoggedIn=True``  → sessão WhatsApp autenticada → ``"open"``.
+    - caso contrário     → ainda não pareada → ``"close"``.
+
+    Mantém fallback para os formatos ``{"state": "open"}`` e
+    ``{"instance": {"state": ...}}`` por robustez.
     """
+    data = state_data.get("data") if isinstance(state_data, dict) else None
+    if isinstance(data, dict) and ("LoggedIn" in data or "Connected" in data):
+        return "open" if data.get("LoggedIn") else "close"
+
     state = state_data.get("state")
     if not state:
         state = state_data.get("instance", {}).get("state", "unknown")
@@ -379,24 +388,48 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
         webhook_url = _build_webhook_url(request, tenant)
         service = EvolutionGoAdapter()
         try:
-            # /instance/connect autentica com o token da instância
-            # (não a Global API Key — esta retorna 401 "not authorized").
-            result = service.connect_instance(
+            # 1. /instance/connect (token da instância) configura webhook +
+            #    eventos e inicia o pareamento. Não retorna o QR.
+            service.connect_instance(
                 base_url=evo_config.server_url,
                 api_key=instance.api_key,
                 name=instance.name,
                 webhook_url=webhook_url,
                 subscribe=[],
             )
+            # 2. /instance/qr retorna o QR em data.Qrcode (data URI completa).
+            qr_result = service.get_qr_code(
+                base_url=evo_config.server_url,
+                api_key=instance.api_key,
+                name=instance.name,
+            )
         except Exception as e:
             logger.error(f"Erro ao gerar QR code: {e}")
             return _json_error(f"Erro na API: {e}", 502)
 
+        # O Go aninha o QR em ``data`` com chaves capitalizadas
+        # (``Qrcode``/``PairingCode``). Mantém fallback para formato plano.
+        qr_data = qr_result.get("data") if isinstance(qr_result, dict) else None
+        if not isinstance(qr_data, dict):
+            qr_data = qr_result if isinstance(qr_result, dict) else {}
+
+        qr_base64 = (
+            qr_data.get("Qrcode")
+            or qr_data.get("qrcode")
+            or qr_data.get("base64")
+            or qr_result.get("base64", "")
+        )
+        pairing_code = (
+            qr_data.get("PairingCode")
+            or qr_data.get("pairingCode")
+            or qr_result.get("pairingCode", "")
+        )
+
         return JsonResponse(
             {
-                "base64": result.get("base64", ""),
-                "pairingCode": result.get("pairingCode", ""),
-                "count": result.get("count", 0),
+                "base64": qr_base64,
+                "pairingCode": pairing_code,
+                "count": qr_data.get("count", 0),
             }
         )
 

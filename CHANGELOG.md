@@ -1,4 +1,21 @@
-## 1.2.3 - 2026-05-20
+<!--
+Builds manuais sobre a release 1.2.2 (fase de estruturação/testes).
+Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
+A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
+-->
+
+## 1.2.2+002 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Status "Desconhecido" mesmo conectado**: o `GET /instance/status` do Go
+  retorna `{"data": {"Connected": ..., "LoggedIn": ...}}`, não `{"state": ...}`.
+  `_parse_state` agora mapeia `LoggedIn=True → "open"`, senão `"close"`.
+- **QR Code não aparecia**: o QR vem do `GET /instance/qr` em `data.Qrcode`
+  (data URI), não na resposta do `/instance/connect`. `InstanceQRCodeView` agora
+  chama connect (configura webhook) + `get_qr_code` e parseia `data.Qrcode`/
+  `data.PairingCode`.
+
+## 1.2.2+001 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed
 - **`401 "not authorized"` ao conectar instância / gerar QR**: o `/instance/connect`

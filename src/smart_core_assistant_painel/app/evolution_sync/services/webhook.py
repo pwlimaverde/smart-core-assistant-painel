@@ -99,6 +99,11 @@ class WebhookProcessor:
                 logger.warning(
                     f"Ignoring envelope - missing contact JID. Event: {e.event}"
                 )
+                # [DIAG-TEMP] Captura a estrutura real do payload do Go para
+                # ajustar o normalizer (remover após o fix).
+                logger.warning(
+                    "[DIAG-TEMP] payload bruto: {}", str(e.raw)[:2500]
+                )
                 continue
 
             # Verificações de ignorar mensagem

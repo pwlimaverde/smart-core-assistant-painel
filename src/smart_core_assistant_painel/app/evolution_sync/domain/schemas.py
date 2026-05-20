@@ -389,6 +389,80 @@ class EvolutionProfileData:
         return {"push_name": self.push_name}
 
 
+def translate_go_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Traduz o payload do Evolution Go (whatsmeow) para o formato Node-like.
+
+    O Evolution Go entrega os eventos no formato do whatsmeow::
+
+        {
+            "event": "Message",
+            "instanceName": "atendimento",
+            "instanceToken": "<token>",
+            "instanceId": "<uuid>",
+            "data": {
+                "Info": {
+                    "Chat": "5511...@s.whatsapp.net",
+                    "Sender": "5511...@s.whatsapp.net",
+                    "SenderAlt": "...@lid",
+                    "ID": "3EB0...", "IsFromMe": false, "IsGroup": false,
+                    "PushName": "...", "Timestamp": "2026-05-20T14:41:32-03:00",
+                    "Type": "text", "MediaType": ""
+                },
+                "Message": {"extendedTextMessage": {"text": "..."}, ...}
+            }
+        }
+
+    As sub-chaves de ``data.Message`` (``conversation``, ``extendedTextMessage``,
+    ``imageMessage``, etc.) são idênticas ao formato Node, então convertemos
+    apenas o "envelope" (Info → key/pushName, instanceName → instance, …) e
+    reaproveitamos os factories existentes.
+
+    Se o payload não estiver no formato Go (sem ``data.Info``), retorna inalterado.
+    """
+    data = payload.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("Info"), dict):
+        return payload
+
+    info: Dict[str, Any] = data["Info"]
+    chat: str = str(info.get("Chat") or "")
+    sender: str = str(info.get("Sender") or "")
+    alt: str = str(info.get("SenderAlt") or info.get("RecipientAlt") or "")
+
+    # Timestamp ISO-8601 → epoch (int). Mantém o original se não parsear.
+    ts_raw: Any = info.get("Timestamp")
+    ts_val: Any = ts_raw
+    if isinstance(ts_raw, str) and ts_raw:
+        try:
+            from datetime import datetime
+
+            ts_val = int(datetime.fromisoformat(ts_raw).timestamp())
+        except Exception:
+            ts_val = ts_raw
+
+    return {
+        "event": payload.get("event"),
+        "instance": payload.get("instanceName") or payload.get("instance"),
+        "sender": sender or chat,
+        "apikey": payload.get("instanceToken") or payload.get("apikey"),
+        "data": {
+            "key": {
+                "remoteJid": chat,
+                "remoteJidAlt": alt,
+                "fromMe": bool(info.get("IsFromMe", False)),
+                "id": info.get("ID"),
+                "addressingMode": info.get("AddressingMode") or None,
+            },
+            "pushName": info.get("PushName"),
+            # messageType deixado ausente → autodetecção pelas chaves de Message
+            "message": data.get("Message", {}) or {},
+            "messageTimestamp": ts_val,
+            "instanceId": payload.get("instanceId"),
+            "isGroup": bool(info.get("IsGroup", False)),
+            "mediaType": info.get("MediaType") or "",
+        },
+    }
+
+
 @dataclass
 class EvolutionWebhookEnvelope:
     """Envelope normalizado contendo os dados do webhook.
@@ -490,6 +564,7 @@ class EvolutionWebhookEnvelope:
         Returns:
             EvolutionWebhookEnvelope: Instância normalizada do envelope.
         """
+        payload = translate_go_payload(payload)
         data_obj: Any = payload.get("data", {})
         if isinstance(data_obj, list):
             first: Dict[str, Any] = next(
@@ -513,6 +588,7 @@ class EvolutionWebhookEnvelope:
         Returns:
             List[EvolutionWebhookEnvelope]: Lista de envelopes normalizados.
         """
+        payload = translate_go_payload(payload)
         data_obj: Any = payload.get("data", {})
         if isinstance(data_obj, list):
             envelopes: List[EvolutionWebhookEnvelope] = []

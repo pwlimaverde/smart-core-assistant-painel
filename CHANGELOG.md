@@ -4,6 +4,23 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+004 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Mensagens recebidas não eram processadas (formato whatsmeow do Go)**: o
+  Evolution Go entrega o payload no formato do whatsmeow (`data.Info.Chat/Sender/
+  ID/IsFromMe/PushName` + `data.Message.<tipo>` + `instanceName`/`instanceToken`),
+  totalmente diferente do Node v2 (`data.key.remoteJid`/`data.message`). O
+  normalizer extraía `data.key.remoteJid` → sempre vazio → "missing contact JID"
+  → mensagem descartada. Novo `translate_go_payload()` converte o envelope Go
+  para o formato Node-like (as sub-chaves de `data.Message` já são idênticas) e
+  reaproveita os factories. Acoplado em `from_dict_single`/`from_dict_batch`.
+- **Entrega de webhooks parava após reconectar**: o `connect_instance` enviava o
+  campo `subscribe`, que o servidor Go interpreta como "zerar" a assinatura
+  (`events=""`) → nenhum webhook entregue. Corrigido para enviar `events`
+  (array). Eventos default ajustados para os suportados pelo Go
+  (`MESSAGE,CONNECTION,PRESENCE,QRCODE`).
+
 ## 1.2.2+003 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

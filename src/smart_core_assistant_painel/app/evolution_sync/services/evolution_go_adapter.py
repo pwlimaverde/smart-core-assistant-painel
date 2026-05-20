@@ -18,14 +18,14 @@ from urllib.parse import urlencode, urljoin
 
 import requests  # noqa: I001
 
+# Eventos suportados pelo Evolution Go (whatsmeow). Enviados no campo ``events``
+# do POST /instance/connect. ⚠️ NÃO usar o campo ``subscribe`` — o servidor o
+# ignora e ZERA a assinatura (events=""), parando toda a entrega de webhooks.
 _DEFAULT_SUBSCRIBE_EVENTS: list[str] = [
     "MESSAGE",
-    "MESSAGE_UPDATE",
-    "MESSAGE_DELETE",
-    "PRESENCE",
     "CONNECTION",
+    "PRESENCE",
     "QRCODE",
-    "CONTACTS",
 ]
 
 
@@ -478,10 +478,12 @@ class EvolutionGoAdapter:
             Exception: Se a API retornar erro HTTP.
         """
         events = subscribe if subscribe else _DEFAULT_SUBSCRIBE_EVENTS
+        # IMPORTANTE: o campo correto é ``events`` (array). Enviar ``subscribe``
+        # faz o servidor zerar a assinatura (events="") e parar a entrega.
         body: dict[str, Any] = {
             "instanceName": name,
             "webhookUrl": webhook_url,
-            "subscribe": events,
+            "events": events,
         }
         response = self._send_request(
             base_url, "/instance/connect", api_key=api_key, method="POST", body=body

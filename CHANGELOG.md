@@ -4,6 +4,18 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+008 - 2026-05-20 (build manual, sem tag)
+
+### Added
+- **Recebimento de mídia (formato whatsmeow do Go)**: `translate_go_payload`
+  agora trata `Info.MediaType` (image/video/audio/document), monta o
+  `data.Message.<tipo>Message` normalizando o casing do whatsmeow
+  (`URL`→`url`, `fileEncSHA256`→`fileEncSha256`) e embute o `base64` inline
+  (que o Go entrega no irmão `data.Message.base64`). `EvolutionMessageData`
+  passa a extrair `base64` também para imagem/vídeo/documento (antes só áudio).
+  Resultado: mídia recebida é decodificada e persistida em `Mensagem.arquivo_midia`
+  pelo pipeline existente. Removido o diagnóstico temporário de mídia.
+
 ## 1.2.2+007 - 2026-05-20 (build manual, sem tag)
 
 ### Changed

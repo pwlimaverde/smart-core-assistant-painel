@@ -69,44 +69,6 @@ def webhook(
     except Exception:
         return JsonResponse({"detail": "invalid json"}, status=400)
 
-    # [DIAG-TEMP-MEDIA] Captura a estrutura real de payloads de MÍDIA do Go
-    # (Info.MediaType preenchido ou Message com chave de mídia) para ajustar o
-    # download/normalização. Remover após o fix de mídia.
-    try:
-        _d = payload.get("data") if isinstance(payload, dict) else None
-        if isinstance(_d, dict):
-            _info = _d.get("Info") or {}
-            _msg = _d.get("Message") or {}
-            _media_keys = {
-                "imageMessage",
-                "videoMessage",
-                "audioMessage",
-                "documentMessage",
-                "stickerMessage",
-            }
-            _is_media = bool(_info.get("MediaType")) or bool(
-                isinstance(_msg, dict) and (_media_keys & set(_msg.keys()))
-            )
-            if _is_media:
-                # Sanitiza valores enormes (base64) para revelar a ESTRUTURA
-                # (mimetype/filename/caption) sem o blob.
-                def _san(obj: Any) -> Any:
-                    if isinstance(obj, dict):
-                        return {k: _san(v) for k, v in obj.items()}
-                    if isinstance(obj, list):
-                        return [_san(v) for v in obj[:3]]
-                    if isinstance(obj, str) and len(obj) > 80:
-                        return f"<str len={len(obj)}>"
-                    return obj
-
-                logger.warning(
-                    "[DIAG-TEMP-MEDIA2] info={} message={}",
-                    _san(_info),
-                    _san(_msg),
-                )
-    except Exception:
-        pass
-
     # 1. Filtro Global: aceita eventos MESSAGE (Go) e messages.upsert (v2)
     # Usa EvolutionEventName.from_raw() para normalizar ambos os formatos.
     # Eventos de mensagem recebida são processados; outros retornam 200 ignorado.

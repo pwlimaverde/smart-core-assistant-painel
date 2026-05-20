@@ -194,6 +194,9 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
                 "mediaKey": msg_data.get("mediaKey", ""),
                 "directPath": msg_data.get("directPath", ""),
                 "fileSha256": msg_data.get("fileSha256", ""),
@@ -210,6 +213,9 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
                 "seconds": msg_data.get("seconds"),
                 "mediaKey": msg_data.get("mediaKey", ""),
                 "directPath": msg_data.get("directPath", ""),
@@ -229,6 +235,10 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
+                "fileName": file_name,
                 "mediaKey": msg_data.get("mediaKey", ""),
                 "directPath": msg_data.get("directPath", ""),
                 "fileSha256": msg_data.get("fileSha256", ""),
@@ -439,6 +449,34 @@ def translate_go_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
         except Exception:
             ts_val = ts_raw
 
+    # --- Mensagem / mídia ---
+    # O Evolution Go entrega mídia com ``data.Info.MediaType`` (image/video/
+    # audio/document/sticker) + ``data.Message.<tipo>Message`` (chaves do
+    # whatsmeow: ``URL``, ``fileEncSHA256``…) e, quase sempre, o conteúdo já
+    # decodificado em ``data.Message.base64`` (irmão do sub-objeto). Normalizamos
+    # o sub-objeto para o formato que os factories esperam e embutimos o base64.
+    go_message: Dict[str, Any] = data.get("Message", {}) or {}
+    media_type: str = str(info.get("MediaType") or "")
+    message_out: Dict[str, Any] = go_message
+    message_type_out: Optional[str] = None
+
+    if media_type:
+        sub_key = f"{media_type}Message"
+        sub: Dict[str, Any] = dict(go_message.get(sub_key, {}) or {})
+        top_b64 = go_message.get("base64")
+        # Casing whatsmeow → esperado pelos factories de mídia.
+        if sub.get("URL") and not sub.get("url"):
+            sub["url"] = sub["URL"]
+        if sub.get("fileSHA256") and not sub.get("fileSha256"):
+            sub["fileSha256"] = sub["fileSHA256"]
+        if sub.get("fileEncSHA256") and not sub.get("fileEncSha256"):
+            sub["fileEncSha256"] = sub["fileEncSHA256"]
+        # base64 inline (irmão) → para dentro do sub-objeto, onde é lido.
+        if top_b64 and not sub.get("base64"):
+            sub["base64"] = top_b64
+        message_out = {sub_key: sub}
+        message_type_out = sub_key
+
     return {
         "event": payload.get("event"),
         "instance": payload.get("instanceName") or payload.get("instance"),
@@ -453,8 +491,10 @@ def translate_go_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
                 "addressingMode": info.get("AddressingMode") or None,
             },
             "pushName": info.get("PushName"),
-            # messageType deixado ausente → autodetecção pelas chaves de Message
-            "message": data.get("Message", {}) or {},
+            # Para mídia, ``messageType`` é o sub-tipo (imageMessage…); para
+            # texto fica None → autodetecção pelas chaves de Message.
+            "message": message_out,
+            "messageType": message_type_out,
             "messageTimestamp": ts_val,
             "instanceId": payload.get("instanceId"),
             "isGroup": bool(info.get("IsGroup", False)),

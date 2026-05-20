@@ -28,7 +28,9 @@ class ConnectionTester:
             return False
 
         try:
-            url = f"{config.server_url.rstrip('/')}/instance/fetchInstances"
+            # Evolution Go expõe a listagem em /instance/all
+            # (o endpoint v2 /instance/fetchInstances retorna 404 no Go).
+            url = f"{config.server_url.rstrip('/')}/instance/all"
             headers = {"apikey": config.api_key}
 
             logger.debug(

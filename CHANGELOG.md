@@ -1,3 +1,18 @@
+## 1.2.1 - 2026-05-20
+
+### Fixed
+- **500 ao gerenciar instâncias / migrations travadas no tenant**: a migration
+  `0006` (Evolution Go) fazia `EvolutionInstance.objects.update(api_version=...)`
+  sem `.using()`. Em multi-tenant o ORM roteava o UPDATE por uma conexão
+  separada onde a coluna recém-criada (ainda não commitada na transação da
+  migration) não era visível → `column api_version does not exist` e rollback de
+  toda a `0006`. Resultado: as colunas `media_storage_backend`/`subscribed_events`/
+  `last_connection_state` nunca eram criadas no banco do tenant e
+  `/evolution/instances/` retornava 500. Corrigido fixando
+  `schema_editor.connection.alias` no `RunPython`.
+- **Testar Conexão com Evolution API**: `ConnectionTester` usava o endpoint v2
+  `/instance/fetchInstances` (404 no Go). Trocado para `/instance/all`.
+
 ## 1.2.0 - 2026-05-20
 
 ### Changed

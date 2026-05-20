@@ -21,10 +21,13 @@ def set_existing_instances_to_v2(apps, schema_editor):
     não automático para instâncias em produção.
     """
     EvolutionInstance = apps.get_model("evolution_sync", "EvolutionInstance")
-    # Atualiza apenas instâncias que ainda têm o valor default vazio
-    # (o campo acaba de ser criado com default="go", mas queremos v2
-    # para instâncias existentes por segurança)
-    EvolutionInstance.objects.all().update(api_version="v2")
+    # IMPORTANTE: usar o alias da conexão da própria migration. Em ambiente
+    # multi-tenant, ``.objects.update()`` sem ``.using()`` é roteado por uma
+    # conexão separada onde a coluna recém-criada (ainda não commitada nesta
+    # transação) não é visível → "column api_version does not exist" e rollback
+    # de toda a migration. Fixar o alias garante mesma conexão/transação.
+    alias = schema_editor.connection.alias
+    EvolutionInstance.objects.using(alias).update(api_version="v2")
 
 
 class Migration(migrations.Migration):

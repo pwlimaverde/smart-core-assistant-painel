@@ -692,36 +692,35 @@ class EvolutionGoAdapter:
         *,
         base_url: str,
         api_key: str,
-        instance: str,
-        message_id: str,
-        number: str,
+        message: dict,
     ) -> dict:
-        """Faz download de mídia via Evolution Go (``POST /message/downloadmedia``).
+        """Faz download/descriptografia de mídia via Evolution Go.
 
-        Alternativa eficiente ao ``getBase64FromMediaMessage`` do v2.
-        Usar quando ``data.message.mediaUrl`` não vier no webhook
-        (S3/MinIO não configurado no servidor do tenant).
+        ``POST /message/downloadimage`` com ``{"message": <objeto Message do
+        whatsmeow>}``. Usado como fallback quando o webhook **não** traz o
+        ``base64`` inline (ex.: imagens grandes). O ``message`` deve conter o
+        sub-objeto de mídia com as chaves de descriptografia do whatsmeow
+        (``URL``, ``directPath``, ``mediaKey``, ``fileEncSHA256``,
+        ``fileSHA256``, ``mediaKeyTimestamp``, ``mimetype``), ex.::
+
+            {"imageMessage": {"URL": "...", "directPath": "...",
+                              "mediaKey": "...", "fileEncSHA256": "...", ...}}
 
         Args:
             base_url: URL base do servidor.
             api_key: Token da instância.
-            instance: Nome da instância.
-            message_id: ID da mensagem com mídia.
-            number: JID/número do remetente.
+            message: Objeto ``Message`` (whatsmeow) com o sub-objeto de mídia.
 
         Returns:
-            dict com ``base64`` e ``mimetype`` da mídia.
+            dict com ``base64`` (e/ou ``mimetype``) da mídia descriptografada.
 
         Raises:
             Exception: Se a API retornar erro HTTP.
         """
-        body: dict[str, Any] = {
-            "messageId": message_id,
-            "number": number,
-        }
+        body: dict[str, Any] = {"message": message}
         response = self._send_request(
             base_url,
-            "/message/downloadmedia",
+            "/message/downloadimage",
             api_key=api_key,
             method="POST",
             body=body,

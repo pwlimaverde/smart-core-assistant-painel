@@ -4,6 +4,16 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+010 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Fallback de download de mídia sem base64 inline** (ex.: imagens grandes): o
+  `download_media` agora usa o endpoint correto `POST /message/downloadimage`
+  com o objeto `Message` (whatsmeow) reconstruído da metadata (`URL`,
+  `directPath`, `mediaKey`, `fileEncSHA256`, `fileSHA256`, `mediaKeyTimestamp`,
+  `mimetype`), em vez do inexistente `/message/downloadmedia`. Extração de
+  base64 robusta (aceita `{base64}` ou `{data:{base64}}`).
+
 ## 1.2.2+009 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

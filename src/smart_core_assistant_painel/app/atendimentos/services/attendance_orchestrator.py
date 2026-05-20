@@ -460,34 +460,52 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        # Sem mediaUrl: baixa via endpoint dedicado do Evolution Go.
-        message_id_wa = mensagem.message_id_whatsapp or ""
-        if not message_id_wa:
+        # Sem base64 inline: reconstrói o objeto Message (whatsmeow) a partir
+        # da metadata e baixa/descriptografa via /message/downloadimage.
+        # As chaves de descriptografia precisam do casing do whatsmeow.
+        if not meta.get("url") or not meta.get("mediaKey"):
             logger.debug(
-                f"Mensagem {mensagem.id}: sem message_id_whatsapp para "
-                "downloadmedia (Go)."
+                f"Mensagem {mensagem.id}: metadata insuficiente para "
+                "download (sem url/mediaKey)."
             )
             return ""
+
+        sub_key = str(mensagem.tipo or "imageMessage")
+        media_obj: dict[str, Any] = {
+            "URL": meta.get("url"),
+            "directPath": meta.get("directPath"),
+            "mediaKey": meta.get("mediaKey"),
+            "fileEncSHA256": meta.get("fileEncSha256"),
+            "fileSHA256": meta.get("fileSha256"),
+            "fileLength": meta.get("fileLength"),
+            "mediaKeyTimestamp": meta.get("mediaKeyTimestamp"),
+            "mimetype": meta.get("mimetype"),
+        }
+        message_obj = {sub_key: media_obj}
 
         try:
             dl_result = adapter.download_media(
                 base_url=base_url,
                 api_key=str(api_key),
-                instance=inst.name,
-                message_id=message_id_wa,
-                number=phone,
+                message=message_obj,
             )
         except Exception as dl_err:
             logger.warning(
-                f"[MIDIA-CTX] downloadmedia falhou (Go) | "
+                f"[MIDIA-CTX] downloadimage falhou (Go) | "
                 f"msg_id={mensagem.id}: {dl_err}"
             )
             return ""
 
-        b64 = dl_result.get("base64", "")
+        # Go retorna ``{base64: ...}`` ou aninhado em ``{data: {base64: ...}}``.
+        data_obj = dl_result.get("data") if isinstance(dl_result, dict) else None
+        b64 = ""
+        if isinstance(data_obj, dict):
+            b64 = data_obj.get("base64") or data_obj.get("Base64") or ""
+        if not b64:
+            b64 = dl_result.get("base64", "") or dl_result.get("Base64", "")
         if b64:
             logger.info(
-                f"[MIDIA-CTX] Base64 obtido via downloadmedia (Go) | "
+                f"[MIDIA-CTX] Base64 obtido via downloadimage (Go) | "
                 f"msg_id={mensagem.id} | len={len(b64)}"
             )
         return str(b64)

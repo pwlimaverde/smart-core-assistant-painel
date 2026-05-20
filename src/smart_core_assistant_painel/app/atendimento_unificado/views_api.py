@@ -36,16 +36,16 @@ from .selectors import (
     list_medias,
     list_notas,
 )
-from .services.board_service import (
+from smart_core_assistant_painel.app.gestao_kanban.services.board_service import (
     BoardMoveError,
     assign_atendimento,
     mark_read,
     move_atendimento,
 )
-from .services.etiquetas_service import toggle_etiqueta
-from .services.message_dispatch_service import send_text_message
-from .services.notas_service import criar_nota, deletar_nota
-from .services.transfer_fluxo_service import transferir_fluxo
+from smart_core_assistant_painel.app.gestao_kanban.services.etiquetas_service import toggle_etiqueta
+from smart_core_assistant_painel.app.chat_evolution.services.message_dispatch_service import send_text_message
+from smart_core_assistant_painel.app.gestao_kanban.services.notas_service import criar_nota, deletar_nota
+from smart_core_assistant_painel.app.gestao_kanban.services.transfer_fluxo_service import transferir_fluxo
 
 
 def _err(msg: str, code: str = "error", status: int = 400) -> JsonResponse:
@@ -577,7 +577,7 @@ class ConversationUploadView(View):
     def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
         if not _can_access_atendimento(request, int(atendimento_id)):
             return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
-        from .services.media_dispatch_service import upload_and_send_media
+        from smart_core_assistant_painel.app.chat_evolution.services.media_dispatch_service import upload_and_send_media
 
         uploaded = request.FILES.get("file")
         if uploaded is None:

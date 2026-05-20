@@ -187,7 +187,7 @@ def mark_read(
         TipoRemetente,
     )
 
-    from ..models import LeituraAtendimento
+    from smart_core_assistant_painel.app.chat_evolution.models import LeituraAtendimento
 
     Mensagem.objects.filter(
         atendimento_id=atendimento_id,

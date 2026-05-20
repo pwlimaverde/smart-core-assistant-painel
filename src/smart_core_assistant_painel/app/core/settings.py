@@ -154,6 +154,8 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.trello_sync",
     # Workspace unificado (Chat + Kanban)
     "smart_core_assistant_painel.app.atendimento_unificado.apps.AtendimentoUnificadoConfig",
+    "smart_core_assistant_painel.app.chat_evolution.apps.ChatEvolutionConfig",
+    "smart_core_assistant_painel.app.gestao_kanban.apps.GestaoKanbanConfig",
     # Usa AppConfig explícito para garantir execução do ready() e sinais
     # "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
     "smart_core_assistant_painel.app.evolution_sync.apps.EvolutionSyncConfig",

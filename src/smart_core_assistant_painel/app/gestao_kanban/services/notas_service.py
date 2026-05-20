@@ -7,7 +7,7 @@ from typing import Any, Optional
 
 from django.core.exceptions import ValidationError
 
-from ..models import Nota
+from smart_core_assistant_painel.app.atendimento_unificado.models import Nota
 
 
 def criar_nota(

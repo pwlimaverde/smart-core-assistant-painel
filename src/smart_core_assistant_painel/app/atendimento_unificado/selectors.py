@@ -288,7 +288,9 @@ def board_snapshot_by_fluxo(
 
     `card_payload` é produzido por `card_renderer.render_card`.
     """
-    from smart_core_assistant_painel.app.gestao_kanban.services.card_renderer import render_card
+    from smart_core_assistant_painel.app.gestao_kanban.services.card_renderer import (
+        render_card,
+    )
 
     etapas_qs = EtapaFluxo.objects.filter(
         fluxo_id=fluxo_id, ativo=True

@@ -88,8 +88,21 @@ def webhook(
                 isinstance(_msg, dict) and (_media_keys & set(_msg.keys()))
             )
             if _is_media:
+                # Sanitiza valores enormes (base64) para revelar a ESTRUTURA
+                # (mimetype/filename/caption) sem o blob.
+                def _san(obj: Any) -> Any:
+                    if isinstance(obj, dict):
+                        return {k: _san(v) for k, v in obj.items()}
+                    if isinstance(obj, list):
+                        return [_san(v) for v in obj[:3]]
+                    if isinstance(obj, str) and len(obj) > 80:
+                        return f"<str len={len(obj)}>"
+                    return obj
+
                 logger.warning(
-                    "[DIAG-TEMP-MEDIA] payload bruto: {}", str(payload)[:3000]
+                    "[DIAG-TEMP-MEDIA2] info={} message={}",
+                    _san(_info),
+                    _san(_msg),
                 )
     except Exception:
         pass

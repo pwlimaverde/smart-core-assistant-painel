@@ -7,7 +7,10 @@ from typing import Optional
 
 from django.core.exceptions import ValidationError
 
-from ..models import Etiqueta, EtiquetaAtendimento
+from smart_core_assistant_painel.app.atendimento_unificado.models import (
+    Etiqueta,
+    EtiquetaAtendimento,
+)
 
 
 def toggle_etiqueta(

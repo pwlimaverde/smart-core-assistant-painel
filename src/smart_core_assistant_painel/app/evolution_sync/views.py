@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.domain.schemas import (
+    EvolutionEventName,
     EvolutionWebhookEnvelope,
 )
 from smart_core_assistant_painel.app.evolution_sync.normalizers import (
@@ -68,10 +69,21 @@ def webhook(
     except Exception:
         return JsonResponse({"detail": "invalid json"}, status=400)
 
-    # 1. Filtro Global: Processar APENAS 'messages.upsert'
-    event = payload.get("event")
-    if event != "messages.upsert":
-        # Retorna 200 para confirmar recebimento, mas ignora processamento
+    # 1. Filtro Global: aceita eventos MESSAGE (Go) e messages.upsert (v2)
+    # Usa EvolutionEventName.from_raw() para normalizar ambos os formatos.
+    # Eventos de mensagem recebida são processados; outros retornam 200 ignorado.
+    _PROCESSABLE_EVENTS = {
+        EvolutionEventName.MESSAGE,
+        EvolutionEventName.MESSAGE_UPDATE,
+        EvolutionEventName.CONTACTS,
+        EvolutionEventName.CONNECTION,
+        EvolutionEventName.QRCODE,
+        EvolutionEventName.PRESENCE,
+    }
+    event = payload.get("event", "")
+    parsed_event = EvolutionEventName.from_raw(event)
+    if parsed_event not in _PROCESSABLE_EVENTS:
+        logger.debug(f"Webhook: evento ignorado {event!r}")
         return JsonResponse({"status": "ignored_event"}, status=200)
 
     data_obj = payload.get("data")

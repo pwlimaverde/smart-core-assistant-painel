@@ -38,6 +38,11 @@ urlpatterns = [
         name="conversation_mark_read",
     ),
     path(
+        "conversations/<int:atendimento_id>/presence/",
+        views_api.ConversationPresenceView.as_view(),
+        name="conversation_presence",
+    ),
+    path(
         "board/",
         views_api.BoardSnapshotView.as_view(),
         name="board_snapshot",

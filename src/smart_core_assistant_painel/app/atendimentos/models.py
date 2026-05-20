@@ -1095,6 +1095,61 @@ class Mensagem(models.Model):
         ),
     )
 
+    # ------------------------------------------------------------------ #
+    # Campos de Reply / Mensagem Citada (Phase 4)
+    # ------------------------------------------------------------------ #
+    mensagem_citada: "models.ForeignKey[Optional[Mensagem]]" = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="respostas",
+        help_text=(
+            "Mensagem original citada (reply). Preenchida via contextInfo.stanzaId "
+            "do webhook quando a mensagem original está no banco local."
+        ),
+    )
+    quoted_preview: models.JSONField[dict[str, Any] | None] = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Preview serializado do bloco citado quando mensagem_citada não pôde "
+            "ser resolvida (ex.: stanzaId de msg mais antiga não armazenada). "
+            "Formato: {remetente, conteudo_preview, tipo, stanza_id}."
+        ),
+    )
+
+    # ------------------------------------------------------------------ #
+    # Campos de Read Receipts (Phase 2)
+    # ------------------------------------------------------------------ #
+    status_envio: models.CharField[str] = models.CharField(
+        max_length=15,
+        choices=[
+            ("pending", "Pendente"),
+            ("sent", "Enviada (✓)"),
+            ("delivered", "Entregue (✓✓)"),
+            ("read", "Lida (✓✓ azul)"),
+            ("failed", "Falhou"),
+        ],
+        default="pending",
+        db_index=True,
+        help_text=(
+            "Status de entrega/leitura da mensagem enviada pelo bot/atendente. "
+            "Atualizado via evento MESSAGE_UPDATE do webhook Evolution. "
+            "Não se aplica a mensagens inbound (do contato)."
+        ),
+    )
+    data_entregue: models.DateTimeField[datetime | None] = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora em que o WhatsApp confirmou entrega ao dispositivo do contato.",
+    )
+    data_lida: models.DateTimeField[datetime | None] = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Data/hora em que o contato visualizou a mensagem no WhatsApp.",
+    )
+
     class Meta:
         verbose_name = "Mensagem"
         verbose_name_plural = "Mensagens"
@@ -1616,6 +1671,66 @@ def inicializar_atendimento_por_contato(
         raise
 
 
+def _resolver_mensagem_citada(mensagem: "Mensagem", metadados: dict[str, Any]) -> None:
+    """Tenta resolver o FK ``mensagem_citada`` a partir de ``contextInfo``.
+
+    O Evolution (v2 e Go) inclui ``contextInfo`` nos metadados quando a
+    mensagem é um reply.  Chaves suportadas:
+
+    * ``contextInfo.stanzaId``  — ID WhatsApp da mensagem citada
+    * ``context_info.stanzaId`` — variante snake_case (Evolution Go)
+
+    Se o stanzaId for encontrado no banco → seta FK.
+    Se não encontrado → seta ``quoted_preview`` com preview mínimo de
+    ``contextInfo.quotedMessage`` para não perder a referência.
+
+    Args:
+        mensagem: Instância de ``Mensagem`` recém-criada (salva).
+        metadados: Dict de metadados já associado à mensagem.
+    """
+    ctx: dict[str, Any] = (
+        metadados.get("contextInfo")
+        or metadados.get("context_info")
+        or {}
+    )
+    if not ctx:
+        return
+
+    stanza_id: str = str(ctx.get("stanzaId") or ctx.get("stanza_id") or "").strip()
+    if not stanza_id:
+        return
+
+    # Tenta resolver FK local
+    original = Mensagem.objects.filter(message_id_whatsapp=stanza_id).first()
+    if original:
+        mensagem.mensagem_citada = original
+        mensagem.save(update_fields=["mensagem_citada"])
+        return
+
+    # Fallback: armazena preview do bloco citado
+    quoted_msg: dict[str, Any] = ctx.get("quotedMessage") or {}
+    conteudo_preview = ""
+    tipo_preview = "extendedTextMessage"
+    for key, val in quoted_msg.items():
+        if key in ("conversation", "extendedTextMessage"):
+            raw = val if isinstance(val, str) else (val or {}).get("text", "")
+            conteudo_preview = (str(raw) or "")[:200]
+            tipo_preview = key
+            break
+        elif key.endswith("Message"):
+            tipo_preview = key
+            conteudo_preview = "[mídia]"
+            break
+
+    mensagem.quoted_preview = {
+        "stanza_id": stanza_id,
+        "tipo": tipo_preview,
+        "conteudo_preview": conteudo_preview,
+        "remetente": "contato" if not ctx.get("participant") else "contato",
+    }
+    mensagem.save(update_fields=["quoted_preview"])
+
+
 def processar_mensagem_por_contato(
     contato_id: int,
     conteudo: str,
@@ -1679,6 +1794,10 @@ def processar_mensagem_por_contato(
             message_id_whatsapp=message_id,
             metadados=metadados or {},
         )
+
+        # Resolve mensagem citada (reply) a partir de contextInfo no metadados.
+        # Evolution Go popula contextInfo.stanzaId com o ID da msg original.
+        _resolver_mensagem_citada(mensagem, metadados or {})
 
         # Atualiza timestamp para SLA/ordenação
         atendimento.touch_last_message()

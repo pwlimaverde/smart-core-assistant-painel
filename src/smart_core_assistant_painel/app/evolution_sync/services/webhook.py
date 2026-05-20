@@ -56,6 +56,32 @@ class WebhookProcessor:
         Returns:
             Dict[str, Any]: Resultado do processamento.
         """
+        # Despacha eventos especiais antes de processar mensagens inbound
+        if envelopes:
+            first = envelopes[0]
+            event_raw = first.event or ""
+            # MESSAGE_UPDATE → atualiza status_envio das mensagens
+            if event_raw == "MESSAGE_UPDATE":
+                try:
+                    self._handle_message_update(payload)
+                except Exception as exc:
+                    logger.error(f"Erro ao processar MESSAGE_UPDATE: {exc}")
+                return {"status": "ok", "event": "MESSAGE_UPDATE"}
+            # PRESENCE → notifica presença do contato via SSE (best-effort)
+            if event_raw == "PRESENCE":
+                try:
+                    self._handle_presence(payload)
+                except Exception as exc:
+                    logger.warning(f"Erro ao processar PRESENCE: {exc}")
+                return {"status": "ok", "event": "PRESENCE"}
+            # CONTACTS → baixa profilePictureUrl para Contato.foto_perfil
+            if event_raw == "CONTACTS":
+                try:
+                    self._handle_contacts(payload)
+                except Exception as exc:
+                    logger.warning(f"Erro ao processar CONTACTS: {exc}")
+                return {"status": "ok", "event": "CONTACTS"}
+
         valid_envelopes = []
 
         for e in envelopes:
@@ -575,3 +601,264 @@ class WebhookProcessor:
                 from_me=True,
                 api_key=envelope.apikey,
             )
+
+    def _handle_message_update(self, payload: Dict[str, Any]) -> None:
+        """Processa evento MESSAGE_UPDATE do Evolution Go para atualizar status_envio.
+
+        O Evolution Go emite este evento quando o WhatsApp confirma entrega
+        (✓✓) ou leitura (✓✓ azul) de uma mensagem enviada.
+
+        Payload esperado (Evolution Go)::
+
+            {
+                "event": "MESSAGE_UPDATE",
+                "instance": "atendimento",
+                "data": {
+                    "key": {"id": "MSGID...", "fromMe": true, "remoteJid": "..."},
+                    "update": {"status": "DELIVERY_ACK" | "READ"}
+                }
+            }
+
+        Status Evolution Go → status_envio do modelo:
+        - ``SERVER_ACK``   → ``"sent"``
+        - ``DELIVERY_ACK`` → ``"delivered"``
+        - ``READ``         → ``"read"``
+
+        Args:
+            payload: Payload bruto do webhook.
+        """
+
+
+        data = payload.get("data", {})
+        if isinstance(data, list):
+            # batch: processa cada item
+            for item in data:
+                if isinstance(item, dict):
+                    self._process_single_message_update(item)
+            return
+
+        if isinstance(data, dict):
+            self._process_single_message_update(data)
+
+    def _process_single_message_update(self, data: Dict[str, Any]) -> None:
+        """Processa um único item de MESSAGE_UPDATE.
+
+        Args:
+            data: Um dict dentro de ``payload["data"]``.
+        """
+        from django.utils import timezone
+
+        from smart_core_assistant_painel.app.atendimentos.models import (
+            Mensagem,
+        )
+
+        key = data.get("key", {})
+        update = data.get("update", {})
+        message_id = key.get("id", "")
+        status_raw = update.get("status", "")
+
+        if not message_id or not status_raw:
+            return
+
+        # Mapeamento Evolution Go status → choices do modelo
+        _STATUS_MAP: dict[str, str] = {
+            "SERVER_ACK": "sent",
+            "DELIVERY_ACK": "delivered",
+            "READ": "read",
+            "PLAYED": "read",  # áudios ouvidos
+        }
+        novo_status = _STATUS_MAP.get(status_raw.upper(), "")
+        if not novo_status:
+            logger.debug(f"MESSAGE_UPDATE: status desconhecido {status_raw!r}")
+            return
+
+        # Busca a Mensagem pelo message_id_whatsapp
+        mensagem = Mensagem.objects.filter(
+            message_id_whatsapp=message_id
+        ).first()
+
+        if not mensagem:
+            logger.debug(
+                f"MESSAGE_UPDATE: mensagem {message_id!r} não encontrada no banco"
+            )
+            return
+
+        update_fields: list[str] = ["status_envio"]
+        mensagem.status_envio = novo_status
+
+        now = timezone.now()
+        if novo_status == "delivered" and not mensagem.data_entregue:
+            mensagem.data_entregue = now
+            update_fields.append("data_entregue")
+        elif novo_status == "read" and not mensagem.data_lida:
+            mensagem.data_lida = now
+            update_fields.append("data_lida")
+            if not mensagem.data_entregue:
+                mensagem.data_entregue = now
+                update_fields.append("data_entregue")
+
+        mensagem.save(update_fields=list(set(update_fields)))
+        logger.info(
+            f"MESSAGE_UPDATE: msg_id={message_id} → status_envio={novo_status}"
+        )
+
+    def _handle_presence(self, payload: Dict[str, Any]) -> None:
+        """Processa evento PRESENCE do Evolution Go e publica SSE ``presence.update``.
+
+        Payload Evolution Go::
+
+            {
+                "event": "PRESENCE",
+                "instance": "atendimento",
+                "data": {
+                    "id": "5511999999999@s.whatsapp.net",
+                    "presences": {
+                        "5511999999999@s.whatsapp.net": {
+                            "lastKnownPresence": "composing" | "recording" | "available" | "paused"
+                        }
+                    }
+                }
+            }
+
+        O JID do contato é usado para localizar o ``Atendimento`` ativo
+        e publicar SSE ``presence.update`` com o estado.
+        """
+        from smart_core_assistant_painel.app.atendimento_unificado.services.realtime_publisher import (
+            publish_event,
+        )
+        from smart_core_assistant_painel.app.evolution_sync.models import (
+            EvolutionContact,
+        )
+
+        data = payload.get("data", {}) or {}
+        presences: dict = data.get("presences", {}) or {}
+
+        for jid, presence_info in presences.items():
+            state = str(
+                (presence_info or {}).get("lastKnownPresence", "available")
+            ).lower()
+
+            # Busca contato pelo JID
+            evo_contact = (
+                EvolutionContact.objects.select_related("contact")
+                .filter(jid=jid, active=True)
+                .first()
+            )
+            if not evo_contact or not evo_contact.contact_id:
+                continue
+
+            # Busca atendimento ativo do contato
+            from smart_core_assistant_painel.app.atendimentos.models import (
+                Atendimento,
+                StatusAtendimento,
+            )
+            atend = (
+                Atendimento.objects.filter(
+                    contato_id=evo_contact.contact_id,
+                )
+                .exclude(
+                    status__in=[
+                        StatusAtendimento.RESOLVIDO,
+                        StatusAtendimento.CANCELADO,
+                    ]
+                )
+                .order_by("-data_inicio")
+                .first()
+            )
+            if not atend:
+                continue
+
+            publish_event(
+                "presence.update",
+                {
+                    "atendimento_id": atend.id,
+                    "jid": jid,
+                    "state": state,
+                },
+            )
+            logger.debug(
+                f"PRESENCE: atendimento={atend.id}, jid={jid!r}, state={state!r}"
+            )
+
+    def _handle_contacts(self, payload: Dict[str, Any]) -> None:
+        """Processa evento CONTACTS (Go) / CONTACTS_UPDATE (v2) e sincroniza avatar.
+
+        Para cada contato vindo no payload, localiza o ``Contato`` pelo
+        telefone (extraído do ``id``/``remoteJid``) e baixa a imagem de
+        ``profilePictureUrl`` para ``Contato.foto_perfil`` quando a URL
+        for diferente da última sincronizada (``foto_perfil_url_origem``).
+
+        Formatos suportados:
+            - Evolution Go: ``payload["data"]`` é dict único ou lista de dicts
+              ``{id, profilePictureUrl, pushName?, name?}``.
+            - Evolution v2: ``payload["data"]`` é lista de dicts com
+              ``{remoteJid, profilePicUrl, pushName?}``.
+        """
+        import re
+        from urllib.parse import urlparse
+
+        import requests
+        from django.core.files.base import ContentFile
+
+        data_obj: Any = payload.get("data")
+        if isinstance(data_obj, dict):
+            contacts_raw: List[Dict[str, Any]] = [data_obj]
+        elif isinstance(data_obj, list):
+            contacts_raw = [c for c in data_obj if isinstance(c, dict)]
+        else:
+            return
+
+        for contact_data in contacts_raw:
+            jid = str(
+                contact_data.get("id")
+                or contact_data.get("remoteJid")
+                or ""
+            )
+            profile_url = str(
+                contact_data.get("profilePictureUrl")
+                or contact_data.get("profilePicUrl")
+                or ""
+            ).strip()
+            if not jid or not profile_url:
+                continue
+
+            telefone = re.sub(r"\D", "", jid.split("@")[0])
+            if not telefone:
+                continue
+
+            contato = Contato.objects.filter(telefone=telefone).first()
+            if not contato:
+                continue
+
+            if contato.foto_perfil_url_origem == profile_url and contato.foto_perfil:
+                continue
+
+            try:
+                resp = requests.get(profile_url, timeout=15)
+                if not resp.ok or not resp.content:
+                    logger.debug(
+                        f"CONTACTS: download avatar falhou jid={jid!r} "
+                        f"status={resp.status_code}"
+                    )
+                    continue
+
+                ext = (urlparse(profile_url).path.rsplit(".", 1)[-1] or "jpg").lower()
+                if ext not in {"jpg", "jpeg", "png", "webp"}:
+                    ext = "jpg"
+                filename = f"{telefone}.{ext}"
+
+                contato.foto_perfil.save(
+                    filename, ContentFile(resp.content), save=False
+                )
+                contato.foto_perfil_url_origem = profile_url
+                contato.save(
+                    update_fields=["foto_perfil", "foto_perfil_url_origem"]
+                )
+                logger.info(
+                    f"CONTACTS: avatar atualizado contato_id={contato.pk} "
+                    f"telefone={telefone}"
+                )
+            except requests.RequestException as exc:
+                logger.warning(
+                    f"CONTACTS: erro baixando avatar jid={jid!r}: {exc}"
+                )

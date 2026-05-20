@@ -6,7 +6,7 @@ from smart_core_assistant_painel.app.evolution_sync.signals import (
 
 
 @patch(
-    "smart_core_assistant_painel.app.evolution_sync.signals.EvolutionWhatsAppService"
+    "smart_core_assistant_painel.app.evolution_sync.signals.EvolutionGoAdapter"
 )
 @patch(
     "smart_core_assistant_painel.app.evolution_sync.signals.EvolutionContact.objects"
@@ -39,8 +39,8 @@ def test_on_message_saved_success(
     _on_message_saved(sender=None, instance=mock_message, created=True)
 
     # Verify Service Call
-    mock_service_instance.send_message.assert_called_once()
-    args, kwargs = mock_service_instance.send_message.call_args
+    mock_service_instance.send_text.assert_called_once()
+    args, kwargs = mock_service_instance.send_text.call_args
     assert kwargs["instance"] == "inst-1"
     assert kwargs["number"] == "5511999999999"
     assert kwargs["text"] == "Hello"

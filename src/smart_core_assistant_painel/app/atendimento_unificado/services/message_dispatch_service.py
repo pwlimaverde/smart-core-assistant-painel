@@ -31,6 +31,7 @@ def send_text_message(
     atendimento_id: int,
     texto: str,
     atendente: Optional[Atendente] = None,
+    quoted_message_id: Optional[int] = None,
 ) -> Mensagem:
     """Cria mensagem de saída para envio via Evolution.
 
@@ -41,6 +42,7 @@ def send_text_message(
         atendimento_id: ID do `Atendimento` alvo.
         texto: Conteúdo a enviar (não pode ser vazio).
         atendente: Atendente autor da mensagem (opcional).
+        quoted_message_id: ID (PK) de ``Mensagem`` a citar (reply).
 
     Returns:
         Mensagem persistida (será marcada `respondida=True` após
@@ -55,6 +57,19 @@ def send_text_message(
 
         metadados = _build_metadados(atend, atendente)
 
+        # Resolve mensagem citada — inclui o message_id_whatsapp nos metadados
+        # para que o signal de envio passe o `quoted` para o Evolution Go.
+        mensagem_citada: Optional[Mensagem] = None
+        if quoted_message_id:
+            mensagem_citada = (
+                Mensagem.objects.filter(
+                    id=quoted_message_id,
+                    atendimento_id=atendimento_id,
+                ).first()
+            )
+            if mensagem_citada and mensagem_citada.message_id_whatsapp:
+                metadados["quoted_whatsapp_id"] = mensagem_citada.message_id_whatsapp
+
         mensagem = Mensagem.objects.create(
             atendimento=atend,
             tipo=TipoMensagem.TEXTO_FORMATADO,
@@ -63,6 +78,7 @@ def send_text_message(
             resposta_bot=texto,
             metadados=metadados,
             respondida=False,
+            mensagem_citada=mensagem_citada,
         )
 
         # Atendente humano enviando msg → bot fica passivo

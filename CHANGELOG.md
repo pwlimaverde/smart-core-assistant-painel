@@ -1,3 +1,29 @@
+## 1.2.0 - 2026-05-20
+
+### Changed
+- **`evolution_sync` agora é exclusivo do Evolution Go**: removida toda a camada
+  de coexistência v2/Go. O cliente Django fala apenas com o Evolution Go, sem
+  feature flag nem código morto. Removidos `EvolutionV2Adapter`, o Protocol
+  `EvolutionAPIInterface`, a factory `get_evolution_adapter`, o alias
+  `EvolutionWhatsAppService`, o management command `migrate_to_evolution_go` e o
+  campo `EvolutionInstance.api_version` (migration 0008). `EvolutionGoAdapter`
+  passa a ser o serviço único, instanciado diretamente.
+- **`views_instances` corrigido para a API do Go**: `get_status` (com token da
+  instância) no lugar de `connectionState`; webhook reconfigurado via
+  `/instance/connect` (não há `/webhook/set` no Go); logout usa o token da
+  instância; parsing do `create_instance` tolerante ao formato do Go.
+
+### Added
+- **Avatar real do contato** (chat Phase 3.6/3.7): novo `Contato.foto_perfil`
+  (+`foto_perfil_url_origem` como cache-key). O webhook trata o evento
+  `CONTACTS`/`CONTACTS_UPDATE` e baixa `profilePictureUrl` para o `FileField`.
+  Cards do Kanban, header do chat e mini-bar renderizam a foto com fallback de
+  iniciais.
+
+### Fixed
+- **Migrations pendentes pós Phase 1/4** geradas (`Mensagem.quoted_preview`,
+  `EvolutionInstance.api_key`/`media_storage_backend`).
+
 ## 1.1.1 - 2026-05-17
 
 ### Fixed

@@ -1,7 +1,38 @@
-{% comment %}Partial usado dentro de <template x-for="m in messages">. Recebe `m`.
+{% comment %}Partial usado dentro de <template x-for="m in enrichedMessages">. Recebe `m`
+enriquecido com _showDateSep, _dateLabel, _stacked, _isFirstUnread.
 Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% endcomment %}
+
+{# ============ SEPARADOR DE DATA ============ #}
+<template x-if="m._showDateSep">
+    <div class="ws-chat__day-sep" aria-hidden="true">
+        <span class="ws-chat__day-sep__label" x-text="m._dateLabel"></span>
+    </div>
+</template>
+
+{# ============ DIVISOR "NOVAS MENSAGENS" ============ #}
+<template x-if="m._isFirstUnread">
+    <div class="ws-chat__new-sep" aria-label="Novas mensagens">
+        <span>novas mensagens</span>
+    </div>
+</template>
+
 <div x-data="{ showAnalise: false }"
-    :class="m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out'">
+    :class="(m.remetente === 'contato' ? 'ws-bub ws-bub--in' : 'ws-bub ws-bub--out') + (m._stacked ? ' ws-bub--stacked' : '')"
+    @dblclick="setReplyTo(m)">
+
+    {# ============ BLOCO CITADO (REPLY) ============ #}
+    <template x-if="m.quoted">
+        <div class="ws-bub__quoted"
+            :class="m.remetente === 'contato' ? 'ws-bub__quoted--in' : 'ws-bub__quoted--out'">
+            <div class="ws-bub__quoted-bar"></div>
+            <div class="ws-bub__quoted-body">
+                <span class="ws-bub__quoted-who"
+                    x-text="m.quoted.remetente === 'contato' ? 'Contato' : 'Atendente'"></span>
+                <span class="ws-bub__quoted-txt"
+                    x-text="m.quoted.conteudo_preview || '[mídia]'"></span>
+            </div>
+        </div>
+    </template>
 
     {# ============ IMAGEM ============ #}
     <template x-if="m.media && m.media.kind === 'image' && m.media.src">
@@ -122,8 +153,14 @@ Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% en
         <span x-text="m.timestamp ? new Date(m.timestamp).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'}) : ''"></span>
         <template x-if="m.remetente !== 'contato'">
             <span class="ws-bub__check"
-                :class="m.respondida ? 'ws-bub__check--read' : ''"
-                x-text="m.respondida ? '✓✓' : '✓'"></span>
+                :class="{
+                    'ws-bub__check--pending':   m.status_envio === 'pending',
+                    'ws-bub__check--sent':      m.status_envio === 'sent',
+                    'ws-bub__check--delivered': m.status_envio === 'delivered',
+                    'ws-bub__check--read':      m.status_envio === 'read' || m.respondida,
+                    'ws-bub__check--failed':    m.status_envio === 'failed',
+                }"
+                x-text="statusEnvioIcon(m.status_envio, m.respondida)"></span>
         </template>
     </div>
 </div>

@@ -273,12 +273,14 @@ class ConversationSendView(View):
         texto = (body.get("texto") or "").strip()
         if not texto:
             return _err("Texto vazio.", "validation", 400)
+        quoted_message_id = _get_int(body.get("quoted_message_id"))
         atendente = _resolve_atendente(request)
         try:
             msg = send_text_message(
                 atendimento_id=int(atendimento_id),
                 texto=texto,
                 atendente=atendente,
+                quoted_message_id=quoted_message_id,
             )
         except ValueError as exc:
             return _err(str(exc), "validation", 400)
@@ -321,6 +323,92 @@ class ConversationMarkReadView(View):
                 "ultima_leitura_at": obj.ultima_leitura_at.isoformat(),
             }
         )
+
+
+@method_decorator(csrf_protect, name="dispatch")
+class ConversationPresenceView(View):
+    """E.5.1 — Envia indicador de presença (digitando/gravando) ao contato.
+
+    Best-effort: falhas não retornam erro HTTP — apenas logam warning.
+    Apenas Evolution Go suporta presence; v2 é no-op silencioso.
+    """
+
+    _VALID_STATES = {"composing", "recording", "paused", "available"}
+
+    @_require_workspace
+    def post(self, request: HttpRequest, atendimento_id: int) -> HttpResponse:
+        if not _can_access_atendimento(request, int(atendimento_id)):
+            return _err("Sem permissão para este fluxo.", "forbidden_flow", 403)
+        body = _load_body(request)
+        state = (body.get("state") or "composing").strip().lower()
+        if state not in self._VALID_STATES:
+            state = "composing"
+        is_audio = bool(body.get("is_audio", False))
+
+        try:
+            _dispatch_presence(int(atendimento_id), state, is_audio)
+        except Exception as exc:
+            logger.warning("presence dispatch falhou (best-effort): {}", exc)
+
+        return JsonResponse({"ok": True, "state": state})
+
+
+def _dispatch_presence(atendimento_id: int, state: str, is_audio: bool = False) -> None:
+    """Despacha set_presence ao Evolution Go para o atendimento (best-effort)."""
+    from smart_core_assistant_painel.app.atendimentos.models import Atendimento
+    from smart_core_assistant_painel.app.evolution_sync.models import (
+        EvolutionContact,
+    )
+    from smart_core_assistant_painel.app.evolution_sync.services import (
+        EvolutionGoAdapter,
+    )
+    from smart_core_assistant_painel.app.tenants.models import TenantEvolution
+
+    atend = (
+        Atendimento.objects.select_related("contato")
+        .filter(id=atendimento_id)
+        .first()
+    )
+    if not atend or not atend.contato:
+        return
+
+    evo_contact = (
+        EvolutionContact.objects.select_related("instance")
+        .filter(contact_id=atend.contato_id, active=True)
+        .order_by("-updated_at")
+        .first()
+    )
+    if not evo_contact or not evo_contact.instance:
+        return
+
+    inst = evo_contact.instance
+    tenant_id = getattr(inst, "tenant_id", None)
+    base_url = ""
+    if tenant_id:
+        from smart_core_assistant_painel.app.tenants.models import (
+            TenantEvolution,
+        )
+        cfg = TenantEvolution.objects.filter(tenant_id=tenant_id).first()
+        if cfg and cfg.server_url:
+            base_url = str(cfg.server_url).rstrip("/")
+    if not base_url:
+        return
+
+    jid = evo_contact.jid or ""
+    if not jid and atend.contato.telefone:
+        jid = f"{atend.contato.telefone}@s.whatsapp.net"
+    if not jid:
+        return
+
+    adapter = EvolutionGoAdapter()
+    adapter.set_presence(
+        instance=str(inst.name or ""),
+        api_key=str(inst.api_key or ""),
+        base_url=base_url,
+        number=jid,
+        state=state,
+        is_audio=is_audio,
+    )
 
 
 class BoardSnapshotView(View):

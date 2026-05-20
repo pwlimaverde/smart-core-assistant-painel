@@ -1,5 +1,89 @@
+"""[EVO-SCHEMA-001] Schemas de domínio para o Evolution Sync.
+
+Contém dataclasses e enums para normalização dos payloads de webhook,
+suportando tanto Evolution v2 (dot.case lowercase) quanto Evolution Go
+(UPPERCASE).
+"""
+
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional
+
+
+class EvolutionEventName(str, Enum):
+    """[EVO-SCHEMA-002] Nomes canônicos de eventos da Evolution API.
+
+    Suporta Evolution Go (UPPERCASE) e Evolution v2 (dot.case lowercase)
+    via ``from_raw()``. Internamente tudo usa o formato Go (UPPERCASE).
+    """
+
+    MESSAGE = "MESSAGE"
+    MESSAGE_UPDATE = "MESSAGE_UPDATE"
+    MESSAGE_DELETE = "MESSAGE_DELETE"
+    SEND_MESSAGE = "SEND_MESSAGE"
+    PRESENCE = "PRESENCE"
+    CONNECTION = "CONNECTION"
+    QRCODE = "QRCODE"
+    CONTACTS = "CONTACTS"
+    GROUP = "GROUP"
+    CALL = "CALL"
+
+    @classmethod
+    def from_raw(cls, raw: str) -> "EvolutionEventName | None":
+        """Converte nome de evento bruto (v2 ou Go) para o enum canônico.
+
+        Aceita ambos os formatos sem configuração adicional:
+        - Evolution Go (UPPERCASE): ``"MESSAGE"``, ``"MESSAGE_UPDATE"``
+        - Evolution v2 (dot.case): ``"messages.upsert"``, ``"messages.update"``
+
+        Args:
+            raw: Nome do evento recebido no payload do webhook.
+
+        Returns:
+            ``EvolutionEventName`` correspondente, ou ``None`` se desconhecido.
+
+        Example::
+
+            EvolutionEventName.from_raw("messages.upsert")  # → MESSAGE
+            EvolutionEventName.from_raw("MESSAGE_UPDATE")   # → MESSAGE_UPDATE
+        """
+        # 1. Tenta match direto (Evolution Go — UPPERCASE)
+        if raw in cls._value2member_map_:
+            return cls._value2member_map_[raw]
+
+        # 2. Normaliza e tenta aliases v2 → Go
+        # "messages.upsert" → "MESSAGES_UPSERT" → alias → MESSAGE
+        normalized = raw.upper().replace(".", "_")
+        # Remove plural "S" para alinhar com aliases
+        normalized_singular = normalized.rstrip("S")
+
+        _ALIASES: dict[str, "EvolutionEventName"] = {
+            # messages.upsert / MESSAGES_UPSERT → MESSAGE
+            "MESSAGES_UPSERT": cls.MESSAGE,
+            "MESSAGE_UPSERT": cls.MESSAGE,
+            # messages.update / MESSAGES_UPDATE → MESSAGE_UPDATE
+            "MESSAGES_UPDATE": cls.MESSAGE_UPDATE,
+            # messages.delete / MESSAGES_DELETE → MESSAGE_DELETE
+            "MESSAGES_DELETE": cls.MESSAGE_DELETE,
+            # send.message / SEND_MESSAGE
+            "SEND_MESSAGE": cls.SEND_MESSAGE,
+            # presence.update / PRESENCE_UPDATE → PRESENCE
+            "PRESENCE_UPDATE": cls.PRESENCE,
+            # connection.update / CONNECTION_UPDATE → CONNECTION
+            "CONNECTION_UPDATE": cls.CONNECTION,
+            # qrcode.updated / QRCODE_UPDATED → QRCODE
+            "QRCODE_UPDATED": cls.QRCODE,
+            # contacts.update / CONTACTS_UPDATE → CONTACTS
+            "CONTACTS_UPDATE": cls.CONTACTS,
+            # groups.upsert → GROUP
+            "GROUPS_UPSERT": cls.GROUP,
+            "GROUP_UPSERT": cls.GROUP,
+        }
+
+        return (
+            _ALIASES.get(normalized)
+            or _ALIASES.get(normalized_singular)
+        )
 
 
 @dataclass
@@ -341,15 +425,35 @@ class EvolutionWebhookEnvelope:
         key: Dict[str, Any] = data.get("key", {})
         from_me: bool = key.get("fromMe", False)
 
-        # Criar os sub-objetos usando seus próprios factory methods
+        # Normaliza nome do evento: aceita v2 (dot.case) e Go (UPPERCASE)
+        raw_event: str = payload.get("event", "")
+        parsed_event = EvolutionEventName.from_raw(raw_event)
+        event_value: str = parsed_event.value if parsed_event else raw_event
+
         # Criar os sub-objetos usando seus próprios factory methods
         contact_data = EvolutionContactData.from_dict(data)
         message_data = EvolutionMessageData.from_dict(data, key)
         profile_data = EvolutionProfileData.from_dict(data)
 
+        # Evolution Go: messageTimestamp pode vir como string
+        # Normalizar para int no metadata se necessário
+        msg_timestamp = data.get("messageTimestamp")
+        if isinstance(msg_timestamp, str):
+            try:
+                data = {**data, "messageTimestamp": int(msg_timestamp)}
+            except (ValueError, TypeError):
+                pass
+
+        # Evolution Go: mediaUrl pode vir em data.message.mediaUrl
+        # Injeta no metadata para uso downstream (attendance_orchestrator)
+        message_obj: Dict[str, Any] = data.get("message", {})
+        media_url: str = message_obj.get("mediaUrl", "")
+        if media_url and message_data.metadata is not None:
+            message_data.metadata["media_url"] = media_url
+
         return cls(
             source="EvolutionAPI",
-            event=payload.get("event"),
+            event=event_value,
             instance=payload.get("instance"),
             instance_id=data.get("instanceId"),
             sender_jid=payload.get("sender"),

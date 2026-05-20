@@ -184,9 +184,16 @@ def render_card(
 
     contato = getattr(atendimento, "contato", None)
     canal = ""
+    contato_avatar_url = ""
     if contato is not None:
         ctx = getattr(atendimento, "contexto_conversa", None) or {}
         canal = ctx.get("canal", "") if isinstance(ctx, dict) else ""
+        foto = getattr(contato, "foto_perfil", None)
+        try:
+            if foto and getattr(foto, "name", ""):
+                contato_avatar_url = foto.url
+        except Exception:
+            contato_avatar_url = ""
 
     atendente = getattr(atendimento, "atendente_humano", None)
     tempo_na_etapa = _get_tempo_na_etapa_seconds(atendimento)
@@ -222,6 +229,7 @@ def render_card(
             else None
         ),
         "canal_emoji": get_canal_emoji(canal),
+        "contato_avatar_url": contato_avatar_url,
         "tags": list(getattr(atendimento, "tags", []) or []),
         "campos_custom_card": [],
         "tempo_na_etapa_segundos": tempo_na_etapa,

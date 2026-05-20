@@ -333,7 +333,14 @@
   flex-shrink: 0;
   position: relative;
   background: var(--ws-accent);
+  overflow: hidden;
 }
+.ws-card__av--img { background: var(--ws-bg-muted, #e5e7eb); }
+.ws-card__av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ws-chat__av--img { background: var(--ws-bg-muted, #e5e7eb); overflow: hidden; }
+.ws-chat__av img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.ws-mini__av--img { background: rgba(255, 255, 255, 0.20); overflow: hidden; }
+.ws-mini__av img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
 .ws-card__id { flex: 1; min-width: 0; }
 .ws-card__name {
   font-size: 12.5px; font-weight: 600;
@@ -561,8 +568,68 @@
   font-size: 10px;
   color: var(--ws-fg-muted);
 }
-.ws-bub__check { color: var(--ws-fg-subtle); }
-.ws-bub__check--read { color: #34b7f1; }
+.ws-bub__check             { color: var(--ws-fg-subtle); font-size: 11px; }
+/* pending: ● quase invisível — aguardando entrega ao servidor */
+.ws-bub__check--pending    { color: var(--ws-fg-subtle); opacity: .45; }
+/* sent: ✓ cinza claro — servidor recebeu */
+.ws-bub__check--sent       { color: var(--ws-fg-subtle); }
+/* delivered: ✓✓ cinza — entregue ao dispositivo */
+.ws-bub__check--delivered  { color: var(--ws-fg-muted); }
+/* read: ✓✓ azul WhatsApp — mensagem lida */
+.ws-bub__check--read       { color: #34b7f1; }
+/* failed: ✗ vermelho — falha no envio */
+.ws-bub__check--failed     { color: #e53935; }
+/* Separador de data — "Hoje / Ontem / DD/MM/AAAA" */
+.ws-chat__day-sep {
+  display: flex; align-items: center; justify-content: center;
+  margin: 10px 0 6px;
+  gap: 8px;
+}
+.ws-chat__day-sep::before,
+.ws-chat__day-sep::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--ws-border);
+}
+.ws-chat__day-sep__label {
+  font-size: 11px; font-weight: 500;
+  color: var(--ws-fg-muted);
+  background: var(--ws-bg-panel);
+  padding: 2px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--ws-border);
+}
+
+/* Divisor "novas mensagens" */
+.ws-chat__new-sep {
+  display: flex; align-items: center; gap: 8px;
+  margin: 10px 0 6px;
+  font-size: 11px; color: #1a73e8;
+}
+.ws-chat__new-sep::before,
+.ws-chat__new-sep::after {
+  content: ''; flex: 1; height: 1px; background: #1a73e8; opacity: .35;
+}
+.ws-chat__new-sep span { white-space: nowrap; font-weight: 500; }
+
+/* Bolha agrupada: mesmo remetente → reduz gap superior */
+.ws-bub--stacked { margin-top: 2px !important; }
+
+/* Botão flutuante scroll-to-bottom */
+.ws-chat__scroll-btn {
+  position: absolute; bottom: 12px; right: 12px;
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--ws-border);
+  background: var(--ws-bg-panel);
+  box-shadow: 0 2px 8px rgba(0,0,0,.18);
+  color: var(--ws-fg);
+  cursor: pointer;
+  z-index: 10;
+  transition: opacity .15s, transform .15s;
+}
+.ws-chat__scroll-btn:hover { background: var(--ws-bg-hover); transform: translateY(-2px); }
+
 .ws-bub--in  { align-self: flex-start; border-top-left-radius: 2px; }
 .ws-bub--out {
   align-self: flex-end;
@@ -677,6 +744,53 @@
 /* ==========================================================================
    6. COMPOSER
    ==========================================================================*/
+
+/* ── Bloco citado dentro do balão ── */
+.ws-bub__quoted {
+  display: flex; gap: 6px;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+  background: rgba(0,0,0,.06);
+  max-width: 100%;
+  overflow: hidden;
+}
+.ws-bub__quoted--out  { background: rgba(0,0,0,.09); }
+[data-theme="dark"] .ws-bub__quoted { background: rgba(255,255,255,.08); }
+.ws-bub__quoted-bar {
+  flex-shrink: 0; width: 3px; border-radius: 2px;
+  background: var(--ws-accent);
+}
+.ws-bub__quoted-body  { display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+.ws-bub__quoted-who   { font-weight: 600; color: var(--ws-accent); font-size: 11px; }
+.ws-bub__quoted-txt   { color: var(--ws-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Banner de reply no composer ── */
+.ws-composer__reply {
+  display: flex; align-items: stretch; gap: 0;
+  border-bottom: 1px solid var(--ws-border);
+  padding: 5px 8px 5px 0;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.ws-composer__reply-bar {
+  flex-shrink: 0; width: 3px; border-radius: 2px;
+  background: var(--ws-accent);
+  margin-right: 8px;
+}
+.ws-composer__reply-body { flex: 1; display: flex; flex-direction: column; gap: 1px; overflow: hidden; }
+.ws-composer__reply-who  { font-weight: 600; color: var(--ws-accent); font-size: 11px; }
+.ws-composer__reply-txt  { color: var(--ws-fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ws-composer__reply-close {
+  flex-shrink: 0; padding: 4px; border-radius: 50%;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--ws-fg-muted);
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--ws-dur-base);
+}
+.ws-composer__reply-close:hover { background: var(--ws-chip); }
+
 .ws-composer {
   background: var(--ws-chat-foot);
   border-top: 1px solid var(--ws-border);
@@ -730,6 +844,42 @@
 .ws-composer__send:disabled { background: var(--ws-fg-subtle); cursor: not-allowed; transform: none; }
 .ws-composer__send--mic { background: var(--ws-accent); }
 .ws-composer__send--mic:hover { background: var(--ws-accent-hover); }
+
+/* Indicador de presença do contato (digitando/gravando) no cabeçalho */
+.ws-chat__presence {
+  font-size: 11px; color: var(--ws-accent);
+  font-style: italic; animation: ws-presence-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes ws-presence-pulse { from { opacity: .6; } to { opacity: 1; } }
+
+/* Barra de gravação de voz no composer */
+.ws-composer__recording {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 4px;
+  font-size: 13px;
+}
+.ws-composer__rec-cancel {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: transparent; border: 1px solid var(--ws-border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: var(--ws-fg-muted);
+  transition: background var(--ws-dur-base);
+}
+.ws-composer__rec-cancel:hover { background: #fee2e2; color: #b91c1c; border-color: #b91c1c; }
+.ws-composer__rec-dot {
+  color: #e53935; animation: ws-rec-blink .8s step-end infinite;
+  font-size: 10px;
+}
+@keyframes ws-rec-blink { 50% { opacity: 0; } }
+.ws-composer__rec-timer { font-variant-numeric: tabular-nums; color: var(--ws-fg); }
+.ws-composer__rec-send {
+  margin-left: auto;
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--ws-success); color: #fff; border: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background var(--ws-dur-base);
+}
+.ws-composer__rec-send:hover { background: #15803d; }
 
 /* ==========================================================================
    7. MINI-BAR FLUTUANTE (modo Kanban)

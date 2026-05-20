@@ -11,7 +11,17 @@ Adiciona `ws-card` para o styling do design system novo.{% endcomment %}
     {# Linha 1: avatar + nome do contato + tempo #}
     <div class="ws-card__row1">
         <div class="ws-card__av"
-            x-text="(card.contato_nome || '?').slice(0, 2).toUpperCase()"></div>
+            :class="card.contato_avatar_url ? 'ws-card__av ws-card__av--img' : 'ws-card__av'">
+            <template x-if="card.contato_avatar_url">
+                <img :src="card.contato_avatar_url"
+                    :alt="card.contato_nome || ''"
+                    loading="lazy"
+                    @error="card.contato_avatar_url = ''">
+            </template>
+            <template x-if="!card.contato_avatar_url">
+                <span x-text="(card.contato_nome || '?').slice(0, 2).toUpperCase()"></span>
+            </template>
+        </div>
         <div class="ws-card__id">
             <div class="ws-card__name" x-text="card.contato_nome"></div>
             <div class="ws-card__phone" x-show="card.canal_emoji || card.status">

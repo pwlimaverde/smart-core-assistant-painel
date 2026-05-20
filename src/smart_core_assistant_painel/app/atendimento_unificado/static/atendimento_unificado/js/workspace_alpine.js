@@ -172,6 +172,34 @@
             notaSaving: false,
             _unreadDebounce: null,
 
+            // ─────────────────────────────────────────────────────────
+            // UX: scroll-to-bottom button + estado de novas mensagens
+            // ─────────────────────────────────────────────────────────
+            showScrollBtn: false,          // botão flutuante "↓"
+            _firstUnreadId: null,          // id da primeira msg não lida ao abrir
+            _scrollBtnThreshold: 120,      // px da borda inferior para mostrar botão
+
+            // ─────────────────────────────────────────────────────────
+            // Reply / Mensagem Citada
+            // ─────────────────────────────────────────────────────────
+            replyTo: null,                 // {id, remetente, conteudo, resposta_bot}
+
+            // ─────────────────────────────────────────────────────────
+            // Presence bidirecional
+            // ─────────────────────────────────────────────────────────
+            contactPresence: null,         // 'composing' | 'recording' | null
+            _presenceTimer: null,          // setTimeout para limpar presença
+            _presenceSendTimer: null,      // debounce para enviar presence outbound
+
+            // ─────────────────────────────────────────────────────────
+            // Voice Recording
+            // ─────────────────────────────────────────────────────────
+            isRecording: false,            // true enquanto grava
+            _mediaRecorder: null,          // instância MediaRecorder
+            _audioChunks: [],              // chunks de áudio gravados
+            recordingSeconds: 0,           // contador de segundos
+            _recordingTimer: null,         // setInterval do contador
+
             init: async function () {
                 try {
                     await this.loadFluxos();
@@ -273,6 +301,25 @@
                     documentMessage: 'Documento',
                 };
                 return map[tipo] || 'Mídia';
+            },
+
+            // Ícone de status de entrega da mensagem (read receipts).
+            // Mapeia status_envio → símbolo Unicode exibido no rodapé do balão.
+            // pending  → ● (cinza claro — aguardando servidor)
+            // sent     → ✓  (cinza — entregue ao servidor)
+            // delivered→ ✓✓ (cinza — entregue ao dispositivo)
+            // read     → ✓✓ (azul — lida)
+            // failed   → ✗  (vermelho — falhou)
+            // fallback → usa m.respondida para retrocompat
+            statusEnvioIcon: function (status, respondida) {
+                switch (status) {
+                    case 'pending':   return '●';
+                    case 'sent':      return '✓';
+                    case 'delivered': return '✓✓';
+                    case 'read':      return '✓✓';
+                    case 'failed':    return '✗';
+                    default:          return respondida ? '✓✓' : '✓';
+                }
             },
 
             // Formata segundos em mm:ss (para duração de áudio/vídeo)
@@ -472,6 +519,7 @@
                             conv = {
                                 atendimento_id: id,
                                 contato_nome: card.contato_nome || card.titulo || 'Contato',
+                                contato_avatar_url: card.contato_avatar_url || '',
                                 assunto: card.assunto || '',
                                 telefone: '',
                                 etapa_nome: '',
@@ -481,12 +529,17 @@
                     }
                 }
                 this.activeConv = conv || { atendimento_id: id };
+                // Captura quantas mensagens não lidas existem antes de marcar
+                // como lidas — usada para exibir o divisor "N novas mensagens".
+                const naoLidos = (conv && conv.nao_lidos) || 0;
                 // Limpa estado anterior das seções do info drawer para evitar
                 // mostrar dados de outra conversa enquanto carrega.
                 this.etiquetasAplicadas = [];
                 this.notas = [];
                 this.medias = [];
                 this.timeline = [];
+                this._firstUnreadId = null;
+                this.showScrollBtn = false;
                 return Promise.all([
                     this.loadMessages(id),
                     this.loadDetail(id),
@@ -496,6 +549,11 @@
                     this.loadMedias(id),
                     this.loadTimeline(id),
                 ]).then(() => {
+                    // Marca a primeira mensagem não lida para exibir o divisor.
+                    if (naoLidos > 0 && this.messages.length >= naoLidos) {
+                        const firstUnread = this.messages[this.messages.length - naoLidos];
+                        this._firstUnreadId = firstUnread ? firstUnread.id : null;
+                    }
                     this.$nextTick(() => this.scrollMessagesBottom());
                 });
             },
@@ -541,11 +599,18 @@
                 this.sending = true;
                 const id = this.activeConv.atendimento_id;
                 const url = buildConvUrl(this.endpoints.conversationsBase, id, 'send');
+                const body = { texto: texto };
+                // Inclui quoted_message_id quando há reply selecionado
+                if (this.replyTo && this.replyTo.id) {
+                    body.quoted_message_id = this.replyTo.id;
+                }
+                const pendingReply = this.replyTo;
                 return jsonFetch(url, {
                     method: 'POST',
-                    body: JSON.stringify({ texto: texto }),
+                    body: JSON.stringify(body),
                 }).then((msg) => {
                     this.composer = '';
+                    this.replyTo = null;
                     this.messages.push({
                         id: msg.id,
                         atendimento_id: msg.atendimento_id,
@@ -555,6 +620,12 @@
                         remetente: 'atendente_humano',
                         timestamp: msg.timestamp,
                         respondida: false,
+                        status_envio: 'pending',
+                        quoted: pendingReply ? {
+                            id: pendingReply.id,
+                            remetente: pendingReply.remetente,
+                            conteudo_preview: (pendingReply.conteudo || pendingReply.resposta_bot || '').slice(0, 200),
+                        } : null,
                     });
                     this.$nextTick(() => this.scrollMessagesBottom());
                 }).catch((exc) => {
@@ -569,6 +640,223 @@
                 const refs = this.$refs || {};
                 const el = refs.messagesContainer;
                 if (el) el.scrollTop = el.scrollHeight;
+                this.showScrollBtn = false;
+            },
+
+            // Seleciona uma mensagem para responder (reply).
+            // Chamado por duplo-clique no balão via @dblclick="setReplyTo(m)".
+            setReplyTo: function (msg) {
+                this.replyTo = msg ? {
+                    id: msg.id,
+                    remetente: msg.remetente,
+                    conteudo: msg.conteudo || '',
+                    resposta_bot: msg.resposta_bot || '',
+                } : null;
+                // Foca o composer automaticamente
+                this.$nextTick(() => {
+                    const el = this.$el && this.$el.querySelector
+                        ? this.$el.querySelector('.ws-composer__input')
+                        : null;
+                    if (el) el.focus();
+                });
+            },
+
+            clearReplyTo: function () { this.replyTo = null; },
+
+            // ─────────────────────────────────────────────────────────
+            // Presence outbound (atendente → contato)
+            // Chamado pelo evento @input do textarea com debounce de 1.5s.
+            // Envia "composing" imediatamente e "paused" após silêncio.
+            // ─────────────────────────────────────────────────────────
+            onComposerInput: function () {
+                if (!this.activeConv) return;
+                // Debounce: cancela envio anterior e agenda novo
+                if (this._presenceSendTimer) clearTimeout(this._presenceSendTimer);
+                this._presenceSendTimer = setTimeout(() => {
+                    this._sendPresence('composing');
+                    // Após 8s sem digitar → paused
+                    if (this._presenceSendTimer) clearTimeout(this._presenceSendTimer);
+                    this._presenceSendTimer = setTimeout(() => {
+                        this._sendPresence('paused');
+                    }, 8000);
+                }, 300);
+            },
+
+            _sendPresence: function (state, isAudio) {
+                if (!this.activeConv) return;
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'presence');
+                jsonFetch(url, {
+                    method: 'POST',
+                    body: JSON.stringify({ state: state, is_audio: !!isAudio }),
+                }).catch(function () { /* best-effort — ignora erros */ });
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Presence inbound (contato → atendente) via SSE
+            // Chamado por handleSSE('presence.update', data).
+            // ─────────────────────────────────────────────────────────
+            handlePresenceUpdate: function (data) {
+                if (!this.activeConv) return;
+                if (data.atendimento_id !== this.activeConv.atendimento_id) return;
+                const state = data.state || 'available';
+                this.contactPresence = (state === 'composing' || state === 'recording')
+                    ? state : null;
+                // Auto-limpa após 8s (contato parou de digitar sem mandar PRESENCE paused)
+                if (this._presenceTimer) clearTimeout(this._presenceTimer);
+                if (this.contactPresence) {
+                    this._presenceTimer = setTimeout(() => {
+                        this.contactPresence = null;
+                    }, 8000);
+                }
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Voice Recording
+            // ─────────────────────────────────────────────────────────
+            startRecording: async function () {
+                if (this.isRecording || !this.activeConv) return;
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const mime = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
+                        ? 'audio/ogg;codecs=opus'
+                        : 'audio/webm;codecs=opus';
+                    this._mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
+                    this._audioChunks = [];
+                    this._mediaRecorder.ondataavailable = (ev) => {
+                        if (ev.data && ev.data.size > 0) this._audioChunks.push(ev.data);
+                    };
+                    this._mediaRecorder.onstop = () => {
+                        stream.getTracks().forEach((t) => t.stop());
+                        this._uploadAudioBlob(mime);
+                    };
+                    this._mediaRecorder.start(250); // chunks a cada 250ms
+                    this.isRecording = true;
+                    this.recordingSeconds = 0;
+                    this._recordingTimer = setInterval(() => { this.recordingSeconds++; }, 1000);
+                    // Sinaliza "gravando" ao contato
+                    this._sendPresence('recording', true);
+                } catch (err) {
+                    alert('Não foi possível acessar o microfone: ' + (err.message || err));
+                }
+            },
+
+            stopRecording: function () {
+                if (!this.isRecording || !this._mediaRecorder) return;
+                this._mediaRecorder.stop();
+                this.isRecording = false;
+                clearInterval(this._recordingTimer);
+                this.recordingSeconds = 0;
+                this._sendPresence('paused');
+            },
+
+            cancelRecording: function () {
+                if (!this._mediaRecorder) return;
+                // Remove o handler de onstop para não fazer upload
+                this._mediaRecorder.onstop = null;
+                try { this._mediaRecorder.stop(); } catch (_) {}
+                this.isRecording = false;
+                clearInterval(this._recordingTimer);
+                this.recordingSeconds = 0;
+                this._audioChunks = [];
+                this._sendPresence('paused');
+            },
+
+            _uploadAudioBlob: function (mime) {
+                if (!this._audioChunks.length || !this.activeConv) return;
+                const ext = mime.includes('ogg') ? 'ogg' : 'webm';
+                const blob = new Blob(this._audioChunks, { type: mime });
+                this._audioChunks = [];
+                const id = this.activeConv.atendimento_id;
+                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'upload');
+                const fd = new FormData();
+                fd.append('file', blob, `audio_${Date.now()}.${ext}`);
+                this.uploading = true;
+                fetch(url, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
+                    body: fd,
+                }).then(function (r) {
+                    return r.json();
+                }).then(() => {
+                    return this.loadMessages(id);
+                }).then(() => {
+                    this.$nextTick(() => this.scrollMessagesBottom());
+                }).catch(function (err) {
+                    console.error('Falha ao enviar áudio', err);
+                    alert('Falha ao enviar áudio gravado.');
+                }).finally(() => {
+                    this.uploading = false;
+                });
+            },
+
+            // Atualiza visibilidade do botão scroll-to-bottom.
+            onChatScroll: function () {
+                const el = (this.$refs || {}).messagesContainer;
+                if (!el) return;
+                const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+                this.showScrollBtn = distFromBottom > this._scrollBtnThreshold;
+            },
+
+            // Computa lista enriquecida de mensagens para o template.
+            // Injeta metadados extras em cada item (sem objetos sentinela
+            // separados) para que chat_message.html continue usando `m`:
+            //   _showDateSep : boolean — mostra separador de data antes deste balão
+            //   _dateLabel   : string  — "Hoje", "Ontem" ou "DD/MM/AAAA"
+            //   _stacked     : boolean — mesmo remetente que anterior (< 5 min)
+            //   _isFirstUnread: boolean — primeira mensagem não lida (banner "N novas")
+            get enrichedMessages() {
+                const msgs = this.messages || [];
+                const firstUnreadId = this._firstUnreadId;
+                const now = new Date();
+                const todayStr  = now.toDateString();
+                const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+                const yestStr   = yesterday.toDateString();
+
+                const result = [];
+                let prevDateStr = null;
+                let prevRemetente = null;
+                let prevTs = null;
+
+                for (let i = 0; i < msgs.length; i++) {
+                    const m = msgs[i];
+                    const ts = m.timestamp ? new Date(m.timestamp) : null;
+                    const dateStr = ts ? ts.toDateString() : null;
+
+                    // Separador de data
+                    const showDateSep = !!dateStr && dateStr !== prevDateStr;
+                    let dateLabel = '';
+                    if (showDateSep) {
+                        if (dateStr === todayStr)      dateLabel = 'Hoje';
+                        else if (dateStr === yestStr)  dateLabel = 'Ontem';
+                        else if (ts) {
+                            const d = ts.getDate().toString().padStart(2, '0');
+                            const mo = (ts.getMonth() + 1).toString().padStart(2, '0');
+                            const yr = ts.getFullYear();
+                            dateLabel = d + '/' + mo + '/' + yr;
+                        }
+                    }
+
+                    // Agrupamento: mesmo remetente + dentro de 5 min
+                    const MIN5 = 5 * 60 * 1000;
+                    const stacked = !showDateSep
+                        && prevRemetente === m.remetente
+                        && !!ts && !!prevTs
+                        && (ts - prevTs) < MIN5;
+
+                    result.push(Object.assign({}, m, {
+                        _showDateSep: showDateSep,
+                        _dateLabel: dateLabel,
+                        _stacked: stacked,
+                        _isFirstUnread: firstUnreadId != null && m.id === firstUnreadId,
+                    }));
+
+                    prevDateStr = dateStr;
+                    prevRemetente = m.remetente;
+                    prevTs = ts;
+                }
+                return result;
             },
 
             connectSSE: function () {
@@ -601,6 +889,7 @@
                 this.sse.addEventListener('atendimento.created', handle('atendimento.created'));
                 this.sse.addEventListener('atendimento.updated', handle('atendimento.updated'));
                 this.sse.addEventListener('custom_field.updated', handle('custom_field.updated'));
+                this.sse.addEventListener('presence.update', handle('presence.update'));
             },
 
             _scheduleSSEReconnect: function () {
@@ -648,6 +937,9 @@
                             this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadDetail(data.atendimento_id);
                         }
+                        break;
+                    case 'presence.update':
+                        this.handlePresenceUpdate(data);
                         break;
                 }
             },

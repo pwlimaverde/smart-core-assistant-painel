@@ -10,6 +10,14 @@
       "approval_status": "approved",
       "approved_at": "2026-05-20T11:31:55.704Z",
       "approved_by": "solo-dev"
+    },
+    {
+      "slug": "refatoracao-modular-atendimento",
+      "path": "plans/refatoracao-modular-atendimento.md",
+      "title": "Refatoração Modular do Atendimento Unificado",
+      "summary": "Separação em 3 apps (chat, kanban, shell) e 1 módulo de design system",
+      "linkedAt": "2026-05-20T14:35:51.862Z",
+      "status": "active"
     }
   ],
   "completed": [],

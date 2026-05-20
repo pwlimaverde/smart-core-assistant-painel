@@ -4,6 +4,21 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+007 - 2026-05-20 (build manual, sem tag)
+
+### Changed
+- **Correções conforme o spec oficial do Evolution GO** (swagger `EvolutionAPI/
+  evolution-go`):
+  - `connect_instance`: volta a usar o campo **`subscribe`** (array de nomes
+    UPPERCASE válidos `MESSAGE,CONNECTION,PRESENCE,QRCODE`) + `immediate:true`.
+    O `events` do +004 era hack; o que zerava a assinatura antes eram nomes
+    PascalCase inválidos.
+  - **`alwaysOnline=true`** agora é o mecanismo primário de persistência da
+    sessão (novo `set_advanced_settings`, chamado na criação da instância via
+    `PUT /instance/{id}/advanced-settings`). O keep-alive vira fallback.
+  - **Envio de mídia** (`send_media`/`send_audio`): campos corretos
+    `{number, type, url, caption, filename}` (eram `mediatype`/`media`/`fileName`).
+
 ## 1.2.2+006 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

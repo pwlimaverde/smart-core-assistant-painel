@@ -259,6 +259,24 @@ class InstanceCreateView(LoginRequiredMixin, View):
             connection_state="close",
         )
 
+        # Mantém a sessão sempre online (mecanismo documentado do Evolution GO),
+        # evitando que o websocket caia por ociosidade e pare os webhooks.
+        if instance_id:
+            try:
+                service.set_advanced_settings(
+                    base_url=evo_config.server_url,
+                    api_key=str(token),
+                    instance_id=str(instance_id),
+                    always_online=True,
+                    read_messages=True,
+                )
+            except Exception as e:
+                logger.warning(
+                    "Não foi possível ativar alwaysOnline para '%s': %s",
+                    instance_name,
+                    e,
+                )
+
         from smart_core_assistant_painel.app.operacional.models import (
             AppInstance,
             Atendente,

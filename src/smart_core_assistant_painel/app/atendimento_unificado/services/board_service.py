@@ -231,8 +231,8 @@ def _dispatch_evolution_markread(atendimento_id: int) -> None:
     from smart_core_assistant_painel.app.evolution_sync.models import (
         EvolutionContact,
     )
-    from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-        get_evolution_adapter,
+    from smart_core_assistant_painel.app.evolution_sync.services import (
+        EvolutionGoAdapter,
     )
     from smart_core_assistant_painel.app.tenants.models import TenantEvolution
 
@@ -255,9 +255,6 @@ def _dispatch_evolution_markread(atendimento_id: int) -> None:
         return
 
     inst = evo_contact.instance
-    if not getattr(inst, "api_version", "v2") == "go":
-        return  # markread só disponível em Go
-
     base_url = ""
     tenant_id = getattr(inst, "tenant_id", None)
     if tenant_id:
@@ -290,7 +287,7 @@ def _dispatch_evolution_markread(atendimento_id: int) -> None:
     if not jid:
         return
 
-    adapter = get_evolution_adapter("go")
+    adapter = EvolutionGoAdapter()
     adapter.mark_read(
         instance=inst.name,
         api_key=str(inst.api_key),

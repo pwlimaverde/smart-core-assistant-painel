@@ -9,8 +9,8 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
 )
-from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-    get_evolution_adapter,
+from smart_core_assistant_painel.app.evolution_sync.services import (
+    EvolutionGoAdapter,
 )
 from smart_core_assistant_painel.app.tenants.middleware import (
     get_current_tenant,
@@ -211,8 +211,7 @@ def _on_message_saved(
             f"para {number}"
         )
 
-        # Seleciona adapter correto via api_version da instância
-        adapter = get_evolution_adapter(getattr(inst, "api_version", "v2"))
+        adapter = EvolutionGoAdapter()
 
         # Quoted (reply): constrói o payload de citação para o Evolution Go.
         # v2 ignora silenciosamente o parâmetro quoted.

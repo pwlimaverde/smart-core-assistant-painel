@@ -4,13 +4,6 @@ from typing import Any
 from django.db import models
 
 
-class APIVersion(models.TextChoices):
-    """[INT-EVO-VER-001] Versão da Evolution API usada pela instância."""
-
-    V2 = "v2", "Evolution API v2 (Baileys)"
-    GO = "go", "Evolution Go"
-
-
 class MediaStorageBackend(models.TextChoices):
     """[INT-EVO-VER-002] Backend de storage de mídia configurado no servidor Evolution Go."""
 
@@ -36,16 +29,12 @@ class EvolutionInstance(models.Model):
         connection_state: Estado da conexão WhatsApp (open, close, unknown).
         last_state_check: Data/hora da última verificação de estado.
         created_at: Data e hora de criação do registro.
-        api_version: Versão da Evolution API (``v2`` ou ``go``).
-            Feature flag que seleciona o adapter correto via
-            ``get_evolution_adapter(instance.api_version)``.
         media_storage_backend: Indica se o servidor Evolution Go tem S3/MinIO
             configurado. Quando ``s3``, o payload do webhook já traz
             ``data.message.mediaUrl`` e não é necessário chamar
-            ``downloadmedia`` ou ``getBase64FromMediaMessage``.
+            ``downloadmedia``.
         subscribed_events: Lista de eventos assinados no ``/instance/connect``
-            do Evolution Go. Vazia em instâncias v2 (events configurados
-            via ``/webhook/set``).
+            do Evolution Go.
         last_connection_state: Último estado de conexão recebido via webhook
             evento ``CONNECTION`` (atualizado pelo webhook; evita polling).
     """
@@ -85,17 +74,8 @@ class EvolutionInstance(models.Model):
     )
 
     # ------------------------------------------------------------------ #
-    # Campos novos: suporte ao Evolution Go (Phase 1)
+    # Campos de configuração do Evolution Go
     # ------------------------------------------------------------------ #
-    api_version: models.CharField[str] = models.CharField(
-        max_length=5,
-        choices=APIVersion.choices,
-        default=APIVersion.GO,
-        help_text=(
-            "Feature flag: seleciona o adapter REST correto. "
-            "Altere para 'v2' para rollback imediato sem deploy."
-        ),
-    )
     media_storage_backend: models.CharField[str] = models.CharField(
         max_length=10,
         choices=MediaStorageBackend.choices,
@@ -130,11 +110,6 @@ class EvolutionInstance(models.Model):
 
     def __str__(self) -> str:  # type: ignore[override]
         return self.name
-
-    @property
-    def is_go(self) -> bool:
-        """Retorna True se esta instância usa o Evolution Go adapter."""
-        return self.api_version == APIVersion.GO
 
     @property
     def has_s3(self) -> bool:

@@ -334,8 +334,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         from smart_core_assistant_painel.app.evolution_sync.models import (
             EvolutionInstance,
         )
-        from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-            get_evolution_adapter,
+        from smart_core_assistant_painel.app.evolution_sync.services import (
+            EvolutionGoAdapter,
         )
         from smart_core_assistant_painel.app.tenants.models import (
             TenantEvolution,
@@ -378,7 +378,6 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        # Construir key da mensagem WhatsApp
         contato = getattr(mensagem.atendimento, "contato", None)
         phone = str(getattr(contato, "telefone", "") or "").strip()
         if not phone:
@@ -387,92 +386,49 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        message_key = {
-            "remoteJid": f"{phone}@s.whatsapp.net",
-            "fromMe": False,
-            "id": mensagem.message_id_whatsapp or "",
-        }
+        adapter = EvolutionGoAdapter()
 
-        # Campos comuns de encriptação do WhatsApp
-        crypto_fields = {
-            "url": meta.get("url", ""),
-            "mimetype": meta.get("mimetype", ""),
-            "mediaKey": meta.get("mediaKey", ""),
-            "directPath": meta.get("directPath", ""),
-            "fileSha256": meta.get("fileSha256", ""),
-            "fileEncSha256": meta.get("fileEncSha256", ""),
-        }
-        if meta.get("fileLength"):
-            crypto_fields["fileLength"] = meta["fileLength"]
-        if meta.get("mediaKeyTimestamp"):
-            crypto_fields["mediaKeyTimestamp"] = meta["mediaKeyTimestamp"]
-
-        # Campos específicos por tipo de mídia
-        if mensagem.tipo == "audioMessage":
-            crypto_fields["seconds"] = meta.get("seconds", 0)
-            crypto_fields["ptt"] = meta.get("ptt", False)
-        elif mensagem.tipo == "videoMessage":
-            crypto_fields["seconds"] = meta.get("seconds", 0)
-
-        message_content = {mensagem.tipo: crypto_fields}
-
-        # Seleciona adapter correto via api_version da instância
-        api_version = getattr(inst, "api_version", "v2")
-        adapter = get_evolution_adapter(api_version)
-
-        # Evolution Go: tenta mediaUrl do payload primeiro (sem custo de CPU)
+        # Evolution Go com S3/MinIO: o webhook já traz mediaUrl — sem custo de
+        # CPU. O caller (_convert_media_context) usa media_url dos metadados.
         media_url_remote = meta.get("media_url", "")
-        if media_url_remote and api_version == "go":
+        if media_url_remote:
             logger.info(
                 f"[MIDIA-CTX] Usando mediaUrl remota (Go S3) | "
                 f"msg_id={mensagem.id} | url={media_url_remote[:60]}..."
             )
-            # Retorna flag especial para o caller usar mediaUrl ao invés de base64
-            # O caller (_convert_media_context) deve verificar media_url nos metadados
             return ""
 
-        # Evolution Go: tenta download via endpoint dedicado (mais eficiente que getBase64)
-        if api_version == "go":
-            message_id_wa = mensagem.message_id_whatsapp or ""
-            if message_id_wa:
-                try:
-                    dl_result = adapter.download_media(
-                        base_url=base_url,
-                        api_key=str(api_key),
-                        instance=inst.name,
-                        message_id=message_id_wa,
-                        number=phone,
-                    )
-                    b64 = dl_result.get("base64", "")
-                    if b64:
-                        logger.info(
-                            f"[MIDIA-CTX] Base64 obtido via downloadmedia (Go) | "
-                            f"msg_id={mensagem.id} | len={len(b64)}"
-                        )
-                        return str(b64)
-                except Exception as dl_err:
-                    logger.warning(
-                        f"[MIDIA-CTX] downloadmedia falhou (Go), "
-                        f"tentando fallback v2: {dl_err}"
-                    )
-
-        # Fallback v2: getBase64FromMediaMessage (CPU-intensivo)
-        if not meta.get("mediaKey"):
-            logger.warning(
-                f"Mensagem {mensagem.id}: sem mediaKey nos "
-                "metadados. Evolution API não conseguirá "
-                "descriptografar a mídia."
+        # Sem mediaUrl: baixa via endpoint dedicado do Evolution Go.
+        message_id_wa = mensagem.message_id_whatsapp or ""
+        if not message_id_wa:
+            logger.debug(
+                f"Mensagem {mensagem.id}: sem message_id_whatsapp para "
+                "downloadmedia (Go)."
             )
             return ""
 
-        result = adapter.get_base64_from_media(
-            base_url=base_url,
-            api_key=str(api_key),
-            instance_name=inst.name,
-            message_key=message_key,
-            message_content=message_content,
-        )
-        return result
+        try:
+            dl_result = adapter.download_media(
+                base_url=base_url,
+                api_key=str(api_key),
+                instance=inst.name,
+                message_id=message_id_wa,
+                number=phone,
+            )
+        except Exception as dl_err:
+            logger.warning(
+                f"[MIDIA-CTX] downloadmedia falhou (Go) | "
+                f"msg_id={mensagem.id}: {dl_err}"
+            )
+            return ""
+
+        b64 = dl_result.get("base64", "")
+        if b64:
+            logger.info(
+                f"[MIDIA-CTX] Base64 obtido via downloadmedia (Go) | "
+                f"msg_id={mensagem.id} | len={len(b64)}"
+            )
+        return str(b64)
 
     def _convert_media_context(
         self,

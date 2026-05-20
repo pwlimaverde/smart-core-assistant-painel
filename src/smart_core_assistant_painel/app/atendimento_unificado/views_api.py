@@ -359,8 +359,8 @@ def _dispatch_presence(atendimento_id: int, state: str, is_audio: bool = False) 
     from smart_core_assistant_painel.app.evolution_sync.models import (
         EvolutionContact,
     )
-    from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-        get_evolution_adapter,
+    from smart_core_assistant_painel.app.evolution_sync.services import (
+        EvolutionGoAdapter,
     )
     from smart_core_assistant_painel.app.tenants.models import TenantEvolution
 
@@ -382,9 +382,6 @@ def _dispatch_presence(atendimento_id: int, state: str, is_audio: bool = False) 
         return
 
     inst = evo_contact.instance
-    if getattr(inst, "api_version", "v2") != "go":
-        return  # presence apenas em Go
-
     tenant_id = getattr(inst, "tenant_id", None)
     base_url = ""
     if tenant_id:
@@ -403,7 +400,7 @@ def _dispatch_presence(atendimento_id: int, state: str, is_audio: bool = False) 
     if not jid:
         return
 
-    adapter = get_evolution_adapter("go")
+    adapter = EvolutionGoAdapter()
     adapter.set_presence(
         instance=str(inst.name or ""),
         api_key=str(inst.api_key or ""),

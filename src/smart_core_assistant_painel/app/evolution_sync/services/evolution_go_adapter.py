@@ -1,8 +1,7 @@
 """[EVO-GO-001] Adapter para o Evolution Go.
 
-Implementação concreta que consome os endpoints REST do Evolution Go
-(container ``evoapicloud/evolution-go``). Seleccionado automaticamente quando
-``EvolutionInstance.api_version == "go"``.
+Implementação que consome os endpoints REST do Evolution Go
+(container ``evoapicloud/evolution-go``). É o único backend suportado.
 
 Diferenças-chave em relação ao v2:
 - Endpoint de envio: ``/send/text`` (não ``/message/sendText/{instance}``)
@@ -33,7 +32,7 @@ _DEFAULT_SUBSCRIBE_EVENTS: list[str] = [
 class EvolutionGoAdapter:
     """[EVO-GO-002] Adapter para Evolution Go.
 
-    Todos os callers devem obter esta instância via ``get_evolution_adapter("go")``.
+    Instanciado diretamente: ``EvolutionGoAdapter()``.
 
     Notas de autenticação:
     - **Global API Key**: usada para listar/criar/deletar instâncias
@@ -665,20 +664,6 @@ class EvolutionGoAdapter:
                 f"Erro ao baixar mídia (Go): {response.status_code} - {response.text}"
             )
         return response.json()
-
-    def get_base64_from_media(
-        self,
-        base_url: str,
-        api_key: str,
-        instance_name: str,
-        message_key: Dict[str, Any],
-        message_content: Dict[str, Any],
-    ) -> str:
-        """Não suportado em Evolution Go.
-
-        Retorna string vazia — use ``download_media`` ou ``mediaUrl`` do payload.
-        """
-        return ""
 
     # ------------------------------------------------------------------
     # Utilitários adicionais Go

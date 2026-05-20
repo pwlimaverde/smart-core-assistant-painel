@@ -21,11 +21,15 @@ phases:
 
 execution:
   history:
-    - timestamp: "2026-05-20T14:35:57.763Z"
+    - timestamp: "2026-05-20T14:40:46.736Z"
       phase: R
-      action: started
-  last_activity: "2026-05-20T14:35:57.763Z"
-  resume_context: "Fase R (Revisão) em progresso"
+      action: step_completed
+      plan: "refatoracao-modular-atendimento"
+      planPhase: "phase-1"
+      stepIndex: 1
+      stepDescription: "Step 1"
+  last_activity: "2026-05-20T14:40:46.736Z"
+  resume_context: "Concluído: Step 1"
 
 approval:
   plan_created: true

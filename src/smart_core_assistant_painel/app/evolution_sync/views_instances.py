@@ -188,11 +188,20 @@ class InstanceCreateView(LoginRequiredMixin, View):
 
         service = EvolutionGoAdapter()
 
+        # O Evolution Go exige um ``token`` no POST /instance/create
+        # (retorna 400 "token is required" se ausente). Geramos o token
+        # aqui — ele se torna o ``api_key`` da instância e é usado como
+        # header ``apikey`` nas operações de instância (qr/status/send).
+        import uuid
+
+        instance_token = uuid.uuid4().hex
+
         try:
             result = service.create_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
                 name=instance_name,
+                token=instance_token,
             )
         except Exception as e:
             error_msg = str(e)
@@ -223,7 +232,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
             result.get("token")
             or instance_data.get("token")
             or (hash_data.get("apikey") if isinstance(hash_data, dict) else hash_data)
-            or ""
+            or instance_token
         )
         instance_id = (
             instance_data.get("instanceId")

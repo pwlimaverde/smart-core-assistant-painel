@@ -1,3 +1,12 @@
+## 1.2.2 - 2026-05-20
+
+### Fixed
+- **Criação de instância falhava com `400 "token is required"`**: o servidor
+  Evolution Go exige um `token` no `POST /instance/create`. A view passava só
+  `name`. Agora o painel gera um `token` (UUID hex) e o envia — esse token vira
+  o `api_key` da instância (header `apikey` nas operações de qr/status/send),
+  com fallback caso o Go não o devolva na resposta.
+
 ## 1.2.1 - 2026-05-20
 
 ### Fixed

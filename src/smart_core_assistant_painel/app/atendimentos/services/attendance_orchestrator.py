@@ -496,19 +496,25 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        # Go retorna ``{base64: ...}`` ou aninhado em ``{data: {base64: ...}}``.
+        # Go retorna ``{message:"success", data:{base64: "<data URL>", ...}}``.
+        # O ``base64`` aqui é um DATA URL (``data:<mime>;base64,<payload>``),
+        # diferente do base64 cru que vem inline no webhook — precisa remover o
+        # prefixo antes de decodificar.
         data_obj = dl_result.get("data") if isinstance(dl_result, dict) else None
         b64 = ""
         if isinstance(data_obj, dict):
             b64 = data_obj.get("base64") or data_obj.get("Base64") or ""
         if not b64:
             b64 = dl_result.get("base64", "") or dl_result.get("Base64", "")
+        b64 = str(b64)
+        if b64.startswith("data:") and ";base64," in b64:
+            b64 = b64.split(";base64,", 1)[1]
         if b64:
             logger.info(
                 f"[MIDIA-CTX] Base64 obtido via downloadimage (Go) | "
                 f"msg_id={mensagem.id} | len={len(b64)}"
             )
-        return str(b64)
+        return b64
 
     def _convert_media_context(
         self,
@@ -659,6 +665,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         b64_data = metadados.get("base64") or ""
         if not b64_data or not isinstance(b64_data, str):
             return
+
+        # Remove prefixo de data URL (``data:<mime>;base64,``) se presente —
+        # senão o ``/`` do prefixo corromperia o decode.
+        if b64_data.startswith("data:") and ";base64," in b64_data:
+            b64_data = b64_data.split(";base64,", 1)[1]
 
         try:
             raw_bytes = _b64.b64decode(b64_data, validate=False)

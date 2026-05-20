@@ -4,6 +4,14 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+011 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Download de mídia retorna data URL, não base64 cru** (confirmado na doc do
+  Evolution Go): o `/message/downloadimage` devolve `data:<mime>;base64,<payload>`.
+  Removido o prefixo antes de decodificar (no fetch e, defensivamente, no
+  `_persist_media_file`) — sem isso o `/` do prefixo corromperia o arquivo.
+
 ## 1.2.2+010 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

@@ -379,9 +379,11 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
         webhook_url = _build_webhook_url(request, tenant)
         service = EvolutionGoAdapter()
         try:
+            # /instance/connect autentica com o token da instância
+            # (não a Global API Key — esta retorna 401 "not authorized").
             result = service.connect_instance(
                 base_url=evo_config.server_url,
-                api_key=evo_config.api_key,
+                api_key=instance.api_key,
                 name=instance.name,
                 webhook_url=webhook_url,
                 subscribe=[],
@@ -461,9 +463,11 @@ class InstanceWebhookView(LoginRequiredMixin, View):
         # (não há endpoint /webhook/set). Reconectar reconfigura o webhook
         # e a lista de eventos assinados.
         try:
+            # /instance/connect autentica com o token da instância
+            # (não a Global API Key — esta retorna 401 "not authorized").
             service.connect_instance(
                 base_url=evo_config.server_url,
-                api_key=evo_config.api_key,
+                api_key=instance.api_key,
                 name=instance.name,
                 webhook_url=webhook_url,
                 subscribe=[],

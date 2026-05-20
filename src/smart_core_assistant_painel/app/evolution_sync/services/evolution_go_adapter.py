@@ -464,7 +464,8 @@ class EvolutionGoAdapter:
 
         Args:
             base_url: URL base do servidor.
-            api_key: Global API Key.
+            api_key: Token da instância (não a Global API Key — esta retorna
+                401 "not authorized" no ``/instance/connect`` do Go).
             name: Nome da instância.
             webhook_url: URL do webhook do painel Django.
             subscribe: Lista de eventos a assinar (ex: ``["MESSAGE", "PRESENCE"]``).

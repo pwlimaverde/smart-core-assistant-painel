@@ -1,3 +1,11 @@
+## 1.2.3 - 2026-05-20
+
+### Fixed
+- **`401 "not authorized"` ao conectar instância / gerar QR**: o `/instance/connect`
+  do Evolution Go autentica com o **token da instância**, não com a Global API
+  Key. `InstanceQRCodeView` e `InstanceWebhookView` passavam `evo_config.api_key`
+  (global). Trocado para `instance.api_key` (token da instância).
+
 ## 1.2.2 - 2026-05-20
 
 ### Fixed

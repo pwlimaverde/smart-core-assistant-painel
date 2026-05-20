@@ -4,6 +4,16 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+009 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Múltiplas mídias em rajada eram mescladas numa só mensagem** (metadados
+  contaminados, só um arquivo salvo): o buffer (`process_contact_response`) fazia
+  `metadados.update()` de todos os envelopes. Agora **cada mídia vira sua própria
+  `Mensagem`** (com arquivo + análise individual) e apenas os textos rápidos são
+  concatenados. A mensagem primária (texto, ou a última mídia) dirige a resposta
+  do bot.
+
 ## 1.2.2+008 - 2026-05-20 (build manual, sem tag)
 
 ### Added

@@ -88,29 +88,91 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 )
                 return
 
-            # 2. Compila conteúdo e metadados
-            content_data = self._compile_message_content(env_list)
-
-            # 3. Determina API key
-            final_api_key = api_key or content_data.get("api_key")
-
-            # 4. Cria mensagem no sistema
-            message_id = self._create_message(
-                contact_id=contact_id,
-                content=content_data["content"],
-                message_type=content_data["message_type"],
-                message_id_whatsapp=content_data["message_id"],
-                metadados=content_data["metadados"],
-                profile_name=content_data["profile_name"],
-                api_key=final_api_key,
+            # 2. Separa mídias de texto. Cada mídia vira SUA PRÓPRIA Mensagem
+            # (com arquivo + análise individual), enquanto textos rápidos são
+            # concatenados em uma única mensagem (contexto do bot). Isso evita
+            # a contaminação de metadados quando várias mídias chegam em rajada.
+            _MEDIA_TYPES = (
+                "audioMessage",
+                "imageMessage",
+                "videoMessage",
+                "documentMessage",
             )
 
-            if not message_id:
+            def _env_type(env: dict[str, Any]) -> str:
+                return str((env.get("message") or {}).get("type") or "")
+
+            media_envs = [e for e in env_list if _env_type(e) in _MEDIA_TYPES]
+            text_envs = [e for e in env_list if _env_type(e) not in _MEDIA_TYPES]
+
+            # 3. Determina API key (do último envelope com apikey)
+            final_api_key = api_key
+            if not final_api_key:
+                for env in reversed(env_list):
+                    if env.get("apikey"):
+                        final_api_key = str(env["apikey"])
+                        break
+
+            # 4. Uma Mensagem por mídia
+            media_msg_ids: list[int] = []
+            for menv in media_envs:
+                msg = menv.get("message") or {}
+                mid = self._create_message(
+                    contact_id=contact_id,
+                    content=str(msg.get("text") or ""),
+                    message_type=str(msg.get("type") or ""),
+                    message_id_whatsapp=str(msg.get("id") or ""),
+                    metadados=(msg.get("metadata") or None),
+                    profile_name=(menv.get("profile") or {}).get("push_name"),
+                    api_key=final_api_key,
+                )
+                if mid:
+                    media_msg_ids.append(mid)
+
+            # 5. Texto concatenado (se houver) vira uma única Mensagem
+            text_msg_id: Optional[int] = None
+            if text_envs:
+                content_data = self._compile_message_content(text_envs)
+                text_msg_id = self._create_message(
+                    contact_id=contact_id,
+                    content=content_data["content"],
+                    message_type=content_data["message_type"],
+                    message_id_whatsapp=content_data["message_id"],
+                    metadados=content_data["metadados"],
+                    profile_name=content_data["profile_name"],
+                    api_key=final_api_key,
+                )
+
+            # 6. Mensagem primária (dirige análise + resposta do bot): o texto
+            # se houver, senão a última mídia recebida.
+            primary_id = text_msg_id or (
+                media_msg_ids[-1] if media_msg_ids else None
+            )
+            if not primary_id:
                 return
 
-            # 5. Processa mensagem e gera resposta
+            # 7. Converte mídia das mensagens NÃO-primárias (a primária, se for
+            # mídia, é convertida dentro de _process_message_and_respond).
+            from smart_core_assistant_painel.app.atendimentos.models import (
+                Mensagem,
+            )
+
+            for mid in media_msg_ids:
+                if mid == primary_id:
+                    continue
+                try:
+                    self._convert_media_context(
+                        Mensagem.objects.get(id=mid),
+                        api_key=final_api_key or "",
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Erro ao converter mídia da msg {mid}: {e}"
+                    )
+
+            # 8. Processa a mensagem primária e gera resposta do bot
             self._process_message_and_respond(
-                message_id=message_id,
+                message_id=primary_id,
                 contact_id=contact_id,
                 api_key=final_api_key,
                 env_list=env_list,

@@ -49,7 +49,7 @@ class EvolutionEventName(str, Enum):
         """
         # 1. Tenta match direto (Evolution Go — UPPERCASE)
         if raw in cls._value2member_map_:
-            return cls._value2member_map_[raw]
+            return cls(raw)
 
         # 2. Normaliza e tenta aliases v2 → Go
         # "messages.upsert" → "MESSAGES_UPSERT" → alias → MESSAGE
@@ -57,7 +57,20 @@ class EvolutionEventName(str, Enum):
         # Remove plural "S" para alinhar com aliases
         normalized_singular = normalized.rstrip("S")
 
+        # 2a. Match direto após normalizar (Evolution Go emite PascalCase:
+        # "Message" → "MESSAGE", "QRCode" → "QRCODE", "Presence" → "PRESENCE").
+        # Sem isto, esses eventos caíam em None e eram descartados no filtro
+        # global do webhook (mensagens inbound não eram processadas).
+        if normalized in cls._value2member_map_:
+            return cls(normalized)
+
         _ALIASES: dict[str, "EvolutionEventName"] = {
+            # Evolution Go: evento de conexão estabelecida / encerrada
+            "CONNECTED": cls.CONNECTION,
+            "DISCONNECTED": cls.CONNECTION,
+            "LOGGEDOUT": cls.CONNECTION,
+            "LOGGED_OUT": cls.CONNECTION,
+            "LOGOUT": cls.CONNECTION,
             # messages.upsert / MESSAGES_UPSERT → MESSAGE
             "MESSAGES_UPSERT": cls.MESSAGE,
             "MESSAGE_UPSERT": cls.MESSAGE,

@@ -4,6 +4,21 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+003 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Eventos do Go em PascalCase eram descartados (mensagens inbound!)**: o Go
+  emite `Message`, `QRCode`, `Connected`, `Presence`, etc. (não UPPERCASE).
+  `EvolutionEventName.from_raw()` não reverificava o value map após normalizar,
+  então `from_raw("Message")` → `None` e o filtro global do webhook ignorava as
+  mensagens recebidas. Agora reverifica o value map normalizado e mapeia
+  `Connected`/`Disconnected`/`LoggedOut` → `CONNECTION`.
+- **Sem feedback visual ao conectar o WhatsApp**: (a) novo handler `_handle_connection`
+  persiste `connection_state` na instância via evento `Connected` (fonte da
+  verdade, independente do polling); (b) o polling de status do detalhe agora
+  **retoma** quando a aba volta a ficar visível (antes morria ao trocar de aba
+  para escanear o QR); (c) banner "WhatsApp conectado com sucesso!" antes do reload.
+
 ## 1.2.2+002 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

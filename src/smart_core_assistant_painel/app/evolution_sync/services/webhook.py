@@ -81,6 +81,15 @@ class WebhookProcessor:
                 except Exception as exc:
                     logger.warning(f"Erro ao processar CONTACTS: {exc}")
                 return {"status": "ok", "event": "CONTACTS"}
+            # CONNECTION → atualiza connection_state da instância (Connected/
+            # Disconnected do Go). Fonte da verdade do estado, sem depender
+            # do polling do navegador.
+            if event_raw == "CONNECTION":
+                try:
+                    self._handle_connection(payload)
+                except Exception as exc:
+                    logger.warning(f"Erro ao processar CONNECTION: {exc}")
+                return {"status": "ok", "event": "CONNECTION"}
 
         valid_envelopes = []
 
@@ -700,6 +709,58 @@ class WebhookProcessor:
         mensagem.save(update_fields=list(set(update_fields)))
         logger.info(
             f"MESSAGE_UPDATE: msg_id={message_id} → status_envio={novo_status}"
+        )
+
+    def _handle_connection(self, payload: Dict[str, Any]) -> None:
+        """Processa evento de conexão do Evolution Go (``Connected``/``Disconnected``).
+
+        Persiste ``connection_state`` na ``EvolutionInstance`` para que a tela
+        reflita o estado real sem depender do polling do navegador (que pode
+        ter parado quando o usuário trocou de aba para escanear o QR).
+
+        Payload Evolution Go (aproximado)::
+
+            {"event": "Connected", "instance": "atendimento", "data": {...}}
+        """
+        from django.utils import timezone
+
+        from smart_core_assistant_painel.app.evolution_sync.models import (
+            EvolutionInstance,
+        )
+
+        raw_event = str(payload.get("event", ""))
+        instance_name = payload.get("instance")
+        if not instance_name:
+            return
+
+        ev = raw_event.upper().replace(".", "_")
+        is_down = any(
+            k in ev for k in ("DISCONNECT", "LOGOUT", "LOGGED_OUT", "CLOSE")
+        )
+        state = "close" if is_down else "open"
+
+        inst = EvolutionInstance.objects.filter(
+            name=instance_name, active=True
+        ).first()
+        if not inst:
+            logger.warning(
+                f"CONNECTION: instância {instance_name!r} não encontrada"
+            )
+            return
+
+        inst.connection_state = state
+        inst.last_connection_state = raw_event
+        inst.last_state_check = timezone.now()
+        inst.save(
+            update_fields=[
+                "connection_state",
+                "last_connection_state",
+                "last_state_check",
+            ]
+        )
+        logger.info(
+            f"CONNECTION: instance={instance_name!r} "
+            f"raw={raw_event!r} state={state!r}"
         )
 
     def _handle_presence(self, payload: Dict[str, Any]) -> None:

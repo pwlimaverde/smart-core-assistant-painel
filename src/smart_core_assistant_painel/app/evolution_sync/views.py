@@ -69,6 +69,31 @@ def webhook(
     except Exception:
         return JsonResponse({"detail": "invalid json"}, status=400)
 
+    # [DIAG-TEMP-MEDIA] Captura a estrutura real de payloads de MÍDIA do Go
+    # (Info.MediaType preenchido ou Message com chave de mídia) para ajustar o
+    # download/normalização. Remover após o fix de mídia.
+    try:
+        _d = payload.get("data") if isinstance(payload, dict) else None
+        if isinstance(_d, dict):
+            _info = _d.get("Info") or {}
+            _msg = _d.get("Message") or {}
+            _media_keys = {
+                "imageMessage",
+                "videoMessage",
+                "audioMessage",
+                "documentMessage",
+                "stickerMessage",
+            }
+            _is_media = bool(_info.get("MediaType")) or bool(
+                isinstance(_msg, dict) and (_media_keys & set(_msg.keys()))
+            )
+            if _is_media:
+                logger.warning(
+                    "[DIAG-TEMP-MEDIA] payload bruto: {}", str(payload)[:3000]
+                )
+    except Exception:
+        pass
+
     # 1. Filtro Global: aceita eventos MESSAGE (Go) e messages.upsert (v2)
     # Usa EvolutionEventName.from_raw() para normalizar ambos os formatos.
     # Eventos de mensagem recebida são processados; outros retornam 200 ignorado.

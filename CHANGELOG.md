@@ -4,6 +4,19 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+005 - 2026-05-20 (build manual, sem tag)
+
+### Added
+- **Keep-alive da sessão Evolution Go**: task Celery `keepalive_evolution_instances`
+  (beat a cada 60s) verifica `connected` via `/instance/all` e dispara
+  `/instance/reconnect` quando a sessão whatsmeow cai por ociosidade — evita que o
+  atendimento pare silenciosamente de receber webhooks. Registrada em
+  `CELERY_BEAT_SCHEDULE` (sincronizada pelo DatabaseScheduler).
+
+### Diagnostics (temporário)
+- Log `[DIAG-TEMP-MEDIA]` na view do webhook captura o payload bruto de mensagens
+  de mídia do Go para ajustar o normalizer/download (será removido após o fix).
+
 ## 1.2.2+004 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

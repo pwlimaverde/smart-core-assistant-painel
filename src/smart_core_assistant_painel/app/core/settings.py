@@ -578,3 +578,16 @@ CELERY_RESULT_EXTENDED = True
 
 # Beat Scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Agendamentos sincronizados para o DatabaseScheduler no startup do beat.
+CELERY_BEAT_SCHEDULE = {
+    # Keep-alive da sessão Evolution Go: o servidor whatsmeow derruba a
+    # conexão quando ociosa; reconectamos a cada 60s para não perder webhooks.
+    "evolution-go-keepalive": {
+        "task": (
+            "smart_core_assistant_painel.app.evolution_sync.tasks."
+            "keepalive_evolution_instances"
+        ),
+        "schedule": 60.0,
+    },
+}

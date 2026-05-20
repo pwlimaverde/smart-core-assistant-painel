@@ -4,6 +4,13 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+006 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Keep-alive quebrava com `FieldError`**: `TenantEvolution.api_key` é property
+  (decripta `_api_key`), não filtrável no ORM. A task agora filtra por
+  `server_url` e valida a chave no loop.
+
 ## 1.2.2+005 - 2026-05-20 (build manual, sem tag)
 
 ### Added

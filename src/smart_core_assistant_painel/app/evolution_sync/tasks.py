@@ -42,16 +42,16 @@ def keepalive_evolution_instances(self) -> str:  # type: ignore[no-untyped-def]
     checked = 0
     reconnected = 0
 
-    configs = (
-        TenantEvolution.objects.select_related("tenant")
-        .exclude(server_url="")
-        .exclude(api_key="")
+    # ``api_key`` é property (decripta ``_api_key``), não dá para filtrar no
+    # ORM — filtramos por ``server_url`` e validamos a chave no loop.
+    configs = TenantEvolution.objects.select_related("tenant").exclude(
+        server_url=""
     )
 
     for cfg in configs:
         tenant = cfg.tenant
         base = (cfg.server_url or "").rstrip("/")
-        if not base:
+        if not base or not cfg.api_key:
             continue
         try:
             set_current_tenant(tenant)

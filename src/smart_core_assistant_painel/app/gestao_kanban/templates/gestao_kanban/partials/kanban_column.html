@@ -16,7 +16,7 @@
     </header>
     <div class="ws-col__body kanban-col-body" :data-etapa-id="etapa.id">
         <template x-for="card in (board.cards[etapa.id] || [])" :key="card.atendimento_id">
-            {% include "atendimento_unificado/partials/kanban_card.html" %}
+            {% include "gestao_kanban/partials/kanban_card.html" %}
         </template>
         <div x-show="(board.cards[etapa.id] || []).length === 0" class="ws-col__empty">
             Solte cards aqui

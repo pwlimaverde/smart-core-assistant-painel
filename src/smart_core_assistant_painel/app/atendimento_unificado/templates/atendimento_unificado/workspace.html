@@ -30,15 +30,18 @@
     atendenteNome: '{{ atendente_nome|escapejs }}',
     sseEnabled: {% if sse_enabled %}true{% else %}false{% endif %},
     endpoints: {
-        fluxos: '{% url 'atendimento_unificado:atendimento_unificado_api:fluxos_list' %}',
-        conversations: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-        conversationsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-        board: '{% url 'atendimento_unificado:atendimento_unificado_api:board_snapshot' %}',
-        boardMove: '{% url 'atendimento_unificado:atendimento_unificado_api:board_move' %}',
-        boardAssign: '{% url 'atendimento_unificado:atendimento_unificado_api:board_assign' %}',
+        fluxos: '{% url 'atendimento_unificado:gestao_kanban_api:fluxos_list' %}',
+        conversations: '{% url 'atendimento_unificado:chat_evolution_api:conversations_list' %}',
+        conversationsBase: '{% url 'atendimento_unificado:chat_evolution_api:conversations_list' %}',
+        kanbanConversationsBase: '/workspace/kanban/api/conversations/',
+        board: '{% url 'atendimento_unificado:gestao_kanban_api:board_snapshot' %}',
+        boardMove: '{% url 'atendimento_unificado:gestao_kanban_api:board_move' %}',
+        boardAssign: '{% url 'atendimento_unificado:gestao_kanban_api:board_assign' %}',
         sse: '{% url 'atendimento_unificado:workspace_events' %}',
-        customFieldsBase: '{% url 'atendimento_unificado:atendimento_unificado_api:conversations_list' %}',
-        export: '{% url 'atendimento_unificado:atendimento_unificado_api:export' %}'
+        export: '{% url 'atendimento_unificado:gestao_kanban_api:export' %}',
+        etiquetas: '{% url 'atendimento_unificado:gestao_kanban_api:etiquetas_list' %}',
+        unreadCount: '{% url 'atendimento_unificado:chat_evolution_api:notifications_unread_count' %}',
+        boardTransferFluxo: '{% url 'atendimento_unificado:gestao_kanban_api:board_transfer_fluxo' %}'
     }
 })"{% endblock %}
 {% block workspace_x_init %}x-init="init()"{% endblock %}
@@ -171,7 +174,7 @@
 
     <div class="ws-cols">
         <template x-for="etapa in board.etapas" :key="etapa.id">
-            {% include "atendimento_unificado/partials/kanban_column.html" %}
+            {% include "gestao_kanban/partials/kanban_column.html" %}
         </template>
         <div x-show="board.etapas.length === 0"
             style="margin: auto; color: var(--ws-fg-subtle); font-size: 13px;">
@@ -343,8 +346,8 @@
             <div class="ws-chat__body-wrap" style="position:relative; display:flex; flex-direction:column; flex:1; min-height:0;">
                 <div class="ws-chat__body" x-ref="messagesContainer"
                     @scroll.passive="onChatScroll()">
-                    <template x-for="m in enrichedMessages" :key="m.id">
-                        {% include "atendimento_unificado/partials/chat_message.html" %}
+                    <template x-for="m in enrichedMessages()" :key="m.id">
+                        {% include "chat_evolution/partials/chat_message.html" %}
                     </template>
                     <div x-show="messages.length === 0"
                         style="text-align: center; color: var(--ws-fg-subtle); font-size: 12px; padding: 32px;">
@@ -452,11 +455,11 @@ em modo 'board'.{% endcomment %}
     x-show="detailDrawerOpen && activeConv"
     x-transition.opacity
     style="display: none;">
-    {% include "atendimento_unificado/partials/detail_panel.html" %}
+    {% include "gestao_kanban/partials/detail_panel.html" %}
 </aside>
 
 {# ==================== MINI-BAR (focus=board) ==================== #}
-{% include "atendimento_unificado/partials/chat_mini_bar.html" %}
+{% include "chat_evolution/partials/chat_mini_bar.html" %}
 
 {# ==================== LIGHTBOX DE MÍDIA ==================== #}
 <div class="ws-lightbox" x-show="mediaLightbox.open" x-cloak
@@ -500,5 +503,7 @@ em modo 'board'.{% endcomment %}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<script src="{% static_versioned 'chat_evolution/js/chat_alpine.js' %}"></script>
+<script src="{% static_versioned 'gestao_kanban/js/kanban_alpine.js' %}"></script>
 <script src="{% static_versioned 'atendimento_unificado/js/workspace_alpine.js' %}"></script>
 {% endblock %}

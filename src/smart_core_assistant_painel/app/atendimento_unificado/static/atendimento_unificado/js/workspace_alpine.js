@@ -100,7 +100,7 @@
         }
     }
 
-    window.workspaceStore = function (init) {
+    window.workspaceCoreMixin = function (init) { {
         return {
             fluxoId: init.fluxoId || null,
             fluxos: [],
@@ -806,7 +806,7 @@
             //   _dateLabel   : string  — "Hoje", "Ontem" ou "DD/MM/AAAA"
             //   _stacked     : boolean — mesmo remetente que anterior (< 5 min)
             //   _isFirstUnread: boolean — primeira mensagem não lida (banner "N novas")
-            get enrichedMessages() {
+            enrichedMessages: function() {
                 const msgs = this.messages || [];
                 const firstUnreadId = this._firstUnreadId;
                 const now = new Date();
@@ -980,7 +980,7 @@
             salvarCampo: function (campo, novoValor, onDone) {
                 if (!this.activeConv) return;
                 const id = this.activeConv.atendimento_id;
-                const safeBase = (this.endpoints.customFieldsBase || '').replace(/\/+$/, '');
+                const safeBase = (this.endpoints.kanbanConversationsBase || '').replace(/\/+$/, '');
                 const url = safeBase + '/' + id + '/custom-fields/' + campo.slug + '/';
                 this.customFieldsSaving[campo.slug] = true;
                 jsonFetch(url, {
@@ -1212,5 +1212,13 @@
             intentLabel: intentLabel,
             tipoMidiaLabel: tipoMidiaLabel,
         };
+    };
+
+    window.workspaceStore = function(init) {
+        return Object.assign({},
+            window.workspaceCoreMixin(init),
+            window.workspaceChatMixin ? window.workspaceChatMixin() : {},
+            window.workspaceKanbanMixin ? window.workspaceKanbanMixin() : {}
+        );
     };
 })();

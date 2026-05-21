@@ -1139,10 +1139,12 @@ class Mensagem(models.Model):
             "Não se aplica a mensagens inbound (do contato)."
         ),
     )
-    data_entregue: models.DateTimeField[datetime | None] = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Data/hora em que o WhatsApp confirmou entrega ao dispositivo do contato.",
+    data_entregue: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            null=True,
+            blank=True,
+            help_text="Data/hora em que o WhatsApp confirmou entrega ao dispositivo do contato.",
+        )
     )
     data_lida: models.DateTimeField[datetime | None] = models.DateTimeField(
         null=True,
@@ -1671,7 +1673,9 @@ def inicializar_atendimento_por_contato(
         raise
 
 
-def _resolver_mensagem_citada(mensagem: "Mensagem", metadados: dict[str, Any]) -> None:
+def _resolver_mensagem_citada(
+    mensagem: "Mensagem", metadados: dict[str, Any]
+) -> None:
     """Tenta resolver o FK ``mensagem_citada`` a partir de ``contextInfo``.
 
     O Evolution (v2 e Go) inclui ``contextInfo`` nos metadados quando a
@@ -1689,14 +1693,14 @@ def _resolver_mensagem_citada(mensagem: "Mensagem", metadados: dict[str, Any]) -
         metadados: Dict de metadados já associado à mensagem.
     """
     ctx: dict[str, Any] = (
-        metadados.get("contextInfo")
-        or metadados.get("context_info")
-        or {}
+        metadados.get("contextInfo") or metadados.get("context_info") or {}
     )
     if not ctx:
         return
 
-    stanza_id: str = str(ctx.get("stanzaId") or ctx.get("stanza_id") or "").strip()
+    stanza_id: str = str(
+        ctx.get("stanzaId") or ctx.get("stanza_id") or ""
+    ).strip()
     if not stanza_id:
         return
 
@@ -1809,6 +1813,23 @@ def processar_mensagem_por_contato(
         if remetente == TipoRemetente.ATENDENTE_HUMANO:
             atendimento.bot_pode_atender = False
             atendimento.save(update_fields=["bot_pode_atender"])
+
+            # Marca mensagens inbound do contato como lidas localmente
+            try:
+                Mensagem.objects.filter(
+                    atendimento=atendimento,
+                    remetente=TipoRemetente.CONTATO,
+                    lido=False,
+                ).update(lido=True)
+                logger.debug(
+                    f"Mensagens anteriores do contato para o atendimento {atendimento.id} "
+                    f"marcadas como lidas localmente no Django devido a resposta enviada do celular."
+                )
+            except Exception as read_exc:
+                logger.warning(
+                    f"Erro ao marcar mensagens anteriores como lidas localmente para o "
+                    f"atendimento {atendimento.id}: {read_exc}"
+                )
 
         return mensagem.id
     except Exception as e:

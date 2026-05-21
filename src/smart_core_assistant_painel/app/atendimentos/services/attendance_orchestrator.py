@@ -6,6 +6,7 @@ coordenar serviços e gerar respostas do bot.
 
 import base64 as _b64
 import mimetypes
+import time
 from typing import TYPE_CHECKING, Any, Optional
 
 from django.core.files.base import ContentFile
@@ -104,7 +105,9 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 return str((env.get("message") or {}).get("type") or "")
 
             media_envs = [e for e in env_list if _env_type(e) in _MEDIA_TYPES]
-            text_envs = [e for e in env_list if _env_type(e) not in _MEDIA_TYPES]
+            text_envs = [
+                e for e in env_list if _env_type(e) not in _MEDIA_TYPES
+            ]
 
             # 3. Determina API key (do último envelope com apikey)
             final_api_key = api_key
@@ -167,9 +170,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                         api_key=final_api_key or "",
                     )
                 except Exception as e:
-                    logger.error(
-                        f"Erro ao converter mídia da msg {mid}: {e}"
-                    )
+                    logger.error(f"Erro ao converter mídia da msg {mid}: {e}")
 
             # 8. Processa a mensagem primária e gera resposta do bot
             self._process_message_and_respond(
@@ -485,24 +486,42 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         }
         message_obj = {sub_key: media_obj}
 
-        try:
-            dl_result = adapter.download_media(
-                base_url=base_url,
-                api_key=str(api_key),
-                message=message_obj,
-            )
-        except Exception as dl_err:
-            logger.warning(
-                f"[MIDIA-CTX] downloadimage falhou (Go) | "
-                f"msg_id={mensagem.id}: {dl_err}"
-            )
+        # O Evolution Go (whatsmeow) às vezes retorna 403/500 transitório no
+        # download logo após o recebimento da mídia (race/throttle durante a
+        # rajada de mensagens). Confirmado em produção que o mesmo download
+        # passa a funcionar após alguns segundos. Faz retry com backoff antes
+        # de desistir. Roda em task Celery assíncrona — o sleep é aceitável.
+        _RETRY_DELAYS = (3, 8, 15)
+        dl_result: Optional[dict[str, Any]] = None
+        for attempt, delay in enumerate((0, *_RETRY_DELAYS)):
+            if delay:
+                time.sleep(delay)
+            try:
+                dl_result = adapter.download_media(
+                    base_url=base_url,
+                    api_key=str(api_key),
+                    message=message_obj,
+                )
+                break
+            except Exception as dl_err:
+                logger.warning(
+                    "[MIDIA-CTX] download de mídia falhou (Go) | "
+                    "msg_id={} | tentativa={}/{}: {}",
+                    mensagem.id,
+                    attempt + 1,
+                    len(_RETRY_DELAYS) + 1,
+                    dl_err,
+                )
+        if dl_result is None:
             return ""
 
         # Go retorna ``{message:"success", data:{base64: "<data URL>", ...}}``.
         # O ``base64`` aqui é um DATA URL (``data:<mime>;base64,<payload>``),
         # diferente do base64 cru que vem inline no webhook — precisa remover o
         # prefixo antes de decodificar.
-        data_obj = dl_result.get("data") if isinstance(dl_result, dict) else None
+        data_obj = (
+            dl_result.get("data") if isinstance(dl_result, dict) else None
+        )
         b64 = ""
         if isinstance(data_obj, dict):
             b64 = data_obj.get("base64") or data_obj.get("Base64") or ""
@@ -720,13 +739,11 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 }
                 ext = ext_by_tipo.get(mensagem.tipo or "", ".bin")
             base_name = (
-                mensagem.message_id_whatsapp
-                or f"msg_{mensagem.id or 'novo'}"
+                mensagem.message_id_whatsapp or f"msg_{mensagem.id or 'novo'}"
             )
             # Sanitiza para evitar caracteres problemáticos em filesystem
             base_name = "".join(
-                c if c.isalnum() or c in ("-", "_") else "_"
-                for c in base_name
+                c if c.isalnum() or c in ("-", "_") else "_" for c in base_name
             )[:80]
             file_name = f"{base_name}{ext}"
 

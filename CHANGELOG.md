@@ -4,6 +4,17 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+014 - 2026-05-21 (build manual, sem tag)
+
+### Fixed
+- **Imagens (e outras mídias) sem base64 inline não eram analisadas pela IA**:
+  o Evolution Go (whatsmeow) retorna 403/500 **transitório** no
+  `POST /message/downloadmedia` logo após o recebimento, durante a rajada de
+  mensagens (race/throttle). Confirmado em produção que o mesmo download passa
+  a funcionar segundos depois. Adicionado retry com backoff (3s/8s/15s) em
+  `_fetch_media_base64_from_evolution` antes de cair no placeholder — mídias
+  que antes falhavam por timing agora são baixadas, persistidas e analisadas.
+
 ## 1.2.2+013 - 2026-05-21 (build manual, sem tag)
 
 ### Fixed

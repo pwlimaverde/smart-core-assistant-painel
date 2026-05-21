@@ -101,9 +101,7 @@ class InstanceListView(LoginRequiredMixin, TemplateView):
                 Departamento,
             )
 
-            instances = list(
-                EvolutionInstance.objects.filter(active=True)
-            )
+            instances = list(EvolutionInstance.objects.filter(active=True))
 
             # Busca resposta_bot e departamento do AppInstance
             api_keys = [i.api_key for i in instances]
@@ -124,22 +122,18 @@ class InstanceListView(LoginRequiredMixin, TemplateView):
                 else:
                     inst.departamento_nome = None  # type: ignore
                     inst.departamento_id = None  # type: ignore
-                    
+
                 if app_inst and app_inst.owner:
                     inst.owner_id = app_inst.owner.id  # type: ignore
                 else:
                     inst.owner_id = None  # type: ignore
 
             context["instances"] = instances
-            context["webhook_url"] = _build_webhook_url(
-                self.request, tenant
-            )
+            context["webhook_url"] = _build_webhook_url(self.request, tenant)
 
             # Dados para o modal de criação
             context["departamentos"] = list(
-                Departamento.objects.filter(
-                    ativo=True
-                ).values("id", "nome")
+                Departamento.objects.filter(ativo=True).values("id", "nome")
             )
         return context
 
@@ -185,10 +179,11 @@ class InstanceCreateView(LoginRequiredMixin, View):
             )
 
         # Log de diagnóstico para rastreamento de problemas de API
-        api_key_preview = evo_config.api_key[:6] if evo_config.api_key else "VAZIO"
+        api_key_preview = (
+            evo_config.api_key[:6] if evo_config.api_key else "VAZIO"
+        )
         logger.info(
-            "Criando instância '%s' no servidor '%s' "
-            "(api_key: %s..., len=%d)",
+            "Criando instância '%s' no servidor '%s' (api_key: %s..., len=%d)",
             instance_name,
             evo_config.server_url,
             api_key_preview,
@@ -227,9 +222,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
                     "Configurações > Evolution.",
                     502,
                 )
-            return _json_error(
-                f"Erro na API Evolution: {error_msg}", 502
-            )
+            return _json_error(f"Erro na API Evolution: {error_msg}", 502)
 
         # O Evolution Go pode retornar o token da instância no topo
         # (``token``), dentro de ``hash`` (string ou dict ``{apikey}``) ou
@@ -240,7 +233,11 @@ class InstanceCreateView(LoginRequiredMixin, View):
         token = (
             result.get("token")
             or instance_data.get("token")
-            or (hash_data.get("apikey") if isinstance(hash_data, dict) else hash_data)
+            or (
+                hash_data.get("apikey")
+                if isinstance(hash_data, dict)
+                else hash_data
+            )
             or instance_token
         )
         instance_id = (
@@ -268,7 +265,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
                     api_key=str(token),
                     instance_id=str(instance_id),
                     always_online=True,
-                    read_messages=True,
+                    read_messages=False,
                 )
             except Exception as e:
                 logger.warning(
@@ -301,9 +298,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
 
         # Vincula owner se fornecido
         if owner_id:
-            owner = Atendente.objects.filter(
-                id=owner_id, ativo=True
-            ).first()
+            owner = Atendente.objects.filter(id=owner_id, ativo=True).first()
             if owner:
                 app_defaults["owner"] = owner
 
@@ -384,9 +379,7 @@ class InstanceDetailView(LoginRequiredMixin, TemplateView):
 
         context["instance"] = instance
         if tenant:
-            context["webhook_url"] = _build_webhook_url(
-                self.request, tenant
-            )
+            context["webhook_url"] = _build_webhook_url(self.request, tenant)
         return context
 
 
@@ -427,7 +420,9 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
 
         # O Go aninha o QR em ``data`` com chaves capitalizadas
         # (``Qrcode``/``PairingCode``). Mantém fallback para formato plano.
-        qr_data = qr_result.get("data") if isinstance(qr_result, dict) else None
+        qr_data = (
+            qr_result.get("data") if isinstance(qr_result, dict) else None
+        )
         if not isinstance(qr_data, dict):
             qr_data = qr_result if isinstance(qr_result, dict) else {}
 
@@ -652,9 +647,9 @@ class InstanceToggleBotView(LoginRequiredMixin, View):
             AppInstance,
         )
 
-        updated = AppInstance.objects.filter(
-            api_key=instance.api_key
-        ).update(resposta_bot=resposta_bot)
+        updated = AppInstance.objects.filter(api_key=instance.api_key).update(
+            resposta_bot=resposta_bot
+        )
 
         if not updated:
             return _json_error(
@@ -774,8 +769,7 @@ class DepartmentCreateView(LoginRequiredMixin, View):
 
         if not nome or len(nome) < 2:
             return _json_error(
-                "Nome do departamento deve ter pelo menos "
-                "2 caracteres."
+                "Nome do departamento deve ter pelo menos 2 caracteres."
             )
 
         from smart_core_assistant_painel.app.operacional.models import (
@@ -784,9 +778,7 @@ class DepartmentCreateView(LoginRequiredMixin, View):
 
         # Verifica duplicidade
         if Departamento.objects.filter(nome__iexact=nome).exists():
-            return _json_error(
-                f"Departamento '{nome}' já existe."
-            )
+            return _json_error(f"Departamento '{nome}' já existe.")
 
         dept = Departamento.objects.create(
             nome=nome,
@@ -830,9 +822,7 @@ class AttendantListView(LoginRequiredMixin, View):
         if dept_id:
             qs = qs.filter(departamento_id=dept_id)
 
-        attendants = list(
-            qs.values("id", "nome", "cargo")
-        )
+        attendants = list(qs.values("id", "nome", "cargo"))
         return JsonResponse({"attendants": attendants})
 
 
@@ -848,7 +838,9 @@ class InstanceUpdateView(LoginRequiredMixin, View):
             return _json_error("Sem permissão para esta ação.", 403)
 
         try:
-            instance = EvolutionInstance.objects.get(pk=pk, tenant_id=tenant.id, active=True)
+            instance = EvolutionInstance.objects.get(
+                pk=pk, tenant_id=tenant.id, active=True
+            )
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
@@ -871,13 +863,17 @@ class InstanceUpdateView(LoginRequiredMixin, View):
 
         app_inst = AppInstance.objects.filter(api_key=instance.api_key).first()
         if not app_inst:
-            return _json_error("Configuração operacional da instância não encontrada.", 404)
+            return _json_error(
+                "Configuração operacional da instância não encontrada.", 404
+            )
 
         app_inst.resposta_bot = resposta_bot
 
         # Atualiza departamento
         if departamento_id:
-            dept = Departamento.objects.filter(id=departamento_id, ativo=True).first()
+            dept = Departamento.objects.filter(
+                id=departamento_id, ativo=True
+            ).first()
             app_inst.departamento = dept if dept else None
         else:
             app_inst.departamento = None

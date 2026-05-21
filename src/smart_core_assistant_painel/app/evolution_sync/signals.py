@@ -216,10 +216,16 @@ def _on_message_saved(
         # Quoted (reply): constrói o payload de citação para o Evolution Go.
         # v2 ignora silenciosamente o parâmetro quoted.
         quoted_payload: Optional[dict] = None
-        quoted_whatsapp_id: str = str(meta.get("quoted_whatsapp_id") or "").strip()
+        quoted_whatsapp_id: str = str(
+            meta.get("quoted_whatsapp_id") or ""
+        ).strip()
         if quoted_whatsapp_id:
             # Evolution Go espera: {"key": {"id": "<stanzaId>", "remoteJid": "...", "fromMe": false}}
-            jid = evo_contact.jid if evo_contact else (f"{number}@s.whatsapp.net" if number else "")
+            jid = (
+                evo_contact.jid
+                if evo_contact
+                else (f"{number}@s.whatsapp.net" if number else "")
+            )
             quoted_payload = {
                 "key": {
                     "id": quoted_whatsapp_id,
@@ -247,6 +253,32 @@ def _on_message_saved(
                 f"Mensagem {instance.id} enviada com sucesso e marcada como "
                 f"respondida"
             )
+
+            # Marca mensagens recebidas como lidas no banco de dados local e na Evolution API
+            try:
+                from smart_core_assistant_painel.app.atendimentos.models import (
+                    TipoRemetente,
+                )
+                from smart_core_assistant_painel.app.gestao_kanban.services.board_service import (
+                    _dispatch_evolution_markread,
+                )
+
+                Mensagem.objects.filter(
+                    atendimento_id=instance.atendimento_id,
+                    remetente=TipoRemetente.CONTATO,
+                    lido=False,
+                ).update(lido=True)
+
+                _dispatch_evolution_markread(instance.atendimento_id)
+                logger.debug(
+                    f"Mensagens anteriores do atendimento {instance.atendimento_id} "
+                    f"marcadas como lidas localmente e na Evolution API."
+                )
+            except Exception as read_exc:
+                logger.warning(
+                    f"Erro ao marcar mensagens anteriores como lidas após envio "
+                    f"da resposta para atendimento {instance.atendimento_id}: {read_exc}"
+                )
 
         except Exception as e:
             logger.error(

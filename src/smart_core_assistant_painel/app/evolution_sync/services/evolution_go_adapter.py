@@ -530,7 +530,7 @@ class EvolutionGoAdapter:
         api_key: str,
         instance_id: str,
         always_online: bool = True,
-        read_messages: bool = True,
+        read_messages: bool = False,
         reject_call: bool = False,
         msg_reject_call: str = "",
         ignore_groups: bool = False,
@@ -540,8 +540,13 @@ class EvolutionGoAdapter:
 
         ``always_online=True`` é o mecanismo **documentado** para manter a sessão
         whatsmeow conectada (evita o ``connected=false`` por ociosidade), em vez
-        de depender só de reconnect periódico. ``read_messages=True`` envia os
-        recibos de leitura (ticks azuis).
+        de depender só de reconnect periódico.
+
+        ``read_messages`` default ``False``: o whatsmeow envia recibo de leitura
+        (ticks azuis) automaticamente para toda mensagem recebida quando ``True``.
+        O app exige recibo de leitura **explícito** (após resposta do bot/atendente
+        ou abertura do atendimento, via ``POST /message/markread``), então este
+        flag deve permanecer ``False``.
 
         Usa o **token da instância** como ``apikey`` (a Global Key dá 401 aqui).
 
@@ -550,7 +555,8 @@ class EvolutionGoAdapter:
             api_key: Token da instância.
             instance_id: ID (UUID) da instância no servidor Go.
             always_online: Mantém a presença/sessão sempre online.
-            read_messages: Marca mensagens recebidas como lidas.
+            read_messages: Envia recibo de leitura automático (ticks azuis) para
+                toda mensagem recebida. Manter ``False`` — recibo é explícito.
             reject_call: Rejeita chamadas automaticamente.
             msg_reject_call: Mensagem enviada ao rejeitar chamada.
             ignore_groups: Ignora mensagens de grupos.

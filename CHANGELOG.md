@@ -4,6 +4,23 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+016 - 2026-05-21 (build manual, sem tag)
+
+### Fixed
+- **Mensagem recebida marcada como "visualizada" (ticks azuis) no ato do
+  recebimento**: a instância do Evolution Go estava com `readMessages: true`,
+  fazendo o whatsmeow enviar recibo de leitura automático para toda mensagem
+  recebida — independente do app. Setting corrigido para `false` na instância
+  de produção. Recibo de leitura agora é **explícito** (após resposta do
+  bot/atendente ou abertura do atendimento via `POST /message/markread`).
+- **Frontend marcava conversa ativa como lida ao receber mensagem via SSE**:
+  removida a chamada `markRead` do handler `message.new` em `workspace_alpine.js`.
+
+### Changed
+- **`set_advanced_settings` (evolution_go_adapter)**: default de `read_messages`
+  alterado de `True` → `False` para evitar reintrodução do recibo automático em
+  chamadas futuras.
+
 ## 1.2.2+015 - 2026-05-21 (build manual, sem tag)
 
 ### Changed

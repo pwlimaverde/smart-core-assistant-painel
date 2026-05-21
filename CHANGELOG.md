@@ -4,6 +4,26 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+013 - 2026-05-21 (build manual, sem tag)
+
+### Fixed
+- **Mídia sem base64 inline (forwarded/grande) causava `InterpretMediaError`**:
+  quando o fallback `POST /message/downloadmedia` falha (CDN do WhatsApp → 403,
+  encapsulado em 500 pelo Evolution Go), a IA era chamada com `base64_len=0`.
+  Adicionado guard em `_convert_media_context`: sem base64 após fallback, registra
+  placeholder em `analise_midia` e retorna sem chamar `converter_contexto`.
+- **Logs `[MIDIA-CTX]` multiline sumiam de filtros por keyword**: texto interpretado
+  ficava em linhas sem o prefixo; separado em `logger.info` (cabeçalho) +
+  `logger.debug` (texto completo), com placeholders `{}` (padrão loguru recomendado).
+
+### Added
+- **Suporte a `stickerMessage`**: adicionado a `_MEDIA_TYPES` em
+  `attendance_orchestrator.py` e branch dedicado em `EvolutionMessageData.from_dict`
+  (`schemas.py`). Stickers chegam sem base64 inline e requerem download via
+  `/message/downloadmedia`; os campos de encriptação (`mediaKey`, `directPath`,
+  `fileSha256`, `fileEncSha256`) são extraídos para viabilizar o fallback.
+  Persistência `.webp` já existia em `_persist_media_file`.
+
 ## 1.2.2+012 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

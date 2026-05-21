@@ -97,6 +97,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 "imageMessage",
                 "videoMessage",
                 "documentMessage",
+                "stickerMessage",
             )
 
             def _env_type(env: dict[str, Any]) -> str:
@@ -321,6 +322,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 "imageMessage",
                 "videoMessage",
                 "documentMessage",
+                "stickerMessage",
             )
             if mensagem.tipo in _MEDIA_TYPES:
                 self._convert_media_context(mensagem, api_key=api_key)
@@ -595,9 +597,28 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                         f"para msg_id={mensagem.id}: {e}"
                     )
 
+            # Sem base64 disponível (inline ausente E download via Evolution
+            # falhou): não há binário para a IA interpretar. Registra placeholder
+            # e sai — evita InterpretMediaError com base64_len=0.
+            if not has_base64:
+                placeholder = (
+                    f"[{mensagem.tipo or 'mídia'} recebida"
+                    " — arquivo indisponível para análise]"
+                )
+                mensagem.analise_midia = placeholder
+                mensagem.save(update_fields=["analise_midia"])
+                logger.warning(
+                    "[MIDIA-CTX] Sem base64 após fallback de download | "
+                    "msg_id={} | tipo={} | placeholder registrado",
+                    mensagem.id,
+                    mensagem.tipo,
+                )
+                return
+
             logger.info(
-                f"[MIDIA-CTX] Chamando converter_contexto | "
-                f"msg_id={mensagem.id} | tipo={mensagem.tipo}"
+                "[MIDIA-CTX] Chamando converter_contexto | msg_id={} | tipo={}",
+                mensagem.id,
+                mensagem.tipo,
             )
 
             texto_convertido = FeaturesCompose.converter_contexto(
@@ -620,12 +641,16 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 update_fields.extend(["analise_midia", "metadados"])
 
                 logger.info(
-                    f"[MIDIA-CTX] <<< Análise IA registrada | "
-                    f"msg_id={mensagem.id} | tipo={mensagem.tipo} | "
-                    f"len_analise={len(texto_final)}\n"
-                    f"---[MIDIA-CTX] TEXTO INTERPRETADO]---\n"
-                    f"{texto_final}\n"
-                    f"---[MIDIA-CTX] FIM TEXTO INTERPRETADO]---"
+                    "[MIDIA-CTX] <<< Análise IA registrada | "
+                    "msg_id={} | tipo={} | len_analise={}",
+                    mensagem.id,
+                    mensagem.tipo,
+                    len(texto_final),
+                )
+                logger.debug(
+                    "[MIDIA-CTX] Texto interpretado | msg_id={}:\n{}",
+                    mensagem.id,
+                    texto_final,
                 )
             else:
                 # Mesmo sem análise IA, limpa base64 do metadados se o

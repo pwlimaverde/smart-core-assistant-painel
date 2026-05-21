@@ -9,6 +9,9 @@ phases:
     status: completed
     started_at: "2026-05-20T14:35:45.871Z"
     completed_at: "2026-05-20T14:35:57.753Z"
+    restructured_at: "2026-05-21T00:00:00.000Z"
+    outputs:
+      - path: ".context/plans/refatoracao-modular-atendimento.md"
   R:
     status: in_progress
     started_at: "2026-05-20T14:35:57.763Z"
@@ -28,8 +31,18 @@ execution:
       planPhase: "phase-1"
       stepIndex: 1
       stepDescription: "Step 1"
-  last_activity: "2026-05-20T14:40:46.736Z"
-  resume_context: "Concluído: Step 1"
+    - timestamp: "2026-05-21T00:00:00.000Z"
+      phase: P
+      action: plan_restructured
+      plan: "refatoracao-modular-atendimento"
+      note: "Plano reconciliado com estado real do código + docs atuais (Django 5.2, Tailwind v4, Alpine.js 3). Progress 100->60."
+    - timestamp: "2026-05-21T12:00:00.000Z"
+      phase: P
+      action: plan_restructured
+      plan: "tratamento-midia-evolution-go"
+      note: "Plano de tratamento de mídia reestruturado contra docs atuais (Django 5.2.7, loguru >=0.7.3, Evolution Go) e validado no código real. Gap crítico adicionado: branch stickerMessage em from_dict. Sem APIs depreciadas."
+  last_activity: "2026-05-21T12:00:00.000Z"
+  resume_context: "Plano reestruturado; ~60% implementado. Próximo: Fase 2.5 (mover views) e Fase 1.4 (componentes design_system). Plano paralelo pronto para implementação: .context/plans/tratamento-midia-evolution-go.md."
 
 approval:
   plan_created: true

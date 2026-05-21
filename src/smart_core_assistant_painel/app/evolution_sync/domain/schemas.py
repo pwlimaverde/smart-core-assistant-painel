@@ -246,6 +246,24 @@ class EvolutionMessageData:
                 "fileLength": msg_data.get("fileLength"),
                 "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
             }
+        elif message_type == "stickerMessage":
+            msg_data = message.get("stickerMessage", {})
+            text = "[sticker]"
+            metadata = {
+                "mimetype": msg_data.get("mimetype"),
+                "url": msg_data.get("url"),
+                # Stickers não trazem base64 inline no webhook do Evolution Go;
+                # o download via /message/downloadmedia é o caminho esperado.
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
+                "mediaKey": msg_data.get("mediaKey", ""),
+                "directPath": msg_data.get("directPath", ""),
+                "fileSha256": msg_data.get("fileSha256", ""),
+                "fileEncSha256": msg_data.get("fileEncSha256", ""),
+                "fileLength": msg_data.get("fileLength"),
+                "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
+            }
 
         return cls(
             id=key.get("id"),

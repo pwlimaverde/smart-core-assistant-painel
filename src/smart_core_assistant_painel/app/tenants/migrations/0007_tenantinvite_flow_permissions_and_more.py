@@ -4,20 +4,27 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('tenants', '0006_tenantconfig_vision_model_and_more'),
+        ("tenants", "0006_tenantconfig_vision_model_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='tenantinvite',
-            name='flow_permissions',
-            field=models.JSONField(blank=True, default=list, help_text='Lista de IDs de FluxoAtendimento liberados para o usuário no Workspace de Atendimento. IDs referenciam o banco do tenant.'),
+            model_name="tenantinvite",
+            name="flow_permissions",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Lista de IDs de FluxoAtendimento liberados para o usuário no Workspace de Atendimento. IDs referenciam o banco do tenant.",
+            ),
         ),
         migrations.AddField(
-            model_name='tenantuser',
-            name='flow_permissions',
-            field=models.JSONField(blank=True, default=list, help_text='Lista de IDs de FluxoAtendimento liberados ao usuário no Workspace. Como FluxoAtendimento mora no banco do tenant, este campo guarda IDs sem FK formal.'),
+            model_name="tenantuser",
+            name="flow_permissions",
+            field=models.JSONField(
+                blank=True,
+                default=list,
+                help_text="Lista de IDs de FluxoAtendimento liberados ao usuário no Workspace. Como FluxoAtendimento mora no banco do tenant, este campo guarda IDs sem FK formal.",
+            ),
         ),
     ]

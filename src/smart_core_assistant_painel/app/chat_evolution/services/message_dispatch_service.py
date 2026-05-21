@@ -61,14 +61,14 @@ def send_text_message(
         # para que o signal de envio passe o `quoted` para o Evolution Go.
         mensagem_citada: Optional[Mensagem] = None
         if quoted_message_id:
-            mensagem_citada = (
-                Mensagem.objects.filter(
-                    id=quoted_message_id,
-                    atendimento_id=atendimento_id,
-                ).first()
-            )
+            mensagem_citada = Mensagem.objects.filter(
+                id=quoted_message_id,
+                atendimento_id=atendimento_id,
+            ).first()
             if mensagem_citada and mensagem_citada.message_id_whatsapp:
-                metadados["quoted_whatsapp_id"] = mensagem_citada.message_id_whatsapp
+                metadados["quoted_whatsapp_id"] = (
+                    mensagem_citada.message_id_whatsapp
+                )
 
         mensagem = Mensagem.objects.create(
             atendimento=atend,

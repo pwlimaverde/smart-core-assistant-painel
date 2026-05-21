@@ -843,9 +843,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
                 request.POST.get("chat_history", "[]") or "[]"
             )
             if isinstance(parsed_history, list):
-                chat_history_in = cast(
-                    list[dict[str, Any]], parsed_history
-                )
+                chat_history_in = cast(list[dict[str, Any]], parsed_history)
         except (json.JSONDecodeError, TypeError):
             pass
         try:
@@ -883,9 +881,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
             mensagem = body.get("mensagem", "").strip()
             parsed_history_b: Any = body.get("chat_history", []) or []
             if isinstance(parsed_history_b, list):
-                chat_history_in = cast(
-                    list[dict[str, Any]], parsed_history_b
-                )
+                chat_history_in = cast(list[dict[str, Any]], parsed_history_b)
             parsed_state_b: Any = body.get("context_state", {}) or {}
             if isinstance(parsed_state_b, dict):
                 context_state_in = cast(dict[str, Any], parsed_state_b)

@@ -74,9 +74,7 @@ urlpatterns = [
     # Workspace de Atendimento Unificado (Chat + Kanban)
     path(
         "workspace/",
-        include(
-            "smart_core_assistant_painel.app.atendimento_unificado.urls"
-        ),
+        include("smart_core_assistant_painel.app.atendimento_unificado.urls"),
     ),
     # Endpoint desativado: appflowy_adapter não está instalado
     # API pública do painel Kanban e entidades

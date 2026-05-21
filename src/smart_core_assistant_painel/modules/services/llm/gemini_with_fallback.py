@@ -5,6 +5,7 @@ Estratégia: por padrão usa a `google_api_key_free` do ConfigProvider. Em caso 
 diário e cai para a `google_api_key` (paga). Próximas chamadas no mesmo dia
 leem a flag e vão direto para a paga sem nova tentativa na free.
 """
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -69,11 +70,7 @@ def _is_quota_error(exc: BaseException) -> bool:
     if status == 429:
         return True
     msg = str(exc).upper()
-    return (
-        "RESOURCE_EXHAUSTED" in msg
-        or "QUOTA" in msg
-        or "RATE_LIMIT" in msg
-    )
+    return "RESOURCE_EXHAUSTED" in msg or "QUOTA" in msg or "RATE_LIMIT" in msg
 
 
 class _FallbackRunnable(Runnable[Any, Any]):
@@ -187,7 +184,9 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
     ) -> ChatResult:
         if not _is_free_burnt():
             try:
-                return self._free._generate(messages, stop, run_manager, **kwargs)  # type: ignore[reportPrivateUsage]
+                return self._free._generate(
+                    messages, stop, run_manager, **kwargs
+                )  # type: ignore[reportPrivateUsage]
             except Exception as e:
                 if _is_quota_error(e):
                     _mark_burnt()
@@ -205,14 +204,18 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
     ) -> ChatResult:
         if not _is_free_burnt():
             try:
-                return await self._free._agenerate(messages, stop, run_manager, **kwargs)  # type: ignore[reportPrivateUsage]
+                return await self._free._agenerate(
+                    messages, stop, run_manager, **kwargs
+                )  # type: ignore[reportPrivateUsage]
             except Exception as e:
                 if _is_quota_error(e):
                     _mark_burnt()
                     _log_burnt("_agenerate", self.model)
                 else:
                     raise
-        return await self._paid._agenerate(messages, stop, run_manager, **kwargs)  # type: ignore[reportPrivateUsage]
+        return await self._paid._agenerate(
+            messages, stop, run_manager, **kwargs
+        )  # type: ignore[reportPrivateUsage]
 
     def _stream(
         self,
@@ -223,7 +226,9 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
     ) -> Iterator[ChatGenerationChunk]:
         if not _is_free_burnt():
             try:
-                yield from self._free._stream(messages, stop, run_manager, **kwargs)  # type: ignore[reportPrivateUsage]
+                yield from self._free._stream(
+                    messages, stop, run_manager, **kwargs
+                )  # type: ignore[reportPrivateUsage]
                 return
             except Exception as e:
                 if _is_quota_error(e):
@@ -242,7 +247,9 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
     ) -> AsyncIterator[ChatGenerationChunk]:
         if not _is_free_burnt():
             try:
-                async for chunk in self._free._astream(messages, stop, run_manager, **kwargs):  # type: ignore[reportPrivateUsage]
+                async for chunk in self._free._astream(
+                    messages, stop, run_manager, **kwargs
+                ):  # type: ignore[reportPrivateUsage]
                     yield chunk
                 return
             except Exception as e:
@@ -251,7 +258,9 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
                     _log_burnt("_astream", self.model)
                 else:
                     raise
-        async for chunk in self._paid._astream(messages, stop, run_manager, **kwargs):  # type: ignore[reportPrivateUsage]
+        async for chunk in self._paid._astream(
+            messages, stop, run_manager, **kwargs
+        ):  # type: ignore[reportPrivateUsage]
             yield chunk
 
     def with_structured_output(  # type: ignore[override]
@@ -259,8 +268,14 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
         schema: Union[type, dict[str, Any]],
         **kwargs: Any,
     ) -> Runnable[Any, Any]:
-        free_r = cast(Runnable[Any, Any], self._free.with_structured_output(schema, **kwargs))
-        paid_r = cast(Runnable[Any, Any], self._paid.with_structured_output(schema, **kwargs))
+        free_r = cast(
+            Runnable[Any, Any],
+            self._free.with_structured_output(schema, **kwargs),
+        )
+        paid_r = cast(
+            Runnable[Any, Any],
+            self._paid.with_structured_output(schema, **kwargs),
+        )
         return _FallbackRunnable(free_r, paid_r, self.model)
 
     def bind_tools(  # type: ignore[override]
@@ -268,6 +283,10 @@ class ChatGoogleGenerativeAIWithFallback(BaseChatModel):
         tools: List[Any],
         **kwargs: Any,
     ) -> Runnable[Any, Any]:
-        free_r = cast(Runnable[Any, Any], self._free.bind_tools(tools, **kwargs))
-        paid_r = cast(Runnable[Any, Any], self._paid.bind_tools(tools, **kwargs))
+        free_r = cast(
+            Runnable[Any, Any], self._free.bind_tools(tools, **kwargs)
+        )
+        paid_r = cast(
+            Runnable[Any, Any], self._paid.bind_tools(tools, **kwargs)
+        )
         return _FallbackRunnable(free_r, paid_r, self.model)

@@ -630,7 +630,9 @@ class TenantUser(models.Model):
         normalizada para ints — entradas inválidas são ignoradas.
         """
         try:
-            return int(flow_id) in {int(x) for x in (self.flow_permissions or [])}  # type: ignore[arg-type]
+            return int(flow_id) in {
+                int(x) for x in (self.flow_permissions or [])
+            }  # type: ignore[arg-type]
         except (TypeError, ValueError):
             return False
 

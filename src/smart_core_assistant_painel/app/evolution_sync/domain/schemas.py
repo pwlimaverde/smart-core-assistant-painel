@@ -93,10 +93,7 @@ class EvolutionEventName(str, Enum):
             "GROUP_UPSERT": cls.GROUP,
         }
 
-        return (
-            _ALIASES.get(normalized)
-            or _ALIASES.get(normalized_singular)
-        )
+        return _ALIASES.get(normalized) or _ALIASES.get(normalized_singular)
 
 
 @dataclass

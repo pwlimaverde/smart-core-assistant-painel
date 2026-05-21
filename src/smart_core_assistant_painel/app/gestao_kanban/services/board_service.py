@@ -187,7 +187,9 @@ def mark_read(
         TipoRemetente,
     )
 
-    from smart_core_assistant_painel.app.atendimento_unificado.models import LeituraAtendimento
+    from smart_core_assistant_painel.app.atendimento_unificado.models import (
+        LeituraAtendimento,
+    )
 
     Mensagem.objects.filter(
         atendimento_id=atendimento_id,
@@ -206,7 +208,10 @@ def mark_read(
         _dispatch_evolution_markread(atendimento_id)
     except Exception as exc:
         from loguru import logger
-        logger.warning(f"mark_read: falha ao disparar markread Evolution: {exc}")
+
+        logger.warning(
+            f"mark_read: falha ao disparar markread Evolution: {exc}"
+        )
 
     return obj
 
@@ -258,7 +263,9 @@ def _dispatch_evolution_markread(atendimento_id: int) -> None:
     base_url = ""
     tenant_id = getattr(inst, "tenant_id", None)
     if tenant_id:
-        tenant_cfg = TenantEvolution.objects.filter(tenant_id=tenant_id).first()
+        tenant_cfg = TenantEvolution.objects.filter(
+            tenant_id=tenant_id
+        ).first()
         if tenant_cfg and tenant_cfg.server_url:
             base_url = str(tenant_cfg.server_url).rstrip("/")
     if not base_url:

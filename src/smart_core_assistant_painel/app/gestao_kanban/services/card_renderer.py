@@ -151,9 +151,7 @@ def _get_tempo_na_etapa_seconds(atendimento: Any) -> int:
     return 0
 
 
-def render_card(
-    atendimento: Any, *, nao_lidos: int = 0
-) -> dict[str, Any]:
+def render_card(atendimento: Any, *, nao_lidos: int = 0) -> dict[str, Any]:
     """Payload do card kanban (formato `cards["<etapa_id>"][i]`).
 
     Mantém superset de chaves para reaproveitamento na sidebar de

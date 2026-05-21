@@ -4,14 +4,13 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('evolution_sync', '0007_alter_evolutioninstance_api_key_and_more'),
+        ("evolution_sync", "0007_alter_evolutioninstance_api_key_and_more"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='evolutioninstance',
-            name='api_version',
+            model_name="evolutioninstance",
+            name="api_version",
         ),
     ]

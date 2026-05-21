@@ -78,9 +78,7 @@ def group_fluxos_by_departamento(
     return [grupos[k] for k in ordem]
 
 
-def sanitize_flow_ids(
-    raw_ids: list[Any], tenant: Tenant
-) -> list[int]:
+def sanitize_flow_ids(raw_ids: list[Any], tenant: Tenant) -> list[int]:
     """Filtra IDs recebidos do formulário, mantendo apenas fluxos do tenant.
 
     Garante isolamento: mesmo que o cliente envie IDs aleatórios via POST,

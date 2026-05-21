@@ -247,10 +247,10 @@ def get_messages(
 
 
 _DOT_COLOR_BY_TIPO: dict[str, str] = {
-    TipoEtapa.FILA: "#a8a29e",          # stone-400 (cinza neutro)
-    TipoEtapa.TRABALHO: "#d97706",      # amber-600 (em andamento)
-    TipoEtapa.ESPERA: "#f59e0b",        # amber-500 (aguardando)
-    TipoEtapa.FINALIZACAO: "#16a34a",   # green-600 (concluído)
+    TipoEtapa.FILA: "#a8a29e",  # stone-400 (cinza neutro)
+    TipoEtapa.TRABALHO: "#d97706",  # amber-600 (em andamento)
+    TipoEtapa.ESPERA: "#f59e0b",  # amber-500 (aguardando)
+    TipoEtapa.FINALIZACAO: "#16a34a",  # green-600 (concluído)
 }
 _DEFAULT_ETAPA_COR = "#6B7280"
 
@@ -665,9 +665,7 @@ def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
         return None
 
     meta: dict[str, Any] = dict(m.metadados or {})
-    nested = (
-        meta.get("media") if isinstance(meta.get("media"), dict) else None
-    )
+    nested = meta.get("media") if isinstance(meta.get("media"), dict) else None
 
     mimetype = (nested or {}).get("mimetype") or meta.get("mimetype") or ""
     filename = (nested or {}).get("filename") or meta.get("fileName") or ""
@@ -696,9 +694,7 @@ def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
     if not src:
         b64 = (nested or {}).get("b64") or meta.get("base64") or ""
         if b64 and isinstance(b64, str) and len(b64) > 10:
-            src = (
-                f"data:{mimetype or 'application/octet-stream'};base64,{b64}"
-            )
+            src = f"data:{mimetype or 'application/octet-stream'};base64,{b64}"
 
     is_pdf = kind == "document" and (
         (mimetype or "").lower() == "application/pdf"
@@ -735,7 +731,9 @@ def _serialize_etiqueta(e: Etiqueta) -> dict[str, Any]:
 
 def list_etiquetas() -> list[dict[str, Any]]:
     """Lista todas as etiquetas ativas para o popover."""
-    return [_serialize_etiqueta(e) for e in Etiqueta.objects.filter(ativo=True)]
+    return [
+        _serialize_etiqueta(e) for e in Etiqueta.objects.filter(ativo=True)
+    ]
 
 
 def list_etiquetas_do_atendimento(atendimento_id: int) -> list[dict[str, Any]]:
@@ -761,8 +759,7 @@ def list_notas(atendimento_id: int) -> list[dict[str, Any]]:
     autores_map: dict[int, str] = {}
     if autores_ids:
         autores_map = {
-            a.id: a.nome
-            for a in Atendente.objects.filter(id__in=autores_ids)
+            a.id: a.nome for a in Atendente.objects.filter(id__in=autores_ids)
         }
     return [
         {
@@ -771,9 +768,7 @@ def list_notas(atendimento_id: int) -> list[dict[str, Any]]:
             "criado_em": n.criado_em.isoformat(),
             "criado_por_id": n.criado_por_id,
             "criado_por_nome": (
-                autores_map.get(n.criado_por_id, "")
-                if n.criado_por_id
-                else ""
+                autores_map.get(n.criado_por_id, "") if n.criado_por_id else ""
             ),
         }
         for n in notas
@@ -783,12 +778,9 @@ def list_notas(atendimento_id: int) -> list[dict[str, Any]]:
 def list_medias(atendimento_id: int) -> list[dict[str, Any]]:
     """Lista mídias e documentos de um atendimento (mais recentes primeiro)."""
     tipos_midia = list(_MEDIA_KIND_BY_TIPO.keys())
-    qs = (
-        Mensagem.objects.filter(
-            atendimento_id=atendimento_id, tipo__in=tipos_midia
-        )
-        .order_by("-timestamp")
-    )
+    qs = Mensagem.objects.filter(
+        atendimento_id=atendimento_id, tipo__in=tipos_midia
+    ).order_by("-timestamp")
     resultado: list[dict[str, Any]] = []
     for m in qs:
         info = _extract_media(m)

@@ -4,15 +4,18 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atendimentos', '0006_mensagem_citada_e_quoted_preview'),
+        ("atendimentos", "0006_mensagem_citada_e_quoted_preview"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='mensagem',
-            name='quoted_preview',
-            field=models.JSONField(blank=True, help_text='Preview serializado do bloco citado quando mensagem_citada não pôde ser resolvida (ex.: stanzaId de msg mais antiga não armazenada). Formato: {remetente, conteudo_preview, tipo, stanza_id}.', null=True),
+            model_name="mensagem",
+            name="quoted_preview",
+            field=models.JSONField(
+                blank=True,
+                help_text="Preview serializado do bloco citado quando mensagem_citada não pôde ser resolvida (ex.: stanzaId de msg mais antiga não armazenada). Formato: {remetente, conteudo_preview, tipo, stanza_id}.",
+                null=True,
+            ),
         ),
     ]

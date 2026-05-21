@@ -355,9 +355,7 @@ class WebhookProcessor:
 
         return instance
 
-    def _sync_app_instance(
-        self, instance: EvolutionInstance
-    ) -> None:
+    def _sync_app_instance(self, instance: EvolutionInstance) -> None:
         """Sincroniza AppInstance com a EvolutionInstance.
 
         Garante que exista um AppInstance correspondente para
@@ -386,8 +384,7 @@ class WebhookProcessor:
             )
         except Exception as e:
             logger.warning(
-                f"Falha ao sincronizar AppInstance "
-                f"para {instance.name}: {e}"
+                f"Falha ao sincronizar AppInstance para {instance.name}: {e}"
             )
 
     def _resolve_contact(
@@ -637,7 +634,6 @@ class WebhookProcessor:
             payload: Payload bruto do webhook.
         """
 
-
         data = payload.get("data", {})
         if isinstance(data, list):
             # batch: processa cada item
@@ -813,6 +809,7 @@ class WebhookProcessor:
                 Atendimento,
                 StatusAtendimento,
             )
+
             atend = (
                 Atendimento.objects.filter(
                     contato_id=evo_contact.contact_id,
@@ -871,9 +868,7 @@ class WebhookProcessor:
 
         for contact_data in contacts_raw:
             jid = str(
-                contact_data.get("id")
-                or contact_data.get("remoteJid")
-                or ""
+                contact_data.get("id") or contact_data.get("remoteJid") or ""
             )
             profile_url = str(
                 contact_data.get("profilePictureUrl")
@@ -891,7 +886,10 @@ class WebhookProcessor:
             if not contato:
                 continue
 
-            if contato.foto_perfil_url_origem == profile_url and contato.foto_perfil:
+            if (
+                contato.foto_perfil_url_origem == profile_url
+                and contato.foto_perfil
+            ):
                 continue
 
             try:
@@ -903,7 +901,9 @@ class WebhookProcessor:
                     )
                     continue
 
-                ext = (urlparse(profile_url).path.rsplit(".", 1)[-1] or "jpg").lower()
+                ext = (
+                    urlparse(profile_url).path.rsplit(".", 1)[-1] or "jpg"
+                ).lower()
                 if ext not in {"jpg", "jpeg", "png", "webp"}:
                     ext = "jpg"
                 filename = f"{telefone}.{ext}"

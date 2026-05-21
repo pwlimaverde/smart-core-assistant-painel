@@ -257,7 +257,11 @@ class EvolutionGoAdapter:
             "fromMe": from_me,
         }
         response = self._send_request(
-            base_url, "/message/react", api_key=api_key, method="POST", body=body
+            base_url,
+            "/message/react",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -291,7 +295,11 @@ class EvolutionGoAdapter:
         """
         body: dict[str, Any] = {"number": number, "id": message_ids}
         response = self._send_request(
-            base_url, "/message/markread", api_key=api_key, method="POST", body=body
+            base_url,
+            "/message/markread",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -335,7 +343,11 @@ class EvolutionGoAdapter:
             "isAudio": is_audio,
         }
         response = self._send_request(
-            base_url, "/message/presence", api_key=api_key, method="POST", body=body
+            base_url,
+            "/message/presence",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -365,11 +377,17 @@ class EvolutionGoAdapter:
         body: dict[str, Any] = {"number": number, "preview": False}
         try:
             response = self._send_request(
-                base_url, "/user/avatar", api_key=api_key, method="POST", body=body
+                base_url,
+                "/user/avatar",
+                api_key=api_key,
+                method="POST",
+                body=body,
             )
             if response.ok:
                 data = response.json()
-                return str(data.get("profilePictureUrl", "") or data.get("url", ""))
+                return str(
+                    data.get("profilePictureUrl", "") or data.get("url", "")
+                )
         except Exception:
             pass
         return ""
@@ -440,7 +458,11 @@ class EvolutionGoAdapter:
             body["token"] = token
 
         response = self._send_request(
-            base_url, "/instance/create", api_key=api_key, method="POST", body=body
+            base_url,
+            "/instance/create",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -489,7 +511,11 @@ class EvolutionGoAdapter:
             "immediate": True,
         }
         response = self._send_request(
-            base_url, "/instance/connect", api_key=api_key, method="POST", body=body
+            base_url,
+            "/instance/connect",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(

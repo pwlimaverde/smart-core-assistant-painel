@@ -4,6 +4,12 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+015 - 2026-05-21 (build manual, sem tag)
+
+### Changed
+- **Formatação automática (ruff)**: normalização de comprimento de linha (`E501`)
+  e estilo de aspas em migrations e demais módulos — sem alteração funcional.
+
 ## 1.2.2+014 - 2026-05-21 (build manual, sem tag)
 
 ### Fixed

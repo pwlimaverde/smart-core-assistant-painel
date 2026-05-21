@@ -314,10 +314,12 @@ class EtiquetaAtendimento(models.Model):
     aplicada_em: models.DateTimeField[datetime] = models.DateTimeField(
         auto_now_add=True
     )
-    aplicada_por_id: models.BigIntegerField[int | None] = models.BigIntegerField(
-        null=True,
-        blank=True,
-        help_text="ID lógico de operacional.Atendente que aplicou.",
+    aplicada_por_id: models.BigIntegerField[int | None] = (
+        models.BigIntegerField(
+            null=True,
+            blank=True,
+            help_text="ID lógico de operacional.Atendente que aplicou.",
+        )
     )
 
     class Meta:

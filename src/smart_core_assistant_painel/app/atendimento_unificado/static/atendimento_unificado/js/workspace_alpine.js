@@ -920,7 +920,6 @@
                         if (this.activeConv && this.activeConv.atendimento_id === data.atendimento_id) {
                             this.loadMessages(data.atendimento_id).then(() => {
                                 this.$nextTick(() => this.scrollMessagesBottom());
-                                this.markRead(data.atendimento_id);
                             });
                         } else if (data.remetente === 'contato') {
                             this._scheduleUnreadRefresh();

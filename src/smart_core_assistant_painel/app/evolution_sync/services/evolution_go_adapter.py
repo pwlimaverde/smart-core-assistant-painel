@@ -696,8 +696,11 @@ class EvolutionGoAdapter:
     ) -> dict:
         """Faz download/descriptografia de mídia via Evolution Go.
 
-        ``POST /message/downloadimage`` com ``{"message": <objeto Message do
-        whatsmeow>}``. Usado como fallback quando o webhook **não** traz o
+        ``POST /message/downloadmedia`` com ``{"message": <objeto Message do
+        whatsmeow>}``. Atende todos os tipos (image/audio/video/document/
+        sticker) — o servidor extrai o sub-objeto via ``GetImageMessage()`` etc.
+        (⚠️ o swagger lista ``/downloadimage`` mas a rota real é
+        ``/downloadmedia``.) Usado como fallback quando o webhook **não** traz o
         ``base64`` inline (ex.: imagens grandes). O ``message`` deve conter o
         sub-objeto de mídia com as chaves de descriptografia do whatsmeow
         (``URL``, ``directPath``, ``mediaKey``, ``fileEncSHA256``,
@@ -720,7 +723,7 @@ class EvolutionGoAdapter:
         body: dict[str, Any] = {"message": message}
         response = self._send_request(
             base_url,
-            "/message/downloadimage",
+            "/message/downloadmedia",
             api_key=api_key,
             method="POST",
             body=body,

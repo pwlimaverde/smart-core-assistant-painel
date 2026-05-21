@@ -4,6 +4,14 @@ Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
 A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
 -->
 
+## 1.2.2+012 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Endpoint de download era `/message/downloadimage` (404)**: o swagger lista
+  esse path mas a rota real do servidor é `/message/downloadmedia` (confirmado
+  ao vivo: `downloadimage`→404, `downloadmedia`→500 "invalid media type" com body
+  vazio). Corrigido o path mantendo o body `{message: <obj>}`.
+
 ## 1.2.2+011 - 2026-05-20 (build manual, sem tag)
 
 ### Fixed

@@ -152,38 +152,6 @@
         </div>
     </div>
 
-    <!-- Card: Configuração de Inteligência Artificial -->
-    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden"
-         x-data="botManager()">
-        <div class="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
-            <h3 class="text-lg font-bold text-stone-800 flex items-center">
-                <svg class="w-5 h-5 mr-2 text-[#a98f71]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                </svg>
-                Configuração de Inteligência Artificial
-            </h3>
-        </div>
-
-        <div class="p-6 space-y-4">
-            <div class="flex items-start">
-                <div class="flex items-center h-5">
-                    <input id="resposta_bot" type="checkbox" x-model="resposta_bot" @change="toggleBot()"
-                        class="w-4 h-4 text-[#a98f71] bg-stone-100 border-stone-300 rounded focus:ring-[#a98f71] focus:ring-2"
-                        {% if not can_edit %}disabled{% endif %}>
-                </div>
-                <div class="ml-3 text-sm">
-                    <label for="resposta_bot" class="font-medium text-stone-700">Permitir Resposta Automática do Bot</label>
-                    <p class="text-stone-500">Se marcado, a IA do sistema processará e responderá automaticamente às mensagens recebidas por esta instância.</p>
-                </div>
-            </div>
-
-            <div x-show="botResult" x-transition class="p-3 rounded-lg text-sm"
-                :class="botSuccess ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'">
-                <span x-text="botResult"></span>
-            </div>
-        </div>
-    </div>
-
     <!-- Card: Webhook -->
     <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden"
          x-data="webhookManager()">
@@ -374,44 +342,6 @@ function webhookManager() {
     }
 }
 
-function botManager() {
-    return {
-        resposta_bot: {{ instance.bot_active|yesno:"true,false" }},
-        botResult: '',
-        botSuccess: false,
-        saving: false,
-
-        async toggleBot() {
-            this.saving = true;
-            this.botResult = '';
-            try {
-                const resp = await fetch('{% url "evolution_instance_toggle_bot" instance.pk %}', {
-                    method: 'POST',
-                    headers: { 
-                        'X-CSRFToken': getCSRF(),
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ resposta_bot: this.resposta_bot })
-                });
-                const data = await resp.json();
-                this.botSuccess = data.success;
-                this.botResult = data.message || (data.success ? 'Atualizado!' : 'Erro');
-                if (data.success && data.resposta_bot !== undefined) {
-                    this.resposta_bot = data.resposta_bot;
-                }
-            } catch (err) {
-                this.botSuccess = false;
-                this.botResult = 'Erro de conexão.';
-            }
-            this.saving = false;
-            
-            // Oculta a mensagem de sucesso depois de um tempo
-            if (this.botSuccess) {
-                setTimeout(() => { this.botResult = ''; }, 3000);
-            }
-        }
-    }
-}
 
 function deleteInstance() {
     fetch('{% url "evolution_instance_delete" instance.pk %}', {

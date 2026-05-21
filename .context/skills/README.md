@@ -26,6 +26,7 @@ On-demand expertise for AI agents. Skills are task-specific procedures that get 
 | [feature-breakdown](./feature-breakdown/SKILL.md) | Decomposição de features em tarefas | P, R |
 | [api-design](./api-design/SKILL.md) | Design de APIs RESTful | P, R |
 | [security-audit](./security-audit/SKILL.md) | Auditoria de segurança e vulnerabilidades | R, V |
+| [plan-restructuring](./plan-restructuring/SKILL.md) | Reestrutura plano final com docs atuais (context7) | P |
 
 ## Creating Custom Skills
 

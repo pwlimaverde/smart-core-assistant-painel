@@ -1,26 +1,11 @@
 /*
- * Store Alpine.js do Workspace de Atendimento Unificado.
+ * Store Alpine.js do Workspace de Atendimento Unificado (Core Shell).
  *
- * - Gerencia estado de Conversas e Kanban
- * - Consome endpoints JSON declarados em workspace.html
- * - Conecta-se ao stream SSE para atualizações ao vivo
+ * - Gerencia o estado comum e a orquestração do layout.
+ * - Centraliza a conexão SSE única por tenant.
+ * - Roteia os filtros de busca e as configurações de visualização.
  *
- * MODOS DE FOCO:
- *  - `focusMode`: 'board' | 'split' | 'chat'  (persistido em localStorage)
- *  - 'board': Kanban toma a tela; chat minimizado em mini-bar flutuante
- *  - 'split': layout dividido (padrão) — kanban + chat + info drawer opcional
- *  - 'chat' : kanban colapsa em trilha de avatares; chat fica grande
- *
- * Atalhos de teclado (em base_workspace.html):
- *  - Alt+1 / Alt+2 / Alt+3 → board / split / chat
- *  - Esc                   → reduz o foco gradualmente
- *  - i                     → toggle do detail drawer
- *
- * Convenções:
- *  - `conversations`: lista (usada apenas como cache de preview para SSE)
- *  - `board`: { etapas: [...], cards: { '<etapa_id>': [...] } }
- *  - `activeConv`: conversa atualmente aberta no chat lateral
- *  - `activeDetail`: payload de /detail/ (campos personalizados, etc.)
+ * Idioma dos comentários: Português. Identificadores: Inglês.
  */
 (function () {
     'use strict';
@@ -67,40 +52,7 @@
         });
     }
 
-    function buildConvUrl(base, atendimentoId, suffix) {
-        const safeBase = base.endsWith('/') ? base : base + '/';
-        return safeBase + atendimentoId + '/' + suffix + '/';
-    }
-
-    function prioridadeClass(p) {
-        switch ((p || '').toLowerCase()) {
-            case 'baixa': return 'bg-green-100 text-green-800';
-            case 'normal': return 'bg-blue-100 text-blue-800';
-            case 'alta': return 'bg-orange-100 text-orange-800';
-            case 'urgente': return 'bg-red-100 text-red-800';
-            default: return 'bg-stone-100 text-stone-700';
-        }
-    }
-
-    function intentLabel(it) {
-        if (!it) return '';
-        if (typeof it === 'string') return it;
-        return it.type || it.nome || it.name || JSON.stringify(it);
-    }
-
-    function tipoMidiaLabel(tipo) {
-        switch (tipo) {
-            case 'imageMessage': return '🖼️ Imagem';
-            case 'videoMessage': return '🎬 Vídeo';
-            case 'audioMessage': return '🎤 Áudio';
-            case 'documentMessage': return '📄 Documento';
-            case 'stickerMessage': return 'Sticker';
-            case 'locationMessage': return '📍 Localização';
-            default: return tipo;
-        }
-    }
-
-    window.workspaceCoreMixin = function (init) { {
+    window.workspaceCoreMixin = function (init) {
         return {
             fluxoId: init.fluxoId || null,
             fluxos: [],
@@ -128,36 +80,30 @@
             sseEnabled: init.sseEnabled === true,
             detailDrawerOpen: false,
 
-            // ─────────────────────────────────────────────────────────
-            // Lightbox para mídia (imagem/vídeo/PDF) em tela cheia
-            // ─────────────────────────────────────────────────────────
+            // Lightbox de mídia
             mediaLightbox: {
                 open: false,
-                kind: '',       // 'image' | 'video' | 'document'
+                kind: '',
                 src: '',
                 mimetype: '',
                 filename: '',
                 isPdf: false,
             },
 
-            // ─────────────────────────────────────────────────────────
-            // NOVO: Modos de foco + tema/densidade
-            // ─────────────────────────────────────────────────────────
-            focusMode: readLS(LS_FOCUS, 'split'),     // 'board' | 'split' | 'chat'
-            theme:     readLS(LS_THEME, 'light'),     // 'light' | 'dark'
-            density:   readLS(LS_DENSITY, 'normal'),  // 'compact' | 'normal' | 'confortable'
+            // Modos de foco e visualização
+            focusMode: readLS(LS_FOCUS, 'split'),
+            theme:     readLS(LS_THEME, 'light'),
+            density:   readLS(LS_DENSITY, 'normal'),
             showKbdHint: false,
             _hintTimer: null,
 
-            // ─────────────────────────────────────────────────────────
-            // Etiquetas, Notas, Mídias, Timeline, Notificações, Filtros
-            // ─────────────────────────────────────────────────────────
-            etiquetas: [],                  // catálogo de etiquetas disponíveis
-            etiquetasAplicadas: [],         // etiquetas do atendimento ativo
-            notas: [],                      // notas do atendimento ativo
-            medias: [],                     // mídias/arquivos do atendimento ativo
-            timeline: [],                   // eventos do atendimento ativo
-            unreadCount: 0,                 // total geral para o sino
+            // Elementos de suporte (etiquetas, notas, mídias, timeline, notificações)
+            etiquetas: [],
+            etiquetasAplicadas: [],
+            notas: [],
+            medias: [],
+            timeline: [],
+            unreadCount: 0,
             etiquetaPopoverOpen: false,
             transferirPopoverOpen: false,
             filterPopoverOpen: false,
@@ -172,33 +118,23 @@
             notaSaving: false,
             _unreadDebounce: null,
 
-            // ─────────────────────────────────────────────────────────
-            // UX: scroll-to-bottom button + estado de novas mensagens
-            // ─────────────────────────────────────────────────────────
-            showScrollBtn: false,          // botão flutuante "↓"
-            _firstUnreadId: null,          // id da primeira msg não lida ao abrir
-            _scrollBtnThreshold: 120,      // px da borda inferior para mostrar botão
+            // UX e Scroll
+            showScrollBtn: false,
+            _firstUnreadId: null,
+            _scrollBtnThreshold: 120,
 
-            // ─────────────────────────────────────────────────────────
-            // Reply / Mensagem Citada
-            // ─────────────────────────────────────────────────────────
-            replyTo: null,                 // {id, remetente, conteudo, resposta_bot}
+            // Reply/Citação
+            replyTo: null,
 
-            // ─────────────────────────────────────────────────────────
-            // Presence bidirecional
-            // ─────────────────────────────────────────────────────────
-            contactPresence: null,         // 'composing' | 'recording' | null
-            _presenceTimer: null,          // setTimeout para limpar presença
-            _presenceSendTimer: null,      // debounce para enviar presence outbound
-
-            // ─────────────────────────────────────────────────────────
-            // Voice Recording
-            // ─────────────────────────────────────────────────────────
-            isRecording: false,            // true enquanto grava
-            _mediaRecorder: null,          // instância MediaRecorder
-            _audioChunks: [],              // chunks de áudio gravados
-            recordingSeconds: 0,           // contador de segundos
-            _recordingTimer: null,         // setInterval do contador
+            // Presença e Gravação
+            contactPresence: null,
+            _presenceTimer: null,
+            _presenceSendTimer: null,
+            isRecording: false,
+            _mediaRecorder: null,
+            _audioChunks: [],
+            recordingSeconds: 0,
+            _recordingTimer: null,
 
             init: async function () {
                 try {
@@ -215,17 +151,14 @@
                     if (this.sseEnabled) {
                         this.connectSSE();
                     }
-                    // Mostra hint de atalhos por 5s na primeira carga.
                     this.showKbdHint = true;
                     this._hintTimer = setTimeout(() => { this.showKbdHint = false; }, 5000);
                 } catch (exc) {
-                    console.error('Falha ao inicializar Workspace', exc);
+                    console.error('Falha ao inicializar Workspace Core', exc);
                 }
             },
 
-            // ─────────────────────────────────────────────────────────
-            // NOVO: Controle de foco
-            // ─────────────────────────────────────────────────────────
+            // Controle de Foco
             setFocus: function (mode) {
                 if (['board', 'split', 'chat'].indexOf(mode) === -1) return;
                 this.focusMode = mode;
@@ -234,116 +167,17 @@
 
             minimizeChat: function () { this.setFocus('board'); },
 
-            // openChat(id?) — se vier um id, abre a conversa e expande pra split.
-            openChat: function (id) {
-                if (id != null) {
-                    // Reusa o openChat original (renomeado para _doOpenChat abaixo).
-                    return this._doOpenChat(id).then(() => this.setFocus('split'));
-                }
-                this.setFocus('split');
-                return Promise.resolve();
-            },
-
-            // Handler do Esc — reduz foco gradualmente. Ignorado se digitando.
             onEscape: function ($event) {
                 if (this.isTypingTarget($event)) return;
                 if (this.mediaLightbox.open) { this.closeLightbox(); return; }
                 if (this.detailDrawerOpen) { this.detailDrawerOpen = false; return; }
                 if (this.focusMode === 'chat')  { this.setFocus('split'); return; }
                 if (this.focusMode === 'split') { this.setFocus('board'); return; }
-                // já está em 'board' — não faz nada
             },
 
             onToggleInfo: function ($event) {
                 if (this.isTypingTarget($event)) return;
                 this.detailDrawerOpen = !this.detailDrawerOpen;
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Lightbox de mídia
-            // ─────────────────────────────────────────────────────────
-            openLightbox: function (media) {
-                if (!media || !media.src) return;
-                // Documentos não-PDF baixam direto, sem modal
-                if (media.kind === 'document' && !media.is_pdf) {
-                    const a = document.createElement('a');
-                    a.href = media.src;
-                    a.download = media.filename || 'documento';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    return;
-                }
-                this.mediaLightbox = {
-                    open: true,
-                    kind: media.kind || '',
-                    src: media.src,
-                    mimetype: media.mimetype || '',
-                    filename: media.filename || '',
-                    isPdf: !!media.is_pdf,
-                };
-            },
-
-            closeLightbox: function () {
-                this.mediaLightbox = {
-                    open: false, kind: '', src: '',
-                    mimetype: '', filename: '', isPdf: false,
-                };
-            },
-
-            // Label legível para tipo de mídia (usado no fallback do balão)
-            tipoMidiaLabel: function (tipo) {
-                const map = {
-                    imageMessage: 'Imagem',
-                    stickerMessage: 'Figurinha',
-                    audioMessage: 'Áudio',
-                    videoMessage: 'Vídeo',
-                    documentMessage: 'Documento',
-                };
-                return map[tipo] || 'Mídia';
-            },
-
-            // Ícone de status de entrega da mensagem (read receipts).
-            // Mapeia status_envio → símbolo Unicode exibido no rodapé do balão.
-            // pending  → ● (cinza claro — aguardando servidor)
-            // sent     → ✓  (cinza — entregue ao servidor)
-            // delivered→ ✓✓ (cinza — entregue ao dispositivo)
-            // read     → ✓✓ (azul — lida)
-            // failed   → ✗  (vermelho — falhou)
-            // fallback → usa m.respondida para retrocompat
-            statusEnvioIcon: function (status, respondida) {
-                switch (status) {
-                    case 'pending':   return '●';
-                    case 'sent':      return '✓';
-                    case 'delivered': return '✓✓';
-                    case 'read':      return '✓✓';
-                    case 'failed':    return '✗';
-                    default:          return respondida ? '✓✓' : '✓';
-                }
-            },
-
-            // Formata segundos em mm:ss (para duração de áudio/vídeo)
-            formatDuration: function (seconds) {
-                if (!seconds || seconds <= 0) return '';
-                const s = Math.floor(seconds);
-                const mm = Math.floor(s / 60);
-                const ss = s % 60;
-                return mm + ':' + (ss < 10 ? '0' : '') + ss;
-            },
-
-            // Texto a exibir no balão. Suprime placeholders sintéticos
-            // ("[imagem]", "[audio]" etc.) quando a mensagem é de mídia —
-            // a mídia já está representada visualmente.
-            bubbleText: function (m) {
-                if (!m) return '';
-                const base = m.remetente === 'contato'
-                    ? (m.conteudo || '')
-                    : (m.resposta_bot || m.conteudo || '');
-                const trimmed = (base || '').trim();
-                if (m.media && /^\[(imagem|audio|áudio|video|vídeo|documento|figurinha|sticker)\]$/i.test(trimmed)) {
-                    return '';
-                }
-                return base;
             },
 
             isTypingTarget: function ($event) {
@@ -352,9 +186,6 @@
                 return tag === 'INPUT' || tag === 'TEXTAREA' || $event.target.isContentEditable;
             },
 
-            // ─────────────────────────────────────────────────────────
-            // Tema + densidade (persistidos)
-            // ─────────────────────────────────────────────────────────
             setTheme: function (t) {
                 this.theme = t;
                 writeLS(LS_THEME, t);
@@ -364,9 +195,7 @@
                 writeLS(LS_DENSITY, d);
             },
 
-            // ─────────────────────────────────────────────────────────
-            // Fluxos / Board / Conversas (igual ao original)
-            // ─────────────────────────────────────────────────────────
+            // Filtros e Carregamento Base
             onFluxoChange: function () {
                 return Promise.all([
                     this.loadConversations(),
@@ -380,8 +209,6 @@
                 });
             },
 
-            // Constrói query string com filtros + busca livre.
-            // `extraParams` permite forçar overrides (ex.: ?fluxo=X).
             _buildFiltersParams: function (extraParams) {
                 const params = new URLSearchParams();
                 if (this.search) params.set('q', this.search);
@@ -409,456 +236,7 @@
                 });
             },
 
-            loadBoard: function () {
-                if (this.fluxoId == null) {
-                    this.board = { etapas: [], cards: {} };
-                    return Promise.resolve();
-                }
-                const params = this._buildFiltersParams({ fluxo: this.fluxoId });
-                const url = this.endpoints.board + '?' + params.toString();
-                return jsonFetch(url).then((data) => {
-                    this.board = data || { etapas: [], cards: {} };
-                    this.$nextTick(() => this.initSortable());
-                });
-            },
-
-            initSortable: function () {
-                this._sortableInstances.forEach(function (s) {
-                    try { s.destroy(); } catch (_) {}
-                });
-                this._sortableInstances = [];
-                if (typeof Sortable === 'undefined') {
-                    console.warn('[workspace] SortableJS não carregado');
-                    return;
-                }
-                const self = this;
-                const cols = document.querySelectorAll('.kanban-col-body');
-                cols.forEach(function (el) {
-                    const instance = Sortable.create(el, {
-                        group: 'kanban-cards',
-                        draggable: '.kanban-card',
-                        animation: 180,
-                        ghostClass: 'kanban-ghost',
-                        chosenClass: 'kanban-chosen',
-                        dragClass: 'kanban-drag',
-                        filter: '.kanban-no-drag, .kanban-no-drag *',
-                        preventOnFilter: false,
-                        onStart: function () { self.isDragging = true; },
-                        onEnd: function (evt) {
-                            setTimeout(function () { self.isDragging = false; }, 50);
-
-                            const atendimentoId = parseInt(evt.item.getAttribute('data-atend-id'), 10);
-                            const fromEtapaId = parseInt(evt.from.getAttribute('data-etapa-id'), 10);
-                            const toEtapaId = parseInt(evt.to.getAttribute('data-etapa-id'), 10);
-
-                            if (!atendimentoId || !toEtapaId) {
-                                self.loadBoard();
-                                return;
-                            }
-                            if (fromEtapaId === toEtapaId) return;
-
-                            jsonFetch(self.endpoints.boardMove, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    atendimento_id: atendimentoId,
-                                    etapa_destino_id: toEtapaId,
-                                }),
-                            }).then(function () {
-                                self.loadBoard();
-                            }).catch(function (exc) {
-                                console.error('[workspace] Falha no boardMove', exc);
-                                self.loadBoard();
-                                alert((exc && exc.message) || 'Falha ao mover card.');
-                            });
-                        },
-                    });
-                    self._sortableInstances.push(instance);
-                });
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Clique em card do kanban
-            // - Em modo 'board': abre conversa mas NÃO expande (mini-bar)
-            // - Em outros modos: comportamento original (abre painel direito)
-            // ─────────────────────────────────────────────────────────
-            onCardClick: function (id, event) {
-                if (this.isDragging) return;
-                return this._doOpenChat(id);
-            },
-
-            onCardDetail: function (id, event) {
-                if (event) { event.stopPropagation(); event.preventDefault(); }
-                if (this.isDragging) return;
-                const self = this;
-                return this._doOpenChat(id).then(function () {
-                    self.detailDrawerOpen = true;
-                    if (self.focusMode === 'board') self.setFocus('split');
-                });
-            },
-
-            openConversation: function (id) {
-                const conv = this.conversations.find((c) => c.atendimento_id === id);
-                this.activeConv = conv || null;
-                return Promise.all([
-                    this.loadMessages(id),
-                    this.loadDetail(id),
-                    this.markRead(id),
-                ]).then(() => {
-                    this.$nextTick(() => this.scrollMessagesBottom());
-                });
-            },
-
-            // _doOpenChat = lógica de "abrir conversa" sem mexer em focusMode.
-            // Use openChat(id) externamente — ele orquestra foco + abertura.
-            _doOpenChat: function (id) {
-                let conv = this.conversations.find((c) => c.atendimento_id === id);
-                if (!conv) {
-                    for (const [etapaId, cards] of Object.entries(this.board.cards || {})) {
-                        const card = (cards || []).find((c) => c.atendimento_id === id);
-                        if (card) {
-                            conv = {
-                                atendimento_id: id,
-                                contato_nome: card.contato_nome || card.titulo || 'Contato',
-                                contato_avatar_url: card.contato_avatar_url || '',
-                                assunto: card.assunto || '',
-                                telefone: '',
-                                etapa_nome: '',
-                            };
-                            break;
-                        }
-                    }
-                }
-                this.activeConv = conv || { atendimento_id: id };
-                // Captura quantas mensagens não lidas existem antes de marcar
-                // como lidas — usada para exibir o divisor "N novas mensagens".
-                const naoLidos = (conv && conv.nao_lidos) || 0;
-                // Limpa estado anterior das seções do info drawer para evitar
-                // mostrar dados de outra conversa enquanto carrega.
-                this.etiquetasAplicadas = [];
-                this.notas = [];
-                this.medias = [];
-                this.timeline = [];
-                this._firstUnreadId = null;
-                this.showScrollBtn = false;
-                return Promise.all([
-                    this.loadMessages(id),
-                    this.loadDetail(id),
-                    this.markRead(id),
-                    this.loadConversationEtiquetas(id),
-                    this.loadNotas(id),
-                    this.loadMedias(id),
-                    this.loadTimeline(id),
-                ]).then(() => {
-                    // Marca a primeira mensagem não lida para exibir o divisor.
-                    if (naoLidos > 0 && this.messages.length >= naoLidos) {
-                        const firstUnread = this.messages[this.messages.length - naoLidos];
-                        this._firstUnreadId = firstUnread ? firstUnread.id : null;
-                    }
-                    this.$nextTick(() => this.scrollMessagesBottom());
-                });
-            },
-
-            // Compat: kanban_card.html ainda chama openChatDrawer em alguns lugares.
-            openChatDrawer: function (id) { return this._doOpenChat(id); },
-
-            loadMessages: function (id) {
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'messages');
-                return jsonFetch(url).then((data) => {
-                    this.messages = data.messages || [];
-                });
-            },
-
-            loadDetail: function (id) {
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'detail');
-                return jsonFetch(url).then((data) => {
-                    this.activeDetail = data;
-                }).catch(() => {
-                    this.activeDetail = null;
-                });
-            },
-
-            markRead: function (id) {
-                if (!this.atendenteId) return Promise.resolve();
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'mark-read');
-                return jsonFetch(url, { method: 'POST' }).then(() => {
-                    const conv = this.conversations.find((c) => c.atendimento_id === id);
-                    if (conv) conv.nao_lidos = 0;
-                    // Zera não-lidas no card do board correspondente
-                    for (const cards of Object.values(this.board.cards || {})) {
-                        const card = (cards || []).find((c) => c.atendimento_id === id);
-                        if (card) card.nao_lidos = 0;
-                    }
-                    this._scheduleUnreadRefresh();
-                }).catch(() => { /* não-fatal */ });
-            },
-
-            sendMessage: function () {
-                if (!this.activeConv || this.sending) return;
-                const texto = (this.composer || '').trim();
-                if (!texto) return;
-                this.sending = true;
-                const id = this.activeConv.atendimento_id;
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'send');
-                const body = { texto: texto };
-                // Inclui quoted_message_id quando há reply selecionado
-                if (this.replyTo && this.replyTo.id) {
-                    body.quoted_message_id = this.replyTo.id;
-                }
-                const pendingReply = this.replyTo;
-                return jsonFetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify(body),
-                }).then((msg) => {
-                    this.composer = '';
-                    this.replyTo = null;
-                    this.messages.push({
-                        id: msg.id,
-                        atendimento_id: msg.atendimento_id,
-                        tipo: 'extendedTextMessage',
-                        conteudo: '',
-                        resposta_bot: msg.resposta_bot,
-                        remetente: 'atendente_humano',
-                        timestamp: msg.timestamp,
-                        respondida: false,
-                        status_envio: 'pending',
-                        quoted: pendingReply ? {
-                            id: pendingReply.id,
-                            remetente: pendingReply.remetente,
-                            conteudo_preview: (pendingReply.conteudo || pendingReply.resposta_bot || '').slice(0, 200),
-                        } : null,
-                    });
-                    this.$nextTick(() => this.scrollMessagesBottom());
-                }).catch((exc) => {
-                    console.error('Falha ao enviar', exc);
-                    alert((exc && exc.message) || 'Falha ao enviar mensagem.');
-                }).finally(() => {
-                    this.sending = false;
-                });
-            },
-
-            scrollMessagesBottom: function () {
-                const refs = this.$refs || {};
-                const el = refs.messagesContainer;
-                if (el) el.scrollTop = el.scrollHeight;
-                this.showScrollBtn = false;
-            },
-
-            // Seleciona uma mensagem para responder (reply).
-            // Chamado por duplo-clique no balão via @dblclick="setReplyTo(m)".
-            setReplyTo: function (msg) {
-                this.replyTo = msg ? {
-                    id: msg.id,
-                    remetente: msg.remetente,
-                    conteudo: msg.conteudo || '',
-                    resposta_bot: msg.resposta_bot || '',
-                } : null;
-                // Foca o composer automaticamente
-                this.$nextTick(() => {
-                    const el = this.$el && this.$el.querySelector
-                        ? this.$el.querySelector('.ws-composer__input')
-                        : null;
-                    if (el) el.focus();
-                });
-            },
-
-            clearReplyTo: function () { this.replyTo = null; },
-
-            // ─────────────────────────────────────────────────────────
-            // Presence outbound (atendente → contato)
-            // Chamado pelo evento @input do textarea com debounce de 1.5s.
-            // Envia "composing" imediatamente e "paused" após silêncio.
-            // ─────────────────────────────────────────────────────────
-            onComposerInput: function () {
-                if (!this.activeConv) return;
-                // Debounce: cancela envio anterior e agenda novo
-                if (this._presenceSendTimer) clearTimeout(this._presenceSendTimer);
-                this._presenceSendTimer = setTimeout(() => {
-                    this._sendPresence('composing');
-                    // Após 8s sem digitar → paused
-                    if (this._presenceSendTimer) clearTimeout(this._presenceSendTimer);
-                    this._presenceSendTimer = setTimeout(() => {
-                        this._sendPresence('paused');
-                    }, 8000);
-                }, 300);
-            },
-
-            _sendPresence: function (state, isAudio) {
-                if (!this.activeConv) return;
-                const id = this.activeConv.atendimento_id;
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'presence');
-                jsonFetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({ state: state, is_audio: !!isAudio }),
-                }).catch(function () { /* best-effort — ignora erros */ });
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Presence inbound (contato → atendente) via SSE
-            // Chamado por handleSSE('presence.update', data).
-            // ─────────────────────────────────────────────────────────
-            handlePresenceUpdate: function (data) {
-                if (!this.activeConv) return;
-                if (data.atendimento_id !== this.activeConv.atendimento_id) return;
-                const state = data.state || 'available';
-                this.contactPresence = (state === 'composing' || state === 'recording')
-                    ? state : null;
-                // Auto-limpa após 8s (contato parou de digitar sem mandar PRESENCE paused)
-                if (this._presenceTimer) clearTimeout(this._presenceTimer);
-                if (this.contactPresence) {
-                    this._presenceTimer = setTimeout(() => {
-                        this.contactPresence = null;
-                    }, 8000);
-                }
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Voice Recording
-            // ─────────────────────────────────────────────────────────
-            startRecording: async function () {
-                if (this.isRecording || !this.activeConv) return;
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    const mime = MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')
-                        ? 'audio/ogg;codecs=opus'
-                        : 'audio/webm;codecs=opus';
-                    this._mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
-                    this._audioChunks = [];
-                    this._mediaRecorder.ondataavailable = (ev) => {
-                        if (ev.data && ev.data.size > 0) this._audioChunks.push(ev.data);
-                    };
-                    this._mediaRecorder.onstop = () => {
-                        stream.getTracks().forEach((t) => t.stop());
-                        this._uploadAudioBlob(mime);
-                    };
-                    this._mediaRecorder.start(250); // chunks a cada 250ms
-                    this.isRecording = true;
-                    this.recordingSeconds = 0;
-                    this._recordingTimer = setInterval(() => { this.recordingSeconds++; }, 1000);
-                    // Sinaliza "gravando" ao contato
-                    this._sendPresence('recording', true);
-                } catch (err) {
-                    alert('Não foi possível acessar o microfone: ' + (err.message || err));
-                }
-            },
-
-            stopRecording: function () {
-                if (!this.isRecording || !this._mediaRecorder) return;
-                this._mediaRecorder.stop();
-                this.isRecording = false;
-                clearInterval(this._recordingTimer);
-                this.recordingSeconds = 0;
-                this._sendPresence('paused');
-            },
-
-            cancelRecording: function () {
-                if (!this._mediaRecorder) return;
-                // Remove o handler de onstop para não fazer upload
-                this._mediaRecorder.onstop = null;
-                try { this._mediaRecorder.stop(); } catch (_) {}
-                this.isRecording = false;
-                clearInterval(this._recordingTimer);
-                this.recordingSeconds = 0;
-                this._audioChunks = [];
-                this._sendPresence('paused');
-            },
-
-            _uploadAudioBlob: function (mime) {
-                if (!this._audioChunks.length || !this.activeConv) return;
-                const ext = mime.includes('ogg') ? 'ogg' : 'webm';
-                const blob = new Blob(this._audioChunks, { type: mime });
-                this._audioChunks = [];
-                const id = this.activeConv.atendimento_id;
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'upload');
-                const fd = new FormData();
-                fd.append('file', blob, `audio_${Date.now()}.${ext}`);
-                this.uploading = true;
-                fetch(url, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                    body: fd,
-                }).then(function (r) {
-                    return r.json();
-                }).then(() => {
-                    return this.loadMessages(id);
-                }).then(() => {
-                    this.$nextTick(() => this.scrollMessagesBottom());
-                }).catch(function (err) {
-                    console.error('Falha ao enviar áudio', err);
-                    alert('Falha ao enviar áudio gravado.');
-                }).finally(() => {
-                    this.uploading = false;
-                });
-            },
-
-            // Atualiza visibilidade do botão scroll-to-bottom.
-            onChatScroll: function () {
-                const el = (this.$refs || {}).messagesContainer;
-                if (!el) return;
-                const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-                this.showScrollBtn = distFromBottom > this._scrollBtnThreshold;
-            },
-
-            // Computa lista enriquecida de mensagens para o template.
-            // Injeta metadados extras em cada item (sem objetos sentinela
-            // separados) para que chat_message.html continue usando `m`:
-            //   _showDateSep : boolean — mostra separador de data antes deste balão
-            //   _dateLabel   : string  — "Hoje", "Ontem" ou "DD/MM/AAAA"
-            //   _stacked     : boolean — mesmo remetente que anterior (< 5 min)
-            //   _isFirstUnread: boolean — primeira mensagem não lida (banner "N novas")
-            enrichedMessages: function() {
-                const msgs = this.messages || [];
-                const firstUnreadId = this._firstUnreadId;
-                const now = new Date();
-                const todayStr  = now.toDateString();
-                const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-                const yestStr   = yesterday.toDateString();
-
-                const result = [];
-                let prevDateStr = null;
-                let prevRemetente = null;
-                let prevTs = null;
-
-                for (let i = 0; i < msgs.length; i++) {
-                    const m = msgs[i];
-                    const ts = m.timestamp ? new Date(m.timestamp) : null;
-                    const dateStr = ts ? ts.toDateString() : null;
-
-                    // Separador de data
-                    const showDateSep = !!dateStr && dateStr !== prevDateStr;
-                    let dateLabel = '';
-                    if (showDateSep) {
-                        if (dateStr === todayStr)      dateLabel = 'Hoje';
-                        else if (dateStr === yestStr)  dateLabel = 'Ontem';
-                        else if (ts) {
-                            const d = ts.getDate().toString().padStart(2, '0');
-                            const mo = (ts.getMonth() + 1).toString().padStart(2, '0');
-                            const yr = ts.getFullYear();
-                            dateLabel = d + '/' + mo + '/' + yr;
-                        }
-                    }
-
-                    // Agrupamento: mesmo remetente + dentro de 5 min
-                    const MIN5 = 5 * 60 * 1000;
-                    const stacked = !showDateSep
-                        && prevRemetente === m.remetente
-                        && !!ts && !!prevTs
-                        && (ts - prevTs) < MIN5;
-
-                    result.push(Object.assign({}, m, {
-                        _showDateSep: showDateSep,
-                        _dateLabel: dateLabel,
-                        _stacked: stacked,
-                        _isFirstUnread: firstUnreadId != null && m.id === firstUnreadId,
-                    }));
-
-                    prevDateStr = dateStr;
-                    prevRemetente = m.remetente;
-                    prevTs = ts;
-                }
-                return result;
-            },
-
+            // SSE único e roteamento de eventos
             connectSSE: function () {
                 if (!this.endpoints.sse) return;
                 this._sseRetryDelay = this._sseRetryDelay || 2000;
@@ -918,9 +296,13 @@
                             }
                         }
                         if (this.activeConv && this.activeConv.atendimento_id === data.atendimento_id) {
-                            this.loadMessages(data.atendimento_id).then(() => {
-                                this.$nextTick(() => this.scrollMessagesBottom());
-                            });
+                            if (typeof this.loadMessages === 'function') {
+                                this.loadMessages(data.atendimento_id).then(() => {
+                                    if (typeof this.scrollMessagesBottom === 'function') {
+                                        this.$nextTick(() => this.scrollMessagesBottom());
+                                    }
+                                });
+                            }
                         } else if (data.remetente === 'contato') {
                             this._scheduleUnreadRefresh();
                         }
@@ -928,202 +310,27 @@
                     case 'board.moved':
                     case 'atendimento.updated':
                     case 'atendimento.created':
-                        if (!this.isDragging) this.loadBoard();
+                        if (!this.isDragging && typeof this.loadBoard === 'function') {
+                            this.loadBoard();
+                        }
                         this.loadConversations();
                         break;
                     case 'custom_field.updated':
                         if (this.activeConv &&
-                            this.activeConv.atendimento_id === data.atendimento_id) {
+                            this.activeConv.atendimento_id === data.atendimento_id &&
+                            typeof this.loadDetail === 'function') {
                             this.loadDetail(data.atendimento_id);
                         }
                         break;
                     case 'presence.update':
-                        this.handlePresenceUpdate(data);
+                        if (typeof this.handlePresenceUpdate === 'function') {
+                            this.handlePresenceUpdate(data);
+                        }
                         break;
                 }
             },
 
-            uploadMedia: function (event, atendimentoId) {
-                const file = event.target.files && event.target.files[0];
-                if (!file || !atendimentoId) return;
-                if (file.size > 10 * 1024 * 1024) {
-                    alert('Arquivo muito grande. Limite: 10 MB.');
-                    event.target.value = '';
-                    return;
-                }
-                this.uploading = true;
-                const url = buildConvUrl(this.endpoints.conversationsBase, atendimentoId, 'upload');
-                const formData = new FormData();
-                formData.append('file', file);
-                fetch(url, {
-                    method: 'POST',
-                    credentials: 'same-origin',
-                    headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                    body: formData,
-                }).then(function (res) {
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    return res.json();
-                }).then(() => {
-                    this.loadMessages(atendimentoId).then(() => {
-                        this.$nextTick(() => this.scrollMessagesBottom());
-                    });
-                }).catch(function (exc) {
-                    console.error('Falha ao enviar mídia', exc);
-                    alert((exc && exc.message) || 'Falha ao enviar mídia.');
-                }).finally(() => {
-                    this.uploading = false;
-                    event.target.value = '';
-                });
-            },
-
-            salvarCampo: function (campo, novoValor, onDone) {
-                if (!this.activeConv) return;
-                const id = this.activeConv.atendimento_id;
-                const safeBase = (this.endpoints.kanbanConversationsBase || '').replace(/\/+$/, '');
-                const url = safeBase + '/' + id + '/custom-fields/' + campo.slug + '/';
-                this.customFieldsSaving[campo.slug] = true;
-                jsonFetch(url, {
-                    method: 'PATCH',
-                    body: JSON.stringify({ valor: novoValor }),
-                }).then(() => {
-                    if (this.activeDetail && Array.isArray(this.activeDetail.campos)) {
-                        const c = this.activeDetail.campos.find((x) => x.slug === campo.slug);
-                        if (c) {
-                            c.valor_raw = novoValor;
-                            c.valor_display = Array.isArray(novoValor)
-                                ? novoValor.join(', ')
-                                : String(novoValor ?? '');
-                            c.origem = 'MANUAL';
-                            c.confianca = null;
-                        }
-                    }
-                    if (typeof onDone === 'function') onDone();
-                }).catch((exc) => {
-                    console.error('Falha ao salvar campo', campo.slug, exc);
-                    alert((exc && exc.message) || 'Falha ao salvar campo.');
-                }).finally(() => {
-                    this.customFieldsSaving[campo.slug] = false;
-                });
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Etiquetas
-            // ─────────────────────────────────────────────────────────
-            loadEtiquetas: function () {
-                const url = (this.endpoints.etiquetas || '/workspace/api/etiquetas/');
-                return jsonFetch(url).then((data) => {
-                    this.etiquetas = data.etiquetas || [];
-                }).catch(() => { this.etiquetas = []; });
-            },
-
-            loadConversationEtiquetas: function (id) {
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'etiquetas');
-                return jsonFetch(url).then((data) => {
-                    this.etiquetasAplicadas = data.etiquetas || [];
-                }).catch(() => { this.etiquetasAplicadas = []; });
-            },
-
-            isEtiquetaAplicada: function (etiquetaId) {
-                return (this.etiquetasAplicadas || []).some((e) => e.id === etiquetaId);
-            },
-
-            toggleEtiqueta: function (etiquetaId) {
-                if (!this.activeConv) return;
-                const id = this.activeConv.atendimento_id;
-                const url = buildConvUrl(
-                    this.endpoints.conversationsBase, id, 'etiquetas/' + etiquetaId + '/toggle'
-                );
-                return jsonFetch(url, { method: 'POST' }).then((result) => {
-                    if (result.ativa) {
-                        const et = this.etiquetas.find((e) => e.id === etiquetaId);
-                        if (et && !this.isEtiquetaAplicada(etiquetaId)) {
-                            this.etiquetasAplicadas.push({ ...et });
-                        }
-                    } else {
-                        this.etiquetasAplicadas = this.etiquetasAplicadas.filter(
-                            (e) => e.id !== etiquetaId
-                        );
-                    }
-                }).catch((exc) => {
-                    console.error('Falha ao alternar etiqueta', exc);
-                    alert((exc && exc.message) || 'Falha ao alternar etiqueta.');
-                });
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Notas
-            // ─────────────────────────────────────────────────────────
-            loadNotas: function (id) {
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'notas');
-                return jsonFetch(url).then((data) => {
-                    this.notas = data.notas || [];
-                }).catch(() => { this.notas = []; });
-            },
-
-            criarNota: function () {
-                if (!this.activeConv) return;
-                const texto = (this.notaComposer || '').trim();
-                if (!texto || this.notaSaving) return;
-                this.notaSaving = true;
-                const id = this.activeConv.atendimento_id;
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'notas');
-                return jsonFetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({ texto: texto }),
-                }).then((nota) => {
-                    this.notas.unshift(nota);
-                    this.notaComposer = '';
-                }).catch((exc) => {
-                    console.error('Falha ao criar nota', exc);
-                    alert((exc && exc.message) || 'Falha ao criar nota.');
-                }).finally(() => {
-                    this.notaSaving = false;
-                });
-            },
-
-            deletarNota: function (notaId) {
-                if (!this.activeConv) return;
-                if (!confirm('Remover esta nota?')) return;
-                const id = this.activeConv.atendimento_id;
-                const safeBase = (this.endpoints.conversationsBase || '').replace(/\/+$/, '');
-                const url = safeBase + '/' + id + '/notas/' + notaId + '/';
-                return jsonFetch(url, { method: 'DELETE' }).then(() => {
-                    this.notas = this.notas.filter((n) => n.id !== notaId);
-                }).catch((exc) => {
-                    console.error('Falha ao remover nota', exc);
-                    alert((exc && exc.message) || 'Falha ao remover nota.');
-                });
-            },
-
-            abrirComposerNota: function () {
-                this.detailDrawerOpen = true;
-                if (this.focusMode === 'board') this.setFocus('split');
-                this.$nextTick(() => {
-                    const ta = document.querySelector('.ws-info__nota-form textarea');
-                    if (ta) ta.focus();
-                });
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Mídias e Timeline
-            // ─────────────────────────────────────────────────────────
-            loadMedias: function (id) {
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'medias');
-                return jsonFetch(url).then((data) => {
-                    this.medias = data.medias || [];
-                }).catch(() => { this.medias = []; });
-            },
-
-            loadTimeline: function (id) {
-                const url = buildConvUrl(this.endpoints.conversationsBase, id, 'timeline');
-                return jsonFetch(url).then((data) => {
-                    this.timeline = data.timeline || [];
-                }).catch(() => { this.timeline = []; });
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Notificações (sino)
-            // ─────────────────────────────────────────────────────────
+            // Sino de Notificações
             loadUnreadCount: function () {
                 const url = (this.endpoints.unreadCount || '/workspace/api/notifications/unread-count/');
                 return jsonFetch(url).then((data) => {
@@ -1139,43 +346,7 @@
                 }, 500);
             },
 
-            // ─────────────────────────────────────────────────────────
-            // Transferência entre fluxos
-            // ─────────────────────────────────────────────────────────
-            transferirFluxo: function (fluxoDestinoId) {
-                if (!this.activeConv) return;
-                const id = this.activeConv.atendimento_id;
-                const url = (this.endpoints.boardTransferFluxo || '/workspace/api/board/transfer-fluxo/');
-                this.transferirPopoverOpen = false;
-                return jsonFetch(url, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        atendimento_id: id,
-                        fluxo_destino_id: fluxoDestinoId,
-                    }),
-                }).then(() => {
-                    // Recarrega tudo — o atendimento pode ter saído da visão atual.
-                    this.loadConversations();
-                    this.loadBoard();
-                    this.activeConv = null;
-                    this.messages = [];
-                    this.activeDetail = null;
-                }).catch((exc) => {
-                    console.error('Falha ao transferir fluxo', exc);
-                    alert((exc && exc.message) || 'Falha ao transferir atendimento.');
-                });
-            },
-
-            fluxosParaTransferir: function () {
-                const atualId = this.activeConv && this.activeConv.fluxo_id;
-                const atualDetailId = this.activeDetail && this.activeDetail.fluxo_id;
-                const excluirId = atualId || atualDetailId || null;
-                return (this.fluxos || []).filter((f) => f.id !== excluirId);
-            },
-
-            // ─────────────────────────────────────────────────────────
-            // Filtros (popover)
-            // ─────────────────────────────────────────────────────────
+            // Filtros Adicionais
             applyFilters: function () {
                 this.filterPopoverOpen = false;
                 return Promise.all([
@@ -1196,7 +367,6 @@
                 return this.applyFilters();
             },
 
-            // Helper: número de filtros ativos (badge no botão funil)
             activeFiltersCount: function () {
                 let n = 0;
                 if (this.filters.q) n++;
@@ -1207,9 +377,57 @@
                 return n;
             },
 
-            prioridadeClass: prioridadeClass,
-            intentLabel: intentLabel,
-            tipoMidiaLabel: tipoMidiaLabel,
+            // Computa mensagens enriquecidas
+            enrichedMessages: function() {
+                const msgs = this.messages || [];
+                const firstUnreadId = this._firstUnreadId;
+                const now = new Date();
+                const todayStr  = now.toDateString();
+                const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+                const yestStr   = yesterday.toDateString();
+
+                const result = [];
+                let prevDateStr = null;
+                let prevRemetente = null;
+                let prevTs = null;
+
+                for (let i = 0; i < msgs.length; i++) {
+                    const m = msgs[i];
+                    const ts = m.timestamp ? new Date(m.timestamp) : null;
+                    const dateStr = ts ? ts.toDateString() : null;
+
+                    const showDateSep = !!dateStr && dateStr !== prevDateStr;
+                    let dateLabel = '';
+                    if (showDateSep) {
+                        if (dateStr === todayStr)      dateLabel = 'Hoje';
+                        else if (dateStr === yestStr)  dateLabel = 'Ontem';
+                        else if (ts) {
+                            const d = ts.getDate().toString().padStart(2, '0');
+                            const mo = (ts.getMonth() + 1).toString().padStart(2, '0');
+                            const yr = ts.getFullYear();
+                            dateLabel = d + '/' + mo + '/' + yr;
+                        }
+                    }
+
+                    const MIN5 = 5 * 60 * 1000;
+                    const stacked = !showDateSep
+                        && prevRemetente === m.remetente
+                        && !!ts && !!prevTs
+                        && (ts - prevTs) < MIN5;
+
+                    result.push(Object.assign({}, m, {
+                        _showDateSep: showDateSep,
+                        _dateLabel: dateLabel,
+                        _stacked: stacked,
+                        _isFirstUnread: firstUnreadId != null && m.id === firstUnreadId,
+                    }));
+
+                    prevDateStr = dateStr;
+                    prevRemetente = m.remetente;
+                    prevTs = ts;
+                }
+                return result;
+            }
         };
     };
 

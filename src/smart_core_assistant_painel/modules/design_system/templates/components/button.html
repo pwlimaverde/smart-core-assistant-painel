@@ -1,0 +1,22 @@
+<button 
+  type="{{ type|default:'button' }}"
+  class="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors duration-150
+         {% if variant == 'primary' %}
+           bg-[var(--ws-accent)] text-white hover:bg-[var(--ws-accent-hover)] focus:ring-[var(--ws-accent)]
+         {% elif variant == 'secondary' %}
+           bg-white text-[var(--ws-fg)] border border-[var(--ws-border)] hover:bg-[var(--ws-bg)] focus:ring-[var(--ws-border-strong)]
+         {% elif variant == 'danger' %}
+           bg-[var(--ws-danger)] text-white hover:bg-red-700 focus:ring-[var(--ws-danger)]
+         {% else %}
+           bg-[var(--ws-chip)] text-[var(--ws-fg)] hover:bg-[var(--ws-border)] focus:ring-[var(--ws-border-strong)]
+         {% endif %}
+         {{ class }}"
+  {% if id %}id="{{ id }}"{% endif %}
+  {% if disabled %}disabled{% endif %}
+  {{ attrs|safe }}
+>
+  {% if icon %}
+    <span class="mr-2">{{ icon|safe }}</span>
+  {% endif %}
+  {{ label|default:'' }}
+</button>

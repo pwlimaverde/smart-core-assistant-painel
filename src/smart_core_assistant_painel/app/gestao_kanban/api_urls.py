@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from django.urls import path
 
-# Por enquanto as views ainda residem em atendimento_unificado
-# Serão movidas no próximo passo da refatoração
-from smart_core_assistant_painel.app.atendimento_unificado import views_api
+from . import views_api
 
 urlpatterns = [
     path(

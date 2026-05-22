@@ -155,3 +155,129 @@ def _build_metadados(
         metadados["evolution"] = evo
 
     return metadados
+
+
+def mark_read(
+    atendimento_id: int,
+    atendente_id: int,
+) -> Any:
+    """Marca todas as mensagens não lidas do contato como lidas.
+
+    Faz três coisas:
+    1. Atualiza em massa ``Mensagem.lido=True`` para mensagens vindas do
+       contato — fonte da verdade do contador do sino e dos cards.
+    2. Cria/atualiza ``LeituraAtendimento`` (audit log de quem leu por último).
+    3. Dispara markread no Evolution Go (best-effort, throttled).
+       Throttle: 1 chamada por atendimento por abertura de conversa (cache 60s).
+
+    Args:
+        atendimento_id: ID do ``Atendimento`` cujas mensagens serão lidas.
+        atendente_id: ID do ``Atendente`` que efetuou a leitura.
+
+    Returns:
+        Instância ``LeituraAtendimento`` criada/atualizada.
+    """
+    from smart_core_assistant_painel.app.atendimento_unificado.models import (
+        LeituraAtendimento,
+    )
+
+    Mensagem.objects.filter(
+        atendimento_id=atendimento_id,
+        remetente=TipoRemetente.CONTATO,
+        lido=False,
+    ).update(lido=True)
+
+    obj, _created = LeituraAtendimento.objects.update_or_create(
+        atendimento_id=atendimento_id,
+        atendente_id=atendente_id,
+        defaults={},
+    )
+
+    try:
+        _dispatch_evolution_markread(atendimento_id)
+    except Exception as exc:
+        logger.warning(
+            "mark_read: falha ao disparar markread Evolution: {}", exc
+        )
+
+    return obj
+
+
+def _dispatch_evolution_markread(atendimento_id: int) -> None:
+    """Chama markread no Evolution Go para o atendimento.
+
+    Throttle: 1 chamada por atendimento a cada 60 segundos via Django cache.
+
+    Args:
+        atendimento_id: ID do atendimento cujas mensagens devem ser marcadas.
+    """
+    from django.core.cache import cache
+
+    from smart_core_assistant_painel.app.evolution_sync.models import (
+        EvolutionContact,
+    )
+    from smart_core_assistant_painel.app.evolution_sync.services import (
+        EvolutionGoAdapter,
+    )
+    from smart_core_assistant_painel.app.tenants.models import TenantEvolution
+
+    throttle_key = f"evo_markread_throttle_{atendimento_id}"
+    if cache.get(throttle_key):
+        return  # throttled — já foi chamado nesta janela
+    cache.set(throttle_key, 1, timeout=60)
+
+    atendimento = (
+        Atendimento.objects.select_related("contato")
+        .filter(id=atendimento_id)
+        .first()
+    )
+    if not atendimento or not atendimento.contato:
+        return
+
+    contato = atendimento.contato
+    evo_contact = (
+        EvolutionContact.objects.select_related("instance")
+        .filter(contact_id=contato.id, active=True)
+        .order_by("-updated_at")
+        .first()
+    )
+    if not evo_contact or not evo_contact.instance:
+        return
+
+    inst = evo_contact.instance
+    base_url = ""
+    tenant_id = getattr(inst, "tenant_id", None)
+    if tenant_id:
+        tenant_cfg = TenantEvolution.objects.filter(
+            tenant_id=tenant_id
+        ).first()
+        if tenant_cfg and tenant_cfg.server_url:
+            base_url = str(tenant_cfg.server_url).rstrip("/")
+    if not base_url:
+        return
+
+    msg_ids = list(
+        Mensagem.objects.filter(
+            atendimento_id=atendimento_id,
+            remetente=TipoRemetente.CONTATO,
+        )
+        .exclude(message_id_whatsapp__isnull=True)
+        .exclude(message_id_whatsapp="")
+        .values_list("message_id_whatsapp", flat=True)[:50]
+    )
+    if not msg_ids:
+        return
+
+    phone = str(getattr(contato, "telefone", "") or "").strip()
+    jid = evo_contact.jid or (f"{phone}@s.whatsapp.net" if phone else "")
+    if not jid:
+        return
+
+    adapter = EvolutionGoAdapter()
+    adapter.mark_read(
+        instance=inst.name,
+        api_key=str(inst.api_key),
+        base_url=base_url,
+        number=jid,
+        message_ids=list(msg_ids),
+    )

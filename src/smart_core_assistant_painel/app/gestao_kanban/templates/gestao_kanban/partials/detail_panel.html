@@ -166,37 +166,8 @@ Usa store Alpine: `activeDetail`, `notas`, `medias`, `timeline`, `etiquetasAplic
                 x-text="(notas || []).length + ' nota(s)'"></span>
         </div>
         <div class="ws-info__notas">
-            <template x-for="n in (notas || [])" :key="n.id">
-                <div class="ws-info__nota">
-                    <div class="ws-info__nota__txt" x-text="n.texto"></div>
-                    <div class="ws-info__nota__meta">
-                        <span>
-                            <span x-text="n.criado_por_nome || 'Sistema'"></span>
-                            ·
-                            <span x-text="new Date(n.criado_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })"></span>
-                        </span>
-                        <template x-if="n.criado_por_id && atendenteId && n.criado_por_id === atendenteId">
-                            <button type="button" class="ws-info__nota__del"
-                                @click="deletarNota(n.id)">Remover</button>
-                        </template>
-                    </div>
-                </div>
-            </template>
-            <template x-if="(notas || []).length === 0">
-                <div style="font-size: 12px; color: var(--ws-fg-muted); padding: 8px;">
-                    Nenhuma nota interna ainda.
-                </div>
-            </template>
+            {% include "gestao_kanban/partials/notas_panel.html" %}
         </div>
-        <form class="ws-info__nota-form" @submit.prevent="criarNota()">
-            <textarea x-model="notaComposer"
-                placeholder="Adicionar nota interna (visível apenas para a equipe)..."
-                rows="3"></textarea>
-            <button type="submit"
-                :disabled="notaSaving || !notaComposer.trim()">
-                <span x-text="notaSaving ? 'Salvando…' : 'Adicionar nota'"></span>
-            </button>
-        </form>
     </section>
 
 </div>

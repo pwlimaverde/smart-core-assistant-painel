@@ -1,0 +1,52 @@
+{# Lightbox/Visualizador de Mídia (Modal) #}
+<template x-if="lightboxOpen && activeMedia">
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+         @keydown.escape.window="closeLightbox()">
+        
+        {# Botão Fechar #}
+        <button @click="closeLightbox()" 
+                class="absolute top-4 right-4 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
+            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+
+        {# Botão Download #}
+        <template x-if="activeMedia.src">
+            <a :href="activeMedia.src" :download="activeMedia.filename || 'download'"
+               class="absolute top-4 right-16 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors flex items-center justify-center"
+               title="Baixar mídia">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+            </a>
+        </template>
+
+        {# Container da Mídia #}
+        <div class="max-w-full max-h-[85vh] flex flex-col items-center justify-center">
+            
+            {# Imagem #}
+            <template x-if="activeMedia.kind === 'image'">
+                <img :src="activeMedia.src" :alt="activeMedia.filename || 'Imagem'"
+                     class="max-w-full max-h-[80vh] object-contain rounded shadow-2xl" />
+            </template>
+            
+            {# Vídeo #}
+            <template x-if="activeMedia.kind === 'video'">
+                <video :src="activeMedia.src" controls autoplay
+                       class="max-w-full max-h-[80vh] rounded shadow-2xl focus:outline-none"></video>
+            </template>
+            
+            {# PDF #}
+            <template x-if="activeMedia.kind === 'document' && activeMedia.is_pdf">
+                <iframe :src="activeMedia.src" class="w-[85vw] h-[75vh] md:w-[70vw] rounded shadow-2xl border-0"></iframe>
+            </template>
+
+            {# Legenda da Mídia #}
+            <template x-if="activeMedia.caption">
+                <div class="mt-4 text-white text-sm bg-black/40 px-4 py-2 rounded max-w-xl text-center truncate" 
+                     x-text="activeMedia.caption"></div>
+            </template>
+        </div>
+    </div>
+</template>

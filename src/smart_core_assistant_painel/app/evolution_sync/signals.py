@@ -259,7 +259,7 @@ def _on_message_saved(
                 from smart_core_assistant_painel.app.atendimentos.models import (
                     TipoRemetente,
                 )
-                from smart_core_assistant_painel.app.gestao_kanban.services.board_service import (
+                from smart_core_assistant_painel.app.chat_evolution.services.message_dispatch_service import (
                     _dispatch_evolution_markread,
                 )
 

@@ -1,0 +1,24 @@
+<div class="text-center py-12 px-4 sm:px-6 flex flex-col items-center justify-center {{ class }}">
+  {% if icon %}
+    <div class="mx-auto h-12 w-12 text-gray-400">
+      {{ icon|safe }}
+    </div>
+  {% else %}
+    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V4a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+    </svg>
+  {% endif %}
+  <h3 class="mt-2 text-sm font-medium text-[var(--ws-fg-strong)]">
+    {{ title }}
+  </h3>
+  {% if message %}
+    <p class="mt-1 text-sm text-[var(--ws-fg-muted)]">
+      {{ message }}
+    </p>
+  {% endif %}
+  {% if button_label %}
+    <div class="mt-6">
+      {% include "components/button.html" with variant="primary" label=button_label attrs=button_attrs %}
+    </div>
+  {% endif %}
+</div>

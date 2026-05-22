@@ -3,9 +3,48 @@
    Este arquivo centraliza o Tailwind e as regras genéricas.
    ========================================================================== */
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-500: #1d4ed8;
+  --color-chat-bubble-in: #ffffff;
+  --color-chat-bubble-out: #d9fdd3;
+  --color-kanban-col-bg: #f1f5f9;
+  --spacing-drawer: 22rem;
+  --font-sans: "Inter", system-ui, sans-serif;
+  
+  --color-ws-bg: var(--ws-bg);
+  --color-ws-fg: var(--ws-fg);
+  --color-ws-fg-strong: var(--ws-fg-strong);
+  --color-ws-fg-muted: var(--ws-fg-muted);
+  --color-ws-fg-subtle: var(--ws-fg-subtle);
+  --color-ws-card: var(--ws-card);
+  --color-ws-card-hover: var(--ws-card-hover);
+  --color-ws-panel: var(--ws-panel);
+  --color-ws-chip: var(--ws-chip);
+  --color-ws-input-bg: var(--ws-input-bg);
+  --color-ws-border: var(--ws-border);
+  --color-ws-border-strong: var(--ws-border-strong);
+  --color-ws-divider: var(--ws-divider);
+  --color-ws-topbar: var(--ws-topbar);
+  --color-ws-topbar-fg: var(--ws-topbar-fg);
+  --color-ws-sidebar: var(--ws-sidebar);
+  --color-ws-sidebar-fg: var(--ws-sidebar-fg);
+  --color-ws-accent: var(--ws-accent);
+  --color-ws-accent-hover: var(--ws-accent-hover);
+  --color-ws-success: var(--ws-success);
+  --color-ws-warning: var(--ws-warning);
+  --color-ws-danger: var(--ws-danger);
+  --color-ws-info: var(--ws-info);
+  --color-ws-chat-bg: var(--ws-chat-bg);
+  --color-ws-chat-dot: var(--ws-chat-dot);
+  --color-ws-chat-header: var(--ws-chat-header);
+  --color-ws-chat-foot: var(--ws-chat-foot);
+  --color-ws-bub-in: var(--ws-bub-in);
+  --color-ws-bub-in-fg: var(--ws-bub-in-fg);
+  --color-ws-bub-out: var(--ws-bub-out);
+  --color-ws-bub-out-fg: var(--ws-bub-out-fg);
+}
 
 /* ==========================================================================
    Design Tokens

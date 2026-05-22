@@ -1,0 +1,25 @@
+<div class="ws-popover ws-popover--left"
+    x-show="etiquetaPopoverOpen" x-transition.opacity
+    style="display: none;">
+    <div class="ws-popover__hdr">Etiquetas</div>
+    <template x-for="et in etiquetas" :key="et.id">
+        <button type="button"
+            :class="isEtiquetaAplicada(et.id) ? 'ws-popover__item ws-popover__item--active' : 'ws-popover__item'"
+            :title="et.descricao || et.nome"
+            @click="toggleEtiqueta(et.id)">
+            <span class="ws-popover__dot" :style="'background: ' + et.cor"></span>
+            <span x-text="et.nome"></span>
+            <template x-if="isEtiquetaAplicada(et.id)">
+                <svg class="ws-popover__check" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 12l5 5L20 7"/>
+                </svg>
+            </template>
+        </button>
+    </template>
+    <template x-if="etiquetas.length === 0">
+        <div class="ws-popover__empty">
+            Nenhuma etiqueta cadastrada.<br>
+            <span style="font-size: 10px;">Cadastre em /admin/atendimento_unificado/etiqueta/</span>
+        </div>
+    </template>
+</div>

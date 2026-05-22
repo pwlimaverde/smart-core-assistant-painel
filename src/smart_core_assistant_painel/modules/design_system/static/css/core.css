@@ -5,7 +5,16 @@
 
 @import "tailwindcss";
 
+/* Fontes de detecção de classes (Tailwind v4 — build de produção via CLI).
+   Escaneia os templates/JS do app e dos módulos para purgar utilities. */
+@source "../../../../app";
+@source "../../../../modules";
+
 @theme {
+  /* Tema global do app (migrado do <style inline> de core/templates/base.html) */
+  --color-gold-primary: #a98f71;
+  --color-gold-dark: #8b7355;
+
   --color-brand-500: #1d4ed8;
   --color-chat-bubble-in: #ffffff;
   --color-chat-bubble-out: #d9fdd3;
@@ -44,6 +53,11 @@
   --color-ws-bub-in-fg: var(--ws-bub-in-fg);
   --color-ws-bub-out: var(--ws-bub-out);
   --color-ws-bub-out-fg: var(--ws-bub-out-fg);
+}
+
+/* Utilitário de fonte global (migrado do <style inline> de base.html) */
+.font-outfit {
+  font-family: 'Outfit', sans-serif;
 }
 
 /* ==========================================================================

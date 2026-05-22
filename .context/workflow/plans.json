@@ -5,7 +5,7 @@
       "path": "plans/refatoracao-modular-atendimento.md",
       "title": "Refatoração Modular do Atendimento Unificado",
       "summary": "Separação em 3 apps (`chat_evolution`, `gestao_kanban`, shell `atendimento_unificado`) + módulo agnóstico `modules/design_system`. **Reestruturado em 2026-05-22** contra docs atuais (Django 5.2.7, Alpine.js v3, Tailwind v4, SortableJS, Evolution Go v2.3.7) e contra o **estado real do código (~60%)**.",
-      "linkedAt": "2026-05-22T12:27:00.607Z",
+      "linkedAt": "2026-05-22T12:36:27.711Z",
       "status": "active"
     }
   ],

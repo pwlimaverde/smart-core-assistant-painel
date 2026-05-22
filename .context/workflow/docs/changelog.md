@@ -1,5 +1,26 @@
 # Changelog
 
+## [v1.1.0] - 2026-05-22
+
+### Adicionado
+- **Gate de Final Review (PREVC fase C):** skill `prevc-final-review` + comando `/final-review` que audita planejado vs. implementado via subagente Opus, corrige desvios automaticamente e bloqueia o arquivamento de planos incompletos.
+- Novos apps modulares `chat_evolution` e `gestao_kanban` criados para desacoplar as funcionalidades de chat e painel do monolito.
+- Arquivos de selectors, signals e views reestruturados e otimizados dentro de cada respectivo app.
+- Configuração do canal SSE para eventos específicos (`chat_evolution/signals.py` e `gestao_kanban/signals.py`) com isolamento multi-tenant.
+
+### Modificado
+- Integrado o shell `workspace.html` para consumir as rotas isoladas dos novos apps.
+- Resolvidos os erros estáticos e warnings de Pyright (como o do `TipoRemetente.BOT` e importações não utilizadas de `signals`).
+- Atualizado o inicializador `apps.py` de ambos os aplicativos para carregar dinamicamente seus respectivos brokers de sinais com as anotações do Pyright adequadas.
+
+### Removido
+- Removidos e esvaziados os módulos obsoletos do monolito antigo `atendimento_unificado` (`selectors.py`, `signals.py`, `views_api.py` deletados e `api_urls.py` esvaziado).
+
+### Workflow
+- Workflow PREVC do plano `refatoracao-modular-atendimento` finalizado e arquivado.
+
+---
+
 ## [v1.0.3] - 2026-02-12
 
 ### Adicionado

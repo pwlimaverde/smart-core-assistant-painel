@@ -4,6 +4,33 @@
     window.workspaceChatMixin = function() {
         return {
             // ─────────────────────────────────────────────────────────
+            // Estado do domínio Chat (movido do core na Fase 4 — separação
+            // de responsabilidades; mesclado em workspaceStore via Object.assign)
+            // ─────────────────────────────────────────────────────────
+            messages: [],
+            activeConv: null,
+            activeDetail: null,
+            composer: '',
+            sending: false,
+            uploading: false,
+            replyTo: null,
+            mediaLightbox: {
+                open: false, kind: '', src: '',
+                mimetype: '', filename: '', isPdf: false,
+            },
+            showScrollBtn: false,
+            _firstUnreadId: null,
+            _scrollBtnThreshold: 120,
+            contactPresence: null,
+            _presenceTimer: null,
+            _presenceSendTimer: null,
+            isRecording: false,
+            _mediaRecorder: null,
+            _audioChunks: [],
+            recordingSeconds: 0,
+            _recordingTimer: null,
+
+            // ─────────────────────────────────────────────────────────
             // Abertura de Chat e Roteamento
             // ─────────────────────────────────────────────────────────
             
@@ -493,6 +520,61 @@
                     return '';
                 }
                 return base;
+            },
+
+            // ─────────────────────────────────────────────────────────
+            // Mensagens enriquecidas (separadores de data, agrupamento,
+            // divisor de não-lidas) — movido do core na Fase 4
+            // ─────────────────────────────────────────────────────────
+            enrichedMessages: function() {
+                const msgs = this.messages || [];
+                const firstUnreadId = this._firstUnreadId;
+                const now = new Date();
+                const todayStr  = now.toDateString();
+                const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
+                const yestStr   = yesterday.toDateString();
+
+                const result = [];
+                let prevDateStr = null;
+                let prevRemetente = null;
+                let prevTs = null;
+
+                for (let i = 0; i < msgs.length; i++) {
+                    const m = msgs[i];
+                    const ts = m.timestamp ? new Date(m.timestamp) : null;
+                    const dateStr = ts ? ts.toDateString() : null;
+
+                    const showDateSep = !!dateStr && dateStr !== prevDateStr;
+                    let dateLabel = '';
+                    if (showDateSep) {
+                        if (dateStr === todayStr)      dateLabel = 'Hoje';
+                        else if (dateStr === yestStr)  dateLabel = 'Ontem';
+                        else if (ts) {
+                            const d = ts.getDate().toString().padStart(2, '0');
+                            const mo = (ts.getMonth() + 1).toString().padStart(2, '0');
+                            const yr = ts.getFullYear();
+                            dateLabel = d + '/' + mo + '/' + yr;
+                        }
+                    }
+
+                    const MIN5 = 5 * 60 * 1000;
+                    const stacked = !showDateSep
+                        && prevRemetente === m.remetente
+                        && !!ts && !!prevTs
+                        && (ts - prevTs) < MIN5;
+
+                    result.push(Object.assign({}, m, {
+                        _showDateSep: showDateSep,
+                        _dateLabel: dateLabel,
+                        _stacked: stacked,
+                        _isFirstUnread: firstUnreadId != null && m.id === firstUnreadId,
+                    }));
+
+                    prevDateStr = dateStr;
+                    prevRemetente = m.remetente;
+                    prevTs = ts;
+                }
+                return result;
             }
         };
     };

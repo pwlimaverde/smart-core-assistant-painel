@@ -54,41 +54,29 @@
 
     window.workspaceCoreMixin = function (init) {
         return {
+            // ─────────────────────────────────────────────────────────
+            // Estado do shell (layout, fluxos, lista de conversas, filtros,
+            // SSE único, notificações). O estado de domínio chat/kanban vive
+            // nos respectivos mixins (workspaceChatMixin / workspaceKanbanMixin),
+            // mesclados em workspaceStore via Object.assign (Fase 4).
+            // ─────────────────────────────────────────────────────────
             fluxoId: init.fluxoId || null,
             fluxos: [],
             conversations: [],
-            messages: [],
-            board: { etapas: [], cards: {} },
-            activeConv: null,
-            activeDetail: null,
-            composer: '',
             search: '',
             filterTag: '',
-            sending: false,
-            uploading: false,
+            endpoints: init.endpoints,
+            tenantSlug: init.tenantSlug,
+            atendenteId: init.atendenteId,
+            atendenteNome: init.atendenteNome,
+            detailDrawerOpen: false,
+
+            // SSE único por tenant
             sseConnected: false,
             sse: null,
             _sseRetryDelay: 2000,
             _sseReconnectTimer: null,
-            _sortableInstances: [],
-            isDragging: false,
-            endpoints: init.endpoints,
-            customFieldsSaving: {},
-            tenantSlug: init.tenantSlug,
-            atendenteId: init.atendenteId,
-            atendenteNome: init.atendenteNome,
             sseEnabled: init.sseEnabled === true,
-            detailDrawerOpen: false,
-
-            // Lightbox de mídia
-            mediaLightbox: {
-                open: false,
-                kind: '',
-                src: '',
-                mimetype: '',
-                filename: '',
-                isPdf: false,
-            },
 
             // Modos de foco e visualização
             focusMode: readLS(LS_FOCUS, 'split'),
@@ -97,15 +85,9 @@
             showKbdHint: false,
             _hintTimer: null,
 
-            // Elementos de suporte (etiquetas, notas, mídias, timeline, notificações)
-            etiquetas: [],
-            etiquetasAplicadas: [],
-            notas: [],
-            medias: [],
-            timeline: [],
+            // Notificações e filtros
             unreadCount: 0,
-            etiquetaPopoverOpen: false,
-            transferirPopoverOpen: false,
+            _unreadDebounce: null,
             filterPopoverOpen: false,
             filters: {
                 q: '',
@@ -114,27 +96,6 @@
                 etiqueta_id: '',
                 apenas_nao_lidos: false,
             },
-            notaComposer: '',
-            notaSaving: false,
-            _unreadDebounce: null,
-
-            // UX e Scroll
-            showScrollBtn: false,
-            _firstUnreadId: null,
-            _scrollBtnThreshold: 120,
-
-            // Reply/Citação
-            replyTo: null,
-
-            // Presença e Gravação
-            contactPresence: null,
-            _presenceTimer: null,
-            _presenceSendTimer: null,
-            isRecording: false,
-            _mediaRecorder: null,
-            _audioChunks: [],
-            recordingSeconds: 0,
-            _recordingTimer: null,
 
             init: async function () {
                 try {
@@ -375,58 +336,6 @@
                 if (this.filters.etiqueta_id) n++;
                 if (this.filters.apenas_nao_lidos) n++;
                 return n;
-            },
-
-            // Computa mensagens enriquecidas
-            enrichedMessages: function() {
-                const msgs = this.messages || [];
-                const firstUnreadId = this._firstUnreadId;
-                const now = new Date();
-                const todayStr  = now.toDateString();
-                const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1);
-                const yestStr   = yesterday.toDateString();
-
-                const result = [];
-                let prevDateStr = null;
-                let prevRemetente = null;
-                let prevTs = null;
-
-                for (let i = 0; i < msgs.length; i++) {
-                    const m = msgs[i];
-                    const ts = m.timestamp ? new Date(m.timestamp) : null;
-                    const dateStr = ts ? ts.toDateString() : null;
-
-                    const showDateSep = !!dateStr && dateStr !== prevDateStr;
-                    let dateLabel = '';
-                    if (showDateSep) {
-                        if (dateStr === todayStr)      dateLabel = 'Hoje';
-                        else if (dateStr === yestStr)  dateLabel = 'Ontem';
-                        else if (ts) {
-                            const d = ts.getDate().toString().padStart(2, '0');
-                            const mo = (ts.getMonth() + 1).toString().padStart(2, '0');
-                            const yr = ts.getFullYear();
-                            dateLabel = d + '/' + mo + '/' + yr;
-                        }
-                    }
-
-                    const MIN5 = 5 * 60 * 1000;
-                    const stacked = !showDateSep
-                        && prevRemetente === m.remetente
-                        && !!ts && !!prevTs
-                        && (ts - prevTs) < MIN5;
-
-                    result.push(Object.assign({}, m, {
-                        _showDateSep: showDateSep,
-                        _dateLabel: dateLabel,
-                        _stacked: stacked,
-                        _isFirstUnread: firstUnreadId != null && m.id === firstUnreadId,
-                    }));
-
-                    prevDateStr = dateStr;
-                    prevRemetente = m.remetente;
-                    prevTs = ts;
-                }
-                return result;
             }
         };
     };

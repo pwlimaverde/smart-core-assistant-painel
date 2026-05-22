@@ -4,7 +4,7 @@
 {% block title %}Workspace · Smart Core{% endblock %}
 
 {% block extra_head %}
-    <link rel="stylesheet" href="{% static 'css/core.css' %}?v=1">
+    {# core.build.css (Tailwind + tokens) já é carregado globalmente em base.html #}
     <link rel="stylesheet" href="{% static 'atendimento_unificado/css/workspace.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'chat_evolution/css/chat.css' %}?v=1">
     <link rel="stylesheet" href="{% static 'gestao_kanban/css/kanban.css' %}?v=1">

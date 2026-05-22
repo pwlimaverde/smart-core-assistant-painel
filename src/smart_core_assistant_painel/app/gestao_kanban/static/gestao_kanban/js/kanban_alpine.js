@@ -35,6 +35,24 @@
     window.workspaceKanbanMixin = function() {
         return {
             // ─────────────────────────────────────────────────────────
+            // Estado do domínio Kanban (movido do core na Fase 4 —
+            // separação de responsabilidades; mesclado via Object.assign)
+            // ─────────────────────────────────────────────────────────
+            board: { etapas: [], cards: {} },
+            isDragging: false,
+            _sortableInstances: [],
+            etiquetas: [],
+            etiquetasAplicadas: [],
+            notas: [],
+            medias: [],
+            timeline: [],
+            notaComposer: '',
+            notaSaving: false,
+            customFieldsSaving: {},
+            etiquetaPopoverOpen: false,
+            transferirPopoverOpen: false,
+
+            // ─────────────────────────────────────────────────────────
             // Carga do Board e SortableJS
             // ─────────────────────────────────────────────────────────
             loadBoard: function () {

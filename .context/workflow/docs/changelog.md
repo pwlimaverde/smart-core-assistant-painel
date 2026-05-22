@@ -3,6 +3,7 @@
 ## [v1.1.0] - 2026-05-22
 
 ### Adicionado
+- **Build de produção Tailwind v4 (sem Node):** `core.build.css` purgado, gerado por `uv run task build-css` via `pytailwindcss` (binário standalone). Substitui o CDN `@tailwindcss/browser` (dev-only) no `base.html`. Tasks `build-css`/`watch-css` no `pyproject.toml`.
 - **Gate de Final Review (PREVC fase C):** skill `prevc-final-review` + comando `/final-review` que audita planejado vs. implementado via subagente Opus, corrige desvios automaticamente e bloqueia o arquivamento de planos incompletos.
 - Novos apps modulares `chat_evolution` e `gestao_kanban` criados para desacoplar as funcionalidades de chat e painel do monolito.
 - Arquivos de selectors, signals e views reestruturados e otimizados dentro de cada respectivo app.

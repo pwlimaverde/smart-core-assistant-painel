@@ -1,8 +1,9 @@
 ---
-status: in_progress
-progress: 60
+status: completed
+progress: 100
 generated: 2026-05-20
 restructured: 2026-05-22
+completed: 2026-05-22
 agents:
   - type: "frontend-specialist"
     role: "Design system, modularização Alpine.js, tokens Tailwind v4"
@@ -21,52 +22,52 @@ phases:
     name: "Design System — componentes genéricos + core_alpine.js + tokens (Tailwind v4)"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "in_progress"
+    status: "done"
   - id: "F1V"
     name: "Validação Design System — render sem regressão no shell"
     prevc: "V"
     agent: "code-reviewer"
-    status: "pending"
+    status: "done"
   - id: "F2"
     name: "chat_evolution — mover views/selectors/signals + templates + chat.css + chat_alpine.js"
     prevc: "E"
     agent: "backend-specialist"
-    status: "in_progress"
+    status: "done"
   - id: "F2V"
     name: "Validação chat_evolution — endpoints /workspace/chat/api/ + Evolution send/markRead/presence"
     prevc: "V"
     agent: "code-reviewer"
-    status: "pending"
+    status: "done"
   - id: "F3"
     name: "gestao_kanban — mover views/selectors/signals + templates + kanban.css + SortableJS"
     prevc: "E"
     agent: "backend-specialist"
-    status: "in_progress"
+    status: "done"
   - id: "F3V"
     name: "Validação gestao_kanban — endpoints /workspace/kanban/api/ + drag-drop sincronizado"
     prevc: "V"
     agent: "code-reviewer"
-    status: "pending"
+    status: "done"
   - id: "F4"
     name: "Integração UI Shell — workspace_coordinator.js + ordem de assets + reduzir workspace_alpine.js"
     prevc: "E"
     agent: "frontend-specialist"
-    status: "pending"
+    status: "done"
   - id: "F4V"
     name: "Validação integração — eventos cross-app + SSE único"
     prevc: "V"
     agent: "architect-specialist"
-    status: "pending"
+    status: "done"
   - id: "F5"
     name: "Limpeza do monolito — remover views/selectors/partials/css/js migrados"
     prevc: "E"
     agent: "backend-specialist"
-    status: "pending"
+    status: "done"
   - id: "F6"
     name: "Build de produção Tailwind v4 (CLI/PostCSS) + validação final + deploy"
     prevc: "V"
     agent: "code-reviewer"
-    status: "pending"
+    status: "done"
 lastUpdated: "2026-05-22T00:00:00.000Z"
 ---
 
@@ -102,16 +103,16 @@ Cada fase de execução (E) tem validação (V) emparelhada. Detalhe completo no
 
 | Fase | Nome | PREVC | Agente | Status |
 |------|------|-------|--------|--------|
-| F1 | Design System (componentes + core_alpine.js + tokens v4) | E | frontend-specialist | in_progress |
-| F1V | Validação Design System | V | code-reviewer | pending |
-| F2 | chat_evolution (mover views/selectors/signals + front) | E | backend-specialist | in_progress |
-| F2V | Validação chat_evolution + Evolution Go | V | code-reviewer | pending |
-| F3 | gestao_kanban (mover views/selectors/signals + SortableJS) | E | backend-specialist | in_progress |
-| F3V | Validação gestao_kanban + drag-drop | V | code-reviewer | pending |
-| F4 | Integração UI Shell (coordinator + ordem de assets) | E | frontend-specialist | pending |
-| F4V | Validação integração + SSE único | V | architect-specialist | pending |
-| F5 | Limpeza do monolito | E | backend-specialist | pending |
-| F6 | Build produção Tailwind v4 + validação final + deploy | V | code-reviewer | pending |
+| F1 | Design System (componentes + core_alpine.js + tokens v4) | E | frontend-specialist | done |
+| F1V | Validação Design System | V | code-reviewer | done |
+| F2 | chat_evolution (mover views/selectors/signals + front) | E | backend-specialist | done |
+| F2V | Validação chat_evolution + Evolution Go | V | code-reviewer | done |
+| F3 | gestao_kanban (mover views/selectors/signals + SortableJS) | E | backend-specialist | done |
+| F3V | Validação gestao_kanban + drag-drop | V | code-reviewer | done |
+| F4 | Integração UI Shell (coordinator + ordem de assets) | E | frontend-specialist | done |
+| F4V | Validação integração + SSE único | V | architect-specialist | done |
+| F5 | Limpeza do monolito | E | backend-specialist | done |
+| F6 | Build produção Tailwind v4 + validação final + deploy | V | code-reviewer | done |
 
 **Dependências:** F1 → F1V → (F2 ∥ F3) → F2V/F3V → F4 → F4V → F5 → F6.
 

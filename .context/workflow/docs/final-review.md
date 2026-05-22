@@ -1,7 +1,19 @@
 # Final Review — refatoracao-modular-atendimento
 Data: 2026-05-22 · Modelo: Opus · Escopo: 4 módulos da refatoração
 
-## Veredito: CORRIGIDO (qualidade) — porém ciclo INCOMPLETO → NÃO ARQUIVAR
+## Atualização 2026-05-22 (pós-finalização) — ciclo CONCLUÍDO e ARQUIVADO
+
+Após o checkpoint abaixo, as fases pendentes foram finalizadas:
+- **F4**: `workspace_alpine.js` reduzido (441→350 linhas); estado/lógica de chat e kanban movidos para os mixins `workspaceChatMixin`/`workspaceKanbanMixin`; shell ficou só com o geral (SSE único, layout, fluxos, filtros). Ordem de assets confirmada correta (Alpine `defer` no head após módulos no fim do body).
+- **F4V**: zero import cruzado chat↔kanban; `EventSource` único.
+- **F5**: partials órfãos do monolito removidos (`chat_drawer.html`, `conversation_item.html`).
+- **F6**: build de produção Tailwind v4 via `pytailwindcss` (standalone, sem Node) → `core.build.css`; CDN `@tailwindcss/browser` removido do `base.html`. Validações: `ruff` limpo, `makemigrations --check` sem mudanças, `manage.py check` sem issues.
+
+**Validação visual NÃO automatizável** (sem browser no ambiente): smoke-test pós-deploy obrigatório (chat texto/mídia/áudio, drag-drop kanban, abertura de chat por card, estilos globais do app após troca do CDN). Veredito de qualidade: **CORRIGIDO**. Plano arquivado em `plans/archive/2026-05-22-refatoracao-modular-atendimento.md`.
+
+---
+
+## Veredito (checkpoint anterior): CORRIGIDO (qualidade) — ciclo estava INCOMPLETO
 A implementação avançou além do snapshot de 60% do plano (F2/F3 backend essencialmente
 movidos, design system criado, coordinator criado). Foram encontrados e corrigidos
 desvios reais: import cruzado proibido `chat_evolution → gestao_kanban`, função de chat

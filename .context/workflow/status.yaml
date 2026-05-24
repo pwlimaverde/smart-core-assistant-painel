@@ -1,0 +1,76 @@
+workflow: PREVC
+phase: P  # Planning
+
+feature: design-system-refactor
+title: "Padronização Global do Design System — Tailwind v4 Tokens + Arquitetura por App"
+started_at: "2026-05-24"
+
+plan: ".context/plans/design-system-refactor.md"
+
+phases:
+  P:  # Planning
+    status: done
+    description: "PRD criado com diagnóstico completo, mapeamento de tokens e plano de 6 fases"
+    completed_at: "2026-05-24"
+
+  R:  # Review / Refinement
+    status: pending
+    description: "Aprovação do plano pelo PO. Validar mapeamento de cores antes de iniciar."
+
+  E:  # Execution
+    status: pending
+    phases:
+      - id: fase-1
+        title: "Infraestrutura de Tokens (core)"
+        status: pending
+        files:
+          - "core/static/css/tokens.css"
+          - "core/static/css/components.css"
+          - "core/templates/base.html"
+
+      - id: fase-2
+        title: "Templates Base"
+        status: pending
+        files:
+          - "core/templates/base_dashboard.html"
+          - "core/templates/base_public.html"
+          - "core/templates/landing_page.html"
+
+      - id: fase-3
+        title: "atendimento_unificado (Workspace/Chat)"
+        status: pending
+        files:
+          - "atendimento_unificado/static/atendimento_unificado/css/workspace.css"
+          - "atendimento_unificado/templates/**/*.html"
+
+      - id: fase-4
+        title: "Apps de Configuração (tenants, evolution_sync, settings_manager)"
+        status: pending
+
+      - id: fase-5
+        title: "Apps de Conteúdo (treinamento, usuarios, oraculo)"
+        status: pending
+
+      - id: fase-6
+        title: "Partials de Componentes no Core"
+        status: pending
+        files:
+          - "core/templates/components/_page_header.html"
+          - "core/templates/components/_card.html"
+          - "core/templates/components/_alert.html"
+
+  V:  # Validation
+    status: pending
+    checks:
+      - "grep -r '#a98f71' src/ --include='*.html' | wc -l  # deve ser 0"
+      - "grep -rn 'ui-btn\\|badge\\|ui-input' src/ --include='*.html' | wc -l  # deve ser >= 30"
+
+  C:  # Closure
+    status: pending
+
+metrics:
+  hardcoded_colors_before: 240
+  hardcoded_colors_target: 0
+  templates_using_design_system_before: 0
+  templates_using_design_system_target: 30
+  total_templates: 64

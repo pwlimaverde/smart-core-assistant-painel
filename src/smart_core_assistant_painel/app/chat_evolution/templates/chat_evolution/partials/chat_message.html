@@ -1,6 +1,12 @@
 {% comment %}Partial usado dentro de <template x-for="m in enrichedMessages">. Recebe `m`
 enriquecido com _showDateSep, _dateLabel, _stacked, _isFirstUnread.
-Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% endcomment %}
+Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.
+
+IMPORTANTE: o `<template x-for>` do Alpine exige um ÚNICO elemento raiz. Por isso
+todo o conteúdo é envolvido por um wrapper único. Usamos `display:contents` para
+que separadores e balão continuem sendo filhos diretos do flex container pai.{% endcomment %}
+
+<div class="ws-msg-row" style="display:contents">
 
 {# ============ SEPARADOR DE DATA ============ #}
 <template x-if="m._showDateSep">
@@ -125,7 +131,9 @@ Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% en
     </template>
 
     {# ============ TOGGLE: ANÁLISE IA ============ #}
-    <template x-if="m.analise_midia">
+    {# Áudio: exibe transcrição (analise_midia) + resumo. Mídia visual: só
+       resumo (analise_midia não é trafegada pelo serializer). #}
+    <template x-if="m.resumo_midia || m.analise_midia">
         <div class="ws-bub__analise">
             <button type="button" class="ws-bub__analise-toggle"
                 @click="showAnalise = !showAnalise"
@@ -139,13 +147,32 @@ Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% en
                 <span x-text="showAnalise ? 'Ocultar análise' : 'Ver análise IA'"></span>
             </button>
             <div class="ws-bub__analise-body" x-show="showAnalise" x-cloak
-                x-transition.opacity x-text="m.analise_midia"></div>
+                x-transition.opacity>
+                {# Transcrição completa (áudio) #}
+                <template x-if="m.analise_midia">
+                    <div class="ws-bub__analise-sec">
+                        <span class="ws-bub__analise-label">Transcrição</span>
+                        <div class="ws-bub__analise-txt" style="white-space:pre-wrap"
+                            x-text="m.analise_midia"></div>
+                    </div>
+                </template>
+                {# Resumo geral gerado pela IA #}
+                <template x-if="m.resumo_midia">
+                    <div class="ws-bub__analise-sec">
+                        <span class="ws-bub__analise-label">Resumo</span>
+                        <div class="ws-bub__analise-txt" style="white-space:pre-wrap"
+                            x-text="m.resumo_midia"></div>
+                    </div>
+                </template>
+            </div>
         </div>
     </template>
 
     {# ============ TEXTO / CAPTION ============ #}
+    {# white-space:pre-wrap preserva as quebras de linha (\n) que separam as
+       mensagens agrupadas no buffer — sem risco de injeção (x-text). #}
     <template x-if="bubbleText(m)">
-        <div class="ws-bub__txt" x-text="bubbleText(m)"></div>
+        <div class="ws-bub__txt" style="white-space:pre-wrap" x-text="bubbleText(m)"></div>
     </template>
 
     {# ============ RODAPÉ (timestamp + status) ============ #}
@@ -164,3 +191,5 @@ Bolhas WhatsApp-style com mídia inline + toggle de análise IA + lightbox.{% en
         </template>
     </div>
 </div>
+
+</div>{# /.ws-msg-row — wrapper de root único do x-for #}

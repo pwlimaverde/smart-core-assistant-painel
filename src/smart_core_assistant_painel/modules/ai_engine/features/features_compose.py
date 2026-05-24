@@ -6,7 +6,7 @@ interação com modelos de linguagem.
 """
 
 import math
-from typing import Any
+from typing import Any, Optional
 
 from langchain_core.documents import Document
 from loguru import logger
@@ -78,6 +78,7 @@ from ..utils.types import (
     LDFData,
     LDFUsecase,
     LMDUsecase,
+    MediaAnalysis,
     RespostaBot,
     TAData,
     TAUsecase,
@@ -392,26 +393,26 @@ class FeaturesCompose:
     def converter_contexto(
         metadados: dict[str, Any],
         message_type: str,
-    ) -> str:
-        """Converte metadados de mensagens multimídia para texto.
+    ) -> Optional[MediaAnalysis]:
+        """Converte metadados de mensagens multimídia em análise estruturada.
 
-        Ponto central de conversão de conteúdo multimídia em contexto
-        textual para análise de IA. Despacha para o handler específico
-        de cada tipo de mídia.
+        Ponto central de conversão de conteúdo multimídia. Despacha para o
+        handler específico de cada tipo de mídia e retorna ``MediaAnalysis``
+        (``analise`` = contexto completo do bot; ``resumo`` = resumo exibido).
 
         Args:
             metadados: Dicionário com os metadados da mensagem.
             message_type: Tipo da mensagem (audioMessage, imageMessage, etc.).
 
         Returns:
-            Texto convertido ou string vazia se não houver conversão.
+            ``MediaAnalysis`` ou ``None`` se não houver conversão.
         """
         if not metadados:
             logger.info(
                 "[MIDIA-CTX] converter_contexto chamado sem metadados | "
                 f"message_type={message_type}"
             )
-            return ""
+            return None
 
         mimetype_log = metadados.get("mimetype")
         url_present = bool(metadados.get("url"))
@@ -427,7 +428,7 @@ class FeaturesCompose:
             mimetype = metadados.get("mimetype", "audio/ogg")
             audio_base64 = metadados.get("base64", "")
             if not audio_url and not audio_base64:
-                return ""
+                return None
             return FeaturesCompose._transcribe_audio(
                 audio_url=str(audio_url or ""),
                 mimetype=str(mimetype),
@@ -439,7 +440,7 @@ class FeaturesCompose:
             mimetype = metadados.get("mimetype", "image/jpeg")
             media_base64 = metadados.get("base64", "")
             if not media_url and not media_base64:
-                return ""
+                return None
             return FeaturesCompose._interpret_media(
                 media_url=str(media_url or ""),
                 mimetype=str(mimetype),
@@ -452,7 +453,7 @@ class FeaturesCompose:
             mimetype = metadados.get("mimetype", "video/mp4")
             media_base64 = metadados.get("base64", "")
             if not media_url and not media_base64:
-                return ""
+                return None
             return FeaturesCompose._interpret_media(
                 media_url=str(media_url or ""),
                 mimetype=str(mimetype),
@@ -466,7 +467,7 @@ class FeaturesCompose:
             file_name = metadados.get("fileName", "documento")
             doc_base64 = metadados.get("base64", "")
             if not doc_url and not doc_base64:
-                return ""
+                return None
             return FeaturesCompose._interpret_media(
                 media_url=str(doc_url or ""),
                 mimetype=str(mimetype),
@@ -479,7 +480,7 @@ class FeaturesCompose:
             f"[MIDIA-CTX] message_type sem handler de conversão: "
             f"{message_type}"
         )
-        return ""
+        return None
 
     @staticmethod
     def _interpret_media(
@@ -488,7 +489,7 @@ class FeaturesCompose:
         media_type: str,
         media_base64: str = "",
         file_name: str = "",
-    ) -> str:
+    ) -> MediaAnalysis:
         """Interpreta mídia (imagem/vídeo/documento) via LLM multimodal.
 
         Método interno — use ``converter_contexto`` como ponto
@@ -502,7 +503,7 @@ class FeaturesCompose:
             file_name: Nome do arquivo (documentos).
 
         Returns:
-            Descrição textual do conteúdo da mídia.
+            ``MediaAnalysis`` com análise completa e resumo.
 
         Raises:
             InterpretMediaError: Se ocorrer erro na interpretação.
@@ -528,15 +529,13 @@ class FeaturesCompose:
         data = usecase(parameters)
 
         if isinstance(data, SuccessReturn):
-            result_text = data.result
+            result: MediaAnalysis = data.result
             logger.info(
                 f"[MIDIA-CTX] _interpret_media OUTPUT | "
-                f"media_type={media_type} | len={len(result_text)}\n"
-                f"---[MIDIA-CTX] LLM RESPONSE]---\n"
-                f"{result_text}\n"
-                f"---[MIDIA-CTX] FIM LLM RESPONSE]---"
+                f"media_type={media_type} | len_analise={len(result.analise)} "
+                f"| len_resumo={len(result.resumo)}"
             )
-            return result_text
+            return result
         elif isinstance(data, ErrorReturn):
             raise data.result
         else:
@@ -564,12 +563,15 @@ class FeaturesCompose:
         if isinstance(message_data, SuccessReturn):
             result: MessageData = message_data.result
             if result.metadados:
-                conteudo_media: str = FeaturesCompose.converter_contexto(
+                analise_media = FeaturesCompose.converter_contexto(
                     result.metadados,
                     result.message_type,
                 )
-                if conteudo_media:
-                    result.conteudo = f"{result.conteudo}\n{conteudo_media}"
+                # Para o contexto do bot usa-se a análise completa.
+                if analise_media and analise_media.analise:
+                    result.conteudo = (
+                        f"{result.conteudo}\n{analise_media.analise}"
+                    )
             return result
         elif isinstance(message_data, ErrorReturn):
             raise message_data.result
@@ -582,7 +584,7 @@ class FeaturesCompose:
         mimetype: str,
         language: str = "pt",
         audio_base64: str = "",
-    ) -> str:
+    ) -> MediaAnalysis:
         """Transcreve um áudio a partir de base64 ou URL.
 
         Método interno — use ``converter_contexto`` como ponto de entrada.
@@ -594,7 +596,7 @@ class FeaturesCompose:
             audio_base64: Conteúdo do áudio em base64 (preferencial).
 
         Returns:
-            str: Texto transcrito do áudio.
+            ``MediaAnalysis`` com ``analise`` (transcrição) e ``resumo``.
 
         Raises:
             TranscribeAudioError: Se ocorrer erro na transcrição.

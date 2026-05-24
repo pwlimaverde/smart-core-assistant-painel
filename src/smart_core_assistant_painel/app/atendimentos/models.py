@@ -1090,8 +1090,18 @@ class Mensagem(models.Model):
         blank=True,
         null=True,
         help_text=(
-            "Análise gerada pela IA para mídias: transcrição de áudio, resumo "
-            "de imagem/vídeo, descrição de documento. Separada de 'conteudo'."
+            "Análise COMPLETA gerada pela IA para mídias: transcrição de áudio, "
+            "descrição detalhada de imagem/vídeo, conteúdo de documento. Usada "
+            "como CONTEXTO interno do bot. Separada de 'conteudo'."
+        ),
+    )
+    resumo_midia: models.TextField[str | None] = models.TextField(
+        blank=True,
+        null=True,
+        help_text=(
+            "Resumo curto e amigável gerado pela IA sobre a mídia, EXIBIDO ao "
+            "atendente no chat (botão 'Ver análise IA'). Distinto de "
+            "'analise_midia', que é o contexto completo do bot."
         ),
     )
 

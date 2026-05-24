@@ -4,7 +4,7 @@ import base64
 from typing import Any, cast
 
 import httpx
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import HumanMessage
 from pydantic import SecretStr
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
@@ -12,6 +12,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     IMData,
+    MediaAnalysis,
 )
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
@@ -27,6 +28,14 @@ class InterpretMediaDatasource(IMData):
 
     _DOWNLOAD_TIMEOUT_SECONDS = 30.0
     _MAX_MEDIA_SIZE_BYTES = 20 * 1024 * 1024  # 20MB (limite inline Gemini)
+
+    # Instrução comum de saída estruturada (análise completa + resumo curto)
+    _OUTPUT_INSTRUCTION = (
+        "\n\nResponda em português com DOIS campos: "
+        "'analise' = a descrição/conteúdo completo e detalhado pedido acima "
+        "(usado como contexto interno); e 'resumo' = um resumo geral curto "
+        "(1 a 3 frases) do que se trata a mídia, para exibir a um atendente."
+    )
 
     # Mapeamento de tipo de mensagem para prompt
     _PROMPTS: dict[str, str] = {
@@ -51,14 +60,15 @@ class InterpretMediaDatasource(IMData):
         ),
     }
 
-    def __call__(self, parameters: InterpretMediaParameters) -> str:
+    def __call__(self, parameters: InterpretMediaParameters) -> MediaAnalysis:
         """Executa interpretação da mídia via Gemini.
 
         Args:
             parameters: Parâmetros com base64/URL da mídia.
 
         Returns:
-            Descrição textual do conteúdo da mídia.
+            ``MediaAnalysis`` com ``analise`` (descrição completa, contexto do
+            bot) e ``resumo`` (resumo curto, exibido ao atendente).
 
         Raises:
             ValueError: Se a mídia exceder o limite ou
@@ -92,8 +102,11 @@ class InterpretMediaDatasource(IMData):
         if parameters.media_type == "documentMessage" and parameters.file_name:
             prompt = f"{prompt}\n\nNome do arquivo: {parameters.file_name}"
 
-        # 4. Instanciar LLM multimodal via ServiceHub
-        llm = self._build_vision_llm()
+        # Instrução de saída estruturada (analise + resumo)
+        prompt = f"{prompt}{self._OUTPUT_INSTRUCTION}"
+
+        # 4. Instanciar LLM multimodal via ServiceHub (com structured output)
+        llm = self._build_vision_llm().with_structured_output(MediaAnalysis)
 
         # 5. Construir mensagem multimodal e invocar
         # Para Gemini via langchain-google-genai v2+, usamos dicionários de conteúdo
@@ -140,24 +153,25 @@ class InterpretMediaDatasource(IMData):
 
         message = HumanMessage(content=cast(Any, content))
 
-        response: BaseMessage = llm.invoke([message])
-        # O LangChain retorna content como str ou list — cast para
-        # evitar warnings de tipo parcialmente desconhecido.
-        raw_content: Any = cast(Any, response.content)
-        if isinstance(raw_content, list):
-            text_parts: list[str] = []
-            for part in cast(list[Any], raw_content):
-                if isinstance(part, dict):
-                    typed_part = cast(dict[str, Any], part)
-                    text_parts.append(str(typed_part.get("text", "")))
-            result = " ".join(text_parts).strip()
+        # `with_structured_output(MediaAnalysis)` retorna a instância Pydantic.
+        result: Any = llm.invoke([message])
+        if isinstance(result, MediaAnalysis):
+            analysis = result
+        elif isinstance(result, dict):
+            result_dict = cast(dict[str, Any], result)
+            analysis = MediaAnalysis(
+                analise=str(result_dict.get("analise", "")),
+                resumo=str(result_dict.get("resumo", "")),
+            )
         else:
-            result = str(raw_content).strip()
+            raise ValueError(
+                "LLM retornou tipo inesperado para a análise de mídia."
+            )
 
-        if not result:
-            raise ValueError("LLM retornou resposta vazia para a mídia.")
+        if not (analysis.analise or "").strip():
+            raise ValueError("LLM retornou análise vazia para a mídia.")
 
-        return result
+        return analysis
 
     def _build_vision_llm(self) -> Any:
         """Constrói instância do LLM multimodal via config.

@@ -4,9 +4,9 @@
   "status": "active",
   "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
   "createdAt": "2026-05-22T12:26:53.837Z",
-  "updatedAt": "2026-05-22T12:27:19.581Z",
+  "updatedAt": "2026-05-24T17:11:08.364Z",
   "startedAt": "2026-05-22T12:26:53.837Z",
-  "traceCount": 9,
+  "traceCount": 11,
   "artifactCount": 0,
   "checkpointCount": 2,
   "checkpoints": [
@@ -43,6 +43,6 @@
     "workflow": true,
     "description": "Refatorar o monolito atendimento_unificado em 3 apps Django (chat_evolution, gestao_kanban, shell) + módulo agnóstico modules/design_system, preservando a UI. Mover views/selectors/signals do monolito, completar design system (Tailwind v4 CSS-first), quebrar JS/CSS monolítico (Alpine.js v3 modular + SortableJS), manter SSE único por tenant e import canônico de models. ~60% concluído."
   },
-  "lastTraceAt": "2026-05-22T12:27:19.581Z",
+  "lastTraceAt": "2026-05-24T17:11:08.364Z",
   "lastCheckpointAt": "2026-05-22T12:27:07.456Z"
 }

@@ -329,9 +329,13 @@
                     <template x-for="m in enrichedMessages()" :key="m.id">
                         {% include "chat_evolution/partials/chat_message.html" %}
                     </template>
-                    <div x-show="messages.length === 0"
+                    <div x-show="messages.length === 0 && !messagesError"
                         style="text-align: center; color: var(--ws-fg-subtle); font-size: 12px; padding: 32px;">
                         Nenhuma mensagem ainda.
+                    </div>
+                    <div x-show="messagesError" x-cloak
+                        style="text-align: center; color: var(--ws-danger, #c0392b); font-size: 12px; padding: 32px;"
+                        x-text="messagesError">
                     </div>
                 </div>
                 {# Botão flutuante scroll-to-bottom #}

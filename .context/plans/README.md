@@ -3,11 +3,11 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Refatoracao Modular Atendimento](./refatoracao-modular-atendimento.md)
+1. [Chat Whatsapp Midia Ia](./chat-whatsapp-midia-ia.md)
 
 ## How To Create Or Update Plans
-- Run "ai-context plan <name>" to scaffold a new plan template.
-- Run "ai-context plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
+- Run "dotcontext plan <name>" to scaffold a new plan template.
+- Run "dotcontext plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
 
 ## Related Resources
 - [Agent Handbook](../agents/README.md)

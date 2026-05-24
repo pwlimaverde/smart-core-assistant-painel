@@ -145,8 +145,11 @@ def _can_access_atendimento(request: HttpRequest, atendimento_id: int) -> bool:
         .values_list("fluxo_atendimento_id", flat=True)
         .first()
     )
+    # Atendimento sem fluxo atribuído não deve ser ocultado do atendente —
+    # mesma política de `_can_access_fluxo(None)`. Antes retornava False aqui,
+    # gerando 403 e chat "vazio" para atendimentos ainda não roteados a fluxo.
     if fluxo_id is None:
-        return False
+        return True
     return int(fluxo_id) in allowed
 
 

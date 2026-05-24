@@ -8,6 +8,7 @@
             // de responsabilidades; mesclado em workspaceStore via Object.assign)
             // ─────────────────────────────────────────────────────────
             messages: [],
+            messagesError: '',
             activeConv: null,
             activeDetail: null,
             composer: '',
@@ -103,13 +104,27 @@
             // ─────────────────────────────────────────────────────────
 
             loadMessages: function (id) {
-                const url = this.endpoints.conversationsBase.endsWith('/') 
+                const url = this.endpoints.conversationsBase.endsWith('/')
                     ? this.endpoints.conversationsBase + id + '/messages/'
                     : this.endpoints.conversationsBase + '/' + id + '/messages/';
+                this.messagesError = '';
                 return fetch(url, { credentials: 'same-origin' })
-                    .then(res => res.json())
+                    .then((res) => {
+                        if (!res.ok) {
+                            // Sem este tratamento uma falha (ex: 403 fluxo sem
+                            // permissão) caía silenciosamente em lista vazia,
+                            // deixando o chat "vazio" sem explicação.
+                            throw new Error('HTTP ' + res.status);
+                        }
+                        return res.json();
+                    })
                     .then((data) => {
                         this.messages = data.messages || [];
+                    })
+                    .catch((err) => {
+                        console.error('Falha ao carregar mensagens do atendimento', id, err);
+                        this.messages = [];
+                        this.messagesError = 'Não foi possível carregar as mensagens.';
                     });
             },
 

@@ -805,15 +805,16 @@ def _process_test_media_upload(
         "fileName": file_name,
     }
 
-    conteudo_media = FeaturesCompose.converter_contexto(
+    analise_media = FeaturesCompose.converter_contexto(
         metadados, message_type
     )
 
     base_text = (caption or "").strip() or _default_conteudo_for_media(
         message_type, file_name
     )
-    if conteudo_media:
-        return f"{base_text}\n{conteudo_media}"
+    # Para o contexto do bot usa-se a análise completa.
+    if analise_media and analise_media.analise:
+        return f"{base_text}\n{analise_media.analise}"
     return base_text
 
 

@@ -640,7 +640,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 mensagem.tipo,
             )
 
-            texto_convertido = FeaturesCompose.converter_contexto(
+            analise_media = FeaturesCompose.converter_contexto(
                 metadados=metadados,
                 message_type=mensagem.tipo,
             )
@@ -649,27 +649,34 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             if file_saved:
                 update_fields.append("arquivo_midia")
 
-            if texto_convertido and texto_convertido.strip():
-                texto_final = texto_convertido.strip()
-                mensagem.analise_midia = texto_final
+            if analise_media and (analise_media.analise or "").strip():
+                analise_final = analise_media.analise.strip()
+                resumo_final = (analise_media.resumo or "").strip()
+                # analise_midia: contexto completo do bot;
+                # resumo_midia: resumo curto exibido ao atendente.
+                mensagem.analise_midia = analise_final
+                mensagem.resumo_midia = resumo_final
                 meta = dict(metadados)
-                meta["contexto_convertido"] = texto_final
+                meta["contexto_convertido"] = analise_final
                 # Remove base64 dos metadados após persistir em disco
                 meta.pop("base64", None)
                 mensagem.metadados = meta
-                update_fields.extend(["analise_midia", "metadados"])
+                update_fields.extend(
+                    ["analise_midia", "resumo_midia", "metadados"]
+                )
 
                 logger.info(
                     "[MIDIA-CTX] <<< Análise IA registrada | "
-                    "msg_id={} | tipo={} | len_analise={}",
+                    "msg_id={} | tipo={} | len_analise={} | len_resumo={}",
                     mensagem.id,
                     mensagem.tipo,
-                    len(texto_final),
+                    len(analise_final),
+                    len(resumo_final),
                 )
                 logger.debug(
                     "[MIDIA-CTX] Texto interpretado | msg_id={}:\n{}",
                     mensagem.id,
-                    texto_final,
+                    analise_final,
                 )
             else:
                 # Mesmo sem análise IA, limpa base64 do metadados se o

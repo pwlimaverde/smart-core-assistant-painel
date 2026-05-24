@@ -1,15 +1,14 @@
 {
-  "active": [],
-  "completed": [
+  "active": [
     {
-      "slug": "refatoracao-modular-atendimento",
-      "path": "plans/archive/refatoracao-modular-atendimento/refatoracao-modular-atendimento.md",
-      "title": "Refatoração Modular do Atendimento Unificado",
-      "summary": "Separação em 3 apps (`chat_evolution`, `gestao_kanban`, shell `atendimento_unificado`) + módulo agnóstico `modules/design_system`. **Reestruturado em 2026-05-22** contra docs atuais (Django 5.2.7, Alpine.js v3, Tailwind v4, SortableJS, Evolution Go v2.3.7) e contra o **estado real do código (~60%)**.",
-      "linkedAt": "2026-05-22T12:36:27.711Z",
-      "status": "completed",
-      "completedAt": "2026-05-22T17:00:00.000Z"
+      "slug": "chat-whatsapp-midia-ia",
+      "path": "plans/chat-whatsapp-midia-ia.md",
+      "title": "Chat estilo WhatsApp: mídia/IA estruturada + correção de visualização",
+      "summary": "Corrigir o bug de renderização das mensagens (`x-for` do Alpine com múltiplos roots),",
+      "linkedAt": "2026-05-24T17:12:22.128Z",
+      "status": "active"
     }
   ],
-  "primary": null
+  "completed": [],
+  "primary": "chat-whatsapp-midia-ia"
 }

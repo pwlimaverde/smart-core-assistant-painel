@@ -487,7 +487,16 @@ def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
         "tipo": m.tipo,
         "conteudo": m.conteudo or "",
         "resposta_bot": m.resposta_bot or "",
-        "analise_midia": m.analise_midia or "",
+        # resumo_midia: resumo curto exibido ao atendente.
+        "resumo_midia": m.resumo_midia or "",
+        # analise_midia (contexto completo do bot) só é trafegada para áudio —
+        # nela a transcrição é o conteúdo útil ao atendente. Para mídia visual
+        # a análise completa permanece interna (não exposta no chat).
+        "analise_midia": (
+            (m.analise_midia or "")
+            if (m.tipo or "") == "audioMessage"
+            else ""
+        ),
         "remetente": m.remetente,
         "timestamp": m.timestamp.isoformat() if m.timestamp else None,
         "respondida": m.respondida,

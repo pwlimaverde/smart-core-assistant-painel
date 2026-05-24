@@ -1,176 +1,118 @@
 # PRD - Refatoração do Design System
 
 ## Título da Feature
-Padronização Global do Design System com Tailwind v4 e Arquitetura de Tokens Centralizados
+Design System como Módulo Dedicado — `modules/design_system/`
 
 ## Resumo Executivo
 
-O projeto possui dois artefatos de design system que coexistem sem se comunicar: o `app.css` (com componentes CSS como `.ui-btn`, `.badge`, `.kanban-card`) e o bloco `@theme` no `base.html` (tokens Tailwind v4). Nenhum dos 64 templates usa as classes do `app.css`, e as cores de identidade da marca (`#a98f71`, `#8b7355`, `#1c1917`) aparecem hardcoded em **240 lugares** dentro de 45 arquivos.
+O projeto possui tokens de cor e componentes CSS definidos, mas desconectados: `app.css` (em `core/`) tem `.ui-btn`, `.badge`, `.modal`, enquanto o `base.html` define `@theme` inline — e nenhum dos 64 templates usa o que foi definido. As 240 ocorrências de `#a98f71` hardcoded são o sintoma.
 
-O objetivo desta refatoração é consolidar os tokens no `core`, fazer os templates consumirem as classes do design system via Tailwind custom tokens, e criar uma pasta `static/{app}/css/` em cada app para sobreposições específicas — deixando toda a aplicação padronizada e mantível.
-
-## Problema
-
-| Sintoma | Evidência |
-|---------|-----------|
-| Cor primária hardcoded | 240× `#a98f71` em 45 arquivos `.html` |
-| Design system inutilizado | 0/64 templates usam `.ui-btn`, `.badge`, `.kanban-card` |
-| Duplicação de padrões | Cards, badges, botões recriados inline em cada template |
-| Tokens desconexos | `app.css` usa `var(--brand-primary)`, templates ignoram isso |
-| Sem hierarquia clara | Não há distinção entre estilos globais e específicos por app |
-
-## Solução Proposta
-
-Estrutura em três camadas:
-
-```
-core/static/css/
-├── tokens.css          ← NOVO: fonte única da verdade (@layer theme + CSS vars)
-├── components.css      ← NOVO: todas as classes utilitárias (.ui-btn, .badge, etc.)
-└── app.css             ← MANTIDO: layout global (navbar, kanban-column, modal)
-
-{app}/static/{app}/css/
-└── {app}.css           ← NOVO (por app): overrides e componentes específicos
-```
-
-O `base.html` carrega `tokens.css` e `components.css` (globais). Cada template de app que precisar de estilos específicos herda via `{% block extra_head %}`.
+A solução é criar `modules/design_system/` como um **Django app próprio**, responsável por tudo que é compartilhado: tokens CSS, componentes globais e templates base. Cada app existente consome do design system e guarda apenas o que não pode ser reaproveitado.
 
 ---
 
 ## Diagnóstico do Estado Atual
 
-### Tailwind no Projeto
-O projeto usa **Tailwind CSS v4 via browser CDN** (`@tailwindcss/browser@4`) com o `<style type="text/tailwindcss">` processado em runtime. **Não há build step** — os tokens customizados definidos no `@theme {}` já são aplicados como classes Tailwind (`bg-gold-primary`, `text-gold-dark`). O gap é que os templates nunca usam essas classes; usam `bg-[#a98f71]` diretamente.
+### Números Críticos
+| Problema | Quantidade |
+|----------|-----------|
+| Ocorrências de `#a98f71` hardcoded em templates | **240** |
+| Arquivos com cores hardcoded | **45** |
+| Templates usando `.ui-btn` / `.badge` do `app.css` | **0 / 64** |
 
-### Mapa de Templates por App
+### Dois Artefatos Desconexos
+| Artefato | Onde | Problema |
+|----------|------|---------|
+| `app.css` | `core/static/css/` | Define componentes mas ninguém usa |
+| `@theme {}` inline | `base.html` | Define tokens mas templates ignoram |
 
-| App | Templates | Estilo Dominante | Complexidade |
-|-----|-----------|-----------------|--------------|
-| `core` | `base.html`, `base_dashboard.html`, `base_public.html`, error pages | Layout global | Alta — âncora do sistema |
-| `atendimento_unificado` | `workspace.html` + 7 partials | Chat + Kanban em Tailwind | Alta — caso mais complexo |
-| `tenants` | 10+ templates (dashboard, configs, onboarding) | Cards + formulários | Média |
-| `evolution_sync` | 2 templates (instance_list, detail) | Cards + tabelas | Baixa |
-| `settings_manager` | 4 templates (whitelist) | Formulários + tabelas | Baixa |
-| `treinamento` | 5 templates | Formulários + listagens | Baixa |
-| `usuarios` | 3 templates (login, cadastro, reset) | Dark luxury (landing) | Média |
-
-### Análise do `atendimento_unificado` (Referência)
-O Workspace é o template mais bem estruturado: usa Tailwind de forma consistente, tem partials bem isolados (`chat_message.html`, `kanban_card.html`, `conversation_item.html`), mas sofre do mesmo problema de cores hardcoded. É o **modelo a seguir** para os demais apps.
-
----
-
-## Requisitos Funcionais
-
-### RF-001: Token CSS Centralizados no Core
-**Descrição:** Criar `core/static/css/tokens.css` como fonte única da verdade para todas as cores, tipografia e espaçamentos da marca.
-**Prioridade:** Alta
-**Critérios de Aceite:**
-- [ ] Arquivo `tokens.css` define `@theme {}` com todos os tokens Tailwind v4
-- [ ] Arquivo `tokens.css` define variáveis CSS (`--brand-*`) para uso em `components.css`
-- [ ] `base.html` carrega `tokens.css` antes de qualquer outro CSS
-- [ ] Não existe mais `@theme {}` inline no `base.html`
-
-### RF-002: Classes de Componentes Globais em `components.css`
-**Descrição:** Extrair todos os componentes do `app.css` para um arquivo `components.css` dedicado, usando tokens do `tokens.css`.
-**Prioridade:** Alta
-**Critérios de Aceite:**
-- [ ] `components.css` contém `.ui-btn`, `.ui-input`, `.ui-select`, `.badge`, `.modal`, `.card-actions`
-- [ ] Todas as classes usam `var(--brand-*)` ou classes Tailwind com tokens customizados
-- [ ] Zero valores hex hardcoded no `components.css`
-
-### RF-003: Substituição de Cores Hardcoded nos Templates
-**Descrição:** Substituir todas as 240 ocorrências de `#a98f71`, `#8b7355`, `#8c735a`, `#1c1917` por classes Tailwind com tokens.
-**Prioridade:** Alta
-**Critérios de Aceite:**
-- [ ] `grep -r "#a98f71" src/` retorna 0 resultados em templates
-- [ ] Cores substituídas por: `bg-gold-primary`, `text-gold-primary`, `bg-sidebar` (para `#1c1917`)
-- [ ] `base_dashboard.html` usa tokens em todos os elementos do sidebar
-
-### RF-004: Pasta de Estilos por App
-**Descrição:** Criar estrutura `{app}/static/{app}/css/{app}.css` para cada app com templates, contendo apenas overrides específicos.
-**Prioridade:** Média
-**Critérios de Aceite:**
-- [ ] `atendimento_unificado/static/atendimento_unificado/css/workspace.css` criado com estilos do chat
-- [ ] Templates herdam via `{% block extra_head %}{% load static %}<link rel="stylesheet" href="{% static '{app}/css/{app}.css' %}">{% endblock %}`
-- [ ] Apps sem necessidade de override específico não têm pasta `css/`
-
-### RF-005: Adoção de Classes de Componentes nos Templates
-**Descrição:** Refatorar templates para usar `.ui-btn`, `.badge`, `.ui-input` onde aplicável, em vez de classes Tailwind compostas repetidas.
-**Prioridade:** Média
-**Critérios de Aceite:**
-- [ ] Templates de `tenants` usam `.ui-btn` e `.badge` do design system
-- [ ] Templates de `evolution_sync` usam `.ui-btn` e `.ui-input`
-- [ ] Templates de `treinamento` usam classes padrão
-
-### RF-006: Partials de Componentes Django (Core)
-**Descrição:** Criar partials reutilizáveis em `core/templates/components/` para os padrões mais repetidos.
-**Prioridade:** Baixa
-**Critérios de Aceite:**
-- [ ] `_page_header.html` (título de página com breadcrumb opcional)
-- [ ] `_card.html` (card container com header/body opcional)
-- [ ] `_alert.html` (substituir o bloco `{% if messages %}` repetido)
-- [ ] Pelo menos 3 templates migrados para usar os novos partials
+### Como o Django resolve templates e static hoje
+```python
+# settings.py
+TEMPLATES = [{"DIRS": [BASE_DIR / "core/templates"], "APP_DIRS": True, ...}]
+STATICFILES_DIRS = (BASE_DIR / "core/static",)
+```
+- `core/templates/` → acesso global (base.html, base_dashboard.html…)
+- `{app}/templates/` → descoberto via `APP_DIRS: True` para cada app em INSTALLED_APPS
+- `core/static/` → incluído manualmente + `{app}/static/` via AppDirectoriesFinder
 
 ---
 
-## Requisitos Não-Funcionais
+## Arquitetura Proposta
 
-### RNF-001: Zero Regressão Visual
-- Nenhuma mudança visível para o usuário final. Toda cor substituída deve ter exatamente o mesmo valor HEX mapeado no token.
+### Design System como Django App dentro de `modules/`
 
-### RNF-002: Sem Build Step Adicional
-- A abordagem CDN do Tailwind v4 deve ser mantida. Nenhum `npm install`, `node_modules` ou processo de build introduzido.
+```
+modules/
+├── ai_engine/         ← Python puro (sem mudança)
+├── initial_loading/   ← Python puro (sem mudança)
+├── services/          ← Python puro (sem mudança)
+└── design_system/     ← NOVO: Django app de UI compartilhada
+    ├── apps.py
+    ├── __init__.py
+    ├── static/
+    │   └── design_system/
+    │       └── css/
+    │           ├── tokens.css      ← @theme + CSS vars (fonte única)
+    │           ├── components.css  ← .ui-btn, .badge, .modal, .kanban-*
+    │           └── layout.css      ← .app-container, .app-navbar, .app-footer
+    └── templates/
+        └── design_system/
+            ├── base.html           ← migrado de core/templates/
+            ├── base_dashboard.html ← migrado de core/templates/
+            ├── base_public.html    ← migrado de core/templates/
+            └── components/
+                ├── _alert.html     ← substitui bloco {% if messages %}
+                ├── _page_header.html
+                └── _card.html
+```
 
-### RNF-003: Backward Compatibility
-- `app.css` continua funcionando durante a transição. Os novos arquivos são aditivos até a migração completa.
+### Responsabilidade de cada app após a refatoração
 
-### RNF-004: Legibilidade do Template
-- Após a refatoração, classes como `bg-gold-primary` devem ser auto-documentáveis. O leitor do template entende a intenção sem consultar o CSS.
+```
+core/               → Configurações Django, middleware, context_processors, URLs
+                      SEM templates (migrados), SEM static CSS (migrados)
+
+{app}/              → Apenas o que não pode ser reaproveitado:
+  templates/{app}/  → extends "design_system/base_dashboard.html"
+  static/{app}/css/ → overrides e componentes exclusivos do app
+                      (criado só se o app realmente precisar)
+```
+
+### Fluxo de herança de templates
+```
+design_system/base.html
+  └── design_system/base_dashboard.html   ← dashboard layout (sidebar + main)
+  └── design_system/base_public.html      ← public layout (landing, login)
+        └── {app}/{page}.html             ← conteúdo específico do app
+```
 
 ---
 
-## Escopo
+## Token CSS — Fonte Única da Verdade
 
-### Incluído
-- Arquivo `tokens.css` com todos os tokens da marca
-- Arquivo `components.css` consolidado
-- Substituição de todas as cores hardcoded nos templates HTML
-- Pasta `css/` por app para overrides específicos
-- Partials de componentes básicos no `core`
-- Migração dos templates mais usados para classes do design system
+### `design_system/static/design_system/css/tokens.css`
 
-### Não Incluído (Fora de Escopo)
-- Introdução de build step (Webpack, Vite, PostCSS)
-- Mudança na identidade visual (cores, fontes, espaçamentos)
-- Refatoração do Django Admin / Jazzmin
-- Testes automatizados de CSS (visual regression)
-- Dark mode (fora do roadmap atual)
-
----
-
-## Arquitetura de Tokens (Detalhamento)
-
-### `tokens.css` — Fonte Única da Verdade
+O arquivo usa `<style type="text/tailwindcss">` para registrar tokens no Tailwind v4 CDN e variáveis CSS para uso em `components.css`:
 
 ```css
-/* core/static/css/tokens.css */
-<style type="text/tailwindcss">
+/* Carregado via base.html. Processado pelo @tailwindcss/browser@4 inline. */
 @theme {
-  /* Marca — Smart Core */
-  --color-gold-primary: #a98f71;   /* Substituí todos bg-[#a98f71] */
-  --color-gold-dark:    #8b7355;   /* Substituí todos bg-[#8b7355], bg-[#8c735a] */
-  --color-sidebar:      #1c1917;   /* bg do sidebar escuro */
+  /* Marca */
+  --color-gold-primary: #a98f71;
+  --color-gold-dark:    #8b7355;
+  --color-sidebar:      #1c1917;
 
   /* Semântica */
-  --color-brand-primary:   #3b82f6;  /* azul */
-  --color-brand-success:   #22c55e;  /* verde */
-  --color-brand-warning:   #f59e0b;  /* amarelo */
-  --color-brand-danger:    #ef4444;  /* vermelho */
+  --color-brand-primary: #3b82f6;
+  --color-brand-success: #22c55e;
+  --color-brand-warning: #f59e0b;
+  --color-brand-danger:  #ef4444;
 
   /* Superfícies */
-  --color-surface-card:    #ffffff;
-  --color-surface-page:    #f8fafc;  /* stone-50 */
-  --color-border-default:  #e2e8f0;
+  --color-surface-card:   #ffffff;
+  --color-surface-page:   #f8fafc;
+  --color-border-default: #e2e8f0;
 
   /* Tipografia */
   --font-family-sans: 'Outfit', sans-serif;
@@ -179,94 +121,178 @@ O Workspace é o template mais bem estruturado: usa Tailwind de forma consistent
   --radius-lg: 14px;
   --radius-md: 10px;
 }
-</style>
 ```
+
+> **Nota técnica:** O Tailwind v4 browser CDN processa `<style type="text/tailwindcss">` inline. O `tokens.css` precisa ser injetado via `{% include %}` dentro do `<style type="text/tailwindcss">` do `base.html`, ou mantido inline. Não é possível linkear um `.css` externo com sintaxe `@theme` via `<link>` — o browser build só processa tags inline. A solução: manter o `@theme` em um `<style type="text/tailwindcss">` dentro de `base.html`, e usar `tokens.css` como CSS puro (variáveis CSS) para `components.css`.
 
 ### Mapeamento de Substituição nos Templates
 
-| Padrão Atual | Substituição |
-|--------------|-------------|
+| Padrão atual (hardcoded) | Substituto (token Tailwind) |
+|--------------------------|----------------------------|
 | `bg-[#a98f71]` | `bg-gold-primary` |
 | `text-[#a98f71]` | `text-gold-primary` |
 | `bg-[#a98f71]/10` | `bg-gold-primary/10` |
 | `border-l-[#a98f71]` | `border-l-gold-primary` |
-| `bg-[#8b7355]`, `bg-[#8c735a]` | `bg-gold-dark` |
-| `bg-[#1c1917]` | `bg-sidebar` |
-| `ring-[#a98f71]` | `ring-gold-primary` |
+| `ring-[#a98f71]/30` | `ring-gold-primary/30` |
 | `hover:bg-[#a98f71]` | `hover:bg-gold-primary` |
+| `bg-[#8b7355]`, `bg-[#8c735a]` | `bg-gold-dark` |
 | `hover:bg-[#8c735a]` | `hover:bg-gold-dark` |
-| `focus:ring-[#a98f71]/30` | `focus:ring-gold-primary/30` |
+| `bg-[#1c1917]` | `bg-sidebar` |
+| `border-[#1c1917]`, `border-stone-800` | mantém `border-stone-800` (é token Tailwind) |
+
+---
+
+## Requisitos Funcionais
+
+### RF-001: Criar `modules/design_system/` como Django App
+**Prioridade:** Alta — bloqueante para tudo
+**Critérios de Aceite:**
+- [ ] `modules/design_system/apps.py` criado (`DesignSystemConfig`)
+- [ ] `"smart_core_assistant_painel.modules.design_system"` em `INSTALLED_APPS` no `settings.py`
+- [ ] Django descobre os templates e static do módulo via `APP_DIRS: True` e `AppDirectoriesFinder`
+
+### RF-002: Migrar Tokens e Componentes para `design_system/static/`
+**Prioridade:** Alta
+**Critérios de Aceite:**
+- [ ] `design_system/static/design_system/css/tokens.css` criado com variáveis CSS `--brand-*`
+- [ ] `design_system/static/design_system/css/components.css` com `.ui-btn`, `.badge`, `.modal`, `.kanban-*`, `.ui-input`, `.ui-select`
+- [ ] `design_system/static/design_system/css/layout.css` com `.app-container`, `.app-navbar`, `.app-footer`, `.divider`
+- [ ] Zero hex hardcoded nesses arquivos (usam `var(--brand-*)`)
+- [ ] `core/static/css/app.css` reduzido a zero linhas funcionais ou removido
+
+### RF-003: Migrar Templates Base para `design_system/templates/`
+**Prioridade:** Alta
+**Critérios de Aceite:**
+- [ ] `design_system/templates/design_system/base.html` criado (migrado de `core/`)
+- [ ] `design_system/templates/design_system/base_dashboard.html` migrado
+- [ ] `design_system/templates/design_system/base_public.html` migrado
+- [ ] `base.html` do design_system carrega `design_system/css/tokens.css`, `components.css`, `layout.css`
+- [ ] `base_dashboard.html` do design_system usa `bg-sidebar`, `bg-gold-primary`, etc. — zero hex
+- [ ] `core/templates/` mantém apenas `404.html`, `500.html`, `403.html` (erros Django, não herdam do design_system)
+- [ ] `TEMPLATES DIRS` no `settings.py` removido ou mantido vazio (tudo via `APP_DIRS`)
+
+### RF-004: Substituir Cores Hardcoded em Todos os Templates
+**Prioridade:** Alta
+**Critérios de Aceite:**
+- [ ] `grep -r "#a98f71\|#8b7355\|#8c735a\|#1c1917" src/ --include="*.html"` → 0 resultados
+- [ ] Todos os `{% extends "base_dashboard.html" %}` → `{% extends "design_system/base_dashboard.html" %}`
+- [ ] Todos os `{% extends "base_public.html" %}` → `{% extends "design_system/base_public.html" %}`
+
+### RF-005: Partials de Componentes no Design System
+**Prioridade:** Média
+**Critérios de Aceite:**
+- [ ] `design_system/templates/design_system/components/_alert.html` substitui o bloco `{% if messages %}` repetido
+- [ ] `design_system/templates/design_system/components/_page_header.html` para cabeçalhos de página
+- [ ] `design_system/templates/design_system/components/_card.html` para cards container
+- [ ] Pelo menos 3 apps migrados para usar os partials
+
+### RF-006: CSS Específico por App (onde necessário)
+**Prioridade:** Média
+**Critérios de Aceite:**
+- [ ] `atendimento_unificado/static/atendimento_unificado/css/workspace.css` criado com:
+  - `.chat-bubble-inbound`, `.chat-bubble-outbound`
+  - `.conv-list-item`, `.conv-list-item--active`
+  - `.workspace-avatar`
+- [ ] `workspace.html` carrega o CSS via `{% block extra_head %}`
+- [ ] Outros apps que precisarem: mesma estrutura `{app}/static/{app}/css/{app}.css`
+
+---
+
+## Requisitos Não-Funcionais
+
+### RNF-001: Zero Regressão Visual
+Substituição 1:1. As cores dos tokens têm exatamente o mesmo hex dos valores que substituem.
+
+### RNF-002: Sem Build Step
+Manter Tailwind v4 CDN. Sem `npm`, `node_modules`, Vite ou PostCSS.
+
+### RNF-003: Backward Compatibility Durante Migração
+`core/templates/base.html` e `base_dashboard.html` podem coexistir com shims de redirecionamento enquanto os apps são migrados.
+
+---
+
+## Escopo
+
+### Incluído
+- Criação de `modules/design_system/` como Django app
+- Migração de tokens e componentes CSS para `design_system/static/`
+- Migração de templates base para `design_system/templates/`
+- Substituição de todas as cores hardcoded nos templates
+- Pasta `{app}/static/{app}/css/` para cada app que precisar de override
+- Partials de componentes reutilizáveis no design_system
+
+### Não Incluído
+- Refatoração do Django Admin / Jazzmin
+- Introdução de build step (Webpack, Vite, PostCSS)
+- Mudança de identidade visual
+- Testes visuais automatizados (visual regression)
+- Dark mode
 
 ---
 
 ## Plano de Execução por Fases
 
-### Fase 1 — Infraestrutura de Tokens (Prioridade: Bloqueante)
-**Escopo:** `core` app apenas  
-**Arquivos criados/modificados:**
-- `core/static/css/tokens.css` — CRIADO (extrai @theme do base.html)
-- `core/static/css/components.css` — CRIADO (extrai componentes do app.css)
-- `core/templates/base.html` — MODIFICADO (adiciona links para novos CSS, remove @theme inline)
+### Fase 1 — Criar `modules/design_system/` *(bloqueante)*
+**O que fazer:**
+1. Criar `modules/design_system/__init__.py`
+2. Criar `modules/design_system/apps.py` com `DesignSystemConfig`
+3. Criar estrutura de diretórios `static/design_system/css/` e `templates/design_system/components/`
+4. Adicionar `"smart_core_assistant_painel.modules.design_system"` ao `INSTALLED_APPS`
+5. Criar `tokens.css`, `components.css`, `layout.css` (conteúdo extraído e limpo do `app.css`)
+6. Verificar que o Django descobre templates e static via `APP_DIRS`
 
-**Resultado:** Base limpa, tokens disponíveis como classes Tailwind.
-
----
-
-### Fase 2 — `base_dashboard.html` e `base_public.html` (Bloqueante)
-**Escopo:** Templates base do layout  
-**Arquivos modificados:**
-- `core/templates/base_dashboard.html` — substituir ~60 ocorrências de `#a98f71`/`#1c1917`
-- `core/templates/base_public.html` — substituir cores do navbar público
-- `core/templates/landing_page.html` — substituir cores do landing
-
-**Resultado:** Todo app que herda de `base_dashboard.html` ganha o design padronizado automaticamente.
+**Resultado:** Módulo registrado, arquivos CSS criados. Nenhum app migrado ainda.
 
 ---
 
-### Fase 3 — `atendimento_unificado` (Workspace / Chat Evolution)
-**Escopo:** App mais complexo — tratado como referência de implementação correta  
-**Arquivos criados/modificados:**
-- `atendimento_unificado/static/atendimento_unificado/css/workspace.css` — CRIADO
-  - Estilos específicos do chat: scrollbar customizado, bolhas de mensagem, layout fixo
-- `atendimento_unificado/templates/atendimento_unificado/workspace.html` — substituir cores
-- `atendimento_unificado/templates/atendimento_unificado/partials/*.html` — substituir cores
+### Fase 2 — Migrar Templates Base *(bloqueante)*
+**O que fazer:**
+1. Criar `design_system/templates/design_system/base.html`
+   - Carrega `design_system/css/tokens.css`, `components.css`, `layout.css`
+   - Remove `@theme` inline (mantém só o `@tailwindcss/browser@4` CDN)
+   - Mantém Alpine.js, Outfit font
+2. Criar `design_system/templates/design_system/base_dashboard.html`
+   - Substitui todas as ~60 ocorrências de hex por tokens (`bg-sidebar`, `bg-gold-primary`, etc.)
+3. Criar `design_system/templates/design_system/base_public.html`
+4. Criar partials `_alert.html`, `_page_header.html`, `_card.html`
 
-**Conteúdo do `workspace.css`:**
-```css
-/* Estilos específicos do Workspace — não fazem sentido como globais */
-.chat-bubble-inbound  { @apply bg-stone-100 text-stone-800 rounded-2xl rounded-tl-sm; }
-.chat-bubble-outbound { @apply bg-gold-primary/10 text-stone-800 rounded-2xl rounded-tr-sm; }
-.conv-list-item       { @apply w-full text-left px-3 py-3 hover:bg-stone-50 transition-colors flex gap-3 items-start; }
-.conv-list-item--active { @apply bg-gold-primary/5 border-l-2 border-l-gold-primary; }
-.workspace-avatar     { @apply h-10 w-10 shrink-0 rounded-full bg-gold-primary flex items-center justify-center text-white font-bold text-xs; }
-```
-
-**Resultado:** `atendimento_unificado` vira o modelo de como todo app deve ser estruturado.
+**Resultado:** Templates base limpos no módulo design_system.
 
 ---
 
-### Fase 4 — Apps de Configuração (`tenants`, `evolution_sync`, `settings_manager`)
-**Escopo:** Templates de configuração e administração  
-**Abordagem:** Substituição de cores + adoção de `.ui-btn`, `.badge`, `.ui-input` do `components.css`  
-**Estimativa:** ~15 templates
+### Fase 3 — `atendimento_unificado` (referência) *(alta prioridade)*
+**O que fazer:**
+1. Criar `atendimento_unificado/static/atendimento_unificado/css/workspace.css`
+2. Atualizar `workspace.html`:
+   - `{% extends "design_system/base_dashboard.html" %}`
+   - Adicionar `{% block extra_head %}` carregando `workspace.css`
+   - Substituir cores hardcoded nos templates e partials
+3. Atualizar todos os partials do workspace
+
+**Por que primeiro:** É o template mais complexo. Resolvê-lo valida toda a arquitetura antes de escalar.
 
 ---
 
-### Fase 5 — Apps de Conteúdo (`treinamento`, `usuarios`, `oraculo`)
-**Escopo:** Formulários, listagens, autenticação  
-**Estimativa:** ~12 templates
+### Fase 4 — Apps de Configuração
+**Apps:** `tenants`, `evolution_sync`, `settings_manager`  
+**O que fazer:** Atualizar `{% extends %}` + substituir cores + adotar `.ui-btn`, `.badge`  
+**~15 templates**
 
 ---
 
-### Fase 6 — Partials de Componentes (Core)
-**Escopo:** Padrões repetidos extraídos para includes reutilizáveis  
-**Arquivos criados:**
-```
-core/templates/components/
-├── _page_header.html   {% include 'components/_page_header.html' with title="..." subtitle="..." %}
-├── _card.html          {% include 'components/_card.html' with title="..." %}
-└── _alert.html         (substitui bloco {% if messages %} repetido em 20+ templates)
-```
+### Fase 5 — Apps de Conteúdo
+**Apps:** `treinamento`, `usuarios`  
+**O que fazer:** Atualizar `{% extends %}` + substituir cores + adotar componentes  
+**~12 templates**
+
+---
+
+### Fase 6 — Limpeza do `core/`
+**O que fazer:**
+1. Remover `core/static/css/app.css` (conteúdo já migrado)
+2. Remover templates migrados de `core/templates/`
+3. Atualizar `settings.py`: remover `TEMPLATES DIRS` (não mais necessário com `APP_DIRS`) e remover `STATICFILES_DIRS` se `core/static/` ficar vazio
+4. `core/` vira app Django puro de configuração: settings, middleware, URLs, context_processors
 
 ---
 
@@ -274,33 +300,34 @@ core/templates/components/
 
 | Risco | Probabilidade | Impacto | Mitigação |
 |-------|---------------|---------|-----------|
-| Tailwind v4 não processar `tokens.css` externo via CDN | Baixa | Alto | Manter `@theme` no `base.html` via `<style type="text/tailwindcss">` inline; `tokens.css` vira arquivo `.css` puro sem Tailwind syntax |
-| Variante de cor com opacidade (`/10`, `/30`) não funcionar com token custom | Baixa | Médio | Tailwind v4 suporta nativamente. Testar em browser antes da fase 2 |
-| Regressão visual em algum template | Média | Médio | Mapeamento 1:1 rigoroso (tabela de substituição acima). Revisar visualmente após cada fase |
-| App com CSS específico conflitando com global | Baixa | Baixo | Ordem de carregamento: global primeiro, app depois via `{% block extra_head %}` |
+| Tailwind v4 CDN não processar CSS externo com `@theme` | Alta | Alto | `@theme` fica inline em `<style type="text/tailwindcss">` no `base.html`; `tokens.css` exporta apenas variáveis CSS puras para `components.css` |
+| Django não encontrar templates do `design_system` | Baixa | Alto | `APP_DIRS: True` + app registrado em `INSTALLED_APPS` → descoberta automática |
+| Conflito de nomes de template (ex: `base.html` do core × do design_system) | Média | Médio | Migrar gradualmente; apps atualizam `{% extends %}` antes de remover do core |
+| App sem `static/{app}/css/` precisar de override | Baixa | Baixo | Criar pasta apenas quando necessário |
 
 ---
 
 ## Métricas de Sucesso
 
-- [ ] `grep -r "#a98f71" src/ --include="*.html"` → 0 resultados
-- [ ] `grep -r "#8b7355\|#8c735a\|#1c1917" src/ --include="*.html"` → 0 resultados
-- [ ] `grep -rn "ui-btn\|badge\|ui-input" src/ --include="*.html"` → ≥ 30 ocorrências (adoção real)
-- [ ] Todos os 64 templates herdam de `base.html` ou `base_dashboard.html` (sem orphans)
-- [ ] `app.css` final tem ≤ 50 linhas (layout only; componentes em `components.css`)
+- [ ] `grep -r "#a98f71" src/ --include="*.html"` → **0 resultados**
+- [ ] `grep -r "#8b7355\|#8c735a\|#1c1917" src/ --include="*.html"` → **0 resultados**
+- [ ] `grep -rn "ui-btn\|badge\|ui-input" src/ --include="*.html"` → **≥ 30 ocorrências**
+- [ ] `grep -r "extends \"base_dashboard" src/ --include="*.html"` → **0** (todos apontam para `design_system/`)
+- [ ] `core/static/css/app.css` → removido ou vazio
+- [ ] `modules/design_system/` registrado em `INSTALLED_APPS`
 
 ---
 
 ## Timeline
 
-| Fase | Descrição | Complexidade | Status |
-|------|-----------|-------------|--------|
-| 1 | Infraestrutura de Tokens (core) | Baixa | Pendente |
-| 2 | Templates Base (`base_dashboard`, `base_public`) | Média | Pendente |
-| 3 | `atendimento_unificado` — referência + `workspace.css` | Alta | Pendente |
-| 4 | Apps de Configuração (tenants, evolution_sync, settings_manager) | Média | Pendente |
-| 5 | Apps de Conteúdo (treinamento, usuarios, oraculo) | Baixa | Pendente |
-| 6 | Partials de Componentes no Core | Baixa | Pendente |
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| 1 | Criar `modules/design_system/` como Django app | Pendente |
+| 2 | Migrar templates base para `design_system/templates/` | Pendente |
+| 3 | `atendimento_unificado` — referência + `workspace.css` | Pendente |
+| 4 | Apps de configuração (tenants, evolution_sync, settings_manager) | Pendente |
+| 5 | Apps de conteúdo (treinamento, usuarios) | Pendente |
+| 6 | Limpeza do `core/` | Pendente |
 
 ---
 

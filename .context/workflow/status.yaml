@@ -2,7 +2,7 @@ workflow: PREVC
 phase: P  # Planning
 
 feature: design-system-refactor
-title: "Padronização Global do Design System — Tailwind v4 Tokens + Arquitetura por App"
+title: "Design System como Módulo Dedicado — modules/design_system/ como Django app"
 started_at: "2026-05-24"
 
 plan: ".context/plans/design-system-refactor.md"

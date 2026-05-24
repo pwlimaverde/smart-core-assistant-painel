@@ -1,474 +1,493 @@
-# PRD - Refatoração do Design System
+# PRD — Design System Desacoplado
 
-## Título da Feature
-Design System Desacoplado — `modules/design_system/` com Jinja2 + Adaptador Django
+## Objetivo
 
-## Resumo Executivo
-
-O projeto tem 240 ocorrências de `#a98f71` hardcoded, 0/64 templates usando os componentes CSS
-definidos, e toda a lógica de layout misturada com Django Template Language (DTL) — o que torna
-impossível portar o frontend sem reescrever tudo.
-
-A solução é criar `modules/design_system/` como um módulo independente com:
-- **CSS/JS puro** (Tailwind tokens + componentes) — 100% framework-agnostic
-- **Templates Jinja2** — compatíveis com Django e FastAPI nativamente
-- **Adaptador Django isolado** — toda a cola com Django fica em um único lugar
-
-Os apps Django ficam com zero templates. Apenas Python.
+Centralizar **tudo que é design** em `modules/design_system/` com o mínimo de acoplamento
+possível ao Django. Os apps Django ficam com zero templates e zero CSS — apenas Python.
 
 ---
 
-## Diagnóstico
+## Princípio Central
 
-### Números
-| Problema | Quantidade |
-|----------|-----------|
-| Ocorrências de `#a98f71` hardcoded | **240** |
-| Arquivos com cores hardcoded | **45** |
-| Templates usando `.ui-btn` / `.badge` | **0 / 64** |
-| Tags Django-específicas (`url`, `csrf`, `load`, `static`) | **~200** |
+O mesmo padrão já usado no backend — lógica de negócio em `modules/`, cola com Django em
+`app/` — aplicado ao frontend:
 
-### Tags Django nos templates (auditoria)
-| Tag | Ocorrências | Portável para Jinja2? |
-|-----|-------------|----------------------|
-| `{% url %}` | 135 | `{{ url('name') }}` — helper |
-| `{% block %}`/`{% extends %}` | 106 | Idêntico em Jinja2 |
-| `{% csrf_token %}` | 36 | `{{ csrf_input }}` — helper |
-| `{% load static %}`/`{% static %}` | 26 | `{{ static('path') }}` — helper |
-| `{% for %}`/`{% if %}`/`{% include %}` | 247+ | Idêntico em Jinja2 |
-| `{% load permission_tags %}` | 5 | Tag customizada → helper Jinja2 |
-
-### Dois artefatos desconexos atuais
-| Artefato | Onde | Problema |
-|----------|------|---------|
-| `app.css` | `core/static/css/` | Define componentes, ninguém usa |
-| `@theme {}` inline | `base.html` | Define tokens, templates ignoram |
+```
+HOJE                              DEPOIS
+──────────────────────────────    ──────────────────────────────────────────
+app/core/templates/base.html  →  modules/design_system/templates/ (Jinja2)
+app/core/static/css/app.css   →  modules/design_system/static/css/
+app/*/templates/**/*.html     →  modules/design_system/templates/apps/*/
+app/*/static/**/css/          →  removidas
+──────────────────────────────    ──────────────────────────────────────────
+Todo acoplamento com Django   →  modules/design_system/adapters/django/
+```
 
 ---
 
-## Princípio Arquitetural
+## As Três Camadas do Design System
 
-O mesmo padrão já aplicado no backend — lógica de negócio em `modules/`, cola com Django em `app/` — agora aplicado ao frontend:
+A pesquisa de melhores práticas (2026) deixa claro que "design" são três camadas separadas,
+cada uma com sua estratégia:
 
-```
-ANTES (acoplado):
-  app/core/templates/base_dashboard.html  ← layout misturado com {% url %} {% load %}
-  app/core/static/css/app.css             ← componentes que ninguém usa
+### Camada 1 — Tokens (100% portável)
 
-DEPOIS (desacoplado):
-  modules/design_system/templates/        ← Jinja2 puro, sem cola Django
-  modules/design_system/static/css/       ← CSS/JS 100% framework-agnostic
-  modules/design_system/adapters/django/  ← TODA a cola Django fica aqui
-  app/{qualquer}/                         ← zero templates, só Python
-```
+**Melhor prática da indústria:** W3C Design Tokens — especificação estabilizada em outubro
+de 2025, padrão agnóstico de plataforma.
+
+Os tokens são definidos **uma vez** em JSON neutro. O CSS os consome como variáveis puras.
+Se o projeto migrar para qualquer outro stack (FastAPI, Node, app mobile), o `tokens.json`
+vai junto sem mudança.
+
+**Sem build step:** o `tokens.css` é mantido manualmente em sincronia com `tokens.json`.
+Se futuramente precisar gerar iOS/Android, a adição do Style Dictionary não exige alterar
+os arquivos existentes — é aditivo.
+
+### Camada 2 — Componentes CSS (100% portável)
+
+Classes utilitárias CSS puras (`.ui-btn`, `.badge`, `.modal`). Usam as variáveis CSS dos
+tokens. Funcionam em qualquer framework ou HTML puro — zero acoplamento.
+
+### Camada 3 — Templates (90% portável)
+
+**Melhor prática para SSR:** Jinja2. Suportado nativamente por Django **e** FastAPI.
+A sintaxe (`{% block %}`, `{% extends %}`, `{% for %}`, `{% if %}`) é idêntica nos dois.
+O único código Django-específico (`url()`, `static()`, `csrf_input`) fica isolado em um
+único arquivo adaptador.
 
 ---
 
 ## Estrutura Final
 
 ```
-modules/design_system/
-│
-├── __init__.py
-│
-├── adapters/
-│   └── django/
-│       ├── __init__.py
-│       ├── apps.py          ← DesignSystemConfig (INSTALLED_APPS)
-│       └── jinja2_env.py    ← registra url(), static(), csrf_input, helpers de permissão
-│
-├── static/
-│   └── design_system/
-│       └── css/
-│           ├── tokens.css      ← variáveis CSS puras (--brand-*, --color-*)
-│           ├── components.css  ← .ui-btn, .badge, .modal, .kanban-*, .ui-input
-│           └── layout.css      ← .app-container, .app-navbar, .app-footer
-│
-└── templates/
-    └── design_system/
-        │
-        ├── base.html               ← base global (head, scripts, body wrapper)
-        ├── base_dashboard.html     ← layout com sidebar + main
-        ├── base_public.html        ← layout landing/login (dark luxury)
-        │
-        ├── components/             ← partials globais reutilizáveis
-        │   ├── _alert.html         ← substitui {% if messages %} repetido
-        │   ├── _page_header.html   ← título de página com breadcrumb
-        │   └── _card.html          ← card container
-        │
-        └── apps/                   ← templates de cada app (todos aqui)
-            │
-            ├── atendimento_unificado/
-            │   ├── workspace.html
-            │   ├── workspace_disabled.html
-            │   └── partials/
-            │       ├── chat_message.html
-            │       ├── kanban_card.html
-            │       ├── kanban_column.html
-            │       ├── conversation_item.html
-            │       ├── chat_drawer.html
-            │       ├── detail_panel.html
-            │       └── custom_fields_panel.html
-            │
-            ├── tenants/
-            │   ├── dashboard.html
-            │   ├── config_database.html
-            │   ├── config_evolution.html
-            │   ├── config_ai.html
-            │   ├── config_trello.html
-            │   ├── config_debug.html
-            │   ├── config_form.html
-            │   ├── signup.html
-            │   ├── subscription_expired.html
-            │   ├── tenant_not_found.html
-            │   ├── backoffice/
-            │   ├── onboarding/
-            │   └── users/
-            │
-            ├── evolution_sync/
-            │   ├── instance_list.html
-            │   └── instance_detail.html
-            │
-            ├── settings_manager/
-            │   ├── index.html
-            │   ├── whitelist.html
-            │   ├── whitelist_form.html
-            │   └── whitelist_confirm.html
-            │
-            ├── treinamento/
-            │   └── *.html
-            │
-            └── usuarios/
-                ├── login.html
-                ├── cadastro.html
-                └── password_reset_form.html
+modules/
+└── design_system/
+    │
+    ├── tokens/
+    │   └── tokens.json                   ← W3C Design Tokens (fonte única da verdade)
+    │
+    ├── static/
+    │   └── design_system/
+    │       └── css/
+    │           ├── tokens.css            ← variáveis CSS geradas do tokens.json
+    │           ├── components.css        ← .ui-btn, .badge, .modal, .kanban-*
+    │           └── layout.css            ← .app-container, .app-navbar, .app-footer
+    │
+    ├── templates/
+    │   └── design_system/
+    │       │
+    │       ├── base.html                 ← base global (head, CDN scripts, body)
+    │       ├── base_dashboard.html       ← layout com sidebar + main
+    │       ├── base_public.html          ← layout landing / login (dark)
+    │       │
+    │       ├── components/               ← partials globais reutilizáveis
+    │       │   ├── _alert.html
+    │       │   ├── _page_header.html
+    │       │   └── _card.html
+    │       │
+    │       └── apps/                     ← TODOS os templates de todos os apps
+    │           ├── atendimento_unificado/
+    │           │   ├── workspace.html
+    │           │   ├── workspace_disabled.html
+    │           │   └── partials/
+    │           │       ├── chat_message.html
+    │           │       ├── kanban_card.html
+    │           │       ├── kanban_column.html
+    │           │       ├── conversation_item.html
+    │           │       ├── chat_drawer.html
+    │           │       ├── detail_panel.html
+    │           │       └── custom_fields_panel.html
+    │           ├── tenants/
+    │           │   ├── dashboard.html
+    │           │   ├── config_database.html
+    │           │   ├── config_evolution.html
+    │           │   ├── config_ai.html
+    │           │   ├── config_trello.html
+    │           │   ├── config_debug.html
+    │           │   ├── config_form.html
+    │           │   ├── signup.html
+    │           │   ├── subscription_expired.html
+    │           │   ├── tenant_not_found.html
+    │           │   ├── backoffice/
+    │           │   ├── onboarding/
+    │           │   └── users/
+    │           ├── evolution_sync/
+    │           │   ├── instance_list.html
+    │           │   └── instance_detail.html
+    │           ├── settings_manager/
+    │           │   ├── index.html
+    │           │   ├── whitelist.html
+    │           │   ├── whitelist_form.html
+    │           │   └── whitelist_confirm.html
+    │           ├── treinamento/
+    │           │   └── *.html
+    │           └── usuarios/
+    │               ├── login.html
+    │               ├── cadastro.html
+    │               └── password_reset_form.html
+    │
+    └── adapters/
+        └── django/
+            ├── __init__.py
+            ├── apps.py                   ← DesignSystemConfig (INSTALLED_APPS)
+            └── jinja2_env.py             ← ÚNICO arquivo com código Django
 
 app/
-  core/            → settings, middleware, context_processors, URLs — SEM templates
-  atendimentos/    → models, views, signals — SEM templates
-  tenants/         → models, views, forms, templatetags → helpers Jinja2
-  evolution_sync/  → models, views, signals — SEM templates
-  ...              → todos: zero templates
+  core/            → settings, middleware, context_processors, URLs — zero templates
+  atendimentos/    → models, views, signals — zero templates
+  tenants/         → models, views, forms — zero templates
+  evolution_sync/  → models, views, signals — zero templates
+  ...              → todos: zero templates, zero CSS
 ```
+
+---
+
+## Tokens W3C — Arquivo `tokens.json`
+
+Fonte única de verdade. Formato estável W3C (2025.10):
+
+```json
+{
+  "$schema": "https://design-tokens.org/schema",
+  "brand": {
+    "gold": {
+      "primary": { "$value": "#a98f71", "$type": "color" },
+      "dark":    { "$value": "#8b7355", "$type": "color" }
+    },
+    "sidebar": { "$value": "#1c1917", "$type": "color" }
+  },
+  "semantic": {
+    "primary": { "$value": "#3b82f6", "$type": "color" },
+    "success": { "$value": "#22c55e", "$type": "color" },
+    "warning": { "$value": "#f59e0b", "$type": "color" },
+    "danger":  { "$value": "#ef4444", "$type": "color" }
+  },
+  "surface": {
+    "card":    { "$value": "#ffffff", "$type": "color" },
+    "page":    { "$value": "#f8fafc", "$type": "color" },
+    "border":  { "$value": "#e2e8f0", "$type": "color" }
+  },
+  "typography": {
+    "fontFamily": { "$value": "'Outfit', sans-serif", "$type": "fontFamily" }
+  },
+  "radius": {
+    "lg": { "$value": "14px", "$type": "dimension" },
+    "md": { "$value": "10px", "$type": "dimension" }
+  }
+}
+```
+
+---
+
+## CSS — Derivado dos Tokens
+
+### `tokens.css` — variáveis CSS (tradução direta do `tokens.json`)
+
+```css
+:root {
+  /* Marca */
+  --color-gold-primary: #a98f71;
+  --color-gold-dark:    #8b7355;
+  --color-sidebar:      #1c1917;
+
+  /* Semântica */
+  --color-primary: #3b82f6;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger:  #ef4444;
+
+  /* Superfícies */
+  --color-surface-card:   #ffffff;
+  --color-surface-page:   #f8fafc;
+  --color-border-default: #e2e8f0;
+
+  /* Tipografia */
+  --font-sans: 'Outfit', sans-serif;
+
+  /* Raios */
+  --radius-lg: 14px;
+  --radius-md: 10px;
+}
+```
+
+### Tailwind v4 `@theme` — registra tokens como classes Tailwind
+
+Inline no `base.html` (limitação do CDN browser — não pode ser arquivo externo):
+
+```html
+<style type="text/tailwindcss">
+  @theme {
+    --color-gold-primary: var(--color-gold-primary);
+    --color-gold-dark:    var(--color-gold-dark);
+    --color-sidebar:      var(--color-sidebar);
+    --font-family-sans:   var(--font-sans);
+    --radius-lg:          var(--radius-lg);
+    --radius-md:          var(--radius-md);
+  }
+</style>
+```
+
+Isso habilita `bg-gold-primary`, `text-gold-primary`, `bg-sidebar` nos templates.
 
 ---
 
 ## Adaptador Django — `jinja2_env.py`
 
-Toda a "cola" entre Jinja2 e Django fica aqui. É o único arquivo que muda se trocar o framework:
+**Todo o código Django-específico fica aqui. É o único arquivo que muda se trocar o framework:**
 
 ```python
 # modules/design_system/adapters/django/jinja2_env.py
-from jinja2 import Environment
 from django.templatetags.static import static
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from jinja2 import Environment
 
 
-def environment(**options):
+def environment(**options) -> Environment:
     env = Environment(**options)
     env.globals.update({
-        # Equivalentes Django → Jinja2
-        "url": reverse,
-        "static": static,
+        # Equivalentes Django → portável para FastAPI trocando só este arquivo
+        "url":        reverse,
+        "static":     static,
         "csrf_input": _csrf_input,
 
         # Helpers de permissão (substitui permission_tags)
-        "can_view_module": _can_view_module,
-        "is_owner_user": _is_owner_user,
-        "can_access_admin_panel": _can_access_admin_panel,
+        "can_view_module":         _can_view_module,
+        "is_owner_user":           _is_owner_user,
+        "can_access_admin_panel":  _can_access_admin_panel,
+        "has_no_module_permissions": _has_no_module_permissions,
+        "has_any_module_permission": _has_any_module_permission,
     })
     return env
-
-
-def _csrf_input(request):
-    token = request.META.get("CSRF_COOKIE", "")
-    return mark_safe(f'<input type="hidden" name="csrfmiddlewaretoken" value="{token}">')
-
-
-def _can_view_module(user, module_name: str) -> bool:
-    # Lógica extraída de permission_tags
-    ...
 ```
-
-**Configuração no `settings.py`:**
-
-```python
-TEMPLATES = [
-    # Jinja2 — processa design_system/templates/ e {app}/templates/ via APP_DIRS
-    {
-        "BACKEND": "django.template.backends.jinja2.Jinja2",
-        "DIRS": [],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "environment": "smart_core_assistant_painel.modules.design_system.adapters.django.jinja2_env.environment",
-        },
-    },
-    # DTL — mantido apenas para Admin Django (Jazzmin usa DTL)
-    {
-        "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "core" / "templates"],
-        "APP_DIRS": True,
-        "OPTIONS": {
-            "context_processors": [...],
-        },
-    },
-]
-```
-
-> O Admin (Jazzmin) usa DTL — mantemos o backend DTL **somente** para ele. Todas as views da aplicação usam Jinja2.
 
 ---
 
-## Conversão DTL → Jinja2 (mapeamento completo)
+## Conversão DTL → Jinja2
 
-### Tags que mudam
+### Tags que mudam (as únicas que exigem trabalho)
 
-| DTL | Jinja2 |
-|-----|--------|
+| Django Template Language | Jinja2 |
+|--------------------------|--------|
 | `{% url 'name' %}` | `{{ url('name') }}` |
 | `{% url 'name' arg %}` | `{{ url('name', args=[arg]) }}` |
 | `{% static 'path' %}` | `{{ static('path') }}` |
 | `{% csrf_token %}` | `{{ csrf_input(request) }}` |
 | `{% load static %}` | Remove (não existe em Jinja2) |
 | `{% load permission_tags %}` | Remove (helpers no env) |
-| `{% load i18n %}` | Remove (configurar i18n no env) |
+| `{% load i18n %}` | Remove (i18n configurado no env) |
 | `{% trans "texto" %}` | `{{ _("texto") }}` |
 | `{% now "Y" %}` | `{{ now().year }}` |
-| `{% with x=y %}` | `{% set x = y %}` |
+| `{% with x=y %}...{% endwith %}` | `{% set x = y %}` |
 | `{% can_view_module "x" as var %}` | `{% set var = can_view_module(user, "x") %}` |
+| `form.as_p` | `form.as_p()` (Jinja2 chama métodos com `()`) |
 
-### Tags que ficam iguais
+### Tags que ficam idênticas (maioria)
 
-| Tag | Status |
-|-----|--------|
-| `{% block %}` / `{% endblock %}` | Idêntico |
-| `{% extends "..." %}` | Idêntico |
-| `{% include "..." %}` | Idêntico |
-| `{% for x in y %}` | Idêntico |
-| `{% if %}` / `{% elif %}` / `{% else %}` | Idêntico |
-| `{{ variavel }}` | Idêntico |
-| `{{ variavel\|filter }}` | Idêntico (maioria dos filtros) |
-
-### Filtros que mudam
-
-| DTL | Jinja2 |
-|-----|--------|
-| `\|truncatechars:N` | `\|truncate(N)` |
-| `\|default:"x"` | `\|default("x")` |
-| `\|date:"d/m/Y"` | `\|strftime("%d/%m/%Y")` |
-| `\|slice:":2"` | `[:2]` (Python nativo) |
-| `\|upper` | `\|upper` (idêntico) |
-| `\|length` | `\|length` (idêntico) |
+`{% block %}`, `{% extends %}`, `{% include %}`, `{% for %}`, `{% if %}`, `{% elif %}`,
+`{% else %}`, `{{ variavel }}`, `{{ variavel|filter }}`, `{% macro %}`.
 
 ---
 
-## Portabilidade no futuro
+## Configuração Django (`settings.py`)
 
-Se migrar para FastAPI, o trabalho se resume a:
+```python
+TEMPLATES = [
+    # Jinja2 — processa todos os templates da aplicação
+    {
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
+        "DIRS": [],
+        "APP_DIRS": True,  # descobre design_system/templates/ via INSTALLED_APPS
+        "OPTIONS": {
+            "environment": (
+                "smart_core_assistant_painel"
+                ".modules.design_system.adapters.django.jinja2_env.environment"
+            ),
+        },
+    },
+    # DTL — mantido SOMENTE para o Admin Django (Jazzmin usa DTL)
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [BASE_DIR / "core" / "templates"],
+        "APP_DIRS": True,
+        "OPTIONS": {"context_processors": [...]},
+    },
+]
 
-1. **CSS/JS** → zero mudanças
-2. **Templates Jinja2** → zero mudanças  
-3. **`jinja2_env.py`** → escrever `adapters/fastapi/jinja2_env.py` com:
-   - `url` → função de URL do FastAPI
-   - `static` → montagem de static do Starlette
-   - `csrf_input` → dependência do FastAPI
-4. **Views Django** → reescrever como rotas FastAPI (lógica de negócio nos `modules/` reaproveitada)
-5. **Models Django ORM** → adaptar para SQLAlchemy ou Tortoise ORM
-
-O frontend (templates + CSS/JS) fica intacto. A lógica de negócio (`modules/`) fica intacta.
-
----
-
-## Requisitos Funcionais
-
-### RF-001: Criar `modules/design_system/` com adaptador Django
-**Prioridade:** Alta — bloqueante
-**Critérios de Aceite:**
-- [ ] `modules/design_system/adapters/django/apps.py` com `DesignSystemConfig`
-- [ ] `modules/design_system/adapters/django/jinja2_env.py` com `url`, `static`, `csrf_input`, helpers de permissão
-- [ ] `"smart_core_assistant_painel.modules.design_system.adapters.django"` em `INSTALLED_APPS`
-- [ ] `settings.py` com backend Jinja2 configurado apontando para `jinja2_env.environment`
-- [ ] Backend DTL mantido para Admin/Jazzmin
-
-### RF-002: CSS Desacoplado em `design_system/static/`
-**Prioridade:** Alta
-**Critérios de Aceite:**
-- [ ] `tokens.css` com variáveis CSS puras (`--brand-*`)
-- [ ] `components.css` com todos os componentes (`.ui-btn`, `.badge`, `.modal`, `.kanban-*`, `.ui-input`)
-- [ ] `layout.css` com layout global (`.app-container`, `.app-navbar`, `.app-footer`)
-- [ ] Zero hex hardcoded nesses arquivos
-- [ ] `core/static/css/app.css` removido
-
-### RF-003: Templates Base em Jinja2
-**Prioridade:** Alta
-**Critérios de Aceite:**
-- [ ] `design_system/templates/design_system/base.html` em Jinja2
-- [ ] `design_system/templates/design_system/base_dashboard.html` em Jinja2 com tokens de cor
-- [ ] `design_system/templates/design_system/base_public.html` em Jinja2
-- [ ] `base.html` carrega os CSS via `{{ static('design_system/css/tokens.css') }}`
-- [ ] `@theme` do Tailwind v4 mantido inline (limitação do CDN browser)
-
-### RF-004: Migrar Todos os Templates para `design_system/templates/design_system/apps/`
-**Prioridade:** Alta
-**Critérios de Aceite:**
-- [ ] Todos os 64 templates migrados para `design_system/templates/design_system/apps/{app}/`
-- [ ] Todos convertidos de DTL para Jinja2
-- [ ] Zero cores hardcoded (`#a98f71`, `#8b7355`, `#1c1917`)
-- [ ] Apps Django com zero arquivos `.html`
-
-### RF-005: Helpers de Permissão no Ambiente Jinja2
-**Prioridade:** Alta (bloqueante para migração de templates com permissões)
-**Critérios de Aceite:**
-- [ ] `can_view_module(user, module)` disponível nos templates Jinja2
-- [ ] `is_owner_user(user)` disponível
-- [ ] `can_access_admin_panel(user)` disponível
-- [ ] `has_no_module_permissions(user)` disponível
-- [ ] `has_any_module_permission(user)` disponível
-
-### RF-006: Componentes Globais (Partials)
-**Prioridade:** Média
-**Critérios de Aceite:**
-- [ ] `components/_alert.html` substitui `{% if messages %}` repetido
-- [ ] `components/_page_header.html` reutilizado em ≥ 5 templates
-- [ ] `components/_card.html` reutilizado em ≥ 3 templates
+INSTALLED_APPS = [
+    ...
+    # Design system registrado — Django descobre static/ e templates/ automaticamente
+    "smart_core_assistant_painel.modules.design_system.adapters.django",
+    ...
+]
+```
 
 ---
 
-## Requisitos Não-Funcionais
+## Portabilidade Futura
 
-### RNF-001: Zero Regressão Visual
-Substituição 1:1 de cores. Nenhuma mudança perceptível ao usuário.
+| O que | Mudança ao trocar Django → FastAPI |
+|-------|-------------------------------------|
+| `tokens.json` | **Nada** — JSON neutro |
+| `tokens.css`, `components.css`, `layout.css` | **Nada** — CSS puro |
+| Templates Jinja2 | **Nada** — Jinja2 é o mesmo |
+| `jinja2_env.py` (adaptador Django) | **Troca por** `adapters/fastapi/jinja2_env.py` |
+| Business logic (`modules/`) | **Nada** — Python puro |
+| Views Django | Reescreve como rotas FastAPI |
+| Django ORM | Adapta para SQLAlchemy |
 
-### RNF-002: Sem Build Step
-Tailwind v4 CDN mantido. Sem npm, node_modules ou Vite.
-
-### RNF-003: Admin Django intacto
-Jazzmin/Admin continuam funcionando via backend DTL. Nenhuma mudança.
-
-### RNF-004: Portabilidade Futura
-Template layer ≥ 90% portável para FastAPI via troca do `jinja2_env.py`.
+O frontend completo (tokens, CSS, templates) sobrevive à migração intacto.
 
 ---
 
-## Plano de Execução por Fases
+## Plano de Execução — 6 Fases
 
-### Fase 1 — Infraestrutura do Módulo *(bloqueante)*
-**Arquivos criados:**
+### Fase 1 — Infraestrutura do Módulo *(bloqueante para tudo)*
+
+**Criar a estrutura vazia do módulo:**
 - `modules/design_system/__init__.py`
+- `modules/design_system/tokens/tokens.json` — todos os tokens da marca
+- `modules/design_system/static/design_system/css/tokens.css` — CSS vars do tokens.json
+- `modules/design_system/static/design_system/css/components.css` — extraído do app.css
+- `modules/design_system/static/design_system/css/layout.css` — layout do app.css
 - `modules/design_system/adapters/__init__.py`
 - `modules/design_system/adapters/django/__init__.py`
-- `modules/design_system/adapters/django/apps.py`
-- `modules/design_system/adapters/django/jinja2_env.py`
-- `modules/design_system/static/design_system/css/tokens.css`
-- `modules/design_system/static/design_system/css/components.css`
-- `modules/design_system/static/design_system/css/layout.css`
+- `modules/design_system/adapters/django/apps.py` — DesignSystemConfig
+- `modules/design_system/adapters/django/jinja2_env.py` — todos os helpers
 
-**Arquivos modificados:**
+**Modificar:**
 - `settings.py` — adicionar `INSTALLED_APPS` + backend Jinja2
 
-**Resultado:** Módulo registrado, CSS criado, Jinja2 configurado. Nenhum template migrado.
+**Verificar:** Admin Django continua funcionando (DTL isolado).
 
 ---
 
-### Fase 2 — Templates Base em Jinja2 *(bloqueante)*
-**Arquivos criados:**
-- `design_system/templates/design_system/base.html`
-- `design_system/templates/design_system/base_dashboard.html`
-- `design_system/templates/design_system/base_public.html`
-- `design_system/templates/design_system/components/_alert.html`
-- `design_system/templates/design_system/components/_page_header.html`
-- `design_system/templates/design_system/components/_card.html`
+### Fase 2 — Templates Base em Jinja2 *(bloqueante para as demais fases)*
 
-**Conversões principais em `base_dashboard.html`:**
-- `{% load static %}` → remove
-- `{% static 'css/app.css' %}` → `{{ static('design_system/css/tokens.css') }}`
-- `bg-[#a98f71]` → `bg-gold-primary` (~60 ocorrências)
+**Criar:**
+- `templates/design_system/base.html` — head, CDN, @theme Tailwind inline
+- `templates/design_system/base_dashboard.html` — sidebar + main (zero hex hardcoded)
+- `templates/design_system/base_public.html` — layout dark (landing, login)
+- `templates/design_system/components/_alert.html`
+- `templates/design_system/components/_page_header.html`
+- `templates/design_system/components/_card.html`
+
+**Substituições em `base_dashboard.html`:**
+- ~60 ocorrências de `bg-[#a98f71]` → `bg-gold-primary`
 - `bg-[#1c1917]` → `bg-sidebar`
+- Todas as tags DTL → Jinja2
 
 ---
 
 ### Fase 3 — `atendimento_unificado` (referência)
-**Arquivos criados:**
-- `design_system/templates/design_system/apps/atendimento_unificado/workspace.html`
-- `design_system/templates/design_system/apps/atendimento_unificado/workspace_disabled.html`
-- `design_system/templates/design_system/apps/atendimento_unificado/partials/*.html` (7 partials)
 
-**Arquivos removidos:**
-- `app/atendimento_unificado/templates/` (inteiro)
+O workspace é o template mais complexo. Resolvê-lo valida toda a arquitetura.
 
-**Conversões:**
-- `{% extends "base_dashboard.html" %}` → `{% extends "design_system/base_dashboard.html" %}`
+**Criar** `templates/design_system/apps/atendimento_unificado/`:
+- `workspace.html` + `workspace_disabled.html`
+- `partials/` — 7 partials (chat_message, kanban_card, kanban_column, conversation_item,
+  chat_drawer, detail_panel, custom_fields_panel)
+
+**Remover:** `app/atendimento_unificado/templates/` (inteiro)
+
+**Conversões específicas:**
+- Bolhas de chat usarão classes de `components.css` (`.chat-bubble-in`, `.chat-bubble-out`)
+  em vez de classes Tailwind compostas repetidas
 - `{% load static %}` → remove
 - `{% static '...' %}` → `{{ static('...') }}`
-- Cores hardcoded → tokens Tailwind
-- Sintaxe Jinja2 para `{% with %}`, filtros, etc.
-
-**Views devem passar `request` no contexto** (necessário para `csrf_input(request)` no Jinja2).
 
 ---
 
-### Fase 4 — `tenants` (maior volume de templates)
-**~10 templates** migrados para `design_system/templates/design_system/apps/tenants/`
+### Fase 4 — `tenants` (maior volume)
+
+**Criar** `templates/design_system/apps/tenants/` com todos os ~15 templates.
 
 **Atenção especial:**
-- `permission_tags` (`can_view_module`, `is_owner_user`) → helpers Jinja2 do env
-- Forms Django → `{{ form.as_p() }}` (Jinja2 chama métodos com `()`)
+- `permission_tags` customizadas (`can_view_module`, `is_owner_user`) →
+  já disponíveis como helpers no `jinja2_env.py`
+- Forms Django: `form.as_p` → `form.as_p()`
+
+**Remover:** `app/tenants/templates/`
 
 ---
 
-### Fase 5 — `evolution_sync`, `settings_manager`, `treinamento`, `usuarios`
-**~20 templates** migrados para `design_system/templates/design_system/apps/{app}/`
+### Fase 5 — Apps restantes
+
+**Migrar** para `templates/design_system/apps/{app}/`:
+- `evolution_sync/` — 2 templates
+- `settings_manager/` — 4 templates
+- `treinamento/` — 5 templates
+- `usuarios/` — 3 templates (login, cadastro, password_reset)
+
+**Remover** as pastas `templates/` de cada app.
 
 ---
 
 ### Fase 6 — Limpeza
-1. Remover todas as pastas `{app}/templates/` (migradas)
-2. Remover `core/static/css/app.css`
-3. Remover `TEMPLATES DIRS` do DTL backend (manter só para Admin)
-4. `core/` vira app Django puro: settings, middleware, URLs, context_processors
 
----
-
-## Riscos
-
-| Risco | Probabilidade | Impacto | Mitigação |
-|-------|---------------|---------|-----------|
-| `@theme` Tailwind v4 não funcionar em arquivo CSS externo | Alta | Alto | Manter `@theme` inline no `base.html`; `tokens.css` exporta apenas `var()` CSS puras |
-| Forms Django renderizados diferente no Jinja2 | Média | Médio | Jinja2 chama métodos com `()` — `form.as_p()` em vez de `form.as_p` |
-| `permission_tags` com lógica complexa difícil de extrair | Média | Médio | Extrair lógica das tags para funções Python puras antes de migrar |
-| Admin (Jazzmin) quebrar com backend Jinja2 | Baixa | Alto | Django suporta múltiplos backends de template. DTL fica exclusivo para Admin |
-| Views não passando `request` no contexto (necessário pro csrf_input) | Média | Médio | Django Jinja2 backend injeta `request` automaticamente via context_processors |
+1. Remover `app/core/static/css/app.css` (conteúdo migrado para o design_system)
+2. Remover templates migrados de `app/core/templates/`
+   - Manter apenas `404.html`, `500.html`, `403.html` (erros Django, DTL, não migram)
+3. Atualizar `settings.py`: remover `TEMPLATES DIRS` do DTL (só mantém `core/templates`
+   para as páginas de erro)
+4. `app/core/` vira app Django puro: settings, middleware, URLs, context_processors
 
 ---
 
 ## Métricas de Sucesso
 
-- [ ] `grep -r "#a98f71" src/ --include="*.html"` → **0**
-- [ ] `grep -rn "{% load" src/smart_core_assistant_painel/app --include="*.html"` → **0**
-- [ ] `find src/smart_core_assistant_painel/app -name "*.html"` → **0 arquivos**
-- [ ] `find src/smart_core_assistant_painel/modules/design_system/templates -name "*.html" | wc -l` → **~64**
-- [ ] Admin Django funcionando normalmente
-- [ ] `grep -rn "ui-btn\|badge\|ui-input" src/ --include="*.html"` → **≥ 30**
+```bash
+# Zero cores hardcoded nos templates
+grep -r "#a98f71\|#8b7355\|#8c735a\|#1c1917" src/ --include="*.html"
+# → 0 resultados
+
+# Zero tags DTL nos templates de aplicação
+grep -rn "{% load " src/smart_core_assistant_painel/modules/design_system/templates/
+# → 0 resultados
+
+# Zero templates nos apps Django
+find src/smart_core_assistant_painel/app -name "*.html" | grep -v "core/templates"
+# → 0 resultados (apenas 404/500/403 no core ficam)
+
+# Todos os templates vivem no design_system
+find src/smart_core_assistant_painel/modules/design_system/templates -name "*.html" | wc -l
+# → ~65 arquivos
+
+# Adoção real das classes de componentes
+grep -rn "ui-btn\|badge\|ui-input\|chat-bubble" \
+  src/smart_core_assistant_painel/modules/design_system/templates/
+# → ≥ 50 ocorrências
+```
+
+---
+
+## Riscos e Mitigações
+
+| Risco | Probabilidade | Impacto | Mitigação |
+|-------|---------------|---------|-----------|
+| Tailwind v4 `@theme` não funcionar em CSS externo | Alta | Alto | `@theme` mantido inline no `base.html`; `tokens.css` exporta só variáveis CSS puras |
+| Admin Django (Jazzmin) quebrar | Baixa | Alto | Backend DTL mantido exclusivamente para o Admin; Jinja2 só nas views da aplicação |
+| Forms Django renderizados diferente em Jinja2 | Média | Médio | Jinja2 chama métodos com `()` — `form.as_p()`, `form.as_table()` |
+| `permission_tags` com lógica complexa | Média | Médio | Extrair funções Python puras antes de migrar; testar helpers no `jinja2_env.py` |
+| Regressão visual durante migração de cores | Média | Baixo | Mapeamento 1:1 rigoroso (tabela de substituição); revisar visualmente por fase |
 
 ---
 
 ## Timeline
 
-| Fase | Descrição | Status |
-|------|-----------|--------|
-| 1 | Infraestrutura do módulo (apps.py, jinja2_env.py, CSS) | Pendente |
-| 2 | Templates base em Jinja2 (base, dashboard, public, components) | Pendente |
-| 3 | `atendimento_unificado` — referência completa | Pendente |
-| 4 | `tenants` — maior volume | Pendente |
-| 5 | `evolution_sync`, `settings_manager`, `treinamento`, `usuarios` | Pendente |
-| 6 | Limpeza geral | Pendente |
+| Fase | Descrição | Arquivos | Status |
+|------|-----------|----------|--------|
+| 1 | Infraestrutura do módulo (tokens.json, CSS, jinja2_env.py) | ~8 novos | Pendente |
+| 2 | Templates base em Jinja2 (base, dashboard, public, partials globais) | ~6 novos | Pendente |
+| 3 | `atendimento_unificado` — 9 templates (referência completa) | ~9 novos | Pendente |
+| 4 | `tenants` — ~15 templates | ~15 novos | Pendente |
+| 5 | `evolution_sync`, `settings_manager`, `treinamento`, `usuarios` — ~14 templates | ~14 novos | Pendente |
+| 6 | Limpeza (`core/`, remoção de templates dos apps) | ~60 removidos | Pendente |
 
 ---
 
 ## Aprovações
 
-| Papel | Nome | Data | Status |
-|-------|------|------|--------|
-| Product Owner | pwlimaverde | 2026-05-24 | Pendente |
-| Tech Lead | — | — | Pendente |
+| Papel | Data | Status |
+|-------|------|--------|
+| Product Owner (pwlimaverde) | 2026-05-24 | Pendente |

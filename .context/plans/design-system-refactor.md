@@ -121,10 +121,14 @@ modules/
     │           │   └── whitelist_confirm.html
     │           ├── treinamento/
     │           │   └── *.html
-    │           └── usuarios/
-    │               ├── login.html
-    │               ├── cadastro.html
-    │               └── password_reset_form.html
+    │           ├── usuarios/
+    │           │   ├── login.html
+    │           │   ├── cadastro.html
+    │           │   └── password_reset_form.html
+    │           └── errors/
+    │               ├── 403.html            ← Django busca pelo nome no template backend
+    │               ├── 404.html
+    │               └── 500.html
     │
     └── adapters/
         └── django/
@@ -133,11 +137,11 @@ modules/
             └── jinja2_env.py             ← ÚNICO arquivo com código Django
 
 app/
-  core/            → settings, middleware, context_processors, URLs — zero templates
-  atendimentos/    → models, views, signals — zero templates
-  tenants/         → models, views, forms — zero templates
-  evolution_sync/  → models, views, signals — zero templates
-  ...              → todos: zero templates, zero CSS
+  core/            → settings, middleware, context_processors, URLs — ZERO templates
+  atendimentos/    → models, views, signals — ZERO templates
+  tenants/         → models, views, forms  — ZERO templates
+  evolution_sync/  → models, views, signals — ZERO templates
+  ...              → todos: ZERO templates, ZERO CSS estático
 ```
 
 ---
@@ -426,11 +430,13 @@ O workspace é o template mais complexo. Resolvê-lo valida toda a arquitetura.
 ### Fase 6 — Limpeza
 
 1. Remover `app/core/static/css/app.css` (conteúdo migrado para o design_system)
-2. Remover templates migrados de `app/core/templates/`
-   - Manter apenas `404.html`, `500.html`, `403.html` (erros Django, DTL, não migram)
-3. Atualizar `settings.py`: remover `TEMPLATES DIRS` do DTL (só mantém `core/templates`
-   para as páginas de erro)
-4. `app/core/` vira app Django puro: settings, middleware, URLs, context_processors
+2. Remover **toda** a pasta `app/core/templates/` (incluindo 404/500/403 — já migrados
+   para `design_system/templates/design_system/apps/errors/`)
+3. Remover pastas `templates/` de todos os apps Django
+4. Atualizar `settings.py`: remover `TEMPLATES DIRS` do DTL (não há mais templates em
+   `core/templates/`; o DTL fica ativo apenas para o Admin Django via `APP_DIRS`)
+5. `app/core/` vira app Django puro: settings, middleware, URLs, context_processors —
+   sem nenhum arquivo HTML
 
 ---
 
@@ -445,9 +451,9 @@ grep -r "#a98f71\|#8b7355\|#8c735a\|#1c1917" src/ --include="*.html"
 grep -rn "{% load " src/smart_core_assistant_painel/modules/design_system/templates/
 # → 0 resultados
 
-# Zero templates nos apps Django
-find src/smart_core_assistant_painel/app -name "*.html" | grep -v "core/templates"
-# → 0 resultados (apenas 404/500/403 no core ficam)
+# Zero templates nos apps Django — nenhuma exceção
+find src/smart_core_assistant_painel/app -name "*.html"
+# → 0 resultados
 
 # Todos os templates vivem no design_system
 find src/smart_core_assistant_painel/modules/design_system/templates -name "*.html" | wc -l
@@ -482,7 +488,7 @@ grep -rn "ui-btn\|badge\|ui-input\|chat-bubble" \
 | 3 | `atendimento_unificado` — 9 templates (referência completa) | ~9 novos | Pendente |
 | 4 | `tenants` — ~15 templates | ~15 novos | Pendente |
 | 5 | `evolution_sync`, `settings_manager`, `treinamento`, `usuarios` — ~14 templates | ~14 novos | Pendente |
-| 6 | Limpeza (`core/`, remoção de templates dos apps) | ~60 removidos | Pendente |
+| 6 | Limpeza total — remove todos os templates e CSS dos apps | ~65 removidos | Pendente |
 
 ---
 

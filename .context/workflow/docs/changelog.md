@@ -3,11 +3,15 @@
 ## [v1.1.0] - 2026-05-22
 
 ### Adicionado
+- **Consolidação dos models de informação no centro `atendimentos`** (arquitetura v6.0): `CampoPersonalizado`, `ValorCampoAtendimento`, `Etiqueta`, `EtiquetaAtendimento`, `Nota` movidos do shell para `atendimentos` via migrations `SeparateDatabaseAndState` (tabelas `atu_*` preservadas). `atendimento_unificado` passa a ser apenas a ponte/UI. Apps periféricos leem via selectors e atualizam por signals.
 - **Build de produção Tailwind v4 (sem Node):** `core.build.css` purgado, gerado por `uv run task build-css` via `pytailwindcss` (binário standalone). Substitui o CDN `@tailwindcss/browser` (dev-only) no `base.html`. Tasks `build-css`/`watch-css` no `pyproject.toml`.
 - **Gate de Final Review (PREVC fase C):** skill `prevc-final-review` + comando `/final-review` que audita planejado vs. implementado via subagente Opus, corrige desvios automaticamente e bloqueia o arquivamento de planos incompletos.
 - Novos apps modulares `chat_evolution` e `gestao_kanban` criados para desacoplar as funcionalidades de chat e painel do monolito.
 - Arquivos de selectors, signals e views reestruturados e otimizados dentro de cada respectivo app.
 - Configuração do canal SSE para eventos específicos (`chat_evolution/signals.py` e `gestao_kanban/signals.py`) com isolamento multi-tenant.
+
+### Removido
+- `LeituraAtendimento` (audit log de leitura por atendente) — eliminado; não-lidos usam `Mensagem.lido` (fonte da verdade, sem multiatendente). Tabela `atu_leitura_atendimento` dropada.
 
 ### Modificado
 - Integrado o shell `workspace.html` para consumir as rotas isoladas dos novos apps.

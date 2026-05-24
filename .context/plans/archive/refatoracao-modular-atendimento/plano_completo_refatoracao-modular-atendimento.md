@@ -7,6 +7,87 @@
 
 ---
 
+## ⚠️ Arquitetura Alvo v6.0 — CORRIGIDA (2026-05-22) — VIGENTE
+
+> Esta seção **substitui** o §2 abaixo (que ficou desalinhado). Definida pelo dono
+> do projeto após o deploy 1.2.2+017 ter exposto a violação: os models de
+> informação ficaram no shell `atendimento_unificado` em vez de no centro.
+> Status do plano: **REABERTO** (F2/F3/F5 voltaram a `in_progress`).
+
+### Princípio central
+
+`atendimentos` é o **CENTRO das informações**. Os apps periféricos não detêm
+informação de domínio — eles **observam e atualizam o centro via signals** e o
+**leem via selectors**.
+
+| App | Papel | Models de informação? |
+|-----|-------|------------------------|
+| **`atendimentos`** | Centro: toda a informação do atendimento | **SIM** (todos) |
+| **`chat_evolution`** | Apenas a estrutura de comunicação com o contato (Evolution/mensageria) | **NÃO** — atualiza o centro por signals |
+| **`gestao_kanban`** | Apenas manipulação de cards (lê o centro) | **NÃO** (salvo algo que seja exclusivo de card e não exista no centro) |
+| **`trello_sync`** | Sincroniza Trello | **NÃO** — atualiza o centro por signals (padrão `@receiver(post_save, sender=Atendimento/...)` já existente) |
+| **`atendimento_unificado`** | Apenas a **ponte/UI** que une a visualização de chat + kanban | **NÃO** — só `WorkspaceView`, templates, `views_sse` (SSE único), `realtime_publisher`, `feature_flags` |
+
+### Destino de cada model `atu_*` (hoje no shell — a corrigir)
+
+| Model atual (shell) | Decisão | Destino |
+|---------------------|---------|---------|
+| `CampoPersonalizado` | mover (não existe no centro) | **`atendimentos`** |
+| `ValorCampoAtendimento` | mover (não existe no centro) | **`atendimentos`** |
+| `Nota` | mover (não existe no centro) | **`atendimentos`** |
+| `Etiqueta` (catálogo cor/descrição) | mover (catálogo é "info que falta") | **`atendimentos`** ✅ |
+| `EtiquetaAtendimento` (aplicação) | **manter o model** (decisão do dono: "etiqueta mantém em atendimento") | **`atendimentos`** ✅ (state-only, dados preservados) |
+| `LeituraAtendimento` (não-lido por atendente) | **eliminar** → `Mensagem.lido` (sem multiatendente, confirmado) | **dropado** (audit log; não-lidos já usavam `Mensagem.lido`) ✅ |
+
+> **Resolvido (2026-05-22):** sem multiatendente, `Mensagem.lido` (global) cobre os
+> não-lidos. `LeituraAtendimento` era só audit log "quem leu por último" — removido.
+> Etiquetas mantêm catálogo + aplicação como models (em `atendimentos`).
+
+### Comunicação cross-app
+
+- **Sem import direto** entre `chat_evolution` e `gestao_kanban` (mantém §2.4).
+- Periféricos → centro via **Django signals** (`post_save`/`post_delete` em models de
+  `atendimentos`), espelhando o padrão de `trello_sync`.
+- Leitura do centro via **selectors** dos apps (consultam `atendimentos.models`).
+
+### Plano de migração (PRODUÇÃO — tabelas `atu_*` já populadas no deploy 1.2.2+017)
+
+1. **Mover `state` sem tocar dados** (`SeparateDatabaseAndState`, `database_operations=[]`)
+   para `atu_campo_personalizado`, `atu_valor_campo`, `atu_nota`, `atu_etiqueta`:
+   tabelas permanecem, muda só o `app_label` (shell → `atendimentos`).
+2. **Migração de DADOS + drop** para os reaproveitados:
+   - `atu_etiqueta_atendimento` → popular `Atendimento.tags` a partir das aplicações
+     existentes; depois `DROP TABLE`.
+   - `atu_leitura_atendimento` → (se confirmado) reconciliar com `Mensagem.lido`;
+     depois `DROP TABLE`.
+   - **Backup/validação obrigatórios** antes do drop em produção.
+3. Atualizar imports (`selectors`/`services`/`views_api`) para `atendimentos.models`.
+4. Mover `tenant_admin` desses models para `atendimentos`.
+5. Reescrever a lógica de etiquetas/não-lidos para o novo modelo (tags/lido) — afeta
+   `selectors`, `services`, `views_api`, JS e templates.
+
+### Impacto (arquivos)
+
+- Backend: `atendimentos/models.py` (+models), `atendimentos/migrations/*` (state + dados),
+  `chat_evolution/{selectors,services,signals}.py`, `gestao_kanban/{selectors,services,views_api}.py`,
+  `atendimento_unificado/{models,tenant_admin}.py` (esvaziar).
+- Frontend: partials/JS que usam etiquetas coloridas e contadores de não-lido.
+
+### Pendências de decisão — RESOLVIDAS (2026-05-22)
+
+- [x] Aplicação de etiqueta: **manter `EtiquetaAtendimento`** (model), em `atendimentos`.
+- [x] Não-lido: **reaproveitar `Mensagem.lido`** (sem multiatendente); `LeituraAtendimento` eliminado.
+
+### Status da implementação (2026-05-22)
+
+✅ Implementado: 5 models movidos para `atendimentos` (state-only, tabelas `atu_*`
+preservadas); `LeituraAtendimento` dropado; `mark_read` usa `Mensagem.lido`; imports
+e `tenant_admin` realocados; shell esvaziado. Validado: `makemigrations --check`
+(sem mudanças), `manage.py check` (0 issues), `pyright` (0 erros), `ruff` (limpo no
+código novo). Deploy: a aplicar (`migrate` roda as migrations state-only + drop).
+
+---
+
 ## Frontmatter sugerido — Fases PREVC (para transcrever ao plano canônico)
 
 ```yaml

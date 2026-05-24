@@ -3,6 +3,7 @@ status: completed
 progress: 100
 generated: 2026-05-20
 restructured: 2026-05-22
+reopened: 2026-05-22
 completed: 2026-05-22
 agents:
   - type: "frontend-specialist"

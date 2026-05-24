@@ -130,9 +130,7 @@ que separadores e balão continuem sendo filhos diretos do flex container pai.{%
         </div>
     </template>
 
-    {# ============ TOGGLE: ANÁLISE IA ============ #}
-    {# Áudio: exibe transcrição (analise_midia) + resumo. Mídia visual: só
-       resumo (analise_midia não é trafegada pelo serializer). #}
+    {# TOGGLE ANÁLISE IA — áudio: transcrição + resumo; mídia visual: só resumo. #}
     <template x-if="m.resumo_midia || m.analise_midia">
         <div class="ws-bub__analise">
             <button type="button" class="ws-bub__analise-toggle"
@@ -168,9 +166,7 @@ que separadores e balão continuem sendo filhos diretos do flex container pai.{%
         </div>
     </template>
 
-    {# ============ TEXTO / CAPTION ============ #}
-    {# white-space:pre-wrap preserva as quebras de linha (\n) que separam as
-       mensagens agrupadas no buffer — sem risco de injeção (x-text). #}
+    {# TEXTO / CAPTION — white-space:pre-wrap preserva as quebras de linha (\n). #}
     <template x-if="bubbleText(m)">
         <div class="ws-bub__txt" style="white-space:pre-wrap" x-text="bubbleText(m)"></div>
     </template>

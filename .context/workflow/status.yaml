@@ -2,7 +2,7 @@ workflow: PREVC
 phase: P  # Planning
 
 feature: design-system-refactor
-title: "Design System como Módulo Dedicado — modules/design_system/ como Django app"
+title: "Design System Desacoplado — modules/design_system/ com Jinja2 + Adaptador Django"
 started_at: "2026-05-24"
 
 plan: ".context/plans/design-system-refactor.md"

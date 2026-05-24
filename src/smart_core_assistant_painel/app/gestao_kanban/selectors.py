@@ -8,14 +8,12 @@ from typing import Any, Optional
 from django.db.models import Q
 from loguru import logger
 
-from smart_core_assistant_painel.app.atendimento_unificado.models import (
-    Etiqueta,
-    EtiquetaAtendimento,
-    Nota,
-)
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
+    Etiqueta,
+    EtiquetaAtendimento,
     Mensagem,
+    Nota,
     StatusAtendimento,
     TipoRemetente,
 )

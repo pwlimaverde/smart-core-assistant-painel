@@ -7,7 +7,7 @@ from typing import Optional
 
 from django.core.exceptions import ValidationError
 
-from smart_core_assistant_painel.app.atendimento_unificado.models import (
+from smart_core_assistant_painel.app.atendimentos.models import (
     Etiqueta,
     EtiquetaAtendimento,
 )

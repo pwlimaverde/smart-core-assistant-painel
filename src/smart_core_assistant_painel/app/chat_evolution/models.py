@@ -1,10 +1,6 @@
 """Modelos do app Chat Evolution.
 
-Os modelos canônicos (com migrations) são mantidos em
-``atendimento_unificado.models``. Para consultas dentro deste app,
-importe diretamente de lá:
-
-    from smart_core_assistant_painel.app.atendimento_unificado.models import (
-        LeituraAtendimento,
-    )
+Este app é **apenas a estrutura de comunicação com o contato** (mensageria via
+Evolution). Não detém models de informação: lê o centro `atendimentos.models`
+via selectors e o atualiza por signals.
 """

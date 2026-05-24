@@ -339,7 +339,7 @@ class CustomFieldPatchView(View):
             return _err("Campo `valor` obrigatório.", "validation", 400)
         valor = body["valor"]
         try:
-            from smart_core_assistant_painel.app.atendimento_unificado.models import (
+            from smart_core_assistant_painel.app.atendimentos.models import (
                 CampoPersonalizado,
                 OrigemValor,
                 ValorCampoAtendimento,

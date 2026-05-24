@@ -294,14 +294,14 @@ class ConversationMarkReadView(View):
                 "no_atendente",
                 400,
             )
-        obj = mark_read(
-            atendimento_id=int(atendimento_id), atendente_id=atendente.id
+        read_at = mark_read(
+            atendimento_id=atendimento_id, atendente_id=atendente.id
         )
         return JsonResponse(
             {
-                "atendimento_id": obj.atendimento_id,
-                "atendente_id": obj.atendente_id,
-                "ultima_leitura_at": obj.ultima_leitura_at.isoformat(),
+                "atendimento_id": atendimento_id,
+                "atendente_id": atendente.id,
+                "ultima_leitura_at": read_at.isoformat(),
             }
         )
 

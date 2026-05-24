@@ -8,17 +8,15 @@ from typing import Any, Optional
 
 from django.db.models import Q
 
-from smart_core_assistant_painel.app.atendimento_unificado.models import (
-    CampoPersonalizado,
-    EtiquetaAtendimento,
-    OrigemValor,
-    ValorCampoAtendimento,
-)
 from smart_core_assistant_painel.app.atendimentos.models import (
     Atendimento,
+    CampoPersonalizado,
+    EtiquetaAtendimento,
     Mensagem,
+    OrigemValor,
     StatusAtendimento,
     TipoRemetente,
+    ValorCampoAtendimento,
 )
 from smart_core_assistant_painel.app.operacional.models import (
     Atendente,

@@ -192,9 +192,6 @@ def _get_int(value: Any) -> Optional[int]:
         return None
 
 
-
-
-
 class FluxosListView(View):
     @_require_workspace
     def get(self, request: HttpRequest) -> HttpResponse:

@@ -51,7 +51,11 @@ def _on_atendimento_saved(
     sender: Any, instance: Atendimento, created: bool, **kwargs: Any
 ) -> None:
     """Publica evento SSE de Kanban quando um Atendimento é criado/atualizado."""
-    event = "kanban.atendimento_created" if created else "kanban.atendimento_updated"
+    event = (
+        "kanban.atendimento_created"
+        if created
+        else "kanban.atendimento_updated"
+    )
     try:
         publish_event(
             event,

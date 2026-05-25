@@ -447,7 +447,7 @@ def _extract_media(m: Mensagem) -> Optional[dict[str, Any]]:
     if arquivo:
         try:
             if arquivo.name:
-                src = arquivo.url
+                src = f"/workspace/chat/api/messages/{m.id}/media/"
                 try:
                     size_label = _format_size_label(arquivo.size)
                 except Exception:
@@ -493,9 +493,7 @@ def _serialize_mensagem(m: Mensagem) -> dict[str, Any]:
         # nela a transcrição é o conteúdo útil ao atendente. Para mídia visual
         # a análise completa permanece interna (não exposta no chat).
         "analise_midia": (
-            (m.analise_midia or "")
-            if (m.tipo or "") == "audioMessage"
-            else ""
+            (m.analise_midia or "") if (m.tipo or "") == "audioMessage" else ""
         ),
         "remetente": m.remetente,
         "timestamp": m.timestamp.isoformat() if m.timestamp else None,

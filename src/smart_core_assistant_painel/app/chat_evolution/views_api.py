@@ -460,3 +460,48 @@ class NotificationsUnreadCountView(View):
             atendente=atendente, is_owner=_is_owner_user(request)
         )
         return JsonResponse({"total": int(total)})
+
+
+class MensagemMediaView(View):
+    """View autenticada para servir mídia protegida via X-Accel-Redirect."""
+
+    @_require_workspace
+    def get(self, request: HttpRequest, mensagem_id: int) -> HttpResponse:
+        import mimetypes
+        import urllib.parse
+
+        from smart_core_assistant_painel.app.atendimentos.models import (
+            Mensagem,
+        )
+
+        mensagem = Mensagem.objects.filter(id=mensagem_id).first()
+        if not mensagem:
+            return _err("Mensagem não encontrada.", "not_found", 404)
+
+        if not _can_access_atendimento(request, mensagem.atendimento_id):
+            return _err(
+                "Sem permissão para este fluxo.", "forbidden_flow", 403
+            )
+
+        if not mensagem.arquivo_midia:
+            return _err(
+                "Mídia não disponível para esta mensagem.", "not_found", 404
+            )
+
+        arquivo = mensagem.arquivo_midia
+        filename = arquivo.name.rsplit("/", 1)[-1]
+
+        # URL-encode no path de forma a não escapar as barras /, pois o nginx
+        # precisa resolver as subpastas em disco.
+        quoted_path = urllib.parse.quote(arquivo.name, safe="/")
+
+        content_type, _ = mimetypes.guess_type(arquivo.name)
+        if not content_type:
+            content_type = "application/octet-stream"
+
+        response = HttpResponse()
+        response["X-Accel-Redirect"] = f"/protected-media/{quoted_path}"
+        response["Content-Type"] = content_type
+        response["Content-Disposition"] = f'inline; filename="{filename}"'
+
+        return response

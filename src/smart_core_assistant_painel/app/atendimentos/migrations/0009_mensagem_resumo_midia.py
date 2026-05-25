@@ -4,20 +4,30 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atendimentos', '0008_etiqueta_campopersonalizado_nota_etiquetaatendimento_and_more'),
+        (
+            "atendimentos",
+            "0008_etiqueta_campopersonalizado_nota_etiquetaatendimento_and_more",
+        ),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='mensagem',
-            name='resumo_midia',
-            field=models.TextField(blank=True, help_text="Resumo curto e amigável gerado pela IA sobre a mídia, EXIBIDO ao atendente no chat (botão 'Ver análise IA'). Distinto de 'analise_midia', que é o contexto completo do bot.", null=True),
+            model_name="mensagem",
+            name="resumo_midia",
+            field=models.TextField(
+                blank=True,
+                help_text="Resumo curto e amigável gerado pela IA sobre a mídia, EXIBIDO ao atendente no chat (botão 'Ver análise IA'). Distinto de 'analise_midia', que é o contexto completo do bot.",
+                null=True,
+            ),
         ),
         migrations.AlterField(
-            model_name='mensagem',
-            name='analise_midia',
-            field=models.TextField(blank=True, help_text="Análise COMPLETA gerada pela IA para mídias: transcrição de áudio, descrição detalhada de imagem/vídeo, conteúdo de documento. Usada como CONTEXTO interno do bot. Separada de 'conteudo'.", null=True),
+            model_name="mensagem",
+            name="analise_midia",
+            field=models.TextField(
+                blank=True,
+                help_text="Análise COMPLETA gerada pela IA para mídias: transcrição de áudio, descrição detalhada de imagem/vídeo, conteúdo de documento. Usada como CONTEXTO interno do bot. Separada de 'conteudo'.",
+                null=True,
+            ),
         ),
     ]

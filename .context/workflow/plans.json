@@ -1,14 +1,16 @@
 {
-  "active": [
+  "active": [],
+  "completed": [
     {
       "slug": "seguranca-midia-tenant-retencao",
-      "path": "plans/seguranca-midia-tenant-retencao.md",
+      "path": "plans/archive/seguranca-midia-tenant-retencao.md",
       "title": "Segurança e retenção do armazenamento de mídia por tenant",
-      "summary": "Isolar a mídia por tenant no path, servir arquivos por view autenticada com",
-      "linkedAt": "2026-05-25T14:45:50.720Z",
-      "status": "active"
+      "summary": "Isolar a mídia por tenant no path, servir arquivos por view autenticada com X-Accel-Redirect e apagar o binário após 30 dias.",
+      "linkedAt": "2026-05-25T15:24:24.948Z",
+      "completedAt": "2026-05-25T00:00:00.000Z",
+      "status": "completed",
+      "finalReview": "CORRIGIDO"
     }
   ],
-  "completed": [],
-  "primary": "seguranca-midia-tenant-retencao"
+  "primary": null
 }

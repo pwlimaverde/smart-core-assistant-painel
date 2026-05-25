@@ -1,51 +1,60 @@
-# Final Review — chat-whatsapp-midia-ia
-Data: 2026-05-24 · Modelo: Opus (claude-opus-4-7, sessão principal) · Diff: working tree (ciclo não commitado)
+# Final Review — seguranca-midia-tenant-retencao
+Data: 2026-05-25 · Modelo: Opus · Diff: working tree (não commitado)
 
 ## Veredito: CORRIGIDO
 
-> Escopo auditado: mudanças **não commitadas** do ciclo (working tree) nos caminhos
-> declarados pelo plano. O diff `master...HEAD` acumula trabalho heterogêneo de toda
-> a branch `feature/refatoracao-modular-atendimento` (181 arquivos) — fora de escopo,
-> conforme Etapa 0.4 do skill.
+> Escopo auditado: mudanças **não commitadas** (working tree) nos caminhos declarados
+> pelo plano. A branch `feature/refatoracao-modular-atendimento` acumula trabalho
+> heterogêneo (203 arquivos em `master...HEAD`) — fora de escopo, conforme Etapa 0.4 do skill.
 
 ## 1. Plano vs. Implementado
 
 | Item do plano | Status | Observação |
-|---------------|--------|------------|
-| **P1.1** Wrapper de root único no `chat_message.html` (`x-for` Alpine) | ✅ | `<div class="ws-msg-row" style="display:contents">` envolve todo o partial; preserva layout flex. Regra validada na doc oficial. |
-| **P1.2** `loadMessages` trata HTTP não-2xx | ✅ | `res.ok` + `.catch`; novo estado `messagesError` exibido no `workspace.html`. |
-| **P1.3** `_can_access_atendimento` com fluxo NULL | ✅ | Agora retorna `True` (alinhado a `_can_access_fluxo`), eliminando 403 indevido. |
-| **P2.1** Campo `Mensagem.resumo_midia` + migration | ✅ | Migration `0009_mensagem_resumo_midia` (AddField + AlterField help_text). |
-| **P2.2** Modelo Pydantic `MediaAnalysis{analise,resumo}` | ✅ | Em `utils/types.py`; `Field(description=...)`, `resumo` com `default=""`. |
-| **P2.3** Datasources com saída estruturada | ✅ | `interpret_media`: `with_structured_output(MediaAnalysis)` multimodal (1 chamada). `transcribe_audio`: transcrição + resumo (2ª chamada de texto com fallback). |
-| **P2.4** Composição (analise→bot, resumo→atendente) | ✅ | `converter_contexto`→`Optional[MediaAnalysis]`; `orchestrator._convert_media_context` salva `analise_midia` + `resumo_midia`; `load_message_data` e `treinamento/views` usam `.analise`. |
-| **P3.1** `white-space:pre-wrap` no balão | ✅ | Quebras de linha (`\n`) do buffer agora renderizam. |
-| **P3.2** Serializer + botão de análise por tipo | ✅ | `resumo_midia` sempre; `analise_midia` só para áudio. Botão: áudio = transcrição+resumo; visual = só resumo. |
-| **P3.3** Revisão de preview/lightbox | ✅ | Estrutura existente preservada; nenhuma regressão introduzida. |
-| Aliases de tipo `IM*/TA*` de `str`→`MediaAnalysis` | ✅ | Usecases atualizados (`ReturnSuccessOrError[MediaAnalysis]`). |
+|---|---|---|
+| **F1**: `media_upload_to(instance, filename)` callable | ✅ | `models.py:1006` retorna `midias_atendimento/{slug}/{Y}/{m}/{filename}`. |
+| F1: usa `get_current_tenant()` + slug, fallback `_shared` | ✅ | `slug = getattr(t, "slug", "") or "_shared"`. |
+| F1: import local de `get_current_tenant` | ✅ | Import dentro do callable, de `tenants.middleware` (linha 15). Evita ciclo. |
+| F1: `arquivo_midia` aponta para o callable | ✅ | `models.py:1094` `upload_to=media_upload_to`. |
+| F1: migration 0010 AlterField | ✅ | Depende de 0009; AlterField com `upload_to=...media_upload_to`. Não move legados. |
+| **F2**: `MensagemMediaView` com `@_require_workspace` | ✅ | `views_api.py:465`. Login+tenant+permissão. |
+| F2: checagem `_can_access_atendimento` | ✅ | Usa `mensagem.atendimento_id`; retorna 403 se negado. |
+| F2: isolamento por DB do tenant (404 p/ outro tenant) | ✅ | `Mensagem.objects.filter(id=...).first()` roteado ao DB do tenant → 404 natural. |
+| F2: `HttpResponse` vazio (NÃO FileResponse) | ✅ | `response = HttpResponse()`. |
+| F2: `X-Accel-Redirect` com `quote(safe="/")` | ✅ | `urllib.parse.quote(arquivo.name, safe="/")` → `/protected-media/{quoted}`. |
+| F2: Content-Type via mimetypes, fallback octet-stream | ✅ | `mimetypes.guess_type` + fallback. |
+| F2: Content-Disposition inline | ✅ | `inline; filename="..."`. |
+| F2: SEM Content-Length | ✅ | Não definido (nginx define). |
+| F2: rota em api_urls | ✅ | `messages/<int:mensagem_id>/media/` → `mensagem_media`. |
+| F2: nginx `/protected-media/` internal + `alias` | ✅ | `internal;` + `alias /var/www/media/;` (não `root`). |
+| F2: `/media/` público removido | ✅ | Bloco substituído. |
+| F2: `selectors._extract_media` → URL da view | ✅ | `src = f"/workspace/chat/api/messages/{m.id}/media/"`. Fallback base64 preservado. |
+| **F3**: `MEDIA_RETENTION_DAYS` via config default 30 | ✅ | `config("MEDIA_RETENTION_DAYS", default=30, cast=int)`. |
+| F3: task global sem TenantTask, itera `Tenant.objects.all()` | ✅ | `@shared_task(bind=True)` sem `base=TenantTask`. |
+| F3: `set_current_tenant`/`set_current_tenant(None)` no finally | ✅ | Loop por tenant com `finally: set_current_tenant(None)`. |
+| F3: `delete(save=False)` + `save(update_fields=["arquivo_midia"])` | ✅ | Preserva `analise_midia`/`resumo_midia`. |
+| F3: `CELERY_BEAT_SCHEDULE` crontab(3,30) + import crontab | ✅ | `from celery.schedules import crontab`; `crontab(hour=3, minute=30)`. |
 
-## 2. Correções Aplicadas (durante a auditoria)
+➕ **Além do plano**: `selectors.py:493` recebeu reformatação cosmética de `analise_midia` (one-liner) — irrelevante, não muda comportamento.
+
+## 2. Correções Aplicadas
 
 | Arquivo:linha | Problema | Correção |
-|---------------|----------|----------|
-| interpret_media_datasource.py:~157 | `result.get(...)` sobre `Any` → 2 erros pyright `reportUnknownArgumentType` | `cast(dict[str, Any], result)` antes de `.get` |
-| transcribe_audio_datasource.py:~230 | `response.get("text")` sobre `dict` sem params (erro pyright pré-existente, no arquivo editado) | `cast(dict[str, Any], response)` |
-| transcribe_audio_datasource.py:3-18 | Bloco de imports desordenado (ruff I001) | `ruff --fix` reorganizou |
-| types.py:185 | Faltavam 2 linhas em branco antes da classe (ruff E302) | Ajustado |
-| types.py (MediaAnalysis.resumo) | Robustez: LLM poderia omitir `resumo` | `default=""` no `Field` |
+|---|---|---|
+| `migrations/0010_alter_mensagem_arquivo_midia.py:3` | ruff `I001`: bloco de import não ordenado | Reordenado: `from django.db ...` primeiro, depois import de 1ª parte. |
+| `atendimentos/tasks.py:121` | pyright: `reportUnknownParameterType`/`reportMissingParameterType` no `self` da task `bind=True` | Adicionado `# type: ignore[no-untyped-def]`, mesmo padrão de `keepalive_evolution_instances`. |
 
 ## 3. Decisões Autônomas (revisar depois)
-- **Auditoria inline (sem subagente Opus):** a sessão principal já roda `claude-opus-4-7` (Opus mais capaz) e detém contexto completo da implementação; o usuário rejeitou subagentes nesta sessão. Optou-se por auditar inline.
-- **`_can_access_atendimento` (P1.3):** mudança de política (fluxo NULL agora acessível). Alinhada a `_can_access_fluxo`, mas é decisão de autorização — revisar se há requisito de ocultar atendimentos sem fluxo de atendentes específicos.
-- **Resumo de áudio em 2ª chamada de texto:** reusa a config de visão do `SERVICEHUB`. Consome 1 chamada LLM extra por áudio (com fallback de truncamento se falhar).
+- **`# type: ignore[no-untyped-def]` no `self`**: replicou a convenção já estabelecida (keepalive task) em vez de remover `bind=True`. `self` não é usado; mantido por consistência.
+- Reformatação cosmética em `selectors.py:493` veio no working tree; mantida por ser benigna.
 
 ## 4. Revalidação
-- **lint (ruff):** ✅ no escopo — 0 erros novos. Restantes (`F821 operacional/clientes` em models.py; `F841` em notion/trello adapters) são **pré-existentes**, fora do escopo do plano.
-- **type-check (pyright):** ✅ no escopo — 0 erros novos. Os 86 erros em `models.py`/`treinamento/views.py` são pré-existentes (campos da migração 0008 `ValorCampoAtendimento`/`EtiquetaAtendimento`; anotações de parâmetros não tocadas). `features_compose.py`, `types.py`, usecases e datasources de IA: **limpos**.
-- **`manage.py check`:** ✅ "System check identified no issues".
-- **testes:** N/A (diretriz do projeto: não criar testes automatizados).
+- lint (ruff, escopo do plano): ✅ — migration/tasks/views_api/api_urls/selectors/settings passam. Único resíduo no escopo é o `F821 operacional` em `models.py`, **pré-existente em HEAD**.
+- type-check (pyright, escopo do plano): ✅ — `tasks.py` limpo após correção. `settings.py:109` é erro **pré-existente** fora do escopo.
+- testes: N/A (diretriz: não criar testes)
 
 ## 5. Pendências (escopo extra ou fora do plano)
-- **Baseline pré-existente de pyright/ruff** não está limpo no projeto (86 erros pyright só em models+treinamento; 26 erros ruff incluindo notion/trello adapters). Fora do escopo deste plano; recomenda-se ciclo dedicado de saneamento de tipos.
-- **Trabalho heterogêneo na branch** (`gestao_kanban`, `tenants`, `design_system`, `teste_debug/`) acumulado em `master...HEAD` — não pertence a este plano.
-- **Validação visual end-to-end** (abrir workspace, enviar mídia real via WhatsApp) depende de ambiente com DB/Evolution — a fazer manualmente pelo dono do projeto.
+- `ruff check src/` reporta ~25 erros project-wide, todos fora do escopo (ex.: `trello_adapter.py:332` F841; `models.py` F821 `operacional`). NÃO corrigidos por diretriz.
+- `pyright` reporta `settings.py:109` (pré-existente) e ~97 warnings de tipos parciais (Django/Celery), pré-existentes/fora de escopo.
+- Migration importa o módulo `...atendimentos.models` (gerado pelo Django via `deconstruct` do callable) — comportamento padrão e correto.
+
+**Veredito final: CORRIGIDO** — implementação fiel ao plano nas 3 fases; 2 desvios de qualidade corrigidos; lint+type-check limpos no escopo. Erros remanescentes são pré-existentes/fora de escopo.

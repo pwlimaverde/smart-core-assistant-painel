@@ -29,9 +29,7 @@ class TranscribeAudioDatasource(TAData):
     _DOWNLOAD_TIMEOUT_SECONDS = 30.0
     _MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024
 
-    def __call__(
-        self, parameters: TranscribeAudioParameters
-    ) -> MediaAnalysis:
+    def __call__(self, parameters: TranscribeAudioParameters) -> MediaAnalysis:
         provider = (
             (SERVICEHUB.TRANSCRIPTION_PROVIDER or "openai").strip().lower()
         )

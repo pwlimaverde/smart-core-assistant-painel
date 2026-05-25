@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from decouple import config
 from django.contrib.messages import constants
 from dotenv import load_dotenv
@@ -581,6 +582,9 @@ CELERY_RESULT_EXTENDED = True
 # Beat Scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
+# Retenção de mídias por tenant (em dias)
+MEDIA_RETENTION_DAYS = config("MEDIA_RETENTION_DAYS", default=30, cast=int)
+
 # Agendamentos sincronizados para o DatabaseScheduler no startup do beat.
 CELERY_BEAT_SCHEDULE = {
     # Keep-alive da sessão Evolution Go: o servidor whatsmeow derruba a
@@ -591,5 +595,13 @@ CELERY_BEAT_SCHEDULE = {
             "keepalive_evolution_instances"
         ),
         "schedule": 60.0,
+    },
+    # Purga de mídias antigas em todos os tenants diariamente na madrugada
+    "purge-old-media": {
+        "task": (
+            "smart_core_assistant_painel.app.atendimentos.tasks."
+            "purge_old_media_all_tenants"
+        ),
+        "schedule": crontab(hour=3, minute=30),
     },
 }

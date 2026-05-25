@@ -1,5 +1,21 @@
 # Changelog
 
+## [2026-05-25] - Segurança e retenção do armazenamento de mídia por tenant
+
+### Adicionado
+- **Isolamento de mídia por tenant no filesystem:** `Mensagem.arquivo_midia` passa a usar o callable `media_upload_to`, que grava em `midias_atendimento/<tenant_slug>/%Y/%m/` (fallback `_shared`). Migration `0010_alter_mensagem_arquivo_midia`.
+- **Serving autenticado de mídia via `X-Accel-Redirect`:** nova `MensagemMediaView` (`/workspace/chat/api/messages/<id>/media/`) com `@_require_workspace` + `_can_access_atendimento` + isolamento por DB do tenant (id de outro tenant → 404). Responde `HttpResponse` vazio com header `X-Accel-Redirect` para `/protected-media/` (nginx serve o binário).
+- **Retenção de 30 dias:** task Celery `purge_old_media_all_tenants` (itera tenants, remove apenas o binário de mensagens > `MEDIA_RETENTION_DAYS` dias, preserva `analise_midia`/`resumo_midia`) agendada diariamente no `CELERY_BEAT_SCHEDULE` (crontab 03:30). Setting `MEDIA_RETENTION_DAYS` (default 30).
+
+### Modificado
+- **nginx (`docker/nginx/conf.d/smartcore.conf`):** removido o `location /media/` público; adicionado `location /protected-media/ { internal; alias /var/www/media/; }` (acesso só via X-Accel interno).
+- **`chat_evolution/selectors.py` `_extract_media`:** `src` aponta para a URL autenticada da view (mantém fallback base64 quando não há arquivo persistido).
+
+### Workflow
+- Final review (subagente Opus) — veredito **CORRIGIDO**. Plano `seguranca-midia-tenant-retencao` arquivado.
+
+---
+
 ## [v1.1.0] - 2026-05-22
 
 ### Adicionado

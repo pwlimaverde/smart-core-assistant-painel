@@ -53,4 +53,9 @@ urlpatterns = [
         views_api.NotificationsUnreadCountView.as_view(),
         name="notifications_unread_count",
     ),
+    path(
+        "messages/<int:mensagem_id>/media/",
+        views_api.MensagemMediaView.as_view(),
+        name="mensagem_media",
+    ),
 ]

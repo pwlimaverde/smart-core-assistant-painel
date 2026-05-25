@@ -1003,6 +1003,20 @@ class Atendimento(models.Model):
             }
 
 
+def media_upload_to(instance: "Mensagem", filename: str) -> str:
+    """Retorna o caminho de armazenamento do arquivo de mídia, isolado por tenant."""
+    from django.utils import timezone
+
+    from smart_core_assistant_painel.app.tenants.middleware import (
+        get_current_tenant,
+    )
+
+    t = get_current_tenant()
+    slug = getattr(t, "slug", "") or "_shared"
+    now = timezone.now()
+    return f"midias_atendimento/{slug}/{now:%Y}/{now:%m}/{filename}"
+
+
 class Mensagem(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
@@ -1077,7 +1091,7 @@ class Mensagem(models.Model):
         help_text="Nível de confiança da resposta do bot (0-1)",
     )
     arquivo_midia: models.FileField = models.FileField(
-        upload_to="midias_atendimento/%Y/%m/",
+        upload_to=media_upload_to,
         blank=True,
         null=True,
         max_length=255,

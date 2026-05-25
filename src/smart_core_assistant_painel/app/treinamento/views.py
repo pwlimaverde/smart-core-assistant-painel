@@ -805,9 +805,7 @@ def _process_test_media_upload(
         "fileName": file_name,
     }
 
-    analise_media = FeaturesCompose.converter_contexto(
-        metadados, message_type
-    )
+    analise_media = FeaturesCompose.converter_contexto(metadados, message_type)
 
     base_text = (caption or "").strip() or _default_conteudo_for_media(
         message_type, file_name

@@ -1,14 +1,14 @@
 {
   "active": [
     {
-      "slug": "chat-whatsapp-midia-ia",
-      "path": "plans/chat-whatsapp-midia-ia.md",
-      "title": "Chat estilo WhatsApp: mídia/IA estruturada + correção de visualização",
-      "summary": "Corrigir o bug de renderização das mensagens (`x-for` do Alpine com múltiplos roots),",
-      "linkedAt": "2026-05-24T17:12:22.128Z",
+      "slug": "seguranca-midia-tenant-retencao",
+      "path": "plans/seguranca-midia-tenant-retencao.md",
+      "title": "Segurança e retenção do armazenamento de mídia por tenant",
+      "summary": "Isolar a mídia por tenant no path, servir arquivos por view autenticada com",
+      "linkedAt": "2026-05-25T14:45:50.720Z",
       "status": "active"
     }
   ],
   "completed": [],
-  "primary": "chat-whatsapp-midia-ia"
+  "primary": "seguranca-midia-tenant-retencao"
 }

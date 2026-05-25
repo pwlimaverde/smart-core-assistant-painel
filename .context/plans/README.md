@@ -3,7 +3,7 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Chat Whatsapp Midia Ia](./chat-whatsapp-midia-ia.md)
+1. [Seguranca Midia Tenant Retencao](./seguranca-midia-tenant-retencao.md)
 
 ## How To Create Or Update Plans
 - Run "dotcontext plan <name>" to scaffold a new plan template.

@@ -1,0 +1,18 @@
+{
+  "id": "eb178d10-0c3c-4d4f-842b-39f5b31f149e",
+  "name": "seguranca-midia-tenant-retencao",
+  "status": "active",
+  "repoPath": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
+  "createdAt": "2026-05-25T14:45:45.759Z",
+  "updatedAt": "2026-05-25T14:45:50.767Z",
+  "startedAt": "2026-05-25T14:45:45.759Z",
+  "traceCount": 3,
+  "artifactCount": 0,
+  "checkpointCount": 0,
+  "checkpoints": [],
+  "metadata": {
+    "workflow": true,
+    "description": "Segurança e retenção do armazenamento de mídia multi-tenant: (1) isolar arquivos por tenant via upload_to dinâmico com slug; (2) parar de servir /media público no nginx e servir por view Django autenticada com X-Accel-Redirect, validando login, tenant e acesso ao atendimento; (3) task Celery beat diária que apaga o binário arquivo_midia após 30 dias preservando analise_midia/resumo_midia. Toca models/migrations Django, views/urls do chat_evolution, selectors, nginx conf, settings e tasks Celery."
+  },
+  "lastTraceAt": "2026-05-25T14:45:50.767Z"
+}

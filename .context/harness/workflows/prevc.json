@@ -1,124 +1,36 @@
 {
   "version": 2,
   "workflowType": "prevc",
-  "updatedAt": "2026-05-24T18:06:28.565Z",
+  "updatedAt": "2026-05-25T14:45:50.742Z",
   "status": {
     "project": {
-      "name": "chat-whatsapp-midia-ia",
-      "scale": 2,
-      "started": "2026-05-24T17:12:18.598Z",
-      "current_phase": "V",
+      "name": "seguranca-midia-tenant-retencao",
+      "scale": 3,
+      "started": "2026-05-25T14:45:45.750Z",
+      "current_phase": "P",
       "settings": {
         "autonomous_mode": false,
         "require_plan": true,
         "require_approval": true
       },
-      "plan": "chat-whatsapp-midia-ia"
+      "plan": "seguranca-midia-tenant-retencao"
     },
     "phases": {
       "P": {
-        "status": "completed",
-        "started_at": "2026-05-24T17:12:18.598Z",
-        "completed_at": "2026-05-24T17:12:25.510Z",
-        "outputs": [
-          {
-            "path": ".context/plans/chat-whatsapp-midia-ia.md",
-            "status": "filled"
-          },
-          {
-            "path": ".context/plans/chat-whatsapp-midia-ia/plano_completo_chat-whatsapp-midia-ia.md",
-            "status": "filled"
-          },
-          {
-            "path": ".context/plans/chat-whatsapp-midia-ia/info_aux_chat-whatsapp-midia-ia.md",
-            "status": "filled"
-          }
-        ]
+        "status": "in_progress",
+        "started_at": "2026-05-25T14:45:45.750Z"
       },
       "R": {
-        "status": "completed",
-        "started_at": "2026-05-24T17:12:25.541Z",
-        "completed_at": "2026-05-24T17:12:30.763Z",
-        "outputs": [
-          {
-            "path": ".context/plans/chat-whatsapp-midia-ia/plano_completo_chat-whatsapp-midia-ia.md",
-            "status": "filled"
-          }
-        ]
+        "status": "pending"
       },
       "E": {
-        "status": "completed",
-        "started_at": "2026-05-24T17:12:30.795Z",
-        "completed_at": "2026-05-24T18:06:21.532Z",
-        "outputs": [
-          {
-            "path": "src/smart_core_assistant_painel/app/chat_evolution/templates/chat_evolution/partials/chat_message.html",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/chat_evolution/static/chat_evolution/js/chat_alpine.js",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/chat_evolution/views_api.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/chat_evolution/selectors.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimentos/models.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimentos/migrations/0009_mensagem_resumo_midia.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimentos/services/attendance_orchestrator.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/utils/types.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/features/interpret_media/datasource/interpret_media_datasource.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/features/transcribe_audio/datasource/transcribe_audio_datasource.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py",
-            "status": "filled"
-          }
-        ]
+        "status": "pending"
       },
       "V": {
-        "status": "completed",
-        "started_at": "2026-05-24T18:06:21.567Z",
-        "completed_at": "2026-05-24T18:06:28.468Z",
-        "outputs": [
-          {
-            "path": "pyright: 0 erros nos arquivos alterados",
-            "status": "filled"
-          },
-          {
-            "path": "manage.py check: System check identified no issues",
-            "status": "filled"
-          },
-          {
-            "path": "migration 0009_mensagem_resumo_midia gerada",
-            "status": "filled"
-          }
-        ]
+        "status": "pending"
       },
       "C": {
-        "status": "skipped",
-        "reason": "Not required for scale MEDIUM"
+        "status": "pending"
       }
     },
     "agents": {},
@@ -130,86 +42,25 @@
     "execution": {
       "history": [
         {
-          "timestamp": "2026-05-24T17:12:18.598Z",
+          "timestamp": "2026-05-25T14:45:45.750Z",
           "phase": "P",
           "action": "started"
         },
         {
-          "timestamp": "2026-05-24T17:12:18.670Z",
-          "phase": "C",
-          "action": "phase_skipped"
-        },
-        {
-          "timestamp": "2026-05-24T17:12:22.134Z",
+          "timestamp": "2026-05-25T14:45:50.724Z",
           "phase": "P",
           "action": "plan_linked",
-          "plan": "chat-whatsapp-midia-ia"
-        },
-        {
-          "timestamp": "2026-05-24T17:12:25.510Z",
-          "phase": "P",
-          "action": "completed"
-        },
-        {
-          "timestamp": "2026-05-24T17:12:25.541Z",
-          "phase": "R",
-          "action": "started"
-        },
-        {
-          "timestamp": "2026-05-24T17:12:30.763Z",
-          "phase": "R",
-          "action": "completed"
-        },
-        {
-          "timestamp": "2026-05-24T17:12:30.795Z",
-          "phase": "E",
-          "action": "started"
-        },
-        {
-          "phase": "E",
-          "action": "plan_phase_updated",
-          "plan": "chat-whatsapp-midia-ia",
-          "description": "Plan phase phase-1 updated to completed",
-          "timestamp": "2026-05-24T17:50:06.599Z"
-        },
-        {
-          "phase": "E",
-          "action": "plan_phase_updated",
-          "plan": "chat-whatsapp-midia-ia",
-          "description": "Plan phase phase-2 updated to completed",
-          "timestamp": "2026-05-24T17:56:20.096Z"
-        },
-        {
-          "phase": "E",
-          "action": "plan_phase_updated",
-          "plan": "chat-whatsapp-midia-ia",
-          "description": "Plan phase phase-3 updated to completed",
-          "timestamp": "2026-05-24T18:06:18.009Z"
-        },
-        {
-          "timestamp": "2026-05-24T18:06:21.532Z",
-          "phase": "E",
-          "action": "completed"
-        },
-        {
-          "timestamp": "2026-05-24T18:06:21.567Z",
-          "phase": "V",
-          "action": "started"
-        },
-        {
-          "timestamp": "2026-05-24T18:06:28.468Z",
-          "phase": "V",
-          "action": "completed"
+          "plan": "seguranca-midia-tenant-retencao"
         }
       ],
-      "last_activity": "2026-05-24T18:06:28.468Z",
-      "resume_context": "Fase V (Validação) concluída"
+      "last_activity": "2026-05-25T14:45:50.724Z",
+      "resume_context": "Plano vinculado - aguardando revisão"
     }
   },
   "binding": {
-    "workflowName": "chat-whatsapp-midia-ia",
-    "sessionId": "fd76a61e-83fb-48bd-b606-d40468dad5fe",
-    "createdAt": "2026-05-24T17:12:18.653Z",
-    "updatedAt": "2026-05-24T18:06:28.532Z"
+    "workflowName": "seguranca-midia-tenant-retencao",
+    "sessionId": "eb178d10-0c3c-4d4f-842b-39f5b31f149e",
+    "createdAt": "2026-05-25T14:45:45.781Z",
+    "updatedAt": "2026-05-25T14:45:45.759Z"
   }
 }

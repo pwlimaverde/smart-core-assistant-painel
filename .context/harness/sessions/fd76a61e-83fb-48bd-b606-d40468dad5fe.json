@@ -4,9 +4,9 @@
   "status": "completed",
   "repoPath": "C:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
   "createdAt": "2026-05-24T17:12:18.613Z",
-  "updatedAt": "2026-05-24T18:06:31.319Z",
+  "updatedAt": "2026-05-25T14:45:13.952Z",
   "startedAt": "2026-05-24T17:12:18.613Z",
-  "traceCount": 16,
+  "traceCount": 17,
   "artifactCount": 0,
   "checkpointCount": 3,
   "checkpoints": [
@@ -66,7 +66,7 @@
     "workflow": true,
     "description": "Corrigir bug de renderização das mensagens do chat (x-for do Alpine com múltiplos elementos raiz), adicionar saída estruturada da IA via Pydantic separando análise (contexto do bot) e resumo (exibido ao atendente) com novo campo Mensagem.resumo_midia + migration, e aproximar a UX do chat do WhatsApp: preview de mídia/documento, lightbox ao clicar, botão para revelar análise da IA, e renderização de quebras de linha no texto agrupado. Toca Django models/migrations, datasources LangChain/Gemini com with_structured_output, templates Alpine.js e selectors."
   },
-  "lastTraceAt": "2026-05-24T18:06:31.319Z",
+  "lastTraceAt": "2026-05-25T14:45:13.952Z",
   "lastCheckpointAt": "2026-05-24T18:06:21.630Z",
   "completedAt": "2026-05-24T18:06:28.532Z"
 }

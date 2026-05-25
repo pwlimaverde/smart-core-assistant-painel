@@ -544,6 +544,28 @@
   border-radius: 4px;
 }
 
+.ws-bub__download {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--ws-accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.ws-bub__download:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="dark"] .ws-bub__download:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
 .ws-bub__analise-toggle:hover {
   background: rgba(0, 0, 0, 0.03);
 }

@@ -130,6 +130,20 @@ que separadores e balão continuem sendo filhos diretos do flex container pai.{%
         </div>
     </template>
 
+    {# ============ BOTÃO DOWNLOAD (imagem/áudio/vídeo) ============ #}
+    {# Documento já possui ação de download própria no bloco acima. #}
+    <template x-if="m.media && m.media.src && m.media.kind !== 'document'">
+        <button type="button" class="ws-bub__download"
+            @click="downloadMedia(m.media)" title="Baixar arquivo">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/>
+            </svg>
+            <span>Baixar</span>
+        </button>
+    </template>
+
     {# TOGGLE ANÁLISE IA — áudio: transcrição + resumo; mídia visual: só resumo. #}
     <template x-if="m.resumo_midia || m.analise_midia">
         <div class="ws-bub__analise">

@@ -377,6 +377,15 @@ em modo 'board'.{% endcomment %}
     @click.self="closeLightbox()"
     x-transition.opacity
     style="display: none;">
+    <button type="button" class="ws-lightbox__download"
+        @click="downloadMedia(mediaLightbox)" aria-label="Baixar"
+        title="Baixar arquivo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+                d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14"/>
+        </svg>
+    </button>
     <button type="button" class="ws-lightbox__close"
         @click="closeLightbox()" aria-label="Fechar">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none"

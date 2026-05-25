@@ -310,6 +310,19 @@
                 };
             },
 
+            // Faz o download do arquivo para a pasta de Downloads do computador.
+            // Funciona para URL servida pelo nginx (mesma origem) e data URI base64.
+            downloadMedia: function (media) {
+                if (!media || !media.src) return;
+                const a = document.createElement('a');
+                a.href = media.src;
+                a.download = media.filename || 'arquivo';
+                a.rel = 'noopener';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            },
+
             // ─────────────────────────────────────────────────────────
             // UX e UI Helpers do Chat
             // ─────────────────────────────────────────────────────────

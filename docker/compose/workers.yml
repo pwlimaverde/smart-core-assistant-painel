@@ -28,7 +28,11 @@ services:
       timeout: 15s
       retries: 3
       start_period: 60s
-    volumes: []
+    volumes:
+      # Mídia persistida pela análise de IA (_convert_media_context roda aqui no
+      # worker). Sem este mount, os arquivos iam para o FS efêmero do worker e
+      # o nginx/app (volume compartilhado) não os enxergavam → mídia 404.
+      - media_files:/app/src/smart_core_assistant_painel/app/media
     develop:
       watch:
         - action: sync+restart
@@ -82,3 +86,7 @@ networks:
   shared_network:
     name: shared_network
     external: true
+
+volumes:
+  media_files:
+    name: smartcore_media_files

@@ -1,0 +1,83 @@
+workflow: PREVC
+phase: P  # Planning
+
+feature: design-system-refactor
+title: "Design System Desacoplado — W3C Tokens + Jinja2 + Adaptador Django isolado"
+started_at: "2026-05-24"
+
+plan: ".context/plans/design-system-refactor.md"
+
+phases:
+  P:  # Planning
+    status: done
+    description: "PRD revisado e alinhado com a modularização pós-v1.2.3, incluindo novos apps e inventário completo de templates"
+    completed_at: "2026-05-26"
+
+  R:  # Review / Refinement
+    status: pending
+    description: "Aprovação do plano pelo PO. Validar o mapeamento dos componentes de DTL para Jinja2 antes de iniciar."
+
+  E:  # Execution
+    status: pending
+    phases:
+      - id: fase-1
+        title: "Infraestrutura de Tokens e Ambiente Jinja2"
+        status: pending
+        files:
+          - "modules/design_system/tokens/tokens.json"
+          - "modules/design_system/static/design_system/css/tokens.css"
+          - "modules/design_system/adapters/django/jinja2_env.py"
+          - "modules/design_system/adapters/django/apps.py"
+          - "modules/design_system/templates/components/*.html"
+
+      - id: fase-2
+        title: "Templates Base em Jinja2"
+        status: pending
+        files:
+          - "modules/design_system/templates/base.html"
+          - "modules/design_system/templates/base_dashboard.html"
+          - "modules/design_system/templates/base_public.html"
+
+      - id: fase-3
+        title: "Workspace Modularizado (Atendimento, Chat, Kanban)"
+        status: pending
+        files:
+          - "modules/design_system/templates/apps/atendimento_unificado/**/*.html"
+          - "modules/design_system/templates/apps/chat_evolution/**/*.html"
+          - "modules/design_system/templates/apps/gestao_kanban/**/*.html"
+
+      - id: fase-4
+        title: "Configurações e Tenants"
+        status: pending
+        files:
+          - "modules/design_system/templates/apps/tenants/**/*.html"
+          - "modules/design_system/templates/apps/evolution_sync/**/*.html"
+          - "modules/design_system/templates/apps/settings_manager/**/*.html"
+
+      - id: fase-5
+        title: "Usuários, Treinamento e Erros"
+        status: pending
+        files:
+          - "modules/design_system/templates/apps/usuarios/**/*.html"
+          - "modules/design_system/templates/apps/treinamento/**/*.html"
+          - "modules/design_system/templates/apps/errors/**/*.html"
+
+      - id: fase-6
+        title: "Limpeza Total e Ajustes de Configuração"
+        status: pending
+
+  V:  # Validation
+    status: pending
+    checks:
+      - "find src/smart_core_assistant_painel/app -name '*.html' | grep -v 'templates/admin' | wc -l  # deve ser 0"
+      - "grep -rn '{% load ' src/smart_core_assistant_painel/modules/design_system/templates/ | wc -l  # deve ser 0"
+
+  C:  # Closure
+    status: pending
+
+metrics:
+  hardcoded_colors_before: 240
+  hardcoded_colors_target: 0
+  templates_using_design_system_before: 0
+  templates_using_design_system_target: 71
+  total_templates: 71

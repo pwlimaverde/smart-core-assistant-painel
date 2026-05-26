@@ -3,11 +3,11 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Seguranca Midia Tenant Retencao](./seguranca-midia-tenant-retencao.md)
+1. [Design System Refactor](./design-system-refactor.md)
 
 ## How To Create Or Update Plans
-- Run "dotcontext plan <name>" to scaffold a new plan template.
-- Run "dotcontext plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
+- Run "ai-context plan <name>" to scaffold a new plan template.
+- Run "ai-context plan <name> --fill" to have an LLM refresh the plan using the latest repository context.
 
 ## Related Resources
 - [Agent Handbook](../agents/README.md)

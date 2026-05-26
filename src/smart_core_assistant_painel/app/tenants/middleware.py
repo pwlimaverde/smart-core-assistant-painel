@@ -125,7 +125,7 @@ class TenantMiddleware:
 
             return render(
                 request,
-                "tenants/subscription_expired.html",
+                "apps/tenants/subscription_expired.html",
                 {"message": message},
                 status=402,
             )
@@ -145,7 +145,7 @@ class TenantMiddleware:
         # Browser: renderiza template
         return render(
             request,
-            "tenants/tenant_not_found.html",
+            "apps/tenants/tenant_not_found.html",
             {"slug": slug},
             status=404,
         )

@@ -31,7 +31,7 @@ class OnboardingSessionMixin:
 
 
 class Step1TenantView(FormView):
-    template_name = "tenants/onboarding/step_1_tenant.html"
+    template_name = "apps/tenants/onboarding/step_1_tenant.html"
     form_class = TenantRegistrationForm
 
     def form_valid(self, form):
@@ -57,7 +57,7 @@ class Step1TenantView(FormView):
 
 
 class Step2PaymentView(OnboardingSessionMixin, TemplateView):
-    template_name = "tenants/onboarding/step_2_payment.html"
+    template_name = "apps/tenants/onboarding/step_2_payment.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -141,7 +141,7 @@ class Step2PaymentView(OnboardingSessionMixin, TemplateView):
 
 
 class Step3ConfigView(OnboardingSessionMixin, FormView):
-    template_name = "tenants/onboarding/step_3_config.html"
+    template_name = "apps/tenants/onboarding/step_3_config.html"
     form_class = OnboardingConfigForm
 
     def get_context_data(self, **kwargs):
@@ -170,7 +170,7 @@ class Step3ConfigView(OnboardingSessionMixin, FormView):
 
 
 class Step4ProvisionView(OnboardingSessionMixin, TemplateView):
-    template_name = "tenants/onboarding/step_4_provision.html"
+    template_name = "apps/tenants/onboarding/step_4_provision.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

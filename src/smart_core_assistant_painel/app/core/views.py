@@ -13,7 +13,8 @@ from urllib.request import Request, urlopen
 from decouple import config
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
+from django.views.generic import TemplateView
 
 API_TOKEN_URL: str = "https://api.clickup.com/api/v2/oauth/token"
 
@@ -94,12 +95,8 @@ def health_check(request: HttpRequest) -> HttpResponse:
     return HttpResponse("OK", status=200)
 
 
-from django.shortcuts import redirect
-from django.views.generic import TemplateView
-
-
 class LandingPageView(TemplateView):
-    template_name = "landing_page.html"
+    template_name = "apps/core/landing_page.html"
 
     def get(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -169,16 +166,16 @@ def custom_page_not_found(
     request: HttpRequest, exception: Any = None
 ) -> HttpResponse:
     """View customizada para erro 404."""
-    return render(request, "404.html", status=404)
+    return render(request, "apps/errors/404.html", status=404)
 
 
 def custom_permission_denied(
     request: HttpRequest, exception: Any = None
 ) -> HttpResponse:
     """View customizada para erro 403."""
-    return render(request, "403.html", status=403)
+    return render(request, "apps/errors/403.html", status=403)
 
 
 def custom_server_error(request: HttpRequest) -> HttpResponse:
     """View customizada para erro 500."""
-    return render(request, "500.html", status=500)
+    return render(request, "apps/errors/500.html", status=500)

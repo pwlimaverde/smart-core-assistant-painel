@@ -1,0 +1,201 @@
+/* ==========================================================================
+   Componentes CSS Utilitários (Design System)
+   Classes utilitárias reutilizáveis que consomem variáveis de tokens.css
+   ========================================================================== */
+
+/* Botões */
+.ui-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--ws-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color var(--ws-dur-fast) var(--ws-ease),
+              border-color var(--ws-dur-fast) var(--ws-ease),
+              box-shadow var(--ws-dur-fast) var(--ws-ease);
+}
+
+.ui-btn:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--ws-card), 0 0 0 4px var(--ws-accent-ring);
+}
+
+.ui-btn--primary {
+  background-color: var(--ws-accent);
+  color: #ffffff;
+  border-color: var(--ws-accent);
+}
+
+.ui-btn--primary:hover {
+  background-color: var(--ws-accent-hover);
+  border-color: var(--ws-accent-hover);
+}
+
+.ui-btn--danger {
+  background-color: var(--ws-danger);
+  color: #ffffff;
+  border-color: var(--ws-danger);
+}
+
+.ui-btn--danger:hover {
+  background-color: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.ui-btn--ghost {
+  background-color: transparent;
+  color: var(--ws-fg);
+  border-color: transparent;
+}
+
+.ui-btn--ghost:hover {
+  background-color: var(--ws-chip);
+}
+
+/* Badges */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1rem;
+  padding: 0.125rem 0.625rem;
+  border-radius: var(--ws-radius-pill);
+}
+
+.ui-badge--success {
+  background-color: var(--ws-success-soft);
+  color: var(--ws-success);
+}
+
+.ui-badge--warning {
+  background-color: var(--ws-warning-soft);
+  color: var(--ws-warning);
+}
+
+.ui-badge--danger {
+  background-color: var(--ws-danger-soft);
+  color: var(--ws-danger);
+}
+
+/* Inputs, Textareas e Selects */
+.ui-input,
+.ui-textarea,
+.ui-select {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  background-color: var(--ws-input-bg);
+  color: var(--ws-fg-strong);
+  border: 1px solid var(--ws-border-strong);
+  border-radius: var(--ws-radius-md);
+  box-shadow: 0 1px 2px rgba(2, 6, 23, 0.04);
+  transition: border-color var(--ws-dur-fast) var(--ws-ease),
+              box-shadow var(--ws-dur-fast) var(--ws-ease);
+}
+
+.ui-input:focus,
+.ui-textarea:focus,
+.ui-select:focus {
+  outline: none;
+  border-color: var(--ws-accent);
+  box-shadow: 0 0 0 3px var(--ws-accent-ring);
+}
+
+.ui-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Cards e Painéis */
+.ui-card {
+  background-color: var(--ws-card);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-card);
+  padding: var(--ws-pad-card);
+  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.06);
+}
+
+.ui-panel {
+  background-color: var(--ws-panel);
+  border: 1px solid var(--ws-border);
+  border-radius: var(--ws-radius-panel);
+  padding: var(--ws-pad-panel);
+}
+
+/* Modal UI */
+.ui-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(28, 25, 23, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.ui-modal-content {
+  background-color: var(--ws-card);
+  border-radius: var(--ws-radius-panel);
+  border: 1px solid var(--ws-border-strong);
+  max-width: 500px;
+  width: 100%;
+  padding: var(--ws-pad-panel);
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.10);
+  animation: ui-fade-in var(--ws-dur-base) var(--ws-ease);
+}
+
+/* Spinner */
+.ui-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--ws-accent-soft);
+  border-top-color: var(--ws-accent);
+  border-radius: var(--ws-radius-pill);
+  animation: ui-spin var(--ws-dur-slow) linear infinite;
+}
+
+/* Toast */
+.ui-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  border-radius: var(--ws-radius-md);
+  border: 1px solid var(--ws-border);
+  background-color: var(--ws-card);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.08);
+  z-index: 9999;
+}
+
+.ui-toast--success {
+  border-left: 4px solid var(--ws-success);
+}
+
+.ui-toast--error {
+  border-left: 4px solid var(--ws-danger);
+}
+
+/* Animações */
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ui-fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

@@ -4,6 +4,8 @@
    ========================================================================== */
 
 @import "tailwindcss";
+@import "./tokens.css";
+@import "./components.css";
 
 /* Fontes de detecção de classes (Tailwind v4 — build de produção via CLI).
    Escaneia os templates/JS do app e dos módulos para purgar utilities. */
@@ -83,112 +85,7 @@
 
    ==========================================================================*/
 
-:root {
-  /* --------------------------------------------------------------------------
-     1. CORES SEMÂNTICAS
-     Derivadas da paleta Smart Core (gold + stone). Editar aqui muda toda
-     a aparência clara do Workspace.
-     ------------------------------------------------------------------------*/
-  --ws-bg:             #f5f5f4;   /* stone-100 - fundo do board */
-  --ws-fg:             #44403c;   /* stone-700 - texto padrão */
-  --ws-fg-strong:      #1c1917;   /* stone-900 - títulos */
-  --ws-fg-muted:       #78716c;   /* stone-500 - metadados */
-  --ws-fg-subtle:      #a8a29e;   /* stone-400 - placeholders */
 
-  --ws-card:           #ffffff;
-  --ws-card-hover:     #ffffff;
-  --ws-panel:          #ffffff;   /* chat panel + info drawer */
-  --ws-chip:           #f5f5f4;   /* stone-100 - chips/tags neutras */
-  --ws-input-bg:       #ffffff;
-
-  --ws-border:         #e7e5e4;   /* stone-200 - bordas leves */
-  --ws-border-strong:  #d6d3d1;   /* stone-300 - bordas mais visíveis */
-  --ws-divider:        #f5f5f4;   /* stone-100 - separadores */
-
-  --ws-topbar:         #1c1917;   /* stone-900 - topbar e sidebar */
-  --ws-topbar-fg:      #f5f5f4;
-  --ws-sidebar:        #1c1917;
-  --ws-sidebar-fg:     #d6d3d1;
-
-  /* Acento de marca - usado em estados ativos, focus rings, botões primários */
-  --ws-accent:         #a98f71;   /* gold-500 */
-  --ws-accent-hover:   #8b7355;   /* gold-600 */
-  --ws-accent-soft:    rgba(169, 143, 113, 0.10);
-  --ws-accent-ring:    rgba(169, 143, 113, 0.20);
-
-  /* Feedback */
-  --ws-success:        #16a34a;
-  --ws-success-soft:   rgba(34, 197, 94, 0.10);
-  --ws-warning:        #d97706;
-  --ws-warning-soft:   rgba(245, 158, 11, 0.10);
-  --ws-danger:         #dc2626;
-  --ws-danger-soft:    rgba(239, 68, 68, 0.10);
-  --ws-info:           #2563eb;
-  --ws-info-soft:      rgba(59, 130, 246, 0.10);
-
-  /* --------------------------------------------------------------------------
-     2. CORES DO CHAT (WhatsApp-style)
-     ------------------------------------------------------------------------*/
-  --ws-chat-bg:        #efeae2;   /* fundo da área de mensagens */
-  --ws-chat-dot:       #c8b89c;   /* pontilhado decorativo */
-  --ws-chat-header:    #ede9e0;
-  --ws-chat-foot:      #f0f2f5;   /* fundo do composer */
-
-  --ws-bub-in:         #ffffff;   /* bolha recebida (contato) */
-  --ws-bub-in-fg:      #1c1917;
-  --ws-bub-out:        #d9fdd3;   /* bolha enviada (atendente/IA) */
-  --ws-bub-out-fg:     #0b3d20;
-  --ws-bub-shadow:     0 1px 1px rgba(0, 0, 0, 0.10);
-
-  /* --------------------------------------------------------------------------
-     3. ESPAÇAMENTO E DENSIDADE
-     A densidade do kanban é controlada por `data-density` no <html>:
-     compact / normal / confortable
-     ------------------------------------------------------------------------*/
-  --ws-pad-card:       12px;      /* padding interno do kanban card */
-  --ws-gap-card:       8px;       /* gap entre cards na coluna */
-
-  --ws-pad-panel:      16px;      /* padding interno de painéis */
-  --ws-pad-section:    20px;      /* padding interno de sections do info drawer */
-
-  /* --------------------------------------------------------------------------
-     4. RAIOS DE BORDA
-     ------------------------------------------------------------------------*/
-  --ws-radius-sm:      6px;       /* tags pequenas */
-  --ws-radius-md:      8px;       /* botões compactos */
-  --ws-radius-card:    10px;      /* kanban card, bolhas */
-  --ws-radius-col:     14px;      /* coluna do kanban */
-  --ws-radius-panel:   16px;      /* painéis maiores */
-  --ws-radius-pill:    9999px;    /* CTAs e pills */
-
-  /* --------------------------------------------------------------------------
-     5. SOMBRAS
-     ------------------------------------------------------------------------*/
-  --ws-shadow-xs:      0 1px 2px rgba(2, 6, 23, 0.04);
-  --ws-shadow-sm:      0 1px 3px rgba(2, 6, 23, 0.06), 0 1px 2px rgba(2, 6, 23, 0.04);
-  --ws-shadow-md:      0 6px 18px rgba(2, 6, 23, 0.08);
-  --ws-shadow-lg:      0 8px 24px rgba(2, 6, 23, 0.10);
-  --ws-shadow-mini:    0 12px 32px rgba(2, 6, 23, 0.18);  /* mini-bar flutuante */
-
-  /* --------------------------------------------------------------------------
-     6. LARGURA DOS PAINÉIS
-     Editar aqui ajusta o split sem mexer no HTML.
-     ------------------------------------------------------------------------*/
-  --ws-sidebar-w:      60px;      /* sidebar slim de ícones */
-  --ws-chat-w:         460px;     /* painel de chat (modo split) */
-  --ws-info-w:         320px;     /* drawer de info do contato */
-  --ws-chat-w-min:     380px;
-  --ws-chat-w-max:     600px;
-  --ws-rail-w:         88px;      /* trilha do kanban (modo Atendimento) */
-
-  /* --------------------------------------------------------------------------
-     7. MOTION
-     ------------------------------------------------------------------------*/
-  --ws-ease:           cubic-bezier(0.2, 0.6, 0.2, 1);
-  --ws-dur-fast:       120ms;
-  --ws-dur-base:       180ms;
-  --ws-dur-slow:       260ms;
-}
 
 /* ==========================================================================
    8. DENSIDADE

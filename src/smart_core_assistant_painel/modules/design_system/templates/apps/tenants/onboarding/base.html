@@ -1,0 +1,143 @@
+{% extends "base_public.html" %}
+
+
+{% block extra_head %}
+<style>
+    .onboarding-surface input:-webkit-autofill,
+    .onboarding-surface input:-webkit-autofill:hover,
+    .onboarding-surface input:-webkit-autofill:focus,
+    .onboarding-surface textarea:-webkit-autofill,
+    .onboarding-surface textarea:-webkit-autofill:hover,
+    .onboarding-surface textarea:-webkit-autofill:focus,
+    .onboarding-surface select:-webkit-autofill,
+    .onboarding-surface select:-webkit-autofill:hover,
+    .onboarding-surface select:-webkit-autofill:focus {
+        -webkit-text-fill-color: #ffffff;
+        caret-color: #ffffff;
+        transition: background-color 9999s ease-out 0s;
+        box-shadow: 0 0 0px 1000px rgba(28, 25, 23, 0.35) inset;
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block public_navbar %}
+<!-- Minimal Onboarding Header -->
+<nav class="absolute top-0 left-0 w-full z-50 py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-center">
+        <a href="/" class="flex items-center gap-2 group transition-opacity hover:opacity-80">
+            <img src="{{ static('img/logo_branca_smart_v2.png') }}" alt="Smart Core" class="h-10 w-auto">
+            <span class="text-xl font-medium tracking-wide text-white">
+                Smart Core
+            </span>
+        </a>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="flex min-h-screen flex-col items-center justify-center py-16 px-4 sm:px-6 lg:px-8 bg-[#0c0a09] relative overflow-hidden">
+    <!-- Background Effects -->
+    <div class="absolute inset-0 z-0">
+        <div class="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-[#a98f71]/10 rounded-full blur-[120px] mix-blend-screen"></div>
+        <div class="absolute bottom-0 right-0 w-[800px] h-[600px] bg-[#1c1917] rounded-full blur-[100px]"></div>
+    </div>
+
+    <div class="w-full max-w-4xl relative z-10">
+        <div class="onboarding-surface bg-[#1c1917]/80 backdrop-blur-xl rounded-3xl border border-white/5 shadow-2xl shadow-black/50 ring-1 ring-white/5 overflow-hidden">
+            <div class="px-8 py-6 border-b border-white/10">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <div class="text-white text-lg font-semibold">Onboarding</div>
+                        <p class="text-stone-400 text-xs">
+                            {% if request.resolver_match.url_name == "onboarding_step_1" %}
+                                Passo 1 de 4
+                            {% elif request.resolver_match.url_name == "onboarding_step_2" %}
+                                Passo 2 de 4
+                            {% elif request.resolver_match.url_name == "onboarding_step_3" %}
+                                Passo 3 de 4
+                            {% elif request.resolver_match.url_name == "onboarding_step_4" %}
+                                Passo 4 de 4
+                            {% else %}
+                                Fluxo de cadastro
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2 text-xs text-stone-500">
+                        <span class="h-2 w-2 rounded-full bg-[#a98f71]"></span>
+                        Smart Core Assistant
+                    </div>
+                </div>
+
+                <div class="mt-6 grid grid-cols-4 gap-2 text-[11px] uppercase tracking-wider">
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_1' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% elif request.resolver_match.url_name == 'onboarding_step_2' or request.resolver_match.url_name == 'onboarding_step_3' or request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-transparent bg-[#a98f71] text-white
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            1
+                        </span>
+                        <span class="hidden sm:inline">Empresa</span>
+                        <span class="sm:hidden">1</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_2' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% elif request.resolver_match.url_name == 'onboarding_step_3' or request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-transparent bg-[#a98f71] text-white
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            2
+                        </span>
+                        <span class="hidden sm:inline">Plano</span>
+                        <span class="sm:hidden">2</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_3' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% elif request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-transparent bg-[#a98f71] text-white
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            3
+                        </span>
+                        <span class="hidden sm:inline">Config</span>
+                        <span class="sm:hidden">3</span>
+                    </div>
+                    <div class="flex items-center justify-center gap-2 rounded-full border px-3 py-2
+                        {% if request.resolver_match.url_name == 'onboarding_step_4' %}
+                            border-[#a98f71] text-[#a98f71] bg-white/5
+                        {% else %}
+                            border-white/10 text-stone-500
+                        {% endif %}">
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/10 text-[10px] font-semibold">
+                            4
+                        </span>
+                        <span class="hidden sm:inline">Pronto</span>
+                        <span class="sm:hidden">4</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-8 py-8">
+                {% block wizard_content %}{% endblock %}
+            </div>
+
+            {% block wizard_footer %}
+            <div class="px-8 py-6 border-t border-white/10 bg-[#1c1917]/60 flex justify-end">
+                <!-- Default Footer Content -->
+            </div>
+            {% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}

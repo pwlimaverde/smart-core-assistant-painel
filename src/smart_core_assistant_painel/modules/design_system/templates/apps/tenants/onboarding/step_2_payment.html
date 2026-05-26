@@ -1,0 +1,218 @@
+{% extends "apps/tenants/onboarding/base.html" %} {% block wizard_content %}
+<div class="space-y-6">
+  {% if show_plans %}
+  <!-- ================= PLANS SELECTION ================= -->
+  <div>
+    <h2 class="text-2xl sm:text-3xl font-semibold text-white">
+      Escolha seu Plano
+    </h2>
+    <p class="text-stone-400 text-sm mt-2">
+      Selecione o melhor plano para o seu negócio.
+    </p>
+  </div>
+
+  <form method="post" id="plan-form" class="space-y-6">
+    {{ csrf_input(request) }}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {% for plan in plans %}
+      <label class="block">
+        <input
+          type="radio"
+          name="plan_id"
+          value="{{ plan.id }}"
+          required
+          class="peer sr-only"
+        />
+        <div
+          class="relative rounded-2xl border border-white/10 bg-stone-900/40 p-5 text-white/90 transition-all duration-200 hover:border-[#a98f71]/60 hover:bg-stone-900/60 peer-checked:border-[#a98f71] peer-checked:bg-stone-900/70"
+        >
+          <div
+            class="absolute top-4 right-4 h-6 w-6 rounded-full border border-white/10 text-[#a98f71] flex items-center justify-center opacity-0 peer-checked:opacity-100"
+          >
+            ✓
+          </div>
+          <h3 class="text-lg font-semibold text-white">{{ plan.name }}</h3>
+          <div class="mt-2 text-2xl font-bold text-[#a98f71]">
+            R$ {{ plan.price|default("--") }}<span
+              class="text-xs font-medium text-stone-400"
+              >/mês</span
+            >
+          </div>
+          <p class="mt-3 text-sm text-stone-400">
+            {{ plan.description|linebreaksbr }}
+          </p>
+        </div>
+      </label>
+      {% else %}
+      <p class="text-stone-400">Nenhum plano disponível.</p>
+      {% endfor %}
+    </div>
+  </form>
+
+  {% elif show_code_input %}
+  <!-- ================= ACCESS CODE INPUT ================= -->
+  <div>
+    <h2 class="text-2xl sm:text-3xl font-semibold text-white">
+      Código de Acesso
+    </h2>
+    <p class="text-stone-400 text-sm mt-2">
+      Informe o código que você recebeu por e-mail para desbloquear seu
+      cadastro.
+    </p>
+  </div>
+
+  <form method="post" id="code-form" class="space-y-6 max-w-md">
+    {{ csrf_input(request) }}
+
+    <div>
+      <label
+        for="access_code"
+        class="block text-sm font-medium text-stone-400 mb-2"
+        >Código de Liberação</label
+      >
+      <input
+        type="text"
+        name="access_code"
+        id="access_code"
+        required
+        maxlength="7"
+        autocomplete="off"
+        class="w-full rounded-xl border border-white/10 bg-stone-800 px-4 py-3 text-white placeholder-stone-500 focus:border-[#a98f71] focus:ring-1 focus:ring-[#a98f71] sm:text-sm uppercase tracking-widest"
+        placeholder="XXX-XXX"
+      />
+    </div>
+
+    {% if error %}
+    <div
+      class="rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-red-200 text-sm flex items-center gap-2"
+    >
+      <svg
+        class="h-5 w-5 text-red-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+        />
+      </svg>
+      {{ error }}
+    </div>
+    {% endif %}
+  </form>
+
+  <script>
+    document.getElementById("access_code").addEventListener("input", function (e) {
+      let v = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      if (v.length > 3) {
+        v = v.slice(0, 3) + "-" + v.slice(3, 6);
+      }
+      e.target.value = v;
+    });
+  </script>
+
+  {% else %}
+  <!-- ================= WAITING STATE ================= -->
+  <div>
+    <h2 class="text-2xl sm:text-3xl font-semibold text-white">
+      Aguardando Aprovação
+    </h2>
+    <p class="text-stone-400 text-sm mt-2">
+      Seu cadastro foi iniciado com sucesso!
+    </p>
+  </div>
+
+  <div
+    class="p-6 bg-stone-900/60 border border-white/10 rounded-2xl text-center space-y-4"
+  >
+    <div
+      class="mx-auto h-16 w-16 rounded-full bg-yellow-500/10 flex items-center justify-center mb-4"
+    >
+      <svg
+        class="h-8 w-8 text-yellow-500"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+    </div>
+
+    <h3 class="text-lg font-medium text-white">Análise em Andamento</h3>
+    <p class="text-stone-400 max-w-lg mx-auto">
+      Por questões de segurança e exclusividade, nosso sistema requer uma
+      liberação administrativa.
+      <br /><br />
+      Nossa equipe foi notificada e em breve você receberá um
+      <strong>Código de Acesso</strong> no seu e-mail cadastrado.
+    </p>
+
+    {% if error %}
+    <div class="mt-4 text-red-400 text-sm">{{ error }}</div>
+    {% endif %}
+
+    <div class="pt-6">
+      <a
+        href=""
+        class="inline-flex items-center text-sm text-[#a98f71] hover:text-[#8b7355] transition-colors"
+      >
+        <svg
+          class="w-4 h-4 mr-2"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+          ></path>
+        </svg>
+        Verificar se já fui aprovado (Recarregar)
+      </a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %} {% block wizard_footer %}
+<div
+  class="px-8 py-6 border-t border-white/10 bg-[#1c1917]/60 flex justify-end"
+>
+  {% if show_plans %}
+  <button
+    type="submit"
+    form="plan-form"
+    class="group relative inline-flex items-center justify-center rounded-xl bg-[#a98f71] px-6 py-3 text-sm font-semibold text-white hover:bg-[#8b7355] shadow-lg shadow-[#a98f71]/20 transition-all"
+  >
+    Realizar Pagamento e Continuar
+    <span class="ml-2 transition-transform group-hover:translate-x-0.5">→</span>
+  </button>
+  {% elif show_code_input %}
+  <button
+    type="submit"
+    form="code-form"
+    class="group relative inline-flex items-center justify-center rounded-xl bg-[#a98f71] px-6 py-3 text-sm font-semibold text-white hover:bg-[#8b7355] shadow-lg shadow-[#a98f71]/20 transition-all"
+  >
+    Validar Código
+    <span class="ml-2 transition-transform group-hover:translate-x-0.5">→</span>
+  </button>
+  {% else %}
+  <a
+    href="{{ url('tenants:onboarding_step_1') }}"
+    class="text-sm text-stone-500 hover:text-stone-300"
+  >
+    Voltar ao início
+  </a>
+  {% endif %}
+</div>
+{% endblock %}

@@ -112,7 +112,7 @@ def list_users(request):
 
     return render(
         request,
-        "tenants/users/list.html",
+        "apps/tenants/users/list.html",
         {
             "users": users,
             "invites": invites,
@@ -213,7 +213,7 @@ def invite_user(request):
     fluxos_grupos = group_fluxos_by_departamento(list_tenant_fluxos(tenant))
     return render(
         request,
-        "tenants/users/invite.html",
+        "apps/tenants/users/invite.html",
         {
             "modules": modules,
             "tenant": tenant,
@@ -314,7 +314,7 @@ Este link expira em 7 dias.
         # Simplificação: Usando o corpo do texto original como fallback
         text_content = message
         html_content = render_to_string(
-            "tenants/users/invite_email.html", context
+            "apps/tenants/users/invite_email.html", context
         )
 
         email_msg = EmailMultiAlternatives(
@@ -369,7 +369,7 @@ def activate_account(request, token):
     invite = get_object_or_404(TenantInvite, token=token)
 
     if not invite.is_valid():
-        return render(request, "tenants/users/invite_expired.html")
+        return render(request, "apps/tenants/users/invite_expired.html")
 
     if request.method == "POST":
         password = request.POST.get("password")
@@ -378,13 +378,13 @@ def activate_account(request, token):
         if password != password_confirm:
             messages.error(request, "As senhas não conferem.")
             return render(
-                request, "tenants/users/activate.html", {"invite": invite}
+                request, "apps/tenants/users/activate.html", {"invite": invite}
             )
 
         if len(password) < 8:
             messages.error(request, "A senha deve ter no mínimo 8 caracteres.")
             return render(
-                request, "tenants/users/activate.html", {"invite": invite}
+                request, "apps/tenants/users/activate.html", {"invite": invite}
             )
 
         try:
@@ -397,7 +397,7 @@ def activate_account(request, token):
             if User.objects.filter(username=invite.email).exists():
                 messages.error(request, "Este email já está cadastrado.")
                 return render(
-                    request, "tenants/users/activate.html", {"invite": invite}
+                    request, "apps/tenants/users/activate.html", {"invite": invite}
                 )
 
             user = User.objects.create(
@@ -434,12 +434,12 @@ def activate_account(request, token):
         except Exception as e:
             messages.error(request, f"Erro ao ativar conta: {e}")
             return render(
-                request, "tenants/users/activate.html", {"invite": invite}
+                request, "apps/tenants/users/activate.html", {"invite": invite}
             )
 
     return render(
         request,
-        "tenants/users/activate.html",
+        "apps/tenants/users/activate.html",
         {"invite": invite, "tenant": invite.tenant},
     )
 
@@ -527,7 +527,7 @@ def edit_permissions(request, user_id):
 
     return render(
         request,
-        "tenants/users/edit_permissions.html",
+        "apps/tenants/users/edit_permissions.html",
         {
             "tenant_user": tenant_user,
             "modules": modules,

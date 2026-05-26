@@ -1,0 +1,569 @@
+{% extends "base_dashboard.html" %}
+
+
+{% block title %}Instâncias WhatsApp{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <a href="{{ url('tenants:dashboard') }}"
+            class="inline-flex items-center text-sm text-stone-500 hover:text-[#a98f71] transition-colors">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Voltar para Dashboard
+        </a>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden"
+         x-data="instanceManager()">
+        <!-- Card Header -->
+        <div class="px-6 py-4 border-b border-stone-100 bg-stone-50/50 flex items-center justify-between">
+            <div>
+                <h2 class="text-xl font-bold text-stone-800 flex items-center">
+                    <span class="p-2 bg-green-50 rounded-lg mr-3 text-green-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                            </path>
+                        </svg>
+                    </span>
+                    Instâncias WhatsApp
+                </h2>
+                <p class="mt-1 text-stone-500 text-sm ml-11">
+                    Gerencie suas instâncias conectadas via Evolution API.
+                </p>
+            </div>
+            {% if evo_config and evo_config.server_url and can_edit %}
+            <div class="flex gap-2">
+                <button @click="refreshAll()" :disabled="refreshing"
+                    class="px-3 py-2 text-sm border border-stone-300 text-stone-700 rounded-lg hover:bg-stone-50 transition-colors disabled:opacity-50 flex items-center">
+                    <svg class="w-4 h-4 mr-1" :class="refreshing && 'animate-spin'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Atualizar Status
+                </button>
+                <button @click="openCreateModal()"
+                    class="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Nova Instância
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="p-6">
+            {% if not evo_config or not evo_config.server_url %}
+            <!-- Aviso: Servidor não configurado -->
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-start">
+                <svg class="w-5 h-5 text-amber-500 mr-3 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <div>
+                    <p class="text-sm font-medium text-amber-800">Servidor Evolution API não configurado</p>
+                    <p class="text-sm text-amber-700 mt-1">
+                        Configure o servidor e a API key antes de gerenciar instâncias.
+                    </p>
+                    <a href="{{ url('tenants:config_evolution') }}"
+                        class="inline-flex items-center mt-2 text-sm font-medium text-amber-800 hover:text-amber-900">
+                        Ir para Configuração
+                        <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            {% elif instances %}
+            <!-- Tabela de Instâncias -->
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-stone-200">
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Nome</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Status</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Telefone</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Departamento</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Bot</th>
+                            <th class="text-right py-3 px-4 text-xs font-semibold text-stone-500 uppercase tracking-wide">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-100">
+                        {% for inst in instances %}
+                        <tr class="hover:bg-stone-50/50 transition-colors" x-data="{ state: '{{ inst.connection_state }}', botActive: {{ inst.bot_active|yesno:'true,false' }} }">
+                            <td class="py-3 px-4">
+                                <div class="font-medium text-stone-800">{{ inst.name }}</div>
+                                <div class="text-xs text-stone-400">ID: {{ inst.instance_id|default("—") }}</div>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span x-show="state === 'open'"
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5"></span>
+                                    Conectado
+                                </span>
+                                <span x-show="state === 'close'"
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-500 mr-1.5"></span>
+                                    Desconectado
+                                </span>
+                                <span x-show="state !== 'open' && state !== 'close'"
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-stone-400 mr-1.5"></span>
+                                    Desconhecido
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-sm text-stone-600">
+                                {{ inst.phone_number|default("—") }}
+                            </td>
+                            <td class="py-3 px-4">
+                                {% if inst.departamento_nome %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                    {{ inst.departamento_nome }}
+                                </span>
+                                {% else %}
+                                <span class="text-xs text-stone-400 italic">Não vinculado</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-center">
+                                {% if can_edit %}
+                                <button @click="toggleBotInline({{ inst.pk }}, $el)"
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors cursor-pointer"
+                                    :class="botActive ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-stone-100 text-stone-500 hover:bg-stone-200'"
+                                    :title="botActive ? 'Bot ativo — clique para desativar' : 'Bot inativo — clique para ativar'">
+                                    <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                    </svg>
+                                    <span x-text="botActive ? 'Ativo' : 'Inativo'"></span>
+                                </button>
+                                {% else %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                    :class="botActive ? 'bg-green-100 text-green-800' : 'bg-stone-100 text-stone-500'">
+                                    <span x-text="botActive ? 'Ativo' : 'Inativo'"></span>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    {% if can_edit %}
+                                    <button @click="openEditModal({{ inst.pk }}, '{{ inst.name }}', '{{ inst.departamento_id|default("") }}', '{{ inst.owner_id|default("") }}', {{ inst.bot_active|yesno:'true,false' }})"
+                                        class="p-2 text-stone-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
+                                        title="Editar">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                        </svg>
+                                    </button>
+                                    {% endif %}
+                                    <a href="{{ url('evolution_instance_detail', args=[inst.pk]) }}"
+                                        class="p-2 text-stone-400 hover:text-[#a98f71] rounded-lg hover:bg-stone-100 transition-colors"
+                                        title="Detalhes">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                    </a>
+                                    {% if can_edit %}
+                                    <button @click="deleteInstance({{ inst.pk }}, '{{ inst.name }}')"
+                                        class="p-2 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                                        title="Excluir">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                        </svg>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z">
+                    </path>
+                </svg>
+                <p class="mt-4 text-sm font-medium text-stone-600">Nenhuma instância cadastrada</p>
+                <p class="mt-1 text-sm text-stone-400">Crie uma nova instância para conectar ao WhatsApp.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Modal: Criar/Editar Instância -->
+        <div x-show="showCreateModal" x-cloak
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+            @keydown.escape.window="showCreateModal = false">
+            <div class="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6 max-h-[90vh] overflow-y-auto"
+                @click.outside="showCreateModal = false">
+                <h3 class="text-lg font-bold text-stone-800 mb-4" x-text="editMode ? 'Editar Instância' : 'Nova Instância'"></h3>
+
+                <div class="space-y-4">
+                    <!-- Nome da Instância -->
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Nome da Instância</label>
+                        <input type="text" x-model="newInstanceName" :disabled="editMode"
+                            placeholder="ex: atendimento-principal"
+                            class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#a98f71] focus:ring-1 focus:ring-[#a98f71]/20 disabled:bg-stone-100 disabled:text-stone-500">
+                        <p class="mt-1 text-xs text-stone-400" x-show="!editMode">Alfanumérico e hífen, 3-50 caracteres.</p>
+                        <p class="mt-1 text-xs text-stone-400" x-show="editMode">O nome da instância não pode ser alterado após a criação.</p>
+                    </div>
+
+                    <!-- Separador: Vinculação Operacional -->
+                    <div class="relative py-2">
+                        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-stone-200"></div></div>
+                        <div class="relative flex justify-center">
+                            <span class="bg-white px-3 text-xs font-semibold text-stone-500 uppercase tracking-wide">Vinculação Operacional</span>
+                        </div>
+                    </div>
+
+                    <!-- Departamento -->
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">Departamento</label>
+                        <div class="flex gap-2">
+                            <select x-model="selectedDepartmentId" @change="onDepartmentChange()"
+                                class="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#a98f71] focus:ring-1 focus:ring-[#a98f71]/20 bg-white">
+                                <option value="">— Sem vínculo —</option>
+                                <template x-for="dept in departments" :key="dept.id">
+                                    <option :value="dept.id" x-text="dept.nome"></option>
+                                </template>
+                            </select>
+                            <button @click="showNewDept = !showNewDept" type="button"
+                                class="px-3 py-2 border border-stone-300 rounded-lg text-sm hover:bg-stone-50 transition-colors text-stone-600 whitespace-nowrap"
+                                :class="showNewDept && 'bg-stone-100'">
+                                + Novo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Criar Novo Departamento (expandível) -->
+                    <div x-show="showNewDept" x-transition
+                        class="p-4 bg-stone-50 border border-stone-200 rounded-lg space-y-3">
+                        <p class="text-xs font-semibold text-stone-500 uppercase tracking-wide">Novo Departamento</p>
+                        <div>
+                            <input type="text" x-model="newDeptName" placeholder="Nome do departamento"
+                                class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#a98f71] focus:ring-1 focus:ring-[#a98f71]/20">
+                        </div>
+                        <div>
+                            <input type="text" x-model="newDeptDesc" placeholder="Descrição (opcional)"
+                                class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#a98f71] focus:ring-1 focus:ring-[#a98f71]/20">
+                        </div>
+                        <div x-show="deptError" class="text-xs text-red-600" x-text="deptError"></div>
+                        <button @click="createDepartment()" :disabled="creatingDept" type="button"
+                            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors disabled:opacity-50">
+                            <span x-text="creatingDept ? 'Criando...' : 'Criar Departamento'"></span>
+                        </button>
+                    </div>
+
+                    <!-- Owner (Atendente Responsável) -->
+                    <div>
+                        <label class="block text-sm font-medium text-stone-700 mb-1">
+                            Owner <span class="text-stone-400 font-normal">(opcional)</span>
+                        </label>
+                        <select x-model="selectedOwnerId"
+                            class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:border-[#a98f71] focus:ring-1 focus:ring-[#a98f71]/20 bg-white"
+                            :disabled="attendants.length === 0 && !loadingAttendants">
+                            <option value="">— Nenhum —</option>
+                            <template x-for="att in attendants" :key="att.id">
+                                <option :value="att.id" x-text="att.nome + (att.cargo ? ' (' + att.cargo + ')' : '')"></option>
+                            </template>
+                        </select>
+                        <p class="mt-1 text-xs text-stone-400" x-show="!selectedDepartmentId">Selecione um departamento para filtrar atendentes.</p>
+                        <p class="mt-1 text-xs text-stone-400" x-show="selectedDepartmentId && attendants.length === 0 && !loadingAttendants">Nenhum atendente cadastrado neste departamento.</p>
+                    </div>
+
+                    <!-- Bot ativo -->
+                    <div class="flex items-center">
+                        <input type="checkbox" id="respostaBotCheckbox" x-model="newRespostaBot"
+                            class="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2">
+                        <label for="respostaBotCheckbox" class="ml-2 text-sm font-medium text-stone-700">
+                            Bot ativo
+                        </label>
+                    </div>
+                    <p class="text-xs text-stone-400" style="margin-top: 4px;">Se ativo, o bot responderá automaticamente às mensagens.</p>
+
+                    <!-- Erro -->
+                    <div x-show="createError" class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p class="text-sm text-red-700" x-text="createError"></p>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="flex gap-3 pt-2">
+                        <button @click="saveInstance()" :disabled="creating"
+                            class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center">
+                            <svg x-show="creating" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span x-text="creating ? 'Salvando...' : (editMode ? 'Salvar Alterações' : 'Criar Instância')"></span>
+                        </button>
+                        <button @click="showCreateModal = false"
+                            class="flex-1 px-4 py-2 border border-stone-300 text-stone-700 font-medium rounded-lg hover:bg-stone-50 transition-colors">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback toast -->
+        <div x-show="toast" x-cloak x-transition
+            class="fixed bottom-6 right-6 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium"
+            :class="toastType === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'">
+            <span x-text="toast"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+function instanceManager() {
+    return {
+        showCreateModal: false,
+        editMode: false,
+        editInstanceId: null,
+        newInstanceName: '',
+        newRespostaBot: true,
+        creating: false,
+        createError: '',
+        refreshing: false,
+        toast: '',
+        toastType: 'success',
+
+        // Departamento
+        departments: {{ departamentos|safe }},
+        selectedDepartmentId: '',
+        showNewDept: false,
+        newDeptName: '',
+        newDeptDesc: '',
+        creatingDept: false,
+        deptError: '',
+
+        // Owner (Atendente)
+        attendants: [],
+        selectedOwnerId: '',
+        loadingAttendants: false,
+
+        getCSRF() {
+            return document.querySelector('[name=csrfmiddlewaretoken]')?.value
+                || '{{ csrf_token }}';
+        },
+
+        showToast(msg, type) {
+            this.toast = msg;
+            this.toastType = type;
+            setTimeout(() => { this.toast = ''; }, 3000);
+        },
+
+        async onDepartmentChange() {
+            this.selectedOwnerId = '';
+            this.attendants = [];
+            if (!this.selectedDepartmentId) return;
+            this.loadingAttendants = true;
+            try {
+                const resp = await fetch(
+                    '{{ url('evolution_attendant_list') }}?department_id=' + this.selectedDepartmentId
+                );
+                const data = await resp.json();
+                this.attendants = data.attendants || [];
+            } catch (err) {
+                this.attendants = [];
+            }
+            this.loadingAttendants = false;
+        },
+
+        async createDepartment() {
+            this.deptError = '';
+            const nome = this.newDeptName.trim();
+            if (!nome || nome.length < 2) {
+                this.deptError = 'Nome deve ter pelo menos 2 caracteres.';
+                return;
+            }
+            this.creatingDept = true;
+            try {
+                const resp = await fetch('{{ url('evolution_department_create') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRF(),
+                    },
+                    body: JSON.stringify({ nome, descricao: this.newDeptDesc.trim() }),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    const dept = data.department;
+                    this.departments.push(dept);
+                    this.selectedDepartmentId = String(dept.id);
+                    this.showNewDept = false;
+                    this.newDeptName = '';
+                    this.newDeptDesc = '';
+                    this.onDepartmentChange();
+                    this.showToast('Departamento criado!', 'success');
+                } else {
+                    this.deptError = data.message || 'Erro ao criar departamento.';
+                }
+            } catch (err) {
+                this.deptError = 'Erro de conexão: ' + err.message;
+            }
+            this.creatingDept = false;
+        },
+
+        async saveInstance() {
+            this.createError = '';
+            const name = this.newInstanceName.trim();
+            if (!name || name.length < 3) {
+                this.createError = 'Nome deve ter pelo menos 3 caracteres.';
+                return;
+            }
+            this.creating = true;
+            try {
+                const body = {
+                    instance_name: name,
+                    resposta_bot: this.newRespostaBot,
+                };
+                if (this.selectedDepartmentId) {
+                    body.departamento_id = parseInt(this.selectedDepartmentId);
+                }
+                if (this.selectedOwnerId) {
+                    body.owner_id = parseInt(this.selectedOwnerId);
+                }
+                
+                let url = '{{ url('evolution_instance_create') }}';
+                if (this.editMode && this.editInstanceId) {
+                    url = '/evolution/instances/' + this.editInstanceId + '/update/';
+                }
+                
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRF(),
+                    },
+                    body: JSON.stringify(body),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    this.showCreateModal = false;
+                    this.newInstanceName = '';
+                    this.newRespostaBot = true;
+                    this.selectedDepartmentId = '';
+                    this.selectedOwnerId = '';
+                    this.showToast(this.editMode ? 'Instância atualizada com sucesso!' : 'Instância criada com sucesso!', 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    this.createError = data.message || 'Erro ao salvar instância.';
+                }
+            } catch (err) {
+                this.createError = 'Erro de conexão: ' + err.message;
+            }
+            this.creating = false;
+        },
+
+        openCreateModal() {
+            this.editMode = false;
+            this.editInstanceId = null;
+            this.newInstanceName = '';
+            this.newRespostaBot = true;
+            this.selectedDepartmentId = '';
+            this.selectedOwnerId = '';
+            this.createError = '';
+            this.attendants = [];
+            this.showCreateModal = true;
+        },
+
+        async openEditModal(id, name, deptId, ownerId, botActive) {
+            this.editMode = true;
+            this.editInstanceId = id;
+            this.newInstanceName = name;
+            this.newRespostaBot = botActive;
+            this.selectedDepartmentId = deptId || '';
+            this.createError = '';
+            
+            if (this.selectedDepartmentId) {
+                await this.onDepartmentChange();
+                this.selectedOwnerId = ownerId || '';
+            } else {
+                this.selectedOwnerId = '';
+                this.attendants = [];
+            }
+            
+            this.showCreateModal = true;
+        },
+
+        async refreshAll() {
+            this.refreshing = true;
+            try {
+                const resp = await fetch('{{ url('evolution_instance_refresh_all') }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.getCSRF() },
+                });
+                const data = await resp.json();
+                if (data.success && data.instances) {
+                    data.instances.forEach(inst => {
+                        const row = document.querySelector(`[data-instance-id="${inst.id}"]`);
+                        if (row) row.__x.$data.state = inst.state;
+                    });
+                    this.showToast('Status atualizado!', 'success');
+                    setTimeout(() => location.reload(), 500);
+                }
+            } catch (err) {
+                this.showToast('Erro ao atualizar status.', 'error');
+            }
+            this.refreshing = false;
+        },
+
+        async deleteInstance(pk, name) {
+            if (!confirm(`Tem certeza que deseja excluir a instância "${name}"?\n\nEsta ação é irreversível.`)) return;
+            try {
+                const resp = await fetch(`/evolution/instances/${pk}/delete/`, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': this.getCSRF() },
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    this.showToast(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    this.showToast(data.message || 'Erro ao excluir.', 'error');
+                }
+            } catch (err) {
+                this.showToast('Erro de conexão.', 'error');
+            }
+        },
+
+        async toggleBotInline(pk, el) {
+            const row = el.closest('tr');
+            const rowData = Alpine.$data(row);
+            const newValue = !rowData.botActive;
+            try {
+                const resp = await fetch(`/evolution/instances/${pk}/toggle-bot/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': this.getCSRF(),
+                    },
+                    body: JSON.stringify({ resposta_bot: newValue }),
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    rowData.botActive = data.resposta_bot;
+                    this.showToast(data.message, 'success');
+                } else {
+                    this.showToast(data.message || 'Erro ao alterar bot.', 'error');
+                }
+            } catch (err) {
+                this.showToast('Erro de conexão.', 'error');
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

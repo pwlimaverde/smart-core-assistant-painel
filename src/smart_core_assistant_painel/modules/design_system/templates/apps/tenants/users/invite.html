@@ -1,0 +1,98 @@
+{% extends "base_dashboard.html" %}
+
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-xl shadow-sm border border-stone-200">
+        <div class="px-6 py-4 border-b border-stone-100">
+            <h3 class="text-lg font-semibold text-stone-800">Enviar Convite de Acesso</h3>
+        </div>
+        <form method="POST" x-data="{ atendimentoOn: false }">
+            {{ csrf_input(request) }}
+            <div class="p-6 space-y-6">
+                <!-- Nome -->
+                <div>
+                    <label for="name" class="block text-sm font-medium text-stone-700 mb-1">Nome do Funcionário</label>
+                    <input type="text" id="name" name="name" placeholder="Ex: João Silva" required
+                        class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-[#a98f71] focus:border-[#a98f71] outline-none transition-colors">
+                </div>
+
+                <!-- Email -->
+                <div>
+                    <label for="email" class="block text-sm font-medium text-stone-700 mb-1">Endereço de Email</label>
+                    <input type="email" id="email" name="email" placeholder="email@exemplo.com" required
+                        class="w-full px-3 py-2 border border-stone-300 rounded-lg focus:ring-[#a98f71] focus:border-[#a98f71] outline-none transition-colors">
+                </div>
+
+                <!-- Módulos -->
+                <div>
+                    <label class="block text-sm font-medium text-stone-700 mb-3">Módulos Permitidos</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for mod_value, mod_label in modules %}
+                        <div
+                            class="flex items-center p-3 border border-stone-200 rounded-lg hover:border-[#a98f71]/50 bg-stone-50/50 hover:bg-white transition-all cursor-pointer">
+                            <input type="checkbox" id="mod_{{ mod_value }}" name="modules" value="{{ mod_value }}"
+                                {% if mod_value == atendimento_module %}x-model="atendimentoOn"{% endif %}
+                                class="h-4 w-4 text-[#a98f71] focus:ring-[#a98f71] border-stone-300 rounded">
+                            <label for="mod_{{ mod_value }}"
+                                class="ml-3 block text-sm font-medium text-stone-700 cursor-pointer w-full">
+                                {{ mod_label }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Fluxos do Workspace -->
+                <div x-show="atendimentoOn" x-cloak x-transition>
+                    <label class="block text-sm font-medium text-stone-700 mb-1">
+                        Fluxos visíveis no Workspace
+                    </label>
+                    <p class="text-xs text-stone-500 mb-3">
+                        Selecione os fluxos que este usuário poderá visualizar
+                        na barra superior do Workspace. Sem nenhum marcado, o
+                        usuário não verá nenhum fluxo.
+                    </p>
+                    {% if fluxos_grupos %}
+                    <div class="space-y-4">
+                        {% for grupo in fluxos_grupos %}
+                        <div class="border border-stone-200 rounded-lg p-3 bg-stone-50/40">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-stone-500 mb-2">
+                                {{ grupo.departamento_nome }}
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {% for fluxo in grupo.fluxos %}
+                                <label class="flex items-center p-2 border border-stone-200 rounded-lg hover:border-[#a98f71]/50 bg-white transition-all cursor-pointer">
+                                    <input type="checkbox" name="flow_ids" value="{{ fluxo.id }}"
+                                        class="h-4 w-4 text-[#a98f71] focus:ring-[#a98f71] border-stone-300 rounded">
+                                    <span class="ml-3 text-sm text-stone-700">{{ fluxo.nome }}</span>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-sm text-stone-500 border border-dashed border-stone-300 rounded-lg p-4 bg-stone-50/60">
+                        Nenhum fluxo cadastrado neste tenant. Cadastre fluxos
+                        em Operacional → Fluxos de Atendimento para liberar
+                        o acesso aqui.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-stone-50 border-t border-stone-200 flex justify-between rounded-b-xl">
+                <a href="{{ url('tenants:user_list') }}"
+                    class="px-4 py-2 border border-stone-300 text-stone-700 font-medium rounded-lg hover:bg-stone-100 transition-colors bg-white shadow-sm">
+                    Cancelar
+                </a>
+                <button type="submit"
+                    class="px-4 py-2 bg-[#a98f71] hover:bg-[#8c735a] text-white font-medium rounded-lg shadow-sm transition-colors duration-200">
+                    Enviar Convite
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

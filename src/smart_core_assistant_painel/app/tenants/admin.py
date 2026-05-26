@@ -302,7 +302,7 @@ class TenantAdmin(admin.ModelAdmin):
 
             # HTML Renderizado
             html_content = render_to_string(
-                "tenants/onboarding/email_access_code.html", context
+                "apps/tenants/onboarding/email_access_code.html", context
             )
 
             email = EmailMultiAlternatives(

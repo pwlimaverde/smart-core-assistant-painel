@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Workspace · Smart Core{% endblock %}
+
+{% block extra_head %}
+    {# core.build.css (Tailwind + tokens) já é carregado globalmente em base.html #}
+    <link rel="stylesheet" href="{{ static('atendimento_unificado/css/workspace.css') }}?v=1">
+    <link rel="stylesheet" href="{{ static('chat_evolution/css/chat.css') }}?v=1">
+    <link rel="stylesheet" href="{{ static('gestao_kanban/css/kanban.css') }}?v=1">
+{% endblock %}
+
+{% block layout %}
+<div class="ws-app"
+    {% block workspace_x_data %}{% endblock %}
+    {% block workspace_x_init %}{% endblock %}
+    @keydown.window.alt.1.prevent="setFocus('board')"
+    @keydown.window.alt.2.prevent="setFocus('split')"
+    @keydown.window.alt.3.prevent="setFocus('chat')"
+    @keydown.window.escape="onEscape($event)"
+    @keydown.window.i="if (!isTypingTarget($event)) onToggleInfo($event)"
+    :data-theme="theme || 'light'"
+    :data-ws-density="density || 'normal'">
+    {% block workspace_topbar %}{% endblock %}
+    <main class="ws-main" :data-focus="focusMode || 'split'">
+        {% block workspace_content %}{% endblock %}
+    </main>
+</div>
+{% endblock %}

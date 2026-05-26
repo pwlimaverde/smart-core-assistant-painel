@@ -51,7 +51,7 @@ def configuracoes_index(request: HttpRequest) -> HttpResponse:
         "whitelist_count": whitelist_count,
         "whitelist_active": whitelist_active,
     }
-    return render(request, "configuracoes/index.html", context)
+    return render(request, "apps/settings_manager/configuracoes/index.html", context)
 
 
 @login_required
@@ -77,7 +77,7 @@ def configuracoes_whitelist(request: HttpRequest) -> HttpResponse:
         "whitelist": whitelist,
         "search": search,
     }
-    return render(request, "configuracoes/whitelist.html", context)
+    return render(request, "apps/settings_manager/configuracoes/whitelist.html", context)
 
 
 @login_required
@@ -147,7 +147,7 @@ def whitelist_adicionar(request: HttpRequest) -> HttpResponse:
         "titulo": "Adicionar à Whitelist",
         "acao": "Adicionar",
     }
-    return render(request, "configuracoes/whitelist_form.html", context)
+    return render(request, "apps/settings_manager/configuracoes/whitelist_form.html", context)
 
 
 @login_required
@@ -176,7 +176,7 @@ def whitelist_editar(request: HttpRequest, pk: int) -> HttpResponse:
         "acao": "Salvar",
         "item": item,
     }
-    return render(request, "configuracoes/whitelist_form.html", context)
+    return render(request, "apps/settings_manager/configuracoes/whitelist_form.html", context)
 
 
 @login_required
@@ -196,7 +196,7 @@ def whitelist_excluir(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("configuracoes:whitelist")
 
     context = {"item": item}
-    return render(request, "configuracoes/whitelist_confirm.html", context)
+    return render(request, "apps/settings_manager/configuracoes/whitelist_confirm.html", context)
 
 
 @login_required

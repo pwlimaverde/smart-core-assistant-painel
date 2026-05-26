@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Marca todos os atendimentos ativos de um tenant como 'resolvido'.
+"""Marca todos os atendimentos ativos de um tenant como 'arquivado'.
 
 Uso (dentro do container em produção):
     docker exec smartcoreassistant_app \
-        python scripts/atendimentos/resolver_todos_atendimentos.py \
+        python scripts/atendimentos/arquivar_todos_atendimentos.py \
         [--tenant SLUG] [--dry-run]
 
 Argumentos opcionais:
@@ -12,7 +12,7 @@ Argumentos opcionais:
 
 Exemplo:
     docker exec smartcoreassistant_app \
-        python scripts/atendimentos/resolver_todos_atendimentos.py \
+        python scripts/atendimentos/arquivar_todos_atendimentos.py \
         --tenant paulo-ecoprint
 """
 
@@ -40,7 +40,7 @@ from smart_core_assistant_painel.app.tenants.services.connection_tester import (
 
 def main(tenant_slug: str | None, dry_run: bool) -> None:
     print("=" * 60)
-    print("  RESOLVER TODOS OS ATENDIMENTOS DO TENANT")
+    print("  ARQUIVAR TODOS OS ATENDIMENTOS DO TENANT")
     print("=" * 60)
 
     # Localiza o tenant
@@ -87,7 +87,7 @@ def main(tenant_slug: str | None, dry_run: bool) -> None:
         return
 
     if dry_run:
-        print("\n[DRY-RUN] Os seguintes atendimentos seriam resolvidos:")
+        print("\n[DRY-RUN] Os seguintes atendimentos seriam arquivados:")
         for atd in ativos_qs.values("id", "status", "data_inicio")[:50]:
             print(f"  id={atd['id']} status={atd['status']} data_inicio={atd['data_inicio']}")
         if total > 50:
@@ -97,17 +97,17 @@ def main(tenant_slug: str | None, dry_run: bool) -> None:
     # Executa o update em lote (sem disparar signals ou métodos do modelo)
     agora = timezone.now()
     atualizados = ativos_qs.update(
-        status=StatusAtendimento.RESOLVIDO,
+        status=StatusAtendimento.ARQUIVADO,
         data_fim=agora,
     )
 
-    print(f"\n[OK] {atualizados} atendimento(s) marcados como 'resolvido'.")
+    print(f"\n[OK] {atualizados} atendimento(s) marcados como 'arquivado'.")
     print(f"     data_fim = {agora.isoformat()}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="Resolve todos os atendimentos ativos de um tenant."
+        description="Arquiva todos os atendimentos ativos de um tenant."
     )
     parser.add_argument(
         "--tenant",

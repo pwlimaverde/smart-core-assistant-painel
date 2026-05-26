@@ -246,11 +246,12 @@ def _aplicar_regras_tipo_etapa(
 
     elif tipo == TipoEtapa.FINALIZACAO.value:
         nome_lower = (etapa_destino.nome or "").lower()
-        final_status = (
-            StatusAtendimento.CANCELADO.value
-            if "cancel" in nome_lower
-            else StatusAtendimento.RESOLVIDO.value
-        )
+        if "cancel" in nome_lower:
+            final_status = StatusAtendimento.CANCELADO.value
+        elif "arquiv" in nome_lower or "archiv" in nome_lower:
+            final_status = StatusAtendimento.ARQUIVADO.value
+        else:
+            final_status = StatusAtendimento.RESOLVIDO.value
         try:
             atend.finalizar_atendimento(
                 novo_status=final_status,

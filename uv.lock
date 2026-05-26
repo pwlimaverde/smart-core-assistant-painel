@@ -3006,7 +3006,7 @@ wheels = [
 
 [[package]]
 name = "smart-core-assistant-painel"
-version = "1.2.2+21"
+version = "1.2.3"
 source = { editable = "." }
 dependencies = [
     { name = "aiohappyeyeballs" },

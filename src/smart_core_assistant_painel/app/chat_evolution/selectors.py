@@ -105,6 +105,7 @@ def list_conversations(
         status__in=[
             StatusAtendimento.RESOLVIDO,
             StatusAtendimento.CANCELADO,
+            StatusAtendimento.ARQUIVADO,
         ]
     )
 
@@ -527,6 +528,7 @@ def contar_nao_lidos_global(
         atendimento__status__in=[
             StatusAtendimento.RESOLVIDO,
             StatusAtendimento.CANCELADO,
+            StatusAtendimento.ARQUIVADO,
         ]
     )
 

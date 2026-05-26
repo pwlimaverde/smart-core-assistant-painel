@@ -818,6 +818,7 @@ class WebhookProcessor:
                     status__in=[
                         StatusAtendimento.RESOLVIDO,
                         StatusAtendimento.CANCELADO,
+                        StatusAtendimento.ARQUIVADO,
                     ]
                 )
                 .order_by("-data_inicio")

@@ -1788,7 +1788,7 @@ def processar_mensagem_por_contato(
             recent_resolved = (
                 Atendimento.objects.filter(
                     contato_id=contato_id,
-                    status=StatusAtendimento.RESOLVIDO,
+                    status__in=[StatusAtendimento.RESOLVIDO, StatusAtendimento.ARQUIVADO],
                     data_fim__gte=timezone.now() - timedelta(minutes=10),
                 )
                 .order_by("-data_fim")

@@ -1481,7 +1481,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             last_atd = (
                 Atendimento.objects.filter(
                     contato_id=contact_id,
-                    status=StatusAtendimento.RESOLVIDO,
+                    status__in=[
+                        StatusAtendimento.RESOLVIDO,
+                        StatusAtendimento.ARQUIVADO,
+                    ],
                 )
                 .exclude(data_fim__isnull=True)
                 .order_by("-data_fim")

@@ -403,6 +403,7 @@ class ExportView(View):
                 status__in=[
                     StatusAtendimento.RESOLVIDO,
                     StatusAtendimento.CANCELADO,
+                    StatusAtendimento.ARQUIVADO,
                 ]
             )
             .order_by("-data_ultima_mensagem")

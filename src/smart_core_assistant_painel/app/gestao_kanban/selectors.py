@@ -109,6 +109,7 @@ def board_snapshot_by_fluxo(
             status__in=[
                 StatusAtendimento.RESOLVIDO,
                 StatusAtendimento.CANCELADO,
+                StatusAtendimento.ARQUIVADO,
             ]
         )
         .select_related(
@@ -370,6 +371,7 @@ def contar_nao_lidos_global(
         atendimento__status__in=[
             StatusAtendimento.RESOLVIDO,
             StatusAtendimento.CANCELADO,
+            StatusAtendimento.ARQUIVADO,
         ]
     )
 

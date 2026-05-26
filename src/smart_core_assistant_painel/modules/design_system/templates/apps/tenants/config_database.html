@@ -36,7 +36,7 @@
 
         <div class="p-6">
             <form method="post" novalidate class="space-y-4">
-                {{ csrf_input(request) }}
+                {{ csrf_input }}
 
                 {% if form.non_field_errors %}
                 <div class="p-4 bg-red-50 border border-red-100 rounded-lg">

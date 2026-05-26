@@ -40,7 +40,7 @@
             <div class="bg-white shadow-xl rounded-2xl overflow-hidden">
                 <form action="{{ url('treinamento:treinar_ia') }}" method="POST" enctype='multipart/form-data'
                     class="p-6 sm:p-8">
-                    {{ csrf_input(request) }}
+                    {{ csrf_input }}
                     {% if modo_edicao %}
                     <input type="hidden" name="treinamento_id" value="{{ treinamento_id }}">
                     {% endif %}

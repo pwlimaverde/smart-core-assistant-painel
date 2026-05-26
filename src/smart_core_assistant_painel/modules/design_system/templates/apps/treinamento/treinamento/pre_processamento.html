@@ -28,7 +28,7 @@
 
     <div class="mx-auto max-w-7xl">
         <form action="{{ url('treinamento:pre_processamento', kwargs={'id': treinamento.id}) }}" method="POST">
-            {{ csrf_input(request) }}
+            {{ csrf_input }}
 
             <!-- Info Bar -->
             <div

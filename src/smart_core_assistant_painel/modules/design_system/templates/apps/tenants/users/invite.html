@@ -8,7 +8,7 @@
             <h3 class="text-lg font-semibold text-stone-800">Enviar Convite de Acesso</h3>
         </div>
         <form method="POST" x-data="{ atendimentoOn: false }">
-            {{ csrf_input(request) }}
+            {{ csrf_input }}
             <div class="p-6 space-y-6">
                 <!-- Nome -->
                 <div>

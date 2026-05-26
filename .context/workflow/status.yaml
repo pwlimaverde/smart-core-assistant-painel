@@ -1,48 +1,35 @@
 project:
-  name: "design-system-refactor"
-  scale: LARGE
-  started: "2026-05-26T14:39:44.899Z"
-  current_phase: C
+  name: "fix-all-broken-routes"
+  scale: SMALL
+  started: "2026-05-26T19:07:22.486Z"
+  current_phase: E
 
 phases:
   P:
-    status: filled
-    started_at: "2026-05-26T14:39:44.899Z"
-    completed_at: "2026-05-26T14:40:02.088Z"
-  R:
-    status: filled
-    started_at: "2026-05-26T14:40:02.096Z"
-    completed_at: "2026-05-26T14:41:30.676Z"
-  E:
-    status: filled
-    started_at: "2026-05-26T14:41:30.685Z"
-    completed_at: "2026-05-26T15:18:04.893Z"
-  V:
-    status: filled
-    started_at: "2026-05-26T15:18:04.903Z"
-    completed_at: "2026-05-26T15:18:15.063Z"
-  C:
     status: completed
-    started_at: "2026-05-26T15:18:15.072Z"
-    completed_at: "2026-05-26T15:22:57.618Z"
-    outputs:
-      - path: ".context/workflow/docs/final-review.md"
-        status: filled
-      - path: ".context/workflow/docs/changelog.md"
-        status: filled
+    started_at: "2026-05-26T19:07:22.486Z"
+    completed_at: "2026-05-26T19:12:16.997Z"
+  R:
+    status: skipped
+    reason: "Not required for scale SMALL"
+  E:
+    status: in_progress
+    started_at: "2026-05-26T19:12:17.007Z"
+  V:
+    status: pending
+  C:
+    status: skipped
+    reason: "Not required for scale SMALL"
 
 execution:
   history:
-    - timestamp: "2026-05-26T15:22:57.618Z"
-      phase: C
-      action: completed
-  last_activity: "2026-05-26T15:22:57.618Z"
-  resume_context: "Fase C (Confirmação) concluída"
+    - timestamp: "2026-05-26T19:12:17.007Z"
+      phase: E
+      action: started
+  last_activity: "2026-05-26T19:12:17.007Z"
+  resume_context: "Fase E (Execução) em progresso"
 
 approval:
   plan_created: true
-  plan_approved: true
-  approved_by: "solo-dev"
-  approved_at: "2026-05-26T14:41:25.479Z"
-  approval_notes: "Plano reestruturado e aprovado. 8 correções aplicadas baseadas na documentação atual e estado real do código."
+  plan_approved: false
 

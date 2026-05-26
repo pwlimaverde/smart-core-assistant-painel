@@ -35,7 +35,7 @@
         </div>
 
         <form method="post" novalidate class="divide-y divide-stone-100">
-            {{ csrf_input(request) }}
+            {{ csrf_input }}
 
             {% if form.non_field_errors %}
             <div class="p-6 bg-red-50 border-b border-red-100">

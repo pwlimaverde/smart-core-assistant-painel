@@ -69,13 +69,13 @@
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <div class="flex justify-end gap-3">
                       <form method="post" class="inline">
-                        {{ csrf_input(request) }}
+                        {{ csrf_input }}
                         <input type="hidden" name="query_compose_id" value="{{ qc.id }}" />
                         <input type="hidden" name="acao" value="editar" />
                         <button type="submit" class="text-amber-600 hover:text-amber-900">Editar</button>
                       </form>
                       <form method="post" class="inline" onsubmit="return confirm('Tem certeza que deseja excluir?');">
-                        {{ csrf_input(request) }}
+                        {{ csrf_input }}
                         <input type="hidden" name="query_compose_id" value="{{ qc.id }}" />
                         <input type="hidden" name="acao" value="excluir" />
                         <button type="submit" class="text-stone-400 hover:text-rose-600">Excluir</button>
@@ -129,13 +129,13 @@
                   <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <div class="flex justify-end gap-3">
                       <form method="post" class="inline">
-                        {{ csrf_input(request) }}
+                        {{ csrf_input }}
                         <input type="hidden" name="query_compose_id" value="{{ qc.id }}" />
                         <input type="hidden" name="acao" value="editar" />
                         <button type="submit" class="text-amber-600 hover:text-amber-900">Editar</button>
                       </form>
                       <form method="post" class="inline" onsubmit="return confirm('Tem certeza que deseja excluir?');">
-                        {{ csrf_input(request) }}
+                        {{ csrf_input }}
                         <input type="hidden" name="query_compose_id" value="{{ qc.id }}" />
                         <input type="hidden" name="acao" value="excluir" />
                         <button type="submit" class="text-stone-400 hover:text-rose-600">Excluir</button>

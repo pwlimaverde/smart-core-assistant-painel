@@ -76,7 +76,7 @@
                                             <form method="post"
                                                 action="{{ url('treinamento:verificar_treinamentos_vetorizados') }}"
                                                 class="inline">
-                                                {{ csrf_input(request) }}
+                                                {{ csrf_input }}
                                                 <input type="hidden" name="acao" value="editar">
                                                 <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                 <button type="submit"
@@ -85,7 +85,7 @@
                                             <form method="post"
                                                 action="{{ url('treinamento:verificar_treinamentos_vetorizados') }}"
                                                 class="inline">
-                                                {{ csrf_input(request) }}
+                                                {{ csrf_input }}
                                                 <input type="hidden" name="acao" value="excluir">
                                                 <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                 <button type="submit" class="text-stone-400 hover:text-rose-600"
@@ -155,7 +155,7 @@
                                             <form method="post"
                                                 action="{{ url('treinamento:verificar_treinamentos_vetorizados') }}"
                                                 class="inline">
-                                                {{ csrf_input(request) }}
+                                                {{ csrf_input }}
                                                 <input type="hidden" name="acao" value="editar">
                                                 <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                 <button type="submit"
@@ -164,7 +164,7 @@
                                             <form method="post"
                                                 action="{{ url('treinamento:verificar_treinamentos_vetorizados') }}"
                                                 class="inline">
-                                                {{ csrf_input(request) }}
+                                                {{ csrf_input }}
                                                 <input type="hidden" name="acao" value="excluir">
                                                 <input type="hidden" name="treinamento_id" value="{{ treinamento.id }}">
                                                 <button type="submit" class="text-stone-400 hover:text-rose-600"

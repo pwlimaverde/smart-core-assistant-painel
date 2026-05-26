@@ -15,7 +15,7 @@
     <h1>Registrar Pagamento para {{ tenant.name }}</h1>
 
     <form method="post">
-        {{ csrf_input(request) }}
+        {{ csrf_input }}
         <fieldset class="module aligned">
             {% for field in form %}
             <div class="form-row">

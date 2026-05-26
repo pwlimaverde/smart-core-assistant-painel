@@ -3,7 +3,7 @@
 This directory contains plans for coordinating work across documentation and playbooks.
 
 ## Plan Queue
-1. [Design System Refactor](./design-system-refactor.md)
+1. [Fixbrokenroutes](./fixbrokenroutes.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

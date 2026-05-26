@@ -1,14 +1,13 @@
 {
-  "active": [],
-  "completed": [
+  "active": [
     {
-      "slug": "design-system-refactor",
-      "path": "plans/archive/design-system-refactor.md",
-      "title": "Design System Desacoplado — Migração DTL → Jinja2",
-      "summary": "Centralizar toda a camada visual em `modules/design_system/` com Jinja2,",
-      "linkedAt": "2026-05-26T14:39:56.437Z",
-      "status": "completed"
+      "slug": "fixbrokenroutes",
+      "path": "plans/fixbrokenroutes.md",
+      "title": "Correção de todas as rotas quebradas (Erro 500) em produção",
+      "linkedAt": "2026-05-26T19:12:12.805Z",
+      "status": "active"
     }
   ],
-  "primary": null
+  "completed": [],
+  "primary": "fixbrokenroutes"
 }

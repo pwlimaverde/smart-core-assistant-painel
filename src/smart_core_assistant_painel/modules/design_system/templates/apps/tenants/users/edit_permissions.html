@@ -33,7 +33,7 @@
 
         <form method="post" novalidate
               x-data="{ atendimentoOn: {% if atendimento_module in current_modules %}true{% else %}false{% endif %} }">
-            {{ csrf_input(request) }}
+            {{ csrf_input }}
             <div class="p-6 space-y-6">
                 <!-- Modules -->
                 <div>

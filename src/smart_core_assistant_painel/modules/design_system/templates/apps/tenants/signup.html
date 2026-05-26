@@ -8,7 +8,7 @@
         <h2 style="text-align: center; margin-bottom: 2rem;">Crie sua conta</h2>
 
         <form method="post" novalidate>
-            {{ csrf_input(request) }}
+            {{ csrf_input }}
 
             {% if form.non_field_errors %}
             <div class="alert alert-error">

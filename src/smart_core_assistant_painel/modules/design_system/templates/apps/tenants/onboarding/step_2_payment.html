@@ -12,7 +12,7 @@
   </div>
 
   <form method="post" id="plan-form" class="space-y-6">
-    {{ csrf_input(request) }}
+    {{ csrf_input }}
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       {% for plan in plans %}
@@ -63,7 +63,7 @@
   </div>
 
   <form method="post" id="code-form" class="space-y-6 max-w-md">
-    {{ csrf_input(request) }}
+    {{ csrf_input }}
 
     <div>
       <label

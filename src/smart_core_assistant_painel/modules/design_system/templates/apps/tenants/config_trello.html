@@ -54,7 +54,7 @@
             </div>
 
             <form action="{{ url('tenants:delete_trello_webhook') }}" method="post" id="deleteWebhookForm">
-                {{ csrf_input(request) }}
+                {{ csrf_input }}
                 <button type="submit"
                     class="w-full px-4 py-2 border border-red-200 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg font-medium transition-colors text-sm"
                     onclick="return confirm('Tem certeza que deseja remover o webhook? Você precisará registrá-lo novamente.');">
@@ -85,7 +85,7 @@
 
             {% if form.instance.api_key and form.instance.token %}
             <form action="{{ url('tenants:register_trello_webhook') }}" method="post">
-                {{ csrf_input(request) }}
+                {{ csrf_input }}
                 <button type="submit"
                     class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm">
                     Registrar Webhook Agora
@@ -125,7 +125,7 @@
 
         <div class="p-6">
             <form method="post" novalidate class="space-y-4">
-                {{ csrf_input(request) }}
+                {{ csrf_input }}
 
                 {% if form.non_field_errors %}
                 <div class="p-4 bg-red-50 border border-red-100 rounded-lg">

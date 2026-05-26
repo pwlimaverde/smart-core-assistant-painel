@@ -10,7 +10,7 @@
     </div>
 
     <form method="post" id="signup-form" class="space-y-5">
-        {{ csrf_input(request) }}
+        {{ csrf_input }}
 
         {% for field in form %}
         <div class="space-y-2">

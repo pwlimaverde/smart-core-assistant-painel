@@ -124,7 +124,7 @@
                                 <form method="post" action="{{ url('configuracoes:whitelist_excluir', args=[item.pk]) }}"
                                     class="inline"
                                     onsubmit="return confirm('Tem certeza que deseja remover {{ item.name }}?');">
-                                    {{ csrf_input(request) }}
+                                    {{ csrf_input }}
                                     <button type="submit"
                                         class="text-stone-400 hover:text-rose-600">Excluir</button>
                                 </form>

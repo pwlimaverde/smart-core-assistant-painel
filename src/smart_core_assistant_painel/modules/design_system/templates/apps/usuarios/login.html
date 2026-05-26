@@ -62,7 +62,7 @@
             {% endif %}
 
             <form class="space-y-6" action="{{ url('login') }}" method="POST">
-                {{ csrf_input(request) }}
+                {{ csrf_input }}
                 {% if request.GET.next %}
                 <input type="hidden" name="next" value="{{ request.GET.next }}" />
                 {% endif %}

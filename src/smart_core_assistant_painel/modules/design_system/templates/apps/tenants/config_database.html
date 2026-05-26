@@ -38,9 +38,9 @@
             <form method="post" novalidate class="space-y-4">
                 {{ csrf_input }}
 
-                {% if form.non_field_errors %}
+                {% if form.non_field_errors() %}
                 <div class="p-4 bg-red-50 border border-red-100 rounded-lg">
-                    {% for error in form.non_field_errors %}
+                    {% for error in form.non_field_errors() %}
                     <div class="text-sm text-red-600 flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

@@ -30,8 +30,9 @@ Data: 2026-05-26 · Modelo: Gemini 1.5 Pro · Diff: Completo (Fases 1 a 6)
 
 ---
 
-## 3. Ajustes Realizados durante a Execução
+## 3. Ajustes Realizados e Correções Pós-Deploy
 
+- **Correção de Erro 500 no Dashboard do Tenant**: Identificado que o template `dashboard.html` estava utilizando sintaxe de bloco DTL `{% tag as var %}` para atribuição das permissões (`has_no_module_permissions`, `can_view_module`, `is_owner_user`). Isso foi corrigido substituindo as diretivas por `{% set ... %}` compatível com o Jinja2, resolvendo a causa raiz do erro 500 em runtime.
 - **Jinja2 Environment (`jinja2_env.py`)**: Adicionado o filtro `escapejs` (mapeado de `django.utils.html.escapejs`) para evitar quebras em trechos javascript inline nos templates migrados.
 - **Ruff Linting**: Corrigida a importação de `redirect` e `TemplateView` em `app/core/views.py` para o topo do arquivo, zerando os erros do Ruff introduzidos nesta view. Os erros remanescentes no projeto são pré-existentes e residem em arquivos fora do escopo.
 

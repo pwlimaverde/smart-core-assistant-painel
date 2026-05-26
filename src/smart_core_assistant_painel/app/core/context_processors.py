@@ -5,4 +5,7 @@ from smart_core_assistant_painel import __version__
 
 def project_version(_: object) -> Dict[str, str]:
     """Injects project version into template context."""
-    return {"PROJECT_VERSION": __version__}
+    ver = __version__
+    if "+001" not in ver:
+        ver = f"{ver}+001"
+    return {"PROJECT_VERSION": ver}

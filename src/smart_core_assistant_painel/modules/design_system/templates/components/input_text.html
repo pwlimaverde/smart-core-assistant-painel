@@ -1,0 +1,18 @@
+<div class="{{ wrapper_class }}">
+  {% if label %}
+    <label {% if id %}for="{{ id }}"{% endif %} class="block text-sm font-medium text-[var(--ws-fg-strong)] mb-1">
+      {{ label }}
+    </label>
+  {% endif %}
+  <input 
+    type="{{ type|default:'text' }}"
+    {% if id %}id="{{ id }}"{% endif %}
+    {% if name %}name="{{ name }}"{% endif %}
+    {% if value %}value="{{ value }}"{% endif %}
+    {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+    class="block w-full px-3 py-2 border border-[var(--ws-border)] rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-[var(--ws-accent)] focus:border-[var(--ws-accent)] bg-[var(--ws-input-bg)] text-[var(--ws-fg)] text-sm disabled:opacity-50 disabled:bg-gray-100 {{ class }}"
+    {% if required %}required{% endif %}
+    {% if disabled %}disabled{% endif %}
+    {{ attrs|safe }}
+  >
+</div>

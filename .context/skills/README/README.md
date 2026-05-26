@@ -31,7 +31,8 @@ Este diretório contém workflows ativos para o Antigravity IDE, sincronizados c
 | [prevc-review](prevc-review.md) | R | code-review, security-audit |
 | [prevc-execution](prevc-execution.md) | E | commit-message, refactoring |
 | [prevc-validation](prevc-validation.md) | V | test-generation, pr-review |
-| [prevc-confirmation](prevc-confirmation.md) | C | documentation, commit-message |
+| [prevc-confirmation](prevc-confirmation.md) | C | prevc-final-review, documentation, commit-message |
+| [prevc-final-review](../prevc-final-review/prevc-final-review.md) | C (gate) | code-review, security-audit — auditoria final via subagente Opus antes de arquivar |
 
 ## Sincronização via MCP ai-context
 

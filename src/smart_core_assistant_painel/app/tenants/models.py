@@ -528,6 +528,14 @@ class TenantInvite(models.Model):
         default="staff",
     )
     module_permissions = models.JSONField(default=dict, blank=True)
+    flow_permissions = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=(
+            "Lista de IDs de FluxoAtendimento liberados para o usuário no "
+            "Workspace de Atendimento. IDs referenciam o banco do tenant."
+        ),
+    )
 
     # Token único para ativação
     token = models.CharField(max_length=64, unique=True, editable=False)
@@ -585,6 +593,15 @@ class TenantUser(models.Model):
         blank=True,
         help_text="{modulo: {view: bool, edit: bool, delete: bool}}",
     )
+    flow_permissions = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=(
+            "Lista de IDs de FluxoAtendimento liberados ao usuário no "
+            "Workspace. Como FluxoAtendimento mora no banco do tenant, "
+            "este campo guarda IDs sem FK formal."
+        ),
+    )
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -605,3 +622,26 @@ class TenantUser(models.Model):
     def has_module_permission(self, module: str, action: str = "view") -> bool:
         perms = self.module_permissions.get(module, {})
         return perms.get(action, False)
+
+    def has_flow_permission(self, flow_id: int) -> bool:
+        """Verifica se o usuário tem acesso a um FluxoAtendimento específico.
+
+        Retorna True quando `flow_id` está em `flow_permissions`. A lista é
+        normalizada para ints — entradas inválidas são ignoradas.
+        """
+        try:
+            return int(flow_id) in {
+                int(x) for x in (self.flow_permissions or [])
+            }  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return False
+
+    def allowed_flow_ids(self) -> list[int]:
+        """Retorna os IDs de fluxo liberados, normalizados em int."""
+        ids: list[int] = []
+        for raw in self.flow_permissions or []:
+            try:
+                ids.append(int(raw))  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                continue
+        return ids

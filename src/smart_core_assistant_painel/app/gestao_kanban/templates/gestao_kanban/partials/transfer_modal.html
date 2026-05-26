@@ -1,0 +1,17 @@
+<div class="ws-popover ws-popover--left"
+    x-show="transferirPopoverOpen" x-transition.opacity
+    style="display: none;">
+    <div class="ws-popover__hdr">Transferir para fluxo</div>
+    <template x-for="f in fluxosParaTransferir()" :key="f.id">
+        <button type="button" class="ws-popover__item"
+            @click="transferirFluxo(f.id)">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13V8a3 3 0 013-3h15M16 3l5 5-5 5"/>
+            </svg>
+            <span x-text="f.nome"></span>
+        </button>
+    </template>
+    <template x-if="fluxosParaTransferir().length === 0">
+        <div class="ws-popover__empty">Nenhum outro fluxo disponível.</div>
+    </template>
+</div>

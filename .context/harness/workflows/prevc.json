@@ -1,117 +1,33 @@
 {
   "version": 2,
   "workflowType": "prevc",
-  "updatedAt": "2026-05-16T16:51:32.339Z",
+  "updatedAt": "2026-05-25T15:34:04.128Z",
   "status": {
     "project": {
-      "name": "atendimento-unificado-chat-kanban",
+      "name": "seguranca-midia-tenant-retencao",
       "scale": 3,
-      "started": "2026-05-14T18:36:22.536Z",
-      "current_phase": "V",
+      "started": "2026-05-25T14:45:45.750Z",
+      "current_phase": "P",
       "settings": {
-        "autonomous_mode": true,
+        "autonomous_mode": false,
         "require_plan": true,
         "require_approval": true
       },
-      "plan": "atendimento-unificado-chat-kanban"
+      "plan": "seguranca-midia-tenant-retencao"
     },
     "phases": {
       "P": {
-        "status": "completed",
-        "started_at": "2026-05-14T18:36:22.536Z",
-        "completed_at": "2026-05-15T14:07:00.838Z",
-        "outputs": [
-          {
-            "path": "plans/atendimento-unificado-chat-kanban.md",
-            "status": "filled"
-          }
-        ]
+        "status": "in_progress",
+        "started_at": "2026-05-25T14:45:45.750Z"
       },
       "R": {
-        "status": "completed",
-        "started_at": "2026-05-15T14:07:00.891Z",
-        "completed_at": "2026-05-15T14:07:05.506Z",
-        "outputs": [
-          {
-            "path": "Aprovação consolidada R.1-R.8 conforme plano consolidado",
-            "status": "filled"
-          }
-        ]
+        "status": "pending"
       },
       "E": {
-        "status": "completed",
-        "started_at": "2026-05-15T14:07:05.529Z",
-        "completed_at": "2026-05-16T16:16:46.198Z",
-        "outputs": [
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/models.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/migrations/0002_campos_personalizados.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/tenant_admin.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/tasks.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/signals.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/selectors.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/views_api.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/api_urls.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/templates/atendimento_unificado/partials/custom_fields_panel.html",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/templates/atendimento_unificado/workspace.html",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/app/atendimento_unificado/static/atendimento_unificado/js/workspace_alpine.js",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/features/extracao_campos/",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/features/analise_mensage/datasource/analise_mensage_datasource.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/features/features_compose.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/utils/parameters.py",
-            "status": "filled"
-          },
-          {
-            "path": "src/smart_core_assistant_painel/modules/ai_engine/utils/erros.py",
-            "status": "filled"
-          }
-        ]
+        "status": "pending"
       },
       "V": {
-        "status": "in_progress",
-        "started_at": "2026-05-16T16:16:46.284Z"
+        "status": "pending"
       },
       "C": {
         "status": "pending"
@@ -121,146 +37,30 @@
     "roles": {},
     "approval": {
       "plan_created": true,
-      "plan_approved": true,
-      "approved_by": "solo-dev",
-      "approved_at": "2026-05-15T14:07:00.417Z",
-      "approval_notes": "Plano aprovado para execução autônoma de E.1 conforme solicitado pelo usuário"
+      "plan_approved": false
     },
     "execution": {
       "history": [
         {
-          "timestamp": "2026-05-14T18:36:22.536Z",
+          "timestamp": "2026-05-25T14:45:45.750Z",
           "phase": "P",
           "action": "started"
         },
         {
-          "timestamp": "2026-05-14T18:46:09.790Z",
+          "timestamp": "2026-05-25T14:45:50.724Z",
           "phase": "P",
           "action": "plan_linked",
-          "plan": "atendimento-unificado-chat-kanban"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Kanban interno deve ter paridade funcional total com Trello",
-          "timestamp": "2026-05-14T19:19:57.808Z"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Estrutura do app espelhando trello_sync com apps.py.ready() carregando signals",
-          "timestamp": "2026-05-15T12:15:31.123Z"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Princípio de independência cross-app: signals e tasks moram dentro de atendimento_unificado",
-          "timestamp": "2026-05-15T12:15:38.575Z"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Reescrever E.2.7 e E.2.10 para usar signals em vez de editar apps externos",
-          "timestamp": "2026-05-15T12:15:48.536Z"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Não-lidos via model próprio LeituraAtendimento (zero alteração em atendimentos)",
-          "timestamp": "2026-05-15T12:35:16.348Z"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Não espelhar campos personalizados no card Trello (drop E.2.10)",
-          "timestamp": "2026-05-15T12:35:24.537Z"
-        },
-        {
-          "phase": "P",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Release via tag git em master + deploy automático em produção + teste direto em produção (sem ambiente de teste)",
-          "timestamp": "2026-05-15T12:35:38.092Z"
-        },
-        {
-          "timestamp": "2026-05-15T14:07:00.417Z",
-          "phase": "P",
-          "action": "plan_approved",
-          "approved_by": "solo-dev"
-        },
-        {
-          "timestamp": "2026-05-15T14:07:00.838Z",
-          "phase": "P",
-          "action": "completed"
-        },
-        {
-          "timestamp": "2026-05-15T14:07:00.891Z",
-          "phase": "R",
-          "action": "started"
-        },
-        {
-          "timestamp": "2026-05-15T14:07:05.506Z",
-          "phase": "R",
-          "action": "completed"
-        },
-        {
-          "timestamp": "2026-05-15T14:07:05.529Z",
-          "phase": "E",
-          "action": "started"
-        },
-        {
-          "phase": "E",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Feature flag via Django settings (sem migration em tabela legada)",
-          "timestamp": "2026-05-15T19:24:20.813Z"
-        },
-        {
-          "phase": "E",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: Card click abre drawer/modal de chat (Opção A do R.7)",
-          "timestamp": "2026-05-15T19:24:23.802Z"
-        },
-        {
-          "phase": "E",
-          "action": "plan_phase_updated",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Plan phase phase-2 updated to in_progress",
-          "timestamp": "2026-05-16T15:16:02.744Z"
-        },
-        {
-          "phase": "E",
-          "action": "decision_recorded",
-          "plan": "atendimento-unificado-chat-kanban",
-          "description": "Decision recorded: E.1 implementada — MVP Chat + Kanban com paridade Trello",
-          "timestamp": "2026-05-16T15:16:09.629Z"
-        },
-        {
-          "timestamp": "2026-05-16T16:16:46.198Z",
-          "phase": "E",
-          "action": "completed"
-        },
-        {
-          "timestamp": "2026-05-16T16:16:46.284Z",
-          "phase": "V",
-          "action": "started"
+          "plan": "seguranca-midia-tenant-retencao"
         }
       ],
-      "last_activity": "2026-05-16T16:16:46.284Z",
-      "resume_context": "Fase V (Validação) em progresso"
+      "last_activity": "2026-05-25T14:45:50.724Z",
+      "resume_context": "Plano vinculado - aguardando revisão"
     }
   },
   "binding": {
-    "workflowName": "atendimento-unificado-chat-kanban",
-    "sessionId": "6abcfefe-dc4b-4831-b97d-abcf4f4d734c",
-    "createdAt": "2026-05-14T18:36:22.601Z",
-    "updatedAt": "2026-05-16T16:51:32.311Z"
+    "workflowName": "seguranca-midia-tenant-retencao",
+    "sessionId": "eb178d10-0c3c-4d4f-842b-39f5b31f149e",
+    "createdAt": "2026-05-25T14:45:45.781Z",
+    "updatedAt": "2026-05-25T14:45:45.759Z"
   }
 }

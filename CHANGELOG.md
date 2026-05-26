@@ -1,3 +1,247 @@
+<!--
+Builds manuais sobre a release 1.2.2 (fase de estruturação/testes).
+Sufixo `+NNN` = build local sequencial, SEM git tag e SEM deploy automático.
+A próxima PATCH oficial (1.2.3) só será cortada/tag quando a fase fechar.
+-->
+
+## 1.2.2+016 - 2026-05-21 (build manual, sem tag)
+
+### Fixed
+- **Mensagem recebida marcada como "visualizada" (ticks azuis) no ato do
+  recebimento**: a instância do Evolution Go estava com `readMessages: true`,
+  fazendo o whatsmeow enviar recibo de leitura automático para toda mensagem
+  recebida — independente do app. Setting corrigido para `false` na instância
+  de produção. Recibo de leitura agora é **explícito** (após resposta do
+  bot/atendente ou abertura do atendimento via `POST /message/markread`).
+- **Frontend marcava conversa ativa como lida ao receber mensagem via SSE**:
+  removida a chamada `markRead` do handler `message.new` em `workspace_alpine.js`.
+
+### Changed
+- **`set_advanced_settings` (evolution_go_adapter)**: default de `read_messages`
+  alterado de `True` → `False` para evitar reintrodução do recibo automático em
+  chamadas futuras.
+
+## 1.2.2+015 - 2026-05-21 (build manual, sem tag)
+
+### Changed
+- **Formatação automática (ruff)**: normalização de comprimento de linha (`E501`)
+  e estilo de aspas em migrations e demais módulos — sem alteração funcional.
+
+## 1.2.2+014 - 2026-05-21 (build manual, sem tag)
+
+### Fixed
+- **Imagens (e outras mídias) sem base64 inline não eram analisadas pela IA**:
+  o Evolution Go (whatsmeow) retorna 403/500 **transitório** no
+  `POST /message/downloadmedia` logo após o recebimento, durante a rajada de
+  mensagens (race/throttle). Confirmado em produção que o mesmo download passa
+  a funcionar segundos depois. Adicionado retry com backoff (3s/8s/15s) em
+  `_fetch_media_base64_from_evolution` antes de cair no placeholder — mídias
+  que antes falhavam por timing agora são baixadas, persistidas e analisadas.
+
+## 1.2.2+013 - 2026-05-21 (build manual, sem tag)
+
+### Fixed
+- **Mídia sem base64 inline (forwarded/grande) causava `InterpretMediaError`**:
+  quando o fallback `POST /message/downloadmedia` falha (CDN do WhatsApp → 403,
+  encapsulado em 500 pelo Evolution Go), a IA era chamada com `base64_len=0`.
+  Adicionado guard em `_convert_media_context`: sem base64 após fallback, registra
+  placeholder em `analise_midia` e retorna sem chamar `converter_contexto`.
+- **Logs `[MIDIA-CTX]` multiline sumiam de filtros por keyword**: texto interpretado
+  ficava em linhas sem o prefixo; separado em `logger.info` (cabeçalho) +
+  `logger.debug` (texto completo), com placeholders `{}` (padrão loguru recomendado).
+
+### Added
+- **Suporte a `stickerMessage`**: adicionado a `_MEDIA_TYPES` em
+  `attendance_orchestrator.py` e branch dedicado em `EvolutionMessageData.from_dict`
+  (`schemas.py`). Stickers chegam sem base64 inline e requerem download via
+  `/message/downloadmedia`; os campos de encriptação (`mediaKey`, `directPath`,
+  `fileSha256`, `fileEncSha256`) são extraídos para viabilizar o fallback.
+  Persistência `.webp` já existia em `_persist_media_file`.
+
+## 1.2.2+012 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Endpoint de download era `/message/downloadimage` (404)**: o swagger lista
+  esse path mas a rota real do servidor é `/message/downloadmedia` (confirmado
+  ao vivo: `downloadimage`→404, `downloadmedia`→500 "invalid media type" com body
+  vazio). Corrigido o path mantendo o body `{message: <obj>}`.
+
+## 1.2.2+011 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Download de mídia retorna data URL, não base64 cru** (confirmado na doc do
+  Evolution Go): o `/message/downloadimage` devolve `data:<mime>;base64,<payload>`.
+  Removido o prefixo antes de decodificar (no fetch e, defensivamente, no
+  `_persist_media_file`) — sem isso o `/` do prefixo corromperia o arquivo.
+
+## 1.2.2+010 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Fallback de download de mídia sem base64 inline** (ex.: imagens grandes): o
+  `download_media` agora usa o endpoint correto `POST /message/downloadimage`
+  com o objeto `Message` (whatsmeow) reconstruído da metadata (`URL`,
+  `directPath`, `mediaKey`, `fileEncSHA256`, `fileSHA256`, `mediaKeyTimestamp`,
+  `mimetype`), em vez do inexistente `/message/downloadmedia`. Extração de
+  base64 robusta (aceita `{base64}` ou `{data:{base64}}`).
+
+## 1.2.2+009 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Múltiplas mídias em rajada eram mescladas numa só mensagem** (metadados
+  contaminados, só um arquivo salvo): o buffer (`process_contact_response`) fazia
+  `metadados.update()` de todos os envelopes. Agora **cada mídia vira sua própria
+  `Mensagem`** (com arquivo + análise individual) e apenas os textos rápidos são
+  concatenados. A mensagem primária (texto, ou a última mídia) dirige a resposta
+  do bot.
+
+## 1.2.2+008 - 2026-05-20 (build manual, sem tag)
+
+### Added
+- **Recebimento de mídia (formato whatsmeow do Go)**: `translate_go_payload`
+  agora trata `Info.MediaType` (image/video/audio/document), monta o
+  `data.Message.<tipo>Message` normalizando o casing do whatsmeow
+  (`URL`→`url`, `fileEncSHA256`→`fileEncSha256`) e embute o `base64` inline
+  (que o Go entrega no irmão `data.Message.base64`). `EvolutionMessageData`
+  passa a extrair `base64` também para imagem/vídeo/documento (antes só áudio).
+  Resultado: mídia recebida é decodificada e persistida em `Mensagem.arquivo_midia`
+  pelo pipeline existente. Removido o diagnóstico temporário de mídia.
+
+## 1.2.2+007 - 2026-05-20 (build manual, sem tag)
+
+### Changed
+- **Correções conforme o spec oficial do Evolution GO** (swagger `EvolutionAPI/
+  evolution-go`):
+  - `connect_instance`: volta a usar o campo **`subscribe`** (array de nomes
+    UPPERCASE válidos `MESSAGE,CONNECTION,PRESENCE,QRCODE`) + `immediate:true`.
+    O `events` do +004 era hack; o que zerava a assinatura antes eram nomes
+    PascalCase inválidos.
+  - **`alwaysOnline=true`** agora é o mecanismo primário de persistência da
+    sessão (novo `set_advanced_settings`, chamado na criação da instância via
+    `PUT /instance/{id}/advanced-settings`). O keep-alive vira fallback.
+  - **Envio de mídia** (`send_media`/`send_audio`): campos corretos
+    `{number, type, url, caption, filename}` (eram `mediatype`/`media`/`fileName`).
+
+## 1.2.2+006 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Keep-alive quebrava com `FieldError`**: `TenantEvolution.api_key` é property
+  (decripta `_api_key`), não filtrável no ORM. A task agora filtra por
+  `server_url` e valida a chave no loop.
+
+## 1.2.2+005 - 2026-05-20 (build manual, sem tag)
+
+### Added
+- **Keep-alive da sessão Evolution Go**: task Celery `keepalive_evolution_instances`
+  (beat a cada 60s) verifica `connected` via `/instance/all` e dispara
+  `/instance/reconnect` quando a sessão whatsmeow cai por ociosidade — evita que o
+  atendimento pare silenciosamente de receber webhooks. Registrada em
+  `CELERY_BEAT_SCHEDULE` (sincronizada pelo DatabaseScheduler).
+
+### Diagnostics (temporário)
+- Log `[DIAG-TEMP-MEDIA]` na view do webhook captura o payload bruto de mensagens
+  de mídia do Go para ajustar o normalizer/download (será removido após o fix).
+
+## 1.2.2+004 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Mensagens recebidas não eram processadas (formato whatsmeow do Go)**: o
+  Evolution Go entrega o payload no formato do whatsmeow (`data.Info.Chat/Sender/
+  ID/IsFromMe/PushName` + `data.Message.<tipo>` + `instanceName`/`instanceToken`),
+  totalmente diferente do Node v2 (`data.key.remoteJid`/`data.message`). O
+  normalizer extraía `data.key.remoteJid` → sempre vazio → "missing contact JID"
+  → mensagem descartada. Novo `translate_go_payload()` converte o envelope Go
+  para o formato Node-like (as sub-chaves de `data.Message` já são idênticas) e
+  reaproveita os factories. Acoplado em `from_dict_single`/`from_dict_batch`.
+- **Entrega de webhooks parava após reconectar**: o `connect_instance` enviava o
+  campo `subscribe`, que o servidor Go interpreta como "zerar" a assinatura
+  (`events=""`) → nenhum webhook entregue. Corrigido para enviar `events`
+  (array). Eventos default ajustados para os suportados pelo Go
+  (`MESSAGE,CONNECTION,PRESENCE,QRCODE`).
+
+## 1.2.2+003 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Eventos do Go em PascalCase eram descartados (mensagens inbound!)**: o Go
+  emite `Message`, `QRCode`, `Connected`, `Presence`, etc. (não UPPERCASE).
+  `EvolutionEventName.from_raw()` não reverificava o value map após normalizar,
+  então `from_raw("Message")` → `None` e o filtro global do webhook ignorava as
+  mensagens recebidas. Agora reverifica o value map normalizado e mapeia
+  `Connected`/`Disconnected`/`LoggedOut` → `CONNECTION`.
+- **Sem feedback visual ao conectar o WhatsApp**: (a) novo handler `_handle_connection`
+  persiste `connection_state` na instância via evento `Connected` (fonte da
+  verdade, independente do polling); (b) o polling de status do detalhe agora
+  **retoma** quando a aba volta a ficar visível (antes morria ao trocar de aba
+  para escanear o QR); (c) banner "WhatsApp conectado com sucesso!" antes do reload.
+
+## 1.2.2+002 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **Status "Desconhecido" mesmo conectado**: o `GET /instance/status` do Go
+  retorna `{"data": {"Connected": ..., "LoggedIn": ...}}`, não `{"state": ...}`.
+  `_parse_state` agora mapeia `LoggedIn=True → "open"`, senão `"close"`.
+- **QR Code não aparecia**: o QR vem do `GET /instance/qr` em `data.Qrcode`
+  (data URI), não na resposta do `/instance/connect`. `InstanceQRCodeView` agora
+  chama connect (configura webhook) + `get_qr_code` e parseia `data.Qrcode`/
+  `data.PairingCode`.
+
+## 1.2.2+001 - 2026-05-20 (build manual, sem tag)
+
+### Fixed
+- **`401 "not authorized"` ao conectar instância / gerar QR**: o `/instance/connect`
+  do Evolution Go autentica com o **token da instância**, não com a Global API
+  Key. `InstanceQRCodeView` e `InstanceWebhookView` passavam `evo_config.api_key`
+  (global). Trocado para `instance.api_key` (token da instância).
+
+## 1.2.2 - 2026-05-20
+
+### Fixed
+- **Criação de instância falhava com `400 "token is required"`**: o servidor
+  Evolution Go exige um `token` no `POST /instance/create`. A view passava só
+  `name`. Agora o painel gera um `token` (UUID hex) e o envia — esse token vira
+  o `api_key` da instância (header `apikey` nas operações de qr/status/send),
+  com fallback caso o Go não o devolva na resposta.
+
+## 1.2.1 - 2026-05-20
+
+### Fixed
+- **500 ao gerenciar instâncias / migrations travadas no tenant**: a migration
+  `0006` (Evolution Go) fazia `EvolutionInstance.objects.update(api_version=...)`
+  sem `.using()`. Em multi-tenant o ORM roteava o UPDATE por uma conexão
+  separada onde a coluna recém-criada (ainda não commitada na transação da
+  migration) não era visível → `column api_version does not exist` e rollback de
+  toda a `0006`. Resultado: as colunas `media_storage_backend`/`subscribed_events`/
+  `last_connection_state` nunca eram criadas no banco do tenant e
+  `/evolution/instances/` retornava 500. Corrigido fixando
+  `schema_editor.connection.alias` no `RunPython`.
+- **Testar Conexão com Evolution API**: `ConnectionTester` usava o endpoint v2
+  `/instance/fetchInstances` (404 no Go). Trocado para `/instance/all`.
+
+## 1.2.0 - 2026-05-20
+
+### Changed
+- **`evolution_sync` agora é exclusivo do Evolution Go**: removida toda a camada
+  de coexistência v2/Go. O cliente Django fala apenas com o Evolution Go, sem
+  feature flag nem código morto. Removidos `EvolutionV2Adapter`, o Protocol
+  `EvolutionAPIInterface`, a factory `get_evolution_adapter`, o alias
+  `EvolutionWhatsAppService`, o management command `migrate_to_evolution_go` e o
+  campo `EvolutionInstance.api_version` (migration 0008). `EvolutionGoAdapter`
+  passa a ser o serviço único, instanciado diretamente.
+- **`views_instances` corrigido para a API do Go**: `get_status` (com token da
+  instância) no lugar de `connectionState`; webhook reconfigurado via
+  `/instance/connect` (não há `/webhook/set` no Go); logout usa o token da
+  instância; parsing do `create_instance` tolerante ao formato do Go.
+
+### Added
+- **Avatar real do contato** (chat Phase 3.6/3.7): novo `Contato.foto_perfil`
+  (+`foto_perfil_url_origem` como cache-key). O webhook trata o evento
+  `CONTACTS`/`CONTACTS_UPDATE` e baixa `profilePictureUrl` para o `FileField`.
+  Cards do Kanban, header do chat e mini-bar renderizam a foto com fallback de
+  iniciais.
+
+### Fixed
+- **Migrations pendentes pós Phase 1/4** geradas (`Mensagem.quoted_preview`,
+  `EvolutionInstance.api_key`/`media_storage_backend`).
+
 ## 1.1.1 - 2026-05-17
 
 ### Fixed

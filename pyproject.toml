@@ -1,6 +1,6 @@
 [project]
 name = "smart-core-assistant-painel"
-version = "1.1.1"
+version = "1.2.3"
 description = "central de atendimento multicanal onde um chatbot realiza a triagem inicial e transfere para atendimento humano quando necessário, com fluxos totalmente personalizáveis por departamento através de uma interface Kanban"
 readme = "README.md"
 authors = [{ name = "pwlimaverde", email = "pwlimaverde@gmail.com" }]
@@ -125,6 +125,7 @@ dev = [
     "django-types>=0.22.0",
     "django-stubs-ext>=5.2.2",
     "langsmith>=0.3.45",
+    "pytailwindcss>=0.3.0",
 ]
 doc = [
     "mkdocs>=1.6.1",
@@ -189,6 +190,11 @@ migrate-all = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.12
 createsuperuser = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.manage createsuperuser\""
 shell = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.manage shell\""
 collectstatic = "powershell -NoProfile -Command \"$env:POSTGRES_HOST='192.168.3.127'; $env:POSTGRES_PORT='5438'; $env:REDIS_HOST='192.168.3.127'; $env:REDIS_PORT='6384'; python -m smart_core_assistant_painel.app.manage collectstatic --noinput\""
+
+# Build do CSS de produção (Tailwind v4 standalone via pytailwindcss — sem Node).
+# Gera core.build.css purgado a partir de core.css. Rodar ao mudar classes/templates.
+build-css = "tailwindcss -i src/smart_core_assistant_painel/modules/design_system/static/css/core.css -o src/smart_core_assistant_painel/modules/design_system/static/css/core.build.css --minify"
+watch-css = "tailwindcss -i src/smart_core_assistant_painel/modules/design_system/static/css/core.css -o src/smart_core_assistant_painel/modules/design_system/static/css/core.build.css --watch"
 
 # ============================================
 # Qualidade de Código

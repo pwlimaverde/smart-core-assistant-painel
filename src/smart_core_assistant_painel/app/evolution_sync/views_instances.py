@@ -25,7 +25,7 @@ from smart_core_assistant_painel.app.tenants.views.legacy_views import (
 )
 
 from .models import EvolutionInstance
-from .services.evolution_api import EvolutionWhatsAppService
+from .services import EvolutionGoAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,27 @@ def _json_error(message: str, status: int = 400) -> JsonResponse:
     return JsonResponse({"success": False, "message": message}, status=status)
 
 
+def _parse_state(state_data: dict[str, Any]) -> str:
+    """Extrai o estado de conexão da resposta do Evolution Go.
+
+    O ``GET /instance/status`` do Go retorna o formato aninhado
+    ``{"data": {"Connected": bool, "LoggedIn": bool, "Name": str}}``:
+    - ``LoggedIn=True``  → sessão WhatsApp autenticada → ``"open"``.
+    - caso contrário     → ainda não pareada → ``"close"``.
+
+    Mantém fallback para os formatos ``{"state": "open"}`` e
+    ``{"instance": {"state": ...}}`` por robustez.
+    """
+    data = state_data.get("data") if isinstance(state_data, dict) else None
+    if isinstance(data, dict) and ("LoggedIn" in data or "Connected" in data):
+        return "open" if data.get("LoggedIn") else "close"
+
+    state = state_data.get("state")
+    if not state:
+        state = state_data.get("instance", {}).get("state", "unknown")
+    return str(state or "unknown")
+
+
 class InstanceListView(LoginRequiredMixin, TemplateView):
     """Lista instâncias Evolution do tenant."""
 
@@ -80,9 +101,7 @@ class InstanceListView(LoginRequiredMixin, TemplateView):
                 Departamento,
             )
 
-            instances = list(
-                EvolutionInstance.objects.filter(active=True)
-            )
+            instances = list(EvolutionInstance.objects.filter(active=True))
 
             # Busca resposta_bot e departamento do AppInstance
             api_keys = [i.api_key for i in instances]
@@ -103,22 +122,18 @@ class InstanceListView(LoginRequiredMixin, TemplateView):
                 else:
                     inst.departamento_nome = None  # type: ignore
                     inst.departamento_id = None  # type: ignore
-                    
+
                 if app_inst and app_inst.owner:
                     inst.owner_id = app_inst.owner.id  # type: ignore
                 else:
                     inst.owner_id = None  # type: ignore
 
             context["instances"] = instances
-            context["webhook_url"] = _build_webhook_url(
-                self.request, tenant
-            )
+            context["webhook_url"] = _build_webhook_url(self.request, tenant)
 
             # Dados para o modal de criação
             context["departamentos"] = list(
-                Departamento.objects.filter(
-                    ativo=True
-                ).values("id", "nome")
+                Departamento.objects.filter(ativo=True).values("id", "nome")
             )
         return context
 
@@ -164,25 +179,33 @@ class InstanceCreateView(LoginRequiredMixin, View):
             )
 
         # Log de diagnóstico para rastreamento de problemas de API
-        api_key_preview = evo_config.api_key[:6] if evo_config.api_key else "VAZIO"
+        api_key_preview = (
+            evo_config.api_key[:6] if evo_config.api_key else "VAZIO"
+        )
         logger.info(
-            "Criando instância '%s' no servidor '%s' "
-            "(api_key: %s..., len=%d)",
+            "Criando instância '%s' no servidor '%s' (api_key: %s..., len=%d)",
             instance_name,
             evo_config.server_url,
             api_key_preview,
             len(evo_config.api_key),
         )
 
-        webhook_url = _build_webhook_url(request, tenant)
-        service = EvolutionWhatsAppService()
+        service = EvolutionGoAdapter()
+
+        # O Evolution Go exige um ``token`` no POST /instance/create
+        # (retorna 400 "token is required" se ausente). Geramos o token
+        # aqui — ele se torna o ``api_key`` da instância e é usado como
+        # header ``apikey`` nas operações de instância (qr/status/send).
+        import uuid
+
+        instance_token = uuid.uuid4().hex
 
         try:
             result = service.create_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
-                instance_name=instance_name,
-                webhook_url=webhook_url,
+                name=instance_name,
+                token=instance_token,
             )
         except Exception as e:
             error_msg = str(e)
@@ -199,20 +222,57 @@ class InstanceCreateView(LoginRequiredMixin, View):
                     "Configurações > Evolution.",
                     502,
                 )
-            return _json_error(
-                f"Erro na API Evolution: {error_msg}", 502
-            )
+            return _json_error(f"Erro na API Evolution: {error_msg}", 502)
 
-        instance_data = result.get("instance", {})
+        # O Evolution Go pode retornar o token da instância no topo
+        # (``token``), dentro de ``hash`` (string ou dict ``{apikey}``) ou
+        # dentro de ``instance``. Extrai de forma tolerante ao formato.
+        instance_data = result.get("instance", {}) or {}
         hash_data = result.get("hash", {})
+
+        token = (
+            result.get("token")
+            or instance_data.get("token")
+            or (
+                hash_data.get("apikey")
+                if isinstance(hash_data, dict)
+                else hash_data
+            )
+            or instance_token
+        )
+        instance_id = (
+            instance_data.get("instanceId")
+            or instance_data.get("id")
+            or result.get("instanceId")
+            or result.get("id")
+            or ""
+        )
 
         instance = EvolutionInstance.objects.create(
             tenant_id=tenant.id,
             name=instance_name,
-            instance_id=instance_data.get("instanceId", ""),
-            api_key=hash_data.get("apikey", ""),
+            instance_id=str(instance_id) or None,
+            api_key=str(token),
             connection_state="close",
         )
+
+        # Mantém a sessão sempre online (mecanismo documentado do Evolution GO),
+        # evitando que o websocket caia por ociosidade e pare os webhooks.
+        if instance_id:
+            try:
+                service.set_advanced_settings(
+                    base_url=evo_config.server_url,
+                    api_key=str(token),
+                    instance_id=str(instance_id),
+                    always_online=True,
+                    read_messages=False,
+                )
+            except Exception as e:
+                logger.warning(
+                    "Não foi possível ativar alwaysOnline para '%s': %s",
+                    instance_name,
+                    e,
+                )
 
         from smart_core_assistant_painel.app.operacional.models import (
             AppInstance,
@@ -238,9 +298,7 @@ class InstanceCreateView(LoginRequiredMixin, View):
 
         # Vincula owner se fornecido
         if owner_id:
-            owner = Atendente.objects.filter(
-                id=owner_id, ativo=True
-            ).first()
+            owner = Atendente.objects.filter(id=owner_id, ativo=True).first()
             if owner:
                 app_defaults["owner"] = owner
 
@@ -291,14 +349,14 @@ class InstanceDetailView(LoginRequiredMixin, TemplateView):
 
         # Buscar estado atual na API
         if evo_config and evo_config.server_url and evo_config.api_key:
-            service = EvolutionWhatsAppService()
+            service = EvolutionGoAdapter()
             try:
-                state_data = service.get_connection_state(
+                state_data = service.get_status(
                     base_url=evo_config.server_url,
-                    api_key=evo_config.api_key,
-                    instance_name=instance.name,
+                    api_key=instance.api_key,
+                    name=instance.name,
                 )
-                state = state_data.get("instance", {}).get("state", "unknown")
+                state = _parse_state(state_data)
                 instance.connection_state = state
                 instance.last_state_check = timezone.now()
                 instance.save(
@@ -315,15 +373,13 @@ class InstanceDetailView(LoginRequiredMixin, TemplateView):
         app_inst = AppInstance.objects.filter(
             api_key=instance.api_key, active=True
         ).first()
-        instance.bot_active = (
+        instance.bot_active = (  # type: ignore[attr-defined]
             app_inst.resposta_bot if app_inst else True
         )
 
         context["instance"] = instance
         if tenant:
-            context["webhook_url"] = _build_webhook_url(
-                self.request, tenant
-            )
+            context["webhook_url"] = _build_webhook_url(self.request, tenant)
         return context
 
 
@@ -331,8 +387,8 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
     """Retorna QR Code (base64) para conexão via AJAX."""
 
     def get(self, request: HttpRequest, pk: int) -> JsonResponse:
-        _, evo_config, _ = _get_tenant_and_config(request)
-        if not evo_config or not evo_config.server_url:
+        tenant, evo_config, _ = _get_tenant_and_config(request)
+        if not tenant or not evo_config or not evo_config.server_url:
             return _json_error("Config Evolution não encontrada.", 404)
 
         try:
@@ -340,22 +396,53 @@ class InstanceQRCodeView(LoginRequiredMixin, View):
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
-        service = EvolutionWhatsAppService()
+        webhook_url = _build_webhook_url(request, tenant)
+        service = EvolutionGoAdapter()
         try:
-            result = service.connect_instance(
+            # 1. /instance/connect (token da instância) configura webhook +
+            #    eventos e inicia o pareamento. Não retorna o QR.
+            service.connect_instance(
                 base_url=evo_config.server_url,
-                api_key=evo_config.api_key,
-                instance_name=instance.name,
+                api_key=instance.api_key,
+                name=instance.name,
+                webhook_url=webhook_url,
+                subscribe=[],
+            )
+            # 2. /instance/qr retorna o QR em data.Qrcode (data URI completa).
+            qr_result = service.get_qr_code(
+                base_url=evo_config.server_url,
+                api_key=instance.api_key,
+                name=instance.name,
             )
         except Exception as e:
             logger.error(f"Erro ao gerar QR code: {e}")
             return _json_error(f"Erro na API: {e}", 502)
 
+        # O Go aninha o QR em ``data`` com chaves capitalizadas
+        # (``Qrcode``/``PairingCode``). Mantém fallback para formato plano.
+        qr_data = (
+            qr_result.get("data") if isinstance(qr_result, dict) else None
+        )
+        if not isinstance(qr_data, dict):
+            qr_data = qr_result if isinstance(qr_result, dict) else {}
+
+        qr_base64 = (
+            qr_data.get("Qrcode")
+            or qr_data.get("qrcode")
+            or qr_data.get("base64")
+            or qr_result.get("base64", "")
+        )
+        pairing_code = (
+            qr_data.get("PairingCode")
+            or qr_data.get("pairingCode")
+            or qr_result.get("pairingCode", "")
+        )
+
         return JsonResponse(
             {
-                "base64": result.get("base64", ""),
-                "pairingCode": result.get("pairingCode", ""),
-                "count": result.get("count", 0),
+                "base64": qr_base64,
+                "pairingCode": pairing_code,
+                "count": qr_data.get("count", 0),
             }
         )
 
@@ -373,14 +460,14 @@ class InstanceConnectionStateView(LoginRequiredMixin, View):
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
-        service = EvolutionWhatsAppService()
+        service = EvolutionGoAdapter()
         try:
-            state_data = service.get_connection_state(
+            state_data = service.get_status(
                 base_url=evo_config.server_url,
-                api_key=evo_config.api_key,
-                instance_name=instance.name,
+                api_key=instance.api_key,
+                name=instance.name,
             )
-            state = state_data.get("instance", {}).get("state", "unknown")
+            state = _parse_state(state_data)
 
             instance.connection_state = state
             instance.last_state_check = timezone.now()
@@ -416,14 +503,20 @@ class InstanceWebhookView(LoginRequiredMixin, View):
             return _json_error("Instância não encontrada.", 404)
 
         webhook_url = _build_webhook_url(request, tenant)
-        service = EvolutionWhatsAppService()
+        service = EvolutionGoAdapter()
 
+        # No Evolution Go o webhook é configurado no /instance/connect
+        # (não há endpoint /webhook/set). Reconectar reconfigura o webhook
+        # e a lista de eventos assinados.
         try:
-            service.set_webhook(
+            # /instance/connect autentica com o token da instância
+            # (não a Global API Key — esta retorna 401 "not authorized").
+            service.connect_instance(
                 base_url=evo_config.server_url,
-                api_key=evo_config.api_key,
-                instance_name=instance.name,
+                api_key=instance.api_key,
+                name=instance.name,
                 webhook_url=webhook_url,
+                subscribe=[],
             )
         except Exception as e:
             logger.error(f"Erro ao configurar webhook: {e}")
@@ -454,13 +547,13 @@ class InstanceDeleteView(LoginRequiredMixin, View):
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
-        service = EvolutionWhatsAppService()
+        service = EvolutionGoAdapter()
 
         try:
             service.delete_instance(
                 base_url=evo_config.server_url,
                 api_key=evo_config.api_key,
-                instance_name=instance.name,
+                name=instance.name,
             )
         except Exception as e:
             logger.warning(f"Erro ao deletar na API (continuando): {e}")
@@ -500,13 +593,14 @@ class InstanceLogoutView(LoginRequiredMixin, View):
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
-        service = EvolutionWhatsAppService()
+        service = EvolutionGoAdapter()
 
         try:
+            # Logout no Go usa o token da instância (não a Global API Key).
             service.logout_instance(
                 base_url=evo_config.server_url,
-                api_key=evo_config.api_key,
-                instance_name=instance.name,
+                api_key=instance.api_key,
+                name=instance.name,
             )
         except Exception as e:
             logger.error(f"Erro ao desconectar: {e}")
@@ -553,9 +647,9 @@ class InstanceToggleBotView(LoginRequiredMixin, View):
             AppInstance,
         )
 
-        updated = AppInstance.objects.filter(
-            api_key=instance.api_key
-        ).update(resposta_bot=resposta_bot)
+        updated = AppInstance.objects.filter(api_key=instance.api_key).update(
+            resposta_bot=resposta_bot
+        )
 
         if not updated:
             return _json_error(
@@ -583,7 +677,7 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
         if not evo_config.server_url or not evo_config.api_key:
             return _json_error("Servidor Evolution não configurado.")
 
-        service = EvolutionWhatsAppService()
+        service = EvolutionGoAdapter()
         instances = list(EvolutionInstance.objects.filter(active=True))
         updated: list[dict[str, Any]] = []
 
@@ -603,14 +697,12 @@ class RefreshAllStatusView(LoginRequiredMixin, View):
                 },
             )
             try:
-                state_data = service.get_connection_state(
+                state_data = service.get_status(
                     base_url=evo_config.server_url,
-                    api_key=evo_config.api_key,
-                    instance_name=instance.name,
+                    api_key=instance.api_key,
+                    name=instance.name,
                 )
-                state = state_data.get(
-                    "instance", {}
-                ).get("state", "unknown")
+                state = _parse_state(state_data)
             except Exception:
                 state = "unknown"
 
@@ -677,8 +769,7 @@ class DepartmentCreateView(LoginRequiredMixin, View):
 
         if not nome or len(nome) < 2:
             return _json_error(
-                "Nome do departamento deve ter pelo menos "
-                "2 caracteres."
+                "Nome do departamento deve ter pelo menos 2 caracteres."
             )
 
         from smart_core_assistant_painel.app.operacional.models import (
@@ -687,9 +778,7 @@ class DepartmentCreateView(LoginRequiredMixin, View):
 
         # Verifica duplicidade
         if Departamento.objects.filter(nome__iexact=nome).exists():
-            return _json_error(
-                f"Departamento '{nome}' já existe."
-            )
+            return _json_error(f"Departamento '{nome}' já existe.")
 
         dept = Departamento.objects.create(
             nome=nome,
@@ -733,9 +822,7 @@ class AttendantListView(LoginRequiredMixin, View):
         if dept_id:
             qs = qs.filter(departamento_id=dept_id)
 
-        attendants = list(
-            qs.values("id", "nome", "cargo")
-        )
+        attendants = list(qs.values("id", "nome", "cargo"))
         return JsonResponse({"attendants": attendants})
 
 
@@ -751,7 +838,9 @@ class InstanceUpdateView(LoginRequiredMixin, View):
             return _json_error("Sem permissão para esta ação.", 403)
 
         try:
-            instance = EvolutionInstance.objects.get(pk=pk, tenant_id=tenant.id, active=True)
+            instance = EvolutionInstance.objects.get(
+                pk=pk, tenant_id=tenant.id, active=True
+            )
         except EvolutionInstance.DoesNotExist:
             return _json_error("Instância não encontrada.", 404)
 
@@ -774,13 +863,17 @@ class InstanceUpdateView(LoginRequiredMixin, View):
 
         app_inst = AppInstance.objects.filter(api_key=instance.api_key).first()
         if not app_inst:
-            return _json_error("Configuração operacional da instância não encontrada.", 404)
+            return _json_error(
+                "Configuração operacional da instância não encontrada.", 404
+            )
 
         app_inst.resposta_bot = resposta_bot
 
         # Atualiza departamento
         if departamento_id:
-            dept = Departamento.objects.filter(id=departamento_id, ativo=True).first()
+            dept = Departamento.objects.filter(
+                id=departamento_id, ativo=True
+            ).first()
             app_inst.departamento = dept if dept else None
         else:
             app_inst.departamento = None

@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from decouple import config
 from django.contrib.messages import constants
 from dotenv import load_dotenv
@@ -154,6 +155,8 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.trello_sync",
     # Workspace unificado (Chat + Kanban)
     "smart_core_assistant_painel.app.atendimento_unificado.apps.AtendimentoUnificadoConfig",
+    "smart_core_assistant_painel.app.chat_evolution.apps.ChatEvolutionConfig",
+    "smart_core_assistant_painel.app.gestao_kanban.apps.GestaoKanbanConfig",
     # Usa AppConfig explícito para garantir execução do ready() e sinais
     # "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
     "smart_core_assistant_painel.app.evolution_sync.apps.EvolutionSyncConfig",
@@ -182,6 +185,12 @@ ATENDIMENTO_UNIFICADO_TENANT_SLUGS: list[str] = [
 ]
 # Canal Redis pub/sub usado pelo SSE do Workspace (sufixo após o slug do tenant)
 ATENDIMENTO_UNIFICADO_SSE_CHANNEL: str = "sse:{tenant_slug}:events"
+# SSE habilitado? Requer worker ASGI (Uvicorn). Sob Gunicorn sync, a view
+# async trava o worker até timeout/SIGKILL, derrubando o app inteiro.
+# Mantenha False enquanto o Gunicorn estiver em worker sync (WSGI).
+ATENDIMENTO_UNIFICADO_SSE_ENABLED: bool = _env_bool(
+    "ATENDIMENTO_UNIFICADO_SSE_ENABLED", False
+)
 
 # Controle do filtro do signal de criação de etapas padrão.
 # Lista de nomes de departamentos permitidos (case-insensitive).
@@ -208,7 +217,12 @@ ROOT_URLCONF = "smart_core_assistant_painel.app.core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, "core", "templates")],
+        "DIRS": [
+            os.path.join(BASE_DIR, "core", "templates"),
+            os.path.join(
+                BASE_DIR.parent, "modules", "design_system", "templates"
+            ),
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -309,7 +323,7 @@ SERVER_EMAIL = DEFAULT_FROM_EMAIL  # Para erros 500
 
 
 # Auth Redirects
-LOGIN_URL = "/login/"
+LOGIN_URL = "/usuarios/login/"
 LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
@@ -332,7 +346,10 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 # Centraliza assets opcionais em core/static e permite AppDirectoriesFinder
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "core", "static"),)
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, "core", "static"),
+    os.path.join(BASE_DIR.parent, "modules", "design_system", "static"),
+)
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "/media/"
@@ -564,3 +581,27 @@ CELERY_RESULT_EXTENDED = True
 
 # Beat Scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Retenção de mídias por tenant (em dias)
+MEDIA_RETENTION_DAYS = config("MEDIA_RETENTION_DAYS", default=30, cast=int)
+
+# Agendamentos sincronizados para o DatabaseScheduler no startup do beat.
+CELERY_BEAT_SCHEDULE = {
+    # Keep-alive da sessão Evolution Go: o servidor whatsmeow derruba a
+    # conexão quando ociosa; reconectamos a cada 60s para não perder webhooks.
+    "evolution-go-keepalive": {
+        "task": (
+            "smart_core_assistant_painel.app.evolution_sync.tasks."
+            "keepalive_evolution_instances"
+        ),
+        "schedule": 60.0,
+    },
+    # Purga de mídias antigas em todos os tenants diariamente na madrugada
+    "purge-old-media": {
+        "task": (
+            "smart_core_assistant_painel.app.atendimentos.tasks."
+            "purge_old_media_all_tenants"
+        ),
+        "schedule": crontab(hour=3, minute=30),
+    },
+}

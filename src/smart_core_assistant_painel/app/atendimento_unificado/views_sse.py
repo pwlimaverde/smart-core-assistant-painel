@@ -22,6 +22,7 @@ import json
 from typing import AsyncIterator
 
 from asgiref.sync import sync_to_async
+from django.conf import settings
 from django.http import HttpRequest, HttpResponse, StreamingHttpResponse
 from loguru import logger
 
@@ -30,8 +31,29 @@ from .feature_flags import get_sse_channel, is_workspace_enabled_for_tenant
 HEARTBEAT_INTERVAL_SECONDS = 25.0
 
 
-async def workspace_events(request: HttpRequest) -> HttpResponse:
-    """Endpoint SSE para o Workspace."""
+def workspace_events(request: HttpRequest) -> HttpResponse:
+    """Endpoint SSE para o Workspace (sync stub + delegação opcional).
+
+    Sob worker WSGI (Gunicorn sync), uma view ``async`` que retorne
+    ``StreamingHttpResponse`` com ``async_generator`` trava o worker até
+    timeout (120 s) e SIGKILL, derrubando o app inteiro. Por isso, esta
+    view é sempre ``sync`` e — quando a flag está OFF — devolve um
+    "close" imediato. O cliente reconecta com backoff sem prejuízo
+    funcional (kanban/chat seguem via REST).
+
+    Para habilitar SSE de verdade: troque o Gunicorn para
+    ``uvicorn.workers.UvicornWorker`` e setar
+    ``ATENDIMENTO_UNIFICADO_SSE_ENABLED=True``.
+    """
+
+    if not getattr(settings, "ATENDIMENTO_UNIFICADO_SSE_ENABLED", False):
+        return _sse_close_response("sse_disabled")
+    # Quando ASGI está disponível, Django aceita retornar a coroutine.
+    return _async_workspace_events(request)  # type: ignore[return-value]
+
+
+async def _async_workspace_events(request: HttpRequest) -> HttpResponse:
+    """Implementação async real do endpoint SSE (uso sob worker ASGI)."""
 
     # Validações iniciais (sync via sync_to_async para evitar acessos
     # bloqueantes ao request.user que dispara ORM em alguns middlewares).

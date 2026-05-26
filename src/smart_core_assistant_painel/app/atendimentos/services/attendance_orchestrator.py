@@ -4,8 +4,12 @@ Este módulo contém a lógica principal para processar mensagens agendadas,
 coordenar serviços e gerar respostas do bot.
 """
 
+import base64 as _b64
+import mimetypes
+import time
 from typing import TYPE_CHECKING, Any, Optional
 
+from django.core.files.base import ContentFile
 from loguru import logger
 
 from smart_core_assistant_painel.app.evolution_sync.services import (
@@ -85,29 +89,92 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 )
                 return
 
-            # 2. Compila conteúdo e metadados
-            content_data = self._compile_message_content(env_list)
-
-            # 3. Determina API key
-            final_api_key = api_key or content_data.get("api_key")
-
-            # 4. Cria mensagem no sistema
-            message_id = self._create_message(
-                contact_id=contact_id,
-                content=content_data["content"],
-                message_type=content_data["message_type"],
-                message_id_whatsapp=content_data["message_id"],
-                metadados=content_data["metadados"],
-                profile_name=content_data["profile_name"],
-                api_key=final_api_key,
+            # 2. Separa mídias de texto. Cada mídia vira SUA PRÓPRIA Mensagem
+            # (com arquivo + análise individual), enquanto textos rápidos são
+            # concatenados em uma única mensagem (contexto do bot). Isso evita
+            # a contaminação de metadados quando várias mídias chegam em rajada.
+            _MEDIA_TYPES = (
+                "audioMessage",
+                "imageMessage",
+                "videoMessage",
+                "documentMessage",
+                "stickerMessage",
             )
 
-            if not message_id:
+            def _env_type(env: dict[str, Any]) -> str:
+                return str((env.get("message") or {}).get("type") or "")
+
+            media_envs = [e for e in env_list if _env_type(e) in _MEDIA_TYPES]
+            text_envs = [
+                e for e in env_list if _env_type(e) not in _MEDIA_TYPES
+            ]
+
+            # 3. Determina API key (do último envelope com apikey)
+            final_api_key = api_key
+            if not final_api_key:
+                for env in reversed(env_list):
+                    if env.get("apikey"):
+                        final_api_key = str(env["apikey"])
+                        break
+
+            # 4. Uma Mensagem por mídia
+            media_msg_ids: list[int] = []
+            for menv in media_envs:
+                msg = menv.get("message") or {}
+                mid = self._create_message(
+                    contact_id=contact_id,
+                    content=str(msg.get("text") or ""),
+                    message_type=str(msg.get("type") or ""),
+                    message_id_whatsapp=str(msg.get("id") or ""),
+                    metadados=(msg.get("metadata") or None),
+                    profile_name=(menv.get("profile") or {}).get("push_name"),
+                    api_key=final_api_key,
+                )
+                if mid:
+                    media_msg_ids.append(mid)
+
+            # 5. Texto concatenado (se houver) vira uma única Mensagem
+            text_msg_id: Optional[int] = None
+            if text_envs:
+                content_data = self._compile_message_content(text_envs)
+                text_msg_id = self._create_message(
+                    contact_id=contact_id,
+                    content=content_data["content"],
+                    message_type=content_data["message_type"],
+                    message_id_whatsapp=content_data["message_id"],
+                    metadados=content_data["metadados"],
+                    profile_name=content_data["profile_name"],
+                    api_key=final_api_key,
+                )
+
+            # 6. Mensagem primária (dirige análise + resposta do bot): o texto
+            # se houver, senão a última mídia recebida.
+            primary_id = text_msg_id or (
+                media_msg_ids[-1] if media_msg_ids else None
+            )
+            if not primary_id:
                 return
 
-            # 5. Processa mensagem e gera resposta
+            # 7. Converte mídia das mensagens NÃO-primárias (a primária, se for
+            # mídia, é convertida dentro de _process_message_and_respond).
+            from smart_core_assistant_painel.app.atendimentos.models import (
+                Mensagem,
+            )
+
+            for mid in media_msg_ids:
+                if mid == primary_id:
+                    continue
+                try:
+                    self._convert_media_context(
+                        Mensagem.objects.get(id=mid),
+                        api_key=final_api_key or "",
+                    )
+                except Exception as e:
+                    logger.error(f"Erro ao converter mídia da msg {mid}: {e}")
+
+            # 8. Processa a mensagem primária e gera resposta do bot
             self._process_message_and_respond(
-                message_id=message_id,
+                message_id=primary_id,
                 contact_id=contact_id,
                 api_key=final_api_key,
                 env_list=env_list,
@@ -256,6 +323,7 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                 "imageMessage",
                 "videoMessage",
                 "documentMessage",
+                "stickerMessage",
             )
             if mensagem.tipo in _MEDIA_TYPES:
                 self._convert_media_context(mensagem, api_key=api_key)
@@ -331,8 +399,8 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         from smart_core_assistant_painel.app.evolution_sync.models import (
             EvolutionInstance,
         )
-        from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-            EvolutionWhatsAppService,
+        from smart_core_assistant_painel.app.evolution_sync.services import (
+            EvolutionGoAdapter,
         )
         from smart_core_assistant_painel.app.tenants.models import (
             TenantEvolution,
@@ -375,7 +443,6 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        # Construir key da mensagem WhatsApp
         contato = getattr(mensagem.atendimento, "contato", None)
         phone = str(getattr(contato, "telefone", "") or "").strip()
         if not phone:
@@ -384,52 +451,91 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             )
             return ""
 
-        message_key = {
-            "remoteJid": f"{phone}@s.whatsapp.net",
-            "fromMe": False,
-            "id": mensagem.message_id_whatsapp or "",
-        }
+        adapter = EvolutionGoAdapter()
 
-        # Campos comuns de encriptação do WhatsApp
-        crypto_fields = {
-            "url": meta.get("url", ""),
-            "mimetype": meta.get("mimetype", ""),
-            "mediaKey": meta.get("mediaKey", ""),
-            "directPath": meta.get("directPath", ""),
-            "fileSha256": meta.get("fileSha256", ""),
-            "fileEncSha256": meta.get("fileEncSha256", ""),
-        }
-        if meta.get("fileLength"):
-            crypto_fields["fileLength"] = meta["fileLength"]
-        if meta.get("mediaKeyTimestamp"):
-            crypto_fields["mediaKeyTimestamp"] = meta["mediaKeyTimestamp"]
-
-        # Campos específicos por tipo de mídia
-        if mensagem.tipo == "audioMessage":
-            crypto_fields["seconds"] = meta.get("seconds", 0)
-            crypto_fields["ptt"] = meta.get("ptt", False)
-        elif mensagem.tipo == "videoMessage":
-            crypto_fields["seconds"] = meta.get("seconds", 0)
-
-        message_content = {mensagem.tipo: crypto_fields}
-
-        if not meta.get("mediaKey"):
-            logger.warning(
-                f"Mensagem {mensagem.id}: sem mediaKey nos "
-                "metadados. Evolution API não conseguirá "
-                "descriptografar a mídia."
+        # Evolution Go com S3/MinIO: o webhook já traz mediaUrl — sem custo de
+        # CPU. O caller (_convert_media_context) usa media_url dos metadados.
+        media_url_remote = meta.get("media_url", "")
+        if media_url_remote:
+            logger.info(
+                f"[MIDIA-CTX] Usando mediaUrl remota (Go S3) | "
+                f"msg_id={mensagem.id} | url={media_url_remote[:60]}..."
             )
             return ""
 
-        service = EvolutionWhatsAppService()
-        result = service.get_base64_from_media(
-            base_url=base_url,
-            api_key=str(api_key),
-            instance_name=inst.name,
-            message_key=message_key,
-            message_content=message_content,
+        # Sem base64 inline: reconstrói o objeto Message (whatsmeow) a partir
+        # da metadata e baixa/descriptografa via /message/downloadimage.
+        # As chaves de descriptografia precisam do casing do whatsmeow.
+        if not meta.get("url") or not meta.get("mediaKey"):
+            logger.debug(
+                f"Mensagem {mensagem.id}: metadata insuficiente para "
+                "download (sem url/mediaKey)."
+            )
+            return ""
+
+        sub_key = str(mensagem.tipo or "imageMessage")
+        media_obj: dict[str, Any] = {
+            "URL": meta.get("url"),
+            "directPath": meta.get("directPath"),
+            "mediaKey": meta.get("mediaKey"),
+            "fileEncSHA256": meta.get("fileEncSha256"),
+            "fileSHA256": meta.get("fileSha256"),
+            "fileLength": meta.get("fileLength"),
+            "mediaKeyTimestamp": meta.get("mediaKeyTimestamp"),
+            "mimetype": meta.get("mimetype"),
+        }
+        message_obj = {sub_key: media_obj}
+
+        # O Evolution Go (whatsmeow) às vezes retorna 403/500 transitório no
+        # download logo após o recebimento da mídia (race/throttle durante a
+        # rajada de mensagens). Confirmado em produção que o mesmo download
+        # passa a funcionar após alguns segundos. Faz retry com backoff antes
+        # de desistir. Roda em task Celery assíncrona — o sleep é aceitável.
+        _RETRY_DELAYS = (3, 8, 15)
+        dl_result: Optional[dict[str, Any]] = None
+        for attempt, delay in enumerate((0, *_RETRY_DELAYS)):
+            if delay:
+                time.sleep(delay)
+            try:
+                dl_result = adapter.download_media(
+                    base_url=base_url,
+                    api_key=str(api_key),
+                    message=message_obj,
+                )
+                break
+            except Exception as dl_err:
+                logger.warning(
+                    "[MIDIA-CTX] download de mídia falhou (Go) | "
+                    "msg_id={} | tentativa={}/{}: {}",
+                    mensagem.id,
+                    attempt + 1,
+                    len(_RETRY_DELAYS) + 1,
+                    dl_err,
+                )
+        if dl_result is None:
+            return ""
+
+        # Go retorna ``{message:"success", data:{base64: "<data URL>", ...}}``.
+        # O ``base64`` aqui é um DATA URL (``data:<mime>;base64,<payload>``),
+        # diferente do base64 cru que vem inline no webhook — precisa remover o
+        # prefixo antes de decodificar.
+        data_obj = (
+            dl_result.get("data") if isinstance(dl_result, dict) else None
         )
-        return result
+        b64 = ""
+        if isinstance(data_obj, dict):
+            b64 = data_obj.get("base64") or data_obj.get("Base64") or ""
+        if not b64:
+            b64 = dl_result.get("base64", "") or dl_result.get("Base64", "")
+        b64 = str(b64)
+        if b64.startswith("data:") and ";base64," in b64:
+            b64 = b64.split(";base64,", 1)[1]
+        if b64:
+            logger.info(
+                f"[MIDIA-CTX] Base64 obtido via downloadimage (Go) | "
+                f"msg_id={mensagem.id} | len={len(b64)}"
+            )
+        return b64
 
     def _convert_media_context(
         self,
@@ -438,9 +544,13 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
     ) -> None:
         """Converte metadados de mídia em texto contextual.
 
-        Centraliza a conversão de conteúdo multimídia (áudio, imagem,
-        vídeo, documento) em texto para análise de IA via
-        FeaturesCompose.converter_contexto.
+        Fluxo:
+            1. Garante base64 (busca via Evolution API se necessário).
+            2. Persiste binário em ``mensagem.arquivo_midia`` (FileField).
+            3. Chama IA para gerar análise (transcrição/resumo).
+            4. Salva análise em ``mensagem.analise_midia`` SEM sobrescrever
+               ``mensagem.conteudo`` — o conteúdo do balão fica reservado
+               para a caption original (texto livre que veio com a mídia).
 
         Args:
             mensagem: Mensagem com metadados de mídia.
@@ -488,50 +598,169 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
                             f"base64_len={len(base64_data)}"
                         )
                 except Exception as e:
-                    logger.warning(
+                    logger.error(
                         f"[MIDIA-CTX] Falha ao buscar base64 via Evolution API "
                         f"para msg_id={mensagem.id}: {e}"
                     )
 
+            # Persiste binário em FileField antes da análise IA, para que o
+            # frontend consiga renderizar mesmo se a análise falhar depois.
+            file_saved = False
+            if has_base64 and not mensagem.arquivo_midia:
+                try:
+                    self._persist_media_file(mensagem, metadados)
+                    file_saved = True
+                except Exception as e:
+                    logger.error(
+                        f"[MIDIA-CTX] Falha ao persistir mídia em FileField "
+                        f"para msg_id={mensagem.id}: {e}"
+                    )
+
+            # Sem base64 disponível (inline ausente E download via Evolution
+            # falhou): não há binário para a IA interpretar. Registra placeholder
+            # e sai — evita InterpretMediaError com base64_len=0.
+            if not has_base64:
+                placeholder = (
+                    f"[{mensagem.tipo or 'mídia'} recebida"
+                    " — arquivo indisponível para análise]"
+                )
+                mensagem.analise_midia = placeholder
+                mensagem.save(update_fields=["analise_midia"])
+                logger.warning(
+                    "[MIDIA-CTX] Sem base64 após fallback de download | "
+                    "msg_id={} | tipo={} | placeholder registrado",
+                    mensagem.id,
+                    mensagem.tipo,
+                )
+                return
+
             logger.info(
-                f"[MIDIA-CTX] Chamando converter_contexto | "
-                f"msg_id={mensagem.id} | tipo={mensagem.tipo}"
+                "[MIDIA-CTX] Chamando converter_contexto | msg_id={} | tipo={}",
+                mensagem.id,
+                mensagem.tipo,
             )
 
-            texto_convertido = FeaturesCompose.converter_contexto(
+            analise_media = FeaturesCompose.converter_contexto(
                 metadados=metadados,
                 message_type=mensagem.tipo,
             )
 
-            if texto_convertido and texto_convertido.strip():
-                texto_final = texto_convertido.strip()
-                conteudo_original = mensagem.conteudo
-                mensagem.conteudo = texto_final
+            update_fields: list[str] = []
+            if file_saved:
+                update_fields.append("arquivo_midia")
+
+            if analise_media and (analise_media.analise or "").strip():
+                analise_final = analise_media.analise.strip()
+                resumo_final = (analise_media.resumo or "").strip()
+                # analise_midia: contexto completo do bot;
+                # resumo_midia: resumo curto exibido ao atendente.
+                mensagem.analise_midia = analise_final
+                mensagem.resumo_midia = resumo_final
                 meta = dict(metadados)
-                meta["contexto_convertido"] = texto_final
+                meta["contexto_convertido"] = analise_final
+                # Remove base64 dos metadados após persistir em disco
                 meta.pop("base64", None)
                 mensagem.metadados = meta
-                mensagem.save(update_fields=["conteudo", "metadados"])
+                update_fields.extend(
+                    ["analise_midia", "resumo_midia", "metadados"]
+                )
 
                 logger.info(
-                    f"[MIDIA-CTX] <<< Conteúdo inserido na mensagem | "
-                    f"msg_id={mensagem.id} | tipo={mensagem.tipo} | "
-                    f"len_convertido={len(texto_final)} | "
-                    f"placeholder_anterior={conteudo_original!r}\n"
-                    f"---[MIDIA-CTX] TEXTO INTERPRETADO]---\n"
-                    f"{texto_final}\n"
-                    f"---[MIDIA-CTX] FIM TEXTO INTERPRETADO]---"
+                    "[MIDIA-CTX] <<< Análise IA registrada | "
+                    "msg_id={} | tipo={} | len_analise={} | len_resumo={}",
+                    mensagem.id,
+                    mensagem.tipo,
+                    len(analise_final),
+                    len(resumo_final),
+                )
+                logger.debug(
+                    "[MIDIA-CTX] Texto interpretado | msg_id={}:\n{}",
+                    mensagem.id,
+                    analise_final,
                 )
             else:
+                # Mesmo sem análise IA, limpa base64 do metadados se o
+                # binário já foi persistido em disco.
+                if file_saved and metadados.get("base64"):
+                    meta = dict(metadados)
+                    meta.pop("base64", None)
+                    mensagem.metadados = meta
+                    update_fields.append("metadados")
                 logger.warning(
                     f"[MIDIA-CTX] Conversão vazia para msg_id={mensagem.id}. "
-                    "Mantendo placeholder."
+                    "Sem análise IA."
                 )
+
+            if update_fields:
+                mensagem.save(update_fields=list(set(update_fields)))
         except Exception as e:
             logger.error(
                 f"[MIDIA-CTX] Erro ao converter mídia da msg_id={mensagem.id}: "
                 f"{e}. Continuando com placeholder."
             )
+
+    @staticmethod
+    def _persist_media_file(
+        mensagem: "Mensagem",
+        metadados: dict[str, Any],
+    ) -> None:
+        """Decodifica base64 e salva binário em ``mensagem.arquivo_midia``.
+
+        Args:
+            mensagem: Mensagem que receberá o arquivo.
+            metadados: Dicionário com 'base64', 'mimetype', 'fileName'.
+
+        Raises:
+            ValueError: Se base64 for inválido.
+        """
+        b64_data = metadados.get("base64") or ""
+        if not b64_data or not isinstance(b64_data, str):
+            return
+
+        # Remove prefixo de data URL (``data:<mime>;base64,``) se presente —
+        # senão o ``/`` do prefixo corromperia o decode.
+        if b64_data.startswith("data:") and ";base64," in b64_data:
+            b64_data = b64_data.split(";base64,", 1)[1]
+
+        try:
+            raw_bytes = _b64.b64decode(b64_data, validate=False)
+        except Exception as e:
+            raise ValueError(f"base64 inválido: {e}") from e
+
+        if not raw_bytes:
+            return
+
+        mimetype = str(metadados.get("mimetype") or "").lower()
+        file_name = str(metadados.get("fileName") or "").strip()
+
+        if not file_name:
+            ext = mimetypes.guess_extension(mimetype) if mimetype else None
+            # Fallback por tipo de mensagem do WhatsApp
+            if not ext:
+                ext_by_tipo = {
+                    "audioMessage": ".ogg",
+                    "imageMessage": ".jpg",
+                    "videoMessage": ".mp4",
+                    "documentMessage": ".bin",
+                    "stickerMessage": ".webp",
+                }
+                ext = ext_by_tipo.get(mensagem.tipo or "", ".bin")
+            base_name = (
+                mensagem.message_id_whatsapp or f"msg_{mensagem.id or 'novo'}"
+            )
+            # Sanitiza para evitar caracteres problemáticos em filesystem
+            base_name = "".join(
+                c if c.isalnum() or c in ("-", "_") else "_" for c in base_name
+            )[:80]
+            file_name = f"{base_name}{ext}"
+
+        mensagem.arquivo_midia.save(
+            file_name, ContentFile(raw_bytes), save=False
+        )
+        logger.info(
+            f"[MIDIA-CTX] Arquivo persistido | msg_id={mensagem.id} | "
+            f"name={file_name} | bytes={len(raw_bytes)}"
+        )
 
     def _configure_attendance(
         self,
@@ -1141,18 +1370,15 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
         attendance: "Atendimento",
         message: "Mensagem",
     ) -> None:
-        """Preenche assunto automaticamente se vazio.
+        """Atualiza assunto do atendimento a cada mensagem analisada.
 
-        Usa intents e entidades da mensagem para gerar
-        um resumo curto como assunto do atendimento.
+        Usa intents e entidades da mensagem para gerar um resumo curto.
+        O assunto é sempre reavaliado para refletir o contexto atual.
 
         Args:
             attendance: Atendimento a atualizar.
             message: Mensagem com intents/entidades.
         """
-        if attendance.assunto:
-            return
-
         parts: list[str] = []
 
         # Usa entidades como base do assunto
@@ -1255,7 +1481,10 @@ class AttendanceOrchestrator(AttendanceOrchestratorInterface):
             last_atd = (
                 Atendimento.objects.filter(
                     contato_id=contact_id,
-                    status=StatusAtendimento.RESOLVIDO,
+                    status__in=[
+                        StatusAtendimento.RESOLVIDO,
+                        StatusAtendimento.ARQUIVADO,
+                    ],
                 )
                 .exclude(data_fim__isnull=True)
                 .order_by("-data_fim")

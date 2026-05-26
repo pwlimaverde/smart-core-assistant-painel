@@ -4,15 +4,17 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('evolution_sync', '0003_evolutioninstance_connection_state_and_more'),
+        ("evolution_sync", "0003_evolutioninstance_connection_state_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='evolutioninstance',
-            name='resposta_bot',
-            field=models.BooleanField(default=True, help_text='Se True, o bot pode responder automaticamente a mensagens desta instância'),
+            model_name="evolutioninstance",
+            name="resposta_bot",
+            field=models.BooleanField(
+                default=True,
+                help_text="Se True, o bot pode responder automaticamente a mensagens desta instância",
+            ),
         ),
     ]

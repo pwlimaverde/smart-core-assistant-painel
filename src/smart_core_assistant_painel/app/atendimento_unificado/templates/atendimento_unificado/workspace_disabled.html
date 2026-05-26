@@ -1,28 +1,44 @@
-{% extends "base_dashboard.html" %}
+{% extends "atendimento_unificado/base_workspace.html" %}
 
-{% block content %}
-<div class="max-w-2xl mx-auto">
-    <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
-        <div class="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
-            <h2 class="text-xl font-bold text-stone-800 flex items-center">
-                <span class="p-2 bg-amber-50 rounded-lg mr-3 text-amber-600">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z" />
-                    </svg>
-                </span>
-                Workspace Indisponível
-            </h2>
-            <p class="mt-1 text-stone-500 text-sm ml-11">
-                A feature ainda não foi habilitada para este tenant.
-            </p>
-        </div>
-        <div class="p-6 text-stone-600 text-sm leading-relaxed">
-            O Workspace de Atendimento Unificado está em rollout gradual. Caso queira
-            antecipar o acesso, fale com seu administrador para habilitar a flag
-            <code class="px-1 py-0.5 bg-stone-100 rounded text-stone-800">ATENDIMENTO_UNIFICADO_ENABLED</code>
-            ou inserir este tenant em
-            <code class="px-1 py-0.5 bg-stone-100 rounded text-stone-800">ATENDIMENTO_UNIFICADO_TENANT_SLUGS</code>.
+{% block workspace_topbar %}
+<header class="bg-[#1c1917] text-stone-100 h-12 flex items-center px-4 gap-4 border-b border-stone-800 shrink-0">
+    <a href="{% url 'tenants:dashboard' %}"
+        class="flex items-center gap-2 text-stone-300 hover:text-white transition-colors"
+        title="Voltar ao painel">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span class="text-sm font-semibold tracking-wide">Workspace</span>
+    </a>
+</header>
+{% endblock %}
+
+{% block workspace_content %}
+<div class="flex-1 flex items-center justify-center p-6">
+    <div class="max-w-2xl w-full">
+        <div class="bg-white rounded-xl shadow-sm border border-stone-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-stone-100 bg-stone-50/50">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center">
+                    <span class="p-2 bg-amber-50 rounded-lg mr-3 text-amber-600">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M5 19h14a2 2 0 001.84-2.75L13.74 4a2 2 0 00-3.48 0L3.16 16.25A2 2 0 005 19z" />
+                        </svg>
+                    </span>
+                    Workspace Indisponível
+                </h2>
+                <p class="mt-1 text-stone-500 text-sm ml-11">
+                    A feature ainda não foi habilitada para este tenant.
+                </p>
+            </div>
+            <div class="p-6 text-stone-600 text-sm leading-relaxed">
+                O Workspace de Atendimento Unificado está em rollout gradual. Caso queira
+                antecipar o acesso, fale com seu administrador para habilitar a flag
+                <code class="px-1 py-0.5 bg-stone-100 rounded text-stone-800">ATENDIMENTO_UNIFICADO_ENABLED</code>
+                ou inserir este tenant em
+                <code class="px-1 py-0.5 bg-stone-100 rounded text-stone-800">ATENDIMENTO_UNIFICADO_TENANT_SLUGS</code>.
+            </div>
         </div>
     </div>
 </div>

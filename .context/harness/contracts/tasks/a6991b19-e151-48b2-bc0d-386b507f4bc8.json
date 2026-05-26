@@ -1,0 +1,29 @@
+{
+  "id": "a6991b19-e151-48b2-bc0d-386b507f4bc8",
+  "title": "Chat Integrado WhatsApp + Migração Evolution Go",
+  "description": "Transformar o painel num substituto fluido do WhatsApp Web (chat + kanban integrados) e migrar toda a integração WhatsApp para Evolution Go via 6 fases. Planejamento detalhado em docs_dev/planejamento/chat_integrado/ (3 documentos: README, plano principal de UX, companion técnico de migração).",
+  "sessionId": "0411608f-864e-4ce1-8162-4194afd428a9",
+  "status": "ready",
+  "inputs": [],
+  "expectedOutputs": [
+    "EvolutionV2Adapter + EvolutionGoAdapter em services/",
+    "Migration api_version + media_storage_backend",
+    "Modelo Mensagem com status_envio + respondendo_a + MensagemReacao",
+    "7 novos endpoints Django (/mark-read /typing /react /send-audio /send-reply /messages/search /forward)",
+    "UI Alpine: date separators, scroll-to-bottom, reply, reactions, voice recording",
+    "Cutover Evolution v2→Go com healthcheck atualizado"
+  ],
+  "acceptanceCriteria": [
+    "Atendente opera 100% no painel sem precisar abrir WhatsApp Web em paralelo",
+    "evolution_sync 100% em Evolution Go com adapter v2 removido após 2 semanas estável",
+    "✓✓ azul disparado em 95%+ das mensagens abertas",
+    "CPU do worker Celery durante recebimento de mídia reduzida >50%",
+    "Latência typing → digitando no cliente <500ms",
+    "pyright zero erros novos nos arquivos tocados",
+    "Tests de regressão do evolution_sync passam com api_version=go"
+  ],
+  "requiredSensors": [],
+  "requiredArtifacts": [],
+  "createdAt": "2026-05-19T12:20:15.945Z",
+  "updatedAt": "2026-05-19T12:20:15.945Z"
+}

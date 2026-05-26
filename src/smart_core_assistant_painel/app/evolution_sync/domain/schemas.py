@@ -1,5 +1,99 @@
+"""[EVO-SCHEMA-001] Schemas de domínio para o Evolution Sync.
+
+Contém dataclasses e enums para normalização dos payloads de webhook,
+suportando tanto Evolution v2 (dot.case lowercase) quanto Evolution Go
+(UPPERCASE).
+"""
+
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Dict, List, Optional
+
+
+class EvolutionEventName(str, Enum):
+    """[EVO-SCHEMA-002] Nomes canônicos de eventos da Evolution API.
+
+    Suporta Evolution Go (UPPERCASE) e Evolution v2 (dot.case lowercase)
+    via ``from_raw()``. Internamente tudo usa o formato Go (UPPERCASE).
+    """
+
+    MESSAGE = "MESSAGE"
+    MESSAGE_UPDATE = "MESSAGE_UPDATE"
+    MESSAGE_DELETE = "MESSAGE_DELETE"
+    SEND_MESSAGE = "SEND_MESSAGE"
+    PRESENCE = "PRESENCE"
+    CONNECTION = "CONNECTION"
+    QRCODE = "QRCODE"
+    CONTACTS = "CONTACTS"
+    GROUP = "GROUP"
+    CALL = "CALL"
+
+    @classmethod
+    def from_raw(cls, raw: str) -> "EvolutionEventName | None":
+        """Converte nome de evento bruto (v2 ou Go) para o enum canônico.
+
+        Aceita ambos os formatos sem configuração adicional:
+        - Evolution Go (UPPERCASE): ``"MESSAGE"``, ``"MESSAGE_UPDATE"``
+        - Evolution v2 (dot.case): ``"messages.upsert"``, ``"messages.update"``
+
+        Args:
+            raw: Nome do evento recebido no payload do webhook.
+
+        Returns:
+            ``EvolutionEventName`` correspondente, ou ``None`` se desconhecido.
+
+        Example::
+
+            EvolutionEventName.from_raw("messages.upsert")  # → MESSAGE
+            EvolutionEventName.from_raw("MESSAGE_UPDATE")   # → MESSAGE_UPDATE
+        """
+        # 1. Tenta match direto (Evolution Go — UPPERCASE)
+        if raw in cls._value2member_map_:
+            return cls(raw)
+
+        # 2. Normaliza e tenta aliases v2 → Go
+        # "messages.upsert" → "MESSAGES_UPSERT" → alias → MESSAGE
+        normalized = raw.upper().replace(".", "_")
+        # Remove plural "S" para alinhar com aliases
+        normalized_singular = normalized.rstrip("S")
+
+        # 2a. Match direto após normalizar (Evolution Go emite PascalCase:
+        # "Message" → "MESSAGE", "QRCode" → "QRCODE", "Presence" → "PRESENCE").
+        # Sem isto, esses eventos caíam em None e eram descartados no filtro
+        # global do webhook (mensagens inbound não eram processadas).
+        if normalized in cls._value2member_map_:
+            return cls(normalized)
+
+        _ALIASES: dict[str, "EvolutionEventName"] = {
+            # Evolution Go: evento de conexão estabelecida / encerrada
+            "CONNECTED": cls.CONNECTION,
+            "DISCONNECTED": cls.CONNECTION,
+            "LOGGEDOUT": cls.CONNECTION,
+            "LOGGED_OUT": cls.CONNECTION,
+            "LOGOUT": cls.CONNECTION,
+            # messages.upsert / MESSAGES_UPSERT → MESSAGE
+            "MESSAGES_UPSERT": cls.MESSAGE,
+            "MESSAGE_UPSERT": cls.MESSAGE,
+            # messages.update / MESSAGES_UPDATE → MESSAGE_UPDATE
+            "MESSAGES_UPDATE": cls.MESSAGE_UPDATE,
+            # messages.delete / MESSAGES_DELETE → MESSAGE_DELETE
+            "MESSAGES_DELETE": cls.MESSAGE_DELETE,
+            # send.message / SEND_MESSAGE
+            "SEND_MESSAGE": cls.SEND_MESSAGE,
+            # presence.update / PRESENCE_UPDATE → PRESENCE
+            "PRESENCE_UPDATE": cls.PRESENCE,
+            # connection.update / CONNECTION_UPDATE → CONNECTION
+            "CONNECTION_UPDATE": cls.CONNECTION,
+            # qrcode.updated / QRCODE_UPDATED → QRCODE
+            "QRCODE_UPDATED": cls.QRCODE,
+            # contacts.update / CONTACTS_UPDATE → CONTACTS
+            "CONTACTS_UPDATE": cls.CONTACTS,
+            # groups.upsert → GROUP
+            "GROUPS_UPSERT": cls.GROUP,
+            "GROUP_UPSERT": cls.GROUP,
+        }
+
+        return _ALIASES.get(normalized) or _ALIASES.get(normalized_singular)
 
 
 @dataclass
@@ -97,6 +191,9 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
                 "mediaKey": msg_data.get("mediaKey", ""),
                 "directPath": msg_data.get("directPath", ""),
                 "fileSha256": msg_data.get("fileSha256", ""),
@@ -113,6 +210,9 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
                 "seconds": msg_data.get("seconds"),
                 "mediaKey": msg_data.get("mediaKey", ""),
                 "directPath": msg_data.get("directPath", ""),
@@ -132,6 +232,28 @@ class EvolutionMessageData:
             metadata = {
                 "mimetype": msg_data.get("mimetype"),
                 "url": msg_data.get("url"),
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
+                "fileName": file_name,
+                "mediaKey": msg_data.get("mediaKey", ""),
+                "directPath": msg_data.get("directPath", ""),
+                "fileSha256": msg_data.get("fileSha256", ""),
+                "fileEncSha256": msg_data.get("fileEncSha256", ""),
+                "fileLength": msg_data.get("fileLength"),
+                "mediaKeyTimestamp": msg_data.get("mediaKeyTimestamp"),
+            }
+        elif message_type == "stickerMessage":
+            msg_data = message.get("stickerMessage", {})
+            text = "[sticker]"
+            metadata = {
+                "mimetype": msg_data.get("mimetype"),
+                "url": msg_data.get("url"),
+                # Stickers não trazem base64 inline no webhook do Evolution Go;
+                # o download via /message/downloadmedia é o caminho esperado.
+                "base64": msg_data.get("base64")
+                or message.get("base64")
+                or "",
                 "mediaKey": msg_data.get("mediaKey", ""),
                 "directPath": msg_data.get("directPath", ""),
                 "fileSha256": msg_data.get("fileSha256", ""),
@@ -292,6 +414,110 @@ class EvolutionProfileData:
         return {"push_name": self.push_name}
 
 
+def translate_go_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Traduz o payload do Evolution Go (whatsmeow) para o formato Node-like.
+
+    O Evolution Go entrega os eventos no formato do whatsmeow::
+
+        {
+            "event": "Message",
+            "instanceName": "atendimento",
+            "instanceToken": "<token>",
+            "instanceId": "<uuid>",
+            "data": {
+                "Info": {
+                    "Chat": "5511...@s.whatsapp.net",
+                    "Sender": "5511...@s.whatsapp.net",
+                    "SenderAlt": "...@lid",
+                    "ID": "3EB0...", "IsFromMe": false, "IsGroup": false,
+                    "PushName": "...", "Timestamp": "2026-05-20T14:41:32-03:00",
+                    "Type": "text", "MediaType": ""
+                },
+                "Message": {"extendedTextMessage": {"text": "..."}, ...}
+            }
+        }
+
+    As sub-chaves de ``data.Message`` (``conversation``, ``extendedTextMessage``,
+    ``imageMessage``, etc.) são idênticas ao formato Node, então convertemos
+    apenas o "envelope" (Info → key/pushName, instanceName → instance, …) e
+    reaproveitamos os factories existentes.
+
+    Se o payload não estiver no formato Go (sem ``data.Info``), retorna inalterado.
+    """
+    data = payload.get("data")
+    if not isinstance(data, dict) or not isinstance(data.get("Info"), dict):
+        return payload
+
+    info: Dict[str, Any] = data["Info"]
+    chat: str = str(info.get("Chat") or "")
+    sender: str = str(info.get("Sender") or "")
+    alt: str = str(info.get("SenderAlt") or info.get("RecipientAlt") or "")
+
+    # Timestamp ISO-8601 → epoch (int). Mantém o original se não parsear.
+    ts_raw: Any = info.get("Timestamp")
+    ts_val: Any = ts_raw
+    if isinstance(ts_raw, str) and ts_raw:
+        try:
+            from datetime import datetime
+
+            ts_val = int(datetime.fromisoformat(ts_raw).timestamp())
+        except Exception:
+            ts_val = ts_raw
+
+    # --- Mensagem / mídia ---
+    # O Evolution Go entrega mídia com ``data.Info.MediaType`` (image/video/
+    # audio/document/sticker) + ``data.Message.<tipo>Message`` (chaves do
+    # whatsmeow: ``URL``, ``fileEncSHA256``…) e, quase sempre, o conteúdo já
+    # decodificado em ``data.Message.base64`` (irmão do sub-objeto). Normalizamos
+    # o sub-objeto para o formato que os factories esperam e embutimos o base64.
+    go_message: Dict[str, Any] = data.get("Message", {}) or {}
+    media_type: str = str(info.get("MediaType") or "")
+    message_out: Dict[str, Any] = go_message
+    message_type_out: Optional[str] = None
+
+    if media_type:
+        sub_key = f"{media_type}Message"
+        sub: Dict[str, Any] = dict(go_message.get(sub_key, {}) or {})
+        top_b64 = go_message.get("base64")
+        # Casing whatsmeow → esperado pelos factories de mídia.
+        if sub.get("URL") and not sub.get("url"):
+            sub["url"] = sub["URL"]
+        if sub.get("fileSHA256") and not sub.get("fileSha256"):
+            sub["fileSha256"] = sub["fileSHA256"]
+        if sub.get("fileEncSHA256") and not sub.get("fileEncSha256"):
+            sub["fileEncSha256"] = sub["fileEncSHA256"]
+        # base64 inline (irmão) → para dentro do sub-objeto, onde é lido.
+        if top_b64 and not sub.get("base64"):
+            sub["base64"] = top_b64
+        message_out = {sub_key: sub}
+        message_type_out = sub_key
+
+    return {
+        "event": payload.get("event"),
+        "instance": payload.get("instanceName") or payload.get("instance"),
+        "sender": sender or chat,
+        "apikey": payload.get("instanceToken") or payload.get("apikey"),
+        "data": {
+            "key": {
+                "remoteJid": chat,
+                "remoteJidAlt": alt,
+                "fromMe": bool(info.get("IsFromMe", False)),
+                "id": info.get("ID"),
+                "addressingMode": info.get("AddressingMode") or None,
+            },
+            "pushName": info.get("PushName"),
+            # Para mídia, ``messageType`` é o sub-tipo (imageMessage…); para
+            # texto fica None → autodetecção pelas chaves de Message.
+            "message": message_out,
+            "messageType": message_type_out,
+            "messageTimestamp": ts_val,
+            "instanceId": payload.get("instanceId"),
+            "isGroup": bool(info.get("IsGroup", False)),
+            "mediaType": info.get("MediaType") or "",
+        },
+    }
+
+
 @dataclass
 class EvolutionWebhookEnvelope:
     """Envelope normalizado contendo os dados do webhook.
@@ -341,15 +567,35 @@ class EvolutionWebhookEnvelope:
         key: Dict[str, Any] = data.get("key", {})
         from_me: bool = key.get("fromMe", False)
 
-        # Criar os sub-objetos usando seus próprios factory methods
+        # Normaliza nome do evento: aceita v2 (dot.case) e Go (UPPERCASE)
+        raw_event: str = payload.get("event", "")
+        parsed_event = EvolutionEventName.from_raw(raw_event)
+        event_value: str = parsed_event.value if parsed_event else raw_event
+
         # Criar os sub-objetos usando seus próprios factory methods
         contact_data = EvolutionContactData.from_dict(data)
         message_data = EvolutionMessageData.from_dict(data, key)
         profile_data = EvolutionProfileData.from_dict(data)
 
+        # Evolution Go: messageTimestamp pode vir como string
+        # Normalizar para int no metadata se necessário
+        msg_timestamp = data.get("messageTimestamp")
+        if isinstance(msg_timestamp, str):
+            try:
+                data = {**data, "messageTimestamp": int(msg_timestamp)}
+            except (ValueError, TypeError):
+                pass
+
+        # Evolution Go: mediaUrl pode vir em data.message.mediaUrl
+        # Injeta no metadata para uso downstream (attendance_orchestrator)
+        message_obj: Dict[str, Any] = data.get("message", {})
+        media_url: str = message_obj.get("mediaUrl", "")
+        if media_url and message_data.metadata is not None:
+            message_data.metadata["media_url"] = media_url
+
         return cls(
             source="EvolutionAPI",
-            event=payload.get("event"),
+            event=event_value,
             instance=payload.get("instance"),
             instance_id=data.get("instanceId"),
             sender_jid=payload.get("sender"),
@@ -373,6 +619,7 @@ class EvolutionWebhookEnvelope:
         Returns:
             EvolutionWebhookEnvelope: Instância normalizada do envelope.
         """
+        payload = translate_go_payload(payload)
         data_obj: Any = payload.get("data", {})
         if isinstance(data_obj, list):
             first: Dict[str, Any] = next(
@@ -396,6 +643,7 @@ class EvolutionWebhookEnvelope:
         Returns:
             List[EvolutionWebhookEnvelope]: Lista de envelopes normalizados.
         """
+        payload = translate_go_payload(payload)
         data_obj: Any = payload.get("data", {})
         if isinstance(data_obj, list):
             envelopes: List[EvolutionWebhookEnvelope] = []

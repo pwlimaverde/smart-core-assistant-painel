@@ -79,9 +79,7 @@ class TenantEvolutionForm(forms.ModelForm):
         # para evitar dupla criptografia ao re-salvar sem alteração
         if self.instance and self.instance.pk:
             if self.instance._api_key:
-                self.fields["api_key"].initial = (
-                    self.instance.api_key
-                )
+                self.fields["api_key"].initial = self.instance.api_key
 
     def save(self, commit: bool = True) -> TenantEvolution:
         instance = super().save(commit=False)

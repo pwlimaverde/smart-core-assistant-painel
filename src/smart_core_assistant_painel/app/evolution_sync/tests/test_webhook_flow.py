@@ -241,7 +241,7 @@ class TestEvolutionWebhookFlow(TestCase):
                 return_value="http://test-url.com",
             ),
             patch(
-                "smart_core_assistant_painel.app.evolution_sync.services.evolution_api.EvolutionWhatsAppService.send_message"
+                "smart_core_assistant_painel.app.evolution_sync.services.evolution_go_adapter.EvolutionGoAdapter.send_text"
             ) as mocked_send,
         ):
             atendimento.refresh_from_db()

@@ -6,8 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Smart Core Assistant{% endblock %}</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    {% load static %}
+    <!-- Tailwind CSS — build estático de produção (substitui o CDN @tailwindcss/browser, dev-only).
+         Gerado por `uv run task build-css` a partir de modules/design_system/static/css/core.css.
+         Contém preflight + utilities purgadas + @theme (tokens + gold) + .font-outfit. -->
+    <link rel="stylesheet" href="{% static 'css/core.build.css' %}?v=1">
 
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3/dist/cdn.min.js"></script>
@@ -21,21 +24,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Custom CSS -->
-    {% load static %}
+    <!-- Custom CSS (overrides após o preflight/utilities do Tailwind) -->
     <link rel="stylesheet" href="{% static 'css/app.css' %}?v=4">
-
-    <style type="text/tailwindcss">
-        @theme {
-          --color-gold-primary: #a98f71;
-          --color-gold-dark: #8b7355;
-          --font-family-sans: 'Outfit', sans-serif;
-        }
-        
-        .font-outfit {
-            font-family: 'Outfit', sans-serif;
-        }
-    </style>
 
     {% block extra_head %}{% endblock %}
 </head>

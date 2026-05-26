@@ -805,15 +805,14 @@ def _process_test_media_upload(
         "fileName": file_name,
     }
 
-    conteudo_media = FeaturesCompose.converter_contexto(
-        metadados, message_type
-    )
+    analise_media = FeaturesCompose.converter_contexto(metadados, message_type)
 
     base_text = (caption or "").strip() or _default_conteudo_for_media(
         message_type, file_name
     )
-    if conteudo_media:
-        return f"{base_text}\n{conteudo_media}"
+    # Para o contexto do bot usa-se a análise completa.
+    if analise_media and analise_media.analise:
+        return f"{base_text}\n{analise_media.analise}"
     return base_text
 
 
@@ -843,9 +842,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
                 request.POST.get("chat_history", "[]") or "[]"
             )
             if isinstance(parsed_history, list):
-                chat_history_in = cast(
-                    list[dict[str, Any]], parsed_history
-                )
+                chat_history_in = cast(list[dict[str, Any]], parsed_history)
         except (json.JSONDecodeError, TypeError):
             pass
         try:
@@ -883,9 +880,7 @@ def testar_resposta_query(request: HttpRequest) -> JsonResponse:
             mensagem = body.get("mensagem", "").strip()
             parsed_history_b: Any = body.get("chat_history", []) or []
             if isinstance(parsed_history_b, list):
-                chat_history_in = cast(
-                    list[dict[str, Any]], parsed_history_b
-                )
+                chat_history_in = cast(list[dict[str, Any]], parsed_history_b)
             parsed_state_b: Any = body.get("context_state", {}) or {}
             if isinstance(parsed_state_b, dict):
                 context_state_in = cast(dict[str, Any], parsed_state_b)

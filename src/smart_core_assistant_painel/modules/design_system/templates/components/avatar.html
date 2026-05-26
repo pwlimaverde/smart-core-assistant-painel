@@ -1,0 +1,14 @@
+<div class="relative flex-shrink-0 inline-flex items-center justify-center rounded-full bg-[var(--ws-chip)] text-[var(--ws-fg-muted)] {{ class }}" style="width: {{ size|default:'40px' }}; height: {{ size|default:'40px' }};">
+  {% if src %}
+    <img src="{{ src }}" alt="{{ alt|default:'' }}" class="object-cover w-full h-full rounded-full">
+  {% else %}
+    <span class="text-sm font-semibold tracking-wider uppercase">
+      {{ initials|slice:":2" }}
+    </span>
+  {% endif %}
+  {% if status %}
+    <span class="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full ring-2 ring-white
+                 {% if status == 'online' %}bg-green-400{% elif status == 'offline' %}bg-gray-300{% else %}bg-yellow-400{% endif %}">
+    </span>
+  {% endif %}
+</div>

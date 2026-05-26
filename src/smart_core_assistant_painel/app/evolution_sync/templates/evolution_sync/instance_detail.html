@@ -67,6 +67,16 @@
         </div>
 
         <div class="p-6">
+            <!-- Banner de sucesso ao detectar conexão (antes do reload) -->
+            <div x-show="connected" x-cloak
+                 x-transition.opacity
+                 class="mb-4 flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-green-50 border border-green-200 text-green-800 font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                WhatsApp conectado com sucesso! Atualizando…
+            </div>
+
             <!-- Estado: Conectado -->
             <template x-if="state === 'open'">
                 <div class="text-center space-y-4">
@@ -225,17 +235,26 @@ function qrcodeManager() {
         qrPolling: null,
         statusPolling: null,
         loading: false,
+        connected: false,
+        _visibilityBound: false,
 
         startQR() {
             this.fetchQR();
             this.qrPolling = setInterval(() => this.fetchQR(), 20000);
             this.statusPolling = setInterval(() => this.checkStatus(), 5000);
-            // Pausar quando tab não visível
-            document.addEventListener('visibilitychange', () => {
-                if (document.hidden) {
-                    this.stopQR();
-                }
-            });
+            // Pausa o polling com a aba oculta e RETOMA ao voltar (enquanto
+            // não estiver conectado). Sem o retomar, ao trocar de aba para
+            // escanear o QR o polling morria e a tela nunca atualizava.
+            if (!this._visibilityBound) {
+                this._visibilityBound = true;
+                document.addEventListener('visibilitychange', () => {
+                    if (document.hidden) {
+                        this.stopQR();
+                    } else if (this.state !== 'open' && !this.qrPolling) {
+                        this.startQR();
+                    }
+                });
+            }
         },
 
         stopQR() {
@@ -266,9 +285,12 @@ function qrcodeManager() {
                 const data = await resp.json();
                 if (data.state === 'open') {
                     this.state = 'open';
+                    this.connected = true;
+                    this.qrCode = '';
                     this.stopQR();
-                    // Recarregar para atualizar info (telefone, etc)
-                    setTimeout(() => location.reload(), 1000);
+                    // Recarregar para atualizar info (telefone, etc).
+                    // O delay maior dá tempo do banner "Conectado!" aparecer.
+                    setTimeout(() => location.reload(), 1800);
                 }
             } catch (err) { /* silencioso */ }
         },

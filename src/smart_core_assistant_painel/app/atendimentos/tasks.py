@@ -115,3 +115,73 @@ def verificar_feedback_atendimento(
         logger.error(
             f"Erro na task verificar_feedback_atendimento para {atendimento_id}: {e}"
         )
+
+
+@shared_task(bind=True)
+def purge_old_media_all_tenants(self) -> str:  # type: ignore[no-untyped-def]
+    """Task global para remoção de mídias com mais de MEDIA_RETENTION_DAYS dias.
+
+    Remove apenas o arquivo binário do storage (limpando o atributo arquivo_midia),
+    preservando o restante da mensagem (como analise_midia e resumo_midia).
+    Itera todos os tenants ativos e aplica a limpeza.
+    """
+    from datetime import timedelta
+
+    from django.conf import settings
+    from django.utils import timezone
+
+    from smart_core_assistant_painel.app.atendimentos.models import Mensagem
+    from smart_core_assistant_painel.app.tenants.middleware import (
+        set_current_tenant,
+    )
+    from smart_core_assistant_painel.app.tenants.models import Tenant
+
+    retention_days = getattr(settings, "MEDIA_RETENTION_DAYS", 30)
+    limite = timezone.now() - timedelta(days=retention_days)
+
+    cleaned_total = 0
+    tenants = Tenant.objects.all()
+
+    logger.info(
+        f"Iniciando purga de mídias antigas (> {retention_days} dias). Limite: {limite}"
+    )
+
+    for tenant in tenants:
+        try:
+            set_current_tenant(tenant)
+
+            # Filtra mensagens com mídia salvas antes do limite
+            msgs = (
+                Mensagem.objects.filter(timestamp__lt=limite)
+                .exclude(arquivo_midia="")
+                .exclude(arquivo_midia__isnull=True)
+            )
+
+            count = 0
+            for m in msgs:
+                if m.arquivo_midia:
+                    try:
+                        m.arquivo_midia.delete(save=False)
+                        m.save(update_fields=["arquivo_midia"])
+                        count += 1
+                    except Exception as err:
+                        logger.error(
+                            f"Erro ao deletar mídia da mensagem {m.id} "
+                            f"no tenant {tenant.slug}: {err}"
+                        )
+
+            if count > 0:
+                logger.info(
+                    f"Purga concluída para o tenant {tenant.slug}: "
+                    f"{count} mídias removidas."
+                )
+                cleaned_total += count
+
+        except Exception as exc:
+            logger.error(
+                f"Erro ao processar purga de mídias no tenant {tenant.slug}: {exc}"
+            )
+        finally:
+            set_current_tenant(None)
+
+    return f"purge_old_media: cleaned={cleaned_total}"

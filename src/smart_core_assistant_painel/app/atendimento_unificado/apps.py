@@ -17,15 +17,4 @@ class AtendimentoUnificadoConfig(AppConfig):
     default_auto_field: str = "django.db.models.BigAutoField"
 
     def ready(self) -> None:
-        # Comentário (PT-BR): Carrega sinais ao iniciar a app, espelhando
-        # o padrão usado por `trello_sync`.
-        try:
-            from . import (
-                signals,  # noqa: F401  # pyright: ignore[reportUnusedImport]
-            )
-        except Exception as exc:
-            from loguru import logger
-
-            logger.warning(
-                "Falha ao carregar sinais do atendimento_unificado: {}", exc
-            )
+        pass

@@ -1,17 +1,16 @@
 {
-  "active": [
+  "active": [],
+  "completed": [
     {
-      "slug": "atendimento-unificado-chat-kanban",
-      "path": "plans/atendimento-unificado-chat-kanban.md",
-      "title": "Atendimento Unificado — Chat WhatsApp + Kanban + Campos Personalizados",
-      "summary": "Construir o módulo `atendimento_unificado`: tela única com chat estilo WhatsApp Web e modo Kanban sobre `EtapaFluxo`/`Atendimento`, com campos personalizados híbridos (globais por tenant + por fluxo) extraídos automaticamente pela IA e reinjetados no system prompt do bot. Real-time via SSE sobre Redis pub/sub. Trello permanece como espelho passivo. Entrega faseada em 3 sub-fases de execução (MVP → Campos+IA → Refinamentos).",
-      "linkedAt": "2026-05-14T18:46:09.784Z",
-      "status": "active",
-      "approval_status": "approved",
-      "approved_at": "2026-05-15T14:07:00.417Z",
-      "approved_by": "solo-dev"
+      "slug": "seguranca-midia-tenant-retencao",
+      "path": "plans/archive/seguranca-midia-tenant-retencao.md",
+      "title": "Segurança e retenção do armazenamento de mídia por tenant",
+      "summary": "Isolar a mídia por tenant no path, servir arquivos por view autenticada com X-Accel-Redirect e apagar o binário após 30 dias.",
+      "linkedAt": "2026-05-25T15:24:24.948Z",
+      "completedAt": "2026-05-25T00:00:00.000Z",
+      "status": "completed",
+      "finalReview": "CORRIGIDO"
     }
   ],
-  "completed": [],
-  "primary": "atendimento-unificado-chat-kanban"
+  "primary": null
 }

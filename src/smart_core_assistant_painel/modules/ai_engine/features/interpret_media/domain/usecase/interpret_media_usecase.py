@@ -13,6 +13,7 @@ from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
 )
 from smart_core_assistant_painel.modules.ai_engine.utils.types import (
     IMUsecase,
+    MediaAnalysis,
 )
 
 
@@ -25,14 +26,14 @@ class InterpretMediaUseCase(IMUsecase):
 
     def __call__(
         self, parameters: InterpretMediaParameters
-    ) -> ReturnSuccessOrError[str]:
+    ) -> ReturnSuccessOrError[MediaAnalysis]:
         """Executa validação e interpretação de mídia.
 
         Args:
             parameters: Parâmetros com dados da mídia.
 
         Returns:
-            SuccessReturn com texto descritivo ou
+            SuccessReturn com ``MediaAnalysis`` (analise + resumo) ou
             ErrorReturn em caso de falha.
         """
         has_url = bool(parameters.media_url and parameters.media_url.strip())

@@ -1,0 +1,22 @@
+{
+  "planSlug": "refatoracao-modular-atendimento",
+  "progress": 100,
+  "phases": {
+    "phase-1": {
+      "phaseId": "phase-1",
+      "status": "completed",
+      "startedAt": "2026-05-20T14:40:45.914Z",
+      "steps": [
+        {
+          "stepIndex": 1,
+          "description": "Step 1",
+          "status": "completed",
+          "completedAt": "2026-05-20T14:40:45.914Z"
+        }
+      ],
+      "completedAt": "2026-05-20T14:40:45.914Z"
+    }
+  },
+  "decisions": [],
+  "lastUpdated": "2026-05-20T14:40:45.914Z"
+}

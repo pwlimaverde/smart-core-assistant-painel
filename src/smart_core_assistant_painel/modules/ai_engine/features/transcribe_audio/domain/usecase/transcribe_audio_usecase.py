@@ -5,7 +5,10 @@ from py_return_success_or_error import ErrorReturn, ReturnSuccessOrError
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     TranscribeAudioParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import TAUsecase
+from smart_core_assistant_painel.modules.ai_engine.utils.types import (
+    MediaAnalysis,
+    TAUsecase,
+)
 
 
 class TranscribeAudioUseCase(TAUsecase):
@@ -13,7 +16,7 @@ class TranscribeAudioUseCase(TAUsecase):
 
     def __call__(
         self, parameters: TranscribeAudioParameters
-    ) -> ReturnSuccessOrError[str]:
+    ) -> ReturnSuccessOrError[MediaAnalysis]:
         has_url = bool(parameters.audio_url and parameters.audio_url.strip())
         has_base64 = bool(
             parameters.audio_base64 and parameters.audio_base64.strip()

@@ -1,6 +1,10 @@
 # /review - Revisar Código
 
-Realiza code review seguindo os padrões do projeto e skills PREVC.
+Realiza code review **pontual** (arquivos ou PR) seguindo os padrões do projeto e
+skills PREVC. É um checklist de qualidade manual.
+
+> Para a **auditoria final do ciclo** (planejado vs. implementado, com subagente
+> Opus e auto-correção, antes de arquivar o plano), use [`/final-review`](final-review.md).
 
 ## Instruções
 

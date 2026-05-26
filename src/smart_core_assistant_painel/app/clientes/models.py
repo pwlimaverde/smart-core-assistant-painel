@@ -109,6 +109,19 @@ class Contato(models.Model):
     metadados: models.JSONField[dict[str, Any] | None] = models.JSONField(
         default=dict, blank=True, help_text="Informações adicionais do contato"
     )
+    foto_perfil: models.FileField = models.FileField(
+        upload_to="contatos/fotos/%Y/%m/",
+        blank=True,
+        null=True,
+        max_length=255,
+        help_text="Avatar do contato baixado do WhatsApp (profilePictureUrl).",
+    )
+    foto_perfil_url_origem: models.URLField[str | None] = models.URLField(
+        max_length=512,
+        blank=True,
+        null=True,
+        help_text="URL remota usada na última sincronização do avatar; serve como cache-key para evitar redownloads.",
+    )
 
     class Meta:
         verbose_name = "Contato"

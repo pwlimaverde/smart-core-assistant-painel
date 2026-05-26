@@ -9,8 +9,8 @@ from smart_core_assistant_painel.app.evolution_sync.models import (
     EvolutionContact,
     EvolutionInstance,
 )
-from smart_core_assistant_painel.app.evolution_sync.services.evolution_api import (
-    EvolutionWhatsAppService,
+from smart_core_assistant_painel.app.evolution_sync.services import (
+    EvolutionGoAdapter,
 )
 from smart_core_assistant_painel.app.tenants.middleware import (
     get_current_tenant,
@@ -211,14 +211,38 @@ def _on_message_saved(
             f"para {number}"
         )
 
+        adapter = EvolutionGoAdapter()
+
+        # Quoted (reply): constrói o payload de citação para o Evolution Go.
+        # v2 ignora silenciosamente o parâmetro quoted.
+        quoted_payload: Optional[dict] = None
+        quoted_whatsapp_id: str = str(
+            meta.get("quoted_whatsapp_id") or ""
+        ).strip()
+        if quoted_whatsapp_id:
+            # Evolution Go espera: {"key": {"id": "<stanzaId>", "remoteJid": "...", "fromMe": false}}
+            jid = (
+                evo_contact.jid
+                if evo_contact
+                else (f"{number}@s.whatsapp.net" if number else "")
+            )
+            quoted_payload = {
+                "key": {
+                    "id": quoted_whatsapp_id,
+                    "remoteJid": jid or f"{number}@s.whatsapp.net",
+                    "fromMe": False,
+                }
+            }
+
         # Tenta enviar a mensagem
         try:
-            EvolutionWhatsAppService().send_message(
+            adapter.send_text(
                 instance=instance_name,
                 api_key=api_key,
                 number=number,
                 text=text,
                 base_url=base_url,
+                quoted=quoted_payload,
             )
 
             # Marca como respondida APENAS após sucesso do envio
@@ -229,6 +253,32 @@ def _on_message_saved(
                 f"Mensagem {instance.id} enviada com sucesso e marcada como "
                 f"respondida"
             )
+
+            # Marca mensagens recebidas como lidas no banco de dados local e na Evolution API
+            try:
+                from smart_core_assistant_painel.app.atendimentos.models import (
+                    TipoRemetente,
+                )
+                from smart_core_assistant_painel.app.chat_evolution.services.message_dispatch_service import (
+                    _dispatch_evolution_markread,
+                )
+
+                Mensagem.objects.filter(
+                    atendimento_id=instance.atendimento_id,
+                    remetente=TipoRemetente.CONTATO,
+                    lido=False,
+                ).update(lido=True)
+
+                _dispatch_evolution_markread(instance.atendimento_id)
+                logger.debug(
+                    f"Mensagens anteriores do atendimento {instance.atendimento_id} "
+                    f"marcadas como lidas localmente e na Evolution API."
+                )
+            except Exception as read_exc:
+                logger.warning(
+                    f"Erro ao marcar mensagens anteriores como lidas após envio "
+                    f"da resposta para atendimento {instance.atendimento_id}: {read_exc}"
+                )
 
         except Exception as e:
             logger.error(

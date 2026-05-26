@@ -14,9 +14,26 @@ urlpatterns = [
         "api/",
         include(
             (
-                "smart_core_assistant_painel.app.atendimento_unificado."
-                "api_urls",
+                "smart_core_assistant_painel.app.atendimento_unificado.api_urls",
                 "atendimento_unificado_api",
+            )
+        ),
+    ),
+    path(
+        "chat/api/",
+        include(
+            (
+                "smart_core_assistant_painel.app.chat_evolution.api_urls",
+                "chat_evolution_api",
+            )
+        ),
+    ),
+    path(
+        "kanban/api/",
+        include(
+            (
+                "smart_core_assistant_painel.app.gestao_kanban.api_urls",
+                "gestao_kanban_api",
             )
         ),
     ),

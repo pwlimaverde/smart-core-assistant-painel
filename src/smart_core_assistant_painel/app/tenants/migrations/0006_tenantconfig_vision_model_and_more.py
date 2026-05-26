@@ -4,20 +4,31 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('tenants', '0005_tenantconfig_transcription_model_and_more'),
+        ("tenants", "0005_tenantconfig_transcription_model_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='tenantconfig',
-            name='vision_model',
-            field=models.CharField(blank=True, default='', help_text='Modelo para interpretação de mídias (ex: gemini-2.5-flash). Se vazio, usa configuração global.', max_length=100, verbose_name='Modelo de Visão'),
+            model_name="tenantconfig",
+            name="vision_model",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="Modelo para interpretação de mídias (ex: gemini-2.5-flash). Se vazio, usa configuração global.",
+                max_length=100,
+                verbose_name="Modelo de Visão",
+            ),
         ),
         migrations.AddField(
-            model_name='tenantconfig',
-            name='vision_provider',
-            field=models.CharField(blank=True, default='', help_text='Provedor de interpretação visual (google, openai). Se vazio, usa configuração global.', max_length=50, verbose_name='Provedor de Visão'),
+            model_name="tenantconfig",
+            name="vision_provider",
+            field=models.CharField(
+                blank=True,
+                default="",
+                help_text="Provedor de interpretação visual (google, openai). Se vazio, usa configuração global.",
+                max_length=50,
+                verbose_name="Provedor de Visão",
+            ),
         ),
     ]

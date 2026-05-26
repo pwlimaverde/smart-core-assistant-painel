@@ -99,7 +99,7 @@
                             <div>{{ item.name }}</div>
                             {% if item.contact_id %}
                             <div class="text-xs font-normal text-stone-500">
-                                Vinculado: {{ item.contact.nome_contato|default(item).contact.telefone }}
+                                Vinculado: {{ item.contact.nome_contato or item.contact.telefone }}
                             </div>
                             {% endif %}
                         </td>

@@ -1,0 +1,13 @@
+{
+  "active": [
+    {
+      "slug": "fixbrokenroutes",
+      "path": "plans/fixbrokenroutes.md",
+      "title": "Correção de todas as rotas quebradas (Erro 500) em produção",
+      "linkedAt": "2026-05-26T19:12:12.805Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "fixbrokenroutes"
+}

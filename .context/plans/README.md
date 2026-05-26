@@ -4,6 +4,7 @@ This directory contains plans for coordinating work across documentation and pla
 
 ## Plan Queue
 1. [Fixbrokenroutes](./fixbrokenroutes.md)
+2. [Fixjinja2filters](./fixjinja2filters.md)
 
 ## How To Create Or Update Plans
 - Run "ai-context plan <name>" to scaffold a new plan template.

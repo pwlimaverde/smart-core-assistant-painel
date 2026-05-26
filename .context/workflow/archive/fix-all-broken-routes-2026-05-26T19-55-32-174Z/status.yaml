@@ -1,0 +1,38 @@
+project:
+  name: "fix-all-broken-routes"
+  scale: SMALL
+  started: "2026-05-26T19:07:22.486Z"
+  current_phase: V
+
+phases:
+  P:
+    status: completed
+    started_at: "2026-05-26T19:07:22.486Z"
+    completed_at: "2026-05-26T19:12:16.997Z"
+  R:
+    status: skipped
+    reason: "Not required for scale SMALL"
+  E:
+    status: completed
+    started_at: "2026-05-26T19:12:17.007Z"
+    completed_at: "2026-05-26T19:18:50.656Z"
+  V:
+    status: completed
+    started_at: "2026-05-26T19:18:50.666Z"
+    completed_at: "2026-05-26T19:19:00.978Z"
+  C:
+    status: skipped
+    reason: "Not required for scale SMALL"
+
+execution:
+  history:
+    - timestamp: "2026-05-26T19:19:00.978Z"
+      phase: V
+      action: completed
+  last_activity: "2026-05-26T19:19:00.978Z"
+  resume_context: "Fase V (Validação) concluída"
+
+approval:
+  plan_created: true
+  plan_approved: false
+

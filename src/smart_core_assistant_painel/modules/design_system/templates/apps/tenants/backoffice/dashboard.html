@@ -173,11 +173,11 @@
                         <tr>
                             <td><a href="{{ url('admin:tenants_tenant_change', args=[tenant.id]) }}">{{ tenant.name }}</a></td>
                             <td>
-                                <span class="status-badge status-{{ tenant.subscription.status|lower|cut:'_' }}">
+                                <span class="status-badge status-{{ tenant.subscription.status|lower|cut('_') }}">
                                     {{ tenant.subscription.get_status_display }}
                                 </span>
                             </td>
-                            <td>{{ tenant.created_at|date:"d/m/Y" }}</td>
+                            <td>{{ tenant.created_at|date("d/m/Y") }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -207,7 +207,7 @@
                             </td>
                             <td>{{ sub.plan.name }}</td>
                             <td style="color: #dc3545; font-weight: bold;">
-                                {{ sub.current_period_end|date:"d/m/Y" }}
+                                {{ sub.current_period_end|date("d/m/Y") }}
                             </td>
                         </tr>
                         {% endfor %}

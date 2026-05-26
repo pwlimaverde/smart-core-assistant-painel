@@ -107,8 +107,8 @@
                                 Por módulo
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">{{ invite.created_at|date:"d/m/Y H:i" }}</td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">{{ invite.expires_at|date:"d/m/Y H:i" }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">{{ invite.created_at|date("d/m/Y H:i") }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-stone-500">{{ invite.expires_at|date("d/m/Y H:i") }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <a href="{{ url('tenants:user_invite_resend', args=[invite.id]) }}" class="text-[#a98f71] hover:text-[#8c735a] font-semibold hover:underline">
                                 Reenviar

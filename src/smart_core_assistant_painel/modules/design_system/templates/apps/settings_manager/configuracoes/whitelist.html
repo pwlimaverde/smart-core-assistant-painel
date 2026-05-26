@@ -111,11 +111,11 @@
                                 class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium cursor-pointer transition-colors {% if item.active %}bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100{% else %}bg-stone-100 text-stone-500 border border-stone-200 hover:bg-stone-200{% endif %}">
                                 <span
                                     class="mr-1.5 h-1.5 w-1.5 rounded-full {% if item.active %}bg-emerald-500{% else %}bg-stone-400{% endif %}"></span>
-                                <span id="toggle-text-{{ item.pk }}">{{ item.active|yesno:"Ativo,Inativo" }}</span>
+                                <span id="toggle-text-{{ item.pk }}">{{ item.active|yesno("Ativo,Inativo") }}</span>
                             </button>
                         </td>
                         <td class="whitespace-nowrap px-3 py-4 text-sm text-stone-500">
-                            {{ item.created_at|date:"d/m/Y H:i" }}
+                            {{ item.created_at|date("d/m/Y H:i") }}
                         </td>
                         <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                             <div class="flex justify-end gap-3">

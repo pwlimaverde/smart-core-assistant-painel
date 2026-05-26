@@ -375,7 +375,7 @@
                         </label>
                         <div
                             class="bg-stone-50 p-3 rounded-lg text-xs font-mono border border-stone-200 max-h-40 overflow-auto whitespace-pre-wrap">
-                            {% if value %}{{ value|truncatechars:500 }}{% else %}<em class="text-stone-400">(não configurado)</em>{% endif %}
+                            {% if value %}{{ value|truncatechars(500) }}{% else %}<em class="text-stone-400">(não configurado)</em>{% endif %}
                         </div>
                     </div>
                     {% endfor %}

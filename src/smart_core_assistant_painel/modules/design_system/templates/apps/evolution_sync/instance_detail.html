@@ -49,11 +49,11 @@
                 </div>
                 <div>
                     <span class="text-stone-500">Criado em:</span>
-                    <span class="ml-2 text-stone-800">{{ instance.created_at|date:"d/m/Y H:i" }}</span>
+                    <span class="ml-2 text-stone-800">{{ instance.created_at|date("d/m/Y H:i") }}</span>
                 </div>
                 <div>
                     <span class="text-stone-500">Última verificação:</span>
-                    <span class="ml-2 text-stone-800">{{ instance.last_state_check|date:"d/m/Y H:i"|default("Nunca") }}</span>
+                    <span class="ml-2 text-stone-800">{{ instance.last_state_check|date("d/m/Y H:i")|default("Nunca") }}</span>
                 </div>
             </div>
         </div>

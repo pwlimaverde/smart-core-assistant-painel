@@ -3,24 +3,33 @@
 import base64
 import os
 import tempfile
-from typing import Any
+from typing import Any, cast
 
 import httpx
+from loguru import logger
 
 from smart_core_assistant_painel.modules.ai_engine.utils.parameters import (
     TranscribeAudioParameters,
 )
-from smart_core_assistant_painel.modules.ai_engine.utils.types import TAData
+from smart_core_assistant_painel.modules.ai_engine.utils.types import (
+    MediaAnalysis,
+    TAData,
+)
 from smart_core_assistant_painel.modules.services import SERVICEHUB
 
 
 class TranscribeAudioDatasource(TAData):
-    """Datasource para transcrever áudio com OpenAI ou Groq."""
+    """Datasource para transcrever áudio com OpenAI ou Groq.
+
+    Retorna ``MediaAnalysis``: ``analise`` = transcrição completa (contexto do
+    bot) e ``resumo`` = resumo curto gerado a partir da transcrição (exibido ao
+    atendente).
+    """
 
     _DOWNLOAD_TIMEOUT_SECONDS = 30.0
     _MAX_AUDIO_SIZE_BYTES = 25 * 1024 * 1024
 
-    def __call__(self, parameters: TranscribeAudioParameters) -> str:
+    def __call__(self, parameters: TranscribeAudioParameters) -> MediaAnalysis:
         provider = (
             (SERVICEHUB.TRANSCRIPTION_PROVIDER or "openai").strip().lower()
         )
@@ -37,21 +46,87 @@ class TranscribeAudioDatasource(TAData):
         extension = self._get_file_extension(parameters.mimetype)
 
         if provider == "openai":
-            return self._transcribe_openai(
+            transcription = self._transcribe_openai(
                 audio_bytes=audio_bytes,
                 model=model,
                 extension=extension,
                 language=language,
             )
-        if provider == "groq":
-            return self._transcribe_groq(
+        elif provider == "groq":
+            transcription = self._transcribe_groq(
                 audio_bytes=audio_bytes,
                 model=model,
                 extension=extension,
                 language=language,
+            )
+        else:
+            raise ValueError(
+                f"Provedor de transcrição não suportado: {provider}"
             )
 
-        raise ValueError(f"Provedor de transcrição não suportado: {provider}")
+        resumo = self._summarize_transcription(transcription)
+        return MediaAnalysis(analise=transcription, resumo=resumo)
+
+    def _summarize_transcription(self, transcription: str) -> str:
+        """Gera um resumo curto da transcrição via LLM de texto.
+
+        Reaproveita a configuração de visão do ``SERVICEHUB`` (provider/modelo)
+        para uma chamada de texto leve. Em caso de falha, faz fallback para um
+        recorte da própria transcrição — nunca quebra o fluxo de transcrição.
+        """
+        text = (transcription or "").strip()
+        if not text:
+            return ""
+        try:
+            llm = self._build_text_llm()
+            prompt = (
+                "Resuma em português, em 1 a 3 frases, o conteúdo do áudio "
+                "transcrito abaixo. Responda apenas com o resumo.\n\n"
+                f"Transcrição:\n{text}"
+            )
+            response = llm.invoke(prompt)
+            content = getattr(response, "content", response)
+            resumo = (
+                content if isinstance(content, str) else str(content)
+            ).strip()
+            return resumo or self._fallback_resumo(text)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "[TRANSCRIBE] Falha ao gerar resumo da transcrição: {}", exc
+            )
+            return self._fallback_resumo(text)
+
+    @staticmethod
+    def _fallback_resumo(text: str) -> str:
+        text = text.strip()
+        return text if len(text) <= 200 else text[:197].rstrip() + "..."
+
+    @staticmethod
+    def _build_text_llm() -> Any:
+        """Constrói um LLM de texto a partir da config de visão do ServiceHub."""
+        from pydantic import SecretStr
+
+        provider = (SERVICEHUB.VISION_PROVIDER or "google").strip().lower()
+        model = (SERVICEHUB.VISION_MODEL or "gemini-2.5-flash").strip()
+
+        if provider == "google":
+            from langchain_google_genai import ChatGoogleGenerativeAI
+
+            api_key = (SERVICEHUB.GOOGLE_API_KEY or "").strip()
+            return ChatGoogleGenerativeAI(
+                model=model,
+                google_api_key=SecretStr(api_key) if api_key else None,  # type: ignore[arg-type]
+                temperature=0,
+            )
+
+        from langchain_openai import ChatOpenAI
+
+        openai_key = (SERVICEHUB.OPENAI_API_KEY or "").strip()
+        return ChatOpenAI(
+            model=model,
+            api_key=SecretStr(openai_key) if openai_key else None,  # type: ignore[arg-type]
+            temperature=0,
+        )
 
     def _download_audio(self, url: str) -> bytes:
         if not url:
@@ -150,7 +225,8 @@ class TranscribeAudioDatasource(TAData):
     @staticmethod
     def _extract_transcription_text(response: Any) -> str:
         if isinstance(response, dict):
-            return str(response.get("text") or "").strip()
+            resp_dict = cast(dict[str, Any], response)
+            return str(resp_dict.get("text") or "").strip()
         text = getattr(response, "text", "")
         return str(text or "").strip()
 

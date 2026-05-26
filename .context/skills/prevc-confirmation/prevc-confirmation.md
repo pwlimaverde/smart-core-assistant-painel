@@ -3,7 +3,7 @@ name: prevc-confirmation
 trigger: auto
 description: Fase C (Confirmation) do workflow PREVC - Entregar e documentar
 phases: [C]
-skills: [documentation, commit-message]
+skills: [prevc-final-review, documentation, commit-message]
 source_tool: antigravity
 source_path: .agent\workflows\prevc-confirmation.md
 imported_at: 2026-05-14T18:16:27.547Z
@@ -26,10 +26,25 @@ Documentar a entrega, atualizar changelog e fazer handoff.
 
 ## Skills Associados
 
+- [prevc-final-review](../prevc-final-review/prevc-final-review.md) - **Gate obrigatório**: auditoria final (subagente Opus) antes de arquivar
 - [documentation](../../.context/skills/documentation/SKILL.md) - Documentação
 - [commit-message](../../.context/skills/commit-message/SKILL.md) - Mensagens de commit
 
 ## Etapas
+
+### 0. Gate de Final Review (OBRIGATÓRIO antes de arquivar)
+
+**Antes de qualquer outra etapa desta fase**, executar o skill
+[prevc-final-review](../prevc-final-review/prevc-final-review.md):
+
+1. Lançar subagente com **modelo Opus** que carrega o plano aprovado e audita o
+   diff da implementação (`git diff master...HEAD`) contra o planejado.
+2. O subagente **corrige automaticamente** todos os desvios/erros e revalida
+   (`lint`, `type-check`, testes existentes).
+3. O relatório é salvo em `.context/workflow/docs/final-review.md`.
+
+> **Não prosseguir para o arquivamento (etapa 5) enquanto o veredito não for
+> CONFORME ou CORRIGIDO.** Se for FALHOU, parar e reportar ao dono do projeto.
 
 ### 1. Atualizar Documentação
 
@@ -114,6 +129,8 @@ history:
 
 ## Checklist Final
 
+- [ ] **Final review executado (subagente Opus) — veredito CONFORME/CORRIGIDO**
+- [ ] **Relatório salvo em `.context/workflow/docs/final-review.md`**
 - [ ] Documentação atualizada
 - [ ] Changelog gerado
 - [ ] README atualizado (se aplicável)

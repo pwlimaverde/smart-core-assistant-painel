@@ -183,19 +183,51 @@ AAUsecase: TypeAlias = UsecaseBaseCallData[
 ]
 AAData: TypeAlias = Datasource[AnaliseAvaliacao, AnaliseAvaliacaoParameters]
 
+
+class MediaAnalysis(BaseModel):
+    """Modelo Pydantic para Structured Output da análise de mídia.
+
+    Usado com `llm.with_structured_output(MediaAnalysis)`. Separa o que é
+    contexto interno do bot (``analise``) do que é exibido ao atendente
+    (``resumo``).
+
+    Attributes:
+        analise: Descrição/transcrição COMPLETA do conteúdo da mídia,
+            usada como contexto para compor a resposta do bot.
+        resumo: Resumo geral curto e amigável do que se trata a mídia,
+            exibido ao atendente no chat.
+    """
+
+    analise: str = Field(
+        description=(
+            "Descrição/transcrição completa e detalhada do conteúdo da "
+            "mídia, em português. Para áudio: a transcrição literal. Para "
+            "imagem/vídeo: descrição detalhada (elementos, textos visíveis, "
+            "contexto). Para documento: o conteúdo textual organizado."
+        )
+    )
+    resumo: str = Field(
+        default="",
+        description=(
+            "Resumo geral curto (1-3 frases), em português, do que se trata "
+            "a mídia — para exibir ao atendente."
+        ),
+    )
+
+
 # Aliases para Interpret Media (imagem/vídeo/documento)
-IMData: TypeAlias = Datasource[str, InterpretMediaParameters]
+IMData: TypeAlias = Datasource[MediaAnalysis, InterpretMediaParameters]
 IMUsecase: TypeAlias = UsecaseBaseCallData[
-    str,
-    str,
+    MediaAnalysis,
+    MediaAnalysis,
     InterpretMediaParameters,
 ]
 
 
 # Aliases para Transcribe Audio
-TAData: TypeAlias = Datasource[str, TranscribeAudioParameters]
+TAData: TypeAlias = Datasource[MediaAnalysis, TranscribeAudioParameters]
 TAUsecase: TypeAlias = UsecaseBaseCallData[
-    str,
-    str,
+    MediaAnalysis,
+    MediaAnalysis,
     TranscribeAudioParameters,
 ]

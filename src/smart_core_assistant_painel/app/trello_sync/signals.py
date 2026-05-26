@@ -337,7 +337,7 @@ def atendimento_resolvido_move_to_resolvido(
     if created:
         return
     try:
-        if instance.status != StatusAtendimento.RESOLVIDO:
+        if instance.status not in (StatusAtendimento.RESOLVIDO, StatusAtendimento.ARQUIVADO):
             return
 
         # Resolve o fluxo de contexto: preferir o da etapa atual; se ausente,

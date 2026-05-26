@@ -1003,6 +1003,20 @@ class Atendimento(models.Model):
             }
 
 
+def media_upload_to(instance: "Mensagem", filename: str) -> str:
+    """Retorna o caminho de armazenamento do arquivo de mídia, isolado por tenant."""
+    from django.utils import timezone
+
+    from smart_core_assistant_painel.app.tenants.middleware import (
+        get_current_tenant,
+    )
+
+    t = get_current_tenant()
+    slug = getattr(t, "slug", "") or "_shared"
+    now = timezone.now()
+    return f"midias_atendimento/{slug}/{now:%Y}/{now:%m}/{filename}"
+
+
 class Mensagem(models.Model):
     id: models.AutoField = models.AutoField(
         primary_key=True, help_text="Chave primária do registro"
@@ -1077,7 +1091,7 @@ class Mensagem(models.Model):
         help_text="Nível de confiança da resposta do bot (0-1)",
     )
     arquivo_midia: models.FileField = models.FileField(
-        upload_to="midias_atendimento/%Y/%m/",
+        upload_to=media_upload_to,
         blank=True,
         null=True,
         max_length=255,
@@ -1090,8 +1104,18 @@ class Mensagem(models.Model):
         blank=True,
         null=True,
         help_text=(
-            "Análise gerada pela IA para mídias: transcrição de áudio, resumo "
-            "de imagem/vídeo, descrição de documento. Separada de 'conteudo'."
+            "Análise COMPLETA gerada pela IA para mídias: transcrição de áudio, "
+            "descrição detalhada de imagem/vídeo, conteúdo de documento. Usada "
+            "como CONTEXTO interno do bot. Separada de 'conteudo'."
+        ),
+    )
+    resumo_midia: models.TextField[str | None] = models.TextField(
+        blank=True,
+        null=True,
+        help_text=(
+            "Resumo curto e amigável gerado pela IA sobre a mídia, EXIBIDO ao "
+            "atendente no chat (botão 'Ver análise IA'). Distinto de "
+            "'analise_midia', que é o contexto completo do bot."
         ),
     )
 
@@ -1139,10 +1163,12 @@ class Mensagem(models.Model):
             "Não se aplica a mensagens inbound (do contato)."
         ),
     )
-    data_entregue: models.DateTimeField[datetime | None] = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="Data/hora em que o WhatsApp confirmou entrega ao dispositivo do contato.",
+    data_entregue: models.DateTimeField[datetime | None] = (
+        models.DateTimeField(
+            null=True,
+            blank=True,
+            help_text="Data/hora em que o WhatsApp confirmou entrega ao dispositivo do contato.",
+        )
     )
     data_lida: models.DateTimeField[datetime | None] = models.DateTimeField(
         null=True,
@@ -1671,7 +1697,9 @@ def inicializar_atendimento_por_contato(
         raise
 
 
-def _resolver_mensagem_citada(mensagem: "Mensagem", metadados: dict[str, Any]) -> None:
+def _resolver_mensagem_citada(
+    mensagem: "Mensagem", metadados: dict[str, Any]
+) -> None:
     """Tenta resolver o FK ``mensagem_citada`` a partir de ``contextInfo``.
 
     O Evolution (v2 e Go) inclui ``contextInfo`` nos metadados quando a
@@ -1689,14 +1717,14 @@ def _resolver_mensagem_citada(mensagem: "Mensagem", metadados: dict[str, Any]) -
         metadados: Dict de metadados já associado à mensagem.
     """
     ctx: dict[str, Any] = (
-        metadados.get("contextInfo")
-        or metadados.get("context_info")
-        or {}
+        metadados.get("contextInfo") or metadados.get("context_info") or {}
     )
     if not ctx:
         return
 
-    stanza_id: str = str(ctx.get("stanzaId") or ctx.get("stanza_id") or "").strip()
+    stanza_id: str = str(
+        ctx.get("stanzaId") or ctx.get("stanza_id") or ""
+    ).strip()
     if not stanza_id:
         return
 
@@ -1760,7 +1788,7 @@ def processar_mensagem_por_contato(
             recent_resolved = (
                 Atendimento.objects.filter(
                     contato_id=contato_id,
-                    status=StatusAtendimento.RESOLVIDO,
+                    status__in=[StatusAtendimento.RESOLVIDO, StatusAtendimento.ARQUIVADO],
                     data_fim__gte=timezone.now() - timedelta(minutes=10),
                 )
                 .order_by("-data_fim")
@@ -1810,7 +1838,322 @@ def processar_mensagem_por_contato(
             atendimento.bot_pode_atender = False
             atendimento.save(update_fields=["bot_pode_atender"])
 
+            # Marca mensagens inbound do contato como lidas localmente
+            try:
+                Mensagem.objects.filter(
+                    atendimento=atendimento,
+                    remetente=TipoRemetente.CONTATO,
+                    lido=False,
+                ).update(lido=True)
+                logger.debug(
+                    f"Mensagens anteriores do contato para o atendimento {atendimento.id} "
+                    f"marcadas como lidas localmente no Django devido a resposta enviada do celular."
+                )
+            except Exception as read_exc:
+                logger.warning(
+                    f"Erro ao marcar mensagens anteriores como lidas localmente para o "
+                    f"atendimento {atendimento.id}: {read_exc}"
+                )
+
         return mensagem.id
     except Exception as e:
         logger.error(f"Erro ao processar mensagem por contato: {e}")
         raise
+
+
+# ===========================================================================
+# Informação de atendimento consolidada no centro (refatoração modular v6.0).
+# Campos personalizados, etiquetas (catálogo + aplicação) e notas. Tabelas
+# `atu_*` preservadas — movidas de `atendimento_unificado` via migration
+# state-only. Apps periféricos (chat_evolution, gestao_kanban, trello_sync)
+# leem via selectors e atualizam por signals; não detêm estes models.
+# ===========================================================================
+
+
+class EscopoCampo(models.TextChoices):
+    GLOBAL = "GLOBAL", "Global (todos os fluxos)"
+    FLUXO = "FLUXO", "Por Fluxo"
+
+
+class TipoCampo(models.TextChoices):
+    TEXTO = "texto", "Texto"
+    NUMERO = "numero", "Número"
+    DATA = "data", "Data"
+    ESCOLHA = "escolha", "Escolha única"
+    MULTIPLA_ESCOLHA = "multipla_escolha", "Múltipla escolha"
+    BOOLEANO = "booleano", "Booleano"
+
+
+class OrigemValor(models.TextChoices):
+    MANUAL = "MANUAL", "Manual (atendente)"
+    BOT = "BOT", "Bot (extração IA)"
+    IMPORT = "IMPORT", "Importado"
+
+
+class CampoPersonalizado(models.Model):
+    """Define um campo personalizado configurável por tenant.
+
+    Campos GLOBAL se aplicam a todos os fluxos; FLUXO se aplicam apenas
+    ao `FluxoAtendimento` referenciado (FK lógica — sem constraint cross-app).
+    A coluna `extrair_hint` orienta a IA sobre como reconhecer o campo.
+    """
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    slug: models.SlugField = models.SlugField(
+        max_length=64,
+        help_text="Identificador URL-friendly (ex: 'cnpj_cliente').",
+    )
+    nome: models.CharField = models.CharField(max_length=120)
+    descricao: models.TextField = models.TextField(
+        blank=True,
+        help_text="Descrição do campo — também usado como hint de extração.",
+    )
+    escopo: models.CharField = models.CharField(
+        max_length=10,
+        choices=EscopoCampo.choices,
+        default=EscopoCampo.GLOBAL,
+    )
+    fluxo_id: models.BigIntegerField = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID lógico de operacional.FluxoAtendimento (null se GLOBAL).",
+    )
+    tipo: models.CharField = models.CharField(
+        max_length=20,
+        choices=TipoCampo.choices,
+        default=TipoCampo.TEXTO,
+    )
+    opcoes: models.JSONField = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Opções válidas para tipos escolha/multipla_escolha.",
+    )
+    obrigatorio: models.BooleanField = models.BooleanField(default=False)
+    extrair_automaticamente: models.BooleanField = models.BooleanField(
+        default=True,
+        help_text="Se True, o bot tenta extrair este campo da conversa.",
+    )
+    extrair_hint: models.CharField = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Dica para a IA sobre como reconhecer este campo.",
+    )
+    mostrar_no_card: models.BooleanField = models.BooleanField(
+        default=True,
+        help_text="Exibir valor como badge no card do Kanban.",
+    )
+    ordem: models.PositiveSmallIntegerField = models.PositiveSmallIntegerField(
+        default=0
+    )
+    ativo: models.BooleanField = models.BooleanField(default=True)
+    data_criacao: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True
+    )
+    data_atualizacao: models.DateTimeField = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = "Campo Personalizado"
+        verbose_name_plural = "Campos Personalizados"
+        db_table = "atu_campo_personalizado"
+        unique_together = [("slug", "escopo", "fluxo_id")]
+        indexes = [
+            models.Index(
+                fields=["escopo", "fluxo_id", "ativo"],
+                name="atu_campo_escopo_fluxo_idx",
+            ),
+            models.Index(
+                fields=["extrair_automaticamente", "ativo"],
+                name="atu_campo_extrair_idx",
+            ),
+        ]
+        ordering = ["ordem", "nome"]
+
+    @override
+    def __str__(self) -> str:
+        return f"CampoPersonalizado({self.slug}, escopo={self.escopo})"
+
+
+class ValorCampoAtendimento(models.Model):
+    """Valor de um `CampoPersonalizado` para um `Atendimento` específico.
+
+    FKs lógicas (BigIntegerField). Quando `origem=BOT`, `confianca` reflete o
+    score do LLM. A idempotência (nunca sobrescrever MANUAL) é garantida pelo
+    service de extração.
+    """
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    atendimento_id: models.BigIntegerField = models.BigIntegerField(
+        help_text="ID lógico de atendimentos.Atendimento (sem FK cruzada).",
+    )
+    campo: models.ForeignKey = models.ForeignKey(
+        CampoPersonalizado,
+        on_delete=models.CASCADE,
+        related_name="valores",
+    )
+    valor: models.JSONField = models.JSONField(
+        help_text="Valor do campo (string, número, lista, bool, etc.).",
+    )
+    origem: models.CharField = models.CharField(
+        max_length=10,
+        choices=OrigemValor.choices,
+        default=OrigemValor.MANUAL,
+    )
+    confianca: models.FloatField = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Score de confiança da extração (apenas quando origem=BOT).",
+    )
+    mensagem_origem_id: models.BigIntegerField = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID lógico da Mensagem que originou a extração (BOT).",
+    )
+    editado_por_id: models.BigIntegerField = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID lógico do Atendente que editou manualmente.",
+    )
+    data_atualizacao: models.DateTimeField = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        verbose_name = "Valor de Campo"
+        verbose_name_plural = "Valores de Campos"
+        db_table = "atu_valor_campo"
+        unique_together = [("atendimento_id", "campo")]
+        indexes = [
+            models.Index(
+                fields=["atendimento_id", "campo"],
+                name="atu_valor_atend_campo_idx",
+            ),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"ValorCampoAtendimento(atendimento={self.atendimento_id}, "
+            f"campo={self.campo_id}, origem={self.origem})"
+        )
+
+
+class Etiqueta(models.Model):
+    """Catálogo de etiquetas (tags coloridas) aplicáveis a atendimentos.
+
+    Mantém nome, cor e descrição. Aplicação em atendimentos via
+    `EtiquetaAtendimento` (M2M manual com FK lógica).
+    """
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    nome: models.CharField[str] = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Nome curto da etiqueta (ex: 'Urgente', 'VIP').",
+    )
+    cor: models.CharField[str] = models.CharField(
+        max_length=7,
+        default="#a98f71",
+        help_text="Cor hexadecimal usada no chip (ex: '#dc2626').",
+    )
+    descricao: models.CharField[str] = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Descrição exibida no tooltip ao passar o mouse.",
+    )
+    ativo: models.BooleanField[bool] = models.BooleanField(default=True)
+    data_criacao: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "Etiqueta"
+        verbose_name_plural = "Etiquetas"
+        db_table = "atu_etiqueta"
+        ordering = ["nome"]
+
+    @override
+    def __str__(self) -> str:
+        return f"Etiqueta({self.nome})"
+
+
+class EtiquetaAtendimento(models.Model):
+    """Associação M2M manual entre Atendimento e Etiqueta (FK lógica)."""
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    atendimento_id: models.BigIntegerField[int] = models.BigIntegerField(
+        db_index=True,
+        help_text="ID lógico de atendimentos.Atendimento.",
+    )
+    etiqueta: models.ForeignKey["Etiqueta"] = models.ForeignKey(
+        Etiqueta,
+        on_delete=models.CASCADE,
+        related_name="aplicacoes",
+    )
+    aplicada_em: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+    aplicada_por_id: models.BigIntegerField[int | None] = (
+        models.BigIntegerField(
+            null=True,
+            blank=True,
+            help_text="ID lógico de operacional.Atendente que aplicou.",
+        )
+    )
+
+    class Meta:
+        verbose_name = "Etiqueta do Atendimento"
+        verbose_name_plural = "Etiquetas dos Atendimentos"
+        db_table = "atu_etiqueta_atendimento"
+        unique_together = [("atendimento_id", "etiqueta")]
+        indexes = [
+            models.Index(
+                fields=["atendimento_id"],
+                name="atu_etiq_atend_idx",
+            ),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"EtiquetaAtendimento(atendimento={self.atendimento_id}, "
+            f"etiqueta={self.etiqueta_id})"
+        )
+
+
+class Nota(models.Model):
+    """Nota interna do atendente vinculada a um atendimento (1:N)."""
+
+    id: models.BigAutoField = models.BigAutoField(primary_key=True)
+    atendimento_id: models.BigIntegerField[int] = models.BigIntegerField(
+        db_index=True,
+        help_text="ID lógico de atendimentos.Atendimento.",
+    )
+    texto: models.TextField[str] = models.TextField(
+        help_text="Conteúdo livre da nota.",
+    )
+    criado_por_id: models.BigIntegerField[int | None] = models.BigIntegerField(
+        null=True,
+        blank=True,
+        help_text="ID lógico de operacional.Atendente que criou a nota.",
+    )
+    criado_em: models.DateTimeField[datetime] = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        verbose_name = "Nota"
+        verbose_name_plural = "Notas"
+        db_table = "atu_nota"
+        ordering = ["-criado_em"]
+        indexes = [
+            models.Index(
+                fields=["atendimento_id", "-criado_em"],
+                name="atu_nota_atend_idx",
+            ),
+        ]
+
+    @override
+    def __str__(self) -> str:
+        return f"Nota(atendimento={self.atendimento_id}, id={self.pk})"

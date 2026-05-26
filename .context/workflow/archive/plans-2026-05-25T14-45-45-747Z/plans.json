@@ -1,0 +1,14 @@
+{
+  "active": [
+    {
+      "slug": "chat-whatsapp-midia-ia",
+      "path": "plans/chat-whatsapp-midia-ia.md",
+      "title": "Chat estilo WhatsApp: mídia/IA estruturada + correção de visualização",
+      "summary": "Corrigir o bug de renderização das mensagens (`x-for` do Alpine com múltiplos roots),",
+      "linkedAt": "2026-05-24T17:12:22.128Z",
+      "status": "active"
+    }
+  ],
+  "completed": [],
+  "primary": "chat-whatsapp-midia-ia"
+}

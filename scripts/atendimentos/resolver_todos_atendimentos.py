@@ -23,7 +23,7 @@ import sys
 # Garante que o manage.py possa ser encontrado via DJANGO_SETTINGS_MODULE
 os.environ.setdefault(
     "DJANGO_SETTINGS_MODULE",
-    "smart_core_assistant_painel.app.settings",
+    "smart_core_assistant_painel.app.core.settings",
 )
 
 import django  # noqa: E402

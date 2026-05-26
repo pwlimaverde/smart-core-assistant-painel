@@ -1,0 +1,164 @@
+{
+  "version": 2,
+  "workflowType": "prevc",
+  "updatedAt": "2026-05-22T12:26:53.819Z",
+  "status": {
+    "project": {
+      "name": "chat-integrado-evolution-go",
+      "scale": 3,
+      "started": "2026-05-19T12:18:14.477Z",
+      "current_phase": "C",
+      "settings": {
+        "autonomous_mode": true,
+        "require_plan": true,
+        "require_approval": true
+      },
+      "plan": "chat-integrado-evolution-go"
+    },
+    "phases": {
+      "P": {
+        "status": "completed",
+        "started_at": "2026-05-19T12:18:14.477Z",
+        "completed_at": "2026-05-20T11:31:59.800Z",
+        "outputs": [
+          {
+            "path": ".context/plans/chat-integrado-evolution-go.md",
+            "status": "filled"
+          }
+        ]
+      },
+      "R": {
+        "status": "completed",
+        "started_at": "2026-05-20T11:31:59.822Z",
+        "completed_at": "2026-05-20T11:32:03.853Z",
+        "outputs": [
+          {
+            "path": "src/smart_core_assistant_painel/app/evolution_sync/services/evolution_go_adapter.py",
+            "status": "filled"
+          },
+          {
+            "path": "src/smart_core_assistant_painel/app/clientes/models.py",
+            "status": "filled"
+          }
+        ]
+      },
+      "E": {
+        "status": "completed",
+        "started_at": "2026-05-20T11:32:03.877Z",
+        "completed_at": "2026-05-20T11:32:10.339Z",
+        "outputs": [
+          {
+            "path": "Django check limpo; sem migrations pendentes; imports resolvidos; refactor Go-exclusive commitado 94c4470",
+            "status": "filled"
+          }
+        ]
+      },
+      "V": {
+        "status": "completed",
+        "started_at": "2026-05-20T11:32:10.359Z",
+        "completed_at": "2026-05-20T11:32:15.291Z",
+        "outputs": [
+          {
+            "path": "Validação: Django check limpo, sem migrations pendentes, smoke test de imports OK. Tenant de teste valida manualmente em produção.",
+            "status": "filled"
+          }
+        ]
+      },
+      "C": {
+        "status": "completed",
+        "started_at": "2026-05-20T11:32:15.315Z",
+        "completed_at": "2026-05-20T11:32:19.458Z",
+        "outputs": [
+          {
+            "path": "Plano chat-integrado-evolution-go concluído: Phases 1-6 entregues, app exclusivo Evolution Go, avatar real, release 1.2.0.",
+            "status": "filled"
+          }
+        ]
+      }
+    },
+    "agents": {},
+    "roles": {},
+    "approval": {
+      "plan_created": true,
+      "plan_approved": true,
+      "approved_by": "solo-dev",
+      "approved_at": "2026-05-20T11:31:55.704Z",
+      "approval_notes": "Plano aprovado pelo solo-dev. Escopo executado e validado: migração Evolution Go finalizada (app agora exclusivo Go, sem v2), avatar real do contato (Phase 3.6/3.7), bugfixes de kwargs e migrations. Tenant de teste em produção; regression dispensada por decisão do dono."
+    },
+    "execution": {
+      "history": [
+        {
+          "timestamp": "2026-05-19T12:18:14.477Z",
+          "phase": "P",
+          "action": "started"
+        },
+        {
+          "timestamp": "2026-05-19T12:20:03.922Z",
+          "phase": "P",
+          "action": "plan_linked",
+          "plan": "chat-integrado-evolution-go"
+        },
+        {
+          "timestamp": "2026-05-20T11:31:55.704Z",
+          "phase": "P",
+          "action": "plan_approved",
+          "approved_by": "solo-dev"
+        },
+        {
+          "timestamp": "2026-05-20T11:31:59.800Z",
+          "phase": "P",
+          "action": "completed"
+        },
+        {
+          "timestamp": "2026-05-20T11:31:59.822Z",
+          "phase": "R",
+          "action": "started"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:03.853Z",
+          "phase": "R",
+          "action": "completed"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:03.877Z",
+          "phase": "E",
+          "action": "started"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:10.339Z",
+          "phase": "E",
+          "action": "completed"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:10.359Z",
+          "phase": "V",
+          "action": "started"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:15.291Z",
+          "phase": "V",
+          "action": "completed"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:15.315Z",
+          "phase": "C",
+          "action": "started"
+        },
+        {
+          "timestamp": "2026-05-20T11:32:19.458Z",
+          "phase": "C",
+          "action": "completed"
+        }
+      ],
+      "last_activity": "2026-05-20T11:32:19.458Z",
+      "resume_context": "Fase C (Confirmação) concluída"
+    }
+  },
+  "binding": {
+    "workflowName": "chat-integrado-evolution-go",
+    "sessionId": "0411608f-864e-4ce1-8162-4194afd428a9",
+    "activeTaskId": "0430123b-debe-4fa5-8d86-d76ebe82e3a6",
+    "createdAt": "2026-05-19T12:18:14.532Z",
+    "updatedAt": "2026-05-20T11:32:19.508Z"
+  }
+}

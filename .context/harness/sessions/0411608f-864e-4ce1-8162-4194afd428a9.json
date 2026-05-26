@@ -4,9 +4,9 @@
   "status": "completed",
   "repoPath": "c:\\PROJETOS\\PYTHON\\APPS\\smart-core-assistant-painel",
   "createdAt": "2026-05-19T12:18:14.512Z",
-  "updatedAt": "2026-05-20T11:32:19.551Z",
+  "updatedAt": "2026-05-22T12:25:59.207Z",
   "startedAt": "2026-05-19T12:18:14.512Z",
-  "traceCount": 35,
+  "traceCount": 37,
   "artifactCount": 0,
   "checkpointCount": 10,
   "checkpoints": [
@@ -104,7 +104,7 @@
     "workflow": true,
     "description": "Implementar a experiência completa do chat integrado estilo WhatsApp Web (read receipts, reply, presença bidirecional, gravação de áudio, reações) e migrar o app evolution_sync da Evolution API v2 para Evolution Go. Planos de produto e infra ficam em docs_dev/planejamento/chat_integrado/."
   },
-  "lastTraceAt": "2026-05-20T11:32:19.551Z",
+  "lastTraceAt": "2026-05-22T12:25:59.207Z",
   "lastCheckpointAt": "2026-05-20T11:32:15.363Z",
   "completedAt": "2026-05-20T11:32:19.508Z"
 }

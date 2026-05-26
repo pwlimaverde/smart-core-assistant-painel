@@ -1,5 +1,47 @@
 # Changelog
 
+## [2026-05-25] - Segurança e retenção do armazenamento de mídia por tenant
+
+### Adicionado
+- **Isolamento de mídia por tenant no filesystem:** `Mensagem.arquivo_midia` passa a usar o callable `media_upload_to`, que grava em `midias_atendimento/<tenant_slug>/%Y/%m/` (fallback `_shared`). Migration `0010_alter_mensagem_arquivo_midia`.
+- **Serving autenticado de mídia via `X-Accel-Redirect`:** nova `MensagemMediaView` (`/workspace/chat/api/messages/<id>/media/`) com `@_require_workspace` + `_can_access_atendimento` + isolamento por DB do tenant (id de outro tenant → 404). Responde `HttpResponse` vazio com header `X-Accel-Redirect` para `/protected-media/` (nginx serve o binário).
+- **Retenção de 30 dias:** task Celery `purge_old_media_all_tenants` (itera tenants, remove apenas o binário de mensagens > `MEDIA_RETENTION_DAYS` dias, preserva `analise_midia`/`resumo_midia`) agendada diariamente no `CELERY_BEAT_SCHEDULE` (crontab 03:30). Setting `MEDIA_RETENTION_DAYS` (default 30).
+
+### Modificado
+- **nginx (`docker/nginx/conf.d/smartcore.conf`):** removido o `location /media/` público; adicionado `location /protected-media/ { internal; alias /var/www/media/; }` (acesso só via X-Accel interno).
+- **`chat_evolution/selectors.py` `_extract_media`:** `src` aponta para a URL autenticada da view (mantém fallback base64 quando não há arquivo persistido).
+
+### Workflow
+- Final review (subagente Opus) — veredito **CORRIGIDO**. Plano `seguranca-midia-tenant-retencao` arquivado.
+
+---
+
+## [v1.1.0] - 2026-05-22
+
+### Adicionado
+- **Consolidação dos models de informação no centro `atendimentos`** (arquitetura v6.0): `CampoPersonalizado`, `ValorCampoAtendimento`, `Etiqueta`, `EtiquetaAtendimento`, `Nota` movidos do shell para `atendimentos` via migrations `SeparateDatabaseAndState` (tabelas `atu_*` preservadas). `atendimento_unificado` passa a ser apenas a ponte/UI. Apps periféricos leem via selectors e atualizam por signals.
+- **Build de produção Tailwind v4 (sem Node):** `core.build.css` purgado, gerado por `uv run task build-css` via `pytailwindcss` (binário standalone). Substitui o CDN `@tailwindcss/browser` (dev-only) no `base.html`. Tasks `build-css`/`watch-css` no `pyproject.toml`.
+- **Gate de Final Review (PREVC fase C):** skill `prevc-final-review` + comando `/final-review` que audita planejado vs. implementado via subagente Opus, corrige desvios automaticamente e bloqueia o arquivamento de planos incompletos.
+- Novos apps modulares `chat_evolution` e `gestao_kanban` criados para desacoplar as funcionalidades de chat e painel do monolito.
+- Arquivos de selectors, signals e views reestruturados e otimizados dentro de cada respectivo app.
+- Configuração do canal SSE para eventos específicos (`chat_evolution/signals.py` e `gestao_kanban/signals.py`) com isolamento multi-tenant.
+
+### Removido
+- `LeituraAtendimento` (audit log de leitura por atendente) — eliminado; não-lidos usam `Mensagem.lido` (fonte da verdade, sem multiatendente). Tabela `atu_leitura_atendimento` dropada.
+
+### Modificado
+- Integrado o shell `workspace.html` para consumir as rotas isoladas dos novos apps.
+- Resolvidos os erros estáticos e warnings de Pyright (como o do `TipoRemetente.BOT` e importações não utilizadas de `signals`).
+- Atualizado o inicializador `apps.py` de ambos os aplicativos para carregar dinamicamente seus respectivos brokers de sinais com as anotações do Pyright adequadas.
+
+### Removido
+- Removidos e esvaziados os módulos obsoletos do monolito antigo `atendimento_unificado` (`selectors.py`, `signals.py`, `views_api.py` deletados e `api_urls.py` esvaziado).
+
+### Workflow
+- Workflow PREVC do plano `refatoracao-modular-atendimento` finalizado e arquivado.
+
+---
+
 ## [v1.0.3] - 2026-02-12
 
 ### Adicionado

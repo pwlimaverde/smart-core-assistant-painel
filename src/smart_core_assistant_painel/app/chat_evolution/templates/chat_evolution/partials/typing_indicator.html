@@ -1,0 +1,11 @@
+{# Indicador de Presença / Digitando #}
+<template x-if="activeConv && activeConv.presence && activeConv.presence.state !== 'paused' && activeConv.presence.state !== 'available'">
+    <div class="flex items-center gap-2 px-4 py-2 bg-stone-50 border-t border-stone-100 text-xs text-stone-500 italic">
+        <div class="flex gap-1 items-center shrink-0">
+            <span class="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+            <span class="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+            <span class="w-1.5 h-1.5 bg-stone-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+        <span x-text="activeConv.presence.is_audio ? 'Gravando áudio…' : 'Digitando…'"></span>
+    </div>
+</template>

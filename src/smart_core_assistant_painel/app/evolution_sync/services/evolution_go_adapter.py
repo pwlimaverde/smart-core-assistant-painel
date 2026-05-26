@@ -18,14 +18,14 @@ from urllib.parse import urlencode, urljoin
 
 import requests  # noqa: I001
 
+# Eventos suportados pelo Evolution Go (whatsmeow). Enviados no campo ``events``
+# do POST /instance/connect. ⚠️ NÃO usar o campo ``subscribe`` — o servidor o
+# ignora e ZERA a assinatura (events=""), parando toda a entrega de webhooks.
 _DEFAULT_SUBSCRIBE_EVENTS: list[str] = [
     "MESSAGE",
-    "MESSAGE_UPDATE",
-    "MESSAGE_DELETE",
-    "PRESENCE",
     "CONNECTION",
+    "PRESENCE",
     "QRCODE",
-    "CONTACTS",
 ]
 
 
@@ -167,12 +167,14 @@ class EvolutionGoAdapter:
         Raises:
             Exception: Se a API retornar erro HTTP.
         """
+        # Spec Evolution GO (MediaStruct): campos ``type``, ``url``, ``caption``,
+        # ``filename`` (não ``mediatype``/``media``/``fileName``).
         body: dict[str, Any] = {
             "number": number,
-            "mediatype": kind,
-            "media": file_url,
+            "type": kind,
+            "url": file_url,
             "caption": caption,
-            "fileName": filename,
+            "filename": filename,
         }
         response = self._send_request(
             base_url, "/send/media", api_key=api_key, method="POST", body=body
@@ -208,9 +210,8 @@ class EvolutionGoAdapter:
         """
         body: dict[str, Any] = {
             "number": number,
-            "mediatype": "audio",
-            "media": audio_url,
-            "ptt": ptt,
+            "type": "audio",
+            "url": audio_url,
         }
         response = self._send_request(
             base_url, "/send/media", api_key=api_key, method="POST", body=body
@@ -256,7 +257,11 @@ class EvolutionGoAdapter:
             "fromMe": from_me,
         }
         response = self._send_request(
-            base_url, "/message/react", api_key=api_key, method="POST", body=body
+            base_url,
+            "/message/react",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -290,7 +295,11 @@ class EvolutionGoAdapter:
         """
         body: dict[str, Any] = {"number": number, "id": message_ids}
         response = self._send_request(
-            base_url, "/message/markread", api_key=api_key, method="POST", body=body
+            base_url,
+            "/message/markread",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -334,7 +343,11 @@ class EvolutionGoAdapter:
             "isAudio": is_audio,
         }
         response = self._send_request(
-            base_url, "/message/presence", api_key=api_key, method="POST", body=body
+            base_url,
+            "/message/presence",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -364,11 +377,17 @@ class EvolutionGoAdapter:
         body: dict[str, Any] = {"number": number, "preview": False}
         try:
             response = self._send_request(
-                base_url, "/user/avatar", api_key=api_key, method="POST", body=body
+                base_url,
+                "/user/avatar",
+                api_key=api_key,
+                method="POST",
+                body=body,
             )
             if response.ok:
                 data = response.json()
-                return str(data.get("profilePictureUrl", "") or data.get("url", ""))
+                return str(
+                    data.get("profilePictureUrl", "") or data.get("url", "")
+                )
         except Exception:
             pass
         return ""
@@ -439,7 +458,11 @@ class EvolutionGoAdapter:
             body["token"] = token
 
         response = self._send_request(
-            base_url, "/instance/create", api_key=api_key, method="POST", body=body
+            base_url,
+            "/instance/create",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
@@ -478,17 +501,92 @@ class EvolutionGoAdapter:
             Exception: Se a API retornar erro HTTP.
         """
         events = subscribe if subscribe else _DEFAULT_SUBSCRIBE_EVENTS
+        # Campo correto por spec (Evolution GO): ``subscribe`` (array de nomes
+        # UPPERCASE: MESSAGE, CONNECTION, PRESENCE, QRCODE). Nomes inválidos
+        # zeram a assinatura. ``immediate`` conecta a sessão de imediato.
         body: dict[str, Any] = {
             "instanceName": name,
             "webhookUrl": webhook_url,
             "subscribe": events,
+            "immediate": True,
         }
         response = self._send_request(
-            base_url, "/instance/connect", api_key=api_key, method="POST", body=body
+            base_url,
+            "/instance/connect",
+            api_key=api_key,
+            method="POST",
+            body=body,
         )
         if not response.ok:
             raise Exception(
                 f"Erro ao conectar instância (Go): {response.status_code} - {response.text}"
+            )
+        return response.json()
+
+    def set_advanced_settings(
+        self,
+        *,
+        base_url: str,
+        api_key: str,
+        instance_id: str,
+        always_online: bool = True,
+        read_messages: bool = False,
+        reject_call: bool = False,
+        msg_reject_call: str = "",
+        ignore_groups: bool = False,
+        ignore_status: bool = False,
+    ) -> dict:
+        """Configura advanced-settings da instância (``PUT /instance/{id}/advanced-settings``).
+
+        ``always_online=True`` é o mecanismo **documentado** para manter a sessão
+        whatsmeow conectada (evita o ``connected=false`` por ociosidade), em vez
+        de depender só de reconnect periódico.
+
+        ``read_messages`` default ``False``: o whatsmeow envia recibo de leitura
+        (ticks azuis) automaticamente para toda mensagem recebida quando ``True``.
+        O app exige recibo de leitura **explícito** (após resposta do bot/atendente
+        ou abertura do atendimento, via ``POST /message/markread``), então este
+        flag deve permanecer ``False``.
+
+        Usa o **token da instância** como ``apikey`` (a Global Key dá 401 aqui).
+
+        Args:
+            base_url: URL base do servidor.
+            api_key: Token da instância.
+            instance_id: ID (UUID) da instância no servidor Go.
+            always_online: Mantém a presença/sessão sempre online.
+            read_messages: Envia recibo de leitura automático (ticks azuis) para
+                toda mensagem recebida. Manter ``False`` — recibo é explícito.
+            reject_call: Rejeita chamadas automaticamente.
+            msg_reject_call: Mensagem enviada ao rejeitar chamada.
+            ignore_groups: Ignora mensagens de grupos.
+            ignore_status: Ignora atualizações de status.
+
+        Returns:
+            dict com a resposta da API.
+
+        Raises:
+            Exception: Se a API retornar erro HTTP.
+        """
+        body: dict[str, Any] = {
+            "alwaysOnline": always_online,
+            "readMessages": read_messages,
+            "rejectCall": reject_call,
+            "msgRejectCall": msg_reject_call,
+            "ignoreGroups": ignore_groups,
+            "ignoreStatus": ignore_status,
+        }
+        response = self._send_request(
+            base_url,
+            f"/instance/{instance_id}/advanced-settings",
+            api_key=api_key,
+            method="PUT",
+            body=body,
+        )
+        if not response.ok:
+            raise Exception(
+                f"Erro ao configurar advanced-settings (Go): "
+                f"{response.status_code} - {response.text}"
             )
         return response.json()
 
@@ -626,33 +724,35 @@ class EvolutionGoAdapter:
         *,
         base_url: str,
         api_key: str,
-        instance: str,
-        message_id: str,
-        number: str,
+        message: dict,
     ) -> dict:
-        """Faz download de mídia via Evolution Go (``POST /message/downloadmedia``).
+        """Faz download/descriptografia de mídia via Evolution Go.
 
-        Alternativa eficiente ao ``getBase64FromMediaMessage`` do v2.
-        Usar quando ``data.message.mediaUrl`` não vier no webhook
-        (S3/MinIO não configurado no servidor do tenant).
+        ``POST /message/downloadmedia`` com ``{"message": <objeto Message do
+        whatsmeow>}``. Atende todos os tipos (image/audio/video/document/
+        sticker) — o servidor extrai o sub-objeto via ``GetImageMessage()`` etc.
+        (⚠️ o swagger lista ``/downloadimage`` mas a rota real é
+        ``/downloadmedia``.) Usado como fallback quando o webhook **não** traz o
+        ``base64`` inline (ex.: imagens grandes). O ``message`` deve conter o
+        sub-objeto de mídia com as chaves de descriptografia do whatsmeow
+        (``URL``, ``directPath``, ``mediaKey``, ``fileEncSHA256``,
+        ``fileSHA256``, ``mediaKeyTimestamp``, ``mimetype``), ex.::
+
+            {"imageMessage": {"URL": "...", "directPath": "...",
+                              "mediaKey": "...", "fileEncSHA256": "...", ...}}
 
         Args:
             base_url: URL base do servidor.
             api_key: Token da instância.
-            instance: Nome da instância.
-            message_id: ID da mensagem com mídia.
-            number: JID/número do remetente.
+            message: Objeto ``Message`` (whatsmeow) com o sub-objeto de mídia.
 
         Returns:
-            dict com ``base64`` e ``mimetype`` da mídia.
+            dict com ``base64`` (e/ou ``mimetype``) da mídia descriptografada.
 
         Raises:
             Exception: Se a API retornar erro HTTP.
         """
-        body: dict[str, Any] = {
-            "messageId": message_id,
-            "number": number,
-        }
+        body: dict[str, Any] = {"message": message}
         response = self._send_request(
             base_url,
             "/message/downloadmedia",

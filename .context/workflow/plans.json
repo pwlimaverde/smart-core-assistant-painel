@@ -1,25 +1,16 @@
 {
-  "active": [
+  "active": [],
+  "completed": [
     {
-      "slug": "chat-integrado-evolution-go",
-      "path": "plans/chat-integrado-evolution-go.md",
-      "title": "Chat Integrado WhatsApp + Migração Evolution Go",
-      "summary": "**Não duplica conteúdo.** Este plano é o **mapa de execução** que referencia os dois documentos de planejamento:",
-      "linkedAt": "2026-05-19T12:20:03.916Z",
-      "status": "active",
-      "approval_status": "approved",
-      "approved_at": "2026-05-20T11:31:55.704Z",
-      "approved_by": "solo-dev"
-    },
-    {
-      "slug": "refatoracao-modular-atendimento",
-      "path": "plans/refatoracao-modular-atendimento.md",
-      "title": "Refatoração Modular do Atendimento Unificado",
-      "summary": "Separação em 3 apps (chat, kanban, shell) e 1 módulo de design system",
-      "linkedAt": "2026-05-20T14:35:51.862Z",
-      "status": "active"
+      "slug": "seguranca-midia-tenant-retencao",
+      "path": "plans/archive/seguranca-midia-tenant-retencao.md",
+      "title": "Segurança e retenção do armazenamento de mídia por tenant",
+      "summary": "Isolar a mídia por tenant no path, servir arquivos por view autenticada com X-Accel-Redirect e apagar o binário após 30 dias.",
+      "linkedAt": "2026-05-25T15:24:24.948Z",
+      "completedAt": "2026-05-25T00:00:00.000Z",
+      "status": "completed",
+      "finalReview": "CORRIGIDO"
     }
   ],
-  "completed": [],
-  "primary": "chat-integrado-evolution-go"
+  "primary": null
 }

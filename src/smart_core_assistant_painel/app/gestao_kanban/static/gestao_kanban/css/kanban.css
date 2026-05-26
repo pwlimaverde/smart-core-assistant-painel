@@ -1,0 +1,15 @@
+/* Drag-and-drop (SortableJS) — preserva nomes/seletores existentes. */
+.kanban-ghost {
+    opacity: 0.35;
+    background: var(--ws-chip) !important;
+    border: 2px dashed var(--ws-accent) !important;
+}
+.kanban-ghost > * { visibility: hidden; }
+.kanban-chosen { cursor: grabbing !important; }
+.kanban-drag {
+    transform: rotate(2deg);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.18) !important;
+    border-color: var(--ws-accent) !important;
+}
+.kanban-card { will-change: transform; }
+.kanban-col-body { min-height: 50px; }

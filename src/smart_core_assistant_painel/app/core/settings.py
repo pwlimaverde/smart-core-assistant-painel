@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
 from decouple import config
 from django.contrib.messages import constants
 from dotenv import load_dotenv
@@ -154,6 +155,8 @@ INSTALLED_APPS = [
     "smart_core_assistant_painel.app.trello_sync",
     # Workspace unificado (Chat + Kanban)
     "smart_core_assistant_painel.app.atendimento_unificado.apps.AtendimentoUnificadoConfig",
+    "smart_core_assistant_painel.app.chat_evolution.apps.ChatEvolutionConfig",
+    "smart_core_assistant_painel.app.gestao_kanban.apps.GestaoKanbanConfig",
     # Usa AppConfig explícito para garantir execução do ready() e sinais
     # "smart_core_assistant_painel.app.clickup_sync.apps.ClickupSyncConfig",
     "smart_core_assistant_painel.app.evolution_sync.apps.EvolutionSyncConfig",
@@ -216,7 +219,9 @@ TEMPLATES = [
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [
             os.path.join(BASE_DIR, "core", "templates"),
-            os.path.join(BASE_DIR.parent, "modules", "design_system", "templates"),
+            os.path.join(
+                BASE_DIR.parent, "modules", "design_system", "templates"
+            ),
         ],
         "APP_DIRS": True,
         "OPTIONS": {
@@ -576,3 +581,27 @@ CELERY_RESULT_EXTENDED = True
 
 # Beat Scheduler
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+# Retenção de mídias por tenant (em dias)
+MEDIA_RETENTION_DAYS = config("MEDIA_RETENTION_DAYS", default=30, cast=int)
+
+# Agendamentos sincronizados para o DatabaseScheduler no startup do beat.
+CELERY_BEAT_SCHEDULE = {
+    # Keep-alive da sessão Evolution Go: o servidor whatsmeow derruba a
+    # conexão quando ociosa; reconectamos a cada 60s para não perder webhooks.
+    "evolution-go-keepalive": {
+        "task": (
+            "smart_core_assistant_painel.app.evolution_sync.tasks."
+            "keepalive_evolution_instances"
+        ),
+        "schedule": 60.0,
+    },
+    # Purga de mídias antigas em todos os tenants diariamente na madrugada
+    "purge-old-media": {
+        "task": (
+            "smart_core_assistant_painel.app.atendimentos.tasks."
+            "purge_old_media_all_tenants"
+        ),
+        "schedule": crontab(hour=3, minute=30),
+    },
+}

@@ -19,16 +19,19 @@ def reverter_lido(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('atendimentos', '0002_status_arquivado'),
+        ("atendimentos", "0002_status_arquivado"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='mensagem',
-            name='lido',
-            field=models.BooleanField(db_index=True, default=False, help_text='Indica se a mensagem (recebida do contato) já foi lida por algum atendente humano via workspace. Não se aplica a mensagens do bot ou do próprio atendente.'),
+            model_name="mensagem",
+            name="lido",
+            field=models.BooleanField(
+                db_index=True,
+                default=False,
+                help_text="Indica se a mensagem (recebida do contato) já foi lida por algum atendente humano via workspace. Não se aplica a mensagens do bot ou do próprio atendente.",
+            ),
         ),
         migrations.RunPython(
             marcar_historico_como_lido,

@@ -17,13 +17,15 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
 
+from smart_core_assistant_painel.app.gestao_kanban.selectors import (
+    list_fluxos_acessiveis,
+)
 from smart_core_assistant_painel.app.operacional.models import Atendente
 from smart_core_assistant_painel.app.tenants.tenant_context import (
     get_current_tenant_slug,
 )
 
 from .feature_flags import is_workspace_enabled_for_tenant
-from .selectors import list_fluxos_acessiveis
 
 
 @method_decorator(login_required, name="dispatch")

@@ -1621,6 +1621,19 @@
   transition: background 0.15s ease;
 }
 .ws-lightbox__close:hover { background: rgba(255, 255, 255, 0.25); }
+.ws-lightbox__download {
+  position: absolute;
+  top: 16px; right: 68px;
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s ease;
+}
+.ws-lightbox__download:hover { background: rgba(255, 255, 255, 0.25); }
 .ws-lightbox__content {
   position: relative;
   max-width: 92vw;

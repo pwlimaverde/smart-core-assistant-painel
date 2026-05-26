@@ -30,7 +30,7 @@
                     {% for member in users %}
                     <tr class="hover:bg-stone-50 transition-colors">
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm font-medium text-stone-900">{{ member.user.get_full_name|default(member).user.username }}</div>
+                            <div class="text-sm font-medium text-stone-900">{{ member.user.get_full_name() or member.user.username }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-stone-500">{{ member.user.email }}</div>
